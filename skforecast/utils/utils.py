@@ -288,6 +288,52 @@ def initialize_weights(
     return weight_func, source_code_weight_func, series_weights
 
 
+
+def initialize_steps(
+        forecaster_name: str,
+        steps: Any
+) -> np.ndarray:
+    """
+    Check steps argument input and generate the corresponding numpy ndarray.
+    Parameters
+    ----------
+    forecaster_name : str
+        Forecaster name.
+    steps : int, list, numpy ndarray, range
+        Number of future steps the forecaster will predict.
+    Returns
+    -------
+    steps : numpy ndarray
+        Number of future steps the forecaster will predict.
+    """
+    if isinstance(steps, int):
+        if steps < 1:
+            raise ValueError(f"`steps` argument must be greater than or equal to 1. Got {steps}.")
+        steps = np.arange(1, steps + 1)
+    if isinstance(steps, (list, tuple, range)):
+        steps = np.array(steps)
+    if isinstance(steps, np.ndarray):
+        if steps.ndim != 1:
+            raise ValueError("`steps` must be a 1-dimensional array.")
+        if steps.size == 0:
+            raise ValueError("Argument `steps` must contain at least one value.")
+        if not np.issubdtype(steps.dtype, np.integer):
+            raise TypeError("All values in `steps` must be integers.")
+        if np.any(steps < 1):
+            raise ValueError("Minimum value of steps allowed is 1.")
+    else:
+        if forecaster_name != 'ForecasterAutoregMultiVariate':
+            raise TypeError(
+                (f"`steps` argument must be an int, 1d numpy ndarray, range, tuple or list. "
+                 f"Got {type(steps)}.")
+            )
+        else:
+            raise TypeError(
+                ("`steps` argument must be a dict, int, 1d numpy ndarray, range, tuple or list. "
+                 f"Got {type(steps)}.")
+            )
+    return steps
+
 def initialize_transformer_series(
     forecaster_name: str,
     series_names_in_: list,

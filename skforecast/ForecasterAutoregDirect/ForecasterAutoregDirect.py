@@ -23,6 +23,7 @@ from ..utils import (
     initialize_lags,
     initialize_window_features,
     initialize_weights,
+    initialize_steps,
     check_select_fit_kwargs,
     check_y,
     check_exog,
@@ -55,8 +56,8 @@ class ForecasterAutoregDirect(ForecasterBase):
     ----------
     regressor : regressor or pipeline compatible with the scikit-learn API
         An instance of a regressor or pipeline compatible with the scikit-learn API.
-    steps : int
-        Maximum number of future steps the forecaster will predict when using
+    steps : int, list, numpy ndarray, range
+        Number of future steps the forecaster will predict when using
         method `predict()`. Since a different model is created for each step,
         this value should be defined before training.
     lags : int, list, numpy ndarray, range, default `None`
@@ -109,7 +110,7 @@ class ForecasterAutoregDirect(ForecasterBase):
     regressors_ : dict
         Dictionary with regressors trained for each step. They are initialized 
         as a copy of `regressor`.
-    steps : int
+    steps : numpy ndarray
         Number of future steps the forecaster will predict when using method
         `predict()`. Since a different model is created for each step, this value
         should be defined before training.
@@ -237,7 +238,7 @@ class ForecasterAutoregDirect(ForecasterBase):
     def __init__(
         self,
         regressor: object,
-        steps: int,
+        steps: Union[int, np.ndarray, list],
         lags: Optional[Union[int, list, np.ndarray, range]] = None,
         window_features: Optional[Union[object, list]] = None,
         transformer_y: Optional[object] = None,
@@ -250,7 +251,6 @@ class ForecasterAutoregDirect(ForecasterBase):
     ) -> None:
         
         self.regressor                          = copy(regressor)
-        self.steps                              = steps
         self.transformer_y                      = transformer_y
         self.transformer_exog                   = transformer_exog
         self.weight_func                        = weight_func
@@ -287,13 +287,10 @@ class ForecasterAutoregDirect(ForecasterBase):
                  f"Got {type(steps)}.")
             )
 
-        if steps < 1:
-            raise ValueError(
-                f"`steps` argument must be greater than or equal to 1. Got {steps}."
-            )
-
         self.regressors_ = {step: clone(self.regressor) for step in range(1, steps + 1)}
         self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
+        self.steps = initialize_steps(type(self.__name__, steps))
+        self.max_step = np.max(self.steps)
         self.window_features, self.window_features_names, self.max_size_window_features = (
             initialize_window_features(window_features)
         )
@@ -335,7 +332,7 @@ class ForecasterAutoregDirect(ForecasterBase):
                               fit_kwargs = fit_kwargs
                           )
 
-        self.in_sample_residuals_ = {step: None for step in range(1, steps + 1)}
+        self.in_sample_residuals_ = {step: None for step in self.steps}
         self.out_sample_residuals_ = None
 
         if n_jobs == 'auto':
@@ -379,7 +376,7 @@ class ForecasterAutoregDirect(ForecasterBase):
             f"Lags: {self.lags} \n"
             f"Window features: {self.window_features_names} \n"
             f"Window size: {self.window_size} \n"
-            f"Maximum steps to predict: {self.steps} \n"
+            f"Steps to predict: {self.steps} \n"
             f"Exogenous included: {self.exog_in_} \n"
             f"Exogenous names: {exog_names_in_} \n"
             f"Transformer for y: {self.transformer_y} \n"
