@@ -1227,7 +1227,7 @@ class ForecasterAutoregDirect(ForecasterBase):
                 exog_type_in_   = self.exog_type_in_,
                 exog_names_in_  = self.exog_names_in_,
                 interval        = None,
-                max_steps       = self.steps
+                init_steps      = self.steps
             )
 
         last_window = last_window.iloc[-self.window_size:].copy()

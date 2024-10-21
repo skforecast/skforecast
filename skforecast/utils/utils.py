@@ -731,7 +731,7 @@ def check_predict_input(
     exog_names_in_: Optional[list] = None,
     interval: Optional[list] = None,
     alpha: Optional[float] = None,
-    max_steps: Optional[int] = None,
+    init_steps: Optional[Union[int, np.ndarray]]= None,
     levels: Optional[Union[str, list]] = None,
     levels_forecaster: Optional[Union[str, list]] = None,
     series_names_in_: Optional[list] = None,
@@ -777,8 +777,8 @@ def check_predict_input(
         interval of 95% should be as `interval = [2.5, 97.5]`.
     alpha : float, default `None`
         The confidence intervals used in ForecasterSarimax are (1 - alpha) %.
-    max_steps: int, default `None`
-        Maximum number of steps allowed (`ForecasterAutoregDirect` and 
+    init_steps: int or numpy ndarray, default `None`
+         Steps intialized in forecaster's definition (`ForecasterAutoregDirect` and
         `ForecasterAutoregMultiVariate`).
     levels : str, list, default `None`
         Time series to be predicted (`ForecasterAutoregMultiSeries`
@@ -804,10 +804,12 @@ def check_predict_input(
              "appropriate arguments before using predict.")
         )
 
-    if isinstance(steps, (int, np.integer)) and steps < 1:
-        raise ValueError(
-            f"`steps` must be an integer greater than or equal to 1. Got {steps}."
-        )
+    if isinstance(steps, (int, np.integer)):
+        if steps < 1:
+            raise ValueError(
+                f"`steps` must be an integer greater than or equal to 1. Got {steps}."
+            )
+        steps = list([steps])
 
     if isinstance(steps, list) and min(steps) < 1:
         raise ValueError(
@@ -815,13 +817,22 @@ def check_predict_input(
             f"Got {min(steps)}.")
         )
 
-    if max_steps is not None:
-        if max(steps) > max_steps:
-            raise ValueError(
-                (f"The maximum value of `steps` must be less than or equal to "
-                 f"the value of steps defined when initializing the forecaster. "
-                 f"Got {max(steps)}, but the maximum is {max_steps}.")
-            )
+    if init_steps is not None:
+        if isinstance(init_steps, (int, np.int32, np.int64)):  # ForecasterAutoregMultiVariate (& ForecasterRNN?)
+            if max(steps) > init_steps:
+                raise ValueError(
+                    (f"The maximum value of `steps` must be less than or equal to "
+                     f"the value of steps defined when initializing the forecaster. "
+                     f"Got {max(steps)}, but the maximum is {init_steps}.")
+                )
+        if isinstance(init_steps, np.ndarray):  # ForecasterAutoregDirect
+            for step in steps:
+                if step not in init_steps:
+                    raise ValueError(
+                        (f"'steps' should match with steps defined when "
+                         f"initializing the forecaster."
+                         f"Got {steps}, but available steps are {init_steps}")
+                    )
 
     if interval is not None or alpha is not None:
         check_interval(interval=interval, alpha=alpha)
