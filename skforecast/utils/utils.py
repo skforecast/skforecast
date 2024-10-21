@@ -1424,6 +1424,7 @@ def cast_exog_dtypes(
     return exog
 
 
+# TODO: Remove int type from steps once propagated steps-to-list changes from Direct to Multivariate
 def exog_to_direct(
         exog: Union[pd.Series, pd.DataFrame],
         steps: Union[int, np.ndarray]
