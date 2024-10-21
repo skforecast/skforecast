@@ -133,6 +133,25 @@ def test_create_lags_when_lags_is_3_steps_2_and_y_is_numpy_arange_10():
     np.testing.assert_array_almost_equal(results[1], expected[1])
 
 
+def test_create_lags_when_lags_is_3_steps_single_2_and_y_is_numpy_arange_10():
+    """
+    Test matrix of lags created properly when lags is 3, 2nd step only and y is
+    np.arange(10).
+    """
+    forecaster = ForecasterAutoregDirect(LinearRegression(), lags=3, steps=[2])
+    results = forecaster._create_lags(y=np.arange(10))
+    expected = (np.array([[2., 1., 0.],
+                          [3., 2., 1.],
+                          [4., 3., 2.],
+                          [5., 4., 3.],
+                          [6., 5., 4.],
+                          [7., 6., 5.]]),
+                np.array([[4., 5., 6., 7., 8., 9.]])
+                )
+    assert (results[0] == expected[0]).all()
+    assert (results[1] == expected[1]).all()
+
+
 def test_create_lags_when_lags_is_3_steps_5_and_y_is_numpy_arange_10():
     """
     Test matrix of lags created properly when lags is 3, steps is 5 and y is
@@ -151,6 +170,24 @@ def test_create_lags_when_lags_is_3_steps_5_and_y_is_numpy_arange_10():
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
     np.testing.assert_array_almost_equal(results[1], expected[1])
+
+
+def test_create_lags_when_lags_is_3_steps_list_interspersed_and_y_is_numpy_arange_10():
+    """
+    Test matrix of lags created properly when lags is 3, steps is [1,3,5] and y is
+    np.arange(10).
+    """
+    forecaster = ForecasterAutoregDirect(LinearRegression(), lags=3, steps=[1,3,5])
+    results = forecaster._create_lags(y=np.arange(10))
+    expected = (np.array([[2., 1., 0.],
+                          [3., 2., 1.],
+                          [4., 3., 2.]]),
+                np.array([[3., 4., 5.],
+                          [5., 6., 7.],
+                          [7., 8., 9.]])
+                )
+    assert (results[0] == expected[0]).all()
+    assert (results[1] == expected[1]).all()
 
 
 def test_create_lags_output_lags_None():

@@ -103,6 +103,24 @@ def test_create_predict_inputs_output_when_regressor_is_LinearRegression_with_li
     pd.testing.assert_index_equal(results[3], expected[3])
 
 
+def test_create_predict_inputs_error_when_pred_steps_are_not_in_train_steps():
+    """
+    Test _create_predict_inputs output when steps is
+    a list with interspersed steps.
+    """
+    train_steps = [1, 3, 5]
+    pred_steps = [1, 4]
+    forecaster = ForecasterAutoregDirect(LinearRegression(), lags=3, steps=train_steps)
+    forecaster.fit(y=pd.Series(np.arange(50, dtype=float)))
+    err_msg = re.escape(
+        (f"'steps' should match with steps defined when "
+         f"initializing the forecaster."
+         f"Got {pred_steps}, but steps available are {np.array(train_steps)}")
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        forecaster._create_predict_inputs(steps=pred_steps)
+
+
 def test_create_predict_inputs_output_when_last_window():
     """
     Test _create_predict_inputs output when external last_window.
@@ -164,6 +182,35 @@ def test_create_predict_inputs_output_when_exog():
     assert results[1] == expected[1]
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
+
+
+def test_create_predict_inputs_output_when_exog_with_train_steps_interspersed_and_pred_steps_by_default():
+    """
+    Test _create_predict_inputs output when exog.
+    """
+    forecaster = ForecasterAutoregDirect(LinearRegression(), lags=3, steps=[1,3,5])
+    forecaster.fit(
+        y=pd.Series(np.arange(50, dtype=float)),
+        exog=pd.Series(np.arange(start=100, stop=150, step=1), name="exog")
+    )
+    results = forecaster._create_predict_inputs(
+        exog=pd.Series(np.arange(start=25, stop=50, step=0.5, dtype=float),
+                       index=pd.RangeIndex(start=50, stop=100),
+                       name="exog")
+    )
+    expected = (
+        [np.array([[49., 48., 47., 25.]]),
+         np.array([[49., 48., 47., 26.]]),
+         np.array([[49., 48., 47., 27.]])],
+        [1, 3, 5],
+        pd.RangeIndex(start=47, stop=50, step=1),
+        ['lag_1', 'lag_2', 'lag_3', 'exog']
+    )
+    for step in range(len(expected[0])):
+        np.testing.assert_almost_equal(results[0][step], expected[0][step])
+    assert results[1] == expected[1]
+    pd.testing.assert_index_equal(results[2], expected[2])
+    assert results[3] == expected[3]
 
 
 def test_create_predict_inputs_output_with_transform_y():
