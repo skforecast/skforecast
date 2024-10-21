@@ -506,7 +506,7 @@ class ForecasterAutoregDirect(ForecasterBase):
         
         """
         
-        n_rows = len(y) - self.window_size - (self.steps - 1)
+        n_rows = len(y) - self.window_size - (self.max_step - 1)
         
         X_data = None
         if self.lags is not None:
@@ -514,7 +514,7 @@ class ForecasterAutoregDirect(ForecasterBase):
                 shape=(n_rows, len(self.lags)), fill_value=np.nan, order='F', dtype=float
             )
             for i, lag in enumerate(self.lags):
-                X_data[:, i] = y[self.window_size - lag : -(lag + self.steps - 1)] 
+                X_data[:, i] = y[self.window_size - lag : -(lag + self.max_step - 1)]
 
             if X_as_pandas:
                 X_data = pd.DataFrame(
@@ -524,10 +524,10 @@ class ForecasterAutoregDirect(ForecasterBase):
                          )
 
         y_data = np.full(
-            shape=(n_rows, self.steps), fill_value=np.nan, order='F', dtype=float
+            shape=(n_rows, len(self.steps)), fill_value=np.nan, order='F', dtype=float
         )
-        for step in range(self.steps):
-            y_data[:, step] = y[self.window_size + step : self.window_size + step + n_rows]
+        for i, step in enumerate(self.steps):
+            y_data[i,] = y[self.window_size + step : self.window_size + step + n_rows]
         
         return X_data, y_data
 
@@ -629,14 +629,14 @@ class ForecasterAutoregDirect(ForecasterBase):
         check_y(y=y)
         y = input_to_frame(data=y, input_name='y')
 
-        if len(y) < self.window_size + self.steps:
+        if len(y) < self.window_size + self.max_step:
             raise ValueError(
                 f"Minimum length of `y` for training this forecaster is "
-                f"{self.window_size + self.steps}. Reduce the number of "
-                f"predicted steps, {self.steps}, or the maximum "
+                f"{self.window_size + self.max_step}. Reduce the maximum "
+                f"value for steps, {self.steps}, or the maximum "
                 f"window_size, {self.window_size}, if no more data is available.\n"
                 f"    Length `y`: {len(y)}.\n"
-                f"    Max step : {self.steps}.\n"
+                f"    Max step : {self.max_step}.\n"
                 f"    Max window size: {self.window_size}.\n"
                 f"    Lags window size: {self.max_lag}.\n"
                 f"    Window features window size: {self.max_size_window_features}."
@@ -698,7 +698,7 @@ class ForecasterAutoregDirect(ForecasterBase):
             
         X_train = []
         X_train_features_names_out_ = []
-        train_index = y_index[self.window_size + (self.steps - 1):]
+        train_index = y_index[self.window_size + (self.max_step - 1):]
         len_train_index = len(train_index)
         X_as_pandas = True if categorical_features else False
 
@@ -769,11 +769,11 @@ class ForecasterAutoregDirect(ForecasterBase):
 
         y_train = {
             step: pd.Series(
-                      data  = y_train[:, step - 1], 
-                      index = y_index[self.window_size + step - 1:][:len_train_index],
+                      data  = y_train[:, i],
+                      index = y_index[self.window_size + i:][:len_train_index],
                       name  = f"y_step_{step}"
                   )
-            for step in range(1, self.steps + 1)
+            for i, step in enumerate(self.steps)
         }
         
         return (
@@ -856,10 +856,10 @@ class ForecasterAutoregDirect(ForecasterBase):
 
         """
 
-        if (step < 1) or (step > self.steps):
+        if step not in self.steps:
             raise ValueError(
-                (f"Invalid value `step`. For this forecaster, minimum value is 1 "
-                 f"and the maximum step is {self.steps}.")
+                (f"Invalid value `step`. For this forecaster, steps available "
+                 f"are {self.steps}.")
             )
 
         y_train_step = y_train[step]
@@ -1035,7 +1035,7 @@ class ForecasterAutoregDirect(ForecasterBase):
         self.X_train_exog_names_out_            = None
         self.X_train_direct_exog_names_out_     = None
         self.X_train_features_names_out_        = None
-        self.in_sample_residuals_               = {step: None for step in range(1, self.steps + 1)}
+        self.in_sample_residuals_               = {step: None for step in self.steps}
         self.is_fitted                          = False
         self.fit_date                           = None
 
@@ -1122,7 +1122,7 @@ class ForecasterAutoregDirect(ForecasterBase):
                 step                      = step,
                 store_in_sample_residuals = store_in_sample_residuals
             )
-            for step in range(1, self.steps + 1))
+            for step in self.steps)
         )
 
         self.regressors_ = {step: regressor 
