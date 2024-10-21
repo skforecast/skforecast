@@ -72,7 +72,7 @@ def test_exception_is_raised_when_step_is_greater_than_forecaster_steps(step):
     forecaster.fit(y=pd.Series(np.arange(5)))
 
     err_msg = re.escape(
-                (f"The step must have a value from 1 to the maximum number of steps "
+                (f"The step must be in initialized steps set "
                  f"({forecaster.steps}). Got {step}.")
             )
     with pytest.raises(ValueError, match = err_msg):         
