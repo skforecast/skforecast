@@ -1205,7 +1205,7 @@ class ForecasterAutoregDirect(ForecasterBase):
         """
         
         steps = prepare_steps_direct(
-                    max_step = self.steps,
+                    init_steps = self.steps,
                     steps    = steps
                 )
 
@@ -1500,7 +1500,7 @@ class ForecasterAutoregDirect(ForecasterBase):
             
             steps = prepare_steps_direct(
                         steps    = steps,
-                        max_step = self.steps
+                        init_steps = self.steps
                     )
             
             if use_in_sample_residuals:
