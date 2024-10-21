@@ -1511,8 +1511,9 @@ class ForecasterAutoregMultiVariate(ForecasterBase):
         """
         
         steps = prepare_steps_direct(
-                    steps    = steps,
-                    max_step = self.steps
+                    forecaster_name = type(self).__name__,
+                    init_steps      = self.steps,
+                    steps           = steps
                 )
 
         if last_window is None:
@@ -1846,8 +1847,9 @@ class ForecasterAutoregMultiVariate(ForecasterBase):
         if self.is_fitted:
             
             steps = prepare_steps_direct(
-                        steps    = steps,
-                        max_step = self.steps
+                        forecaster_name = type(self).__name__,
+                        init_steps      = self.steps,
+                        steps           = steps
                     )
 
             if use_in_sample_residuals:

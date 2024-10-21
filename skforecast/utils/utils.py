@@ -2642,26 +2642,29 @@ def prepare_residuals_multiseries(
     return residuals
 
 
+# TODO: Simplify after propagating steps-to-list implementation to ForecasterAutoregMultivariate
 def prepare_steps_direct(
-    init_steps: np.ndarray,
-    steps: Optional[Union[int, list]] = None
+        forecaster_name: str,
+        init_steps: Union[int, np.ndarray],
+        steps: Optional[Union[int, list]] = None
 ) -> list:
     """
     Prepare list of steps to be predicted in Direct Forecasters.
 
     Parameters
     ----------
-    max_step : int
-        Maximum number of future steps the forecaster will predict 
-        when using method `predict()`.
+    forecaster_name: str
+        Forecaster name
+    init_steps : int or numpy ndarray
+        Steps initialized in forecaster's definition. These are the steps available to be predicted
     steps : int, list, None, default `None`
-        Predict n steps. The value of `steps` must be less than or equal to the 
+        Predict n steps. The value of `steps` must be less than or equal to the
         value of steps defined when initializing the forecaster. Starts at 1.
-    
+
         - If `int`: Only steps within the range of 1 to int are predicted.
-        - If `list`: List of ints. Only the steps contained in the list 
+        - If `list`: List of ints. Only the steps contained in the list
         are predicted.
-        - If `None`: As many steps are predicted as were defined at 
+        - If `None`: As many steps are predicted as were defined at
         initialization.
 
     Returns
@@ -2674,21 +2677,23 @@ def prepare_steps_direct(
     if isinstance(steps, int):
         steps = list(np.arange(steps) + 1)
     elif steps is None:
-        steps = list(init_steps)
+        if forecaster_name == 'ForecasterAutoregDirect':
+            steps = list(init_steps)
+        else:
+            steps = list(np.arange(init_steps) + 1)
     elif isinstance(steps, list):
         steps = list(np.array(steps))
-    
+
     for step in steps:
         if not isinstance(step, (int, np.int64, np.int32)):
             raise TypeError(
                 (f"`steps` argument must be an int, a list of ints or `None`. "
                  f"Got {type(steps)}.")
             )
-    # Required since numpy 2.0
+        # Required since numpy 2.0
     steps = [int(step) for step in steps if step is not None]
 
     return steps
-
 
 def set_skforecast_warnings(
     suppress_warnings: bool,

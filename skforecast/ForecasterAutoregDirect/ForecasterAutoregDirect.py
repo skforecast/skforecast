@@ -1205,8 +1205,9 @@ class ForecasterAutoregDirect(ForecasterBase):
         """
         
         steps = prepare_steps_direct(
-                    init_steps = self.steps,
-                    steps    = steps
+                    forecaster_name = type(self).__name__,
+                    init_steps      = self.steps,
+                    steps           = steps
                 )
 
         if last_window is None:
@@ -1499,8 +1500,9 @@ class ForecasterAutoregDirect(ForecasterBase):
         if self.is_fitted:
             
             steps = prepare_steps_direct(
-                        steps    = steps,
-                        init_steps = self.steps
+                        forecaster_name = type(self).__name__,
+                        init_steps      = self.steps,
+                        steps           = steps
                     )
             
             if use_in_sample_residuals:
