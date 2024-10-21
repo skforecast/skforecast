@@ -1877,7 +1877,7 @@ class ForecasterAutoregDirect(ForecasterBase):
         self.regressor.set_params(**params)
         self.regressors_ = {
             step: clone(self.regressor)
-            for step in range(1, self.steps + 1)
+            for step in self.steps
         }
 
     def set_fit_kwargs(
