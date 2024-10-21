@@ -2066,10 +2066,10 @@ class ForecasterAutoregDirect(ForecasterBase):
         
         if self.out_sample_residuals_ is None:
             self.out_sample_residuals_ = {
-                step: None for step in range(1, self.steps + 1)
+                step: None for step in self.steps
             }
         
-        steps_to_update = set(range(1, self.steps + 1)).intersection(set(y_pred.keys()))
+        steps_to_update = set(self.steps).intersection(set(y_pred.keys()))
         if not steps_to_update:
             warnings.warn(
                 "Provided keys in `y_pred` and `y_true` do not match any step. "
