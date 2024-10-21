@@ -46,7 +46,7 @@ def test_create_train_X_y_ValueError_when_len_y_is_lower_than_maximum_window_siz
     err_msg = re.escape(
         ("Minimum length of `y` for training this forecaster is "
          "6. Reduce the number of "
-         "predicted steps, 3, or the maximum "
+         "predicted steps, [1, 2, 3], or the maximum "
          "window_size, 3, if no more data is available.\n"
          "    Length `y`: 5.\n"
          "    Max step : 3.\n"

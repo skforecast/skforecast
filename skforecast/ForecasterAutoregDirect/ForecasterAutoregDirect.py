@@ -632,8 +632,8 @@ class ForecasterAutoregDirect(ForecasterBase):
         if len(y) < self.window_size + self.max_step:
             raise ValueError(
                 f"Minimum length of `y` for training this forecaster is "
-                f"{self.window_size + self.max_step}. Reduce the maximum "
-                f"value for steps, {self.steps}, or the maximum "
+                f"{self.window_size + self.max_step}. Reduce the number of "
+                f"predicted steps, {self.steps}, or the maximum "
                 f"window_size, {self.window_size}, if no more data is available.\n"
                 f"    Length `y`: {len(y)}.\n"
                 f"    Max step : {self.max_step}.\n"
@@ -873,7 +873,7 @@ class ForecasterAutoregDirect(ForecasterBase):
                 len(self.X_train_window_features_names_out_) if self.window_features is not None else 0
             )
             idx_columns_autoreg = np.arange(n_lags + n_window_features)
-            n_exog = len(self.X_train_direct_exog_names_out_) / self.steps
+            n_exog = len(self.X_train_direct_exog_names_out_) / len(self.steps)
             idx_columns_exog = (
                 np.arange((step - 1) * n_exog, (step) * n_exog) + idx_columns_autoreg[-1] + 1
             )
