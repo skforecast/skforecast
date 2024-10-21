@@ -17,7 +17,7 @@ def test_TypeError_prepare_steps_direct_when_steps_list_contain_floats(steps):
          f"Got {type(steps)}.")
     )
     with pytest.raises(TypeError, match = err_msg):
-        prepare_steps_direct(max_step=5, steps=steps)
+        prepare_steps_direct(forecaster_name='ForecasterAutoregDirect', init_steps=5, steps=steps)
 
 
 @pytest.mark.parametrize("steps, expected_steps", 
@@ -30,8 +30,9 @@ def test_output_prepare_steps_direct(steps, expected_steps):
     Test output prepare_steps_direct for different inputs.
     """
     steps = prepare_steps_direct(
-                max_step = 5, 
-                steps    = steps
+                forecaster_name = 'ForecasterAutoregMultiVariate',
+                init_steps      = 5,
+                steps           = steps
             )
     
     assert steps == expected_steps
