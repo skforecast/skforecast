@@ -121,6 +121,23 @@ def test_create_predict_X_output_when_regressor_is_LinearRegression_using_last_w
     pd.testing.assert_frame_equal(results, expected)
 
 
+def test_create_predict_inputs_error_when_pred_steps_are_not_in_train_steps():
+    """
+    Test create_predict_X output when pred steps aren't in init steps
+    """
+    train_steps = [1, 3, 5]
+    pred_steps = [1, 4]
+    forecaster = ForecasterAutoregDirect(LinearRegression(), lags=3, steps=train_steps)
+    forecaster.fit(y=pd.Series(np.arange(50, dtype=float)))
+    err_msg = re.escape(
+        (f"'steps' should match with steps defined when "
+         f"initializing the forecaster."
+         f"Got {pred_steps}, but steps available are {np.array(train_steps)}")
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        forecaster.create_predict_X(steps=pred_steps)
+
+
 def test_create_predict_X_output_when_exog():
     """
     Test create_predict_X output when exog.
@@ -147,6 +164,33 @@ def test_create_predict_X_output_when_exog():
         index = pd.RangeIndex(start=50, stop=55, step=1)
     )
     
+    pd.testing.assert_frame_equal(results, expected)
+
+
+def test_create_predict_inputs_output_when_exog_with_train_steps_interspersed_and_pred_steps_by_default():
+    """
+    Test create_predict_X output when exog, with steps as interspersed list and no prediction
+    steps defined.
+    """
+    forecaster = ForecasterAutoregDirect(LinearRegression(), lags=3, steps=[1,3,5])
+    forecaster.fit(
+        y=pd.Series(np.arange(50, dtype=float)),
+        exog=pd.Series(np.arange(start=100, stop=150, step=1), name="exog")
+    )
+    results = forecaster.create_predict_X(
+                  exog  = pd.Series(np.arange(start=25, stop=50, step=0.5, dtype=float),
+                                    index=pd.RangeIndex(start=50, stop=100),
+                                    name="exog")
+    )
+    expected = pd.DataFrame(
+        data={
+            'lag_1': [49., 49., 49.],
+            'lag_2': [48., 48., 48.],
+            'lag_3': [47., 47., 47.],
+            'exog': [25., 26., 27.]
+        },
+        index=pd.RangeIndex(start=50, stop=55, step=2)
+    )
     pd.testing.assert_frame_equal(results, expected)
 
 

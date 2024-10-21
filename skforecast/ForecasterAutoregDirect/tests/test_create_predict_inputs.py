@@ -186,7 +186,8 @@ def test_create_predict_inputs_output_when_exog():
 
 def test_create_predict_inputs_output_when_exog_with_train_steps_interspersed_and_pred_steps_by_default():
     """
-    Test _create_predict_inputs output when exog.
+    Test _create_predict_inputs output when exog, with interspersed list of steps and prediction
+    steps by default.
     """
     forecaster = ForecasterAutoregDirect(LinearRegression(), lags=3, steps=[1,3,5])
     forecaster.fit(
@@ -203,6 +204,35 @@ def test_create_predict_inputs_output_when_exog_with_train_steps_interspersed_an
          np.array([[49., 48., 47., 26.]]),
          np.array([[49., 48., 47., 27.]])],
         [1, 3, 5],
+        pd.RangeIndex(start=47, stop=50, step=1),
+        ['lag_1', 'lag_2', 'lag_3', 'exog']
+    )
+    for step in range(len(expected[0])):
+        np.testing.assert_almost_equal(results[0][step], expected[0][step])
+    assert results[1] == expected[1]
+    pd.testing.assert_index_equal(results[2], expected[2])
+    assert results[3] == expected[3]
+
+
+def test_create_predict_inputs_output_when_exog_with_train_steps_interspersed_and_pred_steps_3t():
+    """
+    Test _create_predict_inputs output when exog, with interspersed list of steps and predicting
+    only 3rd step.
+    """
+    forecaster = ForecasterAutoregDirect(LinearRegression(), lags=3, steps=[1,3,5])
+    forecaster.fit(
+        y=pd.Series(np.arange(50, dtype=float)),
+        exog=pd.Series(np.arange(start=100, stop=150, step=1), name="exog")
+    )
+    results = forecaster._create_predict_inputs(
+        steps=[3],
+        exog=pd.Series(np.arange(start=25, stop=50, step=0.5, dtype=float),
+                       index=pd.RangeIndex(start=50, stop=100),
+                       name="exog")
+    )
+    expected = (
+        [np.array([[49., 48., 47., 26.]])],
+        [3],
         pd.RangeIndex(start=47, stop=50, step=1),
         ['lag_1', 'lag_2', 'lag_3', 'exog']
     )
