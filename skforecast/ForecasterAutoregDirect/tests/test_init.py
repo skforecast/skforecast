@@ -14,7 +14,7 @@ def test_init_TypeError_when_steps_is_not_int():
     """
     steps = 'not_valid_type'
     err_msg = re.escape(
-                f"`steps` argument must be an int greater than or equal to 1. "
+                f"`steps` argument must be an int, 1d numpy ndarray, range, tuple or list "
                 f"Got {type(steps)}."
             )
     with pytest.raises(TypeError, match = err_msg):
