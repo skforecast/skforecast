@@ -281,12 +281,6 @@ class ForecasterAutoregDirect(ForecasterBase):
         self.in_sample_residuals_by_bin_        = None
         self.out_sample_residuals_by_bin_       = None
 
-        if not isinstance(steps, int):
-            raise TypeError(
-                (f"`steps` argument must be an int greater than or equal to 1. "
-                 f"Got {type(steps)}.")
-            )
-
         self.regressors_ = {step: clone(self.regressor) for step in range(1, steps + 1)}
         self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
         self.steps = initialize_steps(type(self.__name__, steps))
