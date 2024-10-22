@@ -59,10 +59,10 @@ def test_NotFittedError_is_raised_when_forecaster_is_not_fitted():
 
 
 @pytest.mark.parametrize("step", [0, 2], ids=lambda step: f'step: {step}')
-def test_exception_is_raised_when_step_is_greater_than_forecaster_steps(step):
+def test_exception_is_raised_when_step_is_not_in_forecaster_steps(step):
     """
     Test exception is raised when calling get_feature_importances() and step is 
-    less than 1 or greater than the forecaster.steps.
+    not in initialized steps (forecaster.steps).
     """
     forecaster = ForecasterAutoregDirect(
                      regressor = RandomForestRegressor(random_state=123),
@@ -123,6 +123,29 @@ def test_output_get_feature_importances_when_regressor_is_RandomForestRegressor_
                    'importance': np.array([0.16428571, 0.2, 0.20446429, 0.23333333, 0.19791667])
                }).sort_values(by='importance', ascending=False)
     
+    pd.testing.assert_frame_equal(results, expected)
+
+
+def test_output_get_feature_importances_when_regressor_is_RandomForestRegressor_lags_3_steps_2nd_exog_included():
+    """
+    Test output of get_feature_importances for step 2, when regressor is
+    RandomForestRegressor with lags=3, steps 3 and it is trained with
+    y pandas Series and exog is pandas DataFrame.
+    """
+    y = pd.Series(np.arange(10), name='y', dtype=float)
+    exog = pd.DataFrame({'exog_1': np.arange(100, 110, dtype=float),
+                         'exog_2': np.arange(1000, 1010, dtype=float)})
+    forecaster = ForecasterAutoregDirect(
+        regressor=RandomForestRegressor(n_estimators=5, max_depth=2, random_state=123),
+        lags=3,
+        steps=[2]
+    )
+    forecaster.fit(y=y, exog=exog)
+    results = forecaster.get_feature_importances(step=2)
+    expected = pd.DataFrame({
+        'feature': ['lag_1', 'lag_2', 'lag_3', 'exog_1', 'exog_2'],
+        'importance': np.array([0.16428571, 0.2, 0.20446429, 0.23333333, 0.19791667])
+    }).sort_values(by='importance', ascending=False)
     pd.testing.assert_frame_equal(results, expected)
     
     

@@ -97,6 +97,36 @@ def test_predict_output_when_regressor_is_LinearRegression_with_list_intersperse
     pd.testing.assert_series_equal(results, expected)
 
 
+def test_predict_output_when_regressor_is_LinearRegression_with_list_interspersed_and_init_steps_interspersed():
+    """
+    Test predict output when using LinearRegression as regressor and steps is
+    a list with interspersed steps.
+    """
+    forecaster = ForecasterAutoregDirect(LinearRegression(), lags=3, steps=[1, 4, 5])
+    forecaster.fit(y=pd.Series(np.arange(50)))
+    results = forecaster.predict(steps=[1, 4])
+    expected = pd.Series(
+        data=np.array([50., 53.]),
+        index=pd.RangeIndex(start=50, stop=55, step=1)[[0, 3]],
+        name='pred'
+    )
+    pd.testing.assert_series_equal(results, expected)
+def test_predict_output_when_regressor_is_LinearRegression_with_pred_steps_by_default_and_init_steps_interspersed():
+    """
+    Test predict output when using LinearRegression as regressor and steps is
+    a list with interspersed steps.
+    """
+    forecaster = ForecasterAutoregDirect(LinearRegression(), lags=3, steps=[1, 4])
+    forecaster.fit(y=pd.Series(np.arange(50)))
+    results = forecaster.predict()
+    expected = pd.Series(
+        data=np.array([50., 53.]),
+        index=pd.RangeIndex(start=50, stop=55, step=1)[[0, 3]],
+        name='pred'
+    )
+    pd.testing.assert_series_equal(results, expected)
+
+
 def test_predict_output_when_regressor_is_LinearRegression_using_last_window():
     """
     Test predict output when using LinearRegression as regressor and last_window.
