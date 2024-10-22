@@ -770,7 +770,7 @@ class ForecasterAutoregDirect(ForecasterBase):
         y_train = {
             step: pd.Series(
                       data  = y_train[:, i],
-                      index = y_index[self.window_size + i:][:len_train_index],
+                      index = y_index[self.window_size + step - 1:][:len_train_index],
                       name  = f"y_step_{step}"
                   )
             for i, step in enumerate(self.steps)
