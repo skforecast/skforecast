@@ -707,7 +707,7 @@ def check_interval(
 
     return
 
-
+# TODO: Code simplification after interspersed steps development propagation to ForecasterAutoregMultiVariate
 def check_predict_input(
     forecaster_name: str,
     steps: Union[int, list],
