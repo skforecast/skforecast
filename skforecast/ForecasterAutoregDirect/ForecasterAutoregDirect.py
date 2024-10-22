@@ -282,7 +282,7 @@ class ForecasterAutoregDirect(ForecasterBase):
         self.out_sample_residuals_by_bin_       = None
 
         self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
-        self.steps = initialize_steps(type(self.__name__, steps))
+        self.steps = initialize_steps(steps)
         self.max_step = np.max(self.steps)
         self.regressors_ = {step: clone(self.regressor) for step in self.steps}
         self.window_features, self.window_features_names, self.max_size_window_features = (
