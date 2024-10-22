@@ -81,7 +81,7 @@ def test_backtesting_forecaster_ValueError_when_ForecasterAutoregDirect_not_enou
     err_msg = re.escape(
         (f"When using a ForecasterAutoregDirect, the combination of steps "
          f"+ gap ({cv.steps + cv.gap}) cannot be greater than the `steps` parameter "
-         f"declared when the forecaster is initialized ({forecaster.steps}).")
+         f"declared when the forecaster is initialized ({forecaster.max_step}).")
     )
     with pytest.raises(ValueError, match = err_msg):
         backtesting_forecaster(
