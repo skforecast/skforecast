@@ -203,15 +203,15 @@ def test_create_predict_inputs_output_when_exog_with_train_steps_interspersed_an
         [np.array([[49., 48., 47., 25.]]),
          np.array([[49., 48., 47., 26.]]),
          np.array([[49., 48., 47., 27.]])],
+        ['lag_1', 'lag_2', 'lag_3', 'exog'],
         [1, 3, 5],
-        pd.RangeIndex(start=47, stop=50, step=1),
-        ['lag_1', 'lag_2', 'lag_3', 'exog']
+        pd.RangeIndex(start=50, stop=55, step=2)
     )
     for step in range(len(expected[0])):
         np.testing.assert_almost_equal(results[0][step], expected[0][step])
     assert results[1] == expected[1]
-    pd.testing.assert_index_equal(results[2], expected[2])
-    assert results[3] == expected[3]
+    assert results[2] == expected[2]
+    pd.testing.assert_index_equal(results[3], expected[3])
 
 
 def test_create_predict_inputs_output_when_exog_with_train_steps_interspersed_and_pred_steps_3t():
@@ -232,15 +232,15 @@ def test_create_predict_inputs_output_when_exog_with_train_steps_interspersed_an
     )
     expected = (
         [np.array([[49., 48., 47., 26.]])],
+        ['lag_1', 'lag_2', 'lag_3', 'exog'],
         [3],
-        pd.RangeIndex(start=47, stop=50, step=1),
-        ['lag_1', 'lag_2', 'lag_3', 'exog']
+        pd.Index([52], dtype = np.int64)
     )
     for step in range(len(expected[0])):
         np.testing.assert_almost_equal(results[0][step], expected[0][step])
     assert results[1] == expected[1]
-    pd.testing.assert_index_equal(results[2], expected[2])
-    assert results[3] == expected[3]
+    assert results[2] == expected[2]
+    pd.testing.assert_index_equal(results[3], expected[3])
 
 
 def test_create_predict_inputs_output_with_transform_y():
