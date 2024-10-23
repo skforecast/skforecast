@@ -604,6 +604,7 @@ def test_create_train_X_y_output_when_y_is_series_10_steps_3_and_exog_is_datafra
         {'exog_1': exog['exog_1'].dtypes, 'exog_2': exog['exog_2'].dtypes}
     )
 
+    # TODO: asserts?
     forecaster.exog_in_ is True
     forecaster.X_train_direct_exog_names_out_ == [
         'exog_1_step_1', 'exog_2_step_1', 
@@ -630,14 +631,16 @@ def test_create_train_X_y_output_when_y_is_series_10_steps_3_and_exog_is_datafra
                          ids=lambda dt: f'dtype: {dt}')
 def test_create_train_X_y_output_when_y_is_series_10_steps_1_and_3_and_exog_is_dataframe_of_float_int(dtype):
     """
-    Test the output of create_train_X_y when y=pd.Series(np.arange(10)), steps=3
+    Test the output of create_train_X_y when y=pd.Series(np.arange(10)), steps=[1, 3]
     and exog is a pandas DataFrame of floats or ints.
     """
     y = pd.Series(np.arange(10), name='y', dtype=float)
     exog = pd.DataFrame({'exog_1': np.arange(100, 110, dtype=dtype),
                          'exog_2': np.arange(1000, 1010, dtype=dtype)})
+
     forecaster = ForecasterAutoregDirect(LinearRegression(), lags=5, steps=[1, 3])
-    results = forecaster.create_train_X_y(y=y, exog=exog)
+    results = forecaster._create_train_X_y(y=y, exog=exog)
+
     expected = (
         pd.DataFrame(
             data=np.array([[4, 3, 2, 1, 0, 105, 1005, 107, 1007],
@@ -648,8 +651,8 @@ def test_create_train_X_y_output_when_y_is_series_10_steps_1_and_3_and_exog_is_d
             columns=['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5',
                      'exog_1_step_1', 'exog_2_step_1',
                      'exog_1_step_3', 'exog_2_step_3']
-        ).astype({'exog_1_step_1': dtype, 'exog_2_step_1': dtype,
-                  'exog_1_step_3': dtype, 'exog_2_step_3': dtype}),
+        ).astype({'exog_1_step_1': float, 'exog_2_step_1': float,
+                  'exog_1_step_3': float, 'exog_2_step_3': float}),
         {1: pd.Series(
             data=np.array([5., 6., 7.], dtype=float),
             index=pd.RangeIndex(start=5, stop=8, step=1),
@@ -660,14 +663,34 @@ def test_create_train_X_y_output_when_y_is_series_10_steps_1_and_3_and_exog_is_d
                 index=pd.RangeIndex(start=7, stop=10, step=1),
                 name="y_step_3"
             )
-        }
+        },
+        ['exog_1', 'exog_2'],
+        ['exog_1', 'exog_2'],
+        ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5',
+         'exog_1_step_1', 'exog_2_step_1',
+         'exog_1_step_3', 'exog_2_step_3'],
+        {'exog_1': exog['exog_1'].dtypes, 'exog_2': exog['exog_2'].dtypes}
     )
+
+    # TODO: asserts?
+    forecaster.exog_in_ is True
+    forecaster.X_train_direct_exog_names_out_ == [
+        'exog_1_step_1', 'exog_2_step_1',
+        'exog_1_step_3', 'exog_2_step_3'
+    ]
+    forecaster.X_train_window_features_names_out_ is None
+
     pd.testing.assert_frame_equal(results[0], expected[0])
     assert isinstance(results[1], dict)
     assert all(isinstance(x, pd.Series) for x in results[1].values())
     assert results[1].keys() == expected[1].keys()
     for key in expected[1]:
         pd.testing.assert_series_equal(results[1][key], expected[1][key])
+    assert results[2] == expected[2]
+    assert results[3] == expected[3]
+    assert results[4] == expected[4]
+    for k in results[5].keys():
+        assert results[5][k] == expected[5][k]
 
 
 @pytest.mark.parametrize("exog_values, dtype", 
