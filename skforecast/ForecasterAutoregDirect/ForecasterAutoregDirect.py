@@ -712,7 +712,7 @@ class ForecasterAutoregDirect(ForecasterBase):
         X_train_window_features_names_out_ = None
         if self.window_features is not None:
             n_diff = 0 if self.differentiation is None else self.differentiation
-            end_wf = None if self.steps == 1 else -(self.steps - 1)
+            end_wf = None if self.max_step == 1 else -(self.max_step - 1)
             y_window_features = pd.Series(
                 y_values[n_diff:end_wf], index=y_index[n_diff:end_wf]
             )
