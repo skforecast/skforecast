@@ -2159,7 +2159,7 @@ class ForecasterAutoregDirect(ForecasterBase):
 
         if step not in self.steps:
             raise ValueError(
-                (f"The step must be in initializated steps set "
+                (f"The step must be in initialized steps set "
                  f"({self.steps}). Got {step}.")
             )
 
