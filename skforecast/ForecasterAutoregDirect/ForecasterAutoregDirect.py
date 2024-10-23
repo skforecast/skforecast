@@ -2176,9 +2176,9 @@ class ForecasterAutoregDirect(ForecasterBase):
         if not self.exog_in_:
             idx_columns = idx_columns_autoreg
         else:
-            n_exog = len(self.X_train_direct_exog_names_out_) / self.steps
+            n_exog = len(self.X_train_direct_exog_names_out_) / len(self.steps)
             idx_columns_exog = (
-                np.arange((step - 1) * n_exog, (step) * n_exog) + idx_columns_autoreg[-1] + 1
+                np.arange(list(self.steps).index([step]) * n_exog, (list(self.steps).index([step]) + 1) * n_exog) + idx_columns_autoreg[-1] + 1
             )
             idx_columns = np.concatenate((idx_columns_autoreg, idx_columns_exog))
         
