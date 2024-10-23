@@ -115,7 +115,7 @@ def test_create_predict_inputs_error_when_pred_steps_are_not_in_train_steps():
     err_msg = re.escape(
         (f"'steps' should match with steps defined when "
          f"initializing the forecaster."
-         f"Got {pred_steps}, but steps available are {np.array(train_steps)}")
+         f"Got {pred_steps}, but available steps are {np.array(train_steps)}")
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster._create_predict_inputs(steps=pred_steps)
