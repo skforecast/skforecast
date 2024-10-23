@@ -1299,7 +1299,7 @@ class ForecasterAutoregDirect(ForecasterBase):
         prediction_index = expand_index(
                                index = last_window_index,
                                steps = max(steps)
-                           )[np.array(steps) - 1]
+                           )[0][np.array(steps) - 1]
         if isinstance(last_window_index, pd.DatetimeIndex) and np.array_equal(
             steps, np.arange(min(steps), max(steps) + 1)
         ):
