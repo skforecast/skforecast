@@ -146,7 +146,14 @@ def test_create_lags_when_lags_is_3_steps_single_2_and_y_is_numpy_arange_10():
                           [5., 4., 3.],
                           [6., 5., 4.],
                           [7., 6., 5.]]),
-                np.array([[4., 5., 6., 7., 8., 9.]])
+                np.array([
+                    [4.],
+                    [5.],
+                    [6.],
+                    [7.],
+                    [8.],
+                    [9.]
+                ])
                 )
     assert (results[0] == expected[0]).all()
     assert (results[1] == expected[1]).all()
@@ -182,9 +189,9 @@ def test_create_lags_when_lags_is_3_steps_list_interspersed_and_y_is_numpy_arang
     expected = (np.array([[2., 1., 0.],
                           [3., 2., 1.],
                           [4., 3., 2.]]),
-                np.array([[3., 4., 5.],
-                          [5., 6., 7.],
-                          [7., 8., 9.]])
+                np.array([[3., 5., 7.],
+                          [4., 6., 8.],
+                          [5., 7., 9.]])
                 )
     assert (results[0] == expected[0]).all()
     assert (results[1] == expected[1]).all()
