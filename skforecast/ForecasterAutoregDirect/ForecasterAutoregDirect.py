@@ -527,7 +527,7 @@ class ForecasterAutoregDirect(ForecasterBase):
             shape=(n_rows, len(self.steps)), fill_value=np.nan, order='F', dtype=float
         )
         for i, step in enumerate(self.steps):
-            y_data[i,] = y[self.window_size + step - 1 : self.window_size + step - 1 + n_rows]
+            y_data[:, i] = y[self.window_size + step - 1 : self.window_size + step - 1 + n_rows]
         
         return X_data, y_data
 
