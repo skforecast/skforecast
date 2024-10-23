@@ -579,7 +579,7 @@ def test_create_predict_X_same_predictions_as_predict():
     forecaster.fit(y=data.loc[:end_train], exog=exog.loc[:end_train])
     X_predict = forecaster.create_predict_X(exog=exog.loc[end_train:])
 
-    for i, step in enumerate(range(1, forecaster.steps + 1)):
+    for i, step in enumerate(forecaster.steps):
         results = forecaster.regressors_[step].predict(X_predict.iloc[[i]])
         expected = forecaster.predict(steps=[step], exog=exog.loc[end_train:]).to_numpy()
         np.testing.assert_array_almost_equal(results, expected, decimal=7)
@@ -613,7 +613,7 @@ def test_create_predict_X_same_predictions_as_predict_transformers():
     forecaster.fit(y=data.loc[:end_train], exog=exog.loc[:end_train])
     X_predict = forecaster.create_predict_X(exog=exog.loc[end_train:])
 
-    for i, step in enumerate(range(1, forecaster.steps + 1)):
+    for i, step in enumerate(forecaster.steps):
         results = forecaster.regressors_[step].predict(X_predict.iloc[[i]])
         results = transform_numpy(
                       array             = results,
@@ -653,7 +653,7 @@ def test_create_predict_X_same_predictions_as_predict_transformers_diff():
     forecaster.fit(y=data.loc[:end_train], exog=exog.loc[:end_train])
     X_predict = forecaster.create_predict_X(exog=exog.loc[end_train:])
 
-    for i, step in enumerate(range(1, forecaster.steps + 1)):
+    for i, step in enumerate(forecaster.steps):
         results = forecaster.regressors_[step].predict(X_predict.iloc[[i]])
         results = forecaster.differentiator.inverse_transform_next_window(results)
         results = transform_numpy(
