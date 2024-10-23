@@ -115,7 +115,7 @@ def test_filter_train_X_y_for_step_output_when_lags_3_steps_2nd_and_exog_for_ste
                            [7., 6., 5., 109]], dtype=float),
             index=pd.RangeIndex(start=4, stop=10, step=1),
             columns=['lag_1', 'lag_2', 'lag_3', 'exog_step_2']
-        ).astype({'exog_step_2': int}),
+        ),
         pd.Series(
             data=np.array([4., 5., 6., 7., 8., 9.]),
             index=pd.RangeIndex(start=4, stop=10, step=1),
