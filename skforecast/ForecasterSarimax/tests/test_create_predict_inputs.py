@@ -5,7 +5,7 @@ import pytest
 import numpy as np
 import pandas as pd
 from sklearn.exceptions import NotFittedError
-from skforecast.sarimax import Sarimax
+from skforecast.sarimax import Sarimax # TODO: Changed recently. Is it okey?
 from skforecast.ForecasterSarimax import ForecasterSarimax
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
