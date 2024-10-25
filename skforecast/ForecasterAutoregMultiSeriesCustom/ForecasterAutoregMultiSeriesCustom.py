@@ -33,5 +33,5 @@ class ForecasterAutoregMultiSeriesCustom():
         
         warnings.warn(
             ("This class is deprecated since skforecast 0.14. Use "
-             "ForecasterAutoregMultiSeries instead.")
+             "ForecasterRecursiveMultiSeries instead.")
         )

@@ -31,8 +31,8 @@ def initialize_lags_grid(
     Parameters
     ----------
     forecaster : Forecaster
-        Forecaster model. ForecasterAutoreg, ForecasterAutoregDirect, 
-        ForecasterAutoregMultiSeries, ForecasterAutoregMultiVariate.
+        Forecaster model. ForecasterRecursive, ForecasterDirect, 
+        ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate.
     lags_grid : list, dict, default `None`
         Lists of lags to try, containing int, lists, numpy ndarray, or range 
         objects. If `dict`, the keys are used as labels in the `results` 
@@ -93,8 +93,6 @@ def check_backtesting_input(
     ----------
     forecaster : Forecaster
         Forecaster model.
-    steps : int, list
-        Number of future steps predicted.
     cv : TimeSeriesFold
         TimeSeriesFold object with the information needed to split the data into folds.
     metric : str, Callable, list
@@ -163,17 +161,17 @@ def check_backtesting_input(
     refit = cv.refit
 
     forecasters_uni = [
-        "ForecasterAutoreg",
-        "ForecasterAutoregDirect",
+        "ForecasterRecursive",
+        "ForecasterDirect",
         "ForecasterSarimax",
         "ForecasterEquivalentDate",
     ]
     forecasters_multi = [
-        "ForecasterAutoregMultiVariate",
+        "ForecasterDirectMultiVariate",
         "ForecasterRnn",
     ]
     forecasters_multi_dict = [
-        "ForecasterAutoregMultiSeries"
+        "ForecasterRecursiveMultiSeries"
     ]
 
     if forecaster_name in forecasters_uni:
@@ -358,17 +356,17 @@ def select_n_jobs_backtesting(
 
     - If `refit` is an integer, then `n_jobs = 1`. This is because parallelization doesn't 
     work with intermittent refit.
-    - If forecaster is 'ForecasterAutoreg' and regressor is a linear regressor, 
+    - If forecaster is 'ForecasterRecursive' and regressor is a linear regressor, 
     then `n_jobs = 1`.
-    - If forecaster is 'ForecasterAutoreg' and regressor is not a linear 
+    - If forecaster is 'ForecasterRecursive' and regressor is not a linear 
     regressor and `refit = True`, then `n_jobs = cpu_count() - 1`.
-    - If forecaster is 'ForecasterAutoreg' and regressor is not a linear 
+    - If forecaster is 'ForecasterRecursive' and regressor is not a linear 
     regressor and `refit = False`, then `n_jobs = 1`.
-    - If forecaster is 'ForecasterAutoregDirect' or 'ForecasterAutoregMultiVariate'
+    - If forecaster is 'ForecasterDirect' or 'ForecasterDirectMultiVariate'
     and `refit = True`, then `n_jobs = cpu_count() - 1`.
-    - If forecaster is 'ForecasterAutoregDirect' or 'ForecasterAutoregMultiVariate'
+    - If forecaster is 'ForecasterDirect' or 'ForecasterDirectMultiVariate'
     and `refit = False`, then `n_jobs = 1`.
-    - If forecaster is 'ForecasterAutoregMultiSeries', then `n_jobs = cpu_count() - 1`.
+    - If forecaster is 'ForecasterRecursiveMultiSeries', then `n_jobs = cpu_count() - 1`.
     - If forecaster is 'ForecasterSarimax' or 'ForecasterEquivalentDate', 
     then `n_jobs = 1`.
     - If regressor is a `LGBMRegressor`, then `n_jobs = 1`. This is because `lightgbm` 
@@ -407,14 +405,14 @@ def select_n_jobs_backtesting(
     if not isinstance(refit, bool) and refit != 1:
         n_jobs = 1
     else:
-        if forecaster_name in ['ForecasterAutoreg']:
+        if forecaster_name in ['ForecasterRecursive']:
             if regressor_name in linear_regressors or regressor_name == 'LGBMRegressor':
                 n_jobs = 1
             else:
                 n_jobs = cpu_count() - 1 if refit else 1
-        elif forecaster_name in ['ForecasterAutoregDirect', 'ForecasterAutoregMultiVariate']:
+        elif forecaster_name in ['ForecasterDirect', 'ForecasterDirectMultiVariate']:
             n_jobs = 1
-        elif forecaster_name in ['ForecasterAutoregMultiSeries']:
+        elif forecaster_name in ['ForecasterRecursiveMultiSeries']:
             if regressor_name == 'LGBMRegressor':
                 n_jobs = 1
             else:
@@ -437,7 +435,7 @@ def _initialize_levels_model_selection_multiseries(
 
     Parameters
     ----------
-    forecaster : ForecasterAutoregMultiSeries, ForecasterAutoregMultiVariate, ForecasterRnn
+    forecaster : ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate, ForecasterRnn
         Forecaster model.
     series : pandas DataFrame, dict
         Training time series.
@@ -454,7 +452,7 @@ def _initialize_levels_model_selection_multiseries(
     """
 
     multi_series_forecasters_with_levels = [
-        'ForecasterAutoregMultiSeries', 
+        'ForecasterRecursiveMultiSeries', 
         'ForecasterRnn'
     ]
 
@@ -464,14 +462,14 @@ def _initialize_levels_model_selection_multiseries(
             (f"`levels` must be a `list` of column names, a `str` of a column "
              f"name or `None` when using a forecaster of type "
              f"{multi_series_forecasters_with_levels}. If the forecaster is of "
-             f"type `ForecasterAutoregMultiVariate`, this argument is ignored.")
+             f"type `ForecasterDirectMultiVariate`, this argument is ignored.")
         )
 
-    if type(forecaster).__name__ == 'ForecasterAutoregMultiVariate':
+    if type(forecaster).__name__ == 'ForecasterDirectMultiVariate':
         if levels and levels != forecaster.level and levels != [forecaster.level]:
             warnings.warn(
                 (f"`levels` argument have no use when the forecaster is of type "
-                 f"`ForecasterAutoregMultiVariate`. The level of this forecaster "
+                 f"`ForecasterDirectMultiVariate`. The level of this forecaster "
                  f"is '{forecaster.level}', to predict another level, change "
                  f"the `level` argument when initializing the forecaster. \n"),
                  IgnoredArgumentWarning
@@ -956,7 +954,7 @@ def _predict_and_calculate_metrics_multiseries_one_step_ahead(
     else:
         freq = series[levels[0]].index.step
 
-    if type(forecaster).__name__ == 'ForecasterAutoregMultiVariate':
+    if type(forecaster).__name__ == 'ForecasterDirectMultiVariate':
         step = 1
         X_train, y_train = forecaster.filter_train_X_y_for_step(
                                step    = step,

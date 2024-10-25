@@ -7,11 +7,13 @@
 
 from typing import Any, Union, Optional
 from typing_extensions import Self
+import warnings
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator
 from sklearn.base import TransformerMixin
 from sklearn.exceptions import NotFittedError
+from ..exceptions import MissingValuesWarning
 from numba import njit
 
 
@@ -249,9 +251,14 @@ def series_long_to_dict(
     index: str,
     values: str,
     freq: str,
+    suppress_warnings: bool = False
 ) -> dict:
     """
-    Convert long format series to dictionary.
+    Convert long format series to dictionary of pandas Series with frequency.
+    Input data must be a pandas DataFrame with columns for the series identifier,
+    time index, and values. The function will group the data by the series
+    identifier and convert the time index to a datetime index with the given
+    frequency.
 
     Parameters
     ----------
@@ -265,6 +272,9 @@ def series_long_to_dict(
         Column name with the values.
     freq: str
         Frequency of the series.
+    suppress_warnings: bool, default `False`
+        If True, suppress warnings when a series is incomplete after setting the
+        frequency.
 
     Returns
     -------
@@ -279,11 +289,18 @@ def series_long_to_dict(
     for col in [series_id, index, values]:
         if col not in data.columns:
             raise ValueError(f"Column '{col}' not found in `data`.")
-
+        
+    original_sizes = data.groupby(series_id).size()
     series_dict = {}
     for k, v in data.groupby(series_id):
         series_dict[k] = v.set_index(index)[values].asfreq(freq).rename(k)
         series_dict[k].index.name = None
+        if not suppress_warnings and len(series_dict[k]) != original_sizes[k]:
+            warnings.warn(
+                f"Series '{k}' is incomplete. NaNs have been introduced after "
+                f"setting the frequency.",
+                MissingValuesWarning
+            )
 
     return series_dict
 
@@ -294,9 +311,13 @@ def exog_long_to_dict(
     index: str,
     freq: str,
     dropna: bool = False,
+    suppress_warnings: bool = False
 ) -> dict:
     """
-    Convert long format exogenous variables to dictionary.
+    Convert long format exogenous variables to dictionary. Input data must be a
+    pandas DataFrame with columns for the series identifier, time index, and
+    exogenous variables. The function will group the data by the series identifier
+    and convert the time index to a datetime index with the given frequency.
 
     Parameters
     ----------
@@ -308,9 +329,12 @@ def exog_long_to_dict(
         Column name with the time index.
     freq: str
         Frequency of the series.
-    dropna: bool, default `False`
+    dropna: bool, default False
         If True, drop columns with all values as NaN. This is useful when
         there are series without some exogenous variables.
+    suppress_warnings: bool, default False
+        If True, suppress warnings when exog is incomplete after setting the
+        frequency.
         
     Returns
     -------
@@ -326,6 +350,7 @@ def exog_long_to_dict(
         if col not in data.columns:
             raise ValueError(f"Column '{col}' not found in `data`.")
 
+    original_sizes = data.groupby(series_id).size()
     exog_dict = dict(tuple(data.groupby(series_id)))
     exog_dict = {
         k: v.set_index(index).asfreq(freq).drop(columns=series_id)
@@ -337,6 +362,15 @@ def exog_long_to_dict(
 
     if dropna:
         exog_dict = {k: v.dropna(how="all", axis=1) for k, v in exog_dict.items()}
+    else: 
+        if not suppress_warnings:
+            for k, v in exog_dict.items():
+                if len(v) != original_sizes[k]:
+                    warnings.warn(
+                        f"Exogenous variables for series '{k}' are incomplete. "
+                        f"NaNs have been introduced after setting the frequency.",
+                        MissingValuesWarning
+                    )
 
     return exog_dict
 
@@ -1065,7 +1099,9 @@ class QuantileBinner:
     """
     QuantileBinner class to bin data into quantile-based bins using `numpy.percentile`.
     This class is similar to `KBinsDiscretizer` but faster for binning data into
-    quantile-based bins.
+    quantile-based bins. Bin  intervals are defined following the convention:
+    bins[i-1] <= x < bins[i]. See more information in `numpy.percentile` and
+    `numpy.digitize`.
     
     Parameters
     ----------
@@ -1099,7 +1135,7 @@ class QuantileBinner:
         The random seed to use for generating a random subset of the data.
     dtype : data type, default=numpy.float64
         The data type to use for the bin indices. Default is `numpy.float64`.
-     n_bins_ : int
+    n_bins_ : int
         The number of bins learned during fitting.
     bin_edges_ : numpy ndarray
         The edges of the bins learned during fitting.
@@ -1130,7 +1166,6 @@ class QuantileBinner:
         self.n_bins_      = None
         self.bin_edges_   = None
         self.intervals_   = None
-
 
     def _validate_params(
             self,
@@ -1236,7 +1271,7 @@ class QuantileBinner:
                 "The model has not been fitted yet. Call 'fit' with training data first."
             )
 
-        bin_indices = np.digitize(X, bins=self.bin_edges_, right=True)
+        bin_indices = np.digitize(X, bins=self.bin_edges_, right=False)
         bin_indices = np.clip(bin_indices, 1, self.n_bins_).astype(self.dtype) - 1
 
         return bin_indices

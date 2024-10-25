@@ -38,8 +38,8 @@ def select_features(
 
     Parameters
     ----------
-    forecaster : ForecasterAutoreg, ForecasterAutoregDirect
-        Forecaster model. If forecaster is a ForecasterAutoregDirect, the
+    forecaster : ForecasterRecursive, ForecasterDirect
+        Forecaster model. If forecaster is a ForecasterDirect, the
         selector will only be applied to the features of the first step.
     selector : object
         A feature selector from sklearn.feature_selection.
@@ -83,7 +83,7 @@ def select_features(
 
     """
 
-    valid_forecasters = ['ForecasterAutoreg', 'ForecasterAutoregDirect']
+    valid_forecasters = ['ForecasterRecursive', 'ForecasterDirect']
 
     if type(forecaster).__name__ not in valid_forecasters:
         raise TypeError(
@@ -103,7 +103,7 @@ def select_features(
     forecaster = deepcopy(forecaster)
     forecaster.is_fitted = False
     X_train, y_train = forecaster.create_train_X_y(y=y, exog=exog)
-    if type(forecaster).__name__ == 'ForecasterAutoregDirect':
+    if type(forecaster).__name__ == 'ForecasterDirect':
         X_train, y_train = forecaster.filter_train_X_y_for_step(
                                step          = 1,
                                X_train       = X_train,
@@ -223,7 +223,7 @@ def select_features_multiseries(
 
     Parameters
     ----------
-    forecaster : ForecasterAutoregMultiSeries
+    forecaster : ForecasterRecursiveMultiSeries
         Forecaster model.
     selector : object
         A feature selector from sklearn.feature_selection.
@@ -266,7 +266,7 @@ def select_features_multiseries(
     """
 
     valid_forecasters = [
-        'ForecasterAutoregMultiSeries'
+        'ForecasterRecursiveMultiSeries'
     ]
 
     if type(forecaster).__name__ not in valid_forecasters:

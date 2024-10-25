@@ -18,15 +18,17 @@ This release has undergone a major refactoring to improve the performance of the
 
 + <span class="badge text-bg-feature">Feature</span> Window features can be added to the training matrix using the `window_features` argument in all forecasters. You can use the <code>[RollingFeatures]</code> class to create these features or create your own object.
 
-+ <span class="badge text-bg-feature">Feature</span> <code>[model_selection]</code> functions now have a new argument `cv`. This argument expect an object of type <code>[TimeSeriesFold]</code> or <code>[OneStepAheadFold]</code> which allows to define the validation strategy using the arguments `initial_train_size`, `steps`, `gap`, refit`, `fixed_train_size`, `skip_folds` and `allow_incomplete_folds`.
++ <span class="badge text-bg-feature">Feature</span> <code>[model_selection]</code> functions now have a new argument `cv`. This argument expect an object of type <code>[TimeSeriesFold]</code> or <code>[OneStepAheadFold]</code> which allows to define the validation strategy using the arguments `initial_train_size`, `steps`, `gap`, `refit`, `fixed_train_size`, `skip_folds` and `allow_incomplete_folds`.
 
 + <span class="badge text-bg-feature">Feature</span> Hyperparameter search now allows to follow a one-step-ahead validation strategy using a <code>[OneStepAheadFold]</code> as `cv` argument in the <code>[model_selection]</code> functions.
 
-+ <span class="badge text-bg-enhancement">Enhancement</span> Refactor the prediction process in <code>[ForecasterAutoregMultiSeries]</code> to improve performance when predicting multiple series.
++ <span class="badge text-bg-enhancement">Enhancement</span> Refactor the prediction process in <code>[ForecasterRecursiveMultiSeries]</code> to improve performance when predicting multiple series.
 
 + <span class="badge text-bg-enhancement">Enhancement</span> The bootstrapping process in the `predict_bootstrapping` method of all forecasters has been optimized to improve performance. This may result in slightly different results when using the same seed as in previous versions.
 
-+ <span class="badge text-bg-api-change">API Change</span> <code>[ForecasterAutoregCustom]</code> has been deprecated. Window features can be added using the `window_features` argument in the <code>[ForecasterAutoreg]</code>.
++ <span class="badge text-bg-api-change">API Change</span> package structure has been changed to improve code organization. The forecasters have been grouped into the `recursive`, `direct` amd `deep_learning` modules. Visit the [migration guide](https://skforecast.org/latest/user_guides/migration-guide.html) section for more information.
+
++ <span class="badge text-bg-api-change">API Change</span> <code>[ForecasterAutoregCustom]</code> has been deprecated. Window features can be added using the `window_features` argument in the <code>[ForecasterRecursive]</code>.
 
 + <span class="badge text-bg-api-change">API Change</span> The `pmdarima.ARIMA` regressor is no longer supported by the <code>[ForecasterSarimax]</code>. You can use the skforecast <code>[Sarimax]</code> model or, to continue using it, use skforecast 0.13.0 or lower.
 
@@ -45,22 +47,24 @@ This release has undergone a major refactoring to improve the performance of the
 
 + Create `transform_numpy` function in the <code>[utils]</code> module to carry out the transformation of the modeled time series and exogenous variables as numpy arrays.
 
-+ `random_state` argument in the `fit` method of <code>[ForecasterAutoreg]</code> to set a seed for the random generator so that the stored sample residuals are always deterministic.
++ `random_state` argument in the `fit` method of <code>[ForecasterRecursive]</code> to set a seed for the random generator so that the stored sample residuals are always deterministic.
 
 + New private method `_train_test_split_one_step_ahead` in all forecasters.
 
 + New private function `_calculate_metrics_one_step_ahead` to <code>[model_selection]</code> module to calculate the metrics when predicting one step ahead.
 
++ The `steps` argument in the predict method of the <code>[ForecasterRecursive]</code> can now be a str or a pandas datetime. If so, the method will predict up to the specified date. (contribution by @imMoya).
+
 
 **Changed**
 
-+ <code>[ForecasterAutoregCustom]</code> has been deprecated. Window features can be added using the `window_features` argument in the <code>[ForecasterAutoreg]</code>.
++ <code>[ForecasterAutoregCustom]</code> has been deprecated. Window features can be added using the `window_features` argument in the <code>[ForecasterRecursive]</code>.
 
-+ Refactor `recursive_predict` in <code>[ForecasterAutoregMultiSeries]</code> to predict all series at once and include option of adding residuals. This improves performance when predicting multiple series.
++ Refactor `recursive_predict` in <code>[ForecasterRecursiveMultiSeries]</code> to predict all series at once and include option of adding residuals. This improves performance when predicting multiple series.
 
 + Refactor `predict_bootstrapping` in all Forecasters. The bootstrapping process has been optimized to improve performance. This may result in slightly different results when using the same seed as in previous versions.
 
-+ Change the default value of `encoding` to `ordinal` in <code>[ForecasterAutoregMultiSeries]</code>. This will avoid conflicts if the regressor does not support categorical variables by default.
++ Change the default value of `encoding` to `ordinal` in <code>[ForecasterRecursiveMultiSeries]</code>. This will avoid conflicts if the regressor does not support categorical variables by default.
 
 + Removed argument `engine` from <code>[bayesian_search_forecaster]</code> and <code>[bayesian_search_forecaster_multiseries]</code>.
 
@@ -76,9 +80,11 @@ This release has undergone a major refactoring to improve the performance of the
 
 + Functions from `model_selection_multiseries` and `model_selection_sarimax` modules have been moved to the <code>[model_selection]</code> module.
 
-+ <code>[model_selection]</code> functions now have a new argument `cv`. This argument expect an object of type <code>[TimeSeriesFold]</code> or <code>[OneStepAheadFold]</code> which allows to define the validation strategy using the arguments `initial_train_size`, `steps`, `gap`, refit`, `fixed_train_size`, `skip_folds` and `allow_incomplete_folds`.
++ <code>[model_selection]</code> functions now have a new argument `cv`. This argument expect an object of type <code>[TimeSeriesFold]</code> or <code>[OneStepAheadFold]</code> which allows to define the validation strategy using the arguments `initial_train_size`, `steps`, `gap`, `refit`, `fixed_train_size`, `skip_folds` and `allow_incomplete_folds`.
 
 + Added <code>[feature_selection]</code> module. The functions <code>[select_features]</code> and <code>[select_features_multiseries]</code> have been moved to this module.
+
++ `exog_to_direct` and `exog_to_direct_numpy` in <code>[utils]</code> now returns a the names of the columns of the transformed exogenous variables.
 
 + Renamed attributes in all Forecasters:
 
@@ -853,7 +859,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 
 **Changed**
 
-+ New implementation of `ForecasterAutoregMultiOutput`. The training process in the new version creates a different X_train for each step. See [Direct multi-step forecasting](https://github.com/JoaquinAmatRodrigo/skforecast#introduction) for more details. Old versión can be acces with `skforecast.deprecated.ForecasterAutoregMultiOutput`.
++ New implementation of `ForecasterAutoregMultiOutput`. The training process in the new version creates a different X_train for each step. See [Direct multi-step forecasting](https://github.com/skforecast/skforecast#introduction) for more details. Old versión can be acces with `skforecast.deprecated.ForecasterAutoregMultiOutput`.
 
 **Fixed**
 
@@ -871,7 +877,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 **Changed**
 
 
-+ New implementation of `ForecasterAutoregMultiOutput`. The training process in the new version creates a different X_train for each step. See [Direct multi-step forecasting](https://github.com/JoaquinAmatRodrigo/skforecast#introduction) for more details. Old versión can be acces with `skforecast.deprecated.ForecasterAutoregMultiOutput`.
++ New implementation of `ForecasterAutoregMultiOutput`. The training process in the new version creates a different X_train for each step. See [Direct multi-step forecasting](https://github.com/skforecast/skforecast#introduction) for more details. Old versión can be acces with `skforecast.deprecated.ForecasterAutoregMultiOutput`.
 
 + Class `ForecasterCustom` has been renamed to `ForecasterAutoregCustom`. However, `ForecasterCustom` will still remain to keep backward compatibility.
 
@@ -972,10 +978,10 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 
 <!-- Links to API Reference -->
 <!-- Forecasters -->
-[ForecasterAutoreg]: https://skforecast.org/latest/api/forecasterautoreg
-[ForecasterAutoregDirect]: https://skforecast.org/latest/api/forecasterautoregdirect
-[ForecasterAutoregMultiSeries]: https://skforecast.org/latest/api/forecastermultiseries
-[ForecasterAutoregMultiVariate]: https://skforecast.org/latest/api/forecastermultivariate
+[ForecasterRecursive]: https://skforecast.org/latest/api/forecasterrecursive
+[ForecasterDirect]: https://skforecast.org/latest/api/forecasterdirect
+[ForecasterRecursiveMultiSeries]: https://skforecast.org/latest/api/forecastermultiseries
+[ForecasterDirectMultiVariate]: https://skforecast.org/latest/api/forecastermultivariate
 [ForecasterRNN]: https://skforecast.org/latest/api/forecasterrnn
 [ForecasterSarimax]: https://skforecast.org/latest/api/forecastersarimax
 [Sarimax]: https://skforecast.org/latest/api/sarimax
@@ -1039,8 +1045,11 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 
 
 <!-- OLD -->
+[ForecasterAutoreg]: https://skforecast.org/0.13.0/api/forecasterautoreg
 [ForecasterAutoregCustom]: https://skforecast.org/0.13.0/api/forecasterautoregcustom
+[ForecasterAutoregDirect]: https://skforecast.org/0.13.0/api/forecasterautoregdirect
+[ForecasterAutoregMultiSeries]: https://skforecast.org/0.13.0/api/forecastermultiseries
 [ForecasterAutoregMultiSeriesCustom]: https://skforecast.org/0.13.0/api/forecastermultiseriescustom
+[ForecasterAutoregMultiVariate]: https://skforecast.org/0.13.0/api/forecastermultivariate
 [model_selection_multiseries]: https://skforecast.org/0.13.0/api/model_selection_multiseries
 [model_selection_sarimax]: https://skforecast.org/0.13.0/api/model_selection_sarimax
-

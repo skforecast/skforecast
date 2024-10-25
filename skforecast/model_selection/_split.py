@@ -11,7 +11,7 @@ import warnings
 import numpy as np
 import pandas as pd
 import itertools
-from skforecast.exceptions import IgnoredArgumentWarning
+from ..exceptions import IgnoredArgumentWarning
 
 
 class BaseFold():

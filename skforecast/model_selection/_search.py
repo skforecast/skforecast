@@ -51,7 +51,7 @@ def grid_search_forecaster(
     
     Parameters
     ----------
-    forecaster : ForecasterAutoreg, ForecasterAutoregDirect
+    forecaster : ForecasterRecursive, ForecasterDirect
         Forecaster model.
     y : pandas Series
         Training time series.
@@ -150,7 +150,7 @@ def random_search_forecaster(
     
     Parameters
     ----------
-    forecaster : ForecasterAutoreg, ForecasterAutoregDirect
+    forecaster : ForecasterRecursive, ForecasterDirect
         Forecaster model.
     y : pandas Series
         Training time series.
@@ -243,7 +243,7 @@ def _calculate_metrics_one_step_ahead(
 ) -> list:
     """
     Calculate metrics when predictions are one-step-ahead. When forecaster is
-    of type ForecasterAutoregDirect only the regressor for step 1 is used.
+    of type ForecasterDirect only the regressor for step 1 is used.
 
     Parameters
     ----------
@@ -269,7 +269,7 @@ def _calculate_metrics_one_step_ahead(
     
     """
 
-    if type(forecaster).__name__ == 'ForecasterAutoregDirect':
+    if type(forecaster).__name__ == 'ForecasterDirect':
 
         step = 1  # Only model for step 1 is optimized.
         X_train, y_train = forecaster.filter_train_X_y_for_step(
@@ -335,7 +335,7 @@ def _evaluate_grid_hyperparameters(
     
     Parameters
     ----------
-    forecaster : ForecasterAutoreg, ForecasterAutoregDirect
+    forecaster : ForecasterRecursive, ForecasterDirect
         Forecaster model.
     y : pandas Series
         Training time series.
@@ -393,6 +393,7 @@ def _evaluate_grid_hyperparameters(
     """
 
     cv_name = type(cv).__name__
+    forecaster_name = type(forecaster).__name__
 
     if cv_name not in ['TimeSeriesFold', 'OneStepAheadFold']:
         raise ValueError(
@@ -401,11 +402,17 @@ def _evaluate_grid_hyperparameters(
         )
     
     if cv_name == 'OneStepAheadFold':
+        forecasters_one_step_ahead = ['ForecasterDirect', 'ForecasterAutoreg']
+        if forecaster_name not in forecasters_one_step_ahead:
+            raise ValueError(
+                f"Only forecasters of type {forecasters_one_step_ahead} are allowed "
+                f"when using `cv` of type `OneStepAheadFold`. Got {forecaster_name}."
+            )
         warnings.warn(
-            ("One-step-ahead predictions are used for faster model comparison, but they "
-             "may not fully represent multi-step prediction performance. It is recommended "
-             "to backtest the final model for a more accurate multi-step performance "
-             "estimate.")
+            "One-step-ahead predictions are used for faster model comparison, but they "
+            "may not fully represent multi-step prediction performance. It is recommended "
+            "to backtest the final model for a more accurate multi-step performance "
+            "estimate."
         )
 
     if return_best and exog is not None and (len(exog) != len(y)):
@@ -583,7 +590,7 @@ def bayesian_search_forecaster(
     
     Parameters
     ----------
-    forecaster : ForecasterAutoreg, ForecasterAutoregDirect
+    forecaster : ForecasterRecursive, ForecasterDirect
         Forecaster model.
     y : pandas Series
         Training time series.
@@ -699,7 +706,7 @@ def _bayesian_search_optuna(
     
     Parameters
     ----------
-    forecaster : ForecasterAutoreg, ForecasterAutoregDirect
+    forecaster : ForecasterRecursive, ForecasterDirect
         Forecaster model.
     y : pandas Series
         Training time series. 
@@ -1004,7 +1011,7 @@ def grid_search_forecaster_multiseries(
     
     Parameters
     ----------
-    forecaster : ForecasterAutoregMultiSeries, ForecasterAutoregMultiVariate
+    forecaster : ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate
         Forecaster model.
     series : pandas DataFrame, dict
         Training time series.
@@ -1126,7 +1133,7 @@ def random_search_forecaster_multiseries(
     
     Parameters
     ----------
-    forecaster : ForecasterAutoregMultiSeries, ForecasterAutoregMultiVariate
+    forecaster : ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate
         Forecaster model.
     series : pandas DataFrame, dict
         Training time series.
@@ -1250,7 +1257,7 @@ def _evaluate_grid_hyperparameters_multiseries(
     
     Parameters
     ----------
-    forecaster : ForecasterAutoregMultiSeries, ForecasterAutoregMultiVariate
+    forecaster : ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate
         Forecaster model.
     series : pandas DataFrame, dict
         Training time series.
@@ -1327,25 +1334,35 @@ def _evaluate_grid_hyperparameters_multiseries(
     set_skforecast_warnings(suppress_warnings, action='ignore')
 
     cv_name = type(cv).__name__
+    forecaster_name = type(forecaster).__name__
 
     if cv_name not in ['TimeSeriesFold', 'OneStepAheadFold']:
         raise ValueError(
-           (f"`cv` must be an instance of `TimeSeriesFold` or `OneStepAheadFold`. "
-            f"Got {type(cv)}.")
+            f"`cv` must be an instance of `TimeSeriesFold` or `OneStepAheadFold`. "
+            f"Got {type(cv)}."
         )
     
     if cv_name == 'OneStepAheadFold':
+        forecasters_one_step_ahead = [
+            'ForecasterRecursiveMultiSeries',
+            'ForecasterDirectMultiVariate'
+        ]
+        if forecaster_name not in forecasters_one_step_ahead:
+            raise ValueError(
+                f"Only forecasters of type {forecasters_one_step_ahead} are allowed "
+                f"when using `cv` of type `OneStepAheadFold`. Got {forecaster_name}."
+            )
         warnings.warn(
-            ("One-step-ahead predictions are used for faster model comparison, but they "
-             "may not fully represent multi-step prediction performance. It is recommended "
-             "to backtest the final model for a more accurate multi-step performance "
-             "estimate.")
+            "One-step-ahead predictions are used for faster model comparison, but they "
+            "may not fully represent multi-step prediction performance. It is recommended "
+            "to backtest the final model for a more accurate multi-step performance "
+            "estimate."
         )
 
     if return_best and exog is not None and (len(exog) != len(series)):
         raise ValueError(
-            (f"`exog` must have same number of samples as `series`. "
-             f"length `exog`: ({len(exog)}), length `series`: ({len(series)})")
+            f"`exog` must have same number of samples as `series`. "
+            f"length `exog`: ({len(exog)}), length `series`: ({len(series)})"
         )
     
     if isinstance(aggregate_metric, str):
@@ -1562,7 +1579,7 @@ def bayesian_search_forecaster_multiseries(
     
     Parameters
     ----------
-    forecaster : ForecasterAutoregMultiSeries, ForecasterAutoregMultiVariate
+    forecaster : ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate
         Forecaster model.
     series : pandas DataFrame, dict
         Training time series.
@@ -1579,17 +1596,6 @@ def bayesian_search_forecaster_multiseries(
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
         (Optional) that returns a float.
         - If `list`: List containing multiple strings and/or Callables.
-    method : str, default `'backtesting'`
-        Method used to evaluate the model.
-
-        - 'backtesting': the model is evaluated using backtesting process in which
-        the model predicts `steps` ahead in each iteration.
-        - 'one_step_ahead': the model is evaluated using only one step ahead predictions.
-        This is faster than backtesting but the results may not reflect the actual
-        performance of the model when predicting multiple steps ahead. Arguments `steps`,
-        `fixed_train_size`, `gap`, `skip_folds`, `allow_incomplete_fold` and `refit` are 
-        ignored when `method` is 'one_step_ahead'.
-        **New in version 0.14.0**
     aggregate_metric : str, list, default `['weighted_average', 'average', 'pooling']`
         Aggregation method/s used to combine the metric/s of all levels (series)
         when multiple levels are predicted. If list, the first aggregation method
@@ -1706,7 +1712,7 @@ def _bayesian_search_optuna_multiseries(
     
     Parameters
     ----------
-    forecaster : ForecasterAutoregMultiSeries, ForecasterAutoregMultiVariate
+    forecaster : ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate
         Forecaster model.
     series : pandas DataFrame, dict
         Training time series.
@@ -2019,7 +2025,7 @@ def _bayesian_search_optuna_multiseries(
         params_list.append(regressor_params)
         lags_list.append(lags)
     
-    if type(forecaster).__name__ not in ['ForecasterAutoregMultiVariate']:
+    if type(forecaster).__name__ not in ['ForecasterDirectMultiVariate']:
         lags_list = [
             initialize_lags(forecaster_name=type(forecaster).__name__, lags = lag)[0]
             for lag in lags_list

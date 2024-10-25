@@ -1,3 +1,3 @@
-# `sarimax`
+# `Sarimax`
 
-::: skforecast.sarimax.sarimax.Sarimax
+::: skforecast.sarimax._sarimax.Sarimax

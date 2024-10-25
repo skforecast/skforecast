@@ -56,7 +56,7 @@ def _backtesting_forecaster(
     
     Parameters
     ----------
-    forecaster : ForecasterAutoreg, ForecasterAutoregDirect
+    forecaster : ForecasterRecursive, ForecasterDirect
         Forecaster model.
     y : pandas Series
         Training time series.
@@ -181,13 +181,13 @@ def _backtesting_forecaster(
 
     if refit:
         n_of_fits = int(len(folds) / refit)
-        if type(forecaster).__name__ != 'ForecasterAutoregDirect' and n_of_fits > 50:
+        if type(forecaster).__name__ != 'ForecasterDirect' and n_of_fits > 50:
             warnings.warn(
                 (f"The forecaster will be fit {n_of_fits} times. This can take substantial"
                  f" amounts of time. If not feasible, try with `refit = False`.\n"),
                 LongTrainingWarning
             )
-        elif type(forecaster).__name__ == 'ForecasterAutoregDirect' and n_of_fits * forecaster.steps > 50:
+        elif type(forecaster).__name__ == 'ForecasterDirect' and n_of_fits * forecaster.steps > 50:
             warnings.warn(
                 (f"The forecaster will be fit {n_of_fits * forecaster.steps} times "
                  f"({n_of_fits} folds * {forecaster.steps} regressors). This can take "
@@ -233,7 +233,7 @@ def _backtesting_forecaster(
         next_window_exog = exog.iloc[test_iloc_start:test_iloc_end, ] if exog is not None else None
 
         steps = len(range(test_iloc_start, test_iloc_end))
-        if type(forecaster).__name__ == 'ForecasterAutoregDirect' and gap > 0:
+        if type(forecaster).__name__ == 'ForecasterDirect' and gap > 0:
             # Select only the steps that need to be predicted if gap > 0
             test_no_gap_iloc_start = fold[3][0]
             test_no_gap_iloc_end   = fold[3][1]
@@ -261,7 +261,7 @@ def _backtesting_forecaster(
                        use_binned_residuals    = use_binned_residuals,
                    )
 
-        if type(forecaster).__name__ != 'ForecasterAutoregDirect' and gap > 0:
+        if type(forecaster).__name__ != 'ForecasterDirect' and gap > 0:
             pred = pred.iloc[gap:, ]
 
         return pred
@@ -335,7 +335,7 @@ def backtesting_forecaster(
 
     Parameters
     ----------
-    forecaster : ForecasterAutoreg, ForecasterAutoregDirect
+    forecaster : ForecasterRecursive, ForecasterDirect
         Forecaster model.
     y : pandas Series
         Training time series.
@@ -398,8 +398,8 @@ def backtesting_forecaster(
     """
 
     forecaters_allowed = [
-        'ForecasterAutoreg', 
-        'ForecasterAutoregDirect',
+        'ForecasterRecursive',
+        'ForecasterDirect',
         'ForecasterEquivalentDate'
     ]
     
@@ -424,10 +424,10 @@ def backtesting_forecaster(
         show_progress           = show_progress
     )
     
-    if type(forecaster).__name__ == 'ForecasterAutoregDirect' and \
+    if type(forecaster).__name__ == 'ForecasterDirect' and \
        forecaster.max_step < cv.steps + cv.gap:
         raise ValueError(
-            (f"When using a ForecasterAutoregDirect, the combination of steps "
+            (f"When using a ForecasterDirect, the combination of steps "
              f"+ gap ({cv.steps + cv.gap}) cannot be greater than the `steps` parameter "
              f"declared when the forecaster is initialized ({forecaster.max_step}).")
         )
@@ -483,7 +483,7 @@ def _backtesting_forecaster_multiseries(
     
     Parameters
     ----------
-    forecaster : ForecasterAutoregMultiSeries, ForecasterAutoregMultiVariate
+    forecaster : ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate
         Forecaster model.
     series : pandas DataFrame, dict
         Training time series.
@@ -634,13 +634,13 @@ def _backtesting_forecaster_multiseries(
         
     if refit:
         n_of_fits = int(len(folds) / refit)
-        if type(forecaster).__name__ != 'ForecasterAutoregMultiVariate' and n_of_fits > 50:
+        if type(forecaster).__name__ != 'ForecasterDirectMultiVariate' and n_of_fits > 50:
             warnings.warn(
                 (f"The forecaster will be fit {n_of_fits} times. This can take substantial "
                  f"amounts of time. If not feasible, try with `refit = False`.\n"),
                 LongTrainingWarning,
             )
-        elif type(forecaster).__name__ == 'ForecasterAutoregMultiVariate' and n_of_fits * forecaster.steps > 50:
+        elif type(forecaster).__name__ == 'ForecasterDirectMultiVariate' and n_of_fits * forecaster.steps > 50:
             warnings.warn(
                 (f"The forecaster will be fit {n_of_fits * forecaster.steps} times "
                  f"({n_of_fits} folds * {forecaster.steps} regressors). This can take "
@@ -690,7 +690,7 @@ def _backtesting_forecaster_multiseries(
         test_iloc_start = fold[2][0]
         test_iloc_end   = fold[2][1]
         steps = len(range(test_iloc_start, test_iloc_end))
-        if type(forecaster).__name__ == 'ForecasterAutoregMultiVariate' and gap > 0:
+        if type(forecaster).__name__ == 'ForecasterDirectMultiVariate' and gap > 0:
             # Select only the steps that need to be predicted if gap > 0
             test_iloc_start = fold[3][0]
             test_iloc_end   = fold[3][1]
@@ -720,7 +720,7 @@ def _backtesting_forecaster_multiseries(
                        suppress_warnings       = suppress_warnings
                    )
 
-        if type(forecaster).__name__ != 'ForecasterAutoregMultiVariate' and gap > 0:
+        if type(forecaster).__name__ != 'ForecasterDirectMultiVariate' and gap > 0:
             pred = pred.iloc[gap:, ]
 
         return pred
@@ -801,7 +801,7 @@ def backtesting_forecaster_multiseries(
 
     Parameters
     ----------
-    forecaster : ForecasterAutoregMultiSeries, ForecasterAutoregMultiVariate, ForecasterRnn
+    forecaster : ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate, ForecasterRnn
         Forecaster model.
     series : pandas DataFrame, dict
         Training time series.
@@ -872,8 +872,8 @@ def backtesting_forecaster_multiseries(
     """
 
     multi_series_forecasters = [
-        'ForecasterAutoregMultiSeries', 
-        'ForecasterAutoregMultiVariate',
+        'ForecasterRecursiveMultiSeries',
+        'ForecasterDirectMultiVariate',
         'ForecasterRnn'
     ]
 
