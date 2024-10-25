@@ -8,7 +8,7 @@ from sklearn.exceptions import NotFittedError
 from skforecast.recursive import ForecasterEquivalentDate
 
 # Fixtures
-from .fixtures_ForecasterEquivalentDate import y
+from .fixtures_forecaster_equivalent_date import y
 
 
 def test_predict_NotFittedError_when_fitted_is_False():

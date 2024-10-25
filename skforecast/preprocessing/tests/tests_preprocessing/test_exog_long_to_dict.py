@@ -4,6 +4,7 @@ import pytest
 import numpy as np
 import pandas as pd
 from ...preprocessing import exog_long_to_dict
+from ....exceptions import MissingValuesWarning
 
 # Fixtures
 from .fixtures_preprocessing import exog_A, exog_B, exog_C, n_exog_A, n_exog_B, n_exog_C
@@ -125,4 +126,25 @@ def test_ValueError_when_index_not_in_data():
             series_id="series_id",
             index=index,
             freq="D",
+        )
+
+
+def test_warning_when_exog_are_incomplete_and_dropna_False():
+    """
+    Raise warning if exogenous variables are incomplete and NaN values are introduced
+    after setting the index frequency.
+    """
+    data = exog_long.copy().reset_index(drop=True)
+    data = data.loc[[0, 1] + list(range(3, 30))]
+    msg = (
+        "Exogenous variables for series 'A' are incomplete. NaNs have been introduced "
+        "after setting the frequency."
+    )
+    with pytest.warns(MissingValuesWarning, match=msg):
+        exog_long_to_dict(
+            data=data,
+            series_id='series_id',
+            index='datetime',
+            freq='D',
+            dropna=False,
         )

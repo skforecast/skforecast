@@ -2,17 +2,18 @@
 
 Understanding what can be done when initializing a forecaster with skforecast can have a significant impact on the accuracy and effectiveness of the model. This guide highlights key considerations to keep in mind when initializing a forecaster and how these functionalities can be used to create more powerful and accurate forecasting models in Python.
 
-We will explore the arguments that can be included in a `ForecasterAutoreg`, but this can be extrapolated to any of the skforecast forecasters.
+We will explore the arguments that can be included in a `ForecasterRecursive`, but this can be extrapolated to any of the skforecast forecasters.
 
 ```python
 # Create a forecaster
 # ==============================================================================
-from skforecast.ForecasterAutoreg import ForecasterAutoreg
+from skforecast.recursive import ForecasterRecursive
 from sklearn.ensemble import RandomForestRegressor
 
-forecaster = ForecasterAutoreg(
+forecaster = ForecasterRecursive(
                  regressor        = None,
                  lags             = None,
+                 window_features  = None,
                  transformer_y    = None,
                  transformer_exog = None,
                  weight_func      = None,
@@ -25,7 +26,7 @@ forecaster = ForecasterAutoreg(
 
 !!! tip
 
-    To be able to create and train a forecaster, at least `regressor` and `lags` must be specified.
+    To be able to create and train a forecaster, at least `regressor` and `lags` and/or `window_features` must be specified.
 
 
 ## General parameters
@@ -45,10 +46,10 @@ Skforecast is a Python library that facilitates using scikit-learn regressors as
 ```python
 # Create a forecaster
 # ==============================================================================
-from skforecast.ForecasterAutoreg import ForecasterAutoreg
+from skforecast.recursive import ForecasterRecursive
 from sklearn.ensemble import RandomForestRegressor
 
-forecaster = ForecasterAutoreg(
+forecaster = ForecasterRecursive(
                  regressor = RandomForestRegressor(),
                  lags      = None
              )
@@ -71,14 +72,21 @@ Learn more about [machine learning for forecasting](https://skforecast.org/lates
 ```python
 # Create a forecaster using 5 lags
 # ==============================================================================
-from skforecast.ForecasterAutoreg import ForecasterAutoreg
+from skforecast.recursive import ForecasterRecursive
 from sklearn.ensemble import RandomForestRegressor
 
-forecaster = ForecasterAutoreg(
+forecaster = ForecasterRecursive(
                  regressor = RandomForestRegressor(),
                  lags      = 5
              )
 ```
+
+
+### Window Features
+
+!!! warning
+
+    TODO
 
 
 ### Transformers
@@ -96,13 +104,14 @@ More information: [Scikit-learn transformers and pipelines](https://skforecast.o
 ```python
 # Create a forecaster
 # ==============================================================================
-from skforecast.ForecasterAutoreg import ForecasterAutoreg
+from skforecast.recursive import ForecasterRecursive
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestRegressor
 
-forecaster = ForecasterAutoreg(
+forecaster = ForecasterRecursive(
                  regressor        = RandomForestRegressor(),
                  lags             = 5,
+                 window_features  = None,
                  transformer_y    = StandardScaler(),
                  transformer_exog = StandardScaler()
              )
@@ -118,7 +127,7 @@ More information: [Weighted time series forecasting](https://skforecast.org/late
 ```python
 # Create a forecaster
 # ==============================================================================
-from skforecast.ForecasterAutoreg import ForecasterAutoreg
+from skforecast.recursive import ForecasterRecursive
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestRegressor
 
@@ -136,9 +145,10 @@ def custom_weights(index):
 
     return weights
 
-forecaster = ForecasterAutoreg(
+forecaster = ForecasterRecursive(
                  regressor        = RandomForestRegressor(),
                  lags             = 5,
+                 window_features  = None,
                  transformer_y    = None,
                  transformer_exog = None,
                  weight_func      = custom_weights
@@ -152,20 +162,17 @@ Time series differentiation involves computing the differences between consecuti
 
 More information: [Time series differentiation](https://skforecast.org/latest/faq/time-series-differentiation).
 
-!!! warning
-
-    The `differentiation` parameter is only available for the `ForecasterAutoreg` and `ForecasterAutoregMultiSeries` in the following versions it will be incorporated to the rest of the Forecasters.
-
 ```python
 # Create a forecaster
 # ==============================================================================
-from skforecast.ForecasterAutoreg import ForecasterAutoreg
+from skforecast.recursive import ForecasterRecursive
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestRegressor
 
-forecaster = ForecasterAutoreg(
+forecaster = ForecasterRecursive(
                  regressor        = RandomForestRegressor(),
                  lags             = 5,
+                 window_features  = None,
                  transformer_y    = None,
                  transformer_exog = None,
                  weight_func      = None,
@@ -191,12 +198,13 @@ More information: [Categorical features](https://skforecast.org/latest/user_guid
 ```python
 # Create a forecaster
 # ==============================================================================
-from skforecast.ForecasterAutoreg import ForecasterAutoreg
+from skforecast.recursive import ForecasterRecursive
 from lightgbm import LGBMRegressor
 
-forecaster = ForecasterAutoreg(
+forecaster = ForecasterRecursive(
                  regressor        = LGBMRegressor(),
                  lags             = 5,
+                 window_features  = None,
                  transformer_y    = None,
                  transformer_exog = None,
                  weight_func      = None,
@@ -215,12 +223,13 @@ More information: [Intervals conditioned on predicted values (binned residuals)]
 ```python
 # Create a forecaster
 # ==============================================================================
-from skforecast.ForecasterAutoreg import ForecasterAutoreg
+from skforecast.recursive import ForecasterRecursive
 from lightgbm import LGBMRegressor
 
-forecaster = ForecasterAutoreg(
+forecaster = ForecasterRecursive(
                  regressor        = LGBMRegressor(),
                  lags             = 5,
+                 window_features  = None,
                  transformer_y    = None,
                  transformer_exog = None,
                  weight_func      = None,
@@ -238,12 +247,13 @@ Name used as an identifier of the forecaster. It may be used, for example to ide
 ```python
 # Create a forecaster
 # ==============================================================================
-from skforecast.ForecasterAutoreg import ForecasterAutoreg
+from skforecast.recursive import ForecasterRecursive
 from sklearn.ensemble import RandomForestRegressor
 
-forecaster = ForecasterAutoreg(
+forecaster = ForecasterRecursive(
                  regressor        = RandomForestRegressor(),
                  lags             = 5,
+                 window_features  = None,
                  transformer_y    = None,
                  transformer_exog = None,
                  weight_func      = None,
@@ -256,7 +266,7 @@ forecaster = ForecasterAutoreg(
 
 ## Direct multi-step parameters
 
-For the Forecasters that follow a [direct multi-step strategy](https://skforecast.org/latest/introduction-forecasting/introduction-forecasting#direct-multi-step-forecasting) (`ForecasterAutoregDirect` and `ForecasterAutoregMultiVariate`), there are two additional parameters in addition to those mentioned above.
+For the Forecasters that follow a [direct multi-step strategy](https://skforecast.org/latest/introduction-forecasting/introduction-forecasting#direct-multi-step-forecasting) (`ForecasterDirect` and `ForecasterDirectMultiVariate`), there are two additional parameters in addition to those mentioned above.
 
 ### Steps
 
@@ -267,13 +277,14 @@ The number of models to be trained is specified by the `steps` parameter.
 ```python
 # Create a forecaster
 # ==============================================================================
-from skforecast.ForecasterAutoregDirect import ForecasterAutoregDirect
+from skforecast.direct import ForecasterDirect
 from sklearn.ensemble import RandomForestRegressor
 
-forecaster = ForecasterAutoregDirect(
+forecaster = ForecasterDirect(
                  regressor        = RandomForestRegressor(),
                  steps            = 5,
                  lags             = 5,
+                 window_features  = None,
                  transformer_y    = None,
                  transformer_exog = None,
                  weight_func      = None,
@@ -294,13 +305,14 @@ For a more detailed look at parallelization, visit [Parallelization in skforecas
 ```python
 # Create a forecaster
 # ==============================================================================
-from skforecast.ForecasterAutoregDirect import ForecasterAutoregDirect
+from skforecast.direct import ForecasterDirect
 from sklearn.ensemble import RandomForestRegressor
 
-forecaster = ForecasterAutoregDirect(
+forecaster = ForecasterDirect(
                  regressor        = RandomForestRegressor(),
                  steps            = 5,
                  lags             = 5,
+                 window_features  = None,
                  transformer_y    = None,
                  transformer_exog = None,
                  weight_func      = None,

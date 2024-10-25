@@ -17,9 +17,9 @@ from skforecast.preprocessing import RollingFeatures
 from ....recursive import ForecasterRecursiveMultiSeries
 
 # Fixtures
-from .fixtures_ForecasterAutoregMultiSeries import series
-from .fixtures_ForecasterAutoregMultiSeries import exog
-from .fixtures_ForecasterAutoregMultiSeries import exog_predict
+from .fixtures_forecaster_recursive_multiseries import series
+from .fixtures_forecaster_recursive_multiseries import exog
+from .fixtures_forecaster_recursive_multiseries import exog_predict
 
 transformer_exog = ColumnTransformer(
                        [('scale', StandardScaler(), ['exog_1']),

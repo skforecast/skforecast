@@ -7,7 +7,7 @@ from skforecast.model_selection._validation import backtesting_forecaster
 from skforecast.model_selection._split import TimeSeriesFold
 
 # Fixtures
-from .fixtures_ForecasterEquivalentDate import y
+from .fixtures_forecaster_equivalent_date import y
 
 
 def test_backtesting_with_ForecasterEquivalentDate():

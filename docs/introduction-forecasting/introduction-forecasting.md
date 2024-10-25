@@ -125,21 +125,19 @@ A **Forecaster** object in the skforecast library is a comprehensive container t
 
 The **skforecast** library offers a variety of forecaster types, each tailored to specific requirements such as single or multiple time series, direct or recursive strategies, or custom predictors. Regardless of the specific forecaster type, all instances share the same API.
 
-| Forecaster                   | Single series | Multiple series | Recursive strategy | Direct strategy | Probabilistic prediction | Time series differentiation | Exogenous features | Custom features |
+| Forecaster                   | Single series | Multiple series | Recursive strategy | Direct strategy | Probabilistic prediction | Time series differentiation | Exogenous features | Window features |
 |:-----------------------------|:-------------:|:---------------:|:------------------:|:---------------:|:------------------------:|:---------------------------:|:------------------:|:---------------:|
-|[ForecasterAutoreg]           |✔️||✔️||✔️|✔️|✔️||
-|[ForecasterAutoregDirect]     |✔️|||✔️|✔️||✔️||
-|[ForecasterMultiSeries]       ||✔️|✔️||✔️|✔️|✔️||
-|[ForecasterMultiSeriesCustom] ||✔️|✔️||✔️|✔️|✔️|✔️|
-|[ForecasterMultiVariate]      ||✔️||✔️|✔️||✔️||
+|[ForecasterRecursive]           |✔️||✔️||✔️|✔️|✔️|✔️|
+|[ForecasterDirect]     |✔️|||✔️|✔️||✔️|✔️|
+|[ForecasterRecursiveMultiSeries]       ||✔️|✔️||✔️|✔️|✔️|✔️|
+|[ForecasterDirectMultiVariate]      ||✔️||✔️|✔️||✔️|✔️|
 |[ForecasterRNN]               ||✔️||✔️|||||
 |[ForecasterSarimax]           |✔️||✔️||✔️|✔️|✔️||
 
-[ForecasterAutoreg]: https://skforecast.org/latest/user_guides/autoregresive-forecaster.html
-[ForecasterAutoregDirect]: https://skforecast.org/latest/user_guides/direct-multi-step-forecasting.html
-[ForecasterMultiSeries]: https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting.html
-[ForecasterMultiSeriesCustom]: https://skforecast.org/latest/user_guides/window-features-and-custom-features.html#forecasterautoregmultiseriescustom
-[ForecasterMultiVariate]: https://skforecast.org/latest/user_guides/dependent-multi-series-multivariate-forecasting.html
+[ForecasterRecursive]: https://skforecast.org/latest/user_guides/autoregresive-forecaster.html
+[ForecasterDirect]: https://skforecast.org/latest/user_guides/direct-multi-step-forecasting.html
+[ForecasterRecursiveMultiSeries]: https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting.html
+[ForecasterDirectMultiVariate]: https://skforecast.org/latest/user_guides/dependent-multi-series-multivariate-forecasting.html
 [ForecasterRNN]: https://skforecast.org/latest/user_guides/forecasting-with-deep-learning-rnn-lstm
 [ForecasterSarimax]: https://skforecast.org/latest/user_guides/forecasting-sarimax-arima.html
 

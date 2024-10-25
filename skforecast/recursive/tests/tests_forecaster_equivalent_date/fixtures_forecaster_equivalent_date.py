@@ -1,4 +1,5 @@
-# Fixtures
+# Fixtures _forecaster_equivalent_date
+# ==============================================================================
 
 import numpy as np
 import pandas as pd

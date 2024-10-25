@@ -13,9 +13,9 @@ from skforecast.preprocessing import RollingFeatures
 from ....recursive import ForecasterRecursiveMultiSeries
 
 # Fixtures
-from .fixtures_ForecasterAutoregMultiSeries import series
-from .fixtures_ForecasterAutoregMultiSeries import exog
-from .fixtures_ForecasterAutoregMultiSeries import exog_predict
+from .fixtures_forecaster_recursive_multiseries import series
+from .fixtures_forecaster_recursive_multiseries import exog
+from .fixtures_forecaster_recursive_multiseries import exog_predict
 
 series_2 = pd.DataFrame(
                {'1': pd.Series(np.arange(start=0, stop=50)), 

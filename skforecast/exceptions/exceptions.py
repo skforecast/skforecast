@@ -111,6 +111,22 @@ class IgnoredArgumentWarning(UserWarning):
         return self.message + " " + extra_message
 
 
+class SaveLoadSkforecastWarning(UserWarning):
+    """
+    Warning used to notify any issues that may arise when saving or loading
+    a forecaster.
+    """
+    def __init__(self, message):
+        self.message = message
+
+    def __str__(self):
+        extra_message = (
+            "\n You can suppress this warning using: "
+            "warnings.simplefilter('ignore', category=SaveLoadSkforecastWarning)"
+        )
+        return self.message + " " + extra_message
+
+
 class SkforecastVersionWarning(UserWarning):
     """
     Warning used to notify that the skforecast version installed in the 

@@ -6,3 +6,4 @@ mkdocstrings==0.26.1
 mkdocstrings-python==1.11.1
 notebook==6.4.12
 https://github.com/ipython-contrib/jupyter_contrib_nbextensions/tarball/master
+black == 24.10.0

@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 # Fixtures
-# From 'https://raw.githubusercontent.com/JoaquinAmatRodrigo/skforecast/master/data/h2o_exog.csv'
+# From 'https://raw.githubusercontent.com/skforecast/skforecast/master/data/h2o_exog.csv'
 
 # Series y from observation 0 to 50
 y = pd.Series(

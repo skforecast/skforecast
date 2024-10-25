@@ -11,8 +11,8 @@ from skforecast.preprocessing import RollingFeatures
 from skforecast.direct import ForecasterDirectMultiVariate
 
 # Fixtures
-from .fixtures_ForecasterAutoregMultiVariate import series as series_fixtures
-from .fixtures_ForecasterAutoregMultiVariate import exog
+from .fixtures_forecaster_direct_multivariate import series as series_fixtures
+from .fixtures_forecaster_direct_multivariate import exog
 
 transformer_exog = ColumnTransformer(
                        [('scale', StandardScaler(), ['exog_1']),

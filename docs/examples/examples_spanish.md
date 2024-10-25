@@ -4,7 +4,7 @@
 
 Ejemplos prácticos y tutoriales para ayudarte a entender y aplicar skforecast.
 
-## **Primeros Pasos: Forecasting Fundamental**
+## Primeros Pasos: Forecasting Fundamental
 
 Esta sección proporciona tutoriales esenciales para los usuarios que están comenzando con el pronóstico de series temporales. Estos ejemplos cubren los modelos y técnicas más fundamentales para ayudarte a construir una base sólida en forecasting.
 
@@ -20,7 +20,7 @@ Esta sección proporciona tutoriales esenciales para los usuarios que están com
 Universidad de Deusto / Deustuko Unibertsitatea](https://youtu.be/MlktVhReO0E)
 
 
-## **Modelos Globales: Forecasting Multi-Serie**
+## Modelos Globales: Forecasting Multi-Serie
 
 Estos tutoriales se centran en modelos globales y en el pronóstico de series múltiples, donde puedes explorar el uso de técnicas que manejan varias series temporales simultáneamente y comparar el rendimiento entre diferentes enfoques de forecasting.
 
@@ -31,7 +31,7 @@ Estos tutoriales se centran en modelos globales y en el pronóstico de series m�
 <i class="fa-solid fa-layer-group" style="color: #001633;"></i> [Forecasting con Deep Learning](https://cienciadedatos.net/documentos/py54-forecasting-con-deep-learning)
 
 
-## **Técnicas Avanzadas: Más Allá de los Modelos Básicos**
+## Técnicas Avanzadas: Más Allá de los Modelos Básicos
 
 Para usuarios experimentados que buscan profundizar en sus habilidades de forecasting, esta sección ofrece técnicas avanzadas, como forecasting probabilístico y manejo de valores ausentes.
 

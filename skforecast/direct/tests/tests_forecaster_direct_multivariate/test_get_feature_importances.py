@@ -16,8 +16,8 @@ from skforecast.preprocessing import RollingFeatures
 from skforecast.direct import ForecasterDirectMultiVariate
 
 # Fixtures
-from .fixtures_ForecasterAutoregMultiVariate import series as series_2
-from .fixtures_ForecasterAutoregMultiVariate import exog as exog_2
+from .fixtures_forecaster_direct_multivariate import series as series_2
+from .fixtures_forecaster_direct_multivariate import exog as exog_2
 
 series = pd.DataFrame({'l1': pd.Series(np.arange(10, dtype=float)), 
                        'l2': pd.Series(np.arange(10, dtype=float))})

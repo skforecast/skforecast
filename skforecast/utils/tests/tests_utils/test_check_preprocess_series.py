@@ -5,8 +5,8 @@ import pytest
 import numpy as np
 import pandas as pd
 from skforecast.utils import check_preprocess_series
-from skforecast.recursive.tests.tests_forecaster_recursive_multiseries.fixtures_ForecasterAutoregMultiSeries import series
-from skforecast.recursive.tests.tests_forecaster_recursive_multiseries.fixtures_ForecasterAutoregMultiSeries import series_as_dict
+from skforecast.recursive.tests.tests_forecaster_recursive_multiseries.fixtures_forecaster_recursive_multiseries import series
+from skforecast.recursive.tests.tests_forecaster_recursive_multiseries.fixtures_forecaster_recursive_multiseries import series_as_dict
 
 
 def test_TypeError_check_preprocess_series_when_series_is_not_pandas_DataFrame_or_dict():

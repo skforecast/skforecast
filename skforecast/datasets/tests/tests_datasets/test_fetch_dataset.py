@@ -47,7 +47,7 @@ def test_fetch_dataset():
 
     # Test fetching a dataset with a non-existent version
     bad_url = (
-        'https://raw.githubusercontent.com/JoaquinAmatRodrigo/'
+        'https://raw.githubusercontent.com/skforecast/'
         'skforecast-datasets/non_existent_version/data/h2o.csv'
     )
     

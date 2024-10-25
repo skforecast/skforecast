@@ -11,7 +11,7 @@ from skforecast.utils import prepare_residuals_multiseries
 from skforecast.recursive import ForecasterRecursiveMultiSeries
 
 # Fixtures
-from skforecast.recursive.tests.tests_forecaster_recursive_multiseries.fixtures_ForecasterAutoregMultiSeries import series
+from skforecast.recursive.tests.tests_forecaster_recursive_multiseries.fixtures_forecaster_recursive_multiseries import series
 
 
 def test_prepare_residuals_multiseries_ValueError_when_not_in_sample_residuals_for_any_level():

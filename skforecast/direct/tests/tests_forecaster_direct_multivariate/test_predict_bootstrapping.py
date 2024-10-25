@@ -16,10 +16,10 @@ from skforecast.preprocessing import TimeSeriesDifferentiator
 from skforecast.direct import ForecasterDirectMultiVariate
 
 # Fixtures
-from .fixtures_ForecasterAutoregMultiVariate import series
-from .fixtures_ForecasterAutoregMultiVariate import exog
-from .fixtures_ForecasterAutoregMultiVariate import exog_predict
-from .fixtures_ForecasterAutoregMultiVariate import data  # to test results when using differentiation
+from .fixtures_forecaster_direct_multivariate import series
+from .fixtures_forecaster_direct_multivariate import exog
+from .fixtures_forecaster_direct_multivariate import exog_predict
+from .fixtures_forecaster_direct_multivariate import data  # to test results when using differentiation
 
 transformer_exog = ColumnTransformer(
                        [('scale', StandardScaler(), ['exog_1']),

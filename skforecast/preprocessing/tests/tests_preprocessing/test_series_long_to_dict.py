@@ -1,9 +1,9 @@
 # Unit test series_long_to_dict
 # ==============================================================================
 import pytest
-import numpy as np
 import pandas as pd
 from ...preprocessing import series_long_to_dict
+from ....exceptions import MissingValuesWarning
 
 # Fixtures
 from .fixtures_preprocessing import values_A, values_B, values_C
@@ -111,7 +111,7 @@ def test_warning_when_series_is_incomplete():
     msg = (
         "Series 'B' is incomplete. NaNs have been introduced after setting the frequency."
     )
-    with pytest.warns(UserWarning, match=msg):
+    with pytest.warns(MissingValuesWarning, match=msg):
         series_long_to_dict(
             data=data,
             series_id="series_id",

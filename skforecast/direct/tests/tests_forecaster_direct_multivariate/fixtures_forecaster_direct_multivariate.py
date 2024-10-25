@@ -1,4 +1,4 @@
-# Fixtures ForecasterDirectMultiVariate
+# Fixtures _forecaster_direct_multivariate
 # ==============================================================================
 import numpy as np
 import pandas as pd

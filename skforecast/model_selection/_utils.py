@@ -93,8 +93,6 @@ def check_backtesting_input(
     ----------
     forecaster : Forecaster
         Forecaster model.
-    steps : int, list
-        Number of future steps predicted.
     cv : TimeSeriesFold
         TimeSeriesFold object with the information needed to split the data into folds.
     metric : str, Callable, list

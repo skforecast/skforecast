@@ -664,7 +664,7 @@ class ForecasterDirect(ForecasterBase):
             if not self.is_fitted:
                 y_values = self.differentiator.fit_transform(y_values)
             else:
-                differentiator = clone(self.differentiator)
+                differentiator = copy(self.differentiator)
                 y_values = differentiator.fit_transform(y_values)
 
         exog_names_in_ = None
@@ -915,7 +915,7 @@ class ForecasterDirect(ForecasterBase):
 
         Parameters
         ----------
-        series : pandas Series, pandas DataFrame, dict
+        y : pandas Series
             Training time series.
         initial_train_size : int
             Initial size of the training set. It is the number of observations used
@@ -1415,8 +1415,6 @@ class ForecasterDirect(ForecasterBase):
 
         regressors = [self.regressors_[step] for step in steps]
         with warnings.catch_warnings():
-            # Suppress scikit-learn warning: "X does not have valid feature names,
-            # but NoOpTransformer was fitted with feature names".
             warnings.filterwarnings(
                 "ignore", 
                 message="X does not have valid feature names", 
@@ -1562,8 +1560,6 @@ class ForecasterDirect(ForecasterBase):
         # NOTE: Predictions must be transformed and differenced before adding residuals
         regressors = [self.regressors_[step] for step in steps]
         with warnings.catch_warnings():
-            # Suppress scikit-learn warning: "X does not have valid feature names,
-            # but NoOpTransformer was fitted with feature names".
             warnings.filterwarnings(
                 "ignore", 
                 message="X does not have valid feature names", 
@@ -2093,7 +2089,7 @@ class ForecasterDirect(ForecasterBase):
         y_true = y_true.copy()
         y_pred = y_pred.copy()
         if self.differentiation is not None:
-            differentiator = clone(self.differentiator)
+            differentiator = copy(self.differentiator)
         for k in steps_to_update:
             if isinstance(y_true[k], pd.Series):
                 y_true[k] = y_true[k].to_numpy()

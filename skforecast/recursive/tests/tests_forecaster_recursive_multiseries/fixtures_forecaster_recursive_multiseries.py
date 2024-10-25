@@ -1,4 +1,4 @@
-# Fixtures ForecasterRecursiveMultiSeries
+# Fixtures _forecaster_recursive_multiseries
 # ==============================================================================
 import numpy as np
 import pandas as pd

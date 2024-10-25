@@ -7,33 +7,39 @@ import pytest
 import inspect
 import numpy as np
 import pandas as pd
-import skforecast
-from skforecast.recursive import ForecasterRecursive
-from skforecast.ForecasterAutoregMultiSeriesCustom import ForecasterAutoregMultiSeriesCustom
-from skforecast.utils import save_forecaster
-from skforecast.utils import load_forecaster
-from skforecast.exceptions import SkforecastVersionWarning
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
 
-def create_predictors(y):  # pragma: no cover
-    """
-    Create first 2 lags of a time series.
-    """
-    
-    lags = y[-1:-3:-1]
-    
-    return lags
+import skforecast
+from ....recursive import ForecasterRecursive
+from ....recursive import ForecasterRecursiveMultiSeries
+from ...utils import save_forecaster
+from ...utils import load_forecaster
+from ....exceptions import SkforecastVersionWarning, SaveLoadSkforecastWarning
+
 
 def custom_weights(y):  # pragma: no cover
     """
     """
     return np.ones(len(y))
 
+
 def custom_weights2(y):  # pragma: no cover
     """
     """
     return np.arange(1, len(y) + 1)
+
+
+class UserWindowFeature:
+    def __init__(self, window_sizes, features_names):
+        self.window_sizes = window_sizes
+        self.features_names = features_names
+
+    def transform_batch(self):
+        pass
+
+    def transform(self):
+        pass
 
 
 def test_save_and_load_forecaster_persistence():
@@ -108,26 +114,19 @@ def test_save_and_load_forecaster_SkforecastVersionWarning():
                          [custom_weights, 
                           {'serie_1': custom_weights, 
                            'serie_2': custom_weights2}], 
-                         ids = lambda func : f'type: {type(func)}')
+                         ids = lambda func: f'type: {type(func)}')
 def test_save_forecaster_save_custom_functions(weight_func):
     """ 
     Test if custom functions are saved correctly.
     """
-    forecaster = ForecasterAutoregMultiSeriesCustom(
+    forecaster = ForecasterRecursiveMultiSeries(
                      regressor      = LinearRegression(),
-                     fun_predictors = create_predictors,
-                     window_size    = 3,
+                     lags           = 5,
                      weight_func    = weight_func
                  )
     save_forecaster(forecaster=forecaster, file_name='forecaster.joblib', 
                     save_custom_functions=True)
     os.remove('forecaster.joblib')
-
-    fun_predictors_file = forecaster.fun_predictors.__name__ + '.py'
-    assert os.path.exists(fun_predictors_file)
-    with open(fun_predictors_file, 'r') as file:
-        assert inspect.getsource(forecaster.fun_predictors) == file.read()
-    os.remove(fun_predictors_file)
     
     weight_functions = weight_func.values() if isinstance(weight_func, dict) else [weight_func]
     for weight_func in weight_functions:
@@ -139,27 +138,52 @@ def test_save_forecaster_save_custom_functions(weight_func):
 
 
 @pytest.mark.parametrize("weight_func", 
-                         [None,
-                          custom_weights, 
+                         [custom_weights, 
                           {'serie_1': custom_weights, 
                            'serie_2': custom_weights2}], 
-                         ids = lambda func : f'func: {func}')
+                         ids = lambda func: f'func: {func}')
 def test_save_forecaster_warning_dont_save_custom_functions(weight_func):
     """ 
-    Test UserWarning when custom functions are not saved.
+    Test SaveLoadSkforecastWarning when custom functions are not saved.
     """
-    forecaster = ForecasterAutoregMultiSeriesCustom(
+    forecaster = ForecasterRecursiveMultiSeries(
                      regressor      = LinearRegression(),
-                     fun_predictors = create_predictors,
-                     window_size    = 3,
+                     lags           = 5,
                      weight_func    = weight_func
                  )
 
     warn_msg = re.escape(
-        ("Custom functions used to create predictors or weights are not saved. "
-         "To save them, set `save_custom_functions` to `True`.")
+        "Custom function(s) used to create weights are not saved. "
+        "To save them, set `save_custom_functions` to `True`."
     )
-    with pytest.warns(UserWarning, match = warn_msg):
+    with pytest.warns(SaveLoadSkforecastWarning, match = warn_msg):
+        save_forecaster(forecaster=forecaster, file_name='forecaster.joblib', 
+                        save_custom_functions=False)
+        os.remove('forecaster.joblib')
+
+
+def test_save_forecaster_warning_when_user_defined_window_features():
+    """ 
+    Test SaveLoadSkforecastWarning when user-defined window features.
+    """
+
+    window_features = UserWindowFeature(
+        window_sizes=[1, 2], features_names=['feature_1', 'feature_2']
+    )
+    forecaster = ForecasterRecursiveMultiSeries(
+                     regressor       = LinearRegression(),
+                     lags            = 5,
+                     window_features = window_features
+                 )
+
+    warn_msg = re.escape(
+        "The Forecaster includes custom user-defined classes in the "
+        "`window_features` argument. These classes are not saved automatically "
+        "when saving the Forecaster. Please ensure you save these classes "
+        "manually and import them before loading the Forecaster.\n"
+        "    Custom classes: " + ', '.join({'UserWindowFeature'}),
+    )
+    with pytest.warns(SaveLoadSkforecastWarning, match = warn_msg):
         save_forecaster(forecaster=forecaster, file_name='forecaster.joblib', 
                         save_custom_functions=False)
         os.remove('forecaster.joblib')

@@ -408,3 +408,19 @@ class ForecasterEquivalentDate():
             predictions = aggregate_values.rename('pred')
         
         return predictions
+
+    def summary(self) -> None:
+        """
+        Show forecaster information.
+        
+        Parameters
+        ----------
+        self
+
+        Returns
+        -------
+        None
+        
+        """
+        
+        print(self)

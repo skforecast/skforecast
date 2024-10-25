@@ -10,9 +10,9 @@ from sklearn.preprocessing import OneHotEncoder
 from scipy.stats import norm
 
 # Fixtures
-from .fixtures_ForecasterAutoregMultiVariate import series
-from .fixtures_ForecasterAutoregMultiVariate import exog
-from .fixtures_ForecasterAutoregMultiVariate import exog_predict
+from .fixtures_forecaster_direct_multivariate import series
+from .fixtures_forecaster_direct_multivariate import exog
+from .fixtures_forecaster_direct_multivariate import exog_predict
 
 transformer_exog = ColumnTransformer(
                        [('scale', StandardScaler(), ['exog_1']),

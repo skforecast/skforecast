@@ -384,11 +384,13 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 type(wf).__name__ for wf in self.window_features
             ] 
 
-        self.weight_func, self.source_code_weight_func, self.series_weights = initialize_weights(
-            forecaster_name = type(self).__name__,
-            regressor       = regressor,
-            weight_func     = weight_func,
-            series_weights  = series_weights
+        self.weight_func, self.source_code_weight_func, self.series_weights = (
+            initialize_weights(
+                forecaster_name = type(self).__name__,
+                regressor       = regressor,
+                weight_func     = weight_func,
+                series_weights  = series_weights,
+            )
         )
 
         if self.differentiation is not None:
@@ -777,7 +779,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             if not self.is_fitted:
                 y_values = self.differentiator_[series_name].fit_transform(y_values)
             else:
-                differentiator = clone(self.differentiator_[series_name])
+                differentiator = copy(self.differentiator_[series_name])
                 y_values = differentiator.fit_transform(y_values)
 
         X_train_autoreg = []
@@ -952,7 +954,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             self.differentiator_ = {serie: None for serie in series_names_in_}
         else:
             if not self.is_fitted:
-                self.differentiator_ = {serie: clone(self.differentiator)
+                self.differentiator_ = {serie: copy(self.differentiator)
                                         for serie in series_names_in_}
 
         series_dict, exog_dict = align_series_and_exog_multiseries(
@@ -1374,7 +1376,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         if self.series_weights is not None:
             # Series not present in series_weights have a weight of 1 in all their samples.
             # Keys in series_weights not present in series are ignored.
-            series_not_in_series_weights = set(series_names_in_) - set(self.series_weights.keys())
+            series_not_in_series_weights = (
+                set(series_names_in_) - set(self.series_weights.keys())
+            )
             if series_not_in_series_weights:
                 warnings.warn(
                     (f"{series_not_in_series_weights} not present in `series_weights`. "
@@ -1410,7 +1414,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                      for col in series_names_in_}
             else:
                 # Series not present in weight_func have a weight of 1 in all their samples
-                series_not_in_weight_func = set(series_names_in_) - set(self.weight_func.keys())
+                series_not_in_weight_func = (
+                    set(series_names_in_) - set(self.weight_func.keys())
+                )
                 if series_not_in_weight_func:
                     warnings.warn(
                         (f"{series_not_in_weight_func} not present in `weight_func`. "
@@ -1430,7 +1436,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 if self.encoding == "onehot":
                     idx = X_train.index[X_train[key] == 1.0]
                 else:
-                    idx = X_train.index[X_train["_level_skforecast"] == self.encoding_mapping_[key]]
+                    idx = X_train.index[
+                            X_train["_level_skforecast"] == self.encoding_mapping_[key]
+                         ]
                 weights_samples.append(self.weight_func_[key](idx))
             weights_samples = np.concatenate(weights_samples)
 
@@ -1555,7 +1563,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                             X_train          = X_train
                         )
 
-        X_train_regressor = X_train if self.encoding is not None else X_train.drop(columns='_level_skforecast')
+        X_train_regressor = (
+            X_train
+            if self.encoding is not None
+            else X_train.drop(columns="_level_skforecast")
+        )
         if sample_weight is not None:
             self.regressor.fit(
                 X             = X_train_regressor,
@@ -1783,8 +1795,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
    
             if self.differentiation is not None:
                 if level not in self.differentiator_.keys():
-                    self.differentiator_[level] = clone(self.differentiator)
-                last_window_level = self.differentiator_[level].fit_transform(last_window_level)
+                    self.differentiator_[level] = copy(self.differentiator)
+                last_window_level = (
+                    self.differentiator_[level].fit_transform(last_window_level)
+                )
             
             last_window[level] = last_window_level
 
@@ -1866,7 +1880,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         n_levels = len(levels)
         n_lags = len(self.lags) if self.lags is not None else 0
         n_window_features = (
-            len(self.X_train_window_features_names_out_) if self.window_features is not None else 0
+            len(self.X_train_window_features_names_out_)
+            if self.window_features is not None
+            else 0
         )
         n_autoreg = n_lags + n_window_features
         n_exog = len(self.X_train_exog_names_out_) if exog_values_dict is not None else 0
@@ -1903,25 +1919,21 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         for i in range(steps):
             
             if self.lags is not None:
-                features[:, :n_lags] = last_window[-self.lags - (steps - i), :].transpose()
+                features[:, :n_lags] = last_window[
+                    -self.lags - (steps - i), :
+                ].transpose()
             if self.window_features is not None:
                 features[:, n_lags:n_autoreg] = np.concatenate(
-                    [wf.transform(last_window[i:-(steps - i), :]) 
-                     for wf in self.window_features],
+                    [
+                        wf.transform(last_window[i:-(steps - i), :]) 
+                        for wf in self.window_features
+                    ],
                     axis=1
                 )
             if exog_values_dict is not None:
                 features[:, -n_exog:] = exog_values_dict[i + 1]
 
-            with warnings.catch_warnings():
-                # Suppress scikit-learn warning: "X does not have valid feature names,
-                # but NoOpTransformer was fitted with feature names".
-                warnings.filterwarnings(
-                    "ignore", 
-                    message="X does not have valid feature names", 
-                    category=UserWarning
-                )
-                pred = self.regressor.predict(features)
+            pred = self.regressor.predict(features)
             
             if residuals is not None:
                 pred += residuals[i, :]
@@ -1991,12 +2003,18 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             exog         = exog
         )
   
-        predictions = self._recursive_predict(
-                          steps            = steps,
-                          levels           = levels,
-                          last_window      = last_window,
-                          exog_values_dict = exog_values_dict
-                      )
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", 
+                message="X does not have valid feature names", 
+                category=UserWarning
+            )
+            predictions = self._recursive_predict(
+                              steps            = steps,
+                              levels           = levels,
+                              last_window      = last_window,
+                              exog_values_dict = exog_values_dict
+                          )
         
         X_predict_dict = {}
         if self.lags is not None:
@@ -2030,10 +2048,16 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
             if self.encoding is not None:
                 if self.encoding == 'onehot':
-                    level_encoded = np.zeros(shape=(1, len_X_train_series_names_in_), dtype=float)
+                    level_encoded = np.zeros(
+                                        shape = (1, len_X_train_series_names_in_),
+                                        dtype = float
+                                    )
                     level_encoded[0][self.X_train_series_names_in_.index(level)] = 1.
                 else:
-                    level_encoded = np.array([self.encoding_mapping_.get(level, None)], dtype='float64')
+                    level_encoded = np.array(
+                                        [self.encoding_mapping_.get(level, None)],
+                                        dtype = 'float64'
+                                    )
 
                 level_encoded = np.tile(level_encoded, (steps, 1))
                 X_predict_level.append(level_encoded)
@@ -2118,12 +2142,18 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             check_inputs = check_inputs
         )
 
-        predictions = self._recursive_predict(
-                          steps            = steps,
-                          levels           = levels,
-                          last_window      = last_window,
-                          exog_values_dict = exog_values_dict
-                      )
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", 
+                message="X does not have valid feature names", 
+                category=UserWarning
+            )
+            predictions = self._recursive_predict(
+                              steps            = steps,
+                              levels           = levels,
+                              last_window      = last_window,
+                              exog_values_dict = exog_values_dict
+                          )
         
         for i, level in enumerate(levels):
             if self.differentiation is not None:
@@ -2253,26 +2283,37 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                     order      = 'F',
                                     dtype      = float
                                 )
-        for i in range(n_boot):
-
-            boot_columns.append(f"pred_boot_{i}")
-            boot_predictions_full[:, :, i] = self._recursive_predict(
-                steps            = steps,
-                levels           = levels,
-                last_window      = last_window,
-                exog_values_dict = exog_values_dict,
-                residuals        = sample_residuals[:, i, :]
+        
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", 
+                message="X does not have valid feature names", 
+                category=UserWarning
             )
+            for i in range(n_boot):
+
+                boot_columns.append(f"pred_boot_{i}")
+                boot_predictions_full[:, :, i] = self._recursive_predict(
+                    steps            = steps,
+                    levels           = levels,
+                    last_window      = last_window,
+                    exog_values_dict = exog_values_dict,
+                    residuals        = sample_residuals[:, i, :]
+                )
 
         boot_predictions = {}
         for i, level in enumerate(levels):
 
             if self.differentiation is not None:
                 boot_predictions_full[:, i, :] = (
-                    self.differentiator_[level].inverse_transform_next_window(boot_predictions_full[:, i, :])
+                    self.differentiator_[level]
+                    .inverse_transform_next_window(boot_predictions_full[:, i, :])
                 )
             
-            transformer_level = self.transformer_series_.get(level, self.transformer_series_['_unknown_level'])
+            transformer_level = self.transformer_series_.get(
+                                    level,
+                                    self.transformer_series_['_unknown_level']
+                                )
             if transformer_level is not None:
                 boot_predictions_full[:, i, :] = np.apply_along_axis(
                     func1d            = transform_numpy,
@@ -2489,7 +2530,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         predictions = []
 
         for level in boot_predictions.keys():
-            preds_quantiles = boot_predictions[level].quantile(q=quantiles, axis=1).transpose()
+            preds_quantiles = (
+                boot_predictions[level].quantile(q=quantiles, axis=1).transpose()
+            )
             preds_quantiles.columns = [f'{level}_q_{q}' for q in quantiles]
             predictions.append(preds_quantiles)
 
@@ -2759,7 +2802,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         """
 
-        if not isinstance(residuals, dict) or not all(isinstance(x, np.ndarray) for x in residuals.values()):
+        if not isinstance(residuals, dict) or not all(
+            isinstance(x, np.ndarray) for x in residuals.values()
+        ):
             raise TypeError(
                 (f"`residuals` argument must be a dict of numpy ndarrays in the form "
                  "`{level: residuals}`. "
@@ -2791,11 +2836,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
             if not set(self.out_sample_residuals_.keys()).issubset(set(residuals.keys())):
                 warnings.warn(
-                    (
-                        f"Only residuals of levels " 
-                        f"{set(self.out_sample_residuals_.keys()).intersection(set(residuals.keys()))} "
-                        f"are updated."
-                    ), IgnoredArgumentWarning
+                    f"Only residuals of levels " 
+                    f"{set(self.out_sample_residuals_.keys()).intersection(set(residuals.keys()))} "
+                    f"are updated.", IgnoredArgumentWarning
                 )
             residuals = {
                 k: v 

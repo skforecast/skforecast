@@ -1,20 +1,19 @@
 # Frequently Asked Questions and forecasting tips
 
-Thank you for choosing skforecast and visiting our Frequently Asked Questions (FAQ) page. Here, we aim to provide solutions to commonly encountered issues on our Github repository. If your question is not answered on this page, we encourage you to create a new issue on our [Github](https://github.com/JoaquinAmatRodrigo/skforecast/issues) so that it can be addressed, and other users can also benefit from it. Additionally, we have included some forecasting tips to help you get the most out of skforecast.
+Thank you for choosing skforecast and visiting our Frequently Asked Questions (FAQ) page. Here, we aim to provide solutions to commonly encountered issues on our Github repository. If your question is not answered on this page, we encourage you to create a new issue on our [Github](https://github.com/skforecast/skforecast/issues) so that it can be addressed, and other users can also benefit from it. Additionally, we have included some forecasting tips to help you get the most out of skforecast.
 
-## General Forecasting Tips
-+ [Avoid negative predictions when forecasting](https://skforecast.org/latest/faq/non-negative-predictions.html)
-+ [Forecasting time series with missing values](https://skforecast.org/latest/faq/forecasting-time-series-with-missing-values.html)
-+ [Forecasting with delayed historical data](https://skforecast.org/latest/faq/forecasting-with-delayed-historical-data.html)
+<span style="font-size: 1.3em;">General Forecasting Tips</span>
 
-## Feature Engineering
-+ [Time series differentiation (modelling trend)](https://skforecast.org/latest/faq/time-series-differentiation.html)
-+ [Cyclical features in time series](https://skforecast.org/latest/faq/cyclical-features-time-series.html)
-+ [Time series aggregation](https://skforecast.org/latest/faq/time-series-aggregation.html)
++ [Avoid negative predictions when forecasting](../faq/non-negative-predictions.html)
++ [Forecasting time series with missing values](../faq/forecasting-time-series-with-missing-values.html)
++ [Forecasting with delayed historical data](../faq/forecasting-with-delayed-historical-data.html)
 
-## Advanced Techniques
-+ [Stacking (ensemble) machine learning models to improve forecasting](https://skforecast.org/latest/faq/stacking-ensemble-models-forecasting.html)
+<span style="font-size: 1.3em;">Feature Engineering</span>
 
-## Performance Optimization
-+ [Parallelization in skforecast](https://skforecast.org/latest/faq/parallelization-skforecast.html)
-+ [Profiling skforecast](https://skforecast.org/latest/faq/profiling-skforecast.html)
++ [Cyclical features in time series](../faq/cyclical-features-time-series.html)
++ [Time series aggregation](../faq/time-series-aggregation.html)
+
+<span style="font-size: 1.3em;">Performance Optimization</span>
+
++ [Parallelization in skforecast](../faq/parallelization-skforecast.html)
++ [Profiling skforecast](../faq/profiling-skforecast.html)

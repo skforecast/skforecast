@@ -24,7 +24,6 @@
 ::: skforecast.utils.utils.transform_dataframe
 ::: skforecast.utils.utils.check_optional_dependency
 ::: skforecast.utils.utils.multivariate_time_series_corr
-::: skforecast.utils.utils.select_n_jobs_backtesting
 ::: skforecast.utils.utils.select_n_jobs_fit_forecaster
 ::: skforecast.utils.utils.check_preprocess_series
 ::: skforecast.utils.utils.check_preprocess_exog_multiseries

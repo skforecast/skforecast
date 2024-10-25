@@ -26,9 +26,9 @@ from skforecast.preprocessing import TimeSeriesDifferentiator
 from ....recursive import ForecasterRecursiveMultiSeries
 
 # Fixtures
-from .fixtures_ForecasterAutoregMultiSeries import series
-from .fixtures_ForecasterAutoregMultiSeries import exog
-from .fixtures_ForecasterAutoregMultiSeries import exog_predict
+from .fixtures_forecaster_recursive_multiseries import series
+from .fixtures_forecaster_recursive_multiseries import exog
+from .fixtures_forecaster_recursive_multiseries import exog_predict
 
 THIS_DIR = Path(__file__).parent
 series_dict = joblib.load(THIS_DIR/'fixture_sample_multi_series.joblib')

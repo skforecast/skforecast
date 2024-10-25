@@ -10,6 +10,7 @@ import inspect
 import warnings
 from copy import deepcopy
 from typing import Any, Callable, Optional, Tuple, Union
+from pathlib import Path
 import joblib
 import numpy as np
 import pandas as pd
@@ -20,12 +21,15 @@ from sklearn.compose import ColumnTransformer
 from sklearn.exceptions import NotFittedError
 import skforecast
 from ..exceptions import warn_skforecast_categories
-from ..exceptions import MissingValuesWarning
-from ..exceptions import MissingExogWarning
-from ..exceptions import DataTypeWarning
-from ..exceptions import IgnoredArgumentWarning
-from ..exceptions import SkforecastVersionWarning
-from ..exceptions import UnknownLevelWarning
+from ..exceptions import (
+    MissingValuesWarning,
+    MissingExogWarning,
+    DataTypeWarning,
+    UnknownLevelWarning,
+    IgnoredArgumentWarning,
+    SaveLoadSkforecastWarning,
+    SkforecastVersionWarning
+)
 
 optional_dependencies = {
     'sarimax': [
@@ -1837,7 +1841,7 @@ def save_forecaster(
 ) -> None:
     """
     Save forecaster model using joblib. If custom functions are used to create
-    predictors or weights, they are saved as .py files.
+    weights, they are saved as .py files.
 
     Parameters
     ----------
@@ -1845,11 +1849,11 @@ def save_forecaster(
         Forecaster created with skforecast library.
     file_name : str
         File name given to the object.
-    save_custom_functions : bool, default `True`
-        If True, save custom functions used in the forecaster (fun_predictors and
-        weight_func) as .py files. Custom functions need to be available in the
-        environment where the forecaster is going to be loaded.
-    verbose : bool, default `True`
+    save_custom_functions : bool, default True
+        If True, save custom functions used in the forecaster (weight_func) as 
+        .py files. Custom functions need to be available in the environment 
+        where the forecaster is going to be loaded.
+    verbose : bool, default True
         Print summary about the forecaster saved.
 
     Returns
@@ -1857,17 +1861,14 @@ def save_forecaster(
     None
 
     """
+    
+    # TODO: Ver con Ximo, esto si no tiene sufijo o no es .joblib lo cambia
+    file_name = Path(file_name).with_suffix('.joblib')
 
     # Save forecaster
     joblib.dump(forecaster, filename=file_name)
 
     if save_custom_functions:
-        # Save custom functions to create predictors
-        if hasattr(forecaster, 'fun_predictors') and forecaster.fun_predictors is not None:
-            file_name = forecaster.fun_predictors.__name__ + '.py'
-            with open(file_name, 'w') as file:
-                file.write(inspect.getsource(forecaster.fun_predictors))
-
         # Save custom functions to create weights
         if hasattr(forecaster, 'weight_func') and forecaster.weight_func is not None:
             if isinstance(forecaster.weight_func, dict):
@@ -1880,11 +1881,25 @@ def save_forecaster(
                 with open(file_name, 'w') as file:
                     file.write(inspect.getsource(forecaster.weight_func))
     else:
-        if ((hasattr(forecaster, 'fun_predictors') and forecaster.fun_predictors is not None)
-          or (hasattr(forecaster, 'weight_func') and forecaster.weight_func is not None)):
+        if hasattr(forecaster, 'weight_func') and forecaster.weight_func is not None:
             warnings.warn(
-                ("Custom functions used to create predictors or weights are not saved. "
-                 "To save them, set `save_custom_functions` to `True`.")
+                "Custom function(s) used to create weights are not saved. To save them, "
+                "set `save_custom_functions` to `True`.",
+                SaveLoadSkforecastWarning
+            )
+
+    # TODO: Include docs link in the warning message
+    if hasattr(forecaster, 'window_features') and forecaster.window_features is not None:
+        skforecast_classes = {'RollingFeatures'}
+        custom_classes = set(forecaster.window_features_class_names) - skforecast_classes
+        if custom_classes:
+            warnings.warn(
+                "The Forecaster includes custom user-defined classes in the "
+                "`window_features` argument. These classes are not saved automatically "
+                "when saving the Forecaster. Please ensure you save these classes "
+                "manually and import them before loading the Forecaster.\n"
+                "    Custom classes: " + ', '.join(custom_classes),
+                SaveLoadSkforecastWarning
             )
 
     if verbose:
@@ -1896,8 +1911,9 @@ def load_forecaster(
     verbose: bool = True
 ) -> object:
     """
-    Load forecaster model using joblib. If the forecaster was saved with custom
-    functions to create predictors or weights, these functions must be available
+    Load forecaster model using joblib. If the forecaster was saved with 
+    custom user-defined classes as as window features or custom
+    functions to create weights, these objects must be available
     in the environment where the forecaster is going to be loaded.
 
     Parameters
@@ -1914,18 +1930,18 @@ def load_forecaster(
     
     """
 
-    forecaster = joblib.load(filename=file_name)
+    forecaster = joblib.load(filename=Path(file_name))
 
     skforecast_v = skforecast.__version__
     forecaster_v = forecaster.skforecast_version
 
     if forecaster_v != skforecast_v:
         warnings.warn(
-            (f"The skforecast version installed in the environment differs "
-             f"from the version used to create the forecaster.\n"
-             f"    Installed Version  : {skforecast_v}\n"
-             f"    Forecaster Version : {forecaster_v}\n"
-             f"This may create incompatibilities when using the library."),
+            f"The skforecast version installed in the environment differs "
+            f"from the version used to create the forecaster.\n"
+            f"    Installed Version  : {skforecast_v}\n"
+            f"    Forecaster Version : {forecaster_v}\n"
+            f"This may create incompatibilities when using the library.",
              SkforecastVersionWarning
         )
 

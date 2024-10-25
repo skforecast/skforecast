@@ -50,7 +50,7 @@ def fetch_dataset(
     datasets = {
         'h2o': {
             'url': (
-                f'https://raw.githubusercontent.com/JoaquinAmatRodrigo/'
+                f'https://raw.githubusercontent.com/skforecast/'
                 f'skforecast-datasets/{version}/data/h2o.csv'
             ),
             'sep': ',',
@@ -69,7 +69,7 @@ def fetch_dataset(
         },
         'h2o_exog': {
             'url': (
-                f"https://raw.githubusercontent.com/JoaquinAmatRodrigo/"
+                f"https://raw.githubusercontent.com/skforecast/"
                 f"skforecast-datasets/{version}/data/h2o_exog.csv"
             ),
             'sep': ',',
@@ -89,7 +89,7 @@ def fetch_dataset(
         },
         'fuel_consumption': {
             'url': (
-                f'https://raw.githubusercontent.com/JoaquinAmatRodrigo/'
+                f'https://raw.githubusercontent.com/skforecast/'
                 f'skforecast-datasets/{version}/data/consumos-combustibles-mensual.csv'
             ),
             'sep': ',',
@@ -108,7 +108,7 @@ def fetch_dataset(
         },
         'items_sales': {
             'url': (
-                f'https://raw.githubusercontent.com/JoaquinAmatRodrigo/'
+                f'https://raw.githubusercontent.com/skforecast/'
                 f'skforecast-datasets/{version}/data/simulated_items_sales.csv'
             ),
             'sep': ',',
@@ -120,7 +120,7 @@ def fetch_dataset(
         },
         'air_quality_valencia': {
             'url': (
-                f"https://raw.githubusercontent.com/JoaquinAmatRodrigo/"
+                f"https://raw.githubusercontent.com/skforecast/"
                 f"skforecast-datasets/{version}/data/air_quality_valencia.csv"
             ),
             'sep': ',',
@@ -139,7 +139,7 @@ def fetch_dataset(
         },
         'website_visits': {
             'url': (
-                f'https://raw.githubusercontent.com/JoaquinAmatRodrigo/'
+                f'https://raw.githubusercontent.com/skforecast/'
                 f'skforecast-datasets/{version}/data/visitas_por_dia_web_cienciadedatos.csv'
             ),
             'sep': ',',
@@ -157,7 +157,7 @@ def fetch_dataset(
         },
         'bike_sharing': {
             'url': (
-                f'https://raw.githubusercontent.com/JoaquinAmatRodrigo/'
+                f'https://raw.githubusercontent.com/skforecast/'
                 f'skforecast-datasets/{version}/data/bike_sharing_dataset_clean.csv'
             ),
             'sep': ',',
@@ -176,7 +176,7 @@ def fetch_dataset(
         },
         'bike_sharing_extended_features': {
             'url': (
-                f'https://raw.githubusercontent.com/JoaquinAmatRodrigo/'
+                f'https://raw.githubusercontent.com/skforecast/'
                 f'skforecast-datasets/{version}/data/bike_sharing_extended_features.csv'
             ),
             'sep': ',',
@@ -200,7 +200,7 @@ def fetch_dataset(
         },
         'australia_tourism': {
             'url': (
-                f'https://raw.githubusercontent.com/JoaquinAmatRodrigo/'
+                f'https://raw.githubusercontent.com/skforecast/'
                 f'skforecast-datasets/{version}/data/australia_tourism.csv'
             ),
             'sep': ',',
@@ -223,7 +223,7 @@ def fetch_dataset(
         },
         'uk_daily_flights': {
             'url': (
-                f'https://raw.githubusercontent.com/JoaquinAmatRodrigo/'
+                f'https://raw.githubusercontent.com/skforecast/'
                 f'skforecast-datasets/{version}/data/uk_daily_flights.csv'
             ),
             'sep': ',',
@@ -243,7 +243,7 @@ def fetch_dataset(
         },
         'wikipedia_visits': {
             'url': (
-                f'https://raw.githubusercontent.com/JoaquinAmatRodrigo/'
+                f'https://raw.githubusercontent.com/skforecast/'
                 f'skforecast-datasets/{version}/data/wikipedia_visits.csv'
             ),
             'sep': ',',
@@ -261,7 +261,7 @@ def fetch_dataset(
         },
         'vic_electricity': {
             'url': (
-                f'https://raw.githubusercontent.com/JoaquinAmatRodrigo/'
+                f'https://raw.githubusercontent.com/skforecast/'
                 f'skforecast-datasets/{version}/data/vic_electricity.csv'
             ),
             'sep': ',',
@@ -278,7 +278,7 @@ def fetch_dataset(
         },
         'store_sales': {
             'url': (
-                f'https://raw.githubusercontent.com/JoaquinAmatRodrigo/'
+                f'https://raw.githubusercontent.com/skforecast/'
                 f'skforecast-datasets/{version}/data/store_sales.csv'
             ),
             'sep': ',',
@@ -297,7 +297,7 @@ def fetch_dataset(
         },
         'bicimad': {
             'url': (
-                f'https://raw.githubusercontent.com/JoaquinAmatRodrigo/'
+                f'https://raw.githubusercontent.com/skforecast/'
                 f'skforecast-datasets/{version}/data/bicimad_users.csv'
             ),
             'sep': ',',
@@ -316,7 +316,7 @@ def fetch_dataset(
         },
         'm4_hourly': {
             'url': (
-                f'https://raw.githubusercontent.com/JoaquinAmatRodrigo/'
+                f'https://raw.githubusercontent.com/skforecast/'
                 f'skforecast-datasets/{version}/data/m4_hourly.parquet'
             ),
             'sep': None,
@@ -340,7 +340,7 @@ def fetch_dataset(
         },
         'm4_daily': {
             'url': (
-                f'https://raw.githubusercontent.com/JoaquinAmatRodrigo/'
+                f'https://raw.githubusercontent.com/skforecast/'
                 f'skforecast-datasets/{version}/data/m4_daily.parquet'
             ),
             'sep': None,
@@ -495,7 +495,7 @@ def load_demo_dataset(version: str = 'latest') -> pd.Series:
     version = 'main' if version == 'latest' else f'{version}'
 
     url = (
-        f'https://raw.githubusercontent.com/JoaquinAmatRodrigo/skforecast-datasets/{version}/'
+        f'https://raw.githubusercontent.com/skforecast/skforecast-datasets/{version}/'
         'data/h2o.csv'
     )
 

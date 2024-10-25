@@ -155,8 +155,8 @@ class ForecasterSarimax():
         if fit_kwargs:
             warnings.warn(
                 ("When using the skforecast Sarimax model, the fit kwargs should "
-                    "be passed using the model parameter `sm_fit_kwargs`."),
-                    IgnoredArgumentWarning
+                 "be passed using the model parameter `sm_fit_kwargs`."),
+                 IgnoredArgumentWarning
             )
         self.fit_kwargs = {}
 
@@ -168,8 +168,11 @@ class ForecasterSarimax():
         Information displayed when a ForecasterSarimax object is printed.
         """
 
-        params = self.params
-        params = "\n    " + textwrap.fill(str(params), width=80, subsequent_indent="    ")
+        params = str(self.params)
+        if len(params) > 58:
+            params = "\n    " + textwrap.fill(
+                params, width=80, subsequent_indent="    "
+            )
 
         exog_names_in_ = None
         if self.exog_names_in_ is not None:
@@ -187,7 +190,6 @@ class ForecasterSarimax():
             f"{type(self).__name__} \n"
             f"{'=' * len(type(self).__name__)} \n"
             f"Regressor: {self.regressor} \n"
-            f"Window size: {self.window_size} \n"
             f"Exogenous included: {self.exog_in_} \n"
             f"Exogenous names: {exog_names_in_} \n"
             f"Transformer for y: {self.transformer_y} \n"

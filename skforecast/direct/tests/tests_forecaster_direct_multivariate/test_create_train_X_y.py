@@ -14,7 +14,7 @@ from skforecast.preprocessing import RollingFeatures
 from skforecast.direct import ForecasterDirectMultiVariate
 
 # Fixtures
-from .fixtures_ForecasterAutoregMultiVariate import data  # to test results when using differentiation
+from .fixtures_forecaster_direct_multivariate import data  # to test results when using differentiation
 
 
 def test_create_train_X_y_TypeError_when_series_not_DataFrame():

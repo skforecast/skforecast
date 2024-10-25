@@ -100,8 +100,9 @@ def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_and_n
     Test residuals stored when new residuals length is less than 10_000 and append
     is False.
     """
-    y_true = pd.Series(np.random.normal(loc=10, scale=10, size=1000))
-    y_pred = pd.Series(np.random.normal(loc=10, scale=10, size=1000))
+    rng = np.random.default_rng(12345)
+    y_true = pd.Series(rng.normal(loc=10, scale=10, size=1000))
+    y_pred = pd.Series(rng.normal(loc=10, scale=10, size=1000))
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
     forecaster.fit(y_true)
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
@@ -117,8 +118,9 @@ def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_and_a
     Test residuals stored when new residuals length is less than 10_000 and append
     is True.
     """
-    y_true = pd.Series(np.random.normal(loc=10, scale=10, size=1000))
-    y_pred = pd.Series(np.random.normal(loc=10, scale=10, size=1000))
+    rng = np.random.default_rng(12345)
+    y_true = pd.Series(rng.normal(loc=10, scale=10, size=1000))
+    y_pred = pd.Series(rng.normal(loc=10, scale=10, size=1000))
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
     forecaster.fit(y_true)
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
