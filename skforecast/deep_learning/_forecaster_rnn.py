@@ -739,7 +739,7 @@ class ForecasterRnn(ForecasterBase):
         #         predictions, (predictions.shape[1], predictions.shape[2])
         #     )
         # TODO: Broken after expand_index modifications. int(max(steps))??
-        idx, _ = expand_index(index=last_window_index, steps=max(steps))
+        idx= expand_index(index=last_window_index, steps=max(steps))
 
         predictions = pd.DataFrame(
             data=predictions_reshaped[np.array(steps) - 1],
