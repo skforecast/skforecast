@@ -231,7 +231,7 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_
         lags=3
     )
     forecaster.fit(y=y, exog=exog)
-    forecaster.in_sample_residuals = {2: pd.Series([5, 5, 5, 5, 5, 5, 5])}
+    forecaster.in_sample_residuals_ = {2: pd.Series([5, 5, 5, 5, 5, 5, 5])}
     results = forecaster.predict_bootstrapping(
         steps=[2], exog=exog_predict, n_boot=4, use_in_sample_residuals=True
     )
