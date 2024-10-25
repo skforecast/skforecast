@@ -1743,7 +1743,7 @@ class ForecasterAutoregMultiSeries(ForecasterBase):
                                    last_window   = last_window,
                                    return_values = False
                                )
-        prediction_index = expand_index(
+        prediction_index, _ = expand_index(
                                index = last_window_index,
                                steps = steps
                            )
