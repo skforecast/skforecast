@@ -22,7 +22,7 @@ def test_recursive_predict_output_when_regressor_is_LinearRegression():
     forecaster = ForecasterAutoreg(LinearRegression(), lags=3)
     forecaster.fit(y=pd.Series(np.arange(50)))
 
-    last_window_values, exog_values, _ = (
+    last_window_values, exog_values, _, _ = (
         forecaster._create_predict_inputs(steps=5)
     )
     predictions = forecaster._recursive_predict(
@@ -48,7 +48,7 @@ def test_recursive_predict_output_when_regressor_is_Ridge_StandardScaler():
                  )
     forecaster.fit(y=pd.Series(np.arange(50), name='y'))
 
-    last_window_values, exog_values, _ = (
+    last_window_values, exog_values, _, _ = (
         forecaster._create_predict_inputs(steps=5)
     )
     predictions = forecaster._recursive_predict(
@@ -72,7 +72,7 @@ def test_recursive_predict_output_with_window_features():
     )
     forecaster.fit(y=y, exog=exog)
 
-    last_window_values, exog_values, _ = (
+    last_window_values, exog_values, _, _ = (
         forecaster._create_predict_inputs(steps=10, exog=exog_predict)
     )
     predictions = forecaster._recursive_predict(
@@ -100,7 +100,7 @@ def test_recursive_predict_output_with_two_window_features():
     )
     forecaster.fit(y=y, exog=exog)
 
-    last_window_values, exog_values, _ = (
+    last_window_values, exog_values, _, _ = (
         forecaster._create_predict_inputs(steps=10, exog=exog_predict)
     )
     predictions = forecaster._recursive_predict(
@@ -124,7 +124,7 @@ def test_recursive_predict_output_with_residuals_zero():
     forecaster = ForecasterAutoreg(LinearRegression(), lags=3)
     forecaster.fit(y=pd.Series(np.arange(50)))
 
-    last_window_values, exog_values, _ = (
+    last_window_values, exog_values, _, _ = (
         forecaster._create_predict_inputs(steps=5)
     )
     residuals = np.array([[0], [0], [0], [0], [0]])
@@ -149,7 +149,7 @@ def test_recursive_predict_output_with_residuals_last_step():
     forecaster = ForecasterAutoreg(LinearRegression(), lags=3)
     forecaster.fit(y=pd.Series(np.arange(50)))
 
-    last_window_values, exog_values, _ = (
+    last_window_values, exog_values, _, _ = (
         forecaster._create_predict_inputs(steps=5)
     )
     residuals = np.array([[0], [0], [0], [0], [100]])
@@ -173,7 +173,7 @@ def test_recursive_predict_output_with_residuals():
     forecaster = ForecasterAutoreg(LinearRegression(), lags=3)
     forecaster.fit(y=pd.Series(np.arange(50)))
 
-    last_window_values, exog_values, _ = (
+    last_window_values, exog_values, _, _ = (
         forecaster._create_predict_inputs(steps=5)
     )
     residuals = np.array([[10], [20], [30], [40], [50]])
@@ -198,7 +198,7 @@ def test_recursive_predict_output_with_binned_residuals():
     steps = 10
     forecaster = ForecasterAutoreg(LGBMRegressor(verbose=-1), lags=3)
     forecaster.fit(y=y, exog=exog)
-    last_window_values, exog_values, _ = (
+    last_window_values, exog_values, _, _ = (
         forecaster._create_predict_inputs(steps=steps, exog=exog_predict)
     )
 
