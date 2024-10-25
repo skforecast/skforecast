@@ -1316,7 +1316,7 @@ class ForecasterAutoreg(ForecasterBase):
         """
 
         last_window_values, exog_values, prediction_index, steps = self._create_predict_inputs(
-            steps=steps, last_window=last_window, exog=exog
+            steps=steps, last_window=last_window, exog=exog)
         
         predictions = self._recursive_predict(
                           steps              = steps,
