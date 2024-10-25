@@ -342,13 +342,13 @@ class ForecasterEquivalentDate():
             
             predictions = pd.Series(
                               data  = predictions,
-                              index = expand_index(index=last_window_index, steps=steps),
+                              index = expand_index(index=last_window_index, steps=steps)[0],
                               name  = 'pred'
                           )
 
         if isinstance(self.offset, pd.tseries.offsets.DateOffset):
 
-            predictions_index = expand_index(index=last_window_index, steps=steps)
+            predictions_index, _ = expand_index(index=last_window_index, steps=steps)
             max_allowed_date = last_window_index[-1]
 
             # For every date in predictions_index, calculate the n offsets
