@@ -18,7 +18,7 @@ This release has undergone a major refactoring to improve the performance of the
 
 + <span class="badge text-bg-feature">Feature</span> Window features can be added to the training matrix using the `window_features` argument in all forecasters. You can use the <code>[RollingFeatures]</code> class to create these features or create your own object.
 
-+ <span class="badge text-bg-feature">Feature</span> <code>[model_selection]</code> functions now have a new argument `cv`. This argument expect an object of type <code>[TimeSeriesFold]</code> or <code>[OneStepAheadFold]</code> which allows to define the validation strategy using the arguments `initial_train_size`, `steps`, `gap`, refit`, `fixed_train_size`, `skip_folds` and `allow_incomplete_folds`.
++ <span class="badge text-bg-feature">Feature</span> <code>[model_selection]</code> functions now have a new argument `cv`. This argument expect an object of type <code>[TimeSeriesFold]</code> or <code>[OneStepAheadFold]</code> which allows to define the validation strategy using the arguments `initial_train_size`, `steps`, `gap`, `refit`, `fixed_train_size`, `skip_folds` and `allow_incomplete_folds`.
 
 + <span class="badge text-bg-feature">Feature</span> Hyperparameter search now allows to follow a one-step-ahead validation strategy using a <code>[OneStepAheadFold]</code> as `cv` argument in the <code>[model_selection]</code> functions.
 
@@ -80,7 +80,7 @@ This release has undergone a major refactoring to improve the performance of the
 
 + Functions from `model_selection_multiseries` and `model_selection_sarimax` modules have been moved to the <code>[model_selection]</code> module.
 
-+ <code>[model_selection]</code> functions now have a new argument `cv`. This argument expect an object of type <code>[TimeSeriesFold]</code> or <code>[OneStepAheadFold]</code> which allows to define the validation strategy using the arguments `initial_train_size`, `steps`, `gap`, refit`, `fixed_train_size`, `skip_folds` and `allow_incomplete_folds`.
++ <code>[model_selection]</code> functions now have a new argument `cv`. This argument expect an object of type <code>[TimeSeriesFold]</code> or <code>[OneStepAheadFold]</code> which allows to define the validation strategy using the arguments `initial_train_size`, `steps`, `gap`, `refit`, `fixed_train_size`, `skip_folds` and `allow_incomplete_folds`.
 
 + Added <code>[feature_selection]</code> module. The functions <code>[select_features]</code> and <code>[select_features_multiseries]</code> have been moved to this module.
 

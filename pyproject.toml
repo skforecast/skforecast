@@ -86,6 +86,7 @@ docs = [
     "mkdocstrings-python==1.11.1",
     "notebook==6.4.12",
     "jupyter-contrib-nbextensions==0.7.0",
+    "black==24.10.0
     # Si está el enlace de abajo, al hacer pip install .[docs] falla
     #"https://github.com/ipython-contrib/jupyter_contrib_nbextensions/tarball/master"
 ]

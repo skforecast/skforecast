@@ -1135,7 +1135,7 @@ class QuantileBinner:
         The random seed to use for generating a random subset of the data.
     dtype : data type, default=numpy.float64
         The data type to use for the bin indices. Default is `numpy.float64`.
-     n_bins_ : int
+    n_bins_ : int
         The number of bins learned during fitting.
     bin_edges_ : numpy ndarray
         The edges of the bins learned during fitting.

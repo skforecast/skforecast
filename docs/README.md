@@ -1,9 +1,11 @@
 <script src="https://kit.fontawesome.com/d20edc211b.js" crossorigin="anonymous"></script>
 
-<img src="img/banner-landing-page-skforecast.png#only-light" align="left"  style="margin-bottom: 30px; margin-top: 0px;">
+<div style="margin-bottom: 20px;">
+    <img src="img/banner-landing-page-skforecast.png#only-light" align="left" style="margin-bottom: 30px; margin-top: 0px;">
+    <img src="img/banner-landing-page-dark-mode-skforecast-no-background.png#only-dark" align="left" style="margin-bottom: 30px; margin-top: 0px;">
+</div>
 
-<img src="img/banner-landing-page-dark-mode-skforecast-no-background.png#only-dark" align="left" style="margin-bottom: 30px; margin-top: 0px;">
-
+<div style="clear: both;"></div>
 
 ![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)
 [![PyPI](https://img.shields.io/pypi/v/skforecast)](https://pypi.org/project/skforecast/)
@@ -65,19 +67,19 @@ A **Forecaster** object in the skforecast library is a comprehensive container t
 
 The **skforecast** library offers a variety of forecaster types, each tailored to specific requirements such as single or multiple time series, direct or recursive strategies, or custom predictors. Regardless of the specific forecaster type, all instances share the same API.
 
-| Forecaster                   | Single series | Multiple series | Recursive strategy | Direct strategy | Probabilistic prediction | Time series differentiation | Exogenous features | Custom features |
+| Forecaster                   | Single series | Multiple series | Recursive strategy | Direct strategy | Probabilistic prediction | Time series differentiation | Exogenous features | Window features |
 |:-----------------------------|:-------------:|:---------------:|:------------------:|:---------------:|:------------------------:|:---------------------------:|:------------------:|:---------------:|
-|[ForecasterRecursive]           |✔️||✔️||✔️|✔️|✔️||
-|[ForecasterDirect]     |✔️|||✔️|✔️||✔️||
-|[ForecasterRecursiveMultiSeries]       ||✔️|✔️||✔️|✔️|✔️||
-|[ForecasterDirectMultiVariate]      ||✔️||✔️|✔️||✔️||
+|[ForecasterRecursive]           |✔️||✔️||✔️|✔️|✔️|✔️|
+|[ForecasterDirect]     |✔️|||✔️|✔️||✔️|✔️|
+|[ForecasterRecursiveMultiSeries]       ||✔️|✔️||✔️|✔️|✔️|✔️|
+|[ForecasterDirectMultiVariate]      ||✔️||✔️|✔️||✔️|✔️|
 |[ForecasterRNN]               ||✔️||✔️|||||
 |[ForecasterSarimax]           |✔️||✔️||✔️|✔️|✔️||
 
 [ForecasterRecursive]: https://skforecast.org/latest/user_guides/autoregresive-forecaster.html
 [ForecasterDirect]: https://skforecast.org/latest/user_guides/direct-multi-step-forecasting.html
 [ForecasterRecursiveMultiSeries]: https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting.html
-[ForecasterMuForecasterDirectMultiVariateltiVariate]: https://skforecast.org/latest/user_guides/dependent-multi-series-multivariate-forecasting.html
+[ForecasterDirectMultiVariate]: https://skforecast.org/latest/user_guides/dependent-multi-series-multivariate-forecasting.html
 [ForecasterRNN]: https://skforecast.org/latest/user_guides/forecasting-with-deep-learning-rnn-lstm
 [ForecasterSarimax]: https://skforecast.org/latest/user_guides/forecasting-sarimax-arima.html
 

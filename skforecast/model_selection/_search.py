@@ -1596,17 +1596,6 @@ def bayesian_search_forecaster_multiseries(
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
         (Optional) that returns a float.
         - If `list`: List containing multiple strings and/or Callables.
-    method : str, default `'backtesting'`
-        Method used to evaluate the model.
-
-        - 'backtesting': the model is evaluated using backtesting process in which
-        the model predicts `steps` ahead in each iteration.
-        - 'one_step_ahead': the model is evaluated using only one step ahead predictions.
-        This is faster than backtesting but the results may not reflect the actual
-        performance of the model when predicting multiple steps ahead. Arguments `steps`,
-        `fixed_train_size`, `gap`, `skip_folds`, `allow_incomplete_fold` and `refit` are 
-        ignored when `method` is 'one_step_ahead'.
-        **New in version 0.14.0**
     aggregate_metric : str, list, default `['weighted_average', 'average', 'pooling']`
         Aggregation method/s used to combine the metric/s of all levels (series)
         when multiple levels are predicted. If list, the first aggregation method
