@@ -112,6 +112,7 @@ def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_and_n
     np.testing.assert_almost_equal(results, expected)
 
 
+# TODO: Review this test error
 def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_and_append():
     """
     Test residuals stored when new residuals length is less than 10_000 and append
