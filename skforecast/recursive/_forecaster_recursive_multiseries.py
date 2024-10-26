@@ -2770,29 +2770,37 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
     def set_out_sample_residuals(
         self, 
-        residuals: dict,
+        y_true: dict,
+        y_pred: dict,
         append: bool = True,
-        transform: bool = True,
         random_state: int = 123
     ) -> None:
         """
         Set new values to the attribute `out_sample_residuals_`. Out of sample
         residuals are meant to be calculated using observations that did not
-        participate in the training process.
+        participate in the training process. `y_true` and `y_pred` are expected
+        to be in the original scale of the time series. Residuals are calculated
+        as `y_true` - `y_pred`, after applying the necessary transformations and
+        differentiations if the forecaster includes them (`self.transformer_series`
+        and `self.differentiation`).
+
+        A total of 10000 residuals are stored in the attribute `out_sample_residuals_`.
+        If the number of residuals is greater than 10000, a random sample of 10000
+        residuals is stored.
         
         Parameters
         ----------
-        residuals : dict
-            Dictionary of numpy ndarrays with the residuals of each level in the
-            form {level: residuals}. If len(residuals) > 1000, only a random 
-            sample of 1000 values are stored. Keys must be the same as `levels`.
-        append : bool, default `True`
+        y_true : dict
+            Dictionary of numpy ndarrays or pandas series with the true values of
+            the time series for each series in the form {series: y_true}.
+        y_pred : dict
+            Dictionary of numpy ndarrays or pandas series with the predicted values
+            of the time series for each series in the form {series: y_pred}.
+        append : bool, default `False`
             If `True`, new residuals are added to the once already stored in the
-            attribute `out_sample_residuals_`. Once the limit of 1000 values is
-            reached, no more values are appended. If False, `out_sample_residuals_`
-            is overwritten with the new residuals.
-        transform : bool, default `True`
-            If `True`, new residuals are transformed using self.transformer_series.
+            attribute `out_sample_residuals_`. If after appending the new residuals,
+            the limit of 10000 samples is exceeded, a random sample of 10000 is
+            kept.
         random_state : int, default `123`
             Sets a seed to the random sampling for reproducible output.
         
@@ -2802,115 +2810,118 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         """
 
-        if not isinstance(residuals, dict) or not all(
-            isinstance(x, np.ndarray) for x in residuals.values()
-        ):
-            raise TypeError(
-                (f"`residuals` argument must be a dict of numpy ndarrays in the form "
-                 "`{level: residuals}`. "
-                 f"Got {type(residuals)}.")
-            )
-
         if not self.is_fitted:
             raise NotFittedError(
-                ("This forecaster is not fitted yet. Call `fit` with appropriate "
-                 "arguments before using `set_out_sample_residuals()`.")
+                "This forecaster is not fitted yet. Call `fit` with appropriate "
+                "arguments before using `set_out_sample_residuals()`."
+            )
+
+        if not isinstance(y_true, dict):
+            raise TypeError(
+                f"`y_true` must be a dictionary of numpy ndarrays or pandas series. "
+                f"Got {type(y_true)}."
+            )
+
+        if not isinstance(y_pred, dict):
+            raise TypeError(
+                f"`y_pred` must be a dictionary of numpy ndarrays or pandas series. "
+                f"Got {type(y_pred)}."
             )
         
-        if self.encoding is None:
+        if not set(y_true.keys()) == set(y_pred.keys()):
+            raise ValueError(
+                f"`y_true` and `y_pred` must have the same keys. "
+                f"Got {set(y_true.keys())} and {set(y_pred.keys())}."
+            )
+        
+        for k in y_true.keys():
+            if not isinstance(y_true[k], (np.ndarray, pd.Series)):
+                raise TypeError(
+                    f"Values of `y_true` must be numpy ndarrays or pandas series. "
+                    f"Got {type(y_true[k])}."
+                )
+            if not isinstance(y_pred[k], (np.ndarray, pd.Series)):
+                raise TypeError(
+                    f"Values of `y_pred` must be numpy ndarrays or pandas series. "
+                    f"Got {type(y_pred[k])}."
+                )
+            if len(y_true[k]) != len(y_pred[k]):
+                raise ValueError(
+                    f"{k} must have the same length in `y_true` and `y_pred`. "
+                    f"Got {len(y_true[k])} and {len(y_pred[k])}."
+                )
+            if isinstance(y_true[k], pd.Series) and isinstance(y_pred[k], pd.Series):
+                if not y_true[k].index.equals(y_pred[k].index):
+                    raise ValueError(
+                       "When containing pandas series, elements in `y_true` and "
+                        "must have the same index."
+                    )
+
+        levels = self.series_names_in_ + ['_unknown_level']
+        if self.out_sample_residuals_ is None and self.encoding is not None:
+            self.out_sample_residuals_ = {level: None for level in levels}
+        elif self.out_sample_residuals_ is None:
             self.out_sample_residuals_ = {'_unknown_level': None}
+    
+        series_to_update = set(y_pred.keys()).intersection(set(levels))
+        if not series_to_update:
+            warnings.warn(
+                "Provided keys in `y_pred` and `y_true` do not match any series seen "
+                "in `fit`. Residuals are not updated."
+            )
+            return
+        
+        residuals = {}
+        rng = np.random.default_rng(seed=random_state)
+        y_true = y_true.copy()
+        y_pred = y_pred.copy()
+        if self.differentiation is not None:
+            differentiator = copy(self.differentiator)
+        for k in series_to_update:
+            if isinstance(y_true[k], pd.Series):
+                y_true[k] = y_true[k].to_numpy()
+            if isinstance(y_pred[k], pd.Series):
+                y_pred[k] = y_pred[k].to_numpy()
+            if self.transformer_series:
+                y_true[k] = transform_numpy(
+                                array             = y_true[k],
+                                transformer       = self.transformer_series_[k],
+                                fit               = False,
+                                inverse_transform = False
+                            )
+                y_pred[k] = transform_numpy(
+                                array             = y_pred[k],
+                                transformer       = self.transformer_series_[k],
+                                fit               = False,
+                                inverse_transform = False
+                            )
+            if self.differentiation is not None:
+                y_true[k] = differentiator.fit_transform(y_true[k])[self.differentiation:]
+                y_pred[k] = differentiator.fit_transform(y_pred[k])[self.differentiation:]
+
+            residuals[k] = y_true[k] - y_pred[k]
+
+        if '_unknown_level' not in residuals:
+            residuals['_unknown_level'] = np.concatenate(list(residuals.values()))
+
+        if self.encoding is None:
             if list(residuals.keys()) != ['_unknown_level']:
                 warnings.warn(
                     ("As `encoding` is set to `None`, no distinction between levels "
                      "is made. All residuals are stored in the '_unknown_level' key."),
                      UnknownLevelWarning
                 )
-                residuals = [v for v in residuals.values() if v is not None]
-                if residuals:
-                    residuals = np.concatenate(residuals)
-                residuals = {'_unknown_level': residuals}
-              
-        else:
-            if self.out_sample_residuals_ is None:
-                self.out_sample_residuals_ = {level: None for level in self.series_names_in_}
+            residuals = {'_unknown_level': residuals['_unknown_level']}
 
-            if not set(self.out_sample_residuals_.keys()).issubset(set(residuals.keys())):
-                warnings.warn(
-                    f"Only residuals of levels " 
-                    f"{set(self.out_sample_residuals_.keys()).intersection(set(residuals.keys()))} "
-                    f"are updated.", IgnoredArgumentWarning
-                )
-            residuals = {
-                k: v 
-                for k, v in residuals.items() 
-                if k in self.out_sample_residuals_.keys() and k != '_unknown_level'
-            }
-
-        for level, value in residuals.items():
-
-            residuals_level = value
-            transformer_level = self.transformer_series_[level]
-            level_str = f"level '{level}'" if self.encoding is not None else 'all levels'
-
-            if not transform and transformer_level is not None:
-                warnings.warn(
-                    (f"Argument `transform` is set to `False` but forecaster was "
-                     f"trained using a transformer {transformer_level} "
-                     f"for {level_str}. Ensure that the new residuals are "
-                     f"already transformed or set `transform=True`.")
-                )
-
-            if transform and self.transformer_series_ and transformer_level:
-                warnings.warn(
-                    (f"Residuals will be transformed using the same transformer used "
-                     f"when training the forecaster for {level_str} : "
-                     f"({transformer_level}). Ensure that the new "
-                     f"residuals are on the same scale as the original time series.")
-                )
-                residuals_level = transform_numpy(
-                    array             = residuals_level,
-                    transformer       = transformer_level,
-                    fit               = False,
-                    inverse_transform = False
-                )
-
-            if len(residuals_level) > 1000:
-                rng = np.random.default_rng(seed=random_state)
-                residuals_level = rng.choice(a=residuals_level, size=1000, replace=False)
-
-            if append and self.out_sample_residuals_[level] is not None:
-                free_space = max(0, 1000 - len(self.out_sample_residuals_[level]))
-                if len(residuals_level) < free_space:
-                    residuals_level = np.hstack((
-                                          self.out_sample_residuals_[level],
-                                          residuals_level
-                                      ))
-                else:
-                    residuals_level = np.hstack((
-                                          self.out_sample_residuals_[level],
-                                          residuals_level[:free_space]
-                                      ))
-
-            self.out_sample_residuals_[level] = residuals_level
-
-        if self.encoding is not None:
-            residuals_unknown_level = [
-                v for k, v in self.out_sample_residuals_.items() 
-                if v is not None and k != '_unknown_level'
-            ]
-            if residuals_unknown_level:
-                residuals_unknown_level = np.concatenate(residuals_unknown_level)
-                if len(residuals_unknown_level) > 1000:
-                    rng = np.random.default_rng(seed=random_state)
-                    residuals_unknown_level = rng.choice(
-                                                  a       = residuals_unknown_level,
-                                                  size    = 1000,
-                                                  replace = False
-                                              )
-            else:
-                residuals_unknown_level = None
-            
-            self.out_sample_residuals_['_unknown_level'] = residuals_unknown_level
+        for key, value in residuals.items():
+            if append and self.out_sample_residuals_[key] is not None:
+                value = np.concatenate((
+                            self.out_sample_residuals_[key],
+                            value
+                        ))
+            if len(value) > 10000:
+                value = rng.choice(value, size=10000, replace=False)
+            self.out_sample_residuals_[key] = value
 
 
     def get_feature_importances(
