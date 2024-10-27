@@ -91,10 +91,11 @@ For more installation options, including dependencies and additional features, c
 
 # What is new in skforecast 0.14?
 
-Visit the [release notes](https://github.com/skforecast/skforecast/blob/master/changelog.md) to view all notable changes.
+All significant changes to this project are documented in the release file.
 
-- [ ] ...
-- [x] Bug fixes and performance improvements.
+- For updates to the **latest stable version**, see the [release notes](https://skforecast.org/latest/releases/releases.html).
+
+- For updates on the **version in development** (unstable), see the [release notes](https://skforecast.org/dev/releases/releases.html).
 
 
 # Forecasters
@@ -192,64 +193,3 @@ If you found skforecast useful, you can support us with a donation. Your contrib
 
 <!-- Links to API Reference -->
 <!-- Forecasters -->
-<!-- [ForecasterAutoreg]: https://skforecast.org/latest/api/forecasterautoreg
-[ForecasterAutoregDirect]: https://skforecast.org/latest/api/forecasterautoregdirect
-[ForecasterRNN]: https://skforecast.org/latest/api/forecasterrnn
-[ForecasterSarimax]: https://skforecast.org/latest/api/forecastersarimax
-[Sarimax]: https://skforecast.org/latest/api/sarimax
-[ForecasterEquivalentDate]: https://skforecast.org/latest/api/forecasterbaseline#skforecast.ForecasterBaseline.ForecasterEquivalentDate -->
-[ForecasterAutoregMultiSeries]: https://skforecast.org/latest/api/forecastermultiseries
-[ForecasterAutoregMultiSeriesCustom]: https://skforecast.org/latest/api/forecastermultiseriescustom
-[ForecasterAutoregMultiVariate]: https://skforecast.org/latest/api/forecastermultivariate
-
-<!-- metrics -->
-[metrics]: https://skforecast.org/latest/api/metrics
-[add_y_train_argument]: https://skforecast.org/latest/api/metrics#skforecast.metrics.metrics.add_y_train_argument
-[mean_absolute_scaled_error]: https://skforecast.org/latest/api/metrics#skforecast.metrics.metrics.mean_absolute_scaled_error
-[root_mean_squared_scaled_error]: https://skforecast.org/latest/api/metrics#skforecast.metrics.metrics.root_mean_squared_scaled_error
-
-<!-- model_selection -->
-[model_selection]: https://skforecast.org/latest/api/model_selection
-[backtesting_forecaster]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection.model_selection.backtesting_forecaster
-[grid_search_forecaster]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection.model_selection.grid_search_forecaster
-[random_search_forecaster]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection.model_selection.random_search_forecaster
-[bayesian_search_forecaster]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection.model_selection.bayesian_search_forecaster
-[select_features]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection.model_selection.select_features
-
-<!-- model_selection_multiseries -->
-[model_selection_multiseries]: https://skforecast.org/latest/api/model_selection_multiseries
-[backtesting_forecaster_multiseries]: https://skforecast.org/latest/api/model_selection_multiseries#skforecast.model_selection_multiseries.model_selection_multiseries.backtesting_forecaster_multiseries
-[grid_search_forecaster_multiseries]: https://skforecast.org/latest/api/model_selection_multiseries#skforecast.model_selection_multiseries.model_selection_multiseries.grid_search_forecaster_multiseries
-[random_search_forecaster_multiseries]: https://skforecast.org/latest/api/model_selection_multiseries#skforecast.model_selection_multiseries.model_selection_multiseries.random_search_forecaster_multiseries
-[bayesian_search_forecaster_multiseries]: https://skforecast.org/latest/api/model_selection_multiseries#skforecast.model_selection_multiseries.model_selection_multiseries.bayesian_search_forecaster_multiseries
-[select_features_multiseries]: https://skforecast.org/latest/api/model_selection_multiseries#skforecast.model_selection_multiseries.model_selection_multiseries.select_features_multiseries
-
-<!-- model_selection_sarimax -->
-[model_selection_sarimax]: https://skforecast.org/latest/api/model_selection_sarimax
-[backtesting_sarimax]: https://skforecast.org/latest/api/model_selection_sarimax#skforecast.model_selection_sarimax.model_selection_sarimax.backtesting_sarimax
-[grid_search_sarimax]: https://skforecast.org/latest/api/model_selection_sarimax#skforecast.model_selection_sarimax.model_selection_sarimax.grid_search_sarimax
-[random_search_sarimax]: https://skforecast.org/latest/api/model_selection_sarimax#skforecast.model_selection_sarimax.model_selection_sarimax.random_search_sarimax
-
-<!-- preprocessing -->
-[preprocessing]: https://skforecast.org/latest/api/preprocessing
-[TimeSeriesDifferentiator]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.TimeSeriesDifferentiator
-[series_long_to_dict]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.series_long_to_dict
-[exog_long_to_dict]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.exog_long_to_dict
-[DateTimeFeatureTransformer]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.DateTimeFeatureTransformer
-[create_datetime_features]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.create_datetime_features
-
-<!-- plot -->
-[plot]: https://skforecast.org/latest/api/plot
-[set_dark_theme]: https://skforecast.org/latest/api/plot#skforecast.plot.plot.set_dark_theme
-[plot_residuals]: https://skforecast.org/latest/api/plot#skforecast.plot.plot.plot_residuals
-[plot_multivariate_time_series_corr]: https://skforecast.org/latest/api/plot#skforecast.plot.plot.plot_multivariate_time_series_corr
-[plot_prediction_distribution]: https://skforecast.org/latest/api/plot#skforecast.plot.plot.plot_prediction_distribution
-[plot_prediction_intervals]: https://skforecast.org/latest/api/plot#skforecast.plot.plot.plot_prediction_intervals
-
-<!-- datasets -->
-[datasets]: https://skforecast.org/latest/api/datasets
-[fetch_dataset]: https://skforecast.org/latest/api/datasets#skforecast.datasets.fetch_dataset
-[load_demo_dataset]: https://skforecast.org/latest/api/datasets#skforecast.datasets.load_demo_dataset
-
-<!-- utils -->
-[utils]: https://skforecast.org/latest/api/utils
