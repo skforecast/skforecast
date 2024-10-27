@@ -14,6 +14,7 @@ from skforecast.recursive import ForecasterRecursiveMultiSeries
 from skforecast.direct import ForecasterDirectMultiVariate
 from skforecast.model_selection import bayesian_search_forecaster_multiseries
 from skforecast.model_selection._split import TimeSeriesFold, OneStepAheadFold
+from skforecast.preprocessing import RollingFeatures
 from sklearn.metrics import mean_absolute_percentage_error
 from skforecast.metrics import mean_absolute_scaled_error
 
@@ -145,6 +146,117 @@ def test_results_output_bayesian_search_forecaster_multiseries_ForecasterAutoreg
     ).astype({
         'mean_absolute_error__weighted_average': float, 
         'alpha': float
+    })
+
+    pd.testing.assert_frame_equal(results, expected_results)
+
+
+def test_results_output_bayesian_search_forecaster_multiseries_ForecasterAutoregMultiSeries_with_window_features():
+    """
+    Test output of bayesian_search_forecaster_multiseries in 
+    ForecasterRecursiveMultiSeries with mocked (mocked done in Skforecast v0.12.0).
+    """
+    window_features = RollingFeatures(
+        stats=['mean', 'std', 'min', 'max', 'sum', 'median', 'ratio_min_max', 'coef_variation'],
+        window_sizes=3,
+    )
+
+    forecaster = ForecasterRecursiveMultiSeries(
+                     regressor = Ridge(random_state=123),
+                     lags      = 2,
+                     window_features = window_features,
+                     encoding  = 'onehot',
+                     transformer_series = StandardScaler()
+                 )
+    cv = TimeSeriesFold(
+            initial_train_size = len(series[:-12]),
+            steps              = 3,
+            refit              = False,
+            fixed_train_size   = True
+    )
+
+    def search_space(trial):
+        search_space  = {
+            'alpha': trial.suggest_float('alpha', 1e-2, 1.0),
+            'lags': trial.suggest_categorical('lags', [2, 4])
+        }
+
+        return search_space
+
+    results = bayesian_search_forecaster_multiseries(
+                  forecaster         = forecaster,
+                  series             = series,
+                  cv                 = cv,
+                  search_space       = search_space,
+                  metric             = 'mean_absolute_error',
+                  aggregate_metric   = 'weighted_average',
+                  n_trials           = 10,
+                  random_state       = 123,
+                  return_best        = False,
+                  verbose            = False,
+              )[0]
+    
+    expected_results = pd.DataFrame({
+        'levels': [
+            ['l1', 'l2'],
+            ['l1', 'l2'],
+            ['l1', 'l2'],
+            ['l1', 'l2'],
+            ['l1', 'l2'],
+            ['l1', 'l2'],
+            ['l1', 'l2'],
+            ['l1', 'l2'],
+            ['l1', 'l2'],
+            ['l1', 'l2'],
+        ],
+        'lags': [
+            np.array([1, 2]),
+            np.array([1, 2, 3, 4]),
+            np.array([1, 2]),
+            np.array([1, 2]),
+            np.array([1, 2]),
+            np.array([1, 2, 3, 4]),
+            np.array([1, 2]),
+            np.array([1, 2, 3, 4]),
+            np.array([1, 2, 3, 4]),
+            np.array([1, 2, 3, 4]),
+        ],
+        'params': [
+            {'alpha': 0.5558016213920624},
+            {'alpha': 0.23598059857016607},
+            {'alpha': 0.6995044937418831},
+            {'alpha': 0.7406154516747153},
+            {'alpha': 0.8509374761370117},
+            {'alpha': 0.7252189487445193},
+            {'alpha': 0.9809565564007693},
+            {'alpha': 0.53623586010342},
+            {'alpha': 0.4441865222328282},
+            {'alpha': 0.398196343012209},
+        ],
+        'mean_absolute_error__weighted_average': [
+            0.261692844251679,
+            0.2643237951473078,
+            0.26861473009966413,
+            0.27087715575521204,
+            0.2777007069915752,
+            0.27967030912996776,
+            0.2874984215783917,
+            0.2988729113427532,
+            0.345749311164626,
+            0.5104999292169147,
+        ],
+        'alpha': [
+            0.5558016213920624,
+            0.23598059857016607,
+            0.6995044937418831,
+            0.7406154516747153,
+            0.8509374761370117,
+            0.7252189487445193,
+            0.9809565564007693,
+            0.53623586010342,
+            0.4441865222328282,
+            0.398196343012209,
+        ],
     })
 
     pd.testing.assert_frame_equal(results, expected_results)
