@@ -605,7 +605,10 @@ def _np_mean_jit(x):
 def _np_std_jit(x, ddof=1):
     """
     Standard deviation function implemented with Numba JIT.
+    If the array has only one element, the function returns 0.0.
     """
+    if len(x) == 1:
+        return 0.0
     a_a, b_b = 0, 0
     for i in x:
         a_a = a_a + i
@@ -661,7 +664,11 @@ def _np_min_max_ratio_jit(x):
 def _np_cv_jit(x):
     """
     Coefficient of variation function implemented with Numba JIT.
+    If the array has only one element, the function returns 0.0.
     """
+    if len(x) == 1:
+        return 0.0
+    
     a_a, b_b = 0, 0
     for i in x:
         a_a = a_a + i
@@ -1087,7 +1094,10 @@ class RollingFeatures():
             for j, stat in enumerate(self.stats):
                 X_window = X[-self.window_sizes[j]:, i]
                 X_window = X_window[~np.isnan(X_window)]
-                rolling_features[i, j] = self._apply_stat_numpy_jit(X_window, stat)
+                if len(X_window) > 0: 
+                    rolling_features[i, j] = self._apply_stat_numpy_jit(X_window, stat)
+                else:
+                    rolling_features[i, j] = np.nan
 
         if array_ndim == 1:
             rolling_features = rolling_features.ravel()
