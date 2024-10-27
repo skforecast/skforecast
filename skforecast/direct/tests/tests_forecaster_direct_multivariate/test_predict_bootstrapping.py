@@ -113,13 +113,14 @@ def test_predict_bootstrapping_ValueError_when_step_out_sample_residuals_value_i
                                                lags=3, steps=3, 
                                                transformer_series=transformer_series)
     forecaster.fit(series=series)
-    residuals = {1: np.array([1, 2, 3, 4, 5]),
-                 2: np.array([1, 2, 3, 4, 5])}
-    forecaster.set_out_sample_residuals(residuals = residuals)
+    forecaster.out_sample_residuals_ = {
+        1: np.array([1, 2, 3, 4, 5]),
+        2: np.array([1, 2, 3, 4, 5])
+    }
 
     err_msg = re.escape(
-        ("forecaster residuals for step 3 are `None`. "
-         "Check forecaster.out_sample_residuals_.")
+        "Not `forecaster.out_sample_residuals_` for steps: {3}. Use method "
+        "`set_out_sample_residuals()`."
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster.predict_bootstrapping(steps=3, use_in_sample_residuals=False)
@@ -137,10 +138,11 @@ def test_predict_bootstrapping_ValueError_when_step_out_sample_residuals_value_c
                                                lags=3, steps=3, 
                                                transformer_series=transformer_series)
     forecaster.fit(series=series)
-    residuals = {1: np.array([1, 2, 3, 4, 5]),
-                 2: np.array([1, 2, 3, 4, 5]), 
-                 3: np.array([1, 2, 3, 4, None])}  # StandardScaler() transforms None to NaN
-    forecaster.set_out_sample_residuals(residuals = residuals)
+    forecaster.out_sample_residuals_ = {
+        1: np.array([1, 2, 3, 4, 5]),
+        2: np.array([1, 2, 3, 4, 5]), 
+        3: np.array([1, 2, 3, 4, None])
+    }
 
     err_msg = re.escape(
         ("forecaster residuals for step 3 contains `None` "

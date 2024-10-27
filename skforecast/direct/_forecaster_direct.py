@@ -2024,7 +2024,7 @@ class ForecasterDirect(ForecasterBase):
             attribute `out_sample_residuals_`. If after appending the new residuals,
             the limit of 10000 samples is exceeded, a random sample of 10000 is
             kept.
-        random_state : int, default `123`
+        random_state : int, default `36987`
             Sets a seed to the random sampling for reproducible output.
 
         Returns
