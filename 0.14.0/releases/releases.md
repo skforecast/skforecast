@@ -980,12 +980,12 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 <!-- Forecasters -->
 [ForecasterRecursive]: https://skforecast.org/latest/api/forecasterrecursive
 [ForecasterDirect]: https://skforecast.org/latest/api/forecasterdirect
-[ForecasterRecursiveMultiSeries]: https://skforecast.org/latest/api/forecastermultiseries
-[ForecasterDirectMultiVariate]: https://skforecast.org/latest/api/forecastermultivariate
+[ForecasterRecursiveMultiSeries]: https://skforecast.org/latest/api/forecasterrecursivemultiseries
+[ForecasterDirectMultiVariate]: https://skforecast.org/latest/api/forecasterdirectmultivariate
 [ForecasterRNN]: https://skforecast.org/latest/api/forecasterrnn
 [ForecasterSarimax]: https://skforecast.org/latest/api/forecastersarimax
 [Sarimax]: https://skforecast.org/latest/api/sarimax
-[ForecasterEquivalentDate]: https://skforecast.org/latest/api/forecasterbaseline#skforecast.ForecasterBaseline.ForecasterEquivalentDate
+[ForecasterEquivalentDate]: https://skforecast.org/latest/api/forecasterequivalentdate
 
 <!-- metrics -->
 [metrics]: https://skforecast.org/latest/api/metrics

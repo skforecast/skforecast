@@ -6,7 +6,7 @@
 A time series is a sequence of data arranged chronologically and spaced at equal or irregular intervals. The forecasting process consists of predicting the future value of a time series, either by modeling the series solely based on its past behavior (autoregressive) or by incorporating other external variables.
 
 <p style="text-align: center">
-    <img src="../img/forecasting_multi-step_en.gif" style="width: 500px">
+    <img src="../img/recursive_forecasting_gif.gif" style="padding: 10px; background-color: white; border-radius: 4px;">
 </p>
 
 
@@ -19,7 +19,7 @@ This transformation is essential for machine learning models to capture the depe
 <p style="text-align: center">
     <img src="../img/transform_timeseries.gif" style="width: 500px;">
     <br>
-    <font size="2.5"> <i>Time series transformation into a matrix of 5 lags and a vector with the value of the series that follows each row of the matrix.</i></font>
+    <font size="2.5"> <i>Time series transformation into a matrix of 5 lags and a vector with the value of the series that follows each row of the matrix</i></font>
 </p>
 
 This type of transformation also allows to include additional variables.
@@ -27,7 +27,7 @@ This type of transformation also allows to include additional variables.
 <p style="text-align: center">
     <img src="../img/matrix_transformation_with_exog_variable.png" style="width: 600px;">
     <br>
-    <font size="2.5"> <i>Time series transformation including an exogenous variable.</i></font>
+    <font size="2.5"> <i>Time series transformation including an exogenous variable</i></font>
 </p>
 
 Once data have been rearranged into the new shape, any regression model can be trained to predict the next value (step) of the series. During model training, every row is considered a separate data instance, where values at lags 1, 2, ... *p* are considered predictors for the target quantity of the time series at time step *p+1*. 
@@ -35,7 +35,7 @@ Once data have been rearranged into the new shape, any regression model can be t
 <p style="text-align: center">
     <img src="../img/diagram-trainig-forecaster.png" style="width: 700px;">
     <br>
-    <font size="2.5"> <i>Diagram of training a machine learning model with time series data.</i></font>
+    <font size="2.5"> <i>Diagram of training a machine learning model with time series data</i></font>
 </p>
 
 
@@ -44,9 +44,9 @@ Once data have been rearranged into the new shape, any regression model can be t
 Single-step prediction is used when the goal is to predict only the next value of the series.
 
 <p style="text-align: center">
-    <img src="../img/diagram-single-step-forecasting.png" style="width: 700px;">
+    <img src="../img/diagram-single-step-forecasting.png" style="width: 600px;">
     <br>
-    <font size="2.5"> <i>Diagram of single-step forecasting.</i></font>
+    <font size="2.5"> <i>Diagram of single-step forecasting</i></font>
 </p>
 
 
@@ -60,9 +60,14 @@ When working with time series, it is seldom needed to predict only the next elem
 Since the value *t(n-1)* is required to predict *t(n)*, and *t(n-1)* is unknown, a recursive process is applied in which, each new prediction, is based on the previous one. This process is known as recursive forecasting or recursive multi-step forecasting and can be easily generated with the [`ForecasterAutoreg`](https://skforecast.org/latest/user_guides/autoregresive-forecaster.html) class.
 
 <p style="text-align: center">
-    <img src="../img/diagram-recursive-mutistep-forecasting.png" style="width: 650px">
+    <img src="../img/diagram-recursive-mutistep-forecasting.png" style="width: 600px">
     <br>
-    <font size="2.5"> <i>Diagram of recursive multi-step forecasting.</i></font>
+    <font size="2.5"> <i>Diagram of recursive multi-step forecasting</i></font>
+</p>
+<p style="text-align: center">
+    <img src="../img/recursive_forecasting_gif.gif" style="width: 600px; padding: 10px; background-color: white; border-radius: 4px;">
+    <br>
+    <font size="2.5"> <i>Recursive forecasting</i></font>
 </p>
 
 
@@ -71,9 +76,14 @@ Since the value *t(n-1)* is required to predict *t(n)*, and *t(n-1)* is unknown,
 Direct multi-step forecasting consists of training a different model for each step of the forecast horizon. For example, to predict the next 5 values of a time series, 5 different models are trained, one for each step. As a result, the predictions are independent of each other. This entire process is automated in the [`ForecasterAutoregDirect`](https://skforecast.org/latest/user_guides/direct-multi-step-forecasting.html) class. 
 
 <p style="text-align: center">
-    <img src="../img/diagram-direct-multi-step-forecasting.png" style="width: 700px">
+    <img src="../img/diagram-direct-multi-step-forecasting.png" style="width: 600px">
     <br>
-    <font size="2.5"> <i>Diagram of direct multi-step forecasting.</i></font>
+    <font size="2.5"> <i>Diagram of direct multi-step forecasting</i></font>
+</p>
+<p style="text-align: center">
+    <img src="../img/direct_forecasting_gif.gif" style="width: 600px; padding: 10px; background-color: white; border-radius: 4px;">
+    <br>
+    <font size="2.5"> <i>Direct forecasting</i></font>
 </p>
 
 
@@ -93,7 +103,7 @@ A single model is trained for all time series, but each time series remains inde
 <p style="text-align: center">
     <img src="../img/forecaster_multi_series_train_matrix_diagram.png" style="width: 800px">
     <br>
-    <font size="2.5"> <i>Transformation of two time series and an exogenous variable into the matrices needed to train a machine learning model in a multi-series context.</i></font>
+    <font size="2.5"> <i>Transformation of two time series and an exogenous variable into the matrices needed to train a machine learning model in a multi-series context</i></font>
 </p>
 
 To predict the next *n* steps, the strategy of [recursive multi-step forecasting](https://skforecast.org/latest/introduction-forecasting/introduction-forecasting.html#recursive-multi-step-forecasting) is applied
@@ -101,10 +111,10 @@ To predict the next *n* steps, the strategy of [recursive multi-step forecasting
 <p style="text-align: center">
     <img src="../img/forecaster_multi_series_prediction_diagram.png" style="width: 800px">
     <br>
-    <font size="2.5"> <i>Diagram of recursive forecasting with multiple independent time series.</i></font>
+    <font size="2.5"> <i>Diagram of recursive forecasting with multiple independent time series</i></font>
 </p>
 
-The [`ForecasterAutoregMultiSeries`](https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting.html) and [`ForecasterAutoregMultiSeriesCustom`](https://skforecast.org/latest/user_guides/window-features-and-custom-features.html#forecasterautoregmultiseriescustom) classes cover this process. 
+The [`ForecasterRecursiveMultiSeries`](https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting.html) class cover this process. 
 
 ### Dependent Multi-Series Forecasting (multivariate time series)
 
@@ -113,10 +123,10 @@ All series are modeled together in a single model, considering that each time se
 <p style="text-align: center">
     <img src="../img/forecaster_multivariate_train_matrix_diagram.png" style="width: 800px">
     <br>
-    <font size="2.5"> <i>Transformation of two time series and an exogenous variable into the matrices needed to train a machine learning model in a multi-variate-series context.</i></font>
+    <font size="2.5"> <i>Transformation of two time series and an exogenous variable into the matrices needed to train a machine learning model in a multi-variate-series context</i></font>
 </p>
 
-The [`ForecasterAutoregMultiVariate`](https://skforecast.org/latest/user_guides/dependent-multi-series-multivariate-forecasting.html) class covers this process. 
+The [`ForecasterDirectMultiVariate`](https://skforecast.org/latest/user_guides/dependent-multi-series-multivariate-forecasting.html) class covers this process. 
 
 
 ## Forecasters
@@ -153,7 +163,7 @@ In skforecast, exogenous variables [can be easily included](https://skforecast.o
 <p style="text-align: center">
     <img src="../img/matrix_transformation_with_exog_variable.png" style="width: 550px;">
     <br>
-    <font size="2.5"> <i>Time series transformation including an exogenous variable.</i></font>
+    <font size="2.5"> <i>Time series transformation including an exogenous variable</i></font>
 </p>
 
 
@@ -179,7 +189,7 @@ Backtesting without refit is a strategy where the model is trained only once and
 <p style="text-align: center">
 <img src="../img/backtesting_no_refit.gif" style="width: 650px;">
 <br>
-<font size="2.5"> <i>Backtesting without refit.</i></font>
+<font size="2.5"> <i>Backtesting without refit</i></font>
 </p>
 
 
@@ -196,7 +206,7 @@ Instead of randomizing the data, this backtesting sequentially increases the siz
 <p style="text-align: center">
 <img src="../img/backtesting_refit.gif" style="width: 650px;">
 <br>
-<font size="2.5"> <i>Backtesting with refit and increasing training size (fixed origin).</i></font>
+<font size="2.5"> <i>Backtesting with refit and increasing training size (fixed origin)</i></font>
 </p>
 
 
@@ -211,7 +221,7 @@ In this approach, the model is trained using a fixed window of past observations
 <p style="text-align: center">
 <img src="../img/backtesting_refit_fixed_train_size.gif" style="width: 650px;">
 <br>
-<font size="2.5"> <i>Backtesting with refit and fixed training size (rolling origin).</i></font>
+<font size="2.5"> <i>Backtesting with refit and fixed training size (rolling origin)</i></font>
 </p>
 
 
@@ -224,7 +234,7 @@ This refit strategy can be implemented using either a fixed or rolling origin, p
 <p style="text-align: center">
 <img src="../img/backtesting_intermittent_refit.gif" style="width: 650px;">
 <br>
-<font size="2.5"> <i>Backtesting with intermittent refit.</i></font>
+<font size="2.5"> <i>Backtesting with intermittent refit</i></font>
 </p>
 
 
@@ -237,7 +247,7 @@ For example, consider the goal of predicting the 24 hours of day D+1, but the pr
 <p style="text-align: center">
 <img src="../img/backtesting_refit_gap.gif" style="width: 650px;">
 <br>
-<font size="2.5"> <i>Backtesting with refit and gap.</i></font>
+<font size="2.5"> <i>Backtesting with refit and gap</i></font>
 </p>
 
 

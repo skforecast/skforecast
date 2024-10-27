@@ -3138,7 +3138,7 @@ This is documentation for an unstable development version.
 <p><span class="badge text-bg-feature">Feature</span> Hyperparameter search now allows to follow a one-step-ahead validation strategy using a <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection._split.onestepaheadfold">OneStepAheadFold</a></code> as <code>cv</code> argument in the <code><a href="https://skforecast.org/latest/api/model_selection">model_selection</a></code> functions.</p>
 </li>
 <li>
-<p><span class="badge text-bg-enhancement">Enhancement</span> Refactor the prediction process in <code><a href="https://skforecast.org/latest/api/forecastermultiseries">ForecasterRecursiveMultiSeries</a></code> to improve performance when predicting multiple series.</p>
+<p><span class="badge text-bg-enhancement">Enhancement</span> Refactor the prediction process in <code><a href="https://skforecast.org/latest/api/forecasterrecursivemultiseries">ForecasterRecursiveMultiSeries</a></code> to improve performance when predicting multiple series.</p>
 </li>
 <li>
 <p><span class="badge text-bg-enhancement">Enhancement</span> The bootstrapping process in the <code>predict_bootstrapping</code> method of all forecasters has been optimized to improve performance. This may result in slightly different results when using the same seed as in previous versions.</p>
@@ -3192,13 +3192,13 @@ This is documentation for an unstable development version.
 <p><code><a href="https://skforecast.org/0.13.0/api/forecasterautoregcustom">ForecasterAutoregCustom</a></code> has been deprecated. Window features can be added using the <code>window_features</code> argument in the <code><a href="https://skforecast.org/latest/api/forecasterrecursive">ForecasterRecursive</a></code>.</p>
 </li>
 <li>
-<p>Refactor <code>recursive_predict</code> in <code><a href="https://skforecast.org/latest/api/forecastermultiseries">ForecasterRecursiveMultiSeries</a></code> to predict all series at once and include option of adding residuals. This improves performance when predicting multiple series.</p>
+<p>Refactor <code>recursive_predict</code> in <code><a href="https://skforecast.org/latest/api/forecasterrecursivemultiseries">ForecasterRecursiveMultiSeries</a></code> to predict all series at once and include option of adding residuals. This improves performance when predicting multiple series.</p>
 </li>
 <li>
 <p>Refactor <code>predict_bootstrapping</code> in all Forecasters. The bootstrapping process has been optimized to improve performance. This may result in slightly different results when using the same seed as in previous versions.</p>
 </li>
 <li>
-<p>Change the default value of <code>encoding</code> to <code>ordinal</code> in <code><a href="https://skforecast.org/latest/api/forecastermultiseries">ForecasterRecursiveMultiSeries</a></code>. This will avoid conflicts if the regressor does not support categorical variables by default.</p>
+<p>Change the default value of <code>encoding</code> to <code>ordinal</code> in <code><a href="https://skforecast.org/latest/api/forecasterrecursivemultiseries">ForecasterRecursiveMultiSeries</a></code>. This will avoid conflicts if the regressor does not support categorical variables by default.</p>
 </li>
 <li>
 <p>Removed argument <code>engine</code> from <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection.model_selection.bayesian_search_forecaster">bayesian_search_forecaster</a></code> and <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection._search.bayesian_search_forecaster_multiseries">bayesian_search_forecaster_multiseries</a></code>.</p>
