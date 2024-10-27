@@ -371,6 +371,87 @@ def test_output_bayesian_search_forecaster_multiseries_series_and_exog_dict_with
     pd.testing.assert_frame_equal(expected, results_search)
 
 
+def test_output_bayesian_search_forecaster_multiseries_series_and_exog_dict_window_features_with_mocked():
+    """
+    Test output of bayesian_search_forecaster_multiseries in ForecasterRecursiveMultiSeries
+    when series and exog are dictionaries and window features are included 
+    (mocked done in Skforecast v0.12.0).
+    """
+    window_features = RollingFeatures(
+        stats = ['mean', 'std', 'min', 'max', 'sum', 'median', 'ratio_min_max', 'coef_variation'],
+        window_sizes = 3,
+    )
+    regressor = LGBMRegressor(
+            n_estimators=2, random_state=123, verbose=-1, max_depth=2
+        )
+    forecaster = ForecasterRecursiveMultiSeries(
+        regressor          = regressor,
+        lags               = 14,
+        window_features    = window_features,
+        encoding           = "ordinal",
+        dropna_from_series = False,
+        transformer_series = StandardScaler(),
+        transformer_exog   = StandardScaler(),
+    )
+    cv = TimeSeriesFold(
+            initial_train_size = len(series_dict_train["id_1000"]),
+            steps              = 24,
+            refit              = False,
+            fixed_train_size   = True
+    )
+    lags_grid = [[5], [1, 7, 14]]
+
+    def search_space(trial):
+        search_space = {
+            "n_estimators": trial.suggest_int("n_estimators", 2, 5),
+            "max_depth": trial.suggest_int("max_depth", 2, 5),
+            "lags": trial.suggest_categorical("lags", lags_grid),
+        }
+
+        return search_space
+
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=UserWarning, module="optuna")
+
+        results_search, _ = bayesian_search_forecaster_multiseries(
+            forecaster         = forecaster,
+            series             = series_dict,
+            exog               = exog_dict,
+            cv                 = cv,
+            search_space       = search_space,
+            metric             = "mean_absolute_error",
+            aggregate_metric   = "weighted_average",
+            n_trials           = 3,
+            return_best        = False,
+            show_progress      = False,
+            verbose            = False,
+            suppress_warnings  = True,
+        )
+
+    expected = pd.DataFrame({
+                'levels': [
+                    ['id_1000', 'id_1001', 'id_1002', 'id_1003', 'id_1004'],
+                    ['id_1000', 'id_1001', 'id_1002', 'id_1003', 'id_1004'],
+                    ['id_1000', 'id_1001', 'id_1002', 'id_1003', 'id_1004'],
+                ],
+                'lags': [np.array([1, 7, 14]), np.array([1, 7, 14]), np.array([5])],
+                'params': [
+                    {'n_estimators': 4, 'max_depth': 3},
+                    {'n_estimators': 3, 'max_depth': 3},
+                    {'n_estimators': 4, 'max_depth': 3},
+                ],
+                'mean_absolute_error__weighted_average': [
+                    705.2775299463871,
+                    721.2904821438083,
+                    744.3600945094412,
+                ],
+                'n_estimators': [4, 3, 4],
+                'max_depth': [3, 3, 3],
+            })
+
+    pd.testing.assert_frame_equal(expected, results_search)
+
+
 def test_output_bayesian_search_forecaster_multiseries_series_and_exog_dict_multiple_metrics_aggregated_with_mocked():
     """
     Test output of bayesian_search_forecaster_multiseries in ForecasterRecursiveMultiSeries

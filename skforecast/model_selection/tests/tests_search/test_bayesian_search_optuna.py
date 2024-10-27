@@ -14,6 +14,7 @@ from skforecast.direct import ForecasterDirect
 from skforecast.model_selection import backtesting_forecaster
 from skforecast.model_selection._search import _bayesian_search_optuna
 from skforecast.model_selection._split import TimeSeriesFold
+from skforecast.preprocessing import RollingFeatures
 import optuna
 from optuna.samplers import TPESampler
 from tqdm import tqdm
@@ -211,6 +212,164 @@ def test_results_output_bayesian_search_optuna_ForecasterAutoreg():
         columns=['lags', 'params', 'mean_absolute_error', 'n_estimators', 'min_samples_leaf', 'max_features'],
         index=pd.Index([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], dtype='int64')
     )
+
+    pd.testing.assert_frame_equal(results, expected_results, check_dtype=False)
+
+
+def test_results_output_bayesian_search_optuna_window_features_ForecasterAutoreg():
+    """
+    Test output of _bayesian_search_optuna in ForecasterRecursive including
+    window_features with mocked (mocked done in Skforecast v0.4.3).
+    """
+    window_features = RollingFeatures(
+        stats = ['mean', 'std', 'min', 'max', 'sum', 'median', 'ratio_min_max', 'coef_variation'],
+        window_sizes = 3,
+    )
+    forecaster = ForecasterRecursive(
+                     regressor = RandomForestRegressor(random_state=123),
+                     lags      = 2,
+                     window_features = window_features,
+                 )
+    n_validation = 12
+    y_train = y[:-n_validation]
+    cv = TimeSeriesFold(
+            steps                 = 3,
+            initial_train_size    = len(y_train),
+            window_size           = None,
+            differentiation       = None,
+            refit                 = True,
+            fixed_train_size      = True,
+            gap                   = 0,
+            skip_folds            = None,
+            allow_incomplete_fold = True,
+            return_all_indexes    = False,
+        )
+
+    def search_space(trial):
+        search_space  = {
+            'n_estimators'    : trial.suggest_int('n_estimators', 10, 20),
+            'min_samples_leaf': trial.suggest_float('min_samples_leaf', 0.1, 1., log=True),
+            'max_features'    : trial.suggest_categorical('max_features', ['log2', 'sqrt']),
+            'lags'            : trial.suggest_categorical('lags', [2, 4])
+        } 
+        
+        return search_space
+
+    results = _bayesian_search_optuna(
+                  forecaster         = forecaster,
+                  y                  = y,
+                  cv                 = cv,
+                  search_space       = search_space,
+                  metric             = 'mean_absolute_error',
+                  n_trials           = 10,
+                  random_state       = 123,
+                  return_best        = False,
+                  verbose            = False
+              )[0]
+    
+    expected_results = pd.DataFrame({
+        'lags': [
+            np.array([1, 2, 3, 4]),
+            np.array([1, 2]),
+            np.array([1, 2]),
+            np.array([1, 2]),
+            np.array([1, 2, 3, 4]),
+            np.array([1, 2, 3, 4]),
+            np.array([1, 2]),
+            np.array([1, 2]),
+            np.array([1, 2]),
+            np.array([1, 2]),
+        ],
+        'params': [
+            {
+                'n_estimators': 20,
+                'min_samples_leaf': 0.4839825891759374,
+                'max_features': 'log2',
+            },
+            {
+                'n_estimators': 15,
+                'min_samples_leaf': 0.41010449151752726,
+                'max_features': 'sqrt',
+            },
+            {
+                'n_estimators': 14,
+                'min_samples_leaf': 0.782328520465639,
+                'max_features': 'log2',
+            },
+            {
+                'n_estimators': 15,
+                'min_samples_leaf': 0.34027307604369605,
+                'max_features': 'sqrt',
+            },
+            {
+                'n_estimators': 13,
+                'min_samples_leaf': 0.2599119286878713,
+                'max_features': 'log2',
+            },
+            {
+                'n_estimators': 17,
+                'min_samples_leaf': 0.21035794225904136,
+                'max_features': 'log2',
+            },
+            {
+                'n_estimators': 11,
+                'min_samples_leaf': 0.2714570796881701,
+                'max_features': 'sqrt',
+            },
+            {
+                'n_estimators': 13,
+                'min_samples_leaf': 0.20142843988664705,
+                'max_features': 'sqrt',
+            },
+            {
+                'n_estimators': 17,
+                'min_samples_leaf': 0.19325882509735576,
+                'max_features': 'sqrt',
+            },
+            {
+                'n_estimators': 14,
+                'min_samples_leaf': 0.1147302385573586,
+                'max_features': 'sqrt',
+            },
+        ],
+        'mean_absolute_error': [
+            0.21252324019730395,
+            0.21851156682698414,
+            0.22027505037414963,
+            0.22530355563144466,
+            0.2378358005415178,
+            0.2384269598653063,
+            0.25241649504238356,
+            0.2584381014601676,
+            0.26067982740527423,
+            0.2697438465540914,
+        ],
+        'n_estimators': [20, 15, 14, 15, 13, 17, 11, 13, 17, 14],
+        'min_samples_leaf': [
+            0.4839825891759374,
+            0.41010449151752726,
+            0.782328520465639,
+            0.34027307604369605,
+            0.2599119286878713,
+            0.21035794225904136,
+            0.2714570796881701,
+            0.20142843988664705,
+            0.19325882509735576,
+            0.1147302385573586,
+        ],
+        'max_features': [
+            'log2',
+            'sqrt',
+            'log2',
+            'sqrt',
+            'log2',
+            'log2',
+            'sqrt',
+            'sqrt',
+            'sqrt',
+            'sqrt',
+        ],
+    })
 
     pd.testing.assert_frame_equal(results, expected_results, check_dtype=False)
     
@@ -674,6 +833,167 @@ def test_results_output_bayesian_search_optuna_ForecasterAutoregDirect():
     pd.testing.assert_frame_equal(results, expected_results)
 
 
+def test_results_output_bayesian_search_optuna_window_features_ForecasterAutoregDirect():
+    """
+    Test output of _bayesian_search_optuna in ForecasterDirect including
+    window_features with mocked (mocked done in Skforecast v0.4.3).
+    """
+    window_features = RollingFeatures(
+        stats = ['mean', 'std', 'min', 'max', 'sum', 'median', 'ratio_min_max', 'coef_variation'],
+        window_sizes = 3,
+    )
+    forecaster = ForecasterDirect(
+                     regressor = RandomForestRegressor(random_state=123),
+                     steps     = 3,
+                     lags      = 4,
+                     window_features = window_features,
+                 )
+    n_validation = 12
+    y_train = y[:-n_validation]
+    cv = TimeSeriesFold(
+            steps                 = 3,
+            initial_train_size    = len(y_train),
+            window_size           = None,
+            differentiation       = None,
+            refit                 = True,
+            fixed_train_size      = True,
+            gap                   = 0,
+            skip_folds            = None,
+            allow_incomplete_fold = True,
+            return_all_indexes    = False,
+        )
+    
+    def search_space(trial):
+        search_space  = {
+            'n_estimators'    : trial.suggest_int('n_estimators', 10, 20),
+            'min_samples_leaf': trial.suggest_float('min_samples_leaf', 0.1, 1., log=True),
+            'max_features'    : trial.suggest_categorical('max_features', ['log2', 'sqrt']),
+            'lags'            : trial.suggest_categorical('lags', [2, 4])
+        } 
+        
+        return search_space
+
+    results = _bayesian_search_optuna(
+                  forecaster   = forecaster,
+                  y            = y,
+                  cv           = cv,
+                  search_space = search_space,
+                  metric       = 'mean_absolute_error',
+                  n_trials     = 10,
+                  random_state = 123,
+                  return_best  = False,
+                  verbose      = False
+              )[0]
+    
+    expected_results = pd.DataFrame(
+        {
+            'lags': [
+                np.array([1, 2, 3, 4]),
+                np.array([1, 2]),
+                np.array([1, 2]),
+                np.array([1, 2, 3, 4]),
+                np.array([1, 2]),
+                np.array([1, 2, 3, 4]),
+                np.array([1, 2]),
+                np.array([1, 2]),
+                np.array([1, 2]),
+                np.array([1, 2]),
+            ],
+            'params': [
+                {
+                    'n_estimators': 20,
+                    'min_samples_leaf': 0.4839825891759374,
+                    'max_features': 'log2',
+                },
+                {
+                    'n_estimators': 15,
+                    'min_samples_leaf': 0.41010449151752726,
+                    'max_features': 'sqrt',
+                },
+                {
+                    'n_estimators': 14,
+                    'min_samples_leaf': 0.782328520465639,
+                    'max_features': 'log2',
+                },
+                {
+                    'n_estimators': 17,
+                    'min_samples_leaf': 0.21035794225904136,
+                    'max_features': 'log2',
+                },
+                {
+                    'n_estimators': 15,
+                    'min_samples_leaf': 0.34027307604369605,
+                    'max_features': 'sqrt',
+                },
+                {
+                    'n_estimators': 13,
+                    'min_samples_leaf': 0.2599119286878713,
+                    'max_features': 'log2',
+                },
+                {
+                    'n_estimators': 13,
+                    'min_samples_leaf': 0.20142843988664705,
+                    'max_features': 'sqrt',
+                },
+                {
+                    'n_estimators': 14,
+                    'min_samples_leaf': 0.1147302385573586,
+                    'max_features': 'sqrt',
+                },
+                {
+                    'n_estimators': 17,
+                    'min_samples_leaf': 0.19325882509735576,
+                    'max_features': 'sqrt',
+                },
+                {
+                    'n_estimators': 11,
+                    'min_samples_leaf': 0.2714570796881701,
+                    'max_features': 'sqrt',
+                },
+            ],
+            'mean_absolute_error': [
+                0.2130714159765625,
+                0.21370598876262625,
+                0.21466582599386722,
+                0.21724682621084832,
+                0.21740193466522548,
+                0.22083884690087485,
+                0.22198405983119776,
+                0.2246121914126593,
+                0.22842351518266302,
+                0.22906678546095408,
+            ],
+            'n_estimators': [20, 15, 14, 17, 15, 13, 13, 14, 17, 11],
+            'min_samples_leaf': [
+                0.4839825891759374,
+                0.41010449151752726,
+                0.782328520465639,
+                0.21035794225904136,
+                0.34027307604369605,
+                0.2599119286878713,
+                0.20142843988664705,
+                0.1147302385573586,
+                0.19325882509735576,
+                0.2714570796881701,
+            ],
+            'max_features': [
+                'log2',
+                'sqrt',
+                'log2',
+                'log2',
+                'sqrt',
+                'log2',
+                'sqrt',
+                'sqrt',
+                'sqrt',
+                'sqrt',
+            ],
+        }
+    )
+
+    pd.testing.assert_frame_equal(results, expected_results)
+
+    
 def test_bayesian_search_optuna_output_file():
     """ 
     Test output file of _bayesian_search_optuna.
