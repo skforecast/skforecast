@@ -605,10 +605,10 @@ def _np_mean_jit(x):
 def _np_std_jit(x, ddof=1):
     """
     Standard deviation function implemented with Numba JIT.
-    If the array has only one element, the function returns 0.0.
+    If the array has only one element, the function returns 0.
     """
     if len(x) == 1:
-        return 0.0
+        return 0.
     a_a, b_b = 0, 0
     for i in x:
         a_a = a_a + i
@@ -664,10 +664,10 @@ def _np_min_max_ratio_jit(x):
 def _np_cv_jit(x):
     """
     Coefficient of variation function implemented with Numba JIT.
-    If the array has only one element, the function returns 0.0.
+    If the array has only one element, the function returns 0.
     """
     if len(x) == 1:
-        return 0.0
+        return 0.
     
     a_a, b_b = 0, 0
     for i in x:
