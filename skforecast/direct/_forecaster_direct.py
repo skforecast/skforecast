@@ -1111,7 +1111,6 @@ class ForecasterDirect(ForecasterBase):
                 ).to_numpy()
 
                 if len(residuals) > 1000:
-                    # Only up to 1000 residuals are stored
                     rng = np.random.default_rng(seed=123)
                     residuals = rng.choice(
                                     a       = residuals, 
@@ -1136,12 +1135,13 @@ class ForecasterDirect(ForecasterBase):
             for step in range(1, self.steps + 1))
         )
 
-        self.regressors_ = {step: regressor 
-                            for step, regressor, _ in results_fit}
+        self.regressors_ = {step: regressor for step, regressor, _ in results_fit}
 
         if store_in_sample_residuals:
-            self.in_sample_residuals_ = {step: residuals 
-                                         for step, _, residuals in results_fit}
+            self.in_sample_residuals_ = {
+                step: residuals 
+                for step, _, residuals in results_fit
+            }
         
         self.X_train_features_names_out_ = X_train_features_names_out_
 
@@ -2001,7 +2001,15 @@ class ForecasterDirect(ForecasterBase):
         """
         Set new values to the attribute `out_sample_residuals_`. Out of sample
         residuals are meant to be calculated using observations that did not
-        participate in the training process.
+        participate in the training process. `y_true` and `y_pred` are expected
+        to be in the original scale of the time series. Residuals are calculated
+        as `y_true` - `y_pred`, after applying the necessary transformations and
+        differentiations if the forecaster includes them (`self.transformer_y`
+        and `self.differentiation`).
+
+        A total of 10_000 residuals are stored in the attribute `out_sample_residuals_`.
+        If the number of residuals is greater than 10_000, a random sample of
+        10_000 residuals is stored.
         
         Parameters
         ----------
@@ -2016,7 +2024,7 @@ class ForecasterDirect(ForecasterBase):
             attribute `out_sample_residuals_`. If after appending the new residuals,
             the limit of 10000 samples is exceeded, a random sample of 10000 is
             kept.
-        random_state : int, default `123`
+        random_state : int, default `36987`
             Sets a seed to the random sampling for reproducible output.
 
         Returns

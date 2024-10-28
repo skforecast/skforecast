@@ -82,11 +82,13 @@ def test_prepare_residuals_multiseries_ValueError_when_not_out_sample_residuals_
     """
     levels = ['1', '2']
     use_in_sample_residuals = False
-    new_residuals = {'1': np.array([1, 2, 3, 4, 5])}
 
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
     forecaster.fit(series=series['1'].to_frame())
-    forecaster.set_out_sample_residuals(new_residuals)
+    forecaster.out_sample_residuals_ = {
+        '1': np.array([1, 2, 3, 4, 5]),
+        '_unknown_level': np.array([1, 2, 3, 4, 5])
+    }
 
     warn_msg = re.escape(
         ("`levels` {'2'} are not present in `forecaster.out_sample_residuals_`. "
@@ -124,12 +126,17 @@ def test_prepare_residuals_multiseries_ValueError_when_level_out_sample_residual
     """
     levels = ['1', '2']
     use_in_sample_residuals = False
-    out_sample_residuals_ = {'1': np.array([1, 2, 3, 4, 5])}
-
-    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3,
-                                              transformer_series=transformer_series)
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(),
+        lags=3,
+        transformer_series=transformer_series,
+    )
     forecaster.fit(series=series)
-    forecaster.set_out_sample_residuals(residuals=out_sample_residuals_)
+    forecaster.out_sample_residuals_ = {
+        '1': np.array([1, 2, 3, 4, 5]),
+        '2': None,
+        '_unknown_level': np.array([1, 2, 3, 4, 5])
+        }
 
     err_msg = re.escape(
         ("Not available residuals for level '2'. "
@@ -143,41 +150,6 @@ def test_prepare_residuals_multiseries_ValueError_when_level_out_sample_residual
             in_sample_residuals_    = forecaster.in_sample_residuals_,
             out_sample_residuals_   = forecaster.out_sample_residuals_
         )
-
-
-@pytest.mark.parametrize("transformer_series", 
-                         [None, StandardScaler()],
-                         ids = lambda tr: f'transformer_series type: {type(tr)}')
-def test_prepare_residuals_multiseries_ValueError_when_level_out_sample_residuals_value_contains_None_or_NaNs(transformer_series):
-    """
-    Test ValueError is raised when use_in_sample_residuals=False and
-    forecaster.out_sample_residuals_ has a level with a None or NaN value.
-    """
-    levels = ['1', '2']
-    use_in_sample_residuals = False
-    out_sample_residuals_ = {
-        '1': np.array([1, 2, 3, 4, 5]),
-        '2': np.array([1, 2, 3, 4, None])  # StandardScaler() transforms None to NaN
-    }
-    
-    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3,
-                                              transformer_series=transformer_series)
-    forecaster.fit(series=series)
-    forecaster.set_out_sample_residuals(residuals = out_sample_residuals_)
-
-    err_msg = re.escape(
-        ("forecaster residuals for level '2' contains `None` "
-         "or `NaNs` values. Check `forecaster.out_sample_residuals_`.")
-    )
-    with pytest.raises(ValueError, match = err_msg):
-        prepare_residuals_multiseries(
-            levels                  = levels,
-            use_in_sample_residuals = use_in_sample_residuals, 
-            encoding                = forecaster.encoding,
-            in_sample_residuals_    = forecaster.in_sample_residuals_,
-            out_sample_residuals_   = forecaster.out_sample_residuals_
-        )
-
 
 @pytest.mark.parametrize("use_in_sample_residuals", 
                          [True, False],
@@ -193,11 +165,14 @@ def test_output_prepare_residuals_multiseries(use_in_sample_residuals):
         '_unknown_level': np.array([1, 2, 3, 4, 5, 1, 2, 3, 4, 5])
     }
     
-    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3,
-                                              transformer_series=None)
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(),
+        lags=3,
+        transformer_series=None
+    )
     forecaster.fit(series=series)
     forecaster.in_sample_residuals_ = residuals
-    forecaster.set_out_sample_residuals(residuals=residuals)
+    forecaster.out_sample_residuals_ = residuals
 
     residuals_levels = prepare_residuals_multiseries(
                             levels                  = levels,
