@@ -102,7 +102,7 @@ def test_TypeError_initialize_lags_when_lags_is_not_valid_type(lags):
 @pytest.mark.parametrize("lags", 
                          [1.5, 'not_valid_type'], 
                          ids = lambda lags: f'lags: {lags}')
-def test_TypeError_initialize_lags_when_lags_is_not_valid_type_ForecasterAutoregMultiVariate(lags):
+def test_TypeError_initialize_lags_when_lags_is_not_valid_type_ForecasterDirectMultiVariate(lags):
     """
     Test TypeError is raised when lags is not a valid type in ForecasterDirectMultiVariate.
     """    

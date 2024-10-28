@@ -29,7 +29,7 @@ series_dict = joblib.load(THIS_DIR/'fixture_sample_multi_series.joblib')
 exog_dict = joblib.load(THIS_DIR/'fixture_sample_multi_series_exog.joblib')
 
 
-def test_output_grid_search_forecaster_multiseries_ForecasterAutoregMultiSeries_with_mocked():
+def test_output_grid_search_forecaster_multiseries_ForecasterRecursiveMultiSeries_with_mocked():
     """
     Test output of grid_search_forecaster_multiseries in ForecasterRecursiveMultiSeries 
     with mocked (mocked done in Skforecast v0.5.0)
@@ -80,7 +80,7 @@ def test_output_grid_search_forecaster_multiseries_ForecasterAutoregMultiSeries_
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_output_grid_search_forecaster_multiseries_ForecasterAutoregMultiSeries_multiple_aggregated_metrics_with_mocked():
+def test_output_grid_search_forecaster_multiseries_ForecasterRecursiveMultiSeries_multiple_aggregated_metrics_with_mocked():
     """
     Test output of grid_search_forecaster_multiseries in ForecasterRecursiveMultiSeries 
     with mocked (mocked done in Skforecast v0.5.0)
@@ -182,7 +182,7 @@ def test_output_grid_search_forecaster_multiseries_ForecasterAutoregMultiSeries_
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_output_grid_search_forecaster_multiseries_ForecasterAutoregMultiVariate_with_mocked():
+def test_output_grid_search_forecaster_multiseries_ForecasterDirectMultiVariate_with_mocked():
     """
     Test output of grid_search_forecaster_multiseries in ForecasterDirectMultiVariate 
     with mocked (mocked done in Skforecast v0.6.0)
@@ -234,7 +234,7 @@ def test_output_grid_search_forecaster_multiseries_ForecasterAutoregMultiVariate
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_output_grid_search_forecaster_multiseries_ForecasterAutoregMultiSeries_one_step_ahead():
+def test_output_grid_search_forecaster_multiseries_ForecasterRecursiveMultiSeries_one_step_ahead():
     """
     Test output of grid_search_forecaster_multiseries when series and exog are DataFrames,
     forecaster is ForecasterRecursiveMultiSeries and method is one_step_ahead.
@@ -389,7 +389,7 @@ def test_output_grid_search_forecaster_multiseries_ForecasterAutoregMultiSeries_
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_output_grid_search_forecaster_multiseries_ForecasterAutoregMultiVariate_one_step_ahead():
+def test_output_grid_search_forecaster_multiseries_ForecasterDirectMultiVariate_one_step_ahead():
     """
     Test output of grid_search_forecaster_multiseries when series and exog are DataFrames,
     forecaster is ForecasterDirectMultiVariate and method is one_step_ahead.
@@ -494,7 +494,7 @@ def test_output_grid_search_forecaster_multiseries_ForecasterAutoregMultiVariate
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_output_grid_search_forecaster_multiseries_ForecasterAutoregMultiSeries_one_step_ahead_input_is_dict():
+def test_output_grid_search_forecaster_multiseries_ForecasterRecursiveMultiSeries_one_step_ahead_input_is_dict():
     """
     Test output of grid_search_forecaster_multiseries when series and exog are dictionaries,
     forecaster is ForecasterRecursiveMultiSeries and method is one_step_ahead.

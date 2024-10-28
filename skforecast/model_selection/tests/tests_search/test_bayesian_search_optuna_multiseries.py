@@ -241,7 +241,7 @@ def test_results_output_bayesian_search_optuna_multiseries_with_mocked_when_lags
     pd.testing.assert_frame_equal(results, expected_results, check_dtype=False)
 
 
-def test_results_output_bayesian_search_optuna_multiseries_ForecasterAutoregMultiSeries_with_levels():
+def test_results_output_bayesian_search_optuna_multiseries_ForecasterRecursiveMultiSeries_with_levels():
     """
     Test output of _bayesian_search_optuna_multiseries in 
     ForecasterRecursiveMultiSeries for level 'l1' with mocked 
@@ -315,7 +315,7 @@ def test_results_output_bayesian_search_optuna_multiseries_ForecasterAutoregMult
     pd.testing.assert_frame_equal(results, expected_results, check_dtype=False)
 
 
-def test_results_output_bayesian_search_optuna_multiseries_ForecasterAutoregMultiSeries_with_multiple_metrics_aggregated():
+def test_results_output_bayesian_search_optuna_multiseries_ForecasterRecursiveMultiSeries_with_multiple_metrics_aggregated():
     """
     Test output of _bayesian_search_optuna_multiseries in ForecasterRecursiveMultiSeries
     with multiple metrics and aggregated metrics (mocked done in skforecast v0.12.0).
@@ -482,7 +482,7 @@ def test_results_output_bayesian_search_optuna_multiseries_ForecasterAutoregMult
     pd.testing.assert_frame_equal(results, expected_results, check_dtype=False)
 
 
-def test_results_output_bayesian_search_optuna_multiseries_ForecasterAutoregMultiSeries_window_features_multiple_metrics_aggregated():
+def test_results_output_bayesian_search_optuna_multiseries_ForecasterRecursiveMultiSeries_window_features_multiple_metrics_aggregated():
     """
     Test output of _bayesian_search_optuna_multiseries in ForecasterRecursiveMultiSeries
     with window features and multiple metrics and aggregated metrics
@@ -888,7 +888,7 @@ def test_results_output_bayesian_search_optuna_multiseries_when_lags_is_not_prov
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_results_output_bayesian_search_optuna_multiseries_ForecasterAutoregMultiVariate():
+def test_results_output_bayesian_search_optuna_multiseries_ForecasterDirectMultiVariate():
     """
     Test output of _bayesian_search_optuna_multiseries in 
     ForecasterDirectMultiVariate with mocked (mocked done in skforecast v0.12.0).
@@ -960,7 +960,7 @@ def test_results_output_bayesian_search_optuna_multiseries_ForecasterAutoregMult
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_results_output_bayesian_search_optuna_multiseries_ForecasterAutoregMultiVariate_lags_dict():
+def test_results_output_bayesian_search_optuna_multiseries_ForecasterDirectMultiVariate_lags_dict():
     """
     Test output of _bayesian_search_optuna_multiseries in 
     ForecasterDirectMultiVariate when lags is a dict 
@@ -1045,7 +1045,7 @@ def test_results_output_bayesian_search_optuna_multiseries_ForecasterAutoregMult
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_evaluate_bayesian_search_optuna_multiseries_when_return_best_ForecasterAutoregMultiSeries():
+def test_evaluate_bayesian_search_optuna_multiseries_when_return_best_ForecasterRecursiveMultiSeries():
     """
     Test forecaster is refitted when return_best=True in 
     _bayesian_search_optuna_multiseries with ForecasterRecursiveMultiSeries 
@@ -1167,7 +1167,7 @@ def test_results_opt_best_output__bayesian_search_optuna_multiseries_with_output
     assert best_trial.params == results_opt_best.params
 
 
-def test_bayesian_search_optuna_multiseries_ForecasterAutoregMultiSeries_output_file():
+def test_bayesian_search_optuna_multiseries_ForecasterRecursiveMultiSeries_output_file():
     """
     Test output file of _bayesian_search_optuna_multiseries in 
     ForecasterRecursiveMultiSeries.
@@ -1210,7 +1210,7 @@ def test_bayesian_search_optuna_multiseries_ForecasterAutoregMultiSeries_output_
     os.remove(output_file)
 
 
-def test_bayesian_search_optuna_multiseries_ForecasterAutoregMultiVariate_output_file():
+def test_bayesian_search_optuna_multiseries_ForecasterDirectMultiVariate_output_file():
     """
     Test output file of _bayesian_search_optuna_multiseries in 
     ForecasterDirectMultiVariate.

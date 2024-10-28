@@ -131,7 +131,7 @@ def test_ValueError_bayesian_search_optuna_when_search_space_names_do_not_match(
 # pytest -m "not slow" --verbose
 @pytest.mark.slow
 @pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python3.8 or higher")
-def test_results_output_bayesian_search_optuna_ForecasterAutoreg():
+def test_results_output_bayesian_search_optuna_ForecasterRecursive():
     """
     Test output of _bayesian_search_optuna in ForecasterRecursive with mocked
     (mocked done in Skforecast v0.4.3).
@@ -216,7 +216,7 @@ def test_results_output_bayesian_search_optuna_ForecasterAutoreg():
     pd.testing.assert_frame_equal(results, expected_results, check_dtype=False)
 
 
-def test_results_output_bayesian_search_optuna_window_features_ForecasterAutoreg():
+def test_results_output_bayesian_search_optuna_window_features_ForecasterRecursive():
     """
     Test output of _bayesian_search_optuna in ForecasterRecursive including
     window_features with mocked (mocked done in Skforecast v0.4.3).
@@ -374,7 +374,7 @@ def test_results_output_bayesian_search_optuna_window_features_ForecasterAutoreg
     pd.testing.assert_frame_equal(results, expected_results, check_dtype=False)
     
 
-def test_results_output_bayesian_search_optuna_ForecasterAutoreg_with_kwargs_create_study():
+def test_results_output_bayesian_search_optuna_ForecasterRecursive_with_kwargs_create_study():
     """
     Test output of _bayesian_search_optuna in ForecasterRecursive with 
     kwargs_create_study with mocked (mocked done in Skforecast v0.4.3).
@@ -453,7 +453,7 @@ def test_results_output_bayesian_search_optuna_ForecasterAutoreg_with_kwargs_cre
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_results_output_bayesian_search_optuna_ForecasterAutoreg_with_kwargs_study_optimize():
+def test_results_output_bayesian_search_optuna_ForecasterRecursive_with_kwargs_study_optimize():
     """
     Test output of _bayesian_search_optuna in ForecasterRecursive when 
     kwargs_study_optimize with mocked (mocked done in Skforecast v0.4.3).
@@ -529,7 +529,7 @@ def test_results_output_bayesian_search_optuna_ForecasterAutoreg_with_kwargs_stu
     pd.testing.assert_frame_equal(results, expected_results, check_dtype=False)
 
 
-def test_results_output_bayesian_search_optuna_ForecasterAutoreg_when_lags_not_in_search_space():
+def test_results_output_bayesian_search_optuna_ForecasterRecursive_when_lags_not_in_search_space():
     """
     Test output of _bayesian_search_optuna in ForecasterRecursive when lag is not 
     in search_space with mocked (mocked done in Skforecast v0.4.3).
@@ -601,7 +601,7 @@ def test_results_output_bayesian_search_optuna_ForecasterAutoreg_when_lags_not_i
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_evaluate_bayesian_search_optuna_when_return_best_ForecasterAutoreg():
+def test_evaluate_bayesian_search_optuna_when_return_best_ForecasterRecursive():
     """
     Test forecaster is refitted when return_best=True in _bayesian_search_optuna
     with a ForecasterRecursive.
@@ -738,7 +738,7 @@ def test_results_opt_best_output_bayesian_search_optuna_with_output_study_best_t
     assert best_trial.params == results_opt_best.params
 
 
-def test_results_output_bayesian_search_optuna_ForecasterAutoregDirect():
+def test_results_output_bayesian_search_optuna_ForecasterDirect():
     """
     Test output of _bayesian_search_optuna in ForecasterDirect with mocked
     (mocked done in Skforecast v0.4.3).
@@ -833,7 +833,7 @@ def test_results_output_bayesian_search_optuna_ForecasterAutoregDirect():
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_results_output_bayesian_search_optuna_window_features_ForecasterAutoregDirect():
+def test_results_output_bayesian_search_optuna_window_features_ForecasterDirect():
     """
     Test output of _bayesian_search_optuna in ForecasterDirect including
     window_features with mocked (mocked done in Skforecast v0.4.3).

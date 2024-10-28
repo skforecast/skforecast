@@ -37,6 +37,7 @@ def test_ValueError_bayesian_search_forecaster_when_return_best_and_len_y_exog_d
             allow_incomplete_fold = True,
             return_all_indexes    = False,
         )
+    
     def search_space(trial):  # pragma: no cover
         search_space  = {'alpha': trial.suggest_float('alpha', 1e-2, 1.0)}
         return search_space
@@ -60,7 +61,7 @@ def test_ValueError_bayesian_search_forecaster_when_return_best_and_len_y_exog_d
         )
 
 
-def test_results_output_bayesian_search_forecaster_optuna_ForecasterAutoreg_with_mocked():
+def test_results_output_bayesian_search_forecaster_optuna_ForecasterRecursive_with_mocked():
     """
     Test output of bayesian_search_forecaster in ForecasterRecursive with 
     mocked using optuna (mocked done in Skforecast v0.4.3).
@@ -130,7 +131,7 @@ def test_results_output_bayesian_search_forecaster_optuna_ForecasterAutoreg_with
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_results_output_bayesian_search_forecaster_optuna_ForecasterAutoreg_window_features_with_mocked():
+def test_results_output_bayesian_search_forecaster_optuna_ForecasterRecursive_window_features_with_mocked():
     """
     Test output of bayesian_search_forecaster in ForecasterRecursive with window features 
     using mocked using optuna (mocked done in Skforecast v0.4.3).
@@ -140,9 +141,9 @@ def test_results_output_bayesian_search_forecaster_optuna_ForecasterAutoreg_wind
         window_sizes = 3,
     )
     forecaster = ForecasterRecursive(
-                     regressor      = Ridge(random_state=123),
-                     lags           = 4,
-                    window_features = window_features,
+                     regressor       = Ridge(random_state=123),
+                     lags            = 4,
+                     window_features = window_features,
                  )
 
     cv = TimeSeriesFold(

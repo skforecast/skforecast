@@ -147,7 +147,7 @@ def test_check_predict_input_ValueError_when_last_step_greater_than_max_steps():
         )
 
 
-def test_check_predict_input_TypeError_when_ForecasterAutoregMultiSeries_and_level_not_str_list_or_None():
+def test_check_predict_input_TypeError_when_ForecasterRecursiveMultiSeries_and_level_not_str_list_or_None():
     """
     Test TypeError is raised when `levels` is not a str, a list or None.
     """
@@ -180,7 +180,7 @@ def test_check_predict_input_TypeError_when_ForecasterAutoregMultiSeries_and_lev
                          [('1'       , ['2', '3']), 
                           (['1']     , ['2', '3']), 
                           (['1', '2'], ['2', '3'])])
-def test_check_predict_input_UnknownLevelWarning_when_ForecasterAutoregMultiSeries_and_level_not_in_series_names_in__onehot(levels, series_names_in_):
+def test_check_predict_input_UnknownLevelWarning_when_ForecasterRecursiveMultiSeries_and_level_not_in_series_names_in__onehot(levels, series_names_in_):
     """
     Test UnknownLevelWarning is raised when `levels` is not in `self.series_names_in_` in a 
     ForecasterRecursiveMultiSeries.
@@ -223,7 +223,7 @@ def test_check_predict_input_UnknownLevelWarning_when_ForecasterAutoregMultiSeri
                          [('1'       , ['2', '3']), 
                           (['1']     , ['2', '3']), 
                           (['1', '2'], ['2', '3'])])
-def test_check_predict_input_UnknownLevelWarning_when_ForecasterAutoregMultiSeries_and_level_not_in_series_names_in_(encoding, levels, series_names_in_):
+def test_check_predict_input_UnknownLevelWarning_when_ForecasterRecursiveMultiSeries_and_level_not_in_series_names_in_(encoding, levels, series_names_in_):
     """
     Test UnknownLevelWarning is raised when `levels` is not in `self.series_names_in_` in a 
     ForecasterRecursiveMultiSeries.
@@ -425,7 +425,7 @@ def test_check_predict_input_TypeError_when_last_window_is_not_pandas_DataFrame(
                           (['1', '2'], pd.DataFrame({'3': [1, 2, 3], '4': [1, 2, 3]}))], 
                          ids = lambda values : f'levels: {values}'
                         )
-def test_check_predict_input_ValueError_when_levels_not_in_last_window_ForecasterAutoregMultiSeries(levels, last_window):
+def test_check_predict_input_ValueError_when_levels_not_in_last_window_ForecasterRecursiveMultiSeries(levels, last_window):
     """
     Check ValueError is raised when levels are no the same as last_window column names.
     """
@@ -456,7 +456,7 @@ def test_check_predict_input_ValueError_when_levels_not_in_last_window_Forecaste
         )
 
 
-def test_check_predict_input_ValueError_when_series_names_in__not_last_window_ForecasterAutoregMultiVariate():
+def test_check_predict_input_ValueError_when_series_names_in__not_last_window_ForecasterDirectMultiVariate():
     """
     Check ValueError is raised when column names of series using during fit do not
     match with last_window column names.

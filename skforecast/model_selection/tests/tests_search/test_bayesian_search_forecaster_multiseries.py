@@ -76,7 +76,7 @@ def test_ValueError_bayesian_search_forecaster_multiseries_when_return_best_and_
         )
 
 
-def test_results_output_bayesian_search_forecaster_multiseries_ForecasterAutoregMultiSeries():
+def test_results_output_bayesian_search_forecaster_multiseries_ForecasterRecursiveMultiSeries():
     """
     Test output of bayesian_search_forecaster_multiseries in 
     ForecasterRecursiveMultiSeries with mocked (mocked done in Skforecast v0.12.0).
@@ -92,7 +92,7 @@ def test_results_output_bayesian_search_forecaster_multiseries_ForecasterAutoreg
             steps              = 3,
             refit              = False,
             fixed_train_size   = True
-    )
+        )
 
     def search_space(trial):
         search_space  = {
@@ -151,10 +151,11 @@ def test_results_output_bayesian_search_forecaster_multiseries_ForecasterAutoreg
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_results_output_bayesian_search_forecaster_multiseries_ForecasterAutoregMultiSeries_with_window_features():
+def test_results_output_bayesian_search_forecaster_multiseries_ForecasterRecursiveMultiSeries_with_window_features():
     """
     Test output of bayesian_search_forecaster_multiseries in 
-    ForecasterRecursiveMultiSeries with mocked (mocked done in Skforecast v0.12.0).
+    ForecasterRecursiveMultiSeries with window features 
+    (mocked done in Skforecast v0.14.0).
     """
     window_features = RollingFeatures(
         stats=['mean', 'std', 'min', 'max', 'sum', 'median', 'ratio_min_max', 'coef_variation'],
@@ -173,7 +174,7 @@ def test_results_output_bayesian_search_forecaster_multiseries_ForecasterAutoreg
             steps              = 3,
             refit              = False,
             fixed_train_size   = True
-    )
+        )
 
     def search_space(trial):
         search_space  = {
@@ -375,15 +376,15 @@ def test_output_bayesian_search_forecaster_multiseries_series_and_exog_dict_wind
     """
     Test output of bayesian_search_forecaster_multiseries in ForecasterRecursiveMultiSeries
     when series and exog are dictionaries and window features are included 
-    (mocked done in Skforecast v0.12.0).
+    (mocked done in Skforecast v0.14.0).
     """
     window_features = RollingFeatures(
         stats = ['mean', 'std', 'min', 'max', 'sum', 'median', 'ratio_min_max', 'coef_variation'],
         window_sizes = 3,
     )
     regressor = LGBMRegressor(
-            n_estimators=2, random_state=123, verbose=-1, max_depth=2
-        )
+        n_estimators=2, random_state=123, verbose=-1, max_depth=2
+    )
     forecaster = ForecasterRecursiveMultiSeries(
         regressor          = regressor,
         lags               = 14,
@@ -640,7 +641,98 @@ def test_output_bayesian_search_forecaster_multiseries_series_and_exog_dict_with
     pd.testing.assert_frame_equal(expected, results_search)
 
 
-def test_results_output_bayesian_search_forecaster_multivariate_ForecasterAutoregMultiVariate():
+def test_results_output_bayesian_search_forecaster_multivariate_ForecasterDirectMultiVariate():
+    """
+    Test output of bayesian_search_forecaster_multivariate in 
+    ForecasterDirectMultiVariate with mocked (mocked done in Skforecast v0.12.0).
+    """
+    window_features = RollingFeatures(
+        stats = ['mean', 'std', 'min', 'max', 'sum', 'median', 'ratio_min_max', 'coef_variation'],
+        window_sizes = 3,
+    )
+    forecaster = ForecasterDirectMultiVariate(
+                     regressor       = Ridge(random_state=123),
+                     level           = 'l1',
+                     steps           = 3,
+                     lags            = 2,
+                     window_features = window_features
+                 )
+    cv = TimeSeriesFold(
+            initial_train_size = len(series) - 12,
+            steps              = 3,
+            refit              = False,
+    )
+
+    def search_space(trial):
+        search_space  = {
+            'alpha': trial.suggest_float('alpha', 1e-2, 1.0),
+            'lags': trial.suggest_categorical('lags', [2, {'l1': 4, 'l2': [2, 3]}])
+        }
+
+        return search_space
+
+    results = bayesian_search_forecaster_multiseries(
+                  forecaster         = forecaster,
+                  series             = series,
+                  cv                 = cv,
+                  search_space       = search_space,
+                  metric             = 'mean_absolute_error',
+                  aggregate_metric   = 'weighted_average',
+                  n_trials           = 10,
+                  random_state       = 123,
+                  return_best        = False,
+                  verbose            = False,
+              )[0]
+    
+    expected_results = pd.DataFrame({
+        'levels': [['l1'], ['l1'], ['l1'], ['l1'], ['l1'],
+                   ['l1'], ['l1'], ['l1'], ['l1'], ['l1']],
+        'lags': [{'l1': np.array([1, 2, 3, 4]), 'l2': np.array([2, 3])},
+                 {'l1': np.array([1, 2, 3, 4]), 'l2': np.array([2, 3])},
+                 {'l1': np.array([1, 2, 3, 4]), 'l2': np.array([2, 3])},
+                 {'l1': np.array([1, 2, 3, 4]), 'l2': np.array([2, 3])},
+                 {'l1': np.array([1, 2, 3, 4]), 'l2': np.array([2, 3])},
+                 np.array([1, 2]),
+                 np.array([1, 2]),
+                 np.array([1, 2]),
+                 np.array([1, 2]),
+                 np.array([1, 2])],
+        'params': [{'alpha': 0.7252189487445193},
+                   {'alpha': 0.23598059857016607},
+                   {'alpha': 0.53623586010342},
+                   {'alpha': 0.4441865222328282},
+                   {'alpha': 0.398196343012209},
+                   {'alpha': 0.9809565564007693},
+                   {'alpha': 0.8509374761370117},
+                   {'alpha': 0.7406154516747153},
+                   {'alpha': 0.6995044937418831},
+                   {'alpha': 0.5558016213920624}],
+        'mean_absolute_error': [0.23364862728435018,
+                                0.23399963314273875,
+                                0.23401124553469274,
+                                0.23411514768630792,
+                                0.23414113077335505,
+                                0.250967375463984,
+                                0.25166609972144893,
+                                0.2522467306377772,
+                                0.2524589067210421,
+                                0.2531740553380533],
+        'alpha': [0.7252189487445193,
+                  0.23598059857016607,
+                  0.53623586010342,
+                  0.4441865222328282,
+                  0.398196343012209,
+                  0.9809565564007693,
+                  0.8509374761370117,
+                  0.7406154516747153,
+                  0.6995044937418831,
+                  0.5558016213920624]}
+    )
+
+    pd.testing.assert_frame_equal(results, expected_results)
+
+
+def test_results_output_bayesian_search_forecaster_multivariate_ForecasterDirectMultiVariate_window_features():
     """
     Test output of bayesian_search_forecaster_multivariate in 
     ForecasterDirectMultiVariate with mocked (mocked done in Skforecast v0.12.0).
@@ -714,7 +806,7 @@ def test_results_output_bayesian_search_forecaster_multivariate_ForecasterAutore
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_output_bayesian_search_forecaster_multiseries_ForecasterAutoregMultiVariate_one_step_ahead():
+def test_output_bayesian_search_forecaster_multiseries_ForecasterDirectMultiVariate_one_step_ahead():
     """
     Test output of bayesian_search_forecaster_multiseries when forecaster is ForecasterRecursiveMultiSeries
     and method is one_step_ahead.
@@ -806,7 +898,7 @@ def test_output_bayesian_search_forecaster_multiseries_ForecasterAutoregMultiVar
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_output_bayesian_search_forecaster_multiseries_ForecasterAutoregMultiSeries_one_step_ahead():
+def test_output_bayesian_search_forecaster_multiseries_ForecasterRecursiveMultiSeries_one_step_ahead():
     """
     Test output of bayesian_search_forecaster_multiseries when forecaster is ForecasterRecursiveMultiSeries
     and method is one_step_ahead.

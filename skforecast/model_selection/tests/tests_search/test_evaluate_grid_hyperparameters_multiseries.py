@@ -16,6 +16,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import ParameterGrid
 from skforecast.metrics import mean_absolute_scaled_error
 from skforecast.metrics import root_mean_squared_scaled_error
+from skforecast.preprocessing import RollingFeatures
 from skforecast.recursive import ForecasterRecursiveMultiSeries
 from skforecast.direct import ForecasterDirectMultiVariate
 from skforecast.model_selection._search import _evaluate_grid_hyperparameters_multiseries
@@ -145,7 +146,7 @@ def test_evaluate_grid_hyperparameters_multiseries_exception_when_metric_list_du
 
 # ForecasterRecursiveMultiSeries
 # ======================================================================================================================
-def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterAutoregMultiSeries_with_mocked():
+def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterRecursiveMultiSeries_with_mocked():
     """
     Test output of _evaluate_grid_hyperparameters_multiseries in ForecasterRecursiveMultiSeries 
     with mocked (mocked done in Skforecast v0.5.0).
@@ -218,7 +219,160 @@ def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterAutoregMulti
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_output_evaluate_grid_hyperparameters_ForecasterAutoregMultiSeries_lags_grid_dict_with_mocked():
+def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterRecursiveMultiSeries_with_window_features():
+    """
+    Test output of _evaluate_grid_hyperparameters_multiseries in 
+    ForecasterRecursiveMultiSeries with window features 
+    (mocked done in Skforecast v0.14.0).
+    """
+    window_features = RollingFeatures(
+        stats=['mean', 'std', 'min', 'max', 'sum', 'median', 'ratio_min_max', 'coef_variation'],
+        window_sizes=3,
+    )
+    forecaster = ForecasterRecursiveMultiSeries(
+                     regressor          = Ridge(random_state=123),
+                     lags               = 2, 
+                     window_features    = window_features,
+                     encoding           = 'onehot',
+                     transformer_series = None
+                 )
+    cv = TimeSeriesFold(
+            initial_train_size = len(series) - 12,
+            steps              = 3,
+            gap                = 0,
+            refit              = False,
+            fixed_train_size   = False,
+         )
+    lags_grid = [2, 4]
+    param_grid = [{'alpha': 0.01}, {'alpha': 0.1}, {'alpha': 1}]
+
+    results = _evaluate_grid_hyperparameters_multiseries(
+                  forecaster         = forecaster,
+                  series             = series,
+                  param_grid         = param_grid,
+                  cv                 = cv,
+                  metric             = 'mean_absolute_error',
+                  aggregate_metric   = 'weighted_average',
+                  levels             = None,
+                  exog               = None,
+                  lags_grid          = lags_grid,
+                  return_best        = False,
+                  verbose            = False
+              )
+
+    expected_results = pd.DataFrame(
+        {'levels': [['l1', 'l2'],
+                    ['l1', 'l2'],
+                    ['l1', 'l2'],
+                    ['l1', 'l2'],
+                    ['l1', 'l2'],
+                    ['l1', 'l2']],
+         'lags': [np.array([1, 2, 3, 4]),
+                    np.array([1, 2, 3, 4]),
+                    np.array([1, 2]),
+                    np.array([1, 2]),
+                    np.array([1, 2, 3, 4]),
+                    np.array([1, 2])],
+         'lags_label': [np.array([1, 2, 3, 4]),
+                    np.array([1, 2, 3, 4]),
+                    np.array([1, 2]),
+                    np.array([1, 2]),
+                    np.array([1, 2, 3, 4]),
+                    np.array([1, 2])],
+         'params': [{'alpha': 1},
+                    {'alpha': 0.1},
+                    {'alpha': 1},
+                    {'alpha': 0.1},
+                    {'alpha': 0.01},
+                    {'alpha': 0.01}],
+         'mean_absolute_error__weighted_average': [0.2146029752649913,
+                    0.2155171009179464,
+                    0.21574815856300625,
+                    0.21677673611895729,
+                    0.22004258621311923,
+                    0.22107598684517502],
+         'alpha': [1.0, 0.1, 1.0, 0.1, 0.01, 0.01]}
+    )
+
+    pd.testing.assert_frame_equal(results, expected_results)
+
+
+def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterRecursiveMultiSeries_series_and_exog_dict_with_window_features():
+    """
+    Test output of _evaluate_grid_hyperparameters_multiseries in 
+    ForecasterRecursiveMultiSeries when series and exog are dicts with window features 
+    (mocked done in Skforecast v0.14.0).
+    """
+    window_features = RollingFeatures(
+        stats=['mean', 'std', 'min', 'max', 'sum', 'median', 'ratio_min_max', 'coef_variation'],
+        window_sizes=3,
+    )
+    regressor = LGBMRegressor(
+        n_estimators=10, random_state=123, verbose=-1, max_depth=3
+    )
+    forecaster = ForecasterRecursiveMultiSeries(
+                     regressor          = regressor,
+                     lags               = 2, 
+                     window_features    = window_features,
+                     encoding           = 'onehot',
+                     transformer_series = None
+                 )
+    cv = TimeSeriesFold(
+            initial_train_size = len(series) - 12,
+            steps              = 3,
+            gap                = 0,
+            refit              = False,
+            fixed_train_size   = False,
+         )
+    lags_grid = [2, 4]
+    param_grid = [
+        {'n_estimators': 15, 'max_depth': 5},
+        {'n_estimators': 10, 'max_depth': 3}
+    ]
+
+    results = _evaluate_grid_hyperparameters_multiseries(
+                  forecaster         = forecaster,
+                  series             = series_dict,
+                  exog               = exog_dict,
+                  param_grid         = param_grid,
+                  cv                 = cv,
+                  metric             = 'mean_absolute_error',
+                  aggregate_metric   = 'weighted_average',
+                  levels             = None,
+                  lags_grid          = lags_grid,
+                  return_best        = False,
+                  verbose            = False
+              )
+
+    expected_results = pd.DataFrame({
+        'levels': [['id_1000', 'id_1001', 'id_1002', 'id_1003', 'id_1004'],
+                   ['id_1000', 'id_1001', 'id_1002', 'id_1003', 'id_1004'],
+                   ['id_1000', 'id_1001', 'id_1002', 'id_1003', 'id_1004'],
+                   ['id_1000', 'id_1001', 'id_1002', 'id_1003', 'id_1004']],
+        'lags': [np.array([1, 2, 3, 4]),
+                 np.array([1, 2]),
+                 np.array([1, 2, 3, 4]),
+                 np.array([1, 2])],
+        'lags_label': [np.array([1, 2, 3, 4]),
+                       np.array([1, 2]),
+                       np.array([1, 2, 3, 4]),
+                       np.array([1, 2])],
+        'params': [{'n_estimators': 15, 'max_depth': 5},
+                   {'n_estimators': 15, 'max_depth': 5},
+                   {'n_estimators': 10, 'max_depth': 3},
+                   {'n_estimators': 10, 'max_depth': 3}],
+        'mean_absolute_error__weighted_average': [663.557949349482,
+                                                  673.8431369197542,
+                                                  761.8926543280367,
+                                                  775.090407239743],
+        'n_estimators': [15, 15, 10, 10],
+        'max_depth': [5, 5, 3, 3]
+    })
+
+    pd.testing.assert_frame_equal(results, expected_results)
+
+
+def test_output_evaluate_grid_hyperparameters_ForecasterRecursiveMultiSeries_lags_grid_dict_with_mocked():
     """
     Test output of _evaluate_grid_hyperparameters in ForecasterRecursiveMultiSeries 
     when `lags_grid` is a dict with mocked (mocked done in Skforecast v0.5.0).
@@ -284,7 +438,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterAutoregMultiSeries_lags_
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_output_evaluate_grid_hyperparameters_ForecasterAutoregMultiSeries_lags_grid_is_None_with_mocked():
+def test_output_evaluate_grid_hyperparameters_ForecasterRecursiveMultiSeries_lags_grid_is_None_with_mocked():
     """
     Test output of _evaluate_grid_hyperparameters in ForecasterRecursiveMultiSeries 
     when `lags_grid` is `None` with mocked (mocked done in Skforecast v0.5.0), 
@@ -341,7 +495,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterAutoregMultiSeries_lags_
 @pytest.mark.parametrize("levels", 
                          ['l1', ['l1']], 
                          ids = lambda value: f'levels: {value}')
-def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterAutoregMultiSeries_levels_str_list_with_mocked(levels):
+def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterRecursiveMultiSeries_levels_str_list_with_mocked(levels):
     """
     Test output of _evaluate_grid_hyperparameters_multiseries in ForecasterRecursiveMultiSeries 
     with mocked when `levels` is a `str` or a `list` (mocked done in Skforecast v0.5.0).
@@ -414,7 +568,7 @@ def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterAutoregMulti
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterAutoregMultiSeries_multiple_metrics_with_mocked():
+def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterRecursiveMultiSeries_multiple_metrics_with_mocked():
     """
     Test output of _evaluate_grid_hyperparameters_multiseries in ForecasterRecursiveMultiSeries 
     with mocked when multiple metrics (mocked done in Skforecast v0.6.0).
@@ -500,7 +654,7 @@ def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterAutoregMulti
 @pytest.mark.parametrize("lags_grid", 
                          [[2, 4], {'lags_1': 2, 'lags_2': 4}], 
                          ids=lambda lg: f'lags_grid: {lg}')
-def test_evaluate_grid_hyperparameters_multiseries_when_return_best_ForecasterAutoregMultiSeries(lags_grid):
+def test_evaluate_grid_hyperparameters_multiseries_when_return_best_ForecasterRecursiveMultiSeries(lags_grid):
     """
     Test forecaster is refitted when `return_best = True` in 
     _evaluate_grid_hyperparameters_multiseries.
@@ -543,7 +697,7 @@ def test_evaluate_grid_hyperparameters_multiseries_when_return_best_ForecasterAu
     assert expected_series_names_in_ ==  forecaster.series_names_in_
 
 
-def test_evaluate_grid_hyperparameters_multiseries_ForecasterAutoregMultiSeries_output_file_single_level():
+def test_evaluate_grid_hyperparameters_multiseries_ForecasterRecursiveMultiSeries_output_file_single_level():
     """
     Test output file is created when output_file is passed to
     _evaluate_grid_hyperparameters_multiseries and single level.
@@ -589,7 +743,7 @@ def test_evaluate_grid_hyperparameters_multiseries_ForecasterAutoregMultiSeries_
     os.remove(output_file)
 
 
-def test_evaluate_grid_hyperparameters_multiseries_ForecasterAutoregMultiSeries_output_file_multiple_metrics():
+def test_evaluate_grid_hyperparameters_multiseries_ForecasterRecursiveMultiSeries_output_file_multiple_metrics():
     """
     Test output file is created when output_file is passed to
     _evaluate_grid_hyperparameters_multiseries and list of metrics.
@@ -637,7 +791,7 @@ def test_evaluate_grid_hyperparameters_multiseries_ForecasterAutoregMultiSeries_
     os.remove(output_file)
 
 
-def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterAutoregMultiSeries_multiple_metrics_aggregated_with_mocked():
+def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterRecursiveMultiSeries_multiple_metrics_aggregated_with_mocked():
     """
     Test output of _evaluate_grid_hyperparameters_multiseries in ForecasterRecursiveMultiSeries 
     with mocked when multiple metrics (mocked done in Skforecast v0.6.0).
@@ -760,7 +914,7 @@ def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterAutoregMulti
 
 # ForecasterDirectMultiVariate
 # ======================================================================================================================
-def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterAutoregMultiVariate_with_mocked():
+def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterDirectMultiVariate_with_mocked():
     """
     Test output of _evaluate_grid_hyperparameters_multiseries in ForecasterDirectMultiVariate 
     with mocked (mocked done in Skforecast v0.6.0).
@@ -813,7 +967,7 @@ def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterAutoregMulti
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_output_evaluate_grid_hyperparameters_ForecasterAutoregMultiVariate_lags_grid_dict_with_mocked():
+def test_output_evaluate_grid_hyperparameters_ForecasterDirectMultiVariate_lags_grid_dict_with_mocked():
     """
     Test output of _evaluate_grid_hyperparameters in ForecasterDirectMultiVariate 
     when `lags_grid` is a dict with mocked (mocked done in Skforecast v0.6.0)
@@ -866,7 +1020,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterAutoregMultiVariate_lags
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_output_evaluate_grid_hyperparameters_ForecasterAutoregMultiVariate_lags_grid_is_None_with_mocked():
+def test_output_evaluate_grid_hyperparameters_ForecasterDirectMultiVariate_lags_grid_is_None_with_mocked():
     """
     Test output of _evaluate_grid_hyperparameters in ForecasterDirectMultiVariate 
     when `lags_grid` is `None` with mocked (mocked done in Skforecast v0.6.0), 
@@ -916,7 +1070,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterAutoregMultiVariate_lags
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_output_evaluate_grid_hyperparameters_ForecasterAutoregMultiVariate_lags_grid_is_list_of_dicts_with_mocked():
+def test_output_evaluate_grid_hyperparameters_ForecasterDirectMultiVariate_lags_grid_is_list_of_dicts_with_mocked():
     """
     Test output of _evaluate_grid_hyperparameters in ForecasterDirectMultiVariate 
     when `lags_grid` is a list of dicts with mocked (mocked done in Skforecast v0.6.0).
@@ -987,7 +1141,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterAutoregMultiVariate_lags
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_output_evaluate_grid_hyperparameters_ForecasterAutoregMultiVariate_lags_grid_is_dict_of_dicts_with_mocked():
+def test_output_evaluate_grid_hyperparameters_ForecasterDirectMultiVariate_lags_grid_is_dict_of_dicts_with_mocked():
     """
     Test output of _evaluate_grid_hyperparameters in ForecasterDirectMultiVariate 
     when `lags_grid` is a dict of dicts with mocked (mocked done in Skforecast v0.6.0).
@@ -1075,7 +1229,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterAutoregMultiVariate_lags
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterAutoregMultiVariate_multiple_metrics_with_mocked():
+def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterDirectMultiVariate_multiple_metrics_with_mocked():
     """
     Test output of _evaluate_grid_hyperparameters_multiseries in ForecasterDirectMultiVariate 
     with mocked when multiple metrics (mocked done in Skforecast v0.6.0).
@@ -1131,7 +1285,7 @@ def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterAutoregMulti
 @pytest.mark.parametrize("lags_grid", 
                          [[2, 4], {'lags_1': 2, 'lags_2': 4}], 
                          ids=lambda lg: f'lags_grid: {lg}')
-def test_evaluate_grid_hyperparameters_multiseries_when_return_best_ForecasterAutoregMultiVariate(lags_grid):
+def test_evaluate_grid_hyperparameters_multiseries_when_return_best_ForecasterDirectMultiVariate(lags_grid):
     """
     Test forecaster is refitted when `return_best = True` in 
     _evaluate_grid_hyperparameters_multiseries.
@@ -1177,7 +1331,7 @@ def test_evaluate_grid_hyperparameters_multiseries_when_return_best_ForecasterAu
     assert expected_series_names_in_ ==  forecaster.series_names_in_
 
 
-def test_evaluate_grid_hyperparameters_multiseries_ForecasterAutoregMultiVariate_output_file_single_level():
+def test_evaluate_grid_hyperparameters_multiseries_ForecasterDirectMultiVariate_output_file_single_level():
     """
     Test output file is created when output_file is passed to 
     _evaluate_grid_hyperparameters_multiseries and single level.
@@ -1224,7 +1378,7 @@ def test_evaluate_grid_hyperparameters_multiseries_ForecasterAutoregMultiVariate
     os.remove(output_file)
 
 
-def test_evaluate_grid_hyperparameters_multiseries_ForecasterAutoregMultiVariate_output_file_multiple_metrics():
+def test_evaluate_grid_hyperparameters_multiseries_ForecasterDirectMultiVariate_output_file_multiple_metrics():
     """
     Test output file is created when output_file is passed to 
     _evaluate_grid_hyperparameters_multiseries and list of metrics.
