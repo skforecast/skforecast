@@ -2491,10 +2491,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         
         steps_to_update = set(range(1, self.steps + 1)).intersection(set(y_pred.keys()))
         if not steps_to_update:
-            warnings.warn(
+            raise ValueError(
                 "Provided keys in `y_pred` and `y_true` do not match any step. "
-                "Residuals are not updated.",
-                IgnoredArgumentWarning
+                "Residuals cannot be updated."
             )
 
         residuals = {}

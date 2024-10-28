@@ -23,7 +23,7 @@ tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)  # hide progress bar
 from ..fixtures_model_selection import y
 
  
-def test_output_grid_search_forecaster_ForecasterAutoreg_with_mocked():
+def test_output_grid_search_forecaster_ForecasterRecursive_with_mocked():
     """
     Test output of grid_search_forecaster in ForecasterRecursive with mocked
     (mocked done in Skforecast v0.4.3)

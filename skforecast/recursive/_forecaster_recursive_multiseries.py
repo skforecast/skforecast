@@ -2843,7 +2843,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             if not isinstance(y_pred[k], (np.ndarray, pd.Series)):
                 raise TypeError(
                     f"Values of `y_pred` must be numpy ndarrays or pandas Series. "
-                    f"Got {type(y_true[k])} for series '{k}'."
+                    f"Got {type(y_pred[k])} for series '{k}'."
                 )
             if len(y_true[k]) != len(y_pred[k]):
                 raise ValueError(
@@ -2865,12 +2865,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
     
         series_to_update = set(y_pred.keys()).intersection(set(levels))
         if not series_to_update:
-            warnings.warn(
+            raise ValueError(
                 "Provided keys in `y_pred` and `y_true` do not match any series "
-                "seen during `fit`. Residuals are not updated.",
-                IgnoredArgumentWarning
+                "seen during `fit`. Residuals cannot be updated."
             )
-            return
         
         residuals = {}
         rng = np.random.default_rng(seed=random_state)

@@ -25,7 +25,7 @@ from ..fixtures_model_selection import out_sample_residuals
 
 @pytest.mark.parametrize("n_jobs", [-1, 1, 'auto'],
                          ids=lambda n: f'n_jobs: {n}')
-def test_output_backtesting_forecaster_no_exog_no_remainder_ForecasterAutoreg_with_mocked(n_jobs):
+def test_output_backtesting_forecaster_no_exog_no_remainder_ForecasterRecursive_with_mocked(n_jobs):
     """
     Test output of _backtesting_forecaster with backtesting mocked, interval no.
     Regressor is LinearRegression with lags=3, Series y is mocked, no exog, 
@@ -70,7 +70,7 @@ def test_output_backtesting_forecaster_no_exog_no_remainder_ForecasterAutoreg_wi
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
-def test_output_backtesting_forecaster_no_exog_no_remainder_ForecasterAutoregDirect_with_mocked():
+def test_output_backtesting_forecaster_no_exog_no_remainder_ForecasterDirect_with_mocked():
     """
     Test output of _backtesting_forecaster with backtesting mocked, interval no.
     Regressor is LinearRegression with lags=3, Series y is mocked, no exog, 

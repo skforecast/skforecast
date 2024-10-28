@@ -7,7 +7,6 @@ import pandas as pd
 from sklearn.linear_model import LinearRegression
 from sklearn.exceptions import NotFittedError
 from sklearn.preprocessing import StandardScaler
-from skforecast.exceptions import IgnoredArgumentWarning
 from skforecast.direct import ForecasterDirect
 
 # Fixtures
@@ -148,9 +147,9 @@ def test_set_out_sample_residuals_ValueError_when_y_true_and_y_pred_have_series_
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
 
 
-def test_set_out_sample_residuals_IgnoredArgumentWarning_when_inputs_does_not_match_any_step():
+def test_set_out_sample_residuals_ValueError_when_inputs_does_not_match_any_step():
     """
-    Test IgnoredArgumentWarning is raised when inputs does not contain keys that match any step.
+    Test ValueError is raised when inputs does not contain keys that match any step.
     """
     forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=2)
     forecaster.fit(y=y)
@@ -159,9 +158,9 @@ def test_set_out_sample_residuals_IgnoredArgumentWarning_when_inputs_does_not_ma
 
     err_msg = re.escape(
         "Provided keys in `y_pred` and `y_true` do not match any step. "
-        "Residuals are not updated."
+        "Residuals cannot be updated."
     )
-    with pytest.warns(IgnoredArgumentWarning, match = err_msg):
+    with pytest.raises(ValueError, match = err_msg):
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
 
 
@@ -232,20 +231,6 @@ def test_set_out_sample_residuals_when_residuals_length_is_more_than_10000_and_a
     results = forecaster.out_sample_residuals_
 
     assert all([len(v) == 10_000 for v in results.values()])
-
-
-def test_set_out_sample_residuals_when_residuals_keys_do_not_match():
-    """
-    Test residuals are not stored when keys does not match.
-    """
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=2)
-    forecaster.fit(y=y)
-    y_pred = {3: np.arange(10), 4: np.arange(10)}
-    y_true = {3: np.arange(10), 4: np.arange(10)}
-    forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
-    results = forecaster.out_sample_residuals_
-
-    assert results == {1: None, 2: None}
 
 
 def test_set_out_sample_residuals_when_residuals_keys_partially_match():

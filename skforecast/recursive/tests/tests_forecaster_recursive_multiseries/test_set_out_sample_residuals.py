@@ -150,9 +150,9 @@ def test_set_out_sample_residuals_ValueError_when_y_true_and_y_pred_have_series_
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
 
 
-def test_set_out_sample_residuals_UserWarning_when_inputs_does_not_match_series_seen_in_fit():
+def test_set_out_sample_residuals_ValueError_when_inputs_does_not_match_series_seen_in_fit():
     """
-    Test UserWarning is raised when inputs does not contain keys that match any 
+    Test ValueError is raised when inputs does not contain keys that match any 
     series seen in fit.
     """
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
@@ -161,10 +161,10 @@ def test_set_out_sample_residuals_UserWarning_when_inputs_does_not_match_series_
     y_pred = {'5': np.array([1, 2, 3])}
 
     err_msg = re.escape(
-        "Provided keys in `y_pred` and `y_true` do not match any series seen "
-        "in `fit`. Residuals are not updated."
+        "Provided keys in `y_pred` and `y_true` do not match any series "
+        "seen during `fit`. Residuals cannot be updated."
     )
-    with pytest.warns(UserWarning, match = err_msg):
+    with pytest.raises(ValueError, match = err_msg):
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
 
 
@@ -371,23 +371,6 @@ def test_set_out_sample_residuals_when_residuals_length_is_greater_than_10000_an
     results = forecaster.out_sample_residuals_
 
     assert all([len(v) == 10_000 for v in results.values()])
-
-
-def test_set_out_sample_residuals_when_residuals_keys_do_not_match():
-    """
-    Test residuals are not stored when keys does not match.
-    """
-    forecaster = ForecasterRecursiveMultiSeries(
-                    LinearRegression(),
-                    lags=3,
-                 )
-    forecaster.fit(series=series)
-    y_pred = {'l3': np.arange(10), 'l4': np.arange(10)}
-    y_true = {'l3': np.arange(10), 'l4': np.arange(10)}
-    forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
-    results = forecaster.out_sample_residuals_
-
-    assert results == {'l1': None, 'l2': None, '_unknown_level': None}
 
 
 def test_set_out_sample_residuals_when_residuals_keys_partially_match():

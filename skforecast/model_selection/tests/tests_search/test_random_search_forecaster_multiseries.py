@@ -16,7 +16,7 @@ from functools import partialmethod
 tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)  # hide progress bar
 
 
-def test_output_random_search_forecaster_multiseries_ForecasterAutoregMultiSeries_with_mocked():
+def test_output_random_search_forecaster_multiseries_ForecasterRecursiveMultiSeries_with_mocked():
     """
     Test output of random_search_forecaster_multiseries in ForecasterRecursiveMultiSeries 
     with mocked (mocked done in Skforecast v0.5.0)
@@ -106,7 +106,7 @@ def test_output_random_search_forecaster_multiseries_ForecasterAutoregMultiSerie
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_output_random_search_forecaster_multiseries_ForecasterAutoregMultiVariate_with_mocked():
+def test_output_random_search_forecaster_multiseries_ForecasterDirectMultiVariate_with_mocked():
     """
     Test output of random_search_forecaster_multiseries in ForecasterDirectMultiVariate 
     with mocked (mocked done in Skforecast v0.6.0)
