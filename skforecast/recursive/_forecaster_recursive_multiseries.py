@@ -2784,9 +2784,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         differentiations if the forecaster includes them (`self.transformer_series`
         and `self.differentiation`).
 
-        A total of 10000 residuals are stored in the attribute `out_sample_residuals_`.
-        If the number of residuals is greater than 10000, a random sample of 10000
-        residuals is stored.
+        A total of 10_000 residuals are stored in the attribute `out_sample_residuals_`.
+        If the number of residuals is greater than 10_000, a random sample of
+        10_000 residuals is stored.
         
         Parameters
         ----------
@@ -2799,7 +2799,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         append : bool, default `False`
             If `True`, new residuals are added to the once already stored in the
             attribute `out_sample_residuals_`. If after appending the new residuals,
-            the limit of 10000 samples is exceeded, a random sample of 10000 is
+            the limit of 10_000 samples is exceeded, a random sample of 10_000 is
             kept.
         random_state : int, default `123`
             Sets a seed to the random sampling for reproducible output.
@@ -2818,13 +2818,13 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         if not isinstance(y_true, dict):
             raise TypeError(
-                f"`y_true` must be a dictionary of numpy ndarrays or pandas series. "
+                f"`y_true` must be a dictionary of numpy ndarrays or pandas Series. "
                 f"Got {type(y_true)}."
             )
 
         if not isinstance(y_pred, dict):
             raise TypeError(
-                f"`y_pred` must be a dictionary of numpy ndarrays or pandas series. "
+                f"`y_pred` must be a dictionary of numpy ndarrays or pandas Series. "
                 f"Got {type(y_pred)}."
             )
         
@@ -2837,24 +2837,24 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         for k in y_true.keys():
             if not isinstance(y_true[k], (np.ndarray, pd.Series)):
                 raise TypeError(
-                    f"Values of `y_true` must be numpy ndarrays or pandas series. "
-                    f"Got {type(y_true[k])}."
+                    f"Values of `y_true` must be numpy ndarrays or pandas Series. "
+                    f"Got {type(y_true[k])} for series '{k}'."
                 )
             if not isinstance(y_pred[k], (np.ndarray, pd.Series)):
                 raise TypeError(
-                    f"Values of `y_pred` must be numpy ndarrays or pandas series. "
-                    f"Got {type(y_pred[k])}."
+                    f"Values of `y_pred` must be numpy ndarrays or pandas Series. "
+                    f"Got {type(y_true[k])} for series '{k}'."
                 )
             if len(y_true[k]) != len(y_pred[k]):
                 raise ValueError(
-                    f"{k} must have the same length in `y_true` and `y_pred`. "
-                    f"Got {len(y_true[k])} and {len(y_pred[k])}."
+                    f"`y_true` and `y_pred` must have the same length. "
+                    f"Got {len(y_true[k])} and {len(y_pred[k])} for series '{k}'."
                 )
             if isinstance(y_true[k], pd.Series) and isinstance(y_pred[k], pd.Series):
                 if not y_true[k].index.equals(y_pred[k].index):
                     raise ValueError(
-                       "When containing pandas series, elements in `y_true` and "
-                        "must have the same index."
+                        f"When containing pandas Series, elements in `y_true` and "
+                        f"`y_pred` must have the same index. Error with series '{k}'."
                     )
 
         levels = self.series_names_in_ + ['_unknown_level']
@@ -2866,8 +2866,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         series_to_update = set(y_pred.keys()).intersection(set(levels))
         if not series_to_update:
             warnings.warn(
-                "Provided keys in `y_pred` and `y_true` do not match any series seen "
-                "in `fit`. Residuals are not updated."
+                "Provided keys in `y_pred` and `y_true` do not match any series "
+                "seen during `fit`. Residuals are not updated.",
+                IgnoredArgumentWarning
             )
             return
         
