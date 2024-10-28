@@ -59,7 +59,7 @@ def test_ValueError_bayesian_search_forecaster_when_return_best_and_len_y_exog_d
         )
 
 
-def test_results_output_bayesian_search_forecaster_optuna_ForecasterAutoreg_with_mocked():
+def test_results_output_bayesian_search_forecaster_optuna_ForecasterRecursive_with_mocked():
     """
     Test output of bayesian_search_forecaster in ForecasterRecursive with 
     mocked using optuna (mocked done in Skforecast v0.4.3).

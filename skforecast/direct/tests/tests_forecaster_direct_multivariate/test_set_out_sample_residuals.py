@@ -4,15 +4,15 @@ import re
 import pytest
 import numpy as np
 import pandas as pd
-from skforecast.direct import ForecasterDirectMultiVariate
 from sklearn.linear_model import LinearRegression
 from sklearn.exceptions import NotFittedError
 from sklearn.preprocessing import StandardScaler
+from skforecast.exceptions import IgnoredArgumentWarning
+from skforecast.direct import ForecasterDirectMultiVariate
 
 # Fixtures
 series = pd.DataFrame({'l1': pd.Series(np.arange(15)), 
                        'l2': pd.Series(np.arange(15))})
-
 
 
 def test_set_out_sample_residuals_NotFittedError_when_forecaster_not_fitted():
@@ -49,12 +49,14 @@ def test_set_out_sample_residuals_TypeError_when_y_true_is_not_dict():
     forecaster.is_fitted = True
     y_true = 'not_dict'
     y_pred = {1: np.array([1, 2, 3, 4, 5]), 2: np.array([1, 2, 3, 4, 5])}
+
     err_msg = re.escape(
-        f"`y_true` must be a dictionary of numpy ndarrays or pandas series. "
+        f"`y_true` must be a dictionary of numpy ndarrays or pandas Series. "
         f"Got {type(y_true)}."
     )
     with pytest.raises(TypeError, match = err_msg):
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
+
 
 def test_set_out_sample_residuals_TypeError_when_y_pred_is_not_dict():
     """
@@ -69,8 +71,9 @@ def test_set_out_sample_residuals_TypeError_when_y_pred_is_not_dict():
     forecaster.is_fitted = True
     y_true = {1: np.array([1, 2, 3, 4, 5]), 2: np.array([1, 2, 3, 4, 5])}
     y_pred = 'not_dict'
+
     err_msg = re.escape(
-        f"`y_pred` must be a dictionary of numpy ndarrays or pandas series. "
+        f"`y_pred` must be a dictionary of numpy ndarrays or pandas Series. "
         f"Got {type(y_pred)}."
     )
     with pytest.raises(TypeError, match = err_msg):
@@ -90,6 +93,7 @@ def test_set_out_sample_residuals_ValueError_when_y_pred_and_y_true_keys_do_not_
     forecaster.is_fitted = True
     y_true = {1: np.array([1, 2, 3, 4, 5]), 2: np.array([1, 2, 3, 4, 5])}
     y_pred = {3: np.array([1, 2, 3, 4, 5]), 4: np.array([1, 2, 3, 4, 5])}
+
     err_msg = re.escape(
         f"`y_true` and `y_pred` must have the same keys. "
         f"Got {set(y_true.keys())} and {set(y_pred.keys())}."
@@ -111,9 +115,10 @@ def test_set_out_sample_residuals_TypeError_when_y_true_contains_no_numpy_ndarra
     forecaster.is_fitted = True
     y_true = {1: 'not_ndarray'}
     y_pred = {1: np.array([1, 2, 3, 4, 5])}
+
     err_msg = re.escape(
-        f"Values of `y_true` must be numpy ndarrays or pandas series. "
-        f"Got {type(y_true[1])}."
+        f"Values of `y_true` must be numpy ndarrays or pandas Series. "
+        f"Got {type(y_true[1])} for step 1."
     )
     with pytest.raises(TypeError, match = err_msg):
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
@@ -132,9 +137,10 @@ def test_set_out_sample_residuals_TypeError_when_y_pred_contains_no_numpy_ndarra
     forecaster.is_fitted = True
     y_true = {1: np.array([1, 2, 3, 4, 5])}
     y_pred = {1: 'not_ndarray'}
+
     err_msg = re.escape(
-        f"Values of `y_pred` must be numpy ndarrays or pandas series. "
-        f"Got {type(y_pred[1])}."
+        f"Values of `y_pred` must be numpy ndarrays or pandas Series. "
+        f"Got {type(y_pred[1])} for step 1."
     )
     with pytest.raises(TypeError, match = err_msg):
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
@@ -153,9 +159,10 @@ def test_set_out_sample_residuals_ValueError_when_y_true_and_y_pred_have_element
     forecaster.is_fitted = True
     y_true = {1: np.array([1, 2, 3, 4, 5]), 2: np.array([1, 2, 3, 4, 5])}
     y_pred = {1: np.array([1, 2, 3, 4, 5]), 2: np.array([1, 2])}
+
     err_msg = re.escape(
-        f"{2} must have the same length in `y_true` and `y_pred`. "
-        f"Got {len(y_true[2])} and {len(y_pred[2])}."
+        f"`y_true` and `y_pred` must have the same length. "
+        f"Got {len(y_true[2])} and {len(y_pred[2])} for step 2."
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
@@ -174,17 +181,18 @@ def test_set_out_sample_residuals_ValueError_when_y_true_and_y_pred_have_series_
     forecaster.is_fitted = True
     y_true = {1: pd.Series([1, 2, 3, 4, 5], index=[1, 2, 3, 4, 5])}
     y_pred = {1: pd.Series([1, 2, 3, 4, 5])}
+
     err_msg = re.escape(
-         "When containing pandas series, elements in `y_true` and "
-         "must have the same index."
+        "When containing pandas Series, elements in `y_true` and "
+        "`y_pred` must have the same index. Error in step 1."
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
 
 
-def test_set_out_sample_residuals_UserWarning_when_inputs_does_not_match_any_step():
+def test_set_out_sample_residuals_ValueError_when_inputs_does_not_match_any_step():
     """
-    Test UserWarning is raised when inputs does not contain keys that match any step.
+    Test ValueError is raised when inputs does not contain keys that match any step.
     """
     forecaster = ForecasterDirectMultiVariate(
         regressor=LinearRegression(),
@@ -197,10 +205,10 @@ def test_set_out_sample_residuals_UserWarning_when_inputs_does_not_match_any_ste
     y_pred = {5: np.array([1, 2, 3])}
 
     err_msg = re.escape(
-        "Provided keys in `y_pred` and `y_true` do not match any step. "
-        "Residuals are not updated."
+                "Provided keys in `y_pred` and `y_true` do not match any step. "
+                "Residuals cannot be updated."
     )
-    with pytest.warns(UserWarning, match = err_msg):
+    with pytest.raises(ValueError, match = err_msg):
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
 
 
@@ -295,26 +303,6 @@ def test_set_out_sample_residuals_when_residuals_length_is_more_than_10000_and_a
     results = forecaster.out_sample_residuals_
 
     assert all([len(v) == 10_000 for v in results.values()])
-
-
-def test_set_out_sample_residuals_when_residuals_keys_do_not_match():
-    """
-    Test residuals are not stored when keys does not match.
-    """
-    forecaster = ForecasterDirectMultiVariate(
-        regressor=LinearRegression(),
-        level='l1',
-        lags=3,
-        steps=2,
-        transformer_series=None
-    )
-    forecaster.fit(series=series)
-    y_pred = {3: np.arange(10), 4: np.arange(10)}
-    y_true = {3: np.arange(10), 4: np.arange(10)}
-    forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
-    results = forecaster.out_sample_residuals_
-
-    assert results == {1: None, 2: None}
 
 
 def test_set_out_sample_residuals_when_residuals_keys_partially_match():

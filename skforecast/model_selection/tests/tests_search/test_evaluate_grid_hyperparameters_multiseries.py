@@ -145,7 +145,7 @@ def test_evaluate_grid_hyperparameters_multiseries_exception_when_metric_list_du
 
 # ForecasterRecursiveMultiSeries
 # ======================================================================================================================
-def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterAutoregMultiSeries_with_mocked():
+def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterRecursiveMultiSeries_with_mocked():
     """
     Test output of _evaluate_grid_hyperparameters_multiseries in ForecasterRecursiveMultiSeries 
     with mocked (mocked done in Skforecast v0.5.0).
@@ -218,7 +218,7 @@ def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterAutoregMulti
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_output_evaluate_grid_hyperparameters_ForecasterAutoregMultiSeries_lags_grid_dict_with_mocked():
+def test_output_evaluate_grid_hyperparameters_ForecasterRecursiveMultiSeries_lags_grid_dict_with_mocked():
     """
     Test output of _evaluate_grid_hyperparameters in ForecasterRecursiveMultiSeries 
     when `lags_grid` is a dict with mocked (mocked done in Skforecast v0.5.0).
@@ -284,7 +284,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterAutoregMultiSeries_lags_
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_output_evaluate_grid_hyperparameters_ForecasterAutoregMultiSeries_lags_grid_is_None_with_mocked():
+def test_output_evaluate_grid_hyperparameters_ForecasterRecursiveMultiSeries_lags_grid_is_None_with_mocked():
     """
     Test output of _evaluate_grid_hyperparameters in ForecasterRecursiveMultiSeries 
     when `lags_grid` is `None` with mocked (mocked done in Skforecast v0.5.0), 
@@ -341,7 +341,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterAutoregMultiSeries_lags_
 @pytest.mark.parametrize("levels", 
                          ['l1', ['l1']], 
                          ids = lambda value: f'levels: {value}')
-def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterAutoregMultiSeries_levels_str_list_with_mocked(levels):
+def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterRecursiveMultiSeries_levels_str_list_with_mocked(levels):
     """
     Test output of _evaluate_grid_hyperparameters_multiseries in ForecasterRecursiveMultiSeries 
     with mocked when `levels` is a `str` or a `list` (mocked done in Skforecast v0.5.0).
@@ -414,7 +414,7 @@ def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterAutoregMulti
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterAutoregMultiSeries_multiple_metrics_with_mocked():
+def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterRecursiveMultiSeries_multiple_metrics_with_mocked():
     """
     Test output of _evaluate_grid_hyperparameters_multiseries in ForecasterRecursiveMultiSeries 
     with mocked when multiple metrics (mocked done in Skforecast v0.6.0).
@@ -500,7 +500,7 @@ def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterAutoregMulti
 @pytest.mark.parametrize("lags_grid", 
                          [[2, 4], {'lags_1': 2, 'lags_2': 4}], 
                          ids=lambda lg: f'lags_grid: {lg}')
-def test_evaluate_grid_hyperparameters_multiseries_when_return_best_ForecasterAutoregMultiSeries(lags_grid):
+def test_evaluate_grid_hyperparameters_multiseries_when_return_best_ForecasterRecursiveMultiSeries(lags_grid):
     """
     Test forecaster is refitted when `return_best = True` in 
     _evaluate_grid_hyperparameters_multiseries.
@@ -543,7 +543,7 @@ def test_evaluate_grid_hyperparameters_multiseries_when_return_best_ForecasterAu
     assert expected_series_names_in_ ==  forecaster.series_names_in_
 
 
-def test_evaluate_grid_hyperparameters_multiseries_ForecasterAutoregMultiSeries_output_file_single_level():
+def test_evaluate_grid_hyperparameters_multiseries_ForecasterRecursiveMultiSeries_output_file_single_level():
     """
     Test output file is created when output_file is passed to
     _evaluate_grid_hyperparameters_multiseries and single level.
@@ -589,7 +589,7 @@ def test_evaluate_grid_hyperparameters_multiseries_ForecasterAutoregMultiSeries_
     os.remove(output_file)
 
 
-def test_evaluate_grid_hyperparameters_multiseries_ForecasterAutoregMultiSeries_output_file_multiple_metrics():
+def test_evaluate_grid_hyperparameters_multiseries_ForecasterRecursiveMultiSeries_output_file_multiple_metrics():
     """
     Test output file is created when output_file is passed to
     _evaluate_grid_hyperparameters_multiseries and list of metrics.
@@ -637,7 +637,7 @@ def test_evaluate_grid_hyperparameters_multiseries_ForecasterAutoregMultiSeries_
     os.remove(output_file)
 
 
-def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterAutoregMultiSeries_multiple_metrics_aggregated_with_mocked():
+def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterRecursiveMultiSeries_multiple_metrics_aggregated_with_mocked():
     """
     Test output of _evaluate_grid_hyperparameters_multiseries in ForecasterRecursiveMultiSeries 
     with mocked when multiple metrics (mocked done in Skforecast v0.6.0).
@@ -760,7 +760,7 @@ def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterAutoregMulti
 
 # ForecasterDirectMultiVariate
 # ======================================================================================================================
-def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterAutoregMultiVariate_with_mocked():
+def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterDirectMultiVariate_with_mocked():
     """
     Test output of _evaluate_grid_hyperparameters_multiseries in ForecasterDirectMultiVariate 
     with mocked (mocked done in Skforecast v0.6.0).
@@ -813,7 +813,7 @@ def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterAutoregMulti
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_output_evaluate_grid_hyperparameters_ForecasterAutoregMultiVariate_lags_grid_dict_with_mocked():
+def test_output_evaluate_grid_hyperparameters_ForecasterDirectMultiVariate_lags_grid_dict_with_mocked():
     """
     Test output of _evaluate_grid_hyperparameters in ForecasterDirectMultiVariate 
     when `lags_grid` is a dict with mocked (mocked done in Skforecast v0.6.0)
@@ -866,7 +866,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterAutoregMultiVariate_lags
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_output_evaluate_grid_hyperparameters_ForecasterAutoregMultiVariate_lags_grid_is_None_with_mocked():
+def test_output_evaluate_grid_hyperparameters_ForecasterDirectMultiVariate_lags_grid_is_None_with_mocked():
     """
     Test output of _evaluate_grid_hyperparameters in ForecasterDirectMultiVariate 
     when `lags_grid` is `None` with mocked (mocked done in Skforecast v0.6.0), 
@@ -916,7 +916,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterAutoregMultiVariate_lags
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_output_evaluate_grid_hyperparameters_ForecasterAutoregMultiVariate_lags_grid_is_list_of_dicts_with_mocked():
+def test_output_evaluate_grid_hyperparameters_ForecasterDirectMultiVariate_lags_grid_is_list_of_dicts_with_mocked():
     """
     Test output of _evaluate_grid_hyperparameters in ForecasterDirectMultiVariate 
     when `lags_grid` is a list of dicts with mocked (mocked done in Skforecast v0.6.0).
@@ -987,7 +987,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterAutoregMultiVariate_lags
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_output_evaluate_grid_hyperparameters_ForecasterAutoregMultiVariate_lags_grid_is_dict_of_dicts_with_mocked():
+def test_output_evaluate_grid_hyperparameters_ForecasterDirectMultiVariate_lags_grid_is_dict_of_dicts_with_mocked():
     """
     Test output of _evaluate_grid_hyperparameters in ForecasterDirectMultiVariate 
     when `lags_grid` is a dict of dicts with mocked (mocked done in Skforecast v0.6.0).
@@ -1075,7 +1075,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterAutoregMultiVariate_lags
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterAutoregMultiVariate_multiple_metrics_with_mocked():
+def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterDirectMultiVariate_multiple_metrics_with_mocked():
     """
     Test output of _evaluate_grid_hyperparameters_multiseries in ForecasterDirectMultiVariate 
     with mocked when multiple metrics (mocked done in Skforecast v0.6.0).
@@ -1131,7 +1131,7 @@ def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterAutoregMulti
 @pytest.mark.parametrize("lags_grid", 
                          [[2, 4], {'lags_1': 2, 'lags_2': 4}], 
                          ids=lambda lg: f'lags_grid: {lg}')
-def test_evaluate_grid_hyperparameters_multiseries_when_return_best_ForecasterAutoregMultiVariate(lags_grid):
+def test_evaluate_grid_hyperparameters_multiseries_when_return_best_ForecasterDirectMultiVariate(lags_grid):
     """
     Test forecaster is refitted when `return_best = True` in 
     _evaluate_grid_hyperparameters_multiseries.
@@ -1177,7 +1177,7 @@ def test_evaluate_grid_hyperparameters_multiseries_when_return_best_ForecasterAu
     assert expected_series_names_in_ ==  forecaster.series_names_in_
 
 
-def test_evaluate_grid_hyperparameters_multiseries_ForecasterAutoregMultiVariate_output_file_single_level():
+def test_evaluate_grid_hyperparameters_multiseries_ForecasterDirectMultiVariate_output_file_single_level():
     """
     Test output file is created when output_file is passed to 
     _evaluate_grid_hyperparameters_multiseries and single level.
@@ -1224,7 +1224,7 @@ def test_evaluate_grid_hyperparameters_multiseries_ForecasterAutoregMultiVariate
     os.remove(output_file)
 
 
-def test_evaluate_grid_hyperparameters_multiseries_ForecasterAutoregMultiVariate_output_file_multiple_metrics():
+def test_evaluate_grid_hyperparameters_multiseries_ForecasterDirectMultiVariate_output_file_multiple_metrics():
     """
     Test output file is created when output_file is passed to 
     _evaluate_grid_hyperparameters_multiseries and list of metrics.

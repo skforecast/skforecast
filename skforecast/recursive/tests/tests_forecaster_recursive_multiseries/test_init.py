@@ -61,7 +61,7 @@ def test_init_ValueError_invalid_encoding():
         )
 
 
-def test_ForecasterAutoregMultiSeries_init_not_scaling_with_linear_model():
+def test_ForecasterRecursiveMultiSeries_init_not_scaling_with_linear_model():
     """
     Test Warning is raised when Forecaster has no transformer_series and it
     is using a linear model.

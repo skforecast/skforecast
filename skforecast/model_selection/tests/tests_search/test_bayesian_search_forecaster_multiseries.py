@@ -75,7 +75,7 @@ def test_ValueError_bayesian_search_forecaster_multiseries_when_return_best_and_
         )
 
 
-def test_results_output_bayesian_search_forecaster_multiseries_ForecasterAutoregMultiSeries():
+def test_results_output_bayesian_search_forecaster_multiseries_ForecasterRecursiveMultiSeries():
     """
     Test output of bayesian_search_forecaster_multiseries in 
     ForecasterRecursiveMultiSeries with mocked (mocked done in Skforecast v0.12.0).
@@ -447,7 +447,7 @@ def test_output_bayesian_search_forecaster_multiseries_series_and_exog_dict_with
     pd.testing.assert_frame_equal(expected, results_search)
 
 
-def test_results_output_bayesian_search_forecaster_multivariate_ForecasterAutoregMultiVariate():
+def test_results_output_bayesian_search_forecaster_multivariate_ForecasterDirectMultiVariate():
     """
     Test output of bayesian_search_forecaster_multivariate in 
     ForecasterDirectMultiVariate with mocked (mocked done in Skforecast v0.12.0).
@@ -521,7 +521,7 @@ def test_results_output_bayesian_search_forecaster_multivariate_ForecasterAutore
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_output_bayesian_search_forecaster_multiseries_ForecasterAutoregMultiVariate_one_step_ahead():
+def test_output_bayesian_search_forecaster_multiseries_ForecasterDirectMultiVariate_one_step_ahead():
     """
     Test output of bayesian_search_forecaster_multiseries when forecaster is ForecasterRecursiveMultiSeries
     and method is one_step_ahead.
@@ -613,7 +613,7 @@ def test_output_bayesian_search_forecaster_multiseries_ForecasterAutoregMultiVar
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_output_bayesian_search_forecaster_multiseries_ForecasterAutoregMultiSeries_one_step_ahead():
+def test_output_bayesian_search_forecaster_multiseries_ForecasterRecursiveMultiSeries_one_step_ahead():
     """
     Test output of bayesian_search_forecaster_multiseries when forecaster is ForecasterRecursiveMultiSeries
     and method is one_step_ahead.

@@ -20,8 +20,8 @@ def test_set_out_sample_residuals_NotFittedError_when_forecaster_not_fitted():
     Test NotFittedError is raised when forecaster is not fitted.
     """
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
-    y_true = {1: np.array([1, 2, 3, 4, 5]), 2: np.array([1, 2, 3, 4, 5])}
-    y_pred = {1: np.array([1, 2, 3, 4, 5]), 2: np.array([1, 2, 3, 4, 5])}
+    y_true = {'1': np.array([1, 2, 3, 4, 5]), '2': np.array([1, 2, 3, 4, 5])}
+    y_pred = {'1': np.array([1, 2, 3, 4, 5]), '2': np.array([1, 2, 3, 4, 5])}
 
     err_msg = re.escape(
         ("This forecaster is not fitted yet. Call `fit` with appropriate "
@@ -38,9 +38,10 @@ def test_set_out_sample_residuals_TypeError_when_y_true_is_not_dict():
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
     forecaster.is_fitted = True
     y_true = 'not_dict'
-    y_pred = {1: np.array([1, 2, 3, 4, 5]), 2: np.array([1, 2, 3, 4, 5])}
+    y_pred = {'1': np.array([1, 2, 3, 4, 5]), '2': np.array([1, 2, 3, 4, 5])}
+
     err_msg = re.escape(
-        f"`y_true` must be a dictionary of numpy ndarrays or pandas series. "
+        f"`y_true` must be a dictionary of numpy ndarrays or pandas Series. "
         f"Got {type(y_true)}."
     )
     with pytest.raises(TypeError, match = err_msg):
@@ -53,10 +54,11 @@ def test_set_out_sample_residuals_TypeError_when_y_pred_is_not_dict():
     """
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
     forecaster.is_fitted = True
-    y_true = {1: np.array([1, 2, 3, 4, 5]), 2: np.array([1, 2, 3, 4, 5])}
+    y_true = {'1': np.array([1, 2, 3, 4, 5]), '2': np.array([1, 2, 3, 4, 5])}
     y_pred = 'not_dict'
+
     err_msg = re.escape(
-        f"`y_pred` must be a dictionary of numpy ndarrays or pandas series. "
+        f"`y_pred` must be a dictionary of numpy ndarrays or pandas Series. "
         f"Got {type(y_pred)}."
     )
     with pytest.raises(TypeError, match = err_msg):
@@ -69,8 +71,9 @@ def test_set_out_sample_residuals_ValueError_when_y_pred_and_y_true_keys_do_not_
     """
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
     forecaster.is_fitted = True
-    y_true = {1: np.array([1, 2, 3, 4, 5]), 2: np.array([1, 2, 3, 4, 5])}
-    y_pred = {3: np.array([1, 2, 3, 4, 5]), 4: np.array([1, 2, 3, 4, 5])}
+    y_true = {'1': np.array([1, 2, 3, 4, 5]), '2': np.array([1, 2, 3, 4, 5])}
+    y_pred = {'3': np.array([1, 2, 3, 4, 5]), '4': np.array([1, 2, 3, 4, 5])}
+
     err_msg = re.escape(
         f"`y_true` and `y_pred` must have the same keys. "
         f"Got {set(y_true.keys())} and {set(y_pred.keys())}."
@@ -79,33 +82,35 @@ def test_set_out_sample_residuals_ValueError_when_y_pred_and_y_true_keys_do_not_
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
 
 
-def test_set_out_sample_residuals_TypeError_when_y_true_contains_no_numpy_ndarrays_or_pandas_series():
+def test_set_out_sample_residuals_TypeError_when_y_true_contains_no_numpy_ndarrays_or_pandas_Series():
     """
-    Test TypeError is raised when y_true contains no numpy ndarrays or pandas series.
+    Test TypeError is raised when y_true contains no numpy ndarrays or pandas Series.
     """
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
     forecaster.is_fitted = True
-    y_true = {1: 'not_ndarray'}
-    y_pred = {1: np.array([1, 2, 3, 4, 5])}
+    y_true = {'1': 'not_ndarray'}
+    y_pred = {'1': np.array([1, 2, 3, 4, 5])}
+
     err_msg = re.escape(
-        f"Values of `y_true` must be numpy ndarrays or pandas series. "
-        f"Got {type(y_true[1])}."
+        f"Values of `y_true` must be numpy ndarrays or pandas Series. "
+        f"Got {type(y_true['1'])} for series '1'."
     )
     with pytest.raises(TypeError, match = err_msg):
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
 
 
-def test_set_out_sample_residuals_TypeError_when_y_pred_contains_no_numpy_ndarrays_or_pandas_series():
+def test_set_out_sample_residuals_TypeError_when_y_pred_contains_no_numpy_ndarrays_or_pandas_Series():
     """
-    Test TypeError is raised when y_pred contains no numpy ndarrays or pandas series.
+    Test TypeError is raised when y_pred contains no numpy ndarrays or pandas Series.
     """
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
     forecaster.is_fitted = True
-    y_true = {1: np.array([1, 2, 3, 4, 5])}
-    y_pred = {1: 'not_ndarray'}
+    y_true = {'1': np.array([1, 2, 3, 4, 5])}
+    y_pred = {'1': 'not_ndarray'}
+
     err_msg = re.escape(
-        f"Values of `y_pred` must be numpy ndarrays or pandas series. "
-        f"Got {type(y_pred[1])}."
+        f"Values of `y_pred` must be numpy ndarrays or pandas Series. "
+        f"Got {type(y_pred['1'])} for series '1'."
     )
     with pytest.raises(TypeError, match = err_msg):
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
@@ -117,11 +122,12 @@ def test_set_out_sample_residuals_ValueError_when_y_true_and_y_pred_have_element
     """
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
     forecaster.is_fitted = True
-    y_true = {1: np.array([1, 2, 3, 4, 5]), 2: np.array([1, 2, 3, 4, 5])}
-    y_pred = {1: np.array([1, 2, 3, 4, 5]), 2: np.array([1, 2])}
+    y_true = {'1': np.array([1, 2, 3, 4, 5]), '2': np.array([1, 2, 3, 4, 5])}
+    y_pred = {'1': np.array([1, 2, 3, 4, 5]), '2': np.array([1, 2])}
+
     err_msg = re.escape(
-        f"{2} must have the same length in `y_true` and `y_pred`. "
-        f"Got {len(y_true[2])} and {len(y_pred[2])}."
+        f"`y_true` and `y_pred` must have the same length. "
+        f"Got {len(y_true['2'])} and {len(y_pred['2'])} for series '2'."
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
@@ -133,31 +139,32 @@ def test_set_out_sample_residuals_ValueError_when_y_true_and_y_pred_have_series_
     """
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
     forecaster.is_fitted = True
-    y_true = {1: pd.Series([1, 2, 3, 4, 5], index=[1, 2, 3, 4, 5])}
-    y_pred = {1: pd.Series([1, 2, 3, 4, 5])}
+    y_true = {'1': pd.Series([1, 2, 3, 4, 5], index=[1, 2, 3, 4, 5])}
+    y_pred = {'1': pd.Series([1, 2, 3, 4, 5])}
+
     err_msg = re.escape(
-         "When containing pandas series, elements in `y_true` and "
-         "must have the same index."
+        "When containing pandas Series, elements in `y_true` and "
+        "`y_pred` must have the same index. Error with series '1'."
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
 
 
-def test_set_out_sample_residuals_UserWarning_when_inputs_does_not_match_series_seen_in_fit():
+def test_set_out_sample_residuals_ValueError_when_inputs_does_not_match_series_seen_in_fit():
     """
-    Test UserWarning is raised when inputs does not contain keys that match any 
+    Test ValueError is raised when inputs does not contain keys that match any 
     series seen in fit.
     """
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
     forecaster.fit(series=series)
-    y_true = {5: np.array([1, 2, 3])}
-    y_pred = {5: np.array([1, 2, 3])}
+    y_true = {'5': np.array([1, 2, 3])}
+    y_pred = {'5': np.array([1, 2, 3])}
 
     err_msg = re.escape(
-        "Provided keys in `y_pred` and `y_true` do not match any series seen "
-        "in `fit`. Residuals are not updated."
+        "Provided keys in `y_pred` and `y_true` do not match any series "
+        "seen during `fit`. Residuals cannot be updated."
     )
-    with pytest.warns(UserWarning, match = err_msg):
+    with pytest.raises(ValueError, match = err_msg):
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
 
 
@@ -187,7 +194,8 @@ def test_set_out_sample_residuals_UnknownLevelWarning_when_residuals_levels_but_
         np.testing.assert_array_almost_equal(expected[k], results[k])
 
 
-@pytest.mark.parametrize("encoding", ['ordinal', 'onehot', 'ordinal_category'], 
+@pytest.mark.parametrize("encoding", 
+                         ['ordinal', 'onehot', 'ordinal_category'], 
                          ids=lambda encoding: f'encoding: {encoding}')
 def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_and_no_append(encoding):
     """
@@ -213,6 +221,40 @@ def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_and_n
 
     assert expected.keys() == results.keys()
     assert all(all(np.sort(expected[k]) == np.sort(results[k])) for k in expected.keys())
+
+
+@pytest.mark.parametrize("encoding", 
+                         ['ordinal', 'onehot', 'ordinal_category', None], 
+                         ids=lambda encoding: f'encoding: {encoding}')
+def test_set_out_sample_residuals_for_unknown_level(encoding):
+    """
+    Test residuals stored for unknown level.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3, encoding=encoding)
+    forecaster.fit(series=series)
+    y_true = {'_unknown_level': np.array([1, 2, 3, 5, 6])}
+    y_pred = {'_unknown_level': np.array([0, 1, 2, 3, 4])}
+
+    forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
+    results = forecaster.out_sample_residuals_
+
+    if encoding is None:
+        expected = {
+            '_unknown_level': np.array([1, 1, 1, 2, 2])
+        }
+    else:
+        expected = {
+            'l1': None,
+            'l2': None,
+            '_unknown_level': np.array([1, 1, 1, 2, 2])
+        }
+
+    assert expected.keys() == results.keys()
+    for k in results.keys():
+        if results[k] is None:
+            assert results[k] == expected[k]
+        else:
+            np.testing.assert_array_almost_equal(expected[k], results[k])
 
 
 def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_encoding_None():
@@ -331,23 +373,6 @@ def test_set_out_sample_residuals_when_residuals_length_is_greater_than_10000_an
     assert all([len(v) == 10_000 for v in results.values()])
 
 
-def test_set_out_sample_residuals_when_residuals_keys_do_not_match():
-    """
-    Test residuals are not stored when keys does not match.
-    """
-    forecaster = ForecasterRecursiveMultiSeries(
-                    LinearRegression(),
-                    lags=3,
-                 )
-    forecaster.fit(series=series)
-    y_pred = {'l3': np.arange(10), 'l4': np.arange(10)}
-    y_true = {'l3': np.arange(10), 'l4': np.arange(10)}
-    forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
-    results = forecaster.out_sample_residuals_
-
-    assert results == {'l1': None, 'l2': None, '_unknown_level': None}
-
-
 def test_set_out_sample_residuals_when_residuals_keys_partially_match():
     """
     Test residuals are stored only for matching keys.
@@ -368,7 +393,7 @@ def test_set_out_sample_residuals_when_residuals_keys_partially_match():
     }
     for key in expected.keys():
         if expected[key] is not None:
-            assert np.allclose(expected[key], results[key])
+            np.testing.assert_array_almost_equal(expected[key], results[key])
         else:
             assert results[key] is None
 
@@ -424,4 +449,4 @@ def test_forecaster_set_outsample_residuals_when_transformer_y_and_diferentiatio
     residuals['l2'] = y_true['l2'] - y_pred['l2']
 
     for key in residuals.keys():
-        assert np.allclose(residuals[key], forecaster.out_sample_residuals_[key])
+        np.testing.assert_array_almost_equal(residuals[key], forecaster.out_sample_residuals_[key])

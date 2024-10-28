@@ -2418,15 +2418,15 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         Parameters
         ----------
         y_true : dict
-            Dictionary of numpy ndarrays or pandas series with the true values of
+            Dictionary of numpy ndarrays or pandas Series with the true values of
             the time series for each model in the form {step: y_true}.
         y_pred : dict
-            Dictionary of numpy ndarrays or pandas series with the predicted values
+            Dictionary of numpy ndarrays or pandas Series with the predicted values
             of the time series for each model in the form {step: y_pred}.
         append : bool, default `False`
             If `True`, new residuals are added to the once already stored in the
             attribute `out_sample_residuals_`. If after appending the new residuals,
-            the limit of 10000 samples is exceeded, a random sample of 10000 is
+            the limit of 10_000 samples is exceeded, a random sample of 10_000 is
             kept.
         random_state : int, default `123`
             Sets a seed to the random sampling for reproducible output.
@@ -2445,13 +2445,13 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         if not isinstance(y_true, dict):
             raise TypeError(
-                f"`y_true` must be a dictionary of numpy ndarrays or pandas series. "
+                f"`y_true` must be a dictionary of numpy ndarrays or pandas Series. "
                 f"Got {type(y_true)}."
             )
 
         if not isinstance(y_pred, dict):
             raise TypeError(
-                f"`y_pred` must be a dictionary of numpy ndarrays or pandas series. "
+                f"`y_pred` must be a dictionary of numpy ndarrays or pandas Series. "
                 f"Got {type(y_pred)}."
             )
         
@@ -2464,24 +2464,24 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         for k in y_true.keys():
             if not isinstance(y_true[k], (np.ndarray, pd.Series)):
                 raise TypeError(
-                    f"Values of `y_true` must be numpy ndarrays or pandas series. "
-                    f"Got {type(y_true[k])}."
+                    f"Values of `y_true` must be numpy ndarrays or pandas Series. "
+                    f"Got {type(y_true[k])} for step {k}."
                 )
             if not isinstance(y_pred[k], (np.ndarray, pd.Series)):
                 raise TypeError(
-                    f"Values of `y_pred` must be numpy ndarrays or pandas series. "
-                    f"Got {type(y_pred[k])}."
+                    f"Values of `y_pred` must be numpy ndarrays or pandas Series. "
+                    f"Got {type(y_pred[k])} for step {k}."
                 )
             if len(y_true[k]) != len(y_pred[k]):
                 raise ValueError(
-                    f"{k} must have the same length in `y_true` and `y_pred`. "
-                    f"Got {len(y_true[k])} and {len(y_pred[k])}."
+                    f"`y_true` and `y_pred` must have the same length. "
+                    f"Got {len(y_true[k])} and {len(y_pred[k])} for step {k}."
                 )
             if isinstance(y_true[k], pd.Series) and isinstance(y_pred[k], pd.Series):
                 if not y_true[k].index.equals(y_pred[k].index):
                     raise ValueError(
-                       "When containing pandas series, elements in `y_true` and "
-                        "must have the same index."
+                        f"When containing pandas Series, elements in `y_true` and "
+                        f"`y_pred` must have the same index. Error in step {k}."
                     )
         
         if self.out_sample_residuals_ is None:
@@ -2491,9 +2491,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         
         steps_to_update = set(range(1, self.steps + 1)).intersection(set(y_pred.keys()))
         if not steps_to_update:
-            warnings.warn(
+            raise ValueError(
                 "Provided keys in `y_pred` and `y_true` do not match any step. "
-                "Residuals are not updated."
+                "Residuals cannot be updated."
             )
 
         residuals = {}
