@@ -39,6 +39,7 @@ def test_set_out_sample_residuals_TypeError_when_residuals_is_not_a_dict_of_nump
     """
     forecaster = ForecasterDirectMultiVariate(LinearRegression(fit_intercept=True), level='l1',
                                                lags=3, steps=2)
+    forecaster.fit(series=series)
     err_msg = re.escape(
         (f"`residuals` argument must be a dict of numpy ndarrays in the form "
          "`{step: residuals}`. " 

@@ -594,7 +594,7 @@ class DateTimeFeatureTransformer(BaseEstimator, TransformerMixin):
 
 
 @njit
-def _np_mean_jit(x):
+def _np_mean_jit(x):  # pragma: no cover
     """
     NumPy mean function implemented with Numba JIT.
     """
@@ -602,7 +602,7 @@ def _np_mean_jit(x):
 
 
 @njit
-def _np_std_jit(x, ddof=1):
+def _np_std_jit(x, ddof=1):  # pragma: no cover
     """
     Standard deviation function implemented with Numba JIT.
     If the array has only one element, the function returns 0.
@@ -621,7 +621,7 @@ def _np_std_jit(x, ddof=1):
 
 
 @njit
-def _np_min_jit(x):
+def _np_min_jit(x):  # pragma: no cover
     """
     NumPy min function implemented with Numba JIT.
     """
@@ -629,7 +629,7 @@ def _np_min_jit(x):
 
 
 @njit
-def _np_max_jit(x):
+def _np_max_jit(x):  # pragma: no cover
     """
     NumPy max function implemented with Numba JIT.
     """
@@ -637,7 +637,7 @@ def _np_max_jit(x):
 
 
 @njit
-def _np_sum_jit(x):
+def _np_sum_jit(x):  # pragma: no cover
     """
     NumPy sum function implemented with Numba JIT.
     """
@@ -645,7 +645,7 @@ def _np_sum_jit(x):
 
 
 @njit
-def _np_median_jit(x):
+def _np_median_jit(x):  # pragma: no cover
     """
     NumPy median function implemented with Numba JIT.
     """
@@ -653,7 +653,7 @@ def _np_median_jit(x):
 
 
 @njit
-def _np_min_max_ratio_jit(x):
+def _np_min_max_ratio_jit(x):  # pragma: no cover
     """
     NumPy min-max ratio function implemented with Numba JIT.
     """
@@ -661,7 +661,7 @@ def _np_min_max_ratio_jit(x):
 
 
 @njit
-def _np_cv_jit(x):
+def _np_cv_jit(x):  # pragma: no cover
     """
     Coefficient of variation function implemented with Numba JIT.
     If the array has only one element, the function returns 0.

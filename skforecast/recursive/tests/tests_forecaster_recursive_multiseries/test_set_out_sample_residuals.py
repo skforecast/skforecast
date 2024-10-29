@@ -39,6 +39,7 @@ def test_set_out_sample_residuals_TypeError_when_residuals_is_not_a_dict_of_nump
     Test TypeError is raised when residuals is not a dict of numpy ndarrays.
     """
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
+    forecaster.fit(series=series)
     err_msg = re.escape(
        (f"`residuals` argument must be a dict of numpy ndarrays in the form "
         "`{level: residuals}`. " 

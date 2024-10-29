@@ -39,6 +39,7 @@ def test_set_out_sample_residuals_TypeError_when_y_true_is_not_numpy_array_or_pa
     Test TypeError is raised when y_true argument is not numpy ndarray or pandas Series.
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
+    forecaster.fit(y)
     y_true = 'invalid'
     y_pred = np.array([1, 2, 3])
 
@@ -55,6 +56,7 @@ def test_set_out_sample_residuals_TypeError_when_y_pred_is_not_numpy_array_or_pa
     Test TypeError is raised when y_pred argument is not numpy ndarray or pandas Series.
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
+    forecaster.fit(y)
     y_true = np.array([1, 2, 3])
     y_pred = 'invalid'
 
@@ -71,6 +73,7 @@ def test_set_out_sample_residuals_ValueError_when_y_true_and_y_pred_have_differe
     Test ValueError is raised when y_true and y_pred have different length.
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
+    forecaster.fit(y)
     y_true = np.array([1, 2, 3])
     y_pred = np.array([1, 2, 3, 4])
 
@@ -87,6 +90,7 @@ def test_set_out_sample_residuals_ValueError_when_y_true_and_y_pred_have_differe
     Test ValueError is raised when residuals and y_pred have different index.
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
+    forecaster.fit(y)
     y_true = pd.Series([1, 2, 3], index=[1, 2, 3])
     y_pred = pd.Series([1, 2, 3], index=[1, 2, 4])
 

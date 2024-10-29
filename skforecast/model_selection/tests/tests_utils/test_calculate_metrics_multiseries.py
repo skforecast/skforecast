@@ -113,6 +113,7 @@ folds = [
 window_size = 2
 levels = ["item_1", "item_2", "item_3"]
 
+
 def custom_metric(y_true, y_pred):  # pragma: no cover
     """
     Calculate the mean absolute error excluding predictions between '2012-01-05'
