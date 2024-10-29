@@ -2052,6 +2052,12 @@ class ForecasterRecursive(ForecasterBase):
 
         """
 
+        if not self.is_fitted:
+            raise NotFittedError(
+                "This forecaster is not fitted yet. Call `fit` with appropriate "
+                "arguments before using `set_out_sample_residuals()`."
+            )
+
         if not isinstance(y_true, (np.ndarray, pd.Series)):
             raise TypeError(
                 f"`y_true` argument must be `numpy ndarray` or `pandas Series`. "
@@ -2075,12 +2081,6 @@ class ForecasterRecursive(ForecasterBase):
                 raise ValueError(
                     "`y_true` and `y_pred` must have the same index."
                 )
-
-        if not self.is_fitted:
-            raise NotFittedError(
-                "This forecaster is not fitted yet. Call `fit` with appropriate "
-                "arguments before using `set_out_sample_residuals()`."
-            )
 
         if not isinstance(y_pred, np.ndarray):
             y_pred = y_pred.to_numpy()

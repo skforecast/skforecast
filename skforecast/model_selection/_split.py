@@ -178,8 +178,8 @@ class BaseFold():
                 )
             if not isinstance(fixed_train_size, bool):
                 raise TypeError(
-                    (f"`fixed_train_size` must be a boolean: `True`, `False`. "
-                     f"Got {fixed_train_size}.")
+                    f"`fixed_train_size` must be a boolean: `True`, `False`. "
+                    f"Got {fixed_train_size}."
                 )
             if not isinstance(gap, (int, np.integer)) or gap < 0:
                 raise ValueError(
@@ -188,24 +188,24 @@ class BaseFold():
             if skip_folds is not None:
                 if not isinstance(skip_folds, (int, np.integer, list, type(None))):
                     raise TypeError(
-                        (f"`skip_folds` must be an integer greater than 0, a list of "
-                         f"integers or `None`. Got {skip_folds}.")
+                        f"`skip_folds` must be an integer greater than 0, a list of "
+                        f"integers or `None`. Got {skip_folds}."
                     )
                 if isinstance(skip_folds, (int, np.integer)) and skip_folds < 1:
                     raise ValueError(
-                        (f"`skip_folds` must be an integer greater than 0, a list of "
-                         f"integers or `None`. Got {skip_folds}.")
+                        f"`skip_folds` must be an integer greater than 0, a list of "
+                        f"integers or `None`. Got {skip_folds}."
                     )
                 if isinstance(skip_folds, list) and any([x < 1 for x in skip_folds]):
                     raise ValueError(
-                        (f"`skip_folds` list must contain integers greater than or "
-                         f"equal to 1. The first fold is always needed to train the "
-                        f"forecaster. Got {skip_folds}.")
+                        f"`skip_folds` list must contain integers greater than or "
+                        f"equal to 1. The first fold is always needed to train the "
+                        f"forecaster. Got {skip_folds}."
                     ) 
             if not isinstance(allow_incomplete_fold, bool):
                 raise TypeError(
-                    (f"`allow_incomplete_fold` must be a boolean: `True`, `False`. "
-                    f"Got {allow_incomplete_fold}.")
+                    f"`allow_incomplete_fold` must be a boolean: `True`, `False`. "
+                    f"Got {allow_incomplete_fold}."
                 )
             
         if cv_name == "OneStepAheadFold":
@@ -229,19 +229,19 @@ class BaseFold():
         
         if not isinstance(return_all_indexes, bool):
             raise TypeError(
-                (f"`return_all_indexes` must be a boolean: `True`, `False`. "
-                 f"Got {return_all_indexes}.")
+                f"`return_all_indexes` must be a boolean: `True`, `False`. "
+                f"Got {return_all_indexes}."
             )
         if differentiation is not None:
             if not isinstance(differentiation, (int, np.integer)) or differentiation < 0:
                 raise ValueError(
-                    (f"`differentiation` must be None or an integer greater than or "
-                     f"equal to 0. Got {differentiation}.")
+                    f"`differentiation` must be None or an integer greater than or "
+                    f"equal to 0. Got {differentiation}."
                 )
         if not isinstance(verbose, bool):
             raise TypeError(
-                (f"`verbose` must be a boolean: `True`, `False`. "
-                 f"Got {verbose}.")
+                f"`verbose` must be a boolean: `True`, `False`. "
+                f"Got {verbose}."
             )
 
     def _extract_index(
@@ -286,8 +286,8 @@ class BaseFold():
         params: dict
     ) -> None:
         """
-        Set the parameters of the TimeSeriesFold object. Before overwriting the
-        current parameters, the input parameters are validated to ensure correctness.
+        Set the parameters of the Fold object. Before overwriting the current 
+        parameters, the input parameters are validated to ensure correctness.
 
         Parameters
         ----------
@@ -301,7 +301,7 @@ class BaseFold():
         """
 
         if not isinstance(params, dict):
-            raise ValueError(
+            raise TypeError(
                 f"`params` must be a dictionary. Got {type(params)}."
             )
 
@@ -312,7 +312,10 @@ class BaseFold():
                 f"Unknown parameters: {unknown_params}. They have been ignored.",
                 IgnoredArgumentWarning
             )
-        updated_params = {'cv_name': type(self).__name__, **current_params, **params}
+
+        filtered_params = {k: v for k, v in params.items() if k in current_params}
+        updated_params = {'cv_name': type(self).__name__, **current_params, **filtered_params}
+
         self._validate_params(**updated_params)
         for key, value in updated_params.items():
             setattr(self, key, value)
@@ -746,8 +749,8 @@ class TimeSeriesFold(BaseFold):
 
         if not isinstance(X, (pd.Series, pd.DataFrame, pd.Index, dict)):
             raise TypeError(
-                (f"X must be a pandas Series, DataFrame, Index or a dictionary. "
-                 f"Got {type(X)}.")
+                f"X must be a pandas Series, DataFrame, Index or a dictionary. "
+                f"Got {type(X)}."
             )
         
         if isinstance(self.window_size, pd.tseries.offsets.DateOffset):
@@ -798,8 +801,8 @@ class TimeSeriesFold(BaseFold):
 
         if len(index) < self.initial_train_size + self.steps:
             raise ValueError(
-                (f"The time series must have at least `initial_train_size + steps` "
-                 f"observations. Got {len(index)} observations.")
+                f"The time series must have at least `initial_train_size + steps` "
+                f"observations. Got {len(index)} observations."
             )
 
         while self.initial_train_size + (i * self.steps) + self.gap < len(index):
@@ -944,10 +947,6 @@ class TimeSeriesFold(BaseFold):
             print(
                 f"An already trained forecaster is to be used. Window size: "
                 f"{self.window_size}"
-            )
-        elif self.initial_train_size == 0:
-            print(
-                f"Initial training size is 0. Window size: {self.window_size}"
             )
         else:
             if self.differentiation is None:

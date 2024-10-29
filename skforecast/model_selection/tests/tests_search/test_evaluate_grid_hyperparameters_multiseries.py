@@ -35,6 +35,71 @@ series_dict = joblib.load(THIS_DIR/'fixture_sample_multi_series.joblib')
 exog_dict = joblib.load(THIS_DIR/'fixture_sample_multi_series_exog.joblib')
 
 
+def test_TypeError_evaluate_grid_hyperparameters_multiseries_when_cv_not_valid():
+    """
+    Test TypeError is raised in _evaluate_grid_hyperparameters_multiseries when 
+    cv is not a valid splitter.
+    """
+    class DummyCV:
+        pass
+
+    cv = DummyCV()
+    forecaster = ForecasterRecursiveMultiSeries(
+                     regressor = Ridge(random_state=123),
+                     lags      = 3,
+                     encoding  = 'onehot'
+                 )
+
+    err_msg = re.escape(
+        f"`cv` must be an instance of `TimeSeriesFold` or `OneStepAheadFold`. "
+        f"Got {type(cv)}."
+    )
+    with pytest.raises(TypeError, match = err_msg):
+        _evaluate_grid_hyperparameters_multiseries(
+            forecaster         = forecaster,
+            series             = series,
+            cv                 = cv,
+            param_grid         = [{'alpha': 0.01}, {'alpha': 0.1}, {'alpha': 1}],
+            metric             = 'mean_absolute_error',
+            levels             = None,
+            lags_grid          = [2, 4],
+            return_best        = True,
+            verbose            = False
+        )
+
+
+def test_TypeError_evaluate_grid_hyperparameters_multiseries_when_forecaster_not_OneStepAhead():
+    """
+    Test TypeError is raised in _evaluate_grid_hyperparameters_multiseries when 
+    forecaster is not allowed to use OneStepAheadFold.
+    """
+    cv_one_step_ahead = OneStepAheadFold(
+            initial_train_size    = 100,
+            return_all_indexes    = False,
+        )
+    
+    class DummyForecaster:
+        pass
+    forecaster = DummyForecaster()
+
+    err_msg = re.escape(
+        f"Only forecasters of type ['ForecasterRecursiveMultiSeries', 'ForecasterDirectMultiVariate'] are allowed "
+        f"when using `cv` of type `OneStepAheadFold`. Got {type(forecaster).__name__}."
+    )
+    with pytest.raises(TypeError, match = err_msg):
+        _evaluate_grid_hyperparameters_multiseries(
+            forecaster         = forecaster,
+            series             = series,
+            cv                 = cv_one_step_ahead,
+            param_grid         = [{'alpha': 0.01}, {'alpha': 0.1}, {'alpha': 1}],
+            metric             = 'mean_absolute_error',
+            levels             = None,
+            lags_grid          = [2, 4],
+            return_best        = True,
+            verbose            = False
+        )
+
+
 def test_ValueError_evaluate_grid_hyperparameters_multiseries_when_return_best_and_len_series_exog_different():
     """
     Test ValueError is raised in _evaluate_grid_hyperparameters_multiseries when 
@@ -1562,11 +1627,15 @@ def test_evaluate_grid_hyperparameters_equivalent_outputs_backtesting_and_one_st
     param_grid = list(ParameterGrid(param_grid))
 
     cv_backtesting = TimeSeriesFold(
-            initial_train_size = 213,
-            steps              = 1,
-            refit              = False,
-            fixed_train_size   = False,
-         )
+        initial_train_size = 213,
+        steps              = 1,
+        refit              = False,
+        fixed_train_size   = False,
+    )
+    cv_one_step_ahead = OneStepAheadFold(
+        initial_train_size = 213,
+    )
+    
     results_backtesting = _evaluate_grid_hyperparameters_multiseries(
         forecaster         = forecaster,
         series             = series_dict,
@@ -1579,20 +1648,25 @@ def test_evaluate_grid_hyperparameters_equivalent_outputs_backtesting_and_one_st
         return_best        = False,
         n_jobs             = 'auto',
     )
-    cv_one_step_ahead = OneStepAheadFold(
-            initial_train_size = 213,
-         )
-    results_one_step_ahead = _evaluate_grid_hyperparameters_multiseries(
-        forecaster         = forecaster,
-        series             = series_dict,
-        exog               = exog_dict,
-        cv                 = cv_one_step_ahead,
-        param_grid         = param_grid,
-        lags_grid          = lags_grid,
-        metric             = metrics,
-        aggregate_metric   = ["average", "weighted_average", "pooling"],
-        return_best        = False,
-        n_jobs             = 'auto',
+
+    warn_msg = re.escape(
+        "One-step-ahead predictions are used for faster model comparison, but they "
+        "may not fully represent multi-step prediction performance. It is recommended "
+        "to backtest the final model for a more accurate multi-step performance "
+        "estimate."
     )
+    with pytest.warns(UserWarning, match = warn_msg):
+        results_one_step_ahead = _evaluate_grid_hyperparameters_multiseries(
+            forecaster         = forecaster,
+            series             = series_dict,
+            exog               = exog_dict,
+            cv                 = cv_one_step_ahead,
+            param_grid         = param_grid,
+            lags_grid          = lags_grid,
+            metric             = metrics,
+            aggregate_metric   = ["average", "weighted_average", "pooling"],
+            return_best        = False,
+            n_jobs             = 'auto',
+        )
 
     pd.testing.assert_frame_equal(results_backtesting, results_one_step_ahead)

@@ -1178,12 +1178,12 @@ class QuantileBinner:
         self.intervals_   = None
 
     def _validate_params(
-            self,
-            n_bins: int,
-            method: str,
-            subsample: int,
-            dtype: type,
-            random_state: int
+        self,
+        n_bins: int,
+        method: str,
+        subsample: int,
+        dtype: type,
+        random_state: int
     ):
         """
         Validate the parameters passed to the class initializer.
@@ -1232,11 +1232,11 @@ class QuantileBinner:
         ----------
         X : numpy ndarray
             The training data used to compute the quantiles.
-        
+
         Returns
         -------
-        self : QuantileBinner
-            Fitted estimator.
+        None
+        
         """
 
         if X.size == 0:
@@ -1257,8 +1257,6 @@ class QuantileBinner:
             for i in range(self.n_bins_)
         }
 
-        return self
-
     def transform(self, X: np.ndarray):
         """
         Assign new data to the learned bins.
@@ -1274,6 +1272,7 @@ class QuantileBinner:
             The indices of the bins each value belongs to.
             Values less than the smallest bin edge are assigned to the first bin,
             and values greater than the largest bin edge are assigned to the last bin.
+       
         """
 
         if self.bin_edges_ is None:
@@ -1301,7 +1300,9 @@ class QuantileBinner:
             The indices of the bins each value belongs to.
             Values less than the smallest bin edge are assigned to the first bin,
             and values greater than the largest bin edge are assigned to the last bin.
+        
         """
+
         self.fit(X)
 
         return self.transform(X)
@@ -1310,10 +1311,15 @@ class QuantileBinner:
         """
         Get the parameters of the quantile binner.
         
+        Parameters
+        ----------
+        None
+        
         Returns
         -------
         params : dict
             A dictionary of the parameters of the quantile binner.
+        
         """
 
         return {
@@ -1332,9 +1338,12 @@ class QuantileBinner:
         ----------
         params : dict
             A dictionary of the parameters to set.
+
+        Returns
+        -------
+        None
+        
         """
 
         for param, value in params.items():
             setattr(self, param, value)
-
-        return self

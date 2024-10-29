@@ -60,13 +60,13 @@ def test_create_train_X_y_output_when_series_and_exog_and_encoding_None():
     series["l2"].index = pd.date_range("1990-01-05", periods=5, freq="D")
     series["l3"].index = pd.date_range("1990-01-03", periods=5, freq="D")
     
-    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3,
-                                              encoding           = None,
-                                              transformer_series = StandardScaler())
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=3, encoding=None, transformer_series=StandardScaler()
+    )
     
     forecaster.fit(series=series)
 
-    results = forecaster._create_train_X_y(series=series)
+    results = forecaster.create_train_X_y(series=series)
 
     expected = (
         pd.DataFrame(

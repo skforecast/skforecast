@@ -6,14 +6,16 @@ import os
 import sys
 import numpy as np
 import pandas as pd
+from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import Ridge
-from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error
+from skforecast.metrics import mean_absolute_scaled_error, root_mean_squared_scaled_error
 from skforecast.recursive import ForecasterRecursive
 from skforecast.direct import ForecasterDirect
 from skforecast.model_selection import backtesting_forecaster
 from skforecast.model_selection._search import _bayesian_search_optuna
-from skforecast.model_selection._split import TimeSeriesFold
+from skforecast.model_selection._split import TimeSeriesFold, OneStepAheadFold
 from skforecast.preprocessing import RollingFeatures
 import optuna
 from optuna.samplers import TPESampler
@@ -22,9 +24,92 @@ from functools import partialmethod
 
 # Fixtures
 from ..fixtures_model_selection import y
+from ..fixtures_model_selection import y_feature_selection
+from ..fixtures_model_selection import exog_feature_selection
 
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)  # hide progress bar
+
+
+def test_TypeError_bayesian_search_optuna_when_cv_not_valid():
+    """
+    Test TypeError is raised in _bayesian_search_optuna when cv is not
+    a valid splitter.
+    """
+    class DummyCV:
+        pass
+
+    cv = DummyCV()
+    forecaster = ForecasterRecursive(
+                     regressor = Ridge(random_state=123),
+                     lags      = 2
+                 )
+    
+    def search_space(trial):  # pragma: no cover
+        search_space  = {
+            'alpha': trial.suggest_float('not_alpha', 1e-2, 1.0),
+            'lags': trial.suggest_categorical('lags', [2, 4])
+        }
+
+        return search_space
+    
+    err_msg = re.escape(
+        f"`cv` must be an instance of `TimeSeriesFold` or `OneStepAheadFold`. "
+        f"Got {type(cv)}."
+    )
+    with pytest.raises(TypeError, match = err_msg):
+        _bayesian_search_optuna(
+            forecaster         = forecaster,
+            y                  = y,
+            cv                 = cv,
+            search_space       = search_space,
+            metric             = ['mean_absolute_error', mean_absolute_error],
+            n_trials           = 10,
+            random_state       = 123,
+            return_best        = False,
+            verbose            = False,
+        )
+
+
+def test_TypeError_bayesian_search_optuna_when_forecaster_not_OneStepAhead():
+    """
+    Test TypeError is raised in _bayesian_search_optuna when forecaster is not
+    allowed to use OneStepAheadFold.
+    """
+
+    cv = OneStepAheadFold(
+             initial_train_size    = 100,
+             return_all_indexes    = False,
+         )
+    
+    class DummyForecaster:
+        pass
+    forecaster = DummyForecaster()
+    
+    def search_space(trial):  # pragma: no cover
+        search_space  = {
+            'alpha': trial.suggest_float('not_alpha', 1e-2, 1.0),
+            'lags': trial.suggest_categorical('lags', [2, 4])
+        }
+
+        return search_space
+    
+    err_msg = re.escape(
+        f"Only forecasters of type ['ForecasterRecursive', 'ForecasterDirect'] are allowed "
+        f"when using `cv` of type `OneStepAheadFold`. Got {type(forecaster).__name__}."
+    )
+    with pytest.raises(TypeError, match = err_msg):
+        _bayesian_search_optuna(
+            forecaster         = forecaster,
+            y                  = y,
+            cv                 = cv,
+            search_space       = search_space,
+            metric             = ['mean_absolute_error', mean_absolute_error],
+            n_trials           = 10,
+            random_state       = 123,
+            return_best        = False,
+            verbose            = False,
+        )
 
 
 def test_ValueError_bayesian_search_optuna_metric_list_duplicate_names():
@@ -1044,3 +1129,112 @@ def test_bayesian_search_optuna_output_file():
 
     assert os.path.isfile(output_file)
     os.remove(output_file)
+
+
+@pytest.mark.parametrize(
+        "forecaster",
+        [
+            ForecasterRecursive(
+                regressor=Ridge(random_state=678),
+                lags=3,
+                transformer_y=None,
+                forecaster_id='Recursive_no_transformer'
+            ),
+            ForecasterDirect(
+                regressor=Ridge(random_state=678),
+                steps=1,
+                lags=3,
+                transformer_y=None,
+                forecaster_id='Direct_no_transformer'
+            ),
+            ForecasterRecursive(
+                regressor=Ridge(random_state=678),
+                lags=3,
+                transformer_y=StandardScaler(),
+                transformer_exog=StandardScaler(),
+                forecaster_id='Recursive_transformers'
+            ),
+            ForecasterDirect(
+                regressor=Ridge(random_state=678),
+                steps=1,
+                lags=3,
+                transformer_y=StandardScaler(),
+                transformer_exog=StandardScaler(),
+                forecaster_id='Direct_transformer'
+            )
+        ],
+ids=lambda forecaster: f'forecaster: {forecaster.forecaster_id}')
+def test_bayesian_search_optuna_outputs_backtesting_one_step_ahead(
+    forecaster,
+):
+    """
+    Test that the outputs of _bayesian_search_optuna are equivalent when
+    using backtesting and one-step-ahead.
+    """
+    metrics = [
+        "mean_absolute_error",
+        "mean_squared_error",
+        mean_absolute_percentage_error,
+        mean_absolute_scaled_error,
+        root_mean_squared_scaled_error,
+    ]
+
+    def search_space(trial):
+        search_space  = {
+            'alpha': trial.suggest_float('alpha', 1e-2, 1.0),
+            'lags': trial.suggest_categorical('lags', [2, 4])
+        }
+        
+        return search_space
+    
+    cv_backtesnting = TimeSeriesFold(
+            steps                 = 1,
+            initial_train_size    = 100,
+            window_size           = None,
+            differentiation       = None,
+            refit                 = False,
+            fixed_train_size      = False,
+            gap                   = 0,
+            skip_folds            = None,
+            allow_incomplete_fold = True,
+            return_all_indexes    = False,
+        )
+    cv_one_step_ahead = OneStepAheadFold(
+            initial_train_size    = 100,
+            return_all_indexes    = False,
+        )
+    
+    results_backtesting = _bayesian_search_optuna(
+        forecaster   = forecaster,
+        y            = y_feature_selection,
+        exog         = exog_feature_selection,
+        cv           = cv_backtesnting,
+        search_space = search_space,
+        metric       = metrics,
+        n_trials     = 10,
+        random_state = 123,
+        return_best  = False,
+        verbose      = False
+    )[0]
+
+    warn_msg = re.escape(
+        "One-step-ahead predictions are used for faster model comparison, but they "
+        "may not fully represent multi-step prediction performance. It is recommended "
+        "to backtest the final model for a more accurate multi-step performance "
+        "estimate."
+    )
+    with pytest.warns(UserWarning, match = warn_msg):
+        results_one_step_ahead = _bayesian_search_optuna(
+            forecaster   = forecaster,
+            y            = y_feature_selection,
+            exog         = exog_feature_selection,
+            cv           = cv_one_step_ahead,
+            search_space = search_space,
+            metric       = metrics,
+            n_trials     = 10,
+            random_state = 123,
+            return_best  = False,
+            verbose      = False
+        )[0]
+
+    pd.testing.assert_frame_equal(results_backtesting, results_one_step_ahead)

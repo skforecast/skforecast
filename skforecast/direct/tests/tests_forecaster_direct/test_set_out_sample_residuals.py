@@ -22,8 +22,8 @@ def test_set_out_sample_residuals_NotFittedError_when_forecaster_not_fitted():
     y_pred = {1: np.array([1, 2, 3, 4, 5]), 2: np.array([1, 2, 3, 4, 5])}
 
     err_msg = re.escape(
-        ("This forecaster is not fitted yet. Call `fit` with appropriate "
-         "arguments before using `set_out_sample_residuals()`.")
+        "This forecaster is not fitted yet. Call `fit` with appropriate "
+        "arguments before using `set_out_sample_residuals()`."
     )
     with pytest.raises(NotFittedError, match = err_msg):
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
@@ -181,8 +181,15 @@ def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_and_a
     """
     forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=2)
     forecaster.fit(y=y)
-    y_true = {1: np.array([1, 2, 3, 4, 5]), 2: np.array([2, 3, 4, 5, 6])}
-    y_pred = {1: np.array([0, 1, 2, 3, 4]), 2: np.array([0, 1, 2, 3, 4])}
+    y_true = {
+        1: pd.Series(np.array([1, 2, 3, 4, 5])), 
+        2: pd.Series(np.array([2, 3, 4, 5, 6]))
+    }
+    y_pred = {
+        1: pd.Series(np.array([0, 1, 2, 3, 4])), 
+        2: pd.Series(np.array([0, 1, 2, 3, 4]))
+    }
+
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred, append=True)
     expected = {

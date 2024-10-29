@@ -831,21 +831,28 @@ def test_output_bayesian_search_forecaster_multiseries_ForecasterDirectMultiVari
         }
 
         return search_space
-
-    results, _ = bayesian_search_forecaster_multiseries(
-        forecaster         = forecaster,
-        series             = series_item_sales,
-        exog               = exog_item_sales,
-        cv                 = cv,
-        search_space       = search_space,
-        n_trials           = 5,
-        metric             = metrics,
-        aggregate_metric   = ["average", "weighted_average", "pooling"],
-        return_best        = False,
-        n_jobs             = 'auto',
-        verbose            = False,
-        show_progress      = False
+    
+    warn_msg = re.escape(
+        "One-step-ahead predictions are used for faster model comparison, but they "
+        "may not fully represent multi-step prediction performance. It is recommended "
+        "to backtest the final model for a more accurate multi-step performance "
+        "estimate."
     )
+    with pytest.warns(UserWarning, match = warn_msg):
+        results, _ = bayesian_search_forecaster_multiseries(
+            forecaster         = forecaster,
+            series             = series_item_sales,
+            exog               = exog_item_sales,
+            cv                 = cv,
+            search_space       = search_space,
+            n_trials           = 5,
+            metric             = metrics,
+            aggregate_metric   = ["average", "weighted_average", "pooling"],
+            return_best        = False,
+            n_jobs             = 'auto',
+            verbose            = False,
+            show_progress      = False
+        )
 
     expected_results = pd.DataFrame({
         "levels": [["item_1"], ["item_1"], ["item_1"], ["item_1"], ["item_1"]],
@@ -928,22 +935,29 @@ def test_output_bayesian_search_forecaster_multiseries_ForecasterRecursiveMultiS
         }
 
         return search_space
-
-    results, _ = bayesian_search_forecaster_multiseries(
-        forecaster         = forecaster,
-        series             = series_item_sales,
-        exog               = exog_item_sales,
-        search_space       = search_space,
-        cv                 = cv,
-        n_trials           = 5,
-        metric             = metrics,
-        levels             = levels,
-        aggregate_metric   = ["average", "weighted_average", "pooling"],
-        return_best        = False,
-        n_jobs             = 'auto',
-        verbose            = False,
-        show_progress      = False
+    
+    warn_msg = re.escape(
+        "One-step-ahead predictions are used for faster model comparison, but they "
+        "may not fully represent multi-step prediction performance. It is recommended "
+        "to backtest the final model for a more accurate multi-step performance "
+        "estimate."
     )
+    with pytest.warns(UserWarning, match = warn_msg):
+        results, _ = bayesian_search_forecaster_multiseries(
+            forecaster         = forecaster,
+            series             = series_item_sales,
+            exog               = exog_item_sales,
+            search_space       = search_space,
+            cv                 = cv,
+            n_trials           = 5,
+            metric             = metrics,
+            levels             = levels,
+            aggregate_metric   = ["average", "weighted_average", "pooling"],
+            return_best        = False,
+            n_jobs             = 'auto',
+            verbose            = False,
+            show_progress      = False
+        )
 
     expected_results = pd.DataFrame(
         {

@@ -14,23 +14,6 @@ series = pd.DataFrame({'l1': pd.Series(np.arange(15)),
                        'l2': pd.Series(np.arange(15))})
 
 
-@pytest.mark.parametrize("residuals", [[1, 2, 3], {1: [1, 2, 3, 4]}], 
-                         ids=lambda residuals: f'residuals: {residuals}')
-def test_set_out_sample_residuals_TypeError_when_residuals_is_not_a_dict_of_numpy_ndarray(residuals):
-    """
-    Test TypeError is raised when residuals is not a dict of numpy ndarrays.
-    """
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(fit_intercept=True), level='l1',
-                                               lags=3, steps=2)
-    err_msg = re.escape(
-        (f"`residuals` argument must be a dict of numpy ndarrays in the form "
-         "`{step: residuals}`. " 
-         f"Got {type(residuals)}.")
-    )
-    with pytest.raises(TypeError, match = err_msg):
-        forecaster.set_out_sample_residuals(residuals=residuals)
-
-
 def test_set_out_sample_residuals_NotFittedError_when_forecaster_not_fitted():
     """
     Test NotFittedError is raised when forecaster is not fitted.
@@ -45,6 +28,23 @@ def test_set_out_sample_residuals_NotFittedError_when_forecaster_not_fitted():
          "arguments before using `set_out_sample_residuals()`.")
     )
     with pytest.raises(NotFittedError, match = err_msg):
+        forecaster.set_out_sample_residuals(residuals=residuals)
+
+
+@pytest.mark.parametrize("residuals", [[1, 2, 3], {1: [1, 2, 3, 4]}], 
+                         ids=lambda residuals: f'residuals: {residuals}')
+def test_set_out_sample_residuals_TypeError_when_residuals_is_not_a_dict_of_numpy_ndarray(residuals):
+    """
+    Test TypeError is raised when residuals is not a dict of numpy ndarrays.
+    """
+    forecaster = ForecasterDirectMultiVariate(LinearRegression(fit_intercept=True), level='l1',
+                                               lags=3, steps=2)
+    err_msg = re.escape(
+        (f"`residuals` argument must be a dict of numpy ndarrays in the form "
+         "`{step: residuals}`. " 
+         f"Got {type(residuals)}.")
+    )
+    with pytest.raises(TypeError, match = err_msg):
         forecaster.set_out_sample_residuals(residuals=residuals)
 
 

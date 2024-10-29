@@ -2429,17 +2429,17 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         """
 
+        if not self.is_fitted:
+            raise NotFittedError(
+                ("This forecaster is not fitted yet. Call `fit` with appropriate "
+                 "arguments before using `set_out_sample_residuals()`.")
+            )
+
         if not isinstance(residuals, dict) or not all(isinstance(x, np.ndarray) for x in residuals.values()):
             raise TypeError(
                 (f"`residuals` argument must be a dict of numpy ndarrays in the form "
                  "`{step: residuals}`. " 
                  f"Got {type(residuals)}.")
-            )
-
-        if not self.is_fitted:
-            raise NotFittedError(
-                ("This forecaster is not fitted yet. Call `fit` with appropriate "
-                 "arguments before using `set_out_sample_residuals()`.")
             )
         
         if self.out_sample_residuals_ is None:

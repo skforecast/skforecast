@@ -9,7 +9,7 @@ from skforecast.preprocessing import RollingFeatures
 from skforecast.direct import ForecasterDirect
 
 
-class WindowFeatureNoPandas:
+class WindowFeatureNoPandas:  # pragma: no cover
     def __init__(self, window_sizes, features_names):
         self.window_sizes = window_sizes
         self.features_names = features_names
@@ -21,7 +21,7 @@ class WindowFeatureNoPandas:
         pass
 
 
-class WindowFeatureNoCorrectLength:
+class WindowFeatureNoCorrectLength:  # pragma: no cover
     def __init__(self, window_sizes, features_names):
         self.window_sizes = window_sizes
         self.features_names = features_names
@@ -34,7 +34,7 @@ class WindowFeatureNoCorrectLength:
         pass
 
 
-class WindowFeatureNoCorrectIndex:
+class WindowFeatureNoCorrectIndex:  # pragma: no cover
     def __init__(self, window_sizes, features_names):
         self.window_sizes = window_sizes
         self.features_names = features_names

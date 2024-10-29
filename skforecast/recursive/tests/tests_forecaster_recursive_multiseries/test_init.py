@@ -9,6 +9,23 @@ from sklearn.linear_model import LinearRegression
 from ....recursive import ForecasterRecursiveMultiSeries
 
 
+def test_init_ValueError_when_no_lags_or_window_features():
+    """
+    Test ValueError is raised when no lags or window_features are passed.
+    """
+    err_msg = re.escape(
+        ("At least one of the arguments `lags` or `window_features` "
+         "must be different from None. This is required to create the "
+         "predictors used in training the forecaster.")
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        ForecasterRecursiveMultiSeries(
+            regressor       = LinearRegression(),
+            lags            = None,
+            window_features = None
+        )
+
+
 @pytest.mark.parametrize("dif", 
                          [0, 0.5, 1.5, 'not_int'], 
                          ids = lambda dif: f'differentiation: {dif}')

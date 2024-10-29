@@ -17,6 +17,7 @@ from skforecast.recursive import ForecasterRecursiveMultiSeries
 from skforecast.direct import ForecasterDirectMultiVariate
 from skforecast.model_selection import backtesting_forecaster_multiseries
 from skforecast.model_selection._split import TimeSeriesFold
+from skforecast.preprocessing import RollingFeatures
 
 # Fixtures
 from ..fixtures_model_selection_multiseries import series
@@ -1101,6 +1102,76 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     pd.testing.assert_frame_equal(predictions.head(10), expected_predictions)
 
 
+def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_series_and_exog_dict_with_window_features():
+    """
+    Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 
+    when series and exog are dictionaries and window features
+    (mocked done in Skforecast v0.14.0).
+    """
+    window_features = RollingFeatures(
+        stats = ['mean', 'std', 'min', 'max', 'sum', 'median', 'ratio_min_max', 'coef_variation'],
+        window_sizes = 10,
+    )
+    forecaster = ForecasterRecursiveMultiSeries(
+        regressor=LGBMRegressor(
+            n_estimators=20, random_state=123, verbose=-1
+        ),
+        lags=14,
+        window_features=window_features,
+        encoding='ordinal',
+        dropna_from_series=False,
+        transformer_series=StandardScaler(),
+        transformer_exog=StandardScaler(),
+    )
+    cv = TimeSeriesFold(
+            initial_train_size = len(series_dict_train['id_1000']),
+            steps              = 24,
+            refit              = False,
+            fixed_train_size   = True,
+            allow_incomplete_fold = True,
+         )
+    
+    metrics, predictions = backtesting_forecaster_multiseries(
+        forecaster            = forecaster,
+        series                = series_dict,
+        exog                  = exog_dict,
+        cv                    = cv,
+        metric                = 'mean_absolute_error',
+        add_aggregated_metric = False,
+        n_jobs                = 'auto',
+        verbose               = False,
+        show_progress         = False,
+        suppress_warnings     = True
+    )
+
+    expected_metrics = pd.DataFrame(
+        data={
+        'levels': ['id_1000', 'id_1001', 'id_1002', 'id_1003', 'id_1004'],
+        'mean_absolute_error': [203.9468527, 1105.40996716,
+                                np.nan, 253.89651216, 792.72364223]
+        },
+        columns=['levels', 'mean_absolute_error']
+    )
+    expected_predictions = pd.DataFrame(
+        data=np.array([
+        [1298.57461037, 2667.47526192, 2542.97100542, 8411.2157276 ],
+        [1304.25805669, 2487.352452  , 2229.55427308, 8500.56915202],
+        [1344.1446645 , 2636.37058144, 2199.05843636, 8440.88224657],
+        [1379.38364674, 2544.32608586, 2236.41755734, 8116.99208078],
+        [1338.09366426, 2314.51247115, 2187.52526646, 8190.43433684],
+        [1151.17626597, 1901.63671417, 2181.09966124, 6262.31416544],
+        [ 948.94468539, 1683.47114395,        np.nan, 5937.21928644],
+        [1348.71328768, 1948.01948249,        np.nan, 8391.00440651],
+        [1384.41932734, 2515.20885091,        np.nan, 8542.34427233],
+        [1402.03041386, 2542.16541225,        np.nan, 8359.17989861]]),
+        index=pd.date_range('2016-08-01', periods=10, freq='D'),
+        columns=['id_1000', 'id_1001', 'id_1003', 'id_1004']
+    )
+
+    pd.testing.assert_frame_equal(metrics, expected_metrics)
+    pd.testing.assert_frame_equal(predictions.head(10), expected_predictions)
+
+
 def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_aggregate_metrics_true():
     """
     Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 
@@ -1553,6 +1624,58 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
                                                0.50326485, 0.53339207, 0.50892268, 
                                                0.46841857, 0.48498214, 0.52778775,
                                                0.51476103, 0.48480385, 0.53470992])},
+                               index=pd.RangeIndex(start=38, stop=50, step=1)
+                           )
+                                   
+    pd.testing.assert_frame_equal(expected_metric, metrics_levels)
+    pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+
+
+@pytest.mark.parametrize("n_jobs", [1, -1, 'auto'],
+                         ids=lambda n: f'n_jobs: {n}')
+def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_window_features(n_jobs):
+    """
+    Test output of backtesting_forecaster_multiseries in ForecasterDirectMultiVariate with refit,
+    fixed_train_size with window features with mocked 
+    (mocked done in Skforecast v0.14.0).
+    """
+    window_features = RollingFeatures(
+        stats = ['mean', 'std', 'min', 'max', 'sum', 'median', 'ratio_min_max', 'coef_variation'],
+        window_sizes = 3,
+    )
+    forecaster = ForecasterDirectMultiVariate(
+                     regressor          = Ridge(random_state=123),
+                     steps              = 3,
+                     level              = 'l2',
+                     lags               = 2,
+                     window_features    = window_features,
+                     transformer_series = None
+                 )
+    cv = TimeSeriesFold(
+            initial_train_size = len(series) - 12,
+            steps              = 3,
+            refit              = True,
+            fixed_train_size   = True,
+        )
+
+    metrics_levels, backtest_predictions = backtesting_forecaster_multiseries(
+                                               forecaster            = forecaster,
+                                               series                = series,
+                                               cv                    = cv,
+                                               levels                = None,
+                                               metric                = 'mean_absolute_error',
+                                               add_aggregated_metric = False,
+                                               exog                  = None,
+                                               n_jobs                = n_jobs,
+                                               verbose               = True
+                                           )
+    
+    expected_metric = pd.DataFrame({'levels': ['l2'],
+                                    'mean_absolute_error': [0.23856556]})
+    expected_predictions = pd.DataFrame({
+                               'l2': np.array([0.55657737, 0.37891865, 0.43460762, 0.58417451, 0.59388689,
+                                               0.55074551, 0.3267003 , 0.33008016, 0.40918253, 0.5313121 ,
+                                               0.43536832, 0.5907553])},
                                index=pd.RangeIndex(start=38, stop=50, step=1)
                            )
                                    

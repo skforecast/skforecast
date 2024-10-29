@@ -4,6 +4,7 @@ import pytest
 import re
 import numpy as np
 import pandas as pd
+from ....exceptions import IgnoredArgumentWarning
 from skforecast.model_selection._split import BaseFold
 
 
@@ -175,6 +176,30 @@ def test_basefold_validate_params_raise_invalid_allow_incomplete_fold():
         cv._validate_params(cv_name="TimeSeriesFold", **params)
 
 
+def test_basefold_validate_params_raise_invalid_initial_train_size_OneStepAheadFold():
+    """
+    Test that TypeError is raised when initial_train_size is invalid for 
+    OneStepAheadFold.
+    """
+    cv = BaseFold()
+    params = dict(valid_params)
+    params["initial_train_size"] = "invalid"
+    msg = (
+        f"`initial_train_size` must be an integer greater than 0. "
+        f"Got {params['initial_train_size']}."
+    )
+    with pytest.raises(ValueError, match=msg):
+        cv._validate_params(cv_name="OneStepAheadFold", **params)
+    
+    params["initial_train_size"] = 0
+    msg = (
+        f"`initial_train_size` must be an integer greater than 0. "
+        f"Got {params['initial_train_size']}."
+    )
+    with pytest.raises(ValueError, match=msg):
+        cv._validate_params(cv_name="OneStepAheadFold", **params)
+
+
 def test_basefold_validate_params_raise_invalid_window_size():
     """
     Test that ValueError is raised when window_size is invalid.
@@ -329,3 +354,53 @@ def test_basefold_extract_index_raise_error_when_X_is_dict_with_series_non_with_
     msg = 'At least one series must have a frequency.'
     with pytest.raises(ValueError, match=msg):
         cv._extract_index(X)
+
+
+def test_basefold_set_params_TypeError_non_dict():
+    """
+    Test TypeError is raised set_params method with non-dictionary input.
+    """
+    fold = BaseFold()
+    new_params = ['not', 'a', 'dict']
+
+    msg = (
+        f"`params` must be a dictionary. Got {type(new_params)}."
+    )
+    with pytest.raises(TypeError, match=msg):
+        fold.set_params(new_params)
+
+
+def test_basefold_set_params_valid_params():
+    """
+    Test set_params method with valid parameters.
+    """
+    cv = BaseFold(steps=3, initial_train_size=10)
+    new_params = {
+        'steps': 5,
+        'initial_train_size': 15,
+        'verbose': False
+    }
+    cv.set_params(new_params)
+    assert cv.steps == 5
+    assert cv.initial_train_size == 15
+    assert cv.verbose is False
+
+
+def test_set_params_partial_update_and_unknown_param():
+    """
+    Test set_params method with partial update of parameters.
+    """
+    cv = BaseFold(steps=3, initial_train_size=10, verbose=True)
+    new_params = {
+        'steps': 5,
+        'unknown_param': 5
+    }
+    warn_msg = re.escape(
+        "Unknown parameters: {'unknown_param'}. They have been ignored."
+    )
+    with pytest.warns(IgnoredArgumentWarning, match=warn_msg):
+        cv.set_params(new_params)
+    
+    assert cv.steps == 5
+    assert cv.initial_train_size == 10
+    assert cv.verbose is True

@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from skforecast.recursive import ForecasterRecursive
 from sklearn.linear_model import LinearRegression
+from sklearn.exceptions import NotFittedError
 from sklearn.preprocessing import StandardScaler
 
 # Fixtures
@@ -15,6 +16,22 @@ if pd.__version__ < '2.2.0':
     freq = "H"
 else:
     freq = "h"
+
+
+def test_set_out_sample_residuals_NotFittedError_when_forecaster_not_fitted():
+    """
+    Test NotFittedError is raised when forecaster is not fitted.
+    """
+    forecaster = ForecasterRecursive(LinearRegression(), lags=3)
+    y_true = {1: np.array([1, 2, 3, 4, 5]), 2: np.array([1, 2, 3, 4, 5])}
+    y_pred = {1: np.array([1, 2, 3, 4, 5]), 2: np.array([1, 2, 3, 4, 5])}
+
+    err_msg = re.escape(
+        "This forecaster is not fitted yet. Call `fit` with appropriate "
+        "arguments before using `set_out_sample_residuals()`."
+    )
+    with pytest.raises(NotFittedError, match = err_msg):
+        forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
 
 
 def test_set_out_sample_residuals_TypeError_when_y_true_is_not_numpy_array_or_pandas_series():
