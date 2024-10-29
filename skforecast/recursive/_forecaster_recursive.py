@@ -1124,8 +1124,6 @@ class ForecasterRecursive(ForecasterBase):
         if last_window is None:
             last_window = self.last_window_
 
-        # TODO: Not clear maybe the error "Index must be a pandas DatetimeIndex"
-        # which variable is causing it.
         if self.is_fitted:
             steps = date_to_index_position(
                         index        = last_window.index,
