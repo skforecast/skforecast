@@ -7,6 +7,7 @@
 
 import re
 from copy import deepcopy
+from itertools import chain
 from typing import Union, Optional
 import warnings
 import numpy as np
@@ -83,9 +84,10 @@ def select_features(
 
     """
 
+    forecaster_name = type(forecaster).__name__
     valid_forecasters = ['ForecasterRecursive', 'ForecasterDirect']
 
-    if type(forecaster).__name__ not in valid_forecasters:
+    if forecaster_name not in valid_forecasters:
         raise TypeError(
             f"`forecaster` must be one of the following classes: {valid_forecasters}."
         )
@@ -103,13 +105,14 @@ def select_features(
     forecaster = deepcopy(forecaster)
     forecaster.is_fitted = False
     X_train, y_train = forecaster.create_train_X_y(y=y, exog=exog)
-    if type(forecaster).__name__ == 'ForecasterDirect':
+    if forecaster_name == 'ForecasterDirect':
         X_train, y_train = forecaster.filter_train_X_y_for_step(
                                step          = 1,
                                X_train       = X_train,
                                y_train       = y_train,
                                remove_suffix = True
                            )
+    
     autoreg_cols = []
     if forecaster.lags is not None:
         autoreg_cols.extend([f"lag_{lag}" for lag in forecaster.lags])
@@ -173,9 +176,9 @@ def select_features(
 
     if len(selected_autoreg) == 0:
         warnings.warn(
-            ("No autoregressive features have been selected. Since a Forecaster "
-             "cannot be created without them, be sure to include at least one "
-             "using the `force_inclusion` parameter.")
+            "No autoregressive features have been selected. Since a Forecaster "
+            "cannot be created without them, be sure to include at least one "
+            "using the `force_inclusion` parameter."
         )
     else:
         selected_autoreg = [
@@ -197,7 +200,7 @@ def select_features(
 
     return selected_autoreg, selected_exog
 
-# TODO: Review when MultiSeries has window_features
+# TODO: Create test for MultiVariate
 def select_features_multiseries(
     forecaster: object,
     selector: object,
@@ -223,8 +226,9 @@ def select_features_multiseries(
 
     Parameters
     ----------
-    forecaster : ForecasterRecursiveMultiSeries
-        Forecaster model.
+    forecaster : ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate
+        Forecaster model. If forecaster is a ForecasterDirectMultiVariate, the
+        selector will only be applied to the features of the first step.
     selector : object
         A feature selector from sklearn.feature_selection.
     series : pandas DataFrame
@@ -234,8 +238,8 @@ def select_features_multiseries(
     select_only : str, default `None`
         Decide what type of features to include in the selection process. 
         
-        - If `'autoreg'`, only autoregressive features (lags or custom 
-        predictors) are evaluated by the selector. All exogenous features are 
+        - If `'autoreg'`, only autoregressive features (lags and window features) 
+        are evaluated by the selector. All exogenous features are 
         included in the output (`selected_exog`).
         - If `'exog'`, only exogenous features are evaluated without the presence
         of autoregressive features. All autoregressive features are included 
@@ -265,11 +269,13 @@ def select_features_multiseries(
 
     """
 
+    forecaster_name = type(forecaster).__name__
     valid_forecasters = [
-        'ForecasterRecursiveMultiSeries'
+        'ForecasterRecursiveMultiSeries',
+        'ForecasterDirectMultiVariate'
     ]
 
-    if type(forecaster).__name__ not in valid_forecasters:
+    if forecaster_name not in valid_forecasters:
         raise TypeError(
             f"`forecaster` must be one of the following classes: {valid_forecasters}."
         )
@@ -285,28 +291,38 @@ def select_features_multiseries(
         )
     
     forecaster = deepcopy(forecaster)
-    forecaster.fitted = False
+    forecaster.is_fitted = False
     output = forecaster._create_train_X_y(series=series, exog=exog)
     X_train = output[0]
     y_train = output[1]
-    series_col_names = output[3]
+    if forecaster_name == 'ForecasterDirectMultiVariate':
+        X_train, y_train = forecaster.filter_train_X_y_for_step(
+                               step          = 1,
+                               X_train       = X_train,
+                               y_train       = y_train,
+                               remove_suffix = True
+                           )
 
-    if forecaster.encoding == 'onehot':
-        encoding_cols = series_col_names
-    else:
-        encoding_cols = ['_level_skforecast']
-
-    if hasattr(forecaster, 'lags'):
-        autoreg_cols = [f"lag_{lag}" for lag in forecaster.lags]
-    else:
-        if forecaster.name_predictors is not None:
-            autoreg_cols = forecaster.name_predictors
+    if forecaster_name == 'ForecasterRecursiveMultiSeries':
+        lags_names = forecaster.lags_names
+        window_features_names = output[6]  # X_train_window_features_names_out_ output
+        if forecaster.encoding == 'onehot':
+            encoding_cols = output[4]  # X_train_series_names_in_ output
         else:
-            autoreg_cols = [
-                col
-                for col in X_train.columns
-                if re.match(r'^custom_predictor_\d+', col)
-            ]
+            encoding_cols = ['_level_skforecast']
+    else:
+        lags_names = list(
+            chain(*[v for v in forecaster.lags_names.values() if v is not None])
+        )
+        window_features_names = forecaster.X_train_window_features_names_out_
+        encoding_cols = []
+    
+    autoreg_cols = []
+    if forecaster.lags is not None:
+        autoreg_cols.extend(lags_names)
+    if forecaster.window_features is not None:
+        autoreg_cols.extend(window_features_names)
+    
     exog_cols = [
         col
         for col in X_train.columns
@@ -370,9 +386,9 @@ def select_features_multiseries(
 
     if len(selected_autoreg) == 0:
         warnings.warn(
-            ("No autoregressive features have been selected. Since a Forecaster "
-             "cannot be created without them, be sure to include at least one "
-             "using the `force_inclusion` parameter.")
+            "No autoregressive features have been selected. Since a Forecaster "
+            "cannot be created without them, be sure to include at least one "
+            "using the `force_inclusion` parameter."
         )
     else:
         if hasattr(forecaster, 'lags'):

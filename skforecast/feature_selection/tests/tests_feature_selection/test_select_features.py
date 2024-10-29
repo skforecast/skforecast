@@ -2,7 +2,6 @@
 # ==============================================================================
 import re
 import pytest
-import pandas as pd
 from sklearn.feature_selection import RFE
 from sklearn.linear_model import LinearRegression
 from skforecast.recursive import ForecasterRecursive

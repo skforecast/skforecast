@@ -19,7 +19,8 @@ def test_TypeError_select_features_raise_when_forecaster_is_not_supported():
     """
     
     err_msg = re.escape(
-        "`forecaster` must be one of the following classes: ['ForecasterRecursiveMultiSeries']."
+        "`forecaster` must be one of the following classes: "
+        "['ForecasterRecursiveMultiSeries', 'ForecasterDirectMultiVariate']."
     )
     with pytest.raises(TypeError, match = err_msg):
         select_features_multiseries(
