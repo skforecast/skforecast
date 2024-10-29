@@ -7,6 +7,7 @@ Thank you for choosing skforecast and visiting our Frequently Asked Questions (F
 + [Avoid negative predictions when forecasting](../faq/non-negative-predictions.html)
 + [Forecasting time series with missing values](../faq/forecasting-time-series-with-missing-values.html)
 + [Forecasting with delayed historical data](../faq/forecasting-with-delayed-historical-data.html)
+- [Backtesting vs One-step-ahead](../faq/parameters-search-backetesting-vs-one-step-ahead.html)
 
 <span style="font-size: 1.3em;">Feature Engineering</span>
 
