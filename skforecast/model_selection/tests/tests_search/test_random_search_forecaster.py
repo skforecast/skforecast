@@ -15,7 +15,7 @@ from functools import partialmethod
 tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)  # hide progress bar
 
 
-def test_output_random_search_forecaster_ForecasterAutoreg_with_mocked():
+def test_output_random_search_forecaster_ForecasterRecursive_with_mocked():
     """
     Test output of random_search_forecaster in ForecasterRecursive with mocked
     (mocked done in Skforecast v0.4.3)

@@ -82,7 +82,7 @@ def test_backtesting_forecaster_multiseries_TypeError_when_forecaster_not_a_fore
                                                         lags=2, transformer_series=None,
                                                         encoding='onehot'), 'auto')], 
                          ids=lambda fc: f'forecaster, n_jobs: {fc}')
-def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_not_refit_with_mocked(forecaster, n_jobs):
+def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_not_refit_with_mocked(forecaster, n_jobs):
     """
     Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 
     without refit with mocked 
@@ -121,7 +121,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
-def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_not_refit_not_initial_train_size_with_mocked():
+def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_not_refit_not_initial_train_size_with_mocked():
     """
     Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 
     without refit and initial_train_size is None with mocked, forecaster must 
@@ -185,7 +185,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_
                                                         lags=2, transformer_series=None,
                                                         encoding='onehot'), 'auto')], 
                          ids=lambda fc: f'forecaster, n_jobs: {fc}')
-def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_refit_fixed_train_size_with_mocked(forecaster, n_jobs):
+def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_refit_fixed_train_size_with_mocked(forecaster, n_jobs):
     """
     Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 
     with refit, fixed_train_size and custom metric with mocked 
@@ -234,7 +234,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_
                                                         lags=2, transformer_series=None,
                                                         encoding='onehot'), 'auto')], 
                          ids=lambda fc: f'forecaster, n_jobs: {fc}')
-def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_refit_with_mocked(forecaster, n_jobs):
+def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_refit_with_mocked(forecaster, n_jobs):
     """
     Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 
     with refit with mocked (mocked done in Skforecast v0.5.0).
@@ -272,7 +272,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
-def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_refit_list_metrics_with_mocked_metrics():
+def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_refit_list_metrics_with_mocked_metrics():
     """
     Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 
     with refit and list of metrics with mocked and list of metrics 
@@ -315,7 +315,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
-def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_no_refit_levels_metrics_remainder_with_mocked():
+def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_no_refit_levels_metrics_remainder_with_mocked():
     """
     Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 
     with no refit, remainder, multiple levels and metrics with mocked 
@@ -362,7 +362,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
-def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_refit_levels_metrics_remainder_with_mocked():
+def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_refit_levels_metrics_remainder_with_mocked():
     """
     Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 
     with refit, remainder, multiple levels and metrics with mocked 
@@ -409,7 +409,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
-def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_not_refit_exog_interval_with_mocked():
+def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_not_refit_exog_interval_with_mocked():
     """
     Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 
     without refit with mocked using exog and intervals (mocked done in Skforecast v0.5.0).
@@ -463,7 +463,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
-def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_refit_fixed_train_size_exog_interval_with_mocked():
+def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_refit_fixed_train_size_exog_interval_with_mocked():
     """
     Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 
     with refit and fixed_train_size with mocked using exog and intervals 
@@ -518,7 +518,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
-def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_no_refit_exog_interval_gap_with_mocked():
+def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_no_refit_exog_interval_gap_with_mocked():
     """
     Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 
     with no refit and gap with mocked using exog and intervals 
@@ -579,7 +579,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
-def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_refit_exog_interval_gap_with_mocked():
+def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_refit_exog_interval_gap_with_mocked():
     """
     Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 
     with refit, gap, allow_incomplete_fold False with mocked using exog and intervals 
@@ -639,7 +639,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
-def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_refit_exog_fixed_train_size_interval_gap_with_mocked():
+def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_refit_exog_fixed_train_size_interval_gap_with_mocked():
     """
     Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 
     with refit, fixed_train_size, gap, with mocked using exog and intervals 
@@ -701,7 +701,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
-def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_no_refit_different_lengths_with_mocked():
+def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_no_refit_different_lengths_with_mocked():
     """
     Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 
     with no refit and gap with mocked using exog and intervals and series 
@@ -762,7 +762,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
-def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_refit_different_lengths_with_mocked():
+def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_refit_different_lengths_with_mocked():
     """
     Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 
     with refit, gap, allow_incomplete_fold False with mocked using exog and intervals 
@@ -821,7 +821,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
-def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_refit_fixed_train_size_different_lengths_with_mocked():
+def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_refit_fixed_train_size_different_lengths_with_mocked():
     """
     Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 
     with refit, fixed_train_size, gap, with mocked using exog and intervals 
@@ -883,7 +883,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
-def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_refit_int_interval_yes_exog_yes_remainder_with_mocked():
+def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_refit_int_interval_yes_exog_yes_remainder_with_mocked():
     """
     Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 
     with refit int, interval, gap, with mocked using exog and intervals 
@@ -970,7 +970,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
-def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_refit_int_interval_yes_exog_not_allow_remainder_gap_with_mocked():
+def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_refit_int_interval_yes_exog_not_allow_remainder_gap_with_mocked():
     """
     Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 
     with refit int, interval, gap, with mocked using exog and intervals 
@@ -1037,7 +1037,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
-def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_series_and_exog_dict_with_mocked():
+def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_series_and_exog_dict_with_mocked():
     """
     Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 
     when series and exog are dictionaries (mocked done in Skforecast v0.12.0).
@@ -1101,7 +1101,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_
     pd.testing.assert_frame_equal(predictions.head(10), expected_predictions)
 
 
-def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_aggregate_metrics_true():
+def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_aggregate_metrics_true():
     """
     Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 
     with no refit, remainder, multiple levels and add_aggregated_metric.
@@ -1185,7 +1185,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
-def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_series_and_exog_dict_with_mocked_multiple_aggregated_metrics():
+def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_series_and_exog_dict_with_mocked_multiple_aggregated_metrics():
     """
     Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 
     when series and exog are dictionaries and multiple aggregated metrics are calculated.
@@ -1267,7 +1267,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_
     pd.testing.assert_frame_equal(predictions.head(10), expected_predictions)
 
 
-def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_series_and_exog_dict_with_mocked_skip_folds_2():
+def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_series_and_exog_dict_with_mocked_skip_folds_2():
     """
     Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 
     when series and exog are dictionaries (mocked done in Skforecast v0.12.0).
@@ -1337,7 +1337,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_
     pd.testing.assert_frame_equal(predictions.head(10), expected_predictions)
 
 
-def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_series_and_exog_dict_encoding_None_differentiation():
+def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_series_and_exog_dict_encoding_None_differentiation():
     """
     Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 
     when series and exog are dictionaries, encoding=None, and differentiation=1 
@@ -1414,7 +1414,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiSeries_
 # ======================================================================================================================
 @pytest.mark.parametrize("n_jobs", [1, -1, 'auto'],
                          ids=lambda n: f'n_jobs: {n}')
-def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiVariate_not_refit_with_mocked(n_jobs):
+def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_not_refit_with_mocked(n_jobs):
     """
     Test output of backtesting_forecaster_multiseries in ForecasterDirectMultiVariate without refit
     with mocked (mocked done in Skforecast v0.6.0).
@@ -1460,7 +1460,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiVariate
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
-def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiVariate_not_refit_not_initial_train_size_with_mocked():
+def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_not_refit_not_initial_train_size_with_mocked():
     """
     Test output of backtesting_forecaster_multiseries in ForecasterDirectMultiVariate 
     without refit and initial_train_size is None with mocked, forecaster must be fitted,
@@ -1514,7 +1514,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiVariate
 
 @pytest.mark.parametrize("n_jobs", [1, -1, 'auto'],
                          ids=lambda n: f'n_jobs: {n}')
-def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiVariate_refit_fixed_train_size_with_mocked(n_jobs):
+def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_refit_fixed_train_size_with_mocked(n_jobs):
     """
     Test output of backtesting_forecaster_multiseries in ForecasterDirectMultiVariate with refit,
     fixed_train_size and custom metric with mocked (mocked done in Skforecast v0.6.0).
@@ -1562,7 +1562,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiVariate
 
 @pytest.mark.parametrize("n_jobs", [1, -1, 'auto'],
                          ids=lambda n: f'n_jobs: {n}')
-def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiVariate_refit_with_mocked(n_jobs):
+def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_refit_with_mocked(n_jobs):
     """
     Test output of backtesting_forecaster_multiseries in ForecasterDirectMultiVariate 
     with refit with mocked (mocked done in Skforecast v0.6.0).
@@ -1608,7 +1608,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiVariate
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
-def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiVariate_refit_list_metrics_with_mocked_metrics():
+def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_refit_list_metrics_with_mocked_metrics():
     """
     Test output of backtesting_forecaster_multiseries in ForecasterDirectMultiVariate 
     with refit and list of metrics with mocked and list of metrics 
@@ -1656,7 +1656,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiVariate
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
-def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiVariate_not_refit_exog_interval_with_mocked():
+def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_not_refit_exog_interval_with_mocked():
     """
     Test output of backtesting_forecaster_multiseries in ForecasterDirectMultiVariate 
     without refit with mocked using exog and intervals 
@@ -1716,7 +1716,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiVariate
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
-def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiVariate_refit_fixed_train_size_exog_interval_with_mocked():
+def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_refit_fixed_train_size_exog_interval_with_mocked():
     """
     Test output of backtesting_forecaster_multiseries in ForecasterDirectMultiVariate 
     with refit and fixed_train_size with mocked using exog and intervals 
@@ -1775,7 +1775,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiVariate
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
-def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiVariate_no_refit_exog_interval_gap_with_mocked():
+def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_no_refit_exog_interval_gap_with_mocked():
     """
     Test output of backtesting_forecaster_multiseries in ForecasterDirectMultiVariate 
     with no refit and gap with mocked using exog and intervals 
@@ -1840,7 +1840,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiVariate
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
-def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiVariate_refit_exog_interval_gap_with_mocked():
+def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_refit_exog_interval_gap_with_mocked():
     """
     Test output of backtesting_forecaster_multiseries in ForecasterDirectMultiVariate 
     with refit, gap, allow_incomplete_fold False with mocked using exog and 
@@ -1903,7 +1903,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiVariate
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
-def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiVariate_refit_fixed_train_size_exog_interval_gap_with_mocked():
+def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_refit_fixed_train_size_exog_interval_gap_with_mocked():
     """
     Test output of backtesting_forecaster_multiseries in ForecasterDirectMultiVariate 
     with refit, fixed_train_size, gap, with mocked using exog and intervals 
@@ -1969,7 +1969,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiVariate
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
-def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiVariate_refit_int_interval_yes_exog_yes_remainder_with_mocked():
+def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_refit_int_interval_yes_exog_yes_remainder_with_mocked():
     """
     Test output of backtesting_forecaster_multiseries in ForecasterDirectMultiVariate 
     with refit int, interval, gap, with mocked using exog and intervals 
@@ -2045,7 +2045,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiVariate
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
-def test_output_backtesting_forecaster_multiseries_ForecasterAutoregMultiVariate_refit_int_interval_yes_exog_not_allow_remainder_gap_with_mocked():
+def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_refit_int_interval_yes_exog_not_allow_remainder_gap_with_mocked():
     """
     Test output of backtesting_forecaster_multiseries in ForecasterDirectMultiVariate 
     with refit int, interval, gap, with mocked using exog and intervals 

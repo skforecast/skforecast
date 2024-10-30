@@ -322,20 +322,27 @@ def test_predict_bootstrapping_UnknownLevelWarning_out_sample_residuals_with_enc
     Test UnknownLevelWarning is raised when encoding is None and 
     out_sample_residuals is set.
     """
-    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3, 
-                                              encoding=None)
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(),
+        lags=3, 
+        encoding=None
+    )
     forecaster.fit(series=series)
 
-    new_residuals = {
+    y_true = {
         '1': np.array([1, 2, 3, 4, 5]), 
         '2': np.array([1, 2, 3, 4, 5])
+    }
+    y_pred = {
+        '1': np.array([0, 0, 0, 0, 0]),
+        '2': np.array([0, 0, 0, 0, 0])
     }
     warn_msg = re.escape(
         ("As `encoding` is set to `None`, no distinction between levels "
          "is made. All residuals are stored in the '_unknown_level' key.")
     )
     with pytest.warns(UnknownLevelWarning, match = warn_msg):
-        forecaster.set_out_sample_residuals(new_residuals)
+        forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
     
     last_window = pd.DataFrame(forecaster.last_window_)
     last_window['3'] = last_window['1']
@@ -377,15 +384,18 @@ def test_predict_bootstrapping_ValueError_when_not_level_in_out_sample_residuals
     Test ValueError is raised when use_in_sample_residuals=False and
     forecaster.out_sample_residuals_ is missing a level.
     """
-    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3,
-                                              transformer_series=transformer_series)
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(),
+        lags=3,
+        transformer_series=transformer_series
+    )
     forecaster.fit(series=series)
-    residuals = {'1': np.array([1, 2, 3, 4, 5])}
-    forecaster.set_out_sample_residuals(residuals = residuals)
+    y_true = {'1': np.array([1, 2, 3, 4, 5])}
+    y_pred = {'1': np.array([0, 0, 0, 0, 0])}
+    forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
 
     err_msg = re.escape(
-        ("Not available residuals for level '2'. "
-         "Check `forecaster.out_sample_residuals_`.")
+        "Not available residuals for level '2'. Check `forecaster.out_sample_residuals_`."
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster.predict_bootstrapping(steps=3, use_in_sample_residuals=False)
@@ -399,12 +409,16 @@ def test_predict_bootstrapping_ValueError_when_level_out_sample_residuals_value_
     Test ValueError is raised when use_in_sample_residuals=False and
     forecaster.out_sample_residuals_ has a level with a None or NaN value.
     """
-    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3,
-                                              transformer_series=transformer_series)
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(),
+        lags=3,
+        transformer_series=transformer_series
+    )
     forecaster.fit(series=series)
-    residuals = {'1': np.array([1, 2, 3, 4, 5]),
-                 '2': np.array([1, 2, 3, 4, None])}  # StandardScaler() transforms None to NaN
-    forecaster.set_out_sample_residuals(residuals = residuals)
+    forecaster.out_sample_residuals_ = {
+        '1': np.array([1, 2, 3, 4, 5]),
+        '2': np.array([1, 2, 3, 4, None])
+    }
 
     err_msg = re.escape(
         ("forecaster residuals for level '2' contains `None` "

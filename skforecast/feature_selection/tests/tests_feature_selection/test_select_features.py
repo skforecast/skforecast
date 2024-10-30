@@ -88,7 +88,7 @@ def test_ValueError_select_features_raise_when_subsample_is_not_greater_0_less_e
         )
 
 
-def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterAutoreg_no_window_features():
+def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterRecursive_no_window_features():
     """
     Test that select_features returns the expected values when selector is RFE
     and select_only is 'exog'. Forecaster is ForecasterRecursive and no window
@@ -113,7 +113,7 @@ def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterAuto
     assert selected_exog == ['exog_1', 'exog_2', 'exog_4']
 
 
-def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterAutoreg_window_features():
+def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterRecursive_window_features():
     """
     Test that select_features returns the expected values when selector is RFE
     and select_only is 'exog'. Forecaster is ForecasterRecursive and window
@@ -144,7 +144,7 @@ def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterAuto
 
 
 
-def test_select_features_when_selector_is_RFE_select_only_is_autoreg_ForecasterAutoreg_no_window_features():
+def test_select_features_when_selector_is_RFE_select_only_is_autoreg_ForecasterRecursive_no_window_features():
     """
     Test that select_features returns the expected values when selector is RFE
     and select_only is 'autoreg'. Forecaster is ForecasterRecursive and no window
@@ -169,7 +169,7 @@ def test_select_features_when_selector_is_RFE_select_only_is_autoreg_ForecasterA
     assert selected_exog == ['exog_0', 'exog_1', 'exog_2', 'exog_3', 'exog_4']
 
 
-def test_select_features_when_selector_is_RFE_select_only_is_autoreg_ForecasterAutoreg_window_features():
+def test_select_features_when_selector_is_RFE_select_only_is_autoreg_ForecasterRecursive_window_features():
     """
     Test that select_features returns the expected values when selector is RFE
     and select_only is 'autoreg'. Forecaster is ForecasterRecursive and window
@@ -199,7 +199,7 @@ def test_select_features_when_selector_is_RFE_select_only_is_autoreg_ForecasterA
     assert selected_exog == ['exog_0', 'exog_1', 'exog_2', 'exog_3', 'exog_4']
 
 
-def test_select_features_when_selector_is_RFE_select_only_is_None_ForecasterAutoreg_window_features():
+def test_select_features_when_selector_is_RFE_select_only_is_None_ForecasterRecursive_window_features():
     """
     Test that select_features returns the expected values when selector is RFE
     and select_only is None. Forecaster is ForecasterRecursive and window
@@ -321,7 +321,7 @@ def test_select_features_when_selector_is_RFE_select_force_inclusion_is_list():
     assert selected_exog == ['exog_1', 'exog_2', 'exog_4']
 
 
-def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterAutoregDirect_no_window_features():
+def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterDirect_no_window_features():
     """
     Test that select_features returns the expected values when selector is RFE
     and select_only is 'exog'. Forecaster is ForecasterDirect and no window
@@ -348,7 +348,7 @@ def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterAuto
     assert selected_exog == ['exog_1', 'exog_2', 'exog_4']
 
 
-def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterAutoregDirect_window_features():
+def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterDirect_window_features():
     """
     Test that select_features returns the expected values when selector is RFE
     and select_only is 'exog'. Forecaster is ForecasterDirect and window

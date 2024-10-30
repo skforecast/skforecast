@@ -402,7 +402,7 @@ def _evaluate_grid_hyperparameters(
         )
     
     if cv_name == 'OneStepAheadFold':
-        forecasters_one_step_ahead = ['ForecasterDirect', 'ForecasterAutoreg']
+        forecasters_one_step_ahead = ['ForecasterDirect', 'ForecasterRecursive']
         if forecaster_name not in forecasters_one_step_ahead:
             raise ValueError(
                 f"Only forecasters of type {forecasters_one_step_ahead} are allowed "

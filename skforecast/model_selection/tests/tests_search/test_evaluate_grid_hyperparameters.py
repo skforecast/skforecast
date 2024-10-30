@@ -102,7 +102,7 @@ def test_ValueError_evaluate_grid_hyperparameters_metric_list_duplicate_names():
         )
 
 
-def test_output_evaluate_grid_hyperparameters_ForecasterAutoreg_with_mocked():
+def test_output_evaluate_grid_hyperparameters_ForecasterRecursive_with_mocked():
     """
     Test output of _evaluate_grid_hyperparameters in ForecasterRecursive with mocked
     (mocked done in Skforecast v0.4.3).
@@ -169,7 +169,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterAutoreg_with_mocked():
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_output_evaluate_grid_hyperparameters_ForecasterAutoreg_with_diferentiation_mocked():
+def test_output_evaluate_grid_hyperparameters_ForecasterRecursive_with_diferentiation_mocked():
     """
     Test output of _evaluate_grid_hyperparameters in ForecasterRecursive with mocked
     (mocked done in Skforecast v0.10.0) when differentiation is used.
@@ -239,7 +239,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterAutoreg_with_diferentiat
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_output_evaluate_grid_hyperparameters_ForecasterAutoreg_lags_grid_dict_with_mocked():
+def test_output_evaluate_grid_hyperparameters_ForecasterRecursive_lags_grid_dict_with_mocked():
     """
     Test output of _evaluate_grid_hyperparameters in ForecasterRecursive when 
     `lags_grid` is a dict with mocked (mocked done in Skforecast v0.4.3).
@@ -300,7 +300,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterAutoreg_lags_grid_dict_w
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_output_evaluate_grid_hyperparameters_ForecasterAutoreg_lags_grid_is_None_with_mocked():
+def test_output_evaluate_grid_hyperparameters_ForecasterRecursive_lags_grid_is_None_with_mocked():
     """
     Test output of _evaluate_grid_hyperparameters in ForecasterRecursive when 
     `lags_grid` is None with mocked (mocked done in Skforecast v0.4.3), 
@@ -352,7 +352,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterAutoreg_lags_grid_is_Non
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_output_evaluate_grid_hyperparameters_ForecasterAutoreg_metric_list_with_mocked():
+def test_output_evaluate_grid_hyperparameters_ForecasterRecursive_metric_list_with_mocked():
     """
     Test output of _evaluate_grid_hyperparameters in ForecasterRecursive with mocked
     and multiple metrics (mocked done in Skforecast v0.4.3).
@@ -426,7 +426,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterAutoreg_metric_list_with
 @pytest.mark.parametrize("lags_grid", 
                          [[2, 4], {'lags_1': 2, 'lags_2': 4}], 
                          ids=lambda lg: f'lags_grid: {lg}')
-def test_evaluate_grid_hyperparameters_when_return_best_ForecasterAutoreg(lags_grid):
+def test_evaluate_grid_hyperparameters_when_return_best_ForecasterRecursive(lags_grid):
     """
     Test forecaster is refitted when return_best=True in 
     _evaluate_grid_hyperparameters with ForecasterRecursive.

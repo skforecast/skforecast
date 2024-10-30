@@ -56,7 +56,7 @@ def test_backtesting_forecaster_TypeError_when_forecaster_not_supported_types():
         )
 
 
-def test_backtesting_forecaster_ValueError_when_ForecasterAutoregDirect_not_enough_steps():
+def test_backtesting_forecaster_ValueError_when_ForecasterDirect_not_enough_steps():
     """
     Test ValueError is raised in backtesting_forecaster when there is not enough 
     steps to predict steps+gap in a ForecasterDirect.
