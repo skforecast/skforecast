@@ -535,7 +535,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 </ul>
             </details>
             <p>
-                <a href="https://skforecast.org/{skforecast.__version__}/api/forecastermultivariate#forecasterdirectmultivariate.html">&#128712 <strong>API Reference</strong></a>
+                <a href="https://skforecast.org/{skforecast.__version__}/api/forecasterdirectmultivariate.html">&#128712 <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
                 <a href="https://skforecast.org/{skforecast.__version__}/user_guides/dependent-multi-series-multivariate-forecasting.html">&#128462 <strong>User Guide</strong></a>
             </p>

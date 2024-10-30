@@ -475,7 +475,7 @@ class ForecasterDirect(ForecasterBase):
                 </ul>
             </details>
             <p>
-                <a href="https://skforecast.org/{skforecast.__version__}/api/forecasterdirect#forecasterdirect.html">&#128712 <strong>API Reference</strong></a>
+                <a href="https://skforecast.org/{skforecast.__version__}/api/forecasterdirect.html">&#128712 <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
                 <a href="https://skforecast.org/{skforecast.__version__}/user_guides/direct-multi-step-forecasting.html">&#128462 <strong>User Guide</strong></a>
             </p>
