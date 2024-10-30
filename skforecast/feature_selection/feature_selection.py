@@ -414,9 +414,9 @@ def select_features_multiseries(
             selected_lags = {
                 series_name: [
                     int(feature.replace(f'{series_name}_lag_', '')) 
-                    for feature in selected_autoreg if feature in lags_names
+                    for feature in selected_autoreg if feature in lags_names # TODO: check what happen if lags_name is None
                 ]
-                for series_name, lags_names in forecaster.lags_names.items()
+                for series_name, lags_names in forecaster.lags_names.items() 
             }
         else:
             selected_lags = [
