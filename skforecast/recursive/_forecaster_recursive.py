@@ -665,9 +665,9 @@ class ForecasterRecursive(ForecasterBase):
                     f"Length of `exog` must be equal to the length of `y` (if index is "
                     f"fully aligned) or length of `y` - `window_size` (if `exog` "
                     f"starts after the first `window_size` values).\n"
-                    f"    Length `exog`              : {len_exog}.\n"
-                    f"    Length `y`                 : {len_y}.\n"
-                    f"    Length `y` - `window_size` : {len_train_index}."
+                    f"    Length `exog`              : {len_exog} ({exog.index[0]} -- {exog.index[-1]}).\n"
+                    f"    Length `y`                 : {len_y} ({y.index[0]} -- {y.index[-1]}).\n"
+                    f"    Length `y` - `window_size` : {len_train_index} ({train_index[0]} -- {train_index[-1]})."
                 )
 
             exog_names_in_ = exog.columns.to_list()
@@ -693,7 +693,7 @@ class ForecasterRecursive(ForecasterBase):
                         "`exog` must be aligned with the index of `y` "
                         "to ensure the correct alignment of values."
                     )
-                exog_to_train = exog.iloc[self.window_size:, ]
+                exog = exog.iloc[self.window_size:, ]
             else:
                 if not (exog_index == train_index).all():
                     raise ValueError(
@@ -702,7 +702,6 @@ class ForecasterRecursive(ForecasterBase):
                         "the first `window_size` observations to ensure the correct "
                         "alignment of values."
                     )
-                exog_to_train = exog
             
         X_train = []
         X_train_features_names_out_ = []
@@ -731,9 +730,11 @@ class ForecasterRecursive(ForecasterBase):
         if exog is not None:
             # The first `self.window_size` positions have to be removed from exog
             # since they are not in X_train.
-            X_train_exog_names_out_ = exog.columns.to_list()            
+            X_train_exog_names_out_ = exog.columns.to_list()  
+            if not X_as_pandas:
+                exog = exog.to_numpy()     
             X_train_features_names_out_.extend(X_train_exog_names_out_)
-            X_train.append(exog_to_train)
+            X_train.append(exog)
         
         if len(X_train) == 1:
             X_train = X_train[0]
