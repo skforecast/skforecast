@@ -578,7 +578,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 raise ValueError(
                     (f"When `lags` parameter is a `dict`, its keys must be the "
                      f"same as `series` column names. If don't want to include lags, "
-                      "add '{column: None}' to the lags dict." 
+                      "add '{column: None}' to the lags dict.\n"
                      f"  Lags keys        : {lags_keys}.\n"
                      f"  `series` columns : {series_names_in_}.")
                 )

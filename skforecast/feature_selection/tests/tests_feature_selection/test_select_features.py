@@ -99,7 +99,7 @@ def test_select_features_when_selector_is_RFE_and_select_only_is_exog_regressor(
                  )
     selector = RFE(estimator=LinearRegression(), n_features_to_select=3)
 
-    selected_autoreg, selected_exog = select_features(
+    selected_lags, selected_window_features, selected_exog = select_features(
         selector    = selector,
         forecaster  = forecaster,
         y           = y,
@@ -108,7 +108,8 @@ def test_select_features_when_selector_is_RFE_and_select_only_is_exog_regressor(
         verbose     = True,
     )
 
-    assert selected_autoreg == [1, 2, 3, 4, 5]
+    assert selected_lags == [1, 2, 3, 4, 5]
+    assert selected_window_features == []
     assert selected_exog == ['exog_1', 'exog_2', 'exog_4']
 
 
@@ -124,7 +125,7 @@ def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterRecu
                  )
     selector = RFE(estimator=forecaster.regressor, n_features_to_select=3)
 
-    selected_autoreg, selected_exog = select_features(
+    selected_lags, selected_window_features, selected_exog = select_features(
         selector    = selector,
         forecaster  = forecaster,
         y           = y,
@@ -133,7 +134,8 @@ def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterRecu
         verbose     = True,
     )
 
-    assert selected_autoreg == [1, 2, 3, 4, 5]
+    assert selected_lags == [1, 2, 3, 4, 5]
+    assert selected_window_features == []
     assert selected_exog == ['exog_1', 'exog_2', 'exog_4']
 
 
@@ -154,7 +156,7 @@ def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterRecu
                  )
     selector = RFE(estimator=forecaster.regressor, n_features_to_select=3)
 
-    selected_autoreg, selected_exog = select_features(
+    selected_lags, selected_window_features, selected_exog = select_features(
         selector    = selector,
         forecaster  = forecaster,
         y           = y,
@@ -163,7 +165,8 @@ def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterRecu
         verbose     = True,
     )
 
-    assert selected_autoreg == [1, 2, 3, 4, 5, 'roll_mean_3', 'roll_std_5']
+    assert selected_lags == [1, 2, 3, 4, 5]
+    assert selected_window_features == ['roll_mean_3', 'roll_std_5']
     assert selected_exog == ['exog_1', 'exog_2', 'exog_4']
 
 
@@ -179,7 +182,7 @@ def test_select_features_when_selector_is_RFE_select_only_is_autoreg_ForecasterR
                  )
     selector = RFE(estimator=forecaster.regressor, n_features_to_select=3)
 
-    selected_autoreg, selected_exog = select_features(
+    selected_lags, selected_window_features, selected_exog = select_features(
         selector    = selector,
         forecaster  = forecaster,
         y           = y,
@@ -188,7 +191,8 @@ def test_select_features_when_selector_is_RFE_select_only_is_autoreg_ForecasterR
         verbose     = False,
     )
 
-    assert selected_autoreg == [1, 3, 4]
+    assert selected_lags == [1, 3, 4]
+    assert selected_window_features == []
     assert selected_exog == ['exog_0', 'exog_1', 'exog_2', 'exog_3', 'exog_4']
 
 
@@ -209,7 +213,7 @@ def test_select_features_when_selector_is_RFE_select_only_is_autoreg_ForecasterR
                  )
     selector = RFE(estimator=forecaster.regressor, n_features_to_select=4)
 
-    selected_autoreg, selected_exog = select_features(
+    selected_lags, selected_window_features, selected_exog = select_features(
         selector    = selector,
         forecaster  = forecaster,
         y           = y,
@@ -218,7 +222,8 @@ def test_select_features_when_selector_is_RFE_select_only_is_autoreg_ForecasterR
         verbose     = False,
     )
 
-    assert selected_autoreg == [1, 3, 4, 'roll_std_5']
+    assert selected_lags == [1, 3, 4]
+    assert selected_window_features == ['roll_std_5']
     assert selected_exog == ['exog_0', 'exog_1', 'exog_2', 'exog_3', 'exog_4']
 
 
@@ -240,7 +245,7 @@ def test_select_features_when_selector_is_RFE_select_only_is_None_ForecasterRecu
         "using the `force_inclusion` parameter."
     )
     with pytest.warns(UserWarning, match = warn_msg):
-        selected_autoreg, selected_exog = select_features(
+        selected_lags, selected_window_features, selected_exog = select_features(
             selector    = selector,
             forecaster  = forecaster,
             y           = y,
@@ -249,7 +254,8 @@ def test_select_features_when_selector_is_RFE_select_only_is_None_ForecasterRecu
             verbose     = False,
         )
 
-    assert selected_autoreg == []
+    assert selected_lags == []
+    assert selected_window_features == []
     assert selected_exog == ['exog_0', 'exog_1', 'exog_2', 'exog_3', 'exog_4']
 
 
@@ -276,7 +282,7 @@ def test_select_features_when_selector_is_RFE_select_only_is_None_ForecasterRecu
         "using the `force_inclusion` parameter."
     )
     with pytest.warns(UserWarning, match = warn_msg):
-        selected_autoreg, selected_exog = select_features(
+        selected_lags, selected_window_features, selected_exog = select_features(
             selector    = selector,
             forecaster  = forecaster,
             y           = y,
@@ -285,7 +291,8 @@ def test_select_features_when_selector_is_RFE_select_only_is_None_ForecasterRecu
             verbose     = False,
         )
 
-    assert selected_autoreg == []
+    assert selected_lags == []
+    assert selected_window_features == []
     assert selected_exog == ['exog_0', 'exog_1', 'exog_2', 'exog_3', 'exog_4']
 
 
@@ -305,7 +312,7 @@ def test_select_features_when_selector_is_RFE_select_only_autoreg_and_force_incl
                  )
     selector = RFE(estimator=forecaster.regressor, n_features_to_select=3)
 
-    selected_autoreg, selected_exog = select_features(
+    selected_lags, selected_window_features, selected_exog = select_features(
         selector        = selector,
         forecaster      = forecaster,
         y               = y,
@@ -315,7 +322,8 @@ def test_select_features_when_selector_is_RFE_select_only_autoreg_and_force_incl
         verbose         = False,
     )
 
-    assert selected_autoreg == [1, 2, 3, 4, 5, 'roll_std_5']
+    assert selected_lags == [1, 2, 3, 4, 5]
+    assert selected_window_features == ['roll_std_5']
     assert selected_exog == ['exog_0', 'exog_1', 'exog_2', 'exog_3', 'exog_4']
 
 
@@ -335,7 +343,7 @@ def test_select_features_when_selector_is_RFE_and_force_inclusion_is_regex():
                     )
     selector = RFE(estimator=forecaster.regressor, n_features_to_select=3)
 
-    selected_autoreg, selected_exog = select_features(
+    selected_lags, selected_window_features, selected_exog = select_features(
         selector        = selector,
         forecaster      = forecaster,
         y               = y,
@@ -345,7 +353,8 @@ def test_select_features_when_selector_is_RFE_and_force_inclusion_is_regex():
         verbose         = True,
     )
 
-    assert selected_autoreg == ['roll_mean_3']
+    assert selected_lags == []
+    assert selected_window_features == ['roll_mean_3']
     assert selected_exog == ['exog_1', 'exog_2', 'exog_4']
 
 
@@ -360,7 +369,7 @@ def test_select_features_when_selector_is_RFE_select_force_inclusion_is_list():
                  )
     selector = RFE(estimator=forecaster.regressor, n_features_to_select=3)
 
-    selected_autoreg, selected_exog = select_features(
+    selected_lags, selected_window_features, selected_exog = select_features(
         selector        = selector,
         forecaster      = forecaster,
         y               = y,
@@ -370,7 +379,8 @@ def test_select_features_when_selector_is_RFE_select_force_inclusion_is_list():
         verbose         = False,
     )
 
-    assert selected_autoreg == [1]
+    assert selected_lags == [1]
+    assert selected_window_features == []
     assert selected_exog == ['exog_1', 'exog_2', 'exog_4']
 
 
@@ -387,7 +397,7 @@ def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterDire
                  )
     selector = RFE(estimator=forecaster.regressor, n_features_to_select=3)
 
-    selected_autoreg, selected_exog = select_features(
+    selected_lags, selected_window_features, selected_exog = select_features(
         selector    = selector,
         forecaster  = forecaster,
         y           = y,
@@ -396,7 +406,8 @@ def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterDire
         verbose     = True,
     )
 
-    assert selected_autoreg == [1, 2, 3, 4, 5]
+    assert selected_lags == [1, 2, 3, 4, 5]
+    assert selected_window_features == []
     assert selected_exog == ['exog_1', 'exog_2', 'exog_4']
 
 
@@ -418,7 +429,7 @@ def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterDire
                  )
     selector = RFE(estimator=forecaster.regressor, n_features_to_select=3)
 
-    selected_autoreg, selected_exog = select_features(
+    selected_lags, selected_window_features, selected_exog = select_features(
         selector    = selector,
         forecaster  = forecaster,
         y           = y,
@@ -427,5 +438,6 @@ def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterDire
         verbose     = True,
     )
 
-    assert selected_autoreg == [1, 2, 3, 4, 5, 'roll_mean_3', 'roll_std_5']
+    assert selected_lags == [1, 2, 3, 4, 5]
+    assert selected_window_features == ['roll_mean_3', 'roll_std_5']
     assert selected_exog == ['exog_1', 'exog_2', 'exog_4']

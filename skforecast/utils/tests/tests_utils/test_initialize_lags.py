@@ -33,22 +33,6 @@ def test_ValueError_initialize_lags_when_lags_numpy_ndarray_with_more_than_1_dim
 
 
 @pytest.mark.parametrize("lags", 
-                         [[], (), range(0), np.array([])], 
-                         ids = lambda lags: f'lags type: {type(lags)}')
-def test_ValueError_initialize_lags_when_lags_list_tuple_range_or_numpy_ndarray_with_no_values(lags):
-    """
-    Test ValueError is raised when lags is list, tuple, range or numpy ndarray 
-    with no values.
-    """
-    err_msg = re.escape("Argument `lags` must contain at least one value.")
-    with pytest.raises(ValueError, match = err_msg):
-        initialize_lags(
-            forecaster_name = 'ForecasterRecursive',
-            lags            = lags
-        )
-
-
-@pytest.mark.parametrize("lags", 
                          [[1, 1.5], 
                           (1, 1.5), 
                           np.array([1.2, 1.5])], 
@@ -119,6 +103,7 @@ def test_TypeError_initialize_lags_when_lags_is_not_valid_type_ForecasterDirectM
 
 @pytest.mark.parametrize("lags             , expected", 
                          [(None            , (None, None, None)),
+                          ([]              , (None, None, None)),
                           (10              , (np.arange(10) + 1, [f'lag_{i}' for i in range(1, 11)], 10)), 
                           ([1, 2, 3]       , (np.array([1, 2, 3]), ['lag_1', 'lag_2', 'lag_3'], 3)),
                           ((4, 5, 6)       , (np.array((4, 5, 6)), ['lag_4', 'lag_5', 'lag_6'], 6)),  

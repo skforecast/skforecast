@@ -28,7 +28,7 @@ def test_create_data_to_return_dict_ValueError_when_lags_keys_not_in_series():
     err_msg = re.escape(
         f"When `lags` parameter is a `dict`, its keys must be the "
         f"same as `series` column names. If don't want to include lags, "
-         "add '{column: None}' to the lags dict." 
+         "add '{column: None}' to the lags dict.\n" 
         f"  Lags keys        : {list(forecaster.lags.keys())}.\n"
         f"  `series` columns : {series_names_in_}."
     )

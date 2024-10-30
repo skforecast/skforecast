@@ -100,7 +100,7 @@ def test_select_features_multiseries_when_selector_is_RFE_and_select_only_is_exo
                  )
     selector = RFE(estimator=LinearRegression(), n_features_to_select=2)
 
-    selected_autoreg, selected_exog = select_features_multiseries(
+    selected_lags, selected_window_features, selected_exog = select_features_multiseries(
         selector    = selector,
         forecaster  = forecaster,
         series      = series,
@@ -109,7 +109,8 @@ def test_select_features_multiseries_when_selector_is_RFE_and_select_only_is_exo
         verbose     = False,
     )
 
-    assert selected_autoreg == [1, 2, 3, 4, 5]
+    assert selected_lags == [1, 2, 3, 4, 5]
+    assert selected_window_features == []
     assert selected_exog == ['exog1', 'exog4']
 
 
@@ -126,7 +127,7 @@ def test_select_features_multiseries_when_selector_is_RFE_and_select_only_is_exo
                  )
     selector = RFE(estimator=forecaster.regressor, n_features_to_select=2)
 
-    selected_autoreg, selected_exog = select_features_multiseries(
+    selected_lags, selected_window_features, selected_exog = select_features_multiseries(
         selector    = selector,
         forecaster  = forecaster,
         series      = series,
@@ -135,7 +136,8 @@ def test_select_features_multiseries_when_selector_is_RFE_and_select_only_is_exo
         verbose     = False,
     )
 
-    assert selected_autoreg == [1, 2, 3, 4, 5]
+    assert selected_lags == [1, 2, 3, 4, 5]
+    assert selected_window_features == []
     assert selected_exog == ['exog1', 'exog4']
 
 
@@ -157,7 +159,7 @@ def test_select_features_multiseries_when_selector_is_RFE_and_select_only_is_exo
                  )
     selector = RFE(estimator=forecaster.regressor, n_features_to_select=2)
 
-    selected_autoreg, selected_exog = select_features_multiseries(
+    selected_lags, selected_window_features, selected_exog = select_features_multiseries(
         selector    = selector,
         forecaster  = forecaster,
         series      = series,
@@ -166,7 +168,8 @@ def test_select_features_multiseries_when_selector_is_RFE_and_select_only_is_exo
         verbose     = False,
     )
 
-    assert selected_autoreg == [1, 2, 3, 4, 5, 'roll_mean_3', 'roll_std_5']
+    assert selected_lags == [1, 2, 3, 4, 5]
+    assert selected_window_features == ['roll_mean_3', 'roll_std_5']
     assert selected_exog == ['exog1', 'exog4']
 
 
@@ -183,7 +186,7 @@ def test_select_features_multiseries_when_selector_is_RFE_and_select_only_is_aut
                  )
     selector = RFE(estimator=forecaster.regressor, n_features_to_select=2)
 
-    selected_autoreg, selected_exog = select_features_multiseries(
+    selected_lags, selected_window_features, selected_exog = select_features_multiseries(
         selector    = selector,
         forecaster  = forecaster,
         series      = series,
@@ -192,7 +195,8 @@ def test_select_features_multiseries_when_selector_is_RFE_and_select_only_is_aut
         verbose     = False,
     )
 
-    assert selected_autoreg == [4, 5]
+    assert selected_lags == [4, 5]
+    assert selected_window_features == []
     assert selected_exog == ['exog1', 'exog2', 'exog3', 'exog4']
 
 
@@ -214,7 +218,7 @@ def test_select_features_multiseries_when_selector_is_RFE_and_select_only_is_aut
                  )
     selector = RFE(estimator=forecaster.regressor, n_features_to_select=4)
 
-    selected_autoreg, selected_exog = select_features_multiseries(
+    selected_lags, selected_window_features, selected_exog = select_features_multiseries(
         selector    = selector,
         forecaster  = forecaster,
         series      = series,
@@ -223,7 +227,8 @@ def test_select_features_multiseries_when_selector_is_RFE_and_select_only_is_aut
         verbose     = False,
     )
 
-    assert selected_autoreg == [1, 2, 3, 'roll_mean_3']
+    assert selected_lags == [1, 2, 3]
+    assert selected_window_features == ['roll_mean_3']
     assert selected_exog == ['exog1', 'exog2', 'exog3', 'exog4']
 
 
@@ -247,7 +252,7 @@ def test_select_features_multiseries_when_selector_is_RFE_and_select_only_is_Non
         "using the `force_inclusion` parameter."
     )
     with pytest.warns(UserWarning, match = warn_msg):
-        selected_autoreg, selected_exog = select_features_multiseries(
+        selected_lags, selected_window_features, selected_exog = select_features_multiseries(
             selector    = selector,
             forecaster  = forecaster,
             series      = series,
@@ -256,7 +261,8 @@ def test_select_features_multiseries_when_selector_is_RFE_and_select_only_is_Non
             verbose     = False,
         )
 
-    assert selected_autoreg == []
+    assert selected_lags == []
+    assert selected_window_features == []
     assert selected_exog == ['exog1', 'exog3', 'exog4']
 
 
@@ -279,7 +285,7 @@ def test_select_features_multiseries_when_selector_is_RFE_and_select_only_is_Non
                  )
     selector = RFE(estimator=forecaster.regressor, n_features_to_select=3)
 
-    selected_autoreg, selected_exog = select_features_multiseries(
+    selected_lags, selected_window_features, selected_exog = select_features_multiseries(
         selector    = selector,
         forecaster  = forecaster,
         series      = series,
@@ -288,7 +294,8 @@ def test_select_features_multiseries_when_selector_is_RFE_and_select_only_is_Non
         verbose     = False,
     )
 
-    assert selected_autoreg == ['roll_std_5']
+    assert selected_lags == []
+    assert selected_window_features == ['roll_std_5']
     assert selected_exog == ['exog1', 'exog4']
 
 
@@ -309,7 +316,7 @@ def test_select_features_multiseries_when_selector_is_RFE_select_only_exog_is_Tr
                  )
     selector = RFE(estimator=forecaster.regressor, n_features_to_select=3)
 
-    selected_autoreg, selected_exog = select_features_multiseries(
+    selected_lags, selected_window_features, selected_exog = select_features_multiseries(
         selector        = selector,
         forecaster      = forecaster,
         series          = series,
@@ -319,7 +326,8 @@ def test_select_features_multiseries_when_selector_is_RFE_select_only_exog_is_Tr
         verbose         = False,
     )
 
-    assert selected_autoreg == [1, 2, 3, 4, 5, 'roll_mean_3', 'roll_std_5']
+    assert selected_lags == [1, 2, 3, 4, 5]
+    assert selected_window_features == ['roll_mean_3', 'roll_std_5']
     assert selected_exog == ['exog1', 'exog3', 'exog4']
 
 
@@ -336,7 +344,7 @@ def test_select_features_multiseries_when_selector_is_RFE_select_only_exog_is_Fa
                  )
     selector = RFE(estimator=forecaster.regressor, n_features_to_select=3)
 
-    selected_autoreg, selected_exog = select_features_multiseries(
+    selected_lags, selected_window_features, selected_exog = select_features_multiseries(
         selector        = selector,
         forecaster      = forecaster,
         series          = series,
@@ -346,7 +354,8 @@ def test_select_features_multiseries_when_selector_is_RFE_select_only_exog_is_Fa
         verbose         = True,
     )
 
-    assert selected_autoreg == [1]
+    assert selected_lags == [1]
+    assert selected_window_features == []
     assert selected_exog == ['exog1', 'exog3', 'exog4']
 
 
@@ -364,7 +373,7 @@ def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterDire
                  )
     selector = RFE(estimator=forecaster.regressor, n_features_to_select=3)
 
-    selected_autoreg, selected_exog = select_features_multiseries(
+    selected_lags, selected_window_features, selected_exog = select_features_multiseries(
         selector    = selector,
         forecaster  = forecaster,
         series      = series,
@@ -373,7 +382,8 @@ def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterDire
         verbose     = False,
     )
 
-    assert selected_autoreg == ['l1_lag_1', 'l2_lag_1', 'l2_lag_4']
+    assert selected_lags == {'l1': [1], 'l2': [1, 4]}
+    assert selected_window_features == []
     assert selected_exog == ['exog1', 'exog2', 'exog3', 'exog4']
 
 
@@ -396,7 +406,7 @@ def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterDire
                  )
     selector = RFE(estimator=forecaster.regressor, n_features_to_select=3)
 
-    selected_autoreg, selected_exog = select_features_multiseries(
+    selected_lags, selected_window_features, selected_exog = select_features_multiseries(
         selector    = selector,
         forecaster  = forecaster,
         series      = series,
@@ -404,5 +414,7 @@ def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterDire
         select_only = 'autoreg',
         verbose     = False,
     )
-    assert selected_autoreg == ['l1_lag_1', 'l1_roll_std_5', 'l2_lag_1']
+
+    assert selected_lags == {'l1': [1], 'l2': [1]}
+    assert selected_window_features == ['l1_roll_std_5']
     assert selected_exog == ['exog1', 'exog2', 'exog3', 'exog4']
