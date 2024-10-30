@@ -200,7 +200,7 @@ def select_features(
 
     return selected_autoreg, selected_exog
 
-# TODO: Create test for MultiVariate
+
 def select_features_multiseries(
     forecaster: object,
     selector: object,
@@ -302,20 +302,18 @@ def select_features_multiseries(
                                y_train       = y_train,
                                remove_suffix = True
                            )
-
-    if forecaster_name == 'ForecasterRecursiveMultiSeries':
+        lags_names = list(
+            chain(*[v for v in forecaster.lags_names.values() if v is not None])
+        )
+        window_features_names = forecaster.X_train_window_features_names_out_
+        encoding_cols = []
+    else:
         lags_names = forecaster.lags_names
         window_features_names = output[6]  # X_train_window_features_names_out_ output
         if forecaster.encoding == 'onehot':
             encoding_cols = output[4]  # X_train_series_names_in_ output
         else:
             encoding_cols = ['_level_skforecast']
-    else:
-        lags_names = list(
-            chain(*[v for v in forecaster.lags_names.values() if v is not None])
-        )
-        window_features_names = forecaster.X_train_window_features_names_out_
-        encoding_cols = []
     
     autoreg_cols = []
     if forecaster.lags is not None:
@@ -391,9 +389,10 @@ def select_features_multiseries(
             "using the `force_inclusion` parameter."
         )
     else:
-        if hasattr(forecaster, 'lags'):
-            selected_autoreg = [int(feature.replace('lag_', '')) 
-                                for feature in selected_autoreg] 
+        selected_autoreg = [
+            int(feature.replace('lag_', '')) if feature.startswith('lag_') else feature
+            for feature in selected_autoreg
+        ]
 
     if verbose:
         print(f"Recursive feature elimination ({selector.__class__.__name__})")
@@ -407,4 +406,7 @@ def select_features_multiseries(
         print(f"    Autoreg (n={len(selected_autoreg)}) : {selected_autoreg}")
         print(f"    Exog    (n={len(selected_exog)}) : {selected_exog}")
 
+    # TODO: CUando es MultiVariate, los lags pueden ser distintos para cada serie, si
+    # queremos pasarselo directamente al forecaster, selected_autoreg debe ser un dict
+    # para los lags
     return selected_autoreg, selected_exog
