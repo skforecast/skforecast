@@ -973,8 +973,8 @@ class TimeSeriesFold(BaseFold):
         )
         print(f"    Number of steps per fold: {self.steps}")
         print(
-            f"    Number of steps to exclude from the end of each train set "
-            f"before test (gap): {self.gap}"
+            f"    Number of steps to exclude between last observed data "
+            f"(last window) and predictions (gap): {self.gap}"
         )
         if last_fold_excluded:
             print("    Last fold has been excluded because it was incomplete.")

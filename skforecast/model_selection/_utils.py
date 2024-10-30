@@ -1005,7 +1005,7 @@ def _predict_and_calculate_metrics_multiseries_one_step_ahead(
             predictions_per_level[level]["y_true"] = differentiator.inverse_transform_next_window(
                 predictions_per_level[level]["y_true"].to_numpy()
             )
-            y_train_per_level[level]["y_true"] = differentiator.inverse_transform(
+            y_train_per_level[level]["y_train"] = differentiator.inverse_transform(
                 y_train_per_level[level]["y_train"].to_numpy()
             )[forecaster.differentiation:]
 
@@ -1027,8 +1027,8 @@ def _predict_and_calculate_metrics_multiseries_one_step_ahead(
         if level in predictions_per_level:
             metrics_level = [
                 m(
-                    y_true = predictions_per_level[level].loc[:, 'y_true'],
-                    y_pred = predictions_per_level[level].loc[:, 'y_pred'],
+                    y_true  = predictions_per_level[level].loc[:, 'y_true'],
+                    y_pred  = predictions_per_level[level].loc[:, 'y_pred'],
                     y_train = y_train_per_level[level].loc[:, 'y_train']
                 )
                 for m in metrics
@@ -1090,16 +1090,16 @@ def _predict_and_calculate_metrics_multiseries_one_step_ahead(
             if m_name in ['mean_absolute_scaled_error', 'root_mean_squared_scaled_error']:
                 pooled.append(
                     m(
-                        y_true = predictions_pooled['y_true'],
-                        y_pred = predictions_pooled['y_pred'],
+                        y_true  = predictions_pooled['y_true'],
+                        y_pred  = predictions_pooled['y_pred'],
                         y_train = list_y_train_by_level
                     )
                 )
             else:
                 pooled.append(
                     m(
-                        y_true = predictions_pooled['y_true'],
-                        y_pred = predictions_pooled['y_pred'],
+                        y_true  = predictions_pooled['y_true'],
+                        y_pred  = predictions_pooled['y_pred'],
                         y_train = y_train_pooled['y_train']
                     )
                 )
