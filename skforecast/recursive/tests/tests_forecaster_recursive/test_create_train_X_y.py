@@ -87,34 +87,62 @@ def test_create_train_X_y_MissingValuesWarning_when_exog_has_missing_values():
                          [(pd.Series(np.arange(50), name='y'), pd.Series(np.arange(10), name='exog')), 
                           (pd.Series(np.arange(10), name='y'), pd.Series(np.arange(50), name='exog')), 
                           (pd.Series(np.arange(10), name='y'), pd.DataFrame(np.arange(50).reshape(25, 2), columns=['exog_1', 'exog_2']))])
-def test_create_train_X_y_ValueError_when_len_y_is_different_from_len_exog(y, exog):
+def test_create_train_X_y_ValueError_when_len_y_or_len_train_index_is_different_from_len_exog(y, exog):
     """
-    Test ValueError is raised when length of y is not equal to length exog.
+    Test ValueError is raised when length of y is not equal to length exog or
+    length of y - window_size is not equal to length exog.
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=5)
 
+    len_exog = len(exog)
+    len_y = len(y)
+    len_train_index = len_y - forecaster.window_size
     err_msg = re.escape(
-        (f"`exog` must have same number of samples as `y`. "
-         f"length `exog`: ({len(exog)}), length `y`: ({len(y)})")
+        f"Length of `exog` must be equal to the length of `y` (if index is "
+        f"fully aligned) or length of `y` - `window_size` (if `exog` "
+        f"starts after the first `window_size` values).\n"
+        f"    Length `exog`              : {len_exog}.\n"
+        f"    Length `y`                 : {len_y}.\n"
+        f"    Length `y` - `window_size` : {len_train_index}."
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster._create_train_X_y(y=y, exog=exog)
 
   
-def test_create_train_X_y_ValueError_when_y_and_exog_have_different_index():
+def test_create_train_X_y_ValueError_when_y_and_exog_have_different_index_but_same_length():
     """
-    Test ValueError is raised when y and exog have different index.
+    Test ValueError is raised when y and exog have different index but same length.
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=5)
 
     err_msg = re.escape(
-        ("Different index for `y` and `exog`. They must be equal "
-         "to ensure the correct alignment of values.")  
+        "When `exog` has the same length as `y`, the index of "
+        "`exog` must be aligned with the index of `y` "
+        "to ensure the correct alignment of values." 
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster.fit(
             y    = pd.Series(np.arange(10), index=pd.date_range(start='2022-01-01', periods=10, freq='1D'), name='y'),
             exog = pd.Series(np.arange(10), index=pd.RangeIndex(start=0, stop=10, step=1), name='exog')
+        )
+
+  
+def test_create_train_X_y_ValueError_when_y_and_exog_have_different_index_and_length_exog_no_window_size():
+    """
+    Test ValueError is raised when y and exog have different index but same length.
+    """
+    forecaster = ForecasterRecursive(LinearRegression(), lags=5)
+
+    err_msg = re.escape(
+        "When `exog` doesn't contain the first `window_size` observations, "
+        "the index of `exog` must be aligned with the index of `y` minus "
+        "the first `window_size` observations to ensure the correct "
+        "alignment of values."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        forecaster.fit(
+            y    = pd.Series(np.arange(10), index=pd.date_range(start='2022-01-01', periods=10, freq='1D'), name='y'),
+            exog = pd.Series(np.arange(5, 10), index=pd.RangeIndex(start=5, stop=10, step=1), name='exog')
         )
 
 
@@ -213,6 +241,56 @@ def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_series_of_float
     """
     y = pd.Series(np.arange(10), dtype=float)
     exog = pd.Series(np.arange(100, 110), name='exog', dtype=dtype)
+    forecaster = ForecasterRecursive(LinearRegression(), lags=5)
+    results = forecaster._create_train_X_y(y=y, exog=exog)
+    expected = (
+        pd.DataFrame(
+            data = np.array([[4., 3., 2., 1., 0., 105.],
+                             [5., 4., 3., 2., 1., 106.],
+                             [6., 5., 4., 3., 2., 107.],
+                             [7., 6., 5., 4., 3., 108.],
+                             [8., 7., 6., 5., 4., 109.]]),
+            index   = pd.RangeIndex(start=5, stop=10, step=1),
+            columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog']
+        ).astype({'exog': float}),
+        pd.Series(
+            data  = np.array([5, 6, 7, 8, 9]),
+            index = pd.RangeIndex(start=5, stop=10, step=1),
+            name  = 'y',
+            dtype = float
+        ),
+        ['exog'],
+        None,
+        ['exog'],
+        ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog'],
+        {'exog': exog.dtypes}
+    )
+
+    pd.testing.assert_frame_equal(results[0], expected[0])
+    pd.testing.assert_series_equal(results[1], expected[1])
+    assert results[2] == expected[2]
+    assert isinstance(results[3], type(None))
+    assert results[4] == expected[4]
+    assert results[5] == expected[5]
+    for k in results[6].keys():
+        assert results[6][k] == expected[6][k]
+
+
+@pytest.mark.parametrize("dtype", 
+                         [float, int], 
+                         ids = lambda dt: f'dtype: {dt}')
+def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_series_of_float_int_with_no_window_size(dtype):
+    """
+    Test the output of _create_train_X_y when y=pd.Series(np.arange(10)) and 
+    exog is a pandas series of floats or ints and no initial window_size
+    observations.
+    """
+    y = pd.Series(np.arange(10), dtype=float)
+    exog = pd.Series(
+        np.arange(105, 110), index=pd.RangeIndex(start=5, stop=10, step=1), 
+        name='exog', dtype=dtype
+    )
+
     forecaster = ForecasterRecursive(LinearRegression(), lags=5)
     results = forecaster._create_train_X_y(y=y, exog=exog)
     expected = (
