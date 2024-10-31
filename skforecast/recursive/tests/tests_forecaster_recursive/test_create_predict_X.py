@@ -32,8 +32,8 @@ def test_create_predict_X_NotFittedError_when_fitted_is_False():
                  )
 
     err_msg = re.escape(
-        ("This Forecaster instance is not fitted yet. Call `fit` with "
-         "appropriate arguments before using predict.")
+        "This Forecaster instance is not fitted yet. Call `fit` with "
+        "appropriate arguments before using predict."
     )
     with pytest.raises(NotFittedError, match = err_msg):
         forecaster.create_predict_X(steps=5)
@@ -454,7 +454,17 @@ def test_create_predict_X_same_predictions_as_predict_transformers():
                      differentiation  = None
                  )
     forecaster.fit(y=data.loc[:end_train], exog=exog.loc[:end_train])
-    X_predict = forecaster.create_predict_X(steps=steps, exog=exog.loc[end_train:])
+
+    warn_msg = re.escape(
+        "The output matrix is in the transformed scale due to the "
+        "inclusion of transformations or differentiation in the Forecaster. "
+        "As a result, any predictions generated using this matrix will also "
+        "be in the transformed scale. Please refer to the documentation "
+        "for more details: "
+        "https://skforecast.org/latest/user_guides/autoregresive-forecaster#extract-prediction-matrices"
+    )
+    with pytest.warns(UserWarning, match = warn_msg):
+        X_predict = forecaster.create_predict_X(steps=steps, exog=exog.loc[end_train:])
     results = forecaster.regressor.predict(X_predict)
 
     results = transform_numpy(
@@ -495,7 +505,17 @@ def test_create_predict_X_same_predictions_as_predict_transformers_diff():
                      differentiation  = 1
                  )
     forecaster.fit(y=data.loc[:end_train], exog=exog.loc[:end_train])
-    X_predict = forecaster.create_predict_X(steps=steps, exog=exog.loc[end_train:])
+
+    warn_msg = re.escape(
+        "The output matrix is in the transformed scale due to the "
+        "inclusion of transformations or differentiation in the Forecaster. "
+        "As a result, any predictions generated using this matrix will also "
+        "be in the transformed scale. Please refer to the documentation "
+        "for more details: "
+        "https://skforecast.org/latest/user_guides/autoregresive-forecaster#extract-prediction-matrices"
+    )
+    with pytest.warns(UserWarning, match = warn_msg):
+        X_predict = forecaster.create_predict_X(steps=steps, exog=exog.loc[end_train:])
     results = forecaster.regressor.predict(X_predict)
 
     results = forecaster.differentiator.inverse_transform_next_window(results)

@@ -412,19 +412,31 @@ def select_features_multiseries(
     else:
         if forecaster_name == 'ForecasterDirectMultiVariate':
             selected_lags = {
-                series_name: [
-                    int(feature.replace(f'{series_name}_lag_', '')) 
-                    for feature in selected_autoreg if feature in lags_names # TODO: check what happen if lags_name is None
-                ]
-                for series_name, lags_names in forecaster.lags_names.items() 
+                series_name: (
+                    [
+                        int(feature.replace(f"{series_name}_lag_", ""))
+                        for feature in selected_autoreg
+                        if feature in lags_names
+                    ]
+                    if lags_names is not None
+                    else []
+                )
+                for series_name, lags_names in forecaster.lags_names.items()
             }
+            verbose_selected_lags = [
+                feature for feature in selected_autoreg if feature in lags_cols
+            ]
         else:
             selected_lags = [
                 int(feature.replace('lag_', '')) 
-                for feature in selected_autoreg if feature in lags_cols
+                for feature in selected_autoreg 
+                if feature in lags_cols
             ]
+            verbose_selected_lags = selected_lags
+
         selected_window_features = [
-            feature for feature in selected_autoreg if feature in window_features_cols
+            feature for feature in selected_autoreg 
+            if feature in window_features_cols
         ]
 
     if verbose:
@@ -437,7 +449,7 @@ def select_features_multiseries(
         print(f"    Window features (n={len(window_features_cols)})")
         print(f"    Exog            (n={len(exog_cols)})")
         print(f"Number of features selected: {len(selected_features)}")
-        print(f"    Lags            (n={len(selected_lags)}) : {selected_lags}")
+        print(f"    Lags            (n={len(verbose_selected_lags)}) : {verbose_selected_lags}")
         print(f"    Window features (n={len(selected_window_features)}) : {selected_window_features}")
         print(f"    Exog            (n={len(selected_exog)}) : {selected_exog}")
 

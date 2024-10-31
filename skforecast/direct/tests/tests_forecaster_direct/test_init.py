@@ -14,9 +14,9 @@ def test_init_TypeError_when_steps_is_not_int():
     """
     steps = 'not_valid_type'
     err_msg = re.escape(
-                f"`steps` argument must be an int greater than or equal to 1. "
-                f"Got {type(steps)}."
-            )
+        f"`steps` argument must be an int greater than or equal to 1. "
+        f"Got {type(steps)}."
+    )
     with pytest.raises(TypeError, match = err_msg):
         ForecasterDirect(LinearRegression(), lags=2, steps=steps)
 
@@ -36,9 +36,9 @@ def test_init_ValueError_when_no_lags_or_window_features():
     Test ValueError is raised when no lags or window_features are passed.
     """
     err_msg = re.escape(
-        ("At least one of the arguments `lags` or `window_features` "
-         "must be different from None. This is required to create the "
-         "predictors used in training the forecaster.")
+        "At least one of the arguments `lags` or `window_features` "
+        "must be different from None. This is required to create the "
+        "predictors used in training the forecaster."
     )
     with pytest.raises(ValueError, match = err_msg):
         ForecasterDirect(
@@ -52,6 +52,7 @@ def test_init_ValueError_when_no_lags_or_window_features():
 @pytest.mark.parametrize("lags, window_features, expected", 
                          [(5, None, 5), 
                           (None, True, 6), 
+                          ([], True, 6), 
                           (5, True, 6)], 
                          ids = lambda dt: f'lags, window_features, expected: {dt}')
 def test_init_window_size_correctly_stored(lags, window_features, expected):
@@ -95,8 +96,8 @@ def test_init_ValueError_when_differentiation_argument_is_not_int_or_greater_tha
     Test ValueError is raised when differentiation is not an int or greater than 0.
     """
     err_msg = re.escape(
-        (f"Argument `differentiation` must be an integer equal to or "
-         f"greater than 1. Got {dif}.")
+        f"Argument `differentiation` must be an integer equal to or "
+        f"greater than 1. Got {dif}."
     )
     with pytest.raises(ValueError, match = err_msg):
         ForecasterDirect(

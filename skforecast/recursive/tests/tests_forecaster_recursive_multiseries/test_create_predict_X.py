@@ -911,7 +911,7 @@ def test_create_predict_X_same_predictions_as_predict():
 
     forecaster = ForecasterRecursiveMultiSeries(
         regressor          = LGBMRegressor(
-            n_estimators=2, random_state=123, verbose=-1, max_depth=2
+            n_estimators=15, random_state=123, verbose=-1, max_depth=5
         ),
         lags               = [1, 5],
         window_features    = [rolling, rolling_2],
@@ -958,7 +958,7 @@ def test_create_predict_X_same_predictions_as_predict_transformers():
 
     forecaster = ForecasterRecursiveMultiSeries(
         regressor          = LGBMRegressor(
-            n_estimators=2, random_state=123, verbose=-1, max_depth=2
+            n_estimators=15, random_state=123, verbose=-1, max_depth=5
         ),
         lags               = [1, 5],
         window_features    = [rolling, rolling_2],
@@ -977,9 +977,20 @@ def test_create_predict_X_same_predictions_as_predict_transformers():
         {k: v for k, v in forecaster.last_window_.items() if k in levels}
     )
     last_window['id_1005'] = last_window['id_1004']
-    X_predict = forecaster.create_predict_X(
-        steps=steps, levels=levels, last_window=last_window, exog=exog_dict_test
+
+    warn_msg = re.escape(
+        "The output matrix is in the transformed scale due to the "
+        "inclusion of transformations or differentiation in the Forecaster. "
+        "As a result, any predictions generated using this matrix will also "
+        "be in the transformed scale. Please refer to the documentation "
+        "for more details: "
+        "https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting#extract-prediction-matrices"
     )
+    with pytest.warns(UserWarning, match = warn_msg):
+        X_predict = forecaster.create_predict_X(
+            steps=steps, levels=levels, last_window=last_window, exog=exog_dict_test
+        )
+    
     results = np.full(
         shape=(steps, len(levels)), fill_value=np.nan, order='F', dtype=float
     )
@@ -1010,10 +1021,10 @@ def test_create_predict_X_same_predictions_as_predict_transformers_diff():
 
     forecaster = ForecasterRecursiveMultiSeries(
         regressor          = LGBMRegressor(
-            n_estimators=2, random_state=123, verbose=-1, max_depth=2
+            n_estimators=15, random_state=123, verbose=-1, max_depth=5
         ),
         lags               = [1, 5],
-        # window_features    = [rolling, rolling_2],
+        window_features    = [rolling, rolling_2],
         encoding           = 'ordinal',
         dropna_from_series = False,
         transformer_series = StandardScaler(),
@@ -1029,9 +1040,20 @@ def test_create_predict_X_same_predictions_as_predict_transformers_diff():
         {k: v for k, v in forecaster.last_window_.items() if k in levels}
     )
     last_window['id_1005'] = last_window['id_1004']
-    X_predict = forecaster.create_predict_X(
-        steps=steps, levels=levels, last_window=last_window, exog=exog_dict_test
+
+    warn_msg = re.escape(
+        "The output matrix is in the transformed scale due to the "
+        "inclusion of transformations or differentiation in the Forecaster. "
+        "As a result, any predictions generated using this matrix will also "
+        "be in the transformed scale. Please refer to the documentation "
+        "for more details: "
+        "https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting#extract-prediction-matrices"
     )
+    with pytest.warns(UserWarning, match = warn_msg):
+        X_predict = forecaster.create_predict_X(
+            steps=steps, levels=levels, last_window=last_window, exog=exog_dict_test
+        )
+
     results = np.full(
         shape=(steps, len(levels)), fill_value=np.nan, order='F', dtype=float
     )

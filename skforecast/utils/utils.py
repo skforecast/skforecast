@@ -1331,8 +1331,8 @@ def input_to_frame(
 
     if isinstance(data, pd.Series):
         data = data.to_frame(
-                   name=data.name if data.name is not None else output_col_name[input_name]
-               )
+            name=data.name if data.name is not None else output_col_name[input_name]
+        )
 
     return data
 

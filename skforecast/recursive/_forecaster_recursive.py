@@ -654,9 +654,7 @@ class ForecasterRecursive(ForecasterBase):
         if exog is not None:
             check_exog(exog=exog, allow_nan=True)
             exog = input_to_frame(data=exog, input_name='exog')
-            # TODO: Check if this check can be checked vs y_train. As happened
-            # in base on data (more data from y than exog, but can be aligned
-            # because of the window_size.
+
             len_y = len(y_values)
             len_train_index = len(train_index)
             len_exog = len(exog)
@@ -665,9 +663,9 @@ class ForecasterRecursive(ForecasterBase):
                     f"Length of `exog` must be equal to the length of `y` (if index is "
                     f"fully aligned) or length of `y` - `window_size` (if `exog` "
                     f"starts after the first `window_size` values).\n"
-                    f"    Length `exog`              : {len_exog} ({exog.index[0]} -- {exog.index[-1]}).\n"
-                    f"    Length `y`                 : {len_y} ({y.index[0]} -- {y.index[-1]}).\n"
-                    f"    Length `y` - `window_size` : {len_train_index} ({train_index[0]} -- {train_index[-1]})."
+                    f"    `exog`              : ({exog.index[0]} -- {exog.index[-1]})  (n={len_exog})\n"
+                    f"    `y`                 : ({y.index[0]} -- {y.index[-1]})  (n={len_y})\n"
+                    f"    `y` - `window_size` : ({train_index[0]} -- {train_index[-1]})  (n={len_train_index})"
                 )
 
             exog_names_in_ = exog.columns.to_list()
@@ -693,6 +691,8 @@ class ForecasterRecursive(ForecasterBase):
                         "`exog` must be aligned with the index of `y` "
                         "to ensure the correct alignment of values."
                     )
+                # The first `self.window_size` positions have to be removed from 
+                # exog since they are not in X_train.
                 exog = exog.iloc[self.window_size:, ]
             else:
                 if not (exog_index == train_index).all():
@@ -728,8 +728,6 @@ class ForecasterRecursive(ForecasterBase):
 
         X_train_exog_names_out_ = None
         if exog is not None:
-            # The first `self.window_size` positions have to be removed from exog
-            # since they are not in X_train.
             X_train_exog_names_out_ = exog.columns.to_list()  
             if not X_as_pandas:
                 exog = exog.to_numpy()     
@@ -1381,15 +1379,14 @@ class ForecasterRecursive(ForecasterBase):
                         index   = prediction_index
                     )
         
-        # TODO: Link to docs and extend to other Forecaster classes
-        # TODO: poner warning en la parte de SHAP values y el link que te lleve a la del ForecasterRecursive
         if self.transformer_y is not None or self.differentiation is not None:
             warnings.warn(
                 "The output matrix is in the transformed scale due to the "
                 "inclusion of transformations or differentiation in the Forecaster. "
                 "As a result, any predictions generated using this matrix will also "
                 "be in the transformed scale. Please refer to the documentation "
-                "for more details: LINK DOCS."
+                "for more details: "
+                "https://skforecast.org/latest/user_guides/autoregresive-forecaster#extract-prediction-matrices"
             )
 
         return X_predict

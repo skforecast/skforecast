@@ -17,6 +17,47 @@ from skforecast.direct import ForecasterDirect
 from .fixtures_forecaster_direct import data  # to test results when using differentiation
 
 
+def test_create_train_X_y_ValueError_when_len_y_is_lower_than_maximum_window_size_plus_steps():
+    """
+    Test ValueError is raised when length of y is lower than maximum window_size 
+    plus number of steps included in the forecaster.
+    """
+    y = pd.Series(np.arange(5), name='y')
+
+    forecaster = ForecasterDirect(LinearRegression(), steps=3, lags=3)
+    err_msg = re.escape(
+        "Minimum length of `y` for training this forecaster is "
+        "6. Reduce the number of "
+        "predicted steps, 3, or the maximum "
+        "window_size, 3, if no more data is available.\n"
+        "    Length `y`: 5.\n"
+        "    Max step : 3.\n"
+        "    Max window size: 3.\n"
+        "    Lags window size: 3.\n"
+        "    Window features window size: None."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        forecaster._create_train_X_y(y=y)
+
+    rolling = RollingFeatures(stats=['mean', 'median'], window_sizes=3)
+    forecaster = ForecasterDirect(
+        LinearRegression(),  steps=3, lags=2, window_features=rolling
+    )
+    err_msg = re.escape(
+        "Minimum length of `y` for training this forecaster is "
+        "6. Reduce the number of "
+        "predicted steps, 3, or the maximum "
+        "window_size, 3, if no more data is available.\n"
+        "    Length `y`: 5.\n"
+        "    Max step : 3.\n"
+        "    Max window size: 3.\n"
+        "    Lags window size: 2.\n"
+        "    Window features window size: 3."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        forecaster._create_train_X_y(y=y)
+
+
 def test_create_train_X_y_TypeError_when_exog_is_categorical_of_no_int():
     """
     Test TypeError is raised when exog is categorical with no int values.
@@ -26,36 +67,13 @@ def test_create_train_X_y_TypeError_when_exog_is_categorical_of_no_int():
     forecaster = ForecasterDirect(LinearRegression(), lags=2, steps=2)
 
     err_msg = re.escape(
-        ("Categorical dtypes in exog must contain only integer values. "
-         "See skforecast docs for more info about how to include "
-         "categorical features https://skforecast.org/"
-         "latest/user_guides/categorical-features.html")
+        "Categorical dtypes in exog must contain only integer values. "
+        "See skforecast docs for more info about how to include "
+        "categorical features https://skforecast.org/"
+        "latest/user_guides/categorical-features.html"
     )
     with pytest.raises(TypeError, match = err_msg):
         forecaster._create_train_X_y(y=y, exog=exog)
-
-
-def test_create_train_X_y_ValueError_when_len_y_is_lower_than_maximum_window_size_plus_steps():
-    """
-    Test ValueError is raised when length of y is lower than maximum window_size 
-    plus number of steps included in the forecaster.
-    """
-    y = pd.Series(np.arange(5), name='y')
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=3)
-
-    err_msg = re.escape(
-        ("Minimum length of `y` for training this forecaster is "
-         "6. Reduce the number of "
-         "predicted steps, 3, or the maximum "
-         "window_size, 3, if no more data is available.\n"
-         "    Length `y`: 5.\n"
-         "    Max step : 3.\n"
-         "    Max window size: 3.\n"
-         "    Lags window size: 3.\n"
-         "    Window features window size: None.")
-    )
-    with pytest.raises(ValueError, match = err_msg):
-        forecaster._create_train_X_y(y=y)
 
 
 def test_create_train_X_y_MissingValuesWarning_when_exog_has_missing_values():
@@ -67,42 +85,55 @@ def test_create_train_X_y_MissingValuesWarning_when_exog_has_missing_values():
     forecaster = ForecasterDirect(LinearRegression(), lags=2, steps=2)
 
     warn_msg = re.escape(
-        ("`exog` has missing values. Most machine learning models do "
-         "not allow missing values. Fitting the forecaster may fail.")  
+        "`exog` has missing values. Most machine learning models do "
+        "not allow missing values. Fitting the forecaster may fail."
     )
     with pytest.warns(MissingValuesWarning, match = warn_msg):
         forecaster._create_train_X_y(y=y, exog=exog)
 
 
-@pytest.mark.parametrize("y                        , exog", 
-                         [(pd.Series(np.arange(50)), pd.Series(np.arange(10), name='exog')), 
-                          (pd.Series(np.arange(10)), pd.Series(np.arange(50), name='exog')), 
-                          (pd.Series(np.arange(10)), pd.DataFrame(np.arange(50).reshape(25, 2)))])
+@pytest.mark.parametrize(
+    "y                        , exog", 
+    [(pd.Series(np.arange(50), name='y'), pd.Series(np.arange(10), name='exog')), 
+     (pd.Series(np.arange(10), name='y'), pd.Series(np.arange(50), name='exog')), 
+     (pd.Series(np.arange(10), name='y'), pd.DataFrame(np.arange(50).reshape(25, 2), columns=['exog_1', 'exog_2'])),
+     (pd.Series(np.arange(10), index=pd.date_range(start='2022-01-01', periods=10, freq='1D'), name='y'), 
+      pd.Series(np.arange(50), index=pd.date_range(start='2022-01-01', periods=50, freq='1D'), name='exog'))
+])
 def test_create_train_X_y_ValueError_when_len_y_is_different_from_len_exog(y, exog):
     """
     Test ValueError is raised when length of y is not equal to length exog.
     """
     forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=3)
 
+    len_exog = len(exog)
+    len_y = len(y)
+    y_index_no_ws = y.index[forecaster.window_size:]
+    len_y_no_ws = len(y_index_no_ws)
     err_msg = re.escape(
-        (f"`exog` must have same number of samples as `y`. "
-         f"length `exog`: ({len(exog)}), length `y`: ({len(y)})")
+        f"Length of `exog` must be equal to the length of `y` (if index is "
+        f"fully aligned) or length of `y` - `window_size` (if `exog` "
+        f"starts after the first `window_size` values).\n"
+        f"    `exog`              : ({exog.index[0]} -- {exog.index[-1]})  (n={len_exog})\n"
+        f"    `y`                 : ({y.index[0]} -- {y.index[-1]})  (n={len_y})\n"
+        f"    `y` - `window_size` : ({y_index_no_ws[0]} -- {y_index_no_ws[-1]})  (n={len_y_no_ws})"
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster._create_train_X_y(y=y, exog=exog)
 
 
-def test_create_train_X_y_ValueError_when_y_and_exog_have_different_index():
+def test_create_train_X_y_ValueError_when_y_and_exog_have_different_index_but_same_length():
     """
-    Test ValueError is raised when y and exog have different index.
+    Test ValueError is raised when y and exog have different index but same length.
     """
     y = pd.Series(np.arange(10), name='y')
     y.index = pd.date_range(start='2022-01-01', periods=10, freq='1D')
     forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=3)
 
     err_msg = re.escape(
-        ("Different index for `y` and `exog`. They must be equal "
-         "to ensure the correct alignment of values.") 
+        "When `exog` has the same length as `y`, the index of "
+        "`exog` must be aligned with the index of `y` "
+        "to ensure the correct alignment of values." 
     )
     with pytest.raises(ValueError, match=err_msg):
         forecaster.fit(
@@ -110,6 +141,32 @@ def test_create_train_X_y_ValueError_when_y_and_exog_have_different_index():
             exog=pd.Series(
                 np.arange(10),
                 index=pd.RangeIndex(start=0, stop=10, step=1),
+                name="exog",
+            ),
+        )
+
+
+def test_create_train_X_y_ValueError_when_y_and_exog_have_different_index_and_length_exog_no_window_size():
+    """
+    Test ValueError is raised when y and exog have different index and
+    length exog no window_size.
+    """
+    y = pd.Series(np.arange(10), name='y')
+    y.index = pd.date_range(start='2022-01-01', periods=10, freq='1D')
+    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=3)
+
+    err_msg = re.escape(
+        "When `exog` doesn't contain the first `window_size` observations, "
+        "the index of `exog` must be aligned with the index of `y` minus "
+        "the first `window_size` observations to ensure the correct "
+        "alignment of values."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        forecaster.fit(
+            y=y,
+            exog=pd.Series(
+                np.arange(3, 10),
+                index=pd.RangeIndex(start=3, stop=10, step=1),
                 name="exog",
             ),
         )
@@ -358,6 +415,145 @@ def test_create_train_X_y_output_when_y_is_series_10_steps_2_and_exog_is_series_
          2: pd.Series(
                 data  = np.array([6., 7., 8., 9.], dtype=float), 
                 index = pd.RangeIndex(start=6, stop=10, step=1),
+                name  = "y_step_2"
+            )
+        },
+        ['exog'],
+        ['exog'],
+        ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog_step_1', 'exog_step_2'],
+        {'exog': exog.dtypes}
+    )
+
+    forecaster.exog_in_ is True
+    forecaster.X_train_direct_exog_names_out_ == ['exog_step_1', 'exog_step_2']
+    forecaster.X_train_window_features_names_out_ is None
+
+    pd.testing.assert_frame_equal(results[0], expected[0])
+    assert isinstance(results[1], dict)
+    assert all(isinstance(x, pd.Series) for x in results[1].values())
+    assert results[1].keys() == expected[1].keys()
+    for key in expected[1]: 
+        pd.testing.assert_series_equal(results[1][key], expected[1][key]) 
+    assert results[2] == expected[2]
+    assert results[3] == expected[3]
+    assert results[4] == expected[4]
+    for k in results[5].keys():
+        assert results[5][k] == expected[5][k]
+
+
+@pytest.mark.parametrize("datetime_index", 
+                         [True, False], 
+                         ids = lambda dt: f'datetime_index: {dt}')
+@pytest.mark.parametrize("dtype", 
+                         [float, int], 
+                         ids = lambda dt: f'dtype: {dt}')
+def test_create_train_X_y_output_when_y_is_series_10_steps_1_and_exog_is_series_of_float_int_with_no_window_size(datetime_index, dtype):
+    """
+    Test the output of _create_train_X_y when y=pd.Series(np.arange(10)), steps=1 
+    and exog is a pandas Series of floats or ints and no initial window_size
+    observations.
+    """
+    y = pd.Series(np.arange(10), name='y', dtype=float)
+    exog = pd.Series(
+        np.arange(105, 110), index=pd.RangeIndex(start=5, stop=10, step=1), 
+        name='exog', dtype=dtype
+    )
+
+    expected_index = pd.RangeIndex(start=5, stop=10, step=1)
+    if datetime_index:
+        y.index = pd.date_range(start='2022-01-01', periods=10, freq='D')
+        exog.index = pd.date_range(start='2022-01-06', periods=5, freq='D')
+        expected_index = pd.date_range(start='2022-01-06', periods=5, freq='D')
+
+    forecaster = ForecasterDirect(LinearRegression(), lags=5, steps=1)
+    results = forecaster._create_train_X_y(y=y, exog=exog)
+
+    expected = (
+        pd.DataFrame(
+            data = np.array([[4., 3., 2., 1., 0., 105.],
+                             [5., 4., 3., 2., 1., 106.],
+                             [6., 5., 4., 3., 2., 107.],
+                             [7., 6., 5., 4., 3., 108.],
+                             [8., 7., 6., 5., 4., 109.]]),
+            index   = expected_index,
+            columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
+                       'exog_step_1']
+        ).astype({'exog_step_1': float}),
+        {1: pd.Series(
+                data  = np.array([5., 6., 7., 8., 9.], dtype=float), 
+                index = expected_index,
+                name  = "y_step_1"
+            )
+        },
+        ['exog'],
+        ['exog'],
+        ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog_step_1'],
+        {'exog': exog.dtypes}
+    )
+
+    forecaster.exog_in_ is True
+    forecaster.X_train_direct_exog_names_out_ == ['exog_step_1']
+    forecaster.X_train_window_features_names_out_ is None
+
+    pd.testing.assert_frame_equal(results[0], expected[0])
+    assert isinstance(results[1], dict)
+    assert all(isinstance(x, pd.Series) for x in results[1].values())
+    assert results[1].keys() == expected[1].keys()
+    for key in expected[1]: 
+        pd.testing.assert_series_equal(results[1][key], expected[1][key]) 
+    assert results[2] == expected[2]
+    assert results[3] == expected[3]
+    assert results[4] == expected[4]
+    for k in results[5].keys():
+        assert results[5][k] == expected[5][k]
+
+
+@pytest.mark.parametrize("datetime_index", 
+                         [True, False], 
+                         ids = lambda dt: f'datetime_index: {dt}')
+@pytest.mark.parametrize("dtype", 
+                         [float, int], 
+                         ids = lambda dt: f'dtype: {dt}')
+def test_create_train_X_y_output_when_y_is_series_10_steps_2_and_exog_is_series_of_float_int_with_no_window_size(datetime_index, dtype):
+    """
+    Test the output of _create_train_X_y when y=pd.Series(np.arange(10)), steps=2 
+    and exog is a pandas Series of floats or ints and no initial window_size
+    observations.
+    """
+    y = pd.Series(np.arange(10), name='y', dtype=float)
+    exog = pd.Series(
+        np.arange(105, 110), index=pd.RangeIndex(start=5, stop=10, step=1), 
+        name='exog', dtype=dtype
+    )
+
+    expected_index_1 = pd.RangeIndex(start=5, stop=9, step=1)
+    expected_index_2 = pd.RangeIndex(start=6, stop=10, step=1)
+    if datetime_index:
+        y.index = pd.date_range(start='2022-01-01', periods=10, freq='D')
+        exog.index = pd.date_range(start='2022-01-06', periods=5, freq='D')
+        expected_index_1 = pd.date_range(start='2022-01-06', periods=4, freq='D')
+        expected_index_2 = pd.date_range(start='2022-01-07', periods=4, freq='D')
+
+    forecaster = ForecasterDirect(LinearRegression(), lags=5, steps=2)
+    results = forecaster._create_train_X_y(y=y, exog=exog)
+    expected = (
+        pd.DataFrame(
+            data = np.array([[4., 3., 2., 1., 0., 105., 106.],
+                             [5., 4., 3., 2., 1., 106., 107.],
+                             [6., 5., 4., 3., 2., 107., 108.],
+                             [7., 6., 5., 4., 3., 108., 109.]], dtype=float),
+            index   = expected_index_2,
+            columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
+                       'exog_step_1', 'exog_step_2']
+        ).astype({'exog_step_1': float, 'exog_step_2': float}),
+        {1: pd.Series(
+                data  = np.array([5., 6., 7., 8.], dtype=float), 
+                index = expected_index_1,
+                name  = "y_step_1"
+            ),
+         2: pd.Series(
+                data  = np.array([6., 7., 8., 9.], dtype=float), 
+                index = expected_index_2,
                 name  = "y_step_2"
             )
         },

@@ -334,8 +334,13 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                         forecaster_name = type(self).__name__,
                         lags            = lags[key]
                     )
-                    self.lags_names[key] = [f'{key}_{lag}' for lag in lags_names]
-                    list_max_lags.append(max_lag)
+                    self.lags_names[key] = (
+                        [f'{key}_{lag}' for lag in lags_names] 
+                         if lags_names is not None 
+                         else None
+                    )
+                    if max_lag is not None:
+                        list_max_lags.append(max_lag)
             
             self.max_lag = max(list_max_lags) if len(list_max_lags) != 0 else None
         else:
@@ -349,9 +354,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         )
         if self.window_features is None and (self.lags is None or self.max_lag is None):
             raise ValueError(
-                ("At least one of the arguments `lags` or `window_features` "
-                 "must be different from None. This is required to create the "
-                 "predictors used in training the forecaster.")
+                "At least one of the arguments `lags` or `window_features` "
+                "must be different from None. This is required to create the "
+                "predictors used in training the forecaster."
             )
         
         self.window_size = max(
@@ -801,9 +806,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         if self.level not in series_names_in_:
             raise ValueError(
-                (f"One of the `series` columns must be named as the `level` of the forecaster.\n"
-                 f"  Forecaster `level` : {self.level}.\n"
-                 f"  `series` columns   : {series_names_in_}.")
+                f"One of the `series` columns must be named as the `level` of the forecaster.\n"
+                f"  Forecaster `level` : {self.level}.\n"
+                f"  `series` columns   : {series_names_in_}."
             )
 
         data_to_return_dict, X_train_series_names_in_ = (
@@ -841,22 +846,28 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         if exog is not None:
             check_exog(exog=exog, allow_nan=True)
             exog = input_to_frame(data=exog, input_name='exog')
-            # TODO: Check if this check can be checked vs y_train. As happened
-            # in base on data (more data from y than exog, but can be aligned
-            # because of the window_size.
-            if len(exog) != len(series):
+            
+            series_index_no_ws = series.index[self.window_size:]
+            len_series = len(series)
+            len_series_no_ws = len_series - self.window_size
+            len_exog = len(exog)
+            if not len_exog == len_series and not len_exog == len_series_no_ws:
                 raise ValueError(
-                    (f"`exog` must have same number of samples as `series`. "
-                     f"length `exog`: ({len(exog)}), length `series`: ({len(series)})")
+                    f"Length of `exog` must be equal to the length of `series` (if "
+                    f"index is fully aligned) or length of `seriesy` - `window_size` "
+                    f"(if `exog` starts after the first `window_size` values).\n"
+                    f"    `exog`                   : ({exog.index[0]} -- {exog.index[-1]})  (n={len_exog})\n"
+                    f"    `series`                 : ({series.index[0]} -- {series.index[-1]})  (n={len_series})\n"
+                    f"    `series` - `window_size` : ({series_index_no_ws[0]} -- {series_index_no_ws[-1]})  (n={len_series_no_ws})"
                 )
             
             exog_names_in_ = exog.columns.to_list()
             if len(set(exog_names_in_) - set(series_names_in_)) != len(exog_names_in_):
                 raise ValueError(
-                    (f"`exog` cannot contain a column named the same as one of "
-                     f"the series (column names of series).\n"
-                     f"  `series` columns : {series_names_in_}.\n"
-                     f"  `exog`   columns : {exog_names_in_}.")
+                    f"`exog` cannot contain a column named the same as one of "
+                    f"the series (column names of series).\n"
+                    f"  `series` columns : {series_names_in_}.\n"
+                    f"  `exog`   columns : {exog_names_in_}."
                 )
             
             # NOTE: Need here for filter_train_X_y_for_step to work without fitting
@@ -875,12 +886,25 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 exog.select_dtypes(include=np.number).shape[1] != exog.shape[1]
             )
 
-            # Use .index as series.index is not yet preprocessed
-            if not (exog.index[:len(series)] == series.index).all():
-                raise ValueError(
-                    ("Different index for `series` and `exog`. They must be equal "
-                     "to ensure the correct alignment of values.") 
-                )
+            # Use .index as series.index is not yet preprocessed with preprocess_y
+            if len_exog == len_series:
+                if not (exog.index == series.index).all():
+                    raise ValueError(
+                        "When `exog` has the same length as `series`, the index "
+                        "of `exog` must be aligned with the index of `series` "
+                        "to ensure the correct alignment of values."
+                    )
+                # The first `self.window_size` positions have to be removed from 
+                # exog since they are not in X_train.
+                exog = exog.iloc[self.window_size:, ]
+            else:
+                if not (exog.index == series_index_no_ws).all():
+                    raise ValueError(
+                        "When `exog` doesn't contain the first `window_size` "
+                        "observations, the index of `exog` must be aligned with "
+                        "the index of `series` minus the first `window_size` "
+                        "observations to ensure the correct alignment of values."
+                    )
 
         X_train_autoreg = []
         X_train_window_features_names_out_ = [] if self.window_features is not None else None
@@ -960,27 +984,22 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         X_train_exog_names_out_ = None
         if exog is not None:
-            # Transform exog to match direct format
-            # The first `self.window_size` positions have to be removed from X_exog
-            # since they are not in X_lags.
             X_train_exog_names_out_ = exog.columns.to_list()
             if categorical_features:
-                exog_to_train, X_train_direct_exog_names_out_ = exog_to_direct(
+                exog_direct, X_train_direct_exog_names_out_ = exog_to_direct(
                     exog=exog, steps=self.steps
                 )
-                exog_to_train = exog_to_train.iloc[-len_train_index:, :]
-                exog_to_train.index = train_index
+                exog_direct.index = train_index
             else:
-                exog_to_train, X_train_direct_exog_names_out_ = exog_to_direct_numpy(
+                exog_direct, X_train_direct_exog_names_out_ = exog_to_direct_numpy(
                     exog=exog, steps=self.steps
                 )
-                exog_to_train = exog_to_train[-len_train_index:, :]
 
             # NOTE: Need here for filter_train_X_y_for_step to work without fitting
             self.X_train_direct_exog_names_out_ = X_train_direct_exog_names_out_
 
             X_train_features_names_out_.extend(self.X_train_direct_exog_names_out_)
-            X_train.append(exog_to_train)
+            X_train.append(exog_direct)
         
         if len(X_train) == 1:
             X_train = X_train[0]
@@ -1678,6 +1697,16 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                         index   = prediction_index
                     )
         
+        if self.transformer_series is not None or self.differentiation is not None:
+            warnings.warn(
+                "The output matrix is in the transformed scale due to the "
+                "inclusion of transformations or differentiation in the Forecaster. "
+                "As a result, any predictions generated using this matrix will also "
+                "be in the transformed scale. Please refer to the documentation "
+                "for more details: "
+                "https://skforecast.org/latest/user_guides/dependent-multi-series-multivariate-forecasting#extract-prediction-matrices"
+            )
+        
         set_skforecast_warnings(suppress_warnings, action='default')
 
         return X_predict
@@ -2326,8 +2355,13 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                         forecaster_name = type(self).__name__,
                         lags            = lags[key]
                     )
-                    self.lags_names[key] = [f'{key}_{lag}' for lag in lags_names]
-                    list_max_lags.append(max_lag)
+                    self.lags_names[key] = (
+                        [f'{key}_{lag}' for lag in lags_names] 
+                         if lags_names is not None 
+                         else None
+                    )
+                    if max_lag is not None:
+                        list_max_lags.append(max_lag)
             
             self.max_lag = max(list_max_lags) if len(list_max_lags) != 0 else None
         else:
@@ -2339,9 +2373,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         # Repeated here in case of lags is a dict with all values as None
         if self.window_features is None and (lags is None or self.max_lag is None):
             raise ValueError(
-                ("At least one of the arguments `lags` or `window_features` "
-                 "must be different from None. This is required to create the "
-                 "predictors used in training the forecaster.")
+                "At least one of the arguments `lags` or `window_features` "
+                "must be different from None. This is required to create the "
+                "predictors used in training the forecaster."
             )
         
         self.window_size = max(
@@ -2565,8 +2599,10 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         
         idx_columns = np.concatenate((idx_columns_autoreg, idx_columns_exog))
         idx_columns = [int(x) for x in idx_columns]  # Required since numpy 2.0
-        feature_names = [self.X_train_features_names_out_[i].replace(f"_step_{step}", "") 
-                         for i in idx_columns]
+        feature_names = [
+            self.X_train_features_names_out_[i].replace(f"_step_{step}", "") 
+            for i in idx_columns
+        ]
 
         if hasattr(estimator, 'feature_importances_'):
             feature_importances = estimator.feature_importances_

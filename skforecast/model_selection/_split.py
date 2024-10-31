@@ -959,8 +959,9 @@ class TimeSeriesFold(BaseFold):
                     f"Number of observations used for initial training: "
                     f"{self.initial_train_size - self.differentiation}"
                 )
-                print(f"    First {self.differentiation} observation/s in training sets "
-                        f"are used for differentiation"
+                print(
+                    f"    First {self.differentiation} observation/s in training sets "
+                    f"are used for differentiation"
                 )
         print(
             f"Number of observations used for backtesting: "

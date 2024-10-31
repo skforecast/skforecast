@@ -359,6 +359,37 @@ def test_select_features_multiseries_when_selector_is_RFE_select_only_exog_is_Fa
     assert selected_exog == ['exog1', 'exog3', 'exog4']
 
 
+@pytest.mark.parametrize("lags", 
+                         [{'l1': None, 'l2': 5}, {'l1': [], 'l2': 5}],
+                         ids = lambda lags: f'lags: {lags}')
+def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterDirectMultiVariate_lags_dict(lags):
+    """
+    Test that select_features returns the expected values when selector is RFE
+    and select_only is 'exog'. Forecaster is ForecasterDirectMultiVariate 
+    and lags is a dictionary.
+    """
+    forecaster = ForecasterDirectMultiVariate(
+                     regressor = LinearRegression(),
+                     level     = 'l1',
+                     steps     = 3,
+                     lags      = lags
+                 )
+    selector = RFE(estimator=forecaster.regressor, n_features_to_select=3)
+
+    selected_lags, selected_window_features, selected_exog = select_features_multiseries(
+        selector    = selector,
+        forecaster  = forecaster,
+        series      = series,
+        exog        = exog,
+        select_only = 'autoreg',
+        verbose     = False,
+    )
+
+    assert selected_lags == {'l1': [], 'l2': [1, 4, 5]}
+    assert selected_window_features == []
+    assert selected_exog == ['exog1', 'exog2', 'exog3', 'exog4']
+
+
 def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterDirectMultiVariate_no_window_features():
     """
     Test that select_features returns the expected values when selector is RFE

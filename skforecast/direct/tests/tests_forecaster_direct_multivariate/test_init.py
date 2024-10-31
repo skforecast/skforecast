@@ -42,7 +42,7 @@ def test_init_ValueError_when_steps_is_less_than_1():
 
 
 @pytest.mark.parametrize("lags", 
-                         [None, {'l1': None, 'l2': None}], 
+                         [None, {'l1': None, 'l2': None}, {'l1': [], 'l2': []}], 
                          ids = lambda lags: f'lags: {lags}')
 def test_init_ValueError_when_no_lags_or_window_features(lags):
     """
@@ -65,7 +65,8 @@ def test_init_ValueError_when_no_lags_or_window_features(lags):
 
 @pytest.mark.parametrize("lags, window_features, expected", 
                          [(5, None, 5), 
-                          (None, True, 6), 
+                          (None, True, 6),
+                          ([], True, 6),
                           (5, True, 6)], 
                          ids = lambda dt: f'lags, window_features, expected: {dt}')
 def test_init_window_size_correctly_stored(lags, window_features, expected):
@@ -104,7 +105,8 @@ def test_init_window_size_correctly_stored(lags, window_features, expected):
 
 @pytest.mark.parametrize("lags, expected",
     [({'l1': 3, 'l2': 5}, {'l1': np.array([1, 2, 3]), 'l2': np.array([1, 2, 3, 4, 5])}), 
-    ({'l1': None, 'l2': 5}, {'l1': None, 'l2': np.array([1, 2, 3, 4, 5])})],
+     ({'l1': None, 'l2': 5}, {'l1': None, 'l2': np.array([1, 2, 3, 4, 5])}),
+     ({'l1': [], 'l2': 5}, {'l1': None, 'l2': np.array([1, 2, 3, 4, 5])})],
     ids = lambda value: f'lags: {value}')
 def test_init_max_lag_stored_when_dict(lags, expected):
     """
@@ -116,7 +118,7 @@ def test_init_max_lag_stored_when_dict(lags, expected):
     )
     
     for k in forecaster.lags:
-        if lags[k] is None:
+        if forecaster.lags[k] is None:
             assert forecaster.lags[k] is None
             assert forecaster.lags_names[k] is None
         else:
@@ -126,7 +128,10 @@ def test_init_max_lag_stored_when_dict(lags, expected):
     assert forecaster.window_size == 5
 
 
-def test_init_when_lags_dict_with_all_None():
+@pytest.mark.parametrize("lags", 
+                         [{'l1': None, 'l2': None}, {'l1': [], 'l2': []}],
+                         ids = lambda lags: f'lags: {lags}')
+def test_init_when_lags_dict_with_all_None(lags):
     """
     Test lags dict are correctly stored when all values are None.
     """
@@ -138,7 +143,7 @@ def test_init_when_lags_dict_with_all_None():
                      regressor       = LinearRegression(),
                      level           = 'l1',
                      steps           = 3,
-                     lags            = {'l1': None, 'l2': None},
+                     lags            = lags,
                      window_features = window_features
                  )
     
