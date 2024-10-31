@@ -641,7 +641,7 @@ def test_output_bayesian_search_forecaster_multiseries_series_and_exog_dict_with
     pd.testing.assert_frame_equal(expected, results_search)
 
 
-def test_results_output_bayesian_search_forecaster_multivariate_ForecasterDirectMultiVariate():
+def test_results_output_bayesian_search_forecaster_multivariate_ForecasterDirectMultiVariate_window_features():
     """
     Test output of bayesian_search_forecaster_multivariate in 
     ForecasterDirectMultiVariate with mocked (mocked done in Skforecast v0.12.0).
@@ -732,7 +732,7 @@ def test_results_output_bayesian_search_forecaster_multivariate_ForecasterDirect
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_results_output_bayesian_search_forecaster_multivariate_ForecasterDirectMultiVariate_window_features():
+def test_results_output_bayesian_search_forecaster_multivariate_ForecasterDirectMultiVariate():
     """
     Test output of bayesian_search_forecaster_multivariate in 
     ForecasterDirectMultiVariate with mocked (mocked done in Skforecast v0.12.0).
