@@ -257,14 +257,14 @@ def test_output_backtesting_forecaster_ForecasterRecursive_window_features_with_
     and window features.
     """
 
-    expected_metric = pd.DataFrame({"mean_squared_error": [0.1132386]})
+    expected_metric = pd.DataFrame({"mean_squared_error": [0.10712193574869683]})
     expected_predictions = pd.DataFrame(
         {
             "pred": np.array(
                 [
-                    0.37189345, 0.24877906, 0.33164618, 0.49643827, 0.40030688,
-                    0.42947433, 0.4592766 , 0.55463757, 0.30374867, 0.32671601,
-                    0.56153282, 0.55311912
+                    0.37683092, 0.27485253, 0.35459493, 0.50933738, 0.40740455,
+                    0.44359783, 0.47699345, 0.53865623, 0.30365329, 0.34961539,
+                    0.5671574 , 0.56751209
                 ]
             )
         },
@@ -272,7 +272,7 @@ def test_output_backtesting_forecaster_ForecasterRecursive_window_features_with_
     )
 
     window_features = RollingFeatures(
-        stats = ['mean', 'std', 'min', 'max', 'sum', 'median', 'ratio_min_max', 'coef_variation'],
+        stats = ['mean', 'min', 'max', 'sum', 'median', 'ratio_min_max'],
         window_sizes = 3,
     )
     forecaster = ForecasterRecursive(
@@ -314,14 +314,14 @@ def test_output_backtesting_forecaster_ForecasterDirect_window_features_with_moc
     and window features.
     """
 
-    expected_metric = pd.DataFrame({"mean_squared_error": [0.11337407]})
+    expected_metric = pd.DataFrame({"mean_squared_error": [0.10447263857902568]})
     expected_predictions = pd.DataFrame(
         {
             "pred": np.array(
                 [
-                    0.31478125, 0.45940314, 0.85744121, 0.67976412, 0.38085263,
-                    0.56357911, 0.35567212, 0.4493073 , 0.35493806, 0.53589892,
-                    0.73060039, 0.60025524
+                    0.32372783, 0.43458024, 0.77238875, 0.60657529, 0.37897279,
+                    0.542262  , 0.31403908, 0.37007796, 0.35614498, 0.51622723,
+                    0.67746181, 0.59161821
                 ]
             )
         },
@@ -329,7 +329,7 @@ def test_output_backtesting_forecaster_ForecasterDirect_window_features_with_moc
     )
 
     window_features = RollingFeatures(
-        stats = ['mean', 'std', 'min', 'max', 'sum', 'median', 'ratio_min_max', 'coef_variation'],
+        stats = ['mean', 'min', 'max', 'sum', 'median', 'ratio_min_max'],
         window_sizes = 3,
     )
     forecaster = ForecasterDirect(

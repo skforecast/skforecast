@@ -609,6 +609,7 @@ def _np_std_jit(x, ddof=1):  # pragma: no cover
     """
     if len(x) == 1:
         return 0.
+    
     a_a, b_b = 0, 0
     for i in x:
         a_a = a_a + i
