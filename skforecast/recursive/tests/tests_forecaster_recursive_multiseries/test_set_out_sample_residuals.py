@@ -24,8 +24,8 @@ def test_set_out_sample_residuals_NotFittedError_when_forecaster_not_fitted():
     y_pred = {'1': np.array([1, 2, 3, 4, 5]), '2': np.array([1, 2, 3, 4, 5])}
 
     err_msg = re.escape(
-        ("This forecaster is not fitted yet. Call `fit` with appropriate "
-         "arguments before using `set_out_sample_residuals()`.")
+        "This forecaster is not fitted yet. Call `fit` with appropriate "
+        "arguments before using `set_out_sample_residuals()`."
     )
     with pytest.raises(NotFittedError, match = err_msg):
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
@@ -168,23 +168,6 @@ def test_set_out_sample_residuals_ValueError_when_inputs_does_not_match_series_s
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
 
 
-@pytest.mark.parametrize("residuals", [[1, 2, 3], {'1': [1, 2, 3, 4]}], 
-                         ids=lambda residuals: f'residuals: {residuals}')
-def test_set_out_sample_residuals_TypeError_when_residuals_is_not_a_dict_of_numpy_ndarray(residuals):
-    """
-    Test TypeError is raised when residuals is not a dict of numpy ndarrays.
-    """
-    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
-    forecaster.fit(series=series)
-    err_msg = re.escape(
-       (f"`residuals` argument must be a dict of numpy ndarrays in the form "
-        "`{level: residuals}`. " 
-        f"Got {type(residuals)}.")
-    )
-    with pytest.raises(TypeError, match = err_msg):
-        forecaster.set_out_sample_residuals(residuals=residuals)
-
-
 def test_set_out_sample_residuals_UnknownLevelWarning_when_residuals_levels_but_encoding_None():
     """
     Test UnknownLevelWarning is raised when residuals contains levels but encoding is None.
@@ -195,8 +178,8 @@ def test_set_out_sample_residuals_UnknownLevelWarning_when_residuals_levels_but_
     y_pred = {'l1': np.array([1, 2, 3, 4, 5])}
 
     err_msg = re.escape(
-        ("As `encoding` is set to `None`, no distinction between levels "
-         "is made. All residuals are stored in the '_unknown_level' key.")
+        "As `encoding` is set to `None`, no distinction between levels "
+        "is made. All residuals are stored in the '_unknown_level' key."
     )
     with pytest.warns(UnknownLevelWarning, match = err_msg):
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
@@ -220,9 +203,9 @@ def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_and_n
     is False.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                    LinearRegression(),
-                    lags=3,
-                    encoding=encoding,
+                     LinearRegression(),
+                     lags=3,
+                     encoding=encoding,
                  )
     forecaster.fit(series=series)
     y_true = {'l1': np.array([1, 2, 3, 4, 5]), 'l2': np.array([2, 3, 4, 5, 6])}
