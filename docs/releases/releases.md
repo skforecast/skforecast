@@ -39,6 +39,8 @@ This release has undergone a major refactoring to improve the performance of the
 
 + Added `numba>=0.59` as hard dependency.
 
++ Added `ipython>=8.0` as hard dependency.
+
 + Added `window_features` argument to all forecasters. This argument allows the user to add window features to the training matrix. See <code>[RollingFeatures]</code>.
 
 + Hyperparameter search now allows to follow a one-step-ahead validation strategy using a <code>[OneStepAheadFold]</code> as `cv` argument in the <code>[model_selection]</code> functions.

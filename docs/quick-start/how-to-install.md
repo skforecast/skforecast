@@ -34,6 +34,7 @@ The following dependencies are installed with the default installation:
 + optuna>=2.10
 + joblib>=1.1
 + numba>=0.59
++ ipython>=8.0
 
 
 ## **Optional dependencies**
