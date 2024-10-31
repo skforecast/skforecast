@@ -639,6 +639,7 @@ class ForecasterRecursive(ForecasterBase):
                 inverse_transform = False,
             )
         y_values, y_index = preprocess_y(y=y)
+        train_index = y_index[self.window_size:]
 
         if self.differentiation is not None:
             if not self.is_fitted:
@@ -653,13 +654,18 @@ class ForecasterRecursive(ForecasterBase):
         if exog is not None:
             check_exog(exog=exog, allow_nan=True)
             exog = input_to_frame(data=exog, input_name='exog')
-            # TODO: Check if this check can be checked vs y_train. As happened
-            # in base on data (more data from y than exog, but can be aligned
-            # because of the window_size.
-            if len(exog) != len(y):
+
+            len_y = len(y_values)
+            len_train_index = len(train_index)
+            len_exog = len(exog)
+            if not len_exog == len_y and not len_exog == len_train_index:
                 raise ValueError(
-                    (f"`exog` must have same number of samples as `y`. "
-                     f"length `exog`: ({len(exog)}), length `y`: ({len(y)})")
+                    f"Length of `exog` must be equal to the length of `y` (if index is "
+                    f"fully aligned) or length of `y` - `window_size` (if `exog` "
+                    f"starts after the first `window_size` values).\n"
+                    f"    `exog`              : ({exog.index[0]} -- {exog.index[-1]})  (n={len_exog})\n"
+                    f"    `y`                 : ({y.index[0]} -- {y.index[-1]})  (n={len_y})\n"
+                    f"    `y` - `window_size` : ({train_index[0]} -- {train_index[-1]})  (n={len_train_index})"
                 )
 
             exog_names_in_ = exog.columns.to_list()
@@ -678,15 +684,27 @@ class ForecasterRecursive(ForecasterBase):
             )
 
             _, exog_index = preprocess_exog(exog=exog, return_values=False)
-            if not (exog_index[:len(y_index)] == y_index).all():
-                raise ValueError(
-                    ("Different index for `y` and `exog`. They must be equal "
-                     "to ensure the correct alignment of values.")
-                )
+            if len_exog == len_y:
+                if not (exog_index == y_index).all():
+                    raise ValueError(
+                        "When `exog` has the same length as `y`, the index of "
+                        "`exog` must be aligned with the index of `y` "
+                        "to ensure the correct alignment of values."
+                    )
+                # The first `self.window_size` positions have to be removed from 
+                # exog since they are not in X_train.
+                exog = exog.iloc[self.window_size:, ]
+            else:
+                if not (exog_index == train_index).all():
+                    raise ValueError(
+                        "When `exog` doesn't contain the first `window_size` observations, "
+                        "the index of `exog` must be aligned with the index of `y` minus "
+                        "the first `window_size` observations to ensure the correct "
+                        "alignment of values."
+                    )
             
         X_train = []
         X_train_features_names_out_ = []
-        train_index = y_index[self.window_size:]
         X_as_pandas = True if categorical_features else False
 
         X_train_lags, y_train = self._create_lags(
@@ -710,17 +728,11 @@ class ForecasterRecursive(ForecasterBase):
 
         X_train_exog_names_out_ = None
         if exog is not None:
-            # The first `self.window_size` positions have to be removed from exog
-            # since they are not in X_train.
-            X_train_exog_names_out_ = exog.columns.to_list()
-            if X_as_pandas:
-                exog_to_train = exog.iloc[self.window_size:, ]
-                exog_to_train.index = train_index
-            else:
-                exog_to_train = exog.to_numpy()[self.window_size:, ]
-            
+            X_train_exog_names_out_ = exog.columns.to_list()  
+            if not X_as_pandas:
+                exog = exog.to_numpy()     
             X_train_features_names_out_.extend(X_train_exog_names_out_)
-            X_train.append(exog_to_train)
+            X_train.append(exog)
         
         if len(X_train) == 1:
             X_train = X_train[0]
@@ -1124,8 +1136,6 @@ class ForecasterRecursive(ForecasterBase):
         if last_window is None:
             last_window = self.last_window_
 
-        # TODO: Not clear maybe the error "Index must be a pandas DatetimeIndex"
-        # which variable is causing it.
         if self.is_fitted:
             steps = date_to_index_position(
                         index        = last_window.index,
@@ -1368,6 +1378,16 @@ class ForecasterRecursive(ForecasterBase):
                         columns = self.X_train_features_names_out_,
                         index   = prediction_index
                     )
+        
+        if self.transformer_y is not None or self.differentiation is not None:
+            warnings.warn(
+                "The output matrix is in the transformed scale due to the "
+                "inclusion of transformations or differentiation in the Forecaster. "
+                "As a result, any predictions generated using this matrix will also "
+                "be in the transformed scale. Please refer to the documentation "
+                "for more details: "
+                "https://skforecast.org/latest/user_guides/autoregresive-forecaster#extract-prediction-matrices"
+            )
 
         return X_predict
 
@@ -2052,6 +2072,12 @@ class ForecasterRecursive(ForecasterBase):
 
         """
 
+        if not self.is_fitted:
+            raise NotFittedError(
+                "This forecaster is not fitted yet. Call `fit` with appropriate "
+                "arguments before using `set_out_sample_residuals()`."
+            )
+
         if not isinstance(y_true, (np.ndarray, pd.Series)):
             raise TypeError(
                 f"`y_true` argument must be `numpy ndarray` or `pandas Series`. "
@@ -2076,12 +2102,6 @@ class ForecasterRecursive(ForecasterBase):
                     "`y_true` and `y_pred` must have the same index."
                 )
 
-        if not self.is_fitted:
-            raise NotFittedError(
-                "This forecaster is not fitted yet. Call `fit` with appropriate "
-                "arguments before using `set_out_sample_residuals()`."
-            )
-
         if not isinstance(y_pred, np.ndarray):
             y_pred = y_pred.to_numpy()
 
@@ -2101,6 +2121,7 @@ class ForecasterRecursive(ForecasterBase):
                          fit               = False,
                          inverse_transform = False
                      )
+        
         if self.differentiation is not None:
             differentiator = copy(self.differentiator)
             y_true = differentiator.fit_transform(y_true)[self.differentiation:]

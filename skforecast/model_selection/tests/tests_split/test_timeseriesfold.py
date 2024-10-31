@@ -1,9 +1,83 @@
 # Unit test TimeSeriesFold
 # ==============================================================================
+import re
 import pytest
 import numpy as np
 import pandas as pd
 from skforecast.model_selection._split import TimeSeriesFold
+
+
+def test_TimeSeriesFold_split_TypeError_when_X_is_not_series_dataframe_or_dict():
+    """
+    Test TypeError is raised when X is not a pd.Series, pd.DataFrame or dict.
+    """
+    X = np.arange(100)
+    cv = TimeSeriesFold(steps=10, initial_train_size=70)
+    msg = (f"X must be a pandas Series, DataFrame, Index or a dictionary. Got {type(X)}.")
+    with pytest.raises(TypeError, match=msg):
+        cv.split(X=X)
+
+
+def test_TimeSeriesFold_split_ValueError_when_initial_train_size_and_window_size_None():
+    """
+    Test ValueError is raised when initial_train_size and window_size are None.
+    """
+    X = pd.Series(np.arange(100))
+    cv = TimeSeriesFold(steps=10, initial_train_size=None, window_size=None)
+    msg = re.escape(
+        "To use split method when `initial_train_size` is None, "
+        "`window_size` must be an integer greater than 0. "
+        "Although no initial training is done and all data is used to "
+        "evaluate the model, the first `window_size` observations are "
+        "needed to create the initial predictors. Got `window_size` = None."
+    )
+    with pytest.raises(ValueError, match=msg):
+        cv.split(X=X)
+
+
+def test_TimeSeriesFold_split_ValueError_when_initial_train_size_None_and_refit():
+    """
+    Test ValueError is raised when initial_train_size is None and refit is True.
+    """
+    X = pd.Series(np.arange(100))
+    cv = TimeSeriesFold(
+        steps=10, initial_train_size=None, window_size=5, refit=True
+    )
+    msg = re.escape(
+        "`refit` is only allowed when `initial_train_size` is not `None`. "
+        "Set `refit` to `False` if you want to use `initial_train_size = None`."
+    )
+    with pytest.raises(ValueError, match=msg):
+        cv.split(X=X)
+
+
+def test_TimeSeriesFold_split_warning_when_window_size_is_None():
+    """
+    Test warning is raised when window_size is None with initial_train_size not None.
+    """
+    X = pd.Series(np.arange(100))
+    cv = TimeSeriesFold(
+        steps=10, initial_train_size=10, window_size=None
+    )
+    warn_msg = re.escape("Last window cannot be calculated because `window_size` is None.")
+    with pytest.warns(UserWarning, match=warn_msg):
+        cv.split(X=X)
+
+
+def test_TimeSeriesFold_split_ValueError_when_time_series_not_enough_data():
+    """
+    Test ValueError is raised when time series has not enough data to create the folds.
+    """
+    X = pd.Series(np.arange(5))
+    cv = TimeSeriesFold(
+        steps=10, initial_train_size=10, window_size=5, refit=True
+    )
+    msg = re.escape(
+        f"The time series must have at least `initial_train_size + steps` "
+        f"observations. Got {len(X)} observations."
+    )
+    with pytest.raises(ValueError, match=msg):
+        cv.split(X=X)
 
 
 @pytest.mark.parametrize("return_all_indexes, expected",
@@ -43,7 +117,7 @@ def test_TimeSeriesFold_split_no_refit_no_gap_no_remainder(capfd, return_all_ind
         "    Number of folds: 3\n"
         "    Number skipped folds: 0 \n"
         "    Number of steps per fold: 10\n"
-        "    Number of steps to exclude from the end of each train set before test (gap): 0\n\n"
+        "    Number of steps to exclude between last observed data (last window) and predictions (gap): 0\n\n"
         "Fold: 0\n"
         "    Training:   2022-01-01 00:00:00 -- 2022-03-11 00:00:00  (n=70)\n"
         "    Validation: 2022-03-12 00:00:00 -- 2022-03-21 00:00:00  (n=10)\n"
@@ -97,7 +171,7 @@ def test_TimeSeriesFold_split_no_refit_no_gap_allow_incomplete_fold_False(capfd,
         "    Number of folds: 3\n"
         "    Number skipped folds: 0 \n"
         "    Number of steps per fold: 10\n"
-        "    Number of steps to exclude from the end of each train set before test (gap): 0\n"
+        "    Number of steps to exclude between last observed data (last window) and predictions (gap): 0\n"
         "    Last fold has been excluded because it was incomplete.\n\n"
         "Fold: 0\n"
         "    Training:   2022-01-01 00:00:00 -- 2022-03-06 00:00:00  (n=65)\n"
@@ -154,7 +228,7 @@ def test_TimeSeriesFold_split_no_refit_gap_allow_incomplete_fold_True(capfd, ret
         "    Number of folds: 4\n"
         "    Number skipped folds: 0 \n"
         "    Number of steps per fold: 7\n"
-        "    Number of steps to exclude from the end of each train set before test (gap): 5\n"
+        "    Number of steps to exclude between last observed data (last window) and predictions (gap): 5\n"
         "    Last fold only includes 4 observations.\n\n"
         "Fold: 0\n"
         "    Training:   2022-01-01 00:00:00 -- 2022-03-11 00:00:00  (n=70)\n"
@@ -220,7 +294,7 @@ def test_TimeSeriesFold_split_no_refit_initial_train_size_None_gap(capfd, return
         "    Number of folds: 8\n"
         "    Number skipped folds: 0 \n"
         "    Number of steps per fold: 10\n"
-        "    Number of steps to exclude from the end of each train set before test (gap): 5\n\n"
+        "    Number of steps to exclude between last observed data (last window) and predictions (gap): 5\n\n"
         "Fold: 0\n"
         "    Training:   No training in this fold\n"
         "    Validation: 20 -- 29  (n=10)\n"
@@ -290,7 +364,7 @@ def test_TimeSeriesFold_split_refit_no_fixed_no_gap_no_remainder(capfd, return_a
         "    Number of folds: 3\n"
         "    Number skipped folds: 0 \n"
         "    Number of steps per fold: 10\n"
-        "    Number of steps to exclude from the end of each train set before test (gap): 0\n\n"
+        "    Number of steps to exclude between last observed data (last window) and predictions (gap): 0\n\n"
         "Fold: 0\n"
         "    Training:   2022-01-01 00:00:00 -- 2022-03-11 00:00:00  (n=70)\n"
         "    Validation: 2022-03-12 00:00:00 -- 2022-03-21 00:00:00  (n=10)\n"
@@ -344,7 +418,7 @@ def test_TimeSeriesFold_split_refit_fixed_train_size_no_gap_no_remainder(capfd, 
         "    Number of folds: 3\n"
         "    Number skipped folds: 0 \n"
         "    Number of steps per fold: 10\n"
-        "    Number of steps to exclude from the end of each train set before test (gap): 0\n\n"
+        "    Number of steps to exclude between last observed data (last window) and predictions (gap): 0\n\n"
         "Fold: 0\n"
         "    Training:   2022-01-01 00:00:00 -- 2022-03-11 00:00:00  (n=70)\n"
         "    Validation: 2022-03-12 00:00:00 -- 2022-03-21 00:00:00  (n=10)\n"
@@ -400,7 +474,7 @@ def test_TimeSeriesFold_split_refit_no_fixed_gap_allow_incomplete_fold_True(capf
         "    Number of folds: 4\n"
         "    Number skipped folds: 0 \n"
         "    Number of steps per fold: 7\n"
-        "    Number of steps to exclude from the end of each train set before test (gap): 5\n"
+        "    Number of steps to exclude between last observed data (last window) and predictions (gap): 5\n"
         "    Last fold only includes 4 observations.\n\n"
         "Fold: 0\n"
         "    Training:   2022-01-01 00:00:00 -- 2022-03-11 00:00:00  (n=70)\n"
@@ -459,7 +533,7 @@ def test_TimeSeriesFold_split_refit_fixed_train_size_gap_allow_incomplete_fold_T
         "    Number of folds: 4\n"
         "    Number skipped folds: 0 \n"
         "    Number of steps per fold: 7\n"
-        "    Number of steps to exclude from the end of each train set before test (gap): 5\n"
+        "    Number of steps to exclude between last observed data (last window) and predictions (gap): 5\n"
         "    Last fold only includes 4 observations.\n\n"
         "Fold: 0\n"
         "    Training:   0 -- 69  (n=70)\n"
@@ -517,7 +591,7 @@ def test_TimeSeriesFold_split_refit_no_fixed_gap_allow_incomplete_fold_False(cap
         "    Number of folds: 3\n"
         "    Number skipped folds: 0 \n"
         "    Number of steps per fold: 7\n"
-        "    Number of steps to exclude from the end of each train set before test (gap): 5\n"
+        "    Number of steps to exclude between last observed data (last window) and predictions (gap): 5\n"
         "    Last fold has been excluded because it was incomplete.\n\n"
         "Fold: 0\n"
         "    Training:   2022-01-01 00:00:00 -- 2022-03-11 00:00:00  (n=70)\n"
@@ -571,7 +645,7 @@ def test_TimeSeriesFold_split_refit_fixed_train_size_gap_allow_incomplete_fold_F
         "    Number of folds: 3\n"
         "    Number skipped folds: 0 \n"
         "    Number of steps per fold: 7\n"
-        "    Number of steps to exclude from the end of each train set before test (gap): 5\n"
+        "    Number of steps to exclude between last observed data (last window) and predictions (gap): 5\n"
         "    Last fold has been excluded because it was incomplete.\n\n"
         "Fold: 0\n"
         "    Training:   0 -- 69  (n=70)\n"
@@ -628,7 +702,7 @@ def test_TimeSeriesFold_split_refit_int_no_fixed_no_gap_no_remainder(capfd, retu
         "    Number of folds: 4\n"
         "    Number skipped folds: 0 \n"
         "    Number of steps per fold: 10\n"
-        "    Number of steps to exclude from the end of each train set before test (gap): 0\n\n"
+        "    Number of steps to exclude between last observed data (last window) and predictions (gap): 0\n\n"
         "Fold: 0\n"
         "    Training:   2022-01-01 00:00:00 -- 2022-03-01 00:00:00  (n=60)\n"
         "    Validation: 2022-03-02 00:00:00 -- 2022-03-11 00:00:00  (n=10)\n"
@@ -687,7 +761,7 @@ def test_TimeSeriesFold_split_refit_int_fixed_train_size_no_gap_no_remainder(cap
         "    Number of folds: 4\n"
         "    Number skipped folds: 0 \n"
         "    Number of steps per fold: 10\n"
-        "    Number of steps to exclude from the end of each train set before test (gap): 0\n\n"
+        "    Number of steps to exclude between last observed data (last window) and predictions (gap): 0\n\n"
         "Fold: 0\n"
         "    Training:   2022-01-01 00:00:00 -- 2022-03-01 00:00:00  (n=60)\n"
         "    Validation: 2022-03-02 00:00:00 -- 2022-03-11 00:00:00  (n=10)\n"
@@ -746,7 +820,7 @@ def test_TimeSeriesFold_split_refit_int_no_fixed_gap_allow_incomplete_fold_True(
         "    Number of folds: 4\n"
         "    Number skipped folds: 0 \n"
         "    Number of steps per fold: 7\n"
-        "    Number of steps to exclude from the end of each train set before test (gap): 5\n"
+        "    Number of steps to exclude between last observed data (last window) and predictions (gap): 5\n"
         "    Last fold only includes 4 observations.\n\n"
         "Fold: 0\n"
         "    Training:   2022-01-01 00:00:00 -- 2022-03-11 00:00:00  (n=70)\n"
@@ -805,7 +879,7 @@ def test_TimeSeriesFold_split_refit_int_fixed_train_size_gap_allow_incomplete_fo
         "    Number of folds: 4\n"
         "    Number skipped folds: 0 \n"
         "    Number of steps per fold: 7\n"
-        "    Number of steps to exclude from the end of each train set before test (gap): 5\n"
+        "    Number of steps to exclude between last observed data (last window) and predictions (gap): 5\n"
         "    Last fold only includes 4 observations.\n\n"
         "Fold: 0\n"
         "    Training:   0 -- 69  (n=70)\n"
@@ -863,7 +937,7 @@ def test_TimeSeriesFold_split_refit_int_no_fixed_gap_allow_incomplete_fold_False
         "    Number of folds: 3\n"
         "    Number skipped folds: 0 \n"
         "    Number of steps per fold: 7\n"
-        "    Number of steps to exclude from the end of each train set before test (gap): 5\n"
+        "    Number of steps to exclude between last observed data (last window) and predictions (gap): 5\n"
         "    Last fold has been excluded because it was incomplete.\n\n"
         "Fold: 0\n"
         "    Training:   2022-01-01 00:00:00 -- 2022-03-11 00:00:00  (n=70)\n"
@@ -917,7 +991,7 @@ def test_TimeSeriesFold_split_refit_int_fixed_train_size_gap_allow_incomplete_fo
         "    Number of folds: 3\n"
         "    Number skipped folds: 0 \n"
         "    Number of steps per fold: 7\n"
-        "    Number of steps to exclude from the end of each train set before test (gap): 5\n"
+        "    Number of steps to exclude between last observed data (last window) and predictions (gap): 5\n"
         "    Last fold has been excluded because it was incomplete.\n\n"
         "Fold: 0\n"
         "    Training:   0 -- 69  (n=70)\n"
@@ -974,7 +1048,7 @@ def test_TimeSeriesFold_split_refit_no_fixed_no_gap_no_remainder_differentiation
         "    Number of folds: 3\n"
         "    Number skipped folds: 0 \n"
         "    Number of steps per fold: 10\n"
-        "    Number of steps to exclude from the end of each train set before test (gap): 0\n\n"
+        "    Number of steps to exclude between last observed data (last window) and predictions (gap): 0\n\n"
         "Fold: 0\n"
         "    Training:   2022-01-02 00:00:00 -- 2022-03-11 00:00:00  (n=69)\n"
         "    Validation: 2022-03-12 00:00:00 -- 2022-03-21 00:00:00  (n=10)\n"
@@ -1031,7 +1105,7 @@ def test_TimeSeriesFold_split_refit_fixed_no_gap_no_remainder_skip_folds_3(capfd
         "    Number of folds: 8\n"
         "    Number skipped folds: 5 [1, 2, 4, 5, 7]\n"
         "    Number of steps per fold: 10\n"
-        "    Number of steps to exclude from the end of each train set before test (gap): 0\n\n"
+        "    Number of steps to exclude between last observed data (last window) and predictions (gap): 0\n\n"
         "Fold: 0\n"
         "    Training:   2022-01-01 00:00:00 -- 2022-03-11 00:00:00  (n=70)\n"
         "    Validation: 2022-03-12 00:00:00 -- 2022-03-21 00:00:00  (n=10)\n"
@@ -1057,13 +1131,84 @@ def test_TimeSeriesFold_split_refit_fixed_no_gap_no_remainder_skip_folds_3(capfd
     assert folds == expected
 
 
-def test_timeseriesfold_split_raise_error_when_X_is_not_series_dataframe_or_dict():
+@pytest.mark.parametrize("window_size",
+                         [3, None], 
+                         ids = lambda ws: f'window_size: {ws}')
+def test_TimeSeriesFold_split_as_pandas_return_all_indexes_True(window_size):
     """
-    Test that ValueError is raised when X is not a pd.Series, pd.DataFrame or dict.
+    Test TimeSeriesFold split method output when as_pandas=True and return_all_indexes=True.
     """
-    X = np.arange(100)
-    cv = TimeSeriesFold(steps=10, initial_train_size=70)
-    msg = (
-        f"X must be a pandas Series, DataFrame, Index or a dictionary. Got {type(X)}.")
-    with pytest.raises(TypeError, match=msg):
-        cv.split(X=X)
+    y = pd.Series(np.arange(100))
+    y.index = pd.date_range(start='2022-01-01', periods=100, freq='D')
+    cv = TimeSeriesFold(
+            steps                 = 10,
+            initial_train_size    = 70,
+            window_size           = window_size,
+            differentiation       = None,
+            refit                 = False,
+            fixed_train_size      = False,
+            gap                   = 0,
+            skip_folds            = None,
+            allow_incomplete_fold = True,
+            verbose               = False,
+            return_all_indexes    = True,
+        )
+    folds = cv.split(X=y, as_pandas=True)
+
+    expected = pd.DataFrame(
+        {'fold': [0, 1, 2],
+         'train_index': [range(0, 70), range(0, 70), range(0, 70)],
+         'last_window_index': [range(67, 70), range(77, 80), range(87, 90)],
+         'test_index': [range(70, 80), range(80, 90), range(90, 100)],
+         'test_index_with_gap': [range(70, 80), range(80, 90), range(90, 100)],
+         'fit_forecaster': [True, False, False]}
+    )
+
+    if window_size is None:
+        expected['last_window_index'] = [[None, None], [None, None], [None, None]]
+    
+    pd.testing.assert_frame_equal(folds, expected)
+
+
+@pytest.mark.parametrize("window_size",
+                         [3, None], 
+                         ids = lambda ws: f'window_size: {ws}')
+def test_TimeSeriesFold_split_as_pandas_return_all_indexes_False(window_size):
+    """
+    Test TimeSeriesFold split method output when as_pandas=True and return_all_indexes=False.
+    """
+    y = pd.Series(np.arange(100))
+    y.index = pd.date_range(start='2022-01-01', periods=100, freq='D')
+    cv = TimeSeriesFold(
+            steps                 = 10,
+            initial_train_size    = 70,
+            window_size           = window_size,
+            differentiation       = None,
+            refit                 = False,
+            fixed_train_size      = False,
+            gap                   = 0,
+            skip_folds            = None,
+            allow_incomplete_fold = True,
+            verbose               = False,
+            return_all_indexes    = False
+        )
+    folds = cv.split(X=y, as_pandas=True)
+
+    expected = pd.DataFrame(
+        {'fold': [0, 1, 2],
+         'train_start': [0, 0, 0],
+         'train_end': [70, 70, 70],
+         'last_window_start': [67, 77, 87],
+         'last_window_end': [70, 80, 90],
+         'test_start': [70, 80, 90],
+         'test_end': [80, 90, 100],
+         'test_start_with_gap': [70, 80, 90],
+         'test_end_with_gap': [80, 90, 100],
+         'fit_forecaster': [True, False, False]}
+    )
+
+    if window_size is None:
+        expected['last_window_start'] = [None, None, None]
+        expected['last_window_end'] = [None, None, None]
+    
+    pd.testing.assert_frame_equal(folds, expected)

@@ -674,14 +674,21 @@ class ForecasterDirect(ForecasterBase):
         if exog is not None:
             check_exog(exog=exog, allow_nan=True)
             exog = input_to_frame(data=exog, input_name='exog')
-            # TODO: Check if this check can be checked vs y_train. As happened
-            # in base on data (more data from y than exog, but can be aligned
-            # because of the window_size.
-            if len(exog) != len(y):
+
+            y_index_no_ws = y_index[self.window_size:]
+            len_y = len(y_values)
+            len_y_no_ws = len_y - self.window_size
+            len_exog = len(exog)
+            if not len_exog == len_y and not len_exog == len_y_no_ws:
                 raise ValueError(
-                    (f"`exog` must have same number of samples as `y`. "
-                     f"length `exog`: ({len(exog)}), length `y`: ({len(y)})")
+                    f"Length of `exog` must be equal to the length of `y` (if index is "
+                    f"fully aligned) or length of `y` - `window_size` (if `exog` "
+                    f"starts after the first `window_size` values).\n"
+                    f"    `exog`              : ({exog.index[0]} -- {exog.index[-1]})  (n={len_exog})\n"
+                    f"    `y`                 : ({y.index[0]} -- {y.index[-1]})  (n={len_y})\n"
+                    f"    `y` - `window_size` : ({y_index_no_ws[0]} -- {y_index_no_ws[-1]})  (n={len_y_no_ws})"
                 )
+            
             # NOTE: Need here for filter_train_X_y_for_step to work without fitting
             self.exog_in_ = True
             exog_names_in_ = exog.columns.to_list()
@@ -700,12 +707,25 @@ class ForecasterDirect(ForecasterBase):
             )
 
             _, exog_index = preprocess_exog(exog=exog, return_values=False)
-            if not (exog_index[:len(y_index)] == y_index).all():
-                raise ValueError(
-                    ("Different index for `y` and `exog`. They must be equal "
-                     "to ensure the correct alignment of values.")
-                )
-            
+            if len_exog == len_y:
+                if not (exog_index == y_index).all():
+                    raise ValueError(
+                        "When `exog` has the same length as `y`, the index of "
+                        "`exog` must be aligned with the index of `y` "
+                        "to ensure the correct alignment of values."
+                    )
+                # The first `self.window_size` positions have to be removed from 
+                # exog since they are not in X_train.
+                exog = exog.iloc[self.window_size:, ]
+            else:
+                if not (exog_index == y_index_no_ws).all():
+                    raise ValueError(
+                        "When `exog` doesn't contain the first `window_size` observations, "
+                        "the index of `exog` must be aligned with the index of `y` minus "
+                        "the first `window_size` observations to ensure the correct "
+                        "alignment of values."
+                    )
+        
         X_train = []
         X_train_features_names_out_ = []
         train_index = y_index[self.window_size + (self.steps - 1):]
@@ -741,26 +761,22 @@ class ForecasterDirect(ForecasterBase):
 
         X_train_exog_names_out_ = None
         if exog is not None:
-            # The first `self.window_size` positions have to be removed from exog
-            # since they are not in X_train.
             X_train_exog_names_out_ = exog.columns.to_list()
             if X_as_pandas:
-                exog_to_train, X_train_direct_exog_names_out_ = exog_to_direct(
+                exog_direct, X_train_direct_exog_names_out_ = exog_to_direct(
                     exog=exog, steps=self.steps
                 )
-                exog_to_train = exog_to_train.iloc[-len_train_index:, :]
-                exog_to_train.index = train_index
+                exog_direct.index = train_index
             else:
-                exog_to_train, X_train_direct_exog_names_out_ = exog_to_direct_numpy(
+                exog_direct, X_train_direct_exog_names_out_ = exog_to_direct_numpy(
                     exog=exog, steps=self.steps
                 )
-                exog_to_train = exog_to_train[-len_train_index:, :]
 
             # NOTE: Need here for filter_train_X_y_for_step to work without fitting
             self.X_train_direct_exog_names_out_ = X_train_direct_exog_names_out_
 
             X_train_features_names_out_.extend(self.X_train_direct_exog_names_out_)
-            X_train.append(exog_to_train)
+            X_train.append(exog_direct)
         
         if len(X_train) == 1:
             X_train = X_train[0]
@@ -1365,6 +1381,16 @@ class ForecasterDirect(ForecasterBase):
                         columns = Xs_col_names, 
                         index   = prediction_index
                     )
+        
+        if self.transformer_y is not None or self.differentiation is not None:
+            warnings.warn(
+                "The output matrix is in the transformed scale due to the "
+                "inclusion of transformations or differentiation in the Forecaster. "
+                "As a result, any predictions generated using this matrix will also "
+                "be in the transformed scale. Please refer to the documentation "
+                "for more details: "
+                "https://skforecast.org/latest/user_guides/direct-multi-step-forecasting#extract-prediction-matrices"
+            )
 
         return X_predict
 

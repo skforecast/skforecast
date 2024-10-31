@@ -65,14 +65,17 @@ def test_set_lags_when_lags_argument_is_a_dict():
     assert forecaster.window_size == 5
 
 
-def test_set_lags_when_lags_argument_is_a_dict_with_None():
+@pytest.mark.parametrize("lags", 
+                         [{'l1': 3, 'l2': None}, {'l1': 3, 'l2': []}],
+                         ids = lambda lags: f'lags: {lags}')
+def test_set_lags_when_lags_argument_is_a_dict_with_None(lags):
     """
     Test how lags and max_lag attributes change when lags argument is a dict 
     containing None.
     """
     forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1', 
                                                lags=3, steps=2)
-    forecaster.set_lags(lags={'l1': 3, 'l2': None})
+    forecaster.set_lags(lags=lags)
     
     np.testing.assert_array_almost_equal(forecaster.lags['l1'], np.array([1, 2, 3]))
     assert forecaster.lags['l2'] is None
@@ -85,7 +88,8 @@ def test_set_lags_when_lags_argument_is_a_dict_with_None():
 @pytest.mark.parametrize("lags, max_lag",
                          [(3, 3), 
                           ({'l1': 3, 'l2': 4}, 4), 
-                          ({'l1': None, 'l2': 5}, 5)],
+                          ({'l1': None, 'l2': 5}, 5), 
+                          ({'l1': [], 'l2': 5}, 5)],
                          ids = lambda value: f'lags: {value}')
 def test_set_lags_max_lag_stored(lags, max_lag):
     """
@@ -140,7 +144,10 @@ def test_set_lags_when_window_features():
     assert forecaster.window_size == 6
 
 
-def test_set_lags_to_None():
+@pytest.mark.parametrize("lags", 
+                         [None, []],
+                         ids = lambda lags: f'lags: {lags}')
+def test_set_lags_to_None(lags):
     """
     Test how lags and max_lag attributes change when lags is set to None.
     """
@@ -149,10 +156,31 @@ def test_set_lags_to_None():
         LinearRegression(), level='l1', steps=3, lags=5, window_features=rolling
     )
     
-    forecaster.set_lags(lags=None)
+    forecaster.set_lags(lags=lags)
 
     assert forecaster.lags is None
     assert forecaster.lags_names is None
+    assert forecaster.max_lag is None
+    assert forecaster.max_size_window_features == 3
+    assert forecaster.window_size == 3
+
+
+@pytest.mark.parametrize("lags", 
+                         [{'l1': None, 'l2': None}, {'l1': [], 'l2': []}],
+                         ids = lambda lags: f'lags: {lags}')
+def test_set_lags_to_None_dict(lags):
+    """
+    Test how lags and max_lag attributes change when lags is set to None with a dict.
+    """
+    rolling = RollingFeatures(stats='mean', window_sizes=3)
+    forecaster = ForecasterDirectMultiVariate(
+        LinearRegression(), level='l1', steps=3, lags=5, window_features=rolling
+    )
+    
+    forecaster.set_lags(lags=lags)
+
+    assert forecaster.lags == {'l1': None, 'l2': None}
+    assert forecaster.lags_names == {'l1': None, 'l2': None}
     assert forecaster.max_lag is None
     assert forecaster.max_size_window_features == 3
     assert forecaster.window_size == 3

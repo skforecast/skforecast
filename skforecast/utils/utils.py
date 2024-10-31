@@ -84,10 +84,10 @@ def initialize_lags(
             lags = np.array(lags)
         
         if isinstance(lags, np.ndarray):
+            if lags.size == 0:
+                return None, None, None
             if lags.ndim != 1:
                 raise ValueError("`lags` must be a 1-dimensional array.")
-            if lags.size == 0:
-                raise ValueError("Argument `lags` must contain at least one value.")
             if not np.issubdtype(lags.dtype, np.integer):
                 raise TypeError("All values in `lags` must be integers.")
             if np.any(lags < 1):
@@ -1331,8 +1331,8 @@ def input_to_frame(
 
     if isinstance(data, pd.Series):
         data = data.to_frame(
-                   name=data.name if data.name is not None else output_col_name[input_name]
-               )
+            name=data.name if data.name is not None else output_col_name[input_name]
+        )
 
     return data
 
@@ -1848,7 +1848,7 @@ def save_forecaster(
     forecaster : Forecaster
         Forecaster created with skforecast library.
     file_name : str
-        File name given to the object.
+        File name given to the object. The save extension will be .joblib.
     save_custom_functions : bool, default True
         If True, save custom functions used in the forecaster (weight_func) as 
         .py files. Custom functions need to be available in the environment 
@@ -1862,7 +1862,6 @@ def save_forecaster(
 
     """
     
-    # TODO: Ver con Ximo, esto si no tiene sufijo o no es .joblib lo cambia
     file_name = Path(file_name).with_suffix('.joblib')
 
     # Save forecaster

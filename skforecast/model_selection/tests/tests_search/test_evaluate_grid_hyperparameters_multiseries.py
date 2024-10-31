@@ -16,6 +16,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import ParameterGrid
 from skforecast.metrics import mean_absolute_scaled_error
 from skforecast.metrics import root_mean_squared_scaled_error
+from skforecast.preprocessing import RollingFeatures
 from skforecast.recursive import ForecasterRecursiveMultiSeries
 from skforecast.direct import ForecasterDirectMultiVariate
 from skforecast.model_selection._search import _evaluate_grid_hyperparameters_multiseries
@@ -32,6 +33,71 @@ tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)  # hide progress bar
 THIS_DIR = Path(__file__).parent.parent
 series_dict = joblib.load(THIS_DIR/'fixture_sample_multi_series.joblib')
 exog_dict = joblib.load(THIS_DIR/'fixture_sample_multi_series_exog.joblib')
+
+
+def test_TypeError_evaluate_grid_hyperparameters_multiseries_when_cv_not_valid():
+    """
+    Test TypeError is raised in _evaluate_grid_hyperparameters_multiseries when 
+    cv is not a valid splitter.
+    """
+    class DummyCV:
+        pass
+
+    cv = DummyCV()
+    forecaster = ForecasterRecursiveMultiSeries(
+                     regressor = Ridge(random_state=123),
+                     lags      = 3,
+                     encoding  = 'onehot'
+                 )
+
+    err_msg = re.escape(
+        f"`cv` must be an instance of `TimeSeriesFold` or `OneStepAheadFold`. "
+        f"Got {type(cv)}."
+    )
+    with pytest.raises(TypeError, match = err_msg):
+        _evaluate_grid_hyperparameters_multiseries(
+            forecaster         = forecaster,
+            series             = series,
+            cv                 = cv,
+            param_grid         = [{'alpha': 0.01}, {'alpha': 0.1}, {'alpha': 1}],
+            metric             = 'mean_absolute_error',
+            levels             = None,
+            lags_grid          = [2, 4],
+            return_best        = True,
+            verbose            = False
+        )
+
+
+def test_TypeError_evaluate_grid_hyperparameters_multiseries_when_forecaster_not_OneStepAhead():
+    """
+    Test TypeError is raised in _evaluate_grid_hyperparameters_multiseries when 
+    forecaster is not allowed to use OneStepAheadFold.
+    """
+    cv_one_step_ahead = OneStepAheadFold(
+            initial_train_size    = 100,
+            return_all_indexes    = False,
+        )
+    
+    class DummyForecaster:
+        pass
+    forecaster = DummyForecaster()
+
+    err_msg = re.escape(
+        f"Only forecasters of type ['ForecasterRecursiveMultiSeries', 'ForecasterDirectMultiVariate'] are allowed "
+        f"when using `cv` of type `OneStepAheadFold`. Got {type(forecaster).__name__}."
+    )
+    with pytest.raises(TypeError, match = err_msg):
+        _evaluate_grid_hyperparameters_multiseries(
+            forecaster         = forecaster,
+            series             = series,
+            cv                 = cv_one_step_ahead,
+            param_grid         = [{'alpha': 0.01}, {'alpha': 0.1}, {'alpha': 1}],
+            metric             = 'mean_absolute_error',
+            levels             = None,
+            lags_grid          = [2, 4],
+            return_best        = True,
+            verbose            = False
+        )
 
 
 def test_ValueError_evaluate_grid_hyperparameters_multiseries_when_return_best_and_len_series_exog_different():
@@ -214,6 +280,159 @@ def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterRecursiveMul
         },
         index=pd.Index([0, 1, 2, 3, 4, 5], dtype="int64"),
     )
+
+    pd.testing.assert_frame_equal(results, expected_results)
+
+
+def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterRecursiveMultiSeries_with_window_features():
+    """
+    Test output of _evaluate_grid_hyperparameters_multiseries in 
+    ForecasterRecursiveMultiSeries with window features 
+    (mocked done in Skforecast v0.14.0).
+    """
+    window_features = RollingFeatures(
+        stats=['mean', 'std', 'min', 'max', 'sum', 'median', 'ratio_min_max', 'coef_variation'],
+        window_sizes=3,
+    )
+    forecaster = ForecasterRecursiveMultiSeries(
+                     regressor          = Ridge(random_state=123),
+                     lags               = 2, 
+                     window_features    = window_features,
+                     encoding           = 'onehot',
+                     transformer_series = None
+                 )
+    cv = TimeSeriesFold(
+            initial_train_size = len(series) - 12,
+            steps              = 3,
+            gap                = 0,
+            refit              = False,
+            fixed_train_size   = False,
+         )
+    lags_grid = [2, 4]
+    param_grid = [{'alpha': 0.01}, {'alpha': 0.1}, {'alpha': 1}]
+
+    results = _evaluate_grid_hyperparameters_multiseries(
+                  forecaster         = forecaster,
+                  series             = series,
+                  param_grid         = param_grid,
+                  cv                 = cv,
+                  metric             = 'mean_absolute_error',
+                  aggregate_metric   = 'weighted_average',
+                  levels             = None,
+                  exog               = None,
+                  lags_grid          = lags_grid,
+                  return_best        = False,
+                  verbose            = False
+              )
+
+    expected_results = pd.DataFrame(
+        {'levels': [['l1', 'l2'],
+                    ['l1', 'l2'],
+                    ['l1', 'l2'],
+                    ['l1', 'l2'],
+                    ['l1', 'l2'],
+                    ['l1', 'l2']],
+         'lags': [np.array([1, 2, 3, 4]),
+                    np.array([1, 2, 3, 4]),
+                    np.array([1, 2]),
+                    np.array([1, 2]),
+                    np.array([1, 2, 3, 4]),
+                    np.array([1, 2])],
+         'lags_label': [np.array([1, 2, 3, 4]),
+                    np.array([1, 2, 3, 4]),
+                    np.array([1, 2]),
+                    np.array([1, 2]),
+                    np.array([1, 2, 3, 4]),
+                    np.array([1, 2])],
+         'params': [{'alpha': 1},
+                    {'alpha': 0.1},
+                    {'alpha': 1},
+                    {'alpha': 0.1},
+                    {'alpha': 0.01},
+                    {'alpha': 0.01}],
+         'mean_absolute_error__weighted_average': [0.2146029752649913,
+                    0.2155171009179464,
+                    0.21574815856300625,
+                    0.21677673611895729,
+                    0.22004258621311923,
+                    0.22107598684517502],
+         'alpha': [1.0, 0.1, 1.0, 0.1, 0.01, 0.01]}
+    )
+
+    pd.testing.assert_frame_equal(results, expected_results)
+
+
+def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterRecursiveMultiSeries_series_and_exog_dict_with_window_features():
+    """
+    Test output of _evaluate_grid_hyperparameters_multiseries in 
+    ForecasterRecursiveMultiSeries when series and exog are dicts with window features 
+    (mocked done in Skforecast v0.14.0).
+    """
+    window_features = RollingFeatures(
+        stats=['mean', 'std', 'min', 'max', 'sum', 'median', 'ratio_min_max', 'coef_variation'],
+        window_sizes=3,
+    )
+    regressor = LGBMRegressor(
+        n_estimators=10, random_state=123, verbose=-1, max_depth=3
+    )
+    forecaster = ForecasterRecursiveMultiSeries(
+                     regressor          = regressor,
+                     lags               = 2, 
+                     window_features    = window_features,
+                     encoding           = 'onehot',
+                     transformer_series = None
+                 )
+    cv = TimeSeriesFold(
+            initial_train_size = len(series) - 12,
+            steps              = 3,
+            gap                = 0,
+            refit              = False,
+            fixed_train_size   = False,
+         )
+    lags_grid = [2, 4]
+    param_grid = [
+        {'n_estimators': 15, 'max_depth': 5},
+        {'n_estimators': 10, 'max_depth': 3}
+    ]
+
+    results = _evaluate_grid_hyperparameters_multiseries(
+                  forecaster         = forecaster,
+                  series             = series_dict,
+                  exog               = exog_dict,
+                  param_grid         = param_grid,
+                  cv                 = cv,
+                  metric             = 'mean_absolute_error',
+                  aggregate_metric   = 'weighted_average',
+                  levels             = None,
+                  lags_grid          = lags_grid,
+                  return_best        = False,
+                  verbose            = False
+              )
+
+    expected_results = pd.DataFrame({
+        'levels': [['id_1000', 'id_1001', 'id_1002', 'id_1003', 'id_1004'],
+                   ['id_1000', 'id_1001', 'id_1002', 'id_1003', 'id_1004'],
+                   ['id_1000', 'id_1001', 'id_1002', 'id_1003', 'id_1004'],
+                   ['id_1000', 'id_1001', 'id_1002', 'id_1003', 'id_1004']],
+        'lags': [np.array([1, 2, 3, 4]),
+                 np.array([1, 2]),
+                 np.array([1, 2, 3, 4]),
+                 np.array([1, 2])],
+        'lags_label': [np.array([1, 2, 3, 4]),
+                       np.array([1, 2]),
+                       np.array([1, 2, 3, 4]),
+                       np.array([1, 2])],
+        'params': [{'n_estimators': 15, 'max_depth': 5},
+                   {'n_estimators': 15, 'max_depth': 5},
+                   {'n_estimators': 10, 'max_depth': 3},
+                   {'n_estimators': 10, 'max_depth': 3}],
+        'mean_absolute_error__weighted_average': [663.557949349482,
+                                                  673.8431369197542,
+                                                  761.8926543280367,
+                                                  775.090407239743],
+        'n_estimators': [15, 15, 10, 10],
+        'max_depth': [5, 5, 3, 3]
+    })
 
     pd.testing.assert_frame_equal(results, expected_results)
 
@@ -1408,11 +1627,15 @@ def test_evaluate_grid_hyperparameters_equivalent_outputs_backtesting_and_one_st
     param_grid = list(ParameterGrid(param_grid))
 
     cv_backtesting = TimeSeriesFold(
-            initial_train_size = 213,
-            steps              = 1,
-            refit              = False,
-            fixed_train_size   = False,
-         )
+        initial_train_size = 213,
+        steps              = 1,
+        refit              = False,
+        fixed_train_size   = False,
+    )
+    cv_one_step_ahead = OneStepAheadFold(
+        initial_train_size = 213,
+    )
+    
     results_backtesting = _evaluate_grid_hyperparameters_multiseries(
         forecaster         = forecaster,
         series             = series_dict,
@@ -1425,20 +1648,25 @@ def test_evaluate_grid_hyperparameters_equivalent_outputs_backtesting_and_one_st
         return_best        = False,
         n_jobs             = 'auto',
     )
-    cv_one_step_ahead = OneStepAheadFold(
-            initial_train_size = 213,
-         )
-    results_one_step_ahead = _evaluate_grid_hyperparameters_multiseries(
-        forecaster         = forecaster,
-        series             = series_dict,
-        exog               = exog_dict,
-        cv                 = cv_one_step_ahead,
-        param_grid         = param_grid,
-        lags_grid          = lags_grid,
-        metric             = metrics,
-        aggregate_metric   = ["average", "weighted_average", "pooling"],
-        return_best        = False,
-        n_jobs             = 'auto',
+
+    warn_msg = re.escape(
+        "One-step-ahead predictions are used for faster model comparison, but they "
+        "may not fully represent multi-step prediction performance. It is recommended "
+        "to backtest the final model for a more accurate multi-step performance "
+        "estimate."
     )
+    with pytest.warns(UserWarning, match = warn_msg):
+        results_one_step_ahead = _evaluate_grid_hyperparameters_multiseries(
+            forecaster         = forecaster,
+            series             = series_dict,
+            exog               = exog_dict,
+            cv                 = cv_one_step_ahead,
+            param_grid         = param_grid,
+            lags_grid          = lags_grid,
+            metric             = metrics,
+            aggregate_metric   = ["average", "weighted_average", "pooling"],
+            return_best        = False,
+            n_jobs             = 'auto',
+        )
 
     pd.testing.assert_frame_equal(results_backtesting, results_one_step_ahead)

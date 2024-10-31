@@ -30,7 +30,7 @@ def custom_weights2(y):  # pragma: no cover
     return np.arange(1, len(y) + 1)
 
 
-class UserWindowFeature:
+class UserWindowFeature:  # pragma: no cover
     def __init__(self, window_sizes, features_names):
         self.window_sizes = window_sizes
         self.features_names = features_names
@@ -46,7 +46,9 @@ def test_save_and_load_forecaster_persistence():
     """ 
     Test if a loaded forecaster is exactly the same as the original one.
     """
-    forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3, transformer_y=StandardScaler())
+    forecaster = ForecasterRecursive(
+        regressor=LinearRegression(), lags=3, transformer_y=StandardScaler()
+    )
     rng = np.random.default_rng(12345)
     y = pd.Series(rng.normal(size=100))
     forecaster.fit(y=y)

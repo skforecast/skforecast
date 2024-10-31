@@ -522,7 +522,17 @@ def test_create_predict_X_same_predictions_as_predict_transformers():
                      differentiation    = None
                  )
     forecaster.fit(series=series.loc[:end_train], exog=exog.loc[:end_train])
-    X_predict = forecaster.create_predict_X(exog=exog.loc[end_train:])
+
+    warn_msg = re.escape(
+        "The output matrix is in the transformed scale due to the "
+        "inclusion of transformations or differentiation in the Forecaster. "
+        "As a result, any predictions generated using this matrix will also "
+        "be in the transformed scale. Please refer to the documentation "
+        "for more details: "
+        "https://skforecast.org/latest/user_guides/dependent-multi-series-multivariate-forecasting#extract-prediction-matrices"
+    )
+    with pytest.warns(UserWarning, match = warn_msg):
+        X_predict = forecaster.create_predict_X(exog=exog.loc[end_train:])
 
     for i, step in enumerate(range(1, forecaster.steps + 1)):
         results = forecaster.regressors_[step].predict(X_predict.iloc[[i]])
@@ -569,7 +579,17 @@ def test_create_predict_X_same_predictions_as_predict_transformers_diff():
                      differentiation    = 1
                  )
     forecaster.fit(series=series.loc[:end_train], exog=exog.loc[:end_train])
-    X_predict = forecaster.create_predict_X(exog=exog.loc[end_train:])
+
+    warn_msg = re.escape(
+        "The output matrix is in the transformed scale due to the "
+        "inclusion of transformations or differentiation in the Forecaster. "
+        "As a result, any predictions generated using this matrix will also "
+        "be in the transformed scale. Please refer to the documentation "
+        "for more details: "
+        "https://skforecast.org/latest/user_guides/dependent-multi-series-multivariate-forecasting#extract-prediction-matrices"
+    )
+    with pytest.warns(UserWarning, match = warn_msg):
+        X_predict = forecaster.create_predict_X(exog=exog.loc[end_train:])
 
     for i, step in enumerate(range(1, forecaster.steps + 1)):
         results = forecaster.regressors_[step].predict(X_predict.iloc[[i]])

@@ -2025,12 +2025,14 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         for i, level in enumerate(levels):
             
             X_predict_level = []
-            full_predictors = np.concatenate(
+            full_predictors_level = np.concatenate(
                 (last_window[level].to_numpy(), predictions[:, i])
             )
 
             if self.lags is not None:
-                X_predict_level.append(full_predictors[idx_lags + len(full_predictors)])
+                X_predict_level.append(
+                    full_predictors_level[idx_lags + len(full_predictors_level)]
+                )
 
             if self.window_features is not None:
                 X_window_features = np.full(
@@ -2039,10 +2041,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     order      = 'C',
                     dtype      = float
                 )
-                for i in range(steps):
-                    X_window_features[i, :] = np.concatenate(
-                        [wf.transform(full_predictors[i:-(steps - i)]) 
-                         for wf in self.window_features]
+                for j in range(steps):
+                    X_window_features[j, :] = np.concatenate(
+                        [
+                            wf.transform(full_predictors_level[j:-(steps - j)]) 
+                            for wf in self.window_features
+                        ]
                     )
                 X_predict_level.append(X_window_features)
 
@@ -2075,6 +2079,16 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                         columns = self.X_train_features_names_out_,
                                         index   = prediction_index
                                     )
+        
+        if self.transformer_series is not None or self.differentiation is not None:
+            warnings.warn(
+                "The output matrix is in the transformed scale due to the "
+                "inclusion of transformations or differentiation in the Forecaster. "
+                "As a result, any predictions generated using this matrix will also "
+                "be in the transformed scale. Please refer to the documentation "
+                "for more details: "
+                "https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting#extract-prediction-matrices"
+            )
         
         set_skforecast_warnings(suppress_warnings, action='default')
 

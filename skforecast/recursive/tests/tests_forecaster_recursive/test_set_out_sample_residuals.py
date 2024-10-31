@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from skforecast.recursive import ForecasterRecursive
 from sklearn.linear_model import LinearRegression
+from sklearn.exceptions import NotFittedError
 from sklearn.preprocessing import StandardScaler
 
 # Fixtures
@@ -17,11 +18,28 @@ else:
     freq = "h"
 
 
+def test_set_out_sample_residuals_NotFittedError_when_forecaster_not_fitted():
+    """
+    Test NotFittedError is raised when forecaster is not fitted.
+    """
+    forecaster = ForecasterRecursive(LinearRegression(), lags=3)
+    y_true = {1: np.array([1, 2, 3, 4, 5]), 2: np.array([1, 2, 3, 4, 5])}
+    y_pred = {1: np.array([1, 2, 3, 4, 5]), 2: np.array([1, 2, 3, 4, 5])}
+
+    err_msg = re.escape(
+        "This forecaster is not fitted yet. Call `fit` with appropriate "
+        "arguments before using `set_out_sample_residuals()`."
+    )
+    with pytest.raises(NotFittedError, match = err_msg):
+        forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
+
+
 def test_set_out_sample_residuals_TypeError_when_y_true_is_not_numpy_array_or_pandas_series():
     """
     Test TypeError is raised when y_true argument is not numpy ndarray or pandas Series.
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
+    forecaster.fit(y)
     y_true = 'invalid'
     y_pred = np.array([1, 2, 3])
 
@@ -38,6 +56,7 @@ def test_set_out_sample_residuals_TypeError_when_y_pred_is_not_numpy_array_or_pa
     Test TypeError is raised when y_pred argument is not numpy ndarray or pandas Series.
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
+    forecaster.fit(y)
     y_true = np.array([1, 2, 3])
     y_pred = 'invalid'
 
@@ -54,6 +73,7 @@ def test_set_out_sample_residuals_ValueError_when_y_true_and_y_pred_have_differe
     Test ValueError is raised when y_true and y_pred have different length.
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
+    forecaster.fit(y)
     y_true = np.array([1, 2, 3])
     y_pred = np.array([1, 2, 3, 4])
 
@@ -70,6 +90,7 @@ def test_set_out_sample_residuals_ValueError_when_y_true_and_y_pred_have_differe
     Test ValueError is raised when residuals and y_pred have different index.
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
+    forecaster.fit(y)
     y_true = pd.Series([1, 2, 3], index=[1, 2, 3])
     y_pred = pd.Series([1, 2, 3], index=[1, 2, 4])
 

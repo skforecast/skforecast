@@ -3,6 +3,7 @@
 import re
 import pytest
 import numpy as np
+from sklearn.exceptions import NotFittedError
 from sklearn.preprocessing import KBinsDiscretizer
 from ...preprocessing import QuantileBinner
 
@@ -27,16 +28,16 @@ def test_QuantileBinner_validate_params():
         QuantileBinner(**params[0])
 
     valid_methods = [
-            "inverse_cdf",
-            "averaged_inverse_cdf",
-            "closest_observation",
-            "interpolated_inverse_cdf",
-            "hazen",
-            "weibull",
-            "linear",
-            "median_unbiased",
-            "normal_unbiased",
-        ]
+        "inverse_cdf",
+        "averaged_inverse_cdf",
+        "closest_observation",
+        "interpolated_inverse_cdf",
+        "hazen",
+        "weibull",
+        "linear",
+        "median_unbiased",
+        "normal_unbiased",
+    ]
     err_msg = re.escape(
         f"`method` must be one of {valid_methods}. Got {params[1]['method']}."
     )
@@ -62,6 +63,110 @@ def test_QuantileBinner_validate_params():
     )
     with pytest.raises(ValueError, match = err_msg):
         QuantileBinner(**params[4])
+
+
+def test_QuantileBinner_fit_ValueError_when_input_data_is_empty():
+    """
+    Test ValueError is raised when input data is empty during fit.
+    """
+    
+    X = np.array([])
+    binner = QuantileBinner(
+        n_bins=10,
+        method='linear',
+        dtype=np.float64,
+        random_state=789654,
+    )
+    
+    err_msg = re.escape("Input data `X` cannot be empty.")
+    with pytest.raises(ValueError, match = err_msg):
+        binner.fit(X)
+
+
+def test_QuantileBinner_transform_NotFittedError():
+    """
+    Test NotFittedError is raised when transform is used before fitting.
+    """
+    
+    X = np.array([])
+    binner = QuantileBinner(
+        n_bins=10,
+        method='linear',
+        dtype=np.float64,
+        random_state=789654,
+    )
+    
+    err_msg = re.escape(
+        "The model has not been fitted yet. Call 'fit' with training data first."
+    )
+    with pytest.raises(NotFittedError, match = err_msg):
+        binner.transform(X)
+
+
+def test_QuantileBinner_set_params():
+    """
+    Test set_params method.
+    """
+        
+    binner = QuantileBinner(
+        n_bins=10,
+        method='linear',
+        dtype=np.float64,
+        random_state=789654,
+    )
+    
+    params = {
+        'n_bins': 5,
+        'method': 'inverse_cdf',
+        'dtype': np.float32,
+        'random_state': 123456,
+    }
+    
+    binner.set_params(**params)
+    
+    assert binner.n_bins == params['n_bins']
+    assert binner.method == params['method']
+    assert binner.dtype == params['dtype']
+    assert binner.random_state == params['random_state']
+
+
+def test_QuantileBinner_fit_with_subsample():
+    """
+    Test QuantileBinner fit method with subsample.
+    """
+    
+    X = np.arange(1000)
+    binner = QuantileBinner(
+        n_bins=10,
+        method='linear',
+        subsample=10,
+        dtype=np.float64,
+        random_state=789654,
+    )
+    
+    binner.fit(X.reshape(-1, 1))
+
+    expected_bin_edges_ = np.array(
+        [21., 159.6, 283.8, 388.7, 429.8, 578., 725., 731.6, 734.2,
+         739.4, 743.]
+    )
+    expected_n_bins_ = 10
+    expected_intervals_ = {
+        0.0: (21.0, 159.6),
+        1.0: (159.6, 283.8),
+        2.0: (283.8, 388.7),
+        3.0: (388.7, 429.8),
+        4.0: (429.8, 578.0),
+        5.0: (578.0, 725.0),
+        6.0: (725.0, 731.6),
+        7.0: (731.6, 734.2),
+        8.0: (734.2, 739.4),
+        9.0: (739.4, 743.0)
+    }
+
+    np.testing.assert_array_almost_equal(binner.bin_edges_, expected_bin_edges_)
+    assert binner.n_bins_ == expected_n_bins_
+    assert binner.intervals_ == expected_intervals_
 
 
 def test_QuantileBinner_is_equivalent_to_KBinsDiscretizer():

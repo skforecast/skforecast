@@ -15,7 +15,8 @@ from skforecast.recursive import ForecasterRecursiveMultiSeries
 from skforecast.direct import ForecasterDirectMultiVariate
 from skforecast.model_selection import backtesting_forecaster_multiseries
 from skforecast.model_selection._search import _bayesian_search_optuna_multiseries
-from skforecast.model_selection._split import TimeSeriesFold
+from skforecast.model_selection._split import TimeSeriesFold, OneStepAheadFold
+from skforecast.preprocessing import RollingFeatures
 import optuna
 from optuna.samplers import TPESampler
 from tqdm import tqdm
@@ -26,6 +27,90 @@ from ..fixtures_model_selection_multiseries import series
 
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)  # hide progress bar
+
+
+def test_TypeError_bayesian_search_optuna_multiseries_when_cv_not_valid():
+    """
+    Test TypeError is raised in _bayesian_search_optuna_multiseries when cv is not
+    a valid splitter.
+    """
+    class DummyCV:
+        pass
+
+    cv = DummyCV()
+    forecaster = ForecasterRecursiveMultiSeries(
+                     regressor = Ridge(random_state=123),
+                     lags      = 2,
+                     encoding  = 'onehot'
+                 )
+    
+    def search_space(trial):  # pragma: no cover
+        search_space  = {
+            'alpha': trial.suggest_float('not_alpha', 1e-2, 1.0),
+            'lags': trial.suggest_categorical('lags', [2, 4])
+        }
+
+        return search_space
+    
+    err_msg = re.escape(
+        f"`cv` must be an instance of `TimeSeriesFold` or `OneStepAheadFold`. "
+        f"Got {type(cv)}."
+    )
+    with pytest.raises(TypeError, match = err_msg):
+        _bayesian_search_optuna_multiseries(
+            forecaster         = forecaster,
+            series             = series,
+            search_space       = search_space,
+            cv                 = cv,
+            metric             = 'mean_absolute_error',
+            aggregate_metric   = 'not_valid',
+            n_trials           = 10,
+            random_state       = 123,
+            return_best        = False,
+            verbose            = False,
+        )
+
+
+def test_TypeError_bayesian_search_optuna_multiseries_when_forecaster_not_OneStepAhead():
+    """
+    Test TypeError is raised in _bayesian_search_optuna_multiseries when forecaster is not
+    allowed to use OneStepAheadFold.
+    """
+
+    cv = OneStepAheadFold(
+             initial_train_size    = 100,
+             return_all_indexes    = False,
+         )
+    
+    class DummyForecaster:
+        pass
+    forecaster = DummyForecaster()
+    
+    def search_space(trial):  # pragma: no cover
+        search_space  = {
+            'alpha': trial.suggest_float('not_alpha', 1e-2, 1.0),
+            'lags': trial.suggest_categorical('lags', [2, 4])
+        }
+
+        return search_space
+    
+    err_msg = re.escape(
+        f"Only forecasters of type ['ForecasterRecursiveMultiSeries', 'ForecasterDirectMultiVariate'] are allowed "
+        f"when using `cv` of type `OneStepAheadFold`. Got {type(forecaster).__name__}."
+    )
+    with pytest.raises(TypeError, match = err_msg):
+        _bayesian_search_optuna_multiseries(
+            forecaster         = forecaster,
+            series             = series,
+            search_space       = search_space,
+            cv                 = cv,
+            metric             = 'mean_absolute_error',
+            aggregate_metric   = 'not_valid',
+            n_trials           = 10,
+            random_state       = 123,
+            return_best        = False,
+            verbose            = False,
+        )
 
 
 def test_ValueError_bayesian_search_optuna_multiseries_when_not_allowed_aggregate_metric():
@@ -477,6 +562,177 @@ def test_results_output_bayesian_search_optuna_multiseries_ForecasterRecursiveMu
             ],
         }
     )
+
+    pd.testing.assert_frame_equal(results, expected_results, check_dtype=False)
+
+
+def test_results_output_bayesian_search_optuna_multiseries_ForecasterRecursiveMultiSeries_window_features_multiple_metrics_aggregated():
+    """
+    Test output of _bayesian_search_optuna_multiseries in ForecasterRecursiveMultiSeries
+    with window features and multiple metrics and aggregated metrics
+    (mocked done in skforecast v0.12.0).
+    """
+    window_features = RollingFeatures(
+        stats=['mean', 'std', 'min', 'max', 'sum', 'median', 'ratio_min_max', 'coef_variation'],
+        window_sizes=3,
+    )
+    forecaster = ForecasterRecursiveMultiSeries(
+                     regressor = Ridge(random_state=123),
+                     lags      = 2,
+                     window_features = window_features,
+                     encoding  = 'onehot',
+                     transformer_series = StandardScaler()
+                 )
+    cv = TimeSeriesFold(
+            initial_train_size = len(series[:-12]),
+            steps              = 3,
+            refit              = True,
+            fixed_train_size   = True
+    )
+
+    def search_space(trial):
+        search_space  = {
+            'alpha': trial.suggest_float('alpha', 1e-2, 1.0),
+            'lags' : trial.suggest_categorical('lags', [2, 4])
+        }
+
+        return search_space
+
+    results = _bayesian_search_optuna_multiseries(
+                  forecaster         = forecaster,
+                  series             = series,
+                  search_space       = search_space,
+                  cv                 = cv,
+                  metric             = ['mean_absolute_error', 'mean_absolute_scaled_error'],
+                  aggregate_metric   = ['weighted_average', 'average', 'pooling'],
+                  n_trials           = 10,
+                  random_state       = 123,
+                  return_best        = False,
+                  verbose            = False
+              )[0]
+
+    expected_results = pd.DataFrame({
+        'levels': [
+            ['l1', 'l2'],
+            ['l1', 'l2'],
+            ['l1', 'l2'],
+            ['l1', 'l2'],
+            ['l1', 'l2'],
+            ['l1', 'l2'],
+            ['l1', 'l2'],
+            ['l1', 'l2'],
+            ['l1', 'l2'],
+            ['l1', 'l2'],
+        ],
+        'lags': [
+            np.array([1, 2]),
+            np.array([1, 2]),
+            np.array([1, 2, 3, 4]),
+            np.array([1, 2]),
+            np.array([1, 2]),
+            np.array([1, 2, 3, 4]),
+            np.array([1, 2]),
+            np.array([1, 2, 3, 4]),
+            np.array([1, 2, 3, 4]),
+            np.array([1, 2, 3, 4]),
+        ],
+        'params': [
+            {'alpha': 0.9809565564007693},
+            {'alpha': 0.8509374761370117},
+            {'alpha': 0.7252189487445193},
+            {'alpha': 0.7406154516747153},
+            {'alpha': 0.6995044937418831},
+            {'alpha': 0.53623586010342},
+            {'alpha': 0.5558016213920624},
+            {'alpha': 0.4441865222328282},
+            {'alpha': 0.398196343012209},
+            {'alpha': 0.23598059857016607},
+        ],
+        'mean_absolute_error__weighted_average': [
+            0.26620977459463796,
+            0.2663778037208765,
+            0.2664010145777917,
+            0.2665530523449524,
+            0.2666288782988022,
+            0.26683839212167015,
+            0.2669606099393226,
+            0.26716247569103446,
+            0.26737008166011794,
+            0.2685748853275215,
+        ],
+        'mean_absolute_error__average': [
+            0.26620977459463796,
+            0.26637780372087644,
+            0.2664010145777917,
+            0.2665530523449524,
+            0.2666288782988022,
+            0.26683839212167015,
+            0.2669606099393225,
+            0.26716247569103446,
+            0.26737008166011794,
+            0.26857488532752155,
+        ],
+        'mean_absolute_error__pooling': [
+            0.26620977459463796,
+            0.26637780372087644,
+            0.2664010145777917,
+            0.2665530523449524,
+            0.26662887829880216,
+            0.26683839212167015,
+            0.2669606099393225,
+            0.2671624756910345,
+            0.26737008166011794,
+            0.2685748853275215,
+        ],
+        'mean_absolute_scaled_error__weighted_average': [
+            0.9930667497722296,
+            0.9937439823757043,
+            0.9923479377236472,
+            0.9944435611595945,
+            0.994744372168292,
+            0.9941069879981377,
+            0.9960491623317846,
+            0.9953844945941341,
+            0.996195904784012,
+            1.0008499618646218,
+        ],
+        'mean_absolute_scaled_error__average': [
+            0.9930667497722298,
+            0.9937439823757043,
+            0.9923479377236472,
+            0.9944435611595946,
+            0.9947443721682919,
+            0.9941069879981376,
+            0.9960491623317846,
+            0.9953844945941341,
+            0.996195904784012,
+            1.000849961864622,
+        ],
+        'mean_absolute_scaled_error__pooling': [
+            0.969431956811412,
+            0.9700438532186673,
+            0.9626684384225735,
+            0.970682040215464,
+            0.9709581687044708,
+            0.9642489487589695,
+            0.9721662056891969,
+            0.9654200592524219,
+            0.9661702655321596,
+            0.9705239518983445,
+        ],
+        'alpha': [
+            0.9809565564007693,
+            0.8509374761370117,
+            0.7252189487445193,
+            0.7406154516747153,
+            0.6995044937418831,
+            0.53623586010342,
+            0.5558016213920624,
+            0.4441865222328282,
+            0.398196343012209,
+            0.23598059857016607,
+        ],
+    })
 
     pd.testing.assert_frame_equal(results, expected_results, check_dtype=False)
 

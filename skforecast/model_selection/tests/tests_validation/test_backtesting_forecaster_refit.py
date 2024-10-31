@@ -11,6 +11,7 @@ from skforecast.recursive import ForecasterRecursive
 from skforecast.direct import ForecasterDirect
 from skforecast.model_selection._split import TimeSeriesFold
 from skforecast.model_selection._validation import _backtesting_forecaster
+from skforecast.preprocessing import RollingFeatures
 
 # Fixtures
 from skforecast.exceptions import IgnoredArgumentWarning
@@ -220,6 +221,120 @@ def test_output_backtesting_forecaster_yes_exog_no_remainder_with_mocked():
         index=pd.RangeIndex(start=38, stop=50, step=1),
     )
     forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
+
+    n_backtest = 12
+    y_train = y[:-n_backtest]
+    cv = TimeSeriesFold(
+            steps                 = 4,
+            initial_train_size    = len(y_train),
+            window_size           = None,
+            differentiation       = None,
+            refit                 = True,
+            fixed_train_size      = False,
+            gap                   = 0,
+            skip_folds            = None,
+            allow_incomplete_fold = True,
+            return_all_indexes    = False,
+        )
+    metric, backtest_predictions = _backtesting_forecaster(
+                                        forecaster = forecaster,
+                                        y          = y,
+                                        exog       = exog,
+                                        cv         = cv,
+                                        metric     = 'mean_squared_error',
+                                        verbose    = False
+                                   )
+
+    pd.testing.assert_frame_equal(expected_metric, metric)
+    pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+
+
+def test_output_backtesting_forecaster_ForecasterRecursive_window_features_with_mocked():
+    """
+    Test output of _backtesting_forecaster with backtesting mocked, interval no.
+    Regressor is LinearRegression with lags=3, Series y is mocked, exog is mocked, 
+    12 observations to backtest, steps=4 (no remainder), metric='mean_squared_error'
+    and window features.
+    """
+
+    expected_metric = pd.DataFrame({"mean_squared_error": [0.1132386]})
+    expected_predictions = pd.DataFrame(
+        {
+            "pred": np.array(
+                [
+                    0.37189345, 0.24877906, 0.33164618, 0.49643827, 0.40030688,
+                    0.42947433, 0.4592766 , 0.55463757, 0.30374867, 0.32671601,
+                    0.56153282, 0.55311912
+                ]
+            )
+        },
+        index=pd.RangeIndex(start=38, stop=50, step=1),
+    )
+
+    window_features = RollingFeatures(
+        stats = ['mean', 'std', 'min', 'max', 'sum', 'median', 'ratio_min_max', 'coef_variation'],
+        window_sizes = 3,
+    )
+    forecaster = ForecasterRecursive(
+        regressor=LinearRegression(), lags=3, window_features=window_features
+    )
+
+    n_backtest = 12
+    y_train = y[:-n_backtest]
+    cv = TimeSeriesFold(
+            steps                 = 4,
+            initial_train_size    = len(y_train),
+            window_size           = None,
+            differentiation       = None,
+            refit                 = True,
+            fixed_train_size      = False,
+            gap                   = 0,
+            skip_folds            = None,
+            allow_incomplete_fold = True,
+            return_all_indexes    = False,
+        )
+    metric, backtest_predictions = _backtesting_forecaster(
+                                        forecaster = forecaster,
+                                        y          = y,
+                                        exog       = exog,
+                                        cv         = cv,
+                                        metric     = 'mean_squared_error',
+                                        verbose    = False
+                                   )
+
+    pd.testing.assert_frame_equal(expected_metric, metric)
+    pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+
+
+def test_output_backtesting_forecaster_ForecasterDirect_window_features_with_mocked():
+    """
+    Test output of _backtesting_forecaster with backtesting mocked, interval no.
+    Regressor is LinearRegression with lags=3, Series y is mocked, exog is mocked, 
+    12 observations to backtest, steps=4 (no remainder), metric='mean_squared_error'
+    and window features.
+    """
+
+    expected_metric = pd.DataFrame({"mean_squared_error": [0.11337407]})
+    expected_predictions = pd.DataFrame(
+        {
+            "pred": np.array(
+                [
+                    0.31478125, 0.45940314, 0.85744121, 0.67976412, 0.38085263,
+                    0.56357911, 0.35567212, 0.4493073 , 0.35493806, 0.53589892,
+                    0.73060039, 0.60025524
+                ]
+            )
+        },
+        index=pd.RangeIndex(start=38, stop=50, step=1),
+    )
+
+    window_features = RollingFeatures(
+        stats = ['mean', 'std', 'min', 'max', 'sum', 'median', 'ratio_min_max', 'coef_variation'],
+        window_sizes = 3,
+    )
+    forecaster = ForecasterDirect(
+        regressor=LinearRegression(), steps=4, lags=3, window_features=window_features
+    )
 
     n_backtest = 12
     y_train = y[:-n_backtest]

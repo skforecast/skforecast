@@ -168,6 +168,23 @@ def test_set_out_sample_residuals_ValueError_when_inputs_does_not_match_series_s
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
 
 
+@pytest.mark.parametrize("residuals", [[1, 2, 3], {'1': [1, 2, 3, 4]}], 
+                         ids=lambda residuals: f'residuals: {residuals}')
+def test_set_out_sample_residuals_TypeError_when_residuals_is_not_a_dict_of_numpy_ndarray(residuals):
+    """
+    Test TypeError is raised when residuals is not a dict of numpy ndarrays.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
+    forecaster.fit(series=series)
+    err_msg = re.escape(
+       (f"`residuals` argument must be a dict of numpy ndarrays in the form "
+        "`{level: residuals}`. " 
+        f"Got {type(residuals)}.")
+    )
+    with pytest.raises(TypeError, match = err_msg):
+        forecaster.set_out_sample_residuals(residuals=residuals)
+
+
 def test_set_out_sample_residuals_UnknownLevelWarning_when_residuals_levels_but_encoding_None():
     """
     Test UnknownLevelWarning is raised when residuals contains levels but encoding is None.

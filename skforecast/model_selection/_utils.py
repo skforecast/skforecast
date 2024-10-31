@@ -846,9 +846,9 @@ def _predict_and_calculate_metrics_multiseries_one_step_ahead(
     series: Union[pd.DataFrame, dict],
     X_train: pd.DataFrame,
     y_train: Union[pd.Series, dict],
-    X_train_encoding: pd.Series,
     X_test: pd.DataFrame,
     y_test: Union[pd.Series, dict],
+    X_train_encoding: pd.Series,
     X_test_encoding: pd.Series,
     levels: list,
     metrics: list,
@@ -857,8 +857,8 @@ def _predict_and_calculate_metrics_multiseries_one_step_ahead(
     """   
     One-step-ahead predictions and metrics for each level and also for all levels
     aggregated using average, weighted average or pooling.
-    Input matrices (X_train, y_train, X_test, y_test, X_train_encoding, y_test_encoding)
-    are should have been generated using the forecaster._train_test_split_one_step_ahead().
+    Input matrices (X_train, y_train, X_train_encoding, X_test, y_test, X_test_encoding)
+    should have been generated using the forecaster._train_test_split_one_step_ahead().
 
     - 'average': the average (arithmetic mean) of all levels.
     - 'weighted_average': the average of the metrics weighted by the number of
@@ -876,18 +876,18 @@ def _predict_and_calculate_metrics_multiseries_one_step_ahead(
         Training matrix.
     y_train : pandas Series, dict
         Target values of the training set.
-    X_train_encoding : pandas Series
-            Series identifiers for each row of `X_train`.
     X_test : pandas DataFrame
         Test matrix.
     y_test : pandas Series, dict
         Target values of the test set.
+    X_train_encoding : pandas Series
+        Series identifiers for each row of `X_train`.
     X_test_encoding : pandas Series
         Series identifiers for each row of `X_test`.
-    metrics : list
-        List of metrics to calculate.
     levels : list
         Levels to calculate the metrics.
+    metrics : list
+        List of metrics to calculate.
     add_aggregated_metric : bool, default `True`
         If `True`, and multiple series (`levels`) are predicted, the aggregated
         metrics (average, weighted average and pooled) are also returned.
@@ -902,44 +902,46 @@ def _predict_and_calculate_metrics_multiseries_one_step_ahead(
     -------
     metrics_levels : pandas DataFrame
         Value(s) of the metric(s).
-    backtest_predictions : pandas Dataframe
+    predictions : pandas DataFrame
         Value of predictions for each level.
     
     """
 
     if not isinstance(series, (pd.DataFrame, dict)):
         raise TypeError(
-            ("`series` must be a pandas DataFrame or a dictionary of pandas "
-             "DataFrames.")
+            "`series` must be a pandas DataFrame or a dictionary of pandas "
+            "DataFrames."
         )
     if not isinstance(X_train, pd.DataFrame):
         raise TypeError(f"`X_train` must be a pandas DataFrame. Got: {type(X_train)}")
     if not isinstance(y_train, (pd.Series, dict)):
         raise TypeError(
-            (f"`y_train` must be a pandas Series or a dictionary of pandas Series. "
-                f"Got: {type(y_train)}")
+            f"`y_train` must be a pandas Series or a dictionary of pandas Series. "
+            f"Got: {type(y_train)}"
         )        
-    if not isinstance(X_train_encoding, pd.Series):
-        raise TypeError(
-            (f"`X_train_encoding` must be a pandas Series. Got: {type(X_train_encoding)}")
-        )
     if not isinstance(X_test, pd.DataFrame):
         raise TypeError(f"`X_test` must be a pandas DataFrame. Got: {type(X_test)}")
     if not isinstance(y_test, (pd.Series, dict)):
         raise TypeError(
-            (f"`y_test` must be a pandas Series or a dictionary of pandas Series. "
-             f"Got: {type(y_test)}")
+            f"`y_test` must be a pandas Series or a dictionary of pandas Series. "
+            f"Got: {type(y_test)}"
+        )
+    if not isinstance(X_train_encoding, pd.Series):
+        raise TypeError(
+            f"`X_train_encoding` must be a pandas Series. Got: {type(X_train_encoding)}"
         )
     if not isinstance(X_test_encoding, pd.Series):
         raise TypeError(
-            (f"`y_test_encoding` must be a pandas Series. Got: {type(X_test_encoding)}")
+            f"`X_test_encoding` must be a pandas Series. Got: {type(X_test_encoding)}"
         )
-    if not isinstance(metrics, list):
-        raise TypeError("`metrics` must be a list.")
     if not isinstance(levels, list):
-        raise TypeError("`levels` must be a list.")
+        raise TypeError(f"`levels` must be a list. Got: {type(levels)}")
+    if not isinstance(metrics, list):
+        raise TypeError(f"`metrics` must be a list. Got: {type(metrics)}")
     if not isinstance(add_aggregated_metric, bool):
-        raise TypeError("`add_aggregated_metric` must be a boolean.")
+        raise TypeError(
+            f"`add_aggregated_metric` must be a boolean. Got: {type(add_aggregated_metric)}"
+        )
     
     metrics = [
         _get_metric(metric=m)
@@ -1003,7 +1005,7 @@ def _predict_and_calculate_metrics_multiseries_one_step_ahead(
             predictions_per_level[level]["y_true"] = differentiator.inverse_transform_next_window(
                 predictions_per_level[level]["y_true"].to_numpy()
             )
-            y_train_per_level[level]["y_true"] = differentiator.inverse_transform(
+            y_train_per_level[level]["y_train"] = differentiator.inverse_transform(
                 y_train_per_level[level]["y_train"].to_numpy()
             )[forecaster.differentiation:]
 
@@ -1025,8 +1027,8 @@ def _predict_and_calculate_metrics_multiseries_one_step_ahead(
         if level in predictions_per_level:
             metrics_level = [
                 m(
-                    y_true = predictions_per_level[level].loc[:, 'y_true'],
-                    y_pred = predictions_per_level[level].loc[:, 'y_pred'],
+                    y_true  = predictions_per_level[level].loc[:, 'y_true'],
+                    y_pred  = predictions_per_level[level].loc[:, 'y_pred'],
                     y_train = y_train_per_level[level].loc[:, 'y_train']
                 )
                 for m in metrics
@@ -1088,16 +1090,16 @@ def _predict_and_calculate_metrics_multiseries_one_step_ahead(
             if m_name in ['mean_absolute_scaled_error', 'root_mean_squared_scaled_error']:
                 pooled.append(
                     m(
-                        y_true = predictions_pooled['y_true'],
-                        y_pred = predictions_pooled['y_pred'],
+                        y_true  = predictions_pooled['y_true'],
+                        y_pred  = predictions_pooled['y_pred'],
                         y_train = list_y_train_by_level
                     )
                 )
             else:
                 pooled.append(
                     m(
-                        y_true = predictions_pooled['y_true'],
-                        y_pred = predictions_pooled['y_pred'],
+                        y_true  = predictions_pooled['y_true'],
+                        y_pred  = predictions_pooled['y_pred'],
                         y_train = y_train_pooled['y_train']
                     )
                 )

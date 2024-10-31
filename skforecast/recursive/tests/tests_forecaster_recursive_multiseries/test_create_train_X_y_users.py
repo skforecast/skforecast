@@ -60,27 +60,27 @@ def test_create_train_X_y_output_when_series_and_exog_and_encoding_None():
     series["l2"].index = pd.date_range("1990-01-05", periods=5, freq="D")
     series["l3"].index = pd.date_range("1990-01-03", periods=5, freq="D")
     
-    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3,
-                                              encoding           = None,
-                                              transformer_series = StandardScaler())
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=3, encoding=None, transformer_series=StandardScaler()
+    )
     
     forecaster.fit(series=series)
 
-    results = forecaster._create_train_X_y(series=series)
+    results = forecaster.create_train_X_y(series=series)
 
     expected = (
         pd.DataFrame(
-            data = np.array([[-1.24514561, -1.36966017, -1.49417474, 0.],
-                             [-1.12063105, -1.24514561, -1.36966017, 0.],
-                             [-0.99611649, -1.12063105, -1.24514561, 0.],
-                             [-0.87160193, -0.99611649, -1.12063105, 0.],
-                             [-0.74708737, -0.87160193, -0.99611649, 0.],
-                             [-0.62257281, -0.74708737, -0.87160193, 0.],
-                             [-0.49805825, -0.62257281, -0.74708737, 0.],
-                             [ 0.62257281,  0.49805825,  0.37354368, 1.],
-                             [ 0.74708737,  0.62257281,  0.49805825, 1.],
-                             [ 1.24514561,  1.12063105,  0.99611649, 2.],
-                             [ 1.36966017,  1.24514561,  1.12063105, 2.]]),
+            data = np.array([[-1.24514561, -1.36966017, -1.49417474],
+                             [-1.12063105, -1.24514561, -1.36966017],
+                             [-0.99611649, -1.12063105, -1.24514561],
+                             [-0.87160193, -0.99611649, -1.12063105],
+                             [-0.74708737, -0.87160193, -0.99611649],
+                             [-0.62257281, -0.74708737, -0.87160193],
+                             [-0.49805825, -0.62257281, -0.74708737],
+                             [ 0.62257281,  0.49805825,  0.37354368],
+                             [ 0.74708737,  0.62257281,  0.49805825],
+                             [ 1.24514561,  1.12063105,  0.99611649],
+                             [ 1.36966017,  1.24514561,  1.12063105]]),
             index   = pd.Index(
                           pd.DatetimeIndex(
                               ['1990-01-04', '1990-01-05', '1990-01-06', '1990-01-07', 
@@ -89,8 +89,7 @@ def test_create_train_X_y_output_when_series_and_exog_and_encoding_None():
                                '1990-01-06', '1990-01-07']
                           )
                       ),
-            columns = ['lag_1', 'lag_2', 'lag_3', '_level_skforecast']
-        ).astype({'_level_skforecast': int}
+            columns = ['lag_1', 'lag_2', 'lag_3']
         ),
         pd.Series(
             data  = np.array([

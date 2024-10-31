@@ -594,7 +594,7 @@ class DateTimeFeatureTransformer(BaseEstimator, TransformerMixin):
 
 
 @njit
-def _np_mean_jit(x):
+def _np_mean_jit(x):  # pragma: no cover
     """
     NumPy mean function implemented with Numba JIT.
     """
@@ -602,10 +602,13 @@ def _np_mean_jit(x):
 
 
 @njit
-def _np_std_jit(x, ddof=1):
+def _np_std_jit(x, ddof=1):  # pragma: no cover
     """
     Standard deviation function implemented with Numba JIT.
+    If the array has only one element, the function returns 0.
     """
+    if len(x) == 1:
+        return 0.
     a_a, b_b = 0, 0
     for i in x:
         a_a = a_a + i
@@ -618,7 +621,7 @@ def _np_std_jit(x, ddof=1):
 
 
 @njit
-def _np_min_jit(x):
+def _np_min_jit(x):  # pragma: no cover
     """
     NumPy min function implemented with Numba JIT.
     """
@@ -626,7 +629,7 @@ def _np_min_jit(x):
 
 
 @njit
-def _np_max_jit(x):
+def _np_max_jit(x):  # pragma: no cover
     """
     NumPy max function implemented with Numba JIT.
     """
@@ -634,7 +637,7 @@ def _np_max_jit(x):
 
 
 @njit
-def _np_sum_jit(x):
+def _np_sum_jit(x):  # pragma: no cover
     """
     NumPy sum function implemented with Numba JIT.
     """
@@ -642,7 +645,7 @@ def _np_sum_jit(x):
 
 
 @njit
-def _np_median_jit(x):
+def _np_median_jit(x):  # pragma: no cover
     """
     NumPy median function implemented with Numba JIT.
     """
@@ -650,7 +653,7 @@ def _np_median_jit(x):
 
 
 @njit
-def _np_min_max_ratio_jit(x):
+def _np_min_max_ratio_jit(x):  # pragma: no cover
     """
     NumPy min-max ratio function implemented with Numba JIT.
     """
@@ -658,10 +661,14 @@ def _np_min_max_ratio_jit(x):
 
 
 @njit
-def _np_cv_jit(x):
+def _np_cv_jit(x):  # pragma: no cover
     """
     Coefficient of variation function implemented with Numba JIT.
+    If the array has only one element, the function returns 0.
     """
+    if len(x) == 1:
+        return 0.
+    
     a_a, b_b = 0, 0
     for i in x:
         a_a = a_a + i
@@ -1087,7 +1094,10 @@ class RollingFeatures():
             for j, stat in enumerate(self.stats):
                 X_window = X[-self.window_sizes[j]:, i]
                 X_window = X_window[~np.isnan(X_window)]
-                rolling_features[i, j] = self._apply_stat_numpy_jit(X_window, stat)
+                if len(X_window) > 0: 
+                    rolling_features[i, j] = self._apply_stat_numpy_jit(X_window, stat)
+                else:
+                    rolling_features[i, j] = np.nan
 
         if array_ndim == 1:
             rolling_features = rolling_features.ravel()
@@ -1168,12 +1178,12 @@ class QuantileBinner:
         self.intervals_   = None
 
     def _validate_params(
-            self,
-            n_bins: int,
-            method: str,
-            subsample: int,
-            dtype: type,
-            random_state: int
+        self,
+        n_bins: int,
+        method: str,
+        subsample: int,
+        dtype: type,
+        random_state: int
     ):
         """
         Validate the parameters passed to the class initializer.
@@ -1222,11 +1232,11 @@ class QuantileBinner:
         ----------
         X : numpy ndarray
             The training data used to compute the quantiles.
-        
+
         Returns
         -------
-        self : QuantileBinner
-            Fitted estimator.
+        None
+        
         """
 
         if X.size == 0:
@@ -1247,8 +1257,6 @@ class QuantileBinner:
             for i in range(self.n_bins_)
         }
 
-        return self
-
     def transform(self, X: np.ndarray):
         """
         Assign new data to the learned bins.
@@ -1264,6 +1272,7 @@ class QuantileBinner:
             The indices of the bins each value belongs to.
             Values less than the smallest bin edge are assigned to the first bin,
             and values greater than the largest bin edge are assigned to the last bin.
+       
         """
 
         if self.bin_edges_ is None:
@@ -1291,7 +1300,9 @@ class QuantileBinner:
             The indices of the bins each value belongs to.
             Values less than the smallest bin edge are assigned to the first bin,
             and values greater than the largest bin edge are assigned to the last bin.
+        
         """
+
         self.fit(X)
 
         return self.transform(X)
@@ -1300,10 +1311,15 @@ class QuantileBinner:
         """
         Get the parameters of the quantile binner.
         
+        Parameters
+        ----------
+        None
+        
         Returns
         -------
         params : dict
             A dictionary of the parameters of the quantile binner.
+        
         """
 
         return {
@@ -1322,9 +1338,12 @@ class QuantileBinner:
         ----------
         params : dict
             A dictionary of the parameters to set.
+
+        Returns
+        -------
+        None
+        
         """
 
         for param, value in params.items():
             setattr(self, param, value)
-
-        return self

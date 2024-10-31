@@ -150,5 +150,6 @@ warn_skforecast_categories = [
     UnknownLevelWarning,
     LongTrainingWarning,
     IgnoredArgumentWarning,
+    SaveLoadSkforecastWarning,
     SkforecastVersionWarning
 ]

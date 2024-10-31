@@ -79,7 +79,10 @@ def test_set_lags_when_window_features():
     assert forecaster.window_size == 6
 
 
-def test_set_lags_to_None():
+@pytest.mark.parametrize("lags", 
+                         [None, []],
+                         ids = lambda lags: f'lags: {lags}')
+def test_set_lags_to_None(lags):
     """
     Test how lags and max_lag attributes change when lags is set to None.
     """
@@ -90,7 +93,7 @@ def test_set_lags_to_None():
                      window_features = rolling
                  )
     
-    forecaster.set_lags(lags=None)
+    forecaster.set_lags(lags=lags)
 
     assert forecaster.lags is None
     assert forecaster.lags_names is None

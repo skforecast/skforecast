@@ -14,6 +14,7 @@ from skforecast.recursive import ForecasterRecursiveMultiSeries
 from skforecast.direct import ForecasterDirectMultiVariate
 from skforecast.model_selection import bayesian_search_forecaster_multiseries
 from skforecast.model_selection._split import TimeSeriesFold, OneStepAheadFold
+from skforecast.preprocessing import RollingFeatures
 from sklearn.metrics import mean_absolute_percentage_error
 from skforecast.metrics import mean_absolute_scaled_error
 
@@ -91,7 +92,7 @@ def test_results_output_bayesian_search_forecaster_multiseries_ForecasterRecursi
             steps              = 3,
             refit              = False,
             fixed_train_size   = True
-    )
+        )
 
     def search_space(trial):
         search_space  = {
@@ -145,6 +146,118 @@ def test_results_output_bayesian_search_forecaster_multiseries_ForecasterRecursi
     ).astype({
         'mean_absolute_error__weighted_average': float, 
         'alpha': float
+    })
+
+    pd.testing.assert_frame_equal(results, expected_results)
+
+
+def test_results_output_bayesian_search_forecaster_multiseries_ForecasterRecursiveMultiSeries_with_window_features():
+    """
+    Test output of bayesian_search_forecaster_multiseries in 
+    ForecasterRecursiveMultiSeries with window features 
+    (mocked done in Skforecast v0.14.0).
+    """
+    window_features = RollingFeatures(
+        stats=['mean', 'std', 'min', 'max', 'sum', 'median', 'ratio_min_max', 'coef_variation'],
+        window_sizes=3,
+    )
+
+    forecaster = ForecasterRecursiveMultiSeries(
+                     regressor = Ridge(random_state=123),
+                     lags      = 2,
+                     window_features = window_features,
+                     encoding  = 'onehot',
+                     transformer_series = StandardScaler()
+                 )
+    cv = TimeSeriesFold(
+            initial_train_size = len(series[:-12]),
+            steps              = 3,
+            refit              = False,
+            fixed_train_size   = True
+        )
+
+    def search_space(trial):
+        search_space  = {
+            'alpha': trial.suggest_float('alpha', 1e-2, 1.0),
+            'lags': trial.suggest_categorical('lags', [2, 4])
+        }
+
+        return search_space
+
+    results = bayesian_search_forecaster_multiseries(
+                  forecaster         = forecaster,
+                  series             = series,
+                  cv                 = cv,
+                  search_space       = search_space,
+                  metric             = 'mean_absolute_error',
+                  aggregate_metric   = 'weighted_average',
+                  n_trials           = 10,
+                  random_state       = 123,
+                  return_best        = False,
+                  verbose            = False,
+              )[0]
+    
+    expected_results = pd.DataFrame({
+        'levels': [
+            ['l1', 'l2'],
+            ['l1', 'l2'],
+            ['l1', 'l2'],
+            ['l1', 'l2'],
+            ['l1', 'l2'],
+            ['l1', 'l2'],
+            ['l1', 'l2'],
+            ['l1', 'l2'],
+            ['l1', 'l2'],
+            ['l1', 'l2'],
+        ],
+        'lags': [
+            np.array([1, 2]),
+            np.array([1, 2, 3, 4]),
+            np.array([1, 2]),
+            np.array([1, 2]),
+            np.array([1, 2]),
+            np.array([1, 2, 3, 4]),
+            np.array([1, 2]),
+            np.array([1, 2, 3, 4]),
+            np.array([1, 2, 3, 4]),
+            np.array([1, 2, 3, 4]),
+        ],
+        'params': [
+            {'alpha': 0.5558016213920624},
+            {'alpha': 0.23598059857016607},
+            {'alpha': 0.6995044937418831},
+            {'alpha': 0.7406154516747153},
+            {'alpha': 0.8509374761370117},
+            {'alpha': 0.7252189487445193},
+            {'alpha': 0.9809565564007693},
+            {'alpha': 0.53623586010342},
+            {'alpha': 0.4441865222328282},
+            {'alpha': 0.398196343012209},
+        ],
+        'mean_absolute_error__weighted_average': [
+            0.261692844251679,
+            0.2643237951473078,
+            0.26861473009966413,
+            0.27087715575521204,
+            0.2777007069915752,
+            0.27967030912996776,
+            0.2874984215783917,
+            0.2988729113427532,
+            0.345749311164626,
+            0.5104999292169147,
+        ],
+        'alpha': [
+            0.5558016213920624,
+            0.23598059857016607,
+            0.6995044937418831,
+            0.7406154516747153,
+            0.8509374761370117,
+            0.7252189487445193,
+            0.9809565564007693,
+            0.53623586010342,
+            0.4441865222328282,
+            0.398196343012209,
+        ],
     })
 
     pd.testing.assert_frame_equal(results, expected_results)
@@ -255,6 +368,87 @@ def test_output_bayesian_search_forecaster_multiseries_series_and_exog_dict_with
             "max_depth": int,
         }
     )
+
+    pd.testing.assert_frame_equal(expected, results_search)
+
+
+def test_output_bayesian_search_forecaster_multiseries_series_and_exog_dict_window_features_with_mocked():
+    """
+    Test output of bayesian_search_forecaster_multiseries in ForecasterRecursiveMultiSeries
+    when series and exog are dictionaries and window features are included 
+    (mocked done in Skforecast v0.14.0).
+    """
+    window_features = RollingFeatures(
+        stats = ['mean', 'std', 'min', 'max', 'sum', 'median', 'ratio_min_max', 'coef_variation'],
+        window_sizes = 3,
+    )
+    regressor = LGBMRegressor(
+        n_estimators=2, random_state=123, verbose=-1, max_depth=2
+    )
+    forecaster = ForecasterRecursiveMultiSeries(
+        regressor          = regressor,
+        lags               = 14,
+        window_features    = window_features,
+        encoding           = "ordinal",
+        dropna_from_series = False,
+        transformer_series = StandardScaler(),
+        transformer_exog   = StandardScaler(),
+    )
+    cv = TimeSeriesFold(
+            initial_train_size = len(series_dict_train["id_1000"]),
+            steps              = 24,
+            refit              = False,
+            fixed_train_size   = True
+    )
+    lags_grid = [[5], [1, 7, 14]]
+
+    def search_space(trial):
+        search_space = {
+            "n_estimators": trial.suggest_int("n_estimators", 2, 5),
+            "max_depth": trial.suggest_int("max_depth", 2, 5),
+            "lags": trial.suggest_categorical("lags", lags_grid),
+        }
+
+        return search_space
+
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=UserWarning, module="optuna")
+
+        results_search, _ = bayesian_search_forecaster_multiseries(
+            forecaster         = forecaster,
+            series             = series_dict,
+            exog               = exog_dict,
+            cv                 = cv,
+            search_space       = search_space,
+            metric             = "mean_absolute_error",
+            aggregate_metric   = "weighted_average",
+            n_trials           = 3,
+            return_best        = False,
+            show_progress      = False,
+            verbose            = False,
+            suppress_warnings  = True,
+        )
+
+    expected = pd.DataFrame({
+                'levels': [
+                    ['id_1000', 'id_1001', 'id_1002', 'id_1003', 'id_1004'],
+                    ['id_1000', 'id_1001', 'id_1002', 'id_1003', 'id_1004'],
+                    ['id_1000', 'id_1001', 'id_1002', 'id_1003', 'id_1004'],
+                ],
+                'lags': [np.array([1, 7, 14]), np.array([1, 7, 14]), np.array([5])],
+                'params': [
+                    {'n_estimators': 4, 'max_depth': 3},
+                    {'n_estimators': 3, 'max_depth': 3},
+                    {'n_estimators': 4, 'max_depth': 3},
+                ],
+                'mean_absolute_error__weighted_average': [
+                    705.2775299463871,
+                    721.2904821438083,
+                    744.3600945094412,
+                ],
+                'n_estimators': [4, 3, 4],
+                'max_depth': [3, 3, 3],
+            })
 
     pd.testing.assert_frame_equal(expected, results_search)
 
@@ -447,6 +641,97 @@ def test_output_bayesian_search_forecaster_multiseries_series_and_exog_dict_with
     pd.testing.assert_frame_equal(expected, results_search)
 
 
+def test_results_output_bayesian_search_forecaster_multivariate_ForecasterDirectMultiVariate_window_features():
+    """
+    Test output of bayesian_search_forecaster_multivariate in 
+    ForecasterDirectMultiVariate with mocked (mocked done in Skforecast v0.12.0).
+    """
+    window_features = RollingFeatures(
+        stats = ['mean', 'std', 'min', 'max', 'sum', 'median', 'ratio_min_max', 'coef_variation'],
+        window_sizes = 3,
+    )
+    forecaster = ForecasterDirectMultiVariate(
+                     regressor       = Ridge(random_state=123),
+                     level           = 'l1',
+                     steps           = 3,
+                     lags            = 2,
+                     window_features = window_features
+                 )
+    cv = TimeSeriesFold(
+            initial_train_size = len(series) - 12,
+            steps              = 3,
+            refit              = False,
+    )
+
+    def search_space(trial):
+        search_space  = {
+            'alpha': trial.suggest_float('alpha', 1e-2, 1.0),
+            'lags': trial.suggest_categorical('lags', [2, {'l1': 4, 'l2': [2, 3]}])
+        }
+
+        return search_space
+
+    results = bayesian_search_forecaster_multiseries(
+                  forecaster         = forecaster,
+                  series             = series,
+                  cv                 = cv,
+                  search_space       = search_space,
+                  metric             = 'mean_absolute_error',
+                  aggregate_metric   = 'weighted_average',
+                  n_trials           = 10,
+                  random_state       = 123,
+                  return_best        = False,
+                  verbose            = False,
+              )[0]
+    
+    expected_results = pd.DataFrame({
+        'levels': [['l1'], ['l1'], ['l1'], ['l1'], ['l1'],
+                   ['l1'], ['l1'], ['l1'], ['l1'], ['l1']],
+        'lags': [{'l1': np.array([1, 2, 3, 4]), 'l2': np.array([2, 3])},
+                 {'l1': np.array([1, 2, 3, 4]), 'l2': np.array([2, 3])},
+                 {'l1': np.array([1, 2, 3, 4]), 'l2': np.array([2, 3])},
+                 {'l1': np.array([1, 2, 3, 4]), 'l2': np.array([2, 3])},
+                 {'l1': np.array([1, 2, 3, 4]), 'l2': np.array([2, 3])},
+                 np.array([1, 2]),
+                 np.array([1, 2]),
+                 np.array([1, 2]),
+                 np.array([1, 2]),
+                 np.array([1, 2])],
+        'params': [{'alpha': 0.7252189487445193},
+                   {'alpha': 0.23598059857016607},
+                   {'alpha': 0.53623586010342},
+                   {'alpha': 0.4441865222328282},
+                   {'alpha': 0.398196343012209},
+                   {'alpha': 0.9809565564007693},
+                   {'alpha': 0.8509374761370117},
+                   {'alpha': 0.7406154516747153},
+                   {'alpha': 0.6995044937418831},
+                   {'alpha': 0.5558016213920624}],
+        'mean_absolute_error': [0.23364862728435018,
+                                0.23399963314273875,
+                                0.23401124553469274,
+                                0.23411514768630792,
+                                0.23414113077335505,
+                                0.250967375463984,
+                                0.25166609972144893,
+                                0.2522467306377772,
+                                0.2524589067210421,
+                                0.2531740553380533],
+        'alpha': [0.7252189487445193,
+                  0.23598059857016607,
+                  0.53623586010342,
+                  0.4441865222328282,
+                  0.398196343012209,
+                  0.9809565564007693,
+                  0.8509374761370117,
+                  0.7406154516747153,
+                  0.6995044937418831,
+                  0.5558016213920624]}
+    )
+
+    pd.testing.assert_frame_equal(results, expected_results)
+
+
 def test_results_output_bayesian_search_forecaster_multivariate_ForecasterDirectMultiVariate():
     """
     Test output of bayesian_search_forecaster_multivariate in 
@@ -546,21 +831,28 @@ def test_output_bayesian_search_forecaster_multiseries_ForecasterDirectMultiVari
         }
 
         return search_space
-
-    results, _ = bayesian_search_forecaster_multiseries(
-        forecaster         = forecaster,
-        series             = series_item_sales,
-        exog               = exog_item_sales,
-        cv                 = cv,
-        search_space       = search_space,
-        n_trials           = 5,
-        metric             = metrics,
-        aggregate_metric   = ["average", "weighted_average", "pooling"],
-        return_best        = False,
-        n_jobs             = 'auto',
-        verbose            = False,
-        show_progress      = False
+    
+    warn_msg = re.escape(
+        "One-step-ahead predictions are used for faster model comparison, but they "
+        "may not fully represent multi-step prediction performance. It is recommended "
+        "to backtest the final model for a more accurate multi-step performance "
+        "estimate."
     )
+    with pytest.warns(UserWarning, match = warn_msg):
+        results, _ = bayesian_search_forecaster_multiseries(
+            forecaster         = forecaster,
+            series             = series_item_sales,
+            exog               = exog_item_sales,
+            cv                 = cv,
+            search_space       = search_space,
+            n_trials           = 5,
+            metric             = metrics,
+            aggregate_metric   = ["average", "weighted_average", "pooling"],
+            return_best        = False,
+            n_jobs             = 'auto',
+            verbose            = False,
+            show_progress      = False
+        )
 
     expected_results = pd.DataFrame({
         "levels": [["item_1"], ["item_1"], ["item_1"], ["item_1"], ["item_1"]],
@@ -643,22 +935,29 @@ def test_output_bayesian_search_forecaster_multiseries_ForecasterRecursiveMultiS
         }
 
         return search_space
-
-    results, _ = bayesian_search_forecaster_multiseries(
-        forecaster         = forecaster,
-        series             = series_item_sales,
-        exog               = exog_item_sales,
-        search_space       = search_space,
-        cv                 = cv,
-        n_trials           = 5,
-        metric             = metrics,
-        levels             = levels,
-        aggregate_metric   = ["average", "weighted_average", "pooling"],
-        return_best        = False,
-        n_jobs             = 'auto',
-        verbose            = False,
-        show_progress      = False
+    
+    warn_msg = re.escape(
+        "One-step-ahead predictions are used for faster model comparison, but they "
+        "may not fully represent multi-step prediction performance. It is recommended "
+        "to backtest the final model for a more accurate multi-step performance "
+        "estimate."
     )
+    with pytest.warns(UserWarning, match = warn_msg):
+        results, _ = bayesian_search_forecaster_multiseries(
+            forecaster         = forecaster,
+            series             = series_item_sales,
+            exog               = exog_item_sales,
+            search_space       = search_space,
+            cv                 = cv,
+            n_trials           = 5,
+            metric             = metrics,
+            levels             = levels,
+            aggregate_metric   = ["average", "weighted_average", "pooling"],
+            return_best        = False,
+            n_jobs             = 'auto',
+            verbose            = False,
+            show_progress      = False
+        )
 
     expected_results = pd.DataFrame(
         {

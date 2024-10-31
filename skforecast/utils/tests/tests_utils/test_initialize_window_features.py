@@ -5,7 +5,7 @@ import pytest
 from skforecast.utils import initialize_window_features
 
 
-class WindowFeature:
+class WindowFeature:  # pragma: no cover
     def __init__(self, window_sizes, features_names):
         self.window_sizes = window_sizes
         self.features_names = features_names
@@ -17,7 +17,7 @@ class WindowFeature:
         pass
 
 
-class InvalidWindowFeatureNoAttributes:
+class InvalidWindowFeatureNoAttributes:  # pragma: no cover
     def transform_batch(self):
         pass
 
@@ -25,7 +25,7 @@ class InvalidWindowFeatureNoAttributes:
         pass
 
 
-class InvalidWindowFeatureNoMethods:
+class InvalidWindowFeatureNoMethods:  # pragma: no cover
     def __init__(self, window_sizes, features_names):
         self.window_sizes = window_sizes
         self.features_names = features_names
