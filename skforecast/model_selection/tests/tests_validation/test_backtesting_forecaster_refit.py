@@ -253,11 +253,11 @@ def test_output_backtesting_forecaster_ForecasterRecursive_window_features_with_
     """
     Test output of _backtesting_forecaster with backtesting mocked, interval no.
     Regressor is LinearRegression with lags=3, Series y is mocked, exog is mocked, 
-    12 observations to backtest, steps=4 (no remainder), metric='mean_squared_error'
+    12 observations to backtest, steps=4 (no remainder), metric='mean_absolute_error'
     and window features.
     """
 
-    expected_metric = pd.DataFrame({"mean_squared_error": [0.10712193574869683]})
+    expected_metric = pd.DataFrame({"mean_absolute_error": [0.2635147997223325]})
     expected_predictions = pd.DataFrame(
         {
             "pred": np.array(
@@ -298,7 +298,7 @@ def test_output_backtesting_forecaster_ForecasterRecursive_window_features_with_
                                         y          = y,
                                         exog       = exog,
                                         cv         = cv,
-                                        metric     = 'mean_squared_error',
+                                        metric     = 'mean_absolute_error',
                                         verbose    = False
                                    )
 
@@ -310,11 +310,11 @@ def test_output_backtesting_forecaster_ForecasterDirect_window_features_with_moc
     """
     Test output of _backtesting_forecaster with backtesting mocked, interval no.
     Regressor is LinearRegression with lags=3, Series y is mocked, exog is mocked, 
-    12 observations to backtest, steps=4 (no remainder), metric='mean_squared_error'
+    12 observations to backtest, steps=4 (no remainder), metric='mean_absolute_error'
     and window features.
     """
 
-    expected_metric = pd.DataFrame({"mean_squared_error": [0.10447263857902568]})
+    expected_metric = pd.DataFrame({"mean_absolute_error": [0.24696432911619762]})
     expected_predictions = pd.DataFrame(
         {
             "pred": np.array(
@@ -355,7 +355,7 @@ def test_output_backtesting_forecaster_ForecasterDirect_window_features_with_moc
                                         y          = y,
                                         exog       = exog,
                                         cv         = cv,
-                                        metric     = 'mean_squared_error',
+                                        metric     = 'mean_absolute_error',
                                         verbose    = False
                                    )
 
