@@ -257,14 +257,14 @@ def test_output_backtesting_forecaster_ForecasterRecursive_window_features_with_
     and window features.
     """
 
-    expected_metric = pd.DataFrame({"mean_absolute_error": [0.2635147997223325]})
+    expected_metric = pd.DataFrame({"mean_absolute_error": [0.2095996273]})
     expected_predictions = pd.DataFrame(
         {
             "pred": np.array(
                 [
-                    0.37683092, 0.27485253, 0.35459493, 0.50933738, 0.40740455,
-                    0.44359783, 0.47699345, 0.53865623, 0.30365329, 0.34961539,
-                    0.5671574 , 0.56751209
+                    0.4937106691, 0.4471145812, 0.4937808606, 0.536444821 , 0.4215610015,
+                    0.4273722215, 0.4483843054, 0.5401413533, 0.4366510863, 0.4705228766,
+                    0.5736477861, 0.5938840872,
                 ]
             )
         },
@@ -272,11 +272,11 @@ def test_output_backtesting_forecaster_ForecasterRecursive_window_features_with_
     )
 
     window_features = RollingFeatures(
-        stats = ['mean', 'min', 'max', 'sum', 'median', 'ratio_min_max'],
+        stats = ['mean', 'std', 'min', 'max', 'sum', 'median', 'ratio_min_max', 'coef_variation'],
         window_sizes = 3,
     )
     forecaster = ForecasterRecursive(
-        regressor=LinearRegression(), lags=3, window_features=window_features
+        regressor=Ridge(random_state=123), lags=3, window_features=window_features
     )
 
     n_backtest = 12
@@ -302,7 +302,7 @@ def test_output_backtesting_forecaster_ForecasterRecursive_window_features_with_
                                         verbose    = False
                                    )
 
-    # pd.testing.assert_frame_equal(expected_metric, metric)
+    pd.testing.assert_frame_equal(expected_metric, metric)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
@@ -314,14 +314,14 @@ def test_output_backtesting_forecaster_ForecasterDirect_window_features_with_moc
     and window features.
     """
 
-    expected_metric = pd.DataFrame({"mean_absolute_error": [0.24696432911619762]})
+    expected_metric = pd.DataFrame({"mean_absolute_error": [0.1979777165]})
     expected_predictions = pd.DataFrame(
         {
             "pred": np.array(
                 [
-                    0.32372783, 0.43458024, 0.77238875, 0.60657529, 0.37897279,
-                    0.542262  , 0.31403908, 0.37007796, 0.35614498, 0.51622723,
-                    0.67746181, 0.59161821
+                    0.4754121497, 0.4737280131, 0.5951416701, 0.4792250046, 0.4086254462,
+                    0.4906131377, 0.4283798785, 0.4534338932, 0.4384145046, 0.5073137847,
+                    0.5507396524, 0.4885913459,
                 ]
             )
         },
@@ -329,11 +329,11 @@ def test_output_backtesting_forecaster_ForecasterDirect_window_features_with_moc
     )
 
     window_features = RollingFeatures(
-        stats = ['mean', 'min', 'max', 'sum', 'median', 'ratio_min_max'],
+        stats = ['mean', 'std', 'min', 'max', 'sum', 'median', 'ratio_min_max', 'coef_variation'],
         window_sizes = 3,
     )
     forecaster = ForecasterDirect(
-        regressor=LinearRegression(), steps=4, lags=3, window_features=window_features
+        regressor=Ridge(random_state=123), steps=4, lags=3, window_features=window_features
     )
 
     n_backtest = 12
@@ -359,7 +359,7 @@ def test_output_backtesting_forecaster_ForecasterDirect_window_features_with_moc
                                         verbose    = False
                                    )
 
-    # pd.testing.assert_frame_equal(expected_metric, metric)
+    pd.testing.assert_frame_equal(expected_metric, metric)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
