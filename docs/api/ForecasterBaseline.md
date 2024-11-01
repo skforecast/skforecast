@@ -1,3 +1,0 @@
-# `ForecasterBaseline`
-
-::: skforecast.ForecasterBaseline.ForecasterEquivalentDate

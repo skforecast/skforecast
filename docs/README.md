@@ -1,22 +1,21 @@
 <script src="https://kit.fontawesome.com/d20edc211b.js" crossorigin="anonymous"></script>
 
-<img src="img/banner-landing-page-skforecast.png#only-light" align="left"  style="
-    margin-bottom: 30px;
-    margin-top: 0px;">
+<div style="margin-bottom: 20px;">
+    <img src="img/banner-landing-page-skforecast.png#only-light" align="left" style="margin-bottom: 30px; margin-top: 0px;">
+    <img src="img/banner-landing-page-dark-mode-skforecast-no-background.png#only-dark" align="left" style="margin-bottom: 30px; margin-top: 0px;">
+</div>
 
-<img src="img/banner-landing-page-dark-mode-skforecast-no-background.png#only-dark" align="left" style="
-    margin-bottom: 30px;
-    margin-top: 0px;">
-
+<div style="clear: both;"></div>
 
 ![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)
 [![PyPI](https://img.shields.io/pypi/v/skforecast)](https://pypi.org/project/skforecast/)
-[![codecov](https://codecov.io/gh/JoaquinAmatRodrigo/skforecast/branch/master/graph/badge.svg)](https://codecov.io/gh/JoaquinAmatRodrigo/skforecast)
-[![Build status](https://github.com/JoaquinAmatRodrigo/skforecast/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/JoaquinAmatRodrigo/skforecast/actions/workflows/unit-tests.yml/badge.svg)
+[![codecov](https://codecov.io/gh/skforecast/skforecast/branch/master/graph/badge.svg)](https://codecov.io/gh/skforecast/skforecast)
+[![Build status](https://github.com/skforecast/skforecast/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/skforecast/skforecast/actions/workflows/unit-tests.yml/badge.svg)
 [![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
-[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/JoaquinAmatRodrigo/skforecast/graphs/commit-activity)
-[![Downloads](https://static.pepy.tech/personalized-badge/skforecast?period=total&units=international_system&left_color=grey&right_color=blue&left_text=Downloads)](https://pepy.tech/project/skforecast)
-[![License](https://img.shields.io/github/license/JoaquinAmatRodrigo/skforecast)](https://github.com/JoaquinAmatRodrigo/skforecast/blob/master/LICENSE)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/skforecast/skforecast/graphs/commit-activity)
+[![Downloads](https://static.pepy.tech/badge/skforecast)](https://pepy.tech/project/skforecast)
+[![Downloads](https://static.pepy.tech/badge/skforecast/month)](https://pepy.tech/project/skforecast)
+[![License](https://img.shields.io/github/license/skforecast/skforecast)](https://github.com/skforecast/skforecast/blob/master/LICENSE)
 [![DOI](https://zenodo.org/badge/337705968.svg)](https://zenodo.org/doi/10.5281/zenodo.8382787)
 [![paypal](https://img.shields.io/static/v1?style=social&amp;label=Donate&amp;message=%E2%9D%A4&amp;logo=Paypal&amp;color&amp;link=%3curl%3e)](https://www.paypal.com/donate/?hosted_button_id=D2JZSWRLTZDL6)
 [![buymeacoffee](https://img.shields.io/badge/-Buy_me_a%C2%A0coffee-gray?logo=buy-me-a-coffee)](https://www.buymeacoffee.com/skforecast)
@@ -29,29 +28,37 @@
 
 **Skforecast** is a Python library for time series forecasting using machine learning models. It works with any regressor compatible with the scikit-learn API, including popular options like LightGBM, XGBoost, CatBoost, Keras, and many others.
 
-**Why use skforecast?**
+### Why use skforecast?
 
-The fields of statistics and machine learning have developed many excellent regression algorithms that can be useful for forecasting, but applying them effectively to time series analysis can still be a challenge. To address this issue, the skforecast library provides a comprehensive set of tools for training, validation and prediction in a variety of scenarios commonly encountered when working with time series. The library is built using the widely used scikit-learn API, making it easy to integrate into existing workflows. With skforecast, users have access to a wide range of functionalities such as feature engineering, model selection, hyperparameter tuning and many others. This allows users to focus on the essential aspects of their projects and leave the intricacies of time series analysis to skforecast. In addition, skforecast is developed according to the following priorities:
+Skforecast simplifies time series forecasting with machine learning by providing:
 
-+ Fast and robust prototyping. :zap:
-+ Validation and backtesting methods to have a realistic assessment of model performance. :mag:
-+ Models must be deployed in production. :hammer:
-+ Models must be interpretable. :crystal_ball:
+- :jigsaw: **Seamless integration** with any scikit-learn compatible regressor (e.g., LightGBM, XGBoost, CatBoost, etc.).
+- :repeat: **Flexible workflows** that allow for both single and multi-series forecasting.
+- :hammer_and_wrench: **Comprehensive tools** for feature engineering, model selection, hyperparameter tuning, and more.
+- :building_construction: **Production-ready models** with interpretability and validation methods for backtesting and realistic performance evaluation.
 
-**Share Your Thoughts with Us**
+Whether you're building quick prototypes or deploying models in production, skforecast ensures a fast, reliable, and scalable experience.
 
-Thank you for choosing skforecast! We value your suggestions, bug reports and recommendations as they help us identify areas for improvement and ensure that skforecast meets the needs of the community. Please consider sharing your experiences, reporting bugs, making suggestions or even contributing to the codebase on GitHub. Together, let's make time series forecasting more accessible and accurate for everyone.
+### Get Involved
+
+We value your input! Here are a few ways you can participate:
+
+- **Report bugs** and suggest new features on our [GitHub Issues page](https://github.com/skforecast/skforecast/issues).
+- **Contribute** to the project by [submitting code](https://github.com/skforecast/skforecast/blob/master/CONTRIBUTING.md), adding new features, or improving the documentation.
+- **Share your feedback** on LinkedIn to help spread the word about skforecast!
+
+Together, we can make time series forecasting accessible to everyone.
 
 
 ## Installation & Dependencies
 
-To install the basic version of `skforecast` with its core dependencies, run:
+To install the basic version of `skforecast` with core dependencies, run the following:
 
 ```bash
 pip install skforecast
 ```
 
-If you want to learn more about the installation process, dependencies and optional features, please refer to the [Installation Guide](https://skforecast.org/latest/quick-start/how-to-install.html).
+For more installation options, including dependencies and additional features, check out our [Installation Guide](https://skforecast.org/latest/quick-start/how-to-install.html).
 
 
 ## Forecasters
@@ -60,131 +67,45 @@ A **Forecaster** object in the skforecast library is a comprehensive container t
 
 The **skforecast** library offers a variety of forecaster types, each tailored to specific requirements such as single or multiple time series, direct or recursive strategies, or custom predictors. Regardless of the specific forecaster type, all instances share the same API.
 
-| Forecaster                   | Single series | Multiple series | Recursive strategy | Direct strategy | Probabilistic prediction | Time series differentiation | Exogenous features | Custom features |
-|:-----------------------------|:-------------:|:---------------:|:------------------:|:---------------:|:------------------------:|:---------------------------:|:------------------:|:---------------:|
-|[ForecasterAutoreg]           |✔️||✔️||✔️|✔️|✔️||
-|[ForecasterAutoregCustom]     |✔️||✔️||✔️|✔️|✔️|✔️|✔️|
-|[ForecasterAutoregDirect]     |✔️|||✔️|✔️||✔️||
-|[ForecasterMultiSeries]       ||✔️|✔️||✔️|✔️|✔️||
-|[ForecasterMultiSeriesCustom] ||✔️|✔️||✔️|✔️|✔️|✔️|
-|[ForecasterMultiVariate]      ||✔️||✔️|✔️||✔️||
-|[ForecasterRNN]               ||✔️||✔️|||||
-|[ForecasterSarimax]           |✔️||✔️||✔️|✔️|✔️||
+| Forecaster                      | Single series | Multiple series | Recursive strategy | Direct strategy | Probabilistic prediction | Time series differentiation | Exogenous features | Window features |
+|:--------------------------------|:-------------:|:---------------:|:------------------:|:---------------:|:------------------------:|:---------------------------:|:------------------:|:---------------:|
+|[ForecasterRecursive]            |✔️||✔️||✔️|✔️|✔️|✔️|
+|[ForecasterDirect]               |✔️|||✔️|✔️||✔️|✔️|
+|[ForecasterRecursiveMultiSeries] ||✔️|✔️||✔️|✔️|✔️|✔️|
+|[ForecasterDirectMultiVariate]   ||✔️||✔️|✔️||✔️|✔️|
+|[ForecasterRNN]                  ||✔️||✔️|||||
+|[ForecasterSarimax]              |✔️||✔️||✔️|✔️|✔️||
 
-[ForecasterAutoreg]: https://skforecast.org/latest/user_guides/autoregresive-forecaster.html
-[ForecasterAutoregCustom]: https://skforecast.org/latest/user_guides/window-features-and-custom-features.html
-[ForecasterAutoregDirect]: https://skforecast.org/latest/user_guides/direct-multi-step-forecasting.html
-[ForecasterMultiSeries]: https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting.html
-[ForecasterMultiSeriesCustom]: https://skforecast.org/latest/user_guides/window-features-and-custom-features.html#forecasterautoregmultiseriescustom
-[ForecasterMultiVariate]: https://skforecast.org/latest/user_guides/dependent-multi-series-multivariate-forecasting.html
+[ForecasterRecursive]: https://skforecast.org/latest/user_guides/autoregresive-forecaster.html
+[ForecasterDirect]: https://skforecast.org/latest/user_guides/direct-multi-step-forecasting.html
+[ForecasterRecursiveMultiSeries]: https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting.html
+[ForecasterDirectMultiVariate]: https://skforecast.org/latest/user_guides/dependent-multi-series-multivariate-forecasting.html
 [ForecasterRNN]: https://skforecast.org/latest/user_guides/forecasting-with-deep-learning-rnn-lstm
 [ForecasterSarimax]: https://skforecast.org/latest/user_guides/forecasting-sarimax-arima.html
 
 
 ## Features
 
-+ Create Forecasters from any regressor that follows the scikit-learn API
-+ Include exogenous variables as predictors
-+ Include custom predictors (rolling mean, rolling variance ...)
-+ Multiple backtesting methods for model validation
-+ Grid search, random search and Bayesian search to find optimal lags (predictors) and best hyperparameters
-+ Prediction interval estimated by bootstrapping and quantile regression
-+ Include custom metrics for model validation and grid search
-+ Get predictor importance
-+ Forecaster in production
+Skforecast provides a set of key features designed to make time series forecasting with machine learning easy and efficient. For a detailed overview, see the [User Guides](https://skforecast.org/latest/user_guides/user-guides).
 
 
 ## Examples and tutorials
 
-### English
-
-<i class="fa-duotone fa-chart-line fa" style="font-size: 25px; color:#1DA1F2;"></i>  [**Skforecast: time series forecasting with Machine Learning**](https://www.cienciadedatos.net/documentos/py27-time-series-forecasting-python-scikitlearn.html)
-
-<i class="fa-solid fa-arrow-trend-up" style="color: #E60023;"></i> [**ARIMA and SARIMAX models**](https://www.cienciadedatos.net/documentos/py51-arima-sarimax-models-python.html)
-
-<i class="fa-solid fa-sitemap fa" style="font-size: 25px; color:#00cc99;"></i> [**Forecasting with gradient boosting: XGBoost, LightGBM and CatBoost**](https://www.cienciadedatos.net/documentos/py39-forecasting-time-series-with-skforecast-xgboost-lightgbm-catboost.html)
-
-<i class="fa-solid fa-diagram-project fa-rotate-90" style="font-size: 25px; color:#74C0FC;"></i> [**Forecasting with XGBoost**](https://www.cienciadedatos.net/documentos/py56-forecasting-time-series-with-xgboost.html)
-
-<i class="fa-duotone fa-water fa" style="font-size: 25px; color:teal;"></i> [**Global Forecasting Models: Multi-series forecasting**](https://www.cienciadedatos.net/documentos/py44-multi-series-forecasting-skforecast.html)
-
-<i class="fa-light fa-chart-line fa" style="font-size: 25px; color:#f26e1d;"></i>  [**Probabilistic forecasting models**](https://www.cienciadedatos.net/documentos/py42-probabilistic-forecasting.html)
-
-<i class="fa-solid fa-layer-group" style="color: #001633;"></i> [**Forecasting with Deep Learning**](https://cienciadedatos.net/documentos/py54-forecasting-with-deep-learning)
-
-<i class="fa-solid fa-arrow-trend-up" style="color: #fbbb09;"></i> [**Modelling time series trend with tree based models**](https://www.cienciadedatos.net/documentos/py49-modelling-time-series-trend-with-tree-based-models.html)
-
-
-<i class="fa-solid fa-chart-gantt" style="color: #ff004f;"></i> [**Interpretable forecasting models**](https://www.cienciadedatos.net/documentos/py57-interpretable-forecasting-models.html)
-
-<i class="fa-solid fa-wave-square" style="color: #fbbb09;"></i> [**Intermittent demand forecasting**](https://www.cienciadedatos.net/documentos/py48-intermittent-demand-forecasting.html)
-
-<i class="fa-solid fa-magnifying-glass" style="font-size: 25px; color:purple;"></i> [**Forecasting time series with missing values**](https://www.cienciadedatos.net/documentos/py46-forecasting-time-series-missing-values.html)
-
-<i class="fa-solid fa-cubes-stacked fa-rotate-180" style="color: #c15d0b;"></i> [**Stacking ensemble of machine learning models to improve forecasting**](https://cienciadedatos.net/documentos/py52-stacking-ensemble-models-forecasting.html)
-
-<i class="fa-duotone fa-lightbulb fa" style="font-size: 25px; color:#fcea2b;"></i> [**Forecasting energy demand with machine learning**](https://www.cienciadedatos.net/documentos/py29-forecasting-electricity-power-demand-python.html)
-
-<i class="fa-solid fa-globe" style="font-size: 25px; color:#6b8e23;"></i> [**Global Forecasting Models: Comparative Analysis of Single and Multi-Series Forecasting Modeling**](https://www.cienciadedatos.net/documentos/py53-global-forecasting-models.html)
-
-<i class="fa-solid fa-virus-covid" style="font-size: 25px; color:red;"></i> [**Mitigating the impact of covid on forecasting models**](https://www.cienciadedatos.net/documentos/py45-weighted-time-series-forecasting.html)
-
-<i class="fa-duotone fa-rss fa" style="font-size: 25px; color:#666666;"></i> [**Forecasting web traffic with machine learning and Python**](https://www.cienciadedatos.net/documentos/py37-forecasting-web-traffic-machine-learning.html)
-
-<i class="fa-brands fa-bitcoin fa" style="font-size: 25px; color:#f7931a;"></i> [**Bitcoin price prediction with Python**](https://www.cienciadedatos.net/documentos/py41-forecasting-cryptocurrency-bitcoin-machine-learning-python.html)
-
-
-
-### Español
-
-<i class="fa-duotone fa-chart-line fa" style="font-size: 25px; color:#1DA1F2;"></i> [**Skforecast: forecasting series temporales con Machine Learning**](https://www.cienciadedatos.net/documentos/py27-forecasting-series-temporales-python-scikitlearn.html)
-
-<i class="fa-solid fa-arrow-trend-up" style="color: #E60023;"></i> [**Modelos ARIMA y SARIMAX**](https://cienciadedatos.net/documentos/py51-modelos-arima-sarimax-python.html)
-
-<i class="fa-solid fa-sitemap fa" style="font-size: 25px; color:#00cc99;"></i> [**Forecasting con gradient boosting: XGBoost, LightGBM y CatBoost**](https://www.cienciadedatos.net/documentos/py39-forecasting-series-temporales-con-skforecast-xgboost-lightgbm-catboost.html)
-
-<i class="fa-solid fa-diagram-project fa-rotate-90" style="font-size: 25px; color:#74C0FC;"></i> [**Forecasting con XGBoost**](https://www.cienciadedatos.net/documentos/py56-forecasting-series-temporales-con-xgboost.html)
-
-<i class="fa-duotone fa-water fa" style="font-size: 25px; color:teal;"></i> [**Global Forecasting Models: Multi-series forecasting**](https://www.cienciadedatos.net/documentos/py44-multi-series-forecasting-skforecast-español.html)
-
-<i class="fa-solid fa-globe" style="font-size: 25px; color:#6b8e23;"></i> [**Modelos de forecasting globales: Análisis comparativo de modelos de una y múltiples series**](https://www.cienciadedatos.net/documentos/py53-modelos-forecasting-globales.html)
-
-<i class="fa-light fa-chart-line fa" style="font-size: 25px; color:#f26e1d;"></i>  [**Forecasting probabilístico**](https://www.cienciadedatos.net/documentos/py42-intervalos-prediccion-modelos-forecasting-machine-learning.html)
-
-<i class="fa-solid fa-layer-group" style="color: #001633;"></i> [**Forecasting con Deep Learning**](https://cienciadedatos.net/documentos/py54-forecasting-con-deep-learning)
-
-<i class="fa-solid fa-magnifying-glass" style="font-size: 25px; color:purple;"></i> [**Forecasting de series incompletas con valores faltantes**](https://www.cienciadedatos.net/documentos/py46-forecasting-series-temporales-incompletas.html)
-
-<i class="fa-solid fa-wave-square" style="color: #fbbb09;"></i> [**Predicción demanda intermitente**](https://www.cienciadedatos.net/documentos/py48-forecasting-demanda-intermitente.html)
-
-<i class="fa-solid fa-arrow-trend-up" style="color: #fbbb09;"></i> [**Modelar series temporales con tendencia utilizando modelos de árboles**](https://cienciadedatos.net/documentos/py49-modelar-tendencia-en-series-temporales-modelos-de-arboles.html)
-
-<i class="fa-solid fa-chart-gantt" style="color: #ff004f;"></i> [**Interpretabilidad en modelos de forecasting**](https://www.cienciadedatos.net/documentos/py57-modelos-forecasting-interpretables.html)
-
-<i class="fa-duotone fa-lightbulb fa" style="font-size: 25px; color:#fcea2b;"></i> [**Forecasting de la demanda eléctrica**](https://www.cienciadedatos.net/documentos/py29-forecasting-demanda-energia-electrica-python.html)
-
-<i class="fa-duotone fa-rss fa" style="font-size: 25px; color:#666666;"></i>  [**Forecasting de las visitas a una página web**](https://www.cienciadedatos.net/documentos/py37-forecasting-visitas-web-machine-learning.html)
-
-<i class="fa-solid fa-virus-covid" style="font-size: 25px; color:red;"></i> [**Reducir el impacto del Covid en modelos de forecasting**](https://cienciadedatos.net/documentos/py45-weighted-time-series-forecasting-es)
-
-<i class="fa-brands fa-bitcoin fa" style="font-size: 25px; color:#f7931a;"></i> [**Predicción del precio de Bitcoin con Python**](https://www.cienciadedatos.net/documentos/py41-forecasting-criptomoneda-bitcoin-machine-learning-python.html)
-
-<i class="fa-brands fa-youtube" style="font-size: 25px; color:#c4302b;"></i> [**Workshop predicción de series temporales con machine learning 
-Universidad de Deusto / Deustuko Unibertsitatea**](https://youtu.be/MlktVhReO0E)
+Explore our extensive list of examples and tutorials (English and Spanish) to get you started with skforecast. You can find them [here](https://skforecast.org/latest/examples/examples_english).
 
 
 ## How to contribute
 
 Primarily, skforecast development consists of adding and creating new *Forecasters*, new validation strategies, or improving the performance of the current code. However, there are many other ways to contribute:
 
-- Submit a bug report or feature request on [GitHub Issues](https://github.com/JoaquinAmatRodrigo/skforecast/issues).
-- Contribute a Jupyter notebook to our [examples](https://skforecast.org/latest/examples/examples).
+- Submit a bug report or feature request on [GitHub Issues](https://github.com/skforecast/skforecast/issues).
+- Contribute a Jupyter notebook to our [examples](https://skforecast.org/latest/examples/examples_english).
 - Write [unit or integration tests](https://docs.pytest.org/en/latest/) for our project.
 - Answer questions on our issues, Stack Overflow, and elsewhere.
 - Translate our documentation into another language.
 - Write a blog post, tweet, or share our project with others.
 
-For more information on how to contribute to skforecast, see our [Contribution Guide](https://github.com/JoaquinAmatRodrigo/skforecast/blob/master/CONTRIBUTING.md).
+For more information on how to contribute to skforecast, see our [Contribution Guide](https://github.com/skforecast/skforecast/blob/master/CONTRIBUTING.md).
 
 Visit our [authors section](https://skforecast.org/latest/authors/authors) to meet all the contributors to skforecast.
 
@@ -297,4 +218,4 @@ If you found skforecast useful, you can support us with a donation. Your contrib
 
 ## License
 
-[BSD-3-Clause License](https://github.com/JoaquinAmatRodrigo/skforecast/blob/master/LICENSE)
+[BSD-3-Clause License](https://github.com/skforecast/skforecast/blob/master/LICENSE)

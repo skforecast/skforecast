@@ -1,30 +1,24 @@
-/* ===============================
-   Jupyter Wrapper Styles
-   =============================== */
+/*
+===============================
+Jupyter Wrapper Styles
+===============================
+*/
 
-/* Styling for Jupyter CodeMirror editor */
-.jupyter-wrapper .CodeMirror.cm-s-jupyter {
-  background: var(--jp-layout-color0);
-  color: var(--jp-content-font-color1);
-  font-size: medium;
+/* Hide output prompt in Jupyter */
+.jupyter-wrapper .jp-OutputPrompt,
+.jupyter-wrapper .jp-CodeCell .jp-Cell-inputWrapper .jp-InputPrompt,
+.jupyter-wrapper .jp-Notebook .jp-Cell:not(.jp-mod-active) .jp-InputPrompt {
+  display: none;
 }
 
-/* Styling for Jupyter output area preformatted text */
-/* .jupyter-wrapper .highlight-ipynb pre {
-  font-size: 0.9em;
-} */
+/* Size of code cells in Jupyter Notebooks */
+.jupyter-wrapper .jp-CodeCell .jp-InputArea-editor .CodeMirror {
+  font-size: 0.95em; /* Adjust the size as needed */
+}
 
-/* Styling for Jupyter Output Area */
-.jupyter-wrapper .jp-OutputArea-output pre {
-  border: none;
-  margin: 0px;
-  padding: 0px;
-  overflow-x: auto;
-  overflow-y: auto;
-  word-break: break-all;
-  word-wrap: break-word;
-  white-space: pre-wrap;
-  font-size: medium;
+/* Size of output cells in Jupyter Notebooks */
+.jupyter-wrapper .jp-RenderedText.jp-OutputArea-output pre {
+  font-size: 1.2em; /* Adjust the size as needed */
 }
 
 /* Display inline tables for dataframes in Jupyter */
@@ -32,69 +26,76 @@
   display: inline;
 }
 
-/* Hide output prompt in Jupyter */
-.jupyter-wrapper .jp-OutputPrompt {
-  display: none;
+/*
+===============================
+Markdown Content Styles
+===============================
+*/
+
+.md-typeset h1 {
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--md-default-fg-color);
 }
 
-/* Hide input prompt in Jupyter code cells */
-.jupyter-wrapper .jp-CodeCell .jp-Cell-inputWrapper .jp-InputPrompt {
-  display: none;
-}
-
-/* Hide input prompt in non-active Jupyter cells */
-.jupyter-wrapper .jp-Notebook .jp-Cell:not(.jp-mod-active) .jp-InputPrompt {
-  display: none;
-}
-
-
-/* ===============================
-   Markdown Content Styles
-   =============================== */
-
-/* Hide the Markdown content button */
-.md-content__button {
-  display: none;
-}
-
-/* Set font size for inline code in Markdown */
-.md-typeset code {
-  font-size: 1em;
-}
-
-/* Set font size and line height for H2 headers in Markdown */
 .md-typeset h2 {
-  font-size: 1.3em;
-  line-height: 1.2;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--md-default-fg-color);
 }
 
-/* Set font size and line height for H3 headers in Markdown */
 .md-typeset h3 {
-  font-size: 1.1em;
-  line-height: 1.2;
+  font-size: 1.25em;
+  font-weight: 500;
+  letter-spacing: -.01em;
+  line-height: 1.5;
+  margin: 1.6em 0 .8em;
+  color: var(--md-default-fg-color);
 }
 
-/* Justify paragraph text in Markdown */
-p {
+
+/* Justify text */
+.md-typeset p {
   text-align: justify;
-  text-justify: inter-word;
 }
 
+/* Increase font size of code blocks in Markdown cells */
+.md-typeset pre {
+  font-size: 0.95em; /* Adjust the size as needed */
+}
 
-/* ===============================
-   Color Scheme Styles
-   =============================== */
+.md-typeset pre>code {
+  border-bottom-left-radius: 0;
+  border-top-left-radius: 0;
+  font-size: 1.1em;
+  white-space: pre-wrap; 
+  word-break: break-word;
+}
 
+.md-typeset code:not(.focus-visible) {
+  font-size: 1.1em;
+}
+
+.md-typeset table:not([class]) td>:last-child, .md-typeset table:not([class]) th>:last-child {
+  font-size: 1.1em;
+}
+
+/*
+===============================
+Color Scheme Styles
+===============================
+*/
 /* Light color scheme styles */
 [data-md-color-scheme="light"] {
   --md-primary-fg-color:        #001633;
   --md-primary-fg-color--light: #001633;
   --md-primary-fg-color--dark:  #001633;
-  --md-accent-fg-color:        #f79939;
-  --md-accent-fg-color--light: #f79939;
-  --md-accent-fg-color--dark:  #f79939;
-  --md-primary-bg-color:       #f79939;
-  --md-typeset-a-color:        #f79939;
+  --md-accent-fg-color:         #f79939;
+  --md-accent-fg-color--light:  #f79939;
+  --md-accent-fg-color--dark:   #f79939;
+  --md-primary-bg-color:        #f79939;
+  --md-typeset-a-color:         #f79939;
+  --md-default-fg-color:        #2c2c2c;
 }
 
 /* Slate color scheme styles */
@@ -102,13 +103,13 @@ p {
   --md-primary-fg-color:        #001633;
   --md-primary-fg-color--light: #001633;
   --md-primary-fg-color--dark:  #001633;
-  --md-accent-fg-color:        #f79939;
-  --md-accent-fg-color--light: #f79939;
-  --md-accent-fg-color--dark:  #f79939;
-  --md-primary-bg-color:       #f79939;
-  --md-typeset-a-color:        #f79939;
+  --md-accent-fg-color:         #f79939;
+  --md-accent-fg-color--light:  #f79939;
+  --md-accent-fg-color--dark:   #f79939;
+  --md-primary-bg-color:        #f79939;
+  --md-typeset-a-color:         #f79939;
 }
-
+  
 /* Hide dark images in light mode */
 [data-md-color-scheme="light"] img[src$="#only-dark"],
 [data-md-color-scheme="light"] img[src$="#gh-dark-mode-only"] {
@@ -121,23 +122,19 @@ p {
   display: none; 
 }
 
-
-/* ===============================
-   Badge Styles
-   =============================== */
-
-/* Badge for Releases file Styles */
+/*
+===============================
+Badge Styles
+=============================== 
+*/
 .badge {
   display: inline-block;
   padding: 0.2em 0.4em;
-  font-size: 75%;
+  font-size: 0.75em; 
   font-weight: 700;
   line-height: 1;
   text-align: center;
-  white-space: nowrap;
-  vertical-align: baseline;
   border-radius: 0.25rem;
-  /* margin-right: 0.25em; */
 }
 
 /* Enhancement Badge */

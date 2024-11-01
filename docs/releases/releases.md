@@ -10,6 +10,160 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
 
+## 0.14.0 <small>In development</small> { id="0.14.0" }
+
+The main changes in this release are:
+
+This release has undergone a major refactoring to improve the performance of the library. Visit the [migration guide](https://skforecast.org/latest/user_guides/migration-guide.html) section for more information.
+
++ <span class="badge text-bg-feature">Feature</span> Window features can be added to the training matrix using the `window_features` argument in all forecasters. You can use the <code>[RollingFeatures]</code> class to create these features or create your own object.
+
++ <span class="badge text-bg-feature">Feature</span> <code>[model_selection]</code> functions now have a new argument `cv`. This argument expect an object of type <code>[TimeSeriesFold]</code> or <code>[OneStepAheadFold]</code> which allows to define the validation strategy using the arguments `initial_train_size`, `steps`, `gap`, `refit`, `fixed_train_size`, `skip_folds` and `allow_incomplete_folds`.
+
++ <span class="badge text-bg-feature">Feature</span> Hyperparameter search now allows to follow a one-step-ahead validation strategy using a <code>[OneStepAheadFold]</code> as `cv` argument in the <code>[model_selection]</code> functions.
+
++ <span class="badge text-bg-enhancement">Enhancement</span> Refactor the prediction process in <code>[ForecasterRecursiveMultiSeries]</code> to improve performance when predicting multiple series.
+
++ <span class="badge text-bg-enhancement">Enhancement</span> The bootstrapping process in the `predict_bootstrapping` method of all forecasters has been optimized to improve performance. This may result in slightly different results when using the same seed as in previous versions.
+
++ <span class="badge text-bg-api-change">API Change</span> package structure has been changed to improve code organization. The forecasters have been grouped into the `recursive`, `direct` amd `deep_learning` modules. Visit the [migration guide](https://skforecast.org/latest/user_guides/migration-guide.html) section for more information.
+
++ <span class="badge text-bg-api-change">API Change</span> <code>[ForecasterAutoregCustom]</code> has been deprecated. Window features can be added using the `window_features` argument in the <code>[ForecasterRecursive]</code>.
+
++ <span class="badge text-bg-api-change">API Change</span> The `pmdarima.ARIMA` regressor is no longer supported by the <code>[ForecasterSarimax]</code>. You can use the skforecast <code>[Sarimax]</code> model or, to continue using it, use skforecast 0.13.0 or lower.
+
++ <span class="badge text-bg-danger">Fix</span> Fixed a bug where the `create_predict_X` method in recursive Forecasters did not correctly generate the matrix correctly when using transformations and/or differentiations
+
+
+**Added**
+
++ Added `numba>=0.59` as hard dependency.
+
++ Added `window_features` argument to all forecasters. This argument allows the user to add window features to the training matrix. See <code>[RollingFeatures]</code>.
+
++ Hyperparameter search now allows to follow a one-step-ahead validation strategy using a <code>[OneStepAheadFold]</code> as `cv` argument in the <code>[model_selection]</code> functions.
+
++ Differentiation has been extended to all forecasters. The `differentiation` argument has been added to all forecasters to model the n-order differentiated time series.
+
++ Create `transform_numpy` function in the <code>[utils]</code> module to carry out the transformation of the modeled time series and exogenous variables as numpy arrays.
+
++ `random_state` argument in the `fit` method of <code>[ForecasterRecursive]</code> to set a seed for the random generator so that the stored sample residuals are always deterministic.
+
++ New private method `_train_test_split_one_step_ahead` in all forecasters.
+
++ New private function `_calculate_metrics_one_step_ahead` to <code>[model_selection]</code> module to calculate the metrics when predicting one step ahead.
+
++ The `steps` argument in the predict method of the <code>[ForecasterRecursive]</code> can now be a str or a pandas datetime. If so, the method will predict up to the specified date. (contribution by @imMoya).
+
+
+**Changed**
+
++ <code>[ForecasterAutoregCustom]</code> has been deprecated. Window features can be added using the `window_features` argument in the <code>[ForecasterRecursive]</code>.
+
++ Refactor `recursive_predict` in <code>[ForecasterRecursiveMultiSeries]</code> to predict all series at once and include option of adding residuals. This improves performance when predicting multiple series.
+
++ Refactor `predict_bootstrapping` in all Forecasters. The bootstrapping process has been optimized to improve performance. This may result in slightly different results when using the same seed as in previous versions.
+
++ Change the default value of `encoding` to `ordinal` in <code>[ForecasterRecursiveMultiSeries]</code>. This will avoid conflicts if the regressor does not support categorical variables by default.
+
++ Removed argument `engine` from <code>[bayesian_search_forecaster]</code> and <code>[bayesian_search_forecaster_multiseries]</code>.
+
++ The `pmdarima.ARIMA` regressor is no longer supported by the <code>[ForecasterSarimax]</code>. You can use the skforecast <code>[Sarimax]</code> model or, to continue using it, use skforecast 0.13.0 or lower.
+
++ `initialize_lags` in <code>[utils]</code> now returns the maximum lag, `max_lag`.
+
++ Removed attribute `window_size_diff` from all Forecasters. The window size extended by the order of differentiation is now calculated on `window_size`.
+
++ `lags` can be `None` when initializing any Forecaster that includes window features.
+
++ <code>[model_selection]</code> module has been divided internally into different modules to improve code organization (`_validation`, `_search`, `_split`).
+
++ Functions from `model_selection_multiseries` and `model_selection_sarimax` modules have been moved to the <code>[model_selection]</code> module.
+
++ <code>[model_selection]</code> functions now have a new argument `cv`. This argument expect an object of type <code>[TimeSeriesFold]</code> or <code>[OneStepAheadFold]</code> which allows to define the validation strategy using the arguments `initial_train_size`, `steps`, `gap`, `refit`, `fixed_train_size`, `skip_folds` and `allow_incomplete_folds`.
+
++ Added <code>[feature_selection]</code> module. The functions <code>[select_features]</code> and <code>[select_features_multiseries]</code> have been moved to this module.
+
++ The functions <code>[select_features]</code> and <code>[select_features_multiseries]</code> now have 3 returns: `selected_lags`, `selected_window_features` and `selected_exog`.
+
++ `exog_to_direct` and `exog_to_direct_numpy` in <code>[utils]</code> now returns a the names of the columns of the transformed exogenous variables.
+
++ Renamed attributes in all Forecasters:
+
+    + `encoding_mapping` has been renamed to `encoding_mapping_`.
+
+    + `last_window` has been renamed to `last_window_`.
+
+    + `index_type` has been renamed to `index_type_`.
+
+    + `index_freq` has been renamed to `index_freq_`.
+
+    + `training_range` has been renamed to `training_range_`.
+
+    + `series_col_names` has been renamed to `series_names_in_`.
+
+    + `included_exog` has been renamed to `exog_in_`.
+
+    + `exog_type` has been renamed to `exog_type_in_`.
+
+    + `exog_dtypes` has been renamed to `exog_dtypes_in_`.
+
+    + `exog_col_names` has been renamed to `exog_names_in_`.
+
+    + `series_X_train` has been renamed to `X_train_series_names_in_`.
+
+    + `X_train_col_names` has been renamed to `X_train_features_names_out_`.
+
+    + `binner_intervals` has been renamed to `binner_intervals_`.
+
+    + `in_sample_residuals` has been renamed to `in_sample_residuals_`.
+
+    + `out_sample_residuals` has been renamed to `out_sample_residuals_`.
+
+    + `fitted` has been renamed to `is_fitted`.
+
++ Renamed arguments in different functions and methods:
+
+    + `in_sample_residuals` has been renamed to `use_in_sample_residuals`.
+
+    + `binned_residuals` has been renamed to `use_binned_residuals`.
+
+    + `series_col_names` has been renamed to `series_names_in_` in the `check_predict_input`, `check_preprocess_exog_multiseries` and `initialize_transformer_series` functions in the <code>[utils]</code> module.
+
+    + `series_X_train` has been renamed to `X_train_series_names_in_` in the `prepare_levels_multiseries` function in the <code>[utils]</code> module.
+
+    + `exog_col_names` has been renamed to `exog_names_in_` in the `check_predict_input` and `check_preprocess_exog_multiseries` functions in the <code>[utils]</code> module.
+
+    + `index_type` has been renamed to `index_type_` in the `check_predict_input` function in the <code>[utils]</code> module.
+
+    + `index_freq` has been renamed to `index_freq_` in the `check_predict_input` function in the <code>[utils]</code> module.
+
+    + `included_exog` has been renamed to `exog_in_` in the `check_predict_input` function in the <code>[utils]</code> module.
+
+    + `exog_type` has been renamed to `exog_type_in_` in the `check_predict_input` function in the <code>[utils]</code> module.
+
+    + `exog_dtypes` has been renamed to `exog_dtypes_in_` in the `check_predict_input` function in the <code>[utils]</code> module.
+
+    + `fitted` has been renamed to `is_fitted` in the `check_predict_input` function in the <code>[utils]</code> module.
+
+    + `use_in_sample` has been renamed to `use_in_sample_residuals` in the `prepare_residuals_multiseries` function in the <code>[utils]</code> module.
+
+    + `in_sample_residuals` has been renamed to `use_in_sample_residuals` in the <code>[backtesting_forecaster]</code>, <code>[backtesting_forecaster_multiseries]</code> and `check_backtesting_input` (<code>[utils]</code> module) functions.
+
+   + `binned_residuals` has been renamed to `use_binned_residuals` in the <code>[backtesting_forecaster]</code> function.
+
+    + `in_sample_residuals` has been renamed to `in_sample_residuals_` in the `prepare_residuals_multiseries` function in the <code>[utils]</code> module.
+
+    + `out_sample_residuals` has been renamed to `out_sample_residuals_` in the `prepare_residuals_multiseries` function in the <code>[utils]</code> module.
+
+    + `last_window` has been renamed to `last_window_` in the `preprocess_levels_self_last_window_multiseries` function in the <code>[utils]</code> module.
+
+
+**Fixed**
+
++ Fixed a bug where the `create_predict_X` method in recursive Forecasters did not correctly generate the matrix correctly when using transformations and/or differentiations.
+
+
 ## 0.13.0 <small>Aug 01, 2024</small> { id="0.13.0" }
 
 The main changes in this release are:
@@ -29,7 +183,7 @@ The main changes in this release are:
 + <span class="badge text-bg-api-change">API Change</span> backtesting procedures now pass the training series to the metric functions so it can be used to calculate metrics that depend on the training series.
 
 + <span class="badge text-bg-api-change">API Change</span> Changed the default value of the `transformer_series` argument to `None` in the Global Forecasters <code>[ForecasterAutoregMultiSeries]</code> and <code>[ForecasterAutoregMultiSeriesCustom]</code>. In most cases, tree-based models are used as regressors in these forecasters, so no transformation is applied by default as it is not necessary.
-  
+
 **Added**
 
 + Support for `python 3.12`.
@@ -707,7 +861,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 
 **Changed**
 
-+ New implementation of `ForecasterAutoregMultiOutput`. The training process in the new version creates a different X_train for each step. See [Direct multi-step forecasting](https://github.com/JoaquinAmatRodrigo/skforecast#introduction) for more details. Old versión can be acces with `skforecast.deprecated.ForecasterAutoregMultiOutput`.
++ New implementation of `ForecasterAutoregMultiOutput`. The training process in the new version creates a different X_train for each step. See [Direct multi-step forecasting](https://github.com/skforecast/skforecast#introduction) for more details. Old versión can be acces with `skforecast.deprecated.ForecasterAutoregMultiOutput`.
 
 **Fixed**
 
@@ -725,7 +879,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 **Changed**
 
 
-+ New implementation of `ForecasterAutoregMultiOutput`. The training process in the new version creates a different X_train for each step. See [Direct multi-step forecasting](https://github.com/JoaquinAmatRodrigo/skforecast#introduction) for more details. Old versión can be acces with `skforecast.deprecated.ForecasterAutoregMultiOutput`.
++ New implementation of `ForecasterAutoregMultiOutput`. The training process in the new version creates a different X_train for each step. See [Direct multi-step forecasting](https://github.com/skforecast/skforecast#introduction) for more details. Old versión can be acces with `skforecast.deprecated.ForecasterAutoregMultiOutput`.
 
 + Class `ForecasterCustom` has been renamed to `ForecasterAutoregCustom`. However, `ForecasterCustom` will still remain to keep backward compatibility.
 
@@ -826,52 +980,54 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 
 <!-- Links to API Reference -->
 <!-- Forecasters -->
-[ForecasterAutoreg]: https://skforecast.org/latest/api/forecasterautoreg
-[ForecasterAutoregCustom]: https://skforecast.org/latest/api/forecasterautoregcustom
-[ForecasterAutoregDirect]: https://skforecast.org/latest/api/forecasterautoregdirect
-[ForecasterAutoregMultiSeries]: https://skforecast.org/latest/api/forecastermultiseries
-[ForecasterAutoregMultiSeriesCustom]: https://skforecast.org/latest/api/forecastermultiseriescustom
-[ForecasterAutoregMultiVariate]: https://skforecast.org/latest/api/forecastermultivariate
+[ForecasterRecursive]: https://skforecast.org/latest/api/forecasterrecursive
+[ForecasterDirect]: https://skforecast.org/latest/api/forecasterdirect
+[ForecasterRecursiveMultiSeries]: https://skforecast.org/latest/api/forecasterrecursivemultiseries
+[ForecasterDirectMultiVariate]: https://skforecast.org/latest/api/forecasterdirectmultivariate
 [ForecasterRNN]: https://skforecast.org/latest/api/forecasterrnn
 [ForecasterSarimax]: https://skforecast.org/latest/api/forecastersarimax
 [Sarimax]: https://skforecast.org/latest/api/sarimax
-[ForecasterEquivalentDate]: https://skforecast.org/latest/api/forecasterbaseline#skforecast.ForecasterBaseline.ForecasterEquivalentDate
-
-<!-- metrics -->
-[metrics]: https://skforecast.org/latest/api/metrics
-[add_y_train_argument]: https://skforecast.org/latest/api/metrics#skforecast.metrics.metrics.add_y_train_argument
-[mean_absolute_scaled_error]: https://skforecast.org/latest/api/metrics#skforecast.metrics.metrics.mean_absolute_scaled_error
-[root_mean_squared_scaled_error]: https://skforecast.org/latest/api/metrics#skforecast.metrics.metrics.root_mean_squared_scaled_error
+[ForecasterEquivalentDate]: https://skforecast.org/latest/api/forecasterequivalentdate
 
 <!-- model_selection -->
 [model_selection]: https://skforecast.org/latest/api/model_selection
-[backtesting_forecaster]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection.model_selection.backtesting_forecaster
-[grid_search_forecaster]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection.model_selection.grid_search_forecaster
-[random_search_forecaster]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection.model_selection.random_search_forecaster
-[bayesian_search_forecaster]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection.model_selection.bayesian_search_forecaster
-[select_features]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection.model_selection.select_features
 
-<!-- model_selection_multiseries -->
-[model_selection_multiseries]: https://skforecast.org/latest/api/model_selection_multiseries
-[backtesting_forecaster_multiseries]: https://skforecast.org/latest/api/model_selection_multiseries#skforecast.model_selection_multiseries.model_selection_multiseries.backtesting_forecaster_multiseries
-[grid_search_forecaster_multiseries]: https://skforecast.org/latest/api/model_selection_multiseries#skforecast.model_selection_multiseries.model_selection_multiseries.grid_search_forecaster_multiseries
-[random_search_forecaster_multiseries]: https://skforecast.org/latest/api/model_selection_multiseries#skforecast.model_selection_multiseries.model_selection_multiseries.random_search_forecaster_multiseries
-[bayesian_search_forecaster_multiseries]: https://skforecast.org/latest/api/model_selection_multiseries#skforecast.model_selection_multiseries.model_selection_multiseries.bayesian_search_forecaster_multiseries
-[select_features_multiseries]: https://skforecast.org/latest/api/model_selection_multiseries#skforecast.model_selection_multiseries.model_selection_multiseries.select_features_multiseries
+[backtesting_forecaster]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._validation.backtesting_forecaster
+[grid_search_forecaster]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._search.grid_search_forecaster
+[random_search_forecaster]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._search.random_search_forecaster
+[bayesian_search_forecaster]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._search.bayesian_search_forecaster
 
-<!-- model_selection_sarimax -->
-[model_selection_sarimax]: https://skforecast.org/latest/api/model_selection_sarimax
-[backtesting_sarimax]: https://skforecast.org/latest/api/model_selection_sarimax#skforecast.model_selection_sarimax.model_selection_sarimax.backtesting_sarimax
-[grid_search_sarimax]: https://skforecast.org/latest/api/model_selection_sarimax#skforecast.model_selection_sarimax.model_selection_sarimax.grid_search_sarimax
-[random_search_sarimax]: https://skforecast.org/latest/api/model_selection_sarimax#skforecast.model_selection_sarimax.model_selection_sarimax.random_search_sarimax
+[backtesting_forecaster_multiseries]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._validation.backtesting_forecaster_multiseries
+[grid_search_forecaster_multiseries]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._search.grid_search_forecaster_multiseries
+[random_search_forecaster_multiseries]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._search.random_search_forecaster_multiseries
+[bayesian_search_forecaster_multiseries]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._search.bayesian_search_forecaster_multiseries
+
+[backtesting_sarimax]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._validation.backtesting_sarimax
+[grid_search_sarimax]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._search.grid_search_sarimax
+[random_search_sarimax]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._search.random_search_sarimax
+
+[BaseFold]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._split.BaseFold
+[TimeSeriesFold]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._split.TimeSeriesFold
+[OneStepAheadFold]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._split.OneStepAheadFold
+
+<!-- feature_selection -->
+[feature_selection]: https://skforecast.org/latest/api/feature_selection
+[select_features]: https://skforecast.org/latest/api/feature_selection#skforecast.feature_selection.feature_selection.select_features
+[select_features_multiseries]: https://skforecast.org/latest/api/feature_selection#skforecast.feature_selection.feature_selection.select_features_multiseries
 
 <!-- preprocessing -->
 [preprocessing]: https://skforecast.org/latest/api/preprocessing
-[TimeSeriesDifferentiator]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.TimeSeriesDifferentiator
+[RollingFeatures]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.RollingFeatures
 [series_long_to_dict]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.series_long_to_dict
 [exog_long_to_dict]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.exog_long_to_dict
-[DateTimeFeatureTransformer]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.DateTimeFeatureTransformer
-[create_datetime_features]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.create_datetime_features
+[TimeSeriesDifferentiator]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.TimeSeriesDifferentiator
+[QuantileBinner]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.QuantileBinner
+
+<!-- metrics -->
+[metrics]: https://skforecast.org/latest/api/metrics
+[mean_absolute_scaled_error]: https://skforecast.org/latest/api/metrics#skforecast.metrics.metrics.mean_absolute_scaled_error
+[root_mean_squared_scaled_error]: https://skforecast.org/latest/api/metrics#skforecast.metrics.metrics.root_mean_squared_scaled_error
+[add_y_train_argument]: https://skforecast.org/latest/api/metrics#skforecast.metrics.metrics.add_y_train_argument
 
 <!-- plot -->
 [plot]: https://skforecast.org/latest/api/plot
@@ -881,10 +1037,26 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [plot_prediction_distribution]: https://skforecast.org/latest/api/plot#skforecast.plot.plot.plot_prediction_distribution
 [plot_prediction_intervals]: https://skforecast.org/latest/api/plot#skforecast.plot.plot.plot_prediction_intervals
 
+<!-- utils -->
+[utils]: https://skforecast.org/latest/api/utils
+
 <!-- datasets -->
 [datasets]: https://skforecast.org/latest/api/datasets
 [fetch_dataset]: https://skforecast.org/latest/api/datasets#skforecast.datasets.fetch_dataset
 [load_demo_dataset]: https://skforecast.org/latest/api/datasets#skforecast.datasets.load_demo_dataset
 
-<!-- utils -->
-[utils]: https://skforecast.org/latest/api/utils
+<!-- exceptions -->
+[utils]: https://skforecast.org/latest/api/exceptions
+
+
+<!-- OLD -->
+[ForecasterAutoreg]: https://skforecast.org/0.13.0/api/forecasterautoreg
+[ForecasterAutoregCustom]: https://skforecast.org/0.13.0/api/forecasterautoregcustom
+[ForecasterAutoregDirect]: https://skforecast.org/0.13.0/api/forecasterautoregdirect
+[ForecasterAutoregMultiSeries]: https://skforecast.org/0.13.0/api/forecastermultiseries
+[ForecasterAutoregMultiSeriesCustom]: https://skforecast.org/0.13.0/api/forecastermultiseriescustom
+[ForecasterAutoregMultiVariate]: https://skforecast.org/0.13.0/api/forecastermultivariate
+[model_selection_multiseries]: https://skforecast.org/0.13.0/api/model_selection_multiseries
+[model_selection_sarimax]: https://skforecast.org/0.13.0/api/model_selection_sarimax
+[DateTimeFeatureTransformer]: https://skforecast.org/0.13.0/api/preprocessing#skforecast.preprocessing.DateTimeFeatureTransformer
+[create_datetime_features]: https://skforecast.org/0.13.0/api/preprocessing#skforecast.preprocessing.create_datetime_features

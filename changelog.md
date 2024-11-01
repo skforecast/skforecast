@@ -1,7 +1,8 @@
 # Changelog
 
-All significant changes to this project are documented in the release file.
+Welcome to the changelog! Here, you’ll find all the updates and improvements we’ve made to keep this project moving forward.
 
-- To check the latest updates to the **stable version**, see the [release notes](https://skforecast.org/latest/releases/releases.html) in the documentation.
+- Curious about the **latest stable release**? Check out the [release notes here](https://skforecast.org/latest/releases/releases.html) for all the details.
+- Want a sneak peek at what’s coming next? Head to the [development release notes](https://skforecast.org/dev/releases/releases.html) to see the latest changes still in progress.
 
-- For the latest updates on the version **currently in development** (unstable), see the [release notes](https://github.com/JoaquinAmatRodrigo/skforecast/blob/master/docs/releases/releases.md) in the master branch.
+Thanks for following along!

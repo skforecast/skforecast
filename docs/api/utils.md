@@ -5,7 +5,6 @@
 ::: skforecast.utils.utils.initialize_lags
 ::: skforecast.utils.utils.initialize_weights
 ::: skforecast.utils.utils.initialize_transformer_series
-::: skforecast.utils.utils.initialize_lags_grid
 ::: skforecast.utils.utils.check_select_fit_kwargs
 ::: skforecast.utils.utils.check_y
 ::: skforecast.utils.utils.check_exog
@@ -20,12 +19,11 @@
 ::: skforecast.utils.utils.exog_to_direct
 ::: skforecast.utils.utils.exog_to_direct_numpy
 ::: skforecast.utils.utils.expand_index
+::: skforecast.utils.utils.transform_numpy
 ::: skforecast.utils.utils.transform_series
 ::: skforecast.utils.utils.transform_dataframe
 ::: skforecast.utils.utils.check_optional_dependency
 ::: skforecast.utils.utils.multivariate_time_series_corr
-::: skforecast.utils.utils.check_backtesting_input
-::: skforecast.utils.utils.select_n_jobs_backtesting
 ::: skforecast.utils.utils.select_n_jobs_fit_forecaster
 ::: skforecast.utils.utils.check_preprocess_series
 ::: skforecast.utils.utils.check_preprocess_exog_multiseries

@@ -16,23 +16,24 @@ pip install skforecast
 Specific version:
 
 ```bash
-pip install skforecast==0.13.0
+pip install skforecast==0.14.0
 ```
 
 Latest (unstable):
 
 ```bash
-pip install git+https://github.com/JoaquinAmatRodrigo/skforecast#master
+pip install git+https://github.com/skforecast/skforecast@master
 ```
 
 The following dependencies are installed with the default installation:
 
-+ numpy>=1.20.3
++ numpy>=1.22
 + pandas>=1.5
 + tqdm>=4.57
 + scikit-learn>=1.2
 + optuna>=2.10
 + joblib>=1.1
++ numba>=0.59
 
 
 ## **Optional dependencies**
@@ -51,7 +52,6 @@ For specific use cases, you can install these dependencies as needed:
 pip install skforecast[sarimax]
 ```
 
-+ pmdarima>=2.0, <2.1
 + statsmodels>=0.12, <0.15
 
 

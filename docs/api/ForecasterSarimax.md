@@ -1,3 +1,3 @@
 # `ForecasterSarimax`
 
-::: skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax
+::: skforecast.recursive._forecaster_sarimax.ForecasterSarimax

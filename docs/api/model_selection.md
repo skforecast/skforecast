@@ -1,7 +1,19 @@
 # `model_selection`
 
-::: skforecast.model_selection.model_selection.backtesting_forecaster
-::: skforecast.model_selection.model_selection.grid_search_forecaster
-::: skforecast.model_selection.model_selection.random_search_forecaster
-::: skforecast.model_selection.model_selection.bayesian_search_forecaster
-::: skforecast.model_selection.model_selection.select_features
+::: skforecast.model_selection._validation.backtesting_forecaster
+::: skforecast.model_selection._search.grid_search_forecaster
+::: skforecast.model_selection._search.random_search_forecaster
+::: skforecast.model_selection._search.bayesian_search_forecaster
+::: skforecast.model_selection._validation.backtesting_forecaster_multiseries
+::: skforecast.model_selection._search.grid_search_forecaster_multiseries
+::: skforecast.model_selection._search.random_search_forecaster_multiseries
+::: skforecast.model_selection._search.bayesian_search_forecaster_multiseries
+::: skforecast.model_selection._validation.backtesting_sarimax
+::: skforecast.model_selection._search.grid_search_sarimax
+::: skforecast.model_selection._search.random_search_sarimax
+::: skforecast.model_selection._split.BaseFold
+::: skforecast.model_selection._split.TimeSeriesFold
+::: skforecast.model_selection._split.OneStepAheadFold
+::: skforecast.model_selection._utils.initialize_lags_grid
+::: skforecast.model_selection._utils.check_backtesting_input
+::: skforecast.model_selection._utils.select_n_jobs_backtesting
