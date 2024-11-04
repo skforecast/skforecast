@@ -1919,11 +1919,11 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
-      <a href="../faq/forecasting-time-series-with-missing-values.html" class="md-nav__link">
+      <a href="../faq/non-negative-predictions.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Time series with missing values
+    Avoid negative predictions when forecasting
   </span>
   
 
@@ -1940,11 +1940,11 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
-      <a href="../faq/non-negative-predictions.html" class="md-nav__link">
+      <a href="../faq/forecasting-time-series-with-missing-values.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Non negative predictions
+    Forecasting time series with missing values
   </span>
   
 
@@ -1965,7 +1965,7 @@ This is documentation for an unstable development version.
         
   
   <span class="md-ellipsis">
-    Forecasting with delayed data
+    Forecasting with delayed historical data
   </span>
   
 
@@ -1982,11 +1982,32 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
-      <a href="../faq/parallelization-skforecast.html" class="md-nav__link">
+      <a href="../faq/parameters-search-backtesting-vs-one-step-ahead.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Parallelization
+    Backtesting vs One-step-ahead
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/cyclical-features-time-series.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Cyclical features in time series
   </span>
   
 
@@ -2024,11 +2045,11 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
-      <a href="../faq/profiling-skforecast.html" class="md-nav__link">
+      <a href="../faq/parallelization-skforecast.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Profiling skforecast
+    Parallelization in skforecast
   </span>
   
 
@@ -2045,11 +2066,11 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
-      <a href="../faq/parameters-search-backetesting-vs-one-step-ahead.html" class="md-nav__link">
+      <a href="../faq/profiling-skforecast.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Backtesting vs One-step-ahead
+    Profiling skforecast
   </span>
   
 
@@ -2612,7 +2633,7 @@ This is documentation for an unstable development version.
         
   
   <span class="md-ellipsis">
-    Non negative predictions
+    Avoid negative predictions when forecasting
   </span>
   
 
@@ -2633,7 +2654,49 @@ This is documentation for an unstable development version.
         
   
   <span class="md-ellipsis">
-    Time series with missing values
+    Forecasting time series with missing values
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/forecasting-with-delayed-historical-data.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Forecasting with delayed historical data
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/parameters-search-backtesting-vs-one-step-ahead.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Backtesting vs One-step-ahead
   </span>
   
 
@@ -2655,27 +2718,6 @@ This is documentation for an unstable development version.
   
   <span class="md-ellipsis">
     Cyclical features in time series
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../faq/forecasting-with-delayed-historical-data.html" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Forecasting with delayed data
   </span>
   
 
@@ -2717,7 +2759,7 @@ This is documentation for an unstable development version.
         
   
   <span class="md-ellipsis">
-    Parallelization
+    Parallelization in skforecast
   </span>
   
 
@@ -3132,10 +3174,10 @@ This is documentation for an unstable development version.
 <p><span class="badge text-bg-feature">Feature</span> Window features can be added to the training matrix using the <code>window_features</code> argument in all forecasters. You can use the <code><a href="https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.RollingFeatures">RollingFeatures</a></code> class to create these features or create your own object.</p>
 </li>
 <li>
-<p><span class="badge text-bg-feature">Feature</span> <code><a href="https://skforecast.org/latest/api/model_selection">model_selection</a></code> functions now have a new argument <code>cv</code>. This argument expect an object of type <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection._split.timeseriesfold">TimeSeriesFold</a></code> or <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection._split.onestepaheadfold">OneStepAheadFold</a></code> which allows to define the validation strategy using the arguments <code>initial_train_size</code>, <code>steps</code>, <code>gap</code>, <code>refit</code>, <code>fixed_train_size</code>, <code>skip_folds</code> and <code>allow_incomplete_folds</code>.</p>
+<p><span class="badge text-bg-feature">Feature</span> <code><a href="https://skforecast.org/latest/api/model_selection">model_selection</a></code> functions now have a new argument <code>cv</code>. This argument expect an object of type <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection._split.TimeSeriesFold">TimeSeriesFold</a></code> or <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection._split.OneStepAheadFold">OneStepAheadFold</a></code> which allows to define the validation strategy using the arguments <code>initial_train_size</code>, <code>steps</code>, <code>gap</code>, <code>refit</code>, <code>fixed_train_size</code>, <code>skip_folds</code> and <code>allow_incomplete_folds</code>.</p>
 </li>
 <li>
-<p><span class="badge text-bg-feature">Feature</span> Hyperparameter search now allows to follow a one-step-ahead validation strategy using a <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection._split.onestepaheadfold">OneStepAheadFold</a></code> as <code>cv</code> argument in the <code><a href="https://skforecast.org/latest/api/model_selection">model_selection</a></code> functions.</p>
+<p><span class="badge text-bg-feature">Feature</span> Hyperparameter search now allows to follow a one-step-ahead validation strategy using a <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection._split.OneStepAheadFold">OneStepAheadFold</a></code> as <code>cv</code> argument in the <code><a href="https://skforecast.org/latest/api/model_selection">model_selection</a></code> functions.</p>
 </li>
 <li>
 <p><span class="badge text-bg-enhancement">Enhancement</span> Refactor the prediction process in <code><a href="https://skforecast.org/latest/api/forecasterrecursivemultiseries">ForecasterRecursiveMultiSeries</a></code> to improve performance when predicting multiple series.</p>
@@ -3165,13 +3207,13 @@ This is documentation for an unstable development version.
 <p>Added <code>window_features</code> argument to all forecasters. This argument allows the user to add window features to the training matrix. See <code><a href="https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.RollingFeatures">RollingFeatures</a></code>.</p>
 </li>
 <li>
-<p>Hyperparameter search now allows to follow a one-step-ahead validation strategy using a <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection._split.onestepaheadfold">OneStepAheadFold</a></code> as <code>cv</code> argument in the <code><a href="https://skforecast.org/latest/api/model_selection">model_selection</a></code> functions.</p>
+<p>Hyperparameter search now allows to follow a one-step-ahead validation strategy using a <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection._split.OneStepAheadFold">OneStepAheadFold</a></code> as <code>cv</code> argument in the <code><a href="https://skforecast.org/latest/api/model_selection">model_selection</a></code> functions.</p>
 </li>
 <li>
 <p>Differentiation has been extended to all forecasters. The <code>differentiation</code> argument has been added to all forecasters to model the n-order differentiated time series.</p>
 </li>
 <li>
-<p>Create <code>transform_numpy</code> function in the <code><a href="https://skforecast.org/latest/api/utils">utils</a></code> module to carry out the transformation of the modeled time series and exogenous variables as numpy arrays.</p>
+<p>Create <code>transform_numpy</code> function in the <code><a href="https://skforecast.org/latest/api/exceptions">utils</a></code> module to carry out the transformation of the modeled time series and exogenous variables as numpy arrays.</p>
 </li>
 <li>
 <p><code>random_state</code> argument in the <code>fit</code> method of <code><a href="https://skforecast.org/latest/api/forecasterrecursive">ForecasterRecursive</a></code> to set a seed for the random generator so that the stored sample residuals are always deterministic.</p>
@@ -3201,13 +3243,13 @@ This is documentation for an unstable development version.
 <p>Change the default value of <code>encoding</code> to <code>ordinal</code> in <code><a href="https://skforecast.org/latest/api/forecasterrecursivemultiseries">ForecasterRecursiveMultiSeries</a></code>. This will avoid conflicts if the regressor does not support categorical variables by default.</p>
 </li>
 <li>
-<p>Removed argument <code>engine</code> from <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection.model_selection.bayesian_search_forecaster">bayesian_search_forecaster</a></code> and <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection._search.bayesian_search_forecaster_multiseries">bayesian_search_forecaster_multiseries</a></code>.</p>
+<p>Removed argument <code>engine</code> from <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection._search.bayesian_search_forecaster">bayesian_search_forecaster</a></code> and <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection._search.bayesian_search_forecaster_multiseries">bayesian_search_forecaster_multiseries</a></code>.</p>
 </li>
 <li>
 <p>The <code>pmdarima.ARIMA</code> regressor is no longer supported by the <code><a href="https://skforecast.org/latest/api/forecastersarimax">ForecasterSarimax</a></code>. You can use the skforecast <code><a href="https://skforecast.org/latest/api/sarimax">Sarimax</a></code> model or, to continue using it, use skforecast 0.13.0 or lower.</p>
 </li>
 <li>
-<p><code>initialize_lags</code> in <code><a href="https://skforecast.org/latest/api/utils">utils</a></code> now returns the maximum lag, <code>max_lag</code>.</p>
+<p><code>initialize_lags</code> in <code><a href="https://skforecast.org/latest/api/exceptions">utils</a></code> now returns the maximum lag, <code>max_lag</code>.</p>
 </li>
 <li>
 <p>Removed attribute <code>window_size_diff</code> from all Forecasters. The window size extended by the order of differentiation is now calculated on <code>window_size</code>.</p>
@@ -3222,13 +3264,16 @@ This is documentation for an unstable development version.
 <p>Functions from <code>model_selection_multiseries</code> and <code>model_selection_sarimax</code> modules have been moved to the <code><a href="https://skforecast.org/latest/api/model_selection">model_selection</a></code> module.</p>
 </li>
 <li>
-<p><code><a href="https://skforecast.org/latest/api/model_selection">model_selection</a></code> functions now have a new argument <code>cv</code>. This argument expect an object of type <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection._split.timeseriesfold">TimeSeriesFold</a></code> or <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection._split.onestepaheadfold">OneStepAheadFold</a></code> which allows to define the validation strategy using the arguments <code>initial_train_size</code>, <code>steps</code>, <code>gap</code>, <code>refit</code>, <code>fixed_train_size</code>, <code>skip_folds</code> and <code>allow_incomplete_folds</code>.</p>
+<p><code><a href="https://skforecast.org/latest/api/model_selection">model_selection</a></code> functions now have a new argument <code>cv</code>. This argument expect an object of type <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection._split.TimeSeriesFold">TimeSeriesFold</a></code> or <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection._split.OneStepAheadFold">OneStepAheadFold</a></code> which allows to define the validation strategy using the arguments <code>initial_train_size</code>, <code>steps</code>, <code>gap</code>, <code>refit</code>, <code>fixed_train_size</code>, <code>skip_folds</code> and <code>allow_incomplete_folds</code>.</p>
 </li>
 <li>
 <p>Added <code><a href="https://skforecast.org/latest/api/feature_selection">feature_selection</a></code> module. The functions <code><a href="https://skforecast.org/latest/api/feature_selection#skforecast.feature_selection.feature_selection.select_features">select_features</a></code> and <code><a href="https://skforecast.org/latest/api/feature_selection#skforecast.feature_selection.feature_selection.select_features_multiseries">select_features_multiseries</a></code> have been moved to this module.</p>
 </li>
 <li>
-<p><code>exog_to_direct</code> and <code>exog_to_direct_numpy</code> in <code><a href="https://skforecast.org/latest/api/utils">utils</a></code> now returns a the names of the columns of the transformed exogenous variables.</p>
+<p>The functions <code><a href="https://skforecast.org/latest/api/feature_selection#skforecast.feature_selection.feature_selection.select_features">select_features</a></code> and <code><a href="https://skforecast.org/latest/api/feature_selection#skforecast.feature_selection.feature_selection.select_features_multiseries">select_features_multiseries</a></code> now have 3 returns: <code>selected_lags</code>, <code>selected_window_features</code> and <code>selected_exog</code>.</p>
+</li>
+<li>
+<p><code>exog_to_direct</code> and <code>exog_to_direct_numpy</code> in <code><a href="https://skforecast.org/latest/api/exceptions">utils</a></code> now returns a the names of the columns of the transformed exogenous variables.</p>
 </li>
 <li>
 <p>Renamed attributes in all Forecasters:</p>
@@ -3293,37 +3338,37 @@ This is documentation for an unstable development version.
 <p><code>binned_residuals</code> has been renamed to <code>use_binned_residuals</code>.</p>
 </li>
 <li>
-<p><code>series_col_names</code> has been renamed to <code>series_names_in_</code> in the <code>check_predict_input</code>, <code>check_preprocess_exog_multiseries</code> and <code>initialize_transformer_series</code> functions in the <code><a href="https://skforecast.org/latest/api/utils">utils</a></code> module.</p>
+<p><code>series_col_names</code> has been renamed to <code>series_names_in_</code> in the <code>check_predict_input</code>, <code>check_preprocess_exog_multiseries</code> and <code>initialize_transformer_series</code> functions in the <code><a href="https://skforecast.org/latest/api/exceptions">utils</a></code> module.</p>
 </li>
 <li>
-<p><code>series_X_train</code> has been renamed to <code>X_train_series_names_in_</code> in the <code>prepare_levels_multiseries</code> function in the <code><a href="https://skforecast.org/latest/api/utils">utils</a></code> module.</p>
+<p><code>series_X_train</code> has been renamed to <code>X_train_series_names_in_</code> in the <code>prepare_levels_multiseries</code> function in the <code><a href="https://skforecast.org/latest/api/exceptions">utils</a></code> module.</p>
 </li>
 <li>
-<p><code>exog_col_names</code> has been renamed to <code>exog_names_in_</code> in the <code>check_predict_input</code> and <code>check_preprocess_exog_multiseries</code> functions in the <code><a href="https://skforecast.org/latest/api/utils">utils</a></code> module.</p>
+<p><code>exog_col_names</code> has been renamed to <code>exog_names_in_</code> in the <code>check_predict_input</code> and <code>check_preprocess_exog_multiseries</code> functions in the <code><a href="https://skforecast.org/latest/api/exceptions">utils</a></code> module.</p>
 </li>
 <li>
-<p><code>index_type</code> has been renamed to <code>index_type_</code> in the <code>check_predict_input</code> function in the <code><a href="https://skforecast.org/latest/api/utils">utils</a></code> module.</p>
+<p><code>index_type</code> has been renamed to <code>index_type_</code> in the <code>check_predict_input</code> function in the <code><a href="https://skforecast.org/latest/api/exceptions">utils</a></code> module.</p>
 </li>
 <li>
-<p><code>index_freq</code> has been renamed to <code>index_freq_</code> in the <code>check_predict_input</code> function in the <code><a href="https://skforecast.org/latest/api/utils">utils</a></code> module.</p>
+<p><code>index_freq</code> has been renamed to <code>index_freq_</code> in the <code>check_predict_input</code> function in the <code><a href="https://skforecast.org/latest/api/exceptions">utils</a></code> module.</p>
 </li>
 <li>
-<p><code>included_exog</code> has been renamed to <code>exog_in_</code> in the <code>check_predict_input</code> function in the <code><a href="https://skforecast.org/latest/api/utils">utils</a></code> module.</p>
+<p><code>included_exog</code> has been renamed to <code>exog_in_</code> in the <code>check_predict_input</code> function in the <code><a href="https://skforecast.org/latest/api/exceptions">utils</a></code> module.</p>
 </li>
 <li>
-<p><code>exog_type</code> has been renamed to <code>exog_type_in_</code> in the <code>check_predict_input</code> function in the <code><a href="https://skforecast.org/latest/api/utils">utils</a></code> module.</p>
+<p><code>exog_type</code> has been renamed to <code>exog_type_in_</code> in the <code>check_predict_input</code> function in the <code><a href="https://skforecast.org/latest/api/exceptions">utils</a></code> module.</p>
 </li>
 <li>
-<p><code>exog_dtypes</code> has been renamed to <code>exog_dtypes_in_</code> in the <code>check_predict_input</code> function in the <code><a href="https://skforecast.org/latest/api/utils">utils</a></code> module.</p>
+<p><code>exog_dtypes</code> has been renamed to <code>exog_dtypes_in_</code> in the <code>check_predict_input</code> function in the <code><a href="https://skforecast.org/latest/api/exceptions">utils</a></code> module.</p>
 </li>
 <li>
-<p><code>fitted</code> has been renamed to <code>is_fitted</code> in the <code>check_predict_input</code> function in the <code><a href="https://skforecast.org/latest/api/utils">utils</a></code> module.</p>
+<p><code>fitted</code> has been renamed to <code>is_fitted</code> in the <code>check_predict_input</code> function in the <code><a href="https://skforecast.org/latest/api/exceptions">utils</a></code> module.</p>
 </li>
 <li>
-<p><code>use_in_sample</code> has been renamed to <code>use_in_sample_residuals</code> in the <code>prepare_residuals_multiseries</code> function in the <code><a href="https://skforecast.org/latest/api/utils">utils</a></code> module.</p>
+<p><code>use_in_sample</code> has been renamed to <code>use_in_sample_residuals</code> in the <code>prepare_residuals_multiseries</code> function in the <code><a href="https://skforecast.org/latest/api/exceptions">utils</a></code> module.</p>
 </li>
 <li>
-<p><code>in_sample_residuals</code> has been renamed to <code>use_in_sample_residuals</code> in the <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection._validation.backtesting_forecaster">backtesting_forecaster</a></code>, <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection._validation.backtesting_forecaster_multiseries">backtesting_forecaster_multiseries</a></code> and <code>check_backtesting_input</code> (<code><a href="https://skforecast.org/latest/api/utils">utils</a></code> module) functions.</p>
+<p><code>in_sample_residuals</code> has been renamed to <code>use_in_sample_residuals</code> in the <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection._validation.backtesting_forecaster">backtesting_forecaster</a></code>, <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection._validation.backtesting_forecaster_multiseries">backtesting_forecaster_multiseries</a></code> and <code>check_backtesting_input</code> (<code><a href="https://skforecast.org/latest/api/exceptions">utils</a></code> module) functions.</p>
 </li>
 </ul>
 </li>
@@ -3331,13 +3376,13 @@ This is documentation for an unstable development version.
 <p><code>binned_residuals</code> has been renamed to <code>use_binned_residuals</code> in the <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection._validation.backtesting_forecaster">backtesting_forecaster</a></code> function.</p>
 <ul>
 <li>
-<p><code>in_sample_residuals</code> has been renamed to <code>in_sample_residuals_</code> in the <code>prepare_residuals_multiseries</code> function in the <code><a href="https://skforecast.org/latest/api/utils">utils</a></code> module.</p>
+<p><code>in_sample_residuals</code> has been renamed to <code>in_sample_residuals_</code> in the <code>prepare_residuals_multiseries</code> function in the <code><a href="https://skforecast.org/latest/api/exceptions">utils</a></code> module.</p>
 </li>
 <li>
-<p><code>out_sample_residuals</code> has been renamed to <code>out_sample_residuals_</code> in the <code>prepare_residuals_multiseries</code> function in the <code><a href="https://skforecast.org/latest/api/utils">utils</a></code> module.</p>
+<p><code>out_sample_residuals</code> has been renamed to <code>out_sample_residuals_</code> in the <code>prepare_residuals_multiseries</code> function in the <code><a href="https://skforecast.org/latest/api/exceptions">utils</a></code> module.</p>
 </li>
 <li>
-<p><code>last_window</code> has been renamed to <code>last_window_</code> in the <code>preprocess_levels_self_last_window_multiseries</code> function in the <code><a href="https://skforecast.org/latest/api/utils">utils</a></code> module.</p>
+<p><code>last_window</code> has been renamed to <code>last_window_</code> in the <code>preprocess_levels_self_last_window_multiseries</code> function in the <code><a href="https://skforecast.org/latest/api/exceptions">utils</a></code> module.</p>
 </li>
 </ul>
 </li>
@@ -3416,7 +3461,7 @@ This is documentation for an unstable development version.
 <p>New argument <code>aggregate_metric</code> in <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection._search.grid_search_forecaster_multiseries">grid_search_forecaster_multiseries</a></code>, <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection._search.random_search_forecaster_multiseries">random_search_forecaster_multiseries</a></code> and <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection._search.bayesian_search_forecaster_multiseries">bayesian_search_forecaster_multiseries</a></code> to select the aggregation method used to combine the metric(s) of all levels during the hyperparameter search. The available methods are: mean (arithmetic mean), weighted (weighted by the number of predicted values of each level) and pool (the values of all levels are pooled and then the metric is calculated). If more than one metric and/or aggregation method is used, all are reported in the results, but the first of each is used to select the best model.</p>
 </li>
 <li>
-<p>New class <code><a href="https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.DateTimeFeatureTransformer">DateTimeFeatureTransformer</a></code> and function <code><a href="https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.create_datetime_features">create_datetime_features</a></code> in the <code><a href="https://skforecast.org/latest/api/preprocessing">preprocessing</a></code> module to create datetime and calendar features from a datetime index.</p>
+<p>New class <code><a href="https://skforecast.org/0.13.0/api/preprocessing#skforecast.preprocessing.DateTimeFeatureTransformer">DateTimeFeatureTransformer</a></code> and function <code><a href="https://skforecast.org/0.13.0/api/preprocessing#skforecast.preprocessing.create_datetime_features">create_datetime_features</a></code> in the <code><a href="https://skforecast.org/latest/api/preprocessing">preprocessing</a></code> module to create datetime and calendar features from a datetime index.</p>
 </li>
 </ul>
 <p><strong>Changed</strong></p>
@@ -3443,7 +3488,7 @@ This is documentation for an unstable development version.
 <p>Change information message when <code>verbose</code> is <code>True</code> in <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection._validation.backtesting_forecaster">backtesting_forecaster</a></code> and <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection._validation.backtesting_forecaster_multiseries">backtesting_forecaster_multiseries</a></code>.</p>
 </li>
 <li>
-<p><code>select_n_jobs_backtesting</code> and <code>select_n_jobs_fit</code> in <code><a href="https://skforecast.org/latest/api/utils">utils</a></code> return <code>n_jobs = 1</code> if regressor is <code>LGBMRegressor</code>. This is because <code>lightgbm</code> is highly optimized for gradient boosting and parallelizes operations at a very fine-grained level, making additional parallelization unnecessary and potentially harmful due to resource contention.</p>
+<p><code>select_n_jobs_backtesting</code> and <code>select_n_jobs_fit</code> in <code><a href="https://skforecast.org/latest/api/exceptions">utils</a></code> return <code>n_jobs = 1</code> if regressor is <code>LGBMRegressor</code>. This is because <code>lightgbm</code> is highly optimized for gradient boosting and parallelizes operations at a very fine-grained level, making additional parallelization unnecessary and potentially harmful due to resource contention.</p>
 </li>
 <li>
 <p><code>metric_values</code> returned by <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection._validation.backtesting_forecaster">backtesting_forecaster</a></code> and <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection._validation.backtesting_sarimax">backtesting_sarimax</a></code> is a <code>pandas DataFrame</code> with one column per metric instead of a <code>list</code>.</p>
@@ -4367,13 +4412,14 @@ This is documentation for an unstable development version.
 <p><strong>Fixed</strong></p>
 <!-- Links to API Reference -->
 <!-- Forecasters -->
-<!-- metrics -->
 <!-- model_selection -->
 <!-- feature_selection -->
 <!-- preprocessing -->
+<!-- metrics -->
 <!-- plot -->
-<!-- datasets -->
 <!-- utils -->
+<!-- datasets -->
+<!-- exceptions -->
 <!-- OLD -->
 
 

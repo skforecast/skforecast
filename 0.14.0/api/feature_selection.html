@@ -1919,11 +1919,11 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
-      <a href="../faq/forecasting-time-series-with-missing-values.html" class="md-nav__link">
+      <a href="../faq/non-negative-predictions.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Time series with missing values
+    Avoid negative predictions when forecasting
   </span>
   
 
@@ -1940,11 +1940,11 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
-      <a href="../faq/non-negative-predictions.html" class="md-nav__link">
+      <a href="../faq/forecasting-time-series-with-missing-values.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Non negative predictions
+    Forecasting time series with missing values
   </span>
   
 
@@ -1965,7 +1965,7 @@ This is documentation for an unstable development version.
         
   
   <span class="md-ellipsis">
-    Forecasting with delayed data
+    Forecasting with delayed historical data
   </span>
   
 
@@ -1982,11 +1982,32 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
-      <a href="../faq/parallelization-skforecast.html" class="md-nav__link">
+      <a href="../faq/parameters-search-backtesting-vs-one-step-ahead.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Parallelization
+    Backtesting vs One-step-ahead
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/cyclical-features-time-series.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Cyclical features in time series
   </span>
   
 
@@ -2024,11 +2045,11 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
-      <a href="../faq/profiling-skforecast.html" class="md-nav__link">
+      <a href="../faq/parallelization-skforecast.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Profiling skforecast
+    Parallelization in skforecast
   </span>
   
 
@@ -2045,11 +2066,11 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
-      <a href="../faq/parameters-search-backetesting-vs-one-step-ahead.html" class="md-nav__link">
+      <a href="../faq/profiling-skforecast.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Backtesting vs One-step-ahead
+    Profiling skforecast
   </span>
   
 
@@ -2675,7 +2696,7 @@ This is documentation for an unstable development version.
         
   
   <span class="md-ellipsis">
-    Non negative predictions
+    Avoid negative predictions when forecasting
   </span>
   
 
@@ -2696,7 +2717,49 @@ This is documentation for an unstable development version.
         
   
   <span class="md-ellipsis">
-    Time series with missing values
+    Forecasting time series with missing values
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/forecasting-with-delayed-historical-data.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Forecasting with delayed historical data
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/parameters-search-backtesting-vs-one-step-ahead.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Backtesting vs One-step-ahead
   </span>
   
 
@@ -2718,27 +2781,6 @@ This is documentation for an unstable development version.
   
   <span class="md-ellipsis">
     Cyclical features in time series
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../faq/forecasting-with-delayed-historical-data.html" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Forecasting with delayed data
   </span>
   
 
@@ -2780,7 +2822,7 @@ This is documentation for an unstable development version.
         
   
   <span class="md-ellipsis">
-    Parallelization
+    Parallelization in skforecast
   </span>
   
 
@@ -3084,12 +3126,22 @@ is always deterministic.</p>
       </thead>
       <tbody>
           <tr class="doc-section-item">
-<td><code>selected_autoreg</code></td>            <td>
+<td><code>selected_lags</code></td>            <td>
                   <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>List of selected autoregressive features.</p>
+                <p>List of selected lags.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+<td><code>selected_window_features</code></td>            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>List of selected window features.</p>
               </div>
             </td>
           </tr>
@@ -3107,9 +3159,8 @@ is always deterministic.</p>
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\feature_selection\feature_selection.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 16</span>
-<span class="normal"> 17</span>
+              <summary>Source code in <code>skforecast/feature_selection/feature_selection.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 17</span>
 <span class="normal"> 18</span>
 <span class="normal"> 19</span>
 <span class="normal"> 20</span>
@@ -3290,7 +3341,23 @@ is always deterministic.</p>
 <span class="normal">195</span>
 <span class="normal">196</span>
 <span class="normal">197</span>
-<span class="normal">198</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">select_features</span><span class="p">(</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">select_features</span><span class="p">(</span>
     <span class="n">forecaster</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
     <span class="n">selector</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
     <span class="n">y</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span>
@@ -3300,7 +3367,7 @@ is always deterministic.</p>
     <span class="n">subsample</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
     <span class="n">random_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">123</span><span class="p">,</span>
     <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">list</span><span class="p">,</span> <span class="nb">list</span><span class="p">]:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">list</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">list</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Feature selection using any of the sklearn.feature_selection module selectors </span>
 <span class="sd">    (such as `RFECV`, `SelectFromModel`, etc.). Two groups of features are</span>
@@ -3353,16 +3420,19 @@ is always deterministic.</p>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    selected_autoreg : list</span>
-<span class="sd">        List of selected autoregressive features.</span>
+<span class="sd">    selected_lags : list</span>
+<span class="sd">        List of selected lags.</span>
+<span class="sd">    selected_window_features : list</span>
+<span class="sd">        List of selected window features.</span>
 <span class="sd">    selected_exog : list</span>
 <span class="sd">        List of selected exogenous features.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
+    <span class="n">forecaster_name</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">forecaster</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
     <span class="n">valid_forecasters</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;ForecasterRecursive&#39;</span><span class="p">,</span> <span class="s1">&#39;ForecasterDirect&#39;</span><span class="p">]</span>
 
-    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">forecaster</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_forecasters</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">forecaster_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_forecasters</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;`forecaster` must be one of the following classes: </span><span class="si">{</span><span class="n">valid_forecasters</span><span class="si">}</span><span class="s2">.&quot;</span>
         <span class="p">)</span>
@@ -3380,18 +3450,23 @@ is always deterministic.</p>
     <span class="n">forecaster</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">forecaster</span><span class="p">)</span>
     <span class="n">forecaster</span><span class="o">.</span><span class="n">is_fitted</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">create_train_X_y</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">exog</span><span class="o">=</span><span class="n">exog</span><span class="p">)</span>
-    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">forecaster</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;ForecasterDirect&#39;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">forecaster_name</span> <span class="o">==</span> <span class="s1">&#39;ForecasterDirect&#39;</span><span class="p">:</span>
         <span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">filter_train_X_y_for_step</span><span class="p">(</span>
                                <span class="n">step</span>          <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
                                <span class="n">X_train</span>       <span class="o">=</span> <span class="n">X_train</span><span class="p">,</span>
                                <span class="n">y_train</span>       <span class="o">=</span> <span class="n">y_train</span><span class="p">,</span>
                                <span class="n">remove_suffix</span> <span class="o">=</span> <span class="kc">True</span>
                            <span class="p">)</span>
+
+    <span class="n">lags_cols</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">window_features_cols</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">autoreg_cols</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">if</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">lags</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">autoreg_cols</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;lag_</span><span class="si">{</span><span class="n">lag</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">lag</span> <span class="ow">in</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">lags</span><span class="p">])</span>
+        <span class="n">lags_cols</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">lags_names</span>
+        <span class="n">autoreg_cols</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">lags_cols</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">window_features</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">autoreg_cols</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">forecaster</span><span class="o">.</span><span class="n">window_features_names</span><span class="p">)</span>
+        <span class="n">window_features_cols</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">window_features_names</span>
+        <span class="n">autoreg_cols</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">window_features_cols</span><span class="p">)</span>
 
     <span class="n">exog_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">X_train</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">autoreg_cols</span><span class="p">]</span>
 
@@ -3450,14 +3525,19 @@ is always deterministic.</p>
 
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">selected_autoreg</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-            <span class="p">(</span><span class="s2">&quot;No autoregressive features have been selected. Since a Forecaster &quot;</span>
-             <span class="s2">&quot;cannot be created without them, be sure to include at least one &quot;</span>
-             <span class="s2">&quot;using the `force_inclusion` parameter.&quot;</span><span class="p">)</span>
+            <span class="s2">&quot;No autoregressive features have been selected. Since a Forecaster &quot;</span>
+            <span class="s2">&quot;cannot be created without them, be sure to include at least one &quot;</span>
+            <span class="s2">&quot;using the `force_inclusion` parameter.&quot;</span>
         <span class="p">)</span>
+        <span class="n">selected_lags</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">selected_window_features</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">selected_autoreg</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="nb">int</span><span class="p">(</span><span class="n">feature</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;lag_&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span> <span class="k">if</span> <span class="n">feature</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;lag_&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="n">feature</span>
-            <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">selected_autoreg</span>
+        <span class="n">selected_lags</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="nb">int</span><span class="p">(</span><span class="n">feature</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;lag_&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span> 
+            <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">selected_autoreg</span> <span class="k">if</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">lags_cols</span>
+        <span class="p">]</span>
+        <span class="n">selected_window_features</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">feature</span> <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">selected_autoreg</span> <span class="k">if</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">window_features_cols</span>
         <span class="p">]</span>
 
     <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
@@ -3465,14 +3545,16 @@ is always deterministic.</p>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;--------------------------------&quot;</span> <span class="o">+</span> <span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">selector</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">))</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total number of records available: </span><span class="si">{</span><span class="n">X_train</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total number of records used for feature selection: </span><span class="si">{</span><span class="n">X_train_sample</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of features available: </span><span class="si">{</span><span class="n">X_train</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> 
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Autoreg (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">autoreg_cols</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Exog    (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">exog_cols</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of features available: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">autoreg_cols</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">exog_cols</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> 
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Lags            (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">lags_cols</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Window features (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">window_features_cols</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Exog            (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">exog_cols</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of features selected: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">selected_features</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Autoreg (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">selected_autoreg</span><span class="p">)</span><span class="si">}</span><span class="s2">) : </span><span class="si">{</span><span class="n">selected_autoreg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Exog    (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">selected_exog</span><span class="p">)</span><span class="si">}</span><span class="s2">) : </span><span class="si">{</span><span class="n">selected_exog</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Lags            (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">selected_lags</span><span class="p">)</span><span class="si">}</span><span class="s2">) : </span><span class="si">{</span><span class="n">selected_lags</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Window features (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">selected_window_features</span><span class="p">)</span><span class="si">}</span><span class="s2">) : </span><span class="si">{</span><span class="n">selected_window_features</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Exog            (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">selected_exog</span><span class="p">)</span><span class="si">}</span><span class="s2">) : </span><span class="si">{</span><span class="n">selected_exog</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">selected_autoreg</span><span class="p">,</span> <span class="n">selected_exog</span>
+    <span class="k">return</span> <span class="n">selected_lags</span><span class="p">,</span> <span class="n">selected_window_features</span><span class="p">,</span> <span class="n">selected_exog</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3528,11 +3610,12 @@ list of selected features using the <code>force_inclusion</code> parameter.</p>
           <tr class="doc-section-item">
             <td><code>forecaster</code></td>
             <td>
-                  <code>ForecasterRecursiveMultiSeries</code>
+                  <code>(ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate)</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Forecaster model.</p>
+                <p>Forecaster model. If forecaster is a ForecasterDirectMultiVariate, the
+selector will only be applied to the features of the first step.</p>
               </div>
             </td>
             <td>
@@ -3590,8 +3673,8 @@ list of selected features using the <code>force_inclusion</code> parameter.</p>
               <div class="doc-md-description">
                 <p>Decide what type of features to include in the selection process. </p>
 <ul>
-<li>If <code>'autoreg'</code>, only autoregressive features (lags or custom 
-predictors) are evaluated by the selector. All exogenous features are 
+<li>If <code>'autoreg'</code>, only autoregressive features (lags and window features) 
+are evaluated by the selector. All exogenous features are 
 included in the output (<code>selected_exog</code>).</li>
 <li>If <code>'exog'</code>, only exogenous features are evaluated without the presence
 of autoregressive features. All autoregressive features are included 
@@ -3681,12 +3764,24 @@ is always deterministic.</p>
       </thead>
       <tbody>
           <tr class="doc-section-item">
-<td><code>selected_autoreg</code></td>            <td>
+<td><code>selected_lags</code></td>            <td>
+                  <code>(<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>)</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>List of selected lags. If the forecaster is a ForecasterDirectMultiVariate,
+the output is a dict with the selected lags for each series, {series_name: lags},
+as the lags can be different for each series.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+<td><code>selected_window_features</code></td>            <td>
                   <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>List of selected autoregressive features.</p>
+                <p>List of selected window features.</p>
               </div>
             </td>
           </tr>
@@ -3704,24 +3799,8 @@ is always deterministic.</p>
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\feature_selection\feature_selection.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">201</span>
-<span class="normal">202</span>
-<span class="normal">203</span>
-<span class="normal">204</span>
-<span class="normal">205</span>
-<span class="normal">206</span>
-<span class="normal">207</span>
-<span class="normal">208</span>
-<span class="normal">209</span>
-<span class="normal">210</span>
-<span class="normal">211</span>
-<span class="normal">212</span>
-<span class="normal">213</span>
-<span class="normal">214</span>
-<span class="normal">215</span>
-<span class="normal">216</span>
-<span class="normal">217</span>
+              <summary>Source code in <code>skforecast/feature_selection/feature_selection.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">217</span>
 <span class="normal">218</span>
 <span class="normal">219</span>
 <span class="normal">220</span>
@@ -3898,7 +3977,69 @@ is always deterministic.</p>
 <span class="normal">391</span>
 <span class="normal">392</span>
 <span class="normal">393</span>
-<span class="normal">394</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">select_features_multiseries</span><span class="p">(</span>
+<span class="normal">394</span>
+<span class="normal">395</span>
+<span class="normal">396</span>
+<span class="normal">397</span>
+<span class="normal">398</span>
+<span class="normal">399</span>
+<span class="normal">400</span>
+<span class="normal">401</span>
+<span class="normal">402</span>
+<span class="normal">403</span>
+<span class="normal">404</span>
+<span class="normal">405</span>
+<span class="normal">406</span>
+<span class="normal">407</span>
+<span class="normal">408</span>
+<span class="normal">409</span>
+<span class="normal">410</span>
+<span class="normal">411</span>
+<span class="normal">412</span>
+<span class="normal">413</span>
+<span class="normal">414</span>
+<span class="normal">415</span>
+<span class="normal">416</span>
+<span class="normal">417</span>
+<span class="normal">418</span>
+<span class="normal">419</span>
+<span class="normal">420</span>
+<span class="normal">421</span>
+<span class="normal">422</span>
+<span class="normal">423</span>
+<span class="normal">424</span>
+<span class="normal">425</span>
+<span class="normal">426</span>
+<span class="normal">427</span>
+<span class="normal">428</span>
+<span class="normal">429</span>
+<span class="normal">430</span>
+<span class="normal">431</span>
+<span class="normal">432</span>
+<span class="normal">433</span>
+<span class="normal">434</span>
+<span class="normal">435</span>
+<span class="normal">436</span>
+<span class="normal">437</span>
+<span class="normal">438</span>
+<span class="normal">439</span>
+<span class="normal">440</span>
+<span class="normal">441</span>
+<span class="normal">442</span>
+<span class="normal">443</span>
+<span class="normal">444</span>
+<span class="normal">445</span>
+<span class="normal">446</span>
+<span class="normal">447</span>
+<span class="normal">448</span>
+<span class="normal">449</span>
+<span class="normal">450</span>
+<span class="normal">451</span>
+<span class="normal">452</span>
+<span class="normal">453</span>
+<span class="normal">454</span>
+<span class="normal">455</span>
+<span class="normal">456</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">select_features_multiseries</span><span class="p">(</span>
     <span class="n">forecaster</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
     <span class="n">selector</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
     <span class="n">series</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="nb">dict</span><span class="p">],</span>
@@ -3908,7 +4049,7 @@ is always deterministic.</p>
     <span class="n">subsample</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
     <span class="n">random_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">123</span><span class="p">,</span>
     <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">list</span><span class="p">,</span> <span class="nb">list</span><span class="p">]:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">list</span><span class="p">,</span> <span class="nb">dict</span><span class="p">],</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">list</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Feature selection using any of the sklearn.feature_selection module selectors </span>
 <span class="sd">    (such as `RFECV`, `SelectFromModel`, etc.). Two groups of features are</span>
@@ -3923,8 +4064,9 @@ is always deterministic.</p>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    forecaster : ForecasterRecursiveMultiSeries</span>
-<span class="sd">        Forecaster model.</span>
+<span class="sd">    forecaster : ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate</span>
+<span class="sd">        Forecaster model. If forecaster is a ForecasterDirectMultiVariate, the</span>
+<span class="sd">        selector will only be applied to the features of the first step.</span>
 <span class="sd">    selector : object</span>
 <span class="sd">        A feature selector from sklearn.feature_selection.</span>
 <span class="sd">    series : pandas DataFrame</span>
@@ -3934,8 +4076,8 @@ is always deterministic.</p>
 <span class="sd">    select_only : str, default `None`</span>
 <span class="sd">        Decide what type of features to include in the selection process. </span>
 
-<span class="sd">        - If `&#39;autoreg&#39;`, only autoregressive features (lags or custom </span>
-<span class="sd">        predictors) are evaluated by the selector. All exogenous features are </span>
+<span class="sd">        - If `&#39;autoreg&#39;`, only autoregressive features (lags and window features) </span>
+<span class="sd">        are evaluated by the selector. All exogenous features are </span>
 <span class="sd">        included in the output (`selected_exog`).</span>
 <span class="sd">        - If `&#39;exog&#39;`, only exogenous features are evaluated without the presence</span>
 <span class="sd">        of autoregressive features. All autoregressive features are included </span>
@@ -3958,18 +4100,24 @@ is always deterministic.</p>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    selected_autoreg : list</span>
-<span class="sd">        List of selected autoregressive features.</span>
+<span class="sd">    selected_lags : list, dict</span>
+<span class="sd">        List of selected lags. If the forecaster is a ForecasterDirectMultiVariate,</span>
+<span class="sd">        the output is a dict with the selected lags for each series, {series_name: lags},</span>
+<span class="sd">        as the lags can be different for each series.</span>
+<span class="sd">    selected_window_features : list</span>
+<span class="sd">        List of selected window features.</span>
 <span class="sd">    selected_exog : list</span>
 <span class="sd">        List of selected exogenous features.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
+    <span class="n">forecaster_name</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">forecaster</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
     <span class="n">valid_forecasters</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="s1">&#39;ForecasterRecursiveMultiSeries&#39;</span>
+        <span class="s1">&#39;ForecasterRecursiveMultiSeries&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ForecasterDirectMultiVariate&#39;</span>
     <span class="p">]</span>
 
-    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">forecaster</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_forecasters</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">forecaster_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_forecasters</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;`forecaster` must be one of the following classes: </span><span class="si">{</span><span class="n">valid_forecasters</span><span class="si">}</span><span class="s2">.&quot;</span>
         <span class="p">)</span>
@@ -3985,28 +4133,38 @@ is always deterministic.</p>
         <span class="p">)</span>
 
     <span class="n">forecaster</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">forecaster</span><span class="p">)</span>
-    <span class="n">forecaster</span><span class="o">.</span><span class="n">fitted</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">forecaster</span><span class="o">.</span><span class="n">is_fitted</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="n">output</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">_create_train_X_y</span><span class="p">(</span><span class="n">series</span><span class="o">=</span><span class="n">series</span><span class="p">,</span> <span class="n">exog</span><span class="o">=</span><span class="n">exog</span><span class="p">)</span>
     <span class="n">X_train</span> <span class="o">=</span> <span class="n">output</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">y_train</span> <span class="o">=</span> <span class="n">output</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-    <span class="n">series_col_names</span> <span class="o">=</span> <span class="n">output</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
-
-    <span class="k">if</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">encoding</span> <span class="o">==</span> <span class="s1">&#39;onehot&#39;</span><span class="p">:</span>
-        <span class="n">encoding_cols</span> <span class="o">=</span> <span class="n">series_col_names</span>
+    <span class="k">if</span> <span class="n">forecaster_name</span> <span class="o">==</span> <span class="s1">&#39;ForecasterDirectMultiVariate&#39;</span><span class="p">:</span>
+        <span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">filter_train_X_y_for_step</span><span class="p">(</span>
+                               <span class="n">step</span>          <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+                               <span class="n">X_train</span>       <span class="o">=</span> <span class="n">X_train</span><span class="p">,</span>
+                               <span class="n">y_train</span>       <span class="o">=</span> <span class="n">y_train</span><span class="p">,</span>
+                               <span class="n">remove_suffix</span> <span class="o">=</span> <span class="kc">True</span>
+                           <span class="p">)</span>
+        <span class="n">lags_cols</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
+            <span class="n">chain</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">lags_names</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">])</span>
+        <span class="p">)</span>
+        <span class="n">window_features_cols</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">X_train_window_features_names_out_</span>
+        <span class="n">encoding_cols</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">encoding_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;_level_skforecast&#39;</span><span class="p">]</span>
-
-    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">forecaster</span><span class="p">,</span> <span class="s1">&#39;lags&#39;</span><span class="p">):</span>
-        <span class="n">autoreg_cols</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;lag_</span><span class="si">{</span><span class="n">lag</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">lag</span> <span class="ow">in</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">lags</span><span class="p">]</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">name_predictors</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">autoreg_cols</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">name_predictors</span>
+        <span class="n">lags_cols</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">lags_names</span>
+        <span class="n">window_features_cols</span> <span class="o">=</span> <span class="n">output</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span>  <span class="c1"># X_train_window_features_names_out_ output</span>
+        <span class="k">if</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">encoding</span> <span class="o">==</span> <span class="s1">&#39;onehot&#39;</span><span class="p">:</span>
+            <span class="n">encoding_cols</span> <span class="o">=</span> <span class="n">output</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>  <span class="c1"># X_train_series_names_in_ output</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">autoreg_cols</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="n">col</span>
-                <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">X_train</span><span class="o">.</span><span class="n">columns</span>
-                <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^custom_predictor_\d+&#39;</span><span class="p">,</span> <span class="n">col</span><span class="p">)</span>
-            <span class="p">]</span>
+            <span class="n">encoding_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;_level_skforecast&#39;</span><span class="p">]</span>
+
+    <span class="n">lags_cols</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">lags_cols</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">lags_cols</span>
+    <span class="n">window_features_cols</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">window_features_cols</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">window_features_cols</span>
+    <span class="n">autoreg_cols</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">lags</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">autoreg_cols</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">lags_cols</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">window_features</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">autoreg_cols</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">window_features_cols</span><span class="p">)</span>
+
     <span class="n">exog_cols</span> <span class="o">=</span> <span class="p">[</span>
         <span class="n">col</span>
         <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">X_train</span><span class="o">.</span><span class="n">columns</span>
@@ -4070,14 +4228,41 @@ is always deterministic.</p>
 
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">selected_autoreg</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-            <span class="p">(</span><span class="s2">&quot;No autoregressive features have been selected. Since a Forecaster &quot;</span>
-             <span class="s2">&quot;cannot be created without them, be sure to include at least one &quot;</span>
-             <span class="s2">&quot;using the `force_inclusion` parameter.&quot;</span><span class="p">)</span>
+            <span class="s2">&quot;No autoregressive features have been selected. Since a Forecaster &quot;</span>
+            <span class="s2">&quot;cannot be created without them, be sure to include at least one &quot;</span>
+            <span class="s2">&quot;using the `force_inclusion` parameter.&quot;</span>
         <span class="p">)</span>
+        <span class="n">selected_lags</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">selected_window_features</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">forecaster</span><span class="p">,</span> <span class="s1">&#39;lags&#39;</span><span class="p">):</span>
-            <span class="n">selected_autoreg</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">feature</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;lag_&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span> 
-                                <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">selected_autoreg</span><span class="p">]</span> 
+        <span class="k">if</span> <span class="n">forecaster_name</span> <span class="o">==</span> <span class="s1">&#39;ForecasterDirectMultiVariate&#39;</span><span class="p">:</span>
+            <span class="n">selected_lags</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">series_name</span><span class="p">:</span> <span class="p">(</span>
+                    <span class="p">[</span>
+                        <span class="nb">int</span><span class="p">(</span><span class="n">feature</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">series_name</span><span class="si">}</span><span class="s2">_lag_&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+                        <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">selected_autoreg</span>
+                        <span class="k">if</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">lags_names</span>
+                    <span class="p">]</span>
+                    <span class="k">if</span> <span class="n">lags_names</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                    <span class="k">else</span> <span class="p">[]</span>
+                <span class="p">)</span>
+                <span class="k">for</span> <span class="n">series_name</span><span class="p">,</span> <span class="n">lags_names</span> <span class="ow">in</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">lags_names</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="p">}</span>
+            <span class="n">verbose_selected_lags</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">feature</span> <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">selected_autoreg</span> <span class="k">if</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">lags_cols</span>
+            <span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">selected_lags</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="nb">int</span><span class="p">(</span><span class="n">feature</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;lag_&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span> 
+                <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">selected_autoreg</span> 
+                <span class="k">if</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">lags_cols</span>
+            <span class="p">]</span>
+            <span class="n">verbose_selected_lags</span> <span class="o">=</span> <span class="n">selected_lags</span>
+
+        <span class="n">selected_window_features</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">feature</span> <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">selected_autoreg</span> 
+            <span class="k">if</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">window_features_cols</span>
+        <span class="p">]</span>
 
     <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Recursive feature elimination (</span><span class="si">{</span><span class="n">selector</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
@@ -4085,13 +4270,15 @@ is always deterministic.</p>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total number of records available: </span><span class="si">{</span><span class="n">X_train</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total number of records used for feature selection: </span><span class="si">{</span><span class="n">X_train_sample</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of features available: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">autoreg_cols</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">exog_cols</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> 
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Autoreg (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">autoreg_cols</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Exog    (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">exog_cols</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Lags            (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">lags_cols</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Window features (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">window_features_cols</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Exog            (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">exog_cols</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of features selected: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">selected_features</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Autoreg (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">selected_autoreg</span><span class="p">)</span><span class="si">}</span><span class="s2">) : </span><span class="si">{</span><span class="n">selected_autoreg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Exog    (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">selected_exog</span><span class="p">)</span><span class="si">}</span><span class="s2">) : </span><span class="si">{</span><span class="n">selected_exog</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Lags            (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">verbose_selected_lags</span><span class="p">)</span><span class="si">}</span><span class="s2">) : </span><span class="si">{</span><span class="n">verbose_selected_lags</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Window features (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">selected_window_features</span><span class="p">)</span><span class="si">}</span><span class="s2">) : </span><span class="si">{</span><span class="n">selected_window_features</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Exog            (n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">selected_exog</span><span class="p">)</span><span class="si">}</span><span class="s2">) : </span><span class="si">{</span><span class="n">selected_exog</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">selected_autoreg</span><span class="p">,</span> <span class="n">selected_exog</span>
+    <span class="k">return</span> <span class="n">selected_lags</span><span class="p">,</span> <span class="n">selected_window_features</span><span class="p">,</span> <span class="n">selected_exog</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>

@@ -1919,11 +1919,11 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
-      <a href="../faq/forecasting-time-series-with-missing-values.html" class="md-nav__link">
+      <a href="../faq/non-negative-predictions.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Time series with missing values
+    Avoid negative predictions when forecasting
   </span>
   
 
@@ -1940,11 +1940,11 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
-      <a href="../faq/non-negative-predictions.html" class="md-nav__link">
+      <a href="../faq/forecasting-time-series-with-missing-values.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Non negative predictions
+    Forecasting time series with missing values
   </span>
   
 
@@ -1965,7 +1965,7 @@ This is documentation for an unstable development version.
         
   
   <span class="md-ellipsis">
-    Forecasting with delayed data
+    Forecasting with delayed historical data
   </span>
   
 
@@ -1982,11 +1982,32 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
-      <a href="../faq/parallelization-skforecast.html" class="md-nav__link">
+      <a href="../faq/parameters-search-backtesting-vs-one-step-ahead.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Parallelization
+    Backtesting vs One-step-ahead
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/cyclical-features-time-series.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Cyclical features in time series
   </span>
   
 
@@ -2024,11 +2045,11 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
-      <a href="../faq/profiling-skforecast.html" class="md-nav__link">
+      <a href="../faq/parallelization-skforecast.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Profiling skforecast
+    Parallelization in skforecast
   </span>
   
 
@@ -2045,11 +2066,11 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
-      <a href="../faq/parameters-search-backetesting-vs-one-step-ahead.html" class="md-nav__link">
+      <a href="../faq/profiling-skforecast.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Backtesting vs One-step-ahead
+    Profiling skforecast
   </span>
   
 
@@ -2879,7 +2900,7 @@ This is documentation for an unstable development version.
         
   
   <span class="md-ellipsis">
-    Non negative predictions
+    Avoid negative predictions when forecasting
   </span>
   
 
@@ -2900,7 +2921,49 @@ This is documentation for an unstable development version.
         
   
   <span class="md-ellipsis">
-    Time series with missing values
+    Forecasting time series with missing values
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/forecasting-with-delayed-historical-data.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Forecasting with delayed historical data
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/parameters-search-backtesting-vs-one-step-ahead.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Backtesting vs One-step-ahead
   </span>
   
 
@@ -2922,27 +2985,6 @@ This is documentation for an unstable development version.
   
   <span class="md-ellipsis">
     Cyclical features in time series
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../faq/forecasting-with-delayed-historical-data.html" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Forecasting with delayed data
   </span>
   
 
@@ -2984,7 +3026,7 @@ This is documentation for an unstable development version.
         
   
   <span class="md-ellipsis">
-    Parallelization
+    Parallelization in skforecast
   </span>
   
 
@@ -3960,7 +4002,7 @@ weight to certain dates.</li>
 </ul>
 </details>
                   <details class="quote">
-                    <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_multiseries.py</code></summary>
+                    <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
                     <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">312</span>
 <span class="normal">313</span>
 <span class="normal">314</span>
@@ -4278,7 +4320,7 @@ weight to certain dates.</li>
 The "General Information" section is expanded by default.</p>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_multiseries.py</code></summary>
+              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">513</span>
 <span class="normal">514</span>
 <span class="normal">515</span>
@@ -4569,7 +4611,7 @@ column, the lag 2 in the in the second column and so on.</p>
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_multiseries.py</code></summary>
+              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">603</span>
 <span class="normal">604</span>
 <span class="normal">605</span>
@@ -4782,7 +4824,7 @@ pandas DataFrame.</p>
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_multiseries.py</code></summary>
+              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">655</span>
 <span class="normal">656</span>
 <span class="normal">657</span>
@@ -5034,7 +5076,7 @@ Shape: (len(y) - self.max_lag, )</p>
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_multiseries.py</code></summary>
+              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">715</span>
 <span class="normal">716</span>
 <span class="normal">717</span>
@@ -5496,7 +5538,7 @@ frequency.</li>
 </ul>
 </details>
             <details class="quote">
-              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_multiseries.py</code></summary>
+              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 835</span>
 <span class="normal"> 836</span>
 <span class="normal"> 837</span>
@@ -6239,7 +6281,7 @@ frequency.</li>
 </ul>
 </details>
             <details class="quote">
-              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_multiseries.py</code></summary>
+              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1141</span>
 <span class="normal">1142</span>
 <span class="normal">1143</span>
@@ -6519,7 +6561,7 @@ to train the forecaster before making the first prediction.</p>
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_multiseries.py</code></summary>
+              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1205</span>
 <span class="normal">1206</span>
 <span class="normal">1207</span>
@@ -6891,7 +6933,7 @@ types of weights.</p>
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_multiseries.py</code></summary>
+              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1348</span>
 <span class="normal">1349</span>
 <span class="normal">1350</span>
@@ -7297,7 +7339,7 @@ frequency.</li>
 </ul>
 </details>
             <details class="quote">
-              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_multiseries.py</code></summary>
+              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1471</span>
 <span class="normal">1472</span>
 <span class="normal">1473</span>
@@ -7869,7 +7911,7 @@ in the form <code>{level: residuals}</code>. If <code>predict_boot = False</code
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_multiseries.py</code></summary>
+              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1647</span>
 <span class="normal">1648</span>
 <span class="normal">1649</span>
@@ -8400,7 +8442,7 @@ where each column is an exog and each row a series (level).</p>
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_multiseries.py</code></summary>
+              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1844</span>
 <span class="normal">1845</span>
 <span class="normal">1846</span>
@@ -8754,7 +8796,7 @@ step and series. The index is the same as the prediction index.</p>
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_multiseries.py</code></summary>
+              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1950</span>
 <span class="normal">1951</span>
 <span class="normal">1952</span>
@@ -8886,7 +8928,21 @@ step and series. The index is the same as the prediction index.</p>
 <span class="normal">2078</span>
 <span class="normal">2079</span>
 <span class="normal">2080</span>
-<span class="normal">2081</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_predict_X</span><span class="p">(</span>
+<span class="normal">2081</span>
+<span class="normal">2082</span>
+<span class="normal">2083</span>
+<span class="normal">2084</span>
+<span class="normal">2085</span>
+<span class="normal">2086</span>
+<span class="normal">2087</span>
+<span class="normal">2088</span>
+<span class="normal">2089</span>
+<span class="normal">2090</span>
+<span class="normal">2091</span>
+<span class="normal">2092</span>
+<span class="normal">2093</span>
+<span class="normal">2094</span>
+<span class="normal">2095</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_predict_X</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">levels</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -8964,12 +9020,14 @@ step and series. The index is the same as the prediction index.</p>
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">level</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">levels</span><span class="p">):</span>
 
         <span class="n">X_predict_level</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">full_predictors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+        <span class="n">full_predictors_level</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
             <span class="p">(</span><span class="n">last_window</span><span class="p">[</span><span class="n">level</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span> <span class="n">predictions</span><span class="p">[:,</span> <span class="n">i</span><span class="p">])</span>
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lags</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">X_predict_level</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">full_predictors</span><span class="p">[</span><span class="n">idx_lags</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">full_predictors</span><span class="p">)])</span>
+            <span class="n">X_predict_level</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">full_predictors_level</span><span class="p">[</span><span class="n">idx_lags</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">full_predictors_level</span><span class="p">)]</span>
+            <span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">window_features</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">X_window_features</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span>
@@ -8978,10 +9036,12 @@ step and series. The index is the same as the prediction index.</p>
                 <span class="n">order</span>      <span class="o">=</span> <span class="s1">&#39;C&#39;</span><span class="p">,</span>
                 <span class="n">dtype</span>      <span class="o">=</span> <span class="nb">float</span>
             <span class="p">)</span>
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">steps</span><span class="p">):</span>
-                <span class="n">X_window_features</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
-                    <span class="p">[</span><span class="n">wf</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">full_predictors</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="o">-</span><span class="p">(</span><span class="n">steps</span> <span class="o">-</span> <span class="n">i</span><span class="p">)])</span> 
-                     <span class="k">for</span> <span class="n">wf</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">window_features</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">steps</span><span class="p">):</span>
+                <span class="n">X_window_features</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                    <span class="p">[</span>
+                        <span class="n">wf</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">full_predictors_level</span><span class="p">[</span><span class="n">j</span><span class="p">:</span><span class="o">-</span><span class="p">(</span><span class="n">steps</span> <span class="o">-</span> <span class="n">j</span><span class="p">)])</span> 
+                        <span class="k">for</span> <span class="n">wf</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">window_features</span>
+                    <span class="p">]</span>
                 <span class="p">)</span>
             <span class="n">X_predict_level</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">X_window_features</span><span class="p">)</span>
 
@@ -9014,6 +9074,16 @@ step and series. The index is the same as the prediction index.</p>
                                     <span class="n">columns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">X_train_features_names_out_</span><span class="p">,</span>
                                     <span class="n">index</span>   <span class="o">=</span> <span class="n">prediction_index</span>
                                 <span class="p">)</span>
+
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformer_series</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">differentiation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="s2">&quot;The output matrix is in the transformed scale due to the &quot;</span>
+            <span class="s2">&quot;inclusion of transformations or differentiation in the Forecaster. &quot;</span>
+            <span class="s2">&quot;As a result, any predictions generated using this matrix will also &quot;</span>
+            <span class="s2">&quot;be in the transformed scale. Please refer to the documentation &quot;</span>
+            <span class="s2">&quot;for more details: &quot;</span>
+            <span class="s2">&quot;https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting#extract-prediction-matrices&quot;</span>
+        <span class="p">)</span>
 
     <span class="n">set_skforecast_warnings</span><span class="p">(</span><span class="n">suppress_warnings</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;default&#39;</span><span class="p">)</span>
 
@@ -9180,22 +9250,8 @@ for internal use and is not recommended to be changed.</p>
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_multiseries.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2084</span>
-<span class="normal">2085</span>
-<span class="normal">2086</span>
-<span class="normal">2087</span>
-<span class="normal">2088</span>
-<span class="normal">2089</span>
-<span class="normal">2090</span>
-<span class="normal">2091</span>
-<span class="normal">2092</span>
-<span class="normal">2093</span>
-<span class="normal">2094</span>
-<span class="normal">2095</span>
-<span class="normal">2096</span>
-<span class="normal">2097</span>
-<span class="normal">2098</span>
+              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2098</span>
 <span class="normal">2099</span>
 <span class="normal">2100</span>
 <span class="normal">2101</span>
@@ -9278,7 +9334,21 @@ for internal use and is not recommended to be changed.</p>
 <span class="normal">2178</span>
 <span class="normal">2179</span>
 <span class="normal">2180</span>
-<span class="normal">2181</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">predict</span><span class="p">(</span>
+<span class="normal">2181</span>
+<span class="normal">2182</span>
+<span class="normal">2183</span>
+<span class="normal">2184</span>
+<span class="normal">2185</span>
+<span class="normal">2186</span>
+<span class="normal">2187</span>
+<span class="normal">2188</span>
+<span class="normal">2189</span>
+<span class="normal">2190</span>
+<span class="normal">2191</span>
+<span class="normal">2192</span>
+<span class="normal">2193</span>
+<span class="normal">2194</span>
+<span class="normal">2195</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">predict</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">levels</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -9580,22 +9650,8 @@ information.</p>
 Forecasting: Principles and Practice (3nd ed) Rob J Hyndman and George Athanasopoulos.</p>
 </details>
             <details class="quote">
-              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_multiseries.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2184</span>
-<span class="normal">2185</span>
-<span class="normal">2186</span>
-<span class="normal">2187</span>
-<span class="normal">2188</span>
-<span class="normal">2189</span>
-<span class="normal">2190</span>
-<span class="normal">2191</span>
-<span class="normal">2192</span>
-<span class="normal">2193</span>
-<span class="normal">2194</span>
-<span class="normal">2195</span>
-<span class="normal">2196</span>
-<span class="normal">2197</span>
-<span class="normal">2198</span>
+              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2198</span>
 <span class="normal">2199</span>
 <span class="normal">2200</span>
 <span class="normal">2201</span>
@@ -9732,7 +9788,21 @@ Forecasting: Principles and Practice (3nd ed) Rob J Hyndman and George Athanasop
 <span class="normal">2332</span>
 <span class="normal">2333</span>
 <span class="normal">2334</span>
-<span class="normal">2335</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">predict_bootstrapping</span><span class="p">(</span>
+<span class="normal">2335</span>
+<span class="normal">2336</span>
+<span class="normal">2337</span>
+<span class="normal">2338</span>
+<span class="normal">2339</span>
+<span class="normal">2340</span>
+<span class="normal">2341</span>
+<span class="normal">2342</span>
+<span class="normal">2343</span>
+<span class="normal">2344</span>
+<span class="normal">2345</span>
+<span class="normal">2346</span>
+<span class="normal">2347</span>
+<span class="normal">2348</span>
+<span class="normal">2349</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">predict_bootstrapping</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">levels</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -10110,22 +10180,8 @@ Forecasting: Principles and Practice (2<sup>nd</sup> ed) Rob J Hyndman and
 George Athanasopoulos.</p>
 </details>
             <details class="quote">
-              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_multiseries.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2338</span>
-<span class="normal">2339</span>
-<span class="normal">2340</span>
-<span class="normal">2341</span>
-<span class="normal">2342</span>
-<span class="normal">2343</span>
-<span class="normal">2344</span>
-<span class="normal">2345</span>
-<span class="normal">2346</span>
-<span class="normal">2347</span>
-<span class="normal">2348</span>
-<span class="normal">2349</span>
-<span class="normal">2350</span>
-<span class="normal">2351</span>
-<span class="normal">2352</span>
+              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2352</span>
 <span class="normal">2353</span>
 <span class="normal">2354</span>
 <span class="normal">2355</span>
@@ -10219,7 +10275,21 @@ George Athanasopoulos.</p>
 <span class="normal">2443</span>
 <span class="normal">2444</span>
 <span class="normal">2445</span>
-<span class="normal">2446</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">predict_interval</span><span class="p">(</span>
+<span class="normal">2446</span>
+<span class="normal">2447</span>
+<span class="normal">2448</span>
+<span class="normal">2449</span>
+<span class="normal">2450</span>
+<span class="normal">2451</span>
+<span class="normal">2452</span>
+<span class="normal">2453</span>
+<span class="normal">2454</span>
+<span class="normal">2455</span>
+<span class="normal">2456</span>
+<span class="normal">2457</span>
+<span class="normal">2458</span>
+<span class="normal">2459</span>
+<span class="normal">2460</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">predict_interval</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">levels</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -10548,22 +10618,8 @@ Forecasting: Principles and Practice (2<sup>nd</sup> ed) Rob J Hyndman and
 George Athanasopoulos.</p>
 </details>
             <details class="quote">
-              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_multiseries.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2449</span>
-<span class="normal">2450</span>
-<span class="normal">2451</span>
-<span class="normal">2452</span>
-<span class="normal">2453</span>
-<span class="normal">2454</span>
-<span class="normal">2455</span>
-<span class="normal">2456</span>
-<span class="normal">2457</span>
-<span class="normal">2458</span>
-<span class="normal">2459</span>
-<span class="normal">2460</span>
-<span class="normal">2461</span>
-<span class="normal">2462</span>
-<span class="normal">2463</span>
+              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2463</span>
 <span class="normal">2464</span>
 <span class="normal">2465</span>
 <span class="normal">2466</span>
@@ -10643,7 +10699,21 @@ George Athanasopoulos.</p>
 <span class="normal">2540</span>
 <span class="normal">2541</span>
 <span class="normal">2542</span>
-<span class="normal">2543</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">predict_quantiles</span><span class="p">(</span>
+<span class="normal">2543</span>
+<span class="normal">2544</span>
+<span class="normal">2545</span>
+<span class="normal">2546</span>
+<span class="normal">2547</span>
+<span class="normal">2548</span>
+<span class="normal">2549</span>
+<span class="normal">2550</span>
+<span class="normal">2551</span>
+<span class="normal">2552</span>
+<span class="normal">2553</span>
+<span class="normal">2554</span>
+<span class="normal">2555</span>
+<span class="normal">2556</span>
+<span class="normal">2557</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">predict_quantiles</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">levels</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -10948,22 +11018,8 @@ information.</p>
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_multiseries.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2546</span>
-<span class="normal">2547</span>
-<span class="normal">2548</span>
-<span class="normal">2549</span>
-<span class="normal">2550</span>
-<span class="normal">2551</span>
-<span class="normal">2552</span>
-<span class="normal">2553</span>
-<span class="normal">2554</span>
-<span class="normal">2555</span>
-<span class="normal">2556</span>
-<span class="normal">2557</span>
-<span class="normal">2558</span>
-<span class="normal">2559</span>
-<span class="normal">2560</span>
+              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2560</span>
 <span class="normal">2561</span>
 <span class="normal">2562</span>
 <span class="normal">2563</span>
@@ -11042,7 +11098,21 @@ information.</p>
 <span class="normal">2636</span>
 <span class="normal">2637</span>
 <span class="normal">2638</span>
-<span class="normal">2639</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">predict_dist</span><span class="p">(</span>
+<span class="normal">2639</span>
+<span class="normal">2640</span>
+<span class="normal">2641</span>
+<span class="normal">2642</span>
+<span class="normal">2643</span>
+<span class="normal">2644</span>
+<span class="normal">2645</span>
+<span class="normal">2646</span>
+<span class="normal">2647</span>
+<span class="normal">2648</span>
+<span class="normal">2649</span>
+<span class="normal">2650</span>
+<span class="normal">2651</span>
+<span class="normal">2652</span>
+<span class="normal">2653</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">predict_dist</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">distribution</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
@@ -11211,28 +11281,28 @@ forecaster.</p>
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_multiseries.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2642</span>
-<span class="normal">2643</span>
-<span class="normal">2644</span>
-<span class="normal">2645</span>
-<span class="normal">2646</span>
-<span class="normal">2647</span>
-<span class="normal">2648</span>
-<span class="normal">2649</span>
-<span class="normal">2650</span>
-<span class="normal">2651</span>
-<span class="normal">2652</span>
-<span class="normal">2653</span>
-<span class="normal">2654</span>
-<span class="normal">2655</span>
-<span class="normal">2656</span>
+              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2656</span>
 <span class="normal">2657</span>
 <span class="normal">2658</span>
 <span class="normal">2659</span>
 <span class="normal">2660</span>
 <span class="normal">2661</span>
-<span class="normal">2662</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">set_params</span><span class="p">(</span>
+<span class="normal">2662</span>
+<span class="normal">2663</span>
+<span class="normal">2664</span>
+<span class="normal">2665</span>
+<span class="normal">2666</span>
+<span class="normal">2667</span>
+<span class="normal">2668</span>
+<span class="normal">2669</span>
+<span class="normal">2670</span>
+<span class="normal">2671</span>
+<span class="normal">2672</span>
+<span class="normal">2673</span>
+<span class="normal">2674</span>
+<span class="normal">2675</span>
+<span class="normal">2676</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">set_params</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> 
     <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -11328,27 +11398,27 @@ method of the regressor.</p>
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_multiseries.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2665</span>
-<span class="normal">2666</span>
-<span class="normal">2667</span>
-<span class="normal">2668</span>
-<span class="normal">2669</span>
-<span class="normal">2670</span>
-<span class="normal">2671</span>
-<span class="normal">2672</span>
-<span class="normal">2673</span>
-<span class="normal">2674</span>
-<span class="normal">2675</span>
-<span class="normal">2676</span>
-<span class="normal">2677</span>
-<span class="normal">2678</span>
-<span class="normal">2679</span>
+              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2679</span>
 <span class="normal">2680</span>
 <span class="normal">2681</span>
 <span class="normal">2682</span>
 <span class="normal">2683</span>
-<span class="normal">2684</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">set_fit_kwargs</span><span class="p">(</span>
+<span class="normal">2684</span>
+<span class="normal">2685</span>
+<span class="normal">2686</span>
+<span class="normal">2687</span>
+<span class="normal">2688</span>
+<span class="normal">2689</span>
+<span class="normal">2690</span>
+<span class="normal">2691</span>
+<span class="normal">2692</span>
+<span class="normal">2693</span>
+<span class="normal">2694</span>
+<span class="normal">2695</span>
+<span class="normal">2696</span>
+<span class="normal">2697</span>
+<span class="normal">2698</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">set_fit_kwargs</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> 
     <span class="n">fit_kwargs</span><span class="p">:</span> <span class="nb">dict</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -11449,22 +11519,8 @@ method of the regressor.</p>
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_multiseries.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2687</span>
-<span class="normal">2688</span>
-<span class="normal">2689</span>
-<span class="normal">2690</span>
-<span class="normal">2691</span>
-<span class="normal">2692</span>
-<span class="normal">2693</span>
-<span class="normal">2694</span>
-<span class="normal">2695</span>
-<span class="normal">2696</span>
-<span class="normal">2697</span>
-<span class="normal">2698</span>
-<span class="normal">2699</span>
-<span class="normal">2700</span>
-<span class="normal">2701</span>
+              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2701</span>
 <span class="normal">2702</span>
 <span class="normal">2703</span>
 <span class="normal">2704</span>
@@ -11487,7 +11543,21 @@ method of the regressor.</p>
 <span class="normal">2721</span>
 <span class="normal">2722</span>
 <span class="normal">2723</span>
-<span class="normal">2724</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">set_lags</span><span class="p">(</span>
+<span class="normal">2724</span>
+<span class="normal">2725</span>
+<span class="normal">2726</span>
+<span class="normal">2727</span>
+<span class="normal">2728</span>
+<span class="normal">2729</span>
+<span class="normal">2730</span>
+<span class="normal">2731</span>
+<span class="normal">2732</span>
+<span class="normal">2733</span>
+<span class="normal">2734</span>
+<span class="normal">2735</span>
+<span class="normal">2736</span>
+<span class="normal">2737</span>
+<span class="normal">2738</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">set_lags</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> 
     <span class="n">lags</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">range</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -11602,22 +11672,8 @@ are created from the original time series and are included as predictors.</p>
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_multiseries.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2727</span>
-<span class="normal">2728</span>
-<span class="normal">2729</span>
-<span class="normal">2730</span>
-<span class="normal">2731</span>
-<span class="normal">2732</span>
-<span class="normal">2733</span>
-<span class="normal">2734</span>
-<span class="normal">2735</span>
-<span class="normal">2736</span>
-<span class="normal">2737</span>
-<span class="normal">2738</span>
-<span class="normal">2739</span>
-<span class="normal">2740</span>
-<span class="normal">2741</span>
+              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2741</span>
 <span class="normal">2742</span>
 <span class="normal">2743</span>
 <span class="normal">2744</span>
@@ -11644,7 +11700,21 @@ are created from the original time series and are included as predictors.</p>
 <span class="normal">2765</span>
 <span class="normal">2766</span>
 <span class="normal">2767</span>
-<span class="normal">2768</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">set_window_features</span><span class="p">(</span>
+<span class="normal">2768</span>
+<span class="normal">2769</span>
+<span class="normal">2770</span>
+<span class="normal">2771</span>
+<span class="normal">2772</span>
+<span class="normal">2773</span>
+<span class="normal">2774</span>
+<span class="normal">2775</span>
+<span class="normal">2776</span>
+<span class="normal">2777</span>
+<span class="normal">2778</span>
+<span class="normal">2779</span>
+<span class="normal">2780</span>
+<span class="normal">2781</span>
+<span class="normal">2782</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">set_window_features</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> 
     <span class="n">window_features</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="nb">list</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -11701,7 +11771,7 @@ are created from the original time series and are included as predictors.</p>
 
 <a href="#skforecast.recursive._forecaster_recursive_multiseries.ForecasterRecursiveMultiSeries.set_out_sample_residuals" class="headerlink" title="Permanent link">&para;</a></h3>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">set_out_sample_residuals</span><span class="p">(</span>
-    <span class="n">residuals</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">123</span>
+    <span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">123</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -11709,7 +11779,14 @@ are created from the original time series and are included as predictors.</p>
 
         <p>Set new values to the attribute <code>out_sample_residuals_</code>. Out of sample
 residuals are meant to be calculated using observations that did not
-participate in the training process.</p>
+participate in the training process. <code>y_true</code> and <code>y_pred</code> are expected
+to be in the original scale of the time series. Residuals are calculated
+as <code>y_true</code> - <code>y_pred</code>, after applying the necessary transformations and
+differentiations if the forecaster includes them (<code>self.transformer_series</code>
+and <code>self.differentiation</code>).</p>
+<p>A total of 10_000 residuals are stored in the attribute <code>out_sample_residuals_</code>.
+If the number of residuals is greater than 10_000, a random sample of
+10_000 residuals is stored.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -11724,15 +11801,29 @@ participate in the training process.</p>
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>residuals</code></td>
+            <td><code>y_true</code></td>
             <td>
                   <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Dictionary of numpy ndarrays with the residuals of each level in the
-form {level: residuals}. If len(residuals) &gt; 1000, only a random 
-sample of 1000 values are stored. Keys must be the same as <code>levels</code>.</p>
+                <p>Dictionary of numpy ndarrays or pandas series with the true values of
+the time series for each series in the form {series: y_true}.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>y_pred</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Dictionary of numpy ndarrays or pandas series with the predicted values
+of the time series for each series in the form {series: y_pred}.</p>
               </div>
             </td>
             <td>
@@ -11747,27 +11838,13 @@ sample of 1000 values are stored. Keys must be the same as <code>levels</code>.<
             <td>
               <div class="doc-md-description">
                 <p>If <code>True</code>, new residuals are added to the once already stored in the
-attribute <code>out_sample_residuals_</code>. Once the limit of 1000 values is
-reached, no more values are appended. If False, <code>out_sample_residuals_</code>
-is overwritten with the new residuals.</p>
+attribute <code>out_sample_residuals_</code>. If after appending the new residuals,
+the limit of 10_000 samples is exceeded, a random sample of 10_000 is
+kept.</p>
               </div>
             </td>
             <td>
-                  <code>`True`</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td><code>transform</code></td>
-            <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>If <code>True</code>, new residuals are transformed using self.transformer_series.</p>
-              </div>
-            </td>
-            <td>
-                  <code>`True`</code>
+                  <code>`False`</code>
             </td>
           </tr>
           <tr class="doc-section-item">
@@ -11811,22 +11888,8 @@ is overwritten with the new residuals.</p>
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_multiseries.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2771</span>
-<span class="normal">2772</span>
-<span class="normal">2773</span>
-<span class="normal">2774</span>
-<span class="normal">2775</span>
-<span class="normal">2776</span>
-<span class="normal">2777</span>
-<span class="normal">2778</span>
-<span class="normal">2779</span>
-<span class="normal">2780</span>
-<span class="normal">2781</span>
-<span class="normal">2782</span>
-<span class="normal">2783</span>
-<span class="normal">2784</span>
-<span class="normal">2785</span>
+              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2785</span>
 <span class="normal">2786</span>
 <span class="normal">2787</span>
 <span class="normal">2788</span>
@@ -11954,31 +12017,63 @@ is overwritten with the new residuals.</p>
 <span class="normal">2910</span>
 <span class="normal">2911</span>
 <span class="normal">2912</span>
-<span class="normal">2913</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">set_out_sample_residuals</span><span class="p">(</span>
+<span class="normal">2913</span>
+<span class="normal">2914</span>
+<span class="normal">2915</span>
+<span class="normal">2916</span>
+<span class="normal">2917</span>
+<span class="normal">2918</span>
+<span class="normal">2919</span>
+<span class="normal">2920</span>
+<span class="normal">2921</span>
+<span class="normal">2922</span>
+<span class="normal">2923</span>
+<span class="normal">2924</span>
+<span class="normal">2925</span>
+<span class="normal">2926</span>
+<span class="normal">2927</span>
+<span class="normal">2928</span>
+<span class="normal">2929</span>
+<span class="normal">2930</span>
+<span class="normal">2931</span>
+<span class="normal">2932</span>
+<span class="normal">2933</span>
+<span class="normal">2934</span>
+<span class="normal">2935</span>
+<span class="normal">2936</span>
+<span class="normal">2937</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">set_out_sample_residuals</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> 
-    <span class="n">residuals</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">y_true</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">y_pred</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
     <span class="n">append</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">transform</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">random_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">123</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Set new values to the attribute `out_sample_residuals_`. Out of sample</span>
 <span class="sd">    residuals are meant to be calculated using observations that did not</span>
-<span class="sd">    participate in the training process.</span>
+<span class="sd">    participate in the training process. `y_true` and `y_pred` are expected</span>
+<span class="sd">    to be in the original scale of the time series. Residuals are calculated</span>
+<span class="sd">    as `y_true` - `y_pred`, after applying the necessary transformations and</span>
+<span class="sd">    differentiations if the forecaster includes them (`self.transformer_series`</span>
+<span class="sd">    and `self.differentiation`).</span>
+
+<span class="sd">    A total of 10_000 residuals are stored in the attribute `out_sample_residuals_`.</span>
+<span class="sd">    If the number of residuals is greater than 10_000, a random sample of</span>
+<span class="sd">    10_000 residuals is stored.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    residuals : dict</span>
-<span class="sd">        Dictionary of numpy ndarrays with the residuals of each level in the</span>
-<span class="sd">        form {level: residuals}. If len(residuals) &gt; 1000, only a random </span>
-<span class="sd">        sample of 1000 values are stored. Keys must be the same as `levels`.</span>
-<span class="sd">    append : bool, default `True`</span>
+<span class="sd">    y_true : dict</span>
+<span class="sd">        Dictionary of numpy ndarrays or pandas series with the true values of</span>
+<span class="sd">        the time series for each series in the form {series: y_true}.</span>
+<span class="sd">    y_pred : dict</span>
+<span class="sd">        Dictionary of numpy ndarrays or pandas series with the predicted values</span>
+<span class="sd">        of the time series for each series in the form {series: y_pred}.</span>
+<span class="sd">    append : bool, default `False`</span>
 <span class="sd">        If `True`, new residuals are added to the once already stored in the</span>
-<span class="sd">        attribute `out_sample_residuals_`. Once the limit of 1000 values is</span>
-<span class="sd">        reached, no more values are appended. If False, `out_sample_residuals_`</span>
-<span class="sd">        is overwritten with the new residuals.</span>
-<span class="sd">    transform : bool, default `True`</span>
-<span class="sd">        If `True`, new residuals are transformed using self.transformer_series.</span>
+<span class="sd">        attribute `out_sample_residuals_`. If after appending the new residuals,</span>
+<span class="sd">        the limit of 10_000 samples is exceeded, a random sample of 10_000 is</span>
+<span class="sd">        kept.</span>
 <span class="sd">    random_state : int, default `123`</span>
 <span class="sd">        Sets a seed to the random sampling for reproducible output.</span>
 
@@ -11988,115 +12083,117 @@ is overwritten with the new residuals.</p>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">residuals</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span>
-        <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">residuals</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
-    <span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-            <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;`residuals` argument must be a dict of numpy ndarrays in the form &quot;</span>
-             <span class="s2">&quot;`{level: residuals}`. &quot;</span>
-             <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">residuals</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
-        <span class="p">)</span>
-
     <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_fitted</span><span class="p">:</span>
         <span class="k">raise</span> <span class="n">NotFittedError</span><span class="p">(</span>
-            <span class="p">(</span><span class="s2">&quot;This forecaster is not fitted yet. Call `fit` with appropriate &quot;</span>
-             <span class="s2">&quot;arguments before using `set_out_sample_residuals()`.&quot;</span><span class="p">)</span>
+            <span class="s2">&quot;This forecaster is not fitted yet. Call `fit` with appropriate &quot;</span>
+            <span class="s2">&quot;arguments before using `set_out_sample_residuals()`.&quot;</span>
         <span class="p">)</span>
 
-    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoding</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;`y_true` must be a dictionary of numpy ndarrays or pandas Series. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">y_true</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;`y_pred` must be a dictionary of numpy ndarrays or pandas Series. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">y_pred</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">y_true</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="n">y_pred</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;`y_true` and `y_pred` must have the same keys. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="nb">set</span><span class="p">(</span><span class="n">y_true</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="nb">set</span><span class="p">(</span><span class="n">y_pred</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">y_true</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y_true</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Values of `y_true` must be numpy ndarrays or pandas Series. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">y_true</span><span class="p">[</span><span class="n">k</span><span class="p">])</span><span class="si">}</span><span class="s2"> for series &#39;</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&#39;.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y_pred</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Values of `y_pred` must be numpy ndarrays or pandas Series. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">y_pred</span><span class="p">[</span><span class="n">k</span><span class="p">])</span><span class="si">}</span><span class="s2"> for series &#39;</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&#39;.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_true</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_pred</span><span class="p">[</span><span class="n">k</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;`y_true` and `y_pred` must have the same length. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">y_true</span><span class="p">[</span><span class="n">k</span><span class="p">])</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">y_pred</span><span class="p">[</span><span class="n">k</span><span class="p">])</span><span class="si">}</span><span class="s2"> for series &#39;</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&#39;.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y_true</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y_pred</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">y_true</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">y_pred</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;When containing pandas Series, elements in `y_true` and &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;`y_pred` must have the same index. Error with series &#39;</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&#39;.&quot;</span>
+                <span class="p">)</span>
+
+    <span class="n">levels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">series_names_in_</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;_unknown_level&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_sample_residuals_</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoding</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">out_sample_residuals_</span> <span class="o">=</span> <span class="p">{</span><span class="n">level</span><span class="p">:</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">level</span> <span class="ow">in</span> <span class="n">levels</span><span class="p">}</span>
+    <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_sample_residuals_</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">out_sample_residuals_</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;_unknown_level&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}</span>
+
+    <span class="n">series_to_update</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">y_pred</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">levels</span><span class="p">))</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">series_to_update</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Provided keys in `y_pred` and `y_true` do not match any series &quot;</span>
+            <span class="s2">&quot;seen during `fit`. Residuals cannot be updated.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">residuals</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">random_state</span><span class="p">)</span>
+    <span class="n">y_true</span> <span class="o">=</span> <span class="n">y_true</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">y_pred</span> <span class="o">=</span> <span class="n">y_pred</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">differentiation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">differentiator</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">differentiator</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">series_to_update</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y_true</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
+            <span class="n">y_true</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">y_true</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y_pred</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
+            <span class="n">y_pred</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">y_pred</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformer_series</span><span class="p">:</span>
+            <span class="n">y_true</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">transform_numpy</span><span class="p">(</span>
+                            <span class="n">array</span>             <span class="o">=</span> <span class="n">y_true</span><span class="p">[</span><span class="n">k</span><span class="p">],</span>
+                            <span class="n">transformer</span>       <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformer_series_</span><span class="p">[</span><span class="n">k</span><span class="p">],</span>
+                            <span class="n">fit</span>               <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                            <span class="n">inverse_transform</span> <span class="o">=</span> <span class="kc">False</span>
+                        <span class="p">)</span>
+            <span class="n">y_pred</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">transform_numpy</span><span class="p">(</span>
+                            <span class="n">array</span>             <span class="o">=</span> <span class="n">y_pred</span><span class="p">[</span><span class="n">k</span><span class="p">],</span>
+                            <span class="n">transformer</span>       <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformer_series_</span><span class="p">[</span><span class="n">k</span><span class="p">],</span>
+                            <span class="n">fit</span>               <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                            <span class="n">inverse_transform</span> <span class="o">=</span> <span class="kc">False</span>
+                        <span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">differentiation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">y_true</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">differentiator</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">y_true</span><span class="p">[</span><span class="n">k</span><span class="p">])[</span><span class="bp">self</span><span class="o">.</span><span class="n">differentiation</span><span class="p">:]</span>
+            <span class="n">y_pred</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">differentiator</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">y_pred</span><span class="p">[</span><span class="n">k</span><span class="p">])[</span><span class="bp">self</span><span class="o">.</span><span class="n">differentiation</span><span class="p">:]</span>
+
+        <span class="n">residuals</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">y_true</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">-</span> <span class="n">y_pred</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="s1">&#39;_unknown_level&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">residuals</span><span class="p">:</span>
+        <span class="n">residuals</span><span class="p">[</span><span class="s1">&#39;_unknown_level&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">residuals</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoding</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">list</span><span class="p">(</span><span class="n">residuals</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">!=</span> <span class="p">[</span><span class="s1">&#39;_unknown_level&#39;</span><span class="p">]:</span>
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
                 <span class="p">(</span><span class="s2">&quot;As `encoding` is set to `None`, no distinction between levels &quot;</span>
                  <span class="s2">&quot;is made. All residuals are stored in the &#39;_unknown_level&#39; key.&quot;</span><span class="p">),</span>
                  <span class="n">UnknownLevelWarning</span>
             <span class="p">)</span>
-            <span class="n">residuals</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">residuals</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
-            <span class="k">if</span> <span class="n">residuals</span><span class="p">:</span>
-                <span class="n">residuals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">residuals</span><span class="p">)</span>
-            <span class="n">residuals</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;_unknown_level&#39;</span><span class="p">:</span> <span class="n">residuals</span><span class="p">}</span>
+        <span class="n">residuals</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;_unknown_level&#39;</span><span class="p">:</span> <span class="n">residuals</span><span class="p">[</span><span class="s1">&#39;_unknown_level&#39;</span><span class="p">]}</span>
 
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_sample_residuals_</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">out_sample_residuals_</span> <span class="o">=</span> <span class="p">{</span><span class="n">level</span><span class="p">:</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">level</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">series_names_in_</span><span class="p">}</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">out_sample_residuals_</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">residuals</span><span class="o">.</span><span class="n">keys</span><span class="p">())):</span>
-            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Only residuals of levels &quot;</span> 
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">out_sample_residuals_</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">residuals</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span><span class="si">}</span><span class="s2"> &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;are updated.&quot;</span><span class="p">,</span> <span class="n">IgnoredArgumentWarning</span>
-            <span class="p">)</span>
-        <span class="n">residuals</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="n">k</span><span class="p">:</span> <span class="n">v</span> 
-            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">residuals</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> 
-            <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_sample_residuals_</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="ow">and</span> <span class="n">k</span> <span class="o">!=</span> <span class="s1">&#39;_unknown_level&#39;</span>
-        <span class="p">}</span>
-
-    <span class="k">for</span> <span class="n">level</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">residuals</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-
-        <span class="n">residuals_level</span> <span class="o">=</span> <span class="n">value</span>
-        <span class="n">transformer_level</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformer_series_</span><span class="p">[</span><span class="n">level</span><span class="p">]</span>
-        <span class="n">level_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;level &#39;</span><span class="si">{</span><span class="n">level</span><span class="si">}</span><span class="s2">&#39;&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoding</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s1">&#39;all levels&#39;</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">transform</span> <span class="ow">and</span> <span class="n">transformer_level</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Argument `transform` is set to `False` but forecaster was &quot;</span>
-                 <span class="sa">f</span><span class="s2">&quot;trained using a transformer </span><span class="si">{</span><span class="n">transformer_level</span><span class="si">}</span><span class="s2"> &quot;</span>
-                 <span class="sa">f</span><span class="s2">&quot;for </span><span class="si">{</span><span class="n">level_str</span><span class="si">}</span><span class="s2">. Ensure that the new residuals are &quot;</span>
-                 <span class="sa">f</span><span class="s2">&quot;already transformed or set `transform=True`.&quot;</span><span class="p">)</span>
-            <span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">transform</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformer_series_</span> <span class="ow">and</span> <span class="n">transformer_level</span><span class="p">:</span>
-            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Residuals will be transformed using the same transformer used &quot;</span>
-                 <span class="sa">f</span><span class="s2">&quot;when training the forecaster for </span><span class="si">{</span><span class="n">level_str</span><span class="si">}</span><span class="s2"> : &quot;</span>
-                 <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">transformer_level</span><span class="si">}</span><span class="s2">). Ensure that the new &quot;</span>
-                 <span class="sa">f</span><span class="s2">&quot;residuals are on the same scale as the original time series.&quot;</span><span class="p">)</span>
-            <span class="p">)</span>
-            <span class="n">residuals_level</span> <span class="o">=</span> <span class="n">transform_numpy</span><span class="p">(</span>
-                <span class="n">array</span>             <span class="o">=</span> <span class="n">residuals_level</span><span class="p">,</span>
-                <span class="n">transformer</span>       <span class="o">=</span> <span class="n">transformer_level</span><span class="p">,</span>
-                <span class="n">fit</span>               <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-                <span class="n">inverse_transform</span> <span class="o">=</span> <span class="kc">False</span>
-            <span class="p">)</span>
-
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">residuals_level</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1000</span><span class="p">:</span>
-            <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">random_state</span><span class="p">)</span>
-            <span class="n">residuals_level</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="n">residuals_level</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">append</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_sample_residuals_</span><span class="p">[</span><span class="n">level</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">free_space</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1000</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">out_sample_residuals_</span><span class="p">[</span><span class="n">level</span><span class="p">]))</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">residuals_level</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">free_space</span><span class="p">:</span>
-                <span class="n">residuals_level</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span>
-                                      <span class="bp">self</span><span class="o">.</span><span class="n">out_sample_residuals_</span><span class="p">[</span><span class="n">level</span><span class="p">],</span>
-                                      <span class="n">residuals_level</span>
-                                  <span class="p">))</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">residuals_level</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span>
-                                      <span class="bp">self</span><span class="o">.</span><span class="n">out_sample_residuals_</span><span class="p">[</span><span class="n">level</span><span class="p">],</span>
-                                      <span class="n">residuals_level</span><span class="p">[:</span><span class="n">free_space</span><span class="p">]</span>
-                                  <span class="p">))</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">out_sample_residuals_</span><span class="p">[</span><span class="n">level</span><span class="p">]</span> <span class="o">=</span> <span class="n">residuals_level</span>
-
-    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoding</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">residuals_unknown_level</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_sample_residuals_</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> 
-            <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">k</span> <span class="o">!=</span> <span class="s1">&#39;_unknown_level&#39;</span>
-        <span class="p">]</span>
-        <span class="k">if</span> <span class="n">residuals_unknown_level</span><span class="p">:</span>
-            <span class="n">residuals_unknown_level</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">residuals_unknown_level</span><span class="p">)</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">residuals_unknown_level</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1000</span><span class="p">:</span>
-                <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">random_state</span><span class="p">)</span>
-                <span class="n">residuals_unknown_level</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span>
-                                              <span class="n">a</span>       <span class="o">=</span> <span class="n">residuals_unknown_level</span><span class="p">,</span>
-                                              <span class="n">size</span>    <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
-                                              <span class="n">replace</span> <span class="o">=</span> <span class="kc">False</span>
-                                          <span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">residuals_unknown_level</span> <span class="o">=</span> <span class="kc">None</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">out_sample_residuals_</span><span class="p">[</span><span class="s1">&#39;_unknown_level&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">residuals_unknown_level</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">residuals</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">append</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_sample_residuals_</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">out_sample_residuals_</span><span class="p">[</span><span class="n">key</span><span class="p">],</span>
+                        <span class="n">value</span>
+                    <span class="p">))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">10000</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">out_sample_residuals_</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -12173,32 +12270,8 @@ importances in the attribute <code>feature_importances_</code> or <code>coef_</c
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\recursive\_forecaster_recursive_multiseries.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2916</span>
-<span class="normal">2917</span>
-<span class="normal">2918</span>
-<span class="normal">2919</span>
-<span class="normal">2920</span>
-<span class="normal">2921</span>
-<span class="normal">2922</span>
-<span class="normal">2923</span>
-<span class="normal">2924</span>
-<span class="normal">2925</span>
-<span class="normal">2926</span>
-<span class="normal">2927</span>
-<span class="normal">2928</span>
-<span class="normal">2929</span>
-<span class="normal">2930</span>
-<span class="normal">2931</span>
-<span class="normal">2932</span>
-<span class="normal">2933</span>
-<span class="normal">2934</span>
-<span class="normal">2935</span>
-<span class="normal">2936</span>
-<span class="normal">2937</span>
-<span class="normal">2938</span>
-<span class="normal">2939</span>
-<span class="normal">2940</span>
+              <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2940</span>
 <span class="normal">2941</span>
 <span class="normal">2942</span>
 <span class="normal">2943</span>
@@ -12229,7 +12302,31 @@ importances in the attribute <code>feature_importances_</code> or <code>coef_</c
 <span class="normal">2968</span>
 <span class="normal">2969</span>
 <span class="normal">2970</span>
-<span class="normal">2971</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_feature_importances</span><span class="p">(</span>
+<span class="normal">2971</span>
+<span class="normal">2972</span>
+<span class="normal">2973</span>
+<span class="normal">2974</span>
+<span class="normal">2975</span>
+<span class="normal">2976</span>
+<span class="normal">2977</span>
+<span class="normal">2978</span>
+<span class="normal">2979</span>
+<span class="normal">2980</span>
+<span class="normal">2981</span>
+<span class="normal">2982</span>
+<span class="normal">2983</span>
+<span class="normal">2984</span>
+<span class="normal">2985</span>
+<span class="normal">2986</span>
+<span class="normal">2987</span>
+<span class="normal">2988</span>
+<span class="normal">2989</span>
+<span class="normal">2990</span>
+<span class="normal">2991</span>
+<span class="normal">2992</span>
+<span class="normal">2993</span>
+<span class="normal">2994</span>
+<span class="normal">2995</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_feature_importances</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">sort_importance</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>

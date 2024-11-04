@@ -1919,11 +1919,11 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
-      <a href="../faq/forecasting-time-series-with-missing-values.html" class="md-nav__link">
+      <a href="../faq/non-negative-predictions.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Time series with missing values
+    Avoid negative predictions when forecasting
   </span>
   
 
@@ -1940,11 +1940,11 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
-      <a href="../faq/non-negative-predictions.html" class="md-nav__link">
+      <a href="../faq/forecasting-time-series-with-missing-values.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Non negative predictions
+    Forecasting time series with missing values
   </span>
   
 
@@ -1965,7 +1965,7 @@ This is documentation for an unstable development version.
         
   
   <span class="md-ellipsis">
-    Forecasting with delayed data
+    Forecasting with delayed historical data
   </span>
   
 
@@ -1982,11 +1982,32 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
-      <a href="../faq/parallelization-skforecast.html" class="md-nav__link">
+      <a href="../faq/parameters-search-backtesting-vs-one-step-ahead.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Parallelization
+    Backtesting vs One-step-ahead
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/cyclical-features-time-series.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Cyclical features in time series
   </span>
   
 
@@ -2024,11 +2045,11 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
-      <a href="../faq/profiling-skforecast.html" class="md-nav__link">
+      <a href="../faq/parallelization-skforecast.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Profiling skforecast
+    Parallelization in skforecast
   </span>
   
 
@@ -2045,11 +2066,11 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
-      <a href="../faq/parameters-search-backetesting-vs-one-step-ahead.html" class="md-nav__link">
+      <a href="../faq/profiling-skforecast.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Backtesting vs One-step-ahead
+    Profiling skforecast
   </span>
   
 
@@ -2891,7 +2912,7 @@ This is documentation for an unstable development version.
         
   
   <span class="md-ellipsis">
-    Non negative predictions
+    Avoid negative predictions when forecasting
   </span>
   
 
@@ -2912,7 +2933,49 @@ This is documentation for an unstable development version.
         
   
   <span class="md-ellipsis">
-    Time series with missing values
+    Forecasting time series with missing values
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/forecasting-with-delayed-historical-data.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Forecasting with delayed historical data
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/parameters-search-backtesting-vs-one-step-ahead.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Backtesting vs One-step-ahead
   </span>
   
 
@@ -2934,27 +2997,6 @@ This is documentation for an unstable development version.
   
   <span class="md-ellipsis">
     Cyclical features in time series
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../faq/forecasting-with-delayed-historical-data.html" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Forecasting with delayed data
   </span>
   
 
@@ -2996,7 +3038,7 @@ This is documentation for an unstable development version.
         
   
   <span class="md-ellipsis">
-    Parallelization
+    Parallelization in skforecast
   </span>
   
 
@@ -3391,7 +3433,7 @@ for backtesting.</p>
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\model_selection\_validation.py</code></summary>
+              <summary>Source code in <code>skforecast/model_selection/_validation.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">308</span>
 <span class="normal">309</span>
 <span class="normal">310</span>
@@ -3948,7 +3990,7 @@ The results will be saved in a tab-separated values (TSV) format. If
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\model_selection\_search.py</code></summary>
+              <summary>Source code in <code>skforecast/model_selection/_search.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 34</span>
 <span class="normal"> 35</span>
 <span class="normal"> 36</span>
@@ -4438,7 +4480,7 @@ The results will be saved in a tab-separated values (TSV) format. If
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\model_selection\_search.py</code></summary>
+              <summary>Source code in <code>skforecast/model_selection/_search.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">131</span>
 <span class="normal">132</span>
 <span class="normal">133</span>
@@ -4967,7 +5009,7 @@ sampler is used during optimization.</p>
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\model_selection\_search.py</code></summary>
+              <summary>Source code in <code>skforecast/model_selection/_search.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">571</span>
 <span class="normal">572</span>
 <span class="normal">573</span>
@@ -5532,7 +5574,7 @@ If there is more than one level, this structure will be repeated for each of the
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\model_selection\_validation.py</code></summary>
+              <summary>Source code in <code>skforecast/model_selection/_validation.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">772</span>
 <span class="normal">773</span>
 <span class="normal">774</span>
@@ -6166,15 +6208,8 @@ metric will be the average of the optimization of all levels.</li>
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\model_selection\_search.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 991</span>
-<span class="normal"> 992</span>
-<span class="normal"> 993</span>
-<span class="normal"> 994</span>
-<span class="normal"> 995</span>
-<span class="normal"> 996</span>
-<span class="normal"> 997</span>
-<span class="normal"> 998</span>
+              <summary>Source code in <code>skforecast/model_selection/_search.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 998</span>
 <span class="normal"> 999</span>
 <span class="normal">1000</span>
 <span class="normal">1001</span>
@@ -6284,7 +6319,14 @@ metric will be the average of the optimization of all levels.</li>
 <span class="normal">1105</span>
 <span class="normal">1106</span>
 <span class="normal">1107</span>
-<span class="normal">1108</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">grid_search_forecaster_multiseries</span><span class="p">(</span>
+<span class="normal">1108</span>
+<span class="normal">1109</span>
+<span class="normal">1110</span>
+<span class="normal">1111</span>
+<span class="normal">1112</span>
+<span class="normal">1113</span>
+<span class="normal">1114</span>
+<span class="normal">1115</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">grid_search_forecaster_multiseries</span><span class="p">(</span>
     <span class="n">forecaster</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
     <span class="n">series</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="nb">dict</span><span class="p">],</span>
     <span class="n">cv</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">TimeSeriesFold</span><span class="p">,</span> <span class="n">OneStepAheadFold</span><span class="p">],</span>
@@ -6762,15 +6804,8 @@ metric will be the average of the optimization of all levels.</li>
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\model_selection\_search.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1111</span>
-<span class="normal">1112</span>
-<span class="normal">1113</span>
-<span class="normal">1114</span>
-<span class="normal">1115</span>
-<span class="normal">1116</span>
-<span class="normal">1117</span>
-<span class="normal">1118</span>
+              <summary>Source code in <code>skforecast/model_selection/_search.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1118</span>
 <span class="normal">1119</span>
 <span class="normal">1120</span>
 <span class="normal">1121</span>
@@ -6887,7 +6922,14 @@ metric will be the average of the optimization of all levels.</li>
 <span class="normal">1232</span>
 <span class="normal">1233</span>
 <span class="normal">1234</span>
-<span class="normal">1235</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">random_search_forecaster_multiseries</span><span class="p">(</span>
+<span class="normal">1235</span>
+<span class="normal">1236</span>
+<span class="normal">1237</span>
+<span class="normal">1238</span>
+<span class="normal">1239</span>
+<span class="normal">1240</span>
+<span class="normal">1241</span>
+<span class="normal">1242</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">random_search_forecaster_multiseries</span><span class="p">(</span>
     <span class="n">forecaster</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
     <span class="n">series</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="nb">dict</span><span class="p">],</span>
     <span class="n">cv</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">TimeSeriesFold</span><span class="p">,</span> <span class="n">OneStepAheadFold</span><span class="p">],</span>
@@ -7380,15 +7422,8 @@ metric will be the average of the optimization of all levels.</li>
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\model_selection\_search.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1557</span>
-<span class="normal">1558</span>
-<span class="normal">1559</span>
-<span class="normal">1560</span>
-<span class="normal">1561</span>
-<span class="normal">1562</span>
-<span class="normal">1563</span>
-<span class="normal">1564</span>
+              <summary>Source code in <code>skforecast/model_selection/_search.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1564</span>
 <span class="normal">1565</span>
 <span class="normal">1566</span>
 <span class="normal">1567</span>
@@ -7511,7 +7546,14 @@ metric will be the average of the optimization of all levels.</li>
 <span class="normal">1684</span>
 <span class="normal">1685</span>
 <span class="normal">1686</span>
-<span class="normal">1687</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">bayesian_search_forecaster_multiseries</span><span class="p">(</span>
+<span class="normal">1687</span>
+<span class="normal">1688</span>
+<span class="normal">1689</span>
+<span class="normal">1690</span>
+<span class="normal">1691</span>
+<span class="normal">1692</span>
+<span class="normal">1693</span>
+<span class="normal">1694</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">bayesian_search_forecaster_multiseries</span><span class="p">(</span>
     <span class="n">forecaster</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
     <span class="n">series</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="nb">dict</span><span class="p">],</span>
     <span class="n">cv</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">TimeSeriesFold</span><span class="p">,</span> <span class="n">OneStepAheadFold</span><span class="p">],</span>
@@ -7904,7 +7946,7 @@ for backtesting.</p>
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\model_selection\_validation.py</code></summary>
+              <summary>Source code in <code>skforecast/model_selection/_validation.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1195</span>
 <span class="normal">1196</span>
 <span class="normal">1197</span>
@@ -8386,25 +8428,8 @@ The results will be saved in a tab-separated values (TSV) format. If
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\model_selection\_search.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2090</span>
-<span class="normal">2091</span>
-<span class="normal">2092</span>
-<span class="normal">2093</span>
-<span class="normal">2094</span>
-<span class="normal">2095</span>
-<span class="normal">2096</span>
-<span class="normal">2097</span>
-<span class="normal">2098</span>
-<span class="normal">2099</span>
-<span class="normal">2100</span>
-<span class="normal">2101</span>
-<span class="normal">2102</span>
-<span class="normal">2103</span>
-<span class="normal">2104</span>
-<span class="normal">2105</span>
-<span class="normal">2106</span>
-<span class="normal">2107</span>
+              <summary>Source code in <code>skforecast/model_selection/_search.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2107</span>
 <span class="normal">2108</span>
 <span class="normal">2109</span>
 <span class="normal">2110</span>
@@ -8476,7 +8501,24 @@ The results will be saved in a tab-separated values (TSV) format. If
 <span class="normal">2176</span>
 <span class="normal">2177</span>
 <span class="normal">2178</span>
-<span class="normal">2179</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">grid_search_sarimax</span><span class="p">(</span>
+<span class="normal">2179</span>
+<span class="normal">2180</span>
+<span class="normal">2181</span>
+<span class="normal">2182</span>
+<span class="normal">2183</span>
+<span class="normal">2184</span>
+<span class="normal">2185</span>
+<span class="normal">2186</span>
+<span class="normal">2187</span>
+<span class="normal">2188</span>
+<span class="normal">2189</span>
+<span class="normal">2190</span>
+<span class="normal">2191</span>
+<span class="normal">2192</span>
+<span class="normal">2193</span>
+<span class="normal">2194</span>
+<span class="normal">2195</span>
+<span class="normal">2196</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">grid_search_sarimax</span><span class="p">(</span>
     <span class="n">forecaster</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
     <span class="n">y</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
     <span class="n">cv</span><span class="p">:</span> <span class="n">TimeSeriesFold</span><span class="p">,</span>
@@ -8861,25 +8903,8 @@ The results will be saved in a tab-separated values (TSV) format. If
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\model_selection\_search.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2182</span>
-<span class="normal">2183</span>
-<span class="normal">2184</span>
-<span class="normal">2185</span>
-<span class="normal">2186</span>
-<span class="normal">2187</span>
-<span class="normal">2188</span>
-<span class="normal">2189</span>
-<span class="normal">2190</span>
-<span class="normal">2191</span>
-<span class="normal">2192</span>
-<span class="normal">2193</span>
-<span class="normal">2194</span>
-<span class="normal">2195</span>
-<span class="normal">2196</span>
-<span class="normal">2197</span>
-<span class="normal">2198</span>
-<span class="normal">2199</span>
+              <summary>Source code in <code>skforecast/model_selection/_search.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2199</span>
 <span class="normal">2200</span>
 <span class="normal">2201</span>
 <span class="normal">2202</span>
@@ -8958,7 +8983,24 @@ The results will be saved in a tab-separated values (TSV) format. If
 <span class="normal">2275</span>
 <span class="normal">2276</span>
 <span class="normal">2277</span>
-<span class="normal">2278</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">random_search_sarimax</span><span class="p">(</span>
+<span class="normal">2278</span>
+<span class="normal">2279</span>
+<span class="normal">2280</span>
+<span class="normal">2281</span>
+<span class="normal">2282</span>
+<span class="normal">2283</span>
+<span class="normal">2284</span>
+<span class="normal">2285</span>
+<span class="normal">2286</span>
+<span class="normal">2287</span>
+<span class="normal">2288</span>
+<span class="normal">2289</span>
+<span class="normal">2290</span>
+<span class="normal">2291</span>
+<span class="normal">2292</span>
+<span class="normal">2293</span>
+<span class="normal">2294</span>
+<span class="normal">2295</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">random_search_sarimax</span><span class="p">(</span>
     <span class="n">forecaster</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
     <span class="n">y</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
     <span class="n">cv</span><span class="p">:</span> <span class="n">TimeSeriesFold</span><span class="p">,</span>
@@ -9416,7 +9458,7 @@ test set.</p>
     </table>
 
                   <details class="quote">
-                    <summary>Source code in <code>skforecast\model_selection\_split.py</code></summary>
+                    <summary>Source code in <code>skforecast/model_selection/_split.py</code></summary>
                     <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 93</span>
 <span class="normal"> 94</span>
 <span class="normal"> 95</span>
@@ -9542,7 +9584,7 @@ test set.</p>
         <p>Validate all input parameters to ensure correctness.</p>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\model_selection\_split.py</code></summary>
+              <summary>Source code in <code>skforecast/model_selection/_split.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">135</span>
 <span class="normal">136</span>
 <span class="normal">137</span>
@@ -9699,8 +9741,8 @@ test set.</p>
             <span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fixed_train_size</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;`fixed_train_size` must be a boolean: `True`, `False`. &quot;</span>
-                 <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="n">fixed_train_size</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+                <span class="sa">f</span><span class="s2">&quot;`fixed_train_size` must be a boolean: `True`, `False`. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="n">fixed_train_size</span><span class="si">}</span><span class="s2">.&quot;</span>
             <span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gap</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">))</span> <span class="ow">or</span> <span class="n">gap</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
@@ -9709,24 +9751,24 @@ test set.</p>
         <span class="k">if</span> <span class="n">skip_folds</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">skip_folds</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))):</span>
                 <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                    <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;`skip_folds` must be an integer greater than 0, a list of &quot;</span>
-                     <span class="sa">f</span><span class="s2">&quot;integers or `None`. Got </span><span class="si">{</span><span class="n">skip_folds</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+                    <span class="sa">f</span><span class="s2">&quot;`skip_folds` must be an integer greater than 0, a list of &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;integers or `None`. Got </span><span class="si">{</span><span class="n">skip_folds</span><span class="si">}</span><span class="s2">.&quot;</span>
                 <span class="p">)</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">skip_folds</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">))</span> <span class="ow">and</span> <span class="n">skip_folds</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;`skip_folds` must be an integer greater than 0, a list of &quot;</span>
-                     <span class="sa">f</span><span class="s2">&quot;integers or `None`. Got </span><span class="si">{</span><span class="n">skip_folds</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+                    <span class="sa">f</span><span class="s2">&quot;`skip_folds` must be an integer greater than 0, a list of &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;integers or `None`. Got </span><span class="si">{</span><span class="n">skip_folds</span><span class="si">}</span><span class="s2">.&quot;</span>
                 <span class="p">)</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">skip_folds</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">any</span><span class="p">([</span><span class="n">x</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">skip_folds</span><span class="p">]):</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;`skip_folds` list must contain integers greater than or &quot;</span>
-                     <span class="sa">f</span><span class="s2">&quot;equal to 1. The first fold is always needed to train the &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;forecaster. Got </span><span class="si">{</span><span class="n">skip_folds</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+                    <span class="sa">f</span><span class="s2">&quot;`skip_folds` list must contain integers greater than or &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;equal to 1. The first fold is always needed to train the &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;forecaster. Got </span><span class="si">{</span><span class="n">skip_folds</span><span class="si">}</span><span class="s2">.&quot;</span>
                 <span class="p">)</span> 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">allow_incomplete_fold</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;`allow_incomplete_fold` must be a boolean: `True`, `False`. &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="n">allow_incomplete_fold</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+                <span class="sa">f</span><span class="s2">&quot;`allow_incomplete_fold` must be a boolean: `True`, `False`. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="n">allow_incomplete_fold</span><span class="si">}</span><span class="s2">.&quot;</span>
             <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">cv_name</span> <span class="o">==</span> <span class="s2">&quot;OneStepAheadFold&quot;</span><span class="p">:</span>
@@ -9750,19 +9792,19 @@ test set.</p>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">return_all_indexes</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-            <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;`return_all_indexes` must be a boolean: `True`, `False`. &quot;</span>
-             <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="n">return_all_indexes</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="sa">f</span><span class="s2">&quot;`return_all_indexes` must be a boolean: `True`, `False`. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="n">return_all_indexes</span><span class="si">}</span><span class="s2">.&quot;</span>
         <span class="p">)</span>
     <span class="k">if</span> <span class="n">differentiation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">differentiation</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">))</span> <span class="ow">or</span> <span class="n">differentiation</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;`differentiation` must be None or an integer greater than or &quot;</span>
-                 <span class="sa">f</span><span class="s2">&quot;equal to 0. Got </span><span class="si">{</span><span class="n">differentiation</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+                <span class="sa">f</span><span class="s2">&quot;`differentiation` must be None or an integer greater than or &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;equal to 0. Got </span><span class="si">{</span><span class="n">differentiation</span><span class="si">}</span><span class="s2">.&quot;</span>
             <span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">verbose</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-            <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;`verbose` must be a boolean: `True`, `False`. &quot;</span>
-             <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="n">verbose</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="sa">f</span><span class="s2">&quot;`verbose` must be a boolean: `True`, `False`. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="n">verbose</span><span class="si">}</span><span class="s2">.&quot;</span>
         <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -9838,7 +9880,7 @@ test set.</p>
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\model_selection\_split.py</code></summary>
+              <summary>Source code in <code>skforecast/model_selection/_split.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">247</span>
 <span class="normal">248</span>
 <span class="normal">249</span>
@@ -9929,8 +9971,8 @@ test set.</p>
 
     <div class="doc doc-contents ">
 
-        <p>Set the parameters of the TimeSeriesFold object. Before overwriting the
-current parameters, the input parameters are validated to ensure correctness.</p>
+        <p>Set the parameters of the Fold object. Before overwriting the current 
+parameters, the input parameters are validated to ensure correctness.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -9985,7 +10027,7 @@ current parameters, the input parameters are validated to ensure correctness.</p
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\model_selection\_split.py</code></summary>
+              <summary>Source code in <code>skforecast/model_selection/_split.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">284</span>
 <span class="normal">285</span>
 <span class="normal">286</span>
@@ -10020,13 +10062,16 @@ current parameters, the input parameters are validated to ensure correctness.</p
 <span class="normal">315</span>
 <span class="normal">316</span>
 <span class="normal">317</span>
-<span class="normal">318</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">set_params</span><span class="p">(</span>
+<span class="normal">318</span>
+<span class="normal">319</span>
+<span class="normal">320</span>
+<span class="normal">321</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">set_params</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> 
     <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Set the parameters of the TimeSeriesFold object. Before overwriting the</span>
-<span class="sd">    current parameters, the input parameters are validated to ensure correctness.</span>
+<span class="sd">    Set the parameters of the Fold object. Before overwriting the current </span>
+<span class="sd">    parameters, the input parameters are validated to ensure correctness.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -10040,7 +10085,7 @@ current parameters, the input parameters are validated to ensure correctness.</p
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;`params` must be a dictionary. Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">params</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
         <span class="p">)</span>
 
@@ -10051,7 +10096,10 @@ current parameters, the input parameters are validated to ensure correctness.</p
             <span class="sa">f</span><span class="s2">&quot;Unknown parameters: </span><span class="si">{</span><span class="n">unknown_params</span><span class="si">}</span><span class="s2">. They have been ignored.&quot;</span><span class="p">,</span>
             <span class="n">IgnoredArgumentWarning</span>
         <span class="p">)</span>
-    <span class="n">updated_params</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;cv_name&#39;</span><span class="p">:</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="o">**</span><span class="n">current_params</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">}</span>
+
+    <span class="n">filtered_params</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">current_params</span><span class="p">}</span>
+    <span class="n">updated_params</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;cv_name&#39;</span><span class="p">:</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="o">**</span><span class="n">current_params</span><span class="p">,</span> <span class="o">**</span><span class="n">filtered_params</span><span class="p">}</span>
+
     <span class="bp">self</span><span class="o">.</span><span class="n">_validate_params</span><span class="p">(</span><span class="o">**</span><span class="n">updated_params</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">updated_params</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
@@ -10449,11 +10497,8 @@ forecaster should not be trained in this fold.</p>
 exclusive. This means that the last index is not included in the slice.</p>
 </details>
                   <details class="quote">
-                    <summary>Source code in <code>skforecast\model_selection\_split.py</code></summary>
-                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">641</span>
-<span class="normal">642</span>
-<span class="normal">643</span>
-<span class="normal">644</span>
+                    <summary>Source code in <code>skforecast/model_selection/_split.py</code></summary>
+                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">644</span>
 <span class="normal">645</span>
 <span class="normal">646</span>
 <span class="normal">647</span>
@@ -10477,7 +10522,10 @@ exclusive. This means that the last index is not included in the slice.</p>
 <span class="normal">665</span>
 <span class="normal">666</span>
 <span class="normal">667</span>
-<span class="normal">668</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+<span class="normal">668</span>
+<span class="normal">669</span>
+<span class="normal">670</span>
+<span class="normal">671</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">initial_train_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -10632,11 +10680,8 @@ slice.</p>
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\model_selection\_split.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">693</span>
-<span class="normal">694</span>
-<span class="normal">695</span>
-<span class="normal">696</span>
+              <summary>Source code in <code>skforecast/model_selection/_split.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">696</span>
 <span class="normal">697</span>
 <span class="normal">698</span>
 <span class="normal">699</span>
@@ -10867,7 +10912,10 @@ slice.</p>
 <span class="normal">924</span>
 <span class="normal">925</span>
 <span class="normal">926</span>
-<span class="normal">927</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">split</span><span class="p">(</span>
+<span class="normal">927</span>
+<span class="normal">928</span>
+<span class="normal">929</span>
+<span class="normal">930</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">split</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">X</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">,</span> <span class="nb">dict</span><span class="p">],</span>
     <span class="n">as_pandas</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
@@ -10923,8 +10971,8 @@ slice.</p>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-            <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;X must be a pandas Series, DataFrame, Index or a dictionary. &quot;</span>
-             <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">X</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="sa">f</span><span class="s2">&quot;X must be a pandas Series, DataFrame, Index or a dictionary. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">X</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">window_size</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">tseries</span><span class="o">.</span><span class="n">offsets</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">):</span>
@@ -10975,8 +11023,8 @@ slice.</p>
 
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">index</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_train_size</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The time series must have at least `initial_train_size + steps` &quot;</span>
-             <span class="sa">f</span><span class="s2">&quot;observations. Got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">index</span><span class="p">)</span><span class="si">}</span><span class="s2"> observations.&quot;</span><span class="p">)</span>
+            <span class="sa">f</span><span class="s2">&quot;The time series must have at least `initial_train_size + steps` &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;observations. Got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">index</span><span class="p">)</span><span class="si">}</span><span class="s2"> observations.&quot;</span>
         <span class="p">)</span>
 
     <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_train_size</span> <span class="o">+</span> <span class="p">(</span><span class="n">i</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">gap</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">index</span><span class="p">):</span>
@@ -11130,11 +11178,8 @@ slice.</p>
         <p>Print information about folds.</p>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\model_selection\_split.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 929</span>
-<span class="normal"> 930</span>
-<span class="normal"> 931</span>
-<span class="normal"> 932</span>
+              <summary>Source code in <code>skforecast/model_selection/_split.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 932</span>
 <span class="normal"> 933</span>
 <span class="normal"> 934</span>
 <span class="normal"> 935</span>
@@ -11245,10 +11290,6 @@ slice.</p>
             <span class="sa">f</span><span class="s2">&quot;An already trained forecaster is to be used. Window size: &quot;</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">window_size</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
-    <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_train_size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Initial training size is 0. Window size: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">window_size</span><span class="si">}</span><span class="s2">&quot;</span>
-        <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">differentiation</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span>
@@ -11260,8 +11301,9 @@ slice.</p>
                 <span class="sa">f</span><span class="s2">&quot;Number of observations used for initial training: &quot;</span>
                 <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">initial_train_size</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">differentiation</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    First </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">differentiation</span><span class="si">}</span><span class="s2"> observation/s in training sets &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;are used for differentiation&quot;</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;    First </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">differentiation</span><span class="si">}</span><span class="s2"> observation/s in training sets &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;are used for differentiation&quot;</span>
             <span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span>
         <span class="sa">f</span><span class="s2">&quot;Number of observations used for backtesting: &quot;</span>
@@ -11274,8 +11316,8 @@ slice.</p>
     <span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    Number of steps per fold: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;    Number of steps to exclude from the end of each train set &quot;</span>
-        <span class="sa">f</span><span class="s2">&quot;before test (gap): </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">gap</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;    Number of steps to exclude between last observed data &quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;(last window) and predictions (gap): </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">gap</span><span class="si">}</span><span class="s2">&quot;</span>
     <span class="p">)</span>
     <span class="k">if</span> <span class="n">last_fold_excluded</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;    Last fold has been excluded because it was incomplete.&quot;</span><span class="p">)</span>
@@ -11585,11 +11627,8 @@ forecasting.</p>
     </table>
 
                   <details class="quote">
-                    <summary>Source code in <code>skforecast\model_selection\_split.py</code></summary>
-                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">368</span>
-<span class="normal">369</span>
-<span class="normal">370</span>
-<span class="normal">371</span>
+                    <summary>Source code in <code>skforecast/model_selection/_split.py</code></summary>
+                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">371</span>
 <span class="normal">372</span>
 <span class="normal">373</span>
 <span class="normal">374</span>
@@ -11601,7 +11640,10 @@ forecasting.</p>
 <span class="normal">380</span>
 <span class="normal">381</span>
 <span class="normal">382</span>
-<span class="normal">383</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+<span class="normal">383</span>
+<span class="normal">384</span>
+<span class="normal">385</span>
+<span class="normal">386</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">initial_train_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">window_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -11744,11 +11786,8 @@ slice.</p>
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\model_selection\_split.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">402</span>
-<span class="normal">403</span>
-<span class="normal">404</span>
-<span class="normal">405</span>
+              <summary>Source code in <code>skforecast/model_selection/_split.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">405</span>
 <span class="normal">406</span>
 <span class="normal">407</span>
 <span class="normal">408</span>
@@ -11837,7 +11876,10 @@ slice.</p>
 <span class="normal">491</span>
 <span class="normal">492</span>
 <span class="normal">493</span>
-<span class="normal">494</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">split</span><span class="p">(</span>
+<span class="normal">494</span>
+<span class="normal">495</span>
+<span class="normal">496</span>
+<span class="normal">497</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">split</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">X</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">,</span> <span class="nb">dict</span><span class="p">],</span>
     <span class="n">as_pandas</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -11952,11 +11994,8 @@ slice.</p>
         <p>Print information about folds.</p>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\model_selection\_split.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">496</span>
-<span class="normal">497</span>
-<span class="normal">498</span>
-<span class="normal">499</span>
+              <summary>Source code in <code>skforecast/model_selection/_split.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">499</span>
 <span class="normal">500</span>
 <span class="normal">501</span>
 <span class="normal">502</span>
@@ -11995,7 +12034,10 @@ slice.</p>
 <span class="normal">535</span>
 <span class="normal">536</span>
 <span class="normal">537</span>
-<span class="normal">538</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">_print_info</span><span class="p">(</span>
+<span class="normal">538</span>
+<span class="normal">539</span>
+<span class="normal">540</span>
+<span class="normal">541</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">_print_info</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">index</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">,</span>
     <span class="n">fold</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
@@ -12147,7 +12189,7 @@ DataFrame, and the values are used as the lists of lags to try.</p>
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\model_selection\_utils.py</code></summary>
+              <summary>Source code in <code>skforecast/model_selection/_utils.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">24</span>
 <span class="normal">25</span>
 <span class="normal">26</span>
@@ -12563,7 +12605,7 @@ information.</p>
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\model_selection\_utils.py</code></summary>
+              <summary>Source code in <code>skforecast/model_selection/_utils.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 68</span>
 <span class="normal"> 69</span>
 <span class="normal"> 70</span>
@@ -13228,7 +13270,7 @@ potentially harmful due to resource contention.</li>
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast\model_selection\_utils.py</code></summary>
+              <summary>Source code in <code>skforecast/model_selection/_utils.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">347</span>
 <span class="normal">348</span>
 <span class="normal">349</span>

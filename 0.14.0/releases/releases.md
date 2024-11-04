@@ -84,6 +84,8 @@ This release has undergone a major refactoring to improve the performance of the
 
 + Added <code>[feature_selection]</code> module. The functions <code>[select_features]</code> and <code>[select_features_multiseries]</code> have been moved to this module.
 
++ The functions <code>[select_features]</code> and <code>[select_features_multiseries]</code> now have 3 returns: `selected_lags`, `selected_window_features` and `selected_exog`.
+
 + `exog_to_direct` and `exog_to_direct_numpy` in <code>[utils]</code> now returns a the names of the columns of the transformed exogenous variables.
 
 + Renamed attributes in all Forecasters:
@@ -987,18 +989,13 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [Sarimax]: https://skforecast.org/latest/api/sarimax
 [ForecasterEquivalentDate]: https://skforecast.org/latest/api/forecasterequivalentdate
 
-<!-- metrics -->
-[metrics]: https://skforecast.org/latest/api/metrics
-[add_y_train_argument]: https://skforecast.org/latest/api/metrics#skforecast.metrics.metrics.add_y_train_argument
-[mean_absolute_scaled_error]: https://skforecast.org/latest/api/metrics#skforecast.metrics.metrics.mean_absolute_scaled_error
-[root_mean_squared_scaled_error]: https://skforecast.org/latest/api/metrics#skforecast.metrics.metrics.root_mean_squared_scaled_error
-
 <!-- model_selection -->
 [model_selection]: https://skforecast.org/latest/api/model_selection
+
 [backtesting_forecaster]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._validation.backtesting_forecaster
-[grid_search_forecaster]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection.model_selection.grid_search_forecaster
-[random_search_forecaster]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection.model_selection.random_search_forecaster
-[bayesian_search_forecaster]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection.model_selection.bayesian_search_forecaster
+[grid_search_forecaster]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._search.grid_search_forecaster
+[random_search_forecaster]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._search.random_search_forecaster
+[bayesian_search_forecaster]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._search.bayesian_search_forecaster
 
 [backtesting_forecaster_multiseries]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._validation.backtesting_forecaster_multiseries
 [grid_search_forecaster_multiseries]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._search.grid_search_forecaster_multiseries
@@ -1009,9 +1006,9 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [grid_search_sarimax]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._search.grid_search_sarimax
 [random_search_sarimax]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._search.random_search_sarimax
 
-[BaseFold]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._split.basefold
-[TimeSeriesFold]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._split.timeseriesfold
-[OneStepAheadFold]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._split.onestepaheadfold
+[BaseFold]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._split.BaseFold
+[TimeSeriesFold]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._split.TimeSeriesFold
+[OneStepAheadFold]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._split.OneStepAheadFold
 
 <!-- feature_selection -->
 [feature_selection]: https://skforecast.org/latest/api/feature_selection
@@ -1020,12 +1017,17 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 
 <!-- preprocessing -->
 [preprocessing]: https://skforecast.org/latest/api/preprocessing
-[TimeSeriesDifferentiator]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.TimeSeriesDifferentiator
+[RollingFeatures]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.RollingFeatures
 [series_long_to_dict]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.series_long_to_dict
 [exog_long_to_dict]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.exog_long_to_dict
-[DateTimeFeatureTransformer]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.DateTimeFeatureTransformer
-[create_datetime_features]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.create_datetime_features
-[RollingFeatures]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.RollingFeatures
+[TimeSeriesDifferentiator]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.TimeSeriesDifferentiator
+[QuantileBinner]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.QuantileBinner
+
+<!-- metrics -->
+[metrics]: https://skforecast.org/latest/api/metrics
+[mean_absolute_scaled_error]: https://skforecast.org/latest/api/metrics#skforecast.metrics.metrics.mean_absolute_scaled_error
+[root_mean_squared_scaled_error]: https://skforecast.org/latest/api/metrics#skforecast.metrics.metrics.root_mean_squared_scaled_error
+[add_y_train_argument]: https://skforecast.org/latest/api/metrics#skforecast.metrics.metrics.add_y_train_argument
 
 <!-- plot -->
 [plot]: https://skforecast.org/latest/api/plot
@@ -1035,13 +1037,16 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [plot_prediction_distribution]: https://skforecast.org/latest/api/plot#skforecast.plot.plot.plot_prediction_distribution
 [plot_prediction_intervals]: https://skforecast.org/latest/api/plot#skforecast.plot.plot.plot_prediction_intervals
 
+<!-- utils -->
+[utils]: https://skforecast.org/latest/api/utils
+
 <!-- datasets -->
 [datasets]: https://skforecast.org/latest/api/datasets
 [fetch_dataset]: https://skforecast.org/latest/api/datasets#skforecast.datasets.fetch_dataset
 [load_demo_dataset]: https://skforecast.org/latest/api/datasets#skforecast.datasets.load_demo_dataset
 
-<!-- utils -->
-[utils]: https://skforecast.org/latest/api/utils
+<!-- exceptions -->
+[utils]: https://skforecast.org/latest/api/exceptions
 
 
 <!-- OLD -->
@@ -1053,3 +1058,5 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [ForecasterAutoregMultiVariate]: https://skforecast.org/0.13.0/api/forecastermultivariate
 [model_selection_multiseries]: https://skforecast.org/0.13.0/api/model_selection_multiseries
 [model_selection_sarimax]: https://skforecast.org/0.13.0/api/model_selection_sarimax
+[DateTimeFeatureTransformer]: https://skforecast.org/0.13.0/api/preprocessing#skforecast.preprocessing.DateTimeFeatureTransformer
+[create_datetime_features]: https://skforecast.org/0.13.0/api/preprocessing#skforecast.preprocessing.create_datetime_features
