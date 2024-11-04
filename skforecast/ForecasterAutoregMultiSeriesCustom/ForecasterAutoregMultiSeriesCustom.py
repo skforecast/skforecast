@@ -9,7 +9,6 @@ from typing import Any
 import warnings
 
 
-# TODO: Update warning with user guide link
 class ForecasterAutoregMultiSeriesCustom():
     """
     This class is deprecated since skforecast 0.14. To create window features,
