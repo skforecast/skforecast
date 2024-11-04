@@ -10,6 +10,7 @@ from pathlib import Path
 from sklearn.preprocessing import StandardScaler
 from lightgbm import LGBMRegressor
 from sklearn.linear_model import Ridge
+from skforecast.exceptions import OneStepAheadValidationWarning
 from skforecast.recursive import ForecasterRecursiveMultiSeries
 from skforecast.direct import ForecasterDirectMultiVariate
 from skforecast.model_selection import bayesian_search_forecaster_multiseries
@@ -838,7 +839,7 @@ def test_output_bayesian_search_forecaster_multiseries_ForecasterDirectMultiVari
         "to backtest the final model for a more accurate multi-step performance "
         "estimate."
     )
-    with pytest.warns(UserWarning, match = warn_msg):
+    with pytest.warns(OneStepAheadValidationWarning, match = warn_msg):
         results, _ = bayesian_search_forecaster_multiseries(
             forecaster         = forecaster,
             series             = series_item_sales,
@@ -942,7 +943,7 @@ def test_output_bayesian_search_forecaster_multiseries_ForecasterRecursiveMultiS
         "to backtest the final model for a more accurate multi-step performance "
         "estimate."
     )
-    with pytest.warns(UserWarning, match = warn_msg):
+    with pytest.warns(OneStepAheadValidationWarning, match = warn_msg):
         results, _ = bayesian_search_forecaster_multiseries(
             forecaster         = forecaster,
             series             = series_item_sales,

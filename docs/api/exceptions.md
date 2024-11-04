@@ -7,4 +7,5 @@
 ::: skforecast.exceptions.exceptions.LongTrainingWarning
 ::: skforecast.exceptions.exceptions.IgnoredArgumentWarning
 ::: skforecast.exceptions.exceptions.SaveLoadSkforecastWarning
+::: skforecast.exceptions.exceptions.OneStepAheadValidationWarning
 ::: skforecast.exceptions.exceptions.SkforecastVersionWarning

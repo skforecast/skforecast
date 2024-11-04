@@ -14,6 +14,7 @@ from sklearn.metrics import mean_squared_error
 from sklearn.metrics import mean_absolute_percentage_error
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import ParameterGrid
+from skforecast.exceptions import OneStepAheadValidationWarning
 from skforecast.metrics import mean_absolute_scaled_error
 from skforecast.metrics import root_mean_squared_scaled_error
 from skforecast.preprocessing import RollingFeatures
@@ -1655,7 +1656,7 @@ def test_evaluate_grid_hyperparameters_equivalent_outputs_backtesting_and_one_st
         "to backtest the final model for a more accurate multi-step performance "
         "estimate."
     )
-    with pytest.warns(UserWarning, match = warn_msg):
+    with pytest.warns(OneStepAheadValidationWarning, match = warn_msg):
         results_one_step_ahead = _evaluate_grid_hyperparameters_multiseries(
             forecaster         = forecaster,
             series             = series_dict,
