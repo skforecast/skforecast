@@ -16,6 +16,7 @@ import optuna
 from optuna.samplers import TPESampler
 from sklearn.model_selection import ParameterGrid, ParameterSampler
 from ..exceptions import warn_skforecast_categories
+from ..exceptions import OneStepAheadValidationWarning
 from ..model_selection._split import TimeSeriesFold, OneStepAheadFold
 from ..model_selection._validation import (
     backtesting_forecaster, 
@@ -412,7 +413,7 @@ def _evaluate_grid_hyperparameters(
             "One-step-ahead predictions are used for faster model comparison, but they "
             "may not fully represent multi-step prediction performance. It is recommended "
             "to backtest the final model for a more accurate multi-step performance "
-            "estimate."
+            "estimate.", OneStepAheadValidationWarning
         )
 
     if return_best and exog is not None and (len(exog) != len(y)):
@@ -793,7 +794,7 @@ def _bayesian_search_optuna(
             "One-step-ahead predictions are used for faster model comparison, but they "
             "may not fully represent multi-step prediction performance. It is recommended "
             "to backtest the final model for a more accurate multi-step performance "
-            "estimate."
+            "estimate.", OneStepAheadValidationWarning
         )
     
     if not isinstance(metric, list):
@@ -1363,7 +1364,7 @@ def _evaluate_grid_hyperparameters_multiseries(
             "One-step-ahead predictions are used for faster model comparison, but they "
             "may not fully represent multi-step prediction performance. It is recommended "
             "to backtest the final model for a more accurate multi-step performance "
-            "estimate."
+            "estimate.", OneStepAheadValidationWarning
         )
 
     if return_best and exog is not None and (len(exog) != len(series)):
@@ -1827,7 +1828,7 @@ def _bayesian_search_optuna_multiseries(
             "One-step-ahead predictions are used for faster model comparison, but they "
             "may not fully represent multi-step prediction performance. It is recommended "
             "to backtest the final model for a more accurate multi-step performance "
-            "estimate."
+            "estimate.", OneStepAheadValidationWarning
         )
     
     if isinstance(aggregate_metric, str):

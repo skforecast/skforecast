@@ -7,5 +7,6 @@ from .exceptions import (
     IgnoredArgumentWarning,
     SaveLoadSkforecastWarning,
     SkforecastVersionWarning,
+    OneStepAheadValidationWarning,
     warn_skforecast_categories
 )

@@ -141,6 +141,20 @@ class SkforecastVersionWarning(UserWarning):
             "warnings.simplefilter('ignore', category=SkforecastVersionWarning)"
         )
         return self.message + " " + extra_message
+    
+class OneStepAheadValidationWarning(UserWarning):
+    """
+    Warning used to notify that the one-step-ahead validation is being used.
+    """
+    def __init__(self, message):
+        self.message = message
+
+    def __str__(self):
+        extra_message = (
+            "\n You can suppress this warning using: "
+            "warnings.simplefilter('ignore', category=OneStepAheadValidationWarning)"
+        )
+        return self.message + " " + extra_message
 
 
 warn_skforecast_categories = [
@@ -151,5 +165,6 @@ warn_skforecast_categories = [
     LongTrainingWarning,
     IgnoredArgumentWarning,
     SaveLoadSkforecastWarning,
-    SkforecastVersionWarning
+    SkforecastVersionWarning,
+    OneStepAheadValidationWarning
 ]
