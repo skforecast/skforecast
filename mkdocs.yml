@@ -67,13 +67,14 @@ nav:
       - Forecasting with XGBoost and LightGBM: user_guides/forecasting-xgboost-lightgbm.ipynb
       - Skforecast in GPU: user_guides/skforecast-in-GPU.ipynb
     - FAQ and forecasting tips:
-      - Time series with missing values: faq/forecasting-time-series-with-missing-values.ipynb
-      - Non negative predictions: faq/non-negative-predictions.ipynb
-      - Forecasting with delayed data: faq/forecasting-with-delayed-historical-data.ipynb
-      - Parallelization: faq/parallelization-skforecast.ipynb
+      - Avoid negative predictions when forecasting: faq/non-negative-predictions.ipynb
+      - Forecasting time series with missing values: faq/forecasting-time-series-with-missing-values.ipynb
+      - Forecasting with delayed historical data: faq/forecasting-with-delayed-historical-data.ipynb
+      - Backtesting vs One-step-ahead: faq/parameters-search-backtesting-vs-one-step-ahead.ipynb
+      - Cyclical features in time series: faq/cyclical-features-time-series.ipynb
       - Time series aggregation: faq/time-series-aggregation.ipynb
+      - Parallelization in skforecast: faq/parallelization-skforecast.ipynb
       - Profiling skforecast: faq/profiling-skforecast.ipynb
-      - Backtesting vs One-step-ahead: faq/parameters-search-backetesting-vs-one-step-ahead.ipynb
 
   - Examples and tutorials:
     - English: examples/examples_english.md
@@ -101,8 +102,9 @@ nav:
     - Table of contents: faq/faq.md
     - Avoid negative predictions when forecasting: faq/non-negative-predictions.ipynb
     - Forecasting time series with missing values: faq/forecasting-time-series-with-missing-values.ipynb
-    - Cyclical features in time series: faq/cyclical-features-time-series.ipynb
     - Forecasting with delayed historical data: faq/forecasting-with-delayed-historical-data.ipynb
+    - Backtesting vs One-step-ahead: faq/parameters-search-backtesting-vs-one-step-ahead.ipynb
+    - Cyclical features in time series: faq/cyclical-features-time-series.ipynb
     - Time series aggregation: faq/time-series-aggregation.ipynb
     - Parallelization in skforecast: faq/parallelization-skforecast.ipynb
     - Profiling skforecast: faq/profiling-skforecast.ipynb
