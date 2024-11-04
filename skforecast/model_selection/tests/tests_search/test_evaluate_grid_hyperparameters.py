@@ -10,6 +10,7 @@ from sklearn.model_selection import ParameterGrid
 from sklearn.linear_model import Ridge
 from sklearn.preprocessing import StandardScaler
 from skforecast.metrics import mean_absolute_scaled_error, root_mean_squared_scaled_error
+from skforecast.exceptions import OneStepAheadValidationWarning
 from skforecast.recursive import ForecasterRecursive
 from skforecast.direct import ForecasterDirect
 from skforecast.model_selection._search import _evaluate_grid_hyperparameters
@@ -967,7 +968,7 @@ def test_evaluate_grid_hyperparameters_equivalent_outputs_backtesting_one_step_a
         "to backtest the final model for a more accurate multi-step performance "
         "estimate."
     )
-    with pytest.warns(UserWarning, match = warn_msg):
+    with pytest.warns(OneStepAheadValidationWarning, match = warn_msg):
         results_one_step_ahead = _evaluate_grid_hyperparameters(
             forecaster         = forecaster,
             y                  = y_feature_selection,

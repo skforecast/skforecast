@@ -15,8 +15,7 @@ from tqdm.auto import tqdm
 import optuna
 from optuna.samplers import TPESampler
 from sklearn.model_selection import ParameterGrid, ParameterSampler
-from ..exceptions import warn_skforecast_categories
-from ..exceptions import OneStepAheadValidationWarning
+from ..exceptions import warn_skforecast_categories, OneStepAheadValidationWarning
 from ..model_selection._split import TimeSeriesFold, OneStepAheadFold
 from ..model_selection._validation import (
     backtesting_forecaster, 

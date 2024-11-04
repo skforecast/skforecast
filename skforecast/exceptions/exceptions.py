@@ -127,21 +127,6 @@ class SaveLoadSkforecastWarning(UserWarning):
         return self.message + " " + extra_message
 
 
-class SkforecastVersionWarning(UserWarning):
-    """
-    Warning used to notify that the skforecast version installed in the 
-    environment differs from the version used to initialize the forecaster.
-    """
-    def __init__(self, message):
-        self.message = message
-
-    def __str__(self):
-        extra_message = (
-            "\n You can suppress this warning using: "
-            "warnings.simplefilter('ignore', category=SkforecastVersionWarning)"
-        )
-        return self.message + " " + extra_message
-    
 class OneStepAheadValidationWarning(UserWarning):
     """
     Warning used to notify that the one-step-ahead validation is being used.
@@ -157,6 +142,22 @@ class OneStepAheadValidationWarning(UserWarning):
         return self.message + " " + extra_message
 
 
+class SkforecastVersionWarning(UserWarning):
+    """
+    Warning used to notify that the skforecast version installed in the 
+    environment differs from the version used to initialize the forecaster.
+    """
+    def __init__(self, message):
+        self.message = message
+
+    def __str__(self):
+        extra_message = (
+            "\n You can suppress this warning using: "
+            "warnings.simplefilter('ignore', category=SkforecastVersionWarning)"
+        )
+        return self.message + " " + extra_message
+
+
 warn_skforecast_categories = [
     MissingValuesWarning,
     MissingExogWarning,
@@ -165,6 +166,6 @@ warn_skforecast_categories = [
     LongTrainingWarning,
     IgnoredArgumentWarning,
     SaveLoadSkforecastWarning,
-    SkforecastVersionWarning,
-    OneStepAheadValidationWarning
+    OneStepAheadValidationWarning,
+    SkforecastVersionWarning
 ]

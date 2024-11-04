@@ -31,6 +31,13 @@ class InvalidWindowFeatureNoMethods:  # pragma: no cover
         self.features_names = features_names
 
 
+link_to_docs = (
+    "\nVisit the documentation for more information about how to create "
+    "custom window features:\n"
+    "https://skforecast.org/latest/user_guides/window-features-and-custom-features.html#create-your-custom-window-features"
+)
+
+
 def test_ValueError_initialize_window_features_when_empty_list():
     """
     Test ValueError is raised when `window_features` is an empty list.
@@ -47,8 +54,8 @@ def test_ValueError_initialize_window_features_when_no_required_attributes():
     Test ValueError is raised when window feature does not have the required attributes.
     """
     err_msg = re.escape(
-        ("InvalidWindowFeatureNoAttributes must have the attributes: "
-         "['window_sizes', 'features_names'].")
+        "InvalidWindowFeatureNoAttributes must have the attributes: "
+        "['window_sizes', 'features_names']." + link_to_docs
     )
     with pytest.raises(ValueError, match = err_msg):
         initialize_window_features(InvalidWindowFeatureNoAttributes())
@@ -59,8 +66,8 @@ def test_ValueError_initialize_window_features_when_no_required_methods():
     Test ValueError is raised when window feature does not have the required attributes.
     """
     err_msg = re.escape(
-        ("InvalidWindowFeatureNoMethods must have the methods: "
-         "['transform_batch', 'transform'].")
+        "InvalidWindowFeatureNoMethods must have the methods: "
+        "['transform_batch', 'transform']."  + link_to_docs
     )
     with pytest.raises(ValueError, match = err_msg):
         initialize_window_features(InvalidWindowFeatureNoMethods(5, 'feature_1'))
@@ -73,8 +80,8 @@ def test_TypeError_initialize_window_features_when_window_sizes_not_int_list():
     window_sizes = 'not_valid'
 
     err_msg = re.escape(
-        (f"Attribute `window_sizes` of WindowFeature must be an int or a list "
-         f"of ints. Got {type(window_sizes)}.")
+        f"Attribute `window_sizes` of WindowFeature must be an int or a list "
+        f"of ints. Got {type(window_sizes)}."  + link_to_docs
     )
     with pytest.raises(TypeError, match = err_msg):
         initialize_window_features(WindowFeature(window_sizes, 'feature_1'))
@@ -85,8 +92,8 @@ def test_ValueError_initialize_window_features_when_window_sizes_int_lower_than_
     Test ValueError is raised when `window_sizes` is an int lower than 1.
     """
     err_msg = re.escape(
-        ("If argument `window_sizes` is an integer, it must be equal "
-         "to or greater than 1. Got 0 from WindowFeature.")
+        "If argument `window_sizes` is an integer, it must be equal "
+        "to or greater than 1. Got 0 from WindowFeature."  + link_to_docs
     )
     with pytest.raises(ValueError, match = err_msg):
         initialize_window_features(WindowFeature(0, 'feature_1'))
@@ -101,8 +108,8 @@ def test_ValueError_initialize_window_features_when_window_sizes_list_not_int_or
     int or lower than 1.
     """
     err_msg = re.escape(
-        (f"If argument `window_sizes` is a list, all elements must be integers "
-         f"equal to or greater than 1. Got {window_sizes} from WindowFeature.")
+        f"If argument `window_sizes` is a list, all elements must be integers "
+        f"equal to or greater than 1. Got {window_sizes} from WindowFeature." + link_to_docs
     )
     with pytest.raises(ValueError, match = err_msg):
         initialize_window_features(WindowFeature(window_sizes, 'feature_1'))
@@ -115,8 +122,8 @@ def test_TypeError_initialize_window_features_when_features_names_not_str_list()
     features_names = 5
 
     err_msg = re.escape(
-        (f"Attribute `features_names` of WindowFeature must be a str or a list "
-         f"of strings. Got {type(features_names)}.")
+        f"Attribute `features_names` of WindowFeature must be a str or a list "
+        f"of strings. Got {type(features_names)}."  + link_to_docs
     )
     with pytest.raises(TypeError, match = err_msg):
         initialize_window_features(WindowFeature(3, features_names))
@@ -129,8 +136,8 @@ def test_TypeError_initialize_window_features_when_features_names_list_not_str()
     features_names = ['name_1', 5]
 
     err_msg = re.escape(
-        ("If argument `features_names` is a list, all elements "
-         "must be strings. Got ['name_1', 5] from WindowFeature.")
+        "If argument `features_names` is a list, all elements "
+        "must be strings. Got ['name_1', 5] from WindowFeature." + link_to_docs
     )
     with pytest.raises(TypeError, match = err_msg):
         initialize_window_features(WindowFeature(3, features_names))
@@ -147,7 +154,7 @@ def test_ValueError_initialize_window_features_when_not_unique_features_names():
     window_features_names = ['feature_1', 'feature_2', 'feature_2', 'feature_3']
 
     err_msg = re.escape(
-        (f"All window features names must be unique. Got {window_features_names}.")
+        f"All window features names must be unique. Got {window_features_names}."
     )
     with pytest.raises(ValueError, match = err_msg):
         initialize_window_features(window_features)

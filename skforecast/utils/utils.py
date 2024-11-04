@@ -146,8 +146,12 @@ def initialize_window_features(
         if not isinstance(window_features, list):
             window_features = [window_features]
 
-        # TODO: Add link to documentation in the error message: how to create a 
-        # custom window feature class
+        link_to_docs = (
+            "\nVisit the documentation for more information about how to create "
+            "custom window features:\n"
+            "https://skforecast.org/latest/user_guides/window-features-and-custom-features.html#create-your-custom-window-features"
+        )
+        
         max_window_sizes = []
         window_features_names = []
         for wf in window_features:
@@ -155,25 +159,25 @@ def initialize_window_features(
             atts_methods = set([a for a in dir(wf)])
             if not set(needed_atts).issubset(atts_methods):
                 raise ValueError(
-                    (f"{wf_name} must have the attributes: {needed_atts}.")
+                    f"{wf_name} must have the attributes: {needed_atts}." + link_to_docs
                 )
             if not set(needed_methods).issubset(atts_methods):
                 raise ValueError(
-                    (f"{wf_name} must have the methods: {needed_methods}.")
+                    f"{wf_name} must have the methods: {needed_methods}." + link_to_docs
                 )
             
             window_sizes = wf.window_sizes
             if not isinstance(window_sizes, (int, list)):
                 raise TypeError(
-                    (f"Attribute `window_sizes` of {wf_name} must be an int or a list "
-                     f"of ints. Got {type(window_sizes)}.")
+                    f"Attribute `window_sizes` of {wf_name} must be an int or a list "
+                    f"of ints. Got {type(window_sizes)}." + link_to_docs
                 )
             
             if isinstance(window_sizes, int):
                 if window_sizes < 1:
                     raise ValueError(
-                        (f"If argument `window_sizes` is an integer, it must be equal "
-                         f"to or greater than 1. Got {window_sizes} from {wf_name}.")
+                        f"If argument `window_sizes` is an integer, it must be equal to or "
+                        f"greater than 1. Got {window_sizes} from {wf_name}." + link_to_docs
                     )
                 max_window_sizes.append(window_sizes)
             else:
@@ -181,31 +185,31 @@ def initialize_window_features(
                     ws >= 1 for ws in window_sizes
                 ):                    
                     raise ValueError(
-                        (f"If argument `window_sizes` is a list, all elements must be integers "
-                         f"equal to or greater than 1. Got {window_sizes} from {wf_name}.")
+                        f"If argument `window_sizes` is a list, all elements must be integers "
+                        f"equal to or greater than 1. Got {window_sizes} from {wf_name}." + link_to_docs
                     )
                 max_window_sizes.append(max(window_sizes))
 
             features_names = wf.features_names
             if not isinstance(features_names, (str, list)):
                 raise TypeError(
-                    (f"Attribute `features_names` of {wf_name} must be a str or "
-                     f"a list of strings. Got {type(features_names)}.")
+                    f"Attribute `features_names` of {wf_name} must be a str or "
+                    f"a list of strings. Got {type(features_names)}." + link_to_docs
                 )
             if isinstance(features_names, str):
                 window_features_names.append(features_names)
             else:
                 if not all(isinstance(fn, str) for fn in features_names):
                     raise TypeError(
-                        (f"If argument `features_names` is a list, all elements "
-                         f"must be strings. Got {features_names} from {wf_name}.")
+                        f"If argument `features_names` is a list, all elements "
+                        f"must be strings. Got {features_names} from {wf_name}." + link_to_docs
                     )
                 window_features_names.extend(features_names)
 
         max_size_window_features = max(max_window_sizes)
         if len(set(window_features_names)) != len(window_features_names):
             raise ValueError(
-                (f"All window features names must be unique. Got {window_features_names}.")
+                f"All window features names must be unique. Got {window_features_names}."
             )
 
     return window_features, window_features_names, max_size_window_features
@@ -1887,7 +1891,6 @@ def save_forecaster(
                 SaveLoadSkforecastWarning
             )
 
-    # TODO: Include docs link in the warning message
     if hasattr(forecaster, 'window_features') and forecaster.window_features is not None:
         skforecast_classes = {'RollingFeatures'}
         custom_classes = set(forecaster.window_features_class_names) - skforecast_classes
@@ -1897,7 +1900,9 @@ def save_forecaster(
                 "`window_features` argument. These classes are not saved automatically "
                 "when saving the Forecaster. Please ensure you save these classes "
                 "manually and import them before loading the Forecaster.\n"
-                "    Custom classes: " + ', '.join(custom_classes),
+                "    Custom classes: " + ', '.join(custom_classes) + "\n"
+                "Visit the documentation for more information: "
+                "https://skforecast.org/latest/user_guides/save-load-forecaster.html#saving-and-loading-a-forecaster-model-with-custom-features",
                 SaveLoadSkforecastWarning
             )
 
