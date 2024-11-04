@@ -99,7 +99,7 @@ nav:
     - exceptions: api/exceptions.md
 
   - FAQ and Tips:
-    - Table of contents: faq/faq.md
+    - Table of contents: faq/table-of-contents.md
     - Avoid negative predictions when forecasting: faq/non-negative-predictions.ipynb
     - Forecasting time series with missing values: faq/forecasting-time-series-with-missing-values.ipynb
     - Forecasting with delayed historical data: faq/forecasting-with-delayed-historical-data.ipynb

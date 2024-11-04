@@ -70,4 +70,4 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 - [Profiling skforecast](../faq/profiling-skforecast.html)
 
 
-We hope you find these guides helpful. If you have any questions or need further assistance, please don't hesitate to reach out to the skforecast community. Remember to visit the [FAQ and forecasting tips](../faq/faq.html) page for answers to frequently asked questions and forecasting tips.
+We hope you find these guides helpful. If you have any questions or need further assistance, please don't hesitate to reach out to the skforecast community. Remember to visit the [FAQ and forecasting tips](../faq/table-of-contents.html) page for answers to frequently asked questions and forecasting tips.
