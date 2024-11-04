@@ -11,7 +11,11 @@ import warnings
 
 # TODO: Update warning with user guide link
 class ForecasterAutoregMultiSeriesCustom():
-    """    
+    """
+    This class is deprecated since skforecast 0.14. To create window features,
+    use the class `ForecasterRecursiveMultiSeries` and the argument `window_features`. For
+    more information, see the user guide:
+    https://skforecast.org/latest/user_guides/window-features-and-custom-features
     """
 
     def __init__(
@@ -32,6 +36,8 @@ class ForecasterAutoregMultiSeriesCustom():
     ) -> None:
         
         warnings.warn(
-            ("This class is deprecated since skforecast 0.14. Use "
-             "ForecasterRecursiveMultiSeries instead.")
+            "This class is deprecated since skforecast 0.14. To create window "
+            "features, use the class `ForecasterRecursiveMultiSeries` and the argument "	
+            "`window_features`. For more information, see the user guide: "
+            "https://skforecast.org/latest/user_guides/window-features-and-custom-features"
         )

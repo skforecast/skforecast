@@ -698,8 +698,8 @@ class RollingFeatures():
         the same window size. If a `list`, it should have the same length as stats.
     min_periods : int, list, default `None`
         Minimum number of observations in window required to have a value. 
-        Similar to pandas rolling `min_periods` argument. If `None`, defaults 
-        to `window_sizes`.
+        Same as the `min_periods` argument of pandas rolling. If `None`, 
+        defaults to `window_sizes`.
     features_names : list, default `None`
         Names of the output features. If `None`, default names will be used in the 
         format 'roll_stat_window_size', for example 'roll_mean_7'.
@@ -819,8 +819,8 @@ class RollingFeatures():
             the same window size. If a `list`, it should have the same length as stats.
         min_periods : int, list, default `None`
             Minimum number of observations in window required to have a value. 
-            Similar to pandas rolling `min_periods` argument. If `None`, defaults 
-            to `window_sizes`.
+            Same as the `min_periods` argument of pandas rolling. If `None`, 
+            defaults to `window_sizes`.
         features_names : list, default `None`
             Names of the output features. If `None`, default names will be used in the 
             format 'roll_stat_window_size', for example 'roll_mean_7'.
@@ -1314,7 +1314,7 @@ class QuantileBinner:
         
         Parameters
         ----------
-        None
+        self
         
         Returns
         -------
