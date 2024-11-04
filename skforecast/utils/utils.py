@@ -1897,7 +1897,9 @@ def save_forecaster(
                 "`window_features` argument. These classes are not saved automatically "
                 "when saving the Forecaster. Please ensure you save these classes "
                 "manually and import them before loading the Forecaster.\n"
-                "    Custom classes: " + ', '.join(custom_classes),
+                "    Custom classes: " + ', '.join(custom_classes) + "\n"
+                "Visit the documentation for more information: "
+                "https://skforecast.org/latest/user_guides/save-load-forecaster.html#saving-and-loading-a-forecaster-model-with-custom-features",
                 SaveLoadSkforecastWarning
             )
 
