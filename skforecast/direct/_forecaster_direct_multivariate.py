@@ -21,7 +21,6 @@ from joblib import Parallel, delayed, cpu_count
 
 import skforecast
 from ..base import ForecasterBase
-from ..exceptions import IgnoredArgumentWarning
 from ..utils import (
     initialize_lags,
     initialize_window_features,

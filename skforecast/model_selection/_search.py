@@ -111,19 +111,19 @@ def grid_search_forecaster(
     param_grid = list(ParameterGrid(param_grid))
 
     results = _evaluate_grid_hyperparameters(
-        forecaster            = forecaster,
-        y                     = y,
-        cv                    = cv,
-        param_grid            = param_grid,
-        metric                = metric,
-        exog                  = exog,
-        lags_grid             = lags_grid,
-        return_best           = return_best,
-        n_jobs                = n_jobs,
-        verbose               = verbose,
-        show_progress         = show_progress,
-        output_file           = output_file
-    )
+                  forecaster    = forecaster,
+                  y             = y,
+                  cv            = cv,
+                  param_grid    = param_grid,
+                  metric        = metric,
+                  exog          = exog,
+                  lags_grid     = lags_grid,
+                  return_best   = return_best,
+                  n_jobs        = n_jobs,
+                  verbose       = verbose,
+                  show_progress = show_progress,
+                  output_file   = output_file
+              )
 
     return results
 
@@ -215,19 +215,19 @@ def random_search_forecaster(
     param_grid = list(ParameterSampler(param_distributions, n_iter=n_iter, random_state=random_state))
 
     results = _evaluate_grid_hyperparameters(
-        forecaster            = forecaster,
-        y                     = y,
-        cv                    = cv,
-        param_grid            = param_grid,
-        metric                = metric,
-        exog                  = exog,
-        lags_grid             = lags_grid,
-        return_best           = return_best,
-        n_jobs                = n_jobs,
-        verbose               = verbose,
-        show_progress         = show_progress,
-        output_file           = output_file
-    )
+                  forecaster    = forecaster,
+                  y             = y,
+                  cv            = cv,
+                  param_grid    = param_grid,
+                  metric        = metric,
+                  exog          = exog,
+                  lags_grid     = lags_grid,
+                  return_best   = return_best,
+                  n_jobs        = n_jobs,
+                  verbose       = verbose,
+                  show_progress = show_progress,
+                  output_file   = output_file
+              )
 
     return results
 
@@ -659,26 +659,26 @@ def bayesian_search_forecaster(
 
     if return_best and exog is not None and (len(exog) != len(y)):
         raise ValueError(
-            (f"`exog` must have same number of samples as `y`. "
-             f"length `exog`: ({len(exog)}), length `y`: ({len(y)})")
+            f"`exog` must have same number of samples as `y`. "
+            f"length `exog`: ({len(exog)}), length `y`: ({len(y)})"
         )
             
     results, best_trial = _bayesian_search_optuna(
-                                forecaster            = forecaster,
-                                y                     = y,
-                                cv                    = cv,
-                                exog                  = exog,
-                                search_space          = search_space,
-                                metric                = metric,
-                                n_trials              = n_trials,
-                                random_state          = random_state,
-                                return_best           = return_best,
-                                n_jobs                = n_jobs,
-                                verbose               = verbose,
-                                show_progress         = show_progress,
-                                output_file           = output_file,
-                                kwargs_create_study   = kwargs_create_study,
-                                kwargs_study_optimize = kwargs_study_optimize
+                              forecaster            = forecaster,
+                              y                     = y,
+                              cv                    = cv,
+                              exog                  = exog,
+                              search_space          = search_space,
+                              metric                = metric,
+                              n_trials              = n_trials,
+                              random_state          = random_state,
+                              return_best           = return_best,
+                              n_jobs                = n_jobs,
+                              verbose               = verbose,
+                              show_progress         = show_progress,
+                              output_file           = output_file,
+                              kwargs_create_study   = kwargs_create_study,
+                              kwargs_study_optimize = kwargs_study_optimize
                           )
 
     return results, best_trial
@@ -799,13 +799,15 @@ def _bayesian_search_optuna(
     if not isinstance(metric, list):
         metric = [metric]
     metric = [
-            _get_metric(metric=m)
-            if isinstance(m, str)
-            else add_y_train_argument(m) 
-            for m in metric
-        ]
-    metric_dict = {(m if isinstance(m, str) else m.__name__): [] 
-                   for m in metric}
+        _get_metric(metric=m)
+        if isinstance(m, str)
+        else add_y_train_argument(m) 
+        for m in metric
+    ]
+    metric_dict = {
+        (m if isinstance(m, str) else m.__name__): [] 
+        for m in metric
+    }
     
     if len(metric_dict) != len(metric):
         raise ValueError(
@@ -817,14 +819,14 @@ def _bayesian_search_optuna(
 
         def _objective(
             trial,
-            search_space          = search_space,
-            forecaster            = forecaster,
-            y                     = y,
-            cv                    = cv,
-            exog                  = exog,
-            metric                = metric,
-            n_jobs                = n_jobs,
-            verbose               = verbose,
+            search_space = search_space,
+            forecaster   = forecaster,
+            y            = y,
+            cv           = cv,
+            exog         = exog,
+            metric       = metric,
+            n_jobs       = n_jobs,
+            verbose      = verbose,
         ) -> float:
             
             sample = search_space(trial)
@@ -834,14 +836,14 @@ def _bayesian_search_optuna(
                 forecaster.set_lags(sample['lags'])
             
             metrics, _ = backtesting_forecaster(
-                             forecaster            = forecaster,
-                             y                     = y,
-                             cv                    = cv,
-                             exog                  = exog,
-                             metric                = metric,
-                             n_jobs                = n_jobs,
-                             verbose               = verbose,
-                             show_progress         = False
+                             forecaster    = forecaster,
+                             y             = y,
+                             cv            = cv,
+                             exog          = exog,
+                             metric        = metric,
+                             n_jobs        = n_jobs,
+                             verbose       = verbose,
+                             show_progress = False
                          )
             metrics = metrics.iloc[0, :].to_list()
             
@@ -855,12 +857,12 @@ def _bayesian_search_optuna(
 
         def _objective(
             trial,
-            search_space          = search_space,
-            forecaster            = forecaster,
-            y                     = y,
-            cv                    = cv,
-            exog                  = exog,
-            metric                = metric
+            search_space = search_space,
+            forecaster   = forecaster,
+            y            = y,
+            cv           = cv,
+            exog         = exog,
+            metric       = metric
         ) -> float:
             
             sample = search_space(trial)
@@ -1095,22 +1097,22 @@ def grid_search_forecaster_multiseries(
     param_grid = list(ParameterGrid(param_grid))
 
     results = _evaluate_grid_hyperparameters_multiseries(
-                forecaster            = forecaster,
-                series                = series,
-                cv                    = cv,
-                param_grid            = param_grid,
-                metric                = metric,
-                aggregate_metric      = aggregate_metric,
-                levels                = levels,
-                exog                  = exog,
-                lags_grid             = lags_grid,
-                n_jobs                = n_jobs,
-                return_best           = return_best,
-                verbose               = verbose,
-                show_progress         = show_progress,
-                suppress_warnings     = suppress_warnings,
-                output_file           = output_file
-            )
+                  forecaster        = forecaster,
+                  series            = series,
+                  cv                = cv,
+                  param_grid        = param_grid,
+                  metric            = metric,
+                  aggregate_metric  = aggregate_metric,
+                  levels            = levels,
+                  exog              = exog,
+                  lags_grid         = lags_grid,
+                  n_jobs            = n_jobs,
+                  return_best       = return_best,
+                  verbose           = verbose,
+                  show_progress     = show_progress,
+                  suppress_warnings = suppress_warnings,
+                  output_file       = output_file
+              )
 
     return results
 
@@ -1222,22 +1224,22 @@ def random_search_forecaster_multiseries(
                                        random_state=random_state))
 
     results = _evaluate_grid_hyperparameters_multiseries(
-                forecaster            = forecaster,
-                series                = series,
-                cv                    = cv,
-                param_grid            = param_grid,
-                metric                = metric,
-                aggregate_metric      = aggregate_metric,
-                levels                = levels,
-                exog                  = exog,
-                lags_grid             = lags_grid,
-                return_best           = return_best,
-                n_jobs                = n_jobs,
-                verbose               = verbose,
-                show_progress         = show_progress,
-                suppress_warnings     = suppress_warnings,
-                output_file           = output_file
-            )
+                  forecaster        = forecaster,
+                  series            = series,
+                  cv                = cv,
+                  param_grid        = param_grid,
+                  metric            = metric,
+                  aggregate_metric  = aggregate_metric,
+                  levels            = levels,
+                  exog              = exog,
+                  lags_grid         = lags_grid,
+                  return_best       = return_best,
+                  n_jobs            = n_jobs,
+                  verbose           = verbose,
+                  show_progress     = show_progress,
+                  suppress_warnings = suppress_warnings,
+                  output_file       = output_file
+              )
 
     return results
 
@@ -1377,8 +1379,8 @@ def _evaluate_grid_hyperparameters_multiseries(
     allowed_aggregate_metrics = ['average', 'weighted_average', 'pooling']
     if not set(aggregate_metric).issubset(allowed_aggregate_metrics):
         raise ValueError(
-            (f"Allowed `aggregate_metric` are: {allowed_aggregate_metrics}. "
-             f"Got: {aggregate_metric}.")
+            f"Allowed `aggregate_metric` are: {allowed_aggregate_metrics}. "
+            f"Got: {aggregate_metric}."
         )
     
     levels = _initialize_levels_model_selection_multiseries(
@@ -1671,25 +1673,25 @@ def bayesian_search_forecaster_multiseries(
         )
    
     results, best_trial = _bayesian_search_optuna_multiseries(
-                            forecaster            = forecaster,
-                            series                = series,
-                            cv                    = cv,
-                            exog                  = exog,
-                            levels                = levels, 
-                            search_space          = search_space,
-                            metric                = metric,
-                            aggregate_metric      = aggregate_metric,
-                            n_trials              = n_trials,
-                            random_state          = random_state,
-                            return_best           = return_best,
-                            n_jobs                = n_jobs,
-                            verbose               = verbose,
-                            show_progress         = show_progress,
-                            suppress_warnings     = suppress_warnings,
-                            output_file           = output_file,
-                            kwargs_create_study   = kwargs_create_study,
-                            kwargs_study_optimize = kwargs_study_optimize
-                        )
+                              forecaster            = forecaster,
+                              series                = series,
+                              cv                    = cv,
+                              exog                  = exog,
+                              levels                = levels, 
+                              search_space          = search_space,
+                              metric                = metric,
+                              aggregate_metric      = aggregate_metric,
+                              n_trials              = n_trials,
+                              random_state          = random_state,
+                              return_best           = return_best,
+                              n_jobs                = n_jobs,
+                              verbose               = verbose,
+                              show_progress         = show_progress,
+                              suppress_warnings     = suppress_warnings,
+                              output_file           = output_file,
+                              kwargs_create_study   = kwargs_create_study,
+                              kwargs_study_optimize = kwargs_study_optimize
+                          )
         
     return results, best_trial
 
@@ -1849,11 +1851,11 @@ def _bayesian_search_optuna_multiseries(
     if not isinstance(metric, list):
         metric = [metric]
     metric = [
-            _get_metric(metric=m)
-            if isinstance(m, str)
-            else add_y_train_argument(m) 
-            for m in metric
-        ]
+        _get_metric(metric=m)
+        if isinstance(m, str)
+        else add_y_train_argument(m) 
+        for m in metric
+    ]
     metric_names = [(m if isinstance(m, str) else m.__name__) for m in metric]
     if len(metric_names) != len(set(metric_names)):
         raise ValueError(
@@ -1912,9 +1914,9 @@ def _bayesian_search_optuna_multiseries(
             else:
                 metrics = metrics.loc[metrics['levels'] == levels[0], :]
             metrics = pd.DataFrame(
-                        data    = [metrics.iloc[:, 1:].transpose().stack().to_numpy()],
-                        columns = metric_names
-                    )
+                          data    = [metrics.iloc[:, 1:].transpose().stack().to_numpy()],
+                          columns = metric_names
+                      )
             
             # Store metrics in the variable `metrics_list` defined outside _objective.
             nonlocal metrics_list
@@ -1956,18 +1958,18 @@ def _bayesian_search_optuna_multiseries(
             )
 
             metrics, _ = _predict_and_calculate_metrics_multiseries_one_step_ahead(
-                forecaster            = forecaster,
-                series                = series,
-                X_train               = X_train,
-                y_train               = y_train,
-                X_test                = X_test,
-                y_test                = y_test,
-                X_train_encoding      = X_train_encoding,
-                X_test_encoding       = X_test_encoding,
-                levels                = levels,
-                metrics               = metric,
-                add_aggregated_metric = add_aggregated_metric
-            )
+                             forecaster            = forecaster,
+                             series                = series,
+                             X_train               = X_train,
+                             y_train               = y_train,
+                             X_test                = X_test,
+                             y_test                = y_test,
+                             X_train_encoding      = X_train_encoding,
+                             X_test_encoding       = X_test_encoding,
+                             levels                = levels,
+                             metrics               = metric,
+                             add_aggregated_metric = add_aggregated_metric
+                         )
 
             if add_aggregated_metric:
                 metrics = metrics.loc[metrics['levels'].isin(aggregate_metric), :]
@@ -2025,9 +2027,9 @@ def _bayesian_search_optuna_multiseries(
        
     if search_space(best_trial).keys() != best_trial.params.keys():
         raise ValueError(
-            (f"Some of the key values do not match the search_space key names.\n"
-             f"  Search Space keys  : {list(search_space(best_trial).keys())}\n"
-             f"  Trial objects keys : {list(best_trial.params.keys())}")
+            f"Some of the key values do not match the search_space key names.\n"
+            f"  Search Space keys  : {list(search_space(best_trial).keys())}\n"
+            f"  Trial objects keys : {list(best_trial.params.keys())}"
         )
     warnings.filterwarnings('default')
     
@@ -2408,8 +2410,9 @@ def _evaluate_grid_hyperparameters_sarimax(
                             show_progress         = False
                         )[0]
         metric_values = metric_values.iloc[0, :].to_list()
-        warnings.filterwarnings('ignore', category=RuntimeWarning, 
-                                message= "The forecaster will be fit.*")
+        warnings.filterwarnings(
+            'ignore', category=RuntimeWarning, message= "The forecaster will be fit.*"
+        )
         
         params_list.append(params)
         for m, m_value in zip(metric, metric_values):

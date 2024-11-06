@@ -59,46 +59,79 @@ def _check_X_numpy_ndarray_1d(ensure_1d=True):
 
 class TimeSeriesDifferentiator(BaseEstimator, TransformerMixin):
     """
-    Transforms a time series into a differentiated time series of order n.
-    It also reverts the differentiation.
+    Transforms a time series into a differentiated time series of a specified order
+    and provides functionality to revert the differentiation.
 
     Parameters
     ----------
     order : int
-        Order of differentiation.
+        The order of differentiation to be applied.
+    window_size : int, default None
+        The window size used by the forecaster. This is required to revert the 
+        differentiation for the target variable `y` or its predicted values.
 
     Attributes
     ----------
     order : int
-        Order of differentiation.
+        The order of differentiation.
     initial_values : list
-        List with the initial value of the time series after each differentiation.
-        This is used to revert the differentiation.
+        List with the first value of the time series before each differentiation.
+        If `order = 2`, first value correspond with the first value of the original
+        time series and the second value correspond with the first value of the
+        differentiated time series of order 1. These values are necessary to 
+        revert the differentiation and reconstruct the original time series.
+    pre_train_values : list
+        List with the first training value of the time series before each differentiation.
+        For `order = 1`, the value correspond with the last value of the window used to
+        create the predictors. For order > 1, the value correspond with the first
+        value of the differentiated time series prior to the next differentiation.
+        These values are necessary to revert the differentiation and reconstruct the
+        training time series.
     last_values : list
-        List with the last value of the time series after each differentiation.
-        This is used to revert the differentiation of a new window of data. A new
-        window of data is a time series that starts right after the time series
-        used to fit the transformer.
+        List with the last value of the time series before each differentiation, 
+        used to revert differentiation on subsequent data windows. If `order = 2`, 
+        first value correspond with the last value of the original time series 
+        and the second value correspond with the last value of the differentiated 
+        time series of order 1. This is essential for correctly transforming a 
+        time series that follows immediately after the series used to fit the 
+        transformer.
 
     """
 
     def __init__(
         self, 
-        order: int = 1
+        order: int = 1,
+        window_size: int = None
     ) -> None:
 
         if not isinstance(order, int):
             raise TypeError(
-                f"Parameter 'order' must be an integer greater than 0. Found {type(order)}."
+                f"Parameter `order` must be an integer greater than 0. Found {type(order)}."
             )
         if order < 1:
             raise ValueError(
-                f"Parameter 'order' must be an integer greater than 0. Found {order}."
+                f"Parameter `order` must be an integer greater than 0. Found {order}."
             )
 
+        if window_size is not None:
+            if not isinstance(window_size, int):
+                raise TypeError(
+                    f"Parameter `window_size` must be an integer greater than 0. "
+                    f"Found {type(window_size)}."
+                )
+            if window_size < 1:
+                raise ValueError(
+                    f"Parameter `window_size` must be an integer greater than 0. "
+                    f"Found {window_size}."
+                )
+
         self.order = order
+        self.window_size = window_size
         self.initial_values = []
+        self.pre_train_values = []
         self.last_values = []
+
+        # TODO: Esto no va afuncionar con un Direct para el step=2
 
     @_check_X_numpy_ndarray_1d()
     def fit(
@@ -107,8 +140,10 @@ class TimeSeriesDifferentiator(BaseEstimator, TransformerMixin):
         y: Any = None
     ) -> Self:
         """
-        Fits the transformer. This method only removes the values stored in
-        `self.initial_values`.
+        Fits the transformer. Stores the values needed to revert the 
+        differentiation of different window of the time series, original 
+        time series, training time series, and a time series that follows
+        immediately after the series used to fit the transformer.
 
         Parameters
         ----------
@@ -124,15 +159,20 @@ class TimeSeriesDifferentiator(BaseEstimator, TransformerMixin):
         """
 
         self.initial_values = []
+        self.pre_train_values = []
         self.last_values = []
 
         for i in range(self.order):
             if i == 0:
                 self.initial_values.append(X[0])
+                if self.window_size is not None:
+                    self.pre_train_values.append(X[self.window_size - self.order])
                 self.last_values.append(X[-1])
                 X_diff = np.diff(X, n=1)
             else:
                 self.initial_values.append(X_diff[0])
+                if self.window_size is not None:
+                    self.pre_train_values.append(X_diff[0])
                 self.last_values.append(X_diff[-1])
                 X_diff = np.diff(X_diff, n=1)
 
@@ -145,8 +185,7 @@ class TimeSeriesDifferentiator(BaseEstimator, TransformerMixin):
         y: Any = None
     ) -> np.ndarray:
         """
-        Transforms a time series into a differentiated time series of order n and
-        stores the values needed to revert the differentiation.
+        Transforms a time series into a differentiated time series of order n.
 
         Parameters
         ----------
@@ -159,7 +198,7 @@ class TimeSeriesDifferentiator(BaseEstimator, TransformerMixin):
         -------
         X_diff : numpy ndarray
             Differentiated time series. The length of the array is the same as
-            the original time series but the first n=`order` values are nan.
+            the original time series but the first n `order` values are nan.
 
         """
 
@@ -201,6 +240,53 @@ class TimeSeriesDifferentiator(BaseEstimator, TransformerMixin):
             else:
                 X_undiff = np.insert(X_undiff, 0, self.initial_values[-(i + 1)])
                 X_undiff = np.cumsum(X_undiff, dtype=float)
+
+        return X_undiff
+
+    @_check_X_numpy_ndarray_1d()
+    def inverse_transform_training(
+        self, 
+        X: np.ndarray, 
+        y: Any = None
+    ) -> np.ndarray:
+        """
+        Reverts the differentiation. To do so, the input array is assumed to be
+        the differentiated training time series generated with the original 
+        time series used to fit the transformer.
+
+        Parameters
+        ----------
+        X : numpy ndarray
+            Differentiated time series.
+        y : Ignored
+            Not used, present here for API consistency by convention.
+        
+        Returns
+        -------
+        X_diff : numpy ndarray
+            Reverted differentiated time series.
+        
+        """
+
+        if not self.pre_train_values:
+            raise ValueError(
+                "The `window_size` parameter must be set before fitting the "
+                "transformer to revert the differentiation of the training "
+                "time series."
+            )
+
+        # Remove initial nan values if present
+        X = X[np.argmax(~np.isnan(X)):]
+        for i in range(self.order):
+            if i == 0:
+                X_undiff = np.insert(X, 0, self.pre_train_values[-1])
+                X_undiff = np.cumsum(X_undiff, dtype=float)
+            else:
+                X_undiff = np.insert(X_undiff, 0, self.pre_train_values[-(i + 1)])
+                X_undiff = np.cumsum(X_undiff, dtype=float)
+
+        # Remove initial values as they are not part of the training time series
+        X_undiff = X_undiff[self.order:]
 
         return X_undiff
 
