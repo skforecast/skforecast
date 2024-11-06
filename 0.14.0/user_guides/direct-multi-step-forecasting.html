@@ -372,7 +372,7 @@ This is documentation for an unstable development version.
     
     
       <li class="md-tabs__item">
-        <a href="../faq/faq.html" class="md-tabs__link">
+        <a href="../faq/table-of-contents.html" class="md-tabs__link">
           
   
   FAQ and Tips
@@ -924,18 +924,9 @@ This is documentation for an unstable development version.
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#libraries" class="md-nav__link">
+  <a href="#libraries-and-data" class="md-nav__link">
     <span class="md-ellipsis">
-      Libraries
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#data" class="md-nav__link">
-    <span class="md-ellipsis">
-      Data
+      Libraries and data
     </span>
   </a>
   
@@ -1899,6 +1890,27 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
+      <a href="training-and-prediction-matrices.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Extract training and prediction matrices
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="weighted-time-series-forecasting.html" class="md-nav__link">
         
   
@@ -2718,7 +2730,7 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
-      <a href="../faq/faq.html" class="md-nav__link">
+      <a href="../faq/table-of-contents.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -3407,10 +3419,10 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h1 id="direct-multi-step-forecaster">Direct multi-step forecaster<a class="anchor-link" href="#direct-multi-step-forecaster">¶</a></h1><p>This strategy, commonly known as direct multistep forecasting, is computationally more expensive than the recursive since it requires training several models. However, in some scenarios, it achieves better results. This type of model can be obtained with the <code>ForecasterAutoregDirect</code> class and can also include one or multiple exogenous variables.</p>
+<h1 id="direct-multi-step-forecaster">Direct multi-step forecaster<a class="anchor-link" href="#direct-multi-step-forecaster">¶</a></h1><p>This strategy, commonly known as direct multistep forecasting, is computationally more expensive than the recursive since it requires training several models. However, in some scenarios, it achieves better results. This type of model can be obtained with the <code>ForecasterDirect</code> class and can also include one or multiple exogenous variables.</p>
 <p>Direct multi-step forecasting is a time series forecasting strategy in which a separate model is trained to predict each step in the forecast horizon. This is in contrast to recursive multi-step forecasting, where a single model is used to make predictions for all future time steps by recursively using its own output as input.</p>
 <p>Direct multi-step forecasting can be more computationally expensive than recursive forecasting since it requires training multiple models. However, it can often achieve better accuracy in certain scenarios, particularly when there are complex patterns and dependencies in the data that are difficult to capture with a single model.</p>
-<p>This approach can be performed using the <code>ForecasterAutoregDirect</code> class, which can also incorporate one or multiple exogenous variables to improve the accuracy of the forecasts.</p>
+<p>This approach can be performed using the <code>ForecasterDirect</code> class, which can also incorporate one or multiple exogenous variables to improve the accuracy of the forecasts.</p>
 <p style="text-align: center">
 <img alt="No description has been provided for this image" src="../img/diagram-direct-multi-step-forecasting.png" style="width: 650px"/>
 <br/>
@@ -3421,7 +3433,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <br/>
 <font size="2.5"> <i>Direct forecasting</i></font>
 </p>
-<p>To train a <code>ForecasterAutoregDirect</code> a different training matrix is created for each model.</p>
+<p>To train a <code>ForecasterDirect</code> a different training matrix is created for each model.</p>
 <p style="text-align: center">
 <img alt="No description has been provided for this image" src="../img/diagram_skforecast_multioutput.png" style="width: 700px"/>
 <br/>
@@ -3437,7 +3449,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="libraries">Libraries<a class="anchor-link" href="#libraries">¶</a></h2>
+<h2 id="libraries-and-data">Libraries and data<a class="anchor-link" href="#libraries-and-data">¶</a></h2>
 </div>
 </div>
 </div>
@@ -3447,7 +3459,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [1]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-1">
@@ -3465,7 +3477,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">from</span> <span class="nn">skforecast.ForecasterAutoregDirect</span> <span class="kn">import</span> <span class="n">ForecasterAutoregDirect</span>
+<span class="kn">from</span> <span class="nn">skforecast.direct</span> <span class="kn">import</span> <span class="n">ForecasterDirect</span>
 <span class="kn">from</span> <span class="nn">skforecast.datasets</span> <span class="kn">import</span> <span class="n">fetch_dataset</span>
 <span class="kn">from</span> <span class="nn">sklearn.linear_model</span> <span class="kn">import</span> <span class="n">Ridge</span>
 <span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">mean_squared_error</span>
@@ -3475,23 +3487,12 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from skforecast.ForecasterAutoregDirect import ForecasterAutoregDirect
+from skforecast.direct import ForecasterDirect
 from skforecast.datasets import fetch_dataset
 from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_squared_error</div>
 </div>
 </div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=97f03864-ee4a-459d-9eec-03d14feb931e">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="data">Data<a class="anchor-link" href="#data">¶</a></h2>
 </div>
 </div>
 </div>
@@ -3621,9 +3622,9 @@ Shape of the dataset: (204, 2)
 <i style="font-size: 18px; color:#00b8d4;"></i>
 <b style="color: #00b8d4;">✎ Note</b>
 </p>
-<p>Starting from version <b>skforecast 0.9.0</b>, the <code>ForecasterAutoregDirect</code> now includes the <code>n_jobs</code> parameter, allowing multi-process parallelization. This allows to train regressors for all steps simultaneously.</p>
+<p>Starting from version <b>skforecast 0.9.0</b>, the <code>ForecasterDirect</code> now includes the <code>n_jobs</code> parameter, allowing multi-process parallelization. This allows to train regressors for all steps simultaneously.</p>
 <p>The benefits of parallelization depend on several factors, including the regressor used, the number of fits to be performed, and the volume of data involved. When the <code>n_jobs</code> parameter is set to <code>'auto'</code>, the level of parallelization is automatically selected based on heuristic rules that aim to choose the best option for each scenario.</p>
-<p>For a more detailed look at parallelization, visit <a href="https://skforecast.org/latest/faq/parallelization-skforecast">Parallelization in skforecast</a>.</p>
+<p>For a more detailed look at parallelization, visit <a href="../faq/parallelization-skforecast">Parallelization in skforecast</a>.</p>
 </div>
 </div>
 </div>
@@ -3634,7 +3635,7 @@ Shape of the dataset: (204, 2)
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [3]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-3">
@@ -3649,7 +3650,7 @@ Shape of the dataset: (204, 2)
 </div>
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Create and fit forecaster</span>
 <span class="c1"># ==============================================================================</span>
-<span class="n">forecaster</span> <span class="o">=</span> <span class="n">ForecasterAutoregDirect</span><span class="p">(</span>
+<span class="n">forecaster</span> <span class="o">=</span> <span class="n">ForecasterDirect</span><span class="p">(</span>
                  <span class="n">regressor</span>     <span class="o">=</span> <span class="n">Ridge</span><span class="p">(),</span>
                  <span class="n">steps</span>         <span class="o">=</span> <span class="mi">36</span><span class="p">,</span>
                  <span class="n">lags</span>          <span class="o">=</span> <span class="mi">15</span><span class="p">,</span>
@@ -3662,7 +3663,7 @@ Shape of the dataset: (204, 2)
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-3"># Create and fit forecaster
 # ==============================================================================
-forecaster = ForecasterAutoregDirect(
+forecaster = ForecasterDirect(
                  regressor     = Ridge(),
                  steps         = 36,
                  lags          = 15,
@@ -3681,7 +3682,7 @@ forecaster</div>
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[3]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[ ]:</div>
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
 <pre>======================= 
 ForecasterAutoregDirect 
@@ -3940,7 +3941,7 @@ print(f"Test error (mse): {error_mse}")</div>
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="feature-importances">Feature importances<a class="anchor-link" href="#feature-importances">¶</a></h2><p>Since <code>ForecasterAutoregDirect</code> fits one model per step, it is necessary to specify from which model retrieves its feature importances.</p>
+<h2 id="feature-importances">Feature importances<a class="anchor-link" href="#feature-importances">¶</a></h2><p>Since <code>ForecasterDirect</code> fits one model per step, it is necessary to specify from which model retrieves its feature importances.</p>
 </div>
 </div>
 </div>
@@ -4090,7 +4091,7 @@ print(f"Test error (mse): {error_mse}")</div>
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="extract-training-matrices">Extract training matrices<a class="anchor-link" href="#extract-training-matrices">¶</a></h2><p>Two steps are needed to extract the training matrices. One to create the whole training matrix and a second one to subset the data needed for each model (step).</p>
+<h2 id="extract-training-matrices">Extract training matrices<a class="anchor-link" href="#extract-training-matrices">¶</a></h2><p>Two steps are required to extract the training matrices. One to create the entire training matrix and a second to subset the data needed for each model (step).</p>
 </div>
 </div>
 </div>
@@ -4100,7 +4101,7 @@ print(f"Test error (mse): {error_mse}")</div>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [9]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-9">
@@ -4114,30 +4115,30 @@ print(f"Test error (mse): {error_mse}")</div>
 </clipboard-copy>
 </div>
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Create the whole train matrix</span>
-<span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">create_train_X_y</span><span class="p">(</span><span class="n">data_train</span><span class="p">)</span>
+<span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">create_train_X_y</span><span class="p">(</span><span class="n">data_train</span><span class="p">)</span>
 
 <span class="c1"># Extract X and y to train the model for step 1</span>
-<span class="n">X_1</span><span class="p">,</span> <span class="n">y_1</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">filter_train_X_y_for_step</span><span class="p">(</span>
-               <span class="n">step</span>          <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-               <span class="n">X_train</span>       <span class="o">=</span> <span class="n">X</span><span class="p">,</span>
-               <span class="n">y_train</span>       <span class="o">=</span> <span class="n">y</span><span class="p">,</span>
-               <span class="n">remove_suffix</span> <span class="o">=</span> <span class="kc">False</span>
-           <span class="p">)</span>
+<span class="n">X_train_1</span><span class="p">,</span> <span class="n">y_train_1</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">filter_train_X_y_for_step</span><span class="p">(</span>
+                           <span class="n">step</span>          <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+                           <span class="n">X_train</span>       <span class="o">=</span> <span class="n">X_train</span><span class="p">,</span>
+                           <span class="n">y_train</span>       <span class="o">=</span> <span class="n">y_train</span><span class="p">,</span>
+                           <span class="n">remove_suffix</span> <span class="o">=</span> <span class="kc">False</span>
+                       <span class="p">)</span>
 
-<span class="n">X_1</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="n">X_train_1</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-9"># Create the whole train matrix
-X, y = forecaster.create_train_X_y(data_train)
+X_train, y_train = forecaster.create_train_X_y(data_train)
 
 # Extract X and y to train the model for step 1
-X_1, y_1 = forecaster.filter_train_X_y_for_step(
-               step          = 1,
-               X_train       = X,
-               y_train       = y,
-               remove_suffix = False
-           )
+X_train_1, y_train_1 = forecaster.filter_train_X_y_for_step(
+                           step          = 1,
+                           X_train       = X_train,
+                           y_train       = y_train,
+                           remove_suffix = False
+                       )
 
-X_1.head(4)</div>
+X_train_1.head(4)</div>
 </div>
 </div>
 </div>
@@ -4147,7 +4148,7 @@ X_1.head(4)</div>
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[9]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[ ]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
@@ -4289,7 +4290,7 @@ X_1.head(4)</div>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [10]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-10">
@@ -4302,9 +4303,9 @@ X_1.head(4)</div>
 </div>
 </clipboard-copy>
 </div>
-<div class="highlight-ipynb hl-python"><pre><span></span><span class="n">y_1</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<div class="highlight-ipynb hl-python"><pre><span></span><span class="n">y_train_1</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
 </pre></div>
-<div class="clipboard-copy-txt" id="cell-10">y_1.head(4)</div>
+<div class="clipboard-copy-txt" id="cell-10">y_train_1.head(4)</div>
 </div>
 </div>
 </div>
@@ -4314,7 +4315,7 @@ X_1.head(4)</div>
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[10]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[ ]:</div>
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
 <pre>datetime
 1992-10-01    0.568606

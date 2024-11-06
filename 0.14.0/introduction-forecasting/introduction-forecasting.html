@@ -372,7 +372,7 @@ This is documentation for an unstable development version.
     
     
       <li class="md-tabs__item">
-        <a href="../faq/faq.html" class="md-tabs__link">
+        <a href="../faq/table-of-contents.html" class="md-tabs__link">
           
   
   FAQ and Tips
@@ -2018,6 +2018,27 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
+      <a href="../user_guides/training-and-prediction-matrices.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Extract training and prediction matrices
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../user_guides/weighted-time-series-forecasting.html" class="md-nav__link">
         
   
@@ -2837,7 +2858,7 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
-      <a href="../faq/faq.html" class="md-nav__link">
+      <a href="../faq/table-of-contents.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -3087,10 +3108,6 @@ This is documentation for an unstable development version.
 <h1 id="introduction-to-forecasting">Introduction to forecasting<a class="headerlink" href="#introduction-to-forecasting" title="Permanent link">&para;</a></h1>
 <h2 id="time-series-and-forecasting">Time series and forecasting<a class="headerlink" href="#time-series-and-forecasting" title="Permanent link">&para;</a></h2>
 <p>A time series is a sequence of data arranged chronologically and spaced at equal or irregular intervals. The forecasting process consists of predicting the future value of a time series, either by modeling the series solely based on its past behavior (autoregressive) or by incorporating other external variables.</p>
-<p style="text-align: center">
-    <img src="../img/recursive_forecasting_gif.gif" style="padding: 10px; background-color: white; border-radius: 4px;">
-</p>
-
 <h2 id="machine-learning-for-forecasting">Machine learning for forecasting<a class="headerlink" href="#machine-learning-for-forecasting" title="Permanent link">&para;</a></h2>
 <p>To apply machine learning models to forecasting problems, the time series needs to be transformed into a matrix where each value is associated with a specific time window (known as lags) that precedes it. In the context of time series, a lag with respect to a time step <em>t</em> is defined as the value of the series at previous time steps. For instance, lag 1 represents the value at time step <em>t-1</em>, while lag <em>m</em> represents the value at time step <em>t-m</em>.</p>
 <p>This transformation is essential for machine learning models to capture the dependencies and patterns that exist between past and future values in a time series. By using lags as input features, machine learning models can learn from the past and make predictions about future values. The number of lags used as input features in the matrix is an important hyperparameter that needs to be carefully tuned to obtain the best performance of the model.</p>
@@ -3102,14 +3119,14 @@ This is documentation for an unstable development version.
 
 <p>This type of transformation also allows to include additional variables.</p>
 <p style="text-align: center">
-    <img src="../img/matrix_transformation_with_exog_variable.png" style="width: 600px;">
+    <img src="../img/matrix_transformation_with_exog_variable.png" style="width: 500px;">
     <br>
     <font size="2.5"> <i>Time series transformation including an exogenous variable</i></font>
 </p>
 
 <p>Once data have been rearranged into the new shape, any regression model can be trained to predict the next value (step) of the series. During model training, every row is considered a separate data instance, where values at lags 1, 2, ... <em>p</em> are considered predictors for the target quantity of the time series at time step <em>p+1</em>. </p>
 <p style="text-align: center">
-    <img src="../img/diagram-trainig-forecaster.png" style="width: 700px;">
+    <img src="../img/diagram-trainig-forecaster.png" style="width: 600px;">
     <br>
     <font size="2.5"> <i>Diagram of training a machine learning model with time series data</i></font>
 </p>
@@ -3117,7 +3134,7 @@ This is documentation for an unstable development version.
 <h2 id="single-step-forecasting">Single-step forecasting<a class="headerlink" href="#single-step-forecasting" title="Permanent link">&para;</a></h2>
 <p>Single-step prediction is used when the goal is to predict only the next value of the series.</p>
 <p style="text-align: center">
-    <img src="../img/diagram-single-step-forecasting.png" style="width: 600px;">
+    <img src="../img/diagram-single-step-forecasting.png" style="width: 500px;">
     <br>
     <font size="2.5"> <i>Diagram of single-step forecasting</i></font>
 </p>
@@ -3125,46 +3142,46 @@ This is documentation for an unstable development version.
 <h2 id="multi-step-forecasting">Multi-step forecasting<a class="headerlink" href="#multi-step-forecasting" title="Permanent link">&para;</a></h2>
 <p>When working with time series, it is seldom needed to predict only the next element in the series (<em>t+1</em>). Instead, the most common goal is to predict a whole future interval (<em>t+1, ..., t+n</em>)  or a far point in time (<em>t+n</em>). Several strategies allow generating this type of prediction.</p>
 <h3 id="recursive-multi-step-forecasting">Recursive multi-step forecasting<a class="headerlink" href="#recursive-multi-step-forecasting" title="Permanent link">&para;</a></h3>
-<p>Since the value <em>t(n-1)</em> is required to predict <em>t(n)</em>, and <em>t(n-1)</em> is unknown, a recursive process is applied in which, each new prediction, is based on the previous one. This process is known as recursive forecasting or recursive multi-step forecasting and can be easily generated with the <a href="https://skforecast.org/latest/user_guides/autoregresive-forecaster.html"><code>ForecasterAutoreg</code></a> class.</p>
+<p>Since the value <em>t(n-1)</em> is required to predict <em>t(n)</em>, and <em>t(n-1)</em> is unknown, a recursive process is applied in which, each new prediction, is based on the previous one. This process is known as recursive forecasting or recursive multi-step forecasting and can be easily generated with the <a href="https://skforecast.org/latest/user_guides/autoregresive-forecaster.html"><code>ForecasterRecursive</code></a> class.</p>
 <p style="text-align: center">
-    <img src="../img/diagram-recursive-mutistep-forecasting.png" style="width: 600px">
+    <img src="../img/diagram-recursive-mutistep-forecasting.png" style="width: 500px">
     <br>
     <font size="2.5"> <i>Diagram of recursive multi-step forecasting</i></font>
 </p>
 <p style="text-align: center">
-    <img src="../img/recursive_forecasting_gif.gif" style="width: 600px; padding: 10px; background-color: white; border-radius: 4px;">
+    <img src="../img/recursive_forecasting_gif.gif" style="width: 500px; padding: 10px; background-color: white; border-radius: 4px;">
     <br>
     <font size="2.5"> <i>Recursive forecasting</i></font>
 </p>
 
 <h3 id="direct-multi-step-forecasting">Direct multi-step forecasting<a class="headerlink" href="#direct-multi-step-forecasting" title="Permanent link">&para;</a></h3>
-<p>Direct multi-step forecasting consists of training a different model for each step of the forecast horizon. For example, to predict the next 5 values of a time series, 5 different models are trained, one for each step. As a result, the predictions are independent of each other. This entire process is automated in the <a href="https://skforecast.org/latest/user_guides/direct-multi-step-forecasting.html"><code>ForecasterAutoregDirect</code></a> class. </p>
+<p>Direct multi-step forecasting consists of training a different model for each step of the forecast horizon. For example, to predict the next 5 values of a time series, 5 different models are trained, one for each step. As a result, the predictions are independent of each other. This entire process is automated in the <a href="https://skforecast.org/latest/user_guides/direct-multi-step-forecasting.html"><code>ForecasterDirect</code></a> class. </p>
 <p style="text-align: center">
-    <img src="../img/diagram-direct-multi-step-forecasting.png" style="width: 600px">
+    <img src="../img/diagram-direct-multi-step-forecasting.png" style="width: 500px">
     <br>
     <font size="2.5"> <i>Diagram of direct multi-step forecasting</i></font>
 </p>
 <p style="text-align: center">
-    <img src="../img/direct_forecasting_gif.gif" style="width: 600px; padding: 10px; background-color: white; border-radius: 4px;">
+    <img src="../img/direct_forecasting_gif.gif" style="width: 500px; padding: 10px; background-color: white; border-radius: 4px;">
     <br>
     <font size="2.5"> <i>Direct forecasting</i></font>
 </p>
 
 <h3 id="multiple-output-forecasting">Multiple output forecasting<a class="headerlink" href="#multiple-output-forecasting" title="Permanent link">&para;</a></h3>
-<p>Some machine learning models, such as long short-term memory (LSTM) neural network, can predict simultaneously several values of a sequence (<em>one-shot</em>). This strategy is not currently implemented in skforecast library.</p>
+<p>Some machine learning models, such as long short-term memory (LSTM) neural networks, can predict multiple values of a sequence simultaneously (one-shot). This strategy implemented in the <code>ForecasterRnn</code> class.</p>
 <h2 id="global-forecasting-models">Global forecasting models<a class="headerlink" href="#global-forecasting-models" title="Permanent link">&para;</a></h2>
 <p>Univariate time series forecasting models a single time series as a linear or nonlinear combination of its lags, using past values of the series to predict its future. Global forecasting, involves building a single predictive model that considers all time series simultaneously. It attempts to capture the core patterns that govern the series, thereby mitigating the potential noise that each series might introduce. This approach is computationally efficient, easy to maintain, and can yield more robust generalizations across time series. There are two different strategies for global forecasting.</p>
 <h3 id="independent-multi-series-forecasting">Independent Multi-Series Forecasting<a class="headerlink" href="#independent-multi-series-forecasting" title="Permanent link">&para;</a></h3>
 <p>A single model is trained for all time series, but each time series remains independent of the others, meaning that past values of one series are not used as predictors of other series. However, modeling them together is useful because the series may follow the same intrinsic pattern regarding their past and future values. For instance, the sales of products A and B in the same store may not be related, but they follow the same dynamics, that of the store.</p>
 <p style="text-align: center">
-    <img src="../img/forecaster_multi_series_train_matrix_diagram.png" style="width: 800px">
+    <img src="../img/forecaster_multi_series_train_matrix_diagram.png" style="width: 700px">
     <br>
     <font size="2.5"> <i>Transformation of two time series and an exogenous variable into the matrices needed to train a machine learning model in a multi-series context</i></font>
 </p>
 
 <p>To predict the next <em>n</em> steps, the strategy of <a href="https://skforecast.org/latest/introduction-forecasting/introduction-forecasting.html#recursive-multi-step-forecasting">recursive multi-step forecasting</a> is applied</p>
 <p style="text-align: center">
-    <img src="../img/forecaster_multi_series_prediction_diagram.png" style="width: 800px">
+    <img src="../img/forecaster_multi_series_prediction_diagram.png" style="width: 700px">
     <br>
     <font size="2.5"> <i>Diagram of recursive forecasting with multiple independent time series</i></font>
 </p>
@@ -3173,7 +3190,7 @@ This is documentation for an unstable development version.
 <h3 id="dependent-multi-series-forecasting-multivariate-time-series">Dependent Multi-Series Forecasting (multivariate time series)<a class="headerlink" href="#dependent-multi-series-forecasting-multivariate-time-series" title="Permanent link">&para;</a></h3>
 <p>All series are modeled together in a single model, considering that each time series depends not only on its past values but also on the past values of the other series. The forecaster is expected not only to learn the information of each series separately but also to relate them. An example is the measurements made by all the sensors (flow, temperature, pressure...) installed on an industrial machine such as a compressor.</p>
 <p style="text-align: center">
-    <img src="../img/forecaster_multivariate_train_matrix_diagram.png" style="width: 800px">
+    <img src="../img/forecaster_multivariate_train_matrix_diagram.png" style="width: 700px">
     <br>
     <font size="2.5"> <i>Transformation of two time series and an exogenous variable into the matrices needed to train a machine learning model in a multi-variate-series context</i></font>
 </p>

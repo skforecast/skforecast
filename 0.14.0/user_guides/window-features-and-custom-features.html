@@ -372,7 +372,7 @@ This is documentation for an unstable development version.
     
     
       <li class="md-tabs__item">
-        <a href="../faq/faq.html" class="md-tabs__link">
+        <a href="../faq/table-of-contents.html" class="md-tabs__link">
           
   
   FAQ and Tips
@@ -1863,6 +1863,27 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
+      <a href="training-and-prediction-matrices.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Extract training and prediction matrices
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="weighted-time-series-forecasting.html" class="md-nav__link">
         
   
@@ -2682,7 +2703,7 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
-      <a href="../faq/faq.html" class="md-nav__link">
+      <a href="../faq/table-of-contents.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -3547,7 +3568,7 @@ Freq: MS, Name: y, Length: 204, dtype: float64</pre>
 <li>'coef_variation': the coefficient of variation of the previous <em>n</em> values.</li>
 </ul>
 <p>The user can specify these predictors by passing a list of strings to the <code>stats</code> argument. The user can also specify the window size for each of these predictors by passing a <code>list</code> of integers to the <code>window_size</code> argument, if the value is the same for all the predictors, the user can pass a single <code>integer</code>.</p>
-<p>The following example demonstrates how to use the <code>RollingFeatures</code> class to include rolling statistics (mean, minimum, and maximum values). Here, the rolling mean is computed with a window size of 20, while the minimum and maximum values use a window size of 10.</p>
+<p>The following example demonstrates how to use the <code>RollingFeatures</code> class to include rolling statistics (mean, minimum, and maximum values). Here, the rolling mean is computed with a window size of 10 and 20, while the minimum and maximum values use a window size of 10.</p>
 </div>
 </div>
 </div>
@@ -3573,15 +3594,15 @@ Freq: MS, Name: y, Length: 204, dtype: float64</pre>
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Window features</span>
 <span class="c1"># ==============================================================================</span>
 <span class="n">window_features</span> <span class="o">=</span> <span class="n">RollingFeatures</span><span class="p">(</span>
-                      <span class="n">stats</span>        <span class="o">=</span> <span class="p">[</span><span class="s1">'mean'</span><span class="p">,</span> <span class="s1">'min'</span><span class="p">,</span> <span class="s1">'max'</span><span class="p">],</span>
-                      <span class="n">window_sizes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">20</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">]</span>
+                      <span class="n">stats</span>        <span class="o">=</span> <span class="p">[</span><span class="s1">'mean'</span><span class="p">,</span> <span class="s1">'mean'</span><span class="p">,</span> <span class="s1">'min'</span><span class="p">,</span> <span class="s1">'max'</span><span class="p">],</span>
+                      <span class="n">window_sizes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">20</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">]</span>
                   <span class="p">)</span>
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-3"># Window features
 # ==============================================================================
 window_features = RollingFeatures(
-                      stats        = ['mean', 'min', 'max'],
-                      window_sizes = [20, 10, 10]
+                      stats        = ['mean', 'mean', 'min', 'max'],
+                      window_sizes = [20, 10, 10, 10]
                   )</div>
 </div>
 </div>
