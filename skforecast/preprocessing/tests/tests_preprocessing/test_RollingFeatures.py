@@ -58,20 +58,22 @@ def test_RollingFeatures_validate_params():
     with pytest.raises(TypeError, match = err_msg):
         RollingFeatures(**params[2])
     err_msg = re.escape(
-        ("Length of `window_sizes` list (2) "
-         "must match length of `stats` list (1).")
+        "Length of `window_sizes` list (2) must match length of `stats` list (1)."
     ) 
     with pytest.raises(ValueError, match = err_msg):
         RollingFeatures(**params[3])
     err_msg = re.escape(
-        ("Length of `window_sizes` list (1) "
-         "must match length of `stats` list (2).")
+        "Length of `window_sizes` list (1) must match length of `stats` list (2)."
     ) 
     with pytest.raises(ValueError, match = err_msg):
         RollingFeatures(**params[4])
     
     # Check duplicates (stats, window_sizes)
-    err_msg = re.escape("Duplicate (stat, window_size) pairs are not allowed.")
+    err_msg = re.escape(
+        "Duplicate (stat, window_size) pairs are not allowed.\n"
+        "    `stats`       : ['mean', 'median', 'mean']\n"
+        "    `window_sizes : [6, 5, 6]"
+    )
     with pytest.raises(ValueError, match = err_msg):
         RollingFeatures(**params[5])
 
@@ -82,20 +84,17 @@ def test_RollingFeatures_validate_params():
     with pytest.raises(TypeError, match = err_msg):
         RollingFeatures(**params[6])
     err_msg = re.escape(
-        ("Length of `min_periods` list (2) "
-         "must match length of `stats` list (1).")
+        "Length of `min_periods` list (2) must match length of `stats` list (1)."
     ) 
     with pytest.raises(ValueError, match = err_msg):
         RollingFeatures(**params[7])
     err_msg = re.escape(
-        ("Length of `min_periods` list (1) "
-         "must match length of `stats` list (2).")
+        "Length of `min_periods` list (1) must match length of `stats` list (2)."
     ) 
     with pytest.raises(ValueError, match = err_msg):
         RollingFeatures(**params[8])
     err_msg = re.escape(
-        ("Each min_period must be less than or equal to its "
-         "corresponding window_size.")
+        "Each `min_period` must be less than or equal to its corresponding `window_size`."
     ) 
     with pytest.raises(ValueError, match = err_msg):
         RollingFeatures(**params[9])
@@ -107,14 +106,12 @@ def test_RollingFeatures_validate_params():
     with pytest.raises(TypeError, match = err_msg):
         RollingFeatures(**params[10])
     err_msg = re.escape(
-        ("Length of `features_names` list (2) "
-         "must match length of `stats` list (1).")
+        "Length of `features_names` list (2) must match length of `stats` list (1)."
     ) 
     with pytest.raises(ValueError, match = err_msg):
         RollingFeatures(**params[11])
     err_msg = re.escape(
-        ("Length of `features_names` list (1) "
-         "must match length of `stats` list (2).")
+        "Length of `features_names` list (1) must match length of `stats` list (2)."
     ) 
     with pytest.raises(ValueError, match = err_msg):
         RollingFeatures(**params[12])
@@ -126,8 +123,8 @@ def test_RollingFeatures_validate_params():
     with pytest.raises(TypeError, match = err_msg):
         RollingFeatures(**params[13])
     err_msg = re.escape(
-        ("'not_valid_fillna' is not allowed. Allowed `fillna` "
-         "values are: ['mean', 'median', 'ffill', 'bfill'] or a float value.")
+        "'not_valid_fillna' is not allowed. Allowed `fillna` "
+        "values are: ['mean', 'median', 'ffill', 'bfill'] or a float value."
     ) 
     with pytest.raises(ValueError, match = err_msg):
         RollingFeatures(**params[14])

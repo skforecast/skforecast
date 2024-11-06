@@ -25,14 +25,14 @@ def create_and_compile_model(
     series: pd.DataFrame,
     lags: Union[int, list],
     steps: Union[int, list],
-    levels: Optional[Union[str, int, list]]=None,
-    recurrent_layer: str="LSTM",
-    recurrent_units: Union[int, list]=100,
-    dense_units: Union[int, list]=64,
-    activation: str="relu",
-    optimizer: object=Adam(learning_rate=0.01),
-    loss: object=MeanSquaredError(),
-    compile_kwargs: dict={},
+    levels: Optional[Union[str, int, list]] = None,
+    recurrent_layer: str = "LSTM",
+    recurrent_units: Union[int, list] = 100,
+    dense_units: Union[int, list] = 64,
+    activation: str = "relu",
+    optimizer: object = Adam(learning_rate=0.01),
+    loss: object = MeanSquaredError(),
+    compile_kwargs: dict = {},
 ) -> keras.models.Model:
     """
     Creates a neural network model for time series prediction with flexible recurrent layers.

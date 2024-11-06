@@ -62,6 +62,7 @@ nav:
     - Datasets:
       - Datasets: user_guides/datasets.ipynb
     - Additional Resources:
+      - Extract training and prediction matrices: user_guides/training-and-prediction-matrices.ipynb
       - Weighted time series forecasting: user_guides/weighted-time-series-forecasting.ipynb
       - Stacking multiple models: user_guides/stacking-ensemble-models-forecasting.ipynb
       - Forecasting with XGBoost and LightGBM: user_guides/forecasting-xgboost-lightgbm.ipynb
@@ -99,7 +100,7 @@ nav:
     - exceptions: api/exceptions.md
 
   - FAQ and Tips:
-    - Table of contents: faq/faq.md
+    - Table of contents: faq/table-of-contents.md
     - Avoid negative predictions when forecasting: faq/non-negative-predictions.ipynb
     - Forecasting time series with missing values: faq/forecasting-time-series-with-missing-values.ipynb
     - Forecasting with delayed historical data: faq/forecasting-with-delayed-historical-data.ipynb
