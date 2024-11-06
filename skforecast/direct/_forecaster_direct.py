@@ -19,7 +19,6 @@ from joblib import Parallel, delayed, cpu_count
 
 import skforecast
 from ..base import ForecasterBase
-from ..exceptions import IgnoredArgumentWarning
 from ..utils import (
     initialize_lags,
     initialize_window_features,
@@ -284,8 +283,8 @@ class ForecasterDirect(ForecasterBase):
 
         if not isinstance(steps, int):
             raise TypeError(
-                (f"`steps` argument must be an int greater than or equal to 1. "
-                 f"Got {type(steps)}.")
+                f"`steps` argument must be an int greater than or equal to 1. "
+                f"Got {type(steps)}."
             )
 
         if steps < 1:
@@ -300,9 +299,9 @@ class ForecasterDirect(ForecasterBase):
         )
         if self.window_features is None and self.lags is None:
             raise ValueError(
-                ("At least one of the arguments `lags` or `window_features` "
-                 "must be different from None. This is required to create the "
-                 "predictors used in training the forecaster.")
+                "At least one of the arguments `lags` or `window_features` "
+                "must be different from None. This is required to create the "
+                "predictors used in training the forecaster."
             )
         
         self.window_size = max(
@@ -318,8 +317,8 @@ class ForecasterDirect(ForecasterBase):
         if self.differentiation is not None:
             if not isinstance(differentiation, int) or differentiation < 1:
                 raise ValueError(
-                    (f"Argument `differentiation` must be an integer equal to or "
-                     f"greater than 1. Got {differentiation}.")
+                    f"Argument `differentiation` must be an integer equal to or "
+                    f"greater than 1. Got {differentiation}."
                 )
             self.window_size += self.differentiation
             self.differentiator = TimeSeriesDifferentiator(order=self.differentiation)
@@ -1542,23 +1541,23 @@ class ForecasterDirect(ForecasterBase):
             if use_in_sample_residuals:
                 if not set(steps).issubset(set(self.in_sample_residuals_.keys())):
                     raise ValueError(
-                        (f"Not `forecaster.in_sample_residuals_` for steps: "
-                         f"{set(steps) - set(self.in_sample_residuals_.keys())}.")
+                        f"Not `forecaster.in_sample_residuals_` for steps: "
+                        f"{set(steps) - set(self.in_sample_residuals_.keys())}."
                     )
                 residuals = self.in_sample_residuals_
             else:
                 if self.out_sample_residuals_ is None:
                     raise ValueError(
-                        ("`forecaster.out_sample_residuals_` is `None`. Use "
-                         "`use_in_sample_residuals=True` or the "
-                         "`set_out_sample_residuals()` method before predicting.")
+                        "`forecaster.out_sample_residuals_` is `None`. Use "
+                        "`use_in_sample_residuals=True` or the "
+                        "`set_out_sample_residuals()` method before predicting."
                     )
                 else:
                     if not set(steps).issubset(set(self.out_sample_residuals_.keys())):
                         raise ValueError(
-                            (f"No `forecaster.out_sample_residuals_` for steps: "
-                             f"{set(steps) - set(self.out_sample_residuals_.keys())}. "
-                             f"Use method `set_out_sample_residuals()`.")
+                            f"No `forecaster.out_sample_residuals_` for steps: "
+                            f"{set(steps) - set(self.out_sample_residuals_.keys())}. "
+                            f"Use method `set_out_sample_residuals()`."
                         )
                 residuals = self.out_sample_residuals_
             
@@ -1567,16 +1566,15 @@ class ForecasterDirect(ForecasterBase):
                 else "forecaster.out_sample_residuals_"
             )
             for step in steps:
-                print(step)
                 if residuals[step] is None:
                     raise ValueError(
-                        (f"forecaster residuals for step {step} are `None`. "
-                         f"Check {check_residuals}.")
+                        f"forecaster residuals for step {step} are `None`. "
+                        f"Check {check_residuals}."
                     )
                 elif any(x is None or np.isnan(x) for x in residuals[step]):
                     raise ValueError(
-                        (f"forecaster residuals for step {step} contains `None` values. "
-                         f"Check {check_residuals}.")
+                        f"forecaster residuals for step {step} contains `None` values. "
+                        f"Check {check_residuals}."
                     )
 
         Xs, _, steps, prediction_index = self._create_predict_inputs(

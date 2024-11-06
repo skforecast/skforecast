@@ -151,7 +151,7 @@ class ForecasterBase(ABC):
             .container-{unique_id} {{
                 font-family: 'Arial', sans-serif;
                 font-size: 0.9em;
-                color: #333;
+                color: #333333;
                 border: 1px solid #ddd;
                 background-color: {background_color};
                 padding: 5px 15px;
@@ -161,7 +161,7 @@ class ForecasterBase(ABC):
             }}
             .container-{unique_id} h2 {{
                 font-size: 1.5em;
-                color: #222;
+                color: #222222;
                 border-bottom: 2px solid #ddd;
                 padding-bottom: 5px;
                 margin-bottom: 15px;
@@ -172,6 +172,7 @@ class ForecasterBase(ABC):
             .container-{unique_id} summary {{
                 font-weight: bold;
                 font-size: 1.1em;
+                color: #333333;
                 cursor: pointer;
                 margin-bottom: 5px;
                 background-color: {section_color};
@@ -179,6 +180,7 @@ class ForecasterBase(ABC):
                 border-radius: 5px;
             }}
             .container-{unique_id} summary:hover {{
+                color: #333333;
                 background-color: #e0e0e0;
             }}
             .container-{unique_id} ul {{
@@ -193,11 +195,11 @@ class ForecasterBase(ABC):
             }}
             .container-{unique_id} li strong {{
                 font-weight: bold;
-                color: #444;
+                color: #444444;
             }}
             .container-{unique_id} li::before {{
                 content: "- ";
-                color: #666;
+                color: #666666;
             }}
             .container-{unique_id} a {{
                 color: #001633;

@@ -286,7 +286,6 @@ def test_forecaster_set_outsample_residuals_when_transformer_y_and_diferentiatio
         y_true = y_true,
         y_pred = y_pred
     )
-    print(forecaster.out_sample_residuals_)
 
     y_true[1] = forecaster.transformer_y.transform(y_true[1].reshape(-1, 1)).flatten()
     y_true[2] = forecaster.transformer_y.transform(y_true[2].reshape(-1, 1)).flatten()

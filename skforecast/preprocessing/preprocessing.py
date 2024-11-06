@@ -88,9 +88,13 @@ class TimeSeriesDifferentiator(BaseEstimator, TransformerMixin):
     ) -> None:
 
         if not isinstance(order, int):
-            raise TypeError(f"Parameter 'order' must be an integer greater than 0. Found {type(order)}.")
+            raise TypeError(
+                f"Parameter 'order' must be an integer greater than 0. Found {type(order)}."
+            )
         if order < 1:
-            raise ValueError(f"Parameter 'order' must be an integer greater than 0. Found {order}.")
+            raise ValueError(
+                f"Parameter 'order' must be an integer greater than 0. Found {order}."
+            )
 
         self.order = order
         self.initial_values = []
@@ -862,15 +866,19 @@ class RollingFeatures():
             n_window_sizes = len(window_sizes)
             if n_window_sizes != n_stats:
                 raise ValueError(
-                    (f"Length of `window_sizes` list ({n_window_sizes}) "
-                     f"must match length of `stats` list ({n_stats}).")
+                    f"Length of `window_sizes` list ({n_window_sizes}) "
+                    f"must match length of `stats` list ({n_stats})."
                 )
             
         # Check duplicates (stats, window_sizes)
         if isinstance(window_sizes, int):
             window_sizes = [window_sizes] * n_stats
         if len(set(zip(stats, window_sizes))) != n_stats:
-            raise ValueError("Duplicate (stat, window_size) pairs are not allowed.")
+            raise ValueError(
+                f"Duplicate (stat, window_size) pairs are not allowed.\n"
+                f"    `stats`       : {stats}\n"
+                f"    `window_sizes : {window_sizes}"
+            )
         
         # min_periods
         if not isinstance(min_periods, (int, list, type(None))):
@@ -885,15 +893,15 @@ class RollingFeatures():
                 n_min_periods = len(min_periods)
                 if n_min_periods != n_stats:
                     raise ValueError(
-                        (f"Length of `min_periods` list ({n_min_periods}) "
-                         f"must match length of `stats` list ({n_stats}).")
+                        f"Length of `min_periods` list ({n_min_periods}) "
+                        f"must match length of `stats` list ({n_stats})."
                     )
             
             for i, min_period in enumerate(min_periods):
                 if min_period > window_sizes[i]:
                     raise ValueError(
-                        ("Each min_period must be less than or equal to its "
-                         "corresponding window_size.")
+                        "Each `min_period` must be less than or equal to its "
+                        "corresponding `window_size`."
                     )
         
         # features_names
@@ -906,8 +914,8 @@ class RollingFeatures():
             n_features_names = len(features_names)
             if n_features_names != n_stats:
                 raise ValueError(
-                    (f"Length of `features_names` list ({n_features_names}) "
-                     f"must match length of `stats` list ({n_stats}).")
+                    f"Length of `features_names` list ({n_features_names}) "
+                    f"must match length of `stats` list ({n_stats})."
                 )
         
         # fillna
@@ -921,8 +929,8 @@ class RollingFeatures():
                 allowed_fill_strategy = ['mean', 'median', 'ffill', 'bfill']
                 if fillna not in allowed_fill_strategy:
                     raise ValueError(
-                        (f"'{fillna}' is not allowed. Allowed `fillna` "
-                         f"values are: {allowed_fill_strategy} or a float value.")
+                        f"'{fillna}' is not allowed. Allowed `fillna` "
+                        f"values are: {allowed_fill_strategy} or a float value."
                     )
 
     def _apply_stat_pandas(
