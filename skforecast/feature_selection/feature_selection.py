@@ -146,9 +146,9 @@ def select_features(
         subsample = int(len(X_train) * subsample)
 
     rng = np.random.default_rng(seed=random_state)
-    sample = rng.choice(X_train.index, size=subsample, replace=False)
-    X_train_sample = X_train.loc[sample, :]
-    y_train_sample = y_train.loc[sample]
+    sample = rng.integers(low=0, high=len(X_train), size=subsample)
+    X_train_sample = X_train.iloc[sample, :]
+    y_train_sample = y_train.iloc[sample]
     selector.fit(X_train_sample, y_train_sample)
     selected_features = selector.get_feature_names_out()
 
@@ -367,9 +367,9 @@ def select_features_multiseries(
         subsample = int(len(X_train) * subsample)
 
     rng = np.random.default_rng(seed=random_state)
-    sample = rng.choice(X_train.index, size=subsample, replace=False)
-    X_train_sample = X_train.loc[sample, :]
-    y_train_sample = y_train.loc[sample]
+    sample = rng.integers(low=0, high=len(X_train), size=subsample)
+    X_train_sample = X_train.iloc[sample, :]
+    y_train_sample = y_train.iloc[sample]
     selector.fit(X_train_sample, y_train_sample)
     selected_features = selector.get_feature_names_out()
 
