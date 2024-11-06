@@ -172,7 +172,7 @@ class ForecasterBase(ABC):
             .container-{unique_id} summary {{
                 font-weight: bold;
                 font-size: 1.1em;
-                color: #333333;
+                color: #000000;
                 cursor: pointer;
                 margin-bottom: 5px;
                 background-color: {section_color};
@@ -180,7 +180,7 @@ class ForecasterBase(ABC):
                 border-radius: 5px;
             }}
             .container-{unique_id} summary:hover {{
-                color: #333333;
+                color: #000000;
                 background-color: #e0e0e0;
             }}
             .container-{unique_id} ul {{
