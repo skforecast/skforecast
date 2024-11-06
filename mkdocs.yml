@@ -62,6 +62,7 @@ nav:
     - Datasets:
       - Datasets: user_guides/datasets.ipynb
     - Additional Resources:
+      - Extract training and prediction matrices: user_guides/training-and-prediction-matrices.ipynb
       - Weighted time series forecasting: user_guides/weighted-time-series-forecasting.ipynb
       - Stacking multiple models: user_guides/stacking-ensemble-models-forecasting.ipynb
       - Forecasting with XGBoost and LightGBM: user_guides/forecasting-xgboost-lightgbm.ipynb
