@@ -165,6 +165,7 @@ class ForecasterBase(ABC):
                 border-bottom: 2px solid #ddd;
                 padding-bottom: 5px;
                 margin-bottom: 15px;
+                margin-top: 5px;
             }}
             .container-{unique_id} details {{
                 margin: 10px 0;
@@ -188,6 +189,7 @@ class ForecasterBase(ABC):
                 list-style-type: none;
                 padding-left: 20px;
                 margin: 10px 0;
+                line-height: normal;
             }}
             .container-{unique_id} li {{
                 margin: 5px 0;
