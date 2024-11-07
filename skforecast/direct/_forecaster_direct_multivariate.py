@@ -433,7 +433,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             f"{'=' * len(type(self).__name__)} \n"
             f"{type(self).__name__} \n"
             f"{'=' * len(type(self).__name__)} \n"
-            f"Regressor: {self.regressor} \n"
+            f"Regressor: {type(self.regressor).__name__} \n"
             f"Target series (level): {self.level} \n"
             f"Lags: {self.lags} \n"
             f"Window features: {self.window_features_names} \n"
@@ -488,7 +488,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             <details open>
                 <summary>General Information</summary>
                 <ul>
-                    <li><strong>Regressor:</strong> {self.regressor}</li>
+                    <li><strong>Regressor:</strong> {type(self.regressor).__name__}</li>
                     <li><strong>Target series (level):</strong> {self.level}</li>
                     <li><strong>Lags:</strong> {self.lags}</li>
                     <li><strong>Window features:</strong> {self.window_features_names}</li>

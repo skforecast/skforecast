@@ -357,7 +357,7 @@ class ForecasterRecursive(ForecasterBase):
             f"{'=' * len(type(self).__name__)} \n"
             f"{type(self).__name__} \n"
             f"{'=' * len(type(self).__name__)} \n"
-            f"Regressor: {self.regressor} \n"
+            f"Regressor: {type(self.regressor).__name__} \n"
             f"Lags: {self.lags} \n"
             f"Window features: {self.window_features_names} \n"
             f"Window size: {self.window_size} \n"
@@ -407,7 +407,7 @@ class ForecasterRecursive(ForecasterBase):
             <details open>
                 <summary>General Information</summary>
                 <ul>
-                    <li><strong>Regressor:</strong> {self.regressor}</li>
+                    <li><strong>Regressor:</strong> {type(self.regressor).__name__}</li>
                     <li><strong>Lags:</strong> {self.lags}</li>
                     <li><strong>Window features:</strong> {self.window_features_names}</li>
                     <li><strong>Window size:</strong> {self.window_size}</li>
