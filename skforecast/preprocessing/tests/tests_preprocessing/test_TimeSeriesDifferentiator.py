@@ -126,6 +126,22 @@ def test_TimeSeriesDifferentiator_inverse_transform(order):
     np.testing.assert_array_equal(results, y)
 
 
+def test_TimeSeriesDifferentiator_inverse_transform_ValueError_no_window_size():
+    """
+    Test TimeSeriesDifferentiator inverse_transform_training ValueError when
+    window_size is not provided.
+    """
+    transformer = TimeSeriesDifferentiator(order = 1)
+
+    err_msg = re.escape(
+        "The `window_size` parameter must be set before fitting the "
+        "transformer to revert the differentiation of the training "
+        "time series."
+    ) 
+    with pytest.raises(ValueError, match = err_msg):
+        transformer.inverse_transform_training(y_diff_1)        
+
+
 @pytest.mark.parametrize("order, y_diff",
                          [(1, y_diff_1),
                           (2, y_diff_2),
@@ -135,14 +151,17 @@ def test_TimeSeriesDifferentiator_inverse_transform_training(order, y_diff):
     """
     Test TimeSeriesDifferentiator inverse_transform_training method.
     """
-    window_size = 2 + order
-    y_train = y[window_size:]
+    window_size = 2 + order  # 2 lags + differentiation
+    y_diff_train = y_diff[window_size:]  # Same as y_train predicted
 
     transformer = TimeSeriesDifferentiator(order=order, window_size=window_size)
     transformer.fit_transform(y)
-    results = transformer.inverse_transform_training(y_diff[window_size:])
+    results = transformer.inverse_transform_training(y_diff_train)
     
-    np.testing.assert_array_equal(results, y_train)
+    y_train_expected = y[window_size:]  # No differentiated
+
+    assert len(y_train_expected) == len(y_diff_train)
+    np.testing.assert_array_equal(results, y_train_expected)
 
 
 @pytest.mark.parametrize("order, next_window_diff, expected",

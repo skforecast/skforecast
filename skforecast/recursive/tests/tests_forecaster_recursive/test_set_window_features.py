@@ -56,6 +56,12 @@ def test_set_window_features_when_differentiation_is_not_None():
                      differentiation = 1
                  )
     
+    assert forecaster.max_size_window_features == 2
+    assert forecaster.window_features_names == ['roll_median_2']
+    assert forecaster.window_features_class_names == ['RollingFeatures']
+    assert forecaster.window_size == 3 + 1
+    assert forecaster.differentiator.window_size == 3 + 1
+    
     rolling = RollingFeatures(stats='mean', window_sizes=6)
     forecaster.set_window_features(window_features=rolling)
 
@@ -65,6 +71,7 @@ def test_set_window_features_when_differentiation_is_not_None():
     assert forecaster.window_features_names == ['roll_mean_6']
     assert forecaster.window_features_class_names == ['RollingFeatures']
     assert forecaster.window_size == 6 + 1
+    assert forecaster.differentiator.window_size == 6 + 1
 
 
 def test_set_window_features_when_lags():
