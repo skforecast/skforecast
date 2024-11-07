@@ -60,7 +60,11 @@ def _check_X_numpy_ndarray_1d(ensure_1d=True):
 class TimeSeriesDifferentiator(BaseEstimator, TransformerMixin):
     """
     Transforms a time series into a differentiated time series of a specified order
-    and provides functionality to revert the differentiation.
+    and provides functionality to revert the differentiation. 
+    
+    When using a Forecaster of the `direct` module, the `inverse_transform_training` 
+    method should be used to reverse the differentiation of the training time 
+    series for the model for the step 1.
 
     Parameters
     ----------
@@ -104,7 +108,7 @@ class TimeSeriesDifferentiator(BaseEstimator, TransformerMixin):
         window_size: int = None
     ) -> None:
 
-        if not isinstance(order, int):
+        if not isinstance(order, (int, np.integer)):
             raise TypeError(
                 f"Parameter `order` must be an integer greater than 0. Found {type(order)}."
             )
@@ -114,7 +118,7 @@ class TimeSeriesDifferentiator(BaseEstimator, TransformerMixin):
             )
 
         if window_size is not None:
-            if not isinstance(window_size, int):
+            if not isinstance(window_size, (int, np.integer)):
                 raise TypeError(
                     f"Parameter `window_size` must be an integer greater than 0. "
                     f"Found {type(window_size)}."
@@ -172,7 +176,7 @@ class TimeSeriesDifferentiator(BaseEstimator, TransformerMixin):
             else:
                 self.initial_values.append(X_diff[0])
                 if self.window_size is not None:
-                    self.pre_train_values.append(X_diff[0])
+                    self.pre_train_values.append(X_diff[self.window_size - self.order])
                 self.last_values.append(X_diff[-1])
                 X_diff = np.diff(X_diff, n=1)
 
@@ -254,6 +258,10 @@ class TimeSeriesDifferentiator(BaseEstimator, TransformerMixin):
         the differentiated training time series generated with the original 
         time series used to fit the transformer.
 
+        When using a Forecaster of the `direct` module, the `inverse_transform_training` 
+        method should be used to reverse the differentiation of the training time 
+        series for the model for the step 1.
+
         Parameters
         ----------
         X : numpy ndarray
@@ -333,6 +341,24 @@ class TimeSeriesDifferentiator(BaseEstimator, TransformerMixin):
             X_undiff = X_undiff.ravel()
 
         return X_undiff
+
+    def set_params(self, **params):
+        """
+        Set the parameters of the TimeSeriesDifferentiator.
+        
+        Parameters
+        ----------
+        params : dict
+            A dictionary of the parameters to set.
+
+        Returns
+        -------
+        None
+        
+        """
+
+        for param, value in params.items():
+            setattr(self, param, value)
 
 
 def series_long_to_dict(
@@ -1427,7 +1453,7 @@ class QuantileBinner:
 
     def set_params(self, **params):
         """
-        Set the parameters of the quantile binner.
+        Set the parameters of the QuantileBinner.
         
         Parameters
         ----------

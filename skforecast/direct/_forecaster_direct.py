@@ -321,7 +321,9 @@ class ForecasterDirect(ForecasterBase):
                     f"greater than 1. Got {differentiation}."
                 )
             self.window_size += self.differentiation
-            self.differentiator = TimeSeriesDifferentiator(order=self.differentiation)
+            self.differentiator = TimeSeriesDifferentiator(
+                order=self.differentiation, window_size=self.window_size
+            )
 
         self.weight_func, self.source_code_weight_func, _ = initialize_weights(
             forecaster_name = type(self).__name__, 
@@ -1971,6 +1973,7 @@ class ForecasterDirect(ForecasterBase):
         )
         if self.differentiation is not None:
             self.window_size += self.differentiation
+            self.differentiator.set_params(window_size=self.window_size)
 
     def set_window_features(
         self, 
@@ -2014,6 +2017,7 @@ class ForecasterDirect(ForecasterBase):
         )
         if self.differentiation is not None:
             self.window_size += self.differentiation   
+            self.differentiator.set_params(window_size=self.window_size)
 
     def set_out_sample_residuals(
         self,

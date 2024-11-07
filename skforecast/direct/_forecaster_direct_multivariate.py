@@ -309,8 +309,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         if not isinstance(steps, int):
             raise TypeError(
-                (f"`steps` argument must be an int greater than or equal to 1. "
-                 f"Got {type(steps)}.")
+                f"`steps` argument must be an int greater than or equal to 1. "
+                f"Got {type(steps)}."
             )
 
         if steps < 1:
@@ -375,7 +375,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                     f"greater than 1. Got {differentiation}."
                 )
             self.window_size += self.differentiation
-            self.differentiator = TimeSeriesDifferentiator(order=self.differentiation)
+            self.differentiator = TimeSeriesDifferentiator(
+                order=self.differentiation, window_size=self.window_size
+            )
             
         self.weight_func, self.source_code_weight_func, _ = initialize_weights(
             forecaster_name = type(self).__name__, 
@@ -403,7 +405,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                     f"`n_jobs` must be an integer or `'auto'`. Got {type(n_jobs)}."
                 )
             self.n_jobs = n_jobs if n_jobs > 0 else cpu_count()
-
 
     def __repr__(
         self
@@ -2336,9 +2337,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         if self.window_features is None and lags is None:
             raise ValueError(
-                ("At least one of the arguments `lags` or `window_features` "
-                 "must be different from None. This is required to create the "
-                 "predictors used in training the forecaster.")
+                "At least one of the arguments `lags` or `window_features` "
+                "must be different from None. This is required to create the "
+                "predictors used in training the forecaster."
             )
 
         if isinstance(lags, dict):
@@ -2383,6 +2384,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         )
         if self.differentiation is not None:
             self.window_size += self.differentiation
+            self.differentiator.set_params(window_size=self.window_size)
 
     def set_window_features(
         self, 
@@ -2425,8 +2427,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
              if ws is not None]
         )
         if self.differentiation is not None:
-            self.window_size += self.differentiation   
-
+            self.window_size += self.differentiation
+            self.differentiator.set_params(window_size=self.window_size)
 
     def set_out_sample_residuals(
         self,
