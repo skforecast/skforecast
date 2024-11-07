@@ -409,6 +409,7 @@ def select_features_multiseries(
         )
         selected_lags = []
         selected_window_features = []
+        verbose_selected_lags = []
     else:
         if forecaster_name == 'ForecasterDirectMultiVariate':
             selected_lags = {

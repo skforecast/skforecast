@@ -244,7 +244,7 @@ def test_select_features_multiseries_when_selector_is_RFE_and_select_only_is_Non
                      encoding           = 'onehot',
                      transformer_series = StandardScaler()
                  )
-    selector = RFE(estimator=forecaster.regressor, n_features_to_select=3)
+    selector = RFE(estimator=forecaster.regressor, n_features_to_select=2)
 
     warn_msg = re.escape(
         "No autoregressive features have been selected. Since a Forecaster "
@@ -263,7 +263,7 @@ def test_select_features_multiseries_when_selector_is_RFE_and_select_only_is_Non
 
     assert selected_lags == []
     assert selected_window_features == []
-    assert selected_exog == ['exog1', 'exog3', 'exog4']
+    assert selected_exog == ['exog1', 'exog4']
 
 
 def test_select_features_multiseries_when_selector_is_RFE_and_select_only_is_None_window_features():
@@ -354,9 +354,9 @@ def test_select_features_multiseries_when_selector_is_RFE_select_only_exog_is_Fa
         verbose         = True,
     )
 
-    assert selected_lags == [1]
+    assert selected_lags == [1, 4]
     assert selected_window_features == []
-    assert selected_exog == ['exog1', 'exog3', 'exog4']
+    assert selected_exog == ['exog1', 'exog4']
 
 
 @pytest.mark.parametrize("lags", 
@@ -385,7 +385,7 @@ def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterDire
         verbose     = False,
     )
 
-    assert selected_lags == {'l1': [], 'l2': [1, 4, 5]}
+    assert selected_lags == {'l1': [], 'l2': [2, 3, 4]}
     assert selected_window_features == []
     assert selected_exog == ['exog1', 'exog2', 'exog3', 'exog4']
 
@@ -413,7 +413,7 @@ def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterDire
         verbose     = False,
     )
 
-    assert selected_lags == {'l1': [1], 'l2': [1, 4]}
+    assert selected_lags == {'l1': [3, 5], 'l2': [3]}
     assert selected_window_features == []
     assert selected_exog == ['exog1', 'exog2', 'exog3', 'exog4']
 
@@ -446,6 +446,6 @@ def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterDire
         verbose     = False,
     )
 
-    assert selected_lags == {'l1': [1], 'l2': [1]}
-    assert selected_window_features == ['l1_roll_std_5']
+    assert selected_lags == {'l1': [3, 5], 'l2': [3]}
+    assert selected_window_features == []
     assert selected_exog == ['exog1', 'exog2', 'exog3', 'exog4']

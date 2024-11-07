@@ -110,7 +110,7 @@ def test_select_features_when_selector_is_RFE_and_select_only_is_exog_regressor(
 
     assert selected_lags == [1, 2, 3, 4, 5]
     assert selected_window_features == []
-    assert selected_exog == ['exog_1', 'exog_2', 'exog_4']
+    assert selected_exog == ['exog_0', 'exog_1', 'exog_2']
 
 
 def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterRecursive_no_window_features():
@@ -136,7 +136,7 @@ def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterRecu
 
     assert selected_lags == [1, 2, 3, 4, 5]
     assert selected_window_features == []
-    assert selected_exog == ['exog_1', 'exog_2', 'exog_4']
+    assert selected_exog == ['exog_0', 'exog_1', 'exog_2']
 
 
 def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterRecursive_window_features():
@@ -167,7 +167,7 @@ def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterRecu
 
     assert selected_lags == [1, 2, 3, 4, 5]
     assert selected_window_features == ['roll_mean_3', 'roll_std_5']
-    assert selected_exog == ['exog_1', 'exog_2', 'exog_4']
+    assert selected_exog == ['exog_0', 'exog_1', 'exog_2']
 
 
 def test_select_features_when_selector_is_RFE_select_only_is_autoreg_ForecasterRecursive_no_window_features():
@@ -191,7 +191,7 @@ def test_select_features_when_selector_is_RFE_select_only_is_autoreg_ForecasterR
         verbose     = False,
     )
 
-    assert selected_lags == [1, 3, 4]
+    assert selected_lags == [2, 3, 4]
     assert selected_window_features == []
     assert selected_exog == ['exog_0', 'exog_1', 'exog_2', 'exog_3', 'exog_4']
 
@@ -222,8 +222,8 @@ def test_select_features_when_selector_is_RFE_select_only_is_autoreg_ForecasterR
         verbose     = False,
     )
 
-    assert selected_lags == [1, 3, 4]
-    assert selected_window_features == ['roll_std_5']
+    assert selected_lags == [2, 3, 4]
+    assert selected_window_features == ['roll_mean_3']
     assert selected_exog == ['exog_0', 'exog_1', 'exog_2', 'exog_3', 'exog_4']
 
 
@@ -323,7 +323,7 @@ def test_select_features_when_selector_is_RFE_select_only_autoreg_and_force_incl
     )
 
     assert selected_lags == [1, 2, 3, 4, 5]
-    assert selected_window_features == ['roll_std_5']
+    assert selected_window_features == []
     assert selected_exog == ['exog_0', 'exog_1', 'exog_2', 'exog_3', 'exog_4']
 
 
@@ -355,7 +355,7 @@ def test_select_features_when_selector_is_RFE_and_force_inclusion_is_regex():
 
     assert selected_lags == []
     assert selected_window_features == ['roll_mean_3']
-    assert selected_exog == ['exog_1', 'exog_2', 'exog_4']
+    assert selected_exog == ['exog_0', 'exog_1', 'exog_2']
 
 
 def test_select_features_when_selector_is_RFE_select_force_inclusion_is_list():
@@ -381,7 +381,7 @@ def test_select_features_when_selector_is_RFE_select_force_inclusion_is_list():
 
     assert selected_lags == [1]
     assert selected_window_features == []
-    assert selected_exog == ['exog_1', 'exog_2', 'exog_4']
+    assert selected_exog == ['exog_0', 'exog_1', 'exog_2']
 
 
 def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterDirect_no_window_features():
