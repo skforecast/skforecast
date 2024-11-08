@@ -275,12 +275,12 @@ def test_forecaster_set_outsample_residuals_when_transformer_y_and_diferentiatio
         2: rng.normal(loc=0, scale=1, size=5)
     }
     forecaster = ForecasterDirect(
-                    regressor       = LinearRegression(),
-                    lags            = 5,
-                    steps           = 2, 
-                    differentiation = 1,
-                    transformer_y   = StandardScaler(),
-                )
+                     regressor       = LinearRegression(),
+                     lags            = 5,
+                     steps           = 2, 
+                     differentiation = 1,
+                     transformer_y   = StandardScaler(),
+                 )
     forecaster.fit(y=y_train)
     forecaster.set_out_sample_residuals(
         y_true = y_true,

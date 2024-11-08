@@ -249,10 +249,10 @@ def test_set_out_sample_residuals_when_there_are_no_residuals_for_some_bins():
     y_true = y_pred + rng.normal(loc=0, scale=1, size=len(y_pred))
 
     warn_msg = re.escape(
-            f"The following bins have no out of sample residuals: [0]. "
-            f"No predicted values fall in the interval "
-            f"[{forecaster.binner_intervals_[0]}]. "
-            f"Empty bins will be filled with a random sample of residuals."
+        f"The following bins have no out of sample residuals: [0]. "
+        f"No predicted values fall in the interval "
+        f"[{forecaster.binner_intervals_[0]}]. "
+        f"Empty bins will be filled with a random sample of residuals."
     )
     with pytest.warns(UserWarning, match=warn_msg):
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred, append=True)
@@ -271,12 +271,12 @@ def test_forecaster_set_outsample_residuals_when_transformer_y_and_diferentiatio
     y_true  = pd.Series(rng.normal(loc=0, scale=1, size=36), index=range(100, 136))
     y_pred = rng.uniform(low=-2.5, high=2, size=36)
     forecaster = ForecasterRecursive(
-                        regressor       = LinearRegression(),
-                        lags            = 5,
-                        differentiation = 1,
-                        transformer_y   = StandardScaler(),
-                        binner_kwargs   = {"n_bins": 3}
-                    )
+                     regressor       = LinearRegression(),
+                     lags            = 5,
+                     transformer_y   = StandardScaler(),
+                     differentiation = 1,
+                     binner_kwargs   = {"n_bins": 3}
+                 )
 
     forecaster.fit(y=y_train)
     forecaster.set_out_sample_residuals(
