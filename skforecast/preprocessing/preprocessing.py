@@ -62,9 +62,9 @@ class TimeSeriesDifferentiator(BaseEstimator, TransformerMixin):
     Transforms a time series into a differentiated time series of a specified order
     and provides functionality to revert the differentiation. 
     
-    When using a Forecaster of the `direct` module, the `inverse_transform_training` 
-    method should be used to reverse the differentiation of the training time 
-    series for the model for the step 1.
+    When using a `direct` module Forecaster, the model in step 1 must be 
+    used if you want to reverse the differentiation of the training time 
+    series with the `inverse_transform_training` method.
 
     Parameters
     ----------
@@ -135,7 +135,16 @@ class TimeSeriesDifferentiator(BaseEstimator, TransformerMixin):
         self.pre_train_values = []
         self.last_values = []
 
-        # TODO: Esto no va afuncionar con un Direct para el step=2
+    def __repr__(
+        self
+    ) -> str:
+        """
+        Information displayed when printed.
+        """
+            
+        return (
+            f"TimeSeriesDifferentiator(order={self.order}, window_size={self.window_size})"
+        )
 
     @_check_X_numpy_ndarray_1d()
     def fit(
@@ -258,9 +267,9 @@ class TimeSeriesDifferentiator(BaseEstimator, TransformerMixin):
         the differentiated training time series generated with the original 
         time series used to fit the transformer.
 
-        When using a Forecaster of the `direct` module, the `inverse_transform_training` 
-        method should be used to reverse the differentiation of the training time 
-        series for the model for the step 1.
+        When using a `direct` module Forecaster, the model in step 1 must be 
+        used if you want to reverse the differentiation of the training time 
+        series with the `inverse_transform_training` method.
 
         Parameters
         ----------
@@ -912,6 +921,24 @@ class RollingFeatures():
             unique_rolling_windows[key]['stats_names'].append(self.features_names[i])
 
         self.unique_rolling_windows = unique_rolling_windows
+
+    def __repr__(
+        self
+    ) -> str:
+        """
+        Information displayed when printed.
+        """
+            
+        return (
+            f"RollingFeatures(\n"
+            f"    stats           = {self.stats},\n"
+            f"    window_sizes    = {self.window_sizes},\n"
+            f"    Max window size = {self.max_window_size},\n"
+            f"    min_periods     = {self.min_periods},\n"
+            f"    features_names  = {self.features_names},\n"
+            f"    fillna          = {self.fillna}\n"
+            f")"
+        )
 
     def _validate_params(
         self, 
