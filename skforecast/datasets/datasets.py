@@ -139,6 +139,28 @@ def fetch_dataset(
                 "https://mediambient.gva.es/es/web/calidad-ambiental/datos-historicos."
             )
         },
+        'air_quality_valencia_no_missing': {
+            'url': (
+                f"https://raw.githubusercontent.com/skforecast/"
+                f"skforecast-datasets/{version}/data/air_quality_valencia_no_missing.csv"
+            ),
+            'sep': ',',
+            'index_col': 'datetime',
+            'date_format': '%Y-%m-%d %H:%M:%S',
+            'freq': 'H',
+            'description': (
+                'Hourly measures of several air chemical pollutant (pm2.5, co, no, '
+                'no2, pm10, nox, o3, veloc. (air speed), direc. (air direction), so2) '
+                'at Valencia city. Units are (µg/m3) for pm2.5, no, no2, pm10, so2, '
+                '(mg/m3) for co, (m/s) for veloc. and (degrees) for direc. Missing '
+                'values have been removed using linear interpolation.'
+            ),
+            'source': (
+                "Red de Vigilancia y Control de la Contaminación Atmosférica, "
+                "46250054-València - Centre, "
+                "https://mediambient.gva.es/es/web/calidad-ambiental/datos-historicos."
+            )
+        },
         'website_visits': {
             'url': (
                 f'https://raw.githubusercontent.com/skforecast/'
