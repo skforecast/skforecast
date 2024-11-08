@@ -129,10 +129,12 @@ def fetch_dataset(
             'freq': 'H',
             'description': (
                 'Hourly measures of several air chemical pollutant (pm2.5, co, no, '
-                'no2, pm10, nox, o3, so2) at Valencia city.'
+                'no2, pm10, nox, o3, veloc. (air speed), direc. (air direction), so2) '
+                'at Valencia city. Units are (µg/m3) for pm2.5, no, no2, pm10, so2, '
+                '(mg/m3) for co, (m/s) for veloc. and (degrees) for direc.'
             ),
             'source': (
-                " Red de Vigilancia y Control de la Contaminación Atmosférica, "
+                "Red de Vigilancia y Control de la Contaminación Atmosférica, "
                 "46250054-València - Centre, "
                 "https://mediambient.gva.es/es/web/calidad-ambiental/datos-historicos."
             )
