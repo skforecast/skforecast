@@ -18,6 +18,7 @@ from sklearn.base import clone
 
 import skforecast
 from ..base import ForecasterBase
+from ..exceptions import DataTransformationWarning
 from ..utils import (
     initialize_lags,
     initialize_window_features,
@@ -286,9 +287,9 @@ class ForecasterRecursive(ForecasterBase):
         )
         if self.window_features is None and self.lags is None:
             raise ValueError(
-                ("At least one of the arguments `lags` or `window_features` "
-                 "must be different from None. This is required to create the "
-                 "predictors used in training the forecaster.")
+                "At least one of the arguments `lags` or `window_features` "
+                "must be different from None. This is required to create the "
+                "predictors used in training the forecaster."
             )
         
         self.window_size = max(
@@ -313,11 +314,13 @@ class ForecasterRecursive(ForecasterBase):
         if self.differentiation is not None:
             if not isinstance(differentiation, int) or differentiation < 1:
                 raise ValueError(
-                    (f"Argument `differentiation` must be an integer equal to or "
-                     f"greater than 1. Got {differentiation}.")
+                    f"Argument `differentiation` must be an integer equal to or "
+                    f"greater than 1. Got {differentiation}."
                 )
             self.window_size += self.differentiation
-            self.differentiator = TimeSeriesDifferentiator(order=self.differentiation)
+            self.differentiator = TimeSeriesDifferentiator(
+                order=self.differentiation, window_size=self.window_size
+            )
 
         self.weight_func, self.source_code_weight_func, _ = initialize_weights(
             forecaster_name = type(self).__name__, 
@@ -330,7 +333,6 @@ class ForecasterRecursive(ForecasterBase):
                               regressor  = regressor,
                               fit_kwargs = fit_kwargs
                           )
-
 
     def __repr__(
         self
@@ -1162,15 +1164,15 @@ class ForecasterRecursive(ForecasterBase):
             if predict_boot and not use_in_sample_residuals:
                 if not use_binned_residuals and self.out_sample_residuals_ is None:
                     raise ValueError(
-                        ("`forecaster.out_sample_residuals_` is `None`. Use "
-                         "`use_in_sample_residuals=True` or the "
-                         "`set_out_sample_residuals()` method before predicting.")
+                        "`forecaster.out_sample_residuals_` is `None`. Use "
+                        "`use_in_sample_residuals=True` or the "
+                        "`set_out_sample_residuals()` method before predicting."
                     )
                 if use_binned_residuals and self.out_sample_residuals_by_bin_ is None:
                     raise ValueError(
-                        ("`forecaster.out_sample_residuals_by_bin_` is `None`. Use "
-                         "`use_in_sample_residuals=True` or the "
-                         "`set_out_sample_residuals()` method before predicting.")
+                        "`forecaster.out_sample_residuals_by_bin_` is `None`. Use "
+                        "`use_in_sample_residuals=True` or the "
+                        "`set_out_sample_residuals()` method before predicting."
                     )
 
         last_window = last_window.iloc[-self.window_size:].copy()
@@ -1386,7 +1388,8 @@ class ForecasterRecursive(ForecasterBase):
                 "As a result, any predictions generated using this matrix will also "
                 "be in the transformed scale. Please refer to the documentation "
                 "for more details: "
-                "https://skforecast.org/latest/user_guides/autoregresive-forecaster#extract-prediction-matrices"
+                "https://skforecast.org/latest/user_guides/training-and-prediction-matrices.html",
+                DataTransformationWarning
             )
 
         return X_predict
@@ -1891,7 +1894,6 @@ class ForecasterRecursive(ForecasterBase):
 
         return predictions
 
-
     def set_params(
         self, 
         params: dict
@@ -1914,7 +1916,6 @@ class ForecasterRecursive(ForecasterBase):
         self.regressor = clone(self.regressor)
         self.regressor.set_params(**params)
 
-
     def set_fit_kwargs(
         self, 
         fit_kwargs: dict
@@ -1935,7 +1936,6 @@ class ForecasterRecursive(ForecasterBase):
         """
 
         self.fit_kwargs = check_select_fit_kwargs(self.regressor, fit_kwargs=fit_kwargs)
-
 
     def set_lags(
         self, 
@@ -1975,7 +1975,7 @@ class ForecasterRecursive(ForecasterBase):
         )
         if self.differentiation is not None:
             self.window_size += self.differentiation
-
+            self.differentiator.set_params(window_size=self.window_size)
 
     def set_window_features(
         self, 
@@ -2019,7 +2019,7 @@ class ForecasterRecursive(ForecasterBase):
         )
         if self.differentiation is not None:
             self.window_size += self.differentiation
-
+            self.differentiator.set_params(window_size=self.window_size)
 
     def set_out_sample_residuals(
         self,

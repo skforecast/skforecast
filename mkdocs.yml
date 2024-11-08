@@ -164,7 +164,7 @@ theme:
     #- navigation.sections # To expand sections on the table of contents
     #- navigation.expand # To expand sections on the table of contents
     - navigation.top
-    - toc.integrate # TODO review with Ximo
+    - toc.integrate
     - navigation.breadcrumbs
   font:
     text: Open Sans

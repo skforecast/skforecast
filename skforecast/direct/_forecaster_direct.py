@@ -19,6 +19,7 @@ from joblib import Parallel, delayed, cpu_count
 
 import skforecast
 from ..base import ForecasterBase
+from ..exceptions import DataTransformationWarning
 from ..utils import (
     initialize_lags,
     initialize_window_features,
@@ -321,7 +322,9 @@ class ForecasterDirect(ForecasterBase):
                     f"greater than 1. Got {differentiation}."
                 )
             self.window_size += self.differentiation
-            self.differentiator = TimeSeriesDifferentiator(order=self.differentiation)
+            self.differentiator = TimeSeriesDifferentiator(
+                order=self.differentiation, window_size=self.window_size
+            )
 
         self.weight_func, self.source_code_weight_func, _ = initialize_weights(
             forecaster_name = type(self).__name__, 
@@ -1388,7 +1391,8 @@ class ForecasterDirect(ForecasterBase):
                 "As a result, any predictions generated using this matrix will also "
                 "be in the transformed scale. Please refer to the documentation "
                 "for more details: "
-                "https://skforecast.org/latest/user_guides/direct-multi-step-forecasting#extract-prediction-matrices"
+                "https://skforecast.org/latest/user_guides/training-and-prediction-matrices.html",
+                DataTransformationWarning
             )
 
         return X_predict
@@ -1971,6 +1975,7 @@ class ForecasterDirect(ForecasterBase):
         )
         if self.differentiation is not None:
             self.window_size += self.differentiation
+            self.differentiator.set_params(window_size=self.window_size)
 
     def set_window_features(
         self, 
@@ -2014,6 +2019,7 @@ class ForecasterDirect(ForecasterBase):
         )
         if self.differentiation is not None:
             self.window_size += self.differentiation   
+            self.differentiator.set_params(window_size=self.window_size)
 
     def set_out_sample_residuals(
         self,
