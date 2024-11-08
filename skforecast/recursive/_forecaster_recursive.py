@@ -2124,6 +2124,7 @@ class ForecasterRecursive(ForecasterBase):
         
         if self.differentiation is not None:
             differentiator = copy(self.differentiator)
+            differentiator.set_params(window_size=None)
             y_true = differentiator.fit_transform(y_true)[self.differentiation:]
             y_pred = differentiator.fit_transform(y_pred)[self.differentiation:]
         
@@ -2176,7 +2177,6 @@ class ForecasterRecursive(ForecasterBase):
                                          self.out_sample_residuals_by_bin_.values()
                                      ))
 
-
     def get_feature_importances(
         self,
         sort_importance: bool = True
@@ -2200,8 +2200,8 @@ class ForecasterRecursive(ForecasterBase):
 
         if not self.is_fitted:
             raise NotFittedError(
-                ("This forecaster is not fitted yet. Call `fit` with appropriate "
-                 "arguments before using `get_feature_importances()`.")
+                "This forecaster is not fitted yet. Call `fit` with appropriate "
+                "arguments before using `get_feature_importances()`."
             )
 
         if isinstance(self.regressor, Pipeline):
@@ -2215,10 +2215,10 @@ class ForecasterRecursive(ForecasterBase):
             feature_importances = estimator.coef_
         else:
             warnings.warn(
-                (f"Impossible to access feature importances for regressor of type "
-                 f"{type(estimator)}. This method is only valid when the "
-                 f"regressor stores internally the feature importances in the "
-                 f"attribute `feature_importances_` or `coef_`.")
+                f"Impossible to access feature importances for regressor of type "
+                f"{type(estimator)}. This method is only valid when the "
+                f"regressor stores internally the feature importances in the "
+                f"attribute `feature_importances_` or `coef_`."
             )
             feature_importances = None
 

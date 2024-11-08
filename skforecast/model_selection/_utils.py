@@ -6,7 +6,6 @@
 # coding=utf-8
 
 from typing import Union, Tuple, Optional, Callable, Generator
-from copy import copy, deepcopy
 import warnings
 import numpy as np
 import pandas as pd
@@ -366,7 +365,7 @@ def select_n_jobs_backtesting(
     - If forecaster is 'ForecasterSarimax' or 'ForecasterEquivalentDate', 
     then `n_jobs = 1`.
     - If regressor is a `LGBMRegressor(n_jobs=1)`, then `n_jobs = cpu_count() - 1`.
-    - If regressor is a `LGBMRegressor` with internal n_jobs!=1, then `n_jobs = 1`.
+    - If regressor is a `LGBMRegressor` with internal n_jobs != 1, then `n_jobs = 1`.
     This is because `lightgbm` is highly optimized for gradient boosting and
     parallelizes operations at a very fine-grained level, making additional
     parallelization unnecessary and potentially harmful due to resource contention.

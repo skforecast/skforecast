@@ -344,7 +344,7 @@ class ForecasterDirect(ForecasterBase):
         if n_jobs == 'auto':
             self.n_jobs = select_n_jobs_fit_forecaster(
                               forecaster_name = type(self).__name__,
-                              regressor_name  = type(self.regressor).__name__,
+                              regressor       = self.regressor
                           )
         else:
             if not isinstance(n_jobs, int):
@@ -2128,6 +2128,8 @@ class ForecasterDirect(ForecasterBase):
         y_pred = y_pred.copy()
         if self.differentiation is not None:
             differentiator = copy(self.differentiator)
+            differentiator.set_params(window_size=None)
+        
         for k in steps_to_update:
             if isinstance(y_true[k], pd.Series):
                 y_true[k] = y_true[k].to_numpy()
@@ -2191,20 +2193,18 @@ class ForecasterDirect(ForecasterBase):
         """
 
         if not isinstance(step, int):
-            raise TypeError(
-                f"`step` must be an integer. Got {type(step)}."
-            )
+            raise TypeError(f"`step` must be an integer. Got {type(step)}.")
         
         if not self.is_fitted:
             raise NotFittedError(
-                ("This forecaster is not fitted yet. Call `fit` with appropriate "
-                 "arguments before using `get_feature_importances()`.")
+                "This forecaster is not fitted yet. Call `fit` with appropriate "
+                "arguments before using `get_feature_importances()`."
             )
 
         if (step < 1) or (step > self.steps):
             raise ValueError(
-                (f"The step must have a value from 1 to the maximum number of steps "
-                 f"({self.steps}). Got {step}.")
+                f"The step must have a value from 1 to the maximum number of steps "
+                f"({self.steps}). Got {step}."
             )
 
         if isinstance(self.regressor, Pipeline):
