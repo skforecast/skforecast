@@ -357,9 +357,7 @@ def select_n_jobs_backtesting(
     - If forecaster is 'ForecasterRecursive' and regressor is a linear regressor, 
     then `n_jobs = 1`.
     - If forecaster is 'ForecasterRecursive' and regressor is not a linear 
-    regressor and `refit = True`, then `n_jobs = cpu_count() - 1`.
-    - If forecaster is 'ForecasterRecursive' and regressor is not a linear 
-    regressor and `refit = False`, then `n_jobs = 1`.
+    regressor then `n_jobs = cpu_count() - 1`.
     - If forecaster is 'ForecasterDirect' or 'ForecasterDirectMultiVariate'
     and `refit = True`, then `n_jobs = cpu_count() - 1`.
     - If forecaster is 'ForecasterDirect' or 'ForecasterDirectMultiVariate'
@@ -367,10 +365,11 @@ def select_n_jobs_backtesting(
     - If forecaster is 'ForecasterRecursiveMultiSeries', then `n_jobs = cpu_count() - 1`.
     - If forecaster is 'ForecasterSarimax' or 'ForecasterEquivalentDate', 
     then `n_jobs = 1`.
-    - If regressor is a `LGBMRegressor`, then `n_jobs = 1`. This is because `lightgbm` 
-    is highly optimized for gradient boosting and parallelizes operations at a very 
-    fine-grained level, making additional parallelization unnecessary and 
-    potentially harmful due to resource contention.
+    - If regressor is a `LGBMRegressor(n_jobs=1)`, then `n_jobs = cpu_count() - 1`.
+    - If regressor is a `LGBMRegressor` with internal n_jobs!=1, then `n_jobs = 1`.
+    This is because `lightgbm` is highly optimized for gradient boosting and
+    parallelizes operations at a very fine-grained level, making additional
+    parallelization unnecessary and potentially harmful due to resource contention.
 
     Parameters
     ----------
@@ -389,30 +388,35 @@ def select_n_jobs_backtesting(
     forecaster_name = type(forecaster).__name__
 
     if isinstance(forecaster.regressor, Pipeline):
-        regressor_name = type(forecaster.regressor[-1]).__name__
+        regressor = forecaster.regressor[-1]
+        regressor_name = type(regressor).__name__
     else:
-        regressor_name = type(forecaster.regressor).__name__
+        regressor = forecaster.regressor
+        regressor_name = type(regressor).__name__
 
     linear_regressors = [
         regressor_name
         for regressor_name in dir(sklearn.linear_model)
         if not regressor_name.startswith('_')
     ]
-    # TODO: when regressor is lightgbm and it internar n_jobs=1 then we can follow the standard strategy
+
     refit = False if refit == 0 else refit
     if not isinstance(refit, bool) and refit != 1:
         n_jobs = 1
     else:
         if forecaster_name in ['ForecasterRecursive']:
-            if regressor_name in linear_regressors or regressor_name == 'LGBMRegressor':
+            if regressor_name in linear_regressors:
                 n_jobs = 1
+            elif regressor_name == 'LGBMRegressor':
+                n_jobs = cpu_count() - 1 if regressor.n_jobs == 1 else 1
             else:
-                n_jobs = cpu_count() - 1 if refit else 1
+                n_jobs = cpu_count() - 1
         elif forecaster_name in ['ForecasterDirect', 'ForecasterDirectMultiVariate']:
+            # Parallelization is applied during the fitting process.
             n_jobs = 1
         elif forecaster_name in ['ForecasterRecursiveMultiSeries']:
             if regressor_name == 'LGBMRegressor':
-                n_jobs = 1
+                n_jobs = cpu_count() - 1 if regressor.n_jobs == 1 else 1
             else:
                 n_jobs = cpu_count() - 1
         elif forecaster_name in ['ForecasterSarimax', 'ForecasterEquivalentDate']:
