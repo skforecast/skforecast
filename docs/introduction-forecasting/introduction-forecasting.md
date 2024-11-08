@@ -52,7 +52,7 @@ When working with time series, it is seldom needed to predict only the next elem
 
 ### Recursive multi-step forecasting
 
-Since the value *t(n-1)* is required to predict *t(n)*, and *t(n-1)* is unknown, a recursive process is applied in which, each new prediction, is based on the previous one. This process is known as recursive forecasting or recursive multi-step forecasting and can be easily generated with the [`ForecasterRecursive`](https://skforecast.org/latest/user_guides/autoregresive-forecaster.html) class.
+Since the value *t(n-1)* is required to predict *t(n)*, and *t(n-1)* is unknown, a recursive process is applied in which, each new prediction, is based on the previous one. This process is known as recursive forecasting or recursive multi-step forecasting and can be easily generated with the [`ForecasterRecursive`](../user_guides/autoregresive-forecaster.html) class.
 
 <p style="text-align: center">
     <img src="../img/diagram-recursive-mutistep-forecasting.png" style="width: 500px">
@@ -68,7 +68,7 @@ Since the value *t(n-1)* is required to predict *t(n)*, and *t(n-1)* is unknown,
 
 ### Direct multi-step forecasting
 
-Direct multi-step forecasting consists of training a different model for each step of the forecast horizon. For example, to predict the next 5 values of a time series, 5 different models are trained, one for each step. As a result, the predictions are independent of each other. This entire process is automated in the [`ForecasterDirect`](https://skforecast.org/latest/user_guides/direct-multi-step-forecasting.html) class. 
+Direct multi-step forecasting consists of training a different model for each step of the forecast horizon. For example, to predict the next 5 values of a time series, 5 different models are trained, one for each step. As a result, the predictions are independent of each other. This entire process is automated in the [`ForecasterDirect`](../user_guides/direct-multi-step-forecasting.html) class. 
 
 <p style="text-align: center">
     <img src="../img/diagram-direct-multi-step-forecasting.png" style="width: 500px">
@@ -84,7 +84,7 @@ Direct multi-step forecasting consists of training a different model for each st
 
 ### Multiple output forecasting
 
-Some machine learning models, such as long short-term memory (LSTM) neural networks, can predict multiple values of a sequence simultaneously (one-shot). This strategy implemented in the `ForecasterRnn` class.
+Some machine learning models, such as long short-term memory (LSTM) neural networks, can predict multiple values of a sequence simultaneously (one-shot). This strategy implemented in the <code>ForecasterRnn</code> class.
 
 
 ## Global forecasting models
@@ -109,7 +109,7 @@ To predict the next *n* steps, the strategy of [recursive multi-step forecasting
     <font size="2.5"> <i>Diagram of recursive forecasting with multiple independent time series</i></font>
 </p>
 
-The [`ForecasterRecursiveMultiSeries`](https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting.html) class cover this process. 
+The [`ForecasterRecursiveMultiSeries`](../user_guides/independent-multi-time-series-forecasting.html) class cover this process. 
 
 ### Dependent Multi-Series Forecasting (multivariate time series)
 
@@ -121,7 +121,7 @@ All series are modeled together in a single model, considering that each time se
     <font size="2.5"> <i>Transformation of two time series and an exogenous variable into the matrices needed to train a machine learning model in a multi-variate-series context</i></font>
 </p>
 
-The [`ForecasterDirectMultiVariate`](https://skforecast.org/latest/user_guides/dependent-multi-series-multivariate-forecasting.html) class covers this process. 
+The [`ForecasterDirectMultiVariate`](../user_guides/dependent-multi-series-multivariate-forecasting.html) class covers this process. 
 
 
 ## Forecasters
@@ -139,21 +139,21 @@ The **skforecast** library offers a variety of forecaster types, each tailored t
 |[ForecasterRNN]               ||✔️||✔️|||||
 |[ForecasterSarimax]           |✔️||✔️||✔️|✔️|✔️||
 
-[ForecasterRecursive]: https://skforecast.org/latest/user_guides/autoregresive-forecaster.html
-[ForecasterDirect]: https://skforecast.org/latest/user_guides/direct-multi-step-forecasting.html
-[ForecasterRecursiveMultiSeries]: https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting.html
-[ForecasterDirectMultiVariate]: https://skforecast.org/latest/user_guides/dependent-multi-series-multivariate-forecasting.html
-[ForecasterRNN]: https://skforecast.org/latest/user_guides/forecasting-with-deep-learning-rnn-lstm
-[ForecasterSarimax]: https://skforecast.org/latest/user_guides/forecasting-sarimax-arima.html
+[ForecasterRecursive]: ../user_guides/autoregresive-forecaster.html
+[ForecasterDirect]: ../user_guides/direct-multi-step-forecasting.html
+[ForecasterRecursiveMultiSeries]: ../user_guides/independent-multi-time-series-forecasting.html
+[ForecasterDirectMultiVariate]: ../user_guides/dependent-multi-series-multivariate-forecasting.html
+[ForecasterRNN]: ../user_guides/forecasting-with-deep-learning-rnn-lstm.html
+[ForecasterSarimax]: ../user_guides/forecasting-sarimax-arima.html
 
-To understand what can be done when initializing a forecaster with **skforecast** visit [Forecaster parameters](https://skforecast.org/latest/quick-start/forecaster-parameters) and [Forecaster attributes](https://skforecast.org/latest/quick-start/forecaster-attributes).
+To understand what can be done when initializing a forecaster with **skforecast** visit [Forecaster parameters](../quick-start/forecaster-parameters.html) and [Forecaster attributes](../quick-start/forecaster-attributes.html).
 
 
 ## Exogenous variables (features)
 
 Exogenous variables are predictors that are independent of the model being used for forecasting, and their future values must be known in order to include them in the prediction process. The inclusion of exogenous variables can enhance the accuracy of forecasts.
 
-In skforecast, exogenous variables [can be easily included](https://skforecast.org/latest/user_guides/exogenous-variables) as predictors in all forecasting models. To ensure that their effects are accurately accounted for, it is crucial to include these variables during both the training and prediction phases. This will help to optimize the accuracy of forecasts and provide more reliable predictions.
+In skforecast, exogenous variables [can be easily included](../user_guides/exogenous-variables.html) as predictors in all forecasting models. To ensure that their effects are accurately accounted for, it is crucial to include these variables during both the training and prediction phases. This will help to optimize the accuracy of forecasts and provide more reliable predictions.
 
 <p style="text-align: center">
     <img src="../img/matrix_transformation_with_exog_variable.png" style="width: 550px;">
@@ -266,4 +266,4 @@ As an example, backtesting is performed using the data from this [skforecast exa
 |           7 |               11.1 |  261.4 |
 |        True |               69.1 |  258.3 |
 
-For a code example illustrating the backtesting process, refer to the [Backtesting user guide](https://skforecast.org/latest/user_guides/backtesting.html).
+For a code example illustrating the backtesting process, refer to the [Backtesting user guide](../user_guides/backtesting.html).
