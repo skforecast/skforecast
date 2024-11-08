@@ -398,7 +398,7 @@ def select_n_jobs_backtesting(
         for regressor_name in dir(sklearn.linear_model)
         if not regressor_name.startswith('_')
     ]
-    
+    # TODO: when regressor is lightgbm and it internar n_jobs=1 then we can follow the standard strategy
     refit = False if refit == 0 else refit
     if not isinstance(refit, bool) and refit != 1:
         n_jobs = 1
