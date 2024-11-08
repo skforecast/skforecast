@@ -10,8 +10,8 @@ import warnings
 import sys
 import numpy as np
 import pandas as pd
-from copy import copy
 import inspect
+from copy import copy
 import sklearn
 from sklearn.exceptions import NotFittedError
 from sklearn.pipeline import Pipeline
@@ -21,9 +21,10 @@ from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder
 import skforecast
 from ..base import ForecasterBase
 from ..exceptions import (
+    DataTransformationWarning,
+    IgnoredArgumentWarning,
     MissingValuesWarning,
-    UnknownLevelWarning,
-    IgnoredArgumentWarning
+    UnknownLevelWarning
 )
 from ..utils import (
     initialize_lags,
@@ -2088,7 +2089,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 "As a result, any predictions generated using this matrix will also "
                 "be in the transformed scale. Please refer to the documentation "
                 "for more details: "
-                "https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting#extract-prediction-matrices"
+                "https://skforecast.org/latest/user_guides/training-and-prediction-matrices.html",
+                DataTransformationWarning
             )
         
         set_skforecast_warnings(suppress_warnings, action='default')

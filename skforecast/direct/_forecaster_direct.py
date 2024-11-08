@@ -19,6 +19,7 @@ from joblib import Parallel, delayed, cpu_count
 
 import skforecast
 from ..base import ForecasterBase
+from ..exceptions import DataTransformationWarning
 from ..utils import (
     initialize_lags,
     initialize_window_features,
@@ -1390,7 +1391,8 @@ class ForecasterDirect(ForecasterBase):
                 "As a result, any predictions generated using this matrix will also "
                 "be in the transformed scale. Please refer to the documentation "
                 "for more details: "
-                "https://skforecast.org/latest/user_guides/direct-multi-step-forecasting#extract-prediction-matrices"
+                "https://skforecast.org/latest/user_guides/training-and-prediction-matrices.html",
+                DataTransformationWarning
             )
 
         return X_predict

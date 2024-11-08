@@ -5,7 +5,7 @@
 ################################################################################
 # coding=utf-8
 
-from typing import Union, Tuple, Any, Optional, Callable
+from typing import Union, Tuple, Optional, Callable, Any
 import warnings
 import sys
 import numpy as np
@@ -15,12 +15,13 @@ from copy import copy
 from sklearn.exceptions import NotFittedError
 from sklearn.pipeline import Pipeline
 from sklearn.base import clone
+from joblib import Parallel, delayed, cpu_count
 from sklearn.preprocessing import StandardScaler
 from itertools import chain
-from joblib import Parallel, delayed, cpu_count
 
 import skforecast
 from ..base import ForecasterBase
+from ..exceptions import DataTransformationWarning
 from ..utils import (
     initialize_lags,
     initialize_window_features,
@@ -1704,7 +1705,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 "As a result, any predictions generated using this matrix will also "
                 "be in the transformed scale. Please refer to the documentation "
                 "for more details: "
-                "https://skforecast.org/latest/user_guides/dependent-multi-series-multivariate-forecasting#extract-prediction-matrices"
+                "https://skforecast.org/latest/user_guides/training-and-prediction-matrices.html",
+                DataTransformationWarning
             )
         
         set_skforecast_warnings(suppress_warnings, action='default')
