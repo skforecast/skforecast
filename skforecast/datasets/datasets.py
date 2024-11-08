@@ -316,16 +316,16 @@ def fetch_dataset(
                 'del Ayuntamiento de Madrid https://datos.madrid.es/portal/site/egob'
             )
         },
-        'm4_hourly': {
+        'm4_daily': {
             'url': (
                 f'https://raw.githubusercontent.com/skforecast/'
-                f'skforecast-datasets/{version}/data/m4_hourly.parquet'
+                f'skforecast-datasets/{version}/data/m4_daily.parquet'
             ),
             'sep': None,
             'index_col': 'timestamp',
             'date_format': '%Y-%m-%d %H:%M:%S',
-            'freq': 'H',
-            'description': "Time series with hourly frequency from the M4 competition.",
+            'freq': 'D',
+            'description': "Time series with daily frequency from the M4 competition.",
             'source': (
                 "Monash Time Series Forecasting Repository  "
                 "(https://zenodo.org/communities/forecasting) Godahewa, R., Bergmeir, "
@@ -340,16 +340,16 @@ def fetch_dataset(
                 "https://www.kaggle.com/datasets/yogesh94/m4-forecasting-competition-dataset"
             )
         },
-        'm4_daily': {
+        'm4_hourly': {
             'url': (
                 f'https://raw.githubusercontent.com/skforecast/'
-                f'skforecast-datasets/{version}/data/m4_daily.parquet'
+                f'skforecast-datasets/{version}/data/m4_hourly.parquet'
             ),
             'sep': None,
             'index_col': 'timestamp',
             'date_format': '%Y-%m-%d %H:%M:%S',
-            'freq': 'D',
-            'description': "Time series with daily frequency from the M4 competition.",
+            'freq': 'H',
+            'description': "Time series with hourly frequency from the M4 competition.",
             'source': (
                 "Monash Time Series Forecasting Repository  "
                 "(https://zenodo.org/communities/forecasting) Godahewa, R., Bergmeir, "
@@ -403,7 +403,7 @@ def fetch_dataset(
             'sep': None,
             'index_col': 'timestamp',
             'date_format': '%Y-%m-%d %H:%M:%S',
-            'freq': 'D',
+            'freq': 'H',
             'description': (
                 "Hourly energy consumption data from the The Building Data Genome Project 2 "
                 "with building metadata and weather data. "
