@@ -14,9 +14,9 @@ from pathlib import Path
 import joblib
 import numpy as np
 import pandas as pd
-from sklearn.base import clone
 import sklearn.linear_model
-import sklearn.pipeline
+from sklearn.base import clone
+from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.exceptions import NotFittedError
 import skforecast
@@ -2075,7 +2075,7 @@ def multivariate_time_series_corr(
 
 def select_n_jobs_fit_forecaster(
     forecaster_name: str,
-    regressor_name: str,
+    regressor: object,
 ) -> int:
     """
     Select the optimal number of jobs to use in the fitting process. This
@@ -2084,19 +2084,20 @@ def select_n_jobs_fit_forecaster(
     The number of jobs is chosen as follows:
     
     - If forecaster_name is 'ForecasterDirect' or 'ForecasterDirectMultiVariate'
-    and regressor_name is a linear regressor then `n_jobs = 1`, otherwise `n_jobs = cpu_count() - 1`.
-
-    - If `LGBMRegressor` then `n_jobs = 1`. This is because `lightgbm` 
-    is highly optimized for gradient boosting and parallelizes operations at a very 
-    fine-grained level, making additional parallelization unnecessary and 
-    potentially harmful due to resource contention.
+    and regressor_name is a linear regressor then `n_jobs = 1`, 
+    otherwise `n_jobs = cpu_count() - 1`.
+    - If regressor is a `LGBMRegressor(n_jobs=1)`, then `n_jobs = cpu_count() - 1`.
+    - If regressor is a `LGBMRegressor` with internal n_jobs != 1, then `n_jobs = 1`.
+    This is because `lightgbm` is highly optimized for gradient boosting and
+    parallelizes operations at a very fine-grained level, making additional
+    parallelization unnecessary and potentially harmful due to resource contention.
     
     Parameters
     ----------
     forecaster_name : str
         Forecaster name.
-    regressor_name : str
-        The type of regressor.
+    regressor : regressor or pipeline compatible with the scikit-learn API
+        An instance of a regressor or pipeline compatible with the scikit-learn API.
 
     Returns
     -------
@@ -2104,6 +2105,12 @@ def select_n_jobs_fit_forecaster(
         The number of jobs to run in parallel.
     
     """
+
+    if isinstance(regressor, Pipeline):
+        regressor = regressor[-1]
+        regressor_name = type(regressor).__name__
+    else:
+        regressor_name = type(regressor).__name__
 
     linear_regressors = [
         regressor_name
@@ -2113,8 +2120,10 @@ def select_n_jobs_fit_forecaster(
 
     if forecaster_name in ['ForecasterDirect', 
                            'ForecasterDirectMultiVariate']:
-        if regressor_name in linear_regressors or regressor_name == 'LGBMRegressor':
+        if regressor_name in linear_regressors:
             n_jobs = 1
+        elif regressor_name == 'LGBMRegressor':
+            n_jobs = joblib.cpu_count() - 1 if regressor.n_jobs == 1 else 1
         else:
             n_jobs = joblib.cpu_count() - 1
     else:

@@ -2655,7 +2655,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         return predictions
 
-
     def set_params(
         self, 
         params: dict
@@ -2891,6 +2890,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         y_pred = y_pred.copy()
         if self.differentiation is not None:
             differentiator = copy(self.differentiator)
+            differentiator.set_params(window_size=None)
+
         for k in series_to_update:
             if isinstance(y_true[k], pd.Series):
                 y_true[k] = y_true[k].to_numpy()
@@ -2921,9 +2922,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         if self.encoding is None:
             if list(residuals.keys()) != ['_unknown_level']:
                 warnings.warn(
-                    ("As `encoding` is set to `None`, no distinction between levels "
-                     "is made. All residuals are stored in the '_unknown_level' key."),
-                     UnknownLevelWarning
+                    "As `encoding` is set to `None`, no distinction between levels "
+                    "is made. All residuals are stored in the '_unknown_level' key.",
+                    UnknownLevelWarning
                 )
             residuals = {'_unknown_level': residuals['_unknown_level']}
 
@@ -2936,7 +2937,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             if len(value) > 10000:
                 value = rng.choice(value, size=10000, replace=False)
             self.out_sample_residuals_[key] = value
-
 
     def get_feature_importances(
         self,

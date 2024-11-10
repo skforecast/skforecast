@@ -13,6 +13,8 @@ from sklearn.preprocessing import OrdinalEncoder
 from sklearn.compose import make_column_transformer
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import HistGradientBoostingRegressor
+
+from ....exceptions import DataTransformationWarning
 from skforecast.utils import transform_numpy
 from skforecast.preprocessing import RollingFeatures
 from skforecast.direct import ForecasterDirectMultiVariate
@@ -529,9 +531,9 @@ def test_create_predict_X_same_predictions_as_predict_transformers():
         "As a result, any predictions generated using this matrix will also "
         "be in the transformed scale. Please refer to the documentation "
         "for more details: "
-        "https://skforecast.org/latest/user_guides/dependent-multi-series-multivariate-forecasting#extract-prediction-matrices"
+        "https://skforecast.org/latest/user_guides/training-and-prediction-matrices.html"
     )
-    with pytest.warns(UserWarning, match = warn_msg):
+    with pytest.warns(DataTransformationWarning, match = warn_msg):
         X_predict = forecaster.create_predict_X(exog=exog.loc[end_train:])
 
     for i, step in enumerate(range(1, forecaster.steps + 1)):
@@ -586,9 +588,9 @@ def test_create_predict_X_same_predictions_as_predict_transformers_diff():
         "As a result, any predictions generated using this matrix will also "
         "be in the transformed scale. Please refer to the documentation "
         "for more details: "
-        "https://skforecast.org/latest/user_guides/dependent-multi-series-multivariate-forecasting#extract-prediction-matrices"
+        "https://skforecast.org/latest/user_guides/training-and-prediction-matrices.html"
     )
-    with pytest.warns(UserWarning, match = warn_msg):
+    with pytest.warns(DataTransformationWarning, match = warn_msg):
         X_predict = forecaster.create_predict_X(exog=exog.loc[end_train:])
 
     for i, step in enumerate(range(1, forecaster.steps + 1)):

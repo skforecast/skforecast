@@ -16,6 +16,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import HistGradientBoostingRegressor
 from lightgbm import LGBMRegressor
 
+from ....exceptions import DataTransformationWarning
 from ....utils import transform_numpy
 from ....preprocessing import RollingFeatures
 from ....recursive import ForecasterRecursiveMultiSeries
@@ -984,9 +985,9 @@ def test_create_predict_X_same_predictions_as_predict_transformers():
         "As a result, any predictions generated using this matrix will also "
         "be in the transformed scale. Please refer to the documentation "
         "for more details: "
-        "https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting#extract-prediction-matrices"
+        "https://skforecast.org/latest/user_guides/training-and-prediction-matrices.html"
     )
-    with pytest.warns(UserWarning, match = warn_msg):
+    with pytest.warns(DataTransformationWarning, match = warn_msg):
         X_predict = forecaster.create_predict_X(
             steps=steps, levels=levels, last_window=last_window, exog=exog_dict_test
         )
@@ -1047,9 +1048,9 @@ def test_create_predict_X_same_predictions_as_predict_transformers_diff():
         "As a result, any predictions generated using this matrix will also "
         "be in the transformed scale. Please refer to the documentation "
         "for more details: "
-        "https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting#extract-prediction-matrices"
+        "https://skforecast.org/latest/user_guides/training-and-prediction-matrices.html"
     )
-    with pytest.warns(UserWarning, match = warn_msg):
+    with pytest.warns(DataTransformationWarning, match = warn_msg):
         X_predict = forecaster.create_predict_X(
             steps=steps, levels=levels, last_window=last_window, exog=exog_dict_test
         )

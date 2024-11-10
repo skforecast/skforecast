@@ -77,7 +77,7 @@ def test_TimeSeriesDifferentiator_fit_order_2():
 
     assert tsd.fit(y) == tsd
     assert tsd.initial_values == [1., 3.]
-    assert tsd.pre_train_values == [4., 3.]
+    assert tsd.pre_train_values == [4., 4.]
     assert tsd.last_values == [46., 6.]
 
 
