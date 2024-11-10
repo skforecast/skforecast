@@ -3673,7 +3673,7 @@ forecaster_loaded = load_forecaster('forecaster_001.joblib', verbose=True)</div>
 <pre>=================== 
 ForecasterRecursive 
 =================== 
-Regressor: RandomForestRegressor(random_state=123) 
+Regressor: RandomForestRegressor 
 Lags: [1 2 3 4 5] 
 Window features: None 
 Window size: 5 
@@ -3694,8 +3694,8 @@ Regressor parameters:
     'n_jobs': None, 'oob_score': False, 'random_state': 123, 'verbose': 0,
     'warm_start': False} 
 fit_kwargs: {} 
-Creation date: 2024-11-04 16:05:27 
-Last fit date: 2024-11-04 16:05:28 
+Creation date: 2024-11-10 17:43:25 
+Last fit date: 2024-11-10 17:43:25 
 Skforecast version: 0.14.0 
 Python version: 3.11.10 
 Forecaster id: forecaster_001 
@@ -4076,7 +4076,7 @@ save_forecaster(
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>c:\Users\jaesc2\Miniconda3\envs\skforecast_py11_2\Lib\site-packages\skforecast\utils\utils.py:1895: SaveLoadSkforecastWarning: The Forecaster includes custom user-defined classes in the `window_features` argument. These classes are not saved automatically when saving the Forecaster. Please ensure you save these classes manually and import them before loading the Forecaster.
+<pre>c:\Users\jaesc2\Miniconda3\envs\skforecast_py11_2\Lib\site-packages\skforecast\utils\utils.py:1898: SaveLoadSkforecastWarning: The Forecaster includes custom user-defined classes in the `window_features` argument. These classes are not saved automatically when saving the Forecaster. Please ensure you save these classes manually and import them before loading the Forecaster.
     Custom classes: RollingSkewness
 Visit the documentation for more information: https://skforecast.org/latest/user_guides/save-load-forecaster.html#saving-and-loading-a-forecaster-model-with-custom-features 
  You can suppress this warning using: warnings.simplefilter('ignore', category=SaveLoadSkforecastWarning)
@@ -4144,7 +4144,7 @@ forecaster_loaded = load_forecaster('forecaster_custom_features.joblib', verbose
 <pre>=================== 
 ForecasterRecursive 
 =================== 
-Regressor: RandomForestRegressor(random_state=123) 
+Regressor: RandomForestRegressor 
 Lags: [1 2 3] 
 Window features: ['rolling_skewness'] 
 Window size: 3 
@@ -4165,8 +4165,8 @@ Regressor parameters:
     'n_jobs': None, 'oob_score': False, 'random_state': 123, 'verbose': 0,
     'warm_start': False} 
 fit_kwargs: {} 
-Creation date: 2024-11-04 16:05:28 
-Last fit date: 2024-11-04 16:05:28 
+Creation date: 2024-11-10 17:43:26 
+Last fit date: 2024-11-10 17:43:26 
 Skforecast version: 0.14.0 
 Python version: 3.11.10 
 Forecaster id: forecaster_custom_features 

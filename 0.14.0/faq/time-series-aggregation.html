@@ -2091,18 +2091,9 @@ This is documentation for an unstable development version.
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#libraries" class="md-nav__link">
+  <a href="#libraries-and-data" class="md-nav__link">
     <span class="md-ellipsis">
-      Libraries
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#data" class="md-nav__link">
-    <span class="md-ellipsis">
-      Data
+      Libraries and data
     </span>
   </a>
   
@@ -2882,18 +2873,9 @@ This is documentation for an unstable development version.
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#libraries" class="md-nav__link">
+  <a href="#libraries-and-data" class="md-nav__link">
     <span class="md-ellipsis">
-      Libraries
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#data" class="md-nav__link">
-    <span class="md-ellipsis">
-      Data
+      Libraries and data
     </span>
   </a>
   
@@ -3505,7 +3487,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="libraries">Libraries<a class="anchor-link" href="#libraries">¶</a></h2>
+<h2 id="libraries-and-data">Libraries and data<a class="anchor-link" href="#libraries-and-data">¶</a></h2>
 </div>
 </div>
 </div>
@@ -3539,17 +3521,6 @@ import pandas as pd
 from skforecast.datasets import fetch_dataset</div>
 </div>
 </div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="data">Data<a class="anchor-link" href="#data">¶</a></h2>
 </div>
 </div>
 </div>
@@ -3789,7 +3760,7 @@ print(f"Frequency: {data.index.freq}")</div>
 </div>
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Aggregate data from 30 minutes to 1 hour</span>
 <span class="c1"># ==============================================================================</span>
-<span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="n">rule</span><span class="o">=</span><span class="s1">'1H'</span><span class="p">,</span> <span class="n">closed</span><span class="o">=</span><span class="s1">'left'</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span><span class="s1">'right'</span><span class="p">)</span><span class="o">.</span><span class="n">agg</span><span class="p">({</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="n">rule</span><span class="o">=</span><span class="s1">'1h'</span><span class="p">,</span> <span class="n">closed</span><span class="o">=</span><span class="s1">'left'</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span><span class="s1">'right'</span><span class="p">)</span><span class="o">.</span><span class="n">agg</span><span class="p">({</span>
            <span class="s1">'Demand'</span><span class="p">:</span> <span class="s1">'sum'</span><span class="p">,</span>
            <span class="s1">'Temperature'</span><span class="p">:</span> <span class="s1">'mean'</span><span class="p">,</span>
            <span class="s1">'Holiday'</span><span class="p">:</span> <span class="s1">'mean'</span>
@@ -3799,7 +3770,7 @@ print(f"Frequency: {data.index.freq}")</div>
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-4"># Aggregate data from 30 minutes to 1 hour
 # ==============================================================================
-data = data.resample(rule='1H', closed='left', label ='right').agg({
+data = data.resample(rule='1h', closed='left', label ='right').agg({
            'Demand': 'sum',
            'Temperature': 'mean',
            'Holiday': 'mean'
@@ -3814,14 +3785,6 @@ data</div>
 <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>C:\Users\jaesc2\AppData\Local\Temp\ipykernel_19428\1816291895.py:3: FutureWarning: 'H' is deprecated and will be removed in a future version, please use 'h' instead.
-  data = data.resample(rule='1H', closed='left', label ='right').agg({
-</pre>
-</div>
-</div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
 <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[4]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">

@@ -3441,21 +3441,19 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <span class="c1"># ==============================================================================</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">from</span> <span class="nn">lightgbm</span> <span class="kn">import</span> <span class="n">LGBMRegressor</span>
 <span class="kn">from</span> <span class="nn">skforecast.datasets</span> <span class="kn">import</span> <span class="n">fetch_dataset</span>
 <span class="kn">from</span> <span class="nn">skforecast.recursive</span> <span class="kn">import</span> <span class="n">ForecasterRecursive</span>
 <span class="kn">from</span> <span class="nn">skforecast.preprocessing</span> <span class="kn">import</span> <span class="n">RollingFeatures</span>
-<span class="kn">from</span> <span class="nn">lightgbm</span> <span class="kn">import</span> <span class="n">LGBMRegressor</span>
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-1"># Libraries
 # ==============================================================================
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
+from lightgbm import LGBMRegressor
 from skforecast.datasets import fetch_dataset
 from skforecast.recursive import ForecasterRecursive
-from skforecast.preprocessing import RollingFeatures
-from lightgbm import LGBMRegressor</div>
+from skforecast.preprocessing import RollingFeatures</div>
 </div>
 </div>
 </div>
@@ -3578,7 +3576,7 @@ Freq: MS, Name: y, Length: 204, dtype: float64</pre>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [3]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-3">
@@ -3609,13 +3607,13 @@ window_features = RollingFeatures(
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=9afa7c24">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=9afa7c24">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [4]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-4">
@@ -3649,6 +3647,139 @@ forecaster = ForecasterRecursive(
 
 forecaster.fit(y=y)
 forecaster</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[4]:</div>
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
+<style>
+            .container-914dcc2251ba4f4a8a70c9a0df303d93 {
+                font-family: 'Arial', sans-serif;
+                font-size: 0.9em;
+                color: #333333;
+                border: 1px solid #ddd;
+                background-color: #f0f8ff;
+                padding: 5px 15px;
+                border-radius: 8px;
+                max-width: 600px;
+                #margin: auto;
+            }
+            .container-914dcc2251ba4f4a8a70c9a0df303d93 h2 {
+                font-size: 1.5em;
+                color: #222222;
+                border-bottom: 2px solid #ddd;
+                padding-bottom: 5px;
+                margin-bottom: 15px;
+                margin-top: 5px;
+            }
+            .container-914dcc2251ba4f4a8a70c9a0df303d93 details {
+                margin: 10px 0;
+            }
+            .container-914dcc2251ba4f4a8a70c9a0df303d93 summary {
+                font-weight: bold;
+                font-size: 1.1em;
+                color: #000000;
+                cursor: pointer;
+                margin-bottom: 5px;
+                background-color: #b3dbfd;
+                padding: 5px;
+                border-radius: 5px;
+            }
+            .container-914dcc2251ba4f4a8a70c9a0df303d93 summary:hover {
+                color: #000000;
+                background-color: #e0e0e0;
+            }
+            .container-914dcc2251ba4f4a8a70c9a0df303d93 ul {
+                font-family: 'Courier New', monospace;
+                list-style-type: none;
+                padding-left: 20px;
+                margin: 10px 0;
+                line-height: normal;
+            }
+            .container-914dcc2251ba4f4a8a70c9a0df303d93 li {
+                margin: 5px 0;
+                font-family: 'Courier New', monospace;
+            }
+            .container-914dcc2251ba4f4a8a70c9a0df303d93 li strong {
+                font-weight: bold;
+                color: #444444;
+            }
+            .container-914dcc2251ba4f4a8a70c9a0df303d93 li::before {
+                content: "- ";
+                color: #666666;
+            }
+            .container-914dcc2251ba4f4a8a70c9a0df303d93 a {
+                color: #001633;
+                text-decoration: none;
+            }
+            .container-914dcc2251ba4f4a8a70c9a0df303d93 a:hover {
+                color: #359ccb; 
+            }
+        </style>
+<div class="container-914dcc2251ba4f4a8a70c9a0df303d93">
+<h2>ForecasterRecursive</h2>
+<details open="">
+<summary>General Information</summary>
+<ul>
+<li><strong>Regressor:</strong> LGBMRegressor</li>
+<li><strong>Lags:</strong> [1 2 3]</li>
+<li><strong>Window features:</strong> ['roll_mean_20', 'roll_mean_10', 'roll_min_10', 'roll_max_10']</li>
+<li><strong>Window size:</strong> 20</li>
+<li><strong>Exogenous included:</strong> False</li>
+<li><strong>Weight function included:</strong> False</li>
+<li><strong>Differentiation order:</strong> None</li>
+<li><strong>Creation date:</strong> 2024-11-10 18:10:30</li>
+<li><strong>Last fit date:</strong> 2024-11-10 18:10:30</li>
+<li><strong>Skforecast version:</strong> 0.14.0</li>
+<li><strong>Python version:</strong> 3.11.10</li>
+<li><strong>Forecaster id:</strong> None</li>
+</ul>
+</details>
+<details>
+<summary>Exogenous Variables</summary>
+<ul>
+                    None
+                </ul>
+</details>
+<details>
+<summary>Data Transformations</summary>
+<ul>
+<li><strong>Transformer for y:</strong> None</li>
+<li><strong>Transformer for exog:</strong> None</li>
+</ul>
+</details>
+<details>
+<summary>Training Information</summary>
+<ul>
+<li><strong>Training range:</strong> [Timestamp('1991-07-01 00:00:00'), Timestamp('2008-06-01 00:00:00')]</li>
+<li><strong>Training index type:</strong> DatetimeIndex</li>
+<li><strong>Training index frequency:</strong> MS</li>
+</ul>
+</details>
+<details>
+<summary>Regressor Parameters</summary>
+<ul>
+                    {'boosting_type': 'gbdt', 'class_weight': None, 'colsample_bytree': 1.0, 'importance_type': 'split', 'learning_rate': 0.1, 'max_depth': -1, 'min_child_samples': 20, 'min_child_weight': 0.001, 'min_split_gain': 0.0, 'n_estimators': 100, 'n_jobs': -1, 'num_leaves': 31, 'objective': None, 'random_state': 123, 'reg_alpha': 0.0, 'reg_lambda': 0.0, 'subsample': 1.0, 'subsample_for_bin': 200000, 'subsample_freq': 0, 'verbose': -1}
+                </ul>
+</details>
+<details>
+<summary>Fit Kwargs</summary>
+<ul>
+                    {}
+                </ul>
+</details>
+<p>
+<a href="https://skforecast.org/0.14.0/api/forecasterrecursive.html">🛈 <strong>API Reference</strong></a>
+                  
+                <a href="https://skforecast.org/0.14.0/user_guides/autoregresive-forecaster.html">🗎 <strong>User Guide</strong></a>
+</p>
+</div>
 </div>
 </div>
 </div>
@@ -3695,9 +3826,9 @@ predictions.head(3)</div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
 <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[5]:</div>
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
-<pre>2008-07-01    0.880138
-2008-08-01    1.020947
-2008-09-01    1.061728
+<pre>2008-07-01    0.784687
+2008-08-01    0.907246
+2008-09-01    1.078849
 Freq: MS, Name: pred, dtype: float64</pre>
 </div>
 </div>
@@ -3715,13 +3846,13 @@ Freq: MS, Name: pred, dtype: float64</pre>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=757bdd0a">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=757bdd0a">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [6]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-6">
@@ -3745,6 +3876,21 @@ Freq: MS, Name: pred, dtype: float64</pre>
 print("Window size lags            : ", forecaster.max_lag)
 print("Window size window features : ", forecaster.max_size_window_features)
 print("Window size Forecaster      : ", forecaster.window_size)</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Window size lags            :  3
+Window size window features :  20
+Window size Forecaster      :  20
+</pre>
 </div>
 </div>
 </div>
@@ -3776,7 +3922,7 @@ print("Window size Forecaster      : ", forecaster.window_size)</div>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [6]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [7]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-7">
@@ -3807,7 +3953,7 @@ X_train</div>
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[6]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[7]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
@@ -3831,11 +3977,13 @@ X_train</div>
 <th>lag_2</th>
 <th>lag_3</th>
 <th>roll_mean_20</th>
+<th>roll_mean_10</th>
 <th>roll_min_10</th>
 <th>roll_max_10</th>
 </tr>
 <tr>
 <th>datetime</th>
+<th></th>
 <th></th>
 <th></th>
 <th></th>
@@ -3851,6 +3999,7 @@ X_train</div>
 <td>0.751503</td>
 <td>0.771258</td>
 <td>0.496401</td>
+<td>0.534009</td>
 <td>0.361801</td>
 <td>0.771258</td>
 </tr>
@@ -3860,6 +4009,7 @@ X_train</div>
 <td>0.387554</td>
 <td>0.751503</td>
 <td>0.496275</td>
+<td>0.540557</td>
 <td>0.387554</td>
 <td>0.771258</td>
 </tr>
@@ -3869,6 +4019,7 @@ X_train</div>
 <td>0.427283</td>
 <td>0.387554</td>
 <td>0.496924</td>
+<td>0.540893</td>
 <td>0.387554</td>
 <td>0.771258</td>
 </tr>
@@ -3878,6 +4029,7 @@ X_train</div>
 <td>0.413890</td>
 <td>0.427283</td>
 <td>0.496759</td>
+<td>0.535440</td>
 <td>0.387554</td>
 <td>0.771258</td>
 </tr>
@@ -3887,11 +4039,13 @@ X_train</div>
 <td>0.428859</td>
 <td>0.413890</td>
 <td>0.495638</td>
+<td>0.534906</td>
 <td>0.387554</td>
 <td>0.771258</td>
 </tr>
 <tr>
 <th>...</th>
+<td>...</td>
 <td>...</td>
 <td>...</td>
 <td>...</td>
@@ -3905,6 +4059,7 @@ X_train</div>
 <td>1.176589</td>
 <td>1.163534</td>
 <td>0.980390</td>
+<td>0.995834</td>
 <td>0.561760</td>
 <td>1.219941</td>
 </tr>
@@ -3914,6 +4069,7 @@ X_train</div>
 <td>1.219941</td>
 <td>1.176589</td>
 <td>0.978582</td>
+<td>1.015840</td>
 <td>0.745258</td>
 <td>1.219941</td>
 </tr>
@@ -3923,6 +4079,7 @@ X_train</div>
 <td>0.761822</td>
 <td>1.219941</td>
 <td>0.966838</td>
+<td>1.006258</td>
 <td>0.649435</td>
 <td>1.219941</td>
 </tr>
@@ -3932,6 +4089,7 @@ X_train</div>
 <td>0.649435</td>
 <td>0.761822</td>
 <td>0.955750</td>
+<td>1.005253</td>
 <td>0.649435</td>
 <td>1.219941</td>
 </tr>
@@ -3941,12 +4099,13 @@ X_train</div>
 <td>0.827887</td>
 <td>0.649435</td>
 <td>0.946778</td>
+<td>0.991464</td>
 <td>0.649435</td>
 <td>1.219941</td>
 </tr>
 </tbody>
 </table>
-<p>184 rows × 6 columns</p>
+<p>184 rows × 7 columns</p>
 </div>
 </div>
 </div>
@@ -3970,7 +4129,7 @@ X_train</div>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [7]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [8]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-8">
@@ -4001,9 +4160,9 @@ window_features.transform(X=x)</div>
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[7]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[8]:</div>
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
-<pre>array([ 9.5, 10. , 19. ])</pre>
+<pre>array([ 9.5, 14.5, 10. , 19. ])</pre>
 </div>
 </div>
 </div>
@@ -4026,7 +4185,7 @@ window_features.transform(X=x)</div>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [8]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [9]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-9">
@@ -4055,7 +4214,7 @@ window_features.transform_batch(y).head(3)</div>
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[8]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[9]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
@@ -4076,11 +4235,13 @@ window_features.transform_batch(y).head(3)</div>
 <tr style="text-align: right;">
 <th></th>
 <th>roll_mean_20</th>
+<th>roll_mean_10</th>
 <th>roll_min_10</th>
 <th>roll_max_10</th>
 </tr>
 <tr>
 <th>datetime</th>
+<th></th>
 <th></th>
 <th></th>
 <th></th>
@@ -4090,18 +4251,21 @@ window_features.transform_batch(y).head(3)</div>
 <tr>
 <th>1993-03-01</th>
 <td>0.496401</td>
+<td>0.534009</td>
 <td>0.361801</td>
 <td>0.771258</td>
 </tr>
 <tr>
 <th>1993-04-01</th>
 <td>0.496275</td>
+<td>0.540557</td>
 <td>0.387554</td>
 <td>0.771258</td>
 </tr>
 <tr>
 <th>1993-05-01</th>
 <td>0.496924</td>
+<td>0.540893</td>
 <td>0.387554</td>
 <td>0.771258</td>
 </tr>
@@ -4184,7 +4348,7 @@ window_features.transform_batch(y).head(3)</div>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [10]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-10">
@@ -4281,7 +4445,7 @@ class RollingSkewness():
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [11]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-11">
@@ -4312,7 +4476,7 @@ window_features.transform_batch(y)</div>
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[ ]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[11]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
@@ -4399,7 +4563,7 @@ window_features.transform_batch(y)</div>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [12]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-12">
@@ -4428,7 +4592,7 @@ window_features.transform(X=np.array([6, 12, 8]))</div>
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[ ]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[12]:</div>
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
 <pre>array([0.93521953])</pre>
 </div>
@@ -4436,13 +4600,13 @@ window_features.transform(X=np.array([6, 12, 8]))</div>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=5566caab">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=5566caab">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [13]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-13">
@@ -4476,6 +4640,23 @@ forecaster = ForecasterRecursive(
 
 forecaster.fit(y=y)
 forecaster.predict(steps=5)</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[13]:</div>
+<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
+<pre>2008-07-01    0.769870
+2008-08-01    0.824683
+2008-09-01    0.819595
+2008-10-01    0.799849
+2008-11-01    0.802432
+Freq: MS, Name: pred, dtype: float64</pre>
 </div>
 </div>
 </div>

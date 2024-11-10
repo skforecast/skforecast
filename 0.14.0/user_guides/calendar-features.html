@@ -3412,7 +3412,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>Calendar features serve as key elements in time series forecasting. These features decompose date and time into basic units such as year, month, day, weekday, etc., allowing models to identify recurring patterns, understand seasonal variations, and identify trends. Calendar features can be used as <a href="https://skforecast.org/latest/user_guides/exogenous-variables">exogenous variables</a> because they are known for the period for which predictions are being made (the forecast horizon).</p>
+<p>Calendar features serve as key elements in time series forecasting. These features decompose date and time into basic units such as year, month, day, weekday, etc., allowing models to identify recurring patterns, understand seasonal variations, and identify trends. Calendar features can be used as <a href="../user_guides/exogenous-variables.html">exogenous variables</a> because they are known for the period for which predictions are being made (the forecast horizon).</p>
 <p><strong>Dates and time in Pandas</strong></p>
 <p>Pandas provides a comprehensive set of capabilities tailored for handling time series data in various domains. Using the NumPy <code>datetime64</code> and <code>timedelta64</code> data types, Pandas combines a wide range of functionality from various Python libraries while introducing a wealth of novel tools to effectively manipulate time series data. This includes:</p>
 <ul>
@@ -3446,7 +3446,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [1]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-1">
@@ -3461,7 +3461,6 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div>
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Libraries</span>
 <span class="c1"># ==============================================================================</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 <span class="kn">from</span> <span class="nn">skforecast.datasets</span> <span class="kn">import</span> <span class="n">fetch_dataset</span>
@@ -3470,7 +3469,6 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-1"># Libraries
 # ==============================================================================
-import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from skforecast.datasets import fetch_dataset
@@ -3487,7 +3485,7 @@ from feature_engine.creation import CyclicalFeatures</div>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [14]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [2]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-2">
@@ -3534,7 +3532,7 @@ Shape of the dataset: (17544, 12)
 </div>
 </div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[14]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[2]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
@@ -3604,7 +3602,7 @@ Shape of the dataset: (17544, 12)
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=507f0e9d">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=3818b841">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -3615,12 +3613,12 @@ Shape of the dataset: (17544, 12)
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=d88ab997">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=ac213616">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [15]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [3]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-3">
@@ -3657,7 +3655,7 @@ data.head()</div>
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[15]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[3]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
@@ -3725,12 +3723,12 @@ data.head()</div>
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=c3b6b7cb">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=a1bed5ea">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [16]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [4]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-4">
@@ -3767,7 +3765,7 @@ data.head()</div>
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[16]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[4]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
@@ -3852,7 +3850,7 @@ data.head()</div>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=da50013c">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=5d8aa626">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -3869,12 +3867,12 @@ data.head()</div>
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=d17cf615">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=de617e40">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [17]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-5">
@@ -3889,33 +3887,25 @@ data.head()</div>
 </div>
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Create calendar features with Feature-engine</span>
 <span class="c1"># ==============================================================================</span>
-<span class="n">features_to_extract</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s1">'month'</span><span class="p">,</span>
-    <span class="s1">'week'</span><span class="p">,</span>
-    <span class="s1">'day_of_week'</span><span class="p">,</span>
-    <span class="s1">'hour'</span>
-<span class="p">]</span>
+<span class="n">features_to_extract</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'month'</span><span class="p">,</span> <span class="s1">'week'</span><span class="p">,</span> <span class="s1">'day_of_week'</span><span class="p">,</span> <span class="s1">'hour'</span><span class="p">]</span>
 <span class="n">calendar_transformer</span> <span class="o">=</span> <span class="n">DatetimeFeatures</span><span class="p">(</span>
-                            <span class="n">variables</span>           <span class="o">=</span> <span class="s1">'index'</span><span class="p">,</span>
-                            <span class="n">features_to_extract</span> <span class="o">=</span> <span class="n">features_to_extract</span><span class="p">,</span>
-                            <span class="n">drop_original</span>       <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                           <span class="n">variables</span>           <span class="o">=</span> <span class="s1">'index'</span><span class="p">,</span>
+                           <span class="n">features_to_extract</span> <span class="o">=</span> <span class="n">features_to_extract</span><span class="p">,</span>
+                           <span class="n">drop_original</span>       <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
                        <span class="p">)</span>
+
 <span class="n">calendar_features</span> <span class="o">=</span> <span class="n">calendar_transformer</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 <span class="n">calendar_features</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-5"># Create calendar features with Feature-engine
 # ==============================================================================
-features_to_extract = [
-    'month',
-    'week',
-    'day_of_week',
-    'hour'
-]
+features_to_extract = ['month', 'week', 'day_of_week', 'hour']
 calendar_transformer = DatetimeFeatures(
-                            variables           = 'index',
-                            features_to_extract = features_to_extract,
-                            drop_original       = True,
+                           variables           = 'index',
+                           features_to_extract = features_to_extract,
+                           drop_original       = True,
                        )
+
 calendar_features = calendar_transformer.fit_transform(data)
 calendar_features.head()</div>
 </div>
@@ -3927,7 +3917,7 @@ calendar_features.head()</div>
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[17]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[5]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
@@ -4019,7 +4009,7 @@ calendar_features.head()</div>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ef4d923a">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=9c4302ec">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -4030,7 +4020,7 @@ calendar_features.head()</div>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=734d26cc">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=a1fab7a7">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -4046,7 +4036,7 @@ calendar_features.head()</div>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [11]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [6]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-6">
@@ -4067,9 +4057,11 @@ calendar_features.head()</div>
 <span class="n">location</span> <span class="o">=</span> <span class="n">LocationInfo</span><span class="p">(</span><span class="s2">"Washington, D.C."</span><span class="p">,</span> <span class="s2">"USA"</span><span class="p">)</span>
 <span class="n">sunrise_hour</span> <span class="o">=</span> <span class="p">[</span><span class="n">sun</span><span class="p">(</span><span class="n">location</span><span class="o">.</span><span class="n">observer</span><span class="p">,</span> <span class="n">date</span><span class="o">=</span><span class="n">date</span><span class="p">)[</span><span class="s1">'sunrise'</span><span class="p">]</span> <span class="k">for</span> <span class="n">date</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">]</span>
 <span class="n">sunset_hour</span> <span class="o">=</span> <span class="p">[</span><span class="n">sun</span><span class="p">(</span><span class="n">location</span><span class="o">.</span><span class="n">observer</span><span class="p">,</span> <span class="n">date</span><span class="o">=</span><span class="n">date</span><span class="p">)[</span><span class="s1">'sunset'</span><span class="p">]</span> <span class="k">for</span> <span class="n">date</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">]</span>
+
 <span class="c1"># Round to the nearest hour</span>
 <span class="n">sunrise_hour</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">sunrise_hour</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">)</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="s2">"h"</span><span class="p">)</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">hour</span>
 <span class="n">sunset_hour</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">sunset_hour</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">)</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="s2">"h"</span><span class="p">)</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">hour</span>
+
 <span class="n">sun_light_features</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
                          <span class="s1">'sunrise_hour'</span><span class="p">:</span> <span class="n">sunrise_hour</span><span class="p">,</span>
                          <span class="s1">'sunset_hour'</span><span class="p">:</span> <span class="n">sunset_hour</span><span class="p">}</span>
@@ -4085,9 +4077,11 @@ from astral import LocationInfo
 location = LocationInfo("Washington, D.C.", "USA")
 sunrise_hour = [sun(location.observer, date=date)['sunrise'] for date in data.index]
 sunset_hour = [sun(location.observer, date=date)['sunset'] for date in data.index]
+
 # Round to the nearest hour
 sunrise_hour = pd.Series(sunrise_hour, index=data.index).dt.round("h").dt.hour
 sunset_hour = pd.Series(sunset_hour, index=data.index).dt.round("h").dt.hour
+
 sun_light_features = pd.DataFrame({
                          'sunrise_hour': sunrise_hour,
                          'sunset_hour': sunset_hour}
@@ -4103,7 +4097,7 @@ sun_light_features.tail()</div>
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[11]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[6]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
@@ -4174,7 +4168,7 @@ sun_light_features.tail()</div>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=8bacf2d7">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=e550f461">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -4185,7 +4179,7 @@ sun_light_features.tail()</div>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=3e6c8477">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=8c64091b">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -4196,12 +4190,12 @@ sun_light_features.tail()</div>
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=14bf8289">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=3f232830">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [23]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [7]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-7">
@@ -4268,7 +4262,7 @@ cyclical_features.head(3)</div>
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[23]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[7]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
@@ -4362,12 +4356,12 @@ cyclical_features.head(3)</div>
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=cca37fed">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=afdcd9e7">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [24]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [8]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-8">
@@ -4429,7 +4423,7 @@ plt.show();</div>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=d20dfdbe">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=8b7f4e00">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -4440,7 +4434,7 @@ plt.show();</div>
 <i style="font-size: 18px; color:#00b8d4;"></i>
 <b style="color: #00b8d4;">✎ Note</b>
 </p>
-<p>See <a href="https://skforecast.org/latest/faq/cyclical-features-time-series.html" target="_blank">Cyclical features in time series forecasting</a> for a more detailed description of strategies for encoding cyclic features.</p>
+<p>See <a href="../faq/cyclical-features-time-series.html" target="_blank">Cyclical features in time series forecasting</a> for a more detailed description of strategies for encoding cyclic features.</p>
 </div>
 </div>
 </div>

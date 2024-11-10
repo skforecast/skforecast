@@ -3058,10 +3058,10 @@ regressed on exog[i].</p>
 <ul>
 <li>If <code>'autoreg'</code>, only autoregressive features (lags and window features)
 are evaluated by the selector. All exogenous features are included in the
-output (<code>selected_exog</code>).</li>
+output <code>selected_exog</code>.</li>
 <li>If <code>'exog'</code>, only exogenous features are evaluated without the presence
 of autoregressive features. All autoregressive features are included 
-in the output (<code>selected_autoreg</code>).</li>
+in the outputs <code>selected_lags</code> and <code>selected_window_features</code>.</li>
 <li>If <code>None</code>, all features are evaluated by the selector.</li>
 </ul>
               </div>
@@ -3419,10 +3419,10 @@ is always deterministic.</p>
 
 <span class="sd">        - If `&#39;autoreg&#39;`, only autoregressive features (lags and window features)</span>
 <span class="sd">        are evaluated by the selector. All exogenous features are included in the</span>
-<span class="sd">        output (`selected_exog`).</span>
+<span class="sd">        output `selected_exog`.</span>
 <span class="sd">        - If `&#39;exog&#39;`, only exogenous features are evaluated without the presence</span>
 <span class="sd">        of autoregressive features. All autoregressive features are included </span>
-<span class="sd">        in the output (`selected_autoreg`).</span>
+<span class="sd">        in the outputs `selected_lags` and `selected_window_features`.</span>
 <span class="sd">        - If `None`, all features are evaluated by the selector.</span>
 <span class="sd">    force_inclusion : list, str, default `None`</span>
 <span class="sd">        Features to force include in the final list of selected features.</span>
@@ -3510,9 +3510,9 @@ is always deterministic.</p>
         <span class="n">subsample</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">X_train</span><span class="p">)</span> <span class="o">*</span> <span class="n">subsample</span><span class="p">)</span>
 
     <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">random_state</span><span class="p">)</span>
-    <span class="n">sample</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">X_train</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">subsample</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    <span class="n">X_train_sample</span> <span class="o">=</span> <span class="n">X_train</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">sample</span><span class="p">,</span> <span class="p">:]</span>
-    <span class="n">y_train_sample</span> <span class="o">=</span> <span class="n">y_train</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">sample</span><span class="p">]</span>
+    <span class="n">sample</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">integers</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">X_train</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="n">subsample</span><span class="p">)</span>
+    <span class="n">X_train_sample</span> <span class="o">=</span> <span class="n">X_train</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">sample</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="n">y_train_sample</span> <span class="o">=</span> <span class="n">y_train</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">sample</span><span class="p">]</span>
     <span class="n">selector</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train_sample</span><span class="p">,</span> <span class="n">y_train_sample</span><span class="p">)</span>
     <span class="n">selected_features</span> <span class="o">=</span> <span class="n">selector</span><span class="o">.</span><span class="n">get_feature_names_out</span><span class="p">()</span>
 
@@ -3696,10 +3696,10 @@ selector will only be applied to the features of the first step.</p>
 <ul>
 <li>If <code>'autoreg'</code>, only autoregressive features (lags and window features) 
 are evaluated by the selector. All exogenous features are 
-included in the output (<code>selected_exog</code>).</li>
+included in the output <code>selected_exog</code>.</li>
 <li>If <code>'exog'</code>, only exogenous features are evaluated without the presence
 of autoregressive features. All autoregressive features are included 
-in the output (<code>selected_autoreg</code>).</li>
+in the outputs <code>selected_lags</code> and <code>selected_window_features</code>.</li>
 <li>If <code>None</code>, all features are evaluated by the selector.</li>
 </ul>
               </div>
@@ -4060,7 +4060,8 @@ as the lags can be different for each series.</p>
 <span class="normal">453</span>
 <span class="normal">454</span>
 <span class="normal">455</span>
-<span class="normal">456</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">select_features_multiseries</span><span class="p">(</span>
+<span class="normal">456</span>
+<span class="normal">457</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">select_features_multiseries</span><span class="p">(</span>
     <span class="n">forecaster</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
     <span class="n">selector</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
     <span class="n">series</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="nb">dict</span><span class="p">],</span>
@@ -4099,10 +4100,10 @@ as the lags can be different for each series.</p>
 
 <span class="sd">        - If `&#39;autoreg&#39;`, only autoregressive features (lags and window features) </span>
 <span class="sd">        are evaluated by the selector. All exogenous features are </span>
-<span class="sd">        included in the output (`selected_exog`).</span>
+<span class="sd">        included in the output `selected_exog`.</span>
 <span class="sd">        - If `&#39;exog&#39;`, only exogenous features are evaluated without the presence</span>
 <span class="sd">        of autoregressive features. All autoregressive features are included </span>
-<span class="sd">        in the output (`selected_autoreg`).</span>
+<span class="sd">        in the outputs `selected_lags` and `selected_window_features`.</span>
 <span class="sd">        - If `None`, all features are evaluated by the selector.</span>
 <span class="sd">    force_inclusion : list, str, default `None`</span>
 <span class="sd">        Features to force include in the final list of selected features.</span>
@@ -4213,9 +4214,9 @@ as the lags can be different for each series.</p>
         <span class="n">subsample</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">X_train</span><span class="p">)</span> <span class="o">*</span> <span class="n">subsample</span><span class="p">)</span>
 
     <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">random_state</span><span class="p">)</span>
-    <span class="n">sample</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">X_train</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">subsample</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    <span class="n">X_train_sample</span> <span class="o">=</span> <span class="n">X_train</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">sample</span><span class="p">,</span> <span class="p">:]</span>
-    <span class="n">y_train_sample</span> <span class="o">=</span> <span class="n">y_train</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">sample</span><span class="p">]</span>
+    <span class="n">sample</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">integers</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">X_train</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="n">subsample</span><span class="p">)</span>
+    <span class="n">X_train_sample</span> <span class="o">=</span> <span class="n">X_train</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">sample</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="n">y_train_sample</span> <span class="o">=</span> <span class="n">y_train</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">sample</span><span class="p">]</span>
     <span class="n">selector</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train_sample</span><span class="p">,</span> <span class="n">y_train_sample</span><span class="p">)</span>
     <span class="n">selected_features</span> <span class="o">=</span> <span class="n">selector</span><span class="o">.</span><span class="n">get_feature_names_out</span><span class="p">()</span>
 
@@ -4255,6 +4256,7 @@ as the lags can be different for each series.</p>
         <span class="p">)</span>
         <span class="n">selected_lags</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">selected_window_features</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">verbose_selected_lags</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">forecaster_name</span> <span class="o">==</span> <span class="s1">&#39;ForecasterDirectMultiVariate&#39;</span><span class="p">:</span>
             <span class="n">selected_lags</span> <span class="o">=</span> <span class="p">{</span>

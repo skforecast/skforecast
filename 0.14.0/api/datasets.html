@@ -3536,7 +3536,32 @@ also set to the index.</p>
 <span class="normal">468</span>
 <span class="normal">469</span>
 <span class="normal">470</span>
-<span class="normal">471</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">fetch_dataset</span><span class="p">(</span>
+<span class="normal">471</span>
+<span class="normal">472</span>
+<span class="normal">473</span>
+<span class="normal">474</span>
+<span class="normal">475</span>
+<span class="normal">476</span>
+<span class="normal">477</span>
+<span class="normal">478</span>
+<span class="normal">479</span>
+<span class="normal">480</span>
+<span class="normal">481</span>
+<span class="normal">482</span>
+<span class="normal">483</span>
+<span class="normal">484</span>
+<span class="normal">485</span>
+<span class="normal">486</span>
+<span class="normal">487</span>
+<span class="normal">488</span>
+<span class="normal">489</span>
+<span class="normal">490</span>
+<span class="normal">491</span>
+<span class="normal">492</span>
+<span class="normal">493</span>
+<span class="normal">494</span>
+<span class="normal">495</span>
+<span class="normal">496</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">fetch_dataset</span><span class="p">(</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">version</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;latest&#39;</span><span class="p">,</span>
     <span class="n">raw</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -3654,12 +3679,37 @@ also set to the index.</p>
             <span class="s1">&#39;date_format&#39;</span><span class="p">:</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S&#39;</span><span class="p">,</span>
             <span class="s1">&#39;freq&#39;</span><span class="p">:</span> <span class="s1">&#39;H&#39;</span><span class="p">,</span>
             <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="p">(</span>
-                <span class="s1">&#39;Hourly measures of several air chemical pollutant (pm2.5, co, no, &#39;</span>
-                <span class="s1">&#39;no2, pm10, nox, o3, so2) at Valencia city.&#39;</span>
+                <span class="s1">&#39;Hourly measures of several air chemical pollutant at Valencia city &#39;</span>
+                <span class="s1">&#39;(Avd. Francia) from 2019-01-01 to 20213-12-31. Including the following &#39;</span>
+                <span class="s1">&#39;variables: pm2.5 (µg/m³), CO (mg/m³), NO (µg/m³), NO2 (µg/m³), &#39;</span>
+                <span class="s1">&#39;PM10 (µg/m³), NOx (µg/m³), O3 (µg/m³), Veloc. (m/s), Direc. (degrees), &#39;</span>
+                <span class="s1">&#39;SO2 (µg/m³).&#39;</span>
             <span class="p">),</span>
             <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="p">(</span>
-                <span class="s2">&quot; Red de Vigilancia y Control de la Contaminación Atmosférica, &quot;</span>
-                <span class="s2">&quot;46250054-València - Centre, &quot;</span>
+                <span class="s2">&quot;Red de Vigilancia y Control de la Contaminación Atmosférica, &quot;</span>
+                <span class="s2">&quot;46250047-València - Av. França, &quot;</span>
+                <span class="s2">&quot;https://mediambient.gva.es/es/web/calidad-ambiental/datos-historicos.&quot;</span>
+            <span class="p">)</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;air_quality_valencia_no_missing&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;https://raw.githubusercontent.com/skforecast/&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;skforecast-datasets/</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2">/data/air_quality_valencia_no_missing.csv&quot;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;sep&#39;</span><span class="p">:</span> <span class="s1">&#39;,&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;index_col&#39;</span><span class="p">:</span> <span class="s1">&#39;datetime&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;date_format&#39;</span><span class="p">:</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;freq&#39;</span><span class="p">:</span> <span class="s1">&#39;H&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s1">&#39;Hourly measures of several air chemical pollutant at Valencia city &#39;</span>
+                <span class="s1">&#39;(Avd. Francia) from 2019-01-01 to 20213-12-31. Including the following &#39;</span>
+                <span class="s1">&#39;variables: pm2.5 (µg/m³), CO (mg/m³), NO (µg/m³), NO2 (µg/m³), &#39;</span>
+                <span class="s1">&#39;PM10 (µg/m³), NOx (µg/m³), O3 (µg/m³), Veloc. (m/s), Direc. (degrees), &#39;</span>
+                <span class="s1">&#39;SO2 (µg/m³). Missing values have been imputed using linear interpolation.&#39;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s2">&quot;Red de Vigilancia y Control de la Contaminación Atmosférica, &quot;</span>
+                <span class="s2">&quot;46250047-València - Av. França, &quot;</span>
                 <span class="s2">&quot;https://mediambient.gva.es/es/web/calidad-ambiental/datos-historicos.&quot;</span>
             <span class="p">)</span>
         <span class="p">},</span>
@@ -3840,16 +3890,16 @@ also set to the index.</p>
                 <span class="s1">&#39;del Ayuntamiento de Madrid https://datos.madrid.es/portal/site/egob&#39;</span>
             <span class="p">)</span>
         <span class="p">},</span>
-        <span class="s1">&#39;m4_hourly&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;m4_daily&#39;</span><span class="p">:</span> <span class="p">{</span>
             <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="p">(</span>
                 <span class="sa">f</span><span class="s1">&#39;https://raw.githubusercontent.com/skforecast/&#39;</span>
-                <span class="sa">f</span><span class="s1">&#39;skforecast-datasets/</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s1">/data/m4_hourly.parquet&#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;skforecast-datasets/</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s1">/data/m4_daily.parquet&#39;</span>
             <span class="p">),</span>
             <span class="s1">&#39;sep&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
             <span class="s1">&#39;index_col&#39;</span><span class="p">:</span> <span class="s1">&#39;timestamp&#39;</span><span class="p">,</span>
             <span class="s1">&#39;date_format&#39;</span><span class="p">:</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;freq&#39;</span><span class="p">:</span> <span class="s1">&#39;H&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="s2">&quot;Time series with hourly frequency from the M4 competition.&quot;</span><span class="p">,</span>
+            <span class="s1">&#39;freq&#39;</span><span class="p">:</span> <span class="s1">&#39;D&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="s2">&quot;Time series with daily frequency from the M4 competition.&quot;</span><span class="p">,</span>
             <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="p">(</span>
                 <span class="s2">&quot;Monash Time Series Forecasting Repository  &quot;</span>
                 <span class="s2">&quot;(https://zenodo.org/communities/forecasting) Godahewa, R., Bergmeir, &quot;</span>
@@ -3864,16 +3914,16 @@ also set to the index.</p>
                 <span class="s2">&quot;https://www.kaggle.com/datasets/yogesh94/m4-forecasting-competition-dataset&quot;</span>
             <span class="p">)</span>
         <span class="p">},</span>
-        <span class="s1">&#39;m4_daily&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;m4_hourly&#39;</span><span class="p">:</span> <span class="p">{</span>
             <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="p">(</span>
                 <span class="sa">f</span><span class="s1">&#39;https://raw.githubusercontent.com/skforecast/&#39;</span>
-                <span class="sa">f</span><span class="s1">&#39;skforecast-datasets/</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s1">/data/m4_daily.parquet&#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;skforecast-datasets/</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s1">/data/m4_hourly.parquet&#39;</span>
             <span class="p">),</span>
             <span class="s1">&#39;sep&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
             <span class="s1">&#39;index_col&#39;</span><span class="p">:</span> <span class="s1">&#39;timestamp&#39;</span><span class="p">,</span>
             <span class="s1">&#39;date_format&#39;</span><span class="p">:</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;freq&#39;</span><span class="p">:</span> <span class="s1">&#39;D&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="s2">&quot;Time series with daily frequency from the M4 competition.&quot;</span><span class="p">,</span>
+            <span class="s1">&#39;freq&#39;</span><span class="p">:</span> <span class="s1">&#39;H&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="s2">&quot;Time series with hourly frequency from the M4 competition.&quot;</span><span class="p">,</span>
             <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="p">(</span>
                 <span class="s2">&quot;Monash Time Series Forecasting Repository  &quot;</span>
                 <span class="s2">&quot;(https://zenodo.org/communities/forecasting) Godahewa, R., Bergmeir, &quot;</span>
@@ -3927,7 +3977,7 @@ also set to the index.</p>
             <span class="s1">&#39;sep&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
             <span class="s1">&#39;index_col&#39;</span><span class="p">:</span> <span class="s1">&#39;timestamp&#39;</span><span class="p">,</span>
             <span class="s1">&#39;date_format&#39;</span><span class="p">:</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;freq&#39;</span><span class="p">:</span> <span class="s1">&#39;D&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;freq&#39;</span><span class="p">:</span> <span class="s1">&#39;H&#39;</span><span class="p">,</span>
             <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="p">(</span>
                 <span class="s2">&quot;Hourly energy consumption data from the The Building Data Genome Project 2 &quot;</span>
                 <span class="s2">&quot;with building metadata and weather data. &quot;</span>
@@ -4075,32 +4125,7 @@ see the repository branches.</p>
 
             <details class="quote">
               <summary>Source code in <code>skforecast/datasets/datasets.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">474</span>
-<span class="normal">475</span>
-<span class="normal">476</span>
-<span class="normal">477</span>
-<span class="normal">478</span>
-<span class="normal">479</span>
-<span class="normal">480</span>
-<span class="normal">481</span>
-<span class="normal">482</span>
-<span class="normal">483</span>
-<span class="normal">484</span>
-<span class="normal">485</span>
-<span class="normal">486</span>
-<span class="normal">487</span>
-<span class="normal">488</span>
-<span class="normal">489</span>
-<span class="normal">490</span>
-<span class="normal">491</span>
-<span class="normal">492</span>
-<span class="normal">493</span>
-<span class="normal">494</span>
-<span class="normal">495</span>
-<span class="normal">496</span>
-<span class="normal">497</span>
-<span class="normal">498</span>
-<span class="normal">499</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">499</span>
 <span class="normal">500</span>
 <span class="normal">501</span>
 <span class="normal">502</span>
@@ -4110,7 +4135,32 @@ see the repository branches.</p>
 <span class="normal">506</span>
 <span class="normal">507</span>
 <span class="normal">508</span>
-<span class="normal">509</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">load_demo_dataset</span><span class="p">(</span><span class="n">version</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;latest&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+<span class="normal">509</span>
+<span class="normal">510</span>
+<span class="normal">511</span>
+<span class="normal">512</span>
+<span class="normal">513</span>
+<span class="normal">514</span>
+<span class="normal">515</span>
+<span class="normal">516</span>
+<span class="normal">517</span>
+<span class="normal">518</span>
+<span class="normal">519</span>
+<span class="normal">520</span>
+<span class="normal">521</span>
+<span class="normal">522</span>
+<span class="normal">523</span>
+<span class="normal">524</span>
+<span class="normal">525</span>
+<span class="normal">526</span>
+<span class="normal">527</span>
+<span class="normal">528</span>
+<span class="normal">529</span>
+<span class="normal">530</span>
+<span class="normal">531</span>
+<span class="normal">532</span>
+<span class="normal">533</span>
+<span class="normal">534</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">load_demo_dataset</span><span class="p">(</span><span class="n">version</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;latest&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Load demo data set with monthly expenditure ($AUD) on corticosteroid drugs that</span>
 <span class="sd">    the Australian health system had between 1991 and 2008. Obtained from the book:</span>

@@ -3142,7 +3142,7 @@ This is documentation for an unstable development version.
 <h2 id="multi-step-forecasting">Multi-step forecasting<a class="headerlink" href="#multi-step-forecasting" title="Permanent link">&para;</a></h2>
 <p>When working with time series, it is seldom needed to predict only the next element in the series (<em>t+1</em>). Instead, the most common goal is to predict a whole future interval (<em>t+1, ..., t+n</em>)  or a far point in time (<em>t+n</em>). Several strategies allow generating this type of prediction.</p>
 <h3 id="recursive-multi-step-forecasting">Recursive multi-step forecasting<a class="headerlink" href="#recursive-multi-step-forecasting" title="Permanent link">&para;</a></h3>
-<p>Since the value <em>t(n-1)</em> is required to predict <em>t(n)</em>, and <em>t(n-1)</em> is unknown, a recursive process is applied in which, each new prediction, is based on the previous one. This process is known as recursive forecasting or recursive multi-step forecasting and can be easily generated with the <a href="https://skforecast.org/latest/user_guides/autoregresive-forecaster.html"><code>ForecasterRecursive</code></a> class.</p>
+<p>Since the value <em>t(n-1)</em> is required to predict <em>t(n)</em>, and <em>t(n-1)</em> is unknown, a recursive process is applied in which, each new prediction, is based on the previous one. This process is known as recursive forecasting or recursive multi-step forecasting and can be easily generated with the <a href="../user_guides/autoregresive-forecaster.html"><code>ForecasterRecursive</code></a> class.</p>
 <p style="text-align: center">
     <img src="../img/diagram-recursive-mutistep-forecasting.png" style="width: 500px">
     <br>
@@ -3155,7 +3155,7 @@ This is documentation for an unstable development version.
 </p>
 
 <h3 id="direct-multi-step-forecasting">Direct multi-step forecasting<a class="headerlink" href="#direct-multi-step-forecasting" title="Permanent link">&para;</a></h3>
-<p>Direct multi-step forecasting consists of training a different model for each step of the forecast horizon. For example, to predict the next 5 values of a time series, 5 different models are trained, one for each step. As a result, the predictions are independent of each other. This entire process is automated in the <a href="https://skforecast.org/latest/user_guides/direct-multi-step-forecasting.html"><code>ForecasterDirect</code></a> class. </p>
+<p>Direct multi-step forecasting consists of training a different model for each step of the forecast horizon. For example, to predict the next 5 values of a time series, 5 different models are trained, one for each step. As a result, the predictions are independent of each other. This entire process is automated in the <a href="../user_guides/direct-multi-step-forecasting.html"><code>ForecasterDirect</code></a> class. </p>
 <p style="text-align: center">
     <img src="../img/diagram-direct-multi-step-forecasting.png" style="width: 500px">
     <br>
@@ -3186,7 +3186,7 @@ This is documentation for an unstable development version.
     <font size="2.5"> <i>Diagram of recursive forecasting with multiple independent time series</i></font>
 </p>
 
-<p>The <a href="https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting.html"><code>ForecasterRecursiveMultiSeries</code></a> class cover this process. </p>
+<p>The <a href="../user_guides/independent-multi-time-series-forecasting.html"><code>ForecasterRecursiveMultiSeries</code></a> class cover this process. </p>
 <h3 id="dependent-multi-series-forecasting-multivariate-time-series">Dependent Multi-Series Forecasting (multivariate time series)<a class="headerlink" href="#dependent-multi-series-forecasting-multivariate-time-series" title="Permanent link">&para;</a></h3>
 <p>All series are modeled together in a single model, considering that each time series depends not only on its past values but also on the past values of the other series. The forecaster is expected not only to learn the information of each series separately but also to relate them. An example is the measurements made by all the sensors (flow, temperature, pressure...) installed on an industrial machine such as a compressor.</p>
 <p style="text-align: center">
@@ -3195,7 +3195,7 @@ This is documentation for an unstable development version.
     <font size="2.5"> <i>Transformation of two time series and an exogenous variable into the matrices needed to train a machine learning model in a multi-variate-series context</i></font>
 </p>
 
-<p>The <a href="https://skforecast.org/latest/user_guides/dependent-multi-series-multivariate-forecasting.html"><code>ForecasterDirectMultiVariate</code></a> class covers this process. </p>
+<p>The <a href="../user_guides/dependent-multi-series-multivariate-forecasting.html"><code>ForecasterDirectMultiVariate</code></a> class covers this process. </p>
 <h2 id="forecasters">Forecasters<a class="headerlink" href="#forecasters" title="Permanent link">&para;</a></h2>
 <p>A <strong>Forecaster</strong> object in the skforecast library is a comprehensive container that provides essential functionality and methods for training a forecasting model and generating predictions for future points in time.</p>
 <p>The <strong>skforecast</strong> library offers a variety of forecaster types, each tailored to specific requirements such as single or multiple time series, direct or recursive strategies, or custom predictors. Regardless of the specific forecaster type, all instances share the same API.</p>
@@ -3215,7 +3215,7 @@ This is documentation for an unstable development version.
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><a href="https://skforecast.org/latest/user_guides/autoregresive-forecaster.html">ForecasterRecursive</a></td>
+<td style="text-align: left;"><a href="../user_guides/autoregresive-forecaster.html">ForecasterRecursive</a></td>
 <td style="text-align: center;">✔️</td>
 <td style="text-align: center;"></td>
 <td style="text-align: center;">✔️</td>
@@ -3226,7 +3226,7 @@ This is documentation for an unstable development version.
 <td style="text-align: center;">✔️</td>
 </tr>
 <tr>
-<td style="text-align: left;"><a href="https://skforecast.org/latest/user_guides/direct-multi-step-forecasting.html">ForecasterDirect</a></td>
+<td style="text-align: left;"><a href="../user_guides/direct-multi-step-forecasting.html">ForecasterDirect</a></td>
 <td style="text-align: center;">✔️</td>
 <td style="text-align: center;"></td>
 <td style="text-align: center;"></td>
@@ -3237,7 +3237,7 @@ This is documentation for an unstable development version.
 <td style="text-align: center;">✔️</td>
 </tr>
 <tr>
-<td style="text-align: left;"><a href="https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting.html">ForecasterRecursiveMultiSeries</a></td>
+<td style="text-align: left;"><a href="../user_guides/independent-multi-time-series-forecasting.html">ForecasterRecursiveMultiSeries</a></td>
 <td style="text-align: center;"></td>
 <td style="text-align: center;">✔️</td>
 <td style="text-align: center;">✔️</td>
@@ -3248,7 +3248,7 @@ This is documentation for an unstable development version.
 <td style="text-align: center;">✔️</td>
 </tr>
 <tr>
-<td style="text-align: left;"><a href="https://skforecast.org/latest/user_guides/dependent-multi-series-multivariate-forecasting.html">ForecasterDirectMultiVariate</a></td>
+<td style="text-align: left;"><a href="../user_guides/dependent-multi-series-multivariate-forecasting.html">ForecasterDirectMultiVariate</a></td>
 <td style="text-align: center;"></td>
 <td style="text-align: center;">✔️</td>
 <td style="text-align: center;"></td>
@@ -3259,7 +3259,7 @@ This is documentation for an unstable development version.
 <td style="text-align: center;">✔️</td>
 </tr>
 <tr>
-<td style="text-align: left;"><a href="https://skforecast.org/latest/user_guides/forecasting-with-deep-learning-rnn-lstm">ForecasterRNN</a></td>
+<td style="text-align: left;"><a href="../user_guides/forecasting-with-deep-learning-rnn-lstm.html">ForecasterRNN</a></td>
 <td style="text-align: center;"></td>
 <td style="text-align: center;">✔️</td>
 <td style="text-align: center;"></td>
@@ -3270,7 +3270,7 @@ This is documentation for an unstable development version.
 <td style="text-align: center;"></td>
 </tr>
 <tr>
-<td style="text-align: left;"><a href="https://skforecast.org/latest/user_guides/forecasting-sarimax-arima.html">ForecasterSarimax</a></td>
+<td style="text-align: left;"><a href="../user_guides/forecasting-sarimax-arima.html">ForecasterSarimax</a></td>
 <td style="text-align: center;">✔️</td>
 <td style="text-align: center;"></td>
 <td style="text-align: center;">✔️</td>
@@ -3282,10 +3282,10 @@ This is documentation for an unstable development version.
 </tr>
 </tbody>
 </table>
-<p>To understand what can be done when initializing a forecaster with <strong>skforecast</strong> visit <a href="https://skforecast.org/latest/quick-start/forecaster-parameters">Forecaster parameters</a> and <a href="https://skforecast.org/latest/quick-start/forecaster-attributes">Forecaster attributes</a>.</p>
+<p>To understand what can be done when initializing a forecaster with <strong>skforecast</strong> visit <a href="../quick-start/forecaster-parameters.html">Forecaster parameters</a> and <a href="../quick-start/forecaster-attributes.html">Forecaster attributes</a>.</p>
 <h2 id="exogenous-variables-features">Exogenous variables (features)<a class="headerlink" href="#exogenous-variables-features" title="Permanent link">&para;</a></h2>
 <p>Exogenous variables are predictors that are independent of the model being used for forecasting, and their future values must be known in order to include them in the prediction process. The inclusion of exogenous variables can enhance the accuracy of forecasts.</p>
-<p>In skforecast, exogenous variables <a href="https://skforecast.org/latest/user_guides/exogenous-variables">can be easily included</a> as predictors in all forecasting models. To ensure that their effects are accurately accounted for, it is crucial to include these variables during both the training and prediction phases. This will help to optimize the accuracy of forecasts and provide more reliable predictions.</p>
+<p>In skforecast, exogenous variables <a href="../user_guides/exogenous-variables.html">can be easily included</a> as predictors in all forecasting models. To ensure that their effects are accurately accounted for, it is crucial to include these variables during both the training and prediction phases. This will help to optimize the accuracy of forecasts and provide more reliable predictions.</p>
 <p style="text-align: center">
     <img src="../img/matrix_transformation_with_exog_variable.png" style="width: 550px;">
     <br>
@@ -3400,7 +3400,7 @@ This is documentation for an unstable development version.
 </tr>
 </tbody>
 </table>
-<p>For a code example illustrating the backtesting process, refer to the <a href="https://skforecast.org/latest/user_guides/backtesting.html">Backtesting user guide</a>.</p>
+<p>For a code example illustrating the backtesting process, refer to the <a href="../user_guides/backtesting.html">Backtesting user guide</a>.</p>
 
 
 

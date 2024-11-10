@@ -3488,6 +3488,17 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </tr>
 <tr>
 <td>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">model_selection</span> <span class="kn">import</span> <span class="n">backtesting_forecaster</span>
+</pre></div>
+</td>
+<td>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">model_selection</span> <span class="kn">import</span> <span class="n">TimeSeriesFold</span>
+<span class="kn">from</span> <span class="nn">model_selection</span> <span class="kn">import</span> <span class="n">backtesting_forecaster</span>
+</pre></div>
+</td>
+</tr>
+<tr>
+<td>
 <div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">model_selection_multiseries</span> <span class="kn">import</span> <span class="n">backtesting_forecaster_multiseries</span>
 <span class="kn">from</span> <span class="nn">model_selection_multiseries</span> <span class="kn">import</span> <span class="n">grid_search_forecaster_multiseries</span>
 <span class="kn">from</span> <span class="nn">model_selection_multiseries</span> <span class="kn">import</span> <span class="n">random_search_forecaster_multiseries</span>
@@ -3697,7 +3708,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
     <span class="n">gap</span>                   <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
     <span class="n">skip_folds</span>            <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">allow_incomplete_fold</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">refit</span>                 <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">refit</span>                 <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span>
 
 <span class="n">backtesting_forecaster</span><span class="p">(</span>
@@ -3787,15 +3798,15 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
     <span class="n">gap</span>                   <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
     <span class="n">skip_folds</span>            <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">allow_incomplete_fold</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">refit</span>                 <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">refit</span>                 <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span>
 
 <span class="n">grid_search_forecaster</span><span class="p">(</span>
     <span class="n">forecaster</span>         <span class="o">=</span> <span class="n">forecaster</span><span class="p">,</span>
     <span class="n">y</span>                  <span class="o">=</span> <span class="n">data</span><span class="p">,</span>
-    <span class="n">cv</span>                 <span class="o">=</span> <span class="n">cv</span><span class="p">,</span>
     <span class="n">param_grid</span>         <span class="o">=</span> <span class="n">param_grid</span><span class="p">,</span>
     <span class="n">lags_grid</span>          <span class="o">=</span> <span class="n">lags_grid</span><span class="p">,</span>
+    <span class="n">cv</span>                 <span class="o">=</span> <span class="n">cv</span><span class="p">,</span>
     <span class="n">metric</span>             <span class="o">=</span> <span class="s1">'mean_squared_error'</span><span class="p">,</span>
     <span class="n">return_best</span>        <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">n_jobs</span>             <span class="o">=</span> <span class="s1">'auto'</span><span class="p">,</span>

@@ -2614,24 +2614,6 @@ This is documentation for an unstable development version.
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#skforecast.exceptions.exceptions.MissingValuesWarning" class="md-nav__link">
-    <span class="md-ellipsis">
-      MissingValuesWarning
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#skforecast.exceptions.exceptions.MissingExogWarning" class="md-nav__link">
-    <span class="md-ellipsis">
-      MissingExogWarning
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#skforecast.exceptions.exceptions.DataTypeWarning" class="md-nav__link">
     <span class="md-ellipsis">
       DataTypeWarning
@@ -2641,18 +2623,9 @@ This is documentation for an unstable development version.
 </li>
       
         <li class="md-nav__item">
-  <a href="#skforecast.exceptions.exceptions.UnknownLevelWarning" class="md-nav__link">
+  <a href="#skforecast.exceptions.exceptions.DataTransformationWarning" class="md-nav__link">
     <span class="md-ellipsis">
-      UnknownLevelWarning
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#skforecast.exceptions.exceptions.LongTrainingWarning" class="md-nav__link">
-    <span class="md-ellipsis">
-      LongTrainingWarning
+      DataTransformationWarning
     </span>
   </a>
   
@@ -2668,9 +2641,27 @@ This is documentation for an unstable development version.
 </li>
       
         <li class="md-nav__item">
-  <a href="#skforecast.exceptions.exceptions.SaveLoadSkforecastWarning" class="md-nav__link">
+  <a href="#skforecast.exceptions.exceptions.LongTrainingWarning" class="md-nav__link">
     <span class="md-ellipsis">
-      SaveLoadSkforecastWarning
+      LongTrainingWarning
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#skforecast.exceptions.exceptions.MissingExogWarning" class="md-nav__link">
+    <span class="md-ellipsis">
+      MissingExogWarning
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#skforecast.exceptions.exceptions.MissingValuesWarning" class="md-nav__link">
+    <span class="md-ellipsis">
+      MissingValuesWarning
     </span>
   </a>
   
@@ -2680,6 +2671,24 @@ This is documentation for an unstable development version.
   <a href="#skforecast.exceptions.exceptions.OneStepAheadValidationWarning" class="md-nav__link">
     <span class="md-ellipsis">
       OneStepAheadValidationWarning
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#skforecast.exceptions.exceptions.UnknownLevelWarning" class="md-nav__link">
+    <span class="md-ellipsis">
+      UnknownLevelWarning
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#skforecast.exceptions.exceptions.SaveLoadSkforecastWarning" class="md-nav__link">
+    <span class="md-ellipsis">
+      SaveLoadSkforecastWarning
     </span>
   </a>
   
@@ -3009,12 +3018,12 @@ This is documentation for an unstable development version.
 
 
 
-<h2 id="skforecast.exceptions.exceptions.MissingValuesWarning" class="doc doc-heading">
-            <span class="doc doc-object-name doc-class-name">skforecast.exceptions.exceptions.MissingValuesWarning</span>
+<h2 id="skforecast.exceptions.exceptions.DataTypeWarning" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">skforecast.exceptions.exceptions.DataTypeWarning</span>
 
 
-<a href="#skforecast.exceptions.exceptions.MissingValuesWarning" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">MissingValuesWarning</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+<a href="#skforecast.exceptions.exceptions.DataTypeWarning" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">DataTypeWarning</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents first">
@@ -3022,15 +3031,157 @@ This is documentation for an unstable development version.
               Bases: <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#UserWarning">UserWarning</a></code></p>
 
 
-        <p>Warning used to indicate that there are missing values in the data. This 
-warning occurs when the input data contains missing values, or the training
-matrix generates missing values. Most machine learning models do not accept
-missing values, so the Forecaster's <code>fit' and</code>predict' methods may fail.</p>
+        <p>Warning used to notify there are dtypes in the exogenous data that are not
+'int', 'float', 'bool' or 'category'. Most machine learning models do not
+accept other data types, therefore the forecaster <code>fit</code> and <code>predict</code> may fail.</p>
 
                   <details class="quote">
                     <summary>Source code in <code>skforecast/exceptions/exceptions.py</code></summary>
-                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">21</span>
-<span class="normal">22</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">20</span>
+<span class="normal">21</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
+</code></pre></div></td></tr></table></div>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="skforecast.exceptions.exceptions.DataTransformationWarning" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">skforecast.exceptions.exceptions.DataTransformationWarning</span>
+
+
+<a href="#skforecast.exceptions.exceptions.DataTransformationWarning" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">DataTransformationWarning</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents first">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#UserWarning">UserWarning</a></code></p>
+
+
+        <p>Warning used to notify that the output data is in the transformed space.</p>
+
+                  <details class="quote">
+                    <summary>Source code in <code>skforecast/exceptions/exceptions.py</code></summary>
+                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">35</span>
+<span class="normal">36</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
+</code></pre></div></td></tr></table></div>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="skforecast.exceptions.exceptions.IgnoredArgumentWarning" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">skforecast.exceptions.exceptions.IgnoredArgumentWarning</span>
+
+
+<a href="#skforecast.exceptions.exceptions.IgnoredArgumentWarning" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">IgnoredArgumentWarning</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents first">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#UserWarning">UserWarning</a></code></p>
+
+
+        <p>Warning used to notify that an argument is ignored when using a method 
+or a function.</p>
+
+                  <details class="quote">
+                    <summary>Source code in <code>skforecast/exceptions/exceptions.py</code></summary>
+                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">51</span>
+<span class="normal">52</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
+</code></pre></div></td></tr></table></div>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="skforecast.exceptions.exceptions.LongTrainingWarning" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">skforecast.exceptions.exceptions.LongTrainingWarning</span>
+
+
+<a href="#skforecast.exceptions.exceptions.LongTrainingWarning" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">LongTrainingWarning</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents first">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#UserWarning">UserWarning</a></code></p>
+
+
+        <p>Warning used to notify that a large number of models will be trained and the
+the process may take a while to run.</p>
+
+                  <details class="quote">
+                    <summary>Source code in <code>skforecast/exceptions/exceptions.py</code></summary>
+                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">67</span>
+<span class="normal">68</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
 </code></pre></div></td></tr></table></div>
                   </details>
@@ -3078,8 +3229,8 @@ Forecaster's <code>fit' and</code>predict' methods may fail.</p>
 
                   <details class="quote">
                     <summary>Source code in <code>skforecast/exceptions/exceptions.py</code></summary>
-                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">38</span>
-<span class="normal">39</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">84</span>
+<span class="normal">85</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
 </code></pre></div></td></tr></table></div>
                   </details>
@@ -3108,12 +3259,12 @@ Forecaster's <code>fit' and</code>predict' methods may fail.</p>
 
 
 
-<h2 id="skforecast.exceptions.exceptions.DataTypeWarning" class="doc doc-heading">
-            <span class="doc doc-object-name doc-class-name">skforecast.exceptions.exceptions.DataTypeWarning</span>
+<h2 id="skforecast.exceptions.exceptions.MissingValuesWarning" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">skforecast.exceptions.exceptions.MissingValuesWarning</span>
 
 
-<a href="#skforecast.exceptions.exceptions.DataTypeWarning" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">DataTypeWarning</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+<a href="#skforecast.exceptions.exceptions.MissingValuesWarning" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">MissingValuesWarning</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents first">
@@ -3121,14 +3272,62 @@ Forecaster's <code>fit' and</code>predict' methods may fail.</p>
               Bases: <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#UserWarning">UserWarning</a></code></p>
 
 
-        <p>Warning used to notify there are dtypes in the exogenous data that are not
-'int', 'float', 'bool' or 'category'. Most machine learning models do not
-accept other data types, therefore the forecaster <code>fit</code> and <code>predict</code> may fail.</p>
+        <p>Warning used to indicate that there are missing values in the data. This 
+warning occurs when the input data contains missing values, or the training
+matrix generates missing values. Most machine learning models do not accept
+missing values, so the Forecaster's <code>fit' and</code>predict' methods may fail.</p>
 
                   <details class="quote">
                     <summary>Source code in <code>skforecast/exceptions/exceptions.py</code></summary>
-                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">55</span>
-<span class="normal">56</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">102</span>
+<span class="normal">103</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
+</code></pre></div></td></tr></table></div>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="skforecast.exceptions.exceptions.OneStepAheadValidationWarning" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">skforecast.exceptions.exceptions.OneStepAheadValidationWarning</span>
+
+
+<a href="#skforecast.exceptions.exceptions.OneStepAheadValidationWarning" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">OneStepAheadValidationWarning</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents first">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#UserWarning">UserWarning</a></code></p>
+
+
+        <p>Warning used to notify that the one-step-ahead validation is being used.</p>
+
+                  <details class="quote">
+                    <summary>Source code in <code>skforecast/exceptions/exceptions.py</code></summary>
+                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">117</span>
+<span class="normal">118</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
 </code></pre></div></td></tr></table></div>
                   </details>
@@ -3175,104 +3374,8 @@ training data.</p>
 
                   <details class="quote">
                     <summary>Source code in <code>skforecast/exceptions/exceptions.py</code></summary>
-                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">87</span>
-<span class="normal">88</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
-</code></pre></div></td></tr></table></div>
-                  </details>
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="skforecast.exceptions.exceptions.LongTrainingWarning" class="doc doc-heading">
-            <span class="doc doc-object-name doc-class-name">skforecast.exceptions.exceptions.LongTrainingWarning</span>
-
-
-<a href="#skforecast.exceptions.exceptions.LongTrainingWarning" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">LongTrainingWarning</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
-</code></pre></div>
-
-    <div class="doc doc-contents first">
-            <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#UserWarning">UserWarning</a></code></p>
-
-
-        <p>Warning used to notify that a large number of models will be trained and the
-the process may take a while to run.</p>
-
-                  <details class="quote">
-                    <summary>Source code in <code>skforecast/exceptions/exceptions.py</code></summary>
-                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">71</span>
-<span class="normal">72</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
-</code></pre></div></td></tr></table></div>
-                  </details>
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="skforecast.exceptions.exceptions.IgnoredArgumentWarning" class="doc doc-heading">
-            <span class="doc doc-object-name doc-class-name">skforecast.exceptions.exceptions.IgnoredArgumentWarning</span>
-
-
-<a href="#skforecast.exceptions.exceptions.IgnoredArgumentWarning" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">IgnoredArgumentWarning</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
-</code></pre></div>
-
-    <div class="doc doc-contents first">
-            <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#UserWarning">UserWarning</a></code></p>
-
-
-        <p>Warning used to notify that an argument is ignored when using a method 
-or a function.</p>
-
-                  <details class="quote">
-                    <summary>Source code in <code>skforecast/exceptions/exceptions.py</code></summary>
-                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">103</span>
-<span class="normal">104</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">133</span>
+<span class="normal">134</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
 </code></pre></div></td></tr></table></div>
                   </details>
@@ -3319,55 +3422,8 @@ a forecaster.</p>
 
                   <details class="quote">
                     <summary>Source code in <code>skforecast/exceptions/exceptions.py</code></summary>
-                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">119</span>
-<span class="normal">120</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
-</code></pre></div></td></tr></table></div>
-                  </details>
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="skforecast.exceptions.exceptions.OneStepAheadValidationWarning" class="doc doc-heading">
-            <span class="doc doc-object-name doc-class-name">skforecast.exceptions.exceptions.OneStepAheadValidationWarning</span>
-
-
-<a href="#skforecast.exceptions.exceptions.OneStepAheadValidationWarning" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">OneStepAheadValidationWarning</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
-</code></pre></div>
-
-    <div class="doc doc-contents first">
-            <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#UserWarning">UserWarning</a></code></p>
-
-
-        <p>Warning used to notify that the one-step-ahead validation is being used.</p>
-
-                  <details class="quote">
-                    <summary>Source code in <code>skforecast/exceptions/exceptions.py</code></summary>
-                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">134</span>
-<span class="normal">135</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">149</span>
+<span class="normal">150</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
 </code></pre></div></td></tr></table></div>
                   </details>
@@ -3414,8 +3470,8 @@ environment differs from the version used to initialize the forecaster.</p>
 
                   <details class="quote">
                     <summary>Source code in <code>skforecast/exceptions/exceptions.py</code></summary>
-                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">150</span>
-<span class="normal">151</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">165</span>
+<span class="normal">166</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
 </code></pre></div></td></tr></table></div>
                   </details>

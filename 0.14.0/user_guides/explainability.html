@@ -1553,18 +1553,9 @@ This is documentation for an unstable development version.
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#libraries" class="md-nav__link">
+  <a href="#libraries-and-data" class="md-nav__link">
     <span class="md-ellipsis">
-      Libraries
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#data" class="md-nav__link">
-    <span class="md-ellipsis">
-      Data
+      Libraries and data
     </span>
   </a>
   
@@ -3534,7 +3525,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="libraries">Libraries<a class="anchor-link" href="#libraries">¶</a></h2>
+<h2 id="libraries-and-data">Libraries and data<a class="anchor-link" href="#libraries-and-data">¶</a></h2>
 </div>
 </div>
 </div>
@@ -3544,7 +3535,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [1]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-1">
@@ -3582,17 +3573,6 @@ from skforecast.datasets import fetch_dataset
 from skforecast.recursive import ForecasterRecursive</div>
 </div>
 </div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="data">Data<a class="anchor-link" href="#data">¶</a></h2>
 </div>
 </div>
 </div>
@@ -4089,7 +4069,7 @@ forecaster.get_feature_importances()</div>
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>To properly retrieve the feature importances in the <code>ForecasterDirect</code> and <code>ForecasterDirectMultiVariate</code>, it is essential to specify the model from which to extract the feature importances are to be extracted. This is because <a href="https://skforecast.org/latest/user_guides/direct-multi-step-forecasting.html">Direct Strategy Forecasters</a> fit one model per step, and each model may have different important features. Therefore, the user must explicitly specify which model's feature importances wish to extract to ensure that the correct features are used.</p>
+<p>To properly retrieve the feature importances in the <code>ForecasterDirect</code> and <code>ForecasterDirectMultiVariate</code>, it is essential to specify the model from which to extract the feature importances are to be extracted. This is because <a href="../user_guides/direct-multi-step-forecasting.html">Direct Strategy Forecasters</a> fit one model per step, and each model may have different important features. Therefore, the user must explicitly specify which model's feature importances wish to extract to ensure that the correct features are used.</p>
 </div>
 </div>
 </div>
@@ -4484,7 +4464,7 @@ shap_values = explainer.shap_values(X_train)</div>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [24]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-11">
@@ -4499,11 +4479,11 @@ shap_values = explainer.shap_values(X_train)</div>
 </div>
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Force plot for the first observation</span>
 <span class="c1"># ==============================================================================</span>
-<span class="n">shap</span><span class="o">.</span><span class="n">force_plot</span><span class="p">(</span><span class="n">explainer</span><span class="o">.</span><span class="n">expected_value</span><span class="p">,</span> <span class="n">shap_values</span><span class="p">[</span><span class="mi">0</span><span class="p">,:],</span> <span class="n">X_train</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">,:])</span>
+<span class="n">shap</span><span class="o">.</span><span class="n">force_plot</span><span class="p">(</span><span class="n">explainer</span><span class="o">.</span><span class="n">expected_value</span><span class="p">,</span> <span class="n">shap_values</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:],</span> <span class="n">X_train</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:])</span>
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-11"># Force plot for the first observation
 # ==============================================================================
-shap.force_plot(explainer.expected_value, shap_values[0,:], X_train.iloc[0,:])</div>
+shap.force_plot(explainer.expected_value, shap_values[0, :], X_train.iloc[0, :])</div>
 </div>
 </div>
 </div>
@@ -4513,7 +4493,7 @@ shap.force_plot(explainer.expected_value, shap_values[0,:], X_train.iloc[0,:])</
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[24]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[ ]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div id="iD7AUO2FCUARK9K5IO82Z">
 <div style="color: #900; text-align: center;">
@@ -4551,7 +4531,7 @@ shap.force_plot(explainer.expected_value, shap_values[0,:], X_train.iloc[0,:])</
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [25]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-12">
@@ -4566,11 +4546,11 @@ shap.force_plot(explainer.expected_value, shap_values[0,:], X_train.iloc[0,:])</
 </div>
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Force plot for the first 200 observations in the training set</span>
 <span class="c1"># ==============================================================================</span>
-<span class="n">shap</span><span class="o">.</span><span class="n">force_plot</span><span class="p">(</span><span class="n">explainer</span><span class="o">.</span><span class="n">expected_value</span><span class="p">,</span> <span class="n">shap_values</span><span class="p">[:</span><span class="mi">200</span><span class="p">,:],</span> <span class="n">X_train</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:</span><span class="mi">200</span><span class="p">,:])</span>
+<span class="n">shap</span><span class="o">.</span><span class="n">force_plot</span><span class="p">(</span><span class="n">explainer</span><span class="o">.</span><span class="n">expected_value</span><span class="p">,</span> <span class="n">shap_values</span><span class="p">[:</span><span class="mi">200</span><span class="p">,</span> <span class="p">:],</span> <span class="n">X_train</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:</span><span class="mi">200</span><span class="p">,</span> <span class="p">:])</span>
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-12"># Force plot for the first 200 observations in the training set
 # ==============================================================================
-shap.force_plot(explainer.expected_value, shap_values[:200,:], X_train.iloc[:200,:])</div>
+shap.force_plot(explainer.expected_value, shap_values[:200, :], X_train.iloc[:200, :])</div>
 </div>
 </div>
 </div>
@@ -4580,7 +4560,7 @@ shap.force_plot(explainer.expected_value, shap_values[:200,:], X_train.iloc[:200
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[25]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[ ]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div id="iTGAVUH9L1QOLXSA5F62X">
 <div style="color: #900; text-align: center;">
@@ -4943,7 +4923,7 @@ X_predict</div>
 <i style="font-size: 18px; color:#ff9100; border-color: #ff1744;"></i>
 <b style="color: #ff9100;"> <span style="color: #ff9100;">⚠</span> Warning</b>
 </p>
-<p>If transformations or differentiation are included in the Forecaster, the output matrix will be in the transformed scale. To obtain the SHAP values in the original scale, it is necessary to reverse the transformations or differentiation. For more information, visit: <a href="../user_guides/autoregresive-forecaster#extract-prediction-matrices">Extract prediction matrices</a>.</p>
+<p>If transformations or differentiation are included in the Forecaster, the output matrix will be in the transformed scale. To obtain the SHAP values in the original scale, it is necessary to reverse the transformations or differentiation. For more information, visit: <a href="../user_guides/training-and-prediction-matrices.html">Extract training and prediction matrices</a>.</p>
 </div>
 </div>
 </div>

@@ -3360,7 +3360,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <i style="font-size: 18px; color:#00b8d4;"></i>
 <b style="color: #00b8d4;">✎ Note</b>
 </p>
-<p>All of the gradient boosting libraries mentioned above - <b>XGBoost</b>, <b>Lightgbm</b>, <b>HistGradientBoostingRegressor</b>, and <b>CatBoost</b> - can handle categorical features natively, but they require specific encoding techniques that may not be entirely intuitive. Detailed information can be found in <a href="https://skforecast.org/latest/user_guides/categorical-features.html#native-implementation-for-categorical-features">categorical features</a> and in this two use cases:</p>
+<p>All of the gradient boosting libraries mentioned above - <b>XGBoost</b>, <b>Lightgbm</b>, <b>HistGradientBoostingRegressor</b>, and <b>CatBoost</b> - can handle categorical features natively, but they require specific encoding techniques that may not be entirely intuitive. Detailed information can be found in <a href="../user_guides/categorical-features.html#native-implementation-for-categorical-features">categorical features</a> and in this two use cases:</p>
 <ul>
 <li><a href="https://cienciadedatos.net/documentos/py39-forecasting-time-series-with-skforecast-xgboost-lightgbm-catboost">Forecasting time series with gradient boosting</a></li>
 <li><a href="https://www.cienciadedatos.net/documentos/py56-forecasting-time-series-with-xgboost.html">Forecasting with XGBoost</a></li>
@@ -3383,7 +3383,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <b style="color: #00bfa5;">💡 Tip</b>
 </p>
 <p>Tree-based models, including decision trees, random forests and gradient boosting machines (GBMs) have limitations when it comes to extrapolation, i.e. making predictions or estimates beyond the range of observed data. This limitation becomes particularly critical when forecasting time series data with a trend. Because these models cannot predict values beyond the observed range during training, their predicted values will deviate from the underlying trend.</p>
-<p>Several strategies have been proposed to address this challenge, with one of the most common approaches being the use of differentiation. The differentiation process involves computing the differences between consecutive observations in the time series. Instead of directly modeling the absolute values, the focus shifts to modeling the relative change ratios. Skforecast, version 0.10.0 or higher, introduces a novel <code>differentiation</code> parameter within its forecaster classes to indicate that a differentiation process must be applied before training the model. It is worth noting that the entire differentiation process has been automated and its effects are seamlessly reversed during the prediction phase. This ensures that the resulting forecast values are in the original scale of the time series data.</p>
+<p>Several strategies have been proposed to address this challenge, with one of the most common approaches being the use of differentiation. The differentiation process involves computing the differences between consecutive observations in the time series. Instead of directly modeling the absolute values, the focus shifts to modeling the relative change ratios. Skforecast introduces the <code>differentiation</code> parameter within its forecaster classes to indicate that a differentiation process must be applied before training the model. It is worth noting that the entire differentiation process is automated and its effects are seamlessly reversed during the prediction phase. This ensures that the resulting forecast values are in the original scale of the time series data.</p>
 <p>For more details in this topic visit: <a href="https://www.cienciadedatos.net/documentos/py49-modelling-time-series-trend-with-tree-based-models.html">Modelling time series trend with tree based models</a>.</p>
 </div>
 </div>
@@ -3395,7 +3395,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="libraries">Libraries<a class="anchor-link" href="#libraries">¶</a></h2>
+<h2 id="libraries-and-data">Libraries and data<a class="anchor-link" href="#libraries-and-data">¶</a></h2>
 </div>
 </div>
 </div>
@@ -3423,7 +3423,9 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">from</span> <span class="nn">xgboost</span> <span class="kn">import</span> <span class="n">XGBRegressor</span>
 <span class="kn">from</span> <span class="nn">lightgbm</span> <span class="kn">import</span> <span class="n">LGBMRegressor</span>
+
 <span class="kn">from</span> <span class="nn">skforecast.datasets</span> <span class="kn">import</span> <span class="n">fetch_dataset</span>
+<span class="kn">from</span> <span class="nn">skforecast.preprocessing</span> <span class="kn">import</span> <span class="n">RollingFeatures</span>
 <span class="kn">from</span> <span class="nn">skforecast.recursive</span> <span class="kn">import</span> <span class="n">ForecasterRecursive</span>
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-1"># Libraries
@@ -3431,21 +3433,12 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 import pandas as pd
 from xgboost import XGBRegressor
 from lightgbm import LGBMRegressor
+
 from skforecast.datasets import fetch_dataset
+from skforecast.preprocessing import RollingFeatures
 from skforecast.recursive import ForecasterRecursive</div>
 </div>
 </div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="data">Data<a class="anchor-link" href="#data">¶</a></h2>
 </div>
 </div>
 </div>
@@ -3573,6 +3566,7 @@ data_test  = data.iloc[-steps:, :]</div>
 <span class="n">forecaster</span> <span class="o">=</span> <span class="n">ForecasterRecursive</span><span class="p">(</span>
                  <span class="n">regressor</span>       <span class="o">=</span> <span class="n">LGBMRegressor</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="mi">123</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
                  <span class="n">lags</span>            <span class="o">=</span> <span class="mi">8</span><span class="p">,</span>
+                 <span class="n">window_features</span> <span class="o">=</span> <span class="n">RollingFeatures</span><span class="p">(</span><span class="n">stats</span><span class="o">=</span><span class="p">[</span><span class="s1">'mean'</span><span class="p">],</span> <span class="n">window_sizes</span><span class="o">=</span><span class="p">[</span><span class="mi">7</span><span class="p">]),</span>
                  <span class="n">differentiation</span> <span class="o">=</span> <span class="kc">None</span>
              <span class="p">)</span>
 
@@ -3584,6 +3578,7 @@ data_test  = data.iloc[-steps:, :]</div>
 forecaster = ForecasterRecursive(
                  regressor       = LGBMRegressor(random_state=123, verbose=-1),
                  lags            = 8,
+                 window_features = RollingFeatures(stats=['mean'], window_sizes=[7]),
                  differentiation = None
              )
 
@@ -3599,29 +3594,129 @@ forecaster</div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
 <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[4]:</div>
-<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
-<pre>================= 
-ForecasterAutoreg 
-================= 
-Regressor: LGBMRegressor(random_state=123, verbose=-1) 
-Lags: [1 2 3 4 5 6 7 8] 
-Transformer for y: None 
-Transformer for exog: None 
-Window size: 8 
-Weight function included: False 
-Differentiation order: None 
-Exogenous included: True 
-Exogenous variables names: ['exog_1', 'exog_2'] 
-Training range: [Timestamp('1992-04-01 00:00:00'), Timestamp('2005-06-01 00:00:00')] 
-Training index type: DatetimeIndex 
-Training index frequency: MS 
-Regressor parameters: {'boosting_type': 'gbdt', 'class_weight': None, 'colsample_bytree': 1.0, 'importance_type': 'split', 'learning_rate': 0.1, 'max_depth': -1, 'min_child_samples': 20, 'min_child_weight': 0.001, 'min_split_gain': 0.0, 'n_estimators': 100, 'n_jobs': None, 'num_leaves': 31, 'objective': None, 'random_state': 123, 'reg_alpha': 0.0, 'reg_lambda': 0.0, 'subsample': 1.0, 'subsample_for_bin': 200000, 'subsample_freq': 0, 'verbose': -1} 
-fit_kwargs: {} 
-Creation date: 2024-08-09 11:11:32 
-Last fit date: 2024-08-09 11:11:32 
-Skforecast version: 0.13.0 
-Python version: 3.12.4 
-Forecaster id: None </pre>
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
+<style>
+            .container-6af08fc3045a4bcb82c7fd78d14ad987 {
+                font-family: 'Arial', sans-serif;
+                font-size: 0.9em;
+                color: #333333;
+                border: 1px solid #ddd;
+                background-color: #f0f8ff;
+                padding: 5px 15px;
+                border-radius: 8px;
+                max-width: 600px;
+                #margin: auto;
+            }
+            .container-6af08fc3045a4bcb82c7fd78d14ad987 h2 {
+                font-size: 1.5em;
+                color: #222222;
+                border-bottom: 2px solid #ddd;
+                padding-bottom: 5px;
+                margin-bottom: 15px;
+                margin-top: 5px;
+            }
+            .container-6af08fc3045a4bcb82c7fd78d14ad987 details {
+                margin: 10px 0;
+            }
+            .container-6af08fc3045a4bcb82c7fd78d14ad987 summary {
+                font-weight: bold;
+                font-size: 1.1em;
+                color: #000000;
+                cursor: pointer;
+                margin-bottom: 5px;
+                background-color: #b3dbfd;
+                padding: 5px;
+                border-radius: 5px;
+            }
+            .container-6af08fc3045a4bcb82c7fd78d14ad987 summary:hover {
+                color: #000000;
+                background-color: #e0e0e0;
+            }
+            .container-6af08fc3045a4bcb82c7fd78d14ad987 ul {
+                font-family: 'Courier New', monospace;
+                list-style-type: none;
+                padding-left: 20px;
+                margin: 10px 0;
+                line-height: normal;
+            }
+            .container-6af08fc3045a4bcb82c7fd78d14ad987 li {
+                margin: 5px 0;
+                font-family: 'Courier New', monospace;
+            }
+            .container-6af08fc3045a4bcb82c7fd78d14ad987 li strong {
+                font-weight: bold;
+                color: #444444;
+            }
+            .container-6af08fc3045a4bcb82c7fd78d14ad987 li::before {
+                content: "- ";
+                color: #666666;
+            }
+            .container-6af08fc3045a4bcb82c7fd78d14ad987 a {
+                color: #001633;
+                text-decoration: none;
+            }
+            .container-6af08fc3045a4bcb82c7fd78d14ad987 a:hover {
+                color: #359ccb; 
+            }
+        </style>
+<div class="container-6af08fc3045a4bcb82c7fd78d14ad987">
+<h2>ForecasterRecursive</h2>
+<details open="">
+<summary>General Information</summary>
+<ul>
+<li><strong>Regressor:</strong> LGBMRegressor</li>
+<li><strong>Lags:</strong> [1 2 3 4 5 6 7 8]</li>
+<li><strong>Window features:</strong> ['roll_mean_7']</li>
+<li><strong>Window size:</strong> 8</li>
+<li><strong>Exogenous included:</strong> True</li>
+<li><strong>Weight function included:</strong> False</li>
+<li><strong>Differentiation order:</strong> None</li>
+<li><strong>Creation date:</strong> 2024-11-10 16:52:29</li>
+<li><strong>Last fit date:</strong> 2024-11-10 16:52:29</li>
+<li><strong>Skforecast version:</strong> 0.14.0</li>
+<li><strong>Python version:</strong> 3.11.10</li>
+<li><strong>Forecaster id:</strong> None</li>
+</ul>
+</details>
+<details>
+<summary>Exogenous Variables</summary>
+<ul>
+                    exog_1, exog_2
+                </ul>
+</details>
+<details>
+<summary>Data Transformations</summary>
+<ul>
+<li><strong>Transformer for y:</strong> None</li>
+<li><strong>Transformer for exog:</strong> None</li>
+</ul>
+</details>
+<details>
+<summary>Training Information</summary>
+<ul>
+<li><strong>Training range:</strong> [Timestamp('1992-04-01 00:00:00'), Timestamp('2005-06-01 00:00:00')]</li>
+<li><strong>Training index type:</strong> DatetimeIndex</li>
+<li><strong>Training index frequency:</strong> MS</li>
+</ul>
+</details>
+<details>
+<summary>Regressor Parameters</summary>
+<ul>
+                    {'boosting_type': 'gbdt', 'class_weight': None, 'colsample_bytree': 1.0, 'importance_type': 'split', 'learning_rate': 0.1, 'max_depth': -1, 'min_child_samples': 20, 'min_child_weight': 0.001, 'min_split_gain': 0.0, 'n_estimators': 100, 'n_jobs': None, 'num_leaves': 31, 'objective': None, 'random_state': 123, 'reg_alpha': 0.0, 'reg_lambda': 0.0, 'subsample': 1.0, 'subsample_for_bin': 200000, 'subsample_freq': 0, 'verbose': -1}
+                </ul>
+</details>
+<details>
+<summary>Fit Kwargs</summary>
+<ul>
+                    {}
+                </ul>
+</details>
+<p>
+<a href="https://skforecast.org/0.14.0/api/forecasterrecursive.html">🛈 <strong>API Reference</strong></a>
+                  
+                <a href="https://skforecast.org/0.14.0/user_guides/autoregresive-forecaster.html">🗎 <strong>User Guide</strong></a>
+</p>
+</div>
 </div>
 </div>
 </div>
@@ -3664,16 +3759,16 @@ forecaster.predict(steps=10, exog=data_test[['exog_1', 'exog_2']])</div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
 <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[5]:</div>
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
-<pre>2005-07-01    0.939158
-2005-08-01    0.931943
-2005-09-01    1.072937
-2005-10-01    1.090429
-2005-11-01    1.087492
-2005-12-01    1.170073
-2006-01-01    0.964073
-2006-02-01    0.760841
-2006-03-01    0.829831
-2006-04-01    0.800095
+<pre>2005-07-01    0.941524
+2005-08-01    0.927756
+2005-09-01    1.065236
+2005-10-01    1.088430
+2005-11-01    1.083675
+2005-12-01    1.168836
+2006-01-01    0.967025
+2006-02-01    0.751336
+2006-03-01    0.816116
+2006-04-01    0.801357
 Freq: MS, Name: pred, dtype: float64</pre>
 </div>
 </div>
@@ -3741,54 +3836,59 @@ forecaster.get_feature_importances()</div>
 </thead>
 <tbody>
 <tr>
-<th>9</th>
+<th>10</th>
 <td>exog_2</td>
-<td>127</td>
+<td>121</td>
 </tr>
 <tr>
 <th>1</th>
 <td>lag_2</td>
-<td>91</td>
+<td>94</td>
 </tr>
 <tr>
 <th>0</th>
 <td>lag_1</td>
-<td>61</td>
+<td>59</td>
 </tr>
 <tr>
-<th>5</th>
-<td>lag_6</td>
-<td>49</td>
-</tr>
-<tr>
-<th>8</th>
+<th>9</th>
 <td>exog_1</td>
 <td>43</td>
 </tr>
 <tr>
+<th>5</th>
+<td>lag_6</td>
+<td>42</td>
+</tr>
+<tr>
 <th>3</th>
 <td>lag_4</td>
-<td>38</td>
+<td>41</td>
 </tr>
 <tr>
 <th>4</th>
 <td>lag_5</td>
-<td>35</td>
+<td>37</td>
 </tr>
 <tr>
 <th>7</th>
 <td>lag_8</td>
-<td>26</td>
+<td>25</td>
 </tr>
 <tr>
 <th>6</th>
 <td>lag_7</td>
-<td>25</td>
+<td>22</td>
 </tr>
 <tr>
 <th>2</th>
 <td>lag_3</td>
 <td>14</td>
+</tr>
+<tr>
+<th>8</th>
+<td>roll_mean_7</td>
+<td>11</td>
 </tr>
 </tbody>
 </table>
@@ -3833,6 +3933,7 @@ forecaster.get_feature_importances()</div>
 <span class="n">forecaster</span> <span class="o">=</span> <span class="n">ForecasterRecursive</span><span class="p">(</span>
                  <span class="n">regressor</span>       <span class="o">=</span> <span class="n">XGBRegressor</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="mi">123</span><span class="p">,</span> <span class="n">enable_categorical</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
                  <span class="n">lags</span>            <span class="o">=</span> <span class="mi">8</span><span class="p">,</span>
+                 <span class="n">window_features</span> <span class="o">=</span> <span class="n">RollingFeatures</span><span class="p">(</span><span class="n">stats</span><span class="o">=</span><span class="p">[</span><span class="s1">'mean'</span><span class="p">],</span> <span class="n">window_sizes</span><span class="o">=</span><span class="p">[</span><span class="mi">7</span><span class="p">]),</span>
                  <span class="n">differentiation</span> <span class="o">=</span> <span class="kc">None</span>
              <span class="p">)</span>
 
@@ -3844,6 +3945,7 @@ forecaster.get_feature_importances()</div>
 forecaster = ForecasterRecursive(
                  regressor       = XGBRegressor(random_state=123, enable_categorical=True),
                  lags            = 8,
+                 window_features = RollingFeatures(stats=['mean'], window_sizes=[7]),
                  differentiation = None
              )
 
@@ -3859,39 +3961,129 @@ forecaster</div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
 <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[7]:</div>
-<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
-<pre>================= 
-ForecasterAutoreg 
-================= 
-Regressor: XGBRegressor(base_score=None, booster=None, callbacks=None,
-             colsample_bylevel=None, colsample_bynode=None,
-             colsample_bytree=None, device=None, early_stopping_rounds=None,
-             enable_categorical=True, eval_metric=None, feature_types=None,
-             gamma=None, grow_policy=None, importance_type=None,
-             interaction_constraints=None, learning_rate=None, max_bin=None,
-             max_cat_threshold=None, max_cat_to_onehot=None,
-             max_delta_step=None, max_depth=None, max_leaves=None,
-             min_child_weight=None, missing=nan, monotone_constraints=None,
-             multi_strategy=None, n_estimators=None, n_jobs=None,
-             num_parallel_tree=None, random_state=123, ...) 
-Lags: [1 2 3 4 5 6 7 8] 
-Transformer for y: None 
-Transformer for exog: None 
-Window size: 8 
-Weight function included: False 
-Differentiation order: None 
-Exogenous included: True 
-Exogenous variables names: ['exog_1', 'exog_2'] 
-Training range: [Timestamp('1992-04-01 00:00:00'), Timestamp('2005-06-01 00:00:00')] 
-Training index type: DatetimeIndex 
-Training index frequency: MS 
-Regressor parameters: {'objective': 'reg:squarederror', 'base_score': None, 'booster': None, 'callbacks': None, 'colsample_bylevel': None, 'colsample_bynode': None, 'colsample_bytree': None, 'device': None, 'early_stopping_rounds': None, 'enable_categorical': True, 'eval_metric': None, 'feature_types': None, 'gamma': None, 'grow_policy': None, 'importance_type': None, 'interaction_constraints': None, 'learning_rate': None, 'max_bin': None, 'max_cat_threshold': None, 'max_cat_to_onehot': None, 'max_delta_step': None, 'max_depth': None, 'max_leaves': None, 'min_child_weight': None, 'missing': nan, 'monotone_constraints': None, 'multi_strategy': None, 'n_estimators': None, 'n_jobs': None, 'num_parallel_tree': None, 'random_state': 123, 'reg_alpha': None, 'reg_lambda': None, 'sampling_method': None, 'scale_pos_weight': None, 'subsample': None, 'tree_method': None, 'validate_parameters': None, 'verbosity': None} 
-fit_kwargs: {} 
-Creation date: 2024-08-09 11:11:32 
-Last fit date: 2024-08-09 11:11:32 
-Skforecast version: 0.13.0 
-Python version: 3.12.4 
-Forecaster id: None </pre>
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
+<style>
+            .container-86794f9777e348fc864a7795f9389be4 {
+                font-family: 'Arial', sans-serif;
+                font-size: 0.9em;
+                color: #333333;
+                border: 1px solid #ddd;
+                background-color: #f0f8ff;
+                padding: 5px 15px;
+                border-radius: 8px;
+                max-width: 600px;
+                #margin: auto;
+            }
+            .container-86794f9777e348fc864a7795f9389be4 h2 {
+                font-size: 1.5em;
+                color: #222222;
+                border-bottom: 2px solid #ddd;
+                padding-bottom: 5px;
+                margin-bottom: 15px;
+                margin-top: 5px;
+            }
+            .container-86794f9777e348fc864a7795f9389be4 details {
+                margin: 10px 0;
+            }
+            .container-86794f9777e348fc864a7795f9389be4 summary {
+                font-weight: bold;
+                font-size: 1.1em;
+                color: #000000;
+                cursor: pointer;
+                margin-bottom: 5px;
+                background-color: #b3dbfd;
+                padding: 5px;
+                border-radius: 5px;
+            }
+            .container-86794f9777e348fc864a7795f9389be4 summary:hover {
+                color: #000000;
+                background-color: #e0e0e0;
+            }
+            .container-86794f9777e348fc864a7795f9389be4 ul {
+                font-family: 'Courier New', monospace;
+                list-style-type: none;
+                padding-left: 20px;
+                margin: 10px 0;
+                line-height: normal;
+            }
+            .container-86794f9777e348fc864a7795f9389be4 li {
+                margin: 5px 0;
+                font-family: 'Courier New', monospace;
+            }
+            .container-86794f9777e348fc864a7795f9389be4 li strong {
+                font-weight: bold;
+                color: #444444;
+            }
+            .container-86794f9777e348fc864a7795f9389be4 li::before {
+                content: "- ";
+                color: #666666;
+            }
+            .container-86794f9777e348fc864a7795f9389be4 a {
+                color: #001633;
+                text-decoration: none;
+            }
+            .container-86794f9777e348fc864a7795f9389be4 a:hover {
+                color: #359ccb; 
+            }
+        </style>
+<div class="container-86794f9777e348fc864a7795f9389be4">
+<h2>ForecasterRecursive</h2>
+<details open="">
+<summary>General Information</summary>
+<ul>
+<li><strong>Regressor:</strong> XGBRegressor</li>
+<li><strong>Lags:</strong> [1 2 3 4 5 6 7 8]</li>
+<li><strong>Window features:</strong> ['roll_mean_7']</li>
+<li><strong>Window size:</strong> 8</li>
+<li><strong>Exogenous included:</strong> True</li>
+<li><strong>Weight function included:</strong> False</li>
+<li><strong>Differentiation order:</strong> None</li>
+<li><strong>Creation date:</strong> 2024-11-10 16:52:29</li>
+<li><strong>Last fit date:</strong> 2024-11-10 16:52:30</li>
+<li><strong>Skforecast version:</strong> 0.14.0</li>
+<li><strong>Python version:</strong> 3.11.10</li>
+<li><strong>Forecaster id:</strong> None</li>
+</ul>
+</details>
+<details>
+<summary>Exogenous Variables</summary>
+<ul>
+                    exog_1, exog_2
+                </ul>
+</details>
+<details>
+<summary>Data Transformations</summary>
+<ul>
+<li><strong>Transformer for y:</strong> None</li>
+<li><strong>Transformer for exog:</strong> None</li>
+</ul>
+</details>
+<details>
+<summary>Training Information</summary>
+<ul>
+<li><strong>Training range:</strong> [Timestamp('1992-04-01 00:00:00'), Timestamp('2005-06-01 00:00:00')]</li>
+<li><strong>Training index type:</strong> DatetimeIndex</li>
+<li><strong>Training index frequency:</strong> MS</li>
+</ul>
+</details>
+<details>
+<summary>Regressor Parameters</summary>
+<ul>
+                    {'objective': 'reg:squarederror', 'base_score': None, 'booster': None, 'callbacks': None, 'colsample_bylevel': None, 'colsample_bynode': None, 'colsample_bytree': None, 'device': None, 'early_stopping_rounds': None, 'enable_categorical': True, 'eval_metric': None, 'feature_types': None, 'gamma': None, 'grow_policy': None, 'importance_type': None, 'interaction_constraints': None, 'learning_rate': None, 'max_bin': None, 'max_cat_threshold': None, 'max_cat_to_onehot': None, 'max_delta_step': None, 'max_depth': None, 'max_leaves': None, 'min_child_weight': None, 'missing': nan, 'monotone_constraints': None, 'multi_strategy': None, 'n_estimators': None, 'n_jobs': None, 'num_parallel_tree': None, 'random_state': 123, 'reg_alpha': None, 'reg_lambda': None, 'sampling_method': None, 'scale_pos_weight': None, 'subsample': None, 'tree_method': None, 'validate_parameters': None, 'verbosity': None}
+                </ul>
+</details>
+<details>
+<summary>Fit Kwargs</summary>
+<ul>
+                    {}
+                </ul>
+</details>
+<p>
+<a href="https://skforecast.org/0.14.0/api/forecasterrecursive.html">🛈 <strong>API Reference</strong></a>
+                  
+                <a href="https://skforecast.org/0.14.0/user_guides/autoregresive-forecaster.html">🗎 <strong>User Guide</strong></a>
+</p>
+</div>
 </div>
 </div>
 </div>
@@ -3934,16 +4126,16 @@ forecaster.predict(steps=10, exog=data_test[['exog_1', 'exog_2']])</div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
 <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[8]:</div>
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
-<pre>2005-07-01    0.879593
-2005-08-01    0.988315
-2005-09-01    1.069755
-2005-10-01    1.107012
-2005-11-01    1.114354
-2005-12-01    1.212606
-2006-01-01    0.980519
-2006-02-01    0.682377
-2006-03-01    0.743607
-2006-04-01    0.738725
+<pre>2005-07-01    0.881743
+2005-08-01    0.985714
+2005-09-01    1.070262
+2005-10-01    1.099444
+2005-11-01    1.116030
+2005-12-01    1.206317
+2006-01-01    0.977022
+2006-02-01    0.679524
+2006-03-01    0.740902
+2006-04-01    0.742273
 Freq: MS, Name: pred, dtype: float64</pre>
 </div>
 </div>
@@ -4013,88 +4205,62 @@ forecaster.get_feature_importances()</div>
 <tr>
 <th>0</th>
 <td>lag_1</td>
-<td>0.288422</td>
+<td>0.299734</td>
 </tr>
 <tr>
-<th>9</th>
+<th>10</th>
 <td>exog_2</td>
-<td>0.266819</td>
+<td>0.255852</td>
 </tr>
 <tr>
 <th>1</th>
 <td>lag_2</td>
-<td>0.118983</td>
+<td>0.105777</td>
 </tr>
 <tr>
 <th>6</th>
 <td>lag_7</td>
-<td>0.101393</td>
+<td>0.100981</td>
 </tr>
 <tr>
 <th>4</th>
 <td>lag_5</td>
-<td>0.082091</td>
+<td>0.083807</td>
 </tr>
 <tr>
 <th>7</th>
 <td>lag_8</td>
-<td>0.061150</td>
+<td>0.063430</td>
 </tr>
 <tr>
-<th>8</th>
+<th>9</th>
 <td>exog_1</td>
-<td>0.050711</td>
+<td>0.055471</td>
 </tr>
 <tr>
 <th>3</th>
 <td>lag_4</td>
-<td>0.015282</td>
+<td>0.017550</td>
 </tr>
 <tr>
 <th>5</th>
 <td>lag_6</td>
-<td>0.011015</td>
+<td>0.010896</td>
 </tr>
 <tr>
 <th>2</th>
 <td>lag_3</td>
-<td>0.004135</td>
+<td>0.004139</td>
+</tr>
+<tr>
+<th>8</th>
+<td>roll_mean_7</td>
+<td>0.002362</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<div class="admonition note" name="html-admonition" style="background: rgba(255,145,0,.1); padding-top: 0px; padding-bottom: 6px; border-radius: 8px; border-left: 8px solid #ff9100; border-color: #ff9100; padding-left: 10px; padding-right: 10px">
-<p class="title">
-<i style="font-size: 18px; color:#ff9100; border-color: #ff1744;"></i>
-<b style="color: #ff9100;"> <span style="color: #ff9100;">⚠</span> Warning</b>
-</p>
-<p>Starting with version <code>0.13.0</code>, the <code>ForecasterRecursiveMultiSeries</code> class can use <code>encoding='ordinal_category'</code> for encoding time series identifiers. This approach creates a new column (<i>_level_skforecast</i>) of type pandas <code>category</code>. Consequently, the regressors must be able to handle categorical variables. If the regressors do not support categorical variables, the user should set the encoding to <code>'ordinal'</code> or <code>'onehot'</code> for compatibility.</p>
-<p>Some examples of regressors that support categorical variables and how to enable them are:</p>
-<ul>
-<li>
-<strong>HistGradientBoostingRegressor:</strong> <code>HistGradientBoostingRegressor(categorical_features="from_dtype")</code><br/><br/>
-</li>
-<li>
-<strong>LightGBM:</strong>
-<code>LGBMRegressor</code> does not allow configuration of categorical features during initialization, but rather in its <code>fit</code> method. Therefore, use <code>fit_kwargs = {'categorical_feature':'auto'}</code>. This is the default behavior of <code>LGBMRegressor</code> if no indication is given.
-        <br/><br/>
-</li>
-<li>
-<strong>XGBoost:</strong> <code>XGBRegressor(enable_categorical=True)</code>
-</li>
-</ul>
 </div>
 </div>
 </div>

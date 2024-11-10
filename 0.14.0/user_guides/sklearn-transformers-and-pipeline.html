@@ -3436,7 +3436,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </li>
 </ul>
 <p>Transformations are learned and applied before training the forecaster and are automatically used when calling <code>predict</code>. The output of <code>predict</code> is always on the same scale as the original series <em>y</em>.</p>
-<p>Although skforecast has allowed using scikit-learn pipelines as regressors since version 0.4.0, it is recommended to use <code>transformer_y</code> and <code>transformer_exog</code> instead.</p>
+<p>Although skforecast has allowed using scikit-learn pipelines as regressors, it is recommended to use <code>transformer_y</code> and <code>transformer_exog</code> instead.</p>
 </div>
 </div>
 </div>
@@ -3457,7 +3457,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [20]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [1]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-1">
@@ -3483,10 +3483,11 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <span class="kn">from</span> <span class="nn">sklearn.compose</span> <span class="kn">import</span> <span class="n">ColumnTransformer</span>
 <span class="kn">from</span> <span class="nn">sklearn.pipeline</span> <span class="kn">import</span> <span class="n">make_pipeline</span>
 
+<span class="kn">from</span> <span class="nn">skforecast.datasets</span> <span class="kn">import</span> <span class="n">fetch_dataset</span>
 <span class="kn">from</span> <span class="nn">skforecast.recursive</span> <span class="kn">import</span> <span class="n">ForecasterRecursive</span>
 <span class="kn">from</span> <span class="nn">skforecast.recursive</span> <span class="kn">import</span> <span class="n">ForecasterRecursiveMultiSeries</span>
+<span class="kn">from</span> <span class="nn">skforecast.model_selection</span> <span class="kn">import</span> <span class="n">TimeSeriesFold</span>
 <span class="kn">from</span> <span class="nn">skforecast.model_selection</span> <span class="kn">import</span> <span class="n">grid_search_forecaster</span>
-<span class="kn">from</span> <span class="nn">skforecast.datasets</span> <span class="kn">import</span> <span class="n">fetch_dataset</span>
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-1"># Libraries
 # ==============================================================================
@@ -3501,10 +3502,11 @@ from sklearn.preprocessing import FunctionTransformer
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import make_pipeline
 
+from skforecast.datasets import fetch_dataset
 from skforecast.recursive import ForecasterRecursive
 from skforecast.recursive import ForecasterRecursiveMultiSeries
-from skforecast.model_selection import grid_search_forecaster
-from skforecast.datasets import fetch_dataset</div>
+from skforecast.model_selection import TimeSeriesFold
+from skforecast.model_selection import grid_search_forecaster</div>
 </div>
 </div>
 </div>
@@ -3527,7 +3529,7 @@ from skforecast.datasets import fetch_dataset</div>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [21]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [2]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-2">
@@ -3579,7 +3581,7 @@ Shape of the dataset: (195, 3)
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [22]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [3]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-3">
@@ -3596,14 +3598,14 @@ Shape of the dataset: (195, 3)
 <span class="c1"># ==============================================================================</span>
 <span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">'date'</span>
 <span class="c1"># Add an extra categorical variable</span>
-<span class="n">data</span><span class="p">[</span><span class="s1">'exog_3'</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s2">"A"</span><span class="p">]</span> <span class="o">*</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">))</span> <span class="o">+</span> <span class="p">([</span><span class="s2">"B"</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+<span class="n">data</span><span class="p">[</span><span class="s1">'exog_3'</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s2">"A"</span><span class="p">]</span> <span class="o">*</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span> <span class="o">+</span> <span class="p">([</span><span class="s2">"B"</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
 <span class="n">data</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-3"># Data preprocessing
 # ==============================================================================
 data.index.name = 'date'
 # Add an extra categorical variable
-data['exog_3'] = (["A"] * int(len(data)/2)) + (["B"] * (int(len(data)/2) +1))
+data['exog_3'] = (["A"] * int(len(data) / 2)) + (["B"] * (int(len(data) / 2) + 1))
 data.head()</div>
 </div>
 </div>
@@ -3614,7 +3616,7 @@ data.head()</div>
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[22]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[3]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
@@ -3708,7 +3710,7 @@ data.head()</div>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [23]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [4]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-4">
@@ -3753,30 +3755,130 @@ forecaster</div>
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[23]:</div>
-<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
-<pre>================= 
-ForecasterAutoreg 
-================= 
-Regressor: Ridge(random_state=123) 
-Lags: [1 2 3] 
-Transformer for y: StandardScaler() 
-Transformer for exog: None 
-Window size: 3 
-Weight function included: False 
-Differentiation order: None 
-Exogenous included: True 
-Exogenous variables names: ['exog_1', 'exog_2'] 
-Training range: [Timestamp('1992-04-01 00:00:00'), Timestamp('2008-06-01 00:00:00')] 
-Training index type: DatetimeIndex 
-Training index frequency: MS 
-Regressor parameters: {'alpha': 1.0, 'copy_X': True, 'fit_intercept': True, 'max_iter': None, 'positive': False, 'random_state': 123, 'solver': 'auto', 'tol': 0.0001} 
-fit_kwargs: {} 
-Creation date: 2024-08-13 20:55:49 
-Last fit date: 2024-08-13 20:55:49 
-Skforecast version: 0.13.0 
-Python version: 3.12.4 
-Forecaster id: None </pre>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[4]:</div>
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
+<style>
+            .container-ebdff758058e4666bd84e4b602d36614 {
+                font-family: 'Arial', sans-serif;
+                font-size: 0.9em;
+                color: #333333;
+                border: 1px solid #ddd;
+                background-color: #f0f8ff;
+                padding: 5px 15px;
+                border-radius: 8px;
+                max-width: 600px;
+                #margin: auto;
+            }
+            .container-ebdff758058e4666bd84e4b602d36614 h2 {
+                font-size: 1.5em;
+                color: #222222;
+                border-bottom: 2px solid #ddd;
+                padding-bottom: 5px;
+                margin-bottom: 15px;
+                margin-top: 5px;
+            }
+            .container-ebdff758058e4666bd84e4b602d36614 details {
+                margin: 10px 0;
+            }
+            .container-ebdff758058e4666bd84e4b602d36614 summary {
+                font-weight: bold;
+                font-size: 1.1em;
+                color: #000000;
+                cursor: pointer;
+                margin-bottom: 5px;
+                background-color: #b3dbfd;
+                padding: 5px;
+                border-radius: 5px;
+            }
+            .container-ebdff758058e4666bd84e4b602d36614 summary:hover {
+                color: #000000;
+                background-color: #e0e0e0;
+            }
+            .container-ebdff758058e4666bd84e4b602d36614 ul {
+                font-family: 'Courier New', monospace;
+                list-style-type: none;
+                padding-left: 20px;
+                margin: 10px 0;
+                line-height: normal;
+            }
+            .container-ebdff758058e4666bd84e4b602d36614 li {
+                margin: 5px 0;
+                font-family: 'Courier New', monospace;
+            }
+            .container-ebdff758058e4666bd84e4b602d36614 li strong {
+                font-weight: bold;
+                color: #444444;
+            }
+            .container-ebdff758058e4666bd84e4b602d36614 li::before {
+                content: "- ";
+                color: #666666;
+            }
+            .container-ebdff758058e4666bd84e4b602d36614 a {
+                color: #001633;
+                text-decoration: none;
+            }
+            .container-ebdff758058e4666bd84e4b602d36614 a:hover {
+                color: #359ccb; 
+            }
+        </style>
+<div class="container-ebdff758058e4666bd84e4b602d36614">
+<h2>ForecasterRecursive</h2>
+<details open="">
+<summary>General Information</summary>
+<ul>
+<li><strong>Regressor:</strong> Ridge</li>
+<li><strong>Lags:</strong> [1 2 3]</li>
+<li><strong>Window features:</strong> None</li>
+<li><strong>Window size:</strong> 3</li>
+<li><strong>Exogenous included:</strong> True</li>
+<li><strong>Weight function included:</strong> False</li>
+<li><strong>Differentiation order:</strong> None</li>
+<li><strong>Creation date:</strong> 2024-11-10 17:56:45</li>
+<li><strong>Last fit date:</strong> 2024-11-10 17:56:45</li>
+<li><strong>Skforecast version:</strong> 0.14.0</li>
+<li><strong>Python version:</strong> 3.11.10</li>
+<li><strong>Forecaster id:</strong> None</li>
+</ul>
+</details>
+<details>
+<summary>Exogenous Variables</summary>
+<ul>
+                    exog_1, exog_2
+                </ul>
+</details>
+<details>
+<summary>Data Transformations</summary>
+<ul>
+<li><strong>Transformer for y:</strong> StandardScaler()</li>
+<li><strong>Transformer for exog:</strong> None</li>
+</ul>
+</details>
+<details>
+<summary>Training Information</summary>
+<ul>
+<li><strong>Training range:</strong> [Timestamp('1992-04-01 00:00:00'), Timestamp('2008-06-01 00:00:00')]</li>
+<li><strong>Training index type:</strong> DatetimeIndex</li>
+<li><strong>Training index frequency:</strong> MS</li>
+</ul>
+</details>
+<details>
+<summary>Regressor Parameters</summary>
+<ul>
+                    {'alpha': 1.0, 'copy_X': True, 'fit_intercept': True, 'max_iter': None, 'positive': False, 'random_state': 123, 'solver': 'auto', 'tol': 0.0001}
+                </ul>
+</details>
+<details>
+<summary>Fit Kwargs</summary>
+<ul>
+                    {}
+                </ul>
+</details>
+<p>
+<a href="https://skforecast.org/0.14.0/api/forecasterrecursive.html">🛈 <strong>API Reference</strong></a>
+                  
+                <a href="https://skforecast.org/0.14.0/user_guides/autoregresive-forecaster.html">🗎 <strong>User Guide</strong></a>
+</p>
+</div>
 </div>
 </div>
 </div>
@@ -3799,7 +3901,7 @@ Forecaster id: None </pre>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [24]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-5">
@@ -3844,30 +3946,130 @@ forecaster</div>
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[24]:</div>
-<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
-<pre>================= 
-ForecasterAutoreg 
-================= 
-Regressor: Ridge(random_state=123) 
-Lags: [1 2 3] 
-Transformer for y: None 
-Transformer for exog: StandardScaler() 
-Window size: 3 
-Weight function included: False 
-Differentiation order: None 
-Exogenous included: True 
-Exogenous variables names: ['exog_1', 'exog_2'] 
-Training range: [Timestamp('1992-04-01 00:00:00'), Timestamp('2008-06-01 00:00:00')] 
-Training index type: DatetimeIndex 
-Training index frequency: MS 
-Regressor parameters: {'alpha': 1.0, 'copy_X': True, 'fit_intercept': True, 'max_iter': None, 'positive': False, 'random_state': 123, 'solver': 'auto', 'tol': 0.0001} 
-fit_kwargs: {} 
-Creation date: 2024-08-13 20:55:50 
-Last fit date: 2024-08-13 20:55:50 
-Skforecast version: 0.13.0 
-Python version: 3.12.4 
-Forecaster id: None </pre>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[5]:</div>
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
+<style>
+            .container-356ffed8e0a540aca4b84f89819ad43e {
+                font-family: 'Arial', sans-serif;
+                font-size: 0.9em;
+                color: #333333;
+                border: 1px solid #ddd;
+                background-color: #f0f8ff;
+                padding: 5px 15px;
+                border-radius: 8px;
+                max-width: 600px;
+                #margin: auto;
+            }
+            .container-356ffed8e0a540aca4b84f89819ad43e h2 {
+                font-size: 1.5em;
+                color: #222222;
+                border-bottom: 2px solid #ddd;
+                padding-bottom: 5px;
+                margin-bottom: 15px;
+                margin-top: 5px;
+            }
+            .container-356ffed8e0a540aca4b84f89819ad43e details {
+                margin: 10px 0;
+            }
+            .container-356ffed8e0a540aca4b84f89819ad43e summary {
+                font-weight: bold;
+                font-size: 1.1em;
+                color: #000000;
+                cursor: pointer;
+                margin-bottom: 5px;
+                background-color: #b3dbfd;
+                padding: 5px;
+                border-radius: 5px;
+            }
+            .container-356ffed8e0a540aca4b84f89819ad43e summary:hover {
+                color: #000000;
+                background-color: #e0e0e0;
+            }
+            .container-356ffed8e0a540aca4b84f89819ad43e ul {
+                font-family: 'Courier New', monospace;
+                list-style-type: none;
+                padding-left: 20px;
+                margin: 10px 0;
+                line-height: normal;
+            }
+            .container-356ffed8e0a540aca4b84f89819ad43e li {
+                margin: 5px 0;
+                font-family: 'Courier New', monospace;
+            }
+            .container-356ffed8e0a540aca4b84f89819ad43e li strong {
+                font-weight: bold;
+                color: #444444;
+            }
+            .container-356ffed8e0a540aca4b84f89819ad43e li::before {
+                content: "- ";
+                color: #666666;
+            }
+            .container-356ffed8e0a540aca4b84f89819ad43e a {
+                color: #001633;
+                text-decoration: none;
+            }
+            .container-356ffed8e0a540aca4b84f89819ad43e a:hover {
+                color: #359ccb; 
+            }
+        </style>
+<div class="container-356ffed8e0a540aca4b84f89819ad43e">
+<h2>ForecasterRecursive</h2>
+<details open="">
+<summary>General Information</summary>
+<ul>
+<li><strong>Regressor:</strong> Ridge</li>
+<li><strong>Lags:</strong> [1 2 3]</li>
+<li><strong>Window features:</strong> None</li>
+<li><strong>Window size:</strong> 3</li>
+<li><strong>Exogenous included:</strong> True</li>
+<li><strong>Weight function included:</strong> False</li>
+<li><strong>Differentiation order:</strong> None</li>
+<li><strong>Creation date:</strong> 2024-11-10 17:56:45</li>
+<li><strong>Last fit date:</strong> 2024-11-10 17:56:45</li>
+<li><strong>Skforecast version:</strong> 0.14.0</li>
+<li><strong>Python version:</strong> 3.11.10</li>
+<li><strong>Forecaster id:</strong> None</li>
+</ul>
+</details>
+<details>
+<summary>Exogenous Variables</summary>
+<ul>
+                    exog_1, exog_2
+                </ul>
+</details>
+<details>
+<summary>Data Transformations</summary>
+<ul>
+<li><strong>Transformer for y:</strong> None</li>
+<li><strong>Transformer for exog:</strong> StandardScaler()</li>
+</ul>
+</details>
+<details>
+<summary>Training Information</summary>
+<ul>
+<li><strong>Training range:</strong> [Timestamp('1992-04-01 00:00:00'), Timestamp('2008-06-01 00:00:00')]</li>
+<li><strong>Training index type:</strong> DatetimeIndex</li>
+<li><strong>Training index frequency:</strong> MS</li>
+</ul>
+</details>
+<details>
+<summary>Regressor Parameters</summary>
+<ul>
+                    {'alpha': 1.0, 'copy_X': True, 'fit_intercept': True, 'max_iter': None, 'positive': False, 'random_state': 123, 'solver': 'auto', 'tol': 0.0001}
+                </ul>
+</details>
+<details>
+<summary>Fit Kwargs</summary>
+<ul>
+                    {}
+                </ul>
+</details>
+<p>
+<a href="https://skforecast.org/0.14.0/api/forecasterrecursive.html">🛈 <strong>API Reference</strong></a>
+                  
+                <a href="https://skforecast.org/0.14.0/user_guides/autoregresive-forecaster.html">🗎 <strong>User Guide</strong></a>
+</p>
+</div>
 </div>
 </div>
 </div>
@@ -3890,7 +4092,7 @@ Forecaster id: None </pre>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [25]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [6]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-6">
@@ -3953,34 +4155,134 @@ forecaster</div>
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[25]:</div>
-<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
-<pre>================= 
-ForecasterAutoreg 
-================= 
-Regressor: Ridge(random_state=123) 
-Lags: [1 2 3] 
-Transformer for y: None 
-Transformer for exog: ColumnTransformer(remainder='passthrough',
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[6]:</div>
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
+<style>
+            .container-3e996fec21b64d18aa131849129931d6 {
+                font-family: 'Arial', sans-serif;
+                font-size: 0.9em;
+                color: #333333;
+                border: 1px solid #ddd;
+                background-color: #f0f8ff;
+                padding: 5px 15px;
+                border-radius: 8px;
+                max-width: 600px;
+                #margin: auto;
+            }
+            .container-3e996fec21b64d18aa131849129931d6 h2 {
+                font-size: 1.5em;
+                color: #222222;
+                border-bottom: 2px solid #ddd;
+                padding-bottom: 5px;
+                margin-bottom: 15px;
+                margin-top: 5px;
+            }
+            .container-3e996fec21b64d18aa131849129931d6 details {
+                margin: 10px 0;
+            }
+            .container-3e996fec21b64d18aa131849129931d6 summary {
+                font-weight: bold;
+                font-size: 1.1em;
+                color: #000000;
+                cursor: pointer;
+                margin-bottom: 5px;
+                background-color: #b3dbfd;
+                padding: 5px;
+                border-radius: 5px;
+            }
+            .container-3e996fec21b64d18aa131849129931d6 summary:hover {
+                color: #000000;
+                background-color: #e0e0e0;
+            }
+            .container-3e996fec21b64d18aa131849129931d6 ul {
+                font-family: 'Courier New', monospace;
+                list-style-type: none;
+                padding-left: 20px;
+                margin: 10px 0;
+                line-height: normal;
+            }
+            .container-3e996fec21b64d18aa131849129931d6 li {
+                margin: 5px 0;
+                font-family: 'Courier New', monospace;
+            }
+            .container-3e996fec21b64d18aa131849129931d6 li strong {
+                font-weight: bold;
+                color: #444444;
+            }
+            .container-3e996fec21b64d18aa131849129931d6 li::before {
+                content: "- ";
+                color: #666666;
+            }
+            .container-3e996fec21b64d18aa131849129931d6 a {
+                color: #001633;
+                text-decoration: none;
+            }
+            .container-3e996fec21b64d18aa131849129931d6 a:hover {
+                color: #359ccb; 
+            }
+        </style>
+<div class="container-3e996fec21b64d18aa131849129931d6">
+<h2>ForecasterRecursive</h2>
+<details open="">
+<summary>General Information</summary>
+<ul>
+<li><strong>Regressor:</strong> Ridge</li>
+<li><strong>Lags:</strong> [1 2 3]</li>
+<li><strong>Window features:</strong> None</li>
+<li><strong>Window size:</strong> 3</li>
+<li><strong>Exogenous included:</strong> True</li>
+<li><strong>Weight function included:</strong> False</li>
+<li><strong>Differentiation order:</strong> None</li>
+<li><strong>Creation date:</strong> 2024-11-10 17:56:45</li>
+<li><strong>Last fit date:</strong> 2024-11-10 17:56:45</li>
+<li><strong>Skforecast version:</strong> 0.14.0</li>
+<li><strong>Python version:</strong> 3.11.10</li>
+<li><strong>Forecaster id:</strong> None</li>
+</ul>
+</details>
+<details>
+<summary>Exogenous Variables</summary>
+<ul>
+                    exog_1, exog_2, exog_3
+                </ul>
+</details>
+<details>
+<summary>Data Transformations</summary>
+<ul>
+<li><strong>Transformer for y:</strong> None</li>
+<li><strong>Transformer for exog:</strong> ColumnTransformer(remainder='passthrough',
                   transformers=[('scale_1', StandardScaler(), ['exog_1']),
                                 ('scale_2', StandardScaler(), ['exog_2']),
                                 ('onehot', OneHotEncoder(), ['exog_3'])],
-                  verbose_feature_names_out=False) 
-Window size: 3 
-Weight function included: False 
-Differentiation order: None 
-Exogenous included: True 
-Exogenous variables names: ['exog_1', 'exog_2', 'exog_3'] 
-Training range: [Timestamp('1992-04-01 00:00:00'), Timestamp('2008-06-01 00:00:00')] 
-Training index type: DatetimeIndex 
-Training index frequency: MS 
-Regressor parameters: {'alpha': 1.0, 'copy_X': True, 'fit_intercept': True, 'max_iter': None, 'positive': False, 'random_state': 123, 'solver': 'auto', 'tol': 0.0001} 
-fit_kwargs: {} 
-Creation date: 2024-08-13 20:55:50 
-Last fit date: 2024-08-13 20:55:50 
-Skforecast version: 0.13.0 
-Python version: 3.12.4 
-Forecaster id: None </pre>
+                  verbose_feature_names_out=False)</li>
+</ul>
+</details>
+<details>
+<summary>Training Information</summary>
+<ul>
+<li><strong>Training range:</strong> [Timestamp('1992-04-01 00:00:00'), Timestamp('2008-06-01 00:00:00')]</li>
+<li><strong>Training index type:</strong> DatetimeIndex</li>
+<li><strong>Training index frequency:</strong> MS</li>
+</ul>
+</details>
+<details>
+<summary>Regressor Parameters</summary>
+<ul>
+                    {'alpha': 1.0, 'copy_X': True, 'fit_intercept': True, 'max_iter': None, 'positive': False, 'random_state': 123, 'solver': 'auto', 'tol': 0.0001}
+                </ul>
+</details>
+<details>
+<summary>Fit Kwargs</summary>
+<ul>
+                    {}
+                </ul>
+</details>
+<p>
+<a href="https://skforecast.org/0.14.0/api/forecasterrecursive.html">🛈 <strong>API Reference</strong></a>
+                  
+                <a href="https://skforecast.org/0.14.0/user_guides/autoregresive-forecaster.html">🗎 <strong>User Guide</strong></a>
+</p>
+</div>
 </div>
 </div>
 </div>
@@ -4003,7 +4305,7 @@ Forecaster id: None </pre>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [26]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [7]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-7">
@@ -4036,7 +4338,7 @@ Forecaster id: None </pre>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [27]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [8]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-8">
@@ -4061,7 +4363,7 @@ Forecaster id: None </pre>
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[27]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[8]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
@@ -4155,7 +4457,7 @@ Forecaster id: None </pre>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [28]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [9]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-9">
@@ -4180,7 +4482,7 @@ Forecaster id: None </pre>
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[28]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[9]:</div>
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
 <pre>date
 1992-07-01    0.483389
@@ -4189,6 +4491,23 @@ Forecaster id: None </pre>
 1992-10-01    0.568606
 Freq: MS, Name: y, dtype: float64</pre>
 </div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<div class="admonition note" name="html-admonition" style="background: rgba(0,191,191,.1); padding-top: 0px; padding-bottom: 6px; border-radius: 8px; border-left: 8px solid #00bfa5; border-color: #00bfa5; padding-left: 10px; padding-right: 10px;">
+<p class="title">
+<i style="font-size: 18px; color:#00bfa5;"></i>
+<b style="color: #00bfa5;">💡 Tip</b>
+</p>
+<p>To learn more about how to extract the training and prediction matrices, visit the following link: <a href="../user_guides/training-and-prediction-matrices.html">How to Extract Training and Prediction Matrices</a>.</p>
 </div>
 </div>
 </div>
@@ -4240,7 +4559,7 @@ Freq: MS, Name: y, dtype: float64</pre>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [29]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [10]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-10">
@@ -4330,7 +4649,7 @@ forecaster.fit(y=data['y'])</div>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [30]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [11]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-11">
@@ -4355,7 +4674,7 @@ forecaster.fit(y=data['y'])</div>
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[30]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[11]:</div>
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
 <pre>2008-07-01    0.776206
 2008-08-01    0.775471
@@ -4390,7 +4709,7 @@ Freq: MS, Name: pred, dtype: float64</pre>
 <i style="font-size: 18px; color:#ff9100; border-color: #ff1744;"></i>
 <b style="color: #ff9100;"> <span style="color: #ff9100;">⚠</span> Warning</b>
 </p>
-<p>Starting from version 0.4.0, skforecast permits the usage of scikit-learn pipelines as regressors. It is important to note that ColumnTransformer cannot be included in the pipeline; thus, the same transformation will be applied to both the modeled series and all exogenous variables. However, if the preprocessing transformations only apply to specific columns, then they need to be applied separately using <code>transformer_y</code> and <code>transformer_exog</code>.</p>
+<p>Skforecast allows the usage of scikit-learn pipelines as regressors. It is important to note that ColumnTransformer cannot be included in the pipeline; thus, the same transformation will be applied to both the modeled series and all exogenous variables. However, if the preprocessing transformations only apply to specific columns, then they need to be applied separately using <code>transformer_y</code> and <code>transformer_exog</code>.</p>
 </div>
 </div>
 </div>
@@ -4401,7 +4720,7 @@ Freq: MS, Name: pred, dtype: float64</pre>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [31]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [12]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-12">
@@ -4428,9 +4747,9 @@ pipe</div>
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[31]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[12]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
-<style>#sk-container-id-2 {
+<style>#sk-container-id-1 {
   /* Definition of color scheme common for light and dark mode */
   --sklearn-color-text: black;
   --sklearn-color-line: gray;
@@ -4460,15 +4779,15 @@ pipe</div>
   }
 }
 
-#sk-container-id-2 {
+#sk-container-id-1 {
   color: var(--sklearn-color-text);
 }
 
-#sk-container-id-2 pre {
+#sk-container-id-1 pre {
   padding: 0;
 }
 
-#sk-container-id-2 input.sk-hidden--visually {
+#sk-container-id-1 input.sk-hidden--visually {
   border: 0;
   clip: rect(1px 1px 1px 1px);
   clip: rect(1px, 1px, 1px, 1px);
@@ -4480,7 +4799,7 @@ pipe</div>
   width: 1px;
 }
 
-#sk-container-id-2 div.sk-dashed-wrapped {
+#sk-container-id-1 div.sk-dashed-wrapped {
   border: 1px dashed var(--sklearn-color-line);
   margin: 0 0.4em 0.5em 0.4em;
   box-sizing: border-box;
@@ -4488,7 +4807,7 @@ pipe</div>
   background-color: var(--sklearn-color-background);
 }
 
-#sk-container-id-2 div.sk-container {
+#sk-container-id-1 div.sk-container {
   /* jupyter's `normalize.less` sets `[hidden] { display: none; }`
      but bootstrap.min.css set `[hidden] { display: none !important; }`
      so we also need the `!important` here to be able to override the
@@ -4498,7 +4817,7 @@ pipe</div>
   position: relative;
 }
 
-#sk-container-id-2 div.sk-text-repr-fallback {
+#sk-container-id-1 div.sk-text-repr-fallback {
   display: none;
 }
 
@@ -4514,14 +4833,14 @@ div.sk-item {
 
 /* Parallel-specific style estimator block */
 
-#sk-container-id-2 div.sk-parallel-item::after {
+#sk-container-id-1 div.sk-parallel-item::after {
   content: "";
   width: 100%;
   border-bottom: 2px solid var(--sklearn-color-text-on-default-background);
   flex-grow: 1;
 }
 
-#sk-container-id-2 div.sk-parallel {
+#sk-container-id-1 div.sk-parallel {
   display: flex;
   align-items: stretch;
   justify-content: center;
@@ -4529,28 +4848,28 @@ div.sk-item {
   position: relative;
 }
 
-#sk-container-id-2 div.sk-parallel-item {
+#sk-container-id-1 div.sk-parallel-item {
   display: flex;
   flex-direction: column;
 }
 
-#sk-container-id-2 div.sk-parallel-item:first-child::after {
+#sk-container-id-1 div.sk-parallel-item:first-child::after {
   align-self: flex-end;
   width: 50%;
 }
 
-#sk-container-id-2 div.sk-parallel-item:last-child::after {
+#sk-container-id-1 div.sk-parallel-item:last-child::after {
   align-self: flex-start;
   width: 50%;
 }
 
-#sk-container-id-2 div.sk-parallel-item:only-child::after {
+#sk-container-id-1 div.sk-parallel-item:only-child::after {
   width: 0;
 }
 
 /* Serial-specific style estimator block */
 
-#sk-container-id-2 div.sk-serial {
+#sk-container-id-1 div.sk-serial {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -4568,14 +4887,14 @@ clickable and can be expanded/collapsed.
 
 /* Pipeline and ColumnTransformer style (default) */
 
-#sk-container-id-2 div.sk-toggleable {
+#sk-container-id-1 div.sk-toggleable {
   /* Default theme specific background. It is overwritten whether we have a
   specific estimator or a Pipeline/ColumnTransformer */
   background-color: var(--sklearn-color-background);
 }
 
 /* Toggleable label */
-#sk-container-id-2 label.sk-toggleable__label {
+#sk-container-id-1 label.sk-toggleable__label {
   cursor: pointer;
   display: block;
   width: 100%;
@@ -4585,7 +4904,7 @@ clickable and can be expanded/collapsed.
   text-align: center;
 }
 
-#sk-container-id-2 label.sk-toggleable__label-arrow:before {
+#sk-container-id-1 label.sk-toggleable__label-arrow:before {
   /* Arrow on the left of the label */
   content: "▸";
   float: left;
@@ -4593,13 +4912,13 @@ clickable and can be expanded/collapsed.
   color: var(--sklearn-color-icon);
 }
 
-#sk-container-id-2 label.sk-toggleable__label-arrow:hover:before {
+#sk-container-id-1 label.sk-toggleable__label-arrow:hover:before {
   color: var(--sklearn-color-text);
 }
 
 /* Toggleable content - dropdown */
 
-#sk-container-id-2 div.sk-toggleable__content {
+#sk-container-id-1 div.sk-toggleable__content {
   max-height: 0;
   max-width: 0;
   overflow: hidden;
@@ -4608,12 +4927,12 @@ clickable and can be expanded/collapsed.
   background-color: var(--sklearn-color-unfitted-level-0);
 }
 
-#sk-container-id-2 div.sk-toggleable__content.fitted {
+#sk-container-id-1 div.sk-toggleable__content.fitted {
   /* fitted */
   background-color: var(--sklearn-color-fitted-level-0);
 }
 
-#sk-container-id-2 div.sk-toggleable__content pre {
+#sk-container-id-1 div.sk-toggleable__content pre {
   margin: 0.2em;
   border-radius: 0.25em;
   color: var(--sklearn-color-text);
@@ -4621,79 +4940,79 @@ clickable and can be expanded/collapsed.
   background-color: var(--sklearn-color-unfitted-level-0);
 }
 
-#sk-container-id-2 div.sk-toggleable__content.fitted pre {
+#sk-container-id-1 div.sk-toggleable__content.fitted pre {
   /* unfitted */
   background-color: var(--sklearn-color-fitted-level-0);
 }
 
-#sk-container-id-2 input.sk-toggleable__control:checked~div.sk-toggleable__content {
+#sk-container-id-1 input.sk-toggleable__control:checked~div.sk-toggleable__content {
   /* Expand drop-down */
   max-height: 200px;
   max-width: 100%;
   overflow: auto;
 }
 
-#sk-container-id-2 input.sk-toggleable__control:checked~label.sk-toggleable__label-arrow:before {
+#sk-container-id-1 input.sk-toggleable__control:checked~label.sk-toggleable__label-arrow:before {
   content: "▾";
 }
 
 /* Pipeline/ColumnTransformer-specific style */
 
-#sk-container-id-2 div.sk-label input.sk-toggleable__control:checked~label.sk-toggleable__label {
+#sk-container-id-1 div.sk-label input.sk-toggleable__control:checked~label.sk-toggleable__label {
   color: var(--sklearn-color-text);
   background-color: var(--sklearn-color-unfitted-level-2);
 }
 
-#sk-container-id-2 div.sk-label.fitted input.sk-toggleable__control:checked~label.sk-toggleable__label {
+#sk-container-id-1 div.sk-label.fitted input.sk-toggleable__control:checked~label.sk-toggleable__label {
   background-color: var(--sklearn-color-fitted-level-2);
 }
 
 /* Estimator-specific style */
 
 /* Colorize estimator box */
-#sk-container-id-2 div.sk-estimator input.sk-toggleable__control:checked~label.sk-toggleable__label {
+#sk-container-id-1 div.sk-estimator input.sk-toggleable__control:checked~label.sk-toggleable__label {
   /* unfitted */
   background-color: var(--sklearn-color-unfitted-level-2);
 }
 
-#sk-container-id-2 div.sk-estimator.fitted input.sk-toggleable__control:checked~label.sk-toggleable__label {
+#sk-container-id-1 div.sk-estimator.fitted input.sk-toggleable__control:checked~label.sk-toggleable__label {
   /* fitted */
   background-color: var(--sklearn-color-fitted-level-2);
 }
 
-#sk-container-id-2 div.sk-label label.sk-toggleable__label,
-#sk-container-id-2 div.sk-label label {
+#sk-container-id-1 div.sk-label label.sk-toggleable__label,
+#sk-container-id-1 div.sk-label label {
   /* The background is the default theme color */
   color: var(--sklearn-color-text-on-default-background);
 }
 
 /* On hover, darken the color of the background */
-#sk-container-id-2 div.sk-label:hover label.sk-toggleable__label {
+#sk-container-id-1 div.sk-label:hover label.sk-toggleable__label {
   color: var(--sklearn-color-text);
   background-color: var(--sklearn-color-unfitted-level-2);
 }
 
 /* Label box, darken color on hover, fitted */
-#sk-container-id-2 div.sk-label.fitted:hover label.sk-toggleable__label.fitted {
+#sk-container-id-1 div.sk-label.fitted:hover label.sk-toggleable__label.fitted {
   color: var(--sklearn-color-text);
   background-color: var(--sklearn-color-fitted-level-2);
 }
 
 /* Estimator label */
 
-#sk-container-id-2 div.sk-label label {
+#sk-container-id-1 div.sk-label label {
   font-family: monospace;
   font-weight: bold;
   display: inline-block;
   line-height: 1.2em;
 }
 
-#sk-container-id-2 div.sk-label-container {
+#sk-container-id-1 div.sk-label-container {
   text-align: center;
 }
 
 /* Estimator-specific */
-#sk-container-id-2 div.sk-estimator {
+#sk-container-id-1 div.sk-estimator {
   font-family: monospace;
   border: 1px dotted var(--sklearn-color-border-box);
   border-radius: 0.25em;
@@ -4703,18 +5022,18 @@ clickable and can be expanded/collapsed.
   background-color: var(--sklearn-color-unfitted-level-0);
 }
 
-#sk-container-id-2 div.sk-estimator.fitted {
+#sk-container-id-1 div.sk-estimator.fitted {
   /* fitted */
   background-color: var(--sklearn-color-fitted-level-0);
 }
 
 /* on hover */
-#sk-container-id-2 div.sk-estimator:hover {
+#sk-container-id-1 div.sk-estimator:hover {
   /* unfitted */
   background-color: var(--sklearn-color-unfitted-level-2);
 }
 
-#sk-container-id-2 div.sk-estimator.fitted:hover {
+#sk-container-id-1 div.sk-estimator.fitted:hover {
   /* fitted */
   background-color: var(--sklearn-color-fitted-level-2);
 }
@@ -4801,7 +5120,7 @@ div.sk-label-container:hover .sk-estimator-doc-link.fitted:hover,
 
 /* "?"-specific style due to the `<a>` HTML tag */
 
-#sk-container-id-2 a.estimator_doc_link {
+#sk-container-id-1 a.estimator_doc_link {
   float: right;
   font-size: 1rem;
   line-height: 1em;
@@ -4816,25 +5135,25 @@ div.sk-label-container:hover .sk-estimator-doc-link.fitted:hover,
   border: var(--sklearn-color-unfitted-level-1) 1pt solid;
 }
 
-#sk-container-id-2 a.estimator_doc_link.fitted {
+#sk-container-id-1 a.estimator_doc_link.fitted {
   /* fitted */
   border: var(--sklearn-color-fitted-level-1) 1pt solid;
   color: var(--sklearn-color-fitted-level-1);
 }
 
 /* On hover */
-#sk-container-id-2 a.estimator_doc_link:hover {
+#sk-container-id-1 a.estimator_doc_link:hover {
   /* unfitted */
   background-color: var(--sklearn-color-unfitted-level-3);
   color: var(--sklearn-color-background);
   text-decoration: none;
 }
 
-#sk-container-id-2 a.estimator_doc_link.fitted:hover {
+#sk-container-id-1 a.estimator_doc_link.fitted:hover {
   /* fitted */
   background-color: var(--sklearn-color-fitted-level-3);
 }
-</style><div class="sk-top-container" id="sk-container-id-2"><div class="sk-text-repr-fallback"><pre>Pipeline(steps=[('standardscaler', StandardScaler()), ('ridge', Ridge())])</pre><b>In a Jupyter environment, please rerun this cell to show the HTML representation or trust the notebook. <br/>On GitHub, the HTML representation is unable to render, please try loading this page with nbviewer.org.</b></div><div class="sk-container" hidden=""><div class="sk-item sk-dashed-wrapped"><div class="sk-label-container"><div class="sk-label sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-4" type="checkbox"/><label class="sk-toggleable__label sk-toggleable__label-arrow" for="sk-estimator-id-4">  Pipeline<a class="sk-estimator-doc-link" href="https://scikit-learn.org/1.5/modules/generated/sklearn.pipeline.Pipeline.html" rel="noreferrer" target="_blank">?<span>Documentation for Pipeline</span></a><span class="sk-estimator-doc-link">i<span>Not fitted</span></span></label><div class="sk-toggleable__content"><pre>Pipeline(steps=[('standardscaler', StandardScaler()), ('ridge', Ridge())])</pre></div> </div></div><div class="sk-serial"><div class="sk-item"><div class="sk-estimator sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-5" type="checkbox"/><label class="sk-toggleable__label sk-toggleable__label-arrow" for="sk-estimator-id-5"> StandardScaler<a class="sk-estimator-doc-link" href="https://scikit-learn.org/1.5/modules/generated/sklearn.preprocessing.StandardScaler.html" rel="noreferrer" target="_blank">?<span>Documentation for StandardScaler</span></a></label><div class="sk-toggleable__content"><pre>StandardScaler()</pre></div> </div></div><div class="sk-item"><div class="sk-estimator sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-6" type="checkbox"/><label class="sk-toggleable__label sk-toggleable__label-arrow" for="sk-estimator-id-6"> Ridge<a class="sk-estimator-doc-link" href="https://scikit-learn.org/1.5/modules/generated/sklearn.linear_model.Ridge.html" rel="noreferrer" target="_blank">?<span>Documentation for Ridge</span></a></label><div class="sk-toggleable__content"><pre>Ridge()</pre></div> </div></div></div></div></div></div>
+</style><div class="sk-top-container" id="sk-container-id-1"><div class="sk-text-repr-fallback"><pre>Pipeline(steps=[('standardscaler', StandardScaler()), ('ridge', Ridge())])</pre><b>In a Jupyter environment, please rerun this cell to show the HTML representation or trust the notebook. <br/>On GitHub, the HTML representation is unable to render, please try loading this page with nbviewer.org.</b></div><div class="sk-container" hidden=""><div class="sk-item sk-dashed-wrapped"><div class="sk-label-container"><div class="sk-label sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-1" type="checkbox"/><label class="sk-toggleable__label sk-toggleable__label-arrow" for="sk-estimator-id-1">  Pipeline<a class="sk-estimator-doc-link" href="https://scikit-learn.org/1.5/modules/generated/sklearn.pipeline.Pipeline.html" rel="noreferrer" target="_blank">?<span>Documentation for Pipeline</span></a><span class="sk-estimator-doc-link">i<span>Not fitted</span></span></label><div class="sk-toggleable__content"><pre>Pipeline(steps=[('standardscaler', StandardScaler()), ('ridge', Ridge())])</pre></div> </div></div><div class="sk-serial"><div class="sk-item"><div class="sk-estimator sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-2" type="checkbox"/><label class="sk-toggleable__label sk-toggleable__label-arrow" for="sk-estimator-id-2"> StandardScaler<a class="sk-estimator-doc-link" href="https://scikit-learn.org/1.5/modules/generated/sklearn.preprocessing.StandardScaler.html" rel="noreferrer" target="_blank">?<span>Documentation for StandardScaler</span></a></label><div class="sk-toggleable__content"><pre>StandardScaler()</pre></div> </div></div><div class="sk-item"><div class="sk-estimator sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-3" type="checkbox"/><label class="sk-toggleable__label sk-toggleable__label-arrow" for="sk-estimator-id-3"> Ridge<a class="sk-estimator-doc-link" href="https://scikit-learn.org/1.5/modules/generated/sklearn.linear_model.Ridge.html" rel="noreferrer" target="_blank">?<span>Documentation for Ridge</span></a></label><div class="sk-toggleable__content"><pre>Ridge()</pre></div> </div></div></div></div></div></div>
 </div>
 </div>
 </div>
@@ -4846,7 +5165,7 @@ div.sk-label-container:hover .sk-estimator-doc-link.fitted:hover,
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [32]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [13]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-13">
@@ -4887,30 +5206,130 @@ forecaster</div>
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[32]:</div>
-<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
-<pre>================= 
-ForecasterAutoreg 
-================= 
-Regressor: Pipeline(steps=[('standardscaler', StandardScaler()), ('ridge', Ridge())]) 
-Lags: [ 1  2  3  4  5  6  7  8  9 10] 
-Transformer for y: None 
-Transformer for exog: None 
-Window size: 10 
-Weight function included: False 
-Differentiation order: None 
-Exogenous included: True 
-Exogenous variables names: ['exog_1', 'exog_2'] 
-Training range: [Timestamp('1992-04-01 00:00:00'), Timestamp('2008-06-01 00:00:00')] 
-Training index type: DatetimeIndex 
-Training index frequency: MS 
-Regressor parameters: {'standardscaler__copy': True, 'standardscaler__with_mean': True, 'standardscaler__with_std': True, 'ridge__alpha': 1.0, 'ridge__copy_X': True, 'ridge__fit_intercept': True, 'ridge__max_iter': None, 'ridge__positive': False, 'ridge__random_state': None, 'ridge__solver': 'auto', 'ridge__tol': 0.0001} 
-fit_kwargs: {} 
-Creation date: 2024-08-13 20:55:51 
-Last fit date: 2024-08-13 20:55:51 
-Skforecast version: 0.13.0 
-Python version: 3.12.4 
-Forecaster id: None </pre>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[13]:</div>
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
+<style>
+            .container-34494ee0a07748b48a4a30088f918b7f {
+                font-family: 'Arial', sans-serif;
+                font-size: 0.9em;
+                color: #333333;
+                border: 1px solid #ddd;
+                background-color: #f0f8ff;
+                padding: 5px 15px;
+                border-radius: 8px;
+                max-width: 600px;
+                #margin: auto;
+            }
+            .container-34494ee0a07748b48a4a30088f918b7f h2 {
+                font-size: 1.5em;
+                color: #222222;
+                border-bottom: 2px solid #ddd;
+                padding-bottom: 5px;
+                margin-bottom: 15px;
+                margin-top: 5px;
+            }
+            .container-34494ee0a07748b48a4a30088f918b7f details {
+                margin: 10px 0;
+            }
+            .container-34494ee0a07748b48a4a30088f918b7f summary {
+                font-weight: bold;
+                font-size: 1.1em;
+                color: #000000;
+                cursor: pointer;
+                margin-bottom: 5px;
+                background-color: #b3dbfd;
+                padding: 5px;
+                border-radius: 5px;
+            }
+            .container-34494ee0a07748b48a4a30088f918b7f summary:hover {
+                color: #000000;
+                background-color: #e0e0e0;
+            }
+            .container-34494ee0a07748b48a4a30088f918b7f ul {
+                font-family: 'Courier New', monospace;
+                list-style-type: none;
+                padding-left: 20px;
+                margin: 10px 0;
+                line-height: normal;
+            }
+            .container-34494ee0a07748b48a4a30088f918b7f li {
+                margin: 5px 0;
+                font-family: 'Courier New', monospace;
+            }
+            .container-34494ee0a07748b48a4a30088f918b7f li strong {
+                font-weight: bold;
+                color: #444444;
+            }
+            .container-34494ee0a07748b48a4a30088f918b7f li::before {
+                content: "- ";
+                color: #666666;
+            }
+            .container-34494ee0a07748b48a4a30088f918b7f a {
+                color: #001633;
+                text-decoration: none;
+            }
+            .container-34494ee0a07748b48a4a30088f918b7f a:hover {
+                color: #359ccb; 
+            }
+        </style>
+<div class="container-34494ee0a07748b48a4a30088f918b7f">
+<h2>ForecasterRecursive</h2>
+<details open="">
+<summary>General Information</summary>
+<ul>
+<li><strong>Regressor:</strong> Pipeline</li>
+<li><strong>Lags:</strong> [ 1  2  3  4  5  6  7  8  9 10]</li>
+<li><strong>Window features:</strong> None</li>
+<li><strong>Window size:</strong> 10</li>
+<li><strong>Exogenous included:</strong> True</li>
+<li><strong>Weight function included:</strong> False</li>
+<li><strong>Differentiation order:</strong> None</li>
+<li><strong>Creation date:</strong> 2024-11-10 17:56:45</li>
+<li><strong>Last fit date:</strong> 2024-11-10 17:56:45</li>
+<li><strong>Skforecast version:</strong> 0.14.0</li>
+<li><strong>Python version:</strong> 3.11.10</li>
+<li><strong>Forecaster id:</strong> None</li>
+</ul>
+</details>
+<details>
+<summary>Exogenous Variables</summary>
+<ul>
+                    exog_1, exog_2
+                </ul>
+</details>
+<details>
+<summary>Data Transformations</summary>
+<ul>
+<li><strong>Transformer for y:</strong> None</li>
+<li><strong>Transformer for exog:</strong> None</li>
+</ul>
+</details>
+<details>
+<summary>Training Information</summary>
+<ul>
+<li><strong>Training range:</strong> [Timestamp('1992-04-01 00:00:00'), Timestamp('2008-06-01 00:00:00')]</li>
+<li><strong>Training index type:</strong> DatetimeIndex</li>
+<li><strong>Training index frequency:</strong> MS</li>
+</ul>
+</details>
+<details>
+<summary>Regressor Parameters</summary>
+<ul>
+                    {'standardscaler__copy': True, 'standardscaler__with_mean': True, 'standardscaler__with_std': True, 'ridge__alpha': 1.0, 'ridge__copy_X': True, 'ridge__fit_intercept': True, 'ridge__max_iter': None, 'ridge__positive': False, 'ridge__random_state': None, 'ridge__solver': 'auto', 'ridge__tol': 0.0001}
+                </ul>
+</details>
+<details>
+<summary>Fit Kwargs</summary>
+<ul>
+                    {}
+                </ul>
+</details>
+<p>
+<a href="https://skforecast.org/0.14.0/api/forecasterrecursive.html">🛈 <strong>API Reference</strong></a>
+                  
+                <a href="https://skforecast.org/0.14.0/user_guides/autoregresive-forecaster.html">🗎 <strong>User Guide</strong></a>
+</p>
+</div>
 </div>
 </div>
 </div>
@@ -4933,7 +5352,7 @@ Forecaster id: None </pre>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [33]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [14]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-14">
@@ -4960,16 +5379,18 @@ Forecaster id: None </pre>
 <span class="c1"># Lags used as predictors</span>
 <span class="n">lags_grid</span> <span class="o">=</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">24</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">23</span><span class="p">,</span> <span class="mi">24</span><span class="p">]]</span>
 
+<span class="n">cv</span> <span class="o">=</span> <span class="n">TimeSeriesFold</span><span class="p">(</span>
+    <span class="n">steps</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">initial_train_size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:</span><span class="s1">'2000-04-01'</span><span class="p">]),</span> <span class="n">refit</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">)</span>
+
 <span class="n">results_grid</span> <span class="o">=</span> <span class="n">grid_search_forecaster</span><span class="p">(</span>
                    <span class="n">forecaster</span>         <span class="o">=</span> <span class="n">forecaster</span><span class="p">,</span>
                    <span class="n">y</span>                  <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'y'</span><span class="p">],</span>
                    <span class="n">exog</span>               <span class="o">=</span> <span class="n">data</span><span class="p">[[</span><span class="s1">'exog_1'</span><span class="p">,</span> <span class="s1">'exog_2'</span><span class="p">]],</span>
                    <span class="n">param_grid</span>         <span class="o">=</span> <span class="n">param_grid</span><span class="p">,</span>
                    <span class="n">lags_grid</span>          <span class="o">=</span> <span class="n">lags_grid</span><span class="p">,</span>
-                   <span class="n">steps</span>              <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+                   <span class="n">cv</span>                 <span class="o">=</span> <span class="n">cv</span><span class="p">,</span>
                    <span class="n">metric</span>             <span class="o">=</span> <span class="s1">'mean_absolute_error'</span><span class="p">,</span>
-                   <span class="n">refit</span>              <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-                   <span class="n">initial_train_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:</span><span class="s1">'2000-04-01'</span><span class="p">]),</span>
                    <span class="n">return_best</span>        <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
                    <span class="n">verbose</span>            <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
                    <span class="n">show_progress</span>      <span class="o">=</span> <span class="kc">True</span>
@@ -4991,16 +5412,18 @@ param_grid = {'ridge__alpha': np.logspace(-3, 5, 10)}
 # Lags used as predictors
 lags_grid = [5, 24, [1, 2, 3, 23, 24]]
 
+cv = TimeSeriesFold(
+    steps=5, initial_train_size=len(data.loc[:'2000-04-01']), refit=False
+)
+
 results_grid = grid_search_forecaster(
                    forecaster         = forecaster,
                    y                  = data['y'],
                    exog               = data[['exog_1', 'exog_2']],
                    param_grid         = param_grid,
                    lags_grid          = lags_grid,
-                   steps              = 5,
+                   cv                 = cv,
                    metric             = 'mean_absolute_error',
-                   refit              = False,
-                   initial_train_size = len(data.loc[:'2000-04-01']),
                    return_best        = True,
                    verbose            = False,
                    show_progress      = True
@@ -5018,13 +5441,6 @@ results_grid.head(4)</div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Number of models compared: 30.
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>lags grid:   0%|          | 0/3 [00:00&lt;?, ?it/s]</pre>
 </div>
 </div>
@@ -5039,14 +5455,13 @@ results_grid.head(4)</div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>`Forecaster` refitted using the best-found lags and parameters, and the whole data set: 
   Lags: [1 2 3 4 5] 
-  Parameters: {'ridge__alpha': np.float64(0.001)}
-  Backtesting metric: 6.845311709559406e-05
-
+  Parameters: {'ridge__alpha': 0.001}
+  Backtesting metric: 6.845311709556121e-05
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[33]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[14]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
@@ -5083,7 +5498,7 @@ results_grid.head(4)</div>
 <td>0.001000</td>
 </tr>
 <tr>
-<th>10</th>
+<th>1</th>
 <td>[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14...</td>
 <td>[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14...</td>
 <td>{'ridge__alpha': 0.001}</td>
@@ -5091,7 +5506,7 @@ results_grid.head(4)</div>
 <td>0.001000</td>
 </tr>
 <tr>
-<th>1</th>
+<th>2</th>
 <td>[1, 2, 3, 4, 5]</td>
 <td>[1, 2, 3, 4, 5]</td>
 <td>{'ridge__alpha': 0.007742636826811269}</td>
@@ -5099,7 +5514,7 @@ results_grid.head(4)</div>
 <td>0.007743</td>
 </tr>
 <tr>
-<th>11</th>
+<th>3</th>
 <td>[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14...</td>
 <td>[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14...</td>
 <td>{'ridge__alpha': 0.007742636826811269}</td>
@@ -5121,7 +5536,7 @@ results_grid.head(4)</div>
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="transforming-multiple-input-series-in-global-models">Transforming multiple input series in global models<a class="anchor-link" href="#transforming-multiple-input-series-in-global-models">¶</a></h2><p>When using global forecasting models (<a href="https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting.html#scikit-learn-transformers-in-multi-series">ForecasterRecursiveMultiSeries</a> or <a href="https://skforecast.org/latest/user_guides/dependent-multi-series-multivariate-forecasting.html#scikit-learn-transformers-in-multivariate">ForecasterDirectMultiVariate</a>) the <code>transformer_series</code> argument replaces <code>transformer_y</code>. Three different options are available:</p>
+<h2 id="transforming-multiple-input-series-in-global-models">Transforming multiple input series in global models<a class="anchor-link" href="#transforming-multiple-input-series-in-global-models">¶</a></h2><p>When using global forecasting models (<a href="../user_guides/independent-multi-time-series-forecasting.html#scikit-learn-transformers-in-multi-series">ForecasterRecursiveMultiSeries</a> or <a href="../user_guides/dependent-multi-series-multivariate-forecasting.html#scikit-learn-transformers-in-multivariate">ForecasterDirectMultiVariate</a>) the <code>transformer_series</code> argument replaces <code>transformer_y</code>. Three different options are available:</p>
 <ul>
 <li><p><code>transformer_series</code> is a single transformer: When a single transformer is provided, it is automatically cloned for each individual series. Each cloned transformer is then trained separately on one of the series.</p>
 </li>
@@ -5140,7 +5555,7 @@ results_grid.head(4)</div>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [34]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [15]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-15">
@@ -5182,7 +5597,7 @@ Shape of the dataset: (1097, 3)
 </div>
 </div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[34]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[15]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
@@ -5258,7 +5673,7 @@ Shape of the dataset: (1097, 3)
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [35]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [16]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-16">
@@ -5291,8 +5706,7 @@ forecaster = ForecasterRecursiveMultiSeries(
                  transformer_series = StandardScaler(),
                  transformer_exog   = None
              )
-forecaster.fit(series=data)
-</div>
+forecaster.fit(series=data)</div>
 </div>
 </div>
 </div>
@@ -5315,7 +5729,7 @@ forecaster.fit(series=data)
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [36]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [17]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-17">
@@ -5364,7 +5778,7 @@ Series _unknown_level: StandardScaler() mean=[18.61195143], scale=[5.21803675]
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [37]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [18]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-18">
@@ -5411,7 +5825,7 @@ forecaster.fit(series=data)</div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>/home/ubuntu/anaconda3/envs/skforecast_13_py12/lib/python3.12/site-packages/skforecast/utils/utils.py:255: IgnoredArgumentWarning: {'item_3'} not present in `transformer_series`. No transformation is applied to these series. 
+<pre>c:\Users\jaesc2\Miniconda3\envs\skforecast_py11_2\Lib\site-packages\skforecast\utils\utils.py:363: IgnoredArgumentWarning: {'item_3'} not present in `transformer_series`. No transformation is applied to these series. 
  You can suppress this warning using: warnings.simplefilter('ignore', category=IgnoredArgumentWarning)
   warnings.warn(
 </pre>
@@ -5426,7 +5840,7 @@ forecaster.fit(series=data)</div>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [38]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [19]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-19">

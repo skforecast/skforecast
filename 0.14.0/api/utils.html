@@ -9518,9 +9518,7 @@ time series. </p>
 
 
 <a href="#skforecast.utils.utils.select_n_jobs_fit_forecaster" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">select_n_jobs_fit_forecaster</span><span class="p">(</span>
-    <span class="n">forecaster_name</span><span class="p">,</span> <span class="n">regressor_name</span>
-<span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">select_n_jobs_fit_forecaster</span><span class="p">(</span><span class="n">forecaster_name</span><span class="p">,</span> <span class="n">regressor</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents first">
@@ -9529,16 +9527,14 @@ time series. </p>
 selection is based on heuristics and is not guaranteed to be optimal. </p>
 <p>The number of jobs is chosen as follows:</p>
 <ul>
-<li>
-<p>If forecaster_name is 'ForecasterDirect' or 'ForecasterDirectMultiVariate'
-and regressor_name is a linear regressor then <code>n_jobs = 1</code>, otherwise <code>n_jobs = cpu_count() - 1</code>.</p>
-</li>
-<li>
-<p>If <code>LGBMRegressor</code> then <code>n_jobs = 1</code>. This is because <code>lightgbm</code> 
-is highly optimized for gradient boosting and parallelizes operations at a very 
-fine-grained level, making additional parallelization unnecessary and 
-potentially harmful due to resource contention.</p>
-</li>
+<li>If forecaster_name is 'ForecasterDirect' or 'ForecasterDirectMultiVariate'
+and regressor_name is a linear regressor then <code>n_jobs = 1</code>, 
+otherwise <code>n_jobs = cpu_count() - 1</code>.</li>
+<li>If regressor is a <code>LGBMRegressor(n_jobs=1)</code>, then <code>n_jobs = cpu_count() - 1</code>.</li>
+<li>If regressor is a <code>LGBMRegressor</code> with internal n_jobs != 1, then <code>n_jobs = 1</code>.
+This is because <code>lightgbm</code> is highly optimized for gradient boosting and
+parallelizes operations at a very fine-grained level, making additional
+parallelization unnecessary and potentially harmful due to resource contention.</li>
 </ul>
 
 
@@ -9568,13 +9564,13 @@ potentially harmful due to resource contention.</p>
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>regressor_name</code></td>
+            <td><code>regressor</code></td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+                  <code>regressor or pipeline compatible with the scikit-learn API</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The type of regressor.</p>
+                <p>An instance of a regressor or pipeline compatible with the scikit-learn API.</p>
               </div>
             </td>
             <td>
@@ -9656,9 +9652,18 @@ potentially harmful due to resource contention.</p>
 <span class="normal">2120</span>
 <span class="normal">2121</span>
 <span class="normal">2122</span>
-<span class="normal">2123</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">select_n_jobs_fit_forecaster</span><span class="p">(</span>
+<span class="normal">2123</span>
+<span class="normal">2124</span>
+<span class="normal">2125</span>
+<span class="normal">2126</span>
+<span class="normal">2127</span>
+<span class="normal">2128</span>
+<span class="normal">2129</span>
+<span class="normal">2130</span>
+<span class="normal">2131</span>
+<span class="normal">2132</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">select_n_jobs_fit_forecaster</span><span class="p">(</span>
     <span class="n">forecaster_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">regressor_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">regressor</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Select the optimal number of jobs to use in the fitting process. This</span>
@@ -9667,19 +9672,20 @@ potentially harmful due to resource contention.</p>
 <span class="sd">    The number of jobs is chosen as follows:</span>
 
 <span class="sd">    - If forecaster_name is &#39;ForecasterDirect&#39; or &#39;ForecasterDirectMultiVariate&#39;</span>
-<span class="sd">    and regressor_name is a linear regressor then `n_jobs = 1`, otherwise `n_jobs = cpu_count() - 1`.</span>
-
-<span class="sd">    - If `LGBMRegressor` then `n_jobs = 1`. This is because `lightgbm` </span>
-<span class="sd">    is highly optimized for gradient boosting and parallelizes operations at a very </span>
-<span class="sd">    fine-grained level, making additional parallelization unnecessary and </span>
-<span class="sd">    potentially harmful due to resource contention.</span>
+<span class="sd">    and regressor_name is a linear regressor then `n_jobs = 1`, </span>
+<span class="sd">    otherwise `n_jobs = cpu_count() - 1`.</span>
+<span class="sd">    - If regressor is a `LGBMRegressor(n_jobs=1)`, then `n_jobs = cpu_count() - 1`.</span>
+<span class="sd">    - If regressor is a `LGBMRegressor` with internal n_jobs != 1, then `n_jobs = 1`.</span>
+<span class="sd">    This is because `lightgbm` is highly optimized for gradient boosting and</span>
+<span class="sd">    parallelizes operations at a very fine-grained level, making additional</span>
+<span class="sd">    parallelization unnecessary and potentially harmful due to resource contention.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    forecaster_name : str</span>
 <span class="sd">        Forecaster name.</span>
-<span class="sd">    regressor_name : str</span>
-<span class="sd">        The type of regressor.</span>
+<span class="sd">    regressor : regressor or pipeline compatible with the scikit-learn API</span>
+<span class="sd">        An instance of a regressor or pipeline compatible with the scikit-learn API.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -9687,6 +9693,12 @@ potentially harmful due to resource contention.</p>
 <span class="sd">        The number of jobs to run in parallel.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">regressor</span><span class="p">,</span> <span class="n">Pipeline</span><span class="p">):</span>
+        <span class="n">regressor</span> <span class="o">=</span> <span class="n">regressor</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">regressor_name</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">regressor</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">regressor_name</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">regressor</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
 
     <span class="n">linear_regressors</span> <span class="o">=</span> <span class="p">[</span>
         <span class="n">regressor_name</span>
@@ -9696,8 +9708,10 @@ potentially harmful due to resource contention.</p>
 
     <span class="k">if</span> <span class="n">forecaster_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;ForecasterDirect&#39;</span><span class="p">,</span> 
                            <span class="s1">&#39;ForecasterDirectMultiVariate&#39;</span><span class="p">]:</span>
-        <span class="k">if</span> <span class="n">regressor_name</span> <span class="ow">in</span> <span class="n">linear_regressors</span> <span class="ow">or</span> <span class="n">regressor_name</span> <span class="o">==</span> <span class="s1">&#39;LGBMRegressor&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">regressor_name</span> <span class="ow">in</span> <span class="n">linear_regressors</span><span class="p">:</span>
             <span class="n">n_jobs</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">elif</span> <span class="n">regressor_name</span> <span class="o">==</span> <span class="s1">&#39;LGBMRegressor&#39;</span><span class="p">:</span>
+            <span class="n">n_jobs</span> <span class="o">=</span> <span class="n">joblib</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">regressor</span><span class="o">.</span><span class="n">n_jobs</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">1</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">n_jobs</span> <span class="o">=</span> <span class="n">joblib</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span>
     <span class="k">else</span><span class="p">:</span>
@@ -9796,16 +9810,7 @@ frequency. No multiple frequency is allowed.</li>
 
             <details class="quote">
               <summary>Source code in <code>skforecast/utils/utils.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2126</span>
-<span class="normal">2127</span>
-<span class="normal">2128</span>
-<span class="normal">2129</span>
-<span class="normal">2130</span>
-<span class="normal">2131</span>
-<span class="normal">2132</span>
-<span class="normal">2133</span>
-<span class="normal">2134</span>
-<span class="normal">2135</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2135</span>
 <span class="normal">2136</span>
 <span class="normal">2137</span>
 <span class="normal">2138</span>
@@ -9895,7 +9900,16 @@ frequency. No multiple frequency is allowed.</li>
 <span class="normal">2222</span>
 <span class="normal">2223</span>
 <span class="normal">2224</span>
-<span class="normal">2225</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">check_preprocess_series</span><span class="p">(</span>
+<span class="normal">2225</span>
+<span class="normal">2226</span>
+<span class="normal">2227</span>
+<span class="normal">2228</span>
+<span class="normal">2229</span>
+<span class="normal">2230</span>
+<span class="normal">2231</span>
+<span class="normal">2232</span>
+<span class="normal">2233</span>
+<span class="normal">2234</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">check_preprocess_series</span><span class="p">(</span>
     <span class="n">series</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="nb">dict</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -10151,16 +10165,7 @@ values to pandas DataFrames.</li>
 
             <details class="quote">
               <summary>Source code in <code>skforecast/utils/utils.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2228</span>
-<span class="normal">2229</span>
-<span class="normal">2230</span>
-<span class="normal">2231</span>
-<span class="normal">2232</span>
-<span class="normal">2233</span>
-<span class="normal">2234</span>
-<span class="normal">2235</span>
-<span class="normal">2236</span>
-<span class="normal">2237</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2237</span>
 <span class="normal">2238</span>
 <span class="normal">2239</span>
 <span class="normal">2240</span>
@@ -10317,7 +10322,16 @@ values to pandas DataFrames.</li>
 <span class="normal">2391</span>
 <span class="normal">2392</span>
 <span class="normal">2393</span>
-<span class="normal">2394</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">check_preprocess_exog_multiseries</span><span class="p">(</span>
+<span class="normal">2394</span>
+<span class="normal">2395</span>
+<span class="normal">2396</span>
+<span class="normal">2397</span>
+<span class="normal">2398</span>
+<span class="normal">2399</span>
+<span class="normal">2400</span>
+<span class="normal">2401</span>
+<span class="normal">2402</span>
+<span class="normal">2403</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">check_preprocess_exog_multiseries</span><span class="p">(</span>
     <span class="n">input_series_is_dict</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
     <span class="n">series_indexes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
     <span class="n">series_names_in_</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
@@ -10609,16 +10623,7 @@ different lengths. Reindexing is applied.</li>
 
             <details class="quote">
               <summary>Source code in <code>skforecast/utils/utils.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2397</span>
-<span class="normal">2398</span>
-<span class="normal">2399</span>
-<span class="normal">2400</span>
-<span class="normal">2401</span>
-<span class="normal">2402</span>
-<span class="normal">2403</span>
-<span class="normal">2404</span>
-<span class="normal">2405</span>
-<span class="normal">2406</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2406</span>
 <span class="normal">2407</span>
 <span class="normal">2408</span>
 <span class="normal">2409</span>
@@ -10677,7 +10682,16 @@ different lengths. Reindexing is applied.</li>
 <span class="normal">2462</span>
 <span class="normal">2463</span>
 <span class="normal">2464</span>
-<span class="normal">2465</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">align_series_and_exog_multiseries</span><span class="p">(</span>
+<span class="normal">2465</span>
+<span class="normal">2466</span>
+<span class="normal">2467</span>
+<span class="normal">2468</span>
+<span class="normal">2469</span>
+<span class="normal">2470</span>
+<span class="normal">2471</span>
+<span class="normal">2472</span>
+<span class="normal">2473</span>
+<span class="normal">2474</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">align_series_and_exog_multiseries</span><span class="p">(</span>
     <span class="n">series_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
     <span class="n">input_series_is_dict</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
     <span class="n">exog_dict</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span>
@@ -10837,16 +10851,7 @@ different lengths. Reindexing is applied.</li>
 
             <details class="quote">
               <summary>Source code in <code>skforecast/utils/utils.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2468</span>
-<span class="normal">2469</span>
-<span class="normal">2470</span>
-<span class="normal">2471</span>
-<span class="normal">2472</span>
-<span class="normal">2473</span>
-<span class="normal">2474</span>
-<span class="normal">2475</span>
-<span class="normal">2476</span>
-<span class="normal">2477</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2477</span>
 <span class="normal">2478</span>
 <span class="normal">2479</span>
 <span class="normal">2480</span>
@@ -10866,7 +10871,16 @@ different lengths. Reindexing is applied.</li>
 <span class="normal">2494</span>
 <span class="normal">2495</span>
 <span class="normal">2496</span>
-<span class="normal">2497</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">prepare_levels_multiseries</span><span class="p">(</span>
+<span class="normal">2497</span>
+<span class="normal">2498</span>
+<span class="normal">2499</span>
+<span class="normal">2500</span>
+<span class="normal">2501</span>
+<span class="normal">2502</span>
+<span class="normal">2503</span>
+<span class="normal">2504</span>
+<span class="normal">2505</span>
+<span class="normal">2506</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">prepare_levels_multiseries</span><span class="p">(</span>
     <span class="n">X_train_series_names_in_</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
     <span class="n">levels</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]:</span>
@@ -11014,16 +11028,7 @@ first iteration of the prediction (t + 1).</p>
 
             <details class="quote">
               <summary>Source code in <code>skforecast/utils/utils.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2500</span>
-<span class="normal">2501</span>
-<span class="normal">2502</span>
-<span class="normal">2503</span>
-<span class="normal">2504</span>
-<span class="normal">2505</span>
-<span class="normal">2506</span>
-<span class="normal">2507</span>
-<span class="normal">2508</span>
-<span class="normal">2509</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2509</span>
 <span class="normal">2510</span>
 <span class="normal">2511</span>
 <span class="normal">2512</span>
@@ -11094,7 +11099,16 @@ first iteration of the prediction (t + 1).</p>
 <span class="normal">2577</span>
 <span class="normal">2578</span>
 <span class="normal">2579</span>
-<span class="normal">2580</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">preprocess_levels_self_last_window_multiseries</span><span class="p">(</span>
+<span class="normal">2580</span>
+<span class="normal">2581</span>
+<span class="normal">2582</span>
+<span class="normal">2583</span>
+<span class="normal">2584</span>
+<span class="normal">2585</span>
+<span class="normal">2586</span>
+<span class="normal">2587</span>
+<span class="normal">2588</span>
+<span class="normal">2589</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">preprocess_levels_self_last_window_multiseries</span><span class="p">(</span>
     <span class="n">levels</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
     <span class="n">input_levels_is_list</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
     <span class="n">last_window_</span><span class="p">:</span> <span class="nb">dict</span>
@@ -11327,16 +11341,7 @@ is not <code>None</code>, residuals are assumed to be in the transformed scale. 
 
             <details class="quote">
               <summary>Source code in <code>skforecast/utils/utils.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2583</span>
-<span class="normal">2584</span>
-<span class="normal">2585</span>
-<span class="normal">2586</span>
-<span class="normal">2587</span>
-<span class="normal">2588</span>
-<span class="normal">2589</span>
-<span class="normal">2590</span>
-<span class="normal">2591</span>
-<span class="normal">2592</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2592</span>
 <span class="normal">2593</span>
 <span class="normal">2594</span>
 <span class="normal">2595</span>
@@ -11414,7 +11419,16 @@ is not <code>None</code>, residuals are assumed to be in the transformed scale. 
 <span class="normal">2667</span>
 <span class="normal">2668</span>
 <span class="normal">2669</span>
-<span class="normal">2670</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">prepare_residuals_multiseries</span><span class="p">(</span>
+<span class="normal">2670</span>
+<span class="normal">2671</span>
+<span class="normal">2672</span>
+<span class="normal">2673</span>
+<span class="normal">2674</span>
+<span class="normal">2675</span>
+<span class="normal">2676</span>
+<span class="normal">2677</span>
+<span class="normal">2678</span>
+<span class="normal">2679</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">prepare_residuals_multiseries</span><span class="p">(</span>
     <span class="n">levels</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
     <span class="n">use_in_sample_residuals</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
     <span class="n">encoding</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -11596,16 +11610,7 @@ for more information.</p>
 
             <details class="quote">
               <summary>Source code in <code>skforecast/utils/utils.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2721</span>
-<span class="normal">2722</span>
-<span class="normal">2723</span>
-<span class="normal">2724</span>
-<span class="normal">2725</span>
-<span class="normal">2726</span>
-<span class="normal">2727</span>
-<span class="normal">2728</span>
-<span class="normal">2729</span>
-<span class="normal">2730</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2730</span>
 <span class="normal">2731</span>
 <span class="normal">2732</span>
 <span class="normal">2733</span>
@@ -11621,7 +11626,16 @@ for more information.</p>
 <span class="normal">2743</span>
 <span class="normal">2744</span>
 <span class="normal">2745</span>
-<span class="normal">2746</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">set_skforecast_warnings</span><span class="p">(</span>
+<span class="normal">2746</span>
+<span class="normal">2747</span>
+<span class="normal">2748</span>
+<span class="normal">2749</span>
+<span class="normal">2750</span>
+<span class="normal">2751</span>
+<span class="normal">2752</span>
+<span class="normal">2753</span>
+<span class="normal">2754</span>
+<span class="normal">2755</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">set_skforecast_warnings</span><span class="p">(</span>
     <span class="n">suppress_warnings</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
     <span class="n">action</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;default&#39;</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>

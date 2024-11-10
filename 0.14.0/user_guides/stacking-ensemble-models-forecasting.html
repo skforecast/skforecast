@@ -3475,13 +3475,14 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <span class="c1"># ==============================================================================</span>
 <span class="kn">from</span> <span class="nn">lightgbm</span> <span class="kn">import</span> <span class="n">LGBMRegressor</span>
 <span class="kn">from</span> <span class="nn">sklearn.linear_model</span> <span class="kn">import</span> <span class="n">Ridge</span>
-<span class="kn">from</span> <span class="nn">sklearn.ensemble</span>  <span class="kn">import</span> <span class="n">StackingRegressor</span>
-<span class="kn">from</span> <span class="nn">sklearn.model_selection</span>  <span class="kn">import</span> <span class="n">KFold</span>
+<span class="kn">from</span> <span class="nn">sklearn.ensemble</span> <span class="kn">import</span> <span class="n">StackingRegressor</span>
+<span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="kn">import</span> <span class="n">KFold</span>
 
-<span class="kn">from</span> <span class="nn">skforecast.recursive</span> <span class="kn">import</span> <span class="n">ForecasterRecursive</span>
-<span class="kn">from</span> <span class="nn">skforecast.model_selection</span> <span class="kn">import</span> <span class="n">grid_search_forecaster</span>
-<span class="kn">from</span> <span class="nn">skforecast.model_selection</span> <span class="kn">import</span> <span class="n">backtesting_forecaster</span>
 <span class="kn">from</span> <span class="nn">skforecast.datasets</span> <span class="kn">import</span> <span class="n">fetch_dataset</span>
+<span class="kn">from</span> <span class="nn">skforecast.recursive</span> <span class="kn">import</span> <span class="n">ForecasterRecursive</span>
+<span class="kn">from</span> <span class="nn">skforecast.model_selection</span> <span class="kn">import</span> <span class="n">TimeSeriesFold</span>
+<span class="kn">from</span> <span class="nn">skforecast.model_selection</span> <span class="kn">import</span> <span class="n">backtesting_forecaster</span>
+<span class="kn">from</span> <span class="nn">skforecast.model_selection</span> <span class="kn">import</span> <span class="n">grid_search_forecaster</span>
 
 <span class="c1"># Warnings</span>
 <span class="c1"># ==============================================================================</span>
@@ -3497,13 +3498,14 @@ import pandas as pd
 # ==============================================================================
 from lightgbm import LGBMRegressor
 from sklearn.linear_model import Ridge
-from sklearn.ensemble  import StackingRegressor
-from sklearn.model_selection  import KFold
+from sklearn.ensemble import StackingRegressor
+from sklearn.model_selection import KFold
 
-from skforecast.recursive import ForecasterRecursive
-from skforecast.model_selection import grid_search_forecaster
-from skforecast.model_selection import backtesting_forecaster
 from skforecast.datasets import fetch_dataset
+from skforecast.recursive import ForecasterRecursive
+from skforecast.model_selection import TimeSeriesFold
+from skforecast.model_selection import backtesting_forecaster
+from skforecast.model_selection import grid_search_forecaster
 
 # Warnings
 # ==============================================================================
@@ -3537,18 +3539,18 @@ warnings.filterwarnings('ignore')</div>
 <span class="c1"># ==============================================================================</span>
 <span class="n">data</span> <span class="o">=</span> <span class="n">fetch_dataset</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s1">'fuel_consumption'</span><span class="p">)</span>
 <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:</span><span class="s2">"2019-01-01"</span><span class="p">,</span> <span class="p">[</span><span class="s1">'Gasolinas'</span><span class="p">]]</span>
-<span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'Gasolinas'</span><span class="p">:</span><span class="s1">'consumption'</span><span class="p">})</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'Gasolinas'</span><span class="p">:</span> <span class="s1">'consumption'</span><span class="p">})</span>
 <span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">'date'</span>
-<span class="n">data</span><span class="p">[</span><span class="s1">'consumption'</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'consumption'</span><span class="p">]</span><span class="o">/</span><span class="mi">100000</span>
+<span class="n">data</span><span class="p">[</span><span class="s1">'consumption'</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'consumption'</span><span class="p">]</span> <span class="o">/</span> <span class="mi">100000</span>
 <span class="n">data</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-2"># Data
 # ==============================================================================
 data = fetch_dataset(name = 'fuel_consumption')
 data = data.loc[:"2019-01-01", ['Gasolinas']]
-data = data.rename(columns = {'Gasolinas':'consumption'})
+data = data.rename(columns = {'Gasolinas': 'consumption'})
 data.index.name = 'date'
-data['consumption'] = data['consumption']/100000
+data['consumption'] = data['consumption'] / 100000
 data.head(3)</div>
 </div>
 </div>
@@ -4278,12 +4280,12 @@ div.sk-label-container:hover .sk-estimator-doc-link.fitted:hover,
                               ('lgbm',
                                LGBMRegressor(max_depth=5, n_estimators=500,
                                              random_state=42, verbose=-1))],
-                  final_estimator=Ridge())</pre><b>In a Jupyter environment, please rerun this cell to show the HTML representation or trust the notebook. <br/>On GitHub, the HTML representation is unable to render, please try loading this page with nbviewer.org.</b></div><div class="sk-container" hidden=""><div class="sk-item sk-dashed-wrapped"><div class="sk-label-container"><div class="sk-label sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-1" type="checkbox"/><label class="sk-toggleable__label sk-toggleable__label-arrow" for="sk-estimator-id-1">  StackingRegressor<a class="sk-estimator-doc-link" href="https://scikit-learn.org/1.4/modules/generated/sklearn.ensemble.StackingRegressor.html" rel="noreferrer" target="_blank">?<span>Documentation for StackingRegressor</span></a><span class="sk-estimator-doc-link">i<span>Not fitted</span></span></label><div class="sk-toggleable__content"><pre>StackingRegressor(cv=KFold(n_splits=5, random_state=None, shuffle=False),
+                  final_estimator=Ridge())</pre><b>In a Jupyter environment, please rerun this cell to show the HTML representation or trust the notebook. <br/>On GitHub, the HTML representation is unable to render, please try loading this page with nbviewer.org.</b></div><div class="sk-container" hidden=""><div class="sk-item sk-dashed-wrapped"><div class="sk-label-container"><div class="sk-label sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-1" type="checkbox"/><label class="sk-toggleable__label sk-toggleable__label-arrow" for="sk-estimator-id-1">  StackingRegressor<a class="sk-estimator-doc-link" href="https://scikit-learn.org/1.5/modules/generated/sklearn.ensemble.StackingRegressor.html" rel="noreferrer" target="_blank">?<span>Documentation for StackingRegressor</span></a><span class="sk-estimator-doc-link">i<span>Not fitted</span></span></label><div class="sk-toggleable__content"><pre>StackingRegressor(cv=KFold(n_splits=5, random_state=None, shuffle=False),
                   estimators=[('ridge', Ridge(alpha=0.001)),
                               ('lgbm',
                                LGBMRegressor(max_depth=5, n_estimators=500,
                                              random_state=42, verbose=-1))],
-                  final_estimator=Ridge())</pre></div> </div></div><div class="sk-serial"><div class="sk-item"><div class="sk-parallel"><div class="sk-parallel-item"><div class="sk-item"><div class="sk-label-container"><div class="sk-label sk-toggleable"><label>ridge</label></div></div><div class="sk-serial"><div class="sk-item"><div class="sk-estimator sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-2" type="checkbox"/><label class="sk-toggleable__label sk-toggleable__label-arrow" for="sk-estimator-id-2"> Ridge<a class="sk-estimator-doc-link" href="https://scikit-learn.org/1.4/modules/generated/sklearn.linear_model.Ridge.html" rel="noreferrer" target="_blank">?<span>Documentation for Ridge</span></a></label><div class="sk-toggleable__content"><pre>Ridge(alpha=0.001)</pre></div> </div></div></div></div></div><div class="sk-parallel-item"><div class="sk-item"><div class="sk-label-container"><div class="sk-label sk-toggleable"><label>lgbm</label></div></div><div class="sk-serial"><div class="sk-item"><div class="sk-estimator sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-3" type="checkbox"/><label class="sk-toggleable__label sk-toggleable__label-arrow" for="sk-estimator-id-3">LGBMRegressor</label><div class="sk-toggleable__content"><pre>LGBMRegressor(max_depth=5, n_estimators=500, random_state=42, verbose=-1)</pre></div> </div></div></div></div></div></div></div><div class="sk-item"><div class="sk-parallel"><div class="sk-parallel-item"><div class="sk-item"><div class="sk-label-container"><div class="sk-label sk-toggleable"><label>final_estimator</label></div></div><div class="sk-serial"><div class="sk-item"><div class="sk-estimator sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-4" type="checkbox"/><label class="sk-toggleable__label sk-toggleable__label-arrow" for="sk-estimator-id-4"> Ridge<a class="sk-estimator-doc-link" href="https://scikit-learn.org/1.4/modules/generated/sklearn.linear_model.Ridge.html" rel="noreferrer" target="_blank">?<span>Documentation for Ridge</span></a></label><div class="sk-toggleable__content"><pre>Ridge()</pre></div> </div></div></div></div></div></div></div></div></div></div></div>
+                  final_estimator=Ridge())</pre></div> </div></div><div class="sk-serial"><div class="sk-item"><div class="sk-parallel"><div class="sk-parallel-item"><div class="sk-item"><div class="sk-label-container"><div class="sk-label sk-toggleable"><label>ridge</label></div></div><div class="sk-serial"><div class="sk-item"><div class="sk-estimator sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-2" type="checkbox"/><label class="sk-toggleable__label sk-toggleable__label-arrow" for="sk-estimator-id-2"> Ridge<a class="sk-estimator-doc-link" href="https://scikit-learn.org/1.5/modules/generated/sklearn.linear_model.Ridge.html" rel="noreferrer" target="_blank">?<span>Documentation for Ridge</span></a></label><div class="sk-toggleable__content"><pre>Ridge(alpha=0.001)</pre></div> </div></div></div></div></div><div class="sk-parallel-item"><div class="sk-item"><div class="sk-label-container"><div class="sk-label sk-toggleable"><label>lgbm</label></div></div><div class="sk-serial"><div class="sk-item"><div class="sk-estimator sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-3" type="checkbox"/><label class="sk-toggleable__label sk-toggleable__label-arrow" for="sk-estimator-id-3">LGBMRegressor</label><div class="sk-toggleable__content"><pre>LGBMRegressor(max_depth=5, n_estimators=500, random_state=42, verbose=-1)</pre></div> </div></div></div></div></div></div></div><div class="sk-item"><div class="sk-parallel"><div class="sk-parallel-item"><div class="sk-item"><div class="sk-label-container"><div class="sk-label sk-toggleable"><label>final_estimator</label></div></div><div class="sk-serial"><div class="sk-item"><div class="sk-estimator sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-4" type="checkbox"/><label class="sk-toggleable__label sk-toggleable__label-arrow" for="sk-estimator-id-4"> Ridge<a class="sk-estimator-doc-link" href="https://scikit-learn.org/1.5/modules/generated/sklearn.linear_model.Ridge.html" rel="noreferrer" target="_blank">?<span>Documentation for Ridge</span></a></label><div class="sk-toggleable__content"><pre>Ridge()</pre></div> </div></div></div></div></div></div></div></div></div></div></div>
 </div>
 </div>
 </div>
@@ -4347,34 +4349,40 @@ forecaster = ForecasterRecursive(
 </div>
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Backtesting on test data</span>
 <span class="c1"># ==============================================================================</span>
+<span class="n">cv</span> <span class="o">=</span> <span class="n">TimeSeriesFold</span><span class="p">(</span>
+         <span class="n">steps</span>              <span class="o">=</span> <span class="mi">12</span><span class="p">,</span>  <span class="c1"># Forecast horizon</span>
+         <span class="n">initial_train_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:</span><span class="n">end_validation</span><span class="p">]),</span>
+         <span class="n">refit</span>              <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> 
+     <span class="p">)</span>
+
 <span class="n">metric</span><span class="p">,</span> <span class="n">predictions</span> <span class="o">=</span> <span class="n">backtesting_forecaster</span><span class="p">(</span>
-                          <span class="n">forecaster</span>         <span class="o">=</span> <span class="n">forecaster</span><span class="p">,</span>
-                          <span class="n">y</span>                  <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'consumption'</span><span class="p">],</span>
-                          <span class="n">exog</span>               <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'month_of_year'</span><span class="p">],</span>
-                          <span class="n">initial_train_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:</span><span class="n">end_validation</span><span class="p">]),</span>
-                          <span class="n">fixed_train_size</span>   <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-                          <span class="n">steps</span>              <span class="o">=</span> <span class="mi">12</span><span class="p">,</span>  <span class="c1"># Forecast horizon</span>
-                          <span class="n">refit</span>              <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-                          <span class="n">metric</span>             <span class="o">=</span> <span class="s1">'mean_squared_error'</span><span class="p">,</span>
-                          <span class="n">n_jobs</span>             <span class="o">=</span> <span class="s1">'auto'</span><span class="p">,</span>
-                          <span class="n">verbose</span>            <span class="o">=</span> <span class="kc">False</span>
+                          <span class="n">forecaster</span> <span class="o">=</span> <span class="n">forecaster</span><span class="p">,</span>
+                          <span class="n">y</span>          <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'consumption'</span><span class="p">],</span>
+                          <span class="n">exog</span>       <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'month_of_year'</span><span class="p">],</span>
+                          <span class="n">cv</span>         <span class="o">=</span> <span class="n">cv</span><span class="p">,</span>
+                          <span class="n">metric</span>     <span class="o">=</span> <span class="s1">'mean_squared_error'</span><span class="p">,</span>
+                          <span class="n">n_jobs</span>     <span class="o">=</span> <span class="s1">'auto'</span><span class="p">,</span>
+                          <span class="n">verbose</span>    <span class="o">=</span> <span class="kc">False</span>
                       <span class="p">)</span>        
 
 <span class="n">metric</span>
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-7"># Backtesting on test data
 # ==============================================================================
+cv = TimeSeriesFold(
+         steps              = 12,  # Forecast horizon
+         initial_train_size = len(data.loc[:end_validation]),
+         refit              = False, 
+     )
+
 metric, predictions = backtesting_forecaster(
-                          forecaster         = forecaster,
-                          y                  = data['consumption'],
-                          exog               = data['month_of_year'],
-                          initial_train_size = len(data.loc[:end_validation]),
-                          fixed_train_size   = False,
-                          steps              = 12,  # Forecast horizon
-                          refit              = False,
-                          metric             = 'mean_squared_error',
-                          n_jobs             = 'auto',
-                          verbose            = False
+                          forecaster = forecaster,
+                          y          = data['consumption'],
+                          exog       = data['month_of_year'],
+                          cv         = cv,
+                          metric     = 'mean_squared_error',
+                          n_jobs     = 'auto',
+                          verbose    = False
                       )        
 
 metric</div>
@@ -4483,20 +4491,23 @@ metric</div>
 <span class="c1"># Lags used as predictors</span>
 <span class="n">lags_grid</span> <span class="o">=</span> <span class="p">[</span><span class="mi">24</span><span class="p">]</span>
 
+<span class="n">cv</span> <span class="o">=</span> <span class="n">TimeSeriesFold</span><span class="p">(</span>
+         <span class="n">steps</span>              <span class="o">=</span> <span class="mi">12</span><span class="p">,</span>
+         <span class="n">initial_train_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:</span><span class="n">end_train</span><span class="p">]),</span>
+         <span class="n">refit</span>              <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> 
+     <span class="p">)</span>
+
 <span class="n">results_grid</span> <span class="o">=</span> <span class="n">grid_search_forecaster</span><span class="p">(</span>
-                   <span class="n">forecaster</span>         <span class="o">=</span> <span class="n">forecaster</span><span class="p">,</span>
-                   <span class="n">y</span>                  <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'consumption'</span><span class="p">],</span>
-                   <span class="n">exog</span>               <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'month_of_year'</span><span class="p">],</span>
-                   <span class="n">param_grid</span>         <span class="o">=</span> <span class="n">param_grid</span><span class="p">,</span>
-                   <span class="n">lags_grid</span>          <span class="o">=</span> <span class="n">lags_grid</span><span class="p">,</span>
-                   <span class="n">steps</span>              <span class="o">=</span> <span class="mi">36</span><span class="p">,</span>
-                   <span class="n">refit</span>              <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-                   <span class="n">metric</span>             <span class="o">=</span> <span class="s1">'mean_squared_error'</span><span class="p">,</span>
-                   <span class="n">initial_train_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:</span><span class="n">end_train</span><span class="p">]),</span>
-                   <span class="n">fixed_train_size</span>   <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-                   <span class="n">return_best</span>        <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-                   <span class="n">n_jobs</span>             <span class="o">=</span> <span class="s1">'auto'</span><span class="p">,</span>
-                   <span class="n">verbose</span>            <span class="o">=</span> <span class="kc">False</span>
+                   <span class="n">forecaster</span>  <span class="o">=</span> <span class="n">forecaster</span><span class="p">,</span>
+                   <span class="n">y</span>           <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'consumption'</span><span class="p">],</span>
+                   <span class="n">exog</span>        <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'month_of_year'</span><span class="p">],</span>
+                   <span class="n">lags_grid</span>   <span class="o">=</span> <span class="n">lags_grid</span><span class="p">,</span>
+                   <span class="n">param_grid</span>  <span class="o">=</span> <span class="n">param_grid</span><span class="p">,</span>
+                   <span class="n">cv</span>          <span class="o">=</span> <span class="n">cv</span><span class="p">,</span>
+                   <span class="n">metric</span>      <span class="o">=</span> <span class="s1">'mean_squared_error'</span><span class="p">,</span>
+                   <span class="n">return_best</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                   <span class="n">n_jobs</span>      <span class="o">=</span> <span class="s1">'auto'</span><span class="p">,</span>
+                   <span class="n">verbose</span>     <span class="o">=</span> <span class="kc">False</span>
                <span class="p">)</span>
 
 <span class="n">results_grid</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
@@ -4514,20 +4525,23 @@ param_grid = {
 # Lags used as predictors
 lags_grid = [24]
 
+cv = TimeSeriesFold(
+         steps              = 12,
+         initial_train_size = len(data.loc[:end_train]),
+         refit              = False, 
+     )
+
 results_grid = grid_search_forecaster(
-                   forecaster         = forecaster,
-                   y                  = data['consumption'],
-                   exog               = data['month_of_year'],
-                   param_grid         = param_grid,
-                   lags_grid          = lags_grid,
-                   steps              = 36,
-                   refit              = False,
-                   metric             = 'mean_squared_error',
-                   initial_train_size = len(data.loc[:end_train]),
-                   fixed_train_size   = False,
-                   return_best        = True,
-                   n_jobs             = 'auto',
-                   verbose            = False
+                   forecaster  = forecaster,
+                   y           = data['consumption'],
+                   exog        = data['month_of_year'],
+                   lags_grid   = lags_grid,
+                   param_grid  = param_grid,
+                   cv          = cv,
+                   metric      = 'mean_squared_error',
+                   return_best = True,
+                   n_jobs      = 'auto',
+                   verbose     = False
                )
 
 results_grid.head()</div>
@@ -4539,13 +4553,6 @@ results_grid.head()</div>
 <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Number of models compared: 72.
-</pre>
-</div>
-</div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
@@ -4564,8 +4571,7 @@ results_grid.head()</div>
 <pre>`Forecaster` refitted using the best-found lags and parameters, and the whole data set: 
   Lags: [ 1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24] 
   Parameters: {'final_estimator__alpha': 1, 'lgbm__learning_rate': 0.01, 'lgbm__max_depth': 3, 'lgbm__n_estimators': 100, 'ridge__alpha': 0.1}
-  Backtesting metric: 0.5080664092557889
-
+  Backtesting metric: 0.06635424584881097
 </pre>
 </div>
 </div>
@@ -4603,11 +4609,11 @@ results_grid.head()</div>
 </thead>
 <tbody>
 <tr>
-<th>36</th>
+<th>0</th>
 <td>[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14...</td>
 <td>[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14...</td>
 <td>{'final_estimator__alpha': 1, 'lgbm__learning_...</td>
-<td>0.508066</td>
+<td>0.066354</td>
 <td>1.0</td>
 <td>0.01</td>
 <td>3.0</td>
@@ -4615,11 +4621,11 @@ results_grid.head()</div>
 <td>0.1</td>
 </tr>
 <tr>
-<th>37</th>
+<th>1</th>
 <td>[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14...</td>
 <td>[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14...</td>
 <td>{'final_estimator__alpha': 1, 'lgbm__learning_...</td>
-<td>0.519290</td>
+<td>0.068780</td>
 <td>1.0</td>
 <td>0.01</td>
 <td>3.0</td>
@@ -4627,39 +4633,39 @@ results_grid.head()</div>
 <td>1.0</td>
 </tr>
 <tr>
-<th>42</th>
+<th>2</th>
 <td>[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14...</td>
 <td>[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14...</td>
-<td>{'final_estimator__alpha': 1, 'lgbm__learning_...</td>
-<td>0.531137</td>
-<td>1.0</td>
+<td>{'final_estimator__alpha': 0.1, 'lgbm__learnin...</td>
+<td>0.069371</td>
+<td>0.1</td>
 <td>0.01</td>
-<td>5.0</td>
+<td>3.0</td>
 <td>100.0</td>
 <td>0.1</td>
 </tr>
 <tr>
-<th>48</th>
+<th>3</th>
 <td>[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14...</td>
 <td>[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14...</td>
 <td>{'final_estimator__alpha': 1, 'lgbm__learning_...</td>
-<td>0.532003</td>
-<td>1.0</td>
-<td>0.01</td>
-<td>10.0</td>
-<td>100.0</td>
-<td>0.1</td>
-</tr>
-<tr>
-<th>69</th>
-<td>[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14...</td>
-<td>[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14...</td>
-<td>{'final_estimator__alpha': 1, 'lgbm__learning_...</td>
-<td>0.535757</td>
+<td>0.069450</td>
 <td>1.0</td>
 <td>0.10</td>
 <td>10.0</td>
 <td>500.0</td>
+<td>0.1</td>
+</tr>
+<tr>
+<th>4</th>
+<td>[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14...</td>
+<td>[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14...</td>
+<td>{'final_estimator__alpha': 1, 'lgbm__learning_...</td>
+<td>0.069464</td>
+<td>1.0</td>
+<td>0.01</td>
+<td>5.0</td>
+<td>100.0</td>
 <td>0.1</td>
 </tr>
 </tbody>
@@ -4677,7 +4683,7 @@ results_grid.head()</div>
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>Once the best hyperparameters have been determined for each regressor in the ensemble, the test error is computed through back-testing.</p>
+<p>Once the best hyperparameters have been determined for each regressor in the ensemble, the test error is computed through backtesting.</p>
 </div>
 </div>
 </div>
@@ -4702,34 +4708,40 @@ results_grid.head()</div>
 </div>
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Backtesting on test data</span>
 <span class="c1"># ==============================================================================</span>
+<span class="n">cv</span> <span class="o">=</span> <span class="n">TimeSeriesFold</span><span class="p">(</span>
+         <span class="n">steps</span>              <span class="o">=</span> <span class="mi">12</span><span class="p">,</span>
+         <span class="n">initial_train_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:</span><span class="n">end_validation</span><span class="p">]),</span>
+         <span class="n">refit</span>              <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> 
+     <span class="p">)</span>
+
 <span class="n">metric</span><span class="p">,</span> <span class="n">predictions</span> <span class="o">=</span> <span class="n">backtesting_forecaster</span><span class="p">(</span>
-                          <span class="n">forecaster</span>         <span class="o">=</span> <span class="n">forecaster</span><span class="p">,</span>
-                          <span class="n">y</span>                  <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'consumption'</span><span class="p">],</span>
-                          <span class="n">exog</span>               <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'month_of_year'</span><span class="p">],</span>
-                          <span class="n">initial_train_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:</span><span class="n">end_validation</span><span class="p">]),</span>
-                          <span class="n">fixed_train_size</span>   <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-                          <span class="n">steps</span>              <span class="o">=</span> <span class="mi">12</span><span class="p">,</span>
-                          <span class="n">refit</span>              <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-                          <span class="n">metric</span>             <span class="o">=</span> <span class="s1">'mean_squared_error'</span><span class="p">,</span>
-                          <span class="n">n_jobs</span>             <span class="o">=</span> <span class="s1">'auto'</span><span class="p">,</span>
-                          <span class="n">verbose</span>            <span class="o">=</span> <span class="kc">False</span>
+                          <span class="n">forecaster</span> <span class="o">=</span> <span class="n">forecaster</span><span class="p">,</span>
+                          <span class="n">y</span>          <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'consumption'</span><span class="p">],</span>
+                          <span class="n">exog</span>       <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'month_of_year'</span><span class="p">],</span>
+                          <span class="n">cv</span>         <span class="o">=</span> <span class="n">cv</span><span class="p">,</span>
+                          <span class="n">metric</span>     <span class="o">=</span> <span class="s1">'mean_squared_error'</span><span class="p">,</span>
+                          <span class="n">n_jobs</span>     <span class="o">=</span> <span class="s1">'auto'</span><span class="p">,</span>
+                          <span class="n">verbose</span>    <span class="o">=</span> <span class="kc">False</span>
                       <span class="p">)</span>        
 
 <span class="n">metric</span>
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-9"># Backtesting on test data
 # ==============================================================================
+cv = TimeSeriesFold(
+         steps              = 12,
+         initial_train_size = len(data.loc[:end_validation]),
+         refit              = False, 
+     )
+
 metric, predictions = backtesting_forecaster(
-                          forecaster         = forecaster,
-                          y                  = data['consumption'],
-                          exog               = data['month_of_year'],
-                          initial_train_size = len(data.loc[:end_validation]),
-                          fixed_train_size   = False,
-                          steps              = 12,
-                          refit              = False,
-                          metric             = 'mean_squared_error',
-                          n_jobs             = 'auto',
-                          verbose            = False
+                          forecaster = forecaster,
+                          y          = data['consumption'],
+                          exog       = data['month_of_year'],
+                          cv         = cv,
+                          metric     = 'mean_squared_error',
+                          n_jobs     = 'auto',
+                          verbose    = False
                       )        
 
 metric</div>
