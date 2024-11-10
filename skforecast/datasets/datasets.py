@@ -128,14 +128,15 @@ def fetch_dataset(
             'date_format': '%Y-%m-%d %H:%M:%S',
             'freq': 'H',
             'description': (
-                'Hourly measures of several air chemical pollutant (pm2.5, co, no, '
-                'no2, pm10, nox, o3, veloc. (air speed), direc. (air direction), so2) '
-                'at Valencia city. Units are (µg/m3) for pm2.5, no, no2, pm10, so2, '
-                '(mg/m3) for co, (m/s) for veloc. and (degrees) for direc.'
+                'Hourly measures of several air chemical pollutant at Valencia city '
+                '(Avd. Francia) from 2019-01-01 to 20213-12-31. Including the following '
+                'variables: pm2.5 (µg/m³), CO (mg/m³), NO (µg/m³), NO2 (µg/m³), '
+                'PM10 (µg/m³), NOx (µg/m³), O3 (µg/m³), Veloc. (m/s), Direc. (degrees), '
+                'SO2 (µg/m³).'
             ),
             'source': (
                 "Red de Vigilancia y Control de la Contaminación Atmosférica, "
-                "46250054-València - Centre, "
+                "46250047-València - Av. França, "
                 "https://mediambient.gva.es/es/web/calidad-ambiental/datos-historicos."
             )
         },
@@ -149,15 +150,15 @@ def fetch_dataset(
             'date_format': '%Y-%m-%d %H:%M:%S',
             'freq': 'H',
             'description': (
-                'Hourly measures of several air chemical pollutant (pm2.5, co, no, '
-                'no2, pm10, nox, o3, veloc. (air speed), direc. (air direction), so2) '
-                'at Valencia city. Units are (µg/m3) for pm2.5, no, no2, pm10, so2, '
-                '(mg/m3) for co, (m/s) for veloc. and (degrees) for direc. Missing '
-                'values have been removed using linear interpolation.'
+                'Hourly measures of several air chemical pollutant at Valencia city '
+                '(Avd. Francia) from 2019-01-01 to 20213-12-31. Including the following '
+                'variables: pm2.5 (µg/m³), CO (mg/m³), NO (µg/m³), NO2 (µg/m³), '
+                'PM10 (µg/m³), NOx (µg/m³), O3 (µg/m³), Veloc. (m/s), Direc. (degrees), '
+                'SO2 (µg/m³). Missing values have been imputed using linear interpolation.'
             ),
             'source': (
                 "Red de Vigilancia y Control de la Contaminación Atmosférica, "
-                "46250054-València - Centre, "
+                "46250047-València - Av. França, "
                 "https://mediambient.gva.es/es/web/calidad-ambiental/datos-historicos."
             )
         },
