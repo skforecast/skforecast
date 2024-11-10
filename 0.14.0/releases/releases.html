@@ -2873,7 +2873,7 @@ This is documentation for an unstable development version.
         <li class="md-nav__item">
   <a href="#0.14.0" class="md-nav__link">
     <span class="md-ellipsis">
-      0.14.0 In development
+      0.14.0 Nov 11, 2024
     </span>
   </a>
   
@@ -3187,18 +3187,18 @@ This is documentation for an unstable development version.
 </tr>
 </tbody>
 </table>
-<h2 id="0.14.0">0.14.0 <small>In development</small><a class="headerlink" href="#0.14.0" title="Permanent link">&para;</a></h2>
+<h2 id="0.14.0">0.14.0 <small>Nov 11, 2024</small><a class="headerlink" href="#0.14.0" title="Permanent link">&para;</a></h2>
 <p>The main changes in this release are:</p>
-<p>This release has undergone a major refactoring to improve the performance of the library. Visit the <a href="https://skforecast.org/latest/user_guides/migration-guide.html">migration guide</a> section for more information.</p>
+<p>This release has undergone a major refactoring to improve the performance of the library. Visit the <a href="../user_guides/migration-guide.html">migration guide</a> section for more information.</p>
 <ul>
 <li>
-<p><span class="badge text-bg-feature">Feature</span> Window features can be added to the training matrix using the <code>window_features</code> argument in all forecasters. You can use the <code><a href="https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.RollingFeatures">RollingFeatures</a></code> class to create these features or create your own object. <a href="https://skforecast.org/latest/user_guides/window-features-and-custom-features">Create window and custom features</a>.</p>
+<p><span class="badge text-bg-feature">Feature</span> Window features can be added to the training matrix using the <code>window_features</code> argument in all forecasters. You can use the <code><a href="https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.RollingFeatures">RollingFeatures</a></code> class to create these features or create your own object. <a href="../user_guides/window-features-and-custom-features.html">Create window and custom features</a>.</p>
 </li>
 <li>
 <p><span class="badge text-bg-feature">Feature</span> <code><a href="https://skforecast.org/latest/api/model_selection">model_selection</a></code> functions now have a new argument <code>cv</code>. This argument expect an object of type <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection._split.TimeSeriesFold">TimeSeriesFold</a></code> or <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection._split.OneStepAheadFold">OneStepAheadFold</a></code> which allows to define the validation strategy using the arguments <code>initial_train_size</code>, <code>steps</code>, <code>gap</code>, <code>refit</code>, <code>fixed_train_size</code>, <code>skip_folds</code> and <code>allow_incomplete_folds</code>.</p>
 </li>
 <li>
-<p><span class="badge text-bg-feature">Feature</span> Hyperparameter search now allows to follow a <a href="https://skforecast.org/latest/user_guides/hyperparameter-tuning-and-lags-selection#one-step-ahead-validation">one-step-ahead validation strategy</a> using a <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection._split.OneStepAheadFold">OneStepAheadFold</a></code> as <code>cv</code> argument in the <code><a href="https://skforecast.org/latest/api/model_selection">model_selection</a></code> functions.</p>
+<p><span class="badge text-bg-feature">Feature</span> Hyperparameter search now allows to follow a <a href="../user_guides/hyperparameter-tuning-and-lags-selection#one-step-ahead-validation.html">one-step-ahead validation strategy</a> using a <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection._split.OneStepAheadFold">OneStepAheadFold</a></code> as <code>cv</code> argument in the <code><a href="https://skforecast.org/latest/api/model_selection">model_selection</a></code> functions.</p>
 </li>
 <li>
 <p><span class="badge text-bg-enhancement">Enhancement</span> Refactor the prediction process in <code><a href="https://skforecast.org/latest/api/forecasterrecursivemultiseries">ForecasterRecursiveMultiSeries</a></code> to improve performance when predicting multiple series.</p>
@@ -3207,10 +3207,10 @@ This is documentation for an unstable development version.
 <p><span class="badge text-bg-enhancement">Enhancement</span> The bootstrapping process in the <code>predict_bootstrapping</code> method of all forecasters has been optimized to improve performance. This may result in slightly different results when using the same seed as in previous versions.</p>
 </li>
 <li>
-<p><span class="badge text-bg-enhancement">Enhancement</span> Exogenous variables can be added to the training matrix if they do not contain the first window size observations. This is useful when exogenous variables are not available in early historical data. Visit the <a href="https://skforecast.org/latest/user_guides/exogenous-variables.html#handling-missing-exogenous-data-in-initial-training-periods">exogenous variables</a> section for more information.</p>
+<p><span class="badge text-bg-enhancement">Enhancement</span> Exogenous variables can be added to the training matrix if they do not contain the first window size observations. This is useful when exogenous variables are not available in early historical data. Visit the <a href="../user_guides/exogenous-variables.html#handling-missing-exogenous-data-in-initial-training-periods">exogenous variables</a> section for more information.</p>
 </li>
 <li>
-<p><span class="badge text-bg-api-change">API Change</span> package structure has been changed to improve code organization. The forecasters have been grouped into the <code>recursive</code>, <code>direct</code> amd <code>deep_learning</code> modules. Visit the <a href="https://skforecast.org/latest/user_guides/migration-guide.html">migration guide</a> section for more information.</p>
+<p><span class="badge text-bg-api-change">API Change</span> package structure has been changed to improve code organization. The forecasters have been grouped into the <code>recursive</code>, <code>direct</code> amd <code>deep_learning</code> modules. Visit the <a href="../user_guides/migration-guide.html">migration guide</a> section for more information.</p>
 </li>
 <li>
 <p><span class="badge text-bg-api-change">API Change</span> <code><a href="https://skforecast.org/0.13.0/api/forecasterautoregcustom">ForecasterAutoregCustom</a></code> has been deprecated. Window features can be added using the <code>window_features</code> argument in the <code><a href="https://skforecast.org/latest/api/forecasterrecursive">ForecasterRecursive</a></code>.</p>

@@ -101,7 +101,7 @@ A single model is trained for all time series, but each time series remains inde
     <font size="2.5"> <i>Transformation of two time series and an exogenous variable into the matrices needed to train a machine learning model in a multi-series context</i></font>
 </p>
 
-To predict the next *n* steps, the strategy of [recursive multi-step forecasting](https://skforecast.org/latest/introduction-forecasting/introduction-forecasting.html#recursive-multi-step-forecasting) is applied
+To predict the next *n* steps, the strategy of [recursive multi-step forecasting](../introduction-forecasting/introduction-forecasting.html#recursive-multi-step-forecasting) is applied
 
 <p style="text-align: center">
     <img src="../img/forecaster_multi_series_prediction_diagram.png" style="width: 700px">

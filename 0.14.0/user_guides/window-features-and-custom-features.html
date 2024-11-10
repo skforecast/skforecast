@@ -3392,18 +3392,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h1 id="window-and-custom-features">Window and custom features<a class="anchor-link" href="#window-and-custom-features">¶</a></h1>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=028c1370">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>When forecasting time series data, it may be useful to consider additional characteristics beyond just the lagged values. For example, the moving average of the previous <em>n</em> values may help to capture the trend in the series. The <code>window_features</code> argument allows the inclusion of additional predictors created with the previous values of the series.</p>
+<h1 id="window-and-custom-features">Window and custom features<a class="anchor-link" href="#window-and-custom-features">¶</a></h1><p>When forecasting time series data, it may be useful to consider additional characteristics beyond just the lagged values. For example, the moving average of the previous <em>n</em> values may help to capture the trend in the series. The <code>window_features</code> argument allows the inclusion of additional predictors created with the previous values of the series.</p>
 </div>
 </div>
 </div>
@@ -3424,7 +3413,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [1]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-1">
@@ -3443,8 +3432,8 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">from</span> <span class="nn">lightgbm</span> <span class="kn">import</span> <span class="n">LGBMRegressor</span>
 <span class="kn">from</span> <span class="nn">skforecast.datasets</span> <span class="kn">import</span> <span class="n">fetch_dataset</span>
-<span class="kn">from</span> <span class="nn">skforecast.recursive</span> <span class="kn">import</span> <span class="n">ForecasterRecursive</span>
 <span class="kn">from</span> <span class="nn">skforecast.preprocessing</span> <span class="kn">import</span> <span class="n">RollingFeatures</span>
+<span class="kn">from</span> <span class="nn">skforecast.recursive</span> <span class="kn">import</span> <span class="n">ForecasterRecursive</span>
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-1"># Libraries
 # ==============================================================================
@@ -3452,8 +3441,8 @@ import numpy as np
 import pandas as pd
 from lightgbm import LGBMRegressor
 from skforecast.datasets import fetch_dataset
-from skforecast.recursive import ForecasterRecursive
-from skforecast.preprocessing import RollingFeatures</div>
+from skforecast.preprocessing import RollingFeatures
+from skforecast.recursive import ForecasterRecursive</div>
 </div>
 </div>
 </div>

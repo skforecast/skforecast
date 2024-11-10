@@ -3052,11 +3052,10 @@ This is documentation for an unstable development version.
 
 <h1 id="understanding-the-forecaster-parameters">Understanding the forecaster parameters<a class="headerlink" href="#understanding-the-forecaster-parameters" title="Permanent link">&para;</a></h1>
 <p>Understanding what can be done when initializing a forecaster with skforecast can have a significant impact on the accuracy and effectiveness of the model. This guide highlights key considerations to keep in mind when initializing a forecaster and how these functionalities can be used to create more powerful and accurate forecasting models in Python.</p>
-<p>We will explore the arguments that can be included in a <code>ForecasterRecursive</code>, but this can be extrapolated to any of the skforecast forecasters.</p>
+<p>We will explore the arguments that can be included in a <a href="../api/forecasterrecursive.html"><code>ForecasterRecursive</code></a>, but this can be extrapolated to any of the skforecast forecasters.</p>
 <div class="language-python highlight"><pre><span></span><code><span class="c1"># Create a forecaster</span>
 <span class="c1"># ==============================================================================</span>
 <span class="kn">from</span> <span class="nn">skforecast.recursive</span> <span class="kn">import</span> <span class="n">ForecasterRecursive</span>
-<span class="kn">from</span> <span class="nn">sklearn.ensemble</span> <span class="kn">import</span> <span class="n">RandomForestRegressor</span>
 
 <span class="n">forecaster</span> <span class="o">=</span> <span class="n">ForecasterRecursive</span><span class="p">(</span>
                  <span class="n">regressor</span>        <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -3094,17 +3093,17 @@ This is documentation for an unstable development version.
 </ul>
 <div class="language-python highlight"><pre><span></span><code><span class="c1"># Create a forecaster</span>
 <span class="c1"># ==============================================================================</span>
+<span class="kn">from</span> <span class="nn">lightgbm</span> <span class="kn">import</span> <span class="n">LGBMRegressor</span>
 <span class="kn">from</span> <span class="nn">skforecast.recursive</span> <span class="kn">import</span> <span class="n">ForecasterRecursive</span>
-<span class="kn">from</span> <span class="nn">sklearn.ensemble</span> <span class="kn">import</span> <span class="n">RandomForestRegressor</span>
 
 <span class="n">forecaster</span> <span class="o">=</span> <span class="n">ForecasterRecursive</span><span class="p">(</span>
-                 <span class="n">regressor</span> <span class="o">=</span> <span class="n">RandomForestRegressor</span><span class="p">(),</span>
+                 <span class="n">regressor</span> <span class="o">=</span> <span class="n">LGBMRegressor</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="mi">123</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
                  <span class="n">lags</span>      <span class="o">=</span> <span class="kc">None</span>
              <span class="p">)</span>
 </code></pre></div>
 <h3 id="lags">Lags<a class="headerlink" href="#lags" title="Permanent link">&para;</a></h3>
 <p>To apply machine learning models to forecasting problems, the time series needs to be transformed into a matrix where each value is associated with a specific time window (known as lags) that precedes it. In the context of time series, a lag with respect to a time step <em>t</em> is defined as the value of the series at previous time steps. For instance, lag 1 represents the value at time step <em>t-1</em>, while lag <em>m</em> represents the value at time step <em>t-m</em>.</p>
-<p>Learn more about <a href="https://skforecast.org/latest/introduction-forecasting/introduction-forecasting#machine-learning-for-forecasting">machine learning for forecasting</a>.
+<p>Learn more about <a href="../introduction-forecasting/introduction-forecasting.html#machine-learning-for-forecasting">machine learning for forecasting</a>.
 <br><br></p>
 <p style="text-align: center">
 <img src="../img/transform_timeseries.gif" style="width: 500px;">
@@ -3114,35 +3113,50 @@ This is documentation for an unstable development version.
 
 <div class="language-python highlight"><pre><span></span><code><span class="c1"># Create a forecaster using 5 lags</span>
 <span class="c1"># ==============================================================================</span>
+<span class="kn">from</span> <span class="nn">lightgbm</span> <span class="kn">import</span> <span class="n">LGBMRegressor</span>
 <span class="kn">from</span> <span class="nn">skforecast.recursive</span> <span class="kn">import</span> <span class="n">ForecasterRecursive</span>
-<span class="kn">from</span> <span class="nn">sklearn.ensemble</span> <span class="kn">import</span> <span class="n">RandomForestRegressor</span>
 
 <span class="n">forecaster</span> <span class="o">=</span> <span class="n">ForecasterRecursive</span><span class="p">(</span>
-                 <span class="n">regressor</span> <span class="o">=</span> <span class="n">RandomForestRegressor</span><span class="p">(),</span>
+                 <span class="n">regressor</span> <span class="o">=</span> <span class="n">LGBMRegressor</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="mi">123</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
                  <span class="n">lags</span>      <span class="o">=</span> <span class="mi">5</span>
              <span class="p">)</span>
 </code></pre></div>
 <h3 id="window-features">Window Features<a class="headerlink" href="#window-features" title="Permanent link">&para;</a></h3>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>TODO</p>
-</div>
+<p>When forecasting time series data, it may be useful to consider additional characteristics beyond just the lagged values. For example, the moving average of the previous <em>n</em> values may help to capture the trend in the series. The <code>window_features</code> argument allows the inclusion of additional predictors created with the previous values of the series.</p>
+<p>More information: <a href="../user_guides/window-features-and-custom-features.html">Window and custom features</a>.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="c1"># Create a forecaster with window features</span>
+<span class="c1"># ==============================================================================</span>
+<span class="kn">from</span> <span class="nn">lightgbm</span> <span class="kn">import</span> <span class="n">LGBMRegressor</span>
+<span class="kn">from</span> <span class="nn">skforecast.preprocessing</span> <span class="kn">import</span> <span class="n">RollingFeatures</span>
+<span class="kn">from</span> <span class="nn">skforecast.recursive</span> <span class="kn">import</span> <span class="n">ForecasterRecursive</span>
+
+<span class="n">window_features</span> <span class="o">=</span> <span class="n">RollingFeatures</span><span class="p">(</span>
+                      <span class="n">stats</span>        <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="s1">&#39;min&#39;</span><span class="p">,</span> <span class="s1">&#39;max&#39;</span><span class="p">],</span>
+                      <span class="n">window_sizes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">20</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">]</span>
+                  <span class="p">)</span>
+
+<span class="n">forecaster</span> <span class="o">=</span> <span class="n">ForecasterRecursive</span><span class="p">(</span>
+                 <span class="n">regressor</span>       <span class="o">=</span> <span class="n">LGBMRegressor</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="mi">123</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
+                 <span class="n">lags</span>            <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+                 <span class="n">window_features</span> <span class="o">=</span> <span class="n">window_features</span>
+             <span class="p">)</span>
+</code></pre></div>
 <h3 id="transformers">Transformers<a class="headerlink" href="#transformers" title="Permanent link">&para;</a></h3>
 <p>Skforecast has two arguments in all the forecasters that allow more detailed control over input data transformations. This feature is particularly useful as many machine learning models require specific data pre-processing transformations. For example, linear models may benefit from features being scaled, or categorical features being transformed into numerical values.</p>
 <p>Both arguments expect an instance of a transformer (preprocessor) compatible with the <code>scikit-learn</code> preprocessing API with the methods: <code>fit</code>, <code>transform</code>, <code>fit_transform</code> and, <code>inverse_transform</code>.</p>
-<p>More information: <a href="https://skforecast.org/latest/user_guides/sklearn-transformers-and-pipeline.html">Scikit-learn transformers and pipelines</a>.</p>
+<p>More information: <a href="../user_guides/sklearn-transformers-and-pipeline.html">Scikit-learn transformers and pipelines</a>.</p>
 <div class="admonition example">
 <p class="admonition-title">Example</p>
 <p>In this example, a scikit-learn <code>StandardScaler</code> preprocessor is used for both the time series and the exogenous variables.</p>
 </div>
 <div class="language-python highlight"><pre><span></span><code><span class="c1"># Create a forecaster</span>
 <span class="c1"># ==============================================================================</span>
-<span class="kn">from</span> <span class="nn">skforecast.recursive</span> <span class="kn">import</span> <span class="n">ForecasterRecursive</span>
 <span class="kn">from</span> <span class="nn">sklearn.preprocessing</span> <span class="kn">import</span> <span class="n">StandardScaler</span>
-<span class="kn">from</span> <span class="nn">sklearn.ensemble</span> <span class="kn">import</span> <span class="n">RandomForestRegressor</span>
+<span class="kn">from</span> <span class="nn">lightgbm</span> <span class="kn">import</span> <span class="n">LGBMRegressor</span>
+<span class="kn">from</span> <span class="nn">skforecast.recursive</span> <span class="kn">import</span> <span class="n">ForecasterRecursive</span>
 
 <span class="n">forecaster</span> <span class="o">=</span> <span class="n">ForecasterRecursive</span><span class="p">(</span>
-                 <span class="n">regressor</span>        <span class="o">=</span> <span class="n">RandomForestRegressor</span><span class="p">(),</span>
+                 <span class="n">regressor</span>        <span class="o">=</span> <span class="n">LGBMRegressor</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="mi">123</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
                  <span class="n">lags</span>             <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
                  <span class="n">window_features</span>  <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">transformer_y</span>    <span class="o">=</span> <span class="n">StandardScaler</span><span class="p">(),</span>
@@ -3151,12 +3165,12 @@ This is documentation for an unstable development version.
 </code></pre></div>
 <h3 id="custom-weights">Custom weights<a class="headerlink" href="#custom-weights" title="Permanent link">&para;</a></h3>
 <p>The <code>weight_func</code> parameter allows the user to define custom weights for each observation in the time series. These custom weights can be used to assign different levels of importance to different time periods. For example, assign higher weights to recent data points and lower weights to older data points to emphasize the importance of recent observations in the forecast model.</p>
-<p>More information: <a href="https://skforecast.org/latest/user_guides/weighted-time-series-forecasting">Weighted time series forecasting</a>.</p>
+<p>More information: <a href="../user_guides/weighted-time-series-forecasting.html">Weighted time series forecasting</a>.</p>
 <div class="language-python highlight"><pre><span></span><code><span class="c1"># Create a forecaster</span>
 <span class="c1"># ==============================================================================</span>
-<span class="kn">from</span> <span class="nn">skforecast.recursive</span> <span class="kn">import</span> <span class="n">ForecasterRecursive</span>
 <span class="kn">from</span> <span class="nn">sklearn.preprocessing</span> <span class="kn">import</span> <span class="n">StandardScaler</span>
-<span class="kn">from</span> <span class="nn">sklearn.ensemble</span> <span class="kn">import</span> <span class="n">RandomForestRegressor</span>
+<span class="kn">from</span> <span class="nn">lightgbm</span> <span class="kn">import</span> <span class="n">LGBMRegressor</span>
+<span class="kn">from</span> <span class="nn">skforecast.recursive</span> <span class="kn">import</span> <span class="n">ForecasterRecursive</span>
 
 <span class="c1"># Custom function to create weights</span>
 <span class="c1"># ==============================================================================</span>
@@ -3173,7 +3187,7 @@ This is documentation for an unstable development version.
     <span class="k">return</span> <span class="n">weights</span>
 
 <span class="n">forecaster</span> <span class="o">=</span> <span class="n">ForecasterRecursive</span><span class="p">(</span>
-                 <span class="n">regressor</span>        <span class="o">=</span> <span class="n">RandomForestRegressor</span><span class="p">(),</span>
+                 <span class="n">regressor</span>        <span class="o">=</span> <span class="n">LGBMRegressor</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="mi">123</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
                  <span class="n">lags</span>             <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
                  <span class="n">window_features</span>  <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">transformer_y</span>    <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -3183,15 +3197,15 @@ This is documentation for an unstable development version.
 </code></pre></div>
 <h3 id="differentiation">Differentiation<a class="headerlink" href="#differentiation" title="Permanent link">&para;</a></h3>
 <p>Time series differentiation involves computing the differences between consecutive observations in the time series. When it comes to training forecasting models, differentiation offers the advantage of focusing on relative rates of change rather than directly attempting to model the absolute values. <strong>Skforecast</strong>, version 0.10.0 or higher, introduces a novel differentiation parameter within its Forecasters. </p>
-<p>More information: <a href="https://skforecast.org/latest/faq/time-series-differentiation">Time series differentiation</a>.</p>
+<p>More information: <a href="../user_guides/time-series-differentiation.html">Time series differentiation</a>.</p>
 <div class="language-python highlight"><pre><span></span><code><span class="c1"># Create a forecaster</span>
 <span class="c1"># ==============================================================================</span>
-<span class="kn">from</span> <span class="nn">skforecast.recursive</span> <span class="kn">import</span> <span class="n">ForecasterRecursive</span>
 <span class="kn">from</span> <span class="nn">sklearn.preprocessing</span> <span class="kn">import</span> <span class="n">StandardScaler</span>
-<span class="kn">from</span> <span class="nn">sklearn.ensemble</span> <span class="kn">import</span> <span class="n">RandomForestRegressor</span>
+<span class="kn">from</span> <span class="nn">lightgbm</span> <span class="kn">import</span> <span class="n">LGBMRegressor</span>
+<span class="kn">from</span> <span class="nn">skforecast.recursive</span> <span class="kn">import</span> <span class="n">ForecasterRecursive</span>
 
 <span class="n">forecaster</span> <span class="o">=</span> <span class="n">ForecasterRecursive</span><span class="p">(</span>
-                 <span class="n">regressor</span>        <span class="o">=</span> <span class="n">RandomForestRegressor</span><span class="p">(),</span>
+                 <span class="n">regressor</span>        <span class="o">=</span> <span class="n">LGBMRegressor</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="mi">123</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
                  <span class="n">lags</span>             <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
                  <span class="n">window_features</span>  <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">transformer_y</span>    <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -3210,7 +3224,7 @@ This is documentation for an unstable development version.
 <p class="admonition-title">Example</p>
 <p>The following example demonstrates the inclusion of categorical features in an LGBM regressor. This must be done during the <code>LGBMRegressor</code> fit method. <a href="https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html#lightgbm.LGBMRegressor.fit">Fit parameters lightgbm</a></p>
 </div>
-<p>More information: <a href="https://skforecast.org/latest/user_guides/categorical-features.html#native-implementation-for-categorical-features">Categorical features</a>.</p>
+<p>More information: [Categorical features]../user_guides/categorical-features.html#native-implementation-for-categorical-features).</p>
 <div class="language-python highlight"><pre><span></span><code><span class="c1"># Create a forecaster</span>
 <span class="c1"># ==============================================================================</span>
 <span class="kn">from</span> <span class="nn">skforecast.recursive</span> <span class="kn">import</span> <span class="n">ForecasterRecursive</span>
@@ -3228,8 +3242,8 @@ This is documentation for an unstable development version.
              <span class="p">)</span>
 </code></pre></div>
 <h3 id="intervals-conditioned-on-predicted-values-binned-residuals">Intervals conditioned on predicted values (binned residuals)<a class="headerlink" href="#intervals-conditioned-on-predicted-values-binned-residuals" title="Permanent link">&para;</a></h3>
-<p>When creating prediction intervals, skforecast uses a <code>sklearn.preprocessing.KBinsDiscretizer</code> to bin the residuals. The <code>binner_kwargs</code> parameter allows the user to pass additional arguments to the <code>KBinsDiscretizer</code> object. </p>
-<p>More information: <a href="https://skforecast.org/latest/user_guides/probabilistic-forecasting#intervals-conditioned-on-predicted-values-binned-residuals">Intervals conditioned on predicted values (binned residuals)</a>.</p>
+<p>When creating prediction intervals, skforecast uses a <a href="../api/preprocessing.html#skforecast.preprocessing.preprocessing.QuantileBinner"><code>QuantileBinner</code></a> class to bin data into quantile-based bins using <code>numpy.percentile</code>. This class is similar to <a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.KBinsDiscretizer.html">KBinsDiscretizer</a> but faster for binning data into quantile-based bins. Bin intervals are defined following the convention: bins[i-1] &lt;= x &lt; bins[i].</p>
+<p>More information: <a href="../user_guides/probabilistic-forecasting.html#intervals-conditioned-on-predicted-values-binned-residuals">Intervals conditioned on predicted values (binned residuals)</a>.</p>
 <div class="language-python highlight"><pre><span></span><code><span class="c1"># Create a forecaster</span>
 <span class="c1"># ==============================================================================</span>
 <span class="kn">from</span> <span class="nn">skforecast.recursive</span> <span class="kn">import</span> <span class="n">ForecasterRecursive</span>
@@ -3251,11 +3265,11 @@ This is documentation for an unstable development version.
 <p>Name used as an identifier of the forecaster. It may be used, for example to identify the time series being modeled.</p>
 <div class="language-python highlight"><pre><span></span><code><span class="c1"># Create a forecaster</span>
 <span class="c1"># ==============================================================================</span>
+<span class="kn">from</span> <span class="nn">lightgbm</span> <span class="kn">import</span> <span class="n">LGBMRegressor</span>
 <span class="kn">from</span> <span class="nn">skforecast.recursive</span> <span class="kn">import</span> <span class="n">ForecasterRecursive</span>
-<span class="kn">from</span> <span class="nn">sklearn.ensemble</span> <span class="kn">import</span> <span class="n">RandomForestRegressor</span>
 
 <span class="n">forecaster</span> <span class="o">=</span> <span class="n">ForecasterRecursive</span><span class="p">(</span>
-                 <span class="n">regressor</span>        <span class="o">=</span> <span class="n">RandomForestRegressor</span><span class="p">(),</span>
+                 <span class="n">regressor</span>        <span class="o">=</span> <span class="n">LGBMRegressor</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="mi">123</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
                  <span class="n">lags</span>             <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
                  <span class="n">window_features</span>  <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">transformer_y</span>    <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -3263,21 +3277,22 @@ This is documentation for an unstable development version.
                  <span class="n">weight_func</span>      <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">differentiation</span>  <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">fit_kwargs</span>       <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">binner_kwargs</span>    <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">forecaster_id</span>    <span class="o">=</span> <span class="s1">&#39;my_forecaster&#39;</span>
              <span class="p">)</span>
 </code></pre></div>
 <h2 id="direct-multi-step-parameters">Direct multi-step parameters<a class="headerlink" href="#direct-multi-step-parameters" title="Permanent link">&para;</a></h2>
-<p>For the Forecasters that follow a <a href="https://skforecast.org/latest/introduction-forecasting/introduction-forecasting#direct-multi-step-forecasting">direct multi-step strategy</a> (<code>ForecasterDirect</code> and <code>ForecasterDirectMultiVariate</code>), there are two additional parameters in addition to those mentioned above.</p>
+<p>For the Forecasters that follow a <a href="../introduction-forecasting/introduction-forecasting.html#direct-multi-step-forecasting">direct multi-step strategy</a> (<a href="../api/forecasterdirect.html"><code>ForecasterDirect</code></a> and <a href="../api/forecasterdirectmultivariate.html"><code>ForecasterDirectMultiVariate</code></a>), there are two additional parameters in addition to those mentioned above.</p>
 <h3 id="steps">Steps<a class="headerlink" href="#steps" title="Permanent link">&para;</a></h3>
 <p>Direct multi-step forecasting consists of training a different model for each step of the forecast horizon. For example, to predict the next 5 values of a time series, 5 different models are trained, one for each step. As a result, the predictions are independent of each other. </p>
 <p>The number of models to be trained is specified by the <code>steps</code> parameter.</p>
 <div class="language-python highlight"><pre><span></span><code><span class="c1"># Create a forecaster</span>
 <span class="c1"># ==============================================================================</span>
+<span class="kn">from</span> <span class="nn">lightgbm</span> <span class="kn">import</span> <span class="n">LGBMRegressor</span>
 <span class="kn">from</span> <span class="nn">skforecast.direct</span> <span class="kn">import</span> <span class="n">ForecasterDirect</span>
-<span class="kn">from</span> <span class="nn">sklearn.ensemble</span> <span class="kn">import</span> <span class="n">RandomForestRegressor</span>
 
 <span class="n">forecaster</span> <span class="o">=</span> <span class="n">ForecasterDirect</span><span class="p">(</span>
-                 <span class="n">regressor</span>        <span class="o">=</span> <span class="n">RandomForestRegressor</span><span class="p">(),</span>
+                 <span class="n">regressor</span>        <span class="o">=</span> <span class="n">LGBMRegressor</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="mi">123</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
                  <span class="n">steps</span>            <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
                  <span class="n">lags</span>             <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
                  <span class="n">window_features</span>  <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -3291,14 +3306,14 @@ This is documentation for an unstable development version.
 <h3 id="number-of-jobs">Number of jobs<a class="headerlink" href="#number-of-jobs" title="Permanent link">&para;</a></h3>
 <p>The <code>n_jobs</code> parameter allows multi-process parallelization to train regressors for all <code>steps</code> simultaneously. </p>
 <p>The benefits of parallelization depend on several factors, including the regressor used, the number of fits to be performed, and the volume of data involved. When the <code>n_jobs</code> parameter is set to <code>'auto'</code>, the level of parallelization is automatically selected based on heuristic rules that aim to choose the best option for each scenario.</p>
-<p>For a more detailed look at parallelization, visit <a href="https://skforecast.org/latest/faq/parallelization-skforecast">Parallelization in skforecast</a>.</p>
+<p>For a more detailed look at parallelization, visit <a href="../faq/parallelization-skforecast.html">Parallelization in skforecast</a>.</p>
 <div class="language-python highlight"><pre><span></span><code><span class="c1"># Create a forecaster</span>
 <span class="c1"># ==============================================================================</span>
+<span class="kn">from</span> <span class="nn">lightgbm</span> <span class="kn">import</span> <span class="n">LGBMRegressor</span>
 <span class="kn">from</span> <span class="nn">skforecast.direct</span> <span class="kn">import</span> <span class="n">ForecasterDirect</span>
-<span class="kn">from</span> <span class="nn">sklearn.ensemble</span> <span class="kn">import</span> <span class="n">RandomForestRegressor</span>
 
 <span class="n">forecaster</span> <span class="o">=</span> <span class="n">ForecasterDirect</span><span class="p">(</span>
-                 <span class="n">regressor</span>        <span class="o">=</span> <span class="n">RandomForestRegressor</span><span class="p">(),</span>
+                 <span class="n">regressor</span>        <span class="o">=</span> <span class="n">LGBMRegressor</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="mi">123</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
                  <span class="n">steps</span>            <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
                  <span class="n">lags</span>             <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
                  <span class="n">window_features</span>  <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>

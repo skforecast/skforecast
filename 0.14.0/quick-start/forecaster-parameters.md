@@ -2,13 +2,12 @@
 
 Understanding what can be done when initializing a forecaster with skforecast can have a significant impact on the accuracy and effectiveness of the model. This guide highlights key considerations to keep in mind when initializing a forecaster and how these functionalities can be used to create more powerful and accurate forecasting models in Python.
 
-We will explore the arguments that can be included in a `ForecasterRecursive`, but this can be extrapolated to any of the skforecast forecasters.
+We will explore the arguments that can be included in a [`ForecasterRecursive`](../api/forecasterrecursive.html), but this can be extrapolated to any of the skforecast forecasters.
 
 ```python
 # Create a forecaster
 # ==============================================================================
 from skforecast.recursive import ForecasterRecursive
-from sklearn.ensemble import RandomForestRegressor
 
 forecaster = ForecasterRecursive(
                  regressor        = None,
@@ -46,11 +45,11 @@ Skforecast is a Python library that facilitates using scikit-learn regressors as
 ```python
 # Create a forecaster
 # ==============================================================================
+from lightgbm import LGBMRegressor
 from skforecast.recursive import ForecasterRecursive
-from sklearn.ensemble import RandomForestRegressor
 
 forecaster = ForecasterRecursive(
-                 regressor = RandomForestRegressor(),
+                 regressor = LGBMRegressor(random_state=123, verbose=-1),
                  lags      = None
              )
 ```
@@ -60,7 +59,7 @@ forecaster = ForecasterRecursive(
 
 To apply machine learning models to forecasting problems, the time series needs to be transformed into a matrix where each value is associated with a specific time window (known as lags) that precedes it. In the context of time series, a lag with respect to a time step *t* is defined as the value of the series at previous time steps. For instance, lag 1 represents the value at time step *t-1*, while lag *m* represents the value at time step *t-m*.
 
-Learn more about [machine learning for forecasting](https://skforecast.org/latest/introduction-forecasting/introduction-forecasting#machine-learning-for-forecasting).
+Learn more about [machine learning for forecasting](../introduction-forecasting/introduction-forecasting.html#machine-learning-for-forecasting).
 <br><br>
 
 <p style="text-align: center">
@@ -72,11 +71,11 @@ Learn more about [machine learning for forecasting](https://skforecast.org/lates
 ```python
 # Create a forecaster using 5 lags
 # ==============================================================================
+from lightgbm import LGBMRegressor
 from skforecast.recursive import ForecasterRecursive
-from sklearn.ensemble import RandomForestRegressor
 
 forecaster = ForecasterRecursive(
-                 regressor = RandomForestRegressor(),
+                 regressor = LGBMRegressor(random_state=123, verbose=-1),
                  lags      = 5
              )
 ```
@@ -84,10 +83,28 @@ forecaster = ForecasterRecursive(
 
 ### Window Features
 
-!!! warning
+When forecasting time series data, it may be useful to consider additional characteristics beyond just the lagged values. For example, the moving average of the previous *n* values may help to capture the trend in the series. The `window_features` argument allows the inclusion of additional predictors created with the previous values of the series.
 
-    TODO
+More information: [Window and custom features](../user_guides/window-features-and-custom-features.html).
 
+```python
+# Create a forecaster with window features
+# ==============================================================================
+from lightgbm import LGBMRegressor
+from skforecast.preprocessing import RollingFeatures
+from skforecast.recursive import ForecasterRecursive
+
+window_features = RollingFeatures(
+                      stats        = ['mean', 'mean', 'min', 'max'],
+                      window_sizes = [20, 10, 10, 10]
+                  )
+
+forecaster = ForecasterRecursive(
+                 regressor       = LGBMRegressor(random_state=123, verbose=-1),
+                 lags            = 5,
+                 window_features = window_features
+             )
+```
 
 ### Transformers
 
@@ -95,7 +112,7 @@ Skforecast has two arguments in all the forecasters that allow more detailed con
 
 Both arguments expect an instance of a transformer (preprocessor) compatible with the `scikit-learn` preprocessing API with the methods: `fit`, `transform`, `fit_transform` and, `inverse_transform`.
 
-More information: [Scikit-learn transformers and pipelines](https://skforecast.org/latest/user_guides/sklearn-transformers-and-pipeline.html).
+More information: [Scikit-learn transformers and pipelines](../user_guides/sklearn-transformers-and-pipeline.html).
 
 !!! example
 
@@ -104,12 +121,12 @@ More information: [Scikit-learn transformers and pipelines](https://skforecast.o
 ```python
 # Create a forecaster
 # ==============================================================================
-from skforecast.recursive import ForecasterRecursive
 from sklearn.preprocessing import StandardScaler
-from sklearn.ensemble import RandomForestRegressor
+from lightgbm import LGBMRegressor
+from skforecast.recursive import ForecasterRecursive
 
 forecaster = ForecasterRecursive(
-                 regressor        = RandomForestRegressor(),
+                 regressor        = LGBMRegressor(random_state=123, verbose=-1),
                  lags             = 5,
                  window_features  = None,
                  transformer_y    = StandardScaler(),
@@ -122,14 +139,14 @@ forecaster = ForecasterRecursive(
 
 The `weight_func` parameter allows the user to define custom weights for each observation in the time series. These custom weights can be used to assign different levels of importance to different time periods. For example, assign higher weights to recent data points and lower weights to older data points to emphasize the importance of recent observations in the forecast model.
 
-More information: [Weighted time series forecasting](https://skforecast.org/latest/user_guides/weighted-time-series-forecasting).
+More information: [Weighted time series forecasting](../user_guides/weighted-time-series-forecasting.html).
 
 ```python
 # Create a forecaster
 # ==============================================================================
-from skforecast.recursive import ForecasterRecursive
 from sklearn.preprocessing import StandardScaler
-from sklearn.ensemble import RandomForestRegressor
+from lightgbm import LGBMRegressor
+from skforecast.recursive import ForecasterRecursive
 
 # Custom function to create weights
 # ==============================================================================
@@ -146,7 +163,7 @@ def custom_weights(index):
     return weights
 
 forecaster = ForecasterRecursive(
-                 regressor        = RandomForestRegressor(),
+                 regressor        = LGBMRegressor(random_state=123, verbose=-1),
                  lags             = 5,
                  window_features  = None,
                  transformer_y    = None,
@@ -160,17 +177,17 @@ forecaster = ForecasterRecursive(
 
 Time series differentiation involves computing the differences between consecutive observations in the time series. When it comes to training forecasting models, differentiation offers the advantage of focusing on relative rates of change rather than directly attempting to model the absolute values. **Skforecast**, version 0.10.0 or higher, introduces a novel differentiation parameter within its Forecasters. 
 
-More information: [Time series differentiation](https://skforecast.org/latest/faq/time-series-differentiation).
+More information: [Time series differentiation](../user_guides/time-series-differentiation.html).
 
 ```python
 # Create a forecaster
 # ==============================================================================
-from skforecast.recursive import ForecasterRecursive
 from sklearn.preprocessing import StandardScaler
-from sklearn.ensemble import RandomForestRegressor
+from lightgbm import LGBMRegressor
+from skforecast.recursive import ForecasterRecursive
 
 forecaster = ForecasterRecursive(
-                 regressor        = RandomForestRegressor(),
+                 regressor        = LGBMRegressor(random_state=123, verbose=-1),
                  lags             = 5,
                  window_features  = None,
                  transformer_y    = None,
@@ -193,7 +210,7 @@ Some regressors include the possibility to add some additional configuration dur
 
     The following example demonstrates the inclusion of categorical features in an LGBM regressor. This must be done during the `LGBMRegressor` fit method. [Fit parameters lightgbm](https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html#lightgbm.LGBMRegressor.fit)
 
-More information: [Categorical features](https://skforecast.org/latest/user_guides/categorical-features.html#native-implementation-for-categorical-features).
+More information: [Categorical features]../user_guides/categorical-features.html#native-implementation-for-categorical-features).
 
 ```python
 # Create a forecaster
@@ -216,9 +233,9 @@ forecaster = ForecasterRecursive(
 
 ### Intervals conditioned on predicted values (binned residuals)
 
-When creating prediction intervals, skforecast uses a `sklearn.preprocessing.KBinsDiscretizer` to bin the residuals. The `binner_kwargs` parameter allows the user to pass additional arguments to the `KBinsDiscretizer` object. 
+When creating prediction intervals, skforecast uses a [`QuantileBinner`](../api/preprocessing.html#skforecast.preprocessing.preprocessing.QuantileBinner) class to bin data into quantile-based bins using `numpy.percentile`. This class is similar to [KBinsDiscretizer](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.KBinsDiscretizer.html) but faster for binning data into quantile-based bins. Bin intervals are defined following the convention: bins[i-1] <= x < bins[i].
 
-More information: [Intervals conditioned on predicted values (binned residuals)](https://skforecast.org/latest/user_guides/probabilistic-forecasting#intervals-conditioned-on-predicted-values-binned-residuals).
+More information: [Intervals conditioned on predicted values (binned residuals)](../user_guides/probabilistic-forecasting.html#intervals-conditioned-on-predicted-values-binned-residuals).
 
 ```python
 # Create a forecaster
@@ -247,11 +264,11 @@ Name used as an identifier of the forecaster. It may be used, for example to ide
 ```python
 # Create a forecaster
 # ==============================================================================
+from lightgbm import LGBMRegressor
 from skforecast.recursive import ForecasterRecursive
-from sklearn.ensemble import RandomForestRegressor
 
 forecaster = ForecasterRecursive(
-                 regressor        = RandomForestRegressor(),
+                 regressor        = LGBMRegressor(random_state=123, verbose=-1),
                  lags             = 5,
                  window_features  = None,
                  transformer_y    = None,
@@ -259,6 +276,7 @@ forecaster = ForecasterRecursive(
                  weight_func      = None,
                  differentiation  = None,
                  fit_kwargs       = None,
+                 binner_kwargs    = None,
                  forecaster_id    = 'my_forecaster'
              )
 ```
@@ -266,7 +284,7 @@ forecaster = ForecasterRecursive(
 
 ## Direct multi-step parameters
 
-For the Forecasters that follow a [direct multi-step strategy](https://skforecast.org/latest/introduction-forecasting/introduction-forecasting#direct-multi-step-forecasting) (`ForecasterDirect` and `ForecasterDirectMultiVariate`), there are two additional parameters in addition to those mentioned above.
+For the Forecasters that follow a [direct multi-step strategy](../introduction-forecasting/introduction-forecasting.html#direct-multi-step-forecasting) ([`ForecasterDirect`](../api/forecasterdirect.html) and [`ForecasterDirectMultiVariate`](../api/forecasterdirectmultivariate.html)), there are two additional parameters in addition to those mentioned above.
 
 ### Steps
 
@@ -277,11 +295,11 @@ The number of models to be trained is specified by the `steps` parameter.
 ```python
 # Create a forecaster
 # ==============================================================================
+from lightgbm import LGBMRegressor
 from skforecast.direct import ForecasterDirect
-from sklearn.ensemble import RandomForestRegressor
 
 forecaster = ForecasterDirect(
-                 regressor        = RandomForestRegressor(),
+                 regressor        = LGBMRegressor(random_state=123, verbose=-1),
                  steps            = 5,
                  lags             = 5,
                  window_features  = None,
@@ -300,16 +318,16 @@ The `n_jobs` parameter allows multi-process parallelization to train regressors 
 
 The benefits of parallelization depend on several factors, including the regressor used, the number of fits to be performed, and the volume of data involved. When the `n_jobs` parameter is set to `'auto'`, the level of parallelization is automatically selected based on heuristic rules that aim to choose the best option for each scenario.
 
-For a more detailed look at parallelization, visit [Parallelization in skforecast](https://skforecast.org/latest/faq/parallelization-skforecast).
+For a more detailed look at parallelization, visit [Parallelization in skforecast](../faq/parallelization-skforecast.html).
 
 ```python
 # Create a forecaster
 # ==============================================================================
+from lightgbm import LGBMRegressor
 from skforecast.direct import ForecasterDirect
-from sklearn.ensemble import RandomForestRegressor
 
 forecaster = ForecasterDirect(
-                 regressor        = RandomForestRegressor(),
+                 regressor        = LGBMRegressor(random_state=123, verbose=-1),
                  steps            = 5,
                  lags             = 5,
                  window_features  = None,
