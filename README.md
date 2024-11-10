@@ -69,13 +69,13 @@ For detailed information on how to use and leverage the full potential of **skfo
 | :books: [API Reference]                 | Comprehensive reference for skforecast functions and classes |
 | :black_nib: [Authors]                   | Meet the authors and contributors of skforecast |
 
-[Introduction to forecasting]: https://skforecast.org/latest/introduction-forecasting/introduction-forecasting
-[Quick start]: https://skforecast.org/latest/quick-start/quick-start-skforecast
-[User guides]: https://skforecast.org/latest/user_guides/user-guides
-[Examples and tutorials]: https://skforecast.org/latest/examples/examples
-[FAQ and tips]: https://skforecast.org/latest/faq/faq
-[API Reference]: https://skforecast.org/latest/api/forecasterautoreg
-[Authors]: https://skforecast.org/latest/authors/authors
+[Introduction to forecasting]: https://skforecast.org/latest/introduction-forecasting/introduction-forecasting.html
+[Quick start]: https://skforecast.org/latest/quick-start/quick-start-skforecast.html
+[User guides]: https://skforecast.org/latest/user_guides/table-of-contents.html
+[Examples and tutorials]: https://skforecast.org/latest/examples/examples_english.html
+[FAQ and tips]: https://skforecast.org/latest/faq/table-of-contents.html
+[API Reference]: https://skforecast.org/latest/api/forecasterrecursive.html
+[Authors]: https://skforecast.org/latest/authors/authors.html
 
 
 # Installation & Dependencies
@@ -149,12 +149,12 @@ If you use skforecast for a scientific publication, we would appreciate citation
 **Zenodo**
 
 ```
-Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2024). skforecast (v0.13.0). Zenodo. https://doi.org/10.5281/zenodo.8382788
+Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2024). skforecast (v0.14.0). Zenodo. https://doi.org/10.5281/zenodo.8382788
 ```
 
 **APA**:
 ```
-Amat Rodrigo, J., & Escobar Ortiz, J. (2024). skforecast (Version 0.13.0) [Computer software]. https://doi.org/10.5281/zenodo.8382788
+Amat Rodrigo, J., & Escobar Ortiz, J. (2024). skforecast (Version 0.14.0) [Computer software]. https://doi.org/10.5281/zenodo.8382788
 ```
 
 **BibTeX**:
@@ -162,8 +162,8 @@ Amat Rodrigo, J., & Escobar Ortiz, J. (2024). skforecast (Version 0.13.0) [Compu
 @software{skforecast,
 author = {Amat Rodrigo, Joaquin and Escobar Ortiz, Javier},
 title = {skforecast},
-version = {0.13.0},
-month = {8},
+version = {0.14.0},
+month = {11},
 year = {2024},
 license = {BSD-3-Clause},
 url = {https://skforecast.org/},
@@ -188,8 +188,3 @@ If you found skforecast useful, you can support us with a donation. Your contrib
 # License
 
 [BSD-3-Clause License](https://github.com/skforecast/skforecast/blob/master/LICENSE)
-
-
-
-<!-- Links to API Reference -->
-<!-- Forecasters -->
