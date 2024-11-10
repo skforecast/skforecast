@@ -1,4 +1,4 @@
-# Fixtures model_selection_multiseries
+# Fixtures model_selection multi-series
 # ==============================================================================
 import numpy as np
 import pandas as pd

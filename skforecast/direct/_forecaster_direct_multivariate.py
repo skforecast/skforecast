@@ -398,7 +398,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         if n_jobs == 'auto':
             self.n_jobs = select_n_jobs_fit_forecaster(
                               forecaster_name = type(self).__name__,
-                              regressor_name  = type(self.regressor).__name__,
+                              regressor       = self.regressor
                           )
         else:
             if not isinstance(n_jobs, int):
@@ -580,7 +580,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         if isinstance(self.lags, dict):
             lags_keys = list(self.lags.keys())
-            if lags_keys != series_names_in_:
+            if set(lags_keys) != set(series_names_in_):  # Set to avoid order
                 raise ValueError(
                     (f"When `lags` parameter is a `dict`, its keys must be the "
                      f"same as `series` column names. If don't want to include lags, "
@@ -2539,6 +2539,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         y_pred = y_pred.copy()
         if self.differentiation is not None:
             differentiator = copy(self.differentiator)
+            differentiator.set_params(window_size=None)
+
         for k in steps_to_update:
             if isinstance(y_true[k], pd.Series):
                 y_true[k] = y_true[k].to_numpy()
@@ -2572,7 +2574,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             if len(value) > 10000:
                 value = rng.choice(value, size=10000, replace=False)
             self.out_sample_residuals_[key] = value
-
     
     def get_feature_importances(
         self,

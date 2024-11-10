@@ -6,7 +6,6 @@
 # coding=utf-8
 
 from typing import Union, Tuple, Optional, Callable, Generator
-from copy import copy, deepcopy
 import warnings
 import numpy as np
 import pandas as pd
@@ -86,8 +85,7 @@ def check_backtesting_input(
 ) -> None:
     """
     This is a helper function to check most inputs of backtesting functions in 
-    modules `model_selection`, `model_selection_multiseries` and 
-    `model_selection_sarimax`.
+    modules `model_selection`.
 
     Parameters
     ----------
@@ -366,7 +364,7 @@ def select_n_jobs_backtesting(
     - If forecaster is 'ForecasterSarimax' or 'ForecasterEquivalentDate', 
     then `n_jobs = 1`.
     - If regressor is a `LGBMRegressor(n_jobs=1)`, then `n_jobs = cpu_count() - 1`.
-    - If regressor is a `LGBMRegressor` with internal n_jobs!=1, then `n_jobs = 1`.
+    - If regressor is a `LGBMRegressor` with internal n_jobs != 1, then `n_jobs = 1`.
     This is because `lightgbm` is highly optimized for gradient boosting and
     parallelizes operations at a very fine-grained level, making additional
     parallelization unnecessary and potentially harmful due to resource contention.
@@ -513,7 +511,7 @@ def _initialize_levels_model_selection_multiseries(
     levels: Optional[Union[str, list]] = None
 ) -> list:
     """
-    Initialize levels for model_selection_multiseries functions.
+    Initialize levels for model_selection multi-series functions.
 
     Parameters
     ----------
@@ -529,7 +527,7 @@ def _initialize_levels_model_selection_multiseries(
     Returns
     -------
     levels : list
-        List of levels to be used in model_selection_multiseries functions.
+        List of levels to be used in model_selection multi-series functions.
     
     """
 

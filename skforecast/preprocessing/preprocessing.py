@@ -1297,6 +1297,7 @@ class QuantileBinner:
         The number of bins learned during fitting.
     bin_edges_ : numpy ndarray
         The edges of the bins learned during fitting.
+    
     """
 
     def __init__(
