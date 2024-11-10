@@ -55,10 +55,10 @@ def select_features(
         
         - If `'autoreg'`, only autoregressive features (lags and window features)
         are evaluated by the selector. All exogenous features are included in the
-        output (`selected_exog`).
+        output `selected_exog`.
         - If `'exog'`, only exogenous features are evaluated without the presence
         of autoregressive features. All autoregressive features are included 
-        in the output (`selected_autoreg`).
+        in the outputs `selected_lags` and `selected_window_features`.
         - If `None`, all features are evaluated by the selector.
     force_inclusion : list, str, default `None`
         Features to force include in the final list of selected features.
@@ -253,10 +253,10 @@ def select_features_multiseries(
         
         - If `'autoreg'`, only autoregressive features (lags and window features) 
         are evaluated by the selector. All exogenous features are 
-        included in the output (`selected_exog`).
+        included in the output `selected_exog`.
         - If `'exog'`, only exogenous features are evaluated without the presence
         of autoregressive features. All autoregressive features are included 
-        in the output (`selected_autoreg`).
+        in the outputs `selected_lags` and `selected_window_features`.
         - If `None`, all features are evaluated by the selector.
     force_inclusion : list, str, default `None`
         Features to force include in the final list of selected features.

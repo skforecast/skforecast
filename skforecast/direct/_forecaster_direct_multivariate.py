@@ -580,7 +580,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         if isinstance(self.lags, dict):
             lags_keys = list(self.lags.keys())
-            if lags_keys != series_names_in_:
+            if set(lags_keys) != set(series_names_in_):  # Set to avoid order
                 raise ValueError(
                     (f"When `lags` parameter is a `dict`, its keys must be the "
                      f"same as `series` column names. If don't want to include lags, "

@@ -85,8 +85,7 @@ def check_backtesting_input(
 ) -> None:
     """
     This is a helper function to check most inputs of backtesting functions in 
-    modules `model_selection`, `model_selection_multiseries` and 
-    `model_selection_sarimax`.
+    modules `model_selection`.
 
     Parameters
     ----------
@@ -512,7 +511,7 @@ def _initialize_levels_model_selection_multiseries(
     levels: Optional[Union[str, list]] = None
 ) -> list:
     """
-    Initialize levels for model_selection_multiseries functions.
+    Initialize levels for model_selection multi-series functions.
 
     Parameters
     ----------
@@ -528,7 +527,7 @@ def _initialize_levels_model_selection_multiseries(
     Returns
     -------
     levels : list
-        List of levels to be used in model_selection_multiseries functions.
+        List of levels to be used in model_selection multi-series functions.
     
     """
 
