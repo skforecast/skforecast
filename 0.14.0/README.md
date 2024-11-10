@@ -58,7 +58,7 @@ To install the basic version of `skforecast` with core dependencies, run the fol
 pip install skforecast
 ```
 
-For more installation options, including dependencies and additional features, check out our [Installation Guide](../quick-start/how-to-install.html).
+For more installation options, including dependencies and additional features, check out our [Installation Guide](./quick-start/how-to-install.html).
 
 
 ## Forecasters
@@ -76,22 +76,22 @@ The **skforecast** library offers a variety of forecaster types, each tailored t
 |[ForecasterRNN]                  ||✔️||✔️|||||
 |[ForecasterSarimax]              |✔️||✔️||✔️|✔️|✔️||
 
-[ForecasterRecursive]: ../user_guides/autoregresive-forecaster.html
-[ForecasterDirect]: ../user_guides/direct-multi-step-forecasting.html
-[ForecasterRecursiveMultiSeries]: ../user_guides/independent-multi-time-series-forecasting.html
-[ForecasterDirectMultiVariate]: ../user_guides/dependent-multi-series-multivariate-forecasting.html
-[ForecasterRNN]: ../user_guides/forecasting-with-deep-learning-rnn-lstm.html
-[ForecasterSarimax]: ../user_guides/forecasting-sarimax-arima.html
+[ForecasterRecursive]: ./user_guides/autoregresive-forecaster.html
+[ForecasterDirect]: ./user_guides/direct-multi-step-forecasting.html
+[ForecasterRecursiveMultiSeries]: ./user_guides/independent-multi-time-series-forecasting.html
+[ForecasterDirectMultiVariate]: ./user_guides/dependent-multi-series-multivariate-forecasting.html
+[ForecasterRNN]: ./user_guides/forecasting-with-deep-learning-rnn-lstm.html
+[ForecasterSarimax]: ./user_guides/forecasting-sarimax-arima.html
 
 
 ## Features
 
-Skforecast provides a set of key features designed to make time series forecasting with machine learning easy and efficient. For a detailed overview, see the [User Guides](../user_guides/table-of-contents.html).
+Skforecast provides a set of key features designed to make time series forecasting with machine learning easy and efficient. For a detailed overview, see the [User Guides](./user_guides/table-of-contents.html).
 
 
 ## Examples and tutorials
 
-Explore our extensive list of examples and tutorials (English and Spanish) to get you started with skforecast. You can find them [here](../examples/examples_english.html).
+Explore our extensive list of examples and tutorials (English and Spanish) to get you started with skforecast. You can find them [here](./examples/examples_english.html).
 
 
 ## How to contribute
@@ -99,7 +99,7 @@ Explore our extensive list of examples and tutorials (English and Spanish) to ge
 Primarily, skforecast development consists of adding and creating new *Forecasters*, new validation strategies, or improving the performance of the current code. However, there are many other ways to contribute:
 
 - Submit a bug report or feature request on [GitHub Issues](https://github.com/skforecast/skforecast/issues).
-- Contribute a Jupyter notebook to our [examples](../examples/examples_english).
+- Contribute a Jupyter notebook to our [examples](./examples/examples_english.html).
 - Write [unit or integration tests](https://docs.pytest.org/en/latest/) for our project.
 - Answer questions on our issues, Stack Overflow, and elsewhere.
 - Translate our documentation into another language.
@@ -107,7 +107,7 @@ Primarily, skforecast development consists of adding and creating new *Forecaste
 
 For more information on how to contribute to skforecast, see our [Contribution Guide](https://github.com/skforecast/skforecast/blob/master/CONTRIBUTING.md).
 
-Visit our [authors section](../authors/authors.html) to meet all the contributors to skforecast.
+Visit our [authors section](./authors/authors.html) to meet all the contributors to skforecast.
 
 
 ## Citation
