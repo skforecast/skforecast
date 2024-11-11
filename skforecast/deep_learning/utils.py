@@ -25,7 +25,7 @@ def create_and_compile_model(
     series: pd.DataFrame,
     lags: Union[int, list],
     steps: Union[int, list],
-    levels: Optional[Union[str, int, list]]=None,
+    levels: Optional[Union[str, int, list]] = None,
     recurrent_layer: str="LSTM",
     recurrent_units: Union[int, list]=100,
     dense_units: Union[int, list]=64,
