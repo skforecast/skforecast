@@ -7,7 +7,6 @@ import pandas as pd
 from sklearn.linear_model import LinearRegression
 from sklearn.exceptions import NotFittedError
 from sklearn.preprocessing import StandardScaler
-from skforecast.exceptions import IgnoredArgumentWarning
 from skforecast.direct import ForecasterDirectMultiVariate
 
 # Fixtures
@@ -247,8 +246,15 @@ def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_and_a
         transformer_series=None
     )
     forecaster.fit(series=series)
-    y_true = {1: np.array([1, 2, 3, 4, 5]), 2: np.array([2, 3, 4, 5, 6])}
-    y_pred = {1: np.array([0, 1, 2, 3, 4]), 2: np.array([0, 1, 2, 3, 4])}
+    y_true = {
+        1: pd.Series(np.array([1, 2, 3, 4, 5])), 
+        2: pd.Series(np.array([2, 3, 4, 5, 6]))
+    }
+    y_pred = {
+        1: pd.Series(np.array([0, 1, 2, 3, 4])), 
+        2: pd.Series(np.array([0, 1, 2, 3, 4]))
+    }
+    
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred, append=True)
     expected = {
@@ -367,7 +373,6 @@ def test_forecaster_set_outsample_residuals_when_transformer_y_and_diferentiatio
         y_true = y_true,
         y_pred = y_pred
     )
-    print(forecaster.out_sample_residuals_)
 
     y_true[1] = forecaster.transformer_series_['l1'].transform(y_true[1].reshape(-1, 1)).flatten()
     y_true[2] = forecaster.transformer_series_['l1'].transform(y_true[2].reshape(-1, 1)).flatten()

@@ -11,12 +11,11 @@ classes used across skforecast.
 """
 
 
-class MissingValuesWarning(UserWarning):
+class DataTypeWarning(UserWarning):
     """
-    Warning used to indicate that there are missing values in the data. This 
-    warning occurs when the input data contains missing values, or the training
-    matrix generates missing values. Most machine learning models do not accept
-    missing values, so the Forecaster's `fit' and `predict' methods may fail.
+    Warning used to notify there are dtypes in the exogenous data that are not
+    'int', 'float', 'bool' or 'category'. Most machine learning models do not
+    accept other data types, therefore the forecaster `fit` and `predict` may fail.
     """
     def __init__(self, message):
         self.message = message
@@ -24,7 +23,54 @@ class MissingValuesWarning(UserWarning):
     def __str__(self):
         extra_message = (
             "\n You can suppress this warning using: "
-            "warnings.simplefilter('ignore', category=MissingValuesWarning)"
+            "warnings.simplefilter('ignore', category=DataTypeWarning)"
+        )
+        return self.message + " " + extra_message
+
+
+class DataTransformationWarning(UserWarning):
+    """
+    Warning used to notify that the output data is in the transformed space.
+    """
+    def __init__(self, message):
+        self.message = message
+
+    def __str__(self):
+        extra_message = (
+            "\n You can suppress this warning using: "
+            "warnings.simplefilter('ignore', category=DataTransformationWarning)"
+        )
+        return self.message + " " + extra_message
+
+
+class IgnoredArgumentWarning(UserWarning):
+    """
+    Warning used to notify that an argument is ignored when using a method 
+    or a function.
+    """
+    def __init__(self, message):
+        self.message = message
+
+    def __str__(self):
+        extra_message = (
+            "\n You can suppress this warning using: "
+            "warnings.simplefilter('ignore', category=IgnoredArgumentWarning)"
+        )
+        return self.message + " " + extra_message
+
+
+class LongTrainingWarning(UserWarning):
+    """
+    Warning used to notify that a large number of models will be trained and the
+    the process may take a while to run.
+    """
+    def __init__(self, message):
+        self.message = message
+
+    def __str__(self):
+        extra_message = (
+            "\n You can suppress this warning using: "
+            "warnings.simplefilter('ignore', category=LongTrainingWarning)"
         )
         return self.message + " " + extra_message
 
@@ -46,11 +92,12 @@ class MissingExogWarning(UserWarning):
         return self.message + " " + extra_message
 
 
-class DataTypeWarning(UserWarning):
+class MissingValuesWarning(UserWarning):
     """
-    Warning used to notify there are dtypes in the exogenous data that are not
-    'int', 'float', 'bool' or 'category'. Most machine learning models do not
-    accept other data types, therefore the forecaster `fit` and `predict` may fail.
+    Warning used to indicate that there are missing values in the data. This 
+    warning occurs when the input data contains missing values, or the training
+    matrix generates missing values. Most machine learning models do not accept
+    missing values, so the Forecaster's `fit' and `predict' methods may fail.
     """
     def __init__(self, message):
         self.message = message
@@ -58,15 +105,14 @@ class DataTypeWarning(UserWarning):
     def __str__(self):
         extra_message = (
             "\n You can suppress this warning using: "
-            "warnings.simplefilter('ignore', category=ValueTypesExogWarning)"
+            "warnings.simplefilter('ignore', category=MissingValuesWarning)"
         )
         return self.message + " " + extra_message
 
 
-class LongTrainingWarning(UserWarning):
+class OneStepAheadValidationWarning(UserWarning):
     """
-    Warning used to notify that a large number of models will be trained and the
-    the process may take a while to run.
+    Warning used to notify that the one-step-ahead validation is being used.
     """
     def __init__(self, message):
         self.message = message
@@ -74,7 +120,7 @@ class LongTrainingWarning(UserWarning):
     def __str__(self):
         extra_message = (
             "\n You can suppress this warning using: "
-            "warnings.simplefilter('ignore', category=LongTrainingWarning)"
+            "warnings.simplefilter('ignore', category=OneStepAheadValidationWarning)"
         )
         return self.message + " " + extra_message
 
@@ -91,22 +137,6 @@ class UnknownLevelWarning(UserWarning):
         extra_message = (
             "\n You can suppress this warning using: "
             "warnings.simplefilter('ignore', category=UnknownLevelWarning)"
-        )
-        return self.message + " " + extra_message
-
-
-class IgnoredArgumentWarning(UserWarning):
-    """
-    Warning used to notify that an argument is ignored when using a method 
-    or a function.
-    """
-    def __init__(self, message):
-        self.message = message
-
-    def __str__(self):
-        extra_message = (
-            "\n You can suppress this warning using: "
-            "warnings.simplefilter('ignore', category=IgnoredArgumentWarning)"
         )
         return self.message + " " + extra_message
 
@@ -144,12 +174,14 @@ class SkforecastVersionWarning(UserWarning):
 
 
 warn_skforecast_categories = [
-    MissingValuesWarning,
-    MissingExogWarning,
     DataTypeWarning,
-    UnknownLevelWarning,
-    LongTrainingWarning,
+    DataTransformationWarning,
     IgnoredArgumentWarning,
+    LongTrainingWarning,
+    MissingExogWarning,
+    MissingValuesWarning,
+    OneStepAheadValidationWarning,
+    UnknownLevelWarning,
     SaveLoadSkforecastWarning,
     SkforecastVersionWarning
 ]

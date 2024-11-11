@@ -6,6 +6,21 @@ import pandas as pd
 from skforecast.model_selection._split import OneStepAheadFold
 
 
+def test_OneStepAheadFold_split_raise_error_when_X_is_not_series_dataframe_or_dict():
+    """
+    Test that ValueError is raised when X is not a pd.Series, pd.DataFrame or dict.
+    """
+    X = np.arange(100)
+    cv = OneStepAheadFold(initial_train_size=70)
+    
+    msg = (
+        f"X must be a pandas Series, DataFrame, Index or a dictionary. "
+        f"Got {type(X)}."
+    )
+    with pytest.raises(TypeError, match=msg):
+        cv.split(X=X)
+
+
 @pytest.mark.parametrize("return_all_indexes, expected",
                          [(True, [[range(0, 70)], [range(70, 100)], True]),
                           (False, [[0, 70], [70, 100], True])], 
@@ -139,15 +154,3 @@ def test_OneStepAhead_split_initial_train_size_window_size_return_all_indexes_fa
 
     assert out == expected_out
     pd.testing.assert_frame_equal(folds, expected_folds)
-
-
-def test_onestepaheadfold_split_raise_error_when_X_is_not_series_dataframe_or_dict():
-    """
-    Test that ValueError is raised when X is not a pd.Series, pd.DataFrame or dict.
-    """
-    X = np.arange(100)
-    cv = OneStepAheadFold(initial_train_size=70)
-    msg = (
-        f"X must be a pandas Series, DataFrame, Index or a dictionary. Got {type(X)}.")
-    with pytest.raises(TypeError, match=msg):
-        cv.split(X=X)

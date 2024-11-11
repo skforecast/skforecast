@@ -60,13 +60,14 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 
 <span style="font-size: 1.3em;">FAQ and forecasting tips</span>
 
-- [Time series with missing values](../faq/forecasting-time-series-with-missing-values.html)
-- [Non negative predictions](../faq/non-negative-predictions.html)
-- [Forecasting with delayed data](../faq/forecasting-with-delayed-historical-data.html)
-- [Parallelization](../faq/parallelization-skforecast.html)
+- [Avoid negative predictions when forecasting](../faq/non-negative-predictions.html)
+- [Forecasting time series with missing values](../faq/forecasting-time-series-with-missing-values.html)
+- [Forecasting with delayed historical data](../faq/forecasting-with-delayed-historical-data.html)
+- [Backtesting vs One-step-ahead](../faq/parameters-search-backtesting-vs-one-step-ahead.html)
+- [Cyclical features in time series](../faq/cyclical-features-time-series.html)
 - [Time series aggregation](../faq/time-series-aggregation.html)
+- [Parallelization in skforecast](../faq/parallelization-skforecast.html)
 - [Profiling skforecast](../faq/profiling-skforecast.html)
-- [Backtesting vs One-step-ahead](../faq/parameters-search-backetesting-vs-one-step-ahead.html)
 
 
-We hope you find these guides helpful. If you have any questions or need further assistance, please don't hesitate to reach out to the skforecast community. Remember to visit the [FAQ and forecasting tips](../faq/faq.html) page for answers to frequently asked questions and forecasting tips.
+We hope you find these guides helpful. If you have any questions or need further assistance, please don't hesitate to reach out to the skforecast community. Remember to visit the [FAQ and forecasting tips](../faq/table-of-contents.html) page for answers to frequently asked questions and forecasting tips.

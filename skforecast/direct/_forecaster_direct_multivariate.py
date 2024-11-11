@@ -5,7 +5,7 @@
 ################################################################################
 # coding=utf-8
 
-from typing import Union, Tuple, Any, Optional, Callable
+from typing import Union, Tuple, Optional, Callable, Any
 import warnings
 import sys
 import numpy as np
@@ -15,13 +15,13 @@ from copy import copy
 from sklearn.exceptions import NotFittedError
 from sklearn.pipeline import Pipeline
 from sklearn.base import clone
+from joblib import Parallel, delayed, cpu_count
 from sklearn.preprocessing import StandardScaler
 from itertools import chain
-from joblib import Parallel, delayed, cpu_count
 
 import skforecast
 from ..base import ForecasterBase
-from ..exceptions import IgnoredArgumentWarning
+from ..exceptions import DataTransformationWarning
 from ..utils import (
     initialize_lags,
     initialize_window_features,
@@ -310,8 +310,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         if not isinstance(steps, int):
             raise TypeError(
-                (f"`steps` argument must be an int greater than or equal to 1. "
-                 f"Got {type(steps)}.")
+                f"`steps` argument must be an int greater than or equal to 1. "
+                f"Got {type(steps)}."
             )
 
         if steps < 1:
@@ -376,7 +376,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                     f"greater than 1. Got {differentiation}."
                 )
             self.window_size += self.differentiation
-            self.differentiator = TimeSeriesDifferentiator(order=self.differentiation)
+            self.differentiator = TimeSeriesDifferentiator(
+                order=self.differentiation, window_size=self.window_size
+            )
             
         self.weight_func, self.source_code_weight_func, _ = initialize_weights(
             forecaster_name = type(self).__name__, 
@@ -396,7 +398,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         if n_jobs == 'auto':
             self.n_jobs = select_n_jobs_fit_forecaster(
                               forecaster_name = type(self).__name__,
-                              regressor_name  = type(self.regressor).__name__,
+                              regressor       = self.regressor
                           )
         else:
             if not isinstance(n_jobs, int):
@@ -404,7 +406,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                     f"`n_jobs` must be an integer or `'auto'`. Got {type(n_jobs)}."
                 )
             self.n_jobs = n_jobs if n_jobs > 0 else cpu_count()
-
 
     def __repr__(
         self
@@ -433,7 +434,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             f"{'=' * len(type(self).__name__)} \n"
             f"{type(self).__name__} \n"
             f"{'=' * len(type(self).__name__)} \n"
-            f"Regressor: {self.regressor} \n"
+            f"Regressor: {type(self.regressor).__name__} \n"
             f"Target series (level): {self.level} \n"
             f"Lags: {self.lags} \n"
             f"Window features: {self.window_features_names} \n"
@@ -488,7 +489,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             <details open>
                 <summary>General Information</summary>
                 <ul>
-                    <li><strong>Regressor:</strong> {self.regressor}</li>
+                    <li><strong>Regressor:</strong> {type(self.regressor).__name__}</li>
                     <li><strong>Target series (level):</strong> {self.level}</li>
                     <li><strong>Lags:</strong> {self.lags}</li>
                     <li><strong>Window features:</strong> {self.window_features_names}</li>
@@ -579,7 +580,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         if isinstance(self.lags, dict):
             lags_keys = list(self.lags.keys())
-            if lags_keys != series_names_in_:
+            if set(lags_keys) != set(series_names_in_):  # Set to avoid order
                 raise ValueError(
                     (f"When `lags` parameter is a `dict`, its keys must be the "
                      f"same as `series` column names. If don't want to include lags, "
@@ -1704,7 +1705,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 "As a result, any predictions generated using this matrix will also "
                 "be in the transformed scale. Please refer to the documentation "
                 "for more details: "
-                "https://skforecast.org/latest/user_guides/dependent-multi-series-multivariate-forecasting#extract-prediction-matrices"
+                "https://skforecast.org/latest/user_guides/training-and-prediction-matrices.html",
+                DataTransformationWarning
             )
         
         set_skforecast_warnings(suppress_warnings, action='default')
@@ -1882,23 +1884,23 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             if use_in_sample_residuals:
                 if not set(steps).issubset(set(self.in_sample_residuals_.keys())):
                     raise ValueError(
-                        (f"Not `forecaster.in_sample_residuals_` for steps: "
-                         f"{set(steps) - set(self.in_sample_residuals_.keys())}.")
+                        f"Not `forecaster.in_sample_residuals_` for steps: "
+                        f"{set(steps) - set(self.in_sample_residuals_.keys())}."
                     )
                 residuals = self.in_sample_residuals_
             else:
                 if self.out_sample_residuals_ is None:
                     raise ValueError(
-                        ("`forecaster.out_sample_residuals_` is `None`. Use "
-                         "`use_in_sample_residuals=True` or the "
-                         "`set_out_sample_residuals()` method before predicting.")
+                        "`forecaster.out_sample_residuals_` is `None`. Use "
+                        "`use_in_sample_residuals=True` or the "
+                        "`set_out_sample_residuals()` method before predicting."
                     )
                 else:
                     if not set(steps).issubset(set(self.out_sample_residuals_.keys())):
                         raise ValueError(
-                            (f"Not `forecaster.out_sample_residuals_` for steps: "
-                             f"{set(steps) - set(self.out_sample_residuals_.keys())}. "
-                             f"Use method `set_out_sample_residuals()`.")
+                            f"Not `forecaster.out_sample_residuals_` for steps: "
+                            f"{set(steps) - set(self.out_sample_residuals_.keys())}. "
+                            f"Use method `set_out_sample_residuals()`."
                         )
                 residuals = self.out_sample_residuals_
             
@@ -1909,14 +1911,14 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             for step in steps:
                 if residuals[step] is None:
                     raise ValueError(
-                        (f"forecaster residuals for step {step} are `None`. "
-                         f"Check {check_residuals}.")
+                        f"forecaster residuals for step {step} are `None`. "
+                        f"Check {check_residuals}."
                     )
                 elif (any(element is None for element in residuals[step]) or
                       np.any(np.isnan(residuals[step]))):
                     raise ValueError(
-                        (f"forecaster residuals for step {step} contains `None` "
-                         f"or `NaNs` values. Check {check_residuals}.")
+                        f"forecaster residuals for step {step} contains `None` "
+                        f"or `NaNs` values. Check {check_residuals}."
                     )
 
         Xs, _, steps, prediction_index = self._create_predict_inputs(
@@ -2337,9 +2339,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         if self.window_features is None and lags is None:
             raise ValueError(
-                ("At least one of the arguments `lags` or `window_features` "
-                 "must be different from None. This is required to create the "
-                 "predictors used in training the forecaster.")
+                "At least one of the arguments `lags` or `window_features` "
+                "must be different from None. This is required to create the "
+                "predictors used in training the forecaster."
             )
 
         if isinstance(lags, dict):
@@ -2384,6 +2386,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         )
         if self.differentiation is not None:
             self.window_size += self.differentiation
+            self.differentiator.set_params(window_size=self.window_size)
 
     def set_window_features(
         self, 
@@ -2426,8 +2429,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
              if ws is not None]
         )
         if self.differentiation is not None:
-            self.window_size += self.differentiation   
-
+            self.window_size += self.differentiation
+            self.differentiator.set_params(window_size=self.window_size)
 
     def set_out_sample_residuals(
         self,
@@ -2536,6 +2539,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         y_pred = y_pred.copy()
         if self.differentiation is not None:
             differentiator = copy(self.differentiator)
+            differentiator.set_params(window_size=None)
+
         for k in steps_to_update:
             if isinstance(y_true[k], pd.Series):
                 y_true[k] = y_true[k].to_numpy()
@@ -2569,7 +2574,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             if len(value) > 10000:
                 value = rng.choice(value, size=10000, replace=False)
             self.out_sample_residuals_[key] = value
-
     
     def get_feature_importances(
         self,

@@ -58,20 +58,22 @@ def test_RollingFeatures_validate_params():
     with pytest.raises(TypeError, match = err_msg):
         RollingFeatures(**params[2])
     err_msg = re.escape(
-        ("Length of `window_sizes` list (2) "
-         "must match length of `stats` list (1).")
+        "Length of `window_sizes` list (2) must match length of `stats` list (1)."
     ) 
     with pytest.raises(ValueError, match = err_msg):
         RollingFeatures(**params[3])
     err_msg = re.escape(
-        ("Length of `window_sizes` list (1) "
-         "must match length of `stats` list (2).")
+        "Length of `window_sizes` list (1) must match length of `stats` list (2)."
     ) 
     with pytest.raises(ValueError, match = err_msg):
         RollingFeatures(**params[4])
     
     # Check duplicates (stats, window_sizes)
-    err_msg = re.escape("Duplicate (stat, window_size) pairs are not allowed.")
+    err_msg = re.escape(
+        "Duplicate (stat, window_size) pairs are not allowed.\n"
+        "    `stats`       : ['mean', 'median', 'mean']\n"
+        "    `window_sizes : [6, 5, 6]"
+    )
     with pytest.raises(ValueError, match = err_msg):
         RollingFeatures(**params[5])
 
@@ -82,20 +84,17 @@ def test_RollingFeatures_validate_params():
     with pytest.raises(TypeError, match = err_msg):
         RollingFeatures(**params[6])
     err_msg = re.escape(
-        ("Length of `min_periods` list (2) "
-         "must match length of `stats` list (1).")
+        "Length of `min_periods` list (2) must match length of `stats` list (1)."
     ) 
     with pytest.raises(ValueError, match = err_msg):
         RollingFeatures(**params[7])
     err_msg = re.escape(
-        ("Length of `min_periods` list (1) "
-         "must match length of `stats` list (2).")
+        "Length of `min_periods` list (1) must match length of `stats` list (2)."
     ) 
     with pytest.raises(ValueError, match = err_msg):
         RollingFeatures(**params[8])
     err_msg = re.escape(
-        ("Each min_period must be less than or equal to its "
-         "corresponding window_size.")
+        "Each `min_period` must be less than or equal to its corresponding `window_size`."
     ) 
     with pytest.raises(ValueError, match = err_msg):
         RollingFeatures(**params[9])
@@ -107,14 +106,12 @@ def test_RollingFeatures_validate_params():
     with pytest.raises(TypeError, match = err_msg):
         RollingFeatures(**params[10])
     err_msg = re.escape(
-        ("Length of `features_names` list (2) "
-         "must match length of `stats` list (1).")
+        "Length of `features_names` list (2) must match length of `stats` list (1)."
     ) 
     with pytest.raises(ValueError, match = err_msg):
         RollingFeatures(**params[11])
     err_msg = re.escape(
-        ("Length of `features_names` list (1) "
-         "must match length of `stats` list (2).")
+        "Length of `features_names` list (1) must match length of `stats` list (2)."
     ) 
     with pytest.raises(ValueError, match = err_msg):
         RollingFeatures(**params[12])
@@ -126,8 +123,8 @@ def test_RollingFeatures_validate_params():
     with pytest.raises(TypeError, match = err_msg):
         RollingFeatures(**params[13])
     err_msg = re.escape(
-        ("'not_valid_fillna' is not allowed. Allowed `fillna` "
-         "values are: ['mean', 'median', 'ffill', 'bfill'] or a float value.")
+        "'not_valid_fillna' is not allowed. Allowed `fillna` "
+        "values are: ['mean', 'median', 'ffill', 'bfill'] or a float value."
     ) 
     with pytest.raises(ValueError, match = err_msg):
         RollingFeatures(**params[14])
@@ -435,3 +432,65 @@ def test_RollingFeatures_transform_with_nans_2d():
     expected = np.array([expected_0, expected_1])
 
     np.testing.assert_array_almost_equal(rolling_features, expected)
+
+
+def test_equivalence_results_RollingFeatures_and_custom_class():
+    """
+    Test equivalence of results between RollingFeatures and custom class that
+    calculates rolling mean and std.
+    """
+        
+    y = pd.Series([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+    x = np.array([1, 20, 3])
+
+    class RollingMeanStd():
+        """
+        Custom class to create rolling skewness features.
+        """
+
+        def __init__(self, window_sizes, features_names=['roll_mean_3', 'roll_std_3']):
+            
+            if not isinstance(window_sizes, list):
+                window_sizes = [window_sizes]
+            self.window_sizes = window_sizes
+            self.features_names = features_names
+
+        def transform_batch(self, X: pd.Series) -> pd.DataFrame:
+            
+            rolling_obj = X.rolling(window=self.window_sizes[0], center=False, closed='left')
+            rolling_mean = rolling_obj.mean()
+            rolling_std = rolling_obj.std()
+            rolling_skewness = pd.DataFrame({
+                                    'roll_mean_3': rolling_mean,
+                                    'roll_std_3': rolling_std
+                                }).dropna()
+
+            return rolling_skewness
+
+        def transform(self, X: np.ndarray) -> np.ndarray:
+            
+            X = X[~np.isnan(X)]
+            if len(X) > 0:
+                rolling_mean = np.mean(X)
+                rolling_std = np.std(X, ddof=1)
+                results = np.array([rolling_mean, rolling_std])
+            else:
+                results = np.nan
+            
+            return results
+        
+    window_features_1 = RollingFeatures(
+                stats        = ['mean', 'std'],
+                window_sizes = [3, 3]
+                )
+    window_features_2 = RollingMeanStd(window_sizes=3, features_names=['roll_mean_3', 'roll_std_3'])
+
+    pd.testing.assert_frame_equal(
+        window_features_1.transform_batch(y),
+        window_features_2.transform_batch(y)
+    )
+
+    np.testing.assert_array_almost_equal(
+        window_features_1.transform(x),
+        window_features_2.transform(x)
+    )

@@ -6,7 +6,6 @@
 # coding=utf-8
 
 from typing import Union, Tuple, Optional, Callable, Generator
-from copy import deepcopy
 import warnings
 import numpy as np
 import pandas as pd
@@ -86,8 +85,7 @@ def check_backtesting_input(
 ) -> None:
     """
     This is a helper function to check most inputs of backtesting functions in 
-    modules `model_selection`, `model_selection_multiseries` and 
-    `model_selection_sarimax`.
+    modules `model_selection`.
 
     Parameters
     ----------
@@ -150,9 +148,7 @@ def check_backtesting_input(
     cv_name = type(cv).__name__
 
     if cv_name != "TimeSeriesFold":
-        raise TypeError(
-            (f"`cv` must be a TimeSeriesFold object. Got {cv_name}.")
-        )
+        raise TypeError(f"`cv` must be a TimeSeriesFold object. Got {cv_name}.")
 
     steps = cv.steps
     initial_train_size = cv.initial_train_size
@@ -189,8 +185,8 @@ def check_backtesting_input(
     elif forecaster_name in forecasters_multi_dict:
         if not isinstance(series, (pd.DataFrame, dict)):
             raise TypeError(
-                (f"`series` must be a pandas DataFrame or a dict of DataFrames or Series. "
-                 f"Got {type(series)}.")
+                f"`series` must be a pandas DataFrame or a dict of DataFrames or Series. "
+                f"Got {type(series)}."
             )
         
         data_name = 'series'
@@ -202,9 +198,9 @@ def check_backtesting_input(
             ]
             if not_valid_series:
                 raise TypeError(
-                    (f"If `series` is a dictionary, all series must be a named "
-                     f"pandas Series or a pandas DataFrame with a single column. "
-                     f"Review series: {not_valid_series}")
+                    f"If `series` is a dictionary, all series must be a named "
+                    f"pandas Series or a pandas DataFrame with a single column. "
+                    f"Review series: {not_valid_series}"
                 )
             not_valid_index = [
                 k 
@@ -213,18 +209,18 @@ def check_backtesting_input(
             ]
             if not_valid_index:
                 raise ValueError(
-                    (f"If `series` is a dictionary, all series must have a Pandas "
-                     f"DatetimeIndex as index with the same frequency. "
-                     f"Review series: {not_valid_index}")
+                    f"If `series` is a dictionary, all series must have a Pandas "
+                    f"DatetimeIndex as index with the same frequency. "
+                    f"Review series: {not_valid_index}"
                 )
 
             indexes_freq = [f'{v.index.freq}' for v in series.values()]
             indexes_freq = sorted(set(indexes_freq))
             if not len(indexes_freq) == 1:
                 raise ValueError(
-                    (f"If `series` is a dictionary, all series must have a Pandas "
-                     f"DatetimeIndex as index with the same frequency. "
-                     f"Found frequencies: {indexes_freq}")
+                    f"If `series` is a dictionary, all series must have a Pandas "
+                    f"DatetimeIndex as index with the same frequency. "
+                    f"Found frequencies: {indexes_freq}"
                 )
             data_length = max([len(series[serie]) for serie in series])
         else:
@@ -234,8 +230,8 @@ def check_backtesting_input(
         if forecaster_name in forecasters_multi_dict:
             if not isinstance(exog, (pd.Series, pd.DataFrame, dict)):
                 raise TypeError(
-                    (f"`exog` must be a pandas Series, DataFrame, dictionary of pandas "
-                     f"Series/DataFrames or None. Got {type(exog)}.")
+                    f"`exog` must be a pandas Series, DataFrame, dictionary of pandas "
+                    f"Series/DataFrames or None. Got {type(exog)}."
                 )
             if isinstance(exog, dict):
                 not_valid_exog = [
@@ -245,28 +241,28 @@ def check_backtesting_input(
                 ]
                 if not_valid_exog:
                     raise TypeError(
-                        (f"If `exog` is a dictionary, All exog must be a named pandas "
-                         f"Series, a pandas DataFrame or None. Review exog: {not_valid_exog}")
+                        f"If `exog` is a dictionary, All exog must be a named pandas "
+                        f"Series, a pandas DataFrame or None. Review exog: {not_valid_exog}"
                     )
         else:
             if not isinstance(exog, (pd.Series, pd.DataFrame)):
                 raise TypeError(
-                    (f"`exog` must be a pandas Series, DataFrame or None. Got {type(exog)}.")
+                    f"`exog` must be a pandas Series, DataFrame or None. Got {type(exog)}."
                 )
 
     if hasattr(forecaster, 'differentiation'):
         if forecaster.differentiation != cv.differentiation:
             raise ValueError(
-                (f"The differentiation included in the forecaster "
-                 f"({forecaster.differentiation}) differs from the differentiation "
-                 f"included in the cv ({cv.differentiation}). Set the same value "
-                 f"for both.")
+                f"The differentiation included in the forecaster "
+                f"({forecaster.differentiation}) differs from the differentiation "
+                f"included in the cv ({cv.differentiation}). Set the same value "
+                f"for both using the `differentiation` argument."
             )
 
     if not isinstance(metric, (str, Callable, list)):
         raise TypeError(
-            (f"`metric` must be a string, a callable function, or a list containing "
-             f"multiple strings and/or callables. Got {type(metric)}.")
+            f"`metric` must be a string, a callable function, or a list containing "
+            f"multiple strings and/or callables. Got {type(metric)}."
         )
 
     if forecaster_name == "ForecasterEquivalentDate" and isinstance(
@@ -274,34 +270,34 @@ def check_backtesting_input(
     ):
         if initial_train_size is None:
             raise ValueError(
-                (f"`initial_train_size` must be an integer greater than "
-                 f"the `window_size` of the forecaster ({forecaster.window_size}) "
-                 f"and smaller than the length of `{data_name}` ({data_length}).")
+                f"`initial_train_size` must be an integer greater than "
+                f"the `window_size` of the forecaster ({forecaster.window_size}) "
+                f"and smaller than the length of `{data_name}` ({data_length})."
             )
     elif initial_train_size is not None:
         if initial_train_size < forecaster.window_size or initial_train_size >= data_length:
             raise ValueError(
-                (f"If used, `initial_train_size` must be an integer greater than "
-                 f"the `window_size` of the forecaster ({forecaster.window_size}) "
-                 f"and smaller than the length of `{data_name}` ({data_length}).")
+                f"If used, `initial_train_size` must be an integer greater than "
+                f"the `window_size` of the forecaster ({forecaster.window_size}) "
+                f"and smaller than the length of `{data_name}` ({data_length})."
             )
         if initial_train_size + gap >= data_length:
             raise ValueError(
-                (f"The combination of initial_train_size {initial_train_size} and "
-                 f"gap {gap} cannot be greater than the length of `{data_name}` "
-                 f"({data_length}).")
+                f"The combination of initial_train_size {initial_train_size} and "
+                f"gap {gap} cannot be greater than the length of `{data_name}` "
+                f"({data_length})."
             )
     else:
         if forecaster_name in ['ForecasterSarimax', 'ForecasterEquivalentDate']:
             raise ValueError(
-                (f"`initial_train_size` must be an integer smaller than the "
-                 f"length of `{data_name}` ({data_length}).")
+                f"`initial_train_size` must be an integer smaller than the "
+                f"length of `{data_name}` ({data_length})."
             )
         else:
             if not forecaster.is_fitted:
                 raise NotFittedError(
-                    ("`forecaster` must be already trained if no `initial_train_size` "
-                     "is provided.")
+                    "`forecaster` must be already trained if no `initial_train_size` "
+                    "is provided."
                 )
             if refit:
                 raise ValueError(
@@ -337,10 +333,10 @@ def check_backtesting_input(
 
     if not allow_incomplete_fold and data_length - (initial_train_size + gap) < steps:
         raise ValueError(
-            (f"There is not enough data to evaluate {steps} steps in a single "
-             f"fold. Set `allow_incomplete_fold` to `True` to allow incomplete folds.\n"
-             f"    Data available for test : {data_length - (initial_train_size + gap)}\n"
-             f"    Steps                   : {steps}")
+            f"There is not enough data to evaluate {steps} steps in a single "
+            f"fold. Set `allow_incomplete_fold` to `True` to allow incomplete folds.\n"
+            f"    Data available for test : {data_length - (initial_train_size + gap)}\n"
+            f"    Steps                   : {steps}"
         )
 
 
@@ -359,9 +355,7 @@ def select_n_jobs_backtesting(
     - If forecaster is 'ForecasterRecursive' and regressor is a linear regressor, 
     then `n_jobs = 1`.
     - If forecaster is 'ForecasterRecursive' and regressor is not a linear 
-    regressor and `refit = True`, then `n_jobs = cpu_count() - 1`.
-    - If forecaster is 'ForecasterRecursive' and regressor is not a linear 
-    regressor and `refit = False`, then `n_jobs = 1`.
+    regressor then `n_jobs = cpu_count() - 1`.
     - If forecaster is 'ForecasterDirect' or 'ForecasterDirectMultiVariate'
     and `refit = True`, then `n_jobs = cpu_count() - 1`.
     - If forecaster is 'ForecasterDirect' or 'ForecasterDirectMultiVariate'
@@ -369,10 +363,11 @@ def select_n_jobs_backtesting(
     - If forecaster is 'ForecasterRecursiveMultiSeries', then `n_jobs = cpu_count() - 1`.
     - If forecaster is 'ForecasterSarimax' or 'ForecasterEquivalentDate', 
     then `n_jobs = 1`.
-    - If regressor is a `LGBMRegressor`, then `n_jobs = 1`. This is because `lightgbm` 
-    is highly optimized for gradient boosting and parallelizes operations at a very 
-    fine-grained level, making additional parallelization unnecessary and 
-    potentially harmful due to resource contention.
+    - If regressor is a `LGBMRegressor(n_jobs=1)`, then `n_jobs = cpu_count() - 1`.
+    - If regressor is a `LGBMRegressor` with internal n_jobs != 1, then `n_jobs = 1`.
+    This is because `lightgbm` is highly optimized for gradient boosting and
+    parallelizes operations at a very fine-grained level, making additional
+    parallelization unnecessary and potentially harmful due to resource contention.
 
     Parameters
     ----------
@@ -391,30 +386,35 @@ def select_n_jobs_backtesting(
     forecaster_name = type(forecaster).__name__
 
     if isinstance(forecaster.regressor, Pipeline):
-        regressor_name = type(forecaster.regressor[-1]).__name__
+        regressor = forecaster.regressor[-1]
+        regressor_name = type(regressor).__name__
     else:
-        regressor_name = type(forecaster.regressor).__name__
+        regressor = forecaster.regressor
+        regressor_name = type(regressor).__name__
 
     linear_regressors = [
         regressor_name
         for regressor_name in dir(sklearn.linear_model)
         if not regressor_name.startswith('_')
     ]
-    
+
     refit = False if refit == 0 else refit
     if not isinstance(refit, bool) and refit != 1:
         n_jobs = 1
     else:
         if forecaster_name in ['ForecasterRecursive']:
-            if regressor_name in linear_regressors or regressor_name == 'LGBMRegressor':
+            if regressor_name in linear_regressors:
                 n_jobs = 1
+            elif regressor_name == 'LGBMRegressor':
+                n_jobs = cpu_count() - 1 if regressor.n_jobs == 1 else 1
             else:
-                n_jobs = cpu_count() - 1 if refit else 1
+                n_jobs = cpu_count() - 1
         elif forecaster_name in ['ForecasterDirect', 'ForecasterDirectMultiVariate']:
+            # Parallelization is applied during the fitting process.
             n_jobs = 1
         elif forecaster_name in ['ForecasterRecursiveMultiSeries']:
             if regressor_name == 'LGBMRegressor':
-                n_jobs = 1
+                n_jobs = cpu_count() - 1 if regressor.n_jobs == 1 else 1
             else:
                 n_jobs = cpu_count() - 1
         elif forecaster_name in ['ForecasterSarimax', 'ForecasterEquivalentDate']:
@@ -425,13 +425,93 @@ def select_n_jobs_backtesting(
     return n_jobs
 
 
+def _calculate_metrics_one_step_ahead(
+    forecaster: object,
+    y: pd.Series,
+    metrics: list,
+    X_train: pd.DataFrame,
+    y_train: Union[pd.Series, dict],
+    X_test: pd.DataFrame,
+    y_test: Union[pd.Series, dict]
+) -> list:
+    """
+    Calculate metrics when predictions are one-step-ahead. When forecaster is
+    of type ForecasterDirect only the regressor for step 1 is used.
+
+    Parameters
+    ----------
+    forecaster : object
+        Forecaster model.
+    y : pandas Series
+        Time series data used to train and test the model.
+    metrics : list
+        List of metrics.
+    X_train : pandas DataFrame
+        Predictor values used to train the model.
+    y_train : pandas Series
+        Target values related to each row of `X_train`.
+    X_test : pandas DataFrame
+        Predictor values used to test the model.
+    y_test : pandas Series
+        Target values related to each row of `X_test`.
+
+    Returns
+    -------
+    metric_values : list
+        List with metric values.
+    
+    """
+
+    if type(forecaster).__name__ == 'ForecasterDirect':
+
+        step = 1  # Only the model for step 1 is optimized.
+        X_train, y_train = forecaster.filter_train_X_y_for_step(
+                               step    = step,
+                               X_train = X_train,
+                               y_train = y_train
+                           )
+        X_test, y_test = forecaster.filter_train_X_y_for_step(
+                             step    = step,  
+                             X_train = X_test,
+                             y_train = y_test
+                         )
+        forecaster.regressors_[step].fit(X_train, y_train)
+        y_pred = forecaster.regressors_[step].predict(X_test)
+
+    else:
+        forecaster.regressor.fit(X_train, y_train)
+        y_pred = forecaster.regressor.predict(X_test)
+
+    y_true = y_test.to_numpy()
+    y_pred = y_pred.ravel()
+    y_train = y_train.to_numpy()
+
+    if forecaster.differentiation is not None:
+        y_true = forecaster.differentiator.inverse_transform_next_window(y_true)
+        y_pred = forecaster.differentiator.inverse_transform_next_window(y_pred)
+        y_train = forecaster.differentiator.inverse_transform_training(y_train)
+
+    if forecaster.transformer_y is not None:
+        y_true = forecaster.transformer_y.inverse_transform(y_true.reshape(-1, 1))
+        y_pred = forecaster.transformer_y.inverse_transform(y_pred.reshape(-1, 1))
+        y_train = forecaster.transformer_y.inverse_transform(y_train.reshape(-1, 1))
+
+    metric_values = []
+    for m in metrics:
+        metric_values.append(
+            m(y_true=y_true.ravel(), y_pred=y_pred.ravel(), y_train=y_train.ravel())
+        )
+
+    return metric_values
+
+
 def _initialize_levels_model_selection_multiseries(
     forecaster: object, 
     series: Union[pd.DataFrame, dict],
     levels: Optional[Union[str, list]] = None
 ) -> list:
     """
-    Initialize levels for model_selection_multiseries functions.
+    Initialize levels for model_selection multi-series functions.
 
     Parameters
     ----------
@@ -447,7 +527,7 @@ def _initialize_levels_model_selection_multiseries(
     Returns
     -------
     levels : list
-        List of levels to be used in model_selection_multiseries functions.
+        List of levels to be used in model_selection multi-series functions.
     
     """
 
@@ -640,7 +720,7 @@ def _extract_data_folds_multiseries(
         yield series_train, series_last_window, levels_last_window, exog_train, exog_test, fold
 
 
-def _calculate_metrics_multiseries(
+def _calculate_metrics_backtesting_multiseries(
     series: Union[pd.DataFrame, dict],
     predictions: pd.DataFrame,
     folds: Union[list, tqdm],
@@ -841,7 +921,7 @@ def _calculate_metrics_multiseries(
     return metrics_levels
 
 
-def _predict_and_calculate_metrics_multiseries_one_step_ahead(
+def _predict_and_calculate_metrics_one_step_ahead_multiseries(
     forecaster: object,
     series: Union[pd.DataFrame, dict],
     X_train: pd.DataFrame,
@@ -993,35 +1073,35 @@ def _predict_and_calculate_metrics_multiseries_one_step_ahead(
 
     if forecaster.differentiation is not None:
         for level in predictions_per_level:
-            differentiator = deepcopy(forecaster.differentiator_[level])
-            differentiator.initial_values = [
-                series[level].iloc[
-                    forecaster.window_size - forecaster.differentiation
-                ]
-            ]
-            predictions_per_level[level]["y_pred"] = differentiator.inverse_transform_next_window(
-                predictions_per_level[level]["y_pred"].to_numpy()
+            predictions_per_level[level]["y_true"] = (
+                forecaster.differentiator_[level].inverse_transform_next_window(
+                    predictions_per_level[level]["y_true"].to_numpy()
+                )
             )
-            predictions_per_level[level]["y_true"] = differentiator.inverse_transform_next_window(
-                predictions_per_level[level]["y_true"].to_numpy()
+            predictions_per_level[level]["y_pred"] = (
+                forecaster.differentiator_[level].inverse_transform_next_window(
+                    predictions_per_level[level]["y_pred"].to_numpy()
+                )   
             )
-            y_train_per_level[level]["y_train"] = differentiator.inverse_transform(
-                y_train_per_level[level]["y_train"].to_numpy()
-            )[forecaster.differentiation:]
+            y_train_per_level[level]["y_train"] = (
+                forecaster.differentiator_[level].inverse_transform_training(
+                    y_train_per_level[level]["y_train"].to_numpy()
+                )
+            )
 
     if forecaster.transformer_series is not None:
         for level in predictions_per_level:
             transformer = forecaster.transformer_series_[level]
-            predictions_per_level[level]["y_pred"] = transformer.inverse_transform(
-                predictions_per_level[level][["y_pred"]]
-            )
             predictions_per_level[level]["y_true"] = transformer.inverse_transform(
                 predictions_per_level[level][["y_true"]]
+            )
+            predictions_per_level[level]["y_pred"] = transformer.inverse_transform(
+                predictions_per_level[level][["y_pred"]]
             )
             y_train_per_level[level]["y_train"] = transformer.inverse_transform(
                 y_train_per_level[level][["y_train"]]
             )
-
+    
     metrics_levels = []
     for level in levels:
         if level in predictions_per_level:

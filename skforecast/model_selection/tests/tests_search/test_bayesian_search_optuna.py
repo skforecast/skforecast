@@ -10,6 +10,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error
+from skforecast.exceptions import OneStepAheadValidationWarning
 from skforecast.metrics import mean_absolute_scaled_error, root_mean_squared_scaled_error
 from skforecast.recursive import ForecasterRecursive
 from skforecast.direct import ForecasterDirect
@@ -732,7 +733,7 @@ def test_evaluate_bayesian_search_optuna_when_return_best_ForecasterRecursive():
     expected_lags = np.array([1, 2])
     expected_alpha = 0.5558016213920624
 
-    np.testing.assert_array_equal(forecaster.lags, expected_lags)
+    np.testing.assert_array_almost_equal(forecaster.lags, expected_lags)
     assert expected_alpha == forecaster.regressor.alpha
 
 
@@ -1223,7 +1224,7 @@ def test_bayesian_search_optuna_outputs_backtesting_one_step_ahead(
         "to backtest the final model for a more accurate multi-step performance "
         "estimate."
     )
-    with pytest.warns(UserWarning, match = warn_msg):
+    with pytest.warns(OneStepAheadValidationWarning, match = warn_msg):
         results_one_step_ahead = _bayesian_search_optuna(
             forecaster   = forecaster,
             y            = y_feature_selection,

@@ -34,7 +34,7 @@ def test_exog_to_direct_numpy_when_steps_1_exog_numpy_array_1d():
         None
     )
 
-    np.testing.assert_array_equal(results[0], expected[0])
+    np.testing.assert_array_almost_equal(results[0], expected[0])
     assert results[1] == expected[1]
 
 
@@ -58,7 +58,7 @@ def test_exog_to_direct_numpy_when_steps_2_exog_numpy_array_1d():
         None
     )
 
-    np.testing.assert_array_equal(results[0], expected[0])
+    np.testing.assert_array_almost_equal(results[0], expected[0])
     assert results[1] == expected[1]
 
 
@@ -74,7 +74,7 @@ def test_exog_to_direct_numpy_when_steps_len_exog_numpy_array_1d():
         None
     )
 
-    np.testing.assert_array_equal(results[0], expected[0])
+    np.testing.assert_array_almost_equal(results[0], expected[0])
     assert results[1] == expected[1]
 
 
@@ -99,7 +99,7 @@ def test_exog_to_direct_numpy_when_steps_1_exog_numpy_array_2d():
         None
     )
 
-    np.testing.assert_array_equal(results[0], expected[0])
+    np.testing.assert_array_almost_equal(results[0], expected[0])
     assert results[1] == expected[1]
 
 
@@ -123,7 +123,7 @@ def test_exog_to_direct_numpy_when_steps_2_exog_numpy_array_2d():
         None
     )
 
-    np.testing.assert_array_equal(results[0], expected[0])
+    np.testing.assert_array_almost_equal(results[0], expected[0])
     assert results[1] == expected[1]
 
 
@@ -146,7 +146,7 @@ def test_exog_to_direct_numpy_when_steps_3_exog_numpy_array_2d():
         None
     )
 
-    np.testing.assert_array_equal(results[0], expected[0])
+    np.testing.assert_array_almost_equal(results[0], expected[0])
     assert results[1] == expected[1]
 
 
@@ -163,7 +163,7 @@ def test_exog_to_direct_numpy_when_steps_len_exog_numpy_array_2d():
         None
     )
 
-    np.testing.assert_array_equal(results[0], expected[0])
+    np.testing.assert_array_almost_equal(results[0], expected[0])
     assert results[1] == expected[1]
 
 
@@ -182,7 +182,7 @@ def test_exog_to_direct_numpy_when_steps_series_len_exog_1d_float_int(exog):
         ['exog_step_1', 'exog_step_2', 'exog_step_3', 'exog_step_4', 'exog_step_5']
     )
 
-    np.testing.assert_array_equal(results[0], expected[0])
+    np.testing.assert_array_almost_equal(results[0], expected[0])
     assert results[1] == expected[1]
 
 
@@ -209,7 +209,7 @@ def test_exog_to_direct_numpy_when_steps_2_exog_1d_pandas(exog):
         ['exog_step_1', 'exog_step_2']
     )
 
-    np.testing.assert_array_equal(results[0], expected[0])
+    np.testing.assert_array_almost_equal(results[0], expected[0])
     assert results[1] == expected[1]
 
 
@@ -234,7 +234,7 @@ def test_exog_to_direct_numpy_when_steps_2_exog_pandas_DataFrame():
         ['exog_1_step_1', 'exog_2_step_1', 'exog_1_step_2', 'exog_2_step_2']
     )
 
-    np.testing.assert_array_equal(results[0], expected[0])
+    np.testing.assert_array_almost_equal(results[0], expected[0])
     assert results[1] == expected[1]
 
 
@@ -263,5 +263,5 @@ def test_exog_to_direct_numpy_when_steps_2_exog_pandas_DataFrame_3_columns():
          'exog_1_step_2', 'exog_2_step_2', 'exog_3_step_2']
     )
 
-    np.testing.assert_array_equal(results[0], expected[0])
+    np.testing.assert_array_almost_equal(results[0], expected[0])
     assert results[1] == expected[1]

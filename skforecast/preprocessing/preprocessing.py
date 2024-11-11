@@ -59,42 +59,92 @@ def _check_X_numpy_ndarray_1d(ensure_1d=True):
 
 class TimeSeriesDifferentiator(BaseEstimator, TransformerMixin):
     """
-    Transforms a time series into a differentiated time series of order n.
-    It also reverts the differentiation.
+    Transforms a time series into a differentiated time series of a specified order
+    and provides functionality to revert the differentiation. 
+    
+    When using a `direct` module Forecaster, the model in step 1 must be 
+    used if you want to reverse the differentiation of the training time 
+    series with the `inverse_transform_training` method.
 
     Parameters
     ----------
     order : int
-        Order of differentiation.
+        The order of differentiation to be applied.
+    window_size : int, default None
+        The window size used by the forecaster. This is required to revert the 
+        differentiation for the target variable `y` or its predicted values.
 
     Attributes
     ----------
     order : int
-        Order of differentiation.
+        The order of differentiation.
     initial_values : list
-        List with the initial value of the time series after each differentiation.
-        This is used to revert the differentiation.
+        List with the first value of the time series before each differentiation.
+        If `order = 2`, first value correspond with the first value of the original
+        time series and the second value correspond with the first value of the
+        differentiated time series of order 1. These values are necessary to 
+        revert the differentiation and reconstruct the original time series.
+    pre_train_values : list
+        List with the first training value of the time series before each differentiation.
+        For `order = 1`, the value correspond with the last value of the window used to
+        create the predictors. For order > 1, the value correspond with the first
+        value of the differentiated time series prior to the next differentiation.
+        These values are necessary to revert the differentiation and reconstruct the
+        training time series.
     last_values : list
-        List with the last value of the time series after each differentiation.
-        This is used to revert the differentiation of a new window of data. A new
-        window of data is a time series that starts right after the time series
-        used to fit the transformer.
+        List with the last value of the time series before each differentiation, 
+        used to revert differentiation on subsequent data windows. If `order = 2`, 
+        first value correspond with the last value of the original time series 
+        and the second value correspond with the last value of the differentiated 
+        time series of order 1. This is essential for correctly transforming a 
+        time series that follows immediately after the series used to fit the 
+        transformer.
 
     """
 
     def __init__(
         self, 
-        order: int = 1
+        order: int = 1,
+        window_size: int = None
     ) -> None:
 
-        if not isinstance(order, int):
-            raise TypeError(f"Parameter 'order' must be an integer greater than 0. Found {type(order)}.")
+        if not isinstance(order, (int, np.integer)):
+            raise TypeError(
+                f"Parameter `order` must be an integer greater than 0. Found {type(order)}."
+            )
         if order < 1:
-            raise ValueError(f"Parameter 'order' must be an integer greater than 0. Found {order}.")
+            raise ValueError(
+                f"Parameter `order` must be an integer greater than 0. Found {order}."
+            )
+
+        if window_size is not None:
+            if not isinstance(window_size, (int, np.integer)):
+                raise TypeError(
+                    f"Parameter `window_size` must be an integer greater than 0. "
+                    f"Found {type(window_size)}."
+                )
+            if window_size < 1:
+                raise ValueError(
+                    f"Parameter `window_size` must be an integer greater than 0. "
+                    f"Found {window_size}."
+                )
 
         self.order = order
+        self.window_size = window_size
         self.initial_values = []
+        self.pre_train_values = []
         self.last_values = []
+
+    def __repr__(
+        self
+    ) -> str:
+        """
+        Information displayed when printed.
+        """
+            
+        return (
+            f"TimeSeriesDifferentiator(order={self.order}, window_size={self.window_size})"
+        )
 
     @_check_X_numpy_ndarray_1d()
     def fit(
@@ -103,8 +153,10 @@ class TimeSeriesDifferentiator(BaseEstimator, TransformerMixin):
         y: Any = None
     ) -> Self:
         """
-        Fits the transformer. This method only removes the values stored in
-        `self.initial_values`.
+        Fits the transformer. Stores the values needed to revert the 
+        differentiation of different window of the time series, original 
+        time series, training time series, and a time series that follows
+        immediately after the series used to fit the transformer.
 
         Parameters
         ----------
@@ -120,15 +172,20 @@ class TimeSeriesDifferentiator(BaseEstimator, TransformerMixin):
         """
 
         self.initial_values = []
+        self.pre_train_values = []
         self.last_values = []
 
         for i in range(self.order):
             if i == 0:
                 self.initial_values.append(X[0])
+                if self.window_size is not None:
+                    self.pre_train_values.append(X[self.window_size - self.order])
                 self.last_values.append(X[-1])
                 X_diff = np.diff(X, n=1)
             else:
                 self.initial_values.append(X_diff[0])
+                if self.window_size is not None:
+                    self.pre_train_values.append(X_diff[self.window_size - self.order])
                 self.last_values.append(X_diff[-1])
                 X_diff = np.diff(X_diff, n=1)
 
@@ -141,8 +198,7 @@ class TimeSeriesDifferentiator(BaseEstimator, TransformerMixin):
         y: Any = None
     ) -> np.ndarray:
         """
-        Transforms a time series into a differentiated time series of order n and
-        stores the values needed to revert the differentiation.
+        Transforms a time series into a differentiated time series of order n.
 
         Parameters
         ----------
@@ -155,7 +211,7 @@ class TimeSeriesDifferentiator(BaseEstimator, TransformerMixin):
         -------
         X_diff : numpy ndarray
             Differentiated time series. The length of the array is the same as
-            the original time series but the first n=`order` values are nan.
+            the original time series but the first n `order` values are nan.
 
         """
 
@@ -197,6 +253,57 @@ class TimeSeriesDifferentiator(BaseEstimator, TransformerMixin):
             else:
                 X_undiff = np.insert(X_undiff, 0, self.initial_values[-(i + 1)])
                 X_undiff = np.cumsum(X_undiff, dtype=float)
+
+        return X_undiff
+
+    @_check_X_numpy_ndarray_1d()
+    def inverse_transform_training(
+        self, 
+        X: np.ndarray, 
+        y: Any = None
+    ) -> np.ndarray:
+        """
+        Reverts the differentiation. To do so, the input array is assumed to be
+        the differentiated training time series generated with the original 
+        time series used to fit the transformer.
+
+        When using a `direct` module Forecaster, the model in step 1 must be 
+        used if you want to reverse the differentiation of the training time 
+        series with the `inverse_transform_training` method.
+
+        Parameters
+        ----------
+        X : numpy ndarray
+            Differentiated time series.
+        y : Ignored
+            Not used, present here for API consistency by convention.
+        
+        Returns
+        -------
+        X_diff : numpy ndarray
+            Reverted differentiated time series.
+        
+        """
+
+        if not self.pre_train_values:
+            raise ValueError(
+                "The `window_size` parameter must be set before fitting the "
+                "transformer to revert the differentiation of the training "
+                "time series."
+            )
+
+        # Remove initial nan values if present
+        X = X[np.argmax(~np.isnan(X)):]
+        for i in range(self.order):
+            if i == 0:
+                X_undiff = np.insert(X, 0, self.pre_train_values[-1])
+                X_undiff = np.cumsum(X_undiff, dtype=float)
+            else:
+                X_undiff = np.insert(X_undiff, 0, self.pre_train_values[-(i + 1)])
+                X_undiff = np.cumsum(X_undiff, dtype=float)
+
+        # Remove initial values as they are not part of the training time series
+        X_undiff = X_undiff[self.order:]
 
         return X_undiff
 
@@ -243,6 +350,24 @@ class TimeSeriesDifferentiator(BaseEstimator, TransformerMixin):
             X_undiff = X_undiff.ravel()
 
         return X_undiff
+
+    def set_params(self, **params):
+        """
+        Set the parameters of the TimeSeriesDifferentiator.
+        
+        Parameters
+        ----------
+        params : dict
+            A dictionary of the parameters to set.
+
+        Returns
+        -------
+        None
+        
+        """
+
+        for param, value in params.items():
+            setattr(self, param, value)
 
 
 def series_long_to_dict(
@@ -698,8 +823,8 @@ class RollingFeatures():
         the same window size. If a `list`, it should have the same length as stats.
     min_periods : int, list, default `None`
         Minimum number of observations in window required to have a value. 
-        Similar to pandas rolling `min_periods` argument. If `None`, defaults 
-        to `window_sizes`.
+        Same as the `min_periods` argument of pandas rolling. If `None`, 
+        defaults to `window_sizes`.
     features_names : list, default `None`
         Names of the output features. If `None`, default names will be used in the 
         format 'roll_stat_window_size', for example 'roll_mean_7'.
@@ -797,6 +922,24 @@ class RollingFeatures():
 
         self.unique_rolling_windows = unique_rolling_windows
 
+    def __repr__(
+        self
+    ) -> str:
+        """
+        Information displayed when printed.
+        """
+            
+        return (
+            f"RollingFeatures(\n"
+            f"    stats           = {self.stats},\n"
+            f"    window_sizes    = {self.window_sizes},\n"
+            f"    Max window size = {self.max_window_size},\n"
+            f"    min_periods     = {self.min_periods},\n"
+            f"    features_names  = {self.features_names},\n"
+            f"    fillna          = {self.fillna}\n"
+            f")"
+        )
+
     def _validate_params(
         self, 
         stats, 
@@ -819,8 +962,8 @@ class RollingFeatures():
             the same window size. If a `list`, it should have the same length as stats.
         min_periods : int, list, default `None`
             Minimum number of observations in window required to have a value. 
-            Similar to pandas rolling `min_periods` argument. If `None`, defaults 
-            to `window_sizes`.
+            Same as the `min_periods` argument of pandas rolling. If `None`, 
+            defaults to `window_sizes`.
         features_names : list, default `None`
             Names of the output features. If `None`, default names will be used in the 
             format 'roll_stat_window_size', for example 'roll_mean_7'.
@@ -862,15 +1005,19 @@ class RollingFeatures():
             n_window_sizes = len(window_sizes)
             if n_window_sizes != n_stats:
                 raise ValueError(
-                    (f"Length of `window_sizes` list ({n_window_sizes}) "
-                     f"must match length of `stats` list ({n_stats}).")
+                    f"Length of `window_sizes` list ({n_window_sizes}) "
+                    f"must match length of `stats` list ({n_stats})."
                 )
             
         # Check duplicates (stats, window_sizes)
         if isinstance(window_sizes, int):
             window_sizes = [window_sizes] * n_stats
         if len(set(zip(stats, window_sizes))) != n_stats:
-            raise ValueError("Duplicate (stat, window_size) pairs are not allowed.")
+            raise ValueError(
+                f"Duplicate (stat, window_size) pairs are not allowed.\n"
+                f"    `stats`       : {stats}\n"
+                f"    `window_sizes : {window_sizes}"
+            )
         
         # min_periods
         if not isinstance(min_periods, (int, list, type(None))):
@@ -885,15 +1032,15 @@ class RollingFeatures():
                 n_min_periods = len(min_periods)
                 if n_min_periods != n_stats:
                     raise ValueError(
-                        (f"Length of `min_periods` list ({n_min_periods}) "
-                         f"must match length of `stats` list ({n_stats}).")
+                        f"Length of `min_periods` list ({n_min_periods}) "
+                        f"must match length of `stats` list ({n_stats})."
                     )
             
             for i, min_period in enumerate(min_periods):
                 if min_period > window_sizes[i]:
                     raise ValueError(
-                        ("Each min_period must be less than or equal to its "
-                         "corresponding window_size.")
+                        "Each `min_period` must be less than or equal to its "
+                        "corresponding `window_size`."
                     )
         
         # features_names
@@ -906,8 +1053,8 @@ class RollingFeatures():
             n_features_names = len(features_names)
             if n_features_names != n_stats:
                 raise ValueError(
-                    (f"Length of `features_names` list ({n_features_names}) "
-                     f"must match length of `stats` list ({n_stats}).")
+                    f"Length of `features_names` list ({n_features_names}) "
+                    f"must match length of `stats` list ({n_stats})."
                 )
         
         # fillna
@@ -921,8 +1068,8 @@ class RollingFeatures():
                 allowed_fill_strategy = ['mean', 'median', 'ffill', 'bfill']
                 if fillna not in allowed_fill_strategy:
                     raise ValueError(
-                        (f"'{fillna}' is not allowed. Allowed `fillna` "
-                         f"values are: {allowed_fill_strategy} or a float value.")
+                        f"'{fillna}' is not allowed. Allowed `fillna` "
+                        f"values are: {allowed_fill_strategy} or a float value."
                     )
 
     def _apply_stat_pandas(
@@ -1150,6 +1297,7 @@ class QuantileBinner:
         The number of bins learned during fitting.
     bin_edges_ : numpy ndarray
         The edges of the bins learned during fitting.
+    
     """
 
     def __init__(
@@ -1314,7 +1462,7 @@ class QuantileBinner:
         
         Parameters
         ----------
-        None
+        self
         
         Returns
         -------
@@ -1333,7 +1481,7 @@ class QuantileBinner:
 
     def set_params(self, **params):
         """
-        Set the parameters of the quantile binner.
+        Set the parameters of the QuantileBinner.
         
         Parameters
         ----------

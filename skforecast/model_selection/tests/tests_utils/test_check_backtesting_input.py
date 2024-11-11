@@ -462,10 +462,10 @@ def test_check_backtesting_input_ValueError_when_forecaster_diff_not_cv_diff():
          )
     
     err_msg = re.escape(
-        ("The differentiation included in the forecaster "
-         "(2) differs from the differentiation "
-         "included in the cv (1). Set the same value "
-         "for both.")
+        "The differentiation included in the forecaster "
+        "(2) differs from the differentiation "
+        "included in the cv (1). Set the same value "
+        "for both using the `differentiation` argument."
     )
     with pytest.raises(ValueError, match = err_msg):
         check_backtesting_input(

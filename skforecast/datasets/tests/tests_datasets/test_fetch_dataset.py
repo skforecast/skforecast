@@ -7,10 +7,10 @@ from skforecast.datasets import fetch_dataset
 
 datasets_keys = [
     'h2o', 'h2o_exog', 'fuel_consumption', 'items_sales', 
-    'air_quality_valencia', 'website_visits', 'bike_sharing', 
-    'bike_sharing_extended_features', 'australia_tourism', 
-    'uk_daily_flights', 'wikipedia_visits', 'vic_electricity', 
-    'store_sales', 'bicimad', 'm4_hourly', 'm4_daily', 
+    'air_quality_valencia', 'air_quality_valencia_no_missing', 
+    'website_visits', 'bike_sharing', 'bike_sharing_extended_features', 
+    'australia_tourism', 'uk_daily_flights', 'wikipedia_visits', 
+    'vic_electricity', 'store_sales', 'bicimad', 'm4_daily', 'm4_hourly', 
     'ashrae_daily', 'bdg2_daily', 'bdg2_hourly'
 ]
 

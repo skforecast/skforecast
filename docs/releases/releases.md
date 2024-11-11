@@ -10,23 +10,25 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
 
-## 0.14.0 <small>In development</small> { id="0.14.0" }
+## 0.14.0 <small>Nov 11, 2024</small> { id="0.14.0" }
 
 The main changes in this release are:
 
-This release has undergone a major refactoring to improve the performance of the library. Visit the [migration guide](https://skforecast.org/latest/user_guides/migration-guide.html) section for more information.
+This release has undergone a major refactoring to improve the performance of the library. Visit the [migration guide](../user_guides/migration-guide.html) section for more information.
 
-+ <span class="badge text-bg-feature">Feature</span> Window features can be added to the training matrix using the `window_features` argument in all forecasters. You can use the <code>[RollingFeatures]</code> class to create these features or create your own object.
++ <span class="badge text-bg-feature">Feature</span> Window features can be added to the training matrix using the `window_features` argument in all forecasters. You can use the <code>[RollingFeatures]</code> class to create these features or create your own object. [Create window and custom features](../user_guides/window-features-and-custom-features.html).
 
 + <span class="badge text-bg-feature">Feature</span> <code>[model_selection]</code> functions now have a new argument `cv`. This argument expect an object of type <code>[TimeSeriesFold]</code> or <code>[OneStepAheadFold]</code> which allows to define the validation strategy using the arguments `initial_train_size`, `steps`, `gap`, `refit`, `fixed_train_size`, `skip_folds` and `allow_incomplete_folds`.
 
-+ <span class="badge text-bg-feature">Feature</span> Hyperparameter search now allows to follow a one-step-ahead validation strategy using a <code>[OneStepAheadFold]</code> as `cv` argument in the <code>[model_selection]</code> functions.
++ <span class="badge text-bg-feature">Feature</span> Hyperparameter search now allows to follow a [one-step-ahead validation strategy](../user_guides/hyperparameter-tuning-and-lags-selection.html#one-step-ahead-validation) using a <code>[OneStepAheadFold]</code> as `cv` argument in the <code>[model_selection]</code> functions.
 
 + <span class="badge text-bg-enhancement">Enhancement</span> Refactor the prediction process in <code>[ForecasterRecursiveMultiSeries]</code> to improve performance when predicting multiple series.
 
 + <span class="badge text-bg-enhancement">Enhancement</span> The bootstrapping process in the `predict_bootstrapping` method of all forecasters has been optimized to improve performance. This may result in slightly different results when using the same seed as in previous versions.
 
-+ <span class="badge text-bg-api-change">API Change</span> package structure has been changed to improve code organization. The forecasters have been grouped into the `recursive`, `direct` amd `deep_learning` modules. Visit the [migration guide](https://skforecast.org/latest/user_guides/migration-guide.html) section for more information.
++ <span class="badge text-bg-enhancement">Enhancement</span> Exogenous variables can be added to the training matrix if they do not contain the first window size observations. This is useful when exogenous variables are not available in early historical data. Visit the [exogenous variables](../user_guides/exogenous-variables.html#handling-missing-exogenous-data-in-initial-training-periods) section for more information.
+
++ <span class="badge text-bg-api-change">API Change</span> Package structure has been changed to improve code organization. The forecasters have been grouped into the `recursive`, `direct` amd `deep_learning` modules. Visit the [migration guide](../user_guides/migration-guide.html) section for more information.
 
 + <span class="badge text-bg-api-change">API Change</span> <code>[ForecasterAutoregCustom]</code> has been deprecated. Window features can be added using the `window_features` argument in the <code>[ForecasterRecursive]</code>.
 
@@ -53,7 +55,11 @@ This release has undergone a major refactoring to improve the performance of the
 
 + New private function `_calculate_metrics_one_step_ahead` to <code>[model_selection]</code> module to calculate the metrics when predicting one step ahead.
 
-+ The `steps` argument in the predict method of the <code>[ForecasterRecursive]</code> can now be a str or a pandas datetime. If so, the method will predict up to the specified date. (contribution by @imMoya).
++ The `steps` argument in the predict method of the <code>[ForecasterRecursive]</code> can now be a str or a pandas datetime. If so, the method will predict up to the specified date. (contribution by [@imMoya](https://github.com/imMoya) [#811](https://github.com/skforecast/skforecast/pull/811)).
+
++ Exogenous variables can be added to the training matrix if they do not contain the first window size observations. This is useful when exogenous variables are not available in early historical data.
+
++ Added support for different activation functions in the <code>[create_and_compile_model]</code> function. (contribution by [@pablorodriper](https://github.com/pablorodriper) [#824](https://github.com/skforecast/skforecast/pull/824)).
 
 
 **Changed**
@@ -853,7 +859,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 
 + Multiple exogenous variables can be passed as pandas DataFrame.
 
-+ Documentation at https://joaquinamatrodrigo.github.io/skforecast/
++ Documentation at https://skforecast.org
 
 + New unit test
 
@@ -985,6 +991,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [ForecasterRecursiveMultiSeries]: https://skforecast.org/latest/api/forecasterrecursivemultiseries
 [ForecasterDirectMultiVariate]: https://skforecast.org/latest/api/forecasterdirectmultivariate
 [ForecasterRNN]: https://skforecast.org/latest/api/forecasterrnn
+[create_and_compile_model]: https://skforecast.org/latest/api/forecasterrnn#skforecast.deep_learning.utils.create_and_compile_model
 [ForecasterSarimax]: https://skforecast.org/latest/api/forecastersarimax
 [Sarimax]: https://skforecast.org/latest/api/sarimax
 [ForecasterEquivalentDate]: https://skforecast.org/latest/api/forecasterequivalentdate

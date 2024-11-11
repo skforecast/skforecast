@@ -21,7 +21,7 @@ from ..model_selection._utils import (
     check_backtesting_input,
     select_n_jobs_backtesting,
     _extract_data_folds_multiseries,
-    _calculate_metrics_multiseries
+    _calculate_metrics_backtesting_multiseries
 )
 from ..utils import set_skforecast_warnings
 
@@ -139,9 +139,9 @@ def _backtesting_forecaster(
                  )
     elif not isinstance(refit, bool) and refit != 1 and n_jobs != 1:
         warnings.warn(
-            ("If `refit` is an integer other than 1 (intermittent refit). `n_jobs` "
-             "is set to 1 to avoid unexpected results during parallelization."),
-             IgnoredArgumentWarning
+            "If `refit` is an integer other than 1 (intermittent refit). `n_jobs` "
+            "is set to 1 to avoid unexpected results during parallelization.",
+            IgnoredArgumentWarning
         )
         n_jobs = 1
     else:
@@ -753,7 +753,7 @@ def _backtesting_forecaster_multiseries(
             cols = cols + [f'{level}_lower_bound', f'{level}_upper_bound']
         backtest_predictions.loc[no_valid_index, cols] = np.nan
 
-    metrics_levels = _calculate_metrics_multiseries(
+    metrics_levels = _calculate_metrics_backtesting_multiseries(
         series                = series,
         predictions           = backtest_predictions,
         folds                 = folds,

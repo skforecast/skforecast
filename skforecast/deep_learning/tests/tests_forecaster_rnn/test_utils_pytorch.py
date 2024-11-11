@@ -31,8 +31,7 @@ def test_units(dense_units, recurrent_layer, recurrent_units):
     """
     Test case for testing the create_and_compile_model function with different dense_units and recurrent_units
     """
-    print(f"dense_units: {dense_units}")
-    print(f"recurrent_units: {recurrent_units}")
+    
     # Generate dummy data for testing
     series = pd.DataFrame(np.random.randn(100, 3))
     lags = 10

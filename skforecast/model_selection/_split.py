@@ -447,8 +447,8 @@ class OneStepAheadFold(BaseFold):
 
         if not isinstance(X, (pd.Series, pd.DataFrame, pd.Index, dict)):
             raise TypeError(
-                (f"X must be a pandas Series, DataFrame, Index or a dictionary. "
-                 f"Got {type(X)}.")
+                f"X must be a pandas Series, DataFrame, Index or a dictionary. "
+                f"Got {type(X)}."
             )
 
         index = self._extract_index(X)

@@ -9,11 +9,12 @@ from typing import Any
 import warnings
 
 
-# TODO: Update warning with user guide link
 class ForecasterAutoregCustom():
     """
-    This class turns any regressor compatible with the scikit-learn API into a
-    recursive (multi-step) forecaster with a custom function to create predictors.
+    This class is deprecated since skforecast 0.14. To create window features,
+    use the class `ForecasterRecursive` and the argument `window_features`. For
+    more information, see the user guide:
+    https://skforecast.org/latest/user_guides/window-features-and-custom-features
     
     """
     
@@ -32,6 +33,8 @@ class ForecasterAutoregCustom():
     ) -> None:
         
         warnings.warn(
-            ("This class is deprecated since skforecast 0.14. Use "
-             "ForecasterRecursive instead.")
+            "This class is deprecated since skforecast 0.14. To create window "
+            "features, use the class `ForecasterRecursive` and the argument "	
+            "`window_features`. For more information, see the user guide: "
+            "https://skforecast.org/latest/user_guides/window-features-and-custom-features"
         )

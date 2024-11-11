@@ -5,11 +5,6 @@
 
 A time series is a sequence of data arranged chronologically and spaced at equal or irregular intervals. The forecasting process consists of predicting the future value of a time series, either by modeling the series solely based on its past behavior (autoregressive) or by incorporating other external variables.
 
-<p style="text-align: center">
-    <img src="../img/recursive_forecasting_gif.gif" style="padding: 10px; background-color: white; border-radius: 4px;">
-</p>
-
-
 ## Machine learning for forecasting
 
 To apply machine learning models to forecasting problems, the time series needs to be transformed into a matrix where each value is associated with a specific time window (known as lags) that precedes it. In the context of time series, a lag with respect to a time step *t* is defined as the value of the series at previous time steps. For instance, lag 1 represents the value at time step *t-1*, while lag *m* represents the value at time step *t-m*.
@@ -25,7 +20,7 @@ This transformation is essential for machine learning models to capture the depe
 This type of transformation also allows to include additional variables.
 
 <p style="text-align: center">
-    <img src="../img/matrix_transformation_with_exog_variable.png" style="width: 600px;">
+    <img src="../img/matrix_transformation_with_exog_variable.png" style="width: 500px;">
     <br>
     <font size="2.5"> <i>Time series transformation including an exogenous variable</i></font>
 </p>
@@ -33,7 +28,7 @@ This type of transformation also allows to include additional variables.
 Once data have been rearranged into the new shape, any regression model can be trained to predict the next value (step) of the series. During model training, every row is considered a separate data instance, where values at lags 1, 2, ... *p* are considered predictors for the target quantity of the time series at time step *p+1*. 
 
 <p style="text-align: center">
-    <img src="../img/diagram-trainig-forecaster.png" style="width: 700px;">
+    <img src="../img/diagram-trainig-forecaster.png" style="width: 600px;">
     <br>
     <font size="2.5"> <i>Diagram of training a machine learning model with time series data</i></font>
 </p>
@@ -44,7 +39,7 @@ Once data have been rearranged into the new shape, any regression model can be t
 Single-step prediction is used when the goal is to predict only the next value of the series.
 
 <p style="text-align: center">
-    <img src="../img/diagram-single-step-forecasting.png" style="width: 600px;">
+    <img src="../img/diagram-single-step-forecasting.png" style="width: 500px;">
     <br>
     <font size="2.5"> <i>Diagram of single-step forecasting</i></font>
 </p>
@@ -57,15 +52,15 @@ When working with time series, it is seldom needed to predict only the next elem
 
 ### Recursive multi-step forecasting
 
-Since the value *t(n-1)* is required to predict *t(n)*, and *t(n-1)* is unknown, a recursive process is applied in which, each new prediction, is based on the previous one. This process is known as recursive forecasting or recursive multi-step forecasting and can be easily generated with the [`ForecasterAutoreg`](https://skforecast.org/latest/user_guides/autoregresive-forecaster.html) class.
+Since the value *t(n-1)* is required to predict *t(n)*, and *t(n-1)* is unknown, a recursive process is applied in which, each new prediction, is based on the previous one. This process is known as recursive forecasting or recursive multi-step forecasting and can be easily generated with the [`ForecasterRecursive`](../user_guides/autoregresive-forecaster.html) class.
 
 <p style="text-align: center">
-    <img src="../img/diagram-recursive-mutistep-forecasting.png" style="width: 600px">
+    <img src="../img/diagram-recursive-mutistep-forecasting.png" style="width: 500px">
     <br>
     <font size="2.5"> <i>Diagram of recursive multi-step forecasting</i></font>
 </p>
 <p style="text-align: center">
-    <img src="../img/recursive_forecasting_gif.gif" style="width: 600px; padding: 10px; background-color: white; border-radius: 4px;">
+    <img src="../img/recursive_forecasting_gif.gif" style="width: 500px; padding: 10px; background-color: white; border-radius: 4px;">
     <br>
     <font size="2.5"> <i>Recursive forecasting</i></font>
 </p>
@@ -73,15 +68,15 @@ Since the value *t(n-1)* is required to predict *t(n)*, and *t(n-1)* is unknown,
 
 ### Direct multi-step forecasting
 
-Direct multi-step forecasting consists of training a different model for each step of the forecast horizon. For example, to predict the next 5 values of a time series, 5 different models are trained, one for each step. As a result, the predictions are independent of each other. This entire process is automated in the [`ForecasterAutoregDirect`](https://skforecast.org/latest/user_guides/direct-multi-step-forecasting.html) class. 
+Direct multi-step forecasting consists of training a different model for each step of the forecast horizon. For example, to predict the next 5 values of a time series, 5 different models are trained, one for each step. As a result, the predictions are independent of each other. This entire process is automated in the [`ForecasterDirect`](../user_guides/direct-multi-step-forecasting.html) class. 
 
 <p style="text-align: center">
-    <img src="../img/diagram-direct-multi-step-forecasting.png" style="width: 600px">
+    <img src="../img/diagram-direct-multi-step-forecasting.png" style="width: 500px">
     <br>
     <font size="2.5"> <i>Diagram of direct multi-step forecasting</i></font>
 </p>
 <p style="text-align: center">
-    <img src="../img/direct_forecasting_gif.gif" style="width: 600px; padding: 10px; background-color: white; border-radius: 4px;">
+    <img src="../img/direct_forecasting_gif.gif" style="width: 500px; padding: 10px; background-color: white; border-radius: 4px;">
     <br>
     <font size="2.5"> <i>Direct forecasting</i></font>
 </p>
@@ -89,7 +84,7 @@ Direct multi-step forecasting consists of training a different model for each st
 
 ### Multiple output forecasting
 
-Some machine learning models, such as long short-term memory (LSTM) neural network, can predict simultaneously several values of a sequence (*one-shot*). This strategy is not currently implemented in skforecast library.
+Some machine learning models, such as long short-term memory (LSTM) neural networks, can predict multiple values of a sequence simultaneously (one-shot). This strategy implemented in the <code>ForecasterRnn</code> class.
 
 
 ## Global forecasting models
@@ -101,32 +96,32 @@ Univariate time series forecasting models a single time series as a linear or no
 A single model is trained for all time series, but each time series remains independent of the others, meaning that past values of one series are not used as predictors of other series. However, modeling them together is useful because the series may follow the same intrinsic pattern regarding their past and future values. For instance, the sales of products A and B in the same store may not be related, but they follow the same dynamics, that of the store.
 
 <p style="text-align: center">
-    <img src="../img/forecaster_multi_series_train_matrix_diagram.png" style="width: 800px">
+    <img src="../img/forecaster_multi_series_train_matrix_diagram.png" style="width: 700px">
     <br>
     <font size="2.5"> <i>Transformation of two time series and an exogenous variable into the matrices needed to train a machine learning model in a multi-series context</i></font>
 </p>
 
-To predict the next *n* steps, the strategy of [recursive multi-step forecasting](https://skforecast.org/latest/introduction-forecasting/introduction-forecasting.html#recursive-multi-step-forecasting) is applied
+To predict the next *n* steps, the strategy of [recursive multi-step forecasting](../introduction-forecasting/introduction-forecasting.html#recursive-multi-step-forecasting) is applied
 
 <p style="text-align: center">
-    <img src="../img/forecaster_multi_series_prediction_diagram.png" style="width: 800px">
+    <img src="../img/forecaster_multi_series_prediction_diagram.png" style="width: 700px">
     <br>
     <font size="2.5"> <i>Diagram of recursive forecasting with multiple independent time series</i></font>
 </p>
 
-The [`ForecasterRecursiveMultiSeries`](https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting.html) class cover this process. 
+The [`ForecasterRecursiveMultiSeries`](../user_guides/independent-multi-time-series-forecasting.html) class cover this process. 
 
 ### Dependent Multi-Series Forecasting (multivariate time series)
 
 All series are modeled together in a single model, considering that each time series depends not only on its past values but also on the past values of the other series. The forecaster is expected not only to learn the information of each series separately but also to relate them. An example is the measurements made by all the sensors (flow, temperature, pressure...) installed on an industrial machine such as a compressor.
 
 <p style="text-align: center">
-    <img src="../img/forecaster_multivariate_train_matrix_diagram.png" style="width: 800px">
+    <img src="../img/forecaster_multivariate_train_matrix_diagram.png" style="width: 700px">
     <br>
     <font size="2.5"> <i>Transformation of two time series and an exogenous variable into the matrices needed to train a machine learning model in a multi-variate-series context</i></font>
 </p>
 
-The [`ForecasterDirectMultiVariate`](https://skforecast.org/latest/user_guides/dependent-multi-series-multivariate-forecasting.html) class covers this process. 
+The [`ForecasterDirectMultiVariate`](../user_guides/dependent-multi-series-multivariate-forecasting.html) class covers this process. 
 
 
 ## Forecasters
@@ -144,21 +139,21 @@ The **skforecast** library offers a variety of forecaster types, each tailored t
 |[ForecasterRNN]               ||✔️||✔️|||||
 |[ForecasterSarimax]           |✔️||✔️||✔️|✔️|✔️||
 
-[ForecasterRecursive]: https://skforecast.org/latest/user_guides/autoregresive-forecaster.html
-[ForecasterDirect]: https://skforecast.org/latest/user_guides/direct-multi-step-forecasting.html
-[ForecasterRecursiveMultiSeries]: https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting.html
-[ForecasterDirectMultiVariate]: https://skforecast.org/latest/user_guides/dependent-multi-series-multivariate-forecasting.html
-[ForecasterRNN]: https://skforecast.org/latest/user_guides/forecasting-with-deep-learning-rnn-lstm
-[ForecasterSarimax]: https://skforecast.org/latest/user_guides/forecasting-sarimax-arima.html
+[ForecasterRecursive]: ../user_guides/autoregresive-forecaster.html
+[ForecasterDirect]: ../user_guides/direct-multi-step-forecasting.html
+[ForecasterRecursiveMultiSeries]: ../user_guides/independent-multi-time-series-forecasting.html
+[ForecasterDirectMultiVariate]: ../user_guides/dependent-multi-series-multivariate-forecasting.html
+[ForecasterRNN]: ../user_guides/forecasting-with-deep-learning-rnn-lstm.html
+[ForecasterSarimax]: ../user_guides/forecasting-sarimax-arima.html
 
-To understand what can be done when initializing a forecaster with **skforecast** visit [Forecaster parameters](https://skforecast.org/latest/quick-start/forecaster-parameters) and [Forecaster attributes](https://skforecast.org/latest/quick-start/forecaster-attributes).
+To understand what can be done when initializing a forecaster with **skforecast** visit [Forecaster parameters](../quick-start/forecaster-parameters.html) and [Forecaster attributes](../quick-start/forecaster-attributes.html).
 
 
 ## Exogenous variables (features)
 
 Exogenous variables are predictors that are independent of the model being used for forecasting, and their future values must be known in order to include them in the prediction process. The inclusion of exogenous variables can enhance the accuracy of forecasts.
 
-In skforecast, exogenous variables [can be easily included](https://skforecast.org/latest/user_guides/exogenous-variables) as predictors in all forecasting models. To ensure that their effects are accurately accounted for, it is crucial to include these variables during both the training and prediction phases. This will help to optimize the accuracy of forecasts and provide more reliable predictions.
+In skforecast, exogenous variables [can be easily included](../user_guides/exogenous-variables.html) as predictors in all forecasting models. To ensure that their effects are accurately accounted for, it is crucial to include these variables during both the training and prediction phases. This will help to optimize the accuracy of forecasts and provide more reliable predictions.
 
 <p style="text-align: center">
     <img src="../img/matrix_transformation_with_exog_variable.png" style="width: 550px;">
@@ -271,4 +266,4 @@ As an example, backtesting is performed using the data from this [skforecast exa
 |           7 |               11.1 |  261.4 |
 |        True |               69.1 |  258.3 |
 
-For a code example illustrating the backtesting process, refer to the [Backtesting user guide](https://skforecast.org/latest/user_guides/backtesting.html).
+For a code example illustrating the backtesting process, refer to the [Backtesting user guide](../user_guides/backtesting.html).

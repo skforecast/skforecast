@@ -10,8 +10,8 @@ import warnings
 import sys
 import numpy as np
 import pandas as pd
-from copy import copy
 import inspect
+from copy import copy
 import sklearn
 from sklearn.exceptions import NotFittedError
 from sklearn.pipeline import Pipeline
@@ -21,9 +21,10 @@ from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder
 import skforecast
 from ..base import ForecasterBase
 from ..exceptions import (
+    DataTransformationWarning,
+    IgnoredArgumentWarning,
     MissingValuesWarning,
-    UnknownLevelWarning,
-    IgnoredArgumentWarning
+    UnknownLevelWarning
 )
 from ..utils import (
     initialize_lags,
@@ -369,9 +370,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         )
         if self.window_features is None and self.lags is None:
             raise ValueError(
-                ("At least one of the arguments `lags` or `window_features` "
-                 "must be different from None. This is required to create the "
-                 "predictors used in training the forecaster.")
+                "At least one of the arguments `lags` or `window_features` "
+                "must be different from None. This is required to create the "
+                "predictors used in training the forecaster."
             )
         
         self.window_size = max(
@@ -396,11 +397,13 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         if self.differentiation is not None:
             if not isinstance(differentiation, int) or differentiation < 1:
                 raise ValueError(
-                    (f"Argument `differentiation` must be an integer equal to or "
-                     f"greater than 1. Got {differentiation}.")
+                    f"Argument `differentiation` must be an integer equal to or "
+                    f"greater than 1. Got {differentiation}."
                 )
             self.window_size += self.differentiation
-            self.differentiator = TimeSeriesDifferentiator(order=self.differentiation)
+            self.differentiator = TimeSeriesDifferentiator(
+                order=self.differentiation, window_size=self.window_size
+            )
 
         self.fit_kwargs = check_select_fit_kwargs(
                               regressor  = regressor,
@@ -409,8 +412,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         if self.encoding not in ['ordinal', 'ordinal_category', 'onehot', None]:
             raise ValueError(
-                (f"Argument `encoding` must be one of the following values: 'ordinal', "
-                 f"'ordinal_category', 'onehot' or None. Got '{self.encoding}'.")
+                f"Argument `encoding` must be one of the following values: 'ordinal', "
+                f"'ordinal_category', 'onehot' or None. Got '{self.encoding}'."
             )
 
         if self.encoding == 'onehot':
@@ -434,25 +437,24 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         if self.transformer_series is None and isinstance(regressor, scaling_regressors):
             warnings.warn(
-                ("When using a linear model, it is recommended to use a transformer_series "
-                 "to ensure all series are in the same scale. You can use, for example, a "
-                 "`StandardScaler` from sklearn.preprocessing.")
+                "When using a linear model, it is recommended to use a transformer_series "
+                "to ensure all series are in the same scale. You can use, for example, a "
+                "`StandardScaler` from sklearn.preprocessing."
             )
 
         if isinstance(self.transformer_series, dict):
             if self.encoding is None:
                 raise TypeError(
-                    ("When `encoding` is None, `transformer_series` must be a single "
-                     "transformer (not `dict`) as it is applied to all series.")
+                    "When `encoding` is None, `transformer_series` must be a single "
+                    "transformer (not `dict`) as it is applied to all series."
                 )
             if '_unknown_level' not in self.transformer_series.keys():
                 raise ValueError(
-                    ("If `transformer_series` is a `dict`, a transformer must be "
-                     "provided to transform series that do not exist during training. "
-                     "Add the key '_unknown_level' to `transformer_series`. "
-                     "For example: {'_unknown_level': your_transformer}.")
+                    "If `transformer_series` is a `dict`, a transformer must be "
+                    "provided to transform series that do not exist during training. "
+                    "Add the key '_unknown_level' to `transformer_series`. "
+                    "For example: {'_unknown_level': your_transformer}."
                 )
-
 
     def __repr__(
         self
@@ -482,7 +484,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             f"{'=' * len(type(self).__name__)} \n"
             f"{type(self).__name__} \n"
             f"{'=' * len(type(self).__name__)} \n"
-            f"Regressor: {self.regressor} \n"
+            f"Regressor: {type(self.regressor).__name__} \n"
             f"Lags: {self.lags} \n"
             f"Window features: {self.window_features_names} \n"
             f"Window size: {self.window_size} \n"
@@ -508,7 +510,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         )
 
         return info
-
 
     def _repr_html_(self):
         """
@@ -538,7 +539,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             <details open>
                 <summary>General Information</summary>
                 <ul>
-                    <li><strong>Regressor:</strong> {self.regressor}</li>
+                    <li><strong>Regressor:</strong> {type(self.regressor).__name__}</li>
                     <li><strong>Lags:</strong> {self.lags}</li>
                     <li><strong>Window features:</strong> {self.window_features_names}</li>
                     <li><strong>Window size:</strong> {self.window_size}</li>
@@ -954,8 +955,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             self.differentiator_ = {serie: None for serie in series_names_in_}
         else:
             if not self.is_fitted:
-                self.differentiator_ = {serie: copy(self.differentiator)
-                                        for serie in series_names_in_}
+                self.differentiator_ = {
+                    serie: copy(self.differentiator) for serie in series_names_in_
+                }
 
         series_dict, exog_dict = align_series_and_exog_multiseries(
                                      series_dict          = series_dict,
@@ -2087,7 +2089,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 "As a result, any predictions generated using this matrix will also "
                 "be in the transformed scale. Please refer to the documentation "
                 "for more details: "
-                "https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting#extract-prediction-matrices"
+                "https://skforecast.org/latest/user_guides/training-and-prediction-matrices.html",
+                DataTransformationWarning
             )
         
         set_skforecast_warnings(suppress_warnings, action='default')
@@ -2652,7 +2655,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         return predictions
 
-
     def set_params(
         self, 
         params: dict
@@ -2675,7 +2677,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self.regressor = clone(self.regressor)
         self.regressor.set_params(**params)
 
-
     def set_fit_kwargs(
         self, 
         fit_kwargs: dict
@@ -2696,7 +2697,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         """
 
         self.fit_kwargs = check_select_fit_kwargs(self.regressor, fit_kwargs=fit_kwargs)
-
 
     def set_lags(
         self, 
@@ -2736,7 +2736,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         )
         if self.differentiation is not None:
             self.window_size += self.differentiation
-
+            self.differentiator.set_params(window_size=self.window_size)
 
     def set_window_features(
         self, 
@@ -2780,7 +2780,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         )
         if self.differentiation is not None:
             self.window_size += self.differentiation
-
+            self.differentiator.set_params(window_size=self.window_size)
 
     def set_out_sample_residuals(
         self, 
@@ -2890,6 +2890,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         y_pred = y_pred.copy()
         if self.differentiation is not None:
             differentiator = copy(self.differentiator)
+            differentiator.set_params(window_size=None)
+
         for k in series_to_update:
             if isinstance(y_true[k], pd.Series):
                 y_true[k] = y_true[k].to_numpy()
@@ -2920,9 +2922,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         if self.encoding is None:
             if list(residuals.keys()) != ['_unknown_level']:
                 warnings.warn(
-                    ("As `encoding` is set to `None`, no distinction between levels "
-                     "is made. All residuals are stored in the '_unknown_level' key."),
-                     UnknownLevelWarning
+                    "As `encoding` is set to `None`, no distinction between levels "
+                    "is made. All residuals are stored in the '_unknown_level' key.",
+                    UnknownLevelWarning
                 )
             residuals = {'_unknown_level': residuals['_unknown_level']}
 
@@ -2935,7 +2937,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             if len(value) > 10000:
                 value = rng.choice(value, size=10000, replace=False)
             self.out_sample_residuals_[key] = value
-
 
     def get_feature_importances(
         self,

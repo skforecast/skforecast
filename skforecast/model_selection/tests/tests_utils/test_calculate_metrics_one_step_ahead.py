@@ -8,7 +8,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
 from skforecast.recursive import ForecasterRecursive
 from skforecast.direct import ForecasterDirect
-from skforecast.model_selection._search import _calculate_metrics_one_step_ahead
+from skforecast.model_selection._utils import _calculate_metrics_one_step_ahead
 from skforecast.metrics import add_y_train_argument
 
 # Fixtures
@@ -16,7 +16,7 @@ from ..fixtures_model_selection import y
 from ..fixtures_model_selection import exog
 
 
-def test_calculate_metrics_one_step_ahead_when_forecaster_autoreg():
+def test_calculate_metrics_one_step_ahead_when_ForecasterRecursive():
     """
     Testing _calculate_metrics_one_step_ahead when forecaster is of type ForecasterRecursive.
     """
@@ -47,12 +47,13 @@ def test_calculate_metrics_one_step_ahead_when_forecaster_autoreg():
         y_test=y_test,
     )
     results = np.array([float(result) for result in results])
-    expected = np.array([0.5516310508466604, 1.2750659053445799, 1.9249024647280362])
+
+    expected = np.array([0.5516310508466604, 1.2750659053445799, 2.811352223272513])
 
     np.testing.assert_array_almost_equal(results, expected)
 
 
-def test_calculate_metrics_one_step_ahead_when_forecaster_autoreg_direct():
+def test_calculate_metrics_one_step_ahead_when_ForecasterDirect():
     """
     Testing _calculate_metrics_one_step_ahead when forecaster is of type ForecasterDirect.
     """

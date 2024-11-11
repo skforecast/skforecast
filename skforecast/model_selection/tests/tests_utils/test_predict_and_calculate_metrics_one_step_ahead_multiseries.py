@@ -1,4 +1,4 @@
-# Unit test _predict_and_calculate_metrics_multiseries_one_step_ahead
+# Unit test _predict_and_calculate_metrics_one_step_ahead_multiseries
 # ==============================================================================
 import re
 import pytest
@@ -11,7 +11,7 @@ from sklearn.linear_model import Ridge
 from skforecast.recursive import ForecasterRecursiveMultiSeries
 from skforecast.direct import ForecasterDirectMultiVariate
 from skforecast.model_selection import backtesting_forecaster_multiseries
-from skforecast.model_selection._utils import _predict_and_calculate_metrics_multiseries_one_step_ahead
+from skforecast.model_selection._utils import _predict_and_calculate_metrics_one_step_ahead_multiseries
 from skforecast.model_selection._split import TimeSeriesFold
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_absolute_percentage_error
@@ -26,7 +26,7 @@ series_dict = joblib.load(THIS_DIR/'fixture_sample_multi_series.joblib')
 exog_dict = joblib.load(THIS_DIR/'fixture_sample_multi_series_exog.joblib')
 
 
-def test_predict_and_calculate_metrics_multiseries_one_step_ahead_input_types():
+def test_predict_and_calculate_metrics_one_step_ahead_multiseries_input_types():
     """
     Check if function raises errors when input parameters have wrong types.
     """
@@ -57,7 +57,7 @@ def test_predict_and_calculate_metrics_multiseries_one_step_ahead_input_types():
         "`series` must be a pandas DataFrame or a dictionary of pandas DataFrames."
     )
     with pytest.raises(TypeError, match=err_msg):
-        _predict_and_calculate_metrics_multiseries_one_step_ahead(
+        _predict_and_calculate_metrics_one_step_ahead_multiseries(
             forecaster, "invalid_series_type", X_train, y_train, X_test, y_test, 
             X_train_encoding, X_test_encoding, levels, metrics, add_aggregated_metric
         )
@@ -68,7 +68,7 @@ def test_predict_and_calculate_metrics_multiseries_one_step_ahead_input_types():
         f"`X_train` must be a pandas DataFrame. Got: {type(X_train_invalid)}"
     )
     with pytest.raises(TypeError, match=err_msg):
-        _predict_and_calculate_metrics_multiseries_one_step_ahead(
+        _predict_and_calculate_metrics_one_step_ahead_multiseries(
             forecaster, series, X_train_invalid, y_train, X_test, y_test, 
             X_train_encoding, X_test_encoding, levels, metrics, add_aggregated_metric
         )
@@ -80,7 +80,7 @@ def test_predict_and_calculate_metrics_multiseries_one_step_ahead_input_types():
         f"Got: {type(y_train_invalid)}"
     )  
     with pytest.raises(TypeError, match=err_msg):
-        _predict_and_calculate_metrics_multiseries_one_step_ahead(
+        _predict_and_calculate_metrics_one_step_ahead_multiseries(
             forecaster, series, X_train, y_train_invalid, X_test, y_test, 
             X_train_encoding, X_test_encoding, levels, metrics, add_aggregated_metric
         )
@@ -91,7 +91,7 @@ def test_predict_and_calculate_metrics_multiseries_one_step_ahead_input_types():
         f"`X_test` must be a pandas DataFrame. Got: {type(X_test_invalid)}"
     )
     with pytest.raises(TypeError, match=err_msg):
-        _predict_and_calculate_metrics_multiseries_one_step_ahead(
+        _predict_and_calculate_metrics_one_step_ahead_multiseries(
             forecaster, series, X_train, y_train, X_test_invalid, y_test, 
             X_train_encoding, X_test_encoding, levels, metrics, add_aggregated_metric
         )
@@ -103,7 +103,7 @@ def test_predict_and_calculate_metrics_multiseries_one_step_ahead_input_types():
         f"Got: {type(y_test_invalid)}"
     )
     with pytest.raises(TypeError, match=err_msg):
-        _predict_and_calculate_metrics_multiseries_one_step_ahead(
+        _predict_and_calculate_metrics_one_step_ahead_multiseries(
             forecaster, series, X_train, y_train, X_test, y_test_invalid, 
             X_train_encoding, X_test_encoding, levels, metrics, add_aggregated_metric
         )
@@ -114,7 +114,7 @@ def test_predict_and_calculate_metrics_multiseries_one_step_ahead_input_types():
         f"`X_train_encoding` must be a pandas Series. Got: {type(X_train_encoding_invalid)}"
     )
     with pytest.raises(TypeError, match=err_msg):
-        _predict_and_calculate_metrics_multiseries_one_step_ahead(
+        _predict_and_calculate_metrics_one_step_ahead_multiseries(
             forecaster, series, X_train, y_train, X_test, y_test, 
             X_train_encoding_invalid, X_test_encoding, levels, metrics, add_aggregated_metric
         )
@@ -125,7 +125,7 @@ def test_predict_and_calculate_metrics_multiseries_one_step_ahead_input_types():
         f"`X_test_encoding` must be a pandas Series. Got: {type(X_test_encoding_invalid)}"
     )
     with pytest.raises(TypeError, match=err_msg):
-        _predict_and_calculate_metrics_multiseries_one_step_ahead(
+        _predict_and_calculate_metrics_one_step_ahead_multiseries(
             forecaster, series, X_train, y_train, X_test, y_test, 
             X_train_encoding, X_test_encoding_invalid, levels, metrics, add_aggregated_metric
         )
@@ -136,7 +136,7 @@ def test_predict_and_calculate_metrics_multiseries_one_step_ahead_input_types():
         f"`levels` must be a list. Got: {type(levels_invalid)}"
     )
     with pytest.raises(TypeError, match=err_msg):
-        _predict_and_calculate_metrics_multiseries_one_step_ahead(
+        _predict_and_calculate_metrics_one_step_ahead_multiseries(
             forecaster, series, X_train, y_train, X_test, y_test, 
             X_train_encoding, X_test_encoding, levels_invalid, metrics, add_aggregated_metric
         )
@@ -147,7 +147,7 @@ def test_predict_and_calculate_metrics_multiseries_one_step_ahead_input_types():
         f"`metrics` must be a list. Got: {type(metrics_invalid)}"
     )
     with pytest.raises(TypeError, match=err_msg):
-        _predict_and_calculate_metrics_multiseries_one_step_ahead(
+        _predict_and_calculate_metrics_one_step_ahead_multiseries(
             forecaster, series, X_train, y_train, X_test, y_test, 
             X_train_encoding, X_test_encoding, levels, metrics_invalid, add_aggregated_metric
         )
@@ -158,7 +158,7 @@ def test_predict_and_calculate_metrics_multiseries_one_step_ahead_input_types():
         f"`add_aggregated_metric` must be a boolean. Got: {type(add_aggregated_metric_invalid)}"
     )
     with pytest.raises(TypeError, match=err_msg):
-        _predict_and_calculate_metrics_multiseries_one_step_ahead(
+        _predict_and_calculate_metrics_one_step_ahead_multiseries(
             forecaster, series, X_train, y_train, X_test, y_test, 
             X_train_encoding, X_test_encoding, levels, metrics, add_aggregated_metric_invalid
         )
@@ -192,9 +192,9 @@ def test_predict_and_calculate_metrics_multiseries_one_step_ahead_input_types():
         )
     ],
 ids=lambda forecaster: f'forecaster: {forecaster.forecaster_id}')
-def test_predict_and_calculate_metrics_multiseries_one_step_ahead_output_equivalence_to_backtesting(forecaster):
+def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_equivalence_to_backtesting(forecaster):
     """
-    Test that the output of _predict_and_calculate_metrics_multiseries_one_step_ahead is equivalent to
+    Test that the output of _predict_and_calculate_metrics_one_step_ahead_multiseries is equivalent to
     the output of backtesting_forecaster_multiseries when steps=1 and refit=False.
 
     **Results are not equivalent if differentiation is included**
@@ -239,7 +239,7 @@ def test_predict_and_calculate_metrics_multiseries_one_step_ahead_output_equival
             initial_train_size = initial_train_size,
         )
 
-    metrics_one_step_ahead, pred_one_step_ahead = _predict_and_calculate_metrics_multiseries_one_step_ahead(
+    metrics_one_step_ahead, pred_one_step_ahead = _predict_and_calculate_metrics_one_step_ahead_multiseries(
         forecaster=forecaster,
         series=series,
         X_train = X_train,
@@ -257,9 +257,9 @@ def test_predict_and_calculate_metrics_multiseries_one_step_ahead_output_equival
     pd.testing.assert_frame_equal(pred_one_step_ahead, pred_backtesting)
 
 
-def test_predict_and_calculate_metrics_multiseries_one_step_ahead_output_ForecasterRecursiveMultiSeries_differentiation():
+def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_ForecasterRecursiveMultiSeries_differentiation():
     """
-    Test that the output of _predict_and_calculate_metrics_multiseries_one_step_ahead 
+    Test that the output of _predict_and_calculate_metrics_one_step_ahead_multiseries 
     when ForecasterRecursiveMultiSeries is used with differentiation.
     """
     forecaster = ForecasterRecursiveMultiSeries(
@@ -288,7 +288,7 @@ def test_predict_and_calculate_metrics_multiseries_one_step_ahead_output_Forecas
             initial_train_size = initial_train_size,
         )
 
-    results = _predict_and_calculate_metrics_multiseries_one_step_ahead(
+    results = _predict_and_calculate_metrics_one_step_ahead_multiseries(
         forecaster=forecaster,
         series=series,
         X_train = X_train,
@@ -349,9 +349,9 @@ def test_predict_and_calculate_metrics_multiseries_one_step_ahead_output_Forecas
     pd.testing.assert_frame_equal(results[1].head(10), expected[1])
 
 
-def test_predict_and_calculate_metrics_multiseries_one_step_ahead_output_ForecasterDirectMultiVariate_differentiation():
+def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_ForecasterDirectMultiVariate_differentiation():
     """
-    Test that the output of _predict_and_calculate_metrics_multiseries_one_step_ahead 
+    Test that the output of _predict_and_calculate_metrics_one_step_ahead_multiseries 
     when ForecasterDirectMultiVariate is used with differentiation.
     """
     forecaster = ForecasterDirectMultiVariate(
@@ -382,7 +382,7 @@ def test_predict_and_calculate_metrics_multiseries_one_step_ahead_output_Forecas
             initial_train_size = initial_train_size,
         )
 
-    results = _predict_and_calculate_metrics_multiseries_one_step_ahead(
+    results = _predict_and_calculate_metrics_one_step_ahead_multiseries(
         forecaster=forecaster,
         series=series,
         X_train = X_train,
@@ -440,9 +440,9 @@ def test_predict_and_calculate_metrics_multiseries_one_step_ahead_output_Forecas
         )
     ],
 ids=lambda forecaster: f'forecaster: {forecaster.forecaster_id}')
-def test_predict_and_calculate_metrics_multiseries_one_step_ahead_output_equivalence_to_backtesting_when_series_is_dict(forecaster):
+def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_equivalence_to_backtesting_when_series_is_dict(forecaster):
     """
-    Test that the output of _predict_and_calculate_metrics_multiseries_one_step_ahead is
+    Test that the output of _predict_and_calculate_metrics_one_step_ahead_multiseries is
     equivalent to the output of backtesting_forecaster_multiseries when steps=1 and
     refit=False. Using series and exog as dictionaries.
     Results are not equivalent if diferentiation is included.
@@ -482,7 +482,7 @@ def test_predict_and_calculate_metrics_multiseries_one_step_ahead_output_equival
             exog               = exog_dict,
             initial_train_size = initial_train_size,
         )
-    metrics_one_step_ahead, pred_one_step_ahead = _predict_and_calculate_metrics_multiseries_one_step_ahead(
+    metrics_one_step_ahead, pred_one_step_ahead = _predict_and_calculate_metrics_one_step_ahead_multiseries(
         forecaster=forecaster,
         series=series_dict,
         X_train = X_train,

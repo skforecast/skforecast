@@ -3,7 +3,7 @@
 import pandas as pd
 import numpy as np
 import pytest as pytest
-from skforecast.model_selection._utils import _calculate_metrics_multiseries
+from skforecast.model_selection._utils import _calculate_metrics_backtesting_multiseries
 from skforecast.metrics import add_y_train_argument
 from sklearn.metrics import mean_absolute_error
 from skforecast.metrics import mean_absolute_scaled_error
@@ -125,7 +125,7 @@ def custom_metric(y_true, y_pred):  # pragma: no cover
     return metric
 
 
-def test_calculate_metrics_multiseries_input_types():
+def test_calculate_metrics_backtesting_multiseries_input_types():
     """
     Check if function raises errors when input parameters have wrong types.
     """
@@ -149,56 +149,56 @@ def test_calculate_metrics_multiseries_input_types():
     # Test invalid type for series
     msg = "`series` must be a pandas DataFrame or a dictionary of pandas DataFrames."
     with pytest.raises(TypeError, match=msg):
-        _calculate_metrics_multiseries(
+        _calculate_metrics_backtesting_multiseries(
             "invalid_series_type", predictions, folds, span_index, window_size, metrics, levels
         )
 
     # Test invalid type for predictions
     msg = "`predictions` must be a pandas DataFrame."
     with pytest.raises(TypeError, match=msg):
-        _calculate_metrics_multiseries(
+        _calculate_metrics_backtesting_multiseries(
             series_df, "invalid_predictions_type", folds, span_index, window_size, metrics, levels
         )
 
     # Test invalid type for folds
     msg = "`folds` must be a list."
     with pytest.raises(TypeError, match=msg):
-        _calculate_metrics_multiseries(
+        _calculate_metrics_backtesting_multiseries(
             series_df, predictions, "invalid_folds_type", span_index, window_size, metrics, levels
         )
 
     # Test invalid type for span_index
     msg = "`span_index` must be a pandas DatetimeIndex or pandas RangeIndex."
     with pytest.raises(TypeError, match=msg):
-        _calculate_metrics_multiseries(
+        _calculate_metrics_backtesting_multiseries(
             series_df, predictions, folds, "invalid_span_index_type", window_size, metrics, levels
         )
 
     # Test invalid type for window_size
     msg = "`window_size` must be an integer."
     with pytest.raises(TypeError, match=msg):
-        _calculate_metrics_multiseries(
+        _calculate_metrics_backtesting_multiseries(
             series_df, predictions, folds, span_index, "invalid_window_size_type", metrics, levels
         )
 
     # Test invalid type for metrics
     msg = "`metrics` must be a list."
     with pytest.raises(TypeError, match=msg):
-        _calculate_metrics_multiseries(
+        _calculate_metrics_backtesting_multiseries(
             series_df, predictions, folds, span_index, window_size, "invalid_metrics_type", levels
         )
 
     # Test invalid type for levels
     msg = "`levels` must be a list."
     with pytest.raises(TypeError, match=msg):
-        _calculate_metrics_multiseries(
+        _calculate_metrics_backtesting_multiseries(
             series_df, predictions, folds, span_index, window_size, metrics, "invalid_levels_type"
         )
 
     # Test invalid type for add_aggregated_metric
     msg = "`add_aggregated_metric` must be a boolean."
     with pytest.raises(TypeError, match=msg):
-        _calculate_metrics_multiseries(
+        _calculate_metrics_backtesting_multiseries(
             series_df,
             predictions,
             folds,
@@ -210,15 +210,15 @@ def test_calculate_metrics_multiseries_input_types():
         )
 
 
-def test_calculate_metrics_multiseries_output_when_no_aggregated_metric(
+def test_calculate_metrics_backtesting_multiseries_output_when_no_aggregated_metric(
     metrics=[mean_absolute_error, mean_absolute_scaled_error]
 ):
     """
-    Test output of _calculate_metrics_multiseries when add_aggregated_metric=False
+    Test output of _calculate_metrics_backtesting_multiseries when add_aggregated_metric=False
     """
 
     metrics = [add_y_train_argument(metric) for metric in metrics]
-    results = _calculate_metrics_multiseries(
+    results = _calculate_metrics_backtesting_multiseries(
         series=data,
         predictions=predictions,
         folds=folds,
@@ -240,15 +240,15 @@ def test_calculate_metrics_multiseries_output_when_no_aggregated_metric(
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_calculate_metrics_multiseries_output_when_aggregated_metric(
+def test_calculate_metrics_backtesting_multiseries_output_when_aggregated_metric(
     metrics=[mean_absolute_error, mean_absolute_scaled_error]
 ):
     """
-    Test output of _calculate_metrics_multiseries when add_aggregated_metric=True
+    Test output of _calculate_metrics_backtesting_multiseries when add_aggregated_metric=True
     """
 
     metrics = [add_y_train_argument(metric) for metric in metrics]
-    results = _calculate_metrics_multiseries(
+    results = _calculate_metrics_backtesting_multiseries(
         series=data,
         predictions=predictions,
         folds=folds,
@@ -291,15 +291,15 @@ def test_calculate_metrics_multiseries_output_when_aggregated_metric(
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_calculate_metrics_multiseries_output_when_aggregated_metric_and_customer_metric(
+def test_calculate_metrics_backtesting_multiseries_output_when_aggregated_metric_and_customer_metric(
     metrics=[custom_metric],
 ):
     """
-    Test output of _calculate_metrics_multiseries when add_aggregated_metric=True
+    Test output of _calculate_metrics_backtesting_multiseries when add_aggregated_metric=True
     """
 
     metrics = [add_y_train_argument(metric) for metric in metrics]
-    results = _calculate_metrics_multiseries(
+    results = _calculate_metrics_backtesting_multiseries(
         series=data,
         predictions=predictions,
         folds=folds,
@@ -334,13 +334,13 @@ def test_calculate_metrics_multiseries_output_when_aggregated_metric_and_custome
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_calculate_metrics_multiseries_output_when_aggregated_metric_and_predictions_have_different_length(
+def test_calculate_metrics_backtesting_multiseries_output_when_aggregated_metric_and_predictions_have_different_length(
     metrics=[mean_absolute_error, mean_absolute_scaled_error]
 ):
     """
     """
     metrics = [add_y_train_argument(metric) for metric in metrics]
-    results = _calculate_metrics_multiseries(
+    results = _calculate_metrics_backtesting_multiseries(
         series=data,
         predictions=predictions_different_lenght,
         folds=folds,
@@ -383,14 +383,14 @@ def test_calculate_metrics_multiseries_output_when_aggregated_metric_and_predict
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_calculate_metrics_multiseries_output_when_aggregated_metric_and_one_level_is_not_predicted(
+def test_calculate_metrics_backtesting_multiseries_output_when_aggregated_metric_and_one_level_is_not_predicted(
     metrics=[mean_absolute_error, mean_absolute_scaled_error]
 ):
     """
     
     """
     metrics = [add_y_train_argument(metric) for metric in metrics]
-    results = _calculate_metrics_multiseries(
+    results = _calculate_metrics_backtesting_multiseries(
         series=data,
         predictions=predictions_missing_level,
         folds=folds,

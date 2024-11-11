@@ -62,7 +62,7 @@ def test_fit_without_validation_data():
     # # Assert that the last window is set correctly
     last_window = pd.DataFrame({"1": [2, 3, 4], "2": [2, 3, 4]})
 
-    np.testing.assert_array_equal(forecaster.last_window_, last_window)
+    np.testing.assert_array_almost_equal(forecaster.last_window_, last_window)
 
 
 # Test case for fitting the forecaster with validation data

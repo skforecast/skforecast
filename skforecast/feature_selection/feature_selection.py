@@ -55,10 +55,10 @@ def select_features(
         
         - If `'autoreg'`, only autoregressive features (lags and window features)
         are evaluated by the selector. All exogenous features are included in the
-        output (`selected_exog`).
+        output `selected_exog`.
         - If `'exog'`, only exogenous features are evaluated without the presence
         of autoregressive features. All autoregressive features are included 
-        in the output (`selected_autoreg`).
+        in the outputs `selected_lags` and `selected_window_features`.
         - If `None`, all features are evaluated by the selector.
     force_inclusion : list, str, default `None`
         Features to force include in the final list of selected features.
@@ -146,9 +146,9 @@ def select_features(
         subsample = int(len(X_train) * subsample)
 
     rng = np.random.default_rng(seed=random_state)
-    sample = rng.choice(X_train.index, size=subsample, replace=False)
-    X_train_sample = X_train.loc[sample, :]
-    y_train_sample = y_train.loc[sample]
+    sample = rng.integers(low=0, high=len(X_train), size=subsample)
+    X_train_sample = X_train.iloc[sample, :]
+    y_train_sample = y_train.iloc[sample]
     selector.fit(X_train_sample, y_train_sample)
     selected_features = selector.get_feature_names_out()
 
@@ -253,10 +253,10 @@ def select_features_multiseries(
         
         - If `'autoreg'`, only autoregressive features (lags and window features) 
         are evaluated by the selector. All exogenous features are 
-        included in the output (`selected_exog`).
+        included in the output `selected_exog`.
         - If `'exog'`, only exogenous features are evaluated without the presence
         of autoregressive features. All autoregressive features are included 
-        in the output (`selected_autoreg`).
+        in the outputs `selected_lags` and `selected_window_features`.
         - If `None`, all features are evaluated by the selector.
     force_inclusion : list, str, default `None`
         Features to force include in the final list of selected features.
@@ -367,9 +367,9 @@ def select_features_multiseries(
         subsample = int(len(X_train) * subsample)
 
     rng = np.random.default_rng(seed=random_state)
-    sample = rng.choice(X_train.index, size=subsample, replace=False)
-    X_train_sample = X_train.loc[sample, :]
-    y_train_sample = y_train.loc[sample]
+    sample = rng.integers(low=0, high=len(X_train), size=subsample)
+    X_train_sample = X_train.iloc[sample, :]
+    y_train_sample = y_train.iloc[sample]
     selector.fit(X_train_sample, y_train_sample)
     selected_features = selector.get_feature_names_out()
 
@@ -409,6 +409,7 @@ def select_features_multiseries(
         )
         selected_lags = []
         selected_window_features = []
+        verbose_selected_lags = []
     else:
         if forecaster_name == 'ForecasterDirectMultiVariate':
             selected_lags = {

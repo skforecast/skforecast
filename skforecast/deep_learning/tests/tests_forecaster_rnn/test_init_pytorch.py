@@ -26,7 +26,7 @@ def test_init(levels, steps, lags):
     """
     Test case for the initialization of the ForecasterRnn class
     """
-    print(f"levels: {levels}")
+    
     # Generate dummy data for testing
     series = pd.DataFrame(np.random.randn(100, 3))
     series.columns = [f"t+{step}" for step in range(1, series.shape[1] + 1)]

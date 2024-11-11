@@ -23,9 +23,9 @@ def test_set_lags_ValueError_when_lags_set_to_None_and_window_features_is_None(l
                      window_features = None
                  )
     err_msg = re.escape(
-        ("At least one of the arguments `lags` or `window_features` "
-         "must be different from None. This is required to create the "
-         "predictors used in training the forecaster.")
+        "At least one of the arguments `lags` or `window_features` "
+        "must be different from None. This is required to create the "
+        "predictors used in training the forecaster."
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster.set_lags(lags=lags)
@@ -117,12 +117,19 @@ def test_set_lags_when_differentiation_is_not_None():
                      differentiation = 1
                  )
     
+    np.testing.assert_array_almost_equal(forecaster.lags, np.array([1, 2, 3]))
+    assert forecaster.lags_names == ['lag_1', 'lag_2', 'lag_3']
+    assert forecaster.max_lag == 3
+    assert forecaster.window_size == 3 + 1
+    assert forecaster.differentiator.window_size == 3 + 1
+    
     forecaster.set_lags(lags=5)
 
     np.testing.assert_array_almost_equal(forecaster.lags, np.array([1, 2, 3, 4, 5]))
     assert forecaster.lags_names == ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5']
     assert forecaster.max_lag == 5
     assert forecaster.window_size == 5 + 1
+    assert forecaster.differentiator.window_size == 5 + 1
 
 
 def test_set_lags_when_window_features():
