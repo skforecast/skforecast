@@ -1884,23 +1884,23 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             if use_in_sample_residuals:
                 if not set(steps).issubset(set(self.in_sample_residuals_.keys())):
                     raise ValueError(
-                        (f"Not `forecaster.in_sample_residuals_` for steps: "
-                         f"{set(steps) - set(self.in_sample_residuals_.keys())}.")
+                        f"Not `forecaster.in_sample_residuals_` for steps: "
+                        f"{set(steps) - set(self.in_sample_residuals_.keys())}."
                     )
                 residuals = self.in_sample_residuals_
             else:
                 if self.out_sample_residuals_ is None:
                     raise ValueError(
-                        ("`forecaster.out_sample_residuals_` is `None`. Use "
-                         "`use_in_sample_residuals=True` or the "
-                         "`set_out_sample_residuals()` method before predicting.")
+                        "`forecaster.out_sample_residuals_` is `None`. Use "
+                        "`use_in_sample_residuals=True` or the "
+                        "`set_out_sample_residuals()` method before predicting."
                     )
                 else:
                     if not set(steps).issubset(set(self.out_sample_residuals_.keys())):
                         raise ValueError(
-                            (f"Not `forecaster.out_sample_residuals_` for steps: "
-                             f"{set(steps) - set(self.out_sample_residuals_.keys())}. "
-                             f"Use method `set_out_sample_residuals()`.")
+                            f"Not `forecaster.out_sample_residuals_` for steps: "
+                            f"{set(steps) - set(self.out_sample_residuals_.keys())}. "
+                            f"Use method `set_out_sample_residuals()`."
                         )
                 residuals = self.out_sample_residuals_
             
@@ -1911,14 +1911,14 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             for step in steps:
                 if residuals[step] is None:
                     raise ValueError(
-                        (f"forecaster residuals for step {step} are `None`. "
-                         f"Check {check_residuals}.")
+                        f"forecaster residuals for step {step} are `None`. "
+                        f"Check {check_residuals}."
                     )
                 elif (any(element is None for element in residuals[step]) or
                       np.any(np.isnan(residuals[step]))):
                     raise ValueError(
-                        (f"forecaster residuals for step {step} contains `None` "
-                         f"or `NaNs` values. Check {check_residuals}.")
+                        f"forecaster residuals for step {step} contains `None` "
+                        f"or `NaNs` values. Check {check_residuals}."
                     )
 
         Xs, _, steps, prediction_index = self._create_predict_inputs(
