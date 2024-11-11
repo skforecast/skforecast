@@ -2,7 +2,7 @@
 
 All contributions, bug reports, bug fixes, documentation improvements, enhancements, and ideas are welcome.
 
-A detailed overview on how to contribute can be found in the [contributing guide](https://github.com/JoaquinAmatRodrigo/skforecast/blob/master/CONTRIBUTING.md).
+A detailed overview on how to contribute can be found in the [contributing guide](https://github.com/skforecast/skforecast/blob/master/CONTRIBUTING.md).
 
 ## Core Development Team
 
@@ -32,4 +32,6 @@ A detailed overview on how to contribute can be found in the [contributing guide
 
 + Lillian Jensen, MPH, [tyg3rr](https://github.com/tyg3rr)
 
-+ Ivan Liu , [IvanLiuTW](https://github.com/IvanLiuTW)
++ Ivan Liu, [IvanLiuTW](https://github.com/IvanLiuTW)
+
++ Ignacio Moya, [imMoya](https://github.com/imMoya)

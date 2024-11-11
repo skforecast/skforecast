@@ -3,6 +3,7 @@
 import tomli
 from itertools import chain
 
+
 def main():
     """
     """
@@ -19,6 +20,7 @@ def main():
     with open("requirements.txt", mode='w') as fp:
         for dependency in dependences_all:
             fp.write(f"{dependency}\n")
+
 
 if __name__ == "__main__":
     main()

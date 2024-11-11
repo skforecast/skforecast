@@ -50,7 +50,7 @@ def fetch_dataset(
     datasets = {
         'h2o': {
             'url': (
-                f'https://raw.githubusercontent.com/JoaquinAmatRodrigo/'
+                f'https://raw.githubusercontent.com/skforecast/'
                 f'skforecast-datasets/{version}/data/h2o.csv'
             ),
             'sep': ',',
@@ -69,7 +69,7 @@ def fetch_dataset(
         },
         'h2o_exog': {
             'url': (
-                f"https://raw.githubusercontent.com/JoaquinAmatRodrigo/"
+                f"https://raw.githubusercontent.com/skforecast/"
                 f"skforecast-datasets/{version}/data/h2o_exog.csv"
             ),
             'sep': ',',
@@ -89,7 +89,7 @@ def fetch_dataset(
         },
         'fuel_consumption': {
             'url': (
-                f'https://raw.githubusercontent.com/JoaquinAmatRodrigo/'
+                f'https://raw.githubusercontent.com/skforecast/'
                 f'skforecast-datasets/{version}/data/consumos-combustibles-mensual.csv'
             ),
             'sep': ',',
@@ -108,7 +108,7 @@ def fetch_dataset(
         },
         'items_sales': {
             'url': (
-                f'https://raw.githubusercontent.com/JoaquinAmatRodrigo/'
+                f'https://raw.githubusercontent.com/skforecast/'
                 f'skforecast-datasets/{version}/data/simulated_items_sales.csv'
             ),
             'sep': ',',
@@ -120,7 +120,7 @@ def fetch_dataset(
         },
         'air_quality_valencia': {
             'url': (
-                f"https://raw.githubusercontent.com/JoaquinAmatRodrigo/"
+                f"https://raw.githubusercontent.com/skforecast/"
                 f"skforecast-datasets/{version}/data/air_quality_valencia.csv"
             ),
             'sep': ',',
@@ -128,18 +128,43 @@ def fetch_dataset(
             'date_format': '%Y-%m-%d %H:%M:%S',
             'freq': 'H',
             'description': (
-                'Hourly measures of several air chemical pollutant (pm2.5, co, no, '
-                'no2, pm10, nox, o3, so2) at Valencia city.'
+                'Hourly measures of several air chemical pollutant at Valencia city '
+                '(Avd. Francia) from 2019-01-01 to 20213-12-31. Including the following '
+                'variables: pm2.5 (µg/m³), CO (mg/m³), NO (µg/m³), NO2 (µg/m³), '
+                'PM10 (µg/m³), NOx (µg/m³), O3 (µg/m³), Veloc. (m/s), Direc. (degrees), '
+                'SO2 (µg/m³).'
             ),
             'source': (
-                " Red de Vigilancia y Control de la Contaminación Atmosférica, "
-                "46250054-València - Centre, "
+                "Red de Vigilancia y Control de la Contaminación Atmosférica, "
+                "46250047-València - Av. França, "
+                "https://mediambient.gva.es/es/web/calidad-ambiental/datos-historicos."
+            )
+        },
+        'air_quality_valencia_no_missing': {
+            'url': (
+                f"https://raw.githubusercontent.com/skforecast/"
+                f"skforecast-datasets/{version}/data/air_quality_valencia_no_missing.csv"
+            ),
+            'sep': ',',
+            'index_col': 'datetime',
+            'date_format': '%Y-%m-%d %H:%M:%S',
+            'freq': 'H',
+            'description': (
+                'Hourly measures of several air chemical pollutant at Valencia city '
+                '(Avd. Francia) from 2019-01-01 to 20213-12-31. Including the following '
+                'variables: pm2.5 (µg/m³), CO (mg/m³), NO (µg/m³), NO2 (µg/m³), '
+                'PM10 (µg/m³), NOx (µg/m³), O3 (µg/m³), Veloc. (m/s), Direc. (degrees), '
+                'SO2 (µg/m³). Missing values have been imputed using linear interpolation.'
+            ),
+            'source': (
+                "Red de Vigilancia y Control de la Contaminación Atmosférica, "
+                "46250047-València - Av. França, "
                 "https://mediambient.gva.es/es/web/calidad-ambiental/datos-historicos."
             )
         },
         'website_visits': {
             'url': (
-                f'https://raw.githubusercontent.com/JoaquinAmatRodrigo/'
+                f'https://raw.githubusercontent.com/skforecast/'
                 f'skforecast-datasets/{version}/data/visitas_por_dia_web_cienciadedatos.csv'
             ),
             'sep': ',',
@@ -157,7 +182,7 @@ def fetch_dataset(
         },
         'bike_sharing': {
             'url': (
-                f'https://raw.githubusercontent.com/JoaquinAmatRodrigo/'
+                f'https://raw.githubusercontent.com/skforecast/'
                 f'skforecast-datasets/{version}/data/bike_sharing_dataset_clean.csv'
             ),
             'sep': ',',
@@ -176,7 +201,7 @@ def fetch_dataset(
         },
         'bike_sharing_extended_features': {
             'url': (
-                f'https://raw.githubusercontent.com/JoaquinAmatRodrigo/'
+                f'https://raw.githubusercontent.com/skforecast/'
                 f'skforecast-datasets/{version}/data/bike_sharing_extended_features.csv'
             ),
             'sep': ',',
@@ -200,7 +225,7 @@ def fetch_dataset(
         },
         'australia_tourism': {
             'url': (
-                f'https://raw.githubusercontent.com/JoaquinAmatRodrigo/'
+                f'https://raw.githubusercontent.com/skforecast/'
                 f'skforecast-datasets/{version}/data/australia_tourism.csv'
             ),
             'sep': ',',
@@ -223,7 +248,7 @@ def fetch_dataset(
         },
         'uk_daily_flights': {
             'url': (
-                f'https://raw.githubusercontent.com/JoaquinAmatRodrigo/'
+                f'https://raw.githubusercontent.com/skforecast/'
                 f'skforecast-datasets/{version}/data/uk_daily_flights.csv'
             ),
             'sep': ',',
@@ -243,7 +268,7 @@ def fetch_dataset(
         },
         'wikipedia_visits': {
             'url': (
-                f'https://raw.githubusercontent.com/JoaquinAmatRodrigo/'
+                f'https://raw.githubusercontent.com/skforecast/'
                 f'skforecast-datasets/{version}/data/wikipedia_visits.csv'
             ),
             'sep': ',',
@@ -261,7 +286,7 @@ def fetch_dataset(
         },
         'vic_electricity': {
             'url': (
-                f'https://raw.githubusercontent.com/JoaquinAmatRodrigo/'
+                f'https://raw.githubusercontent.com/skforecast/'
                 f'skforecast-datasets/{version}/data/vic_electricity.csv'
             ),
             'sep': ',',
@@ -278,7 +303,7 @@ def fetch_dataset(
         },
         'store_sales': {
             'url': (
-                f'https://raw.githubusercontent.com/JoaquinAmatRodrigo/'
+                f'https://raw.githubusercontent.com/skforecast/'
                 f'skforecast-datasets/{version}/data/store_sales.csv'
             ),
             'sep': ',',
@@ -297,7 +322,7 @@ def fetch_dataset(
         },
         'bicimad': {
             'url': (
-                f'https://raw.githubusercontent.com/JoaquinAmatRodrigo/'
+                f'https://raw.githubusercontent.com/skforecast/'
                 f'skforecast-datasets/{version}/data/bicimad_users.csv'
             ),
             'sep': ',',
@@ -314,16 +339,16 @@ def fetch_dataset(
                 'del Ayuntamiento de Madrid https://datos.madrid.es/portal/site/egob'
             )
         },
-        'm4_hourly': {
+        'm4_daily': {
             'url': (
-                f'https://raw.githubusercontent.com/JoaquinAmatRodrigo/'
-                f'skforecast-datasets/{version}/data/m4_hourly.parquet'
+                f'https://raw.githubusercontent.com/skforecast/'
+                f'skforecast-datasets/{version}/data/m4_daily.parquet'
             ),
             'sep': None,
             'index_col': 'timestamp',
             'date_format': '%Y-%m-%d %H:%M:%S',
-            'freq': 'H',
-            'description': "Time series with hourly frequency from the M4 competition.",
+            'freq': 'D',
+            'description': "Time series with daily frequency from the M4 competition.",
             'source': (
                 "Monash Time Series Forecasting Repository  "
                 "(https://zenodo.org/communities/forecasting) Godahewa, R., Bergmeir, "
@@ -338,16 +363,16 @@ def fetch_dataset(
                 "https://www.kaggle.com/datasets/yogesh94/m4-forecasting-competition-dataset"
             )
         },
-        'm4_daily': {
+        'm4_hourly': {
             'url': (
-                f'https://raw.githubusercontent.com/JoaquinAmatRodrigo/'
-                f'skforecast-datasets/{version}/data/m4_daily.parquet'
+                f'https://raw.githubusercontent.com/skforecast/'
+                f'skforecast-datasets/{version}/data/m4_hourly.parquet'
             ),
             'sep': None,
             'index_col': 'timestamp',
             'date_format': '%Y-%m-%d %H:%M:%S',
-            'freq': 'D',
-            'description': "Time series with daily frequency from the M4 competition.",
+            'freq': 'H',
+            'description': "Time series with hourly frequency from the M4 competition.",
             'source': (
                 "Monash Time Series Forecasting Repository  "
                 "(https://zenodo.org/communities/forecasting) Godahewa, R., Bergmeir, "
@@ -401,7 +426,7 @@ def fetch_dataset(
             'sep': None,
             'index_col': 'timestamp',
             'date_format': '%Y-%m-%d %H:%M:%S',
-            'freq': 'D',
+            'freq': 'H',
             'description': (
                 "Hourly energy consumption data from the The Building Data Genome Project 2 "
                 "with building metadata and weather data. "
@@ -495,7 +520,7 @@ def load_demo_dataset(version: str = 'latest') -> pd.Series:
     version = 'main' if version == 'latest' else f'{version}'
 
     url = (
-        f'https://raw.githubusercontent.com/JoaquinAmatRodrigo/skforecast-datasets/{version}/'
+        f'https://raw.githubusercontent.com/skforecast/skforecast-datasets/{version}/'
         'data/h2o.csv'
     )
 

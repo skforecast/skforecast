@@ -6,16 +6,16 @@
 # coding=utf-8
 
 import os
-from copy import copy
 import logging
 from typing import Union, Tuple, Optional, Callable
 import warnings
+from copy import deepcopy
 import pandas as pd
 from tqdm.auto import tqdm
 import optuna
 from optuna.samplers import TPESampler
 from sklearn.model_selection import ParameterGrid, ParameterSampler
-from ..exceptions import warn_skforecast_categories
+from ..exceptions import warn_skforecast_categories, OneStepAheadValidationWarning
 from ..model_selection._split import TimeSeriesFold, OneStepAheadFold
 from ..model_selection._validation import (
     backtesting_forecaster, 
@@ -26,7 +26,8 @@ from ..metrics import add_y_train_argument, _get_metric
 from ..model_selection._utils import (
     initialize_lags_grid,
     _initialize_levels_model_selection_multiseries,
-    _predict_and_calculate_metrics_multiseries_one_step_ahead
+    _calculate_metrics_one_step_ahead,
+    _predict_and_calculate_metrics_one_step_ahead_multiseries
 )
 from ..utils import initialize_lags, set_skforecast_warnings
 
@@ -51,7 +52,7 @@ def grid_search_forecaster(
     
     Parameters
     ----------
-    forecaster : ForecasterAutoreg, ForecasterAutoregDirect
+    forecaster : ForecasterRecursive, ForecasterDirect
         Forecaster model.
     y : pandas Series
         Training time series.
@@ -111,19 +112,19 @@ def grid_search_forecaster(
     param_grid = list(ParameterGrid(param_grid))
 
     results = _evaluate_grid_hyperparameters(
-        forecaster            = forecaster,
-        y                     = y,
-        cv                    = cv,
-        param_grid            = param_grid,
-        metric                = metric,
-        exog                  = exog,
-        lags_grid             = lags_grid,
-        return_best           = return_best,
-        n_jobs                = n_jobs,
-        verbose               = verbose,
-        show_progress         = show_progress,
-        output_file           = output_file
-    )
+                  forecaster    = forecaster,
+                  y             = y,
+                  cv            = cv,
+                  param_grid    = param_grid,
+                  metric        = metric,
+                  exog          = exog,
+                  lags_grid     = lags_grid,
+                  return_best   = return_best,
+                  n_jobs        = n_jobs,
+                  verbose       = verbose,
+                  show_progress = show_progress,
+                  output_file   = output_file
+              )
 
     return results
 
@@ -150,7 +151,7 @@ def random_search_forecaster(
     
     Parameters
     ----------
-    forecaster : ForecasterAutoreg, ForecasterAutoregDirect
+    forecaster : ForecasterRecursive, ForecasterDirect
         Forecaster model.
     y : pandas Series
         Training time series.
@@ -215,105 +216,21 @@ def random_search_forecaster(
     param_grid = list(ParameterSampler(param_distributions, n_iter=n_iter, random_state=random_state))
 
     results = _evaluate_grid_hyperparameters(
-        forecaster            = forecaster,
-        y                     = y,
-        cv                    = cv,
-        param_grid            = param_grid,
-        metric                = metric,
-        exog                  = exog,
-        lags_grid             = lags_grid,
-        return_best           = return_best,
-        n_jobs                = n_jobs,
-        verbose               = verbose,
-        show_progress         = show_progress,
-        output_file           = output_file
-    )
+                  forecaster    = forecaster,
+                  y             = y,
+                  cv            = cv,
+                  param_grid    = param_grid,
+                  metric        = metric,
+                  exog          = exog,
+                  lags_grid     = lags_grid,
+                  return_best   = return_best,
+                  n_jobs        = n_jobs,
+                  verbose       = verbose,
+                  show_progress = show_progress,
+                  output_file   = output_file
+              )
 
     return results
-
-
-def _calculate_metrics_one_step_ahead(
-    forecaster: object,
-    y: pd.Series,
-    metrics: list,
-    X_train: pd.DataFrame,
-    y_train: Union[pd.Series, dict],
-    X_test: pd.DataFrame,
-    y_test: Union[pd.Series, dict]
-) -> list:
-    """
-    Calculate metrics when predictions are one-step-ahead. When forecaster is
-    of type ForecasterAutoregDirect only the regressor for step 1 is used.
-
-    Parameters
-    ----------
-    forecaster : object
-        Forecaster model.
-    y : pandas Series
-        Time series data used to train and test the model.
-    metrics : list
-        List of metrics.
-    X_train : pandas DataFrame
-        Predictor values used to train the model.
-    y_train : pandas Series
-        Target values related to each row of `X_train`.
-    X_test : pandas DataFrame
-        Predictor values used to test the model.
-    y_test : pandas Series
-        Target values related to each row of `X_test`.
-
-    Returns
-    -------
-    metric_values : list
-        List with metric values.
-    
-    """
-
-    if type(forecaster).__name__ == 'ForecasterAutoregDirect':
-
-        step = 1  # Only model for step 1 is optimized.
-        X_train, y_train = forecaster.filter_train_X_y_for_step(
-                               step    = step,
-                               X_train = X_train,
-                               y_train = y_train
-                           )
-        X_test, y_test = forecaster.filter_train_X_y_for_step(
-                             step    = step,  
-                             X_train = X_test,
-                             y_train = y_test
-                         )
-        forecaster.regressors_[step].fit(X_train, y_train)
-        pred = forecaster.regressors_[step].predict(X_test)
-
-    else:
-        forecaster.regressor.fit(X_train, y_train)
-        pred = forecaster.regressor.predict(X_test)
-
-    pred = pred.ravel()
-    y_train = y_train.to_numpy()
-    y_test = y_test.to_numpy()
-
-    if forecaster.differentiation is not None:
-        differentiator = copy(forecaster.differentiator)
-        differentiator.initial_values = (
-            [y.iloc[forecaster.window_size - forecaster.differentiation]]
-        )
-        pred = differentiator.inverse_transform_next_window(pred)
-        y_test = differentiator.inverse_transform_next_window(y_test)
-        y_train = differentiator.inverse_transform(y_train)
-
-    if forecaster.transformer_y is not None:
-        pred = forecaster.transformer_y.inverse_transform(pred.reshape(-1, 1))
-        y_test = forecaster.transformer_y.inverse_transform(y_test.reshape(-1, 1))
-        y_train = forecaster.transformer_y.inverse_transform(y_train.reshape(-1, 1))
-
-    metric_values = []
-    for m in metrics:
-        metric_values.append(
-            m(y_true=y_test.ravel(), y_pred=pred.ravel(), y_train=y_train.ravel())
-        )
-
-    return metric_values
 
 
 def _evaluate_grid_hyperparameters(
@@ -335,7 +252,7 @@ def _evaluate_grid_hyperparameters(
     
     Parameters
     ----------
-    forecaster : ForecasterAutoreg, ForecasterAutoregDirect
+    forecaster : ForecasterRecursive, ForecasterDirect
         Forecaster model.
     y : pandas Series
         Training time series.
@@ -393,25 +310,38 @@ def _evaluate_grid_hyperparameters(
     """
 
     cv_name = type(cv).__name__
+    forecaster_name = type(forecaster).__name__
 
     if cv_name not in ['TimeSeriesFold', 'OneStepAheadFold']:
-        raise ValueError(
-           (f"`cv` must be an instance of `TimeSeriesFold` or `OneStepAheadFold`. "
-            f"Got {type(cv)}.")
+        raise TypeError(
+            f"`cv` must be an instance of `TimeSeriesFold` or `OneStepAheadFold`. "
+            f"Got {type(cv)}."
         )
     
     if cv_name == 'OneStepAheadFold':
+        forecasters_one_step_ahead = ['ForecasterRecursive', 'ForecasterDirect']
+        if forecaster_name not in forecasters_one_step_ahead:
+            raise TypeError(
+                f"Only forecasters of type {forecasters_one_step_ahead} are allowed "
+                f"when using `cv` of type `OneStepAheadFold`. Got {forecaster_name}."
+            )
         warnings.warn(
-            ("One-step-ahead predictions are used for faster model comparison, but they "
-             "may not fully represent multi-step prediction performance. It is recommended "
-             "to backtest the final model for a more accurate multi-step performance "
-             "estimate.")
+            "One-step-ahead predictions are used for faster model comparison, but they "
+            "may not fully represent multi-step prediction performance. It is recommended "
+            "to backtest the final model for a more accurate multi-step performance "
+            "estimate.", OneStepAheadValidationWarning
         )
+        cv = deepcopy(cv)
+        cv.set_params({
+            'window_size': forecaster.window_size,
+            'differentiation': forecaster.differentiation,
+            'verbose': verbose
+        })
 
     if return_best and exog is not None and (len(exog) != len(y)):
         raise ValueError(
-            (f"`exog` must have same number of samples as `y`. "
-             f"length `exog`: ({len(exog)}), length `y`: ({len(y)})")
+            f"`exog` must have same number of samples as `y`. "
+            f"length `exog`: ({len(exog)}), length `y`: ({len(y)})"
         )
 
     lags_grid, lags_label = initialize_lags_grid(forecaster, lags_grid)
@@ -583,7 +513,7 @@ def bayesian_search_forecaster(
     
     Parameters
     ----------
-    forecaster : ForecasterAutoreg, ForecasterAutoregDirect
+    forecaster : ForecasterRecursive, ForecasterDirect
         Forecaster model.
     y : pandas Series
         Training time series.
@@ -652,26 +582,26 @@ def bayesian_search_forecaster(
 
     if return_best and exog is not None and (len(exog) != len(y)):
         raise ValueError(
-            (f"`exog` must have same number of samples as `y`. "
-             f"length `exog`: ({len(exog)}), length `y`: ({len(y)})")
+            f"`exog` must have same number of samples as `y`. "
+            f"length `exog`: ({len(exog)}), length `y`: ({len(y)})"
         )
             
     results, best_trial = _bayesian_search_optuna(
-                                forecaster            = forecaster,
-                                y                     = y,
-                                cv                    = cv,
-                                exog                  = exog,
-                                search_space          = search_space,
-                                metric                = metric,
-                                n_trials              = n_trials,
-                                random_state          = random_state,
-                                return_best           = return_best,
-                                n_jobs                = n_jobs,
-                                verbose               = verbose,
-                                show_progress         = show_progress,
-                                output_file           = output_file,
-                                kwargs_create_study   = kwargs_create_study,
-                                kwargs_study_optimize = kwargs_study_optimize
+                              forecaster            = forecaster,
+                              y                     = y,
+                              cv                    = cv,
+                              exog                  = exog,
+                              search_space          = search_space,
+                              metric                = metric,
+                              n_trials              = n_trials,
+                              random_state          = random_state,
+                              return_best           = return_best,
+                              n_jobs                = n_jobs,
+                              verbose               = verbose,
+                              show_progress         = show_progress,
+                              output_file           = output_file,
+                              kwargs_create_study   = kwargs_create_study,
+                              kwargs_study_optimize = kwargs_study_optimize
                           )
 
     return results, best_trial
@@ -699,7 +629,7 @@ def _bayesian_search_optuna(
     
     Parameters
     ----------
-    forecaster : ForecasterAutoreg, ForecasterAutoregDirect
+    forecaster : ForecasterRecursive, ForecasterDirect
         Forecaster model.
     y : pandas Series
         Training time series. 
@@ -767,31 +697,46 @@ def _bayesian_search_optuna(
     """
     
     cv_name = type(cv).__name__
+    forecaster_name = type(forecaster).__name__
 
     if cv_name not in ['TimeSeriesFold', 'OneStepAheadFold']:
-        raise ValueError(
-           (f"`cv` must be an instance of `TimeSeriesFold` or `OneStepAheadFold`. "
-            f"Got {type(cv)}.")
+        raise TypeError(
+            f"`cv` must be an instance of `TimeSeriesFold` or `OneStepAheadFold`. "
+            f"Got {type(cv)}."
         )
     
     if cv_name == 'OneStepAheadFold':
+        forecasters_one_step_ahead = ['ForecasterRecursive', 'ForecasterDirect']
+        if forecaster_name not in forecasters_one_step_ahead:
+            raise TypeError(
+                f"Only forecasters of type {forecasters_one_step_ahead} are allowed "
+                f"when using `cv` of type `OneStepAheadFold`. Got {forecaster_name}."
+            )
         warnings.warn(
-            ("One-step-ahead predictions are used for faster model comparison, but they "
-             "may not fully represent multi-step prediction performance. It is recommended "
-             "to backtest the final model for a more accurate multi-step performance "
-             "estimate.")
+            "One-step-ahead predictions are used for faster model comparison, but they "
+            "may not fully represent multi-step prediction performance. It is recommended "
+            "to backtest the final model for a more accurate multi-step performance "
+            "estimate.", OneStepAheadValidationWarning
         )
+        cv = deepcopy(cv)
+        cv.set_params({
+            'window_size': forecaster.window_size,
+            'differentiation': forecaster.differentiation,
+            'verbose': verbose
+        })
     
     if not isinstance(metric, list):
         metric = [metric]
     metric = [
-            _get_metric(metric=m)
-            if isinstance(m, str)
-            else add_y_train_argument(m) 
-            for m in metric
-        ]
-    metric_dict = {(m if isinstance(m, str) else m.__name__): [] 
-                   for m in metric}
+        _get_metric(metric=m)
+        if isinstance(m, str)
+        else add_y_train_argument(m) 
+        for m in metric
+    ]
+    metric_dict = {
+        (m if isinstance(m, str) else m.__name__): [] 
+        for m in metric
+    }
     
     if len(metric_dict) != len(metric):
         raise ValueError(
@@ -803,14 +748,14 @@ def _bayesian_search_optuna(
 
         def _objective(
             trial,
-            search_space          = search_space,
-            forecaster            = forecaster,
-            y                     = y,
-            cv                    = cv,
-            exog                  = exog,
-            metric                = metric,
-            n_jobs                = n_jobs,
-            verbose               = verbose,
+            search_space = search_space,
+            forecaster   = forecaster,
+            y            = y,
+            cv           = cv,
+            exog         = exog,
+            metric       = metric,
+            n_jobs       = n_jobs,
+            verbose      = verbose,
         ) -> float:
             
             sample = search_space(trial)
@@ -820,14 +765,14 @@ def _bayesian_search_optuna(
                 forecaster.set_lags(sample['lags'])
             
             metrics, _ = backtesting_forecaster(
-                             forecaster            = forecaster,
-                             y                     = y,
-                             cv                    = cv,
-                             exog                  = exog,
-                             metric                = metric,
-                             n_jobs                = n_jobs,
-                             verbose               = verbose,
-                             show_progress         = False
+                             forecaster    = forecaster,
+                             y             = y,
+                             cv            = cv,
+                             exog          = exog,
+                             metric        = metric,
+                             n_jobs        = n_jobs,
+                             verbose       = verbose,
+                             show_progress = False
                          )
             metrics = metrics.iloc[0, :].to_list()
             
@@ -841,12 +786,12 @@ def _bayesian_search_optuna(
 
         def _objective(
             trial,
-            search_space          = search_space,
-            forecaster            = forecaster,
-            y                     = y,
-            cv                    = cv,
-            exog                  = exog,
-            metric                = metric
+            search_space = search_space,
+            forecaster   = forecaster,
+            y            = y,
+            cv           = cv,
+            exog         = exog,
+            metric       = metric
         ) -> float:
             
             sample = search_space(trial)
@@ -942,7 +887,7 @@ def _bayesian_search_optuna(
             metric_dict[m_name].append(m_values)
     
     lags_list = [
-        initialize_lags(forecaster_name=type(forecaster).__name__, lags = lag)[0]
+        initialize_lags(forecaster_name=forecaster_name, lags = lag)[0]
         for lag in lags_list
     ]
 
@@ -1004,7 +949,7 @@ def grid_search_forecaster_multiseries(
     
     Parameters
     ----------
-    forecaster : ForecasterAutoregMultiSeries, ForecasterAutoregMultiVariate
+    forecaster : ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate
         Forecaster model.
     series : pandas DataFrame, dict
         Training time series.
@@ -1081,22 +1026,22 @@ def grid_search_forecaster_multiseries(
     param_grid = list(ParameterGrid(param_grid))
 
     results = _evaluate_grid_hyperparameters_multiseries(
-                forecaster            = forecaster,
-                series                = series,
-                cv                    = cv,
-                param_grid            = param_grid,
-                metric                = metric,
-                aggregate_metric      = aggregate_metric,
-                levels                = levels,
-                exog                  = exog,
-                lags_grid             = lags_grid,
-                n_jobs                = n_jobs,
-                return_best           = return_best,
-                verbose               = verbose,
-                show_progress         = show_progress,
-                suppress_warnings     = suppress_warnings,
-                output_file           = output_file
-            )
+                  forecaster        = forecaster,
+                  series            = series,
+                  cv                = cv,
+                  param_grid        = param_grid,
+                  metric            = metric,
+                  aggregate_metric  = aggregate_metric,
+                  levels            = levels,
+                  exog              = exog,
+                  lags_grid         = lags_grid,
+                  n_jobs            = n_jobs,
+                  return_best       = return_best,
+                  verbose           = verbose,
+                  show_progress     = show_progress,
+                  suppress_warnings = suppress_warnings,
+                  output_file       = output_file
+              )
 
     return results
 
@@ -1126,7 +1071,7 @@ def random_search_forecaster_multiseries(
     
     Parameters
     ----------
-    forecaster : ForecasterAutoregMultiSeries, ForecasterAutoregMultiVariate
+    forecaster : ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate
         Forecaster model.
     series : pandas DataFrame, dict
         Training time series.
@@ -1208,22 +1153,22 @@ def random_search_forecaster_multiseries(
                                        random_state=random_state))
 
     results = _evaluate_grid_hyperparameters_multiseries(
-                forecaster            = forecaster,
-                series                = series,
-                cv                    = cv,
-                param_grid            = param_grid,
-                metric                = metric,
-                aggregate_metric      = aggregate_metric,
-                levels                = levels,
-                exog                  = exog,
-                lags_grid             = lags_grid,
-                return_best           = return_best,
-                n_jobs                = n_jobs,
-                verbose               = verbose,
-                show_progress         = show_progress,
-                suppress_warnings     = suppress_warnings,
-                output_file           = output_file
-            )
+                  forecaster        = forecaster,
+                  series            = series,
+                  cv                = cv,
+                  param_grid        = param_grid,
+                  metric            = metric,
+                  aggregate_metric  = aggregate_metric,
+                  levels            = levels,
+                  exog              = exog,
+                  lags_grid         = lags_grid,
+                  return_best       = return_best,
+                  n_jobs            = n_jobs,
+                  verbose           = verbose,
+                  show_progress     = show_progress,
+                  suppress_warnings = suppress_warnings,
+                  output_file       = output_file
+              )
 
     return results
 
@@ -1250,7 +1195,7 @@ def _evaluate_grid_hyperparameters_multiseries(
     
     Parameters
     ----------
-    forecaster : ForecasterAutoregMultiSeries, ForecasterAutoregMultiVariate
+    forecaster : ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate
         Forecaster model.
     series : pandas DataFrame, dict
         Training time series.
@@ -1327,25 +1272,41 @@ def _evaluate_grid_hyperparameters_multiseries(
     set_skforecast_warnings(suppress_warnings, action='ignore')
 
     cv_name = type(cv).__name__
+    forecaster_name = type(forecaster).__name__
 
     if cv_name not in ['TimeSeriesFold', 'OneStepAheadFold']:
-        raise ValueError(
-           (f"`cv` must be an instance of `TimeSeriesFold` or `OneStepAheadFold`. "
-            f"Got {type(cv)}.")
+        raise TypeError(
+            f"`cv` must be an instance of `TimeSeriesFold` or `OneStepAheadFold`. "
+            f"Got {type(cv)}."
         )
     
     if cv_name == 'OneStepAheadFold':
+        forecasters_one_step_ahead = [
+            'ForecasterRecursiveMultiSeries',
+            'ForecasterDirectMultiVariate'
+        ]
+        if forecaster_name not in forecasters_one_step_ahead:
+            raise TypeError(
+                f"Only forecasters of type {forecasters_one_step_ahead} are allowed "
+                f"when using `cv` of type `OneStepAheadFold`. Got {forecaster_name}."
+            )
         warnings.warn(
-            ("One-step-ahead predictions are used for faster model comparison, but they "
-             "may not fully represent multi-step prediction performance. It is recommended "
-             "to backtest the final model for a more accurate multi-step performance "
-             "estimate.")
+            "One-step-ahead predictions are used for faster model comparison, but they "
+            "may not fully represent multi-step prediction performance. It is recommended "
+            "to backtest the final model for a more accurate multi-step performance "
+            "estimate.", OneStepAheadValidationWarning
         )
+        cv = deepcopy(cv)
+        cv.set_params({
+            'window_size': forecaster.window_size,
+            'differentiation': forecaster.differentiation,
+            'verbose': verbose
+        })
 
     if return_best and exog is not None and (len(exog) != len(series)):
         raise ValueError(
-            (f"`exog` must have same number of samples as `series`. "
-             f"length `exog`: ({len(exog)}), length `series`: ({len(series)})")
+            f"`exog` must have same number of samples as `series`. "
+            f"length `exog`: ({len(exog)}), length `series`: ({len(series)})"
         )
     
     if isinstance(aggregate_metric, str):
@@ -1353,8 +1314,8 @@ def _evaluate_grid_hyperparameters_multiseries(
     allowed_aggregate_metrics = ['average', 'weighted_average', 'pooling']
     if not set(aggregate_metric).issubset(allowed_aggregate_metrics):
         raise ValueError(
-            (f"Allowed `aggregate_metric` are: {allowed_aggregate_metrics}. "
-             f"Got: {aggregate_metric}.")
+            f"Allowed `aggregate_metric` are: {allowed_aggregate_metrics}. "
+            f"Got: {aggregate_metric}."
         )
     
     levels = _initialize_levels_model_selection_multiseries(
@@ -1450,14 +1411,14 @@ def _evaluate_grid_hyperparameters_multiseries(
 
             else:
 
-                metrics, _ = _predict_and_calculate_metrics_multiseries_one_step_ahead(
+                metrics, _ = _predict_and_calculate_metrics_one_step_ahead_multiseries(
                     forecaster            = forecaster,
                     series                = series,
                     X_train               = X_train,
                     y_train               = y_train,
-                    X_train_encoding      = X_train_encoding,
                     X_test                = X_test,
                     y_test                = y_test,
+                    X_train_encoding      = X_train_encoding,
                     X_test_encoding       = X_test_encoding,
                     levels                = levels,
                     metrics               = metric,
@@ -1562,7 +1523,7 @@ def bayesian_search_forecaster_multiseries(
     
     Parameters
     ----------
-    forecaster : ForecasterAutoregMultiSeries, ForecasterAutoregMultiVariate
+    forecaster : ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate
         Forecaster model.
     series : pandas DataFrame, dict
         Training time series.
@@ -1579,17 +1540,6 @@ def bayesian_search_forecaster_multiseries(
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
         (Optional) that returns a float.
         - If `list`: List containing multiple strings and/or Callables.
-    method : str, default `'backtesting'`
-        Method used to evaluate the model.
-
-        - 'backtesting': the model is evaluated using backtesting process in which
-        the model predicts `steps` ahead in each iteration.
-        - 'one_step_ahead': the model is evaluated using only one step ahead predictions.
-        This is faster than backtesting but the results may not reflect the actual
-        performance of the model when predicting multiple steps ahead. Arguments `steps`,
-        `fixed_train_size`, `gap`, `skip_folds`, `allow_incomplete_fold` and `refit` are 
-        ignored when `method` is 'one_step_ahead'.
-        **New in version 0.14.0**
     aggregate_metric : str, list, default `['weighted_average', 'average', 'pooling']`
         Aggregation method/s used to combine the metric/s of all levels (series)
         when multiple levels are predicted. If list, the first aggregation method
@@ -1658,25 +1608,25 @@ def bayesian_search_forecaster_multiseries(
         )
    
     results, best_trial = _bayesian_search_optuna_multiseries(
-                            forecaster            = forecaster,
-                            series                = series,
-                            cv                    = cv,
-                            exog                  = exog,
-                            levels                = levels, 
-                            search_space          = search_space,
-                            metric                = metric,
-                            aggregate_metric      = aggregate_metric,
-                            n_trials              = n_trials,
-                            random_state          = random_state,
-                            return_best           = return_best,
-                            n_jobs                = n_jobs,
-                            verbose               = verbose,
-                            show_progress         = show_progress,
-                            suppress_warnings     = suppress_warnings,
-                            output_file           = output_file,
-                            kwargs_create_study   = kwargs_create_study,
-                            kwargs_study_optimize = kwargs_study_optimize
-                        )
+                              forecaster            = forecaster,
+                              series                = series,
+                              cv                    = cv,
+                              exog                  = exog,
+                              levels                = levels, 
+                              search_space          = search_space,
+                              metric                = metric,
+                              aggregate_metric      = aggregate_metric,
+                              n_trials              = n_trials,
+                              random_state          = random_state,
+                              return_best           = return_best,
+                              n_jobs                = n_jobs,
+                              verbose               = verbose,
+                              show_progress         = show_progress,
+                              suppress_warnings     = suppress_warnings,
+                              output_file           = output_file,
+                              kwargs_create_study   = kwargs_create_study,
+                              kwargs_study_optimize = kwargs_study_optimize
+                          )
         
     return results, best_trial
 
@@ -1706,7 +1656,7 @@ def _bayesian_search_optuna_multiseries(
     
     Parameters
     ----------
-    forecaster : ForecasterAutoregMultiSeries, ForecasterAutoregMultiVariate
+    forecaster : ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate
         Forecaster model.
     series : pandas DataFrame, dict
         Training time series.
@@ -1792,20 +1742,36 @@ def _bayesian_search_optuna_multiseries(
     set_skforecast_warnings(suppress_warnings, action='ignore')
 
     cv_name = type(cv).__name__
+    forecaster_name = type(forecaster).__name__
 
     if cv_name not in ['TimeSeriesFold', 'OneStepAheadFold']:
-        raise ValueError(
-           (f"`cv` must be an instance of `TimeSeriesFold` or `OneStepAheadFold`. "
-            f"Got {type(cv)}.")
+        raise TypeError(
+            f"`cv` must be an instance of `TimeSeriesFold` or `OneStepAheadFold`. "
+            f"Got {type(cv)}."
         )
     
     if cv_name == 'OneStepAheadFold':
+        forecasters_one_step_ahead = [
+            'ForecasterRecursiveMultiSeries',
+            'ForecasterDirectMultiVariate'
+        ]
+        if forecaster_name not in forecasters_one_step_ahead:
+            raise TypeError(
+                f"Only forecasters of type {forecasters_one_step_ahead} are allowed "
+                f"when using `cv` of type `OneStepAheadFold`. Got {forecaster_name}."
+            )
         warnings.warn(
-            ("One-step-ahead predictions are used for faster model comparison, but they "
-             "may not fully represent multi-step prediction performance. It is recommended "
-             "to backtest the final model for a more accurate multi-step performance "
-             "estimate.")
+            "One-step-ahead predictions are used for faster model comparison, but they "
+            "may not fully represent multi-step prediction performance. It is recommended "
+            "to backtest the final model for a more accurate multi-step performance "
+            "estimate.", OneStepAheadValidationWarning
         )
+        cv = deepcopy(cv)
+        cv.set_params({
+            'window_size': forecaster.window_size,
+            'differentiation': forecaster.differentiation,
+            'verbose': verbose
+        })
     
     if isinstance(aggregate_metric, str):
         aggregate_metric = [aggregate_metric]
@@ -1826,11 +1792,11 @@ def _bayesian_search_optuna_multiseries(
     if not isinstance(metric, list):
         metric = [metric]
     metric = [
-            _get_metric(metric=m)
-            if isinstance(m, str)
-            else add_y_train_argument(m) 
-            for m in metric
-        ]
+        _get_metric(metric=m)
+        if isinstance(m, str)
+        else add_y_train_argument(m) 
+        for m in metric
+    ]
     metric_names = [(m if isinstance(m, str) else m.__name__) for m in metric]
     if len(metric_names) != len(set(metric_names)):
         raise ValueError(
@@ -1889,9 +1855,9 @@ def _bayesian_search_optuna_multiseries(
             else:
                 metrics = metrics.loc[metrics['levels'] == levels[0], :]
             metrics = pd.DataFrame(
-                        data    = [metrics.iloc[:, 1:].transpose().stack().to_numpy()],
-                        columns = metric_names
-                    )
+                          data    = [metrics.iloc[:, 1:].transpose().stack().to_numpy()],
+                          columns = metric_names
+                      )
             
             # Store metrics in the variable `metrics_list` defined outside _objective.
             nonlocal metrics_list
@@ -1932,19 +1898,19 @@ def _bayesian_search_optuna_multiseries(
                 series=series, exog=exog, initial_train_size=cv.initial_train_size,
             )
 
-            metrics, _ = _predict_and_calculate_metrics_multiseries_one_step_ahead(
-                forecaster            = forecaster,
-                series                = series,
-                X_train               = X_train,
-                y_train               = y_train,
-                X_train_encoding      = X_train_encoding,
-                X_test                = X_test,
-                y_test                = y_test,
-                X_test_encoding       = X_test_encoding,
-                levels                = levels,
-                metrics               = metric,
-                add_aggregated_metric = add_aggregated_metric
-            )
+            metrics, _ = _predict_and_calculate_metrics_one_step_ahead_multiseries(
+                             forecaster            = forecaster,
+                             series                = series,
+                             X_train               = X_train,
+                             y_train               = y_train,
+                             X_test                = X_test,
+                             y_test                = y_test,
+                             X_train_encoding      = X_train_encoding,
+                             X_test_encoding       = X_test_encoding,
+                             levels                = levels,
+                             metrics               = metric,
+                             add_aggregated_metric = add_aggregated_metric
+                         )
 
             if add_aggregated_metric:
                 metrics = metrics.loc[metrics['levels'].isin(aggregate_metric), :]
@@ -2002,9 +1968,9 @@ def _bayesian_search_optuna_multiseries(
        
     if search_space(best_trial).keys() != best_trial.params.keys():
         raise ValueError(
-            (f"Some of the key values do not match the search_space key names.\n"
-             f"  Search Space keys  : {list(search_space(best_trial).keys())}\n"
-             f"  Trial objects keys : {list(best_trial.params.keys())}")
+            f"Some of the key values do not match the search_space key names.\n"
+            f"  Search Space keys  : {list(search_space(best_trial).keys())}\n"
+            f"  Trial objects keys : {list(best_trial.params.keys())}"
         )
     warnings.filterwarnings('default')
     
@@ -2019,9 +1985,9 @@ def _bayesian_search_optuna_multiseries(
         params_list.append(regressor_params)
         lags_list.append(lags)
     
-    if type(forecaster).__name__ not in ['ForecasterAutoregMultiVariate']:
+    if forecaster_name not in ['ForecasterDirectMultiVariate']:
         lags_list = [
-            initialize_lags(forecaster_name=type(forecaster).__name__, lags = lag)[0]
+            initialize_lags(forecaster_name=forecaster_name, lags = lag)[0]
             for lag in lags_list
         ]
     else:
@@ -2033,12 +1999,12 @@ def _bayesian_search_optuna_multiseries(
                         lags[key] = None
                     else:
                         lags[key] = initialize_lags(
-                                        forecaster_name = type(forecaster).__name__,
+                                        forecaster_name = forecaster_name,
                                         lags            = lags[key]
                                     )[0]
             else:
                 lags = initialize_lags(
-                           forecaster_name = type(forecaster).__name__,
+                           forecaster_name = forecaster_name,
                            lags            = lags
                        )[0]
             lags_list_initialized.append(lags)
@@ -2385,8 +2351,9 @@ def _evaluate_grid_hyperparameters_sarimax(
                             show_progress         = False
                         )[0]
         metric_values = metric_values.iloc[0, :].to_list()
-        warnings.filterwarnings('ignore', category=RuntimeWarning, 
-                                message= "The forecaster will be fit.*")
+        warnings.filterwarnings(
+            'ignore', category=RuntimeWarning, message= "The forecaster will be fit.*"
+        )
         
         params_list.append(params)
         for m, m_value in zip(metric, metric_values):

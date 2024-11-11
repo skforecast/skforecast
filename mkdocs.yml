@@ -1,7 +1,7 @@
 site_name: Skforecast Docs
 extra_css:
   - stylesheets/extra.css
-repo_url: https://github.com/JoaquinAmatRodrigo/skforecast
+repo_url: https://github.com/skforecast/skforecast
 site_url: https://skforecast.org
 remote_branch: docs_dev
 site_description: Python library for time series forecasting using machine learning models. It works with any regressor compatible with the scikit-learn API, including popular options like LightGBM, XGBoost, CatBoost, Keras, and many others.
@@ -14,6 +14,8 @@ nav:
     - Welcome to skforecast: README.md
   
   - Intro to Forecasting: introduction-forecasting/introduction-forecasting.md
+
+  - Skforecast 0.14: user_guides/migration-guide.ipynb
   
   - Quick start:
     - Quick start: quick-start/quick-start-skforecast.ipynb
@@ -23,7 +25,7 @@ nav:
 
   - User Guides:
     - Table of contents: user_guides/table-of-contents.md
-    - Skforecast 0.14 Migration guide: user_guides/migration-guide.md
+    - Skforecast 0.14 Migration guide: ./user_guides/migration-guide.html
     - Input data: user_guides/input-data.ipynb
     - Single series Forecasters:
       - Recursive multi-step forecasting: user_guides/autoregresive-forecaster.ipynb
@@ -60,33 +62,36 @@ nav:
     - Datasets:
       - Datasets: user_guides/datasets.ipynb
     - Additional Resources:
+      - Extract training and prediction matrices: user_guides/training-and-prediction-matrices.ipynb
       - Weighted time series forecasting: user_guides/weighted-time-series-forecasting.ipynb
       - Stacking multiple models: user_guides/stacking-ensemble-models-forecasting.ipynb
       - Forecasting with XGBoost and LightGBM: user_guides/forecasting-xgboost-lightgbm.ipynb
       - Skforecast in GPU: user_guides/skforecast-in-GPU.ipynb
     - FAQ and forecasting tips:
-      - Time series with missing values: faq/forecasting-time-series-with-missing-values.ipynb
-      - Non negative predictions: faq/non-negative-predictions.ipynb
-      - Forecasting with delayed data: faq/forecasting-with-delayed-historical-data.ipynb
-      - Parallelization: faq/parallelization-skforecast.ipynb
+      - Avoid negative predictions when forecasting: faq/non-negative-predictions.ipynb
+      - Forecasting time series with missing values: faq/forecasting-time-series-with-missing-values.ipynb
+      - Forecasting with delayed historical data: faq/forecasting-with-delayed-historical-data.ipynb
+      - Backtesting vs One-step-ahead: faq/parameters-search-backtesting-vs-one-step-ahead.ipynb
+      - Cyclical features in time series: faq/cyclical-features-time-series.ipynb
       - Time series aggregation: faq/time-series-aggregation.ipynb
+      - Parallelization in skforecast: faq/parallelization-skforecast.ipynb
       - Profiling skforecast: faq/profiling-skforecast.ipynb
-      - Backtesting vs One-step-ahead: faq/parameters-search-backetesting-vs-one-step-ahead.ipynb
 
   - Examples and tutorials:
     - English: examples/examples_english.md
     - Spanish: examples/examples_spanish.md
 
   - API Reference:
-    - ForecasterAutoreg: api/ForecasterAutoreg.md
-    - ForecasterAutoregDirect: api/ForecasterAutoregDirect.md
-    - ForecasterMultiSeries: api/ForecasterMultiSeries.md
-    - ForecasterMultiVariate: api/ForecasterMultiVariate.md
+    - ForecasterRecursive: api/ForecasterRecursive.md
+    - ForecasterDirect: api/ForecasterDirect.md
+    - ForecasterRecursiveMultiSeries: api/ForecasterRecursiveMultiSeries.md
+    - ForecasterDirectMultiVariate: api/ForecasterDirectMultiVariate.md
     - ForecasterRnn: api/ForecasterRnn.md
+    - sarimax: api/Sarimax.md
     - ForecasterSarimax: api/ForecasterSarimax.md
-    - sarimax: api/sarimax.md
-    - ForecasterBaseline: api/ForecasterBaseline.md
+    - ForecasterEquivalentDate: api/ForecasterEquivalentDate.md
     - model_selection: api/model_selection.md
+    - feature_selection: api/feature_selection.md
     - preprocessing: api/preprocessing.md
     - metrics: api/metrics.md
     - plot: api/plot.md
@@ -95,13 +100,12 @@ nav:
     - exceptions: api/exceptions.md
 
   - FAQ and Tips:
-    - Table of contents: faq/faq.md
-    - Time series differentiation: faq/time-series-differentiation.ipynb
+    - Table of contents: faq/table-of-contents.md
     - Avoid negative predictions when forecasting: faq/non-negative-predictions.ipynb
     - Forecasting time series with missing values: faq/forecasting-time-series-with-missing-values.ipynb
-    - Cyclical features in time series: faq/cyclical-features-time-series.ipynb
-    - Stacking (ensemble) machine learning models: faq/stacking-ensemble-models-forecasting.ipynb
     - Forecasting with delayed historical data: faq/forecasting-with-delayed-historical-data.ipynb
+    - Backtesting vs One-step-ahead: faq/parameters-search-backtesting-vs-one-step-ahead.ipynb
+    - Cyclical features in time series: faq/cyclical-features-time-series.ipynb
     - Time series aggregation: faq/time-series-aggregation.ipynb
     - Parallelization in skforecast: faq/parallelization-skforecast.ipynb
     - Profiling skforecast: faq/profiling-skforecast.ipynb
@@ -114,12 +118,21 @@ plugins:
   - mkdocstrings:
       handlers:
         python:
+          import:
+            - https://docs.python.org/3/objects.inv
+            - https://mkdocstrings.github.io/autorefs/objects.inv
+            - https://www.mkdocs.org/objects.inv
+            - https://python-markdown.github.io/objects.inv
           options:
             docstring_style: numpy
             docstring_section_style: table
             show_root_heading: true
-            show_root_full_path: false
+            show_root_full_path: true
             merge_init_into_class: true
+            show_symbol_type_heading: false
+            separate_signature: true
+            show_signature_annotations: false
+            summary: true
             filters: ["!__"] # exclude all members starting with __
             members_order: source
             docstring_options:
@@ -143,9 +156,6 @@ plugins:
 
 theme:
   name: material
-  codehilite:
-    linenums: true
-    pygments_style: vs
   custom_dir: docs/overrides
   favicon: img/favicon.png
   features:
@@ -154,6 +164,8 @@ theme:
     #- navigation.sections # To expand sections on the table of contents
     #- navigation.expand # To expand sections on the table of contents
     - navigation.top
+    - toc.integrate
+    - navigation.breadcrumbs
   font:
     text: Open Sans
     code: Ubuntu Mono
@@ -183,7 +195,6 @@ theme:
         name: Switch to light mode
 
 markdown_extensions:
-  # Python Markdown
   - abbr
   - admonition
   - attr_list
@@ -193,8 +204,6 @@ markdown_extensions:
   - md_in_html
   - toc:
       permalink: true
-
-  # Python Markdown Extensions
   - pymdownx.arithmatex:
       generic: true
   - pymdownx.betterem:
@@ -206,8 +215,10 @@ markdown_extensions:
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - pymdownx.highlight:
       use_pygments: true
-      linenums: true
+      linenums: false
+      pygments_lang_class: true
   - pymdownx.inlinehilite
+  - pymdownx.snippets
   - pymdownx.keys
   - pymdownx.mark
   - pymdownx.smartsymbols
@@ -232,3 +243,10 @@ extra:
       as to measure the effectiveness of our documentation and whether users
       find what they're searching for. With your consent, you're helping us to
       make our documentation better.
+  social:
+    - icon: fontawesome/brands/linkedin
+      link: https://www.linkedin.com/company/skforecast/
+  seo:
+    description: >-
+      Skforecast is a Python library for time series forecasting using machine learning models. It works with any regressor compatible with the scikit-learn API, including popular options like LightGBM, XGBoost, CatBoost, Keras, and many others.
+    keywords: time series, forecasting, machine learning, python, data science, scikit-learn, lightgbm, xgboost, catboost, keras, probabilistic forecasting, multiple time series forecasting

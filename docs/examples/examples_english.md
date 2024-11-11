@@ -4,7 +4,7 @@
 
 Practical examples and tutorials to help you understand and apply skforecast.
 
-## **Getting Started: Fundamental Forecasting**
+## Getting Started: Fundamental Forecasting
 
 This section provides essential tutorials for users who are just getting started with time series forecasting. These examples cover the most fundamental models and techniques to help you build a strong foundation in forecasting.
 
@@ -16,19 +16,23 @@ This section provides essential tutorials for users who are just getting started
 
 <i class="fa-solid fa-diagram-project fa-rotate-90" style="font-size: 25px; color:#74C0FC;"></i> [Forecasting with XGBoost](https://www.cienciadedatos.net/documentos/py56-forecasting-time-series-with-xgboost.html)
 
+<i class="fa-solid fa-diagram-project fa-rotate-90" style="font-size: 25px; color:#76b644;"></i> [Forecasting with LightGBM](https://www.cienciadedatos.net/documentos/py58-forecasting-time-series-with-lightgbm.html)
 
-## **Global Models: Multi-Series Forecasting**
+
+## Global Models: Multi-Series Forecasting
 
 These tutorials focus on global models and multi-series forecasting, where you can explore the use of techniques that handle multiple time series simultaneously and compare performance across different forecasting approaches.
 
 <i class="fa-duotone fa-water fa" style="font-size: 25px; color:teal;"></i> [Global Forecasting Models: Multi-series forecasting](https://www.cienciadedatos.net/documentos/py44-multi-series-forecasting-skforecast.html)
+
+<i class="fa-solid fa-stairs" style="font-size: 25px; color:#B197FC;"></i> [Scalable Forecasting: modeling thousand time series with a single global model](https://www.cienciadedatos.net/documentos/py59-scalable-forecasting-model.html)
 
 <i class="fa-solid fa-globe" style="font-size: 25px; color:#6b8e23;"></i> [Global Forecasting Models: Comparative Analysis of Single and Multi-Series Forecasting Modeling](https://www.cienciadedatos.net/documentos/py53-global-forecasting-models.html)
 
 <i class="fa-solid fa-layer-group" style="color: #001633;"></i> [Forecasting with Deep Learning](https://cienciadedatos.net/documentos/py54-forecasting-with-deep-learning)
 
 
-## **Advanced Techniques: Beyond Basic Models**
+## Advanced Techniques: Beyond Basic Models
 
 For experienced users looking to deepen their forecasting skills, this section provides advanced techniques, including probabilistic forecasting, handling missing values, and more sophisticated ensemble methods.
 

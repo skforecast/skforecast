@@ -22,7 +22,7 @@ pip install skforecast==0.14.0
 Latest (unstable):
 
 ```bash
-pip install git+https://github.com/JoaquinAmatRodrigo/skforecast@master
+pip install git+https://github.com/skforecast/skforecast@master
 ```
 
 The following dependencies are installed with the default installation:

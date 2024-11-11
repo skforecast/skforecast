@@ -7,6 +7,7 @@
 
 import re
 from copy import deepcopy
+from itertools import chain
 from typing import Union, Optional
 import warnings
 import numpy as np
@@ -23,7 +24,7 @@ def select_features(
     subsample: Union[int, float] = 0.5,
     random_state: int = 123,
     verbose: bool = True
-) -> Union[list, list]:
+) -> Union[list, list, list]:
     """
     Feature selection using any of the sklearn.feature_selection module selectors 
     (such as `RFECV`, `SelectFromModel`, etc.). Two groups of features are
@@ -38,8 +39,8 @@ def select_features(
 
     Parameters
     ----------
-    forecaster : ForecasterAutoreg, ForecasterAutoregDirect
-        Forecaster model. If forecaster is a ForecasterAutoregDirect, the
+    forecaster : ForecasterRecursive, ForecasterDirect
+        Forecaster model. If forecaster is a ForecasterDirect, the
         selector will only be applied to the features of the first step.
     selector : object
         A feature selector from sklearn.feature_selection.
@@ -54,10 +55,10 @@ def select_features(
         
         - If `'autoreg'`, only autoregressive features (lags and window features)
         are evaluated by the selector. All exogenous features are included in the
-        output (`selected_exog`).
+        output `selected_exog`.
         - If `'exog'`, only exogenous features are evaluated without the presence
         of autoregressive features. All autoregressive features are included 
-        in the output (`selected_autoreg`).
+        in the outputs `selected_lags` and `selected_window_features`.
         - If `None`, all features are evaluated by the selector.
     force_inclusion : list, str, default `None`
         Features to force include in the final list of selected features.
@@ -76,16 +77,19 @@ def select_features(
 
     Returns
     -------
-    selected_autoreg : list
-        List of selected autoregressive features.
+    selected_lags : list
+        List of selected lags.
+    selected_window_features : list
+        List of selected window features.
     selected_exog : list
         List of selected exogenous features.
 
     """
 
-    valid_forecasters = ['ForecasterAutoreg', 'ForecasterAutoregDirect']
+    forecaster_name = type(forecaster).__name__
+    valid_forecasters = ['ForecasterRecursive', 'ForecasterDirect']
 
-    if type(forecaster).__name__ not in valid_forecasters:
+    if forecaster_name not in valid_forecasters:
         raise TypeError(
             f"`forecaster` must be one of the following classes: {valid_forecasters}."
         )
@@ -103,18 +107,23 @@ def select_features(
     forecaster = deepcopy(forecaster)
     forecaster.is_fitted = False
     X_train, y_train = forecaster.create_train_X_y(y=y, exog=exog)
-    if type(forecaster).__name__ == 'ForecasterAutoregDirect':
+    if forecaster_name == 'ForecasterDirect':
         X_train, y_train = forecaster.filter_train_X_y_for_step(
                                step          = 1,
                                X_train       = X_train,
                                y_train       = y_train,
                                remove_suffix = True
                            )
+    
+    lags_cols = []
+    window_features_cols = []
     autoreg_cols = []
     if forecaster.lags is not None:
-        autoreg_cols.extend([f"lag_{lag}" for lag in forecaster.lags])
+        lags_cols = forecaster.lags_names
+        autoreg_cols.extend(lags_cols)
     if forecaster.window_features is not None:
-        autoreg_cols.extend(forecaster.window_features_names)
+        window_features_cols = forecaster.window_features_names
+        autoreg_cols.extend(window_features_cols)
 
     exog_cols = [col for col in X_train.columns if col not in autoreg_cols]
 
@@ -137,9 +146,9 @@ def select_features(
         subsample = int(len(X_train) * subsample)
 
     rng = np.random.default_rng(seed=random_state)
-    sample = rng.choice(X_train.index, size=subsample, replace=False)
-    X_train_sample = X_train.loc[sample, :]
-    y_train_sample = y_train.loc[sample]
+    sample = rng.integers(low=0, high=len(X_train), size=subsample)
+    X_train_sample = X_train.iloc[sample, :]
+    y_train_sample = y_train.iloc[sample]
     selector.fit(X_train_sample, y_train_sample)
     selected_features = selector.get_feature_names_out()
 
@@ -173,14 +182,19 @@ def select_features(
 
     if len(selected_autoreg) == 0:
         warnings.warn(
-            ("No autoregressive features have been selected. Since a Forecaster "
-             "cannot be created without them, be sure to include at least one "
-             "using the `force_inclusion` parameter.")
+            "No autoregressive features have been selected. Since a Forecaster "
+            "cannot be created without them, be sure to include at least one "
+            "using the `force_inclusion` parameter."
         )
+        selected_lags = []
+        selected_window_features = []
     else:
-        selected_autoreg = [
-            int(feature.replace('lag_', '')) if feature.startswith('lag_') else feature
-            for feature in selected_autoreg
+        selected_lags = [
+            int(feature.replace('lag_', '')) 
+            for feature in selected_autoreg if feature in lags_cols
+        ]
+        selected_window_features = [
+            feature for feature in selected_autoreg if feature in window_features_cols
         ]
 
     if verbose:
@@ -188,16 +202,18 @@ def select_features(
         print("--------------------------------" + "-" * len(selector.__class__.__name__))
         print(f"Total number of records available: {X_train.shape[0]}")
         print(f"Total number of records used for feature selection: {X_train_sample.shape[0]}")
-        print(f"Number of features available: {X_train.shape[1]}") 
-        print(f"    Autoreg (n={len(autoreg_cols)})")
-        print(f"    Exog    (n={len(exog_cols)})")
+        print(f"Number of features available: {len(autoreg_cols) + len(exog_cols)}") 
+        print(f"    Lags            (n={len(lags_cols)})")
+        print(f"    Window features (n={len(window_features_cols)})")
+        print(f"    Exog            (n={len(exog_cols)})")
         print(f"Number of features selected: {len(selected_features)}")
-        print(f"    Autoreg (n={len(selected_autoreg)}) : {selected_autoreg}")
-        print(f"    Exog    (n={len(selected_exog)}) : {selected_exog}")
+        print(f"    Lags            (n={len(selected_lags)}) : {selected_lags}")
+        print(f"    Window features (n={len(selected_window_features)}) : {selected_window_features}")
+        print(f"    Exog            (n={len(selected_exog)}) : {selected_exog}")
 
-    return selected_autoreg, selected_exog
+    return selected_lags, selected_window_features, selected_exog
 
-# TODO: Review when MultiSeries has window_features
+
 def select_features_multiseries(
     forecaster: object,
     selector: object,
@@ -208,7 +224,7 @@ def select_features_multiseries(
     subsample: Union[int, float] = 0.5,
     random_state: int = 123,
     verbose: bool = True,
-) -> Union[list, list]:
+) -> Union[Union[list, dict], list, list]:
     """
     Feature selection using any of the sklearn.feature_selection module selectors 
     (such as `RFECV`, `SelectFromModel`, etc.). Two groups of features are
@@ -223,8 +239,9 @@ def select_features_multiseries(
 
     Parameters
     ----------
-    forecaster : ForecasterAutoregMultiSeries
-        Forecaster model.
+    forecaster : ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate
+        Forecaster model. If forecaster is a ForecasterDirectMultiVariate, the
+        selector will only be applied to the features of the first step.
     selector : object
         A feature selector from sklearn.feature_selection.
     series : pandas DataFrame
@@ -234,12 +251,12 @@ def select_features_multiseries(
     select_only : str, default `None`
         Decide what type of features to include in the selection process. 
         
-        - If `'autoreg'`, only autoregressive features (lags or custom 
-        predictors) are evaluated by the selector. All exogenous features are 
-        included in the output (`selected_exog`).
+        - If `'autoreg'`, only autoregressive features (lags and window features) 
+        are evaluated by the selector. All exogenous features are 
+        included in the output `selected_exog`.
         - If `'exog'`, only exogenous features are evaluated without the presence
         of autoregressive features. All autoregressive features are included 
-        in the output (`selected_autoreg`).
+        in the outputs `selected_lags` and `selected_window_features`.
         - If `None`, all features are evaluated by the selector.
     force_inclusion : list, str, default `None`
         Features to force include in the final list of selected features.
@@ -258,18 +275,24 @@ def select_features_multiseries(
 
     Returns
     -------
-    selected_autoreg : list
-        List of selected autoregressive features.
+    selected_lags : list, dict
+        List of selected lags. If the forecaster is a ForecasterDirectMultiVariate,
+        the output is a dict with the selected lags for each series, {series_name: lags},
+        as the lags can be different for each series.
+    selected_window_features : list
+        List of selected window features.
     selected_exog : list
         List of selected exogenous features.
 
     """
 
+    forecaster_name = type(forecaster).__name__
     valid_forecasters = [
-        'ForecasterAutoregMultiSeries'
+        'ForecasterRecursiveMultiSeries',
+        'ForecasterDirectMultiVariate'
     ]
 
-    if type(forecaster).__name__ not in valid_forecasters:
+    if forecaster_name not in valid_forecasters:
         raise TypeError(
             f"`forecaster` must be one of the following classes: {valid_forecasters}."
         )
@@ -285,28 +308,38 @@ def select_features_multiseries(
         )
     
     forecaster = deepcopy(forecaster)
-    forecaster.fitted = False
+    forecaster.is_fitted = False
     output = forecaster._create_train_X_y(series=series, exog=exog)
     X_train = output[0]
     y_train = output[1]
-    series_col_names = output[3]
-
-    if forecaster.encoding == 'onehot':
-        encoding_cols = series_col_names
+    if forecaster_name == 'ForecasterDirectMultiVariate':
+        X_train, y_train = forecaster.filter_train_X_y_for_step(
+                               step          = 1,
+                               X_train       = X_train,
+                               y_train       = y_train,
+                               remove_suffix = True
+                           )
+        lags_cols = list(
+            chain(*[v for v in forecaster.lags_names.values() if v is not None])
+        )
+        window_features_cols = forecaster.X_train_window_features_names_out_
+        encoding_cols = []
     else:
-        encoding_cols = ['_level_skforecast']
-
-    if hasattr(forecaster, 'lags'):
-        autoreg_cols = [f"lag_{lag}" for lag in forecaster.lags]
-    else:
-        if forecaster.name_predictors is not None:
-            autoreg_cols = forecaster.name_predictors
+        lags_cols = forecaster.lags_names
+        window_features_cols = output[6]  # X_train_window_features_names_out_ output
+        if forecaster.encoding == 'onehot':
+            encoding_cols = output[4]  # X_train_series_names_in_ output
         else:
-            autoreg_cols = [
-                col
-                for col in X_train.columns
-                if re.match(r'^custom_predictor_\d+', col)
-            ]
+            encoding_cols = ['_level_skforecast']
+    
+    lags_cols = [] if lags_cols is None else lags_cols
+    window_features_cols = [] if window_features_cols is None else window_features_cols
+    autoreg_cols = []
+    if forecaster.lags is not None:
+        autoreg_cols.extend(lags_cols)
+    if forecaster.window_features is not None:
+        autoreg_cols.extend(window_features_cols)
+    
     exog_cols = [
         col
         for col in X_train.columns
@@ -334,9 +367,9 @@ def select_features_multiseries(
         subsample = int(len(X_train) * subsample)
 
     rng = np.random.default_rng(seed=random_state)
-    sample = rng.choice(X_train.index, size=subsample, replace=False)
-    X_train_sample = X_train.loc[sample, :]
-    y_train_sample = y_train.loc[sample]
+    sample = rng.integers(low=0, high=len(X_train), size=subsample)
+    X_train_sample = X_train.iloc[sample, :]
+    y_train_sample = y_train.iloc[sample]
     selector.fit(X_train_sample, y_train_sample)
     selected_features = selector.get_feature_names_out()
 
@@ -370,14 +403,42 @@ def select_features_multiseries(
 
     if len(selected_autoreg) == 0:
         warnings.warn(
-            ("No autoregressive features have been selected. Since a Forecaster "
-             "cannot be created without them, be sure to include at least one "
-             "using the `force_inclusion` parameter.")
+            "No autoregressive features have been selected. Since a Forecaster "
+            "cannot be created without them, be sure to include at least one "
+            "using the `force_inclusion` parameter."
         )
+        selected_lags = []
+        selected_window_features = []
+        verbose_selected_lags = []
     else:
-        if hasattr(forecaster, 'lags'):
-            selected_autoreg = [int(feature.replace('lag_', '')) 
-                                for feature in selected_autoreg] 
+        if forecaster_name == 'ForecasterDirectMultiVariate':
+            selected_lags = {
+                series_name: (
+                    [
+                        int(feature.replace(f"{series_name}_lag_", ""))
+                        for feature in selected_autoreg
+                        if feature in lags_names
+                    ]
+                    if lags_names is not None
+                    else []
+                )
+                for series_name, lags_names in forecaster.lags_names.items()
+            }
+            verbose_selected_lags = [
+                feature for feature in selected_autoreg if feature in lags_cols
+            ]
+        else:
+            selected_lags = [
+                int(feature.replace('lag_', '')) 
+                for feature in selected_autoreg 
+                if feature in lags_cols
+            ]
+            verbose_selected_lags = selected_lags
+
+        selected_window_features = [
+            feature for feature in selected_autoreg 
+            if feature in window_features_cols
+        ]
 
     if verbose:
         print(f"Recursive feature elimination ({selector.__class__.__name__})")
@@ -385,10 +446,12 @@ def select_features_multiseries(
         print(f"Total number of records available: {X_train.shape[0]}")
         print(f"Total number of records used for feature selection: {X_train_sample.shape[0]}")
         print(f"Number of features available: {len(autoreg_cols) + len(exog_cols)}") 
-        print(f"    Autoreg (n={len(autoreg_cols)})")
-        print(f"    Exog    (n={len(exog_cols)})")
+        print(f"    Lags            (n={len(lags_cols)})")
+        print(f"    Window features (n={len(window_features_cols)})")
+        print(f"    Exog            (n={len(exog_cols)})")
         print(f"Number of features selected: {len(selected_features)}")
-        print(f"    Autoreg (n={len(selected_autoreg)}) : {selected_autoreg}")
-        print(f"    Exog    (n={len(selected_exog)}) : {selected_exog}")
+        print(f"    Lags            (n={len(verbose_selected_lags)}) : {verbose_selected_lags}")
+        print(f"    Window features (n={len(selected_window_features)}) : {selected_window_features}")
+        print(f"    Exog            (n={len(selected_exog)}) : {selected_exog}")
 
-    return selected_autoreg, selected_exog
+    return selected_lags, selected_window_features, selected_exog

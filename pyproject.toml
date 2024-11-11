@@ -86,25 +86,26 @@ docs = [
     "mkdocstrings-python==1.11.1",
     "notebook==6.4.12",
     "jupyter-contrib-nbextensions==0.7.0",
+    "black==24.10.0"
     # Si está el enlace de abajo, al hacer pip install .[docs] falla
     #"https://github.com/ipython-contrib/jupyter_contrib_nbextensions/tarball/master"
 ]
 
 test = [
-    "pytest>=7.1, <8.3",
-    "pytest-cov>=4.0, <5.1",
-    "pytest-xdist>=3.3, <3.7",
-    "lightgbm>=4.0, <4.5",
-    "tensorflow>=2.13, <2.17",
-    "torch>=2.2, <2.3",
-    "tomli>=2.0, <2.1",
+    "pytest>=7.3",
+    "pytest-cov>=4.1",
+    "pytest-xdist>=3.3",
+    "lightgbm>=4.0, <4.6",
+    "tensorflow>=2.13, <2.19",
+    "torch>=2.2, <2.6",
+    "tomli>=2.0",
     "pandas[parquet]>=1.5"
 ]
 
 
 [project.urls]
 Homepage = "https://www.skforecast.org"
-Repository = "https://github.com/JoaquinAmatRodrigo/skforecast"
+Repository = "https://github.com/skforecast/skforecast"
 Documentation = "https://www.skforecast.org"
 "Release Notes" = "https://skforecast.org/latest/releases/releases"
 
