@@ -12,13 +12,13 @@
         <meta name="author" content="Joaquin Amat Rodrigo and Javier Escobar Ortiz">
       
       
-        <link rel="canonical" href="https://joaquinamatrodrigo.github.io/skforecast/0.14.0/api/ForecasterSarimax.html">
+        <link rel="canonical" href="https://skforecast.org/0.14.0/api/ForecasterSarimax.html">
       
       
-        <link rel="prev" href="ForecasterRnn.html">
+        <link rel="prev" href="Sarimax.html">
       
       
-        <link rel="next" href="Sarimax.html">
+        <link rel="next" href="ForecasterEquivalentDate.html">
       
       
       <link rel="icon" href="../img/favicon.png">
@@ -106,9 +106,9 @@
           <aside class="md-banner md-banner--warning">
             <div class="md-banner__inner md-grid md-typeset">
               
-  You're not viewing the latest stable version.
+This is documentation for an unstable development version.
   <a href="../..">
-    <strong>Click here to go to latest.</strong>
+    <strong>Switch to latest stable version.</strong>
   </a>
 
             </div>
@@ -220,7 +220,7 @@
     
     
       <div class="md-header__source">
-        <a href="https://github.com/JoaquinAmatRodrigo/skforecast" title="Go to repository" class="md-source" data-md-component="source">
+        <a href="https://github.com/skforecast/skforecast" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
@@ -267,7 +267,24 @@
   
     
   
-  Introduction to forecasting
+  Intro to Forecasting
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../user_guides/migration-guide.html" class="md-tabs__link">
+        
+  
+    
+  
+  Skforecast 0.14
 
       </a>
     </li>
@@ -337,7 +354,7 @@
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="ForecasterAutoreg.html" class="md-tabs__link">
+        <a href="ForecasterRecursive.html" class="md-tabs__link">
           
   
   API Reference
@@ -355,7 +372,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../faq/faq.html" class="md-tabs__link">
+        <a href="../faq/table-of-contents.html" class="md-tabs__link">
           
   
   FAQ and Tips
@@ -426,7 +443,9 @@
   
 
 
-<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
     <a href=".." title="Skforecast Docs" class="md-nav__button md-logo" aria-label="Skforecast Docs" data-md-component="logo">
       
@@ -437,7 +456,7 @@
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/JoaquinAmatRodrigo/skforecast" title="Go to repository" class="md-source" data-md-component="source">
+      <a href="https://github.com/skforecast/skforecast" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
@@ -527,7 +546,27 @@
         
   
   <span class="md-ellipsis">
-    Introduction to forecasting
+    Intro to Forecasting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/migration-guide.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Skforecast 0.14
   </span>
   
 
@@ -553,10 +592,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -567,8 +606,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             Quick start
           </label>
@@ -682,10 +721,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
         
           
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -696,8 +735,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             User Guides
           </label>
@@ -715,6 +754,27 @@
   
   <span class="md-ellipsis">
     Table of contents
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/migration-guide.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Skforecast 0.14 Migration guide
   </span>
   
 
@@ -762,10 +822,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_4" >
         
           
-          <label class="md-nav__link" for="__nav_4_3" id="__nav_4_3_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_4" id="__nav_5_4_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -776,8 +836,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_3">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_4">
             <span class="md-nav__icon md-icon"></span>
             Single series Forecasters
           </label>
@@ -892,10 +952,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_4" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_5" >
         
           
-          <label class="md-nav__link" for="__nav_4_4" id="__nav_4_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -906,8 +966,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_4">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_5">
             <span class="md-nav__icon md-icon"></span>
             Global Forecasters (multiple series)
           </label>
@@ -924,7 +984,7 @@
         
   
   <span class="md-ellipsis">
-    Independent multi-time series forecasting"
+    Independent multi-time series forecasting
   </span>
   
 
@@ -945,7 +1005,7 @@
         
   
   <span class="md-ellipsis">
-    Series with different lengths and different exogenous variables"
+    Series with different lengths and different exogenous variables
   </span>
   
 
@@ -966,7 +1026,7 @@
         
   
   <span class="md-ellipsis">
-    Dependent multivariate series forecasting"
+    Dependent multivariate series forecasting
   </span>
   
 
@@ -1022,10 +1082,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6" >
         
           
-          <label class="md-nav__link" for="__nav_4_5" id="__nav_4_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1036,8 +1096,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_5">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_6">
             <span class="md-nav__icon md-icon"></span>
             Feature Engineering
           </label>
@@ -1215,10 +1275,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_7" >
         
           
-          <label class="md-nav__link" for="__nav_4_6" id="__nav_4_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_7" id="__nav_5_7_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1229,8 +1289,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_6">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_7">
             <span class="md-nav__icon md-icon"></span>
             Model Evaluation and Tuning
           </label>
@@ -1345,10 +1405,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_8" >
         
           
-          <label class="md-nav__link" for="__nav_4_7" id="__nav_4_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_8" id="__nav_5_8_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1359,8 +1419,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_7">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_8">
             <span class="md-nav__icon md-icon"></span>
             Probabilistic Forecasting
           </label>
@@ -1412,10 +1472,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_8" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_9" >
         
           
-          <label class="md-nav__link" for="__nav_4_8" id="__nav_4_8_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_9" id="__nav_5_9_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1426,8 +1486,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_8_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_8">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_9">
             <span class="md-nav__icon md-icon"></span>
             Model Explainability
           </label>
@@ -1479,10 +1539,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_10" >
         
           
-          <label class="md-nav__link" for="__nav_4_9" id="__nav_4_9_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_10" id="__nav_5_10_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1493,8 +1553,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_9_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_9">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_10">
             <span class="md-nav__icon md-icon"></span>
             Model deployment
           </label>
@@ -1567,10 +1627,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_11" >
         
           
-          <label class="md-nav__link" for="__nav_4_10" id="__nav_4_10_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_11" id="__nav_5_11_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1581,8 +1641,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_10_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_10">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_11">
             <span class="md-nav__icon md-icon"></span>
             Plotting
           </label>
@@ -1634,10 +1694,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_11" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_12" >
         
           
-          <label class="md-nav__link" for="__nav_4_11" id="__nav_4_11_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_12" id="__nav_5_12_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1648,8 +1708,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_11_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_11">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_12">
             <span class="md-nav__icon md-icon"></span>
             Datasets
           </label>
@@ -1701,10 +1761,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_12" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_13" >
         
           
-          <label class="md-nav__link" for="__nav_4_12" id="__nav_4_12_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_13" id="__nav_5_13_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1715,12 +1775,33 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_12_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_12">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_13">
             <span class="md-nav__icon md-icon"></span>
             Additional Resources
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/training-and-prediction-matrices.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Extract training and prediction matrices
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
             
               
                 
@@ -1831,10 +1912,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_13" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_14" >
         
           
-          <label class="md-nav__link" for="__nav_4_13" id="__nav_4_13_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_14" id="__nav_5_14_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1845,8 +1926,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_13_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_13">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_14_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_14">
             <span class="md-nav__icon md-icon"></span>
             FAQ and forecasting tips
           </label>
@@ -1859,11 +1940,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../faq/forecasting-time-series-with-missing-values.html" class="md-nav__link">
+      <a href="../faq/non-negative-predictions.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Time series with missing values
+    Avoid negative predictions when forecasting
   </span>
   
 
@@ -1880,11 +1961,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../faq/non-negative-predictions.html" class="md-nav__link">
+      <a href="../faq/forecasting-time-series-with-missing-values.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Non negative predictions
+    Forecasting time series with missing values
   </span>
   
 
@@ -1905,7 +1986,7 @@
         
   
   <span class="md-ellipsis">
-    Forecasting with delayed data
+    Forecasting with delayed historical data
   </span>
   
 
@@ -1922,11 +2003,32 @@
   
   
     <li class="md-nav__item">
-      <a href="../faq/parallelization-skforecast.html" class="md-nav__link">
+      <a href="../faq/parameters-search-backtesting-vs-one-step-ahead.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Parallelization
+    Backtesting vs One-step-ahead
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/cyclical-features-time-series.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Cyclical features in time series
   </span>
   
 
@@ -1964,11 +2066,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../faq/profiling-skforecast.html" class="md-nav__link">
+      <a href="../faq/parallelization-skforecast.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Profiling skforecast
+    Parallelization in skforecast
   </span>
   
 
@@ -1985,11 +2087,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../faq/parameters-search-backetesting-vs-one-step-ahead.html" class="md-nav__link">
+      <a href="../faq/profiling-skforecast.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Backtesting vs One-step-ahead
+    Profiling skforecast
   </span>
   
 
@@ -2031,10 +2133,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -2045,8 +2147,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             Examples and tutorials
           </label>
@@ -2123,10 +2225,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
         
           
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
             
   
   <span class="md-ellipsis">
@@ -2137,8 +2239,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_6">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             API Reference
           </label>
@@ -2151,11 +2253,11 @@
   
   
     <li class="md-nav__item">
-      <a href="ForecasterAutoreg.html" class="md-nav__link">
+      <a href="ForecasterRecursive.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    ForecasterAutoreg
+    ForecasterRecursive
   </span>
   
 
@@ -2172,11 +2274,11 @@
   
   
     <li class="md-nav__item">
-      <a href="ForecasterAutoregDirect.html" class="md-nav__link">
+      <a href="ForecasterDirect.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    ForecasterAutoregDirect
+    ForecasterDirect
   </span>
   
 
@@ -2193,11 +2295,11 @@
   
   
     <li class="md-nav__item">
-      <a href="ForecasterMultiSeries.html" class="md-nav__link">
+      <a href="ForecasterRecursiveMultiSeries.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    ForecasterMultiSeries
+    ForecasterRecursiveMultiSeries
   </span>
   
 
@@ -2214,11 +2316,11 @@
   
   
     <li class="md-nav__item">
-      <a href="ForecasterMultiVariate.html" class="md-nav__link">
+      <a href="ForecasterDirectMultiVariate.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    ForecasterMultiVariate
+    ForecasterDirectMultiVariate
   </span>
   
 
@@ -2240,6 +2342,27 @@
   
   <span class="md-ellipsis">
     ForecasterRnn
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Sarimax.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    sarimax
   </span>
   
 
@@ -2302,7 +2425,7 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax" class="md-nav__link">
+  <a href="#skforecast.recursive._forecaster_sarimax.ForecasterSarimax" class="md-nav__link">
     <span class="md-ellipsis">
       ForecasterSarimax
     </span>
@@ -2312,7 +2435,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.fit" class="md-nav__link">
+  <a href="#skforecast.recursive._forecaster_sarimax.ForecasterSarimax.fit" class="md-nav__link">
     <span class="md-ellipsis">
       fit
     </span>
@@ -2321,7 +2444,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax._create_predict_inputs" class="md-nav__link">
+  <a href="#skforecast.recursive._forecaster_sarimax.ForecasterSarimax._create_predict_inputs" class="md-nav__link">
     <span class="md-ellipsis">
       _create_predict_inputs
     </span>
@@ -2330,7 +2453,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.predict" class="md-nav__link">
+  <a href="#skforecast.recursive._forecaster_sarimax.ForecasterSarimax.predict" class="md-nav__link">
     <span class="md-ellipsis">
       predict
     </span>
@@ -2339,7 +2462,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.predict_interval" class="md-nav__link">
+  <a href="#skforecast.recursive._forecaster_sarimax.ForecasterSarimax.predict_interval" class="md-nav__link">
     <span class="md-ellipsis">
       predict_interval
     </span>
@@ -2348,7 +2471,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.set_params" class="md-nav__link">
+  <a href="#skforecast.recursive._forecaster_sarimax.ForecasterSarimax.set_params" class="md-nav__link">
     <span class="md-ellipsis">
       set_params
     </span>
@@ -2357,7 +2480,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.set_fit_kwargs" class="md-nav__link">
+  <a href="#skforecast.recursive._forecaster_sarimax.ForecasterSarimax.set_fit_kwargs" class="md-nav__link">
     <span class="md-ellipsis">
       set_fit_kwargs
     </span>
@@ -2366,7 +2489,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.get_feature_importances" class="md-nav__link">
+  <a href="#skforecast.recursive._forecaster_sarimax.ForecasterSarimax.get_feature_importances" class="md-nav__link">
     <span class="md-ellipsis">
       get_feature_importances
     </span>
@@ -2375,7 +2498,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.get_info_criteria" class="md-nav__link">
+  <a href="#skforecast.recursive._forecaster_sarimax.ForecasterSarimax.get_info_criteria" class="md-nav__link">
     <span class="md-ellipsis">
       get_info_criteria
     </span>
@@ -2384,7 +2507,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.summary" class="md-nav__link">
+  <a href="#skforecast.recursive._forecaster_sarimax.ForecasterSarimax.summary" class="md-nav__link">
     <span class="md-ellipsis">
       summary
     </span>
@@ -2413,32 +2536,11 @@
   
   
     <li class="md-nav__item">
-      <a href="Sarimax.html" class="md-nav__link">
+      <a href="ForecasterEquivalentDate.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Sarimax
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="ForecasterBaseline.html" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    ForecasterBaseline
+    ForecasterEquivalentDate
   </span>
   
 
@@ -2476,32 +2578,11 @@
   
   
     <li class="md-nav__item">
-      <a href="model_selection_multiseries.html" class="md-nav__link">
+      <a href="feature_selection.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    model_selection_multiseries
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="model_selection_sarimax.html" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    model_selection_sarimax
+    feature_selection
   </span>
   
 
@@ -2661,10 +2742,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
         
           
-          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -2675,8 +2756,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_7">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             FAQ and Tips
           </label>
@@ -2689,7 +2770,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../faq/faq.html" class="md-nav__link">
+      <a href="../faq/table-of-contents.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2710,32 +2791,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../faq/time-series-differentiation.ipynb" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Time series differentiation
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../faq/non-negative-predictions.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Non negative predictions
+    Avoid negative predictions when forecasting
   </span>
   
 
@@ -2756,7 +2816,49 @@
         
   
   <span class="md-ellipsis">
-    Time series with missing values
+    Forecasting time series with missing values
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/forecasting-with-delayed-historical-data.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Forecasting with delayed historical data
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/parameters-search-backtesting-vs-one-step-ahead.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Backtesting vs One-step-ahead
   </span>
   
 
@@ -2778,48 +2880,6 @@
   
   <span class="md-ellipsis">
     Cyclical features in time series
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../faq/stacking-ensemble-models-forecasting.ipynb" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Stacking (ensemble) machine learning models
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../faq/forecasting-with-delayed-historical-data.html" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Forecasting with delayed data
   </span>
   
 
@@ -2861,7 +2921,7 @@
         
   
   <span class="md-ellipsis">
-    Parallelization
+    Parallelization in skforecast
   </span>
   
 
@@ -2946,128 +3006,6 @@
               </div>
             
             
-              
-              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
-                <div class="md-sidebar__scrollwrap">
-                  <div class="md-sidebar__inner">
-                    
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax" class="md-nav__link">
-    <span class="md-ellipsis">
-      ForecasterSarimax
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="ForecasterSarimax">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.fit" class="md-nav__link">
-    <span class="md-ellipsis">
-      fit
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax._create_predict_inputs" class="md-nav__link">
-    <span class="md-ellipsis">
-      _create_predict_inputs
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.predict" class="md-nav__link">
-    <span class="md-ellipsis">
-      predict
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.predict_interval" class="md-nav__link">
-    <span class="md-ellipsis">
-      predict_interval
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.set_params" class="md-nav__link">
-    <span class="md-ellipsis">
-      set_params
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.set_fit_kwargs" class="md-nav__link">
-    <span class="md-ellipsis">
-      set_fit_kwargs
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.get_feature_importances" class="md-nav__link">
-    <span class="md-ellipsis">
-      get_feature_importances
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.get_info_criteria" class="md-nav__link">
-    <span class="md-ellipsis">
-      get_info_criteria
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.summary" class="md-nav__link">
-    <span class="md-ellipsis">
-      summary
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-                  </div>
-                </div>
-              </div>
-            
           
           
             <div class="md-content" data-md-component="content">
@@ -3086,11 +3024,19 @@
 
 
 
-<h2 id="skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax" class="doc doc-heading">
-              <code class="highlight language-python"><span class="n">ForecasterSarimax</span><span class="p">(</span><span class="n">regressor</span><span class="p">,</span> <span class="n">transformer_y</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">transformer_exog</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fit_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">forecaster_id</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+<h2 id="skforecast.recursive._forecaster_sarimax.ForecasterSarimax" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">skforecast.recursive._forecaster_sarimax.ForecasterSarimax</span>
 
-<a href="#skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax" class="headerlink" title="Permanent link">&para;</a></h2>
 
+<a href="#skforecast.recursive._forecaster_sarimax.ForecasterSarimax" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">ForecasterSarimax</span><span class="p">(</span>
+    <span class="n">regressor</span><span class="p">,</span>
+    <span class="n">transformer_y</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">transformer_exog</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">fit_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">forecaster_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
 
     <div class="doc doc-contents first">
 
@@ -3114,7 +3060,7 @@ compatible with the skforecast API.
           <tr class="doc-section-item">
             <td><code>regressor</code></td>
             <td>
-                  <code><span title="skforecast.Sarimax.Sarimax">Sarimax</span></code>
+                  <code><a class="autorefs autorefs-internal" title="skforecast.sarimax.Sarimax" href="Sarimax.html#skforecast.sarimax._sarimax.Sarimax">Sarimax</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3161,7 +3107,7 @@ forecaster. <code>inverse_transform</code> is not available when using ColumnTra
           <tr class="doc-section-item">
             <td><code>fit_kwargs</code></td>
             <td>
-                  <code>dict</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3203,9 +3149,9 @@ using the model parameter <code>sm_fit_kwargs</code> and not this one.</p>
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code><span title="skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.regressor">regressor</span></code></td>
+            <td><code><span title="skforecast.recursive._forecaster_sarimax.ForecasterSarimax.regressor">regressor</span></code></td>
             <td>
-                  <code><span title="skforecast.Sarimax.Sarimax">Sarimax</span></code>
+                  <code><a class="autorefs autorefs-internal" title="skforecast.sarimax.Sarimax" href="Sarimax.html#skforecast.sarimax._sarimax.Sarimax">Sarimax</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3214,9 +3160,9 @@ using the model parameter <code>sm_fit_kwargs</code> and not this one.</p>
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code><span title="skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.params">params</span></code></td>
+            <td><code><span title="skforecast.recursive._forecaster_sarimax.ForecasterSarimax.params">params</span></code></td>
             <td>
-                  <code>dict</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3225,7 +3171,7 @@ using the model parameter <code>sm_fit_kwargs</code> and not this one.</p>
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code><span title="skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.transformer_y">transformer_y</span></code></td>
+            <td><code><span title="skforecast.recursive._forecaster_sarimax.ForecasterSarimax.transformer_y">transformer_y</span></code></td>
             <td>
                   <code>object transformer (preprocessor)</code>
             </td>
@@ -3239,7 +3185,7 @@ The transformation is applied to <code>y</code> before training the forecaster.<
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code><span title="skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.transformer_exog">transformer_exog</span></code></td>
+            <td><code><span title="skforecast.recursive._forecaster_sarimax.ForecasterSarimax.transformer_exog">transformer_exog</span></code></td>
             <td>
                   <code>object transformer (preprocessor)</code>
             </td>
@@ -3252,9 +3198,9 @@ forecaster. <code>inverse_transform</code> is not available when using ColumnTra
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code><span title="skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.window_size">window_size</span></code></td>
+            <td><code><span title="skforecast.recursive._forecaster_sarimax.ForecasterSarimax.window_size">window_size</span></code></td>
             <td>
-                  <code>int</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3263,7 +3209,7 @@ forecaster. <code>inverse_transform</code> is not available when using ColumnTra
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code><span title="skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.last_window_">last_window_</span></code></td>
+            <td><code><span title="skforecast.recursive._forecaster_sarimax.ForecasterSarimax.last_window_">last_window_</span></code></td>
             <td>
                   <code>pandas Series</code>
             </td>
@@ -3275,7 +3221,7 @@ values needed to predict the next <code>step</code> immediately after the traini
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code><span title="skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.extended_index_">extended_index_</span></code></td>
+            <td><code><span title="skforecast.recursive._forecaster_sarimax.ForecasterSarimax.extended_index_">extended_index_</span></code></td>
             <td>
                   <code>pandas Index</code>
             </td>
@@ -3291,9 +3237,9 @@ to know more about statsmodels append method.</p>
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code><span title="skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.index_type_">index_type_</span></code></td>
+            <td><code><span title="skforecast.recursive._forecaster_sarimax.ForecasterSarimax.index_type_">index_type_</span></code></td>
             <td>
-                  <code>type</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3302,9 +3248,9 @@ to know more about statsmodels append method.</p>
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code><span title="skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.index_freq_">index_freq_</span></code></td>
+            <td><code><span title="skforecast.recursive._forecaster_sarimax.ForecasterSarimax.index_freq_">index_freq_</span></code></td>
             <td>
-                  <code>str</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3313,7 +3259,7 @@ to know more about statsmodels append method.</p>
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code><span title="skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.training_range_">training_range_</span></code></td>
+            <td><code><span title="skforecast.recursive._forecaster_sarimax.ForecasterSarimax.training_range_">training_range_</span></code></td>
             <td>
                   <code>pandas Index</code>
             </td>
@@ -3324,9 +3270,9 @@ to know more about statsmodels append method.</p>
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code><span title="skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.exog_in_">exog_in_</span></code></td>
+            <td><code><span title="skforecast.recursive._forecaster_sarimax.ForecasterSarimax.exog_in_">exog_in_</span></code></td>
             <td>
-                  <code>bool</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3335,9 +3281,9 @@ to know more about statsmodels append method.</p>
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code><span title="skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.exog_names_in_">exog_names_in_</span></code></td>
+            <td><code><span title="skforecast.recursive._forecaster_sarimax.ForecasterSarimax.exog_names_in_">exog_names_in_</span></code></td>
             <td>
-                  <code>list</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3346,9 +3292,9 @@ to know more about statsmodels append method.</p>
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code><span title="skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.exog_type_in_">exog_type_in_</span></code></td>
+            <td><code><span title="skforecast.recursive._forecaster_sarimax.ForecasterSarimax.exog_type_in_">exog_type_in_</span></code></td>
             <td>
-                  <code>type</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3357,9 +3303,9 @@ to know more about statsmodels append method.</p>
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code><span title="skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.exog_dtypes_in_">exog_dtypes_in_</span></code></td>
+            <td><code><span title="skforecast.recursive._forecaster_sarimax.ForecasterSarimax.exog_dtypes_in_">exog_dtypes_in_</span></code></td>
             <td>
-                  <code>dict</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3369,9 +3315,9 @@ is used, the dtypes are calculated after the transformation.</p>
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code><span title="skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.X_train_exog_names_out_">X_train_exog_names_out_</span></code></td>
+            <td><code><span title="skforecast.recursive._forecaster_sarimax.ForecasterSarimax.X_train_exog_names_out_">X_train_exog_names_out_</span></code></td>
             <td>
-                  <code>list</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3382,9 +3328,9 @@ some exogenous variables are transformed during the training process.</p>
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code><span title="skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.fit_kwargs">fit_kwargs</span></code></td>
+            <td><code><span title="skforecast.recursive._forecaster_sarimax.ForecasterSarimax.fit_kwargs">fit_kwargs</span></code></td>
             <td>
-                  <code>dict</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3393,9 +3339,9 @@ some exogenous variables are transformed during the training process.</p>
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code><span title="skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.creation_date">creation_date</span></code></td>
+            <td><code><span title="skforecast.recursive._forecaster_sarimax.ForecasterSarimax.creation_date">creation_date</span></code></td>
             <td>
-                  <code>str</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3404,9 +3350,9 @@ some exogenous variables are transformed during the training process.</p>
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code><span title="skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.is_fitted">is_fitted</span></code></td>
+            <td><code><span title="skforecast.recursive._forecaster_sarimax.ForecasterSarimax.is_fitted">is_fitted</span></code></td>
             <td>
-                  <code>bool</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3415,9 +3361,9 @@ some exogenous variables are transformed during the training process.</p>
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code><span title="skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.fit_date">fit_date</span></code></td>
+            <td><code><span title="skforecast.recursive._forecaster_sarimax.ForecasterSarimax.fit_date">fit_date</span></code></td>
             <td>
-                  <code>str</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3426,9 +3372,9 @@ some exogenous variables are transformed during the training process.</p>
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code><span title="skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.skforecast_version">skforecast_version</span></code></td>
+            <td><code><span title="skforecast.recursive._forecaster_sarimax.ForecasterSarimax.skforecast_version">skforecast_version</span></code></td>
             <td>
-                  <code>str</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3437,9 +3383,9 @@ some exogenous variables are transformed during the training process.</p>
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code><span title="skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.python_version">python_version</span></code></td>
+            <td><code><span title="skforecast.recursive._forecaster_sarimax.ForecasterSarimax.python_version">python_version</span></code></td>
             <td>
-                  <code>str</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3448,9 +3394,9 @@ some exogenous variables are transformed during the training process.</p>
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code><span title="skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.forecaster_id">forecaster_id</span></code></td>
+            <td><code><span title="skforecast.recursive._forecaster_sarimax.ForecasterSarimax.forecaster_id">forecaster_id</span></code></td>
             <td>
-                  <code>(str, int)</code>
+                  <code>(<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a>)</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3462,8 +3408,8 @@ some exogenous variables are transformed during the training process.</p>
     </table>
 
                   <details class="quote">
-                    <summary>Source code in <code>skforecast/ForecasterSarimax/ForecasterSarimax.py</code></summary>
-                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">117</span>
+                    <summary>Source code in <code>skforecast/recursive/_forecaster_sarimax.py</code></summary>
+                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">117</span>
 <span class="normal">118</span>
 <span class="normal">119</span>
 <span class="normal">120</span>
@@ -3537,10 +3483,10 @@ some exogenous variables are transformed during the training process.</p>
     <span class="bp">self</span><span class="o">.</span><span class="n">python_version</span>          <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">forecaster_id</span>           <span class="o">=</span> <span class="n">forecaster_id</span>
 
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">regressor</span><span class="p">,</span> <span class="n">skforecast</span><span class="o">.</span><span class="n">Sarimax</span><span class="o">.</span><span class="n">Sarimax</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">regressor</span><span class="p">,</span> <span class="n">skforecast</span><span class="o">.</span><span class="n">sarimax</span><span class="o">.</span><span class="n">Sarimax</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
             <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;`regressor` must be an instance of type &quot;</span>
-             <span class="sa">f</span><span class="s2">&quot;`skforecast.Sarimax.Sarimax`. Got &#39;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">regressor</span><span class="p">)</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+             <span class="sa">f</span><span class="s2">&quot;`skforecast.sarimax.Sarimax`. Got &#39;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">regressor</span><span class="p">)</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
         <span class="p">)</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">regressor</span><span class="o">.</span><span class="n">get_params</span><span class="p">(</span><span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -3548,8 +3494,8 @@ some exogenous variables are transformed during the training process.</p>
     <span class="k">if</span> <span class="n">fit_kwargs</span><span class="p">:</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
             <span class="p">(</span><span class="s2">&quot;When using the skforecast Sarimax model, the fit kwargs should &quot;</span>
-                <span class="s2">&quot;be passed using the model parameter `sm_fit_kwargs`.&quot;</span><span class="p">),</span>
-                <span class="n">IgnoredArgumentWarning</span>
+             <span class="s2">&quot;be passed using the model parameter `sm_fit_kwargs`.&quot;</span><span class="p">),</span>
+             <span class="n">IgnoredArgumentWarning</span>
         <span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">fit_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
 </code></pre></div></td></tr></table></div>
@@ -3570,11 +3516,18 @@ some exogenous variables are transformed during the training process.</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.fit" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">fit</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">exog</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">store_last_window</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">suppress_warnings</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+<h3 id="skforecast.recursive._forecaster_sarimax.ForecasterSarimax.fit" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">fit</span>
 
-<a href="#skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.fit" class="headerlink" title="Permanent link">&para;</a></h3>
 
+<a href="#skforecast.recursive._forecaster_sarimax.ForecasterSarimax.fit" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">fit</span><span class="p">(</span>
+    <span class="n">y</span><span class="p">,</span>
+    <span class="n">exog</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">store_last_window</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">suppress_warnings</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
 
     <div class="doc doc-contents ">
 
@@ -3627,7 +3580,7 @@ that y[i] is regressed on exog[i].</p>
           <tr class="doc-section-item">
             <td><code>store_last_window</code></td>
             <td>
-                  <code>bool</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3641,7 +3594,7 @@ that y[i] is regressed on exog[i].</p>
           <tr class="doc-section-item">
             <td><code>suppress_warnings</code></td>
             <td>
-                  <code>bool</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3679,10 +3632,8 @@ that y[i] is regressed on exog[i].</p>
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast/ForecasterSarimax/ForecasterSarimax.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">211</span>
-<span class="normal">212</span>
-<span class="normal">213</span>
+              <summary>Source code in <code>skforecast/recursive/_forecaster_sarimax.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">213</span>
 <span class="normal">214</span>
 <span class="normal">215</span>
 <span class="normal">216</span>
@@ -3783,7 +3734,9 @@ that y[i] is regressed on exog[i].</p>
 <span class="normal">311</span>
 <span class="normal">312</span>
 <span class="normal">313</span>
-<span class="normal">314</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">fit</span><span class="p">(</span>
+<span class="normal">314</span>
+<span class="normal">315</span>
+<span class="normal">316</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">fit</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">y</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
     <span class="n">exog</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -3896,11 +3849,18 @@ that y[i] is regressed on exog[i].</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax._create_predict_inputs" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">_create_predict_inputs</span><span class="p">(</span><span class="n">steps</span><span class="p">,</span> <span class="n">last_window</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">last_window_exog</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">exog</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+<h3 id="skforecast.recursive._forecaster_sarimax.ForecasterSarimax._create_predict_inputs" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">_create_predict_inputs</span>
 
-<a href="#skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax._create_predict_inputs" class="headerlink" title="Permanent link">&para;</a></h3>
 
+<a href="#skforecast.recursive._forecaster_sarimax.ForecasterSarimax._create_predict_inputs" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">_create_predict_inputs</span><span class="p">(</span>
+    <span class="n">steps</span><span class="p">,</span>
+    <span class="n">last_window</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">last_window_exog</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">exog</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
 
     <div class="doc doc-contents ">
 
@@ -3923,7 +3883,7 @@ iteration of the prediction process.</p>
           <tr class="doc-section-item">
             <td><code>steps</code></td>
             <td>
-                  <code>int</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4031,10 +3991,8 @@ of the training data.</p>
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast/ForecasterSarimax/ForecasterSarimax.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">317</span>
-<span class="normal">318</span>
-<span class="normal">319</span>
+              <summary>Source code in <code>skforecast/recursive/_forecaster_sarimax.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">319</span>
 <span class="normal">320</span>
 <span class="normal">321</span>
 <span class="normal">322</span>
@@ -4177,7 +4135,9 @@ of the training data.</p>
 <span class="normal">459</span>
 <span class="normal">460</span>
 <span class="normal">461</span>
-<span class="normal">462</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">_create_predict_inputs</span><span class="p">(</span>
+<span class="normal">462</span>
+<span class="normal">463</span>
+<span class="normal">464</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">_create_predict_inputs</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">last_window</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -4332,11 +4292,18 @@ of the training data.</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.predict" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">predict</span><span class="p">(</span><span class="n">steps</span><span class="p">,</span> <span class="n">last_window</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">last_window_exog</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">exog</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+<h3 id="skforecast.recursive._forecaster_sarimax.ForecasterSarimax.predict" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">predict</span>
 
-<a href="#skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.predict" class="headerlink" title="Permanent link">&para;</a></h3>
 
+<a href="#skforecast.recursive._forecaster_sarimax.ForecasterSarimax.predict" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">predict</span><span class="p">(</span>
+    <span class="n">steps</span><span class="p">,</span>
+    <span class="n">last_window</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">last_window_exog</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">exog</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
 
     <div class="doc doc-contents ">
 
@@ -4366,7 +4333,7 @@ to know more about statsmodels append method.</p>
           <tr class="doc-section-item">
             <td><code>steps</code></td>
             <td>
-                  <code>int</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4452,10 +4419,8 @@ of the training data.</p>
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast/ForecasterSarimax/ForecasterSarimax.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">465</span>
-<span class="normal">466</span>
-<span class="normal">467</span>
+              <summary>Source code in <code>skforecast/recursive/_forecaster_sarimax.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">467</span>
 <span class="normal">468</span>
 <span class="normal">469</span>
 <span class="normal">470</span>
@@ -4528,7 +4493,9 @@ of the training data.</p>
 <span class="normal">537</span>
 <span class="normal">538</span>
 <span class="normal">539</span>
-<span class="normal">540</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">predict</span><span class="p">(</span>
+<span class="normal">540</span>
+<span class="normal">541</span>
+<span class="normal">542</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">predict</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">last_window</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -4613,11 +4580,20 @@ of the training data.</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.predict_interval" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">predict_interval</span><span class="p">(</span><span class="n">steps</span><span class="p">,</span> <span class="n">last_window</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">last_window_exog</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">exog</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+<h3 id="skforecast.recursive._forecaster_sarimax.ForecasterSarimax.predict_interval" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">predict_interval</span>
 
-<a href="#skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.predict_interval" class="headerlink" title="Permanent link">&para;</a></h3>
 
+<a href="#skforecast.recursive._forecaster_sarimax.ForecasterSarimax.predict_interval" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">predict_interval</span><span class="p">(</span>
+    <span class="n">steps</span><span class="p">,</span>
+    <span class="n">last_window</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">last_window_exog</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">exog</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span>
+    <span class="n">interval</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
 
     <div class="doc doc-contents ">
 
@@ -4647,7 +4623,7 @@ to know more about statsmodels append method.</p>
           <tr class="doc-section-item">
             <td><code>steps</code></td>
             <td>
-                  <code>int</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4707,7 +4683,7 @@ trained including exogenous variables.</p>
           <tr class="doc-section-item">
             <td><code>alpha</code></td>
             <td>
-                  <code>float</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4722,7 +4698,7 @@ If both, <code>alpha</code> and <code>interval</code> are provided, <code>alpha<
           <tr class="doc-section-item">
             <td><code>interval</code></td>
             <td>
-                  <code>list</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4769,10 +4745,8 @@ provided, <code>alpha</code> will be used.</p>
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast/ForecasterSarimax/ForecasterSarimax.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">543</span>
-<span class="normal">544</span>
-<span class="normal">545</span>
+              <summary>Source code in <code>skforecast/recursive/_forecaster_sarimax.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">545</span>
 <span class="normal">546</span>
 <span class="normal">547</span>
 <span class="normal">548</span>
@@ -4870,7 +4844,9 @@ provided, <code>alpha</code> will be used.</p>
 <span class="normal">640</span>
 <span class="normal">641</span>
 <span class="normal">642</span>
-<span class="normal">643</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">predict_interval</span><span class="p">(</span>
+<span class="normal">643</span>
+<span class="normal">644</span>
+<span class="normal">645</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">predict_interval</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">last_window</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -4980,11 +4956,13 @@ provided, <code>alpha</code> will be used.</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.set_params" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">set_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span></code>
+<h3 id="skforecast.recursive._forecaster_sarimax.ForecasterSarimax.set_params" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">set_params</span>
 
-<a href="#skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.set_params" class="headerlink" title="Permanent link">&para;</a></h3>
 
+<a href="#skforecast.recursive._forecaster_sarimax.ForecasterSarimax.set_params" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">set_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+</code></pre></div>
 
     <div class="doc doc-contents ">
 
@@ -5005,7 +4983,7 @@ provided, <code>alpha</code> will be used.</p>
           <tr class="doc-section-item">
             <td><code>params</code></td>
             <td>
-                  <code>dict</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -5043,10 +5021,8 @@ provided, <code>alpha</code> will be used.</p>
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast/ForecasterSarimax/ForecasterSarimax.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">646</span>
-<span class="normal">647</span>
-<span class="normal">648</span>
+              <summary>Source code in <code>skforecast/recursive/_forecaster_sarimax.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">648</span>
 <span class="normal">649</span>
 <span class="normal">650</span>
 <span class="normal">651</span>
@@ -5064,7 +5040,9 @@ provided, <code>alpha</code> will be used.</p>
 <span class="normal">663</span>
 <span class="normal">664</span>
 <span class="normal">665</span>
-<span class="normal">666</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">set_params</span><span class="p">(</span>
+<span class="normal">666</span>
+<span class="normal">667</span>
+<span class="normal">668</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">set_params</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> 
     <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -5094,11 +5072,13 @@ provided, <code>alpha</code> will be used.</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.set_fit_kwargs" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">set_fit_kwargs</span><span class="p">(</span><span class="n">fit_kwargs</span><span class="p">)</span></code>
+<h3 id="skforecast.recursive._forecaster_sarimax.ForecasterSarimax.set_fit_kwargs" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">set_fit_kwargs</span>
 
-<a href="#skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.set_fit_kwargs" class="headerlink" title="Permanent link">&para;</a></h3>
 
+<a href="#skforecast.recursive._forecaster_sarimax.ForecasterSarimax.set_fit_kwargs" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">set_fit_kwargs</span><span class="p">(</span><span class="n">fit_kwargs</span><span class="p">)</span>
+</code></pre></div>
 
     <div class="doc doc-contents ">
 
@@ -5120,7 +5100,7 @@ method of the regressor.</p>
           <tr class="doc-section-item">
             <td><code>fit_kwargs</code></td>
             <td>
-                  <code>dict</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -5158,10 +5138,8 @@ method of the regressor.</p>
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast/ForecasterSarimax/ForecasterSarimax.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">669</span>
-<span class="normal">670</span>
-<span class="normal">671</span>
+              <summary>Source code in <code>skforecast/recursive/_forecaster_sarimax.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">671</span>
 <span class="normal">672</span>
 <span class="normal">673</span>
 <span class="normal">674</span>
@@ -5183,7 +5161,9 @@ method of the regressor.</p>
 <span class="normal">690</span>
 <span class="normal">691</span>
 <span class="normal">692</span>
-<span class="normal">693</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">set_fit_kwargs</span><span class="p">(</span>
+<span class="normal">693</span>
+<span class="normal">694</span>
+<span class="normal">695</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">set_fit_kwargs</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> 
     <span class="n">fit_kwargs</span><span class="p">:</span> <span class="nb">dict</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -5217,11 +5197,13 @@ method of the regressor.</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.get_feature_importances" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">get_feature_importances</span><span class="p">(</span><span class="n">sort_importance</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
+<h3 id="skforecast.recursive._forecaster_sarimax.ForecasterSarimax.get_feature_importances" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">get_feature_importances</span>
 
-<a href="#skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.get_feature_importances" class="headerlink" title="Permanent link">&para;</a></h3>
 
+<a href="#skforecast.recursive._forecaster_sarimax.ForecasterSarimax.get_feature_importances" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">get_feature_importances</span><span class="p">(</span><span class="n">sort_importance</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</code></pre></div>
 
     <div class="doc doc-contents ">
 
@@ -5242,7 +5224,7 @@ method of the regressor.</p>
           <tr class="doc-section-item">
             <td><code>sort_importance</code></td>
             <td>
-                  <code>bool</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -5280,10 +5262,8 @@ method of the regressor.</p>
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast/ForecasterSarimax/ForecasterSarimax.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">696</span>
-<span class="normal">697</span>
-<span class="normal">698</span>
+              <summary>Source code in <code>skforecast/recursive/_forecaster_sarimax.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">698</span>
 <span class="normal">699</span>
 <span class="normal">700</span>
 <span class="normal">701</span>
@@ -5314,7 +5294,9 @@ method of the regressor.</p>
 <span class="normal">726</span>
 <span class="normal">727</span>
 <span class="normal">728</span>
-<span class="normal">729</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_feature_importances</span><span class="p">(</span>
+<span class="normal">729</span>
+<span class="normal">730</span>
+<span class="normal">731</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_feature_importances</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">sort_importance</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
@@ -5357,11 +5339,13 @@ method of the regressor.</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.get_info_criteria" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">get_info_criteria</span><span class="p">(</span><span class="n">criteria</span><span class="o">=</span><span class="s1">&#39;aic&#39;</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;standard&#39;</span><span class="p">)</span></code>
+<h3 id="skforecast.recursive._forecaster_sarimax.ForecasterSarimax.get_info_criteria" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">get_info_criteria</span>
 
-<a href="#skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.get_info_criteria" class="headerlink" title="Permanent link">&para;</a></h3>
 
+<a href="#skforecast.recursive._forecaster_sarimax.ForecasterSarimax.get_info_criteria" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">get_info_criteria</span><span class="p">(</span><span class="n">criteria</span><span class="o">=</span><span class="s1">&#39;aic&#39;</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;standard&#39;</span><span class="p">)</span>
+</code></pre></div>
 
     <div class="doc doc-contents ">
 
@@ -5384,7 +5368,7 @@ to know more about statsmodels info_criteria method.</p>
           <tr class="doc-section-item">
             <td><code>criteria</code></td>
             <td>
-                  <code>str</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -5399,7 +5383,7 @@ to know more about statsmodels info_criteria method.</p>
           <tr class="doc-section-item">
             <td><code>method</code></td>
             <td>
-                  <code>str</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -5427,7 +5411,7 @@ method; 'lutkepohl' computes the information criteria as in Lütkepohl
       <tbody>
           <tr class="doc-section-item">
 <td><code>metric</code></td>            <td>
-                  <code>float</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -5439,10 +5423,8 @@ method; 'lutkepohl' computes the information criteria as in Lütkepohl
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast/ForecasterSarimax/ForecasterSarimax.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">732</span>
-<span class="normal">733</span>
-<span class="normal">734</span>
+              <summary>Source code in <code>skforecast/recursive/_forecaster_sarimax.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">734</span>
 <span class="normal">735</span>
 <span class="normal">736</span>
 <span class="normal">737</span>
@@ -5482,7 +5464,9 @@ method; 'lutkepohl' computes the information criteria as in Lütkepohl
 <span class="normal">771</span>
 <span class="normal">772</span>
 <span class="normal">773</span>
-<span class="normal">774</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_info_criteria</span><span class="p">(</span>
+<span class="normal">774</span>
+<span class="normal">775</span>
+<span class="normal">776</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_info_criteria</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> 
     <span class="n">criteria</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;aic&#39;</span><span class="p">,</span> 
     <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;standard&#39;</span>
@@ -5534,11 +5518,13 @@ method; 'lutkepohl' computes the information criteria as in Lütkepohl
 <div class="doc doc-object doc-function">
 
 
-<h3 id="skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.summary" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">summary</span><span class="p">()</span></code>
+<h3 id="skforecast.recursive._forecaster_sarimax.ForecasterSarimax.summary" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">summary</span>
 
-<a href="#skforecast.ForecasterSarimax.ForecasterSarimax.ForecasterSarimax.summary" class="headerlink" title="Permanent link">&para;</a></h3>
 
+<a href="#skforecast.recursive._forecaster_sarimax.ForecasterSarimax.summary" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">summary</span><span class="p">()</span>
+</code></pre></div>
 
     <div class="doc doc-contents ">
 
@@ -5596,10 +5582,8 @@ method; 'lutkepohl' computes the information criteria as in Lütkepohl
     </table>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast/ForecasterSarimax/ForecasterSarimax.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">777</span>
-<span class="normal">778</span>
-<span class="normal">779</span>
+              <summary>Source code in <code>skforecast/recursive/_forecaster_sarimax.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">779</span>
 <span class="normal">780</span>
 <span class="normal">781</span>
 <span class="normal">782</span>
@@ -5611,7 +5595,9 @@ method; 'lutkepohl' computes the information criteria as in Lütkepohl
 <span class="normal">788</span>
 <span class="normal">789</span>
 <span class="normal">790</span>
-<span class="normal">791</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">791</span>
+<span class="normal">792</span>
+<span class="normal">793</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Show forecaster information.</span>
 
@@ -5683,6 +5669,21 @@ method; 'lutkepohl' computes the information criteria as in Lütkepohl
     Made with
     <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
       Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://www.linkedin.com/company/skforecast/" target="_blank" rel="noopener" title="www.linkedin.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3M135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3 0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2 0 38.5 17.3 38.5 38.5 0 21.3-17.2 38.5-38.5 38.5m282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9z"/></svg>
     </a>
   
 </div>
@@ -5771,7 +5772,7 @@ method; 'lutkepohl' computes the information criteria as in Lütkepohl
       </div>
       <script>var consent=__md_get("__consent");if(consent)for(var input of document.forms.consent.elements)input.name&&(input.checked=consent[input.name]||!1);else"file:"!==location.protocol&&setTimeout((function(){document.querySelector("[data-md-component=consent]").hidden=!1}),250);var form=document.forms.consent;for(var action of["submit","reset"])form.addEventListener(action,(function(e){if(e.preventDefault(),"reset"===e.type)for(var n of document.forms.consent.elements)n.name&&(n.checked=!1);__md_set("__consent",Object.fromEntries(Array.from(new FormData(form).keys()).map((function(e){return[e,!0]})))),location.hash="",location.reload()}))</script>
     
-    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.top"], "search": "../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.top", "toc.integrate", "navigation.breadcrumbs"], "search": "../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
       <script src="../assets/javascripts/bundle.525ec568.min.js"></script>

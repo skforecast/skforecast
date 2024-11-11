@@ -12,7 +12,7 @@
         <meta name="author" content="Joaquin Amat Rodrigo and Javier Escobar Ortiz">
       
       
-        <link rel="canonical" href="https://joaquinamatrodrigo.github.io/skforecast/0.14.0/user_guides/save-load-forecaster.html">
+        <link rel="canonical" href="https://skforecast.org/0.14.0/user_guides/save-load-forecaster.html">
       
       
         <link rel="prev" href="explainability.html">
@@ -106,9 +106,9 @@
           <aside class="md-banner md-banner--warning">
             <div class="md-banner__inner md-grid md-typeset">
               
-  You're not viewing the latest stable version.
+This is documentation for an unstable development version.
   <a href="../..">
-    <strong>Click here to go to latest.</strong>
+    <strong>Switch to latest stable version.</strong>
   </a>
 
             </div>
@@ -220,7 +220,7 @@
     
     
       <div class="md-header__source">
-        <a href="https://github.com/JoaquinAmatRodrigo/skforecast" title="Go to repository" class="md-source" data-md-component="source">
+        <a href="https://github.com/skforecast/skforecast" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
@@ -267,7 +267,24 @@
   
     
   
-  Introduction to forecasting
+  Intro to Forecasting
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="migration-guide.html" class="md-tabs__link">
+        
+  
+    
+  
+  Skforecast 0.14
 
       </a>
     </li>
@@ -337,7 +354,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../api/ForecasterAutoreg.html" class="md-tabs__link">
+        <a href="../api/ForecasterRecursive.html" class="md-tabs__link">
           
   
   API Reference
@@ -355,7 +372,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../faq/faq.html" class="md-tabs__link">
+        <a href="../faq/table-of-contents.html" class="md-tabs__link">
           
   
   FAQ and Tips
@@ -426,7 +443,9 @@
   
 
 
-<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
     <a href=".." title="Skforecast Docs" class="md-nav__button md-logo" aria-label="Skforecast Docs" data-md-component="logo">
       
@@ -437,7 +456,7 @@
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/JoaquinAmatRodrigo/skforecast" title="Go to repository" class="md-source" data-md-component="source">
+      <a href="https://github.com/skforecast/skforecast" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
@@ -527,7 +546,27 @@
         
   
   <span class="md-ellipsis">
-    Introduction to forecasting
+    Intro to Forecasting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="migration-guide.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Skforecast 0.14
   </span>
   
 
@@ -553,10 +592,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -567,8 +606,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             Quick start
           </label>
@@ -687,10 +726,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
         
           
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
             
   
   <span class="md-ellipsis">
@@ -701,8 +740,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_4">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             User Guides
           </label>
@@ -720,6 +759,27 @@
   
   <span class="md-ellipsis">
     Table of contents
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="migration-guide.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Skforecast 0.14 Migration guide
   </span>
   
 
@@ -767,10 +827,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_4" >
         
           
-          <label class="md-nav__link" for="__nav_4_3" id="__nav_4_3_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_4" id="__nav_5_4_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -781,8 +841,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_3">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_4">
             <span class="md-nav__icon md-icon"></span>
             Single series Forecasters
           </label>
@@ -897,10 +957,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_4" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_5" >
         
           
-          <label class="md-nav__link" for="__nav_4_4" id="__nav_4_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -911,8 +971,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_4">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_5">
             <span class="md-nav__icon md-icon"></span>
             Global Forecasters (multiple series)
           </label>
@@ -929,7 +989,7 @@
         
   
   <span class="md-ellipsis">
-    Independent multi-time series forecasting"
+    Independent multi-time series forecasting
   </span>
   
 
@@ -950,7 +1010,7 @@
         
   
   <span class="md-ellipsis">
-    Series with different lengths and different exogenous variables"
+    Series with different lengths and different exogenous variables
   </span>
   
 
@@ -971,7 +1031,7 @@
         
   
   <span class="md-ellipsis">
-    Dependent multivariate series forecasting"
+    Dependent multivariate series forecasting
   </span>
   
 
@@ -1027,10 +1087,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6" >
         
           
-          <label class="md-nav__link" for="__nav_4_5" id="__nav_4_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1041,8 +1101,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_5">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_6">
             <span class="md-nav__icon md-icon"></span>
             Feature Engineering
           </label>
@@ -1220,10 +1280,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_7" >
         
           
-          <label class="md-nav__link" for="__nav_4_6" id="__nav_4_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_7" id="__nav_5_7_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1234,8 +1294,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_6">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_7">
             <span class="md-nav__icon md-icon"></span>
             Model Evaluation and Tuning
           </label>
@@ -1350,10 +1410,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_8" >
         
           
-          <label class="md-nav__link" for="__nav_4_7" id="__nav_4_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_8" id="__nav_5_8_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1364,8 +1424,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_7">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_8">
             <span class="md-nav__icon md-icon"></span>
             Probabilistic Forecasting
           </label>
@@ -1417,10 +1477,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_8" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_9" >
         
           
-          <label class="md-nav__link" for="__nav_4_8" id="__nav_4_8_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_9" id="__nav_5_9_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1431,8 +1491,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_8_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_8">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_9">
             <span class="md-nav__icon md-icon"></span>
             Model Explainability
           </label>
@@ -1486,10 +1546,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_9" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_10" checked>
         
           
-          <label class="md-nav__link" for="__nav_4_9" id="__nav_4_9_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_10" id="__nav_5_10_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1500,8 +1560,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_9_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_4_9">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_10_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5_10">
             <span class="md-nav__icon md-icon"></span>
             Model deployment
           </label>
@@ -1560,18 +1620,9 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#libraries" class="md-nav__link">
+  <a href="#libraries-and-data" class="md-nav__link">
     <span class="md-ellipsis">
-      Libraries
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#data" class="md-nav__link">
-    <span class="md-ellipsis">
-      Data
+      Libraries and data
     </span>
   </a>
   
@@ -1587,9 +1638,9 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#saving-and-loading-a-forecaster-model-with-custom-functions" class="md-nav__link">
+  <a href="#saving-and-loading-a-forecaster-model-with-custom-features" class="md-nav__link">
     <span class="md-ellipsis">
-      Saving and Loading a Forecaster Model with Custom Functions
+      Saving and Loading a Forecaster Model with Custom Features
     </span>
   </a>
   
@@ -1650,10 +1701,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_11" >
         
           
-          <label class="md-nav__link" for="__nav_4_10" id="__nav_4_10_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_11" id="__nav_5_11_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1664,8 +1715,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_10_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_10">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_11">
             <span class="md-nav__icon md-icon"></span>
             Plotting
           </label>
@@ -1717,10 +1768,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_11" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_12" >
         
           
-          <label class="md-nav__link" for="__nav_4_11" id="__nav_4_11_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_12" id="__nav_5_12_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1731,8 +1782,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_11_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_11">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_12">
             <span class="md-nav__icon md-icon"></span>
             Datasets
           </label>
@@ -1784,10 +1835,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_12" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_13" >
         
           
-          <label class="md-nav__link" for="__nav_4_12" id="__nav_4_12_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_13" id="__nav_5_13_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1798,12 +1849,33 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_12_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_12">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_13">
             <span class="md-nav__icon md-icon"></span>
             Additional Resources
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="training-and-prediction-matrices.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Extract training and prediction matrices
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
             
               
                 
@@ -1914,10 +1986,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_13" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_14" >
         
           
-          <label class="md-nav__link" for="__nav_4_13" id="__nav_4_13_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_14" id="__nav_5_14_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1928,8 +2000,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_13_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_13">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_14_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_14">
             <span class="md-nav__icon md-icon"></span>
             FAQ and forecasting tips
           </label>
@@ -1942,11 +2014,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../faq/forecasting-time-series-with-missing-values.html" class="md-nav__link">
+      <a href="../faq/non-negative-predictions.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Time series with missing values
+    Avoid negative predictions when forecasting
   </span>
   
 
@@ -1963,11 +2035,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../faq/non-negative-predictions.html" class="md-nav__link">
+      <a href="../faq/forecasting-time-series-with-missing-values.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Non negative predictions
+    Forecasting time series with missing values
   </span>
   
 
@@ -1988,7 +2060,7 @@
         
   
   <span class="md-ellipsis">
-    Forecasting with delayed data
+    Forecasting with delayed historical data
   </span>
   
 
@@ -2005,11 +2077,32 @@
   
   
     <li class="md-nav__item">
-      <a href="../faq/parallelization-skforecast.html" class="md-nav__link">
+      <a href="../faq/parameters-search-backtesting-vs-one-step-ahead.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Parallelization
+    Backtesting vs One-step-ahead
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/cyclical-features-time-series.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Cyclical features in time series
   </span>
   
 
@@ -2047,11 +2140,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../faq/profiling-skforecast.html" class="md-nav__link">
+      <a href="../faq/parallelization-skforecast.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Profiling skforecast
+    Parallelization in skforecast
   </span>
   
 
@@ -2068,11 +2161,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../faq/parameters-search-backetesting-vs-one-step-ahead.html" class="md-nav__link">
+      <a href="../faq/profiling-skforecast.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Backtesting vs One-step-ahead
+    Profiling skforecast
   </span>
   
 
@@ -2114,10 +2207,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -2128,8 +2221,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             Examples and tutorials
           </label>
@@ -2201,10 +2294,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
         
           
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -2215,8 +2308,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             API Reference
           </label>
@@ -2229,11 +2322,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../api/ForecasterAutoreg.html" class="md-nav__link">
+      <a href="../api/ForecasterRecursive.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    ForecasterAutoreg
+    ForecasterRecursive
   </span>
   
 
@@ -2250,11 +2343,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../api/ForecasterAutoregDirect.html" class="md-nav__link">
+      <a href="../api/ForecasterDirect.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    ForecasterAutoregDirect
+    ForecasterDirect
   </span>
   
 
@@ -2271,11 +2364,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../api/ForecasterMultiSeries.html" class="md-nav__link">
+      <a href="../api/ForecasterRecursiveMultiSeries.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    ForecasterMultiSeries
+    ForecasterRecursiveMultiSeries
   </span>
   
 
@@ -2292,11 +2385,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../api/ForecasterMultiVariate.html" class="md-nav__link">
+      <a href="../api/ForecasterDirectMultiVariate.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    ForecasterMultiVariate
+    ForecasterDirectMultiVariate
   </span>
   
 
@@ -2334,6 +2427,27 @@
   
   
     <li class="md-nav__item">
+      <a href="../api/Sarimax.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    sarimax
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../api/ForecasterSarimax.html" class="md-nav__link">
         
   
@@ -2355,32 +2469,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../api/Sarimax.html" class="md-nav__link">
+      <a href="../api/ForecasterEquivalentDate.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Sarimax
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../api/ForecasterBaseline.html" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    ForecasterBaseline
+    ForecasterEquivalentDate
   </span>
   
 
@@ -2418,32 +2511,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../api/model_selection_multiseries.html" class="md-nav__link">
+      <a href="../api/feature_selection.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    model_selection_multiseries
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../api/model_selection_sarimax.html" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    model_selection_sarimax
+    feature_selection
   </span>
   
 
@@ -2603,10 +2675,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
         
           
-          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -2617,8 +2689,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_7">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             FAQ and Tips
           </label>
@@ -2631,7 +2703,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../faq/faq.html" class="md-nav__link">
+      <a href="../faq/table-of-contents.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2652,32 +2724,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../faq/time-series-differentiation.ipynb" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Time series differentiation
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../faq/non-negative-predictions.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Non negative predictions
+    Avoid negative predictions when forecasting
   </span>
   
 
@@ -2698,7 +2749,49 @@
         
   
   <span class="md-ellipsis">
-    Time series with missing values
+    Forecasting time series with missing values
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/forecasting-with-delayed-historical-data.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Forecasting with delayed historical data
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/parameters-search-backtesting-vs-one-step-ahead.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Backtesting vs One-step-ahead
   </span>
   
 
@@ -2720,48 +2813,6 @@
   
   <span class="md-ellipsis">
     Cyclical features in time series
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../faq/stacking-ensemble-models-forecasting.ipynb" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Stacking (ensemble) machine learning models
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../faq/forecasting-with-delayed-historical-data.html" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Forecasting with delayed data
   </span>
   
 
@@ -2803,7 +2854,7 @@
         
   
   <span class="md-ellipsis">
-    Parallelization
+    Parallelization in skforecast
   </span>
   
 
@@ -2887,68 +2938,6 @@
                 </div>
               </div>
             
-            
-              
-              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
-                <div class="md-sidebar__scrollwrap">
-                  <div class="md-sidebar__inner">
-                    
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#libraries" class="md-nav__link">
-    <span class="md-ellipsis">
-      Libraries
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#data" class="md-nav__link">
-    <span class="md-ellipsis">
-      Data
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#save-and-load-forecaster-model" class="md-nav__link">
-    <span class="md-ellipsis">
-      Save and load forecaster model
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#saving-and-loading-a-forecaster-model-with-custom-functions" class="md-nav__link">
-    <span class="md-ellipsis">
-      Saving and Loading a Forecaster Model with Custom Functions
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-                  </div>
-                </div>
-              </div>
             
           
           
@@ -3403,7 +3392,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h1 id="save-and-load-forecasters">Save and load forecasters<a class="anchor-link" href="#save-and-load-forecasters">¶</a></h1><p>Skforecast models can be easily saved and loaded from disk using the pickle or joblib library. Two handy functions, <code>save_forecaster</code> and <code>load_forecaster</code> are available to streamline this process. See below for a simple example.</p>
+<h1 id="save-and-load-forecasters">Save and load forecasters<a class="anchor-link" href="#save-and-load-forecasters">¶</a></h1><p>Skforecast models can be easily saved and loaded from disk using the joblib library. Two handy functions, <code>save_forecaster</code> and <code>load_forecaster</code> are available to streamline this process. See below for a simple example.</p>
 <p>A <code>forecaster_id</code> has been included when initializing the Forecaster, this may help to identify the target of the model.</p>
 </div>
 </div>
@@ -3420,7 +3409,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <i style="font-size: 18px; color:#00b8d4;"></i>
 <b style="color: #00b8d4;">✎ Note</b>
 </p>
-<p>Learn how to use <a href="https://skforecast.org/latest/user_guides/forecaster-in-production">forecaster models in production</a>.</p>
+<p>Learn how to use <a href="../user_guides/forecaster-in-production.html">forecaster models in production</a>.</p>
 </div>
 </div>
 </div>
@@ -3432,7 +3421,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="libraries">Libraries<a class="anchor-link" href="#libraries">¶</a></h2>
+<h2 id="libraries-and-data">Libraries and data<a class="anchor-link" href="#libraries-and-data">¶</a></h2>
 </div>
 </div>
 </div>
@@ -3457,36 +3446,27 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div>
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Libraries</span>
 <span class="c1"># ==============================================================================</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">from</span> <span class="nn">sklearn.ensemble</span> <span class="kn">import</span> <span class="n">RandomForestRegressor</span>
-<span class="kn">from</span> <span class="nn">skforecast.ForecasterAutoreg</span> <span class="kn">import</span> <span class="n">ForecasterAutoreg</span>
-<span class="kn">from</span> <span class="nn">skforecast.ForecasterAutoregCustom</span> <span class="kn">import</span> <span class="n">ForecasterAutoregCustom</span>
+
+<span class="kn">from</span> <span class="nn">skforecast.datasets</span> <span class="kn">import</span> <span class="n">fetch_dataset</span>
+<span class="kn">from</span> <span class="nn">skforecast.recursive</span> <span class="kn">import</span> <span class="n">ForecasterRecursive</span>
 <span class="kn">from</span> <span class="nn">skforecast.utils</span> <span class="kn">import</span> <span class="n">save_forecaster</span>
 <span class="kn">from</span> <span class="nn">skforecast.utils</span> <span class="kn">import</span> <span class="n">load_forecaster</span>
-<span class="kn">from</span> <span class="nn">skforecast.datasets</span> <span class="kn">import</span> <span class="n">fetch_dataset</span>
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-1"># Libraries
 # ==============================================================================
+import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
-from skforecast.ForecasterAutoreg import ForecasterAutoreg
-from skforecast.ForecasterAutoregCustom import ForecasterAutoregCustom
+
+from skforecast.datasets import fetch_dataset
+from skforecast.recursive import ForecasterRecursive
 from skforecast.utils import save_forecaster
-from skforecast.utils import load_forecaster
-from skforecast.datasets import fetch_dataset</div>
+from skforecast.utils import load_forecaster</div>
 </div>
 </div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="data">Data<a class="anchor-link" href="#data">¶</a></h2>
 </div>
 </div>
 </div>
@@ -3583,7 +3563,7 @@ Shape of the dataset: (204, 2)
 </div>
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Create and train forecaster</span>
 <span class="c1"># ==============================================================================</span>
-<span class="n">forecaster</span> <span class="o">=</span> <span class="n">ForecasterAutoreg</span><span class="p">(</span>
+<span class="n">forecaster</span> <span class="o">=</span> <span class="n">ForecasterRecursive</span><span class="p">(</span>
                  <span class="n">regressor</span>     <span class="o">=</span> <span class="n">RandomForestRegressor</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="mi">123</span><span class="p">),</span>
                  <span class="n">lags</span>          <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
                  <span class="n">forecaster_id</span> <span class="o">=</span> <span class="s2">"forecaster_001"</span>
@@ -3594,7 +3574,7 @@ Shape of the dataset: (204, 2)
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-3"># Create and train forecaster
 # ==============================================================================
-forecaster = ForecasterAutoreg(
+forecaster = ForecasterRecursive(
                  regressor     = RandomForestRegressor(random_state=123),
                  lags          = 5,
                  forecaster_id = "forecaster_001"
@@ -3690,27 +3670,34 @@ forecaster_loaded = load_forecaster('forecaster_001.joblib', verbose=True)</div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>================= 
-ForecasterAutoreg 
-================= 
-Regressor: RandomForestRegressor(random_state=123) 
+<pre>=================== 
+ForecasterRecursive 
+=================== 
+Regressor: RandomForestRegressor 
 Lags: [1 2 3 4 5] 
+Window features: None 
+Window size: 5 
+Exogenous included: False 
+Exogenous names: None 
 Transformer for y: None 
 Transformer for exog: None 
-Window size: 5 
 Weight function included: False 
 Differentiation order: None 
-Exogenous included: False 
-Exogenous variables names: None 
 Training range: [Timestamp('1991-07-01 00:00:00'), Timestamp('2008-06-01 00:00:00')] 
 Training index type: DatetimeIndex 
 Training index frequency: MS 
-Regressor parameters: {'bootstrap': True, 'ccp_alpha': 0.0, 'criterion': 'squared_error', 'max_depth': None, 'max_features': 1.0, 'max_leaf_nodes': None, 'max_samples': None, 'min_impurity_decrease': 0.0, 'min_samples_leaf': 1, 'min_samples_split': 2, 'min_weight_fraction_leaf': 0.0, 'monotonic_cst': None, 'n_estimators': 100, 'n_jobs': None, 'oob_score': False, 'random_state': 123, 'verbose': 0, 'warm_start': False} 
+Regressor parameters: 
+    {'bootstrap': True, 'ccp_alpha': 0.0, 'criterion': 'squared_error', 'max_depth':
+    None, 'max_features': 1.0, 'max_leaf_nodes': None, 'max_samples': None,
+    'min_impurity_decrease': 0.0, 'min_samples_leaf': 1, 'min_samples_split': 2,
+    'min_weight_fraction_leaf': 0.0, 'monotonic_cst': None, 'n_estimators': 100,
+    'n_jobs': None, 'oob_score': False, 'random_state': 123, 'verbose': 0,
+    'warm_start': False} 
 fit_kwargs: {} 
-Creation date: 2024-07-29 18:14:22 
-Last fit date: 2024-07-29 18:14:22 
-Skforecast version: 0.13.0 
-Python version: 3.11.5 
+Creation date: 2024-11-10 17:43:25 
+Last fit date: 2024-11-10 17:43:25 
+Skforecast version: 0.14.0 
+Python version: 3.11.10 
 Forecaster id: forecaster_001 
 
 </pre>
@@ -3815,11 +3802,11 @@ forecaster.forecaster_id</div>
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="saving-and-loading-a-forecaster-model-with-custom-functions">Saving and Loading a Forecaster Model with Custom Functions<a class="anchor-link" href="#saving-and-loading-a-forecaster-model-with-custom-functions">¶</a></h2><p>Sometimes external functions are needed when creating a Forecaster object. For example:</p>
+<h2 id="saving-and-loading-a-forecaster-model-with-custom-features">Saving and Loading a Forecaster Model with Custom Features<a class="anchor-link" href="#saving-and-loading-a-forecaster-model-with-custom-features">¶</a></h2><p>Sometimes external objects are needed when creating a Forecaster. For example:</p>
 <ul>
-<li><p>A custom function to <a href="https://skforecast.org/latest/user_guides/window-features-and-custom-features">create window and custom features</a>.</p>
+<li><p>Custom class to <a href="../user_guides/window-features-and-custom-features.html#create-your-custom-window-features">create window and custom features</a>.</p>
 </li>
-<li><p>A function to reduce the impact of some dates on the model, <a href="https://skforecast.org/latest/user_guides/weighted-time-series-forecasting">Weighted Time Series Forecasting</a>.</p>
+<li><p>A function to reduce the impact of some dates on the model, <a href="../user_guides/weighted-time-series-forecasting.html">Weighted Time Series Forecasting</a>.</p>
 </li>
 </ul>
 <p>For your code to work properly, these functions must be available in the environment where the Forecaster is loaded.</p>
@@ -3845,27 +3832,79 @@ forecaster.forecaster_id</div>
 </div>
 </clipboard-copy>
 </div>
-<div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Custom function to create predictors</span>
+<div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Custom class to create rolling skewness features</span>
 <span class="c1"># ==============================================================================</span>
-<span class="k">def</span> <span class="nf">create_predictors</span><span class="p">(</span><span class="n">y</span><span class="p">):</span>
+<span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">skew</span>
+
+
+<span class="k">class</span> <span class="nc">RollingSkewness</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">"""</span>
-<span class="sd">    Create first 5 lags of a time series.</span>
+<span class="sd">    Custom class to create rolling skewness features.</span>
 <span class="sd">    """</span>
-    
-    <span class="n">lags</span> <span class="o">=</span> <span class="n">y</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">6</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-    
-    <span class="k">return</span> <span class="n">lags</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">window_sizes</span><span class="p">,</span> <span class="n">features_names</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="s1">'rolling_skewness'</span><span class="p">):</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">window_sizes</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">window_sizes</span> <span class="o">=</span> <span class="p">[</span><span class="n">window_sizes</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">window_sizes</span> <span class="o">=</span> <span class="n">window_sizes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">features_names</span> <span class="o">=</span> <span class="n">features_names</span>
+
+    <span class="k">def</span> <span class="nf">transform_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+        
+        <span class="n">rolling_obj</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="n">window</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">window_sizes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">center</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">closed</span><span class="o">=</span><span class="s1">'left'</span><span class="p">)</span>
+        <span class="n">rolling_skewness</span> <span class="o">=</span> <span class="n">rolling_obj</span><span class="o">.</span><span class="n">skew</span><span class="p">()</span>
+        <span class="n">rolling_skewness</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+                               <span class="bp">self</span><span class="o">.</span><span class="n">features_names</span><span class="p">:</span> <span class="n">rolling_skewness</span>
+                           <span class="p">})</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">rolling_skewness</span>
+
+    <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        
+        <span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">X</span><span class="p">)]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">rolling_skewness</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">skew</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">)])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">rolling_skewness</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+        
+        <span class="k">return</span> <span class="n">rolling_skewness</span>
 </pre></div>
-<div class="clipboard-copy-txt" id="cell-8"># Custom function to create predictors
+<div class="clipboard-copy-txt" id="cell-8"># Custom class to create rolling skewness features
 # ==============================================================================
-def create_predictors(y):
+from scipy.stats import skew
+
+
+class RollingSkewness():
     """
-    Create first 5 lags of a time series.
+    Custom class to create rolling skewness features.
     """
-    
-    lags = y[-1:-6:-1]
-    
-    return lags</div>
+
+    def __init__(self, window_sizes, features_names: list = 'rolling_skewness'):
+        
+        if not isinstance(window_sizes, list):
+            window_sizes = [window_sizes]
+        self.window_sizes = window_sizes
+        self.features_names = features_names
+
+    def transform_batch(self, X: pd.Series) -&gt; pd.DataFrame:
+        
+        rolling_obj = X.rolling(window=self.window_sizes[0], center=False, closed='left')
+        rolling_skewness = rolling_obj.skew()
+        rolling_skewness = pd.DataFrame({
+                               self.features_names: rolling_skewness
+                           }).dropna()
+
+        return rolling_skewness
+
+    def transform(self, X: np.ndarray) -&gt; np.ndarray:
+        
+        X = X[~np.isnan(X)]
+        if len(X) &gt; 0:
+            rolling_skewness = np.array([skew(X, bias=False)])
+        else:
+            rolling_skewness = np.nan
+        
+        return rolling_skewness</div>
 </div>
 </div>
 </div>
@@ -3890,38 +3929,35 @@ def create_predictors(y):
 </div>
 </clipboard-copy>
 </div>
-<div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Create and train forecaster</span>
+<div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Custom function to create weights</span>
 <span class="c1"># ==============================================================================</span>
-<span class="n">forecaster</span> <span class="o">=</span> <span class="n">ForecasterAutoregCustom</span><span class="p">(</span>
-                 <span class="n">regressor</span>      <span class="o">=</span> <span class="n">RandomForestRegressor</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="mi">123</span><span class="p">),</span>
-                 <span class="n">fun_predictors</span> <span class="o">=</span> <span class="n">create_predictors</span><span class="p">,</span>
-                 <span class="n">window_size</span>    <span class="o">=</span> <span class="mi">5</span>
-             <span class="p">)</span>
+<span class="k">def</span> <span class="nf">custom_weights</span><span class="p">(</span><span class="n">index</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Return 0 if index is between 2004-01-01 and 2005-01-01.</span>
+<span class="sd">    """</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+                  <span class="p">(</span><span class="n">index</span> <span class="o">&gt;=</span> <span class="s1">'2004-01-01'</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">index</span> <span class="o">&lt;=</span> <span class="s1">'2005-01-01'</span><span class="p">),</span>
+                   <span class="mi">0</span><span class="p">,</span>
+                   <span class="mi">1</span>
+              <span class="p">)</span>
 
-<span class="n">forecaster</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s1">'y'</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">weights</span>
 </pre></div>
-<div class="clipboard-copy-txt" id="cell-9"># Create and train forecaster
+<div class="clipboard-copy-txt" id="cell-9"># Custom function to create weights
 # ==============================================================================
-forecaster = ForecasterAutoregCustom(
-                 regressor      = RandomForestRegressor(random_state=123),
-                 fun_predictors = create_predictors,
-                 window_size    = 5
-             )
+def custom_weights(index):
+    """
+    Return 0 if index is between 2004-01-01 and 2005-01-01.
+    """
+    weights = np.where(
+                  (index &gt;= '2004-01-01') &amp; (index &lt;= '2005-01-01'),
+                   0,
+                   1
+              )
 
-forecaster.fit(y=data['y'])</div>
+    return weights</div>
 </div>
 </div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>The <code>save_forecaster</code> function will save all the functions used to create it in different files. In this case, the created module is <code>create_predictors.py</code>.</p>
 </div>
 </div>
 </div>
@@ -3944,23 +3980,33 @@ forecaster.fit(y=data['y'])</div>
 </div>
 </clipboard-copy>
 </div>
-<div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Save model and custom function</span>
+<div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Create and train forecaster</span>
 <span class="c1"># ==============================================================================</span>
-<span class="n">save_forecaster</span><span class="p">(</span>
-    <span class="n">forecaster</span><span class="p">,</span> 
-    <span class="n">file_name</span> <span class="o">=</span> <span class="s1">'forecaster_custom.joblib'</span><span class="p">,</span> 
-    <span class="n">save_custom_functions</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> 
-    <span class="n">verbose</span> <span class="o">=</span> <span class="kc">False</span>
-<span class="p">)</span>
+<span class="n">window_features</span> <span class="o">=</span> <span class="n">RollingSkewness</span><span class="p">(</span><span class="n">window_sizes</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+
+<span class="n">forecaster</span> <span class="o">=</span> <span class="n">ForecasterRecursive</span><span class="p">(</span>
+                 <span class="n">regressor</span>       <span class="o">=</span> <span class="n">RandomForestRegressor</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="mi">123</span><span class="p">),</span>
+                 <span class="n">lags</span>            <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+                 <span class="n">window_features</span> <span class="o">=</span> <span class="n">window_features</span><span class="p">,</span>
+                 <span class="n">weight_func</span>     <span class="o">=</span> <span class="n">custom_weights</span><span class="p">,</span>
+                 <span class="n">forecaster_id</span>   <span class="o">=</span> <span class="s2">"forecaster_custom_features"</span>
+             <span class="p">)</span>
+
+<span class="n">forecaster</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s1">'y'</span><span class="p">])</span>
 </pre></div>
-<div class="clipboard-copy-txt" id="cell-10"># Save model and custom function
+<div class="clipboard-copy-txt" id="cell-10"># Create and train forecaster
 # ==============================================================================
-save_forecaster(
-    forecaster, 
-    file_name = 'forecaster_custom.joblib', 
-    save_custom_functions = True, 
-    verbose = False
-)</div>
+window_features = RollingSkewness(window_sizes=3)
+
+forecaster = ForecasterRecursive(
+                 regressor       = RandomForestRegressor(random_state=123),
+                 lags            = 3,
+                 window_features = window_features,
+                 weight_func     = custom_weights,
+                 forecaster_id   = "forecaster_custom_features"
+             )
+
+forecaster.fit(y=data['y'])</div>
 </div>
 </div>
 </div>
@@ -3973,7 +4019,13 @@ save_forecaster(
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>These functions must be imported into the environment where the Forecaster is going to be loaded.</p>
+<div class="admonition note" name="html-admonition" style="background: rgba(255,145,0,.1); padding-top: 0px; padding-bottom: 6px; border-radius: 8px; border-left: 8px solid #ff9100; border-color: #ff9100; padding-left: 10px; padding-right: 10px">
+<p class="title">
+<i style="font-size: 18px; color:#ff9100; border-color: #ff1744;"></i>
+<b style="color: #ff9100;"> <span style="color: #ff9100;">⚠</span> Warning</b>
+</p>
+<p>The <code>save_forecaster</code> function will save the functions used to create the weights as a module (<code>custom_weights.py</code>). <b>But the classes used to create the window features will not be saved</b>. Therefore, you must ensure that these classes are available in the environment where the Forecaster is loaded.</p>
+</div>
 </div>
 </div>
 </div>
@@ -3996,17 +4048,88 @@ save_forecaster(
 </div>
 </clipboard-copy>
 </div>
+<div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Save model and custom function</span>
+<span class="c1"># ==============================================================================</span>
+<span class="n">save_forecaster</span><span class="p">(</span>
+    <span class="n">forecaster</span><span class="p">,</span> 
+    <span class="n">file_name</span> <span class="o">=</span> <span class="s1">'forecaster_custom_features.joblib'</span><span class="p">,</span> 
+    <span class="n">save_custom_functions</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> 
+    <span class="n">verbose</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="p">)</span>
+</pre></div>
+<div class="clipboard-copy-txt" id="cell-11"># Save model and custom function
+# ==============================================================================
+save_forecaster(
+    forecaster, 
+    file_name = 'forecaster_custom_features.joblib', 
+    save_custom_functions = True, 
+    verbose = False
+)</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>c:\Users\jaesc2\Miniconda3\envs\skforecast_py11_2\Lib\site-packages\skforecast\utils\utils.py:1898: SaveLoadSkforecastWarning: The Forecaster includes custom user-defined classes in the `window_features` argument. These classes are not saved automatically when saving the Forecaster. Please ensure you save these classes manually and import them before loading the Forecaster.
+    Custom classes: RollingSkewness
+Visit the documentation for more information: https://skforecast.org/latest/user_guides/save-load-forecaster.html#saving-and-loading-a-forecaster-model-with-custom-features 
+ You can suppress this warning using: warnings.simplefilter('ignore', category=SaveLoadSkforecastWarning)
+  warnings.warn(
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<p>At this point, the <code>RollingSkewness</code> class is manually saved in a file called <code>rolling_skewness.py</code>. This file must be available in the environment where the Forecaster is loaded.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [12]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="CodeMirror cm-s-jupyter">
+<div class="zeroclipboard-container">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-12">
+<div>
+<span class="notice" hidden="">Copied!</span>
+<svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
+<path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+<path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+</svg>
+</div>
+</clipboard-copy>
+</div>
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Load model and custom function</span>
 <span class="c1"># ==============================================================================</span>
-<span class="kn">from</span> <span class="nn">create_predictors</span> <span class="kn">import</span> <span class="n">create_predictors</span>
+<span class="kn">from</span> <span class="nn">rolling_skewness</span> <span class="kn">import</span> <span class="n">RollingSkewness</span>  <span class="c1"># This has to be generated manually</span>
+<span class="kn">from</span> <span class="nn">custom_weights</span> <span class="kn">import</span> <span class="n">custom_weights</span>
 
-<span class="n">forecaster_loaded</span> <span class="o">=</span> <span class="n">load_forecaster</span><span class="p">(</span><span class="s1">'forecaster_custom.joblib'</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">forecaster_loaded</span> <span class="o">=</span> <span class="n">load_forecaster</span><span class="p">(</span><span class="s1">'forecaster_custom_features.joblib'</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
-<div class="clipboard-copy-txt" id="cell-11"># Load model and custom function
+<div class="clipboard-copy-txt" id="cell-12"># Load model and custom function
 # ==============================================================================
-from create_predictors import create_predictors
+from rolling_skewness import RollingSkewness  # This has to be generated manually
+from custom_weights import custom_weights
 
-forecaster_loaded = load_forecaster('forecaster_custom.joblib', verbose=True)</div>
+forecaster_loaded = load_forecaster('forecaster_custom_features.joblib', verbose=True)</div>
 </div>
 </div>
 </div>
@@ -4018,29 +4141,35 @@ forecaster_loaded = load_forecaster('forecaster_custom.joblib', verbose=True)</d
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>======================= 
-ForecasterAutoregCustom 
-======================= 
-Regressor: RandomForestRegressor(random_state=123) 
-Predictors created with function: create_predictors 
+<pre>=================== 
+ForecasterRecursive 
+=================== 
+Regressor: RandomForestRegressor 
+Lags: [1 2 3] 
+Window features: ['rolling_skewness'] 
+Window size: 3 
+Exogenous included: False 
+Exogenous names: None 
 Transformer for y: None 
 Transformer for exog: None 
-Window size: 5 
-Weight function included: False 
+Weight function included: True 
 Differentiation order: None 
-Exogenous included: False 
-Type of exogenous variable: None 
-Exogenous variables names: None 
 Training range: [Timestamp('1991-07-01 00:00:00'), Timestamp('2008-06-01 00:00:00')] 
 Training index type: DatetimeIndex 
 Training index frequency: MS 
-Regressor parameters: {'bootstrap': True, 'ccp_alpha': 0.0, 'criterion': 'squared_error', 'max_depth': None, 'max_features': 1.0, 'max_leaf_nodes': None, 'max_samples': None, 'min_impurity_decrease': 0.0, 'min_samples_leaf': 1, 'min_samples_split': 2, 'min_weight_fraction_leaf': 0.0, 'monotonic_cst': None, 'n_estimators': 100, 'n_jobs': None, 'oob_score': False, 'random_state': 123, 'verbose': 0, 'warm_start': False} 
+Regressor parameters: 
+    {'bootstrap': True, 'ccp_alpha': 0.0, 'criterion': 'squared_error', 'max_depth':
+    None, 'max_features': 1.0, 'max_leaf_nodes': None, 'max_samples': None,
+    'min_impurity_decrease': 0.0, 'min_samples_leaf': 1, 'min_samples_split': 2,
+    'min_weight_fraction_leaf': 0.0, 'monotonic_cst': None, 'n_estimators': 100,
+    'n_jobs': None, 'oob_score': False, 'random_state': 123, 'verbose': 0,
+    'warm_start': False} 
 fit_kwargs: {} 
-Creation date: 2024-07-29 18:14:23 
-Last fit date: 2024-07-29 18:14:23 
-Skforecast version: 0.13.0 
-Python version: 3.11.5 
-Forecaster id: None 
+Creation date: 2024-11-10 17:43:26 
+Last fit date: 2024-11-10 17:43:26 
+Skforecast version: 0.14.0 
+Python version: 3.11.10 
+Forecaster id: forecaster_custom_features 
 
 </pre>
 </div>
@@ -4100,6 +4229,21 @@ Forecaster id: None
     Made with
     <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
       Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://www.linkedin.com/company/skforecast/" target="_blank" rel="noopener" title="www.linkedin.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3M135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3 0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2 0 38.5 17.3 38.5 38.5 0 21.3-17.2 38.5-38.5 38.5m282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9z"/></svg>
     </a>
   
 </div>
@@ -4188,7 +4332,7 @@ Forecaster id: None
       </div>
       <script>var consent=__md_get("__consent");if(consent)for(var input of document.forms.consent.elements)input.name&&(input.checked=consent[input.name]||!1);else"file:"!==location.protocol&&setTimeout((function(){document.querySelector("[data-md-component=consent]").hidden=!1}),250);var form=document.forms.consent;for(var action of["submit","reset"])form.addEventListener(action,(function(e){if(e.preventDefault(),"reset"===e.type)for(var n of document.forms.consent.elements)n.name&&(n.checked=!1);__md_set("__consent",Object.fromEntries(Array.from(new FormData(form).keys()).map((function(e){return[e,!0]})))),location.hash="",location.reload()}))</script>
     
-    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.top"], "search": "../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.top", "toc.integrate", "navigation.breadcrumbs"], "search": "../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
       <script src="../assets/javascripts/bundle.525ec568.min.js"></script>

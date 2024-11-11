@@ -4,7 +4,7 @@
 
 Ejemplos prácticos y tutoriales para ayudarte a entender y aplicar skforecast.
 
-## **Primeros Pasos: Forecasting Fundamental**
+## Primeros Pasos: Forecasting Fundamental
 
 Esta sección proporciona tutoriales esenciales para los usuarios que están comenzando con el pronóstico de series temporales. Estos ejemplos cubren los modelos y técnicas más fundamentales para ayudarte a construir una base sólida en forecasting.
 
@@ -16,22 +16,26 @@ Esta sección proporciona tutoriales esenciales para los usuarios que están com
 
 <i class="fa-solid fa-diagram-project fa-rotate-90" style="font-size: 25px; color:#74C0FC;"></i> [Forecasting con XGBoost](https://www.cienciadedatos.net/documentos/py56-forecasting-series-temporales-con-xgboost.html)
 
+<i class="fa-solid fa-diagram-project fa-rotate-90" style="font-size: 25px; color:#76b644;"></i> [Forecasting con LightGBM](https://www.cienciadedatos.net/documentos/py58-forecasting-series-temporales-con-lightgbm.html)
+
 <i class="fa-brands fa-youtube" style="font-size: 25px; color:#c4302b;"></i> [Workshop predicción de series temporales con machine learning 
 Universidad de Deusto / Deustuko Unibertsitatea](https://youtu.be/MlktVhReO0E)
 
 
-## **Modelos Globales: Forecasting Multi-Serie**
+## Modelos Globales: Forecasting Multi-Serie
 
 Estos tutoriales se centran en modelos globales y en el pronóstico de series múltiples, donde puedes explorar el uso de técnicas que manejan varias series temporales simultáneamente y comparar el rendimiento entre diferentes enfoques de forecasting.
 
 <i class="fa-duotone fa-water fa" style="font-size: 25px; color:teal;"></i> [Global Forecasting Models: Multi-series forecasting](https://www.cienciadedatos.net/documentos/py44-multi-series-forecasting-skforecast-español.html)
+
+<i class="fa-solid fa-stairs" style="font-size: 25px; color:#B197FC;"></i> [Forecasting escalable: modelado de mil de series temporales con un único modelo global](https://www.cienciadedatos.net/documentos/py59-modelos-forecasting-escalable.html)
 
 <i class="fa-solid fa-globe" style="font-size: 25px; color:#6b8e23;"></i> [Modelos de forecasting globales: Análisis comparativo de modelos de una y múltiples series](https://www.cienciadedatos.net/documentos/py53-modelos-forecasting-globales.html)
 
 <i class="fa-solid fa-layer-group" style="color: #001633;"></i> [Forecasting con Deep Learning](https://cienciadedatos.net/documentos/py54-forecasting-con-deep-learning)
 
 
-## **Técnicas Avanzadas: Más Allá de los Modelos Básicos**
+## Técnicas Avanzadas: Más Allá de los Modelos Básicos
 
 Para usuarios experimentados que buscan profundizar en sus habilidades de forecasting, esta sección ofrece técnicas avanzadas, como forecasting probabilístico y manejo de valores ausentes.
 
