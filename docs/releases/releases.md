@@ -857,7 +857,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 
 + Multiple exogenous variables can be passed as pandas DataFrame.
 
-+ Documentation at https://joaquinamatrodrigo.github.io/skforecast/
++ Documentation at https://skforecast.org
 
 + New unit test
 
