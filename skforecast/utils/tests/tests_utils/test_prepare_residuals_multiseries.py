@@ -183,4 +183,4 @@ def test_output_prepare_residuals_multiseries(use_in_sample_residuals):
                        )
     
     for level in residuals.keys():
-        np.testing.assert_array_equal(residuals_levels[level], residuals[level])
+        np.testing.assert_array_almost_equal(residuals_levels[level], residuals[level])

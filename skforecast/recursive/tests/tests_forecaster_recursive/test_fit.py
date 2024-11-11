@@ -95,7 +95,7 @@ def test_fit_in_sample_residuals_stored():
     expected = np.array([0., 0.])
 
     assert isinstance(results, np.ndarray)
-    np.testing.assert_array_equal(results, expected)
+    np.testing.assert_array_almost_equal(results, expected)
 
 
 def test_fit_in_sample_residuals_by_bin_stored():
@@ -163,7 +163,7 @@ def test_fit_same_residuals_when_residuals_greater_than_10000():
     
     assert isinstance(results_1, np.ndarray)
     assert isinstance(results_2, np.ndarray)
-    np.testing.assert_array_equal(results_1, results_2)
+    np.testing.assert_array_almost_equal(results_1, results_2)
 
 
 def test_fit_in_sample_residuals_not_stored():

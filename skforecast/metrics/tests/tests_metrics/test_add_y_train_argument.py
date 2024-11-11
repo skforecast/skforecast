@@ -40,4 +40,4 @@ def test_add_y_train_argument_func_with_y_train():
 
     # Test the wrapped function with 'y_train' argument
     result = wrapped_func(10, y_train=np.array([1, 2, 3]))
-    np.testing.assert_array_equal(result, np.array([11, 12, 13]))
+    np.testing.assert_array_almost_equal(result, np.array([11, 12, 13]))

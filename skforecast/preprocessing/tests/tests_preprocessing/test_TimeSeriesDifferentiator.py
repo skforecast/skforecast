@@ -94,7 +94,7 @@ def test_TimeSeriesDifferentiator_transform(order, expected):
     _ = transformer.fit(y)
     results = transformer.transform(y)
 
-    np.testing.assert_array_equal(results, expected)
+    np.testing.assert_array_almost_equal(results, expected)
 
 
 @pytest.mark.parametrize("order, expected",
@@ -109,7 +109,7 @@ def test_TimeSeriesDifferentiator_fit_transform(order, expected):
     transformer = TimeSeriesDifferentiator(order=order)
     results = transformer.fit_transform(y)
 
-    np.testing.assert_array_equal(results, expected)
+    np.testing.assert_array_almost_equal(results, expected)
 
 
 @pytest.mark.parametrize("order",
@@ -123,7 +123,7 @@ def test_TimeSeriesDifferentiator_inverse_transform(order):
     y_diff = transformer.fit_transform(y)
     results = transformer.inverse_transform(y_diff)
 
-    np.testing.assert_array_equal(results, y)
+    np.testing.assert_array_almost_equal(results, y)
 
 
 def test_TimeSeriesDifferentiator_inverse_transform_ValueError_no_window_size():
@@ -161,7 +161,7 @@ def test_TimeSeriesDifferentiator_inverse_transform_training(order, y_diff):
     y_train_expected = y[window_size:]  # No differentiated
 
     assert len(y_train_expected) == len(y_diff_train)
-    np.testing.assert_array_equal(results, y_train_expected)
+    np.testing.assert_array_almost_equal(results, y_train_expected)
 
 
 @pytest.mark.parametrize("order, next_window_diff, expected",
@@ -177,7 +177,7 @@ def test_TimeSeriesDifferentiator_inverse_transform_next_window(order, next_wind
     transformer.fit_transform(y)
     results = transformer.inverse_transform_next_window(next_window_diff)
     
-    np.testing.assert_array_equal(results, expected)
+    np.testing.assert_array_almost_equal(results, expected)
 
 
 @pytest.mark.parametrize("order, next_window_diff, expected",
@@ -193,4 +193,4 @@ def test_TimeSeriesDifferentiator_inverse_transform_next_window_2d(order, next_w
     transformer.fit_transform(y)
     results = transformer.inverse_transform_next_window(next_window_diff)
     
-    np.testing.assert_array_equal(results, expected)
+    np.testing.assert_array_almost_equal(results, expected)

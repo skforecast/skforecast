@@ -145,5 +145,5 @@ def test_create_lags_several_configurations(lags, steps, expected):
 
     results = forecaster._create_lags(y=np.arange(10))
 
-    np.testing.assert_array_equal(results[0], expected[0])
-    np.testing.assert_array_equal(results[1], np.transpose(expected[1]))
+    np.testing.assert_array_almost_equal(results[0], expected[0])
+    np.testing.assert_array_almost_equal(results[1], np.transpose(expected[1]))

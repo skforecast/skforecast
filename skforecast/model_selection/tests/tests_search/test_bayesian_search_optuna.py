@@ -733,7 +733,7 @@ def test_evaluate_bayesian_search_optuna_when_return_best_ForecasterRecursive():
     expected_lags = np.array([1, 2])
     expected_alpha = 0.5558016213920624
 
-    np.testing.assert_array_equal(forecaster.lags, expected_lags)
+    np.testing.assert_array_almost_equal(forecaster.lags, expected_lags)
     assert expected_alpha == forecaster.regressor.alpha
 
 

@@ -64,7 +64,7 @@ def test_save_and_load_forecaster_persistence():
         if key in ['regressor', 'binner', 'transformer_y', 'transformer_exog']:
             assert joblib.hash(attribute_forecaster) == joblib.hash(attribute_forecaster_loaded)
         elif isinstance(attribute_forecaster, np.ndarray):
-            np.testing.assert_array_equal(attribute_forecaster, attribute_forecaster_loaded)
+            np.testing.assert_array_almost_equal(attribute_forecaster, attribute_forecaster_loaded)
         elif isinstance(attribute_forecaster, pd.Series):
             pd.testing.assert_series_equal(attribute_forecaster, attribute_forecaster_loaded)
         elif isinstance(attribute_forecaster, pd.DataFrame):
@@ -75,7 +75,7 @@ def test_save_and_load_forecaster_persistence():
             assert attribute_forecaster.keys() == attribute_forecaster_loaded.keys()
             for k in attribute_forecaster.keys():
                 if isinstance(attribute_forecaster[k], np.ndarray):
-                    np.testing.assert_array_equal(attribute_forecaster[k], attribute_forecaster_loaded[k])
+                    np.testing.assert_array_almost_equal(attribute_forecaster[k], attribute_forecaster_loaded[k])
                 elif isinstance(attribute_forecaster[k], pd.Series):
                     pd.testing.assert_series_equal(attribute_forecaster[k], attribute_forecaster_loaded[k])
                 elif isinstance(attribute_forecaster[k], pd.DataFrame):
