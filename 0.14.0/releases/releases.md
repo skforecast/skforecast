@@ -55,9 +55,11 @@ This release has undergone a major refactoring to improve the performance of the
 
 + New private function `_calculate_metrics_one_step_ahead` to <code>[model_selection]</code> module to calculate the metrics when predicting one step ahead.
 
-+ The `steps` argument in the predict method of the <code>[ForecasterRecursive]</code> can now be a str or a pandas datetime. If so, the method will predict up to the specified date. (contribution by @imMoya).
++ The `steps` argument in the predict method of the <code>[ForecasterRecursive]</code> can now be a str or a pandas datetime. If so, the method will predict up to the specified date. (contribution by @imMoya [#811](https://github.com/skforecast/skforecast/pull/811)).
 
 + Exogenous variables can be added to the training matrix if they do not contain the first window size observations. This is useful when exogenous variables are not available in early historical data.
+
++ Added support for different activation functions in the <code>[create_and_compile_model]</code> function. (contribution by @pablorodriper [#824](https://github.com/skforecast/skforecast/pull/824)).
 
 
 **Changed**
@@ -857,7 +859,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 
 + Multiple exogenous variables can be passed as pandas DataFrame.
 
-+ Documentation at https://joaquinamatrodrigo.github.io/skforecast/
++ Documentation at https://skforecast.org
 
 + New unit test
 
@@ -989,6 +991,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [ForecasterRecursiveMultiSeries]: https://skforecast.org/latest/api/forecasterrecursivemultiseries
 [ForecasterDirectMultiVariate]: https://skforecast.org/latest/api/forecasterdirectmultivariate
 [ForecasterRNN]: https://skforecast.org/latest/api/forecasterrnn
+[create_and_compile_model]: https://skforecast.org/latest/api/forecasterrnn#skforecast.deep_learning.utils.create_and_compile_model
 [ForecasterSarimax]: https://skforecast.org/latest/api/forecastersarimax
 [Sarimax]: https://skforecast.org/latest/api/sarimax
 [ForecasterEquivalentDate]: https://skforecast.org/latest/api/forecasterequivalentdate

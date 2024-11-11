@@ -5907,11 +5907,13 @@ list of integers for multiple layers.</p>
           <tr class="doc-section-item">
             <td><code>activation</code></td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+                  <code>(<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>)</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Activation function for the recurrent and dense layers.</p>
+                <p>Activation function for the recurrent and dense layers. Can be a single 
+string for all layers or a dictionary specifying different activations 
+for 'recurrent_units' and 'dense_units'.</p>
               </div>
             </td>
             <td>
@@ -5980,6 +5982,41 @@ list of integers for multiple layers.</p>
             <td>
               <div class="doc-md-description">
                 <p>Compiled neural network model.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#TypeError">TypeError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If any of the input arguments are of incorrect type.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#ValueError">ValueError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If the activation dictionary does not have the required keys or if the 
+lengths of the lists in the activation dictionary do not match the 
+corresponding parameters.</p>
               </div>
             </td>
           </tr>
@@ -6158,18 +6195,58 @@ list of integers for multiple layers.</p>
 <span class="normal">191</span>
 <span class="normal">192</span>
 <span class="normal">193</span>
-<span class="normal">194</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_and_compile_model</span><span class="p">(</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_and_compile_model</span><span class="p">(</span>
     <span class="n">series</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">lags</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">],</span>
     <span class="n">steps</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">],</span>
-    <span class="n">levels</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">recurrent_layer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;LSTM&quot;</span><span class="p">,</span>
-    <span class="n">recurrent_units</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
-    <span class="n">dense_units</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="mi">64</span><span class="p">,</span>
-    <span class="n">activation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;relu&quot;</span><span class="p">,</span>
-    <span class="n">optimizer</span><span class="p">:</span> <span class="nb">object</span> <span class="o">=</span> <span class="n">Adam</span><span class="p">(</span><span class="n">learning_rate</span><span class="o">=</span><span class="mf">0.01</span><span class="p">),</span>
-    <span class="n">loss</span><span class="p">:</span> <span class="nb">object</span> <span class="o">=</span> <span class="n">MeanSquaredError</span><span class="p">(),</span>
-    <span class="n">compile_kwargs</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{},</span>
+    <span class="n">levels</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">]]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">recurrent_layer</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s2">&quot;LSTM&quot;</span><span class="p">,</span>
+    <span class="n">recurrent_units</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">]</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+    <span class="n">dense_units</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">]</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span>
+    <span class="n">activation</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]</span><span class="o">=</span><span class="s2">&quot;relu&quot;</span><span class="p">,</span>
+    <span class="n">optimizer</span><span class="p">:</span> <span class="nb">object</span><span class="o">=</span><span class="n">Adam</span><span class="p">(</span><span class="n">learning_rate</span><span class="o">=</span><span class="mf">0.01</span><span class="p">),</span>
+    <span class="n">loss</span><span class="p">:</span> <span class="nb">object</span><span class="o">=</span><span class="n">MeanSquaredError</span><span class="p">(),</span>
+    <span class="n">compile_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="o">=</span><span class="p">{},</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">keras</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Creates a neural network model for time series prediction with flexible recurrent layers.</span>
@@ -6194,8 +6271,10 @@ list of integers for multiple layers.</p>
 <span class="sd">        list of integers for multiple layers.</span>
 <span class="sd">    dense_units : int, list, default `64`</span>
 <span class="sd">        List of integers representing the number of units in each dense layer.</span>
-<span class="sd">    activation : str, default `&#39;relu&#39;`</span>
-<span class="sd">        Activation function for the recurrent and dense layers.</span>
+<span class="sd">    activation : str, dict, default `&#39;relu&#39;`</span>
+<span class="sd">        Activation function for the recurrent and dense layers. Can be a single </span>
+<span class="sd">        string for all layers or a dictionary specifying different activations </span>
+<span class="sd">        for &#39;recurrent_units&#39; and &#39;dense_units&#39;.</span>
 <span class="sd">    optimizer : object, default `Adam(learning_rate=0.01)`</span>
 <span class="sd">        Optimization algorithm and learning rate.</span>
 <span class="sd">    loss : object, default `MeanSquaredError()`</span>
@@ -6207,6 +6286,15 @@ list of integers for multiple layers.</p>
 <span class="sd">    -------</span>
 <span class="sd">    model : keras.models.Model</span>
 <span class="sd">        Compiled neural network model.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    TypeError</span>
+<span class="sd">        If any of the input arguments are of incorrect type.</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If the activation dictionary does not have the required keys or if the </span>
+<span class="sd">        lengths of the lists in the activation dictionary do not match the </span>
+<span class="sd">        corresponding parameters.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -6275,38 +6363,67 @@ list of integers for multiple layers.</p>
             <span class="sa">f</span><span class="s2">&quot;`levels` argument must be a string, list or int. Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">levels</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
         <span class="p">)</span>
 
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">activation</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">dense_units</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">activation</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;recurrent_units&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">activation</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">recurrent_units</span><span class="p">),</span> 
+                <span class="s2">&quot;dense_units&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">activation</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">dense_units</span><span class="p">)</span>  
+            <span class="p">}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">activation</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;recurrent_units&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">activation</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">recurrent_units</span><span class="p">)</span>
+            <span class="p">}</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">activation</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="c1"># Check if the dictionary has the required keys</span>
+        <span class="k">if</span> <span class="s2">&quot;recurrent_units&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">activation</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The activation dictionary must have a &#39;recurrent_units&#39; key.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">dense_units</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s2">&quot;dense_units&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">activation</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The activation dictionary must have a &#39;dense_units&#39; key if dense_units is not None.&quot;</span><span class="p">)</span>
+        <span class="c1"># Check if the values are lists</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">activation</span><span class="p">[</span><span class="s2">&quot;recurrent_units&quot;</span><span class="p">],</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;The &#39;recurrent_units&#39; value in the activation dictionary must be a list.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">dense_units</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">activation</span><span class="p">[</span><span class="s2">&quot;dense_units&quot;</span><span class="p">],</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;The &#39;dense_units&#39; value in the activation dictionary must be a list if dense_units is not None.&quot;</span><span class="p">)</span>
+        <span class="c1"># Check if the lists have the same length as the corresponding parameters</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">activation</span><span class="p">[</span><span class="s2">&quot;recurrent_units&quot;</span><span class="p">])</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">recurrent_units</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The &#39;recurrent_units&#39; list in the activation dictionary must have the same length as the recurrent_units parameter.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">dense_units</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">activation</span><span class="p">[</span><span class="s2">&quot;dense_units&quot;</span><span class="p">])</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">dense_units</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The &#39;dense_units&#39; list in the activation dictionary must have the same length as the dense_units parameter.&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;`activation` argument must be a string or dict. Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">activation</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
     <span class="n">input_layer</span> <span class="o">=</span> <span class="n">Input</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">lags</span><span class="p">,</span> <span class="n">n_series</span><span class="p">))</span>
     <span class="n">x</span> <span class="o">=</span> <span class="n">input_layer</span>
 
     <span class="c1"># Dynamically create multiple recurrent layers if recurrent_units is a list</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">recurrent_units</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">units</span> <span class="ow">in</span> <span class="n">recurrent_units</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>  <span class="c1"># All layers except the last one</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">units</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">recurrent_units</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>  <span class="c1"># All layers except the last one</span>
             <span class="k">if</span> <span class="n">recurrent_layer</span> <span class="o">==</span> <span class="s2">&quot;LSTM&quot;</span><span class="p">:</span>
-                <span class="n">x</span> <span class="o">=</span> <span class="n">LSTM</span><span class="p">(</span><span class="n">units</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="n">activation</span><span class="p">,</span> <span class="n">return_sequences</span><span class="o">=</span><span class="kc">True</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="n">LSTM</span><span class="p">(</span><span class="n">units</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="n">activation</span><span class="p">[</span><span class="s2">&quot;recurrent_units&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span> <span class="n">return_sequences</span><span class="o">=</span><span class="kc">True</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">recurrent_layer</span> <span class="o">==</span> <span class="s2">&quot;RNN&quot;</span><span class="p">:</span>
-                <span class="n">x</span> <span class="o">=</span> <span class="n">SimpleRNN</span><span class="p">(</span><span class="n">units</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="n">activation</span><span class="p">,</span> <span class="n">return_sequences</span><span class="o">=</span><span class="kc">True</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="n">SimpleRNN</span><span class="p">(</span><span class="n">units</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="n">activation</span><span class="p">[</span><span class="s2">&quot;recurrent_units&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span> <span class="n">return_sequences</span><span class="o">=</span><span class="kc">True</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid recurrent layer: </span><span class="si">{</span><span class="n">recurrent_layer</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="c1"># Last layer without return_sequences</span>
         <span class="k">if</span> <span class="n">recurrent_layer</span> <span class="o">==</span> <span class="s2">&quot;LSTM&quot;</span><span class="p">:</span>
-            <span class="n">x</span> <span class="o">=</span> <span class="n">LSTM</span><span class="p">(</span><span class="n">recurrent_units</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">activation</span><span class="o">=</span><span class="n">activation</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">LSTM</span><span class="p">(</span><span class="n">recurrent_units</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">activation</span><span class="o">=</span><span class="n">activation</span><span class="p">[</span><span class="s2">&quot;recurrent_units&quot;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">])(</span><span class="n">x</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">recurrent_layer</span> <span class="o">==</span> <span class="s2">&quot;RNN&quot;</span><span class="p">:</span>
-            <span class="n">x</span> <span class="o">=</span> <span class="n">SimpleRNN</span><span class="p">(</span><span class="n">recurrent_units</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">activation</span><span class="o">=</span><span class="n">activation</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">SimpleRNN</span><span class="p">(</span><span class="n">recurrent_units</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">activation</span><span class="o">=</span><span class="n">activation</span><span class="p">[</span><span class="s2">&quot;recurrent_units&quot;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">])(</span><span class="n">x</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid recurrent layer: </span><span class="si">{</span><span class="n">recurrent_layer</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="c1"># Single recurrent layer</span>
         <span class="k">if</span> <span class="n">recurrent_layer</span> <span class="o">==</span> <span class="s2">&quot;LSTM&quot;</span><span class="p">:</span>
-            <span class="n">x</span> <span class="o">=</span> <span class="n">LSTM</span><span class="p">(</span><span class="n">recurrent_units</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="n">activation</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">LSTM</span><span class="p">(</span><span class="n">recurrent_units</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="n">activation</span><span class="p">[</span><span class="s2">&quot;recurrent_units&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">])(</span><span class="n">x</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">recurrent_layer</span> <span class="o">==</span> <span class="s2">&quot;RNN&quot;</span><span class="p">:</span>
-            <span class="n">x</span> <span class="o">=</span> <span class="n">SimpleRNN</span><span class="p">(</span><span class="n">recurrent_units</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="n">activation</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">SimpleRNN</span><span class="p">(</span><span class="n">recurrent_units</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="n">activation</span><span class="p">[</span><span class="s2">&quot;recurrent_units&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">])(</span><span class="n">x</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid recurrent layer: </span><span class="si">{</span><span class="n">recurrent_layer</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="c1"># Dense layers</span>
     <span class="k">if</span> <span class="n">dense_units</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">nn</span> <span class="ow">in</span> <span class="n">dense_units</span><span class="p">:</span>
-            <span class="n">x</span> <span class="o">=</span> <span class="n">Dense</span><span class="p">(</span><span class="n">nn</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="n">activation</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">nn</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">dense_units</span><span class="p">):</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">Dense</span><span class="p">(</span><span class="n">nn</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="n">activation</span><span class="p">[</span><span class="s2">&quot;dense_units&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">])(</span><span class="n">x</span><span class="p">)</span>
 
     <span class="c1"># Output layer</span>
     <span class="n">x</span> <span class="o">=</span> <span class="n">Dense</span><span class="p">(</span><span class="n">levels</span> <span class="o">*</span> <span class="n">steps</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s2">&quot;linear&quot;</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>

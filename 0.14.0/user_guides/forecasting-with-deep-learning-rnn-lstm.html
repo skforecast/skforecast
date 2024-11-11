@@ -3602,7 +3602,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [2]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [1]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-1">
@@ -3721,7 +3721,7 @@ torch version: 2.2.2+cpu
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [3]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [2]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-2">
@@ -3756,19 +3756,20 @@ air_quality.head()</div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>air_quality_valencia_no_missing
 -------------------------------
-Hourly measures of several air chemical pollutant (pm2.5, co, no, no2, pm10,
-nox, o3, veloc. (air speed), direc. (air direction), so2) at Valencia city.
-Units are (µg/m3) for pm2.5, no, no2, pm10, so2, (mg/m3) for co, (m/s) for
-veloc. and (degrees) for direc. Missing values have been removed using linear
-interpolation.
-Red de Vigilancia y Control de la Contaminación Atmosférica, 46250054-València -
-Centre, https://mediambient.gva.es/es/web/calidad-ambiental/datos-historicos.
-Shape of the dataset: (26304, 10)
+Hourly measures of several air chemical pollutant at Valencia city (Avd.
+Francia) from 2019-01-01 to 20213-12-31. Including the following variables:
+pm2.5 (µg/m³), CO (mg/m³), NO (µg/m³), NO2 (µg/m³), PM10 (µg/m³), NOx (µg/m³),
+O3 (µg/m³), Veloc. (m/s), Direc. (degrees), SO2 (µg/m³). Missing values have
+been imputed using linear interpolation.
+Red de Vigilancia y Control de la Contaminación Atmosférica, 46250047-València -
+Av. França, https://mediambient.gva.es/es/web/calidad-ambiental/datos-
+historicos.
+Shape of the dataset: (43824, 10)
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[3]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[2]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
@@ -3788,7 +3789,7 @@ Shape of the dataset: (26304, 10)
 <thead>
 <tr style="text-align: right;">
 <th></th>
-<th>pm2.5</th>
+<th>so2</th>
 <th>co</th>
 <th>no</th>
 <th>no2</th>
@@ -3797,7 +3798,7 @@ Shape of the dataset: (26304, 10)
 <th>o3</th>
 <th>veloc.</th>
 <th>direc.</th>
-<th>so2</th>
+<th>pm2.5</th>
 </tr>
 <tr>
 <th>datetime</th>
@@ -3816,7 +3817,7 @@ Shape of the dataset: (26304, 10)
 <tbody>
 <tr>
 <th>2019-01-01 00:00:00</th>
-<td>19.0</td>
+<td>8.0</td>
 <td>0.2</td>
 <td>3.0</td>
 <td>36.0</td>
@@ -3825,11 +3826,11 @@ Shape of the dataset: (26304, 10)
 <td>16.0</td>
 <td>0.5</td>
 <td>262.0</td>
-<td>8.0</td>
+<td>19.0</td>
 </tr>
 <tr>
 <th>2019-01-01 01:00:00</th>
-<td>26.0</td>
+<td>8.0</td>
 <td>0.1</td>
 <td>2.0</td>
 <td>40.0</td>
@@ -3838,11 +3839,11 @@ Shape of the dataset: (26304, 10)
 <td>6.0</td>
 <td>0.6</td>
 <td>248.0</td>
-<td>8.0</td>
+<td>26.0</td>
 </tr>
 <tr>
 <th>2019-01-01 02:00:00</th>
-<td>31.0</td>
+<td>8.0</td>
 <td>0.1</td>
 <td>11.0</td>
 <td>42.0</td>
@@ -3851,11 +3852,11 @@ Shape of the dataset: (26304, 10)
 <td>3.0</td>
 <td>0.3</td>
 <td>224.0</td>
-<td>8.0</td>
+<td>31.0</td>
 </tr>
 <tr>
 <th>2019-01-01 03:00:00</th>
-<td>30.0</td>
+<td>10.0</td>
 <td>0.1</td>
 <td>15.0</td>
 <td>41.0</td>
@@ -3864,11 +3865,11 @@ Shape of the dataset: (26304, 10)
 <td>3.0</td>
 <td>0.2</td>
 <td>220.0</td>
-<td>10.0</td>
+<td>30.0</td>
 </tr>
 <tr>
 <th>2019-01-01 04:00:00</th>
-<td>30.0</td>
+<td>11.0</td>
 <td>0.1</td>
 <td>16.0</td>
 <td>39.0</td>
@@ -3877,7 +3878,7 @@ Shape of the dataset: (26304, 10)
 <td>3.0</td>
 <td>0.4</td>
 <td>221.0</td>
-<td>11.0</td>
+<td>30.0</td>
 </tr>
 </tbody>
 </table>
@@ -3893,7 +3894,7 @@ Shape of the dataset: (26304, 10)
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [4]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [3]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-3">
@@ -3940,7 +3941,7 @@ Frequency: &lt;Hour&gt;
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [4]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-4">
@@ -3955,6 +3956,8 @@ Frequency: &lt;Hour&gt;
 </div>
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Split train-validation-test</span>
 <span class="c1"># ==============================================================================</span>
+<span class="n">air_quality</span> <span class="o">=</span> <span class="n">air_quality</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">"2019-01-01 00:00:00"</span><span class="p">:</span><span class="s2">"2021-12-31 23:59:59"</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
 <span class="n">end_train</span> <span class="o">=</span> <span class="s2">"2021-03-31 23:59:00"</span>
 <span class="n">end_validation</span> <span class="o">=</span> <span class="s2">"2021-09-30 23:59:00"</span>
 <span class="n">air_quality_train</span> <span class="o">=</span> <span class="n">air_quality</span><span class="o">.</span><span class="n">loc</span><span class="p">[:</span><span class="n">end_train</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
@@ -3976,6 +3979,8 @@ Frequency: &lt;Hour&gt;
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-4"># Split train-validation-test
 # ==============================================================================
+air_quality = air_quality.loc["2019-01-01 00:00:00":"2021-12-31 23:59:59", :].copy()
+
 end_train = "2021-03-31 23:59:00"
 end_validation = "2021-09-30 23:59:00"
 air_quality_train = air_quality.loc[:end_train, :].copy()

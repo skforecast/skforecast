@@ -3249,10 +3249,13 @@ This is documentation for an unstable development version.
 <p>New private function <code>_calculate_metrics_one_step_ahead</code> to <code><a href="https://skforecast.org/latest/api/model_selection">model_selection</a></code> module to calculate the metrics when predicting one step ahead.</p>
 </li>
 <li>
-<p>The <code>steps</code> argument in the predict method of the <code><a href="https://skforecast.org/latest/api/forecasterrecursive">ForecasterRecursive</a></code> can now be a str or a pandas datetime. If so, the method will predict up to the specified date. (contribution by @imMoya).</p>
+<p>The <code>steps</code> argument in the predict method of the <code><a href="https://skforecast.org/latest/api/forecasterrecursive">ForecasterRecursive</a></code> can now be a str or a pandas datetime. If so, the method will predict up to the specified date. (contribution by @imMoya <a href="https://github.com/skforecast/skforecast/pull/811">#811</a>).</p>
 </li>
 <li>
 <p>Exogenous variables can be added to the training matrix if they do not contain the first window size observations. This is useful when exogenous variables are not available in early historical data.</p>
+</li>
+<li>
+<p>Added support for different activation functions in the <code><a href="https://skforecast.org/latest/api/forecasterrnn#skforecast.deep_learning.utils.create_and_compile_model">create_and_compile_model</a></code> function. (contribution by @pablorodriper <a href="https://github.com/skforecast/skforecast/pull/824">#824</a>).</p>
 </li>
 </ul>
 <p><strong>Changed</strong></p>
@@ -4313,7 +4316,7 @@ This is documentation for an unstable development version.
 <p>Multiple exogenous variables can be passed as pandas DataFrame.</p>
 </li>
 <li>
-<p>Documentation at <a href="https://joaquinamatrodrigo.github.io/skforecast/">https://joaquinamatrodrigo.github.io/skforecast/</a></p>
+<p>Documentation at <a href="https://skforecast.org">https://skforecast.org</a></p>
 </li>
 <li>
 <p>New unit test</p>
