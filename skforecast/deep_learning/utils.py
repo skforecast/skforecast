@@ -57,8 +57,10 @@ def create_and_compile_model(
         list of integers for multiple layers.
     dense_units : int, list, default `64`
         List of integers representing the number of units in each dense layer.
-    activation : str, default `'relu'`
-        Activation function for the recurrent and dense layers.
+    activation : str or dict, default `'relu'`
+        Activation function for the recurrent and dense layers. Can be a single 
+        string for all layers or a dictionary specifying different activations 
+        for 'recurrent_units' and 'dense_units'.
     optimizer : object, default `Adam(learning_rate=0.01)`
         Optimization algorithm and learning rate.
     loss : object, default `MeanSquaredError()`
@@ -70,6 +72,15 @@ def create_and_compile_model(
     -------
     model : keras.models.Model
         Compiled neural network model.
+    
+    Raises
+    ------
+    TypeError
+        If any of the input arguments are of incorrect type.
+    ValueError
+        If the activation dictionary does not have the required keys or if the 
+        lengths of the lists in the activation dictionary do not match the 
+        corresponding parameters.
     
     """
     
@@ -138,38 +149,67 @@ def create_and_compile_model(
             f"`levels` argument must be a string, list or int. Got {type(levels)}."
         )
 
+    if isinstance(activation, str):
+        if dense_units is not None:
+            activation = {
+                "recurrent_units": [activation]*len(recurrent_units), 
+                "dense_units": [activation]*len(dense_units)  
+            }
+        else:
+            activation = {
+                "recurrent_units": [activation]*len(recurrent_units)
+            }
+    elif isinstance(activation, dict):
+        # Check if the dictionary has the required keys
+        if "recurrent_units" not in activation.keys():
+            raise ValueError("The activation dictionary must have a 'recurrent_units' key.")
+        if dense_units is not None and "dense_units" not in activation.keys():
+            raise ValueError("The activation dictionary must have a 'dense_units' key if dense_units is not None.")
+        # Check if the values are lists
+        if not isinstance(activation["recurrent_units"], list):
+            raise TypeError("The 'recurrent_units' value in the activation dictionary must be a list.")
+        if dense_units is not None and not isinstance(activation["dense_units"], list) :
+            raise TypeError("The 'dense_units' value in the activation dictionary must be a list if dense_units is not None.")
+        # Check if the lists have the same length as the corresponding parameters
+        if len(activation["recurrent_units"]) != len(recurrent_units):
+            raise ValueError("The 'recurrent_units' list in the activation dictionary must have the same length as the recurrent_units parameter.")
+        if dense_units is not None and len(activation["dense_units"]) != len(dense_units):
+            raise ValueError("The 'dense_units' list in the activation dictionary must have the same length as the dense_units parameter.")
+    else:
+        raise TypeError(f"`activation` argument must be a string or dict. Got {type(activation)}.")
+
     input_layer = Input(shape=(lags, n_series))
     x = input_layer
 
     # Dynamically create multiple recurrent layers if recurrent_units is a list
     if isinstance(recurrent_units, list):
-        for units in recurrent_units[:-1]:  # All layers except the last one
+        for i, units in enumerate(recurrent_units[:-1]):  # All layers except the last one
             if recurrent_layer == "LSTM":
-                x = LSTM(units, activation=activation, return_sequences=True)(x)
+                x = LSTM(units, activation=activation["recurrent_units"][i], return_sequences=True)(x)
             elif recurrent_layer == "RNN":
-                x = SimpleRNN(units, activation=activation, return_sequences=True)(x)
+                x = SimpleRNN(units, activation=activation["recurrent_units"][i], return_sequences=True)(x)
             else:
                 raise ValueError(f"Invalid recurrent layer: {recurrent_layer}")
         # Last layer without return_sequences
         if recurrent_layer == "LSTM":
-            x = LSTM(recurrent_units[-1], activation=activation)(x)
+            x = LSTM(recurrent_units[-1], activation=activation["recurrent_units"][-1])(x)
         elif recurrent_layer == "RNN":
-            x = SimpleRNN(recurrent_units[-1], activation=activation)(x)
+            x = SimpleRNN(recurrent_units[-1], activation=activation["recurrent_units"][-1])(x)
         else:
             raise ValueError(f"Invalid recurrent layer: {recurrent_layer}")
     else:
         # Single recurrent layer
         if recurrent_layer == "LSTM":
-            x = LSTM(recurrent_units, activation=activation)(x)
+            x = LSTM(recurrent_units, activation=activation["recurrent_units"][0])(x)
         elif recurrent_layer == "RNN":
-            x = SimpleRNN(recurrent_units, activation=activation)(x)
+            x = SimpleRNN(recurrent_units, activation=activation["recurrent_units"][0])(x)
         else:
             raise ValueError(f"Invalid recurrent layer: {recurrent_layer}")
 
     # Dense layers
     if dense_units is not None:
-        for nn in dense_units:
-            x = Dense(nn, activation=activation)(x)
+        for i, nn in enumerate(dense_units):
+            x = Dense(nn, activation=activation["dense_units"][i])(x)
 
     # Output layer
     x = Dense(levels * steps, activation="linear")(x)

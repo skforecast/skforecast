@@ -81,6 +81,55 @@ def test_correct_input_type():
     assert isinstance(model, keras.models.Model)
 
 
+@pytest.mark.parametrize(
+    "recurrent_units, dense_units, activation",
+    [
+        (64, 100, "relu"),
+        (64, None, "relu"),
+        ([64], 100, "relu"),
+        ([64, 32], 100, "relu"),
+        ([64, 32], [100, 50], "relu"),
+        (64, 100, {"recurrent_units": ["relu"], "dense_units": ["tanh"]}),
+        ([64], 100, {"recurrent_units": ["relu"], "dense_units": ["tanh"]}),
+        ([64, 32], 100, {"recurrent_units": ["relu", "relu"], "dense_units": ["tanh"]}),
+        ([64, 32], None, {"recurrent_units": ["relu", "relu"]}),
+        (64, [100, 50], {"recurrent_units": ["relu"], "dense_units": ["relu", "tanh"]}),
+        ([64, 64], [100, 50], {"recurrent_units": ["relu", "relu"], "dense_units": ["relu", "tanh"]}),
+    ]
+)
+def test_correct_activation_type(recurrent_units, dense_units, activation):
+    # Test if the function works with activation as a string
+    model = create_and_compile_model(
+        series_data, lags_data, steps_data, levels_data,
+        dense_units=dense_units,
+        recurrent_units=recurrent_units,
+        activation=activation
+    )
+    assert isinstance(model, keras.models.Model)
+
+
+@pytest.mark.parametrize(
+    "recurrent_units, dense_units, activation, message",
+    [
+        (64, None, {}, "The activation dictionary must have a 'recurrent_units' key."),
+        (64, 64, {"recurrent_units": ["relu"]}, "The activation dictionary must have a 'dense_units' key if dense_units is not None."),
+        (64, None, {"recurrent_units": "not_a_list"}, "The 'recurrent_units' value in the activation dictionary must be a list."),
+        (64, 64, {"recurrent_units": ["relu"], "dense_units": "not_a_list"}, "The 'dense_units' value in the activation dictionary must be a list if dense_units is not None."),
+        ([64, 64], None, {"recurrent_units": ["relu"]}, "The 'recurrent_units' list in the activation dictionary must have the same length as the recurrent_units parameter."),
+        (64, [64, 64], {"recurrent_units": ["relu"], "dense_units": ["relu"]}, "The 'dense_units' list in the activation dictionary must have the same length as the dense_units parameter."),
+        (64, 64, 64, "`activation` argument must be a string or dict. Got <class 'int'>.")
+    ]
+)
+def test_incorrect_activation_type(recurrent_units, dense_units, activation, message):
+    with pytest.raises(Exception, match=message):
+        create_and_compile_model(
+            series_data, lags_data, steps_data, levels_data,
+            dense_units=dense_units,
+            recurrent_units=recurrent_units,
+            activation=activation
+        )
+
+
 def test_incorrect_series_type():
     # Test if the function raises an error for incorrect series type
     with pytest.raises(TypeError, match="`series` must be a pandas DataFrame. Got .*"):
