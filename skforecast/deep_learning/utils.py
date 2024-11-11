@@ -57,7 +57,7 @@ def create_and_compile_model(
         list of integers for multiple layers.
     dense_units : int, list, default `64`
         List of integers representing the number of units in each dense layer.
-    activation : str or dict, default `'relu'`
+    activation : str, dict, default `'relu'`
         Activation function for the recurrent and dense layers. Can be a single 
         string for all layers or a dictionary specifying different activations 
         for 'recurrent_units' and 'dense_units'.
@@ -168,7 +168,7 @@ def create_and_compile_model(
         # Check if the values are lists
         if not isinstance(activation["recurrent_units"], list):
             raise TypeError("The 'recurrent_units' value in the activation dictionary must be a list.")
-        if dense_units is not None and not isinstance(activation["dense_units"], list) :
+        if dense_units is not None and not isinstance(activation["dense_units"], list):
             raise TypeError("The 'dense_units' value in the activation dictionary must be a list if dense_units is not None.")
         # Check if the lists have the same length as the corresponding parameters
         if len(activation["recurrent_units"]) != len(recurrent_units):
