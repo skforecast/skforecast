@@ -25,7 +25,7 @@ These tutorials focus on global models and multi-series forecasting, where you c
 
 <i class="fa-duotone fa-water fa" style="font-size: 25px; color:teal;"></i> [Global Forecasting Models: Multi-series forecasting](https://www.cienciadedatos.net/documentos/py44-multi-series-forecasting-skforecast.html)
 
-<i class="fa-solid fa-stairs" style="font-size: 25px; color:#B197FC;"></i> [Scalable Forecasting: modeling thousand time series with a single global model](https://www.cienciadedatos.net/documentos/py59-scalable-forecasting-model.html)
+<i class="fa-solid fa-stairs" style="font-size: 25px; color:#B197FC;"></i> [Scalable Forecasting: Modeling thousand time series with a single global model](https://www.cienciadedatos.net/documentos/py59-scalable-forecasting-models.html)
 
 <i class="fa-solid fa-globe" style="font-size: 25px; color:#6b8e23;"></i> [Global Forecasting Models: Comparative Analysis of Single and Multi-Series Forecasting Modeling](https://www.cienciadedatos.net/documentos/py53-global-forecasting-models.html)
 
