@@ -3452,6 +3452,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 
 <span class="kn">from</span> <span class="nn">skforecast.datasets</span> <span class="kn">import</span> <span class="n">fetch_dataset</span>
 <span class="kn">from</span> <span class="nn">skforecast.recursive</span> <span class="kn">import</span> <span class="n">ForecasterRecursive</span>
+<span class="kn">from</span> <span class="nn">skforecast.recursive</span> <span class="kn">import</span> <span class="n">ForecasterRecursiveMultiSeries</span>
 <span class="kn">from</span> <span class="nn">skforecast.utils</span> <span class="kn">import</span> <span class="n">save_forecaster</span>
 <span class="kn">from</span> <span class="nn">skforecast.utils</span> <span class="kn">import</span> <span class="n">load_forecaster</span>
 </pre></div>
@@ -3463,6 +3464,7 @@ from sklearn.ensemble import RandomForestRegressor
 
 from skforecast.datasets import fetch_dataset
 from skforecast.recursive import ForecasterRecursive
+from skforecast.recursive import ForecasterRecursiveMultiSeries
 from skforecast.utils import save_forecaster
 from skforecast.utils import load_forecaster</div>
 </div>
@@ -3694,8 +3696,8 @@ Regressor parameters:
     'n_jobs': None, 'oob_score': False, 'random_state': 123, 'verbose': 0,
     'warm_start': False} 
 fit_kwargs: {} 
-Creation date: 2024-11-10 17:43:25 
-Last fit date: 2024-11-10 17:43:25 
+Creation date: 2024-11-12 13:26:33 
+Last fit date: 2024-11-12 13:26:33 
 Skforecast version: 0.14.0 
 Python version: 3.11.10 
 Forecaster id: forecaster_001 
@@ -4119,14 +4121,14 @@ Visit the documentation for more information: https://skforecast.org/latest/user
 </div>
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Load model and custom function</span>
 <span class="c1"># ==============================================================================</span>
-<span class="kn">from</span> <span class="nn">rolling_skewness</span> <span class="kn">import</span> <span class="n">RollingSkewness</span>  <span class="c1"># This has to be generated manually</span>
+<span class="kn">from</span> <span class="nn">rolling_skewness</span> <span class="kn">import</span> <span class="n">RollingSkewness</span>  <span class="c1"># This file has to be generated manually</span>
 <span class="kn">from</span> <span class="nn">custom_weights</span> <span class="kn">import</span> <span class="n">custom_weights</span>
 
 <span class="n">forecaster_loaded</span> <span class="o">=</span> <span class="n">load_forecaster</span><span class="p">(</span><span class="s1">'forecaster_custom_features.joblib'</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-12"># Load model and custom function
 # ==============================================================================
-from rolling_skewness import RollingSkewness  # This has to be generated manually
+from rolling_skewness import RollingSkewness  # This file has to be generated manually
 from custom_weights import custom_weights
 
 forecaster_loaded = load_forecaster('forecaster_custom_features.joblib', verbose=True)</div>
@@ -4165,11 +4167,576 @@ Regressor parameters:
     'n_jobs': None, 'oob_score': False, 'random_state': 123, 'verbose': 0,
     'warm_start': False} 
 fit_kwargs: {} 
-Creation date: 2024-11-10 17:43:26 
-Last fit date: 2024-11-10 17:43:26 
+Creation date: 2024-11-12 13:26:33 
+Last fit date: 2024-11-12 13:26:33 
 Skforecast version: 0.14.0 
 Python version: 3.11.10 
 Forecaster id: forecaster_custom_features 
+
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<p>When using a <code>ForecasterRecursiveMultiSeries</code>, the <code>save_forecaster</code> function will save a different module for each of the functions used to create the weights.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [13]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="CodeMirror cm-s-jupyter">
+<div class="zeroclipboard-container">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-13">
+<div>
+<span class="notice" hidden="">Copied!</span>
+<svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
+<path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+<path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+</svg>
+</div>
+</clipboard-copy>
+</div>
+<div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Data download</span>
+<span class="c1"># ==============================================================================</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">fetch_dataset</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"items_sales"</span><span class="p">)</span>
+<span class="n">data</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+<div class="clipboard-copy-txt" id="cell-13"># Data download
+# ==============================================================================
+data = fetch_dataset(name="items_sales")
+data.head()</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>items_sales
+-----------
+Simulated time series for the sales of 3 different items.
+Simulated data.
+Shape of the dataset: (1097, 3)
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[13]:</div>
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+<thead>
+<tr style="text-align: right;">
+<th></th>
+<th>item_1</th>
+<th>item_2</th>
+<th>item_3</th>
+</tr>
+<tr>
+<th>date</th>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th>2012-01-01</th>
+<td>8.253175</td>
+<td>21.047727</td>
+<td>19.429739</td>
+</tr>
+<tr>
+<th>2012-01-02</th>
+<td>22.777826</td>
+<td>26.578125</td>
+<td>28.009863</td>
+</tr>
+<tr>
+<th>2012-01-03</th>
+<td>27.549099</td>
+<td>31.751042</td>
+<td>32.078922</td>
+</tr>
+<tr>
+<th>2012-01-04</th>
+<td>25.895533</td>
+<td>24.567708</td>
+<td>27.252276</td>
+</tr>
+<tr>
+<th>2012-01-05</th>
+<td>21.379238</td>
+<td>18.191667</td>
+<td>20.357737</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [14]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="CodeMirror cm-s-jupyter">
+<div class="zeroclipboard-container">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-14">
+<div>
+<span class="notice" hidden="">Copied!</span>
+<svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
+<path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+<path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+</svg>
+</div>
+</clipboard-copy>
+</div>
+<div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Custom function to create weights for each item</span>
+<span class="c1"># ==============================================================================</span>
+<span class="k">def</span> <span class="nf">custom_weights_item_1</span><span class="p">(</span><span class="n">index</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Return 0 if index is between 2012-01-01 and 2012-06-01.</span>
+<span class="sd">    """</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">index</span> <span class="o">&gt;=</span> <span class="s1">'2012-01-01'</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">index</span> <span class="o">&lt;=</span> <span class="s1">'2012-06-01'</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">weights</span>
+
+<span class="k">def</span> <span class="nf">custom_weights_item_2</span><span class="p">(</span><span class="n">index</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Return 0 if index is between 2012-04-01 and 2013-01-01.</span>
+<span class="sd">    """</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">index</span> <span class="o">&gt;=</span> <span class="s1">'2012-04-01'</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">index</span> <span class="o">&lt;=</span> <span class="s1">'2013-01-01'</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">weights</span>
+
+<span class="k">def</span> <span class="nf">custom_weights_item_3</span><span class="p">(</span><span class="n">index</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Return 0 if index is between 2012-06-01 and 2013-01-01.</span>
+<span class="sd">    """</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">index</span> <span class="o">&gt;=</span> <span class="s1">'2012-06-01'</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">index</span> <span class="o">&lt;=</span> <span class="s1">'2013-01-01'</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">weights</span>
+</pre></div>
+<div class="clipboard-copy-txt" id="cell-14"># Custom function to create weights for each item
+# ==============================================================================
+def custom_weights_item_1(index):
+    """
+    Return 0 if index is between 2012-01-01 and 2012-06-01.
+    """
+    weights = np.where(
+        (index &gt;= '2012-01-01') &amp; (index &lt;= '2012-06-01'), 0, 1
+    )
+
+    return weights
+
+def custom_weights_item_2(index):
+    """
+    Return 0 if index is between 2012-04-01 and 2013-01-01.
+    """
+    weights = np.where(
+        (index &gt;= '2012-04-01') &amp; (index &lt;= '2013-01-01'), 0, 1
+    )
+
+    return weights
+
+def custom_weights_item_3(index):
+    """
+    Return 0 if index is between 2012-06-01 and 2013-01-01.
+    """
+    weights = np.where(
+        (index &gt;= '2012-06-01') &amp; (index &lt;= '2013-01-01'), 0, 1
+    )
+
+    return weights</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [15]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="CodeMirror cm-s-jupyter">
+<div class="zeroclipboard-container">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-15">
+<div>
+<span class="notice" hidden="">Copied!</span>
+<svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
+<path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+<path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+</svg>
+</div>
+</clipboard-copy>
+</div>
+<div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Create and train ForecasterRecursiveMultiSeries</span>
+<span class="c1"># ==============================================================================</span>
+<span class="n">window_features</span> <span class="o">=</span> <span class="n">RollingSkewness</span><span class="p">(</span><span class="n">window_sizes</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">weight_func_dict</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">'item_1'</span><span class="p">:</span> <span class="n">custom_weights_item_1</span><span class="p">,</span>
+    <span class="s1">'item_2'</span><span class="p">:</span> <span class="n">custom_weights_item_2</span><span class="p">,</span>
+    <span class="s1">'item_3'</span><span class="p">:</span> <span class="n">custom_weights_item_3</span>
+<span class="p">}</span>
+
+<span class="n">forecaster</span> <span class="o">=</span> <span class="n">ForecasterRecursiveMultiSeries</span><span class="p">(</span>
+                 <span class="n">regressor</span>       <span class="o">=</span> <span class="n">RandomForestRegressor</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="mi">123</span><span class="p">),</span>
+                 <span class="n">lags</span>            <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+                 <span class="n">window_features</span> <span class="o">=</span> <span class="n">window_features</span><span class="p">,</span>
+                 <span class="n">encoding</span>        <span class="o">=</span> <span class="s1">'ordinal'</span><span class="p">,</span>
+                 <span class="n">weight_func</span>     <span class="o">=</span> <span class="n">weight_func_dict</span>
+             <span class="p">)</span>
+
+<span class="n">forecaster</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">series</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+<span class="n">forecaster</span>
+</pre></div>
+<div class="clipboard-copy-txt" id="cell-15"># Create and train ForecasterRecursiveMultiSeries
+# ==============================================================================
+window_features = RollingSkewness(window_sizes=3)
+weight_func_dict = {
+    'item_1': custom_weights_item_1,
+    'item_2': custom_weights_item_2,
+    'item_3': custom_weights_item_3
+}
+
+forecaster = ForecasterRecursiveMultiSeries(
+                 regressor       = RandomForestRegressor(random_state=123),
+                 lags            = 3,
+                 window_features = window_features,
+                 encoding        = 'ordinal',
+                 weight_func     = weight_func_dict
+             )
+
+forecaster.fit(series=data)
+forecaster</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[15]:</div>
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
+<style>
+            .container-17b18ad1b1584253a5cc1fc0c4683075 {
+                font-family: 'Arial', sans-serif;
+                font-size: 0.9em;
+                color: #333333;
+                border: 1px solid #ddd;
+                background-color: #f0f8ff;
+                padding: 5px 15px;
+                border-radius: 8px;
+                max-width: 600px;
+                #margin: auto;
+            }
+            .container-17b18ad1b1584253a5cc1fc0c4683075 h2 {
+                font-size: 1.5em;
+                color: #222222;
+                border-bottom: 2px solid #ddd;
+                padding-bottom: 5px;
+                margin-bottom: 15px;
+                margin-top: 5px;
+            }
+            .container-17b18ad1b1584253a5cc1fc0c4683075 details {
+                margin: 10px 0;
+            }
+            .container-17b18ad1b1584253a5cc1fc0c4683075 summary {
+                font-weight: bold;
+                font-size: 1.1em;
+                color: #000000;
+                cursor: pointer;
+                margin-bottom: 5px;
+                background-color: #b3dbfd;
+                padding: 5px;
+                border-radius: 5px;
+            }
+            .container-17b18ad1b1584253a5cc1fc0c4683075 summary:hover {
+                color: #000000;
+                background-color: #e0e0e0;
+            }
+            .container-17b18ad1b1584253a5cc1fc0c4683075 ul {
+                font-family: 'Courier New', monospace;
+                list-style-type: none;
+                padding-left: 20px;
+                margin: 10px 0;
+                line-height: normal;
+            }
+            .container-17b18ad1b1584253a5cc1fc0c4683075 li {
+                margin: 5px 0;
+                font-family: 'Courier New', monospace;
+            }
+            .container-17b18ad1b1584253a5cc1fc0c4683075 li strong {
+                font-weight: bold;
+                color: #444444;
+            }
+            .container-17b18ad1b1584253a5cc1fc0c4683075 li::before {
+                content: "- ";
+                color: #666666;
+            }
+            .container-17b18ad1b1584253a5cc1fc0c4683075 a {
+                color: #001633;
+                text-decoration: none;
+            }
+            .container-17b18ad1b1584253a5cc1fc0c4683075 a:hover {
+                color: #359ccb; 
+            }
+        </style>
+<div class="container-17b18ad1b1584253a5cc1fc0c4683075">
+<h2>ForecasterRecursiveMultiSeries</h2>
+<details open="">
+<summary>General Information</summary>
+<ul>
+<li><strong>Regressor:</strong> RandomForestRegressor</li>
+<li><strong>Lags:</strong> [1 2 3]</li>
+<li><strong>Window features:</strong> ['rolling_skewness']</li>
+<li><strong>Window size:</strong> 3</li>
+<li><strong>Series encoding:</strong> ordinal</li>
+<li><strong>Exogenous included:</strong> False</li>
+<li><strong>Weight function included:</strong> True</li>
+<li><strong>Series weights:</strong> None</li>
+<li><strong>Differentiation order:</strong> None</li>
+<li><strong>Creation date:</strong> 2024-11-12 13:26:34</li>
+<li><strong>Last fit date:</strong> 2024-11-12 13:26:35</li>
+<li><strong>Skforecast version:</strong> 0.14.0</li>
+<li><strong>Python version:</strong> 3.11.10</li>
+<li><strong>Forecaster id:</strong> None</li>
+</ul>
+</details>
+<details>
+<summary>Exogenous Variables</summary>
+<ul>
+                    None
+                </ul>
+</details>
+<details>
+<summary>Data Transformations</summary>
+<ul>
+<li><strong>Transformer for series:</strong> None</li>
+<li><strong>Transformer for exog:</strong> None</li>
+</ul>
+</details>
+<details>
+<summary>Training Information</summary>
+<ul>
+<li><strong>Series names (levels):</strong> item_1, item_2, item_3</li>
+<li><strong>Training range:</strong> 'item_1': ['2012-01-01', '2015-01-01'], 'item_2': ['2012-01-01', '2015-01-01'], 'item_3': ['2012-01-01', '2015-01-01']</li>
+<li><strong>Training index type:</strong> DatetimeIndex</li>
+<li><strong>Training index frequency:</strong> D</li>
+</ul>
+</details>
+<details>
+<summary>Regressor Parameters</summary>
+<ul>
+                    {'bootstrap': True, 'ccp_alpha': 0.0, 'criterion': 'squared_error', 'max_depth': None, 'max_features': 1.0, 'max_leaf_nodes': None, 'max_samples': None, 'min_impurity_decrease': 0.0, 'min_samples_leaf': 1, 'min_samples_split': 2, 'min_weight_fraction_leaf': 0.0, 'monotonic_cst': None, 'n_estimators': 100, 'n_jobs': None, 'oob_score': False, 'random_state': 123, 'verbose': 0, 'warm_start': False}
+                </ul>
+</details>
+<details>
+<summary>Fit Kwargs</summary>
+<ul>
+                    {}
+                </ul>
+</details>
+<p>
+<a href="https://skforecast.org/0.14.0/api/forecasterrecursivemultiseries.html">🛈 <strong>API Reference</strong></a>
+                  
+                <a href="https://skforecast.org/0.14.0/user_guides/independent-multi-time-series-forecasting.html">🗎 <strong>User Guide</strong></a>
+</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [16]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="CodeMirror cm-s-jupyter">
+<div class="zeroclipboard-container">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-16">
+<div>
+<span class="notice" hidden="">Copied!</span>
+<svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
+<path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+<path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+</svg>
+</div>
+</clipboard-copy>
+</div>
+<div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Save model and custom function</span>
+<span class="c1"># ==============================================================================</span>
+<span class="n">save_forecaster</span><span class="p">(</span>
+    <span class="n">forecaster</span><span class="p">,</span> 
+    <span class="n">file_name</span> <span class="o">=</span> <span class="s1">'forecaster_multiseries_custom_features.joblib'</span><span class="p">,</span> 
+    <span class="n">save_custom_functions</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> 
+    <span class="n">verbose</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="p">)</span>
+</pre></div>
+<div class="clipboard-copy-txt" id="cell-16"># Save model and custom function
+# ==============================================================================
+save_forecaster(
+    forecaster, 
+    file_name = 'forecaster_multiseries_custom_features.joblib', 
+    save_custom_functions = True, 
+    verbose = False
+)</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>c:\Users\jaesc2\Miniconda3\envs\skforecast_py11_2\Lib\site-packages\skforecast\utils\utils.py:1898: SaveLoadSkforecastWarning: The Forecaster includes custom user-defined classes in the `window_features` argument. These classes are not saved automatically when saving the Forecaster. Please ensure you save these classes manually and import them before loading the Forecaster.
+    Custom classes: RollingSkewness
+Visit the documentation for more information: https://skforecast.org/latest/user_guides/save-load-forecaster.html#saving-and-loading-a-forecaster-model-with-custom-features 
+ You can suppress this warning using: warnings.simplefilter('ignore', category=SaveLoadSkforecastWarning)
+  warnings.warn(
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [17]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="CodeMirror cm-s-jupyter">
+<div class="zeroclipboard-container">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-17">
+<div>
+<span class="notice" hidden="">Copied!</span>
+<svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
+<path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+<path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+</svg>
+</div>
+</clipboard-copy>
+</div>
+<div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Load model and custom function</span>
+<span class="c1"># ==============================================================================</span>
+<span class="kn">from</span> <span class="nn">rolling_skewness</span> <span class="kn">import</span> <span class="n">RollingSkewness</span>  <span class="c1"># This file has to be generated manually</span>
+<span class="kn">from</span> <span class="nn">custom_weights_item_1</span> <span class="kn">import</span> <span class="n">custom_weights_item_1</span>
+<span class="kn">from</span> <span class="nn">custom_weights_item_2</span> <span class="kn">import</span> <span class="n">custom_weights_item_2</span>
+<span class="kn">from</span> <span class="nn">custom_weights_item_3</span> <span class="kn">import</span> <span class="n">custom_weights_item_3</span>
+
+<span class="n">forecaster_loaded</span> <span class="o">=</span> <span class="n">load_forecaster</span><span class="p">(</span>
+    <span class="s1">'forecaster_multiseries_custom_features.joblib'</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+</pre></div>
+<div class="clipboard-copy-txt" id="cell-17"># Load model and custom function
+# ==============================================================================
+from rolling_skewness import RollingSkewness  # This file has to be generated manually
+from custom_weights_item_1 import custom_weights_item_1
+from custom_weights_item_2 import custom_weights_item_2
+from custom_weights_item_3 import custom_weights_item_3
+
+forecaster_loaded = load_forecaster(
+    'forecaster_multiseries_custom_features.joblib', verbose=True
+)</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>============================== 
+ForecasterRecursiveMultiSeries 
+============================== 
+Regressor: RandomForestRegressor 
+Lags: [1 2 3] 
+Window features: ['rolling_skewness'] 
+Window size: 3 
+Series encoding: ordinal 
+Series names (levels): item_1, item_2, item_3 
+Exogenous included: False 
+Exogenous names: None 
+Transformer for series: None 
+Transformer for exog: None 
+Weight function included: True 
+Series weights: None 
+Differentiation order: None 
+Training range: 
+    'item_1': ['2012-01-01', '2015-01-01'], 'item_2': ['2012-01-01', '2015-01-01'],
+    'item_3': ['2012-01-01', '2015-01-01'] 
+Training index type: DatetimeIndex 
+Training index frequency: D 
+Regressor parameters: 
+    {'bootstrap': True, 'ccp_alpha': 0.0, 'criterion': 'squared_error', 'max_depth':
+    None, 'max_features': 1.0, 'max_leaf_nodes': None, 'max_samples': None,
+    'min_impurity_decrease': 0.0, 'min_samples_leaf': 1, 'min_samples_split': 2,
+    'min_weight_fraction_leaf': 0.0, 'monotonic_cst': None, 'n_estimators': 100,
+    'n_jobs': None, 'oob_score': False, 'random_state': 123, 'verbose': 0,
+    'warm_start': False} 
+fit_kwargs: {} 
+Creation date: 2024-11-12 13:26:34 
+Last fit date: 2024-11-12 13:26:35 
+Skforecast version: 0.14.0 
+Python version: 3.11.10 
+Forecaster id: None 
 
 </pre>
 </div>
