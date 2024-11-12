@@ -3696,8 +3696,8 @@ Regressor parameters:
     'n_jobs': None, 'oob_score': False, 'random_state': 123, 'verbose': 0,
     'warm_start': False} 
 fit_kwargs: {} 
-Creation date: 2024-11-12 13:26:33 
-Last fit date: 2024-11-12 13:26:33 
+Creation date: 2024-11-12 15:28:27 
+Last fit date: 2024-11-12 15:28:27 
 Skforecast version: 0.14.0 
 Python version: 3.11.10 
 Forecaster id: forecaster_001 
@@ -3867,7 +3867,7 @@ forecaster.forecaster_id</div>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">rolling_skewness</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">skew</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">)])</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">rolling_skewness</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+            <span class="n">rolling_skewness</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">])</span>
         
         <span class="k">return</span> <span class="n">rolling_skewness</span>
 </pre></div>
@@ -3904,7 +3904,7 @@ class RollingSkewness():
         if len(X) &gt; 0:
             rolling_skewness = np.array([skew(X, bias=False)])
         else:
-            rolling_skewness = np.nan
+            rolling_skewness = np.array([np.nan])
         
         return rolling_skewness</div>
 </div>
@@ -4167,8 +4167,8 @@ Regressor parameters:
     'n_jobs': None, 'oob_score': False, 'random_state': 123, 'verbose': 0,
     'warm_start': False} 
 fit_kwargs: {} 
-Creation date: 2024-11-12 13:26:33 
-Last fit date: 2024-11-12 13:26:33 
+Creation date: 2024-11-12 15:28:27 
+Last fit date: 2024-11-12 15:28:27 
 Skforecast version: 0.14.0 
 Python version: 3.11.10 
 Forecaster id: forecaster_custom_features 
@@ -4176,17 +4176,6 @@ Forecaster id: forecaster_custom_features
 </pre>
 </div>
 </div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>When using a <code>ForecasterRecursiveMultiSeries</code>, the <code>save_forecaster</code> function will save a different module for each of the functions used to create the weights.</p>
 </div>
 </div>
 </div>
@@ -4209,12 +4198,71 @@ Forecaster id: forecaster_custom_features
 </div>
 </clipboard-copy>
 </div>
+<div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Predict using loaded forecaster</span>
+<span class="c1"># ==============================================================================</span>
+<span class="n">forecaster_loaded</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">steps</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+</pre></div>
+<div class="clipboard-copy-txt" id="cell-13"># Predict using loaded forecaster
+# ==============================================================================
+forecaster_loaded.predict(steps=5)</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[13]:</div>
+<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
+<pre>2008-07-01    0.808125
+2008-08-01    0.859447
+2008-09-01    0.933751
+2008-10-01    0.950768
+2008-11-01    0.914137
+Freq: MS, Name: pred, dtype: float64</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<p>When using a <code>ForecasterRecursiveMultiSeries</code>, the <code>save_forecaster</code> function will save a different module for each of the functions used to create the weights.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [14]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="CodeMirror cm-s-jupyter">
+<div class="zeroclipboard-container">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-14">
+<div>
+<span class="notice" hidden="">Copied!</span>
+<svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
+<path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+<path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+</svg>
+</div>
+</clipboard-copy>
+</div>
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Data download</span>
 <span class="c1"># ==============================================================================</span>
 <span class="n">data</span> <span class="o">=</span> <span class="n">fetch_dataset</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"items_sales"</span><span class="p">)</span>
 <span class="n">data</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 </pre></div>
-<div class="clipboard-copy-txt" id="cell-13"># Data download
+<div class="clipboard-copy-txt" id="cell-14"># Data download
 # ==============================================================================
 data = fetch_dataset(name="items_sales")
 data.head()</div>
@@ -4238,7 +4286,7 @@ Shape of the dataset: (1097, 3)
 </div>
 </div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[13]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[14]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
@@ -4314,10 +4362,10 @@ Shape of the dataset: (1097, 3)
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [14]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [15]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
-<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-14">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-15">
 <div>
 <span class="notice" hidden="">Copied!</span>
 <svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
@@ -4359,7 +4407,7 @@ Shape of the dataset: (1097, 3)
 
     <span class="k">return</span> <span class="n">weights</span>
 </pre></div>
-<div class="clipboard-copy-txt" id="cell-14"># Custom function to create weights for each item
+<div class="clipboard-copy-txt" id="cell-15"># Custom function to create weights for each item
 # ==============================================================================
 def custom_weights_item_1(index):
     """
@@ -4395,16 +4443,123 @@ def custom_weights_item_3(index):
 </div>
 </div>
 </div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [16]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="CodeMirror cm-s-jupyter">
+<div class="zeroclipboard-container">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-16">
+<div>
+<span class="notice" hidden="">Copied!</span>
+<svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
+<path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+<path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+</svg>
+</div>
+</clipboard-copy>
+</div>
+<div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Custom class to create rolling skewness features (multi-series)</span>
+<span class="c1"># ==============================================================================</span>
+<span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">skew</span>
+
+
+<span class="k">class</span> <span class="nc">RollingSkewnessMultiSeries</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Custom class to create rolling skewness features for multiple series.</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">window_sizes</span><span class="p">,</span> <span class="n">features_names</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="s1">'rolling_skewness'</span><span class="p">):</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">window_sizes</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">window_sizes</span> <span class="o">=</span> <span class="p">[</span><span class="n">window_sizes</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">window_sizes</span> <span class="o">=</span> <span class="n">window_sizes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">features_names</span> <span class="o">=</span> <span class="n">features_names</span>
+
+    <span class="k">def</span> <span class="nf">transform_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+        
+        <span class="n">rolling_obj</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="n">window</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">window_sizes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">center</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">closed</span><span class="o">=</span><span class="s1">'left'</span><span class="p">)</span>
+        <span class="n">rolling_skewness</span> <span class="o">=</span> <span class="n">rolling_obj</span><span class="o">.</span><span class="n">skew</span><span class="p">()</span>
+        <span class="n">rolling_skewness</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+                               <span class="bp">self</span><span class="o">.</span><span class="n">features_names</span><span class="p">:</span> <span class="n">rolling_skewness</span>
+                           <span class="p">})</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">rolling_skewness</span>
+
+    <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        
+        <span class="n">n_series</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># Series (levels) to be predicted (present in last_window)</span>
+        <span class="n">n_stats</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># Only skewness is calculated</span>
+        <span class="n">rolling_skewness</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span>
+            <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">n_series</span><span class="p">,</span> <span class="n">n_stats</span><span class="p">),</span> <span class="n">fill_value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_series</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">rolling_skewness</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">skew</span><span class="p">(</span><span class="n">X</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">rolling_skewness</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>        
+        
+        <span class="k">return</span> <span class="n">rolling_skewness</span>
+</pre></div>
+<div class="clipboard-copy-txt" id="cell-16"># Custom class to create rolling skewness features (multi-series)
+# ==============================================================================
+from scipy.stats import skew
+
+
+class RollingSkewnessMultiSeries():
+    """
+    Custom class to create rolling skewness features for multiple series.
+    """
+
+    def __init__(self, window_sizes, features_names: list = 'rolling_skewness'):
+        
+        if not isinstance(window_sizes, list):
+            window_sizes = [window_sizes]
+        self.window_sizes = window_sizes
+        self.features_names = features_names
+
+    def transform_batch(self, X: pd.Series) -&gt; pd.DataFrame:
+        
+        rolling_obj = X.rolling(window=self.window_sizes[0], center=False, closed='left')
+        rolling_skewness = rolling_obj.skew()
+        rolling_skewness = pd.DataFrame({
+                               self.features_names: rolling_skewness
+                           }).dropna()
+
+        return rolling_skewness
+
+    def transform(self, X: np.ndarray) -&gt; np.ndarray:
+        
+        n_series = X.shape[1]  # Series (levels) to be predicted (present in last_window)
+        n_stats = 1  # Only skewness is calculated
+        rolling_skewness = np.full(
+            shape=(n_series, n_stats), fill_value=np.nan, dtype=float
+        )
+        for i in range(n_series):
+            if len(X) &gt; 0:
+                rolling_skewness[i, :] = skew(X[:, i], bias=False)
+            else:
+                rolling_skewness[i, :] = np.nan        
+        
+        return rolling_skewness</div>
+</div>
+</div>
+</div>
+</div>
+</div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
 <div class="jp-Cell jp-CodeCell jp-Notebook-cell">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [15]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [17]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
-<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-15">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-17">
 <div>
 <span class="notice" hidden="">Copied!</span>
 <svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
@@ -4416,7 +4571,7 @@ def custom_weights_item_3(index):
 </div>
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Create and train ForecasterRecursiveMultiSeries</span>
 <span class="c1"># ==============================================================================</span>
-<span class="n">window_features</span> <span class="o">=</span> <span class="n">RollingSkewness</span><span class="p">(</span><span class="n">window_sizes</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">window_features</span> <span class="o">=</span> <span class="n">RollingSkewnessMultiSeries</span><span class="p">(</span><span class="n">window_sizes</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
 <span class="n">weight_func_dict</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s1">'item_1'</span><span class="p">:</span> <span class="n">custom_weights_item_1</span><span class="p">,</span>
     <span class="s1">'item_2'</span><span class="p">:</span> <span class="n">custom_weights_item_2</span><span class="p">,</span>
@@ -4434,9 +4589,9 @@ def custom_weights_item_3(index):
 <span class="n">forecaster</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">series</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
 <span class="n">forecaster</span>
 </pre></div>
-<div class="clipboard-copy-txt" id="cell-15"># Create and train ForecasterRecursiveMultiSeries
+<div class="clipboard-copy-txt" id="cell-17"># Create and train ForecasterRecursiveMultiSeries
 # ==============================================================================
-window_features = RollingSkewness(window_sizes=3)
+window_features = RollingSkewnessMultiSeries(window_sizes=3)
 weight_func_dict = {
     'item_1': custom_weights_item_1,
     'item_2': custom_weights_item_2,
@@ -4462,10 +4617,10 @@ forecaster</div>
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[15]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[17]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <style>
-            .container-17b18ad1b1584253a5cc1fc0c4683075 {
+            .container-bf66bcd3e00c4de9b390d00b8c01ac25 {
                 font-family: 'Arial', sans-serif;
                 font-size: 0.9em;
                 color: #333333;
@@ -4476,7 +4631,7 @@ forecaster</div>
                 max-width: 600px;
                 #margin: auto;
             }
-            .container-17b18ad1b1584253a5cc1fc0c4683075 h2 {
+            .container-bf66bcd3e00c4de9b390d00b8c01ac25 h2 {
                 font-size: 1.5em;
                 color: #222222;
                 border-bottom: 2px solid #ddd;
@@ -4484,10 +4639,10 @@ forecaster</div>
                 margin-bottom: 15px;
                 margin-top: 5px;
             }
-            .container-17b18ad1b1584253a5cc1fc0c4683075 details {
+            .container-bf66bcd3e00c4de9b390d00b8c01ac25 details {
                 margin: 10px 0;
             }
-            .container-17b18ad1b1584253a5cc1fc0c4683075 summary {
+            .container-bf66bcd3e00c4de9b390d00b8c01ac25 summary {
                 font-weight: bold;
                 font-size: 1.1em;
                 color: #000000;
@@ -4497,38 +4652,38 @@ forecaster</div>
                 padding: 5px;
                 border-radius: 5px;
             }
-            .container-17b18ad1b1584253a5cc1fc0c4683075 summary:hover {
+            .container-bf66bcd3e00c4de9b390d00b8c01ac25 summary:hover {
                 color: #000000;
                 background-color: #e0e0e0;
             }
-            .container-17b18ad1b1584253a5cc1fc0c4683075 ul {
+            .container-bf66bcd3e00c4de9b390d00b8c01ac25 ul {
                 font-family: 'Courier New', monospace;
                 list-style-type: none;
                 padding-left: 20px;
                 margin: 10px 0;
                 line-height: normal;
             }
-            .container-17b18ad1b1584253a5cc1fc0c4683075 li {
+            .container-bf66bcd3e00c4de9b390d00b8c01ac25 li {
                 margin: 5px 0;
                 font-family: 'Courier New', monospace;
             }
-            .container-17b18ad1b1584253a5cc1fc0c4683075 li strong {
+            .container-bf66bcd3e00c4de9b390d00b8c01ac25 li strong {
                 font-weight: bold;
                 color: #444444;
             }
-            .container-17b18ad1b1584253a5cc1fc0c4683075 li::before {
+            .container-bf66bcd3e00c4de9b390d00b8c01ac25 li::before {
                 content: "- ";
                 color: #666666;
             }
-            .container-17b18ad1b1584253a5cc1fc0c4683075 a {
+            .container-bf66bcd3e00c4de9b390d00b8c01ac25 a {
                 color: #001633;
                 text-decoration: none;
             }
-            .container-17b18ad1b1584253a5cc1fc0c4683075 a:hover {
+            .container-bf66bcd3e00c4de9b390d00b8c01ac25 a:hover {
                 color: #359ccb; 
             }
         </style>
-<div class="container-17b18ad1b1584253a5cc1fc0c4683075">
+<div class="container-bf66bcd3e00c4de9b390d00b8c01ac25">
 <h2>ForecasterRecursiveMultiSeries</h2>
 <details open="">
 <summary>General Information</summary>
@@ -4542,8 +4697,8 @@ forecaster</div>
 <li><strong>Weight function included:</strong> True</li>
 <li><strong>Series weights:</strong> None</li>
 <li><strong>Differentiation order:</strong> None</li>
-<li><strong>Creation date:</strong> 2024-11-12 13:26:34</li>
-<li><strong>Last fit date:</strong> 2024-11-12 13:26:35</li>
+<li><strong>Creation date:</strong> 2024-11-12 15:28:27</li>
+<li><strong>Last fit date:</strong> 2024-11-12 15:28:28</li>
 <li><strong>Skforecast version:</strong> 0.14.0</li>
 <li><strong>Python version:</strong> 3.11.10</li>
 <li><strong>Forecaster id:</strong> None</li>
@@ -4600,10 +4755,10 @@ forecaster</div>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [16]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [18]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
-<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-16">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-18">
 <div>
 <span class="notice" hidden="">Copied!</span>
 <svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
@@ -4622,7 +4777,7 @@ forecaster</div>
     <span class="n">verbose</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span>
 </pre></div>
-<div class="clipboard-copy-txt" id="cell-16"># Save model and custom function
+<div class="clipboard-copy-txt" id="cell-18"># Save model and custom function
 # ==============================================================================
 save_forecaster(
     forecaster, 
@@ -4642,7 +4797,7 @@ save_forecaster(
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
 <pre>c:\Users\jaesc2\Miniconda3\envs\skforecast_py11_2\Lib\site-packages\skforecast\utils\utils.py:1898: SaveLoadSkforecastWarning: The Forecaster includes custom user-defined classes in the `window_features` argument. These classes are not saved automatically when saving the Forecaster. Please ensure you save these classes manually and import them before loading the Forecaster.
-    Custom classes: RollingSkewness
+    Custom classes: RollingSkewnessMultiSeries
 Visit the documentation for more information: https://skforecast.org/latest/user_guides/save-load-forecaster.html#saving-and-loading-a-forecaster-model-with-custom-features 
  You can suppress this warning using: warnings.simplefilter('ignore', category=SaveLoadSkforecastWarning)
   warnings.warn(
@@ -4658,10 +4813,10 @@ Visit the documentation for more information: https://skforecast.org/latest/user
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [17]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [19]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
-<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-17">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-19">
 <div>
 <span class="notice" hidden="">Copied!</span>
 <svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
@@ -4673,7 +4828,7 @@ Visit the documentation for more information: https://skforecast.org/latest/user
 </div>
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Load model and custom function</span>
 <span class="c1"># ==============================================================================</span>
-<span class="kn">from</span> <span class="nn">rolling_skewness</span> <span class="kn">import</span> <span class="n">RollingSkewness</span>  <span class="c1"># This file has to be generated manually</span>
+<span class="kn">from</span> <span class="nn">rolling_skewness</span> <span class="kn">import</span> <span class="n">RollingSkewnessMultiSeries</span>  <span class="c1"># This file has to be generated manually</span>
 <span class="kn">from</span> <span class="nn">custom_weights_item_1</span> <span class="kn">import</span> <span class="n">custom_weights_item_1</span>
 <span class="kn">from</span> <span class="nn">custom_weights_item_2</span> <span class="kn">import</span> <span class="n">custom_weights_item_2</span>
 <span class="kn">from</span> <span class="nn">custom_weights_item_3</span> <span class="kn">import</span> <span class="n">custom_weights_item_3</span>
@@ -4682,9 +4837,9 @@ Visit the documentation for more information: https://skforecast.org/latest/user
     <span class="s1">'forecaster_multiseries_custom_features.joblib'</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span>
 <span class="p">)</span>
 </pre></div>
-<div class="clipboard-copy-txt" id="cell-17"># Load model and custom function
+<div class="clipboard-copy-txt" id="cell-19"># Load model and custom function
 # ==============================================================================
-from rolling_skewness import RollingSkewness  # This file has to be generated manually
+from rolling_skewness import RollingSkewnessMultiSeries  # This file has to be generated manually
 from custom_weights_item_1 import custom_weights_item_1
 from custom_weights_item_2 import custom_weights_item_2
 from custom_weights_item_3 import custom_weights_item_3
@@ -4732,13 +4887,112 @@ Regressor parameters:
     'n_jobs': None, 'oob_score': False, 'random_state': 123, 'verbose': 0,
     'warm_start': False} 
 fit_kwargs: {} 
-Creation date: 2024-11-12 13:26:34 
-Last fit date: 2024-11-12 13:26:35 
+Creation date: 2024-11-12 15:28:27 
+Last fit date: 2024-11-12 15:28:28 
 Skforecast version: 0.14.0 
 Python version: 3.11.10 
 Forecaster id: None 
 
 </pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [20]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="CodeMirror cm-s-jupyter">
+<div class="zeroclipboard-container">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-20">
+<div>
+<span class="notice" hidden="">Copied!</span>
+<svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
+<path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+<path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+</svg>
+</div>
+</clipboard-copy>
+</div>
+<div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Predict using loaded forecaster</span>
+<span class="c1"># ==============================================================================</span>
+<span class="n">forecaster_loaded</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">steps</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">levels</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>  <span class="c1"># Predict all levels</span>
+</pre></div>
+<div class="clipboard-copy-txt" id="cell-20"># Predict using loaded forecaster
+# ==============================================================================
+forecaster_loaded.predict(steps=5, levels=None)  # Predict all levels</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[20]:</div>
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+<thead>
+<tr style="text-align: right;">
+<th></th>
+<th>item_1</th>
+<th>item_2</th>
+<th>item_3</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th>2015-01-02</th>
+<td>14.818313</td>
+<td>17.954045</td>
+<td>19.676498</td>
+</tr>
+<tr>
+<th>2015-01-03</th>
+<td>14.961743</td>
+<td>17.530592</td>
+<td>19.207165</td>
+</tr>
+<tr>
+<th>2015-01-04</th>
+<td>18.349711</td>
+<td>17.792810</td>
+<td>19.919855</td>
+</tr>
+<tr>
+<th>2015-01-05</th>
+<td>18.639790</td>
+<td>18.447346</td>
+<td>22.158983</td>
+</tr>
+<tr>
+<th>2015-01-06</th>
+<td>17.254107</td>
+<td>19.599428</td>
+<td>22.687187</td>
+</tr>
+</tbody>
+</table>
+</div>
 </div>
 </div>
 </div>
