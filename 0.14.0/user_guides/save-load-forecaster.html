@@ -1644,6 +1644,21 @@ This is documentation for an unstable development version.
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Saving and Loading a Forecaster Model with Custom Features">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#forecasterrecursivemultiseries" class="md-nav__link">
+    <span class="md-ellipsis">
+      ForecasterRecursiveMultiSeries
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -3696,8 +3711,8 @@ Regressor parameters:
     'n_jobs': None, 'oob_score': False, 'random_state': 123, 'verbose': 0,
     'warm_start': False} 
 fit_kwargs: {} 
-Creation date: 2024-11-12 15:28:27 
-Last fit date: 2024-11-12 15:28:27 
+Creation date: 2024-11-12 17:27:04 
+Last fit date: 2024-11-12 17:27:04 
 Skforecast version: 0.14.0 
 Python version: 3.11.10 
 Forecaster id: forecaster_001 
@@ -4167,8 +4182,8 @@ Regressor parameters:
     'n_jobs': None, 'oob_score': False, 'random_state': 123, 'verbose': 0,
     'warm_start': False} 
 fit_kwargs: {} 
-Creation date: 2024-11-12 15:28:27 
-Last fit date: 2024-11-12 15:28:27 
+Creation date: 2024-11-12 17:27:04 
+Last fit date: 2024-11-12 17:27:05 
 Skforecast version: 0.14.0 
 Python version: 3.11.10 
 Forecaster id: forecaster_custom_features 
@@ -4224,6 +4239,17 @@ forecaster_loaded.predict(steps=5)</div>
 Freq: MS, Name: pred, dtype: float64</pre>
 </div>
 </div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h3 id="forecasterrecursivemultiseries">ForecasterRecursiveMultiSeries<a class="anchor-link" href="#forecasterrecursivemultiseries">¶</a></h3>
 </div>
 </div>
 </div>
@@ -4550,6 +4576,44 @@ class RollingSkewnessMultiSeries():
 </div>
 </div>
 </div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<div class="admonition note" name="html-admonition" style="background: rgba(255,145,0,.1); padding-top: 0px; padding-bottom: 6px; border-radius: 8px; border-left: 8px solid #ff9100; border-color: #ff9100; padding-left: 10px; padding-right: 10px">
+<p class="title">
+<i style="font-size: 18px; color:#ff9100; border-color: #ff1744;"></i>
+<b style="color: #ff9100;"> <span style="color: #ff9100;">⚠</span> Warning</b>
+</p>
+<p>When <code>weight_func</code> is a <code>dict</code> and does not contain any of the series, for instance:</p>
+<div class="highlight"><pre><span></span><span class="c1"># Not include item_2</span>
+<span class="n">weight_func_dict</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">'item_1'</span><span class="p">:</span> <span class="n">custom_weights_item_1</span><span class="p">,</span>
+    <span class="s1">'item_3'</span><span class="p">:</span> <span class="n">custom_weights_item_3</span>
+<span class="p">}</span>
+</pre></div>
+<p>You must create a function that returns all 1's as weights of that series.</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">custom_weights_all_1</span><span class="p">(</span><span class="n">index</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Return 1 for all elements in the index.</span>
+<span class="sd">    """</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">index</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">weights</span>
+
+<span class="c1"># item_2 dummy weights</span>
+<span class="n">weight_func_dict</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">'item_1'</span><span class="p">:</span> <span class="n">custom_weights_item_1</span><span class="p">,</span>
+    <span class="s1">'item_2'</span><span class="p">:</span> <span class="n">custom_weights_all_1</span><span class="p">,</span>
+    <span class="s1">'item_3'</span><span class="p">:</span> <span class="n">custom_weights_item_3</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
 <div class="jp-Cell jp-CodeCell jp-Notebook-cell">
 <div class="jp-Cell-inputWrapper" tabindex="0">
@@ -4620,7 +4684,7 @@ forecaster</div>
 <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[17]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <style>
-            .container-bf66bcd3e00c4de9b390d00b8c01ac25 {
+            .container-de81a2c86a1044999e165e03fe968bb9 {
                 font-family: 'Arial', sans-serif;
                 font-size: 0.9em;
                 color: #333333;
@@ -4631,7 +4695,7 @@ forecaster</div>
                 max-width: 600px;
                 #margin: auto;
             }
-            .container-bf66bcd3e00c4de9b390d00b8c01ac25 h2 {
+            .container-de81a2c86a1044999e165e03fe968bb9 h2 {
                 font-size: 1.5em;
                 color: #222222;
                 border-bottom: 2px solid #ddd;
@@ -4639,10 +4703,10 @@ forecaster</div>
                 margin-bottom: 15px;
                 margin-top: 5px;
             }
-            .container-bf66bcd3e00c4de9b390d00b8c01ac25 details {
+            .container-de81a2c86a1044999e165e03fe968bb9 details {
                 margin: 10px 0;
             }
-            .container-bf66bcd3e00c4de9b390d00b8c01ac25 summary {
+            .container-de81a2c86a1044999e165e03fe968bb9 summary {
                 font-weight: bold;
                 font-size: 1.1em;
                 color: #000000;
@@ -4652,38 +4716,38 @@ forecaster</div>
                 padding: 5px;
                 border-radius: 5px;
             }
-            .container-bf66bcd3e00c4de9b390d00b8c01ac25 summary:hover {
+            .container-de81a2c86a1044999e165e03fe968bb9 summary:hover {
                 color: #000000;
                 background-color: #e0e0e0;
             }
-            .container-bf66bcd3e00c4de9b390d00b8c01ac25 ul {
+            .container-de81a2c86a1044999e165e03fe968bb9 ul {
                 font-family: 'Courier New', monospace;
                 list-style-type: none;
                 padding-left: 20px;
                 margin: 10px 0;
                 line-height: normal;
             }
-            .container-bf66bcd3e00c4de9b390d00b8c01ac25 li {
+            .container-de81a2c86a1044999e165e03fe968bb9 li {
                 margin: 5px 0;
                 font-family: 'Courier New', monospace;
             }
-            .container-bf66bcd3e00c4de9b390d00b8c01ac25 li strong {
+            .container-de81a2c86a1044999e165e03fe968bb9 li strong {
                 font-weight: bold;
                 color: #444444;
             }
-            .container-bf66bcd3e00c4de9b390d00b8c01ac25 li::before {
+            .container-de81a2c86a1044999e165e03fe968bb9 li::before {
                 content: "- ";
                 color: #666666;
             }
-            .container-bf66bcd3e00c4de9b390d00b8c01ac25 a {
+            .container-de81a2c86a1044999e165e03fe968bb9 a {
                 color: #001633;
                 text-decoration: none;
             }
-            .container-bf66bcd3e00c4de9b390d00b8c01ac25 a:hover {
+            .container-de81a2c86a1044999e165e03fe968bb9 a:hover {
                 color: #359ccb; 
             }
         </style>
-<div class="container-bf66bcd3e00c4de9b390d00b8c01ac25">
+<div class="container-de81a2c86a1044999e165e03fe968bb9">
 <h2>ForecasterRecursiveMultiSeries</h2>
 <details open="">
 <summary>General Information</summary>
@@ -4697,8 +4761,8 @@ forecaster</div>
 <li><strong>Weight function included:</strong> True</li>
 <li><strong>Series weights:</strong> None</li>
 <li><strong>Differentiation order:</strong> None</li>
-<li><strong>Creation date:</strong> 2024-11-12 15:28:27</li>
-<li><strong>Last fit date:</strong> 2024-11-12 15:28:28</li>
+<li><strong>Creation date:</strong> 2024-11-12 17:27:05</li>
+<li><strong>Last fit date:</strong> 2024-11-12 17:27:06</li>
 <li><strong>Skforecast version:</strong> 0.14.0</li>
 <li><strong>Python version:</strong> 3.11.10</li>
 <li><strong>Forecaster id:</strong> None</li>
@@ -4887,8 +4951,8 @@ Regressor parameters:
     'n_jobs': None, 'oob_score': False, 'random_state': 123, 'verbose': 0,
     'warm_start': False} 
 fit_kwargs: {} 
-Creation date: 2024-11-12 15:28:27 
-Last fit date: 2024-11-12 15:28:28 
+Creation date: 2024-11-12 17:27:05 
+Last fit date: 2024-11-12 17:27:06 
 Skforecast version: 0.14.0 
 Python version: 3.11.10 
 Forecaster id: None 
