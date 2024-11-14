@@ -2,274 +2,274 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://skforecast.org/0.14.0/index.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/api/ForecasterDirect.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/api/ForecasterDirectMultiVariate.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/api/ForecasterEquivalentDate.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/api/ForecasterRecursive.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/api/ForecasterRecursiveMultiSeries.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/api/ForecasterRnn.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/api/ForecasterSarimax.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/api/Sarimax.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/api/datasets.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/api/exceptions.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/api/feature_selection.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/api/metrics.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/api/model_selection.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/api/plot.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/api/preprocessing.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/api/utils.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/authors/authors.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/examples/examples_english.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/examples/examples_spanish.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/faq/cyclical-features-time-series.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/faq/forecasting-time-series-with-missing-values.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/faq/forecasting-with-delayed-historical-data.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/faq/non-negative-predictions.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/faq/parallelization-skforecast.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/faq/parameters-search-backtesting-vs-one-step-ahead.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/faq/profiling-skforecast.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/faq/table-of-contents.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/faq/time-series-aggregation.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/introduction-forecasting/introduction-forecasting.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/quick-start/forecaster-attributes.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/quick-start/forecaster-parameters.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/quick-start/how-to-install.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/quick-start/quick-start-skforecast.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/releases/releases.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/user_guides/autoregresive-forecaster.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/user_guides/backtesting.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/user_guides/calendar-features.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/user_guides/categorical-features.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/user_guides/datasets.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/user_guides/dependent-multi-series-multivariate-forecasting.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/user_guides/direct-multi-step-forecasting.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/user_guides/exogenous-variables.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/user_guides/explainability.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/user_guides/feature-selection.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/user_guides/forecaster-in-production.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/user_guides/forecasting-baseline.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/user_guides/forecasting-sarimax-arima.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/user_guides/forecasting-with-deep-learning-rnn-lstm.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/user_guides/forecasting-xgboost-lightgbm.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/user_guides/hyperparameter-tuning-and-lags-selection.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/user_guides/independent-multi-time-series-forecasting.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/user_guides/input-data.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/user_guides/metrics.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/user_guides/migration-guide.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/user_guides/multi-series-with-different-length-and-different_exog.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/user_guides/plotting.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/user_guides/probabilistic-forecasting.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/user_guides/rolling_skewness.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/user_guides/save-load-forecaster.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/user_guides/skforecast-in-GPU.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/user_guides/sklearn-transformers-and-pipeline.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/user_guides/stacking-ensemble-models-forecasting.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/user_guides/table-of-contents.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/user_guides/time-series-differentiation.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/user_guides/training-and-prediction-matrices.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/user_guides/weighted-time-series-forecasting.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
     <url>
          <loc>https://skforecast.org/0.14.0/user_guides/window-features-and-custom-features.html</loc>
-         <lastmod>2024-11-13</lastmod>
+         <lastmod>2024-11-14</lastmod>
     </url>
 </urlset>
