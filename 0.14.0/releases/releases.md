@@ -18,7 +18,7 @@ This release has undergone a major refactoring to improve the performance of the
 
 + <span class="badge text-bg-feature">Feature</span> Window features can be added to the training matrix using the `window_features` argument in all forecasters. You can use the <code>[RollingFeatures]</code> class to create these features or create your own object. [Create window and custom features](../user_guides/window-features-and-custom-features.html).
 
-+ <span class="badge text-bg-feature">Feature</span> <code>[model_selection]</code> functions now have a new argument `cv`. This argument expect an object of type <code>[TimeSeriesFold]</code> or <code>[OneStepAheadFold]</code> which allows to define the validation strategy using the arguments `initial_train_size`, `steps`, `gap`, `refit`, `fixed_train_size`, `skip_folds` and `allow_incomplete_folds`.
++ <span class="badge text-bg-feature">Feature</span> <code>[model_selection]</code> functions now have a new argument `cv`. This argument expect an object of type <code>[TimeSeriesFold]</code> ([backtesting](../user_guides/backtesting.html)) or <code>[OneStepAheadFold]</code> which allows to define the validation strategy using the arguments `initial_train_size`, `steps`, `gap`, `refit`, `fixed_train_size`, `skip_folds` and `allow_incomplete_folds`.
 
 + <span class="badge text-bg-feature">Feature</span> Hyperparameter search now allows to follow a [one-step-ahead validation strategy](../user_guides/hyperparameter-tuning-and-lags-selection.html#one-step-ahead-validation) using a <code>[OneStepAheadFold]</code> as `cv` argument in the <code>[model_selection]</code> functions.
 
@@ -30,7 +30,9 @@ This release has undergone a major refactoring to improve the performance of the
 
 + <span class="badge text-bg-api-change">API Change</span> Package structure has been changed to improve code organization. The forecasters have been grouped into the `recursive`, `direct` amd `deep_learning` modules. Visit the [migration guide](../user_guides/migration-guide.html) section for more information.
 
-+ <span class="badge text-bg-api-change">API Change</span> <code>[ForecasterAutoregCustom]</code> has been deprecated. Window features can be added using the `window_features` argument in the <code>[ForecasterRecursive]</code>.
++ <span class="badge text-bg-api-change">API Change</span> <code>[ForecasterAutoregCustom]</code> has been deprecated. [Window features](../user_guides/window-features-and-custom-features.html) can be added using the `window_features` argument in the <code>[ForecasterRecursive]</code>.
+
++ <span class="badge text-bg-api-change">API Change</span> Refactor the `set_out_sample_residuals` method in all forecasters, it now expects `y_true` and `y_pred` as arguments instead of `residuals`. This method is used to store the residuals of the out-of-sample predictions.
 
 + <span class="badge text-bg-api-change">API Change</span> The `pmdarima.ARIMA` regressor is no longer supported by the <code>[ForecasterSarimax]</code>. You can use the skforecast <code>[Sarimax]</code> model or, to continue using it, use skforecast 0.13.0 or lower.
 
@@ -91,6 +93,8 @@ This release has undergone a major refactoring to improve the performance of the
 + Added <code>[feature_selection]</code> module. The functions <code>[select_features]</code> and <code>[select_features_multiseries]</code> have been moved to this module.
 
 + The functions <code>[select_features]</code> and <code>[select_features_multiseries]</code> now have 3 returns: `selected_lags`, `selected_window_features` and `selected_exog`.
+
++ Refactor the `set_out_sample_residuals` method in all forecasters, it now expects `y_true` and `y_pred` as arguments instead of `residuals`.
 
 + `exog_to_direct` and `exog_to_direct_numpy` in <code>[utils]</code> now returns a the names of the columns of the transformed exogenous variables.
 

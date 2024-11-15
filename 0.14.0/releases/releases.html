@@ -3195,7 +3195,7 @@ This is documentation for an unstable development version.
 <p><span class="badge text-bg-feature">Feature</span> Window features can be added to the training matrix using the <code>window_features</code> argument in all forecasters. You can use the <code><a href="https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.RollingFeatures">RollingFeatures</a></code> class to create these features or create your own object. <a href="../user_guides/window-features-and-custom-features.html">Create window and custom features</a>.</p>
 </li>
 <li>
-<p><span class="badge text-bg-feature">Feature</span> <code><a href="https://skforecast.org/latest/api/model_selection">model_selection</a></code> functions now have a new argument <code>cv</code>. This argument expect an object of type <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection._split.TimeSeriesFold">TimeSeriesFold</a></code> or <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection._split.OneStepAheadFold">OneStepAheadFold</a></code> which allows to define the validation strategy using the arguments <code>initial_train_size</code>, <code>steps</code>, <code>gap</code>, <code>refit</code>, <code>fixed_train_size</code>, <code>skip_folds</code> and <code>allow_incomplete_folds</code>.</p>
+<p><span class="badge text-bg-feature">Feature</span> <code><a href="https://skforecast.org/latest/api/model_selection">model_selection</a></code> functions now have a new argument <code>cv</code>. This argument expect an object of type <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection._split.TimeSeriesFold">TimeSeriesFold</a></code> (<a href="../user_guides/backtesting.html">backtesting</a>) or <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection._split.OneStepAheadFold">OneStepAheadFold</a></code> which allows to define the validation strategy using the arguments <code>initial_train_size</code>, <code>steps</code>, <code>gap</code>, <code>refit</code>, <code>fixed_train_size</code>, <code>skip_folds</code> and <code>allow_incomplete_folds</code>.</p>
 </li>
 <li>
 <p><span class="badge text-bg-feature">Feature</span> Hyperparameter search now allows to follow a <a href="../user_guides/hyperparameter-tuning-and-lags-selection.html#one-step-ahead-validation">one-step-ahead validation strategy</a> using a <code><a href="https://skforecast.org/latest/api/model_selection#skforecast.model_selection._split.OneStepAheadFold">OneStepAheadFold</a></code> as <code>cv</code> argument in the <code><a href="https://skforecast.org/latest/api/model_selection">model_selection</a></code> functions.</p>
@@ -3213,7 +3213,10 @@ This is documentation for an unstable development version.
 <p><span class="badge text-bg-api-change">API Change</span> Package structure has been changed to improve code organization. The forecasters have been grouped into the <code>recursive</code>, <code>direct</code> amd <code>deep_learning</code> modules. Visit the <a href="../user_guides/migration-guide.html">migration guide</a> section for more information.</p>
 </li>
 <li>
-<p><span class="badge text-bg-api-change">API Change</span> <code><a href="https://skforecast.org/0.13.0/api/forecasterautoregcustom">ForecasterAutoregCustom</a></code> has been deprecated. Window features can be added using the <code>window_features</code> argument in the <code><a href="https://skforecast.org/latest/api/forecasterrecursive">ForecasterRecursive</a></code>.</p>
+<p><span class="badge text-bg-api-change">API Change</span> <code><a href="https://skforecast.org/0.13.0/api/forecasterautoregcustom">ForecasterAutoregCustom</a></code> has been deprecated. <a href="../user_guides/window-features-and-custom-features.html">Window features</a> can be added using the <code>window_features</code> argument in the <code><a href="https://skforecast.org/latest/api/forecasterrecursive">ForecasterRecursive</a></code>.</p>
+</li>
+<li>
+<p><span class="badge text-bg-api-change">API Change</span> Refactor the <code>set_out_sample_residuals</code> method in all forecasters, it now expects <code>y_true</code> and <code>y_pred</code> as arguments instead of <code>residuals</code>. This method is used to store the residuals of the out-of-sample predictions.</p>
 </li>
 <li>
 <p><span class="badge text-bg-api-change">API Change</span> The <code>pmdarima.ARIMA</code> regressor is no longer supported by the <code><a href="https://skforecast.org/latest/api/forecastersarimax">ForecasterSarimax</a></code>. You can use the skforecast <code><a href="https://skforecast.org/latest/api/sarimax">Sarimax</a></code> model or, to continue using it, use skforecast 0.13.0 or lower.</p>
@@ -3301,6 +3304,9 @@ This is documentation for an unstable development version.
 </li>
 <li>
 <p>The functions <code><a href="https://skforecast.org/latest/api/feature_selection#skforecast.feature_selection.feature_selection.select_features">select_features</a></code> and <code><a href="https://skforecast.org/latest/api/feature_selection#skforecast.feature_selection.feature_selection.select_features_multiseries">select_features_multiseries</a></code> now have 3 returns: <code>selected_lags</code>, <code>selected_window_features</code> and <code>selected_exog</code>.</p>
+</li>
+<li>
+<p>Refactor the <code>set_out_sample_residuals</code> method in all forecasters, it now expects <code>y_true</code> and <code>y_pred</code> as arguments instead of <code>residuals</code>.</p>
 </li>
 <li>
 <p><code>exog_to_direct</code> and <code>exog_to_direct_numpy</code> in <code><a href="https://skforecast.org/latest/api/exceptions">utils</a></code> now returns a the names of the columns of the transformed exogenous variables.</p>
