@@ -1536,8 +1536,17 @@ This is documentation for an unstable development version.
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
-        
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Plotting
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
       
       <a href="plotting.html" class="md-nav__link md-nav__link--active">
         
@@ -1548,6 +1557,50 @@ This is documentation for an unstable development version.
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#plot-forecasting-residuals" class="md-nav__link">
+    <span class="md-ellipsis">
+      Plot forecasting residuals
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plot-prediction-intervals" class="md-nav__link">
+    <span class="md-ellipsis">
+      Plot prediction intervals
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plot-correlation-between-lags-of-multiple-time-series" class="md-nav__link">
+    <span class="md-ellipsis">
+      Plot correlation between lags of multiple time series
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -2707,6 +2760,8 @@ This is documentation for an unstable development version.
   
 
 
+  <h1>Plotting</h1>
+
 <script>
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
@@ -3149,7 +3204,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h1 id="plot-forecasting-residuals">Plot forecasting residuals<a class="anchor-link" href="#plot-forecasting-residuals">¶</a></h1>
+<h2 id="plot-forecasting-residuals">Plot forecasting residuals<a class="anchor-link" href="#plot-forecasting-residuals">¶</a></h2>
 </div>
 </div>
 </div>
@@ -3576,7 +3631,7 @@ _ = plot_residuals(residuals=residuals, figsize=(7, 3.5))</div>
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h1 id="plot-prediction-intervals">Plot prediction intervals<a class="anchor-link" href="#plot-prediction-intervals">¶</a></h1>
+<h2 id="plot-prediction-intervals">Plot prediction intervals<a class="anchor-link" href="#plot-prediction-intervals">¶</a></h2>
 </div>
 </div>
 </div>
@@ -3803,7 +3858,7 @@ plot_prediction_intervals(
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h1 id="plot-correlation-between-lags-of-multiple-time-series">Plot correlation between lags of multiple time series<a class="anchor-link" href="#plot-correlation-between-lags-of-multiple-time-series">¶</a></h1>
+<h2 id="plot-correlation-between-lags-of-multiple-time-series">Plot correlation between lags of multiple time series<a class="anchor-link" href="#plot-correlation-between-lags-of-multiple-time-series">¶</a></h2>
 </div>
 </div>
 </div>
