@@ -57,6 +57,7 @@ def fetch_dataset(
             'index_col': 'fecha',
             'date_format': '%Y-%m-%d',
             'freq': 'MS',
+            'file_type': 'csv',
             'description': (
                 'Monthly expenditure ($AUD) on corticosteroid drugs that the '
                 'Australian health system had between 1991 and 2008. '
@@ -76,6 +77,7 @@ def fetch_dataset(
             'index_col': 'fecha',
             'date_format': '%Y-%m-%d',
             'freq': 'MS',
+            'file_type': 'csv',
             'description': (
                 'Monthly expenditure ($AUD) on corticosteroid drugs that the '
                 'Australian health system had between 1991 and 2008. Two additional '
@@ -96,6 +98,7 @@ def fetch_dataset(
             'index_col': 'Fecha',
             'date_format': '%Y-%m-%d',
             'freq': 'MS',
+            'file_type': 'csv',
             'description': (
                 'Monthly fuel consumption in Spain from 1969-01-01 to 2022-08-01.'
             ),
@@ -115,6 +118,7 @@ def fetch_dataset(
             'index_col': 'date',
             'date_format': '%Y-%m-%d',
             'freq': 'D',
+            'file_type': 'csv',
             'description': 'Simulated time series for the sales of 3 different items.',
             'source': 'Simulated data.'
         },
@@ -127,6 +131,7 @@ def fetch_dataset(
             'index_col': 'datetime',
             'date_format': '%Y-%m-%d %H:%M:%S',
             'freq': 'H',
+            'file_type': 'csv',
             'description': (
                 'Hourly measures of several air chemical pollutant at Valencia city '
                 '(Avd. Francia) from 2019-01-01 to 20213-12-31. Including the following '
@@ -149,6 +154,7 @@ def fetch_dataset(
             'index_col': 'datetime',
             'date_format': '%Y-%m-%d %H:%M:%S',
             'freq': 'H',
+            'file_type': 'csv',
             'description': (
                 'Hourly measures of several air chemical pollutant at Valencia city '
                 '(Avd. Francia) from 2019-01-01 to 20213-12-31. Including the following '
@@ -171,6 +177,7 @@ def fetch_dataset(
             'index_col': 'date',
             'date_format': '%Y-%m-%d',
             'freq': '1D',
+            'file_type': 'csv',
             'description': (
                 'Daily visits to the cienciadedatos.net website registered with the '
                 'google analytics service.'
@@ -189,6 +196,7 @@ def fetch_dataset(
             'index_col': 'date_time',
             'date_format': '%Y-%m-%d %H:%M:%S',
             'freq': 'H',
+            'file_type': 'csv',
             'description': (
                 'Hourly usage of the bike share system in the city of Washington D.C. '
                 'during the years 2011 and 2012. In addition to the number of users per '
@@ -208,6 +216,7 @@ def fetch_dataset(
             'index_col': 'date_time',
             'date_format': '%Y-%m-%d %H:%M:%S',
             'freq': 'H',
+            'file_type': 'csv',
             'description': (
                 'Hourly usage of the bike share system in the city of Washington D.C. '
                 'during the years 2011 and 2012. In addition to the number of users per '
@@ -232,6 +241,7 @@ def fetch_dataset(
             'index_col': 'date_time',
             'date_format': '%Y-%m-%d',
             'freq': 'Q',
+            'file_type': 'csv',
             'description': (
                 "Quarterly overnight trips (in thousands) from 1998 Q1 to 2016 Q4 "
                 "across Australia. The tourism regions are formed through the "
@@ -255,6 +265,7 @@ def fetch_dataset(
             'index_col': 'Date',
             'date_format': '%d/%m/%Y',
             'freq': 'D',
+            'file_type': 'csv',
             'description': 'Daily number of flights in UK from 02/01/2019 to 23/01/2022.',
             'source': (
                 'Experimental statistics published as part of the Economic activity and '
@@ -275,6 +286,7 @@ def fetch_dataset(
             'index_col': 'date',
             'date_format': '%Y-%m-%d',
             'freq': 'D',
+            'file_type': 'csv',
             'description': (
                 'Log daily page views for the Wikipedia page for Peyton Manning. '
                 'Scraped data using the Wikipediatrend package in R.'
@@ -293,6 +305,7 @@ def fetch_dataset(
             'index_col': 'Time',
             'date_format': '%Y-%m-%dT%H:%M:%SZ',
             'freq': '30min',
+            'file_type': 'csv',
             'description': 'Half-hourly electricity demand for Victoria, Australia',
             'source': (
                 "O'Hara-Wild M, Hyndman R, Wang E, Godahewa R (2022).tsibbledata: Diverse "
@@ -310,6 +323,7 @@ def fetch_dataset(
             'index_col': 'date',
             'date_format': '%Y-%m-%d',
             'freq': 'D',
+            'file_type': 'csv',
             'description': (
                 'This dataset contains 913,000 sales transactions from 2013-01-01 to '
                 '2017-12-31 for 50 products (SKU) in 10 stores.'
@@ -329,6 +343,7 @@ def fetch_dataset(
             'index_col': 'date',
             'date_format': '%Y-%m-%d',
             'freq': 'D',
+            'file_type': 'csv',
             'description': (
                 'This dataset contains the daily users of the bicycle rental '
                 'service (BiciMad) in the city of Madrid (Spain) from 2014-06-23 '
@@ -348,6 +363,7 @@ def fetch_dataset(
             'index_col': 'timestamp',
             'date_format': '%Y-%m-%d %H:%M:%S',
             'freq': 'D',
+            'file_type': 'parquet',
             'description': "Time series with daily frequency from the M4 competition.",
             'source': (
                 "Monash Time Series Forecasting Repository  "
@@ -372,6 +388,7 @@ def fetch_dataset(
             'index_col': 'timestamp',
             'date_format': '%Y-%m-%d %H:%M:%S',
             'freq': 'H',
+            'file_type': 'parquet',
             'description': "Time series with hourly frequency from the M4 competition.",
             'source': (
                 "Monash Time Series Forecasting Repository  "
@@ -393,6 +410,7 @@ def fetch_dataset(
             'index_col': 'timestamp',
             'date_format': '%Y-%m-%d',
             'freq': 'D',
+            'file_type': 'parquet',
             'description': (
                 "Daily energy consumption data from the ASHRAE competition with "
                 "building metadata and weather data."
@@ -409,6 +427,7 @@ def fetch_dataset(
             'index_col': 'timestamp',
             'date_format': '%Y-%m-%d',
             'freq': 'D',
+            'file_type': 'parquet',
             'description': (
                 "Daily energy consumption data from the The Building Data Genome Project 2 "
                 "with building metadata and weather data. "
@@ -427,6 +446,7 @@ def fetch_dataset(
             'index_col': 'timestamp',
             'date_format': '%Y-%m-%d %H:%M:%S',
             'freq': 'H',
+            'file_type': 'parquet',
             'description': (
                 "Hourly energy consumption data from the The Building Data Genome Project 2 "
                 "with building metadata and weather data. "
@@ -440,11 +460,17 @@ def fetch_dataset(
             )
         },
         'm5': {
-            'url': 'https://drive.google.com/file/d/1c6HldcZPdlvVr5P0RCPEWkUiqkAo42I1/view?usp=sharing',
+            'url': [
+                'https://drive.google.com/file/d/1JOqBsSHegly6iSJFgmkugAko734c6ZW5/view?usp=sharing',
+                'https://drive.google.com/file/d/1BhO1BUvs-d7ipXrm7caC3Wd_d0C_6PZ8/view?usp=sharing',
+                'https://drive.google.com/file/d/1oHwkQ_QycJVTZMb6bH8C2klQB971gXXA/view?usp=sharing',
+                'https://drive.google.com/file/d/1OvYzFlDG04YgTvju2k02vHEOj0nIuwei/view?usp=sharing'
+            ],
             'sep': None,
             'index_col': 'timestamp',
             'date_format': '%Y-%m-%d',
             'freq': 'D',
+            'file_type': 'parquet',
             'description': (
                 "Daily sales data from the M5 competition with product metadata and calendar data."
             ),
@@ -461,29 +487,34 @@ def fetch_dataset(
         )
     
     url = datasets[name]['url']
+    file_type = datasets[name]['file_type']
 
-    if url.endswith('.csv'):
-        try:
-            sep = datasets[name]['sep']
-            df = pd.read_csv(url, sep=sep, **kwargs_read_csv)
-        except:
-            raise ValueError(
-                f"Error reading dataset '{name}' from {url}. Try to version = 'latest'"
-            )
+    if not isinstance(url, list):
+        if url.startswith('https://drive.google.com'):
+            file_id = url.split('/')[-2]
+            url = 'https://drive.google.com/uc?id=' + file_id
+        if file_type == 'csv':
+            try:
+                sep = datasets[name]['sep']
+                df = pd.read_csv(url, sep=sep, **kwargs_read_csv)
+            except:
+                raise ValueError(
+                    f"Error reading dataset '{name}' from {url}. Try to version = 'latest'"
+                )
+        if file_type == 'parquet':
+            try:
+                df = pd.read_parquet(url)
+            except:
+                raise ValueError(
+                    f"Error reading dataset '{name}' from {url}. Try to version = 'latest'"
+                )
+    else:
+        df = []
+        for url_partition in url:
+            path = 'https://drive.google.com/uc?export=download&id=' + url_partition.split('/')[-2]
+            df.append(pd.read_parquet(path))
+        df = pd.concat(df, axis=0)
 
-    if url.endswith('.parquet'):
-        try:
-            df = pd.read_parquet(url)
-        except:
-            raise ValueError(
-                f"Error reading dataset '{name}' from {url}. Try to version = 'latest'"
-            )
-        
-    if url.startswith('https://drive.google.com'):
-        file_id = url.split('/')[-2]
-        url = 'https://drive.google.com/uc?id=' + file_id
-        df = pd.read_parquet(url)
-        
     if not raw:
         try:
             index_col = datasets[name]['index_col']
