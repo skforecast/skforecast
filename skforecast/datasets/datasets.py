@@ -438,6 +438,20 @@ def fetch_dataset(
                 "Predictor III competition. Sci Data 7, 368 (2020). "
                 "https://doi.org/10.1038/s41597-020-00712-x"
             )
+        },
+        'm5': {
+            'url': 'https://drive.google.com/file/d/1c6HldcZPdlvVr5P0RCPEWkUiqkAo42I1/view?usp=sharing',
+            'sep': None,
+            'index_col': 'timestamp',
+            'date_format': '%Y-%m-%d',
+            'freq': 'D',
+            'description': (
+                "Daily sales data from the M5 competition with product metadata and calendar data."
+            ),
+            'source': (
+                "Addison Howard, inversion, Spyros Makridakis, and vangelis. "
+                "M5 Forecasting - Accuracy. https://kaggle.com/competitions/m5-forecasting-accuracy, 2020. Kaggle."
+            )
         }
     }
     
