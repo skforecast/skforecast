@@ -513,7 +513,7 @@ def fetch_dataset(
         for url_partition in url:
             path = 'https://drive.google.com/uc?export=download&id=' + url_partition.split('/')[-2]
             df.append(pd.read_parquet(path))
-        df = pd.concat(df, axis=0)
+        df = pd.concat(df, axis=0).reset_index(drop=True)
 
     if not raw:
         try:
