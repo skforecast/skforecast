@@ -3120,7 +3120,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <!-- End of mermaid configuration --><div class="jupyter-wrapper">
 <div class="jp-Notebook" data-jp-theme-light="true" data-jp-theme-name="JupyterLab Light">
 <div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=3925e75f">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=cbe78167">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -3155,7 +3155,7 @@ from scipy.stats import skew</div>
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=decc8968">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=0d6e46f5">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -3242,7 +3242,7 @@ from scipy.stats import skew</div>
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=bb8d9735">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=5ac67480">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -3284,7 +3284,13 @@ from scipy.stats import skew</div>
 
     <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
         
-        <span class="n">n_series</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># Series (levels) to be predicted (present in last_window)</span>
+        <span class="n">X_dim</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">ndim</span>
+        <span class="k">if</span> <span class="n">X_dim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">n_series</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># Only one series</span>
+            <span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">n_series</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># Series (levels) to be predicted (present in last_window)</span>
+        
         <span class="n">n_stats</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># Only skewness is calculated</span>
         <span class="n">rolling_skewness</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span>
             <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">n_series</span><span class="p">,</span> <span class="n">n_stats</span><span class="p">),</span> <span class="n">fill_value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span>
@@ -3293,7 +3299,10 @@ from scipy.stats import skew</div>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">rolling_skewness</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">skew</span><span class="p">(</span><span class="n">X</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">rolling_skewness</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>        
+                <span class="n">rolling_skewness</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>      
+
+        <span class="k">if</span> <span class="n">X_dim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">rolling_skewness</span> <span class="o">=</span> <span class="n">rolling_skewness</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>  
         
         <span class="k">return</span> <span class="n">rolling_skewness</span>
 </pre></div>
@@ -3321,7 +3330,13 @@ from scipy.stats import skew</div>
 
     def transform(self, X: np.ndarray) -&gt; np.ndarray:
         
-        n_series = X.shape[1]  # Series (levels) to be predicted (present in last_window)
+        X_dim = X.ndim
+        if X_dim == 1:
+            n_series = 1  # Only one series
+            X = X.reshape(-1, 1)
+        else:
+            n_series = X.shape[1]  # Series (levels) to be predicted (present in last_window)
+        
         n_stats = 1  # Only skewness is calculated
         rolling_skewness = np.full(
             shape=(n_series, n_stats), fill_value=np.nan, dtype=float
@@ -3330,7 +3345,10 @@ from scipy.stats import skew</div>
             if len(X) &gt; 0:
                 rolling_skewness[i, :] = skew(X[:, i], bias=False)
             else:
-                rolling_skewness[i, :] = np.nan        
+                rolling_skewness[i, :] = np.nan      
+
+        if X_dim == 1:
+            rolling_skewness = rolling_skewness.flatten()  
         
         return rolling_skewness</div>
 </div>

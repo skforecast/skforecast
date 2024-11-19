@@ -1219,6 +1219,15 @@ This is documentation for an unstable development version.
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#adding-multiple-window-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      Adding multiple window features
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3475,7 +3484,7 @@ forecaster</div>
 <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[4]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <style>
-            .container-90518335847e4a33a8a6ef08bf61b090 {
+            .container-8270f6f818d34600a1ba008cfee31b56 {
                 font-family: 'Arial', sans-serif;
                 font-size: 0.9em;
                 color: #333333;
@@ -3486,7 +3495,7 @@ forecaster</div>
                 max-width: 600px;
                 #margin: auto;
             }
-            .container-90518335847e4a33a8a6ef08bf61b090 h2 {
+            .container-8270f6f818d34600a1ba008cfee31b56 h2 {
                 font-size: 1.5em;
                 color: #222222;
                 border-bottom: 2px solid #ddd;
@@ -3494,10 +3503,10 @@ forecaster</div>
                 margin-bottom: 15px;
                 margin-top: 5px;
             }
-            .container-90518335847e4a33a8a6ef08bf61b090 details {
+            .container-8270f6f818d34600a1ba008cfee31b56 details {
                 margin: 10px 0;
             }
-            .container-90518335847e4a33a8a6ef08bf61b090 summary {
+            .container-8270f6f818d34600a1ba008cfee31b56 summary {
                 font-weight: bold;
                 font-size: 1.1em;
                 color: #000000;
@@ -3507,38 +3516,38 @@ forecaster</div>
                 padding: 5px;
                 border-radius: 5px;
             }
-            .container-90518335847e4a33a8a6ef08bf61b090 summary:hover {
+            .container-8270f6f818d34600a1ba008cfee31b56 summary:hover {
                 color: #000000;
                 background-color: #e0e0e0;
             }
-            .container-90518335847e4a33a8a6ef08bf61b090 ul {
+            .container-8270f6f818d34600a1ba008cfee31b56 ul {
                 font-family: 'Courier New', monospace;
                 list-style-type: none;
                 padding-left: 20px;
                 margin: 10px 0;
                 line-height: normal;
             }
-            .container-90518335847e4a33a8a6ef08bf61b090 li {
+            .container-8270f6f818d34600a1ba008cfee31b56 li {
                 margin: 5px 0;
                 font-family: 'Courier New', monospace;
             }
-            .container-90518335847e4a33a8a6ef08bf61b090 li strong {
+            .container-8270f6f818d34600a1ba008cfee31b56 li strong {
                 font-weight: bold;
                 color: #444444;
             }
-            .container-90518335847e4a33a8a6ef08bf61b090 li::before {
+            .container-8270f6f818d34600a1ba008cfee31b56 li::before {
                 content: "- ";
                 color: #666666;
             }
-            .container-90518335847e4a33a8a6ef08bf61b090 a {
+            .container-8270f6f818d34600a1ba008cfee31b56 a {
                 color: #001633;
                 text-decoration: none;
             }
-            .container-90518335847e4a33a8a6ef08bf61b090 a:hover {
+            .container-8270f6f818d34600a1ba008cfee31b56 a:hover {
                 color: #359ccb; 
             }
         </style>
-<div class="container-90518335847e4a33a8a6ef08bf61b090">
+<div class="container-8270f6f818d34600a1ba008cfee31b56">
 <h2>ForecasterRecursive</h2>
 <details open="">
 <summary>General Information</summary>
@@ -3550,8 +3559,8 @@ forecaster</div>
 <li><strong>Exogenous included:</strong> False</li>
 <li><strong>Weight function included:</strong> False</li>
 <li><strong>Differentiation order:</strong> None</li>
-<li><strong>Creation date:</strong> 2024-11-12 15:20:38</li>
-<li><strong>Last fit date:</strong> 2024-11-12 15:20:39</li>
+<li><strong>Creation date:</strong> 2024-11-19 09:18:23</li>
+<li><strong>Last fit date:</strong> 2024-11-19 09:18:23</li>
 <li><strong>Skforecast version:</strong> 0.14.0</li>
 <li><strong>Python version:</strong> 3.11.10</li>
 <li><strong>Forecaster id:</strong> None</li>
@@ -4644,7 +4653,13 @@ Shape of the dataset: (1097, 3)
 
     <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
         
-        <span class="n">n_series</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># Series (levels) to be predicted (present in last_window)</span>
+        <span class="n">X_dim</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">ndim</span>
+        <span class="k">if</span> <span class="n">X_dim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">n_series</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># Only one series</span>
+            <span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">n_series</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># Series (levels) to be predicted (present in last_window)</span>
+        
         <span class="n">n_stats</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># Only skewness is calculated</span>
         <span class="n">rolling_skewness</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span>
             <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">n_series</span><span class="p">,</span> <span class="n">n_stats</span><span class="p">),</span> <span class="n">fill_value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span>
@@ -4653,7 +4668,10 @@ Shape of the dataset: (1097, 3)
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">rolling_skewness</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">skew</span><span class="p">(</span><span class="n">X</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">rolling_skewness</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>        
+                <span class="n">rolling_skewness</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>      
+
+        <span class="k">if</span> <span class="n">X_dim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">rolling_skewness</span> <span class="o">=</span> <span class="n">rolling_skewness</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>  
         
         <span class="k">return</span> <span class="n">rolling_skewness</span>
 </pre></div>
@@ -4686,7 +4704,13 @@ class RollingSkewnessMultiSeries():
 
     def transform(self, X: np.ndarray) -&gt; np.ndarray:
         
-        n_series = X.shape[1]  # Series (levels) to be predicted (present in last_window)
+        X_dim = X.ndim
+        if X_dim == 1:
+            n_series = 1  # Only one series
+            X = X.reshape(-1, 1)
+        else:
+            n_series = X.shape[1]  # Series (levels) to be predicted (present in last_window)
+        
         n_stats = 1  # Only skewness is calculated
         rolling_skewness = np.full(
             shape=(n_series, n_stats), fill_value=np.nan, dtype=float
@@ -4695,7 +4719,10 @@ class RollingSkewnessMultiSeries():
             if len(X) &gt; 0:
                 rolling_skewness[i, :] = skew(X[:, i], bias=False)
             else:
-                rolling_skewness[i, :] = np.nan        
+                rolling_skewness[i, :] = np.nan      
+
+        if X_dim == 1:
+            rolling_skewness = rolling_skewness.flatten()  
         
         return rolling_skewness</div>
 </div>
@@ -4860,6 +4887,783 @@ window_features.transform(pd.DataFrame(forecaster.last_window_).to_numpy())</div
 <pre>array([[-1.7304836 ],
        [ 1.69345527],
        [ 0.27695088]])</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=672a4286">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="adding-multiple-window-features">Adding multiple window features<a class="anchor-link" href="#adding-multiple-window-features">¶</a></h2><p>It is possible to include multiple window features in all forecasters. The <code>window_features</code> argument must be a list of instances of the classes that compute the desired features.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=e07e3666">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [18]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="CodeMirror cm-s-jupyter">
+<div class="zeroclipboard-container">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-18">
+<div>
+<span class="notice" hidden="">Copied!</span>
+<svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
+<path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+<path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+</svg>
+</div>
+</clipboard-copy>
+</div>
+<div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Forecaster with multiple window features</span>
+<span class="c1"># ==============================================================================</span>
+<span class="n">window_features</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">RollingFeatures</span><span class="p">(</span><span class="n">stats</span><span class="o">=</span><span class="p">[</span><span class="s1">'mean'</span><span class="p">,</span> <span class="s1">'mean'</span><span class="p">],</span> <span class="n">window_sizes</span><span class="o">=</span><span class="p">[</span><span class="mi">20</span><span class="p">,</span> <span class="mi">10</span><span class="p">]),</span>
+    <span class="n">RollingSkewness</span><span class="p">(</span><span class="n">window_sizes</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="p">]</span>
+
+<span class="n">forecaster</span> <span class="o">=</span> <span class="n">ForecasterRecursive</span><span class="p">(</span>
+                 <span class="n">regressor</span>       <span class="o">=</span> <span class="n">LGBMRegressor</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="mi">123</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
+                 <span class="n">lags</span>            <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+                 <span class="n">window_features</span> <span class="o">=</span> <span class="n">window_features</span>
+             <span class="p">)</span>
+
+<span class="n">forecaster</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">)</span>
+<span class="n">forecaster</span>
+</pre></div>
+<div class="clipboard-copy-txt" id="cell-18"># Forecaster with multiple window features
+# ==============================================================================
+window_features = [
+    RollingFeatures(stats=['mean', 'mean'], window_sizes=[20, 10]),
+    RollingSkewness(window_sizes=10)
+]
+
+forecaster = ForecasterRecursive(
+                 regressor       = LGBMRegressor(random_state=123, verbose=-1),
+                 lags            = 3,
+                 window_features = window_features
+             )
+
+forecaster.fit(y=y)
+forecaster</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[18]:</div>
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
+<style>
+            .container-9ef2d103282b49c192bb8fae17ef491e {
+                font-family: 'Arial', sans-serif;
+                font-size: 0.9em;
+                color: #333333;
+                border: 1px solid #ddd;
+                background-color: #f0f8ff;
+                padding: 5px 15px;
+                border-radius: 8px;
+                max-width: 600px;
+                #margin: auto;
+            }
+            .container-9ef2d103282b49c192bb8fae17ef491e h2 {
+                font-size: 1.5em;
+                color: #222222;
+                border-bottom: 2px solid #ddd;
+                padding-bottom: 5px;
+                margin-bottom: 15px;
+                margin-top: 5px;
+            }
+            .container-9ef2d103282b49c192bb8fae17ef491e details {
+                margin: 10px 0;
+            }
+            .container-9ef2d103282b49c192bb8fae17ef491e summary {
+                font-weight: bold;
+                font-size: 1.1em;
+                color: #000000;
+                cursor: pointer;
+                margin-bottom: 5px;
+                background-color: #b3dbfd;
+                padding: 5px;
+                border-radius: 5px;
+            }
+            .container-9ef2d103282b49c192bb8fae17ef491e summary:hover {
+                color: #000000;
+                background-color: #e0e0e0;
+            }
+            .container-9ef2d103282b49c192bb8fae17ef491e ul {
+                font-family: 'Courier New', monospace;
+                list-style-type: none;
+                padding-left: 20px;
+                margin: 10px 0;
+                line-height: normal;
+            }
+            .container-9ef2d103282b49c192bb8fae17ef491e li {
+                margin: 5px 0;
+                font-family: 'Courier New', monospace;
+            }
+            .container-9ef2d103282b49c192bb8fae17ef491e li strong {
+                font-weight: bold;
+                color: #444444;
+            }
+            .container-9ef2d103282b49c192bb8fae17ef491e li::before {
+                content: "- ";
+                color: #666666;
+            }
+            .container-9ef2d103282b49c192bb8fae17ef491e a {
+                color: #001633;
+                text-decoration: none;
+            }
+            .container-9ef2d103282b49c192bb8fae17ef491e a:hover {
+                color: #359ccb; 
+            }
+        </style>
+<div class="container-9ef2d103282b49c192bb8fae17ef491e">
+<h2>ForecasterRecursive</h2>
+<details open="">
+<summary>General Information</summary>
+<ul>
+<li><strong>Regressor:</strong> LGBMRegressor</li>
+<li><strong>Lags:</strong> [1 2 3]</li>
+<li><strong>Window features:</strong> ['roll_mean_20', 'roll_mean_10', 'rolling_skewness']</li>
+<li><strong>Window size:</strong> 20</li>
+<li><strong>Exogenous included:</strong> False</li>
+<li><strong>Weight function included:</strong> False</li>
+<li><strong>Differentiation order:</strong> None</li>
+<li><strong>Creation date:</strong> 2024-11-19 09:18:25</li>
+<li><strong>Last fit date:</strong> 2024-11-19 09:18:25</li>
+<li><strong>Skforecast version:</strong> 0.14.0</li>
+<li><strong>Python version:</strong> 3.11.10</li>
+<li><strong>Forecaster id:</strong> None</li>
+</ul>
+</details>
+<details>
+<summary>Exogenous Variables</summary>
+<ul>
+                    None
+                </ul>
+</details>
+<details>
+<summary>Data Transformations</summary>
+<ul>
+<li><strong>Transformer for y:</strong> None</li>
+<li><strong>Transformer for exog:</strong> None</li>
+</ul>
+</details>
+<details>
+<summary>Training Information</summary>
+<ul>
+<li><strong>Training range:</strong> [Timestamp('1991-07-01 00:00:00'), Timestamp('2008-06-01 00:00:00')]</li>
+<li><strong>Training index type:</strong> DatetimeIndex</li>
+<li><strong>Training index frequency:</strong> MS</li>
+</ul>
+</details>
+<details>
+<summary>Regressor Parameters</summary>
+<ul>
+                    {'boosting_type': 'gbdt', 'class_weight': None, 'colsample_bytree': 1.0, 'importance_type': 'split', 'learning_rate': 0.1, 'max_depth': -1, 'min_child_samples': 20, 'min_child_weight': 0.001, 'min_split_gain': 0.0, 'n_estimators': 100, 'n_jobs': None, 'num_leaves': 31, 'objective': None, 'random_state': 123, 'reg_alpha': 0.0, 'reg_lambda': 0.0, 'subsample': 1.0, 'subsample_for_bin': 200000, 'subsample_freq': 0, 'verbose': -1}
+                </ul>
+</details>
+<details>
+<summary>Fit Kwargs</summary>
+<ul>
+                    {}
+                </ul>
+</details>
+<p>
+<a href="https://skforecast.org/0.14.0/api/forecasterrecursive.html">🛈 <strong>API Reference</strong></a>
+                  
+                <a href="https://skforecast.org/0.14.0/user_guides/autoregresive-forecaster.html">🗎 <strong>User Guide</strong></a>
+</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=fb15aad1">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [19]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="CodeMirror cm-s-jupyter">
+<div class="zeroclipboard-container">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-19">
+<div>
+<span class="notice" hidden="">Copied!</span>
+<svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
+<path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+<path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+</svg>
+</div>
+</clipboard-copy>
+</div>
+<div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Inspect prediction matrix</span>
+<span class="c1"># ==============================================================================</span>
+<span class="n">forecaster</span><span class="o">.</span><span class="n">create_predict_X</span><span class="p">(</span><span class="n">steps</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+</pre></div>
+<div class="clipboard-copy-txt" id="cell-19"># Inspect prediction matrix
+# ==============================================================================
+forecaster.create_predict_X(steps=5)</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[19]:</div>
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+<thead>
+<tr style="text-align: right;">
+<th></th>
+<th>lag_1</th>
+<th>lag_2</th>
+<th>lag_3</th>
+<th>roll_mean_20</th>
+<th>roll_mean_10</th>
+<th>rolling_skewness</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th>2008-07-01</th>
+<td>0.762137</td>
+<td>0.816255</td>
+<td>0.827887</td>
+<td>0.926472</td>
+<td>0.959856</td>
+<td>-0.130309</td>
+</tr>
+<tr>
+<th>2008-08-01</th>
+<td>0.953737</td>
+<td>0.762137</td>
+<td>0.816255</td>
+<td>0.918757</td>
+<td>0.944132</td>
+<td>-0.053265</td>
+</tr>
+<tr>
+<th>2008-09-01</th>
+<td>1.027884</td>
+<td>0.953737</td>
+<td>0.762137</td>
+<td>0.914148</td>
+<td>0.935922</td>
+<td>-0.024878</td>
+</tr>
+<tr>
+<th>2008-10-01</th>
+<td>0.963651</td>
+<td>1.027884</td>
+<td>0.953737</td>
+<td>0.901165</td>
+<td>0.915934</td>
+<td>-0.022704</td>
+</tr>
+<tr>
+<th>2008-11-01</th>
+<td>1.096952</td>
+<td>0.963651</td>
+<td>1.027884</td>
+<td>0.926125</td>
+<td>0.907970</td>
+<td>-0.173034</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=a37d1e3a">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [20]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="CodeMirror cm-s-jupyter">
+<div class="zeroclipboard-container">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-20">
+<div>
+<span class="notice" hidden="">Copied!</span>
+<svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
+<path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+<path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+</svg>
+</div>
+</clipboard-copy>
+</div>
+<div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Predict</span>
+<span class="c1"># ==============================================================================</span>
+<span class="n">forecaster</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">steps</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+</pre></div>
+<div class="clipboard-copy-txt" id="cell-20"># Predict
+# ==============================================================================
+forecaster.predict(steps=5)</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[20]:</div>
+<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
+<pre>2008-07-01    0.953737
+2008-08-01    1.027884
+2008-09-01    0.963651
+2008-10-01    1.096952
+2008-11-01    1.096672
+Freq: MS, Name: pred, dtype: float64</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=1907e1de">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [21]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="CodeMirror cm-s-jupyter">
+<div class="zeroclipboard-container">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-21">
+<div>
+<span class="notice" hidden="">Copied!</span>
+<svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
+<path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+<path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+</svg>
+</div>
+</clipboard-copy>
+</div>
+<div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Forecaster with multiple window features</span>
+<span class="c1"># ==============================================================================</span>
+<span class="n">window_features</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">RollingFeatures</span><span class="p">(</span><span class="n">stats</span><span class="o">=</span><span class="p">[</span><span class="s1">'mean'</span><span class="p">,</span> <span class="s1">'mean'</span><span class="p">],</span> <span class="n">window_sizes</span><span class="o">=</span><span class="p">[</span><span class="mi">20</span><span class="p">,</span> <span class="mi">10</span><span class="p">]),</span>
+    <span class="n">RollingSkewnessMultiSeries</span><span class="p">(</span><span class="n">window_sizes</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="p">]</span>
+
+<span class="n">forecaster</span> <span class="o">=</span> <span class="n">ForecasterRecursiveMultiSeries</span><span class="p">(</span>
+                 <span class="n">regressor</span>       <span class="o">=</span> <span class="n">LGBMRegressor</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="mi">123</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
+                 <span class="n">lags</span>            <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+                 <span class="n">window_features</span> <span class="o">=</span> <span class="n">window_features</span>
+             <span class="p">)</span>
+
+<span class="n">forecaster</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">series</span><span class="o">=</span><span class="n">data_multiseries</span><span class="p">)</span>
+<span class="n">forecaster</span>
+</pre></div>
+<div class="clipboard-copy-txt" id="cell-21"># Forecaster with multiple window features
+# ==============================================================================
+window_features = [
+    RollingFeatures(stats=['mean', 'mean'], window_sizes=[20, 10]),
+    RollingSkewnessMultiSeries(window_sizes=10)
+]
+
+forecaster = ForecasterRecursiveMultiSeries(
+                 regressor       = LGBMRegressor(random_state=123, verbose=-1),
+                 lags            = 3,
+                 window_features = window_features
+             )
+
+forecaster.fit(series=data_multiseries)
+forecaster</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[21]:</div>
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
+<style>
+            .container-9903903e244a4ef586a71661c2f4ddb4 {
+                font-family: 'Arial', sans-serif;
+                font-size: 0.9em;
+                color: #333333;
+                border: 1px solid #ddd;
+                background-color: #f0f8ff;
+                padding: 5px 15px;
+                border-radius: 8px;
+                max-width: 600px;
+                #margin: auto;
+            }
+            .container-9903903e244a4ef586a71661c2f4ddb4 h2 {
+                font-size: 1.5em;
+                color: #222222;
+                border-bottom: 2px solid #ddd;
+                padding-bottom: 5px;
+                margin-bottom: 15px;
+                margin-top: 5px;
+            }
+            .container-9903903e244a4ef586a71661c2f4ddb4 details {
+                margin: 10px 0;
+            }
+            .container-9903903e244a4ef586a71661c2f4ddb4 summary {
+                font-weight: bold;
+                font-size: 1.1em;
+                color: #000000;
+                cursor: pointer;
+                margin-bottom: 5px;
+                background-color: #b3dbfd;
+                padding: 5px;
+                border-radius: 5px;
+            }
+            .container-9903903e244a4ef586a71661c2f4ddb4 summary:hover {
+                color: #000000;
+                background-color: #e0e0e0;
+            }
+            .container-9903903e244a4ef586a71661c2f4ddb4 ul {
+                font-family: 'Courier New', monospace;
+                list-style-type: none;
+                padding-left: 20px;
+                margin: 10px 0;
+                line-height: normal;
+            }
+            .container-9903903e244a4ef586a71661c2f4ddb4 li {
+                margin: 5px 0;
+                font-family: 'Courier New', monospace;
+            }
+            .container-9903903e244a4ef586a71661c2f4ddb4 li strong {
+                font-weight: bold;
+                color: #444444;
+            }
+            .container-9903903e244a4ef586a71661c2f4ddb4 li::before {
+                content: "- ";
+                color: #666666;
+            }
+            .container-9903903e244a4ef586a71661c2f4ddb4 a {
+                color: #001633;
+                text-decoration: none;
+            }
+            .container-9903903e244a4ef586a71661c2f4ddb4 a:hover {
+                color: #359ccb; 
+            }
+        </style>
+<div class="container-9903903e244a4ef586a71661c2f4ddb4">
+<h2>ForecasterRecursiveMultiSeries</h2>
+<details open="">
+<summary>General Information</summary>
+<ul>
+<li><strong>Regressor:</strong> LGBMRegressor</li>
+<li><strong>Lags:</strong> [1 2 3]</li>
+<li><strong>Window features:</strong> ['roll_mean_20', 'roll_mean_10', 'rolling_skewness']</li>
+<li><strong>Window size:</strong> 20</li>
+<li><strong>Series encoding:</strong> ordinal</li>
+<li><strong>Exogenous included:</strong> False</li>
+<li><strong>Weight function included:</strong> False</li>
+<li><strong>Series weights:</strong> None</li>
+<li><strong>Differentiation order:</strong> None</li>
+<li><strong>Creation date:</strong> 2024-11-19 09:18:25</li>
+<li><strong>Last fit date:</strong> 2024-11-19 09:18:25</li>
+<li><strong>Skforecast version:</strong> 0.14.0</li>
+<li><strong>Python version:</strong> 3.11.10</li>
+<li><strong>Forecaster id:</strong> None</li>
+</ul>
+</details>
+<details>
+<summary>Exogenous Variables</summary>
+<ul>
+                    None
+                </ul>
+</details>
+<details>
+<summary>Data Transformations</summary>
+<ul>
+<li><strong>Transformer for series:</strong> None</li>
+<li><strong>Transformer for exog:</strong> None</li>
+</ul>
+</details>
+<details>
+<summary>Training Information</summary>
+<ul>
+<li><strong>Series names (levels):</strong> item_1, item_2, item_3</li>
+<li><strong>Training range:</strong> 'item_1': ['2012-01-01', '2015-01-01'], 'item_2': ['2012-01-01', '2015-01-01'], 'item_3': ['2012-01-01', '2015-01-01']</li>
+<li><strong>Training index type:</strong> DatetimeIndex</li>
+<li><strong>Training index frequency:</strong> D</li>
+</ul>
+</details>
+<details>
+<summary>Regressor Parameters</summary>
+<ul>
+                    {'boosting_type': 'gbdt', 'class_weight': None, 'colsample_bytree': 1.0, 'importance_type': 'split', 'learning_rate': 0.1, 'max_depth': -1, 'min_child_samples': 20, 'min_child_weight': 0.001, 'min_split_gain': 0.0, 'n_estimators': 100, 'n_jobs': None, 'num_leaves': 31, 'objective': None, 'random_state': 123, 'reg_alpha': 0.0, 'reg_lambda': 0.0, 'subsample': 1.0, 'subsample_for_bin': 200000, 'subsample_freq': 0, 'verbose': -1}
+                </ul>
+</details>
+<details>
+<summary>Fit Kwargs</summary>
+<ul>
+                    {}
+                </ul>
+</details>
+<p>
+<a href="https://skforecast.org/0.14.0/api/forecasterrecursivemultiseries.html">🛈 <strong>API Reference</strong></a>
+                  
+                <a href="https://skforecast.org/0.14.0/user_guides/independent-multi-time-series-forecasting.html">🗎 <strong>User Guide</strong></a>
+</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=59f7dc0e">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [22]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="CodeMirror cm-s-jupyter">
+<div class="zeroclipboard-container">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-22">
+<div>
+<span class="notice" hidden="">Copied!</span>
+<svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
+<path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+<path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+</svg>
+</div>
+</clipboard-copy>
+</div>
+<div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Inspect prediction matrix for item_1</span>
+<span class="c1"># ==============================================================================</span>
+<span class="n">forecaster</span><span class="o">.</span><span class="n">create_predict_X</span><span class="p">(</span><span class="n">steps</span><span class="o">=</span><span class="mi">5</span><span class="p">)[</span><span class="s1">'item_1'</span><span class="p">]</span>
+</pre></div>
+<div class="clipboard-copy-txt" id="cell-22"># Inspect prediction matrix for item_1
+# ==============================================================================
+forecaster.create_predict_X(steps=5)['item_1']</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[22]:</div>
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+<thead>
+<tr style="text-align: right;">
+<th></th>
+<th>lag_1</th>
+<th>lag_2</th>
+<th>lag_3</th>
+<th>roll_mean_20</th>
+<th>roll_mean_10</th>
+<th>rolling_skewness</th>
+<th>_level_skforecast</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th>2015-01-02</th>
+<td>10.496302</td>
+<td>18.721223</td>
+<td>18.857026</td>
+<td>19.627230</td>
+<td>18.109484</td>
+<td>-1.596973</td>
+<td>0.0</td>
+</tr>
+<tr>
+<th>2015-01-03</th>
+<td>18.861343</td>
+<td>10.496302</td>
+<td>18.721223</td>
+<td>19.512458</td>
+<td>17.676044</td>
+<td>-1.504973</td>
+<td>0.0</td>
+</tr>
+<tr>
+<th>2015-01-04</th>
+<td>17.778515</td>
+<td>18.861343</td>
+<td>10.496302</td>
+<td>19.364411</td>
+<td>17.349451</td>
+<td>-1.337133</td>
+<td>0.0</td>
+</tr>
+<tr>
+<th>2015-01-05</th>
+<td>19.272862</td>
+<td>17.778515</td>
+<td>18.861343</td>
+<td>19.293172</td>
+<td>17.434766</td>
+<td>-1.284426</td>
+<td>0.0</td>
+</tr>
+<tr>
+<th>2015-01-06</th>
+<td>20.198399</td>
+<td>19.272862</td>
+<td>17.778515</td>
+<td>19.143477</td>
+<td>17.800624</td>
+<td>-1.469888</td>
+<td>0.0</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=cede7d6e">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [23]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="CodeMirror cm-s-jupyter">
+<div class="zeroclipboard-container">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-23">
+<div>
+<span class="notice" hidden="">Copied!</span>
+<svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
+<path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+<path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+</svg>
+</div>
+</clipboard-copy>
+</div>
+<div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Inspect prediction matrix</span>
+<span class="c1"># ==============================================================================</span>
+<span class="n">forecaster</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">steps</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+</pre></div>
+<div class="clipboard-copy-txt" id="cell-23"># Inspect prediction matrix
+# ==============================================================================
+forecaster.predict(steps=5)</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[23]:</div>
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+<thead>
+<tr style="text-align: right;">
+<th></th>
+<th>item_1</th>
+<th>item_2</th>
+<th>item_3</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th>2015-01-02</th>
+<td>18.861343</td>
+<td>21.561617</td>
+<td>21.071428</td>
+</tr>
+<tr>
+<th>2015-01-03</th>
+<td>17.778515</td>
+<td>21.288322</td>
+<td>20.891229</td>
+</tr>
+<tr>
+<th>2015-01-04</th>
+<td>19.272862</td>
+<td>20.580463</td>
+<td>21.024649</td>
+</tr>
+<tr>
+<th>2015-01-05</th>
+<td>20.198399</td>
+<td>20.020874</td>
+<td>21.414145</td>
+</tr>
+<tr>
+<th>2015-01-06</th>
+<td>19.464618</td>
+<td>20.100328</td>
+<td>21.244314</td>
+</tr>
+</tbody>
+</table>
+</div>
 </div>
 </div>
 </div>

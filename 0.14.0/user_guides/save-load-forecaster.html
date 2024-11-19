@@ -3527,8 +3527,8 @@ Regressor parameters:
     'n_jobs': None, 'oob_score': False, 'random_state': 123, 'verbose': 0,
     'warm_start': False} 
 fit_kwargs: {} 
-Creation date: 2024-11-12 17:27:04 
-Last fit date: 2024-11-12 17:27:04 
+Creation date: 2024-11-19 09:20:55 
+Last fit date: 2024-11-19 09:20:55 
 Skforecast version: 0.14.0 
 Python version: 3.11.10 
 Forecaster id: forecaster_001 
@@ -3998,8 +3998,8 @@ Regressor parameters:
     'n_jobs': None, 'oob_score': False, 'random_state': 123, 'verbose': 0,
     'warm_start': False} 
 fit_kwargs: {} 
-Creation date: 2024-11-12 17:27:04 
-Last fit date: 2024-11-12 17:27:05 
+Creation date: 2024-11-19 09:20:55 
+Last fit date: 2024-11-19 09:20:55 
 Skforecast version: 0.14.0 
 Python version: 3.11.10 
 Forecaster id: forecaster_custom_features 
@@ -4333,7 +4333,13 @@ def custom_weights_item_3(index):
 
     <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
         
-        <span class="n">n_series</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># Series (levels) to be predicted (present in last_window)</span>
+        <span class="n">X_dim</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">ndim</span>
+        <span class="k">if</span> <span class="n">X_dim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">n_series</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># Only one series</span>
+            <span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">n_series</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># Series (levels) to be predicted (present in last_window)</span>
+        
         <span class="n">n_stats</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># Only skewness is calculated</span>
         <span class="n">rolling_skewness</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span>
             <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">n_series</span><span class="p">,</span> <span class="n">n_stats</span><span class="p">),</span> <span class="n">fill_value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span>
@@ -4342,7 +4348,10 @@ def custom_weights_item_3(index):
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">rolling_skewness</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">skew</span><span class="p">(</span><span class="n">X</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">rolling_skewness</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>        
+                <span class="n">rolling_skewness</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>      
+
+        <span class="k">if</span> <span class="n">X_dim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">rolling_skewness</span> <span class="o">=</span> <span class="n">rolling_skewness</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>  
         
         <span class="k">return</span> <span class="n">rolling_skewness</span>
 </pre></div>
@@ -4375,7 +4384,13 @@ class RollingSkewnessMultiSeries():
 
     def transform(self, X: np.ndarray) -&gt; np.ndarray:
         
-        n_series = X.shape[1]  # Series (levels) to be predicted (present in last_window)
+        X_dim = X.ndim
+        if X_dim == 1:
+            n_series = 1  # Only one series
+            X = X.reshape(-1, 1)
+        else:
+            n_series = X.shape[1]  # Series (levels) to be predicted (present in last_window)
+        
         n_stats = 1  # Only skewness is calculated
         rolling_skewness = np.full(
             shape=(n_series, n_stats), fill_value=np.nan, dtype=float
@@ -4384,7 +4399,10 @@ class RollingSkewnessMultiSeries():
             if len(X) &gt; 0:
                 rolling_skewness[i, :] = skew(X[:, i], bias=False)
             else:
-                rolling_skewness[i, :] = np.nan        
+                rolling_skewness[i, :] = np.nan      
+
+        if X_dim == 1:
+            rolling_skewness = rolling_skewness.flatten()  
         
         return rolling_skewness</div>
 </div>
@@ -4500,7 +4518,7 @@ forecaster</div>
 <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[17]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <style>
-            .container-de81a2c86a1044999e165e03fe968bb9 {
+            .container-a3c5027f0c6142e086aa5588291a4a04 {
                 font-family: 'Arial', sans-serif;
                 font-size: 0.9em;
                 color: #333333;
@@ -4511,7 +4529,7 @@ forecaster</div>
                 max-width: 600px;
                 #margin: auto;
             }
-            .container-de81a2c86a1044999e165e03fe968bb9 h2 {
+            .container-a3c5027f0c6142e086aa5588291a4a04 h2 {
                 font-size: 1.5em;
                 color: #222222;
                 border-bottom: 2px solid #ddd;
@@ -4519,10 +4537,10 @@ forecaster</div>
                 margin-bottom: 15px;
                 margin-top: 5px;
             }
-            .container-de81a2c86a1044999e165e03fe968bb9 details {
+            .container-a3c5027f0c6142e086aa5588291a4a04 details {
                 margin: 10px 0;
             }
-            .container-de81a2c86a1044999e165e03fe968bb9 summary {
+            .container-a3c5027f0c6142e086aa5588291a4a04 summary {
                 font-weight: bold;
                 font-size: 1.1em;
                 color: #000000;
@@ -4532,38 +4550,38 @@ forecaster</div>
                 padding: 5px;
                 border-radius: 5px;
             }
-            .container-de81a2c86a1044999e165e03fe968bb9 summary:hover {
+            .container-a3c5027f0c6142e086aa5588291a4a04 summary:hover {
                 color: #000000;
                 background-color: #e0e0e0;
             }
-            .container-de81a2c86a1044999e165e03fe968bb9 ul {
+            .container-a3c5027f0c6142e086aa5588291a4a04 ul {
                 font-family: 'Courier New', monospace;
                 list-style-type: none;
                 padding-left: 20px;
                 margin: 10px 0;
                 line-height: normal;
             }
-            .container-de81a2c86a1044999e165e03fe968bb9 li {
+            .container-a3c5027f0c6142e086aa5588291a4a04 li {
                 margin: 5px 0;
                 font-family: 'Courier New', monospace;
             }
-            .container-de81a2c86a1044999e165e03fe968bb9 li strong {
+            .container-a3c5027f0c6142e086aa5588291a4a04 li strong {
                 font-weight: bold;
                 color: #444444;
             }
-            .container-de81a2c86a1044999e165e03fe968bb9 li::before {
+            .container-a3c5027f0c6142e086aa5588291a4a04 li::before {
                 content: "- ";
                 color: #666666;
             }
-            .container-de81a2c86a1044999e165e03fe968bb9 a {
+            .container-a3c5027f0c6142e086aa5588291a4a04 a {
                 color: #001633;
                 text-decoration: none;
             }
-            .container-de81a2c86a1044999e165e03fe968bb9 a:hover {
+            .container-a3c5027f0c6142e086aa5588291a4a04 a:hover {
                 color: #359ccb; 
             }
         </style>
-<div class="container-de81a2c86a1044999e165e03fe968bb9">
+<div class="container-a3c5027f0c6142e086aa5588291a4a04">
 <h2>ForecasterRecursiveMultiSeries</h2>
 <details open="">
 <summary>General Information</summary>
@@ -4577,8 +4595,8 @@ forecaster</div>
 <li><strong>Weight function included:</strong> True</li>
 <li><strong>Series weights:</strong> None</li>
 <li><strong>Differentiation order:</strong> None</li>
-<li><strong>Creation date:</strong> 2024-11-12 17:27:05</li>
-<li><strong>Last fit date:</strong> 2024-11-12 17:27:06</li>
+<li><strong>Creation date:</strong> 2024-11-19 09:20:56</li>
+<li><strong>Last fit date:</strong> 2024-11-19 09:20:57</li>
 <li><strong>Skforecast version:</strong> 0.14.0</li>
 <li><strong>Python version:</strong> 3.11.10</li>
 <li><strong>Forecaster id:</strong> None</li>
@@ -4767,8 +4785,8 @@ Regressor parameters:
     'n_jobs': None, 'oob_score': False, 'random_state': 123, 'verbose': 0,
     'warm_start': False} 
 fit_kwargs: {} 
-Creation date: 2024-11-12 17:27:05 
-Last fit date: 2024-11-12 17:27:06 
+Creation date: 2024-11-19 09:20:56 
+Last fit date: 2024-11-19 09:20:57 
 Skforecast version: 0.14.0 
 Python version: 3.11.10 
 Forecaster id: None 
