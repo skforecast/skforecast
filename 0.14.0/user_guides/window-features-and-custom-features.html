@@ -3226,7 +3226,27 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h1 id="window-and-custom-features">Window and custom features<a class="anchor-link" href="#window-and-custom-features">¶</a></h1><p>When forecasting time series data, it may be useful to consider additional characteristics beyond just the lagged values. For example, the moving average of the previous <em>n</em> values may help to capture the trend in the series. The <code>window_features</code> argument allows the inclusion of additional predictors created with the previous values of the series.</p>
+<h1 id="window-and-custom-features">Window and custom features<a class="anchor-link" href="#window-and-custom-features">¶</a></h1><p>When forecasting time series data, it may be useful to consider additional characteristics of the time series beyond just the lagged values. For example, the moving average of the previous <em>n</em> values may help to capture the trend in the series. The <code>window_features</code> argument allows the inclusion of additional predictors created with the previous values of the series.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=3a00885b">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<div class="admonition note" name="html-admonition" style="background: rgba(255,145,0,.1); padding-top: 0px; padding-bottom: 6px; border-radius: 8px; border-left: 8px solid #ff9100; border-color: #ff9100; padding-left: 10px; padding-right: 10px">
+<p class="title">
+<i style="font-size: 18px; color:#ff9100; border-color: #ff1744;"></i>
+<b style="color: #ff9100;"> <span style="color: #ff9100;">⚠</span> Warning</b>
+</p>
+<p>
+  This section focuses on window features and other user-defined features derived from past values of the time series being modelled. These features are different from exogenous variables. Exogenous variables are external to the time series and are added to the model as additional predictors. See the 
+  <a href="../user_guides/exogenous-variables.html">Exogenous Variables</a> section for more information on how to create window features and lags from exogenous variables.
+</p>
+</div>
 </div>
 </div>
 </div>
@@ -3484,7 +3504,7 @@ forecaster</div>
 <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[4]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <style>
-            .container-8270f6f818d34600a1ba008cfee31b56 {
+            .container-5ac76ae510ce43f6a69d85a9e442dec4 {
                 font-family: 'Arial', sans-serif;
                 font-size: 0.9em;
                 color: #333333;
@@ -3495,7 +3515,7 @@ forecaster</div>
                 max-width: 600px;
                 #margin: auto;
             }
-            .container-8270f6f818d34600a1ba008cfee31b56 h2 {
+            .container-5ac76ae510ce43f6a69d85a9e442dec4 h2 {
                 font-size: 1.5em;
                 color: #222222;
                 border-bottom: 2px solid #ddd;
@@ -3503,10 +3523,10 @@ forecaster</div>
                 margin-bottom: 15px;
                 margin-top: 5px;
             }
-            .container-8270f6f818d34600a1ba008cfee31b56 details {
+            .container-5ac76ae510ce43f6a69d85a9e442dec4 details {
                 margin: 10px 0;
             }
-            .container-8270f6f818d34600a1ba008cfee31b56 summary {
+            .container-5ac76ae510ce43f6a69d85a9e442dec4 summary {
                 font-weight: bold;
                 font-size: 1.1em;
                 color: #000000;
@@ -3516,38 +3536,38 @@ forecaster</div>
                 padding: 5px;
                 border-radius: 5px;
             }
-            .container-8270f6f818d34600a1ba008cfee31b56 summary:hover {
+            .container-5ac76ae510ce43f6a69d85a9e442dec4 summary:hover {
                 color: #000000;
                 background-color: #e0e0e0;
             }
-            .container-8270f6f818d34600a1ba008cfee31b56 ul {
+            .container-5ac76ae510ce43f6a69d85a9e442dec4 ul {
                 font-family: 'Courier New', monospace;
                 list-style-type: none;
                 padding-left: 20px;
                 margin: 10px 0;
                 line-height: normal;
             }
-            .container-8270f6f818d34600a1ba008cfee31b56 li {
+            .container-5ac76ae510ce43f6a69d85a9e442dec4 li {
                 margin: 5px 0;
                 font-family: 'Courier New', monospace;
             }
-            .container-8270f6f818d34600a1ba008cfee31b56 li strong {
+            .container-5ac76ae510ce43f6a69d85a9e442dec4 li strong {
                 font-weight: bold;
                 color: #444444;
             }
-            .container-8270f6f818d34600a1ba008cfee31b56 li::before {
+            .container-5ac76ae510ce43f6a69d85a9e442dec4 li::before {
                 content: "- ";
                 color: #666666;
             }
-            .container-8270f6f818d34600a1ba008cfee31b56 a {
+            .container-5ac76ae510ce43f6a69d85a9e442dec4 a {
                 color: #001633;
                 text-decoration: none;
             }
-            .container-8270f6f818d34600a1ba008cfee31b56 a:hover {
+            .container-5ac76ae510ce43f6a69d85a9e442dec4 a:hover {
                 color: #359ccb; 
             }
         </style>
-<div class="container-8270f6f818d34600a1ba008cfee31b56">
+<div class="container-5ac76ae510ce43f6a69d85a9e442dec4">
 <h2>ForecasterRecursive</h2>
 <details open="">
 <summary>General Information</summary>
@@ -3559,10 +3579,10 @@ forecaster</div>
 <li><strong>Exogenous included:</strong> False</li>
 <li><strong>Weight function included:</strong> False</li>
 <li><strong>Differentiation order:</strong> None</li>
-<li><strong>Creation date:</strong> 2024-11-19 09:18:23</li>
-<li><strong>Last fit date:</strong> 2024-11-19 09:18:23</li>
+<li><strong>Creation date:</strong> 2024-11-20 21:42:00</li>
+<li><strong>Last fit date:</strong> 2024-11-20 21:42:01</li>
 <li><strong>Skforecast version:</strong> 0.14.0</li>
-<li><strong>Python version:</strong> 3.11.10</li>
+<li><strong>Python version:</strong> 3.12.4</li>
 <li><strong>Forecaster id:</strong> None</li>
 </ul>
 </details>
@@ -4965,7 +4985,7 @@ forecaster</div>
 <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[18]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <style>
-            .container-9ef2d103282b49c192bb8fae17ef491e {
+            .container-ecf96fdcb07a45cf8582a14fdc304bf5 {
                 font-family: 'Arial', sans-serif;
                 font-size: 0.9em;
                 color: #333333;
@@ -4976,7 +4996,7 @@ forecaster</div>
                 max-width: 600px;
                 #margin: auto;
             }
-            .container-9ef2d103282b49c192bb8fae17ef491e h2 {
+            .container-ecf96fdcb07a45cf8582a14fdc304bf5 h2 {
                 font-size: 1.5em;
                 color: #222222;
                 border-bottom: 2px solid #ddd;
@@ -4984,10 +5004,10 @@ forecaster</div>
                 margin-bottom: 15px;
                 margin-top: 5px;
             }
-            .container-9ef2d103282b49c192bb8fae17ef491e details {
+            .container-ecf96fdcb07a45cf8582a14fdc304bf5 details {
                 margin: 10px 0;
             }
-            .container-9ef2d103282b49c192bb8fae17ef491e summary {
+            .container-ecf96fdcb07a45cf8582a14fdc304bf5 summary {
                 font-weight: bold;
                 font-size: 1.1em;
                 color: #000000;
@@ -4997,38 +5017,38 @@ forecaster</div>
                 padding: 5px;
                 border-radius: 5px;
             }
-            .container-9ef2d103282b49c192bb8fae17ef491e summary:hover {
+            .container-ecf96fdcb07a45cf8582a14fdc304bf5 summary:hover {
                 color: #000000;
                 background-color: #e0e0e0;
             }
-            .container-9ef2d103282b49c192bb8fae17ef491e ul {
+            .container-ecf96fdcb07a45cf8582a14fdc304bf5 ul {
                 font-family: 'Courier New', monospace;
                 list-style-type: none;
                 padding-left: 20px;
                 margin: 10px 0;
                 line-height: normal;
             }
-            .container-9ef2d103282b49c192bb8fae17ef491e li {
+            .container-ecf96fdcb07a45cf8582a14fdc304bf5 li {
                 margin: 5px 0;
                 font-family: 'Courier New', monospace;
             }
-            .container-9ef2d103282b49c192bb8fae17ef491e li strong {
+            .container-ecf96fdcb07a45cf8582a14fdc304bf5 li strong {
                 font-weight: bold;
                 color: #444444;
             }
-            .container-9ef2d103282b49c192bb8fae17ef491e li::before {
+            .container-ecf96fdcb07a45cf8582a14fdc304bf5 li::before {
                 content: "- ";
                 color: #666666;
             }
-            .container-9ef2d103282b49c192bb8fae17ef491e a {
+            .container-ecf96fdcb07a45cf8582a14fdc304bf5 a {
                 color: #001633;
                 text-decoration: none;
             }
-            .container-9ef2d103282b49c192bb8fae17ef491e a:hover {
+            .container-ecf96fdcb07a45cf8582a14fdc304bf5 a:hover {
                 color: #359ccb; 
             }
         </style>
-<div class="container-9ef2d103282b49c192bb8fae17ef491e">
+<div class="container-ecf96fdcb07a45cf8582a14fdc304bf5">
 <h2>ForecasterRecursive</h2>
 <details open="">
 <summary>General Information</summary>
@@ -5040,10 +5060,10 @@ forecaster</div>
 <li><strong>Exogenous included:</strong> False</li>
 <li><strong>Weight function included:</strong> False</li>
 <li><strong>Differentiation order:</strong> None</li>
-<li><strong>Creation date:</strong> 2024-11-19 09:18:25</li>
-<li><strong>Last fit date:</strong> 2024-11-19 09:18:25</li>
+<li><strong>Creation date:</strong> 2024-11-20 21:42:05</li>
+<li><strong>Last fit date:</strong> 2024-11-20 21:42:05</li>
 <li><strong>Skforecast version:</strong> 0.14.0</li>
-<li><strong>Python version:</strong> 3.11.10</li>
+<li><strong>Python version:</strong> 3.12.4</li>
 <li><strong>Forecaster id:</strong> None</li>
 </ul>
 </details>
@@ -5318,7 +5338,7 @@ forecaster</div>
 <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[21]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <style>
-            .container-9903903e244a4ef586a71661c2f4ddb4 {
+            .container-f1922659703a4c12a72c9acd5ece56e2 {
                 font-family: 'Arial', sans-serif;
                 font-size: 0.9em;
                 color: #333333;
@@ -5329,7 +5349,7 @@ forecaster</div>
                 max-width: 600px;
                 #margin: auto;
             }
-            .container-9903903e244a4ef586a71661c2f4ddb4 h2 {
+            .container-f1922659703a4c12a72c9acd5ece56e2 h2 {
                 font-size: 1.5em;
                 color: #222222;
                 border-bottom: 2px solid #ddd;
@@ -5337,10 +5357,10 @@ forecaster</div>
                 margin-bottom: 15px;
                 margin-top: 5px;
             }
-            .container-9903903e244a4ef586a71661c2f4ddb4 details {
+            .container-f1922659703a4c12a72c9acd5ece56e2 details {
                 margin: 10px 0;
             }
-            .container-9903903e244a4ef586a71661c2f4ddb4 summary {
+            .container-f1922659703a4c12a72c9acd5ece56e2 summary {
                 font-weight: bold;
                 font-size: 1.1em;
                 color: #000000;
@@ -5350,38 +5370,38 @@ forecaster</div>
                 padding: 5px;
                 border-radius: 5px;
             }
-            .container-9903903e244a4ef586a71661c2f4ddb4 summary:hover {
+            .container-f1922659703a4c12a72c9acd5ece56e2 summary:hover {
                 color: #000000;
                 background-color: #e0e0e0;
             }
-            .container-9903903e244a4ef586a71661c2f4ddb4 ul {
+            .container-f1922659703a4c12a72c9acd5ece56e2 ul {
                 font-family: 'Courier New', monospace;
                 list-style-type: none;
                 padding-left: 20px;
                 margin: 10px 0;
                 line-height: normal;
             }
-            .container-9903903e244a4ef586a71661c2f4ddb4 li {
+            .container-f1922659703a4c12a72c9acd5ece56e2 li {
                 margin: 5px 0;
                 font-family: 'Courier New', monospace;
             }
-            .container-9903903e244a4ef586a71661c2f4ddb4 li strong {
+            .container-f1922659703a4c12a72c9acd5ece56e2 li strong {
                 font-weight: bold;
                 color: #444444;
             }
-            .container-9903903e244a4ef586a71661c2f4ddb4 li::before {
+            .container-f1922659703a4c12a72c9acd5ece56e2 li::before {
                 content: "- ";
                 color: #666666;
             }
-            .container-9903903e244a4ef586a71661c2f4ddb4 a {
+            .container-f1922659703a4c12a72c9acd5ece56e2 a {
                 color: #001633;
                 text-decoration: none;
             }
-            .container-9903903e244a4ef586a71661c2f4ddb4 a:hover {
+            .container-f1922659703a4c12a72c9acd5ece56e2 a:hover {
                 color: #359ccb; 
             }
         </style>
-<div class="container-9903903e244a4ef586a71661c2f4ddb4">
+<div class="container-f1922659703a4c12a72c9acd5ece56e2">
 <h2>ForecasterRecursiveMultiSeries</h2>
 <details open="">
 <summary>General Information</summary>
@@ -5395,10 +5415,10 @@ forecaster</div>
 <li><strong>Weight function included:</strong> False</li>
 <li><strong>Series weights:</strong> None</li>
 <li><strong>Differentiation order:</strong> None</li>
-<li><strong>Creation date:</strong> 2024-11-19 09:18:25</li>
-<li><strong>Last fit date:</strong> 2024-11-19 09:18:25</li>
+<li><strong>Creation date:</strong> 2024-11-20 21:42:05</li>
+<li><strong>Last fit date:</strong> 2024-11-20 21:42:05</li>
 <li><strong>Skforecast version:</strong> 0.14.0</li>
-<li><strong>Python version:</strong> 3.11.10</li>
+<li><strong>Python version:</strong> 3.12.4</li>
 <li><strong>Forecaster id:</strong> None</li>
 </ul>
 </details>
