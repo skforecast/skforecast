@@ -509,10 +509,15 @@ def fetch_dataset(
                     f"Error reading dataset '{name}' from {url}. Try to version = 'latest'"
                 )
     else:
-        df = []
-        for url_partition in url:
-            path = 'https://drive.google.com/uc?export=download&id=' + url_partition.split('/')[-2]
-            df.append(pd.read_parquet(path))
+        try: 
+            df = []
+            for url_partition in url:
+                path = 'https://drive.google.com/uc?export=download&id=' + url_partition.split('/')[-2]
+                df.append(pd.read_parquet(path))
+        except:
+            raise ValueError(
+                f"Error reading dataset '{name}' from {url}. Try to version = 'latest'"
+            )
         df = pd.concat(df, axis=0).reset_index(drop=True)
 
     if not raw:
