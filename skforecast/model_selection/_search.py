@@ -36,6 +36,8 @@ def parse_pipe_args(t):
     if '__' not in t:
         return None, t
     els = t.split('__')
+    if els[0] not in ['estimator', 'transformer_y', 'transformer_exog']:
+        return None, t
     return els[0], '__'.join(els[1:])
 
 
@@ -766,15 +768,13 @@ def _bayesian_search_optuna(
         ) -> float:
 
             sample = search_space(trial)
-            # << new
-            #sample_params = {k: v for k, v in sample.items() if k != 'lags'}
-            #forecaster.set_params(sample_params)
-            #print(f"Sample items: {list(sample.items())}")
 
             estimator_params = {}
             transformer_y_params = {}
             transformer_exog_params = {}
             for k, v in sample.items():
+                if k == 'lags':
+                    continue
                 prefix, arg = parse_pipe_args(k)
                 if prefix == 'estimator':
                     estimator_params[arg] = v
@@ -782,18 +782,16 @@ def _bayesian_search_optuna(
                     transformer_y_params[arg] = v
                 elif prefix == 'transformer_exog':
                     transformer_exog_params[arg] = v
+                else:
+                    estimator_params[arg] = v
 
-            #print(f"Forecaster params: {estimator_params}")
             forecaster.set_params(estimator_params)
 
             if transformer_y_params:
                 forecaster.transformer_y.set_params(**transformer_y_params)
-                #print(f"Transformer_y params set: {forecaster.transformer_y.get_params()}")
 
             if transformer_exog_params:
                 forecaster.transformer_exog.set_params(**transformer_exog_params)
-                #print(f"Transformer_exog params set: {forecaster.transformer_exog.get_params()}")
-            # new >>
 
             if "lags" in sample:
                 forecaster.set_lags(sample['lags'])
@@ -898,7 +896,6 @@ def _bayesian_search_optuna(
     if output_file is not None:
         handler.close()
 
-    # <<new: can use parse_pipe_arg on the keys
     parsed_keys = [parse_pipe_args(x)[1] for x in search_space(best_trial).keys()]
     if parsed_keys != list(best_trial.params.keys()):
         raise ValueError(
@@ -906,7 +903,6 @@ def _bayesian_search_optuna(
              f"  Search Space keys  : {parsed_keys}\n"
              f"  Trial objects keys : {list(best_trial.params.keys())}.")
         )
-    # new>>
     warnings.filterwarnings('default')
 
     lags_list = []
@@ -947,7 +943,6 @@ def _bayesian_search_optuna(
         best_metric = results.loc[0, list(metric_dict.keys())[0]]
 
         forecaster.set_lags(best_lags)
-        print(f"Setting best params: {best_params}")
         forecaster.set_params(best_params)
 
         forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True)

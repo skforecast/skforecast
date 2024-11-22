@@ -1181,14 +1181,6 @@ class ForecasterRecursive(ForecasterBase):
         last_window_values, last_window_index = preprocess_last_window(
                                                     last_window = last_window
                                                 )
-        #print("Creating predict inputs")
-        # <<new
-        # last_window_values = transform_numpy(
-        #                          array             = last_window_values,
-        #                          transformer       = self.transformer_y,
-        #                          fit               = False,
-        #                          inverse_transform = False
-        #                      )
         last_window_values = transform_dataframe(
                    df                = pd.DataFrame(data=last_window_values,
                                                     index=last_window_index,
@@ -1197,7 +1189,6 @@ class ForecasterRecursive(ForecasterBase):
                    fit               = False,
                    inverse_transform = False
                ).values.flatten()
-        # new>>
 
         if self.differentiation is not None:
             last_window_values = self.differentiator.fit_transform(last_window_values)
@@ -1466,30 +1457,19 @@ class ForecasterRecursive(ForecasterBase):
                               last_window_values = last_window_values,
                               exog_values        = exog_values
                           )
-            #print(f"Main regressor predictions: {predictions}")
 
         if self.differentiation is not None:
             predictions = self.differentiator.inverse_transform_next_window(predictions)
 
-        # <<new
-        # predictions = transform_numpy(
-        #                   array             = predictions,
-        #                   transformer       = self.transformer_y,
-        #                   fit               = False,
-        #                   inverse_transform = True
-        #               )
         predictions = transform_dataframe(
                     df                = pd.DataFrame(data=predictions,
                                                      index=prediction_index,
-                                                     columns=["target"]),
+                                                     columns=["y"]),
                     transformer       = self.transformer_y,
                     fit               = False,
                     inverse_transform = True
                 ).values.flatten()
-        # new>>
 
-        #print(f"Transformed predictions: {predictions}")
-        #print(f"Prediction_index: {prediction_index}")
         predictions = pd.Series(
                           data  = predictions,
                           index = prediction_index,
@@ -1632,7 +1612,6 @@ class ForecasterRecursive(ForecasterBase):
                 self.differentiator.inverse_transform_next_window(boot_predictions)
             )
 
-        # new: re-write to use df here
         if self.transformer_y:
             boot_predictions = np.apply_along_axis(
                                    func1d            = transform_numpy,
@@ -2123,14 +2102,12 @@ class ForecasterRecursive(ForecasterBase):
                 f"Got {len(y_true)} and {len(y_pred)}."
             )
 
-        # new
         y_true_index = None
         if isinstance(y_true, pd.Series) and isinstance(y_pred, pd.Series):
             if not y_true.index.equals(y_pred.index):
                 raise ValueError(
                     "`y_true` and `y_pred` must have the same index."
                 )
-            # new
             y_true_index = y_true.index
 
         if not isinstance(y_pred, np.ndarray):
@@ -2140,7 +2117,6 @@ class ForecasterRecursive(ForecasterBase):
             y_true = y_true.to_numpy()
 
         if self.transformer_y:
-            # << new
             if not y_true_index:
                 y_true = transform_numpy(
                              array             = y_true,
@@ -2156,18 +2132,17 @@ class ForecasterRecursive(ForecasterBase):
                          )
             else:
                 y_true = transform_dataframe(
-                             df             = pd.DataFrame(data=y_true, index=y_true_index, columns=["target"]),
+                             df                = pd.DataFrame(data=y_true, index=y_true_index, columns=["y"]),
                              transformer       = self.transformer_y,
                              fit               = False,
                              inverse_transform = False
-                         )
+                         ).values.flatten()
                 y_pred = transform_dataframe(
-                             df             = pd.DataFrame(data=y_pred, index=y_true_index, columns=["target"]),
+                             df                = pd.DataFrame(data=y_pred, index=y_true_index, columns=["y"]),
                              transformer       = self.transformer_y,
                              fit               = False,
                              inverse_transform = False
-                         )
-            # new>>
+                         ).values.flatten()
         
         if self.differentiation is not None:
             differentiator = copy(self.differentiator)
