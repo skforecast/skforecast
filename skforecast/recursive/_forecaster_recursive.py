@@ -1181,10 +1181,16 @@ class ForecasterRecursive(ForecasterBase):
         last_window_values, last_window_index = preprocess_last_window(
                                                     last_window = last_window
                                                 )
+        if last_window is None:
+            col_names = ["y"]
+        elif type(last_window) == pd.Series:
+            col_names = [last_window.name]
+        elif type(last_window) == pd.DataFrame:
+            col_names = last_window.columns
         last_window_values = transform_dataframe(
                    df                = pd.DataFrame(data=last_window_values,
                                                     index=last_window_index,
-                                                    columns=["y"]),
+                                                    columns=col_names),
                    transformer       = self.transformer_y,
                    fit               = False,
                    inverse_transform = False
@@ -1461,10 +1467,16 @@ class ForecasterRecursive(ForecasterBase):
         if self.differentiation is not None:
             predictions = self.differentiator.inverse_transform_next_window(predictions)
 
+        if last_window is None:
+            col_names = ["y"]
+        elif type(last_window) == pd.Series:
+            col_names = [last_window.name]
+        elif type(last_window) == pd.DataFrame:
+            col_names = last_window.columns
         predictions = transform_dataframe(
                     df                = pd.DataFrame(data=predictions,
                                                      index=prediction_index,
-                                                     columns=["y"]),
+                                                     columns=col_names),
                     transformer       = self.transformer_y,
                     fit               = False,
                     inverse_transform = True
@@ -2132,13 +2144,15 @@ class ForecasterRecursive(ForecasterBase):
                          )
             else:
                 y_true = transform_dataframe(
-                             df                = pd.DataFrame(data=y_true, index=y_true_index, columns=["y"]),
+                             df                = pd.DataFrame(data=y_true,
+                                index=y_true_index, columns=[self.last_window_]),
                              transformer       = self.transformer_y,
                              fit               = False,
                              inverse_transform = False
                          ).values.flatten()
                 y_pred = transform_dataframe(
-                             df                = pd.DataFrame(data=y_pred, index=y_true_index, columns=["y"]),
+                             df                = pd.DataFrame(data=y_pred,
+                                index=y_true_index, columns=[self.last_window_]),
                              transformer       = self.transformer_y,
                              fit               = False,
                              inverse_transform = False
