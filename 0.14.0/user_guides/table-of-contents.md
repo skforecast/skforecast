@@ -37,6 +37,10 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 
 - [Probabilistic forecasting](../user_guides/probabilistic-forecasting.html)
 
+<span style="font-size: 1.3em;">Model Explainability</span>
+
+- [Model Explainability](../user_guides/explainability.html)
+
 <span style="font-size: 1.3em;">Model deployment</span>
 
 - [Save and load forecaster](../user_guides/save-load-forecaster.html)
