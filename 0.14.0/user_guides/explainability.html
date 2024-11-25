@@ -3905,15 +3905,15 @@ forecaster.get_feature_importances()</div>
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>SHAP (SHapley Additive exPlanations) values are a popular method for explaining machine learning models, as they help to understand how variables and values influence predictions visually and quantitatively.</p>
-<p>It is possible to generate SHAP-values explanations from Skforecast models with just two essential elements:</p>
+<p>SHAP (SHapley Additive exPlanations) values are a widely used approach for interpreting machine learning models, providing a clear understanding of how variables and their values impact predictions, both visually and numerically.</p>
+<p>Skforecast models allow you to generate SHAP-value explanations using just two key components:</p>
 <ul>
-<li><p>The internal regressor of the forecaster.</p>
+<li><p>The internal regressor used by the forecaster.</p>
 </li>
-<li><p>The training matrices created from the time series and used to fit the forecaster.</p>
+<li><p>The input matrices derived from the time series. These matrices can either be the ones used for fitting the forecaster or those required during the prediction phase.</p>
 </li>
 </ul>
-<p>By leveraging these two components, users can create insightful and interpretable explanations for their skforecast models. These explanations can be used to verify the reliability of the model, identify the most significant factors that contribute to model predictions, and gain a deeper understanding of the underlying relationship between the input variables and the target variable.</p>
+<p>With these elements, users can produce meaningful explanations for their Skforecast models. These insights help verify model reliability, highlight the key factors influencing predictions, and uncover the relationships between input features and the target variable.</p>
 </div>
 </div>
 </div>
