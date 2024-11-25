@@ -10,7 +10,7 @@ from skforecast.utils import StartSktimePipe, EndSktimePipe
 
 def test_StartSktimePipe_transforms_input_as_df_with_datetimeindex_WSUN():
     """
-    Check if the input is transformed to a dataframe with a PeriodIndex
+    Check if the input DataFrame with specified Offset date is transformed to a dataframe with a PeriodIndex
     """
     df = pd.DataFrame(
         index=pd.DatetimeIndex(['2011-01-02', '2011-01-09', '2011-01-16', '2011-01-23',
@@ -40,7 +40,7 @@ def test_StartSktimePipe_transforms_input_as_df_with_datetimeindex_WSUN():
 
 def test_StartSktimePipe_transforms_input_as_df_with_datetimeindex_inferred_freq():
     """
-    Check if the input is transformed to a dataframe with a PeriodIndex
+    Check if the input DataFrame with inferred Offset date is transformed to a dataframe with a PeriodIndex
     """
     df = pd.DataFrame(
         index=pd.DatetimeIndex(['2011-01-02', '2011-01-09', '2011-01-16', '2011-01-23',
@@ -70,7 +70,7 @@ def test_StartSktimePipe_transforms_input_as_df_with_datetimeindex_inferred_freq
 
 def test_StartSktimePipe_transforms_input_as_nparray():
     """
-    Check if the input is transformed to a dataframe with a PeriodIndex
+    Check if the input numpy array is transformed to a dataframe with a PeriodIndex
     """
     a = np.array([[17.], [25.], [39.], [22.], [33.], [39.], [39.], [17.], [34.], [52.]])
 
@@ -93,7 +93,7 @@ def test_StartSktimePipe_transforms_input_as_nparray():
 
 def test_StartSktimePipe_transforms_input_as_series():
     """
-    Check if the input is transformed to a dataframe with a PeriodIndex
+    Check if the input Series is transformed to a dataframe with a PeriodIndex
     """
 
     s = pd.Series(index=pd.DatetimeIndex(['2011-01-02', '2011-01-09', '2011-01-16', '2011-01-23',
@@ -118,9 +118,10 @@ def test_StartSktimePipe_transforms_input_as_series():
     )
     pd.testing.assert_series_equal(output, expected)
 
+
 def test_StartSktimePipe_inverse_transform():
     """
-    Check if the input is transformed to a dataframe with a PeriodIndex
+    Check if the input DataFrame with a PeriodIndex is transformed to a dataframe with a DatetimeIndex
     """
     df = pd.DataFrame(
         index=pd.PeriodIndex(['2010-12-27/2011-01-02', '2011-01-03/2011-01-09',
@@ -148,9 +149,10 @@ def test_StartSktimePipe_inverse_transform():
 
     pd.testing.assert_frame_equal(output, expected)
 
+
 def test_EndSktimePipe_transform():
     """
-    Check if the input is transformed to a dataframe with a DateIndex
+    Check if the input DataFrame with a PeriodIndex is transformed to a dataframe with a DatetimeIndex
     """
     df = pd.DataFrame(
         index=pd.PeriodIndex(['2010-12-27/2011-01-02', '2011-01-03/2011-01-09',
@@ -179,11 +181,10 @@ def test_EndSktimePipe_transform():
     pd.testing.assert_frame_equal(output, expected)
 
 
-
-
 def test_EndSktimePipe_inverse_transforms_input_as_df_with_datetimeindex_WSUN():
     """
-    Check if the input is inverse_transformed to a dataframe with a PeriodIndex
+    Check if the input DataFrame with a DatetimeIndex with specified Offset date
+    is inverse-transformed to a dataframe with a PeriodIndex
     """
     df = pd.DataFrame(
         index=pd.DatetimeIndex(['2011-01-02', '2011-01-09', '2011-01-16', '2011-01-23',
@@ -213,7 +214,8 @@ def test_EndSktimePipe_inverse_transforms_input_as_df_with_datetimeindex_WSUN():
 
 def test_EndSktimePipe_inverse_transforms_input_as_df_with_datetimeindex_inferred_freq():
     """
-    Check if the input is transformed to a dataframe with a PeriodIndex
+    Check if the input DataFrame with a DatetimeIndex and inferred OffsetDate
+    is inverse-transformed to a dataframe with a PeriodIndex
     """
     df = pd.DataFrame(
         index=pd.DatetimeIndex(['2011-01-02', '2011-01-09', '2011-01-16', '2011-01-23',
@@ -241,9 +243,9 @@ def test_EndSktimePipe_inverse_transforms_input_as_df_with_datetimeindex_inferre
     pd.testing.assert_frame_equal(output, expected)
 
 
-def test_EndSktimePipe_transforms_input_as_nparray():
+def test_EndSktimePipe_inverse_transforms_input_as_nparray():
     """
-    Check if the input is transformed to a dataframe with a PeriodIndex
+    Check if the input numpy array is inverse-transformed to a dataframe with a PeriodIndex
     """
     a = np.array([[17.], [25.], [39.], [22.], [33.], [39.], [39.], [17.], [34.], [52.]])
 
@@ -264,9 +266,9 @@ def test_EndSktimePipe_transforms_input_as_nparray():
     pd.testing.assert_frame_equal(output, expected)
 
 
-def test_EndSktimePipe_transforms_input_as_series():
+def test_EndSktimePipe_inverse_transforms_input_as_series():
     """
-    Check if the input is transformed to a dataframe with a PeriodIndex
+    Check if the input series is inverse-transformed to a dataframe with a PeriodIndex
     """
 
     s = pd.Series(index=pd.DatetimeIndex(['2011-01-02', '2011-01-09', '2011-01-16', '2011-01-23',

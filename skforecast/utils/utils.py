@@ -2786,9 +2786,6 @@ class StartSktimePipe(BaseTransformer):
         """Input: np array, Series or DataFrame with either a datetime or PeriodIndex
         Output: DataFrame with PeriodIndex
         """
-        #print("StartPipe: Received data to be transformed:")
-        #print(X)
-        #print("Done")
         if type(X) == np.ndarray:
             X = nparray_to_df(X, self.first_date, self.columns, self.period)
         if type(X.index) != pd.core.indexes.period.PeriodIndex:
@@ -2800,14 +2797,10 @@ class StartSktimePipe(BaseTransformer):
         """Input: DataFrame with PeriodIndex
         Output: DataFrame with Datetime index
         """
-        #if type(X) == np.ndarray:
-        #    X = nparray_to_df(X, self.first_date, self.columns, self.period)
         if type(X.index) != pd.core.indexes.datetimes.DatetimeIndex:
             X = X.copy()
             X.index = X.index.to_timestamp(how="end").date.astype('datetime64[ns]')
             X = X.asfreq(self.period)
-        #print("StartPipe: Returning inverse_transformed data:")
-        #print(X)
         return X
 
 
@@ -2835,17 +2828,12 @@ class EndSktimePipe(BaseTransformer):
             X = X.copy()
             X.index = X.index.to_timestamp(how="end").date.astype('datetime64[ns]')
             X = X.asfreq(self.period)
-        #print("EndPipe: Returning transformed data:")
-        #print(X.info())
-        #print("Done.")
         return X
 
     def inverse_transform(self, X, y=None):
         """Input: np array, Series or DataFrame with either a datetime or PeriodIndex
         Output: DataFrame with PeriodIndex
         """
-        #print("EndPipe: Received data to be inverse-transformed:")
-        #print(X)
         if type(X) == np.ndarray:
             X = nparray_to_df(X, self.first_date, self.columns, self.period)
         if type(X.index) != pd.core.indexes.period.PeriodIndex:
