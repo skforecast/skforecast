@@ -2774,12 +2774,15 @@ class StartSktimePipe(BaseTransformer):
         "capability:inverse_transform": True,
     }
 
-    def __init__(self, first_date, columns, period="W-MON"):
-        self.period = period
-        self.columns = columns
-        self.first_date = first_date
+    def __init__(self):
+        self.period = None
+        self.columns = None
+        self.first_date = None
 
     def fit(self, X, y=None):
+        self.first_date = X.index[0]
+        self.period = X.index.freqstr
+        self.columns = X.columns
         return self
 
     def transform(self, X, y=None):
@@ -2812,12 +2815,15 @@ class EndSktimePipe(BaseTransformer):
         "capability:inverse_transform": True,
     }
 
-    def __init__(self, first_date, columns, period="W-MON"):
-        self.period = period
-        self.columns = columns
-        self.first_date = first_date
+    def __init__(self):
+        self.period = None
+        self.columns = None
+        self.first_date = None
 
     def fit(self, X, y=None):
+        self.first_date = X.index.to_timestamp(how="end").date.astype('datetime64[ns]')[0]
+        self.period = X.index.freqstr
+        self.columns = X.columns
         return self
 
     def transform(self, X, y=None):
