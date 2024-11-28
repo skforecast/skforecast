@@ -1,6 +1,6 @@
 [project]
 name = "skforecast"
-version = "0.14.0"
+version = "0.15.0"
 description = "Skforecast is a Python library for time series forecasting using machine learning models. It works with any regressor compatible with the scikit-learn API, including popular options like LightGBM, XGBoost, CatBoost, Keras, and many others."
 readme = "README.md"
 authors = [

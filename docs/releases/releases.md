@@ -10,6 +10,19 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
 
+## 0.15.0 <small>In development</small> { id="0.15.0" }
+
+The main changes in this release are:
+
+**Added**
+
+**Changed**
+
++ <code>[ForecasterAutoregCustom]</code> and <code>[ForecasterAutoregMultiSeriesCustom]</code> has been deleted (deprecated since skforecast 0.14.0). Window features can be added using the `window_features` argument in the <code>[ForecasterRecursive]</code> and <code>[ForecasterRecursiveMultiSeries]</code>.
+
+**Fixed**
+
+
 ## 0.14.0 <small>Nov 11, 2024</small> { id="0.14.0" }
 
 The main changes in this release are:
@@ -66,7 +79,7 @@ This release has undergone a major refactoring to improve the performance of the
 
 **Changed**
 
-+ <code>[ForecasterAutoregCustom]</code> has been deprecated. Window features can be added using the `window_features` argument in the <code>[ForecasterRecursive]</code>.
++ <code>[ForecasterAutoregCustom]</code> and <code>[ForecasterAutoregMultiSeriesCustom]</code> has been deprecated. Window features can be added using the `window_features` argument in the <code>[ForecasterRecursive]</code> and <code>[ForecasterRecursiveMultiSeries]</code>.
 
 + Refactor `recursive_predict` in <code>[ForecasterRecursiveMultiSeries]</code> to predict all series at once and include option of adding residuals. This improves performance when predicting multiple series.
 
