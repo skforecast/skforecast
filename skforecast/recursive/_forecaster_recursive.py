@@ -2071,10 +2071,10 @@ class ForecasterRecursive(ForecasterBase):
 
         Parameters
         ----------
-        y_true : pandas Series, numpy ndarray, default `None`
+        y_true : pandas Series, numpy ndarray
             True values of the time series from which the residuals have been
             calculated.
-        y_pred : pandas Series, numpy ndarray, default `None`
+        y_pred : pandas Series, numpy ndarray
             Predicted values of the time series.
         append : bool, default `False`
             If `True`, new residuals are added to the once already stored in the

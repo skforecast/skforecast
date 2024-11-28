@@ -18,7 +18,7 @@ This release has undergone a major refactoring to improve the performance of the
 
 + <span class="badge text-bg-feature">Feature</span> Window features can be added to the training matrix using the `window_features` argument in all forecasters. You can use the <code>[RollingFeatures]</code> class to create these features or create your own object. [Create window and custom features](../user_guides/window-features-and-custom-features.html).
 
-+ <span class="badge text-bg-feature">Feature</span> <code>[model_selection]</code> functions now have a new argument `cv`. This argument expect an object of type <code>[TimeSeriesFold]</code> or <code>[OneStepAheadFold]</code> which allows to define the validation strategy using the arguments `initial_train_size`, `steps`, `gap`, `refit`, `fixed_train_size`, `skip_folds` and `allow_incomplete_folds`.
++ <span class="badge text-bg-feature">Feature</span> <code>[model_selection]</code> functions now have a new argument `cv`. This argument expect an object of type <code>[TimeSeriesFold]</code> ([backtesting](../user_guides/backtesting.html)) or <code>[OneStepAheadFold]</code> which allows to define the validation strategy using the arguments `initial_train_size`, `steps`, `gap`, `refit`, `fixed_train_size`, `skip_folds` and `allow_incomplete_folds`.
 
 + <span class="badge text-bg-feature">Feature</span> Hyperparameter search now allows to follow a [one-step-ahead validation strategy](../user_guides/hyperparameter-tuning-and-lags-selection.html#one-step-ahead-validation) using a <code>[OneStepAheadFold]</code> as `cv` argument in the <code>[model_selection]</code> functions.
 
@@ -30,7 +30,9 @@ This release has undergone a major refactoring to improve the performance of the
 
 + <span class="badge text-bg-api-change">API Change</span> Package structure has been changed to improve code organization. The forecasters have been grouped into the `recursive`, `direct` amd `deep_learning` modules. Visit the [migration guide](../user_guides/migration-guide.html) section for more information.
 
-+ <span class="badge text-bg-api-change">API Change</span> <code>[ForecasterAutoregCustom]</code> has been deprecated. Window features can be added using the `window_features` argument in the <code>[ForecasterRecursive]</code>.
++ <span class="badge text-bg-api-change">API Change</span> <code>[ForecasterAutoregCustom]</code> has been deprecated. [Window features](../user_guides/window-features-and-custom-features.html) can be added using the `window_features` argument in the <code>[ForecasterRecursive]</code>.
+
++ <span class="badge text-bg-api-change">API Change</span> Refactor the `set_out_sample_residuals` method in all forecasters, it now expects `y_true` and `y_pred` as arguments instead of `residuals`. This method is used to store the residuals of the out-of-sample predictions.
 
 + <span class="badge text-bg-api-change">API Change</span> The `pmdarima.ARIMA` regressor is no longer supported by the <code>[ForecasterSarimax]</code>. You can use the skforecast <code>[Sarimax]</code> model or, to continue using it, use skforecast 0.13.0 or lower.
 
@@ -91,6 +93,8 @@ This release has undergone a major refactoring to improve the performance of the
 + Added <code>[feature_selection]</code> module. The functions <code>[select_features]</code> and <code>[select_features_multiseries]</code> have been moved to this module.
 
 + The functions <code>[select_features]</code> and <code>[select_features_multiseries]</code> now have 3 returns: `selected_lags`, `selected_window_features` and `selected_exog`.
+
++ Refactor the `set_out_sample_residuals` method in all forecasters, it now expects `y_true` and `y_pred` as arguments instead of `residuals`.
 
 + `exog_to_direct` and `exog_to_direct_numpy` in <code>[utils]</code> now returns a the names of the columns of the transformed exogenous variables.
 
@@ -266,17 +270,17 @@ The main changes in this release are:
 
 + <span class="badge text-bg-feature">Feature</span> Multiseries forecaster (Global Models) can be trained using [series of different lengths and with different exogenous variables](https://skforecast.org/latest/user_guides/multi-series-with-different-length-and-different_exog) per series.
 
-+ <span class="badge text-bg-feature">Feature</span> New functionality to [select features](https://skforecast.org/latest/user_guides/feature-selection) using scikit-learn selectors ([`select_features`](https://skforecast.org/latest/api/model_selection#skforecast.model_selection.model_selection.select_features) and [`select_features_multiseries`](https://skforecast.org/latest/api/model_selection_multiseries#skforecast.model_selection_multiseries.model_selection_multiseries.select_features_multiseries)).
++ <span class="badge text-bg-feature">Feature</span> New functionality to [select features](https://skforecast.org/latest/user_guides/feature-selection) using scikit-learn selectors ([`select_features`](https://skforecast.org/latest/api/model_selection#skforecast.model_selection.model_selection.select_features) and [`select_features_multiseries`](https://skforecast.org/0.12.0/api/model_selection_multiseries#skforecast.model_selection_multiseries.model_selection_multiseries.select_features_multiseries)).
 
 + <span class="badge text-bg-feature">Feature</span> Added new forecaster [`ForecasterRnn`](https://skforecast.org/latest/api/forecasterrnn) to create forecasting models based on [deep learning](https://skforecast.org/latest/user_guides/forecasting-with-deep-learning-rnn-lstm) (RNN and LSTM).
 
-+ <span class="badge text-bg-feature">Feature</span> New method to [predict intervals conditioned on the range of the predicted values](https://skforecast.org/latest/user_guides/probabilistic-forecasting#intervals-conditioned-on-predicted-values-binned-residuals). This is can help to improve the interval coverage when the residuals are not homoscedastic ([`ForecasterAutoreg`](https://skforecast.org/latest/api/forecasterautoreg)).
++ <span class="badge text-bg-feature">Feature</span> New method to [predict intervals conditioned on the range of the predicted values](https://skforecast.org/latest/user_guides/probabilistic-forecasting#intervals-conditioned-on-predicted-values-binned-residuals). This is can help to improve the interval coverage when the residuals are not homoscedastic ([`ForecasterAutoreg`](https://skforecast.org/0.12.0/api/forecasterautoreg)).
 
 + <span class="badge text-bg-enhancement">Enhancement</span> [Bayesian hyperparameter search](https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting#hyperparameter-tuning-and-lags-selection-multi-series) is now available for all multiseries forecasters using `optuna` as the search engine.
 
-+ <span class="badge text-bg-enhancement">Enhancement</span> All Recursive Forecasters are now able to [differentiate the time series](https://skforecast.org/latest/faq/time-series-differentiation) before modeling it.
++ <span class="badge text-bg-enhancement">Enhancement</span> All Recursive Forecasters are now able to [differentiate the time series](https://skforecast.org/latest/user_guides/time-series-differentiation) before modeling it.
 
-+ <span class="badge text-bg-api-change">API Change</span> Changed the default value of the `transformer_series` argument to use a `StandardScaler()` in the Global Forecasters ([`ForecasterAutoregMultiSeries`](https://skforecast.org/latest/api/forecastermultiseries), [`ForecasterAutoregMultiSeriesCustom`](https://skforecast.org/latest/api/forecastermultiseriescustom) and [`ForecasterAutoregMultiVariate`](https://skforecast.org/latest/api/forecastermultivariate)).
++ <span class="badge text-bg-api-change">API Change</span> Changed the default value of the `transformer_series` argument to use a `StandardScaler()` in the Global Forecasters ([`ForecasterAutoregMultiSeries`](https://skforecast.org/0.12.0/api/forecastermultiseries), [`ForecasterAutoregMultiSeriesCustom`](https://skforecast.org/0.12.0/api/forecastermultiseriescustom) and [`ForecasterAutoregMultiVariate`](https://skforecast.org/0.12.0/api/forecastermultivariate)).
 
 **Added**
 

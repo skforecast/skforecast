@@ -50,17 +50,13 @@ nav:
       - Backtesting forecaster: user_guides/backtesting.ipynb
       - Hyperparameter tuning and lags selection: user_guides/hyperparameter-tuning-and-lags-selection.ipynb
       - Feature selection: user_guides/feature-selection.ipynb
-    - Probabilistic Forecasting:
-      - Probabilistic forecasting: user_guides/probabilistic-forecasting.ipynb
-    - Model Explainability:
-      - Explainability: user_guides/explainability.ipynb
+    - Probabilistic Forecasting: user_guides/probabilistic-forecasting.ipynb
+    - Model Explainability: user_guides/explainability.ipynb
     - Model deployment:
       - Save and load forecaster: user_guides/save-load-forecaster.ipynb
       - Forecaster in production: user_guides/forecaster-in-production.ipynb
-    - Plotting:
-      - Plotting: user_guides/plotting.ipynb
-    - Datasets:
-      - Datasets: user_guides/datasets.ipynb
+    - Plotting: user_guides/plotting.ipynb
+    - Datasets: user_guides/datasets.ipynb
     - Additional Resources:
       - Extract training and prediction matrices: user_guides/training-and-prediction-matrices.ipynb
       - Weighted time series forecasting: user_guides/weighted-time-series-forecasting.ipynb

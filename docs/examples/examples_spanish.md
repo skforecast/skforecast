@@ -10,7 +10,7 @@ Esta sección proporciona tutoriales esenciales para los usuarios que están com
 
 <i class="fa-duotone fa-chart-line fa" style="font-size: 25px; color:#1DA1F2;"></i> [Skforecast: forecasting series temporales con machine learning](https://www.cienciadedatos.net/documentos/py27-forecasting-series-temporales-python-scikitlearn.html)
 
-<i class="fa-solid fa-arrow-trend-up" style="color: #E60023;"></i> [Modelos ARIMA y SARIMAX](https://cienciadedatos.net/documentos/py51-modelos-arima-sarimax-python.html)
+<i class="fa-solid fa-arrow-trend-up" style="font-size: 25px; color: #E60023;"></i> [Modelos ARIMA y SARIMAX](https://cienciadedatos.net/documentos/py51-modelos-arima-sarimax-python.html)
 
 <i class="fa-solid fa-sitemap fa" style="font-size: 25px; color:#00cc99;"></i> [Forecasting con gradient boosting: XGBoost, LightGBM y CatBoost](https://www.cienciadedatos.net/documentos/py39-forecasting-series-temporales-con-skforecast-xgboost-lightgbm-catboost.html)
 
@@ -26,13 +26,13 @@ Universidad de Deusto / Deustuko Unibertsitatea](https://youtu.be/MlktVhReO0E)
 
 Estos tutoriales se centran en modelos globales y en el pronóstico de series múltiples, donde puedes explorar el uso de técnicas que manejan varias series temporales simultáneamente y comparar el rendimiento entre diferentes enfoques de forecasting.
 
-<i class="fa-duotone fa-water fa" style="font-size: 25px; color:teal;"></i> [Global Forecasting Models: Multi-series forecasting](https://www.cienciadedatos.net/documentos/py44-multi-series-forecasting-skforecast-español.html)
+<i class="fa-duotone fa-water fa" style="font-size: 25px; color:teal;"></i> [Modelos de Forecasting Globales: Multi-series forecasting](https://www.cienciadedatos.net/documentos/py44-multi-series-forecasting-skforecast-español.html)
 
-<i class="fa-solid fa-stairs" style="font-size: 25px; color:#B197FC;"></i> [Forecasting escalable: modelado de mil de series temporales con un único modelo global](https://www.cienciadedatos.net/documentos/py59-modelos-forecasting-escalable.html)
+<i class="fa-solid fa-stairs" style="font-size: 25px; color:#B197FC;"></i> [Forecasting Escalable: Modelado de mil series temporales con un único modelo global](https://www.cienciadedatos.net/documentos/py59-modelos-forecasting-escalables.html)
 
-<i class="fa-solid fa-globe" style="font-size: 25px; color:#6b8e23;"></i> [Modelos de forecasting globales: Análisis comparativo de modelos de una y múltiples series](https://www.cienciadedatos.net/documentos/py53-modelos-forecasting-globales.html)
+<i class="fa-solid fa-globe" style="font-size: 25px; color:#6b8e23;"></i> [Modelos de Forecasting Globales: Análisis comparativo de modelos de una y múltiples series](https://www.cienciadedatos.net/documentos/py53-modelos-forecasting-globales.html)
 
-<i class="fa-solid fa-layer-group" style="color: #001633;"></i> [Forecasting con Deep Learning](https://cienciadedatos.net/documentos/py54-forecasting-con-deep-learning)
+<i class="fa-solid fa-layer-group" style="font-size: 25px; color: #001633;"></i> [Forecasting con Deep Learning](https://cienciadedatos.net/documentos/py54-forecasting-con-deep-learning)
 
 
 ## Técnicas Avanzadas: Más Allá de los Modelos Básicos
@@ -41,11 +41,11 @@ Para usuarios experimentados que buscan profundizar en sus habilidades de foreca
 
 <i class="fa-light fa-chart-line fa" style="font-size: 25px; color:#f26e1d;"></i>  [Forecasting probabilístico](https://cienciadedatos.net/documentos/py42-forecasting-probabilistico.html)
 
-<i class="fa-solid fa-arrow-trend-up" style="color: #fbbb09;"></i> [Modelar series temporales con tendencia utilizando modelos de árboles](https://cienciadedatos.net/documentos/py49-modelar-tendencia-en-series-temporales-modelos-de-arboles.html)
+<i class="fa-solid fa-arrow-trend-up" style="font-size: 25px; color: #fbbb09;"></i> [Modelar series temporales con tendencia utilizando modelos de árboles](https://cienciadedatos.net/documentos/py49-modelar-tendencia-en-series-temporales-modelos-de-arboles.html)
 
 <i class="fa-solid fa-magnifying-glass" style="font-size: 25px; color:purple;"></i> [Forecasting de series incompletas con valores faltantes](https://www.cienciadedatos.net/documentos/py46-forecasting-series-temporales-incompletas.html)
 
-<i class="fa-solid fa-chart-gantt" style="color: #ff004f;"></i> [Interpretabilidad en modelos de forecasting](https://www.cienciadedatos.net/documentos/py57-modelos-forecasting-interpretables.html)
+<i class="fa-solid fa-chart-gantt" style="font-size: 25px; color: #ff004f;"></i> [Interpretabilidad en modelos de forecasting](https://www.cienciadedatos.net/documentos/py57-modelos-forecasting-interpretables.html)
 
 
 ## Desafíos del Mundo Real y Estudios de Caso
@@ -56,7 +56,7 @@ Esta sección incluye aplicaciones del mundo real del pronóstico de series temp
 
 <i class="fa-duotone fa-rss fa" style="font-size: 25px; color:#666666;"></i>  [Forecasting de las visitas a una página web](https://www.cienciadedatos.net/documentos/py37-forecasting-visitas-web-machine-learning.html)
 
-<i class="fa-solid fa-wave-square" style="color: #fbbb09;"></i> [Predicción demanda intermitente](https://www.cienciadedatos.net/documentos/py48-forecasting-demanda-intermitente.html)
+<i class="fa-solid fa-wave-square" style="font-size: 25px; color: #fbbb09;"></i> [Predicción demanda intermitente](https://www.cienciadedatos.net/documentos/py48-forecasting-demanda-intermitente.html)
 
 <i class="fa-solid fa-virus-covid" style="font-size: 25px; color:red;"></i> [Reducir el impacto del Covid en modelos de forecasting](https://cienciadedatos.net/documentos/py45-weighted-time-series-forecasting-es)
 
