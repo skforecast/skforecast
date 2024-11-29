@@ -2439,37 +2439,37 @@ def align_series_and_exog_multiseries(
     """
 
     for k in series_dict.keys():
-
-        first_valid_index = series_dict[k].first_valid_index()
-        last_valid_index = series_dict[k].last_valid_index()
-
-        series_dict[k] = series_dict[k].loc[first_valid_index : last_valid_index]
+        if np.isnan(series_dict[k].iloc[0]) or np.isnan(series_dict[k].iloc[-1]):
+            first_valid_index = series_dict[k].first_valid_index()
+            last_valid_index = series_dict[k].last_valid_index()
+            series_dict[k] = series_dict[k].loc[first_valid_index : last_valid_index]
+        else:
+            first_valid_index = series_dict[k].index[0]
+            last_valid_index = series_dict[k].index[-1]
 
         if exog_dict[k] is not None:
             if input_series_is_dict:
-                index_intersection = (
-                    series_dict[k].index.intersection(exog_dict[k].index)
-                )
-                if len(index_intersection) == 0:
-                    warnings.warn(
-                        (f"Series '{k}' and its `exog` do not have the same index. "
-                         f"All exog values will be NaN for the period of the series."),
-                         MissingValuesWarning
-                    )
-                elif len(index_intersection) != len(series_dict[k]):
-                    warnings.warn(
-                        (f"Series '{k}' and its `exog` do not have the same length. "
-                         f"Exog values will be NaN for the not matched period of the series."),
-                         MissingValuesWarning
-                    )  
-                exog_dict[k] = exog_dict[k].loc[index_intersection]
-                if len(index_intersection) != len(series_dict[k]):
-                    exog_dict[k] = exog_dict[k].reindex(
-                                       series_dict[k].index, 
-                                       fill_value = np.nan
-                                   )
-            else:
-                exog_dict[k] = exog_dict[k].loc[first_valid_index : last_valid_index]
+                if not series_dict[k].index.equals(exog_dict[k].index):
+                    print("reindexing")
+                    exog_dict[k] = exog_dict[k].loc[first_valid_index:last_valid_index]
+                    if len(exog_dict[k]) == 0:
+                        warnings.warn(
+                            (f"Series '{k}' and its `exog` do not have the same index. "
+                            f"All exog values will be NaN for the period of the series."),
+                            MissingValuesWarning
+                        )
+                    elif len(exog_dict[k]) != len(series_dict[k]):
+                        warnings.warn(
+                            (f"Series '{k}' and its `exog` do not have the same length. "
+                            f"Exog values will be NaN for the not matched period of the series."),
+                            MissingValuesWarning
+                        )  
+                        exog_dict[k] = exog_dict[k].reindex(
+                                         series_dict[k].index, 
+                                         fill_value = np.nan
+                                       )
+            if not input_series_is_dict and not series_dict[k].index.equals(exog_dict[k].index):
+                exog_dict[k] = exog_dict[k].loc[first_valid_index:last_valid_index]
 
     return series_dict, exog_dict
 
