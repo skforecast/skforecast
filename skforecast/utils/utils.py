@@ -1654,23 +1654,26 @@ def transform_numpy(
             "`inverse_transform` is not available when using ColumnTransformers."
         )
 
-    if not inverse_transform:
-        if fit:
-            array_transformed = transformer.fit_transform(array)
-        else:
-            with warnings.catch_warnings():
-                warnings.filterwarnings(
-                    "ignore", 
-                    message="X does not have valid feature names", 
-                    category=UserWarning
-                )
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore", 
+            message="X does not have valid feature names", 
+            category=UserWarning
+        )
+        if not inverse_transform:
+            if fit:
+                array_transformed = transformer.fit_transform(array)
+            else:
                 array_transformed = transformer.transform(array)
-    else:
-        array_transformed = transformer.inverse_transform(array)
+        else:
+            array_transformed = transformer.inverse_transform(array)
 
     if hasattr(array_transformed, 'toarray'):
         # If the returned values are in sparse matrix format, it is converted to dense
         array_transformed = array_transformed.toarray()
+
+    if isinstance(array_transformed, (pd.Series, pd.DataFrame)):
+        array_transformed = array_transformed.to_numpy()
 
     if array_ndim == 1:
         array_transformed = array_transformed.ravel()
