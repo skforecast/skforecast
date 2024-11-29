@@ -1107,7 +1107,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         Parameters
         ----------
         step : int
-            step for which columns must be selected selected. Starts at 1.
+            step for which columns must be selected. Starts at 1.
         X_train : pandas DataFrame
             Dataframe created with the `_create_train_X_y` method, first return.
         y_train : dict
