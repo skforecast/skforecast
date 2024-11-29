@@ -478,7 +478,61 @@ def fetch_dataset(
                 "Addison Howard, inversion, Spyros Makridakis, and vangelis. "
                 "M5 Forecasting - Accuracy. https://kaggle.com/competitions/m5-forecasting-accuracy, 2020. Kaggle."
             )
-        }
+        },
+        'ett_m1': {
+            'url': (
+                f'https://raw.githubusercontent.com/skforecast/'
+                f'skforecast-datasets/refs/heads/{version}/data/ETTm1.csv'
+            ),
+            'sep': ',',
+            'index_col': 'date',
+            'date_format': '%Y-%m-%d %H:%M:%S',
+            'freq': '15min',
+            'file_type': 'csv',
+            'description': (
+                'Data from an electricity transformer station was collected between July '
+                '2016 and July 2018 (2 years × 365 days × 24 hours × 4 intervals per '
+                'hour = 70,080 data points). Each data point consists of 8 features, '
+                'including the date of the point, the predictive value "Oil Temperature (OT)", '
+                'and 6 different types of external power load features: High UseFul Load (HUFL), '
+                'High UseLess Load (HULL), Middle UseFul Load (MUFL), Middle UseLess Load (MULL), '
+                'Low UseFul Load (LUFL), Low UseLess Load(LULL).'
+            ),
+            'source': (
+                'Zhou, Haoyi & Zhang, Shanghang & Peng, Jieqi & Zhang, Shuai & Li, '
+                'Jianxin & Xiong, Hui & Zhang, Wancai. (2020). Informer: Beyond Efficient '
+                'Transformer for Long Sequence Time-Series Forecasting. '
+                '[10.48550/arXiv.2012.07436](https://arxiv.org/abs/2012.07436). '
+                'https://github.com/zhouhaoyi/ETDataset'
+            )
+        },
+        'ett_m2': {
+            'url': (
+                f'https://raw.githubusercontent.com/skforecast/'
+                f'skforecast-datasets/{version}/data/ETTm2.csv'
+            ),
+            'sep': ',',
+            'index_col': 'date',
+            'date_format': '%Y-%m-%d %H:%M:%S',
+            'freq': '15min',
+            'file_type': 'csv',
+            'description': (
+                'Data from an electricity transformer station was collected between July '
+                '2016 and July 2018 (2 years × 365 days × 24 hours × 4 intervals per '
+                'hour = 70,080 data points). Each data point consists of 8 features, '
+                'including the date of the point, the predictive value "Oil Temperature (OT)", '
+                'and 6 different types of external power load features: High UseFul Load (HUFL), '
+                'High UseLess Load (HULL), Middle UseFul Load (MUFL), Middle UseLess Load (MULL), '
+                'Low UseFul Load (LUFL), Low UseLess Load(LULL).'
+            ),
+            'source': (
+                'Zhou, Haoyi & Zhang, Shanghang & Peng, Jieqi & Zhang, Shuai & Li, '
+                'Jianxin & Xiong, Hui & Zhang, Wancai. (2020). Informer: Beyond Efficient '
+                'Transformer for Long Sequence Time-Series Forecasting. '
+                '[10.48550/arXiv.2012.07436](https://arxiv.org/abs/2012.07436). '
+                'https://github.com/zhouhaoyi/ETDataset'
+            )
+        },
     }
     
     if name not in datasets.keys():
