@@ -31,6 +31,7 @@ from ..exceptions import (
     SkforecastVersionWarning
 )
 
+
 optional_dependencies = {
     'sarimax': [
         'statsmodels>=0.12, <0.15'
@@ -43,6 +44,9 @@ optional_dependencies = {
         'matplotlib>=3.3, <3.10', 
         'seaborn>=0.11, <0.14', 
         'statsmodels>=0.12, <0.15'
+    ],
+    'sktime': [
+        'sktime>=0.34.0'
     ]
 }
 

@@ -63,6 +63,10 @@ deeplearning = [
     "keras>=2.6, <4.0"
 ]
 
+sktime = [
+    "sktime>=0.34.0"
+]
+
 all = [
     "matplotlib>=3.3, <3.10",
     "seaborn>=0.11, <0.14",
