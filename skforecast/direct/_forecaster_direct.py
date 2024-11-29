@@ -869,7 +869,7 @@ class ForecasterDirect(ForecasterBase):
         Parameters
         ----------
         step : int
-            Step for which columns must be selected selected. Starts at 1.
+            Step for which columns must be selected. Starts at 1.
         X_train : pandas DataFrame
             Dataframe created with the `create_train_X_y` method, first return.
         y_train : dict
