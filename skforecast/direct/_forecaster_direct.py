@@ -980,7 +980,7 @@ class ForecasterDirect(ForecasterBase):
         X_train: pd.DataFrame,
     ) -> np.ndarray:
         """
-        Crate weights for each observation according to the forecaster's attribute
+        Create weights for each observation according to the forecaster's attribute
         `weight_func`.
 
         Parameters

@@ -1353,7 +1353,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         X_train: pd.DataFrame
     ) -> np.ndarray:
         """
-        Crate weights for each observation according to the forecaster's attributes
+        Create weights for each observation according to the forecaster's attributes
         `series_weights` and `weight_func`. The resulting weights are product of both
         types of weights.
 
