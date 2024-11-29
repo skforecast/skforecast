@@ -31,11 +31,6 @@ from ..exceptions import (
     SkforecastVersionWarning
 )
 
-try:
-    from sktime.transformations.base import BaseTransformer
-except ImportError:
-    pass
-
 
 optional_dependencies = {
     'sarimax': [
@@ -49,6 +44,9 @@ optional_dependencies = {
         'matplotlib>=3.3, <3.10', 
         'seaborn>=0.11, <0.14', 
         'statsmodels>=0.12, <0.15'
+    ],
+    'sktime': [
+        'sktime>=0.34.0'
     ]
 }
 
@@ -2759,90 +2757,3 @@ def set_skforecast_warnings(
     if suppress_warnings:
         for category in warn_skforecast_categories:
             warnings.filterwarnings(action, category=category)
-
-
-def nparray_to_df(data, first_date, columns, period):
-    dates = pd.date_range(first_date, periods=data.shape[0], freq=period)
-    return pd.DataFrame(data=data, index=dates, columns=columns)
-
-
-class StartSktimePipe(BaseTransformer):
-
-    _tags = {
-        "scitype:transform-input": "Series",
-        "scitype:transform-output": "Series",
-        "capability:inverse_transform": True,
-    }
-
-    def __init__(self):
-        self.period = None
-        self.columns = None
-        self.first_date = None
-
-    def fit(self, X, y=None):
-        self.first_date = X.index[0]
-        self.period = X.index.freqstr
-        self.columns = X.columns
-        return self
-
-    def transform(self, X, y=None):
-        """Input: np array, Series or DataFrame with either a datetime or PeriodIndex
-        Output: DataFrame with PeriodIndex
-        """
-        if type(X) == np.ndarray:
-            X = nparray_to_df(X, self.first_date, self.columns, self.period)
-        if type(X.index) != pd.core.indexes.period.PeriodIndex:
-            X = X.copy()
-            X.index = X.index.to_period(self.period)
-        return X
-
-    def inverse_transform(self, X, y=None):
-        """Input: DataFrame with PeriodIndex
-        Output: DataFrame with Datetime index
-        """
-        if type(X.index) != pd.core.indexes.datetimes.DatetimeIndex:
-            X = X.copy()
-            X.index = X.index.to_timestamp(how="end").date.astype('datetime64[ns]')
-            X = X.asfreq(self.period)
-        return X
-
-
-class EndSktimePipe(BaseTransformer):
-
-    _tags = {
-        "scitype:transform-input": "Series",
-        "scitype:transform-output": "Series",
-        "capability:inverse_transform": True,
-    }
-
-    def __init__(self):
-        self.period = None
-        self.columns = None
-        self.first_date = None
-
-    def fit(self, X, y=None):
-        self.first_date = X.index.to_timestamp(how="end").date.astype('datetime64[ns]')[0]
-        self.period = X.index.freqstr
-        self.columns = X.columns
-        return self
-
-    def transform(self, X, y=None):
-        """Input: DataFrame with PeriodIndex
-        Output: DataFrame with Datetime index
-        """
-        if type(X.index) != pd.core.indexes.datetimes.DatetimeIndex:
-            X = X.copy()
-            X.index = X.index.to_timestamp(how="end").date.astype('datetime64[ns]')
-            X = X.asfreq(self.period)
-        return X
-
-    def inverse_transform(self, X, y=None):
-        """Input: np array, Series or DataFrame with either a datetime or PeriodIndex
-        Output: DataFrame with PeriodIndex
-        """
-        if type(X) == np.ndarray:
-            X = nparray_to_df(X, self.first_date, self.columns, self.period)
-        if type(X.index) != pd.core.indexes.period.PeriodIndex:
-            X = X.copy()
-            X.index = X.index.to_period(self.period)
-        return X

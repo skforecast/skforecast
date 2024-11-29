@@ -32,15 +32,6 @@ from ..model_selection._utils import (
 from ..utils import initialize_lags, set_skforecast_warnings
 
 
-def parse_pipe_args(t):
-    if '__' not in t:
-        return None, t
-    els = t.split('__')
-    if els[0] not in ['estimator', 'transformer_y', 'transformer_exog']:
-        return None, t
-    return els[0], '__'.join(els[1:])
-
-
 def grid_search_forecaster(
     forecaster: object,
     y: pd.Series,
@@ -616,6 +607,40 @@ def bayesian_search_forecaster(
     return results, best_trial
 
 
+def parse_pipe_args(t):
+    """Given a pipeline step parameter as a string, return the name of the step
+    and its value
+    """
+    if '__' not in t:
+        return None, t
+    els = t.split('__')
+    if els[0] not in ['regressor', 'transformer_y', 'transformer_exog']:
+        return None, t
+    return els[0], '__'.join(els[1:])
+
+
+def _extract_grid_params(sample):
+    """Given a sample, extract regressor, transformer y, transformer exog
+    parameters
+    """
+    regressor_params = {}
+    transformer_y_params = {}
+    transformer_exog_params = {}
+    for k, v in sample.items():
+        if k == 'lags':
+            continue
+        prefix, arg = parse_pipe_args(k)
+        if prefix == 'regressor':
+            regressor_params[arg] = v
+        elif prefix == 'transformer_y':
+            transformer_y_params[arg] = v
+        elif prefix == 'transformer_exog':
+            transformer_exog_params[arg] = v
+        else:
+            regressor_params[arg] = v
+    return regressor_params, transformer_y_params, transformer_exog_params
+
+
 def _bayesian_search_optuna(
     forecaster: object,
     y: pd.Series,
@@ -769,23 +794,10 @@ def _bayesian_search_optuna(
 
             sample = search_space(trial)
 
-            estimator_params = {}
-            transformer_y_params = {}
-            transformer_exog_params = {}
-            for k, v in sample.items():
-                if k == 'lags':
-                    continue
-                prefix, arg = parse_pipe_args(k)
-                if prefix == 'estimator':
-                    estimator_params[arg] = v
-                elif prefix == 'transformer_y':
-                    transformer_y_params[arg] = v
-                elif prefix == 'transformer_exog':
-                    transformer_exog_params[arg] = v
-                else:
-                    estimator_params[arg] = v
+            (regressor_params, transformer_y_params,
+                transformer_exog_params) = _extract_grid_params(sample)
 
-            forecaster.set_params(estimator_params)
+            forecaster.set_params(regressor_params)
 
             if transformer_y_params:
                 forecaster.transformer_y.set_params(**transformer_y_params)
@@ -827,8 +839,18 @@ def _bayesian_search_optuna(
         ) -> float:
 
             sample = search_space(trial)
-            sample_params = {k: v for k, v in sample.items() if k != 'lags'}
-            forecaster.set_params(sample_params)
+
+            (regressor_params, transformer_y_params,
+                transformer_exog_params) = _extract_grid_params(sample)
+
+            forecaster.set_params(regressor_params)
+
+            if transformer_y_params:
+                forecaster.transformer_y.set_params(**transformer_y_params)
+
+            if transformer_exog_params:
+                forecaster.transformer_exog.set_params(**transformer_exog_params)
+
             if "lags" in sample:
                 forecaster.set_lags(sample['lags'])
 
@@ -942,8 +964,29 @@ def _bayesian_search_optuna(
         best_params = results.loc[0, 'params']
         best_metric = results.loc[0, list(metric_dict.keys())[0]]
 
+        # extract best params
+        regressor_params = {}
+        transformer_y_params = {}
+        transformer_exog_params = {}
+        for k, v in best_params.items():
+            if k == 'lags':
+                continue
+            elif '_y__' in k:
+                transformer_y_params[k] = v
+            elif '_x__' in k:
+                transformer_exog_params[k] = v
+            else:
+                regressor_params[k] = v
+
+        # set best params
         forecaster.set_lags(best_lags)
-        forecaster.set_params(best_params)
+        forecaster.set_params(regressor_params)
+
+        if transformer_y_params:
+            forecaster.transformer_y.set_params(**transformer_y_params)
+
+        if transformer_exog_params:
+            forecaster.transformer_exog.set_params(**transformer_exog_params)
 
         forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True)
         

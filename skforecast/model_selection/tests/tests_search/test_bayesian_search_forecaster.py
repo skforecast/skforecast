@@ -9,6 +9,7 @@ from sklearn.linear_model import Ridge
 from skforecast.recursive import ForecasterRecursive
 from skforecast.preprocessing import RollingFeatures
 from skforecast.model_selection._search import bayesian_search_forecaster
+from skforecast.model_selection._search import _extract_grid_params
 from skforecast.model_selection._split import TimeSeriesFold
 
 # Fixtures
@@ -227,3 +228,65 @@ def test_results_output_bayesian_search_forecaster_optuna_ForecasterRecursive_wi
     })
 
     pd.testing.assert_frame_equal(results, expected_results)
+
+
+def test__assert_extract_grid_params_extracts_params_for_regressor_transformers_with_regressor_prefix():
+    """
+    Check if the input DataFrame with specified Offset date is transformed to a dataframe with a PeriodIndex
+    """
+    search_space_sample = {
+        'lags': [1],
+        'regressor__max_depth': 10,
+        'regressor__min_samples_leaf': 5,
+        'regressor__max_features': 'sqrt',
+        'transformer_y__differencer_y__passthrough': True,
+        'transformer_exog__differencer_x__passthrough': False
+    }
+
+    output = _extract_grid_params(search_space_sample)
+
+    expected = (
+        {
+            'max_depth': 10,
+            'min_samples_leaf': 5,
+            'max_features': 'sqrt',
+        },
+        {
+            'differencer_y__passthrough': True,
+        },
+        {
+            'differencer_x__passthrough': False
+        }
+    )
+    assert output == expected
+
+
+def test__assert_extract_grid_params_extracts_params_for_regressor_transformers_without_regressor_prefix():
+    """
+    Check if the input DataFrame with specified Offset date is transformed to a dataframe with a PeriodIndex
+    """
+    search_space_sample = {
+        'lags': [1],
+        'max_depth': 10,
+        'min_samples_leaf': 5,
+        'max_features': 'sqrt',
+        'transformer_y__differencer_y__passthrough': True,
+        'transformer_exog__differencer_x__passthrough': False
+    }
+
+    output = _extract_grid_params(search_space_sample)
+
+    expected = (
+        {
+            'max_depth': 10,
+            'min_samples_leaf': 5,
+            'max_features': 'sqrt',
+        },
+        {
+            'differencer_y__passthrough': True,
+        },
+        {
+            'differencer_x__passthrough': False
+        }
+    )
+    assert output == expected

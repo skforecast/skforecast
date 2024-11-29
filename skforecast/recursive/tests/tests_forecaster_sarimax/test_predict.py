@@ -105,7 +105,6 @@ def test_predict_output_ForecasterSarimax_skforecast_Sarimax(kwargs, data):
     Test predict output of ForecasterSarimax using Sarimax from skforecast.
     """
     system = "win" if platform.system() == "Windows" else 'linux'
-    system = "linux"
 
     forecaster = ForecasterSarimax(
                      regressor = Sarimax(maxiter=1000, method='cg', disp=False, **kwargs)
@@ -284,7 +283,6 @@ def test_predict_output_ForecasterSarimax_with_last_window(kwargs, data):
     Test predict output of ForecasterSarimax with `last_window`.
     """
     system = "win" if platform.system() == "Windows" else 'linux'
-    system = "linux"
     
     forecaster = ForecasterSarimax(
                      regressor = Sarimax(maxiter=1000, method='cg', disp=False, **kwargs)

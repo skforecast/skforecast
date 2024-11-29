@@ -4,7 +4,7 @@
 import pytest
 import numpy as np
 import pandas as pd
-from skforecast.utils import StartSktimePipe, EndSktimePipe
+from skforecast.utils.sktime_utils import StartSktimePipe, EndSktimePipe
 
 
 def test_StartSktimePipe_transforms_input_as_df_with_datetimeindex_WSUN():
