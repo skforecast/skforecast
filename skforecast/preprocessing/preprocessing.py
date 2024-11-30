@@ -415,9 +415,9 @@ def series_long_to_dict(
         if col not in data.columns:
             raise ValueError(f"Column '{col}' not found in `data`.")
         
-    original_sizes = data.groupby(series_id).size()
+    original_sizes = data.groupby(series_id, observed=True).size()
     series_dict = {}
-    for k, v in data.groupby(series_id):
+    for k, v in data.groupby(series_id, observed=True):
         series_dict[k] = v.set_index(index)[values].asfreq(freq).rename(k)
         series_dict[k].index.name = None
         if not suppress_warnings and len(series_dict[k]) != original_sizes[k]:
@@ -475,8 +475,8 @@ def exog_long_to_dict(
         if col not in data.columns:
             raise ValueError(f"Column '{col}' not found in `data`.")
 
-    original_sizes = data.groupby(series_id).size()
-    exog_dict = dict(tuple(data.groupby(series_id)))
+    original_sizes = data.groupby(series_id, observed=True).size()
+    exog_dict = dict(tuple(data.groupby(series_id, observed=True)))
     exog_dict = {
         k: v.set_index(index).asfreq(freq).drop(columns=series_id)
         for k, v in exog_dict.items()
