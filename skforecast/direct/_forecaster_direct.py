@@ -1636,7 +1636,7 @@ class ForecasterDirect(ForecasterBase):
         steps: Optional[Union[int, list]] = None,
         last_window: Optional[pd.Series] = None,
         exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
-        interval: list = [5, 95],
+        interval: Union[list, tuple] = [5, 95],
         n_boot: int = 250,
         random_state: int = 123,
         use_in_sample_residuals: bool = True,
@@ -1665,7 +1665,7 @@ class ForecasterDirect(ForecasterBase):
             right after training data.
         exog : pandas Series, pandas DataFrame, default `None`
             Exogenous variable/s included as predictor/s.
-        interval : list, default `[5, 95]`
+        interval : list, tuple, default `[5, 95]`
             Confidence of the prediction interval estimated. Sequence of 
             percentiles to compute, which must be between 0 and 100 inclusive. 
             For example, interval of 95% should be as `interval = [2.5, 97.5]`.

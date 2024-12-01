@@ -76,7 +76,7 @@ def _backtesting_forecaster(
         Exogenous variable/s included as predictor/s. Must have the same
         number of observations as `y` and should be aligned so that y[i] is
         regressed on exog[i].
-    interval : list, default `None`
+    interval : list, tuple, default `None`
         Confidence of the prediction interval estimated. Sequence of percentiles
         to compute, which must be between 0 and 100 inclusive. For example, 
         interval of 95% should be as `interval = [2.5, 97.5]`. If `None`, no
@@ -355,7 +355,7 @@ def backtesting_forecaster(
         Exogenous variable/s included as predictor/s. Must have the same
         number of observations as `y` and should be aligned so that y[i] is
         regressed on exog[i].
-    interval : list, default `None`
+    interval : list, tuple, default `None`
         Confidence of the prediction interval estimated. Sequence of percentiles
         to compute, which must be between 0 and 100 inclusive. For example, 
         interval of 95% should be as `interval = [2.5, 97.5]`. If `None`, no
@@ -510,7 +510,7 @@ def _backtesting_forecaster_multiseries(
         calculated.
     exog : pandas Series, pandas DataFrame, dict, default `None`
         Exogenous variables.
-    interval : list, default `None`
+    interval : list, tuple, default `None`
         Confidence of the prediction interval estimated. Sequence of percentiles
         to compute, which must be between 0 and 100 inclusive. If `None`, no
         intervals are estimated.
@@ -829,7 +829,7 @@ def backtesting_forecaster_multiseries(
         calculated.
     exog : pandas Series, pandas DataFrame, dict, default `None`
         Exogenous variables.
-    interval : list, default `None`
+    interval : list, tuple, default `None`
         Confidence of the prediction interval estimated. Sequence of percentiles
         to compute, which must be between 0 and 100 inclusive. If `None`, no
         intervals are estimated.
@@ -967,7 +967,7 @@ def _backtesting_sarimax(
     alpha : float, default `0.05`
         The confidence intervals for the forecasts are (1 - alpha) %.
         If both, `alpha` and `interval` are provided, `alpha` will be used.
-    interval : list, default `None`
+    interval : list, tuple, default `None`
         Confidence of the prediction interval estimated. The values must be
         symmetric. Sequence of percentiles to compute, which must be between 
         0 and 100 inclusive. For example, interval of 95% should be as 
@@ -1236,7 +1236,7 @@ def backtesting_sarimax(
     alpha : float, default `0.05`
         The confidence intervals for the forecasts are (1 - alpha) %.
         If both, `alpha` and `interval` are provided, `alpha` will be used.
-    interval : list, default `None`
+    interval : list, tuple, default `None`
         Confidence of the prediction interval estimated. The values must be
         symmetric. Sequence of percentiles to compute, which must be between 
         0 and 100 inclusive. For example, interval of 95% should be as 

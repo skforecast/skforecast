@@ -594,7 +594,7 @@ def check_exog_dtypes(
 
 
 def check_interval(
-    interval: list = None,
+    interval: Union[list, tuple] = None,
     quantiles: float = None,
     alpha: float = None
 ) -> None:
@@ -603,7 +603,7 @@ def check_interval(
 
     Parameters
     ----------
-    interval : list, default `None`
+    interval : list, tuple, default `None`
         Confidence of the prediction interval estimated. Sequence of percentiles
         to compute, which must be between 0 and 100 inclusive. For example, 
         interval of 95% should be as `interval = [2.5, 97.5]`.
@@ -621,9 +621,9 @@ def check_interval(
     """
 
     if interval is not None:
-        if not isinstance(interval, list):
+        if not isinstance(interval, (list, tuple)):
             raise TypeError(
-                ("`interval` must be a `list`. For example, interval of 95% "
+                ("`interval` must be a `list` or `tuple`. For example, interval of 95% "
                  "should be as `interval = [2.5, 97.5]`.")
             )
 
@@ -733,7 +733,7 @@ def check_predict_input(
         Type of exogenous variable/s used in training.
     exog_names_in_ : list, default `None`
         Names of the exogenous variables used during training.
-    interval : list, default `None`
+    interval : list, tuple, default `None`
         Confidence of the prediction interval estimated. Sequence of percentiles
         to compute, which must be between 0 and 100 inclusive. For example, 
         interval of 95% should be as `interval = [2.5, 97.5]`.
