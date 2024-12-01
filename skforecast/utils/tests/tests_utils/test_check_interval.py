@@ -105,7 +105,7 @@ def test_check_interval_TypeError_when_quantiles_is_not_a_list():
 
 
 @pytest.mark.parametrize("quantiles", 
-                         [[-0.01, 0.01, 0.5], [0., 1., 1.1], (-2), [-2, 2]], 
+                         [[-0.01, 0.01, 0.5], [0., 1., 1.1], [-2], (-2, 2)], 
                          ids = lambda value: f'quantiles: {value}')
 def test_check_interval_ValueError_when_elements_in_quantiles_are_out_of_bounds(quantiles):
     """
