@@ -22,6 +22,8 @@ The main changes in this release are:
 
 **Fixed**
 
++ Fix `transform_numpy` function in the <code>[utils]</code> module to work when transformers output in `scikit-learn` is `set_output(transform='pandas')`.
+
 
 ## 0.14.0 <small>Nov 11, 2024</small> { id="0.14.0" }
 
