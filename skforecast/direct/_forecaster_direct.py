@@ -1731,7 +1731,7 @@ class ForecasterDirect(ForecasterBase):
         steps: Optional[Union[int, list]] = None,
         last_window: Optional[pd.Series] = None,
         exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
-        quantiles: list = [0.05, 0.5, 0.95],
+        quantiles: Union[list, tuple] = [0.05, 0.5, 0.95],
         n_boot: int = 250,
         random_state: int = 123,
         use_in_sample_residuals: bool = True,
@@ -1759,7 +1759,7 @@ class ForecasterDirect(ForecasterBase):
             right after training data.
         exog : pandas Series, pandas DataFrame, default `None`
             Exogenous variable/s included as predictor/s.
-        quantiles : list, default `[0.05, 0.5, 0.95]`
+        quantiles : list, tuple, default [0.05, 0.5, 0.95]
             Sequence of quantiles to compute, which must be between 0 and 1 
             inclusive. For example, quantiles of 0.05, 0.5 and 0.95 should be as 
             `quantiles = [0.05, 0.5, 0.95]`.

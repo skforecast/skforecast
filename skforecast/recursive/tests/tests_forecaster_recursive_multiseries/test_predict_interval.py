@@ -506,7 +506,7 @@ def test_predict_interval_output_when_series_and_exog_dict_encoding_None_unknown
     exog_dict_test_2['id_1005'] = exog_dict_test_2['id_1001']
     predictions = forecaster.predict_interval(
         steps=5, levels=levels, exog=exog_dict_test_2, last_window=last_window,
-        suppress_warnings=True, n_boot=10, interval=[5, 95]
+        suppress_warnings=True, n_boot=10, interval=(5, 95)
     )
     
     expected = pd.DataFrame(
