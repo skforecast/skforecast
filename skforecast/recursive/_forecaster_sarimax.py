@@ -549,7 +549,7 @@ class ForecasterSarimax():
         last_window_exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
         exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
         alpha: float = 0.05,
-        interval: list = None,
+        interval: Union[list, tuple] = None,
     ) -> pd.DataFrame:
         """
         Forecast future values and their confidence intervals.
@@ -583,7 +583,7 @@ class ForecasterSarimax():
         alpha : float, default `0.05`
             The confidence intervals for the forecasts are (1 - alpha) %.
             If both, `alpha` and `interval` are provided, `alpha` will be used.
-        interval : list, default `None`
+        interval : list, tuple, default `None`
             Confidence of the prediction interval estimated. The values must be
             symmetric. Sequence of percentiles to compute, which must be between 
             0 and 100 inclusive. For example, interval of 95% should be as 

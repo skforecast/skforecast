@@ -104,7 +104,7 @@ def check_backtesting_input(
         Training time series for multi-series forecasters.
     exog : pandas Series, pandas DataFrame, dict, default `None`
         Exogenous variables.
-    interval : list, default `None`
+    interval : list, tuple, default `None`
         Confidence of the prediction interval estimated. Sequence of percentiles
         to compute, which must be between 0 and 100 inclusive.
     alpha : float, default `None`

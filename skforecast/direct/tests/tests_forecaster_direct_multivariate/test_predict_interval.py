@@ -39,6 +39,7 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_2_
     results = forecaster.predict_interval(
                   steps                   = 2,
                   exog                    = exog_predict,
+                  interval                = [5, 95],
                   n_boot                  = 4,
                   use_in_sample_residuals = True
               )
@@ -71,6 +72,7 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_2_
     results = forecaster.predict_interval(
                   steps                   = 2,
                   exog                    = exog_predict,
+                  interval                = (5, 95),
                   n_boot                  = 4,
                   use_in_sample_residuals = False
               )
