@@ -2450,7 +2450,6 @@ def align_series_and_exog_multiseries(
         if exog_dict[k] is not None:
             if input_series_is_dict:
                 if not series_dict[k].index.equals(exog_dict[k].index):
-                    print("reindexing")
                     exog_dict[k] = exog_dict[k].loc[first_valid_index:last_valid_index]
                     if len(exog_dict[k]) == 0:
                         warnings.warn(
@@ -2464,10 +2463,10 @@ def align_series_and_exog_multiseries(
                             f"Exog values will be NaN for the not matched period of the series."),
                             MissingValuesWarning
                         )  
-                        exog_dict[k] = exog_dict[k].reindex(
-                                         series_dict[k].index, 
-                                         fill_value = np.nan
-                                       )
+                    exog_dict[k] = exog_dict[k].reindex(
+                                        series_dict[k].index, 
+                                        fill_value = np.nan
+                                    )
             if not input_series_is_dict and not series_dict[k].index.equals(exog_dict[k].index):
                 exog_dict[k] = exog_dict[k].loc[first_valid_index:last_valid_index]
 
