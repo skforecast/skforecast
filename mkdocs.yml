@@ -242,6 +242,10 @@ extra:
   social:
     - icon: fontawesome/brands/linkedin
       link: https://www.linkedin.com/company/skforecast/
+    - icon: fontawesome/brands/github
+      link: https://github.com/skforecast/skforecast
+    - icon: fontawesome/brands/creative-commons
+      link: https://creativecommons.org/licenses/by-nc-sa/4.0/
   seo:
     description: >-
       Skforecast is a Python library for time series forecasting using machine learning models. It works with any regressor compatible with the scikit-learn API, including popular options like LightGBM, XGBoost, CatBoost, Keras, and many others.
