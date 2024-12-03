@@ -214,9 +214,9 @@ If you found skforecast useful, you can support us with a donation. Your contrib
 
 
 <a href="https://github.com/sponsors/JoaquinAmatRodrigo" target="_blank" title="Become a GitHub Sponsor">
-<img style="margin-bottom: 1em; height: 77px" src="https://devblackops.io/images/github_sponsor_button.png" alt="Become a GitHub Sponsor">
+<img style="margin-bottom: 1em; max-width: 280px;" src="./img/github_sponsor_button.png" alt="Become a GitHub Sponsor">
 </a>  <a href="https://github.com/sponsors/JavierEscobarOrtiz" target="_blank" title="Become a GitHub Sponsor">
-<img style="margin-bottom: 1em; height: 77px" src="https://devblackops.io/images/github_sponsor_button.png" alt="Become a GitHub Sponsor">
+<img style="margin-bottom: 1em; ; max-width: 280px;" src="./img/github_sponsor_button.png" alt="Become a GitHub Sponsor">
 </a>
 
 [![paypal](https://www.paypalobjects.com/en_US/ES/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/donate/?hosted_button_id=D2JZSWRLTZDL6)
