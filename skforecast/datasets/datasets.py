@@ -533,6 +533,26 @@ def fetch_dataset(
                 'https://github.com/zhouhaoyi/ETDataset'
             )
         },
+        'expenditures_australia': {
+            'url': (
+                f'https://raw.githubusercontent.com/skforecast/skforecast-datasets/refs/heads/'
+                f'{version}/data/expenditures_australia.csv'
+            ),
+            'sep': ',',
+            'index_col': 'date',
+            'date_format': '%Y-%m-%d',
+            'freq': 'MS',
+            'file_type': 'csv',
+            'description': (
+                'Monthly expenditure on cafes, restaurants and takeaway food services '
+                'in Victoria (Australia) from April 1982 up to April 2024.'
+            ),
+            'source': (
+                'Australian Bureau of Statistics. Catalogue No. 8501.0 '
+                'https://www.abs.gov.au/statistics/industry/retail-and-wholesale-trade/'
+                'retail-trade-australia/apr-2024/8501011.xlsx'
+            )
+        },
     }
     
     if name not in datasets.keys():
