@@ -30,14 +30,14 @@ def plot_residuals(
     """
     Parameters
     ----------
-    residuals : pandas Series, numpy ndarray, default `None`.
+    residuals : pandas Series, numpy ndarray, default None.
         Values of residuals. If `None`, residuals are calculated internally using
         `y_true` and `y_true`.
-    y_true : pandas Series, numpy ndarray, default `None`.
+    y_true : pandas Series, numpy ndarray, default None.
         Ground truth (correct) values. Ignored if residuals is not `None`.
-    y_pred : pandas Series, numpy ndarray, default `None`. 
+    y_pred : pandas Series, numpy ndarray, default None. 
         Values of predictions. Ignored if residuals is not `None`.
-    fig : matplotlib.figure.Figure, default `None`. 
+    fig : matplotlib.figure.Figure, default None. 
         Pre-existing fig for the plot. Otherwise, call matplotlib.pyplot.figure()
         internally.
     fig_kw : dict
@@ -89,7 +89,7 @@ def plot_multivariate_time_series_corr(
     ----------
     corr : pandas DataFrame
         correlation matrix
-    ax : matplotlib.axes.Axes, default `None`. 
+    ax : matplotlib.axes.Axes, default None
         Pre-existing ax for the plot. Otherwise, call matplotlib.pyplot.subplots() 
         internally.
     fig_kw : dict
@@ -131,7 +131,7 @@ def plot_prediction_distribution(
     ----------
     bootstrapping_predictions : pandas DataFrame
         Bootstrapping predictions created with `Forecaster.predict_bootstrapping`.
-    bw_method : str, scalar, Callable, default `None`
+    bw_method : str, scalar, Callable, default None
         The method used to calculate the estimator bandwidth. This can be 'scott', 
         'silverman', a scalar constant or a Callable. If None (default), 'scott' 
         is used. See scipy.stats.gaussian_kde for more information.
@@ -240,7 +240,8 @@ def plot_prediction_intervals(
     title: str = None,
     xaxis_title: str = None,
     yaxis_title: str = None,
-    ax: plt.Axes = None
+    ax: plt.Axes = None,
+    kwargs_subplots: dict = {}
 ):
     """
     Plot predicted intervals vs real values using matplotlib.
@@ -254,16 +255,18 @@ def plot_prediction_intervals(
         Real values of target variable.
     target_variable : str
         Name of target variable.
-    initial_x_zoom : list, default `None`
+    initial_x_zoom : list, default None
         Initial zoom of x-axis, by default None.
-    title : str, default `None`
+    title : str, default None
         Title of the plot, by default None.
-    xaxis_title : str, default `None`
+    xaxis_title : str, default None
         Title of x-axis, by default None.
-    yaxis_title : str, default `None`
+    yaxis_title : str, default None
         Title of y-axis, by default None.
-    ax : matplotlib axes, default `None`
+    ax : matplotlib axes, default None
         Axes where to plot, by default None.
+    kwargs_subplots : dict, default {}
+        Additional keyword arguments (key, value mappings) to pass to `plt.subplots`.
 
     Returns
     -------
@@ -272,7 +275,7 @@ def plot_prediction_intervals(
     """
     
     if ax is None:
-        fig, ax = plt.subplots(figsize=(7, 3))
+        fig, ax = plt.subplots(figsize=(7, 3), **kwargs_subplots)
 
     y_true.loc[predictions.index, target_variable].plot(ax=ax, label='Real value')
     predictions['pred'].plot(ax=ax, label='prediction')
