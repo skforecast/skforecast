@@ -311,15 +311,16 @@ class ForecasterRecursive(ForecasterBase):
         self.binner = QuantileBinner(**self.binner_kwargs)
         self.binner_intervals_ = None
 
-        if self.differentiation is not None:
+        if differentiation is not None:
             if not isinstance(differentiation, int) or differentiation < 1:
                 raise ValueError(
                     f"Argument `differentiation` must be an integer equal to or "
                     f"greater than 1. Got {differentiation}."
                 )
-            self.window_size += self.differentiation
+            self.differentiation_max = differentiation
+            self.window_size += differentiation
             self.differentiator = TimeSeriesDifferentiator(
-                order=self.differentiation, window_size=self.window_size
+                order=differentiation, window_size=self.window_size
             )
 
         self.weight_func, self.source_code_weight_func, _ = initialize_weights(

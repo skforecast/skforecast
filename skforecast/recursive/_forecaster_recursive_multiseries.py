@@ -404,7 +404,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             )
         )
 
-        if self.differentiation is not None:
+        if differentiation is not None:
             if isinstance(differentiation, int):
                 if differentiation < 1:
                     raise ValueError(
@@ -414,7 +414,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 self.differentiation_max = differentiation
                 self.window_size += self.differentiation_max
                 self.differentiator = TimeSeriesDifferentiator(
-                    order=self.differentiation, window_size=self.window_size
+                    order=differentiation, window_size=self.window_size
                 )
             elif isinstance(differentiation, dict):
                 differentiation_max = []
@@ -823,8 +823,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         y_values = y.to_numpy()
         y_index = y.index
 
-        # TODO: Change because Nones in dict
-        if self.differentiation is not None:
+        if self.differentiator_[series_name] is not None:
             if not self.is_fitted:
                 y_values = self.differentiator_[series_name].fit_transform(y_values)
             else:
@@ -842,7 +841,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         
         X_train_window_features_names_out_ = None
         if self.window_features is not None:
-            n_diff = 0 if self.differentiation is None else self.differentiation
+            n_diff = 0 if self.differentiation is None else self.differentiation_max
             y_window_features = pd.Series(y_values[n_diff:], index=y_index[n_diff:])
             X_train_window_features, X_train_window_features_names_out_ = (
                 self._create_window_features(
@@ -1099,8 +1098,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             check_exog_dtypes(X_train_exog, call_check_exog=False)
             if not (X_train_exog.index == X_train.index).all():
                 raise ValueError(
-                    ("Different index for `series` and `exog` after transformation. "
-                     "They must be equal to ensure the correct alignment of values.")
+                    "Different index for `series` and `exog` after transformation. "
+                    "They must be equal to ensure the correct alignment of values."
                 )
 
             X_train_exog_names_out_ = X_train_exog.columns.to_list()
@@ -1111,11 +1110,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             y_train = y_train.iloc[mask]
             X_train = X_train.iloc[mask,]
             warnings.warn(
-                ("NaNs detected in `y_train`. They have been dropped because the "
-                 "target variable cannot have NaN values. Same rows have been "
-                 "dropped from `X_train` to maintain alignment. This is caused by "
-                 "series with interspersed NaNs."),
-                 MissingValuesWarning
+                "NaNs detected in `y_train`. They have been dropped because the "
+                "target variable cannot have NaN values. Same rows have been "
+                "dropped from `X_train` to maintain alignment. This is caused by "
+                "series with interspersed NaNs.",
+                MissingValuesWarning
             )
 
         if self.dropna_from_series:
@@ -1124,25 +1123,25 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 X_train = X_train.iloc[mask, ]
                 y_train = y_train.iloc[mask]
                 warnings.warn(
-                    ("NaNs detected in `X_train`. They have been dropped. If "
-                     "you want to keep them, set `forecaster.dropna_from_series = False`. "
-                     "Same rows have been removed from `y_train` to maintain alignment. "
-                     "This caused by series with interspersed NaNs."),
-                     MissingValuesWarning
+                    "NaNs detected in `X_train`. They have been dropped. If "
+                    "you want to keep them, set `forecaster.dropna_from_series = False`. "
+                    "Same rows have been removed from `y_train` to maintain alignment. "
+                    "This caused by series with interspersed NaNs.",
+                    MissingValuesWarning
                 )
         else:
             if np.any(X_train.isnull().to_numpy()):
                 warnings.warn(
-                    ("NaNs detected in `X_train`. Some regressors do not allow "
-                     "NaN values during training. If you want to drop them, "
-                     "set `forecaster.dropna_from_series = True`."),
-                     MissingValuesWarning
+                    "NaNs detected in `X_train`. Some regressors do not allow "
+                    "NaN values during training. If you want to drop them, "
+                    "set `forecaster.dropna_from_series = True`.",
+                    MissingValuesWarning
                 )
 
         if X_train.empty:
             raise ValueError(
-                ("All samples have been removed due to NaNs. Set "
-                 "`forecaster.dropna_from_series = False` or review `exog` values.")
+                "All samples have been removed due to NaNs. Set "
+                "`forecaster.dropna_from_series = False` or review `exog` values."
             )
         
         if self.encoding == 'onehot':
@@ -1168,8 +1167,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             series_not_in_series_dict = set(series_to_store) - set(X_train_series_names_in_)
             if series_not_in_series_dict:
                 warnings.warn(
-                    (f"Series {series_not_in_series_dict} are not present in "
-                     f"`series`. No last window is stored for them."),
+                    f"Series {series_not_in_series_dict} are not present in "
+                    f"`series`. No last window is stored for them.",
                     IgnoredArgumentWarning
                 )
                 series_to_store = [s for s in series_to_store 

@@ -268,8 +268,9 @@ def test_fit_in_sample_residuals_not_stored(encoding):
     series = pd.DataFrame({'1': pd.Series(np.arange(5)), 
                            '2': pd.Series(np.arange(5))})
 
-    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3,
-                                              encoding=encoding)
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=3, encoding=encoding
+    )
     forecaster.fit(series=series, store_in_sample_residuals=False)
     results = forecaster.in_sample_residuals_
 
@@ -288,8 +289,9 @@ def test_fit_in_sample_residuals_not_stored_encoding_None():
     series = pd.DataFrame({'1': pd.Series(np.arange(5)), 
                            '2': pd.Series(np.arange(5))})
 
-    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3,
-                                              encoding=None)
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=3, encoding=None
+    )
     forecaster.fit(series=series, store_in_sample_residuals=False)
     results = forecaster.in_sample_residuals_
 
