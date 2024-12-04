@@ -162,7 +162,7 @@ def test_Sarimax_consolidate_kwargs_init_kwargs(kwargs, _init_kwargs):
                             'sm_fit_kwargs': {'test': 'fake_param'}}, 
                            {'maxiter': 200, 
                             'test': 'fake_param'})], 
-                         ids = lambda values : f'kwargs, _fit_kwargs: {values}')
+                         ids = lambda values: f'kwargs, _fit_kwargs: {values}')
 def test_Sarimax_consolidate_kwargs_fit_kwargs(kwargs, _fit_kwargs):
     """
     Test if `sarimax._fit_kwargs` are correctly consolidate.

@@ -44,10 +44,10 @@ def test_set_window_features_with_different_inputs(wf):
     assert forecaster.window_size == 6
 
 
-def test_set_window_features_when_differentiation_is_not_None():
+def test_set_window_features_when_differentiation_is_integer():
     """
     Test how `window_size` is also updated when the forecaster includes 
-    differentiation.
+    differentiation as integer.
     """
     forecaster = ForecasterRecursiveMultiSeries(
                      regressor       = LinearRegression(),
@@ -60,6 +60,7 @@ def test_set_window_features_when_differentiation_is_not_None():
     assert forecaster.window_features_names == ['roll_median_2']
     assert forecaster.window_features_class_names == ['RollingFeatures']
     assert forecaster.window_size == 3 + 1
+    assert forecaster.differentiation_max == 1
     assert forecaster.differentiator.window_size == 3 + 1
     
     rolling = RollingFeatures(stats='mean', window_sizes=6)
@@ -71,7 +72,44 @@ def test_set_window_features_when_differentiation_is_not_None():
     assert forecaster.window_features_names == ['roll_mean_6']
     assert forecaster.window_features_class_names == ['RollingFeatures']
     assert forecaster.window_size == 6 + 1
+    assert forecaster.differentiation_max == 1
     assert forecaster.differentiator.window_size == 6 + 1
+
+
+def test_set_window_features_when_differentiation_is_dict():
+    """
+    Test how `window_size` is also updated when the forecaster includes 
+    differentiation as dict.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     regressor       = LinearRegression(),
+                     lags            = 3,
+                     window_features = RollingFeatures(stats='median', window_sizes=2),
+                     differentiation = {'l1': 1, 'l2': 2, 'l3': None}
+                 )
+    
+    assert forecaster.max_size_window_features == 2
+    assert forecaster.window_features_names == ['roll_median_2']
+    assert forecaster.window_features_class_names == ['RollingFeatures']
+    assert forecaster.window_size == 3 + 2
+    assert forecaster.differentiation_max == 2
+    assert forecaster.differentiator['l1'].window_size == 3 + 2
+    assert forecaster.differentiator['l2'].window_size == 3 + 2
+    assert forecaster.differentiator['l3'] is None
+    
+    rolling = RollingFeatures(stats='mean', window_sizes=6)
+    forecaster.set_window_features(window_features=rolling)
+
+    assert forecaster.lags_names == ['lag_1', 'lag_2', 'lag_3']
+    assert forecaster.max_lag == 3
+    assert forecaster.max_size_window_features == 6
+    assert forecaster.window_features_names == ['roll_mean_6']
+    assert forecaster.window_features_class_names == ['RollingFeatures']
+    assert forecaster.window_size == 6 + 2
+    assert forecaster.differentiation_max == 2
+    assert forecaster.differentiator['l1'].window_size == 6 + 2
+    assert forecaster.differentiator['l2'].window_size == 6 + 2
+    assert forecaster.differentiator['l3'] is None
 
 
 def test_set_window_features_when_lags():

@@ -57,7 +57,11 @@ def test_fit_correct_dict_create_series_weights_weight_func_transformer_series()
         'l3': None,
         '_unknown_level': forecaster.transformer_series_['_unknown_level']
     }
-    expected_weight_func_ = {'l1': lambda index: np.ones_like(index, dtype=float), 'l2': custom_weights, 'l3': lambda index: np.ones_like(index, dtype=float)}
+    expected_weight_func_ = {
+        'l1': forecaster._weight_func_all_1, 
+        'l2': custom_weights, 
+        'l3': forecaster._weight_func_all_1
+    }
     expected_series_weights_ = {'l1': 3., 'l2': 1., 'l3': 0.5}
 
     assert forecaster.transformer_series_.keys() == expected_transformer_series_.keys()
@@ -78,7 +82,7 @@ def test_fit_correct_dict_create_series_weights_weight_func_transformer_series()
         'l2': None,
         '_unknown_level': forecaster.transformer_series_['_unknown_level']
     }
-    expected_weight_func_ = {'l1': lambda index: np.ones_like(index, dtype=float), 'l2': custom_weights}
+    expected_weight_func_ = {'l1': forecaster._weight_func_all_1, 'l2': custom_weights}
     expected_series_weights_ = {'l1': 3., 'l2': 1.}
 
     assert forecaster.transformer_series_.keys() == expected_transformer_series_.keys()
