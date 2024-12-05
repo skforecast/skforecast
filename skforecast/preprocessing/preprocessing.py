@@ -934,6 +934,7 @@ class RollingFeatures():
         self.features_names = features_names
         
         self.fillna = fillna
+        self.stats_kwargs = stats_kwargs
 
         window_params_list = []
         for i in range(len(self.stats)):
@@ -972,11 +973,11 @@ class RollingFeatures():
             f"RollingFeatures(\n"
             f"    stats           = {self.stats},\n"
             f"    window_sizes    = {self.window_sizes},\n"
-            f"    stats_kwargs    = {self.stats_kwargs},\n"
             f"    Max window size = {self.max_window_size},\n"
             f"    min_periods     = {self.min_periods},\n"
             f"    features_names  = {self.features_names},\n"
             f"    fillna          = {self.fillna}\n"
+            f"    stats_kwargs    = {self.stats_kwargs},\n"
             f")"
         )
 
@@ -997,7 +998,7 @@ class RollingFeatures():
         stats : str, list
             Statistics to compute over the rolling window. Can be a `string` or a `list`,
             and can have repeats. Available statistics are: 'mean', 'std', 'min', 'max',
-            'sum', 'median', 'ratio_min_max', 'coef_variation'.
+            'sum', 'median', 'ratio_min_max', 'coef_variation', 'ewm'.
         window_sizes : int, list
             Size of the rolling window for each statistic. If an `int`, all stats share 
             the same window size. If a `list`, it should have the same length as stats.
