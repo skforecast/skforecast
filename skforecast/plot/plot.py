@@ -4,7 +4,8 @@
 # This work by skforecast team is licensed under the BSD 3-Clause License.     #
 ################################################################################
 # coding=utf-8
- 
+
+from __future__ import annotations
 from typing import Union, Any, Optional
 import numpy as np
 import pandas as pd
@@ -241,7 +242,8 @@ def plot_prediction_intervals(
     xaxis_title: str = None,
     yaxis_title: str = None,
     ax: plt.Axes = None,
-    kwargs_subplots: dict = {}
+    kwargs_subplots: dict[str, object] = {'figsize': (7, 3)},
+    kwargs_fill_between: dict[str, object] = {'color': '#444444', 'alpha': 0.3}
 ):
     """
     Plot predicted intervals vs real values using matplotlib.
@@ -265,8 +267,10 @@ def plot_prediction_intervals(
         Title of y-axis, by default None.
     ax : matplotlib axes, default None
         Axes where to plot, by default None.
-    kwargs_subplots : dict, default {}
+    kwargs_subplots : dict, default {'figsize': (7, 3)}
         Additional keyword arguments (key, value mappings) to pass to `plt.subplots`.
+    kwargs_fill_between : dict, default {'color': '#444444', 'alpha': 0.3}
+        Additional keyword arguments (key, value mappings) to pass to `ax.fill_between`.
 
     Returns
     -------
@@ -275,7 +279,7 @@ def plot_prediction_intervals(
     """
     
     if ax is None:
-        fig, ax = plt.subplots(figsize=(7, 3), **kwargs_subplots)
+        fig, ax = plt.subplots(**kwargs_subplots)
 
     y_true.loc[predictions.index, target_variable].plot(ax=ax, label='Real value')
     predictions['pred'].plot(ax=ax, label='prediction')
@@ -283,8 +287,7 @@ def plot_prediction_intervals(
         predictions.index,
         predictions['lower_bound'],
         predictions['upper_bound'],
-        color = '#444444',
-        alpha = 0.3,
+        **kwargs_fill_between
     )
     ax.set_ylabel(yaxis_title)
     ax.set_xlabel(xaxis_title)

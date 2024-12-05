@@ -401,7 +401,8 @@ def initialize_differentiator_multiseries(
         objects in `differentiator` and is used internally to avoid overwriting.
     
     """
-
+    
+    series_names_in_ = series_names_in_ + ['_unknown_level']
     if differentiator is None:
         differentiator_ = {serie: None for serie in series_names_in_}
     elif not isinstance(differentiator, dict):

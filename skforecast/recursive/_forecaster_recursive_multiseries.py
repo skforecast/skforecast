@@ -393,69 +393,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         if window_features is not None:
             self.window_features_class_names = [
                 type(wf).__name__ for wf in self.window_features
-            ] 
-
-        self.weight_func, self.source_code_weight_func, self.series_weights = (
-            initialize_weights(
-                forecaster_name = type(self).__name__,
-                regressor       = regressor,
-                weight_func     = weight_func,
-                series_weights  = series_weights,
-            )
-        )
-
-        if differentiation is not None:
-            if isinstance(differentiation, int):
-                if differentiation < 1:
-                    raise ValueError(
-                        f"If `differentiation` is an integer, it must be equal "
-                        f"to or greater than 1. Got {differentiation}."
-                    )
-                self.differentiation_max = differentiation
-                self.window_size += self.differentiation_max
-                self.differentiator = TimeSeriesDifferentiator(
-                    order=differentiation, window_size=self.window_size
-                )
-            elif isinstance(differentiation, dict):
-                differentiation_max = []
-                for level, diff in differentiation.items():
-                    if diff is not None:
-                        if not isinstance(diff, int) or diff < 1:
-                            raise ValueError(
-                                f"If `differentiation` is a dict, the values must be "
-                                f"None or integers equal to or greater than 1. "
-                                f"Got {diff} for series '{level}'."
-                            )
-                        differentiation_max.append(diff)
-
-                if len(differentiation_max) == 0:
-                    raise ValueError(
-                        "If `differentiation` is a dict, at least one value must be "
-                        "different from None. Got all values equal to None. If you "
-                        "do not want to differentiate any series, set `differentiation` "
-                        "to None."
-                    )
-                
-                self.differentiation_max = max(differentiation_max)
-                self.window_size += self.differentiation_max
-                self.differentiator = {
-                    level: (
-                        TimeSeriesDifferentiator(order=diff, window_size=self.window_size)
-                        if diff is not None else None
-                    )
-                    for level, diff in differentiation.items()
-                }
-            else:
-                raise TypeError(
-                    f"When including `differentiation`, this argument must be "
-                    f"an integer (equal to or greater than 1) or a dict of "
-                    f"integers. Got {type(differentiation)}."
-                )
-
-        self.fit_kwargs = check_select_fit_kwargs(
-                              regressor  = regressor,
-                              fit_kwargs = fit_kwargs
-                          )
+            ]
 
         if self.encoding not in ['ordinal', 'ordinal_category', 'onehot', None]:
             raise ValueError(
@@ -502,6 +440,85 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     "Add the key '_unknown_level' to `transformer_series`. "
                     "For example: {'_unknown_level': your_transformer}."
                 )
+
+        self.weight_func, self.source_code_weight_func, self.series_weights = (
+            initialize_weights(
+                forecaster_name = type(self).__name__,
+                regressor       = regressor,
+                weight_func     = weight_func,
+                series_weights  = series_weights,
+            )
+        )
+
+        if differentiation is not None:
+            if isinstance(differentiation, int):
+                if differentiation < 1:
+                    raise ValueError(
+                        f"If `differentiation` is an integer, it must be equal "
+                        f"to or greater than 1. Got {differentiation}."
+                    )
+                self.differentiation = differentiation
+                self.differentiation_max = differentiation
+                self.window_size += self.differentiation_max
+                self.differentiator = TimeSeriesDifferentiator(
+                    order=differentiation, window_size=self.window_size
+                )
+            elif isinstance(differentiation, dict):
+
+                if self.encoding is None:
+                    raise TypeError(
+                        "When `encoding` is None, `differentiation` must be an "
+                        "integer equal to or greater than 1. Same differentiation "
+                        "must be applied to all series."
+                    )
+                if '_unknown_level' not in differentiation.keys():
+                    raise ValueError(
+                        "If `differentiation` is a `dict`, an order must be provided "
+                        "to differentiate series that do not exist during training. "
+                        "Add the key '_unknown_level' to `differentiation`. "
+                        "For example: {'_unknown_level': 1}."
+                    )
+                
+                differentiation_max = []
+                for level, diff in differentiation.items():
+                    if diff is not None:
+                        if not isinstance(diff, int) or diff < 1:
+                            raise ValueError(
+                                f"If `differentiation` is a dict, the values must be "
+                                f"None or integers equal to or greater than 1. "
+                                f"Got {diff} for series '{level}'."
+                            )
+                        differentiation_max.append(diff)
+
+                if len(differentiation_max) == 0:
+                    raise ValueError(
+                        "If `differentiation` is a dict, at least one value must be "
+                        "different from None. Got all values equal to None. If you "
+                        "do not want to differentiate any series, set `differentiation` "
+                        "to None."
+                    )
+                
+                self.differentiation = differentiation
+                self.differentiation_max = max(differentiation_max)
+                self.window_size += self.differentiation_max
+                self.differentiator = {
+                    level: (
+                        TimeSeriesDifferentiator(order=diff, window_size=self.window_size)
+                        if diff is not None else None
+                    )
+                    for level, diff in differentiation.items()
+                }
+            else:
+                raise TypeError(
+                    f"When including `differentiation`, this argument must be "
+                    f"an integer (equal to or greater than 1) or a dict of "
+                    f"integers. Got {type(differentiation)}."
+                )
+
+        self.fit_kwargs = check_select_fit_kwargs(
+                              regressor  = regressor,
+                              fit_kwargs = fit_kwargs
+                          )
 
     def __repr__(
         self
@@ -968,10 +985,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         if self.is_fitted and not set(series_names_in_).issubset(set(self.series_names_in_)):
             raise ValueError(
-                (f"Once the Forecaster has been trained, `series` must contain "
-                 f"the same series names as those used during training:\n"
-                 f" Got      : {series_names_in_}\n"
-                 f" Expected : {self.series_names_in_}")
+                f"Once the Forecaster has been trained, `series` must contain "
+                f"the same series names as those used during training:\n"
+                f" Got      : {series_names_in_}\n"
+                f" Expected : {self.series_names_in_}"
             )
 
         exog_dict = {serie: None for serie in series_names_in_}
@@ -989,16 +1006,16 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             if self.is_fitted:
                 if self.exog_names_in_ is None:
                     raise ValueError(
-                        ("Once the Forecaster has been trained, `exog` must be `None` "
-                         "because no exogenous variables were added during training.")
+                        "Once the Forecaster has been trained, `exog` must be `None` "
+                        "because no exogenous variables were added during training."
                     )
                 else:
                     if not set(exog_names_in_) == set(self.exog_names_in_):
                         raise ValueError(
-                            (f"Once the Forecaster has been trained, `exog` must contain "
-                             f"the same exogenous variables as those used during training:\n"
-                             f" Got      : {exog_names_in_}\n"
-                             f" Expected : {self.exog_names_in_}")
+                            f"Once the Forecaster has been trained, `exog` must contain "
+                            f"the same exogenous variables as those used during training:\n"
+                            f" Got      : {exog_names_in_}\n"
+                            f" Expected : {self.exog_names_in_}"
                         )
 
         if not self.is_fitted:
@@ -1708,10 +1725,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             
             if len(residuals) > 1000:
                 in_sample_residuals_['_unknown_level'] = rng.choice(
-                                                            a       = residuals,
-                                                            size    = 1000,
-                                                            replace = False
-                                                        )
+                                                             a       = residuals,
+                                                             size    = 1000,
+                                                             replace = False
+                                                         )
             else:
                 in_sample_residuals_['_unknown_level'] = residuals
         else:
@@ -1876,13 +1893,14 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 fit               = False,
                 inverse_transform = False
             )
-   
+
             if self.differentiation is not None:
                 if level not in self.differentiator_.keys():
-                    self.differentiator_[level] = copy(self.differentiator)
-                last_window_level = (
-                    self.differentiator_[level].fit_transform(last_window_level)
-                )
+                    self.differentiator_[level] = copy(self.differentiator_['_unknown_level'])
+                if self.differentiator_[level] is not None:
+                    last_window_level = (
+                        self.differentiator_[level].fit_transform(last_window_level)
+                    )
             
             last_window[level] = last_window_level
 
@@ -2255,7 +2273,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                           )
         
         for i, level in enumerate(levels):
-            if self.differentiation is not None:
+            if self.differentiator_[level] is not None:
                 predictions[:, i] = (
                     self
                     .differentiator_[level]
@@ -2403,7 +2421,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         boot_predictions = {}
         for i, level in enumerate(levels):
 
-            if self.differentiation is not None:
+            if self.differentiator_[level] is not None:
                 boot_predictions_full[:, i, :] = (
                     self.differentiator_[level]
                     .inverse_transform_next_window(boot_predictions_full[:, i, :])
@@ -2816,6 +2834,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             [ws for ws in [self.max_lag, self.max_size_window_features] 
              if ws is not None]
         )
+        
         if self.differentiation is not None:
             self.window_size += self.differentiation_max
             if isinstance(self.differentiator, dict):
@@ -2865,6 +2884,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             [ws for ws in [self.max_lag, self.max_size_window_features] 
              if ws is not None]
         )
+
         if self.differentiation is not None:
             self.window_size += self.differentiation_max
             if isinstance(self.differentiator, dict):
