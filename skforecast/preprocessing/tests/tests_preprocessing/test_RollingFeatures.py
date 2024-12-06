@@ -46,7 +46,7 @@ def test_RollingFeatures_validate_params():
         RollingFeatures(**params[0])
     err_msg = re.escape(
        ("Statistic 'not_valid_stat' is not allowed. Allowed stats are: ['mean', "
-        "'std', 'min', 'max', 'sum', 'median', 'ratio_min_max', 'coef_variation'].")
+        "'std', 'min', 'max', 'sum', 'median', 'ratio_min_max', 'coef_variation', 'ewm'].")
     ) 
     with pytest.raises(ValueError, match = err_msg):
         RollingFeatures(**params[1])
@@ -215,7 +215,7 @@ def test_RollingFeatures_apply_stat_pandas_numpy():
     """
 
     stats = ['mean', 'std', 'min', 'max', 'sum', 'median', 
-             'ratio_min_max', 'coef_variation']
+             'ratio_min_max', 'coef_variation', 'ewm']
     
     rolling = RollingFeatures(stats=stats, window_sizes=10)
     X_window_pandas = X.iloc[-11:]
@@ -238,39 +238,125 @@ def test_RollingFeatures_transform_batch():
     X_datetime.index = pd.date_range(start='1990-01-01', periods=len(X), freq='D')
 
     stats = ['mean', 'std', 'min', 'max', 'sum', 'median', 
-             'ratio_min_max', 'coef_variation']
+                'ratio_min_max', 'coef_variation', 'ewm']
     rolling = RollingFeatures(stats=stats, window_sizes=4)
     rolling_features = rolling.transform_batch(X_datetime).head(10)
-    
+
     expected = pd.DataFrame(
-        data = np.array([[0.44019369, 0.22156465, 0.22685145, 0.69646919, 1.76077474,
-                          0.41872705, 0.32571642, 0.50333446],
-                         [0.44594363, 0.23054861, 0.22685145, 0.71946897, 1.78377452,
-                          0.41872705, 0.31530401, 0.51699048],
-                         [0.48018541, 0.20796803, 0.22685145, 0.71946897, 1.92074165,
-                          0.48721061, 0.31530401, 0.43309944],
-                         [0.6686636 , 0.24087135, 0.42310646, 0.9807642 , 2.6746544 ,
-                          0.63539187, 0.43140488, 0.360228  ],
-                         [0.70204234, 0.22810163, 0.42310646, 0.9807642 , 2.80816937,
-                          0.70214935, 0.43140488, 0.3249115 ],
-                         [0.64240807, 0.25196046, 0.42310646, 0.9807642 , 2.5696323 ,
-                          0.58288082, 0.43140488, 0.39221247],
-                         [0.63466084, 0.26125613, 0.39211752, 0.9807642 , 2.53864336,
-                          0.58288082, 0.39980815, 0.41164685],
-                         [0.4752643 , 0.15089728, 0.34317802, 0.68482974, 1.90105718,
-                          0.43652471, 0.50111436, 0.31750182],
-                         [0.48631929, 0.17157163, 0.34317802, 0.72904971, 1.94527715,
-                          0.43652471, 0.47071964, 0.35279628],
-                         [0.47572937, 0.17331344, 0.34317802, 0.72904971, 1.90291749,
-                          0.41534488, 0.47071964, 0.364311  ]]),
-        columns = ['roll_mean_4', 'roll_std_4', 'roll_min_4', 'roll_max_4',
-                   'roll_sum_4', 'roll_median_4', 'roll_ratio_min_max_4',
-                   'roll_coef_variation_4'],
+        data = {
+            "roll_mean_4": [
+                0.440193685,
+                0.44594363000000004,
+                0.48018541249999996,
+                0.6686636,
+                0.7020423425000001,
+                0.642408075,
+                0.63466084,
+                0.475264295,
+                0.4863192875,
+                0.4757293725,
+            ],
+            "roll_std_4": [
+                0.2215646508537583,
+                0.2305486112172858,
+                0.20796803421252608,
+                0.24087135366452725,
+                0.22810163043780196,
+                0.25196045881621093,
+                0.2612561344738438,
+                0.15089728042696288,
+                0.1715716346143639,
+                0.17331344323200243,
+            ],
+            "roll_min_4": [
+                0.22685145,
+                0.22685145,
+                0.22685145,
+                0.42310646,
+                0.42310646,
+                0.42310646,
+                0.39211752,
+                0.34317802,
+                0.34317802,
+                0.34317802,
+            ],
+            "roll_max_4": [
+                0.69646919,
+                0.71946897,
+                0.71946897,
+                0.9807642,
+                0.9807642,
+                0.9807642,
+                0.9807642,
+                0.68482974,
+                0.72904971,
+                0.72904971,
+            ],
+            "roll_sum_4": [
+                1.76077474,
+                1.7837745200000001,
+                1.9207416499999999,
+                2.6746544,
+                2.8081693700000003,
+                2.5696323,
+                2.53864336,
+                1.90105718,
+                1.94527715,
+                1.90291749,
+            ],
+            "roll_median_4": [
+                0.41872705,
+                0.41872705,
+                0.48721061499999996,
+                0.63539187,
+                0.702149355,
+                0.58288082,
+                0.58288082,
+                0.43652471000000004,
+                0.43652471000000004,
+                0.41534488,
+            ],
+            "roll_ratio_min_max_4": [
+                0.3257164182668296,
+                0.3153040081770309,
+                0.3153040081770309,
+                0.43140487795129556,
+                0.43140487795129556,
+                0.43140487795129556,
+                0.3998081496041556,
+                0.5011143645718423,
+                0.4707196440692638,
+                0.4707196440692638,
+            ],
+            "roll_coef_variation_4": [
+                0.5033344602700475,
+                0.5169904797547747,
+                0.4330994420046571,
+                0.3602280035350021,
+                0.3249114998185482,
+                0.3922124715138597,
+                0.4116468482187176,
+                0.31750182375253516,
+                0.35279627813314707,
+                0.3643109995946328,
+            ],
+            "roll_ewm_4_alpha_0.3": [
+                0.43000710180418467,
+                0.5190257835333596,
+                0.5032329347216739,
+                0.7179547901342281,
+                0.7206729972799052,
+                0.6261400283379392,
+                0.5529958717726017,
+                0.42961449499407806,
+                0.5236366168574812,
+                0.4941020829688117,
+            ],
+        },
         index = pd.date_range(start='1990-01-05', periods=10, freq='D')
     )
 
     pd.testing.assert_frame_equal(rolling_features, expected)
-
 
 def test_RollingFeatures_transform_batch_different_rolling_and_fillna():
     """
@@ -357,14 +443,33 @@ def test_RollingFeatures_transform():
     """
     Test RollingFeatures transform method.
     """
-
-    stats = ['mean', 'std', 'min', 'max', 'sum', 'median', 
-             'ratio_min_max', 'coef_variation']
+    stats = [
+        "mean",
+        "std",
+        "min",
+        "max",
+        "sum",
+        "median",
+        "ratio_min_max",
+        "coef_variation",
+        "ewm",
+    ]
     rolling = RollingFeatures(stats=stats, window_sizes=4)
     rolling_features = rolling.transform(X.to_numpy(copy=True))
-    
-    expected = np.array([0.65024343, 0.23013666, 0.48303426, 0.98555979, 
-                         2.6009737 , 0.56618983, 0.49011157, 0.35392385])
+
+    expected = np.array(
+        [
+            0.65024343,
+            0.23013666,
+            0.48303426,
+            0.98555979,
+            2.6009737,
+            0.56618983,
+            0.49011157,
+            0.35392385,
+            0.64158672,
+        ]
+    )
 
     np.testing.assert_array_almost_equal(rolling_features, expected)
 
@@ -377,13 +482,33 @@ def test_RollingFeatures_transform_2d():
     X_2d = X.to_numpy(copy=True)
     X_2d = np.tile(X_2d, (2, 1)).T
 
-    stats = ['mean', 'std', 'min', 'max', 'sum', 'median', 
-             'ratio_min_max', 'coef_variation']
+    stats = [
+        "mean",
+        "std",
+        "min",
+        "max",
+        "sum",
+        "median",
+        "ratio_min_max",
+        "coef_variation",
+        "ewm",
+    ]
     rolling = RollingFeatures(stats=stats, window_sizes=4)
     rolling_features = rolling.transform(X_2d)
-    
-    expected = np.array([0.65024343, 0.23013666, 0.48303426, 0.98555979, 
-                         2.6009737 , 0.56618983, 0.49011157, 0.35392385])
+
+    expected = np.array(
+        [
+            0.65024343,
+            0.23013666,
+            0.48303426,
+            0.98555979,
+            2.6009737,
+            0.56618983,
+            0.49011157,
+            0.35392385,
+            0.64158672,
+        ]
+    )
     expected = np.array([expected, expected])
 
     np.testing.assert_array_almost_equal(rolling_features, expected)
@@ -397,14 +522,34 @@ def test_RollingFeatures_transform_with_nans():
     X_nans = X.to_numpy(copy=True)
     X_nans[-7] = np.nan
 
-    stats = ['mean', 'std', 'min', 'max', 'sum', 'median', 
-             'ratio_min_max', 'coef_variation']
-    window_sizes = [10, 10, 15, 4, 15, 4, 4, 4]
+    stats = [
+        "mean",
+        "std",
+        "min",
+        "max",
+        "sum",
+        "median",
+        "ratio_min_max",
+        "coef_variation",
+        "ewm",
+    ]
+    window_sizes = [10, 10, 15, 4, 15, 4, 4, 4, 4]
     rolling = RollingFeatures(stats=stats, window_sizes=window_sizes)
     rolling_features = rolling.transform(X_nans)
-    
-    expected = np.array([0.53051056, 0.28145959, 0.11561840, 0.98555979, 
-                         7.85259345, 0.56618983, 0.49011157, 0.35392385])
+
+    expected = np.array(
+        [
+            0.53051056,
+            0.28145959,
+            0.11561840,
+            0.98555979,
+            7.85259345,
+            0.56618983,
+            0.49011157,
+            0.35392385,
+            0.64158672,
+        ]
+    )
 
     np.testing.assert_array_almost_equal(rolling_features, expected)
 

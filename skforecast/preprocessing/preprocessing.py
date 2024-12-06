@@ -1129,7 +1129,7 @@ class RollingFeatures():
                 )
             
             for stat in kwargs_stats.keys():
-                if stat not in stats:
+                if stat not in allowed_stats:
                     raise ValueError(
                         f"Statistic '{stat}' is not in `stats`. "
                         f"Keys in `kwargs_stats` must match statistics in `stats`."
