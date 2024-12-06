@@ -869,7 +869,7 @@ class ForecasterDirect(ForecasterBase):
         Parameters
         ----------
         step : int
-            Step for which columns must be selected selected. Starts at 1.
+            Step for which columns must be selected. Starts at 1.
         X_train : pandas DataFrame
             Dataframe created with the `create_train_X_y` method, first return.
         y_train : dict
@@ -980,7 +980,7 @@ class ForecasterDirect(ForecasterBase):
         X_train: pd.DataFrame,
     ) -> np.ndarray:
         """
-        Crate weights for each observation according to the forecaster's attribute
+        Create weights for each observation according to the forecaster's attribute
         `weight_func`.
 
         Parameters
@@ -1636,7 +1636,7 @@ class ForecasterDirect(ForecasterBase):
         steps: Optional[Union[int, list]] = None,
         last_window: Optional[pd.Series] = None,
         exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
-        interval: list = [5, 95],
+        interval: Union[list, tuple] = [5, 95],
         n_boot: int = 250,
         random_state: int = 123,
         use_in_sample_residuals: bool = True,
@@ -1665,7 +1665,7 @@ class ForecasterDirect(ForecasterBase):
             right after training data.
         exog : pandas Series, pandas DataFrame, default `None`
             Exogenous variable/s included as predictor/s.
-        interval : list, default `[5, 95]`
+        interval : list, tuple, default `[5, 95]`
             Confidence of the prediction interval estimated. Sequence of 
             percentiles to compute, which must be between 0 and 100 inclusive. 
             For example, interval of 95% should be as `interval = [2.5, 97.5]`.
@@ -1731,7 +1731,7 @@ class ForecasterDirect(ForecasterBase):
         steps: Optional[Union[int, list]] = None,
         last_window: Optional[pd.Series] = None,
         exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
-        quantiles: list = [0.05, 0.5, 0.95],
+        quantiles: Union[list, tuple] = [0.05, 0.5, 0.95],
         n_boot: int = 250,
         random_state: int = 123,
         use_in_sample_residuals: bool = True,
@@ -1759,7 +1759,7 @@ class ForecasterDirect(ForecasterBase):
             right after training data.
         exog : pandas Series, pandas DataFrame, default `None`
             Exogenous variable/s included as predictor/s.
-        quantiles : list, default `[0.05, 0.5, 0.95]`
+        quantiles : list, tuple, default [0.05, 0.5, 0.95]
             Sequence of quantiles to compute, which must be between 0 and 1 
             inclusive. For example, quantiles of 0.05, 0.5 and 0.95 should be as 
             `quantiles = [0.05, 0.5, 0.95]`.

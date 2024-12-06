@@ -594,8 +594,8 @@ def check_exog_dtypes(
 
 
 def check_interval(
-    interval: list = None,
-    quantiles: float = None,
+    interval: Union[list, tuple] = None,
+    quantiles: Union[list, tuple] = None,
     alpha: float = None
 ) -> None:
     """
@@ -603,15 +603,15 @@ def check_interval(
 
     Parameters
     ----------
-    interval : list, default `None`
+    interval : list, tuple, default None
         Confidence of the prediction interval estimated. Sequence of percentiles
         to compute, which must be between 0 and 100 inclusive. For example, 
         interval of 95% should be as `interval = [2.5, 97.5]`.
-    quantiles : list, default `None`
+    quantiles : list, tuple, default None
         Sequence of quantiles to compute, which must be between 0 and 1 
         inclusive. For example, quantiles of 0.05, 0.5 and 0.95 should be as 
         `quantiles = [0.05, 0.5, 0.95]`.
-    alpha : float, default `None`
+    alpha : float, default None
         The confidence intervals used in ForecasterSarimax are (1 - alpha) %.
 
     Returns
@@ -621,17 +621,17 @@ def check_interval(
     """
 
     if interval is not None:
-        if not isinstance(interval, list):
+        if not isinstance(interval, (list, tuple)):
             raise TypeError(
-                ("`interval` must be a `list`. For example, interval of 95% "
-                 "should be as `interval = [2.5, 97.5]`.")
+                "`interval` must be a `list` or `tuple`. For example, interval of 95% "
+                "should be as `interval = [2.5, 97.5]`."
             )
 
         if len(interval) != 2:
             raise ValueError(
-                ("`interval` must contain exactly 2 values, respectively the "
-                 "lower and upper interval bounds. For example, interval of 95% "
-                 "should be as `interval = [2.5, 97.5]`.")
+                "`interval` must contain exactly 2 values, respectively the "
+                "lower and upper interval bounds. For example, interval of 95% "
+                "should be as `interval = [2.5, 97.5]`."
             )
 
         if (interval[0] < 0.) or (interval[0] >= 100.):
@@ -646,28 +646,28 @@ def check_interval(
 
         if interval[0] >= interval[1]:
             raise ValueError(
-                (f"Lower interval bound ({interval[0]}) must be less than the "
-                 f"upper interval bound ({interval[1]}).")
+                f"Lower interval bound ({interval[0]}) must be less than the "
+                f"upper interval bound ({interval[1]})."
             )
         
     if quantiles is not None:
-        if not isinstance(quantiles, list):
+        if not isinstance(quantiles, (list, tuple)):
             raise TypeError(
-                ("`quantiles` must be a `list`. For example, quantiles 0.05, "
-                 "0.5, and 0.95 should be as `quantiles = [0.05, 0.5, 0.95]`.")
+                "`quantiles` must be a `list` or `tuple`. For example, quantiles "
+                "0.05, 0.5, and 0.95 should be as `quantiles = [0.05, 0.5, 0.95]`."
             )
         
         for q in quantiles:
             if (q < 0.) or (q > 1.):
                 raise ValueError(
-                    ("All elements in `quantiles` must be >= 0 and <= 1.")
+                    "All elements in `quantiles` must be >= 0 and <= 1."
                 )
     
     if alpha is not None:
         if not isinstance(alpha, float):
             raise TypeError(
-                ("`alpha` must be a `float`. For example, interval of 95% "
-                 "should be as `alpha = 0.05`.")
+                "`alpha` must be a `float`. For example, interval of 95% "
+                "should be as `alpha = 0.05`."
             )
 
         if (alpha <= 0.) or (alpha >= 1):
@@ -733,7 +733,7 @@ def check_predict_input(
         Type of exogenous variable/s used in training.
     exog_names_in_ : list, default `None`
         Names of the exogenous variables used during training.
-    interval : list, default `None`
+    interval : list, tuple, default `None`
         Confidence of the prediction interval estimated. Sequence of percentiles
         to compute, which must be between 0 and 100 inclusive. For example, 
         interval of 95% should be as `interval = [2.5, 97.5]`.
@@ -1654,23 +1654,26 @@ def transform_numpy(
             "`inverse_transform` is not available when using ColumnTransformers."
         )
 
-    if not inverse_transform:
-        if fit:
-            array_transformed = transformer.fit_transform(array)
-        else:
-            with warnings.catch_warnings():
-                warnings.filterwarnings(
-                    "ignore", 
-                    message="X does not have valid feature names", 
-                    category=UserWarning
-                )
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore", 
+            message="X does not have valid feature names", 
+            category=UserWarning
+        )
+        if not inverse_transform:
+            if fit:
+                array_transformed = transformer.fit_transform(array)
+            else:
                 array_transformed = transformer.transform(array)
-    else:
-        array_transformed = transformer.inverse_transform(array)
+        else:
+            array_transformed = transformer.inverse_transform(array)
 
     if hasattr(array_transformed, 'toarray'):
         # If the returned values are in sparse matrix format, it is converted to dense
         array_transformed = array_transformed.toarray()
+
+    if isinstance(array_transformed, (pd.Series, pd.DataFrame)):
+        array_transformed = array_transformed.to_numpy()
 
     if array_ndim == 1:
         array_transformed = array_transformed.ravel()
