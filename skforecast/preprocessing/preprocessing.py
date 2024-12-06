@@ -862,7 +862,7 @@ class RollingFeatures():
     fillna : str, float, default `None`
         Fill missing values in `transform_batch` method. Available 
         methods are: 'mean', 'median', 'ffill', 'bfill', or a float value.
-    stats_kwargs : dict, default `{'ewm': {'alpha': 0.3}}`
+    kwargs_stats : dict, default `{'ewm': {'alpha': 0.3}}`
         Dictionary with additional arguments for the statistics. The keys are the
         statistic names and the values are dictionaries with the arguments for the
         corresponding statistic. For example, {'ewm': {'alpha': 0.3}}.
@@ -886,7 +886,7 @@ class RollingFeatures():
     unique_rolling_windows : dict
         Dictionary containing unique rolling window parameters and the corresponding
         statistics.
-    stats_kwargs : dict
+    kwargs_stats : dict
         Dictionary with additional arguments for the statistics. 
         
     """
@@ -898,7 +898,7 @@ class RollingFeatures():
         min_periods: Optional[Union[int, list]] = None,
         features_names: Optional[list] = None, 
         fillna: Optional[Union[str, float]] = None,
-        stats_kwargs: Optional[dict] = {'ewm': {'alpha': 0.3}},
+        kwargs_stats: Optional[dict] = {'ewm': {'alpha': 0.3}},
     ) -> None:
         
         self._validate_params(
@@ -907,7 +907,7 @@ class RollingFeatures():
             min_periods,
             features_names,
             fillna,
-            stats_kwargs
+            kwargs_stats
         )
 
         if isinstance(stats, str):
@@ -927,14 +927,17 @@ class RollingFeatures():
         self.min_periods = min_periods
 
         if features_names is None:
-            features_names = [
-                f"roll_{stat}_{window_size}" 
-                for stat, window_size in zip(self.stats, self.window_sizes)
-            ]
+            features_names = []
+            for stat, window_size in zip(self.stats, self.window_sizes):
+                if stat not in kwargs_stats:
+                    features_names.append(f"roll_{stat}_{window_size}")
+                else:
+                    kwargs_sufix = "_".join([f"{k}_{v}" for k, v in kwargs_stats[stat].items()])
+                    features_names.append(f"roll_{stat}_{window_size}_{kwargs_sufix}")
         self.features_names = features_names
-        
+
         self.fillna = fillna
-        self.stats_kwargs = stats_kwargs
+        self.kwargs_stats = kwargs_stats
 
         window_params_list = []
         for i in range(len(self.stats)):
@@ -977,7 +980,7 @@ class RollingFeatures():
             f"    min_periods     = {self.min_periods},\n"
             f"    features_names  = {self.features_names},\n"
             f"    fillna          = {self.fillna}\n"
-            f"    stats_kwargs    = {self.stats_kwargs},\n"
+            f"    kwargs_stats    = {self.kwargs_stats},\n"
             f")"
         )
 
@@ -988,7 +991,7 @@ class RollingFeatures():
         min_periods: Optional[Union[int, list]] = None,
         features_names: Optional[Union[str, list]] = None, 
         fillna: Optional[Union[str, float]] = None,
-        stats_kwargs: Optional[dict] = None
+        kwargs_stats: Optional[dict] = None
     ) -> None:
         """
         Validate the parameters of the RollingFeatures class.
@@ -1012,7 +1015,7 @@ class RollingFeatures():
         fillna : str, float, default `None`
             Fill missing values in `transform_batch` method. Available 
             methods are: 'mean', 'median', 'ffill', 'bfill', or a float value.
-        stats_kwargs : dict, default `None`
+        kwargs_stats : dict, default `None`
             Dictionary with additional arguments for the statistics. The keys are the
             statistic names and the values are dictionaries with the arguments for the
             corresponding statistic. For example, {'ewm': {'alpha': 0.3}}.
@@ -1118,18 +1121,18 @@ class RollingFeatures():
                         f"values are: {allowed_fill_strategy} or a float value."
                     )
         
-        # stats_kwargs
-        if stats_kwargs is not None:
-            if not isinstance(stats_kwargs, dict):
+        # kwargs_stats
+        if kwargs_stats is not None:
+            if not isinstance(kwargs_stats, dict):
                 raise TypeError(
-                    f"`stats_kwargs` must be a dictionary or None. Got {type(stats_kwargs)}."
+                    f"`kwargs_stats` must be a dictionary or None. Got {type(kwargs_stats)}."
                 )
             
-            for stat in stats_kwargs.keys():
+            for stat in kwargs_stats.keys():
                 if stat not in stats:
                     raise ValueError(
                         f"Statistic '{stat}' is not in `stats`. "
-                        f"Keys in `stats_kwargs` must match statistics in `stats`."
+                        f"Keys in `kwargs_stats` must match statistics in `stats`."
                     )
 
     def _apply_stat_pandas(
@@ -1171,7 +1174,7 @@ class RollingFeatures():
         elif stat == 'coef_variation':
             return rolling_obj.std() / rolling_obj.mean()
         elif stat == 'ewm':
-            return rolling_obj.apply(lambda x: _ewm_jit(x.to_numpy(), **self.stats_kwargs[stat]))
+            return rolling_obj.apply(lambda x: _ewm_jit(x.to_numpy(), **self.kwargs_stats[stat]))
         else:
             raise ValueError(f"Statistic '{stat}' is not implemented.")
 
@@ -1267,7 +1270,7 @@ class RollingFeatures():
         elif stat == 'coef_variation':
             return _np_cv_jit(X_window)
         elif stat == 'ewm':
-            return _ewm_jit(X_window, **self.stats_kwargs[stat])
+            return _ewm_jit(X_window, **self.kwargs_stats[stat])
         else:
             raise ValueError(f"Statistic '{stat}' is not implemented.")
 
