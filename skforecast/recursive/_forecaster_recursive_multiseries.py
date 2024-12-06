@@ -3000,6 +3000,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         rng = np.random.default_rng(seed=random_state)
         y_true = y_true.copy()
         y_pred = y_pred.copy()
+        # TODO: Check with diff as dict
         if self.differentiation is not None:
             differentiator = copy(self.differentiator)
             differentiator.set_params(window_size=None)

@@ -17,7 +17,7 @@ def test_initialize_differentiator_when_differentiator_is_None():
                           differentiator   = None
                       )
 
-    assert differentiator_ == {'col1': None, 'col2': None}
+    assert differentiator_ == {'col1': None, 'col2': None, '_unknown_level': None}
 
 
 def test_initialize_differentiator_when_differentiator_is_TimeSeriesDifferentiator():
@@ -32,7 +32,11 @@ def test_initialize_differentiator_when_differentiator_is_TimeSeriesDifferentiat
                           differentiator   = differentiator
                       )
     
-    expected = {'col1': differentiator, 'col2': differentiator}
+    expected = {
+        'col1': differentiator, 
+        'col2': differentiator, 
+        '_unknown_level': differentiator
+    }
 
     assert differentiator_.keys() == expected.keys()
     for k in expected.keys():
@@ -48,7 +52,8 @@ def test_initialize_differentiator_when_differentiator_is_dict():
     series_names_in_ = ['col1', 'col2', 'col3']
     differentiator = {
         'col1': TimeSeriesDifferentiator(order=1, window_size=5),
-        'col2': TimeSeriesDifferentiator(order=2, window_size=5)
+        'col2': TimeSeriesDifferentiator(order=2, window_size=5),
+        '_unknown_level': TimeSeriesDifferentiator(order=3, window_size=5)
     }
     
     differentiator_ = initialize_differentiator_multiseries(
@@ -59,7 +64,8 @@ def test_initialize_differentiator_when_differentiator_is_dict():
     expected = {
         'col1': TimeSeriesDifferentiator(order=1, window_size=5),
         'col2': TimeSeriesDifferentiator(order=2, window_size=5),
-        'col3': None
+        'col3': None,
+        '_unknown_level': TimeSeriesDifferentiator(order=3, window_size=5)
     }
 
     assert differentiator_.keys() == expected.keys()
@@ -80,7 +86,8 @@ def test_initialize_differentiator_multiseries_IgnoredArgumentWarning_when_keys_
     series_names_in_ = ['col1', 'col2']
     differentiator = {
         'col1': TimeSeriesDifferentiator(order=1, window_size=5),
-        'col3': TimeSeriesDifferentiator(order=2, window_size=5)
+        'col3': TimeSeriesDifferentiator(order=2, window_size=5),
+        '_unknown_level': TimeSeriesDifferentiator(order=1, window_size=5)
     }
     
     series_not_in_differentiator = set(['col2'])
@@ -96,7 +103,8 @@ def test_initialize_differentiator_multiseries_IgnoredArgumentWarning_when_keys_
     
     expected = {
         'col1': TimeSeriesDifferentiator(order=1, window_size=5),
-        'col2': None
+        'col2': None,
+        '_unknown_level': TimeSeriesDifferentiator(order=1, window_size=5)
     }
 
     assert differentiator_.keys() == expected.keys()
