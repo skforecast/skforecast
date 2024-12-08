@@ -16,6 +16,8 @@ The main changes in this release are:
 
 **Added**
 
++ Added statistic `ewm` (exponential weighted mean) in `RollinFeatures`.
+
 **Changed**
 
 + <code>[ForecasterAutoregCustom]</code> and <code>[ForecasterAutoregMultiSeriesCustom]</code> has been deleted (deprecated since skforecast 0.14.0). Window features can be added using the `window_features` argument in the <code>[ForecasterRecursive]</code> and <code>[ForecasterRecursiveMultiSeries]</code>.
