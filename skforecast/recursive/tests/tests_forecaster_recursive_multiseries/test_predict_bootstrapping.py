@@ -164,9 +164,9 @@ def test_predict_bootstrapping_UnknownLevelWarning_when_not_in_sample_residuals_
     last_window['3'] = last_window['1']
 
     warn_msg = re.escape(
-        ("`levels` {'3'} were not included in training. "
-         "Unknown levels are encoded as NaN, which may cause the "
-         "prediction to fail if the regressor does not accept NaN values.")
+        "`levels` {'3'} were not included in training. "
+        "Unknown levels are encoded as NaN, which may cause the "
+        "prediction to fail if the regressor does not accept NaN values."
     )
     with pytest.warns(UnknownLevelWarning, match = warn_msg):
         results = forecaster.predict_bootstrapping(

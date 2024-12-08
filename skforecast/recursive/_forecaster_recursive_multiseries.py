@@ -2273,7 +2273,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                           )
         
         for i, level in enumerate(levels):
-            if self.differentiator_[level] is not None:
+            if self.differentiation is not None and self.differentiator_[level] is not None:
                 predictions[:, i] = (
                     self
                     .differentiator_[level]
@@ -2421,7 +2421,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         boot_predictions = {}
         for i, level in enumerate(levels):
 
-            if self.differentiator_[level] is not None:
+            if self.differentiation is not None and self.differentiator_[level] is not None:
                 boot_predictions_full[:, i, :] = (
                     self.differentiator_[level]
                     .inverse_transform_next_window(boot_predictions_full[:, i, :])
@@ -2458,7 +2458,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         levels: str | list[str] | None = None,
         last_window: pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
-        interval: list[int] | tuple[int] = [5, 95],
+        interval: list[float] | tuple[float] = [5, 95],
         n_boot: int = 250,
         random_state: int = 123,
         use_in_sample_residuals: bool = True,

@@ -77,7 +77,7 @@ def test_set_lags_when_differentiation_is_dict():
     forecaster = ForecasterRecursiveMultiSeries(
                      regressor       = LinearRegression(),
                      lags            = 3,
-                     differentiation = {'l1': 1, 'l2': 2, 'l3': None}
+                     differentiation = {'l1': 1, 'l2': 2, 'l3': None, '_unknown_level': 1}
                  )
     
     np.testing.assert_array_almost_equal(forecaster.lags, np.array([1, 2, 3]))
@@ -88,6 +88,7 @@ def test_set_lags_when_differentiation_is_dict():
     assert forecaster.differentiator['l1'].window_size == 3 + 2
     assert forecaster.differentiator['l2'].window_size == 3 + 2
     assert forecaster.differentiator['l3'] is None
+    assert forecaster.differentiator['_unknown_level'].window_size == 3 + 2
     
     forecaster.set_lags(lags=5)
 
@@ -99,6 +100,7 @@ def test_set_lags_when_differentiation_is_dict():
     assert forecaster.differentiator['l1'].window_size == 5 + 2
     assert forecaster.differentiator['l2'].window_size == 5 + 2
     assert forecaster.differentiator['l3'] is None
+    assert forecaster.differentiator['_unknown_level'].window_size == 5 + 2
 
 
 @pytest.mark.parametrize("lags", 

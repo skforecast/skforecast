@@ -2344,7 +2344,7 @@ def test_create_train_X_y_encoding_mapping(encoding, encoding_mapping_):
                          [True, False], 
                          ids = lambda is_fitted: f'fit_forecaster: {is_fitted}')
 @pytest.mark.parametrize("differentiation", 
-                         [1, {'l1': 1, 'l2': 1, 'l3': 1}], 
+                         [1, {'l1': 1, 'l2': 1, 'l3': 1, '_unknown_level': 1}], 
                          ids = lambda diff: f'differentiation: {diff}')
 def test_create_train_X_y_output_when_series_and_differentiation_1_and_already_trained(fit_forecaster, differentiation):
     """
@@ -2562,10 +2562,7 @@ def test_create_train_X_y_output_when_series_and_already_trained_encoding_None(f
 @pytest.mark.parametrize("fit_forecaster", 
                          [True, False], 
                          ids = lambda is_fitted: f'fit_forecaster: {is_fitted}')
-@pytest.mark.parametrize("differentiation", 
-                         [1, {'l1': 1, 'l2': 1, 'l3': 1}], 
-                         ids = lambda diff: f'differentiation: {diff}')
-def test_create_train_X_y_output_when_series_and_differentiation_1_and_already_trained_encoding_None(fit_forecaster, differentiation):
+def test_create_train_X_y_output_when_series_and_differentiation_1_and_already_trained_encoding_None(fit_forecaster):
     """
     Test the output of _create_train_X_y when differentiation=1,
     encoding None and already trained forecaster.
@@ -2581,7 +2578,7 @@ def test_create_train_X_y_output_when_series_and_differentiation_1_and_already_t
     
     forecaster = ForecasterRecursiveMultiSeries(
         LinearRegression(), lags=3, encoding=None,
-        transformer_series=StandardScaler(), differentiation=differentiation
+        transformer_series=StandardScaler(), differentiation=1
     )
     
     if fit_forecaster:
@@ -2881,7 +2878,8 @@ def test_create_train_X_y_output_when_series_and_exog_with_window_features_no_la
                          [True, False], 
                          ids = lambda is_fitted: f'fit_forecaster: {is_fitted}')
 @pytest.mark.parametrize("differentiation", 
-                         [{'l1': 1, 'l2': 2, 'l3': None}, {'l1': 1, 'l2': 2}], 
+                         [{'l1': 1, 'l2': 2, 'l3': None, '_unknown_level': 1}, 
+                          {'l1': 1, 'l2': 2, '_unknown_level': 1}], 
                          ids = lambda diff: f'differentiation: {diff}')
 def test_create_train_X_y_output_when_series_and_exog_and_differentiation_dict_and_already_trained(fit_forecaster, differentiation):
     """
