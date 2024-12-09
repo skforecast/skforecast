@@ -5,6 +5,7 @@
 ################################################################################
 # coding=utf-8
 
+from __future__ import annotations
 from typing import Any, Union, Optional
 from typing_extensions import Self
 import warnings
@@ -105,7 +106,7 @@ class TimeSeriesDifferentiator(BaseEstimator, TransformerMixin):
     def __init__(
         self, 
         order: int = 1,
-        window_size: int = None
+        window_size: int | None = None
     ) -> None:
 
         if not isinstance(order, (int, np.integer)):
@@ -377,7 +378,7 @@ def series_long_to_dict(
     values: str,
     freq: str,
     suppress_warnings: bool = False
-) -> dict:
+) -> dict[str, pd.Series]:
     """
     Convert long format series to dictionary of pandas Series with frequency.
     Input data must be a pandas DataFrame with columns for the series identifier,
@@ -397,7 +398,7 @@ def series_long_to_dict(
         Column name with the values.
     freq: str
         Frequency of the series.
-    suppress_warnings: bool, default `False`
+    suppress_warnings: bool, default False
         If True, suppress warnings when a series is incomplete after setting the
         frequency.
 
@@ -437,7 +438,7 @@ def exog_long_to_dict(
     freq: str,
     dropna: bool = False,
     suppress_warnings: bool = False
-) -> dict:
+) -> dict[str, pd.DataFrame]:
     """
     Convert long format exogenous variables to dictionary. Input data must be a
     pandas DataFrame with columns for the series identifier, time index, and
@@ -501,10 +502,10 @@ def exog_long_to_dict(
 
 
 def create_datetime_features(
-    X: Union[pd.Series, pd.DataFrame],
-    features: Optional[list] = None,
+    X: pd.Series | pd.DataFrame,
+    features: list[str] | None = None,
     encoding: str = "cyclical",
-    max_values: Optional[dict] = None,
+    max_values: dict[str, int] | None = None,
 ) -> pd.DataFrame:
     """
     Extract datetime features from the DateTime index of a pandas DataFrame or Series.
@@ -513,14 +514,14 @@ def create_datetime_features(
     ----------
     X : pandas Series, pandas DataFrame
         Input DataFrame or Series with a datetime index.
-    features : list, default `None`
+    features : list, default None
         List of calendar features (strings) to extract from the index. When `None`,
         the following features are extracted: 'year', 'month', 'week', 'day_of_week',
         'day_of_month', 'day_of_year', 'weekend', 'hour', 'minute', 'second'.
-    encoding : str, default `'cyclical'`
+    encoding : str, default 'cyclical'
         Encoding method for the extracted features. Options are None, 'cyclical' or
         'onehot'.
-    max_values : dict, default `None`
+    max_values : dict, default None
         Dictionary of maximum values for the cyclical encoding of calendar features.
         When `None`, the following values are used: {'month': 12, 'week': 52, 
         'day_of_week': 7, 'day_of_month': 31, 'day_of_year': 365, 'hour': 24, 
@@ -617,14 +618,14 @@ class DateTimeFeatureTransformer(BaseEstimator, TransformerMixin):
 
     Parameters
     ----------
-    features : list, default `None`
+    features : list, default None
         List of calendar features (strings) to extract from the index. When `None`,
         the following features are extracted: 'year', 'month', 'week', 'day_of_week',
         'day_of_month', 'day_of_year', 'weekend', 'hour', 'minute', 'second'.
-    encoding : str, default `'cyclical'`
+    encoding : str, default 'cyclical'
         Encoding method for the extracted features. Options are None, 'cyclical' or
         'onehot'.
-    max_values : dict, default `None`
+    max_values : dict, default None
         Dictionary of maximum values for the cyclical encoding of calendar features.
         When `None`, the following values are used: {'month': 12, 'week': 52, 
         'day_of_week': 7, 'day_of_month': 31, 'day_of_year': 365, 'hour': 24, 
@@ -643,9 +644,9 @@ class DateTimeFeatureTransformer(BaseEstimator, TransformerMixin):
 
     def __init__(
         self,
-        features: Optional[list] = None,
+        features: list[str] | None = None,
         encoding: str = "cyclical",
-        max_values: Optional[dict] = None
+        max_values: dict[str, int] | None = None
     ) -> None:
 
         if encoding not in ["cyclical", "onehot", None]:
@@ -691,7 +692,7 @@ class DateTimeFeatureTransformer(BaseEstimator, TransformerMixin):
 
     def transform(
         self,
-        X: Union[pd.Series, pd.DataFrame]
+        X: pd.Series | pd.DataFrame
     ) -> pd.DataFrame:
         """
         Create datetime features from the DateTime index of a pandas DataFrame or Series.
@@ -719,7 +720,7 @@ class DateTimeFeatureTransformer(BaseEstimator, TransformerMixin):
 
 
 @njit
-def _np_mean_jit(x):  # pragma: no cover
+def _np_mean_jit(x: np.ndarray) -> float:  # pragma: no cover
     """
     NumPy mean function implemented with Numba JIT.
     """
@@ -727,7 +728,7 @@ def _np_mean_jit(x):  # pragma: no cover
 
 
 @njit
-def _np_std_jit(x, ddof=1):  # pragma: no cover
+def _np_std_jit(x: np.ndarray, ddof: int = 1) -> float:  # pragma: no cover
     """
     Standard deviation function implemented with Numba JIT.
     If the array has only one element, the function returns 0.
@@ -747,7 +748,7 @@ def _np_std_jit(x, ddof=1):  # pragma: no cover
 
 
 @njit
-def _np_min_jit(x):  # pragma: no cover
+def _np_min_jit(x: np.ndarray) -> float:  # pragma: no cover
     """
     NumPy min function implemented with Numba JIT.
     """
@@ -755,7 +756,7 @@ def _np_min_jit(x):  # pragma: no cover
 
 
 @njit
-def _np_max_jit(x):  # pragma: no cover
+def _np_max_jit(x: np.ndarray) -> float:  # pragma: no cover
     """
     NumPy max function implemented with Numba JIT.
     """
@@ -763,7 +764,7 @@ def _np_max_jit(x):  # pragma: no cover
 
 
 @njit
-def _np_sum_jit(x):  # pragma: no cover
+def _np_sum_jit(x: np.ndarray) -> float:  # pragma: no cover
     """
     NumPy sum function implemented with Numba JIT.
     """
@@ -771,7 +772,7 @@ def _np_sum_jit(x):  # pragma: no cover
 
 
 @njit
-def _np_median_jit(x):  # pragma: no cover
+def _np_median_jit(x: np.ndarray) -> float:  # pragma: no cover
     """
     NumPy median function implemented with Numba JIT.
     """
@@ -779,7 +780,7 @@ def _np_median_jit(x):  # pragma: no cover
 
 
 @njit
-def _np_min_max_ratio_jit(x):  # pragma: no cover
+def _np_min_max_ratio_jit(x: np.ndarray) -> float:  # pragma: no cover
     """
     NumPy min-max ratio function implemented with Numba JIT.
     """
@@ -787,7 +788,7 @@ def _np_min_max_ratio_jit(x):  # pragma: no cover
 
 
 @njit
-def _np_cv_jit(x):  # pragma: no cover
+def _np_cv_jit(x: np.ndarray) -> float:  # pragma: no cover
     """
     Coefficient of variation function implemented with Numba JIT.
     If the array has only one element, the function returns 0.
@@ -813,15 +814,16 @@ def _ewm_jit(x: np.ndarray, alpha: float) -> float:  # pragma: no cover
 
     Parameters
     ----------
-    x : numpy.ndarray
-        The input array.
+    x : numpy ndarray
+        Input array.
     alpha : float
-        The decay factor.
+        Secay factor.
 
     Returns
     -------
-    float
+    ewm : float
         The exponentially weighted mean.
+    
     """
     if not (0 < alpha <= 1):
         raise ValueError("Alpha should be in the range (0, 1].")
@@ -834,7 +836,9 @@ def _ewm_jit(x: np.ndarray, alpha: float) -> float:  # pragma: no cover
         weights += x[i] * weight
         sum_weights += weight
 
-    return weights / sum_weights
+    ewm = weights / sum_weights
+
+    return ewm
 
 
 class RollingFeatures():
@@ -852,17 +856,17 @@ class RollingFeatures():
     window_sizes : int, list
         Size of the rolling window for each statistic. If an `int`, all stats share 
         the same window size. If a `list`, it should have the same length as stats.
-    min_periods : int, list, default `None`
+    min_periods : int, list, default None
         Minimum number of observations in window required to have a value. 
         Same as the `min_periods` argument of pandas rolling. If `None`, 
         defaults to `window_sizes`.
-    features_names : list, default `None`
+    features_names : list, default None
         Names of the output features. If `None`, default names will be used in the 
         format 'roll_stat_window_size', for example 'roll_mean_7'.
-    fillna : str, float, default `None`
+    fillna : str, float, default None
         Fill missing values in `transform_batch` method. Available 
         methods are: 'mean', 'median', 'ffill', 'bfill', or a float value.
-    kwargs_stats : dict, default `{'ewm': {'alpha': 0.3}}`
+    kwargs_stats : dict, default {'ewm': {'alpha': 0.3}}
         Dictionary with additional arguments for the statistics. The keys are the
         statistic names and the values are dictionaries with the arguments for the
         corresponding statistic. For example, {'ewm': {'alpha': 0.3}}.
@@ -893,12 +897,12 @@ class RollingFeatures():
 
     def __init__(
         self, 
-        stats: Union[str, list],
-        window_sizes: Union[int, list],
-        min_periods: Optional[Union[int, list]] = None,
-        features_names: Optional[list] = None, 
-        fillna: Optional[Union[str, float]] = None,
-        kwargs_stats: Optional[dict] = {'ewm': {'alpha': 0.3}},
+        stats: str | list[str],
+        window_sizes: int | list[int],
+        min_periods: int | list[int] | None = None,
+        features_names: list[str] | None = None, 
+        fillna: str | float | None = None,
+        kwargs_stats: dict[str, dict[str, object]] | None = {'ewm': {'alpha': 0.3}}
     ) -> None:
         
         self._validate_params(
@@ -986,12 +990,12 @@ class RollingFeatures():
 
     def _validate_params(
         self, 
-        stats, 
-        window_sizes, 
-        min_periods: Optional[Union[int, list]] = None,
-        features_names: Optional[Union[str, list]] = None, 
-        fillna: Optional[Union[str, float]] = None,
-        kwargs_stats: Optional[dict] = None
+        stats: str | list[str], 
+        window_sizes: int | list[int],
+        min_periods: int | list[int] | None = None,
+        features_names: list[str] | None = None, 
+        fillna: str | float | None = None,
+        kwargs_stats: dict[str, dict[str, object]] | None = None
     ) -> None:
         """
         Validate the parameters of the RollingFeatures class.
@@ -1005,17 +1009,17 @@ class RollingFeatures():
         window_sizes : int, list
             Size of the rolling window for each statistic. If an `int`, all stats share 
             the same window size. If a `list`, it should have the same length as stats.
-        min_periods : int, list, default `None`
+        min_periods : int, list, default None
             Minimum number of observations in window required to have a value. 
             Same as the `min_periods` argument of pandas rolling. If `None`, 
             defaults to `window_sizes`.
-        features_names : list, default `None`
+        features_names : list, default None
             Names of the output features. If `None`, default names will be used in the 
             format 'roll_stat_window_size', for example 'roll_mean_7'.
-        fillna : str, float, default `None`
+        fillna : str, float, default None
             Fill missing values in `transform_batch` method. Available 
             methods are: 'mean', 'median', 'ffill', 'bfill', or a float value.
-        kwargs_stats : dict, default `None`
+        kwargs_stats : dict, default None
             Dictionary with additional arguments for the statistics. The keys are the
             statistic names and the values are dictionaries with the arguments for the
             corresponding statistic. For example, {'ewm': {'alpha': 0.3}}.
@@ -1027,21 +1031,23 @@ class RollingFeatures():
         """
 
         # stats
+        allowed_stats = [
+            'mean', 'std', 'min', 'max', 'sum', 'median', 'ratio_min_max', 
+            'coef_variation', 'ewm'
+        ]
+
         if not isinstance(stats, (str, list)):
             raise TypeError(
                 f"`stats` must be a string or a list of strings. Got {type(stats)}."
             )        
-        
         if isinstance(stats, str):
             stats = [stats]
-        allowed_stats = ['mean', 'std', 'min', 'max', 'sum', 'median', 
-                         'ratio_min_max', 'coef_variation', 'ewm']
+
         for stat in set(stats):
             if stat not in allowed_stats:
                 raise ValueError(
                     f"Statistic '{stat}' is not allowed. Allowed stats are: {allowed_stats}."
                 )
-        
         n_stats = len(stats)
         
         # window_sizes
@@ -1122,6 +1128,7 @@ class RollingFeatures():
                     )
         
         # kwargs_stats
+        allowed_kwargs_stats = ['ewm']
         if kwargs_stats is not None:
             if not isinstance(kwargs_stats, dict):
                 raise TypeError(
@@ -1129,10 +1136,12 @@ class RollingFeatures():
                 )
             
             for stat in kwargs_stats.keys():
-                if stat not in allowed_stats:
+                if stat not in allowed_kwargs_stats:
                     raise ValueError(
-                        f"Statistic '{stat}' is not in `stats`. "
-                        f"Keys in `kwargs_stats` must match statistics in `stats`."
+                        f"Invalid statistic '{stat}' found in `kwargs_stats`. "
+                        f"Allowed statistics with additional arguments are: "
+                        f"{allowed_kwargs_stats}. Please ensure all keys in "
+                        f"`kwargs_stats` are among the allowed statistics."
                     )
 
     def _apply_stat_pandas(
@@ -1332,48 +1341,51 @@ class QuantileBinner:
     ----------
     n_bins : int
         The number of quantile-based bins to create.
-    method : str, default='linear'
+    method : str, default 'linear'
         The method used to compute the quantiles. This parameter is passed to 
         `numpy.percentile`. Default is 'linear'. Valid values are "inverse_cdf",
         "averaged_inverse_cdf", "closest_observation", "interpolated_inverse_cdf",
         "hazen", "weibull", "linear", "median_unbiased", "normal_unbiased".
-    subsample : int, default=200000
+    subsample : int, default 200000
         The number of samples to use for computing quantiles. If the dataset 
         has more samples than `subsample`, a random subset will be used.
-    random_state : int, default=789654
-        The random seed to use for generating a random subset of the data.
-    dtype : data type, default=numpy.float64
+    dtype : data type, default numpy.float64
         The data type to use for the bin indices. Default is `numpy.float64`.
+    random_state : int, default 789654
+        The random seed to use for generating a random subset of the data.
     
     Attributes
     ----------
     n_bins : int
         The number of quantile-based bins to create.
-    method : str, default='linear'
+    method : str
         The method used to compute the quantiles. This parameter is passed to 
         `numpy.percentile`. Default is 'linear'. Valid values are 'linear',
         'lower', 'higher', 'midpoint', 'nearest'.
-    subsample : int, default=200000
+    subsample : int
         The number of samples to use for computing quantiles. If the dataset 
         has more samples than `subsample`, a random subset will be used.
-    random_state : int, default=789654
-        The random seed to use for generating a random subset of the data.
-    dtype : data type, default=numpy.float64
+    dtype : data type
         The data type to use for the bin indices. Default is `numpy.float64`.
+    random_state : int
+        The random seed to use for generating a random subset of the data.
     n_bins_ : int
         The number of bins learned during fitting.
     bin_edges_ : numpy ndarray
         The edges of the bins learned during fitting.
+    intervals_ : dict
+        A dictionary with the bin indices as keys and the corresponding bin
+        intervals as values.
     
     """
 
     def __init__(
         self,
         n_bins: int,
-        method: Optional[str] = "linear",
+        method: str = "linear",
         subsample: int = 200000,
-        dtype: Optional[type] = np.float64,
-        random_state: Optional[int] = 789654
+        dtype: type = np.float64,
+        random_state: int = 789654
     ):
         
         self._validate_params(
@@ -1387,8 +1399,8 @@ class QuantileBinner:
         self.n_bins       = n_bins
         self.method       = method
         self.subsample    = subsample
-        self.random_state = random_state
         self.dtype        = dtype
+        self.random_state = random_state
         self.n_bins_      = None
         self.bin_edges_   = None
         self.intervals_   = None

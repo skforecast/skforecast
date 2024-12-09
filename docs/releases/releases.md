@@ -16,7 +16,7 @@ The main changes in this release are:
 
 **Added**
 
-+ Added statistic `ewm` (exponential weighted mean) in `RollinFeatures`.
++ Added statistic `ewm` (exponential weighted mean) in <code>[RollingFeatures]</code>. Alpha can be specified using the new argument `kwargs_stats`, default `{'ewm': {'alpha': 0.3}}`.
 
 **Changed**
 

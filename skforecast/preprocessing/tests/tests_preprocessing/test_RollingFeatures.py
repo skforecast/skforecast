@@ -36,6 +36,10 @@ def test_RollingFeatures_validate_params():
              'min_periods': 5, 'features_names': ['mean_5', 'median_6'], 'fillna': {}},
         14: {'stats': ['mean', 'median'], 'window_sizes': [5, 6], 
              'min_periods': [5, 5], 'features_names': None, 'fillna': 'not_valid_fillna'},
+        15: {'stats': ['mean', 'median'], 'window_sizes': [5, 6], 'min_periods': [5, 5], 
+             'features_names': None, 'fillna': 'ffill', 'kwargs_stats': 'not_valid_kwargs_stats'},
+        16: {'stats': ['mean', 'median'], 'window_sizes': [5, 6], 'min_periods': [5, 5], 
+             'features_names': None, 'fillna': 'ffill', 'kwargs_stats': {'median': {'alpha': 0.3}}},
     }
     
     # stats
@@ -45,8 +49,8 @@ def test_RollingFeatures_validate_params():
     with pytest.raises(TypeError, match = err_msg):
         RollingFeatures(**params[0])
     err_msg = re.escape(
-       ("Statistic 'not_valid_stat' is not allowed. Allowed stats are: ['mean', "
-        "'std', 'min', 'max', 'sum', 'median', 'ratio_min_max', 'coef_variation', 'ewm'].")
+        "Statistic 'not_valid_stat' is not allowed. Allowed stats are: ['mean', "
+        "'std', 'min', 'max', 'sum', 'median', 'ratio_min_max', 'coef_variation', 'ewm']."
     ) 
     with pytest.raises(ValueError, match = err_msg):
         RollingFeatures(**params[1])
@@ -129,14 +133,32 @@ def test_RollingFeatures_validate_params():
     with pytest.raises(ValueError, match = err_msg):
         RollingFeatures(**params[14])
 
+    # kwargs_stats
+    err_msg = re.escape(
+        f"`kwargs_stats` must be a dictionary or None. Got {type(params[15]['kwargs_stats'])}."
+    )
+    with pytest.raises(TypeError, match = err_msg):
+        RollingFeatures(**params[15])
+    allowed_kwargs_stats = ['ewm']
+    err_msg = re.escape(
+        f"Invalid statistic 'median' found in `kwargs_stats`. "
+        f"Allowed statistics with additional arguments are: "
+        f"{allowed_kwargs_stats}. Please ensure all keys in "
+        f"`kwargs_stats` are among the allowed statistics."
+    ) 
+    with pytest.raises(ValueError, match = err_msg):
+        RollingFeatures(**params[16])
+
 
 @pytest.mark.parametrize(
-        "params", 
-        [{'stats': 'mean', 'window_sizes': 5, 
-          'min_periods': None, 'features_names': None, 'fillna': 'ffill'},
-         {'stats': ['mean'], 'window_sizes': [5], 
-          'min_periods': 5, 'features_names': ['roll_mean_5'], 'fillna': 'ffill'}], 
-        ids = lambda params: f'params: {params}')
+    "params", 
+    [{'stats': ['mean', 'ewm'], 'window_sizes': 5, 'min_periods': None, 
+      'features_names': None, 'fillna': 'ffill', 
+      'kwargs_stats': {'ewm': {'alpha': 0.3}}},
+     {'stats': ['mean', 'ewm'], 'window_sizes': [5, 5], 'min_periods': 5, 
+      'features_names': ['roll_mean_5', 'roll_ewm_5_alpha_0.3'], 
+      'fillna': 'ffill', 'kwargs_stats': {'ewm': {'alpha': 0.3}}}], 
+    ids = lambda params: f'params: {params}')
 def test_RollingFeatures_init_store_parameters(params):
     """
     Test RollingFeatures initialization and stored parameters.
@@ -144,18 +166,19 @@ def test_RollingFeatures_init_store_parameters(params):
 
     rolling = RollingFeatures(**params)
 
-    assert rolling.stats == ['mean']
-    assert rolling.n_stats == 1
-    assert rolling.window_sizes == [5]
+    assert rolling.stats == ['mean', 'ewm']
+    assert rolling.n_stats == 2
+    assert rolling.window_sizes == [5, 5]
     assert rolling.max_window_size == 5
-    assert rolling.min_periods == [5]
-    assert rolling.features_names == ['roll_mean_5']
+    assert rolling.min_periods == [5, 5]
+    assert rolling.features_names == ['roll_mean_5', 'roll_ewm_5_alpha_0.3']
     assert rolling.fillna == 'ffill'
+    assert rolling.kwargs_stats == {'ewm': {'alpha': 0.3}}
 
     unique_rolling_windows = {
         '5_5': {'params': {'window': 5, 'min_periods': 5, 'center': False, 'closed': 'left'}, 
-                'stats_idx': [0],
-                'stats_names': ['roll_mean_5'],
+                'stats_idx': [0, 1],
+                'stats_names': ['roll_mean_5', 'roll_ewm_5_alpha_0.3'],
                 'rolling_obj': None}
     }
 
@@ -238,7 +261,7 @@ def test_RollingFeatures_transform_batch():
     X_datetime.index = pd.date_range(start='1990-01-01', periods=len(X), freq='D')
 
     stats = ['mean', 'std', 'min', 'max', 'sum', 'median', 
-                'ratio_min_max', 'coef_variation', 'ewm']
+             'ratio_min_max', 'coef_variation', 'ewm']
     rolling = RollingFeatures(stats=stats, window_sizes=4)
     rolling_features = rolling.transform_batch(X_datetime).head(10)
 
@@ -358,6 +381,7 @@ def test_RollingFeatures_transform_batch():
 
     pd.testing.assert_frame_equal(rolling_features, expected)
 
+
 def test_RollingFeatures_transform_batch_different_rolling_and_fillna():
     """
     Test RollingFeatures transform_batch method with different rolling windows 
@@ -403,9 +427,9 @@ def test_RollingFeatures_transform_batch_different_rolling_and_fillna():
 
 
 @pytest.mark.parametrize(
-        "fillna", 
-        ['mean', 'median', 'ffill', 'bfill', None, 5., 0], 
-        ids = lambda fillna: f'fillna: {fillna}')
+    "fillna", 
+    ['mean', 'median', 'ffill', 'bfill', None, 5., 0], 
+    ids = lambda fillna: f'fillna: {fillna}')
 def test_RollingFeatures_transform_batch_fillna_all_methods(fillna):
     """
     Test RollingFeatures transform_batch method with all fillna methods.
@@ -572,7 +596,7 @@ def test_RollingFeatures_transform_with_nans_2d():
     
     expected_0 = np.array([0.53051056, 0.28145959, 0.11561840, 0.98555979, 
                            7.85259345, 0.56618983, 0.49011157, 0.35392385])
-    expected_1 = np.array([0.548774, 0.26592 , 0.115618, 0.98556, 
+    expected_1 = np.array([0.548774, 0.26592, 0.115618, 0.98556, 
                            8.016964, 0.56618983, 0.49011157, 0.35392385])
     expected = np.array([expected_0, expected_1])
 
