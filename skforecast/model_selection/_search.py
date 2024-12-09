@@ -905,6 +905,7 @@ def _bayesian_search_optuna(
     results = pd.concat([results, results['params'].apply(pd.Series)], axis=1)
     
     if return_best:
+        
         best_lags = results.loc[0, 'lags']
         best_params = results.loc[0, 'params']
         best_metric = results.loc[0, list(metric_dict.keys())[0]]
@@ -1482,7 +1483,13 @@ def _evaluate_grid_hyperparameters_multiseries(
         forecaster.set_lags(best_lags)
         forecaster.set_params(best_params)
 
-        forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
+        # TODO: Check if including suppress_warnings here fix warnings when return_best
+        forecaster.fit(
+            series                    = series, 
+            exog                      = exog, 
+            store_in_sample_residuals = True, 
+            suppress_warnings         = suppress_warnings
+        )
 
         if len(levels) > 20:
             levels_print = levels[:10] + ["..."] + levels[-10:]
@@ -1608,8 +1615,8 @@ def bayesian_search_forecaster_multiseries(
 
     if return_best and exog is not None and (len(exog) != len(series)):
         raise ValueError(
-            (f"`exog` must have same number of samples as `series`. "
-             f"length `exog`: ({len(exog)}), length `series`: ({len(series)})")
+            f"`exog` must have same number of samples as `series`. "
+            f"length `exog`: ({len(exog)}), length `series`: ({len(series)})"
         )
    
     results, best_trial = _bayesian_search_optuna_multiseries(
@@ -2036,7 +2043,13 @@ def _bayesian_search_optuna_multiseries(
         forecaster.set_lags(best_lags)
         forecaster.set_params(best_params)
 
-        forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
+        # TODO: Check if including suppress_warnings here fix warnings when return_best
+        forecaster.fit(
+            series                    = series, 
+            exog                      = exog, 
+            store_in_sample_residuals = True, 
+            suppress_warnings         = suppress_warnings
+        )
 
         if len(levels) > 20:
             levels_print = levels[:10] + ["..."] + levels[-10:]

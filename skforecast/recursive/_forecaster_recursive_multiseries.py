@@ -1321,8 +1321,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 raise ValueError(
                     "All series with frequency must have the same frequency."
                 )
-            min_index = min([v.index[0] for v in series.values()])
-            max_index = max([v.index[-1] for v in series.values()])
+            # TODO: Add testing when series is a dict with one empty series
+            # TODO: Tests if all series are empty
+            min_index = min([v.index[0] for v in series.values() if len(v) > 0])
+            max_index = max([v.index[-1] for v in series.values() if len(v) > 0])
             span_index = pd.date_range(start=min_index, end=max_index, freq=freqs[0])
         else:
             span_index = series.index
