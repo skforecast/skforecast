@@ -24,7 +24,7 @@ def _check_X_numpy_ndarray_1d(ensure_1d=True):
 
     Parameters
     ----------
-    ensure_1d : bool, default=True
+    ensure_1d : bool, default True
         Whether to ensure if X is a 1D numpy array.
     
     Returns
