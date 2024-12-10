@@ -808,7 +808,7 @@ def _np_cv_jit(x: np.ndarray) -> float:  # pragma: no cover
 
 
 @njit
-def _ewm_jit(x: np.ndarray, alpha: float) -> float:  # pragma: no cover
+def _ewm_jit(x: np.ndarray, alpha: float = 0.3) -> float:  # pragma: no cover
     """
     Calculate the exponentially weighted mean of an array.
 
@@ -816,8 +816,8 @@ def _ewm_jit(x: np.ndarray, alpha: float) -> float:  # pragma: no cover
     ----------
     x : numpy ndarray
         Input array.
-    alpha : float
-        Secay factor.
+    alpha : float, default 0.3
+        Decay factor.
 
     Returns
     -------
@@ -846,13 +846,20 @@ class RollingFeatures():
     This class computes rolling features. To avoid data leakage, the last point 
     in the window is excluded from calculations, ('closed': 'left' and 
     'center': False).
+    
+    Currently, the following statistics are supported: 'mean', 'std', 'min', 'max',
+    'sum', 'median', 'ratio_min_max', 'coef_variation', 'ewm'. For 'ewm', the
+    alpha parameter can be set in the kwargs_stats dictionary, default is
+    {'ewm': {'alpha': 0.3}}.
 
     Parameters
     ----------
     stats : str, list
         Statistics to compute over the rolling window. Can be a `string` or a `list`,
         and can have repeats. Available statistics are: 'mean', 'std', 'min', 'max',
-        'sum', 'median', 'ratio_min_max', 'coef_variation', 'ewm'.
+        'sum', 'median', 'ratio_min_max', 'coef_variation', 'ewm'. For 'ewm', the
+        alpha parameter can be set in the kwargs_stats dictionary, default is
+        {'ewm': {'alpha': 0.3}}.
     window_sizes : int, list
         Size of the rolling window for each statistic. If an `int`, all stats share 
         the same window size. If a `list`, it should have the same length as stats.
@@ -941,7 +948,7 @@ class RollingFeatures():
         self.features_names = features_names
 
         self.fillna = fillna
-        self.kwargs_stats = kwargs_stats
+        self.kwargs_stats = kwargs_stats if kwargs_stats is not None else {}
 
         window_params_list = []
         for i in range(len(self.stats)):
@@ -1183,7 +1190,8 @@ class RollingFeatures():
         elif stat == 'coef_variation':
             return rolling_obj.std() / rolling_obj.mean()
         elif stat == 'ewm':
-            return rolling_obj.apply(lambda x: _ewm_jit(x.to_numpy(), **self.kwargs_stats[stat]))
+            kwargs = self.kwargs_stats.get(stat, {})
+            return rolling_obj.apply(lambda x: _ewm_jit(x.to_numpy(), **kwargs))
         else:
             raise ValueError(f"Statistic '{stat}' is not implemented.")
 
@@ -1279,7 +1287,8 @@ class RollingFeatures():
         elif stat == 'coef_variation':
             return _np_cv_jit(X_window)
         elif stat == 'ewm':
-            return _ewm_jit(X_window, **self.kwargs_stats[stat])
+            kwargs = self.kwargs_stats.get(stat, {})
+            return _ewm_jit(X_window, **kwargs)
         else:
             raise ValueError(f"Statistic '{stat}' is not implemented.")
 
