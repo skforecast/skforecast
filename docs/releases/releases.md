@@ -16,6 +16,8 @@ The main changes in this release are:
 
 **Added**
 
++ Added statistic `ewm` (exponential weighted mean) in <code>[RollingFeatures]</code>. Alpha can be specified using the new argument `kwargs_stats`, default `{'ewm': {'alpha': 0.3}}`.
+
 **Changed**
 
 + <code>[ForecasterAutoregCustom]</code> and <code>[ForecasterAutoregMultiSeriesCustom]</code> has been deleted (deprecated since skforecast 0.14.0). Window features can be added using the `window_features` argument in the <code>[ForecasterRecursive]</code> and <code>[ForecasterRecursiveMultiSeries]</code>.
