@@ -311,7 +311,8 @@ def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_and_a
         np.testing.assert_array_almost_equal(np.sort(expected[k]), np.sort(results[k]))
 
 
-@pytest.mark.parametrize("encoding", ['ordinal', 'onehot', 'ordinal_category'], 
+@pytest.mark.parametrize("encoding", 
+                         ['ordinal', 'onehot', 'ordinal_category'], 
                          ids=lambda encoding: f'encoding: {encoding}')
 def test_set_out_sample_residuals_when_residuals_length_is_greater_than_10000(encoding):
     """
@@ -398,10 +399,13 @@ def test_set_out_sample_residuals_when_residuals_keys_partially_match():
             assert results[key] is None
 
 
-def test_forecaster_set_outsample_residuals_when_transformer_y_and_diferentiation():
+@pytest.mark.parametrize("differentiation", 
+                         [1, {'l1': 1, 'l2': 1, '_unknown_level': 1}], 
+                         ids=lambda diff: f'differentiation: {diff}')
+def test_forecaster_set_outsample_residuals_when_transformer_series_and_diferentiation(differentiation):
     """
-    Test set_out_sample_residuals when forecaster has transformer_y and differentiation.
-    Stored should equivalent to residuals calculated manually if transformer_y and
+    Test set_out_sample_residuals when forecaster has transformer_series and differentiation.
+    Stored should equivalent to residuals calculated manually if transformer_series and
     differentiation are applied to `y_true` and `y_pred` before calculating residuals.
     """
     rng = np.random.default_rng(12345)
@@ -424,11 +428,11 @@ def test_forecaster_set_outsample_residuals_when_transformer_y_and_diferentiatio
         'l2': rng.normal(loc=0, scale=1, size=5)
     }
     forecaster = ForecasterRecursiveMultiSeries(
-                    regressor       = LinearRegression(),
-                    lags            = 5,
-                    differentiation = 1,
-                    transformer_series = StandardScaler(),
-                )
+                     regressor          = LinearRegression(),
+                     lags               = 5,
+                     differentiation    = differentiation,
+                     transformer_series = StandardScaler(),
+                 )
     forecaster.fit(series=series_train)
     forecaster.set_out_sample_residuals(
         y_true = y_true,
@@ -439,13 +443,86 @@ def test_forecaster_set_outsample_residuals_when_transformer_y_and_diferentiatio
     y_true['l2'] = forecaster.transformer_series_['l2'].transform(y_true['l2'].reshape(-1, 1)).flatten()
     y_pred['l1'] = forecaster.transformer_series_['l1'].transform(y_pred['l1'].reshape(-1, 1)).flatten()
     y_pred['l2'] = forecaster.transformer_series_['l2'].transform(y_pred['l2'].reshape(-1, 1)).flatten()
-    y_true['l1'] = forecaster.differentiator_['l1'].transform(y_true['l1'])[forecaster.differentiation:]
-    y_true['l2'] = forecaster.differentiator_['l2'].transform(y_true['l2'])[forecaster.differentiation:]
-    y_pred['l1'] = forecaster.differentiator_['l1'].transform(y_pred['l1'])[forecaster.differentiation:]
-    y_pred['l2'] = forecaster.differentiator_['l2'].transform(y_pred['l2'])[forecaster.differentiation:]
+    y_true['l1'] = forecaster.differentiator_['l1'].transform(y_true['l1'])[forecaster.differentiation_max:]
+    y_true['l2'] = forecaster.differentiator_['l2'].transform(y_true['l2'])[forecaster.differentiation_max:]
+    y_pred['l1'] = forecaster.differentiator_['l1'].transform(y_pred['l1'])[forecaster.differentiation_max:]
+    y_pred['l2'] = forecaster.differentiator_['l2'].transform(y_pred['l2'])[forecaster.differentiation_max:]
     residuals = {}
     residuals['l1'] = y_true['l1'] - y_pred['l1']
     residuals['l2'] = y_true['l2'] - y_pred['l2']
+    residuals['_unknown_level'] = np.concatenate([(y_true['l2'] - y_pred['l2']), (y_true['l1'] - y_pred['l1'])])
+
+    for key in residuals.keys():
+        np.testing.assert_array_almost_equal(residuals[key], forecaster.out_sample_residuals_[key])
+
+
+def test_forecaster_set_outsample_residuals_when_transformer_series_and_diferentiation_as_dict_unknonw_level():
+    """
+    Test set_out_sample_residuals when forecaster has transformer_series, differentiation
+    and unknown level.
+    Stored should equivalent to residuals calculated manually if transformer_series and
+    differentiation are applied to `y_true` and `y_pred` before calculating residuals.
+    """
+    rng = np.random.default_rng(12345)
+    series_train = {
+        'l1': pd.Series(
+            rng.normal(loc=0, scale=1, size=100),
+            index = pd.date_range(start='1-1-2018', periods=100, freq='D')
+        ),
+        'l2': pd.Series(
+            rng.normal(loc=0, scale=1, size=100),
+            index = pd.date_range(start='1-1-2018', periods=100, freq='D')
+        ),
+        'l3': pd.Series(
+            rng.normal(loc=0, scale=1, size=100),
+            index = pd.date_range(start='1-1-2018', periods=100, freq='D')
+        )
+    }
+    y_true  = {
+        'l1': rng.normal(loc=0, scale=1, size=5),
+        'l2': rng.normal(loc=0, scale=1, size=5),
+        'l3': rng.normal(loc=0, scale=1, size=5),
+        '_unknown_level': rng.normal(loc=0, scale=1, size=5)
+    }
+    y_pred = {
+        'l1': rng.normal(loc=0, scale=1, size=5),
+        'l2': rng.normal(loc=0, scale=1, size=5),
+        'l3': rng.normal(loc=0, scale=1, size=5),
+        '_unknown_level': rng.normal(loc=0, scale=1, size=5)
+    }
+    forecaster = ForecasterRecursiveMultiSeries(
+                     regressor          = LinearRegression(),
+                     lags               = 5,
+                     differentiation    = {'l1': 1, 'l2': 2, 'l3': None, '_unknown_level': 1},
+                     transformer_series = StandardScaler(),
+                 )
+    forecaster.fit(series=series_train)
+    forecaster.set_out_sample_residuals(
+        y_true = y_true,
+        y_pred = y_pred
+    )
+
+    y_true['l1'] = forecaster.transformer_series_['l1'].transform(y_true['l1'].reshape(-1, 1)).flatten()
+    y_true['l2'] = forecaster.transformer_series_['l2'].transform(y_true['l2'].reshape(-1, 1)).flatten()
+    y_true['l3'] = forecaster.transformer_series_['l3'].transform(y_true['l3'].reshape(-1, 1)).flatten()
+    y_true['_unknown_level'] = forecaster.transformer_series_['_unknown_level'].transform(y_true['_unknown_level'].reshape(-1, 1)).flatten()
+    y_pred['l1'] = forecaster.transformer_series_['l1'].transform(y_pred['l1'].reshape(-1, 1)).flatten()
+    y_pred['l2'] = forecaster.transformer_series_['l2'].transform(y_pred['l2'].reshape(-1, 1)).flatten()
+    y_pred['l3'] = forecaster.transformer_series_['l3'].transform(y_pred['l3'].reshape(-1, 1)).flatten()
+    y_pred['_unknown_level'] = forecaster.transformer_series_['_unknown_level'].transform(y_pred['_unknown_level'].reshape(-1, 1)).flatten()
+    y_true['l1'] = forecaster.differentiator_['l1'].transform(y_true['l1'])[forecaster.differentiation_max:]
+    y_true['l2'] = forecaster.differentiator_['l2'].transform(y_true['l2'])[forecaster.differentiation_max:]
+    # l3 is not differentiated
+    y_true['_unknown_level'] = forecaster.differentiator_['_unknown_level'].transform(y_true['_unknown_level'])[forecaster.differentiation_max:]
+    y_pred['l1'] = forecaster.differentiator_['l1'].transform(y_pred['l1'])[forecaster.differentiation_max:]
+    y_pred['l2'] = forecaster.differentiator_['l2'].transform(y_pred['l2'])[forecaster.differentiation_max:]
+    # l3 is not differentiated
+    y_pred['_unknown_level'] = forecaster.differentiator_['_unknown_level'].transform(y_pred['_unknown_level'])[forecaster.differentiation_max:]
+    residuals = {}
+    residuals['l1'] = y_true['l1'] - y_pred['l1']
+    residuals['l2'] = y_true['l2'] - y_pred['l2']
+    residuals['l3'] = y_true['l3'] - y_pred['l3']
+    residuals['_unknown_level'] = y_true['_unknown_level'] - y_pred['_unknown_level']
 
     for key in residuals.keys():
         np.testing.assert_array_almost_equal(residuals[key], forecaster.out_sample_residuals_[key])

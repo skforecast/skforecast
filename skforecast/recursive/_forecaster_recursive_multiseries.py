@@ -1275,7 +1275,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         return X_train, y_train
 
-
     def _train_test_split_one_step_ahead(
         self,
         series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
@@ -1321,7 +1320,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 raise ValueError(
                     "All series with frequency must have the same frequency."
                 )
-            # TODO: Add testing when series is a dict with one empty series
+            
             min_index = min([v.index[0] for v in series.values() if not v.empty])
             max_index = max([v.index[-1] for v in series.values() if not v.empty])
             span_index = pd.date_range(start=min_index, end=max_index, freq=freqs[0])
@@ -3001,10 +3000,25 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         rng = np.random.default_rng(seed=random_state)
         y_true = y_true.copy()
         y_pred = y_pred.copy()
-        # TODO: Check with diff as dict
+        
         if self.differentiation is not None:
-            differentiator = copy(self.differentiator)
-            differentiator.set_params(window_size=None)
+            if isinstance(self.differentiator, dict):
+                differentiator = {
+                    series: copy(
+                        self.differentiator.get(
+                            series, self.differentiator["_unknown_level"]
+                        )
+                    )
+                    for series in series_to_update
+                }
+            else:
+                differentiator = {
+                    series: copy(self.differentiator) 
+                    for series in series_to_update
+                }
+            for k in series_to_update:
+                if self.differentiator_[k] is not None:
+                    differentiator[k].set_params(window_size=None)
 
         for k in series_to_update:
             if isinstance(y_true[k], pd.Series):
@@ -3024,9 +3038,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                 fit               = False,
                                 inverse_transform = False
                             )
-            if self.differentiation is not None:
-                y_true[k] = differentiator.fit_transform(y_true[k])[self.differentiation:]
-                y_pred[k] = differentiator.fit_transform(y_pred[k])[self.differentiation:]
+            # TODO: Force same length for all residuals if differentiator is different for each series?
+            # If not, change self.differentiation_max for forecaster.differentiation but 
+            # takinng into account it can have Nones. I think is not worth it.
+            if self.differentiation is not None and self.differentiator_[k] is not None:
+                y_true[k] = differentiator[k].fit_transform(y_true[k])[self.differentiation_max:]
+                y_pred[k] = differentiator[k].fit_transform(y_pred[k])[self.differentiation_max:]
 
             residuals[k] = y_true[k] - y_pred[k]
 
