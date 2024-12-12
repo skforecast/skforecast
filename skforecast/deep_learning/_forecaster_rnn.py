@@ -165,6 +165,8 @@ class ForecasterRnn(ForecasterBase):
         Not used, present here for API consistency by convention.
     differentiation : Ignored
         Not used, present here for API consistency by convention.
+    differentiation_max : Ignored
+        Not used, present here for API consistency by convention.
     differentiator : Ignored
         Not used, present here for API consistency by convention.
     
@@ -214,6 +216,7 @@ class ForecasterRnn(ForecasterBase):
         self.dropna_from_series = False  # Ignored in this forecaster
         self.encoding = None   # Ignored in this forecaster
         self.differentiation = None   # Ignored in this forecaster
+        self.differentiation_max = None   # Ignored in this forecaster
         self.differentiator = None   # Ignored in this forecaster
 
         # Infer parameters from the model

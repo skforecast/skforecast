@@ -334,7 +334,7 @@ def _evaluate_grid_hyperparameters(
         cv = deepcopy(cv)
         cv.set_params({
             'window_size': forecaster.window_size,
-            'differentiation': forecaster.differentiation,
+            'differentiation': forecaster.differentiation_max,
             'verbose': verbose
         })
 
@@ -721,7 +721,7 @@ def _bayesian_search_optuna(
         cv = deepcopy(cv)
         cv.set_params({
             'window_size': forecaster.window_size,
-            'differentiation': forecaster.differentiation,
+            'differentiation': forecaster.differentiation_max,
             'verbose': verbose
         })
     
@@ -1300,7 +1300,7 @@ def _evaluate_grid_hyperparameters_multiseries(
         cv = deepcopy(cv)
         cv.set_params({
             'window_size': forecaster.window_size,
-            'differentiation': forecaster.differentiation,
+            'differentiation': forecaster.differentiation_max,
             'verbose': verbose
         })
 
@@ -1781,7 +1781,7 @@ def _bayesian_search_optuna_multiseries(
         cv = deepcopy(cv)
         cv.set_params({
             'window_size': forecaster.window_size,
-            'differentiation': forecaster.differentiation,
+            'differentiation': forecaster.differentiation_max,
             'verbose': verbose
         })
     
