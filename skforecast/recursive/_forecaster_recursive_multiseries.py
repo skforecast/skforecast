@@ -858,6 +858,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         
         X_train_window_features_names_out_ = None
         if self.window_features is not None:
+            # NOTE: The first `self.differentiation_max` positions of `y_values`
+            # must be removed to match the length of `y_train` after creating
+            # the window features. This is because `y_train` is created using the 
+            # global window size of the Forecaster, which includes the maximum 
+            # differentiation (self.differentiation_max).
             n_diff = 0 if self.differentiation is None else self.differentiation_max
             y_window_features = pd.Series(y_values[n_diff:], index=y_index[n_diff:])
             X_train_window_features, X_train_window_features_names_out_ = (
@@ -2934,6 +2939,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         -------
         None
 
+        Notes
+        -----
+        Out-of-sample residuals can only be stored for series seen during 
+        fit. To save residuals for unseen levels use the key '_unknown_level'. 
+
         """
 
         if not self.is_fitted:
@@ -2983,13 +2993,16 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                         f"`y_pred` must have the same index. Error with series '{k}'."
                     )
 
-        levels = self.series_names_in_ + ['_unknown_level']
-        if self.out_sample_residuals_ is None and self.encoding is not None:
-            self.out_sample_residuals_ = {level: None for level in levels}
-        elif self.out_sample_residuals_ is None:
-            self.out_sample_residuals_ = {'_unknown_level': None}
+        # NOTE: Out-of-sample residuals can only be stored for series seen during 
+        # fit. To save residuals for unseen levels use the key '_unknown_level'. 
+        series_names_in_ = self.series_names_in_ + ['_unknown_level']        
+        if self.out_sample_residuals_ is None:
+            if self.encoding is not None:
+                self.out_sample_residuals_ = {level: None for level in series_names_in_}
+            else:
+                self.out_sample_residuals_ = {'_unknown_level': None}
     
-        series_to_update = set(y_pred.keys()).intersection(set(levels))
+        series_to_update = set(y_pred.keys()).intersection(set(series_names_in_))
         if not series_to_update:
             raise ValueError(
                 "Provided keys in `y_pred` and `y_true` do not match any series "
@@ -3002,23 +3015,18 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         y_pred = y_pred.copy()
         
         if self.differentiation is not None:
-            if isinstance(self.differentiator, dict):
-                differentiator = {
-                    series: copy(
-                        self.differentiator.get(
-                            series, self.differentiator["_unknown_level"]
-                        )
+            differentiator_ = {
+                series: copy(
+                    self.differentiator_.get(
+                        series, self.differentiator_["_unknown_level"]
                     )
-                    for series in series_to_update
-                }
-            else:
-                differentiator = {
-                    series: copy(self.differentiator) 
-                    for series in series_to_update
-                }
+                )
+                for series in series_to_update
+            }
+
             for k in series_to_update:
-                if self.differentiator_[k] is not None:
-                    differentiator[k].set_params(window_size=None)
+                if differentiator_[k] is not None:
+                    differentiator_[k].set_params(window_size=None)
 
         for k in series_to_update:
             if isinstance(y_true[k], pd.Series):
@@ -3038,12 +3046,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                 fit               = False,
                                 inverse_transform = False
                             )
-            # TODO: Force same length for all residuals if differentiator is different for each series?
-            # If not, change self.differentiation_max for forecaster.differentiation but 
-            # takinng into account it can have Nones. I think is not worth it.
-            if self.differentiation is not None and self.differentiator_[k] is not None:
-                y_true[k] = differentiator[k].fit_transform(y_true[k])[self.differentiation_max:]
-                y_pred[k] = differentiator[k].fit_transform(y_pred[k])[self.differentiation_max:]
+            
+            if self.differentiation is not None:
+                differentiator = differentiator_[k]
+                if differentiator is not None:
+                    y_true[k] = differentiator.fit_transform(y_true[k])[differentiator.order:]
+                    y_pred[k] = differentiator.fit_transform(y_pred[k])[differentiator.order:]
 
             residuals[k] = y_true[k] - y_pred[k]
 
