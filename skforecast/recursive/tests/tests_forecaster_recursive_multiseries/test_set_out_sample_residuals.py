@@ -510,14 +510,14 @@ def test_forecaster_set_outsample_residuals_when_transformer_series_and_diferent
     y_pred['l2'] = forecaster.transformer_series_['l2'].transform(y_pred['l2'].reshape(-1, 1)).flatten()
     y_pred['l3'] = forecaster.transformer_series_['l3'].transform(y_pred['l3'].reshape(-1, 1)).flatten()
     y_pred['_unknown_level'] = forecaster.transformer_series_['_unknown_level'].transform(y_pred['_unknown_level'].reshape(-1, 1)).flatten()
-    y_true['l1'] = forecaster.differentiator_['l1'].transform(y_true['l1'])[forecaster.differentiation_max:]
-    y_true['l2'] = forecaster.differentiator_['l2'].transform(y_true['l2'])[forecaster.differentiation_max:]
+    y_true['l1'] = forecaster.differentiator_['l1'].transform(y_true['l1'])[forecaster.differentiator_['l1'].order:]
+    y_true['l2'] = forecaster.differentiator_['l2'].transform(y_true['l2'])[forecaster.differentiator_['l2'].order:]
     # l3 is not differentiated
-    y_true['_unknown_level'] = forecaster.differentiator_['_unknown_level'].transform(y_true['_unknown_level'])[forecaster.differentiation_max:]
-    y_pred['l1'] = forecaster.differentiator_['l1'].transform(y_pred['l1'])[forecaster.differentiation_max:]
-    y_pred['l2'] = forecaster.differentiator_['l2'].transform(y_pred['l2'])[forecaster.differentiation_max:]
+    y_true['_unknown_level'] = forecaster.differentiator_['_unknown_level'].transform(y_true['_unknown_level'])[forecaster.differentiator_['_unknown_level'].order:]
+    y_pred['l1'] = forecaster.differentiator_['l1'].transform(y_pred['l1'])[forecaster.differentiator_['l1'].order:]
+    y_pred['l2'] = forecaster.differentiator_['l2'].transform(y_pred['l2'])[forecaster.differentiator_['l2'].order:]
     # l3 is not differentiated
-    y_pred['_unknown_level'] = forecaster.differentiator_['_unknown_level'].transform(y_pred['_unknown_level'])[forecaster.differentiation_max:]
+    y_pred['_unknown_level'] = forecaster.differentiator_['_unknown_level'].transform(y_pred['_unknown_level'])[forecaster.differentiator_['_unknown_level'].order:]
     residuals = {}
     residuals['l1'] = y_true['l1'] - y_pred['l1']
     residuals['l2'] = y_true['l2'] - y_pred['l2']
