@@ -148,8 +148,8 @@ def test_check_backtesting_input_TypeError_when_series_is_not_pandas_DataFrame_m
          )
 
     err_msg = re.escape(
-        (f"`series` must be a pandas DataFrame or a dict of DataFrames or Series. "
-         f"Got {type(bad_series)}.")
+        f"`series` must be a pandas DataFrame or a dict of DataFrames or Series. "
+        f"Got {type(bad_series)}."
     )
     with pytest.raises(TypeError, match = err_msg):
         check_backtesting_input(
@@ -186,9 +186,9 @@ def test_check_backtesting_input_TypeError_when_series_is_dict_of_pandas_Series_
          )
 
     err_msg = re.escape(
-        ("If `series` is a dictionary, all series must be a named "
-         "pandas Series or a pandas DataFrame with a single column. "
-         "Review series: ['l1']")
+        "If `series` is a dictionary, all series must be a named "
+        "pandas Series or a pandas DataFrame with a single column. "
+        "Review series: ['l1']"
     )
     with pytest.raises(TypeError, match = err_msg):
         check_backtesting_input(
@@ -230,8 +230,8 @@ def test_check_backtesting_input_ValueError_when_series_is_dict_no_DatetimeIndex
          )
 
     err_msg = re.escape(
-        ("If `series` is a dictionary, all series must have a Pandas DatetimeIndex "
-         "as index with the same frequency. Review series: ['l1', 'l2']")
+        "If `series` is a dictionary, all series must have a Pandas DatetimeIndex "
+        "as index with the same frequency. Review series: ['l1', 'l2']"
     )
     with pytest.raises(ValueError, match = err_msg):
         check_backtesting_input(
@@ -278,8 +278,8 @@ def test_check_backtesting_input_ValueError_when_series_is_dict_diff_freq_multis
          )
 
     err_msg = re.escape(
-        ("If `series` is a dictionary, all series must have a Pandas DatetimeIndex "
-         "as index with the same frequency. Found frequencies: ['<Day>', '<MonthBegin>']")
+        "If `series` is a dictionary, all series must have a Pandas DatetimeIndex "
+        "as index with the same frequency. Found frequencies: ['<Day>', '<MonthBegin>']"
     )
     with pytest.raises(ValueError, match = err_msg):
         check_backtesting_input(
@@ -327,8 +327,8 @@ def test_check_backtesting_input_TypeError_when_not_valid_exog_type_multiseries_
          )
 
     err_msg = re.escape(
-        (f"`exog` must be a pandas Series, DataFrame, dictionary of pandas "
-         f"Series/DataFrames or None. Got {type(bad_exog)}.")
+        f"`exog` must be a pandas Series, DataFrame, dictionary of pandas "
+        f"Series/DataFrames or None. Got {type(bad_exog)}."
     )
     with pytest.raises(TypeError, match = err_msg):
         check_backtesting_input(
@@ -377,8 +377,8 @@ def test_check_backtesting_input_TypeError_when_not_valid_exog_dict_type_multise
          )
 
     err_msg = re.escape(
-        ("If `exog` is a dictionary, All exog must be a named pandas "
-         "Series, a pandas DataFrame or None. Review exog: ['l1']")
+        "If `exog` is a dictionary, All exog must be a named pandas "
+        "Series, a pandas DataFrame or None. Review exog: ['l1']"
     )
     with pytest.raises(TypeError, match = err_msg):
         check_backtesting_input(
@@ -420,7 +420,7 @@ def test_check_backtesting_input_TypeError_when_not_valid_exog_type():
          )
 
     err_msg = re.escape(
-        (f"`exog` must be a pandas Series, DataFrame or None. Got {type(bad_exog)}.")
+        f"`exog` must be a pandas Series, DataFrame or None. Got {type(bad_exog)}."
     )
     with pytest.raises(TypeError, match = err_msg):
         check_backtesting_input(
@@ -439,20 +439,69 @@ def test_check_backtesting_input_TypeError_when_not_valid_exog_type():
         )
 
 
-def test_check_backtesting_input_ValueError_when_forecaster_diff_not_cv_diff():
+@pytest.mark.parametrize("differentiation", 
+    [{'l1': 1, 'l2': 2, '_unknown_level': 1}, {'l1': 2, 'l2': None, '_unknown_level': 1}], 
+     ids = lambda diff: f'differentiation: {diff}')
+def test_check_backtesting_input_ValueError_when_ForecasterRecursiveMultiSeries_diff_dict_not_cv_diff(differentiation):
+    """
+    Test ValueError is raised in check_backtesting_input if `differentiation`
+    of the ForecasterRecursiveMultiSeries as dict is different from 
+    `differentiation` of the cv.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+        regressor=Ridge(), lags=2, differentiation=differentiation
+    )
+
+    cv = TimeSeriesFold(
+             steps                 = 3,
+             initial_train_size    = len(series) - 12,
+             refit                 = False,
+             fixed_train_size      = False,
+             gap                   = 0,
+             allow_incomplete_fold = True,
+             differentiation       = 1,
+             verbose               = False
+         )
+    
+    err_msg = re.escape(
+        "When using a dict as `differentiation` in ForecasterRecursiveMultiSeries, "
+        "the `differentiation` included in the cv (1) must be "
+        "the same as the maximum `differentiation` included in the forecaster "
+        "(2). Set the same value "
+        "for both using the `differentiation` argument."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        check_backtesting_input(
+            forecaster              = forecaster,
+            cv                      = cv,
+            metric                  = 'mean_absolute_error',
+            series                  = series,
+            interval                = None,
+            n_boot                  = 500,
+            random_state            = 123,
+            use_in_sample_residuals = True,
+            show_progress           = False,
+            suppress_warnings       = False
+        )
+
+
+@pytest.mark.parametrize("forecaster", 
+    [ForecasterRecursive(regressor=Ridge(), lags=2, differentiation=2),
+     ForecasterRecursiveMultiSeries(regressor=Ridge(), lags=2, differentiation=2)], 
+     ids = lambda fr: f'forecaster: {type(fr).__name__}')
+def test_check_backtesting_input_ValueError_when_forecaster_diff_not_cv_diff(forecaster):
     """
     Test ValueError is raised in check_backtesting_input if `differentiation`
     of the forecaster is different from `differentiation` of the cv.
     """
-    forecaster = ForecasterRecursive(
-                     regressor       = Ridge(random_state=123),
-                     lags            = 2,
-                     differentiation = 2
-                 )
+    if type(forecaster).__name__ == 'ForecasterRecursive':
+        data_length = len(y)
+    else:
+        data_length = len(series)
     
     cv = TimeSeriesFold(
              steps                 = 3,
-             initial_train_size    = len(y[:-12]),
+             initial_train_size    = data_length - 12,
              refit                 = False,
              fixed_train_size      = False,
              gap                   = 0,
@@ -473,6 +522,7 @@ def test_check_backtesting_input_ValueError_when_forecaster_diff_not_cv_diff():
             cv                      = cv,
             metric                  = 'mean_absolute_error',
             y                       = y,
+            series                  = series,
             interval                = None,
             n_boot                  = 500,
             random_state            = 123,
@@ -504,8 +554,8 @@ def test_check_backtesting_input_TypeError_when_metric_not_correct_type():
     metric = 5
     
     err_msg = re.escape(
-        (f"`metric` must be a string, a callable function, or a list containing "
-         f"multiple strings and/or callables. Got {type(metric)}.")
+        f"`metric` must be a string, a callable function, or a list containing "
+        f"multiple strings and/or callables. Got {type(metric)}."
     )
     with pytest.raises(TypeError, match = err_msg):
         check_backtesting_input(
@@ -546,9 +596,9 @@ def test_check_backtesting_input_ValueError_when_initial_train_size_is_None_Fore
          )
     
     err_msg = re.escape(
-        (f"`initial_train_size` must be an integer greater than "
-         f"the `window_size` of the forecaster ({forecaster.window_size}) "
-         f"and smaller than the length of `{data_name}` ({data_length}).")
+        f"`initial_train_size` must be an integer greater than "
+        f"the `window_size` of the forecaster ({forecaster.window_size}) "
+        f"and smaller than the length of `{data_name}` ({data_length})."
     )
     with pytest.raises(ValueError, match = err_msg):
         check_backtesting_input(
@@ -599,9 +649,9 @@ def test_check_backtesting_input_ValueError_when_initial_train_size_not_correct_
          )
     
     err_msg = re.escape(
-        (f"If used, `initial_train_size` must be an integer greater than "
-         f"the `window_size` of the forecaster ({forecaster.window_size}) "
-         f"and smaller than the length of `{data_name}` ({data_length}).")
+        f"If used, `initial_train_size` must be an integer greater than "
+        f"the `window_size` of the forecaster ({forecaster.window_size}) "
+        f"and smaller than the length of `{data_name}` ({data_length})."
     )
     with pytest.raises(ValueError, match = err_msg):
         check_backtesting_input(
@@ -980,10 +1030,10 @@ def test_check_backtesting_input_ValueError_when_not_enough_data_to_create_a_fol
          )
     
     err_msg = re.escape(
-        (f"There is not enough data to evaluate {cv.steps} steps in a single "
-         f"fold. Set `allow_incomplete_fold` to `True` to allow incomplete folds.\n"
-         f"    Data available for test : {data_length - (cv.initial_train_size + cv.gap)}\n"
-         f"    Steps                   : {cv.steps}")
+        f"There is not enough data to evaluate {cv.steps} steps in a single "
+        f"fold. Set `allow_incomplete_fold` to `True` to allow incomplete folds.\n"
+        f"    Data available for test : {data_length - (cv.initial_train_size + cv.gap)}\n"
+        f"    Steps                   : {cv.steps}"
     )
     with pytest.raises(ValueError, match = err_msg):
         check_backtesting_input(

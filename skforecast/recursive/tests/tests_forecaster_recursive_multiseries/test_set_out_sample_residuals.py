@@ -408,25 +408,31 @@ def test_forecaster_set_outsample_residuals_when_transformer_series_and_diferent
     Stored should equivalent to residuals calculated manually if transformer_series and
     differentiation are applied to `y_true` and `y_pred` before calculating residuals.
     """
-    rng = np.random.default_rng(12345)
     series_train = {
         'l1': pd.Series(
-            rng.normal(loc=0, scale=1, size=100),
-            index = pd.date_range(start='1-1-2018', periods=100, freq='D')
+            np.array([-1.42382504,  1.26372846, -0.87066174, -0.25917323, -0.07534331,
+                      -0.74088465, -1.3677927 ,  0.6488928 ,  0.36105811, -1.95286306,
+                       2.34740965,  0.96849691, -0.75938718,  0.90219827, -0.46695317,
+                      -0.06068952,  0.78884434, -1.25666813,  0.57585751,  1.39897899]),
+            index = pd.date_range(start='1-1-2018', periods=20, freq='D')
         ),
         'l2': pd.Series(
-            rng.normal(loc=0, scale=1, size=100),
-            index = pd.date_range(start='1-1-2018', periods=100, freq='D')
+            np.array([1.32229806, -0.29969852,  0.90291934, -1.62158273, -0.15818926,
+                      0.44948393, -1.34360107, -0.08168759,  1.72473993,  2.61815943,
+                      0.77736134,  0.8286332 , -0.95898831, -1.20938829, -1.41229201,
+                      0.54154683,  0.7519394 , -0.65876032, -1.22867499,  0.25755777]),
+            index = pd.date_range(start='1-1-2018', periods=20, freq='D')
         )
     }
     y_true  = {
-        'l1': rng.normal(loc=0, scale=1, size=5),
-        'l2': rng.normal(loc=0, scale=1, size=5)
+        'l1': np.array([ 0.31290292, -0.13081169,  1.26998312, -0.09296246, -0.06615089]),
+        'l2': np.array([-1.10821447,  0.13595685,  1.34707776,  0.06114402,  0.0709146 ])
     }
     y_pred = {
-        'l1': rng.normal(loc=0, scale=1, size=5),
-        'l2': rng.normal(loc=0, scale=1, size=5)
+        'l1': np.array([0.43365454, 0.27748366, 0.53025239, 0.53672097, 0.61835001]),
+        'l2': np.array([-0.79501746,  0.30003095, -1.60270159,  0.26679883, -1.26162378])
     }
+    
     forecaster = ForecasterRecursiveMultiSeries(
                      regressor          = LinearRegression(),
                      lags               = 5,

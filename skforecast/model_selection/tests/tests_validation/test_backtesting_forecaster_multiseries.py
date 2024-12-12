@@ -1425,14 +1425,16 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
         transformer_series=None,
         transformer_exog=StandardScaler(),
     )
+    
     cv = TimeSeriesFold(
             initial_train_size = len(series_dict_train['id_1000']),
             steps              = 24,
             refit              = False,
             fixed_train_size   = True,
             gap                = 0,
-            differentiation    = 1,
+            differentiation    = forecaster.differentiation_max
         )
+    
     metrics, predictions = backtesting_forecaster_multiseries(
         forecaster            = forecaster,
         series                = series_dict,
@@ -1473,6 +1475,103 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
             [1473.95692547, 3159.99921219,        np.nan, 6740.53028097],
             [1596.51499989, 3449.40467366,        np.nan, 7172.21235605],
             [1572.31317919, 3507.56355926,        np.nan, 7506.35124681]]),
+        index=pd.date_range('2016-08-01', periods=10, freq='D'),
+        columns=['id_1000', 'id_1001', 'id_1003', 'id_1004']
+    )
+
+    pd.testing.assert_frame_equal(metrics, expected_metrics)
+    pd.testing.assert_frame_equal(predictions.head(10), expected_predictions)
+
+
+def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_series_and_exog_dict_differentiation_dict():
+    """
+    Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 
+    when series and exog are dictionaries, encoding='ordinal', and differentiation as dict.
+    (mocked done in Skforecast v0.15.0).
+    """
+    differentiation = {
+        'id_1000': 1, 'id_1001': 2, 'id_1002': None, 'id_1003': 2, 'id_1004': 1, '_unknown_level': 1
+    }
+
+    forecaster = ForecasterRecursiveMultiSeries(
+        regressor=LGBMRegressor(
+            n_estimators=30, random_state=123, verbose=-1, max_depth=4
+        ),
+        lags=[1, 7, 14],
+        encoding='ordinal',
+        differentiation=differentiation,
+        dropna_from_series=False,
+        transformer_series=None,
+        transformer_exog=StandardScaler(),
+    )
+
+    cv = TimeSeriesFold(
+            initial_train_size = len(series_dict_train['id_1000']),
+            steps              = 24,
+            refit              = False,
+            fixed_train_size   = True,
+            gap                = 0,
+            differentiation    = forecaster.differentiation_max
+        )
+    
+    metrics, predictions = backtesting_forecaster_multiseries(
+        forecaster            = forecaster,
+        series                = series_dict,
+        exog                  = exog_dict,
+        cv                    = cv,
+        metric                = ['mean_absolute_error', 'mean_absolute_scaled_error'],
+        n_jobs                = 'auto',
+        verbose               = True,
+        show_progress         = True,
+        suppress_warnings     = True
+    )
+
+    expected_metrics = pd.DataFrame(
+        {
+            "levels": {
+                0: "id_1000",
+                1: "id_1001",
+                2: "id_1002",
+                3: "id_1003",
+                4: "id_1004",
+                5: "average",
+                6: "weighted_average",
+                7: "pooling",
+            },
+            "mean_absolute_error": {
+                0: 709.932118979991,
+                1: 18124.927301272775,
+                2: np.nan,
+                3: 6434.862937930988,
+                4: 677.5474280183303,
+                5: 6486.817446550521,
+                6: 8270.334566642234,
+                7: 8270.334566642236,
+            },
+            "mean_absolute_scaled_error": {
+                0: 3.2915229401688673,
+                1: 49.625963480324536,
+                2: np.nan,
+                3: 26.186189742022798,
+                4: 0.5544820306613829,
+                5: 19.914539548294393,
+                6: 24.408235797583576,
+                7: 20.00576968474758,
+            },
+        }
+    )
+    expected_predictions = pd.DataFrame(
+        data=np.array([
+            [1548.71621914,  3897.51607168,  6148.05420402,  8566.05067444],
+            [ 1536.05313173,  5635.69476485,  7726.49471767,  9178.12103644],
+            [ 1553.93326121,  6886.39340049,  9808.83531995,  9061.45721677],
+            [ 1477.30370685,  8185.08084028, 12024.19439089,  9077.12418461],
+            [ 1503.35710688,  9446.39566238, 14498.93483814,  8462.20628033],
+            [ 1270.65730287,  9966.339615  , 17062.71265964,  6924.19872059],
+            [ 1153.69012476, 11367.60163467,         np.nan,  5961.34534784],
+            [ 1768.39356058, 13476.42137718,         np.nan,  7960.28068817],
+            [ 1902.92132925, 16618.90352301,         np.nan,  8691.77459165],
+            [ 1930.50552359, 18784.85993513,         np.nan,  8759.63500202]]),
         index=pd.date_range('2016-08-01', periods=10, freq='D'),
         columns=['id_1000', 'id_1001', 'id_1003', 'id_1004']
     )
