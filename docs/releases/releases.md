@@ -16,11 +16,15 @@ The main changes in this release are:
 
 **Added**
 
++ The `differentiation` argument in <code>[ForecasterRecursiveMultiSeries]</code> can now be a dict to [differentiate each series independently](../user_guides/independent-multi-time-series-forecasting.html#differentiation). This is useful if the user wants to differentiate each series with a different order or not differentiate some of them.
+
 + Added statistic `ewm` (exponential weighted mean) in <code>[RollingFeatures]</code>. Alpha can be specified using the new argument `kwargs_stats`, default `{'ewm': {'alpha': 0.3}}`.
+
 
 **Changed**
 
-+ <code>[ForecasterAutoregCustom]</code> and <code>[ForecasterAutoregMultiSeriesCustom]</code> has been deleted (deprecated since skforecast 0.14.0). Window features can be added using the `window_features` argument in the <code>[ForecasterRecursive]</code> and <code>[ForecasterRecursiveMultiSeries]</code>.
++ <code>[ForecasterAutoregCustom]</code> and <code>[ForecasterAutoregMultiSeriesCustom]</code> has been deleted (deprecated since skforecast 0.14.0). Window features can be added using the `window_features` argument in the <code>[ForecasterRecursive]</code>, <code>[ForecasterDirect]</code>, <code>[ForecasterDirectMultiVariate]</code> and <code>[ForecasterRecursiveMultiSeries]</code>.
+
 
 **Fixed**
 

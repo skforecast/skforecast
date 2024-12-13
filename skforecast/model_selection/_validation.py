@@ -123,7 +123,7 @@ def _backtesting_forecaster(
 
     cv.set_params({
         'window_size': forecaster.window_size,
-        'differentiation': forecaster.differentiation,
+        'differentiation': forecaster.differentiation_max,
         'return_all_indexes': False,
         'verbose': verbose
     })
@@ -559,7 +559,7 @@ def _backtesting_forecaster_multiseries(
 
     cv.set_params({
         'window_size': forecaster.window_size,
-        'differentiation': forecaster.differentiation,
+        'differentiation': forecaster.differentiation_max,
         'return_all_indexes': False,
         'verbose': verbose
     })

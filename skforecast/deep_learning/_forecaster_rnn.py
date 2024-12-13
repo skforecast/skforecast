@@ -167,7 +167,11 @@ class ForecasterRnn(ForecasterBase):
         Not used, present here for API consistency by convention.
     differentiation : Ignored
         Not used, present here for API consistency by convention.
+    differentiation_max : Ignored
+        Not used, present here for API consistency by convention.
     differentiator : Ignored
+        Not used, present here for API consistency by convention.
+    differentiator_ : Ignored
         Not used, present here for API consistency by convention.
 
     """
@@ -214,9 +218,11 @@ class ForecasterRnn(ForecasterBase):
         self.forecaster_id = forecaster_id
         self.history = None  # TODO: Change to history_ as come from fit method?
         self.dropna_from_series = False  # Ignored in this forecaster
-        self.encoding = None  # Ignored in this forecaster
-        self.differentiation = None  # Ignored in this forecaster
-        self.differentiator = None  # Ignored in this forecaster
+        self.encoding = None   # Ignored in this forecaster
+        self.differentiation = None   # Ignored in this forecaster
+        self.differentiation_max = None   # Ignored in this forecaster
+        self.differentiator = None   # Ignored in this forecaster
+        self.differentiator_ = None   # Ignored in this forecaster
 
         # Infer parameters from the model
         self.regressor = regressor  # TODO: Create copy of regressor copy(regressor)

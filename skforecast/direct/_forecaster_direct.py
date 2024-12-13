@@ -5,6 +5,7 @@
 ################################################################################
 # coding=utf-8
 
+from __future__ import annotations
 from typing import Union, Tuple, Optional, Callable, Any
 import warnings
 import sys
@@ -60,31 +61,31 @@ class ForecasterDirect(ForecasterBase):
         Maximum number of future steps the forecaster will predict when using
         method `predict()`. Since a different model is created for each step,
         this value should be defined before training.
-    lags : int, list, numpy ndarray, range, default `None`
+    lags : int, list, numpy ndarray, range, default None
         Lags used as predictors. Index starts at 1, so lag 1 is equal to t-1.
     
         - `int`: include lags from 1 to `lags` (included).
         - `list`, `1d numpy ndarray` or `range`: include only lags present in 
         `lags`, all elements must be int.
         - `None`: no lags are included as predictors. 
-    window_features : object, list, default `None`
+    window_features : object, list, default None
         Instance or list of instances used to create window features. Window features
         are created from the original time series and are included as predictors.
-    transformer_y : object transformer (preprocessor), default `None`
+    transformer_y : object transformer (preprocessor), default None
         An instance of a transformer (preprocessor) compatible with the scikit-learn
         preprocessing API with methods: fit, transform, fit_transform and inverse_transform.
         ColumnTransformers are not allowed since they do not have inverse_transform method.
         The transformation is applied to `y` before training the forecaster. 
-    transformer_exog : object transformer (preprocessor), default `None`
+    transformer_exog : object transformer (preprocessor), default None
         An instance of a transformer (preprocessor) compatible with the scikit-learn
         preprocessing API. The transformation is applied to `exog` before training the
         forecaster. `inverse_transform` is not available when using ColumnTransformers.
-    weight_func : Callable, default `None`
+    weight_func : Callable, default None
         Function that defines the individual weights for each sample based on the
         index. For example, a function that assigns a lower weight to certain dates.
         Ignored if `regressor` does not have the argument `sample_weight` in its `fit`
         method. The resulting `sample_weight` cannot have negative values.
-    differentiation : int, default `None`
+    differentiation : int, default None
         Order of differencing applied to the time series before training the forecaster.
         If `None`, no differencing is applied. The order of differentiation is the number
         of times the differencing operation is applied to a time series. Differencing
@@ -92,13 +93,13 @@ class ForecasterDirect(ForecasterBase):
         Differentiation is reversed in the output of `predict()` and `predict_interval()`.
         **WARNING: This argument is newly introduced and requires special attention. It
         is still experimental and may undergo changes.**
-    fit_kwargs : dict, default `None`
+    fit_kwargs : dict, default None
         Additional arguments to be passed to the `fit` method of the regressor.
     n_jobs : int, 'auto', default `'auto'`
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
         skforecast.utils.select_n_jobs_fit_forecaster.
-    forecaster_id : str, int, default `None`
+    forecaster_id : str, int, default None
         Name used as an identifier of the forecaster.
     
     Attributes
@@ -152,6 +153,9 @@ class ForecasterDirect(ForecasterBase):
     differentiation : int
         Order of differencing applied to the time series before training the 
         forecaster.
+    differentiation_max : int
+        Maximum order of differentiation. For this Forecaster, it is equal to
+        the value of the `differentiation` parameter.
     differentiator : TimeSeriesDifferentiator
         Skforecast object used to differentiate the time series.
     last_window_ : pandas DataFrame
@@ -257,6 +261,7 @@ class ForecasterDirect(ForecasterBase):
         self.weight_func                        = weight_func
         self.source_code_weight_func            = None
         self.differentiation                    = differentiation
+        self.differentiation_max                = None
         self.differentiator                     = None
         self.last_window_                       = None
         self.index_type_                        = None
@@ -315,16 +320,8 @@ class ForecasterDirect(ForecasterBase):
                 type(wf).__name__ for wf in self.window_features
             ]
 
-        if self.differentiation is not None:
-            if not isinstance(differentiation, int) or differentiation < 1:
-                raise ValueError(
-                    f"Argument `differentiation` must be an integer equal to or "
-                    f"greater than 1. Got {differentiation}."
-                )
-            self.window_size += self.differentiation
-            self.differentiator = TimeSeriesDifferentiator(
-                order=self.differentiation, window_size=self.window_size
-            )
+        self.in_sample_residuals_ = {step: None for step in range(1, steps + 1)}
+        self.out_sample_residuals_ = None
 
         self.weight_func, self.source_code_weight_func, _ = initialize_weights(
             forecaster_name = type(self).__name__, 
@@ -333,13 +330,23 @@ class ForecasterDirect(ForecasterBase):
             series_weights  = None
         )
 
+        if differentiation is not None:
+            if not isinstance(differentiation, int) or differentiation < 1:
+                raise ValueError(
+                    f"Argument `differentiation` must be an integer equal to or "
+                    f"greater than 1. Got {differentiation}."
+                )
+            self.differentiation = differentiation
+            self.differentiation_max = differentiation
+            self.window_size += differentiation
+            self.differentiator = TimeSeriesDifferentiator(
+                order=differentiation, window_size=self.window_size
+            )
+
         self.fit_kwargs = check_select_fit_kwargs(
                               regressor  = regressor,
                               fit_kwargs = fit_kwargs
                           )
-
-        self.in_sample_residuals_ = {step: None for step in range(1, steps + 1)}
-        self.out_sample_residuals_ = None
 
         if n_jobs == 'auto':
             self.n_jobs = select_n_jobs_fit_forecaster(
@@ -505,7 +512,7 @@ class ForecasterDirect(ForecasterBase):
             Training time series values.
         X_as_pandas : bool, default `False`
             If `True`, the returned matrix `X_data` is a pandas DataFrame.
-        train_index : pandas Index, default `None`
+        train_index : pandas Index, default None
             Index of the training data. It is used to create the pandas DataFrame
             `X_data` when `X_as_pandas` is `True`.
 
@@ -611,7 +618,7 @@ class ForecasterDirect(ForecasterBase):
         ----------
         y : pandas Series
             Training time series.
-        exog : pandas Series, pandas DataFrame, default `None`
+        exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s. Must have the same
             number of observations as `y` and their indexes must be aligned.
 
@@ -829,7 +836,7 @@ class ForecasterDirect(ForecasterBase):
         ----------
         y : pandas Series
             Training time series.
-        exog : pandas Series, pandas DataFrame, default `None`
+        exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s. Must have the same
             number of observations as `y` and their indexes must be aligned.
 
@@ -938,7 +945,7 @@ class ForecasterDirect(ForecasterBase):
         initial_train_size : int
             Initial size of the training set. It is the number of observations used
             to train the forecaster before making the first prediction.
-        exog : pandas Series, pandas DataFrame, default `None`
+        exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s. Must have the same
             number of observations as `y` and their indexes must be aligned.
         
@@ -1035,7 +1042,7 @@ class ForecasterDirect(ForecasterBase):
         ----------
         y : pandas Series
             Training time series.
-        exog : pandas Series, pandas DataFrame, default `None`
+        exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s. Must have the same
             number of observations as `y` and their indexes must be aligned so
             that y[i] is regressed on exog[i].
@@ -1198,7 +1205,7 @@ class ForecasterDirect(ForecasterBase):
         
         Parameters
         ----------
-        steps : int, list, None, default `None`
+        steps : int, list, None, default None
             Predict n steps. The value of `steps` must be less than or equal to the 
             value of steps defined when initializing the forecaster. Starts at 1.
         
@@ -1207,13 +1214,13 @@ class ForecasterDirect(ForecasterBase):
             are predicted.
             - If `None`: As many steps are predicted as were defined at 
             initialization.
-        last_window : pandas Series, pandas DataFrame, default `None`
+        last_window : pandas Series, pandas DataFrame, default None
             Series values used to create the predictors (lags) needed to 
             predict `steps`.
             If `last_window = None`, the values stored in `self.last_window_` are
             used to calculate the initial predictors, and the predictions start
             right after training data.
-        exog : pandas Series, pandas DataFrame, default `None`
+        exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
         check_inputs : bool, default `True`
             If `True`, the input is checked for possible warnings and errors 
@@ -1348,7 +1355,7 @@ class ForecasterDirect(ForecasterBase):
         
         Parameters
         ----------
-        steps : int, list, None, default `None`
+        steps : int, list, None, default None
             Predict n steps. The value of `steps` must be less than or equal to the 
             value of steps defined when initializing the forecaster. Starts at 1.
         
@@ -1357,13 +1364,13 @@ class ForecasterDirect(ForecasterBase):
             are predicted.
             - If `None`: As many steps are predicted as were defined at 
             initialization.
-        last_window : pandas Series, pandas DataFrame, default `None`
+        last_window : pandas Series, pandas DataFrame, default None
             Series values used to create the predictors (lags) needed to 
             predict `steps`.
             If `last_window = None`, the values stored in `self.last_window_` are
             used to calculate the initial predictors, and the predictions start
             right after training data.
-        exog : pandas Series, pandas DataFrame, default `None`
+        exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
 
         Returns
@@ -1409,7 +1416,7 @@ class ForecasterDirect(ForecasterBase):
 
         Parameters
         ----------
-        steps : int, list, None, default `None`
+        steps : int, list, None, default None
             Predict n steps. The value of `steps` must be less than or equal to the 
             value of steps defined when initializing the forecaster. Starts at 1.
         
@@ -1418,13 +1425,13 @@ class ForecasterDirect(ForecasterBase):
             are predicted.
             - If `None`: As many steps are predicted as were defined at 
             initialization.
-        last_window : pandas Series, pandas DataFrame, default `None`
+        last_window : pandas Series, pandas DataFrame, default None
             Series values used to create the predictors (lags) needed to 
             predict `steps`.
             If `last_window = None`, the values stored in` self.last_window_` are
             used to calculate the initial predictors, and the predictions start
             right after training data.
-        exog : pandas Series, pandas DataFrame, default `None`
+        exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
         check_inputs : bool, default `True`
             If `True`, the input is checked for possible warnings and errors 
@@ -1490,7 +1497,7 @@ class ForecasterDirect(ForecasterBase):
         
         Parameters
         ----------
-        steps : int, list, None, default `None`
+        steps : int, list, None, default None
             Predict n steps. The value of `steps` must be less than or equal to the 
             value of steps defined when initializing the forecaster. Starts at 1.
         
@@ -1499,13 +1506,13 @@ class ForecasterDirect(ForecasterBase):
             are predicted.
             - If `None`: As many steps are predicted as were defined at 
             initialization.
-        last_window : pandas Series, default `None`
+        last_window : pandas Series, default None
             Series values used to create the predictors (lags) needed to 
             predict `steps`.
             If `last_window = None`, the values stored in` self.last_window_` are
             used to calculate the initial predictors, and the predictions start
             right after training data.
-        exog : pandas Series, pandas DataFrame, default `None`
+        exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
         n_boot : int, default `250`
             Number of bootstrapping iterations used to estimate predictions.
@@ -1648,7 +1655,7 @@ class ForecasterDirect(ForecasterBase):
         
         Parameters
         ----------
-        steps : int, list, None, default `None`
+        steps : int, list, None, default None
             Predict n steps. The value of `steps` must be less than or equal to the 
             value of steps defined when initializing the forecaster. Starts at 1.
         
@@ -1657,13 +1664,13 @@ class ForecasterDirect(ForecasterBase):
             are predicted.
             - If `None`: As many steps are predicted as were defined at 
             initialization.
-        last_window : pandas Series, default `None`
+        last_window : pandas Series, default None
             Series values used to create the predictors (lags) needed to 
             predict `steps`.
             If `last_window = None`, the values stored in` self.last_window_` are
             used to calculate the initial predictors, and the predictions start
             right after training data.
-        exog : pandas Series, pandas DataFrame, default `None`
+        exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
         interval : list, tuple, default `[5, 95]`
             Confidence of the prediction interval estimated. Sequence of 
@@ -1742,7 +1749,7 @@ class ForecasterDirect(ForecasterBase):
         
         Parameters
         ----------
-        steps : int, list, None, default `None`
+        steps : int, list, None, default None
             Predict n steps. The value of `steps` must be less than or equal to the 
             value of steps defined when initializing the forecaster. Starts at 1.
         
@@ -1751,13 +1758,13 @@ class ForecasterDirect(ForecasterBase):
             are predicted.
             - If `None`: As many steps are predicted as were defined at 
             initialization.
-        last_window : pandas Series, default `None`
+        last_window : pandas Series, default None
             Series values used to create the predictors (lags) needed to 
             predict `steps`.
             If `last_window = None`, the values stored in` self.last_window_` are
             used to calculate the initial predictors, and the predictions start
             right after training data.
-        exog : pandas Series, pandas DataFrame, default `None`
+        exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
         quantiles : list, tuple, default [0.05, 0.5, 0.95]
             Sequence of quantiles to compute, which must be between 0 and 1 
@@ -1827,7 +1834,7 @@ class ForecasterDirect(ForecasterBase):
         ----------
         distribution : Object
             A distribution object from scipy.stats.
-        steps : int, list, None, default `None`
+        steps : int, list, None, default None
             Predict n steps. The value of `steps` must be less than or equal to the 
             value of steps defined when initializing the forecaster. Starts at 1.
         
@@ -1836,13 +1843,13 @@ class ForecasterDirect(ForecasterBase):
             are predicted.
             - If `None`: As many steps are predicted as were defined at 
             initialization.
-        last_window : pandas Series, default `None`
+        last_window : pandas Series, default None
             Series values used to create the predictors (lags) needed to 
             predict `steps`.
             If `last_window = None`, the values stored in` self.last_window_` are
             used to calculate the initial predictors, and the predictions start
             right after training data.
-        exog : pandas Series, pandas DataFrame, default `None`
+        exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
         n_boot : int, default `250`
             Number of bootstrapping iterations used to estimate predictions.
@@ -1947,7 +1954,7 @@ class ForecasterDirect(ForecasterBase):
         
         Parameters
         ----------
-        lags : int, list, numpy ndarray, range, default `None`
+        lags : int, list, numpy ndarray, range, default None
             Lags used as predictors. Index starts at 1, so lag 1 is equal to t-1. 
         
             - `int`: include lags from 1 to `lags` (included).
@@ -1988,7 +1995,7 @@ class ForecasterDirect(ForecasterBase):
         
         Parameters
         ----------
-        window_features : object, list, default `None`
+        window_features : object, list, default None
             Instance or list of instances used to create window features. Window features
             are created from the original time series and are included as predictors.
 

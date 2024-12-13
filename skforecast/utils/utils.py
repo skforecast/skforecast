@@ -5,10 +5,11 @@
 ################################################################################
 # coding=utf-8
 
+from __future__ import annotations
 import importlib
 import inspect
 import warnings
-from copy import deepcopy
+from copy import copy, deepcopy
 from typing import Any, Callable, Optional, Tuple, Union
 from pathlib import Path
 import joblib
@@ -352,8 +353,11 @@ def initialize_transformer_series(
         transformer_series_ = {serie: None for serie in series_names_in_}
         # Only elements already present in transformer_series_ are updated
         transformer_series_.update(
-            (k, v) for k, v in deepcopy(transformer_series).items() 
-            if k in transformer_series_
+            {
+                k: deepcopy(v)
+                for k, v in transformer_series.items()
+                if k in transformer_series_
+            }
         )
 
         series_not_in_transformer_series = (
@@ -361,12 +365,72 @@ def initialize_transformer_series(
         ) - {'_unknown_level'}
         if series_not_in_transformer_series:
             warnings.warn(
-                (f"{series_not_in_transformer_series} not present in `transformer_series`."
-                f" No transformation is applied to these series."),
+                f"{series_not_in_transformer_series} not present in `transformer_series`."
+                f" No transformation is applied to these series.",
                 IgnoredArgumentWarning
             )
 
     return transformer_series_
+
+
+def initialize_differentiator_multiseries(
+    series_names_in_: list[str],
+    differentiator: object | dict[str, object | None] | None = None
+) -> dict[str, object | None]:
+    """
+    Initialize `differentiator_` attribute for the ForecasterRecursiveMultiSeries.
+
+    - If `int`, the same order of differentiation is applied to all series.
+    - If `dict`, a different order of differentiation (including None) can 
+    be used for each series. The keys must be the names of the series used
+    to fit the forecaster. If a series is not present in the dictionary, no
+    differencing is applied.
+    - If `None`, no differencing is applied.
+
+    Parameters
+    ----------
+    series_names_in_ : list
+        Names of the series (levels) used during training.
+    differentiator : TimeSeriesDifferentiator, dict, default None
+        Skforecast object (or dict of objects) used to differentiate the time series.
+
+    Returns
+    -------
+    differentiator_ : dict
+        Dictionary with the `differentiator` for each series. It is created cloning the
+        objects in `differentiator` and is used internally to avoid overwriting.
+    
+    """
+    
+    series_names_in_ = series_names_in_ + ['_unknown_level']
+    if differentiator is None:
+        differentiator_ = {serie: None for serie in series_names_in_}
+    elif not isinstance(differentiator, dict):
+        differentiator_ = {
+            serie: copy(differentiator) for serie in series_names_in_
+        }
+    else:
+        differentiator_ = {serie: None for serie in series_names_in_}
+        # Only elements already present in differentiator_ are updated
+        differentiator_.update(
+            {
+                k: deepcopy(v)
+                for k, v in differentiator.items()
+                if k in differentiator_
+            }
+        )
+
+        series_not_in_differentiator = (
+            set(series_names_in_) - set(differentiator.keys())
+        )
+        if series_not_in_differentiator:
+            warnings.warn(
+                f"{series_not_in_differentiator} not present in `differentiation`."
+                f" No differentiation is applied to these series.",
+                IgnoredArgumentWarning
+            )
+
+    return differentiator_
 
 
 def check_select_fit_kwargs(
@@ -762,8 +826,8 @@ def check_predict_input(
 
     if not is_fitted:
         raise NotFittedError(
-            ("This Forecaster instance is not fitted yet. Call `fit` with "
-             "appropriate arguments before using predict.")
+            "This Forecaster instance is not fitted yet. Call `fit` with "
+            "appropriate arguments before using predict."
         )
 
     if isinstance(steps, (int, np.integer)) and steps < 1:
@@ -773,16 +837,16 @@ def check_predict_input(
 
     if isinstance(steps, list) and min(steps) < 1:
         raise ValueError(
-           (f"The minimum value of `steps` must be equal to or greater than 1. "
-            f"Got {min(steps)}.")
+           f"The minimum value of `steps` must be equal to or greater than 1. "
+           f"Got {min(steps)}."
         )
 
     if max_steps is not None:
         if max(steps) > max_steps:
             raise ValueError(
-                (f"The maximum value of `steps` must be less than or equal to "
-                 f"the value of steps defined when initializing the forecaster. "
-                 f"Got {max(steps)}, but the maximum is {max_steps}.")
+                f"The maximum value of `steps` must be less than or equal to "
+                f"the value of steps defined when initializing the forecaster. "
+                f"Got {max(steps)}, but the maximum is {max_steps}."
             )
 
     if interval is not None or alpha is not None:
@@ -792,8 +856,8 @@ def check_predict_input(
                            'ForecasterRnn']:
         if not isinstance(levels, (type(None), str, list)):
             raise TypeError(
-                ("`levels` must be a `list` of column names, a `str` of a "
-                 "column name or `None`.")
+                "`levels` must be a `list` of column names, a `str` of a "
+                "column name or `None`."
             )
 
         levels_to_check = (
@@ -804,35 +868,35 @@ def check_predict_input(
         if forecaster_name == 'ForecasterRnn':
             if len(unknown_levels) != 0:
                 raise ValueError(
-                    (f"`levels` names must be included in the series used during fit "
-                     f"({levels_to_check}). Got {levels}.")
+                    f"`levels` names must be included in the series used during fit "
+                    f"({levels_to_check}). Got {levels}."
                 )
         else:
             if len(unknown_levels) != 0 and last_window is not None and encoding is not None:
                 if encoding == 'onehot':
                     warnings.warn(
-                        (f"`levels` {unknown_levels} were not included in training. The resulting "
-                         f"one-hot encoded columns for this feature will be all zeros."),
-                         UnknownLevelWarning
+                        f"`levels` {unknown_levels} were not included in training. The resulting "
+                        f"one-hot encoded columns for this feature will be all zeros.",
+                        UnknownLevelWarning
                     )
                 else:
                     warnings.warn(
-                        (f"`levels` {unknown_levels} were not included in training. "
-                         f"Unknown levels are encoded as NaN, which may cause the "
-                         f"prediction to fail if the regressor does not accept NaN values."),
-                         UnknownLevelWarning
+                        f"`levels` {unknown_levels} were not included in training. "
+                        f"Unknown levels are encoded as NaN, which may cause the "
+                        f"prediction to fail if the regressor does not accept NaN values.",
+                        UnknownLevelWarning
                     )
 
     if exog is None and exog_in_:
         raise ValueError(
-            ("Forecaster trained with exogenous variable/s. "
-             "Same variable/s must be provided when predicting.")
+            "Forecaster trained with exogenous variable/s. "
+            "Same variable/s must be provided when predicting."
         )
 
     if exog is not None and not exog_in_:
         raise ValueError(
-            ("Forecaster trained without exogenous variable/s. "
-             "`exog` must be `None` when predicting.")
+            "Forecaster trained without exogenous variable/s. "
+            "`exog` must be `None` when predicting."
         )
 
     # Checks last_window
@@ -842,8 +906,8 @@ def check_predict_input(
         'ForecasterRnn'
     ]:
         raise ValueError(
-            ("`last_window` was not stored during training. If you don't want "
-             "to retrain the Forecaster, provide `last_window` as argument.")
+            "`last_window` was not stored during training. If you don't want "
+            "to retrain the Forecaster, provide `last_window` as argument."
         )
 
     if forecaster_name in ['ForecasterRecursiveMultiSeries', 
@@ -860,19 +924,19 @@ def check_predict_input(
                                'ForecasterRnn'] and \
             len(set(levels) - set(last_window_cols)) != 0:
             raise ValueError(
-                (f"`last_window` must contain a column(s) named as the level(s) "
-                 f"to be predicted.\n"
-                 f"    `levels` : {levels}\n"
-                 f"    `last_window` columns : {last_window_cols}")
+                f"`last_window` must contain a column(s) named as the level(s) "
+                f"to be predicted.\n"
+                f"    `levels` : {levels}\n"
+                f"    `last_window` columns : {last_window_cols}"
             )
 
         if forecaster_name == 'ForecasterDirectMultiVariate':
             if len(set(series_names_in_) - set(last_window_cols)) > 0:
                 raise ValueError(
-                    (f"`last_window` columns must be the same as the `series` "
-                     f"column names used to create the X_train matrix.\n"
-                     f"    `last_window` columns    : {last_window_cols}\n"
-                     f"    `series` columns X train : {series_names_in_}")
+                    f"`last_window` columns must be the same as the `series` "
+                    f"column names used to create the X_train matrix.\n"
+                    f"    `last_window` columns    : {last_window_cols}\n"
+                    f"    `series` columns X train : {series_names_in_}"
                 )
     else:
         if not isinstance(last_window, (pd.Series, pd.DataFrame)):
@@ -884,14 +948,14 @@ def check_predict_input(
     # Check last_window len, nulls and index (type and freq)
     if len(last_window) < window_size:
         raise ValueError(
-            (f"`last_window` must have as many values as needed to "
-             f"generate the predictors. For this forecaster it is {window_size}.")
+            f"`last_window` must have as many values as needed to "
+            f"generate the predictors. For this forecaster it is {window_size}."
         )
     if last_window.isnull().any().all():
         warnings.warn(
-            ("`last_window` has missing values. Most of machine learning models do "
-             "not allow missing values. Prediction method may fail."), 
-             MissingValuesWarning
+            "`last_window` has missing values. Most of machine learning models do "
+            "not allow missing values. Prediction method may fail.", 
+            MissingValuesWarning
         )
     _, last_window_index = preprocess_last_window(
                                last_window   = last_window.iloc[:0],
@@ -899,14 +963,14 @@ def check_predict_input(
                            ) 
     if not isinstance(last_window_index, index_type_):
         raise TypeError(
-            (f"Expected index of type {index_type_} for `last_window`. "
-             f"Got {type(last_window_index)}.")
+            f"Expected index of type {index_type_} for `last_window`. "
+            f"Got {type(last_window_index)}."
         )
     if isinstance(last_window_index, pd.DatetimeIndex):
         if not last_window_index.freqstr == index_freq_:
             raise TypeError(
-                (f"Expected frequency of type {index_freq_} for `last_window`. "
-                 f"Got {last_window_index.freqstr}.")
+                f"Expected frequency of type {index_freq_} for `last_window`. "
+                f"Got {last_window_index.freqstr}."
             )
 
     # Checks exog
@@ -932,10 +996,10 @@ def check_predict_input(
             no_exog_levels = set(levels) - set(exog.keys())
             if no_exog_levels:
                 warnings.warn(
-                    (f"`exog` does not contain keys for levels {no_exog_levels}. "
-                     f"Missing levels are filled with NaN. Most of machine learning "
-                     f"models do not allow missing values. Prediction method may fail."),
-                     MissingExogWarning
+                    f"`exog` does not contain keys for levels {no_exog_levels}. "
+                    f"Missing levels are filled with NaN. Most of machine learning "
+                    f"models do not allow missing values. Prediction method may fail.",
+                    MissingExogWarning
                 )
             exogs_to_check = [
                 (f"`exog` for series '{k}'", v) 
@@ -954,9 +1018,9 @@ def check_predict_input(
 
             if exog_to_check.isnull().any().any():
                 warnings.warn(
-                    (f"{exog_name} has missing values. Most of machine learning models "
-                     f"do not allow missing values. Prediction method may fail."), 
-                     MissingValuesWarning
+                    f"{exog_name} has missing values. Most of machine learning models "
+                    f"do not allow missing values. Prediction method may fail.", 
+                    MissingValuesWarning
                 )
 
             # Check exog has many values as distance to max step predicted
@@ -964,16 +1028,16 @@ def check_predict_input(
             if len(exog_to_check) < last_step:
                 if forecaster_name in ['ForecasterRecursiveMultiSeries']:
                     warnings.warn(
-                        (f"{exog_name} doesn't have as many values as steps "
-                         f"predicted, {last_step}. Missing values are filled "
-                         f"with NaN. Most of machine learning models do not "
-                         f"allow missing values. Prediction method may fail."),
-                         MissingValuesWarning
+                        f"{exog_name} doesn't have as many values as steps "
+                        f"predicted, {last_step}. Missing values are filled "
+                        f"with NaN. Most of machine learning models do not "
+                        f"allow missing values. Prediction method may fail.",
+                        MissingValuesWarning
                     )
                 else: 
                     raise ValueError(
-                        (f"{exog_name} must have at least as many values as "
-                         f"steps predicted, {last_step}.")
+                        f"{exog_name} must have at least as many values as "
+                        f"steps predicted, {last_step}."
                     )
 
             # Check name/columns are in exog_names_in_
@@ -982,33 +1046,33 @@ def check_predict_input(
                 if col_missing:
                     if forecaster_name in ['ForecasterRecursiveMultiSeries']:
                         warnings.warn(
-                            (f"{col_missing} not present in {exog_name}. All "
-                             f"values will be NaN."),
-                             MissingExogWarning
+                            f"{col_missing} not present in {exog_name}. All "
+                            f"values will be NaN.",
+                            MissingExogWarning
                         ) 
                     else:
                         raise ValueError(
-                            (f"Missing columns in {exog_name}. Expected {exog_names_in_}. "
-                             f"Got {exog_to_check.columns.to_list()}.")
+                            f"Missing columns in {exog_name}. Expected {exog_names_in_}. "
+                            f"Got {exog_to_check.columns.to_list()}."
                         )
             else:
                 if exog_to_check.name is None:
                     raise ValueError(
-                        (f"When {exog_name} is a pandas Series, it must have a name. Got None.")
+                        f"When {exog_name} is a pandas Series, it must have a name. Got None."
                     )
 
                 if exog_to_check.name not in exog_names_in_:
                     if forecaster_name in ['ForecasterRecursiveMultiSeries']:
                         warnings.warn(
-                            (f"'{exog_to_check.name}' was not observed during training. "
-                             f"{exog_name} is ignored. Exogenous variables must be one "
-                             f"of: {exog_names_in_}."),
-                             IgnoredArgumentWarning
+                            f"'{exog_to_check.name}' was not observed during training. "
+                            f"{exog_name} is ignored. Exogenous variables must be one "
+                            f"of: {exog_names_in_}.",
+                            IgnoredArgumentWarning
                         )
                     else:
                         raise ValueError(
-                            (f"'{exog_to_check.name}' was not observed during training. "
-                             f"Exogenous variables must be: {exog_names_in_}.")
+                            f"'{exog_to_check.name}' was not observed during training. "
+                            f"Exogenous variables must be: {exog_names_in_}."
                         )
 
             # Check index dtype and freq
@@ -2329,9 +2393,11 @@ def check_preprocess_exog_multiseries(
 
         # Only elements already present in exog_dict are updated
         exog_dict.update(
-            (k, v.copy())
-            for k, v in exog.items() 
-            if k in exog_dict and v is not None
+            {
+                k: v.copy()
+                for k, v in exog.items()
+                if k in exog_dict and v is not None
+            }
         )
 
         series_not_in_exog = set(series_names_in_) - set(exog.keys())
