@@ -103,6 +103,7 @@ nav:
     - Backtesting vs One-step-ahead: faq/parameters-search-backtesting-vs-one-step-ahead.ipynb
     - Cyclical features in time series: faq/cyclical-features-time-series.ipynb
     - Time series aggregation: faq/time-series-aggregation.ipynb
+    - Continuous Ranked Probability Score (CRPS): faq/probabilistic-forecasting-crps-score.ipynb
     - Parallelization in skforecast: faq/parallelization-skforecast.ipynb
     - Profiling skforecast: faq/profiling-skforecast.ipynb
 

@@ -224,7 +224,7 @@ def root_mean_squared_scaled_error(
     return rmsse
 
 
-def crps_from_boot_predictions(y_true: float, y_pred: np.ndarray) -> float:
+def crps_from_predictions(y_true: float, y_pred: np.ndarray) -> float:
     """
     Compute the Continuous Ranked Probability Score (CRPS) for a set of
     forecast realizations, for example from bootstrapping. The CRPS compares
