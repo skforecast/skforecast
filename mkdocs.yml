@@ -45,7 +45,7 @@ nav:
       - Data transformation: user_guides/sklearn-transformers-and-pipeline.ipynb
       - Differentiation: user_guides/time-series-differentiation.ipynb
       - Feature selection: user_guides/feature-selection.ipynb
-      - Sktime pipelines: user_guides/sktime_pipelines.ipynb
+      - Sktime pipelines: user_guides/sktime-pipelines.ipynb
     - Model Evaluation and Tuning:
       - Metrics: user_guides/metrics.ipynb
       - Backtesting forecaster: user_guides/backtesting.ipynb
