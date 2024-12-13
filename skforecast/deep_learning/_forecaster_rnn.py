@@ -643,6 +643,10 @@ class ForecasterRnn(ForecasterBase):
 
         set_skforecast_warnings(suppress_warnings, action="default")
 
+        if store_in_sample_residuals:
+            residuals = y_train - self.regressor.predict(x=X_train, verbose=0)
+            self.in_sample_residuals_ = {step: residuals[:, i, :] for i, step in enumerate(self.steps)}
+
     def predict(
         self,
         steps: Optional[Union[int, list]] = None,
