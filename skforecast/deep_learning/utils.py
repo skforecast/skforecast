@@ -275,3 +275,139 @@ def create_and_compile_model(
         model.compile(optimizer=optimizer, loss=loss, **compile_kwargs)
 
     return model
+
+
+def create_and_compile_model_exo(
+    series: pd.DataFrame,
+    lags: Union[int, list],
+    steps: Union[int, list],
+    exog: Optional[pd.DataFrame] = None,
+    levels: Optional[Union[str, int, list]] = None,
+    recurrent_layer: str = "LSTM",
+    recurrent_units: Union[int, list] = 100,
+    dense_units: Union[int, list] = 64,
+    activation: Union[str, dict] = "relu",
+    optimizer: object = Adam(learning_rate=0.01),
+    loss: object = MeanSquaredError(),
+    compile_kwargs: dict = {},
+) -> keras.models.Model:
+    """
+    Creates a neural network model for time series prediction with flexible recurrent layers and optional exogenous variables.
+
+    Parameters
+    ----------
+    series : pandas DataFrame
+        Input time series.
+    exog : pandas DataFrame, optional
+        Exogenous variables to be included as input, should have the same number of rows as `series`.
+    lags : int, list
+        Number of lagged time steps to consider in the input, or a list of specific lag indices.
+    steps : int, list
+        Number of steps to predict into the future, or a list of specific step indices.
+    levels : str, int, list, default `None`
+        Number of output levels (features) to predict, or a list of specific level indices. If None, defaults to the number of input series.
+    recurrent_layer : str, default `'LSTM'`
+        Type of recurrent layer to be used ('LSTM' or 'RNN').
+    recurrent_units : int, list, default `100`
+        Number of units in the recurrent layer(s). Can be an integer or a list of integers for multiple layers.
+    dense_units : int, list, default `64`
+        List of integers representing the number of units in each dense layer.
+    activation : str, dict, default `'relu'`
+        Activation function for the recurrent and dense layers. Can be a single
+        string for all layers or a dictionary specifying different activations
+        for 'recurrent_units' and 'dense_units'.
+    optimizer : object, default `Adam(learning_rate=0.01)`
+        Optimization algorithm and learning rate.
+    loss : object, default `MeanSquaredError()`
+        Loss function for model training.
+    compile_kwargs : dict, default `{}`
+        Additional arguments for model compilation.
+
+    Returns
+    -------
+    model : keras.models.Model
+        Compiled neural network model.
+    """
+
+    # Validate inputs
+    if not isinstance(series, pd.DataFrame):
+        raise TypeError("`series` must be a pandas DataFrame.")
+    if exog is not None and not isinstance(exog, pd.DataFrame):
+        raise TypeError("`exog` must be a pandas DataFrame or None.")
+
+    n_series = series.shape[1]
+    n_exog = exog.shape[1] if exog is not None else 0
+
+    # Convert lags, steps, and levels to lengths if they are lists
+    if isinstance(lags, list):
+        lags = len(lags)
+    if isinstance(steps, list):
+        steps = len(steps)
+    if isinstance(levels, list):
+        levels = len(levels)
+    elif levels is None:
+        levels = n_series
+
+    # Define input layers for series and exogenous variables
+    series_input = Input(shape=(lags, n_series))
+    inputs = [series_input]
+
+    if exog is not None:
+        exog_input = Input(shape=(n_exog,))  # Exogenous input without lagging
+        inputs.append(exog_input)
+
+    # Recurrent layers for the main time series input
+    x = series_input
+    for i, units in enumerate(
+        recurrent_units if isinstance(recurrent_units, list) else [recurrent_units]
+    ):
+        return_sequences = i < len(recurrent_units) - 1
+        if recurrent_layer == "LSTM":
+            x = LSTM(
+                units,
+                activation=(
+                    activation
+                    if isinstance(activation, str)
+                    else activation.get("recurrent_units", "relu")
+                ),
+                return_sequences=return_sequences,
+            )(x)
+        elif recurrent_layer == "RNN":
+            x = SimpleRNN(
+                units,
+                activation=(
+                    activation
+                    if isinstance(activation, str)
+                    else activation.get("recurrent_units", "relu")
+                ),
+                return_sequences=return_sequences,
+            )(x)
+        else:
+            raise ValueError(f"Invalid recurrent layer type: {recurrent_layer}")
+
+    # Flatten the recurrent output to concatenate with exogenous inputs (if any)
+    x = Flatten()(x)
+
+    if exog is not None:
+        x = Concatenate()([x, exog_input])
+
+    # Dense layers
+    for units in dense_units if isinstance(dense_units, list) else [dense_units]:
+        x = Dense(
+            units,
+            activation=(
+                activation
+                if isinstance(activation, str)
+                else activation.get("dense_units", "relu")
+            ),
+        )(x)
+
+    # Output layer
+    x = Dense(steps * levels, activation="linear")(x)
+    output = Reshape((steps, levels))(x)
+
+    # Compile the model
+    model = Model(inputs=inputs, outputs=output)
+    model.compile(optimizer=optimizer, loss=loss, **compile_kwargs)
+
+    return model
