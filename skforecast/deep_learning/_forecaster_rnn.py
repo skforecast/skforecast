@@ -23,16 +23,9 @@ import skforecast
 
 from ..base import ForecasterBase
 from ..exceptions import IgnoredArgumentWarning
-from ..utils import (
-    check_predict_input,
-    check_select_fit_kwargs,
-    check_y,
-    expand_index,
-    preprocess_last_window,
-    preprocess_y,
-    set_skforecast_warnings,
-    transform_series,
-)
+from ..utils import (check_predict_input, check_select_fit_kwargs, check_y,
+                     expand_index, preprocess_last_window, preprocess_y,
+                     set_skforecast_warnings, transform_series)
 
 
 # TODO. Test Interval
@@ -587,6 +580,7 @@ class ForecasterRnn(ForecasterBase):
         self.is_fitted = False
         self.training_range_ = None
 
+        # TODO. ask @XIMO deveríamos eliminar las columnas no incluidas en series y en levels?
         self.series_names_in_ = list(series.columns)
 
         X_train, y_train, X_train_dim_names_ = self.create_train_X_y(series=series)
@@ -603,6 +597,7 @@ class ForecasterRnn(ForecasterBase):
             y_train = torch.tensor(y_train).to(torch_device)
 
         if self.series_val is not None:
+            # TODO. ask @XIMO deveríamos eliminar las columnas no incluidas en series y en levels?
             torch_device = torch.device(device)
             X_val, y_val, _ = self.create_train_X_y(series=self.series_val)
             if keras.__version__ > "3.0" and keras.backend.backend() == "torch":
@@ -781,10 +776,13 @@ class ForecasterRnn(ForecasterBase):
         return predictions
 
     def plot_history(
-        self, ax: matplotlib.axes.Axes = None, **fig_kw
+        self,
+        ax: matplotlib.axes.Axes = None,
+        exclude_first_iteration: bool = False,
+        **fig_kw,
     ) -> matplotlib.figure.Figure:
         """
-        Plots the training and validation loss curves from the given history object stores
+        Plots the training and validation loss curves from the given history object stored
         in the ForecasterRnn.
 
         Parameters
@@ -792,6 +790,8 @@ class ForecasterRnn(ForecasterBase):
         ax : matplotlib.axes.Axes, default `None`
             Pre-existing ax for the plot. Otherwise, call matplotlib.pyplot.subplots()
             internally.
+        exclude_first_iteration : bool, default `False`
+            Whether to exclude the first epoch from the plot.
         fig_kw : dict
             Other keyword arguments are passed to matplotlib.pyplot.subplots().
 
@@ -799,7 +799,6 @@ class ForecasterRnn(ForecasterBase):
         -------
         fig: matplotlib.figure.Figure
             Matplotlib Figure.
-
         """
 
         if ax is None:
@@ -808,14 +807,20 @@ class ForecasterRnn(ForecasterBase):
             fig = ax.get_figure()
 
         # Setting up the plot style
-
         if self.history is None:
             raise ValueError("ForecasterRnn has not been fitted yet.")
 
+        # Determine the range of epochs to plot, excluding the first one if specified
+        epoch_range = range(1, len(self.history["loss"]) + 1)
+        if exclude_first_iteration:
+            epoch_range = range(2, len(self.history["loss"]) + 1)
+
         # Plotting training loss
         ax.plot(
-            range(1, len(self.history["loss"]) + 1),
-            self.history["loss"],
+            epoch_range,
+            self.history["loss"][
+                exclude_first_iteration:
+            ],  # Skip first element if specified
             color="b",
             label="Training Loss",
         )
@@ -823,8 +828,10 @@ class ForecasterRnn(ForecasterBase):
         # Plotting validation loss
         if "val_loss" in self.history:
             ax.plot(
-                range(1, len(self.history["val_loss"]) + 1),
-                self.history["val_loss"],
+                epoch_range,
+                self.history["val_loss"][
+                    exclude_first_iteration:
+                ],  # Skip first element if specified
                 color="r",
                 label="Validation Loss",
             )
@@ -841,7 +848,9 @@ class ForecasterRnn(ForecasterBase):
         ax.grid(True, linestyle="--", alpha=0.7)
 
         # Setting x-axis ticks to integers only
-        ax.set_xticks(range(1, len(self.history["loss"]) + 1))
+        ax.set_xticks(epoch_range)
+
+        return fig
 
     # def predict_bootstrapping(
     #     self,
