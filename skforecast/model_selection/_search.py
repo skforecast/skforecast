@@ -5,11 +5,13 @@
 ################################################################################
 # coding=utf-8
 
+from __future__ import annotations
 import os
 import logging
-from typing import Union, Tuple, Optional, Callable
+from typing import Callable
 import warnings
 from copy import deepcopy
+import numpy as np
 import pandas as pd
 from tqdm.auto import tqdm
 import optuna
@@ -35,16 +37,20 @@ from ..utils import initialize_lags, set_skforecast_warnings
 def grid_search_forecaster(
     forecaster: object,
     y: pd.Series,
-    cv: Union[TimeSeriesFold, OneStepAheadFold],
+    cv: TimeSeriesFold | OneStepAheadFold,
     param_grid: dict,
-    metric: Union[str, Callable, list],
-    exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
-    lags_grid: Optional[Union[list, dict]] = None,
+    metric: str | Callable | list[str | Callable],
+    exog: pd.Series | pd.DataFrame | None = None,
+    lags_grid: (
+        list[int | list[int] | np.ndarray[int] | range[int]]
+        | dict[str, list[int | list[int] | np.ndarray[int] | range[int]]]
+        | None
+    ) = None,
     return_best: bool = True,
-    n_jobs: Union[int, str] = 'auto',
+    n_jobs: int | str = 'auto',
     verbose: bool = True,
     show_progress: bool = True,
-    output_file: Optional[str] = None
+    output_file: str | None = None
 ) -> pd.DataFrame:
     """
     Exhaustive search over specified parameter values for a Forecaster object.
@@ -72,25 +78,25 @@ def grid_search_forecaster(
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
         (Optional) that returns a float.
         - If `list`: List containing multiple strings and/or Callables.
-    exog : pandas Series, pandas DataFrame, default `None`
+    exog : pandas Series, pandas DataFrame, default None
         Exogenous variable/s included as predictor/s. Must have the same
         number of observations as `y` and should be aligned so that y[i] is
         regressed on exog[i].
-    lags_grid : list, dict, default `None`
+    lags_grid : list, dict, default None
         Lists of lags to try, containing int, lists, numpy ndarray, or range 
         objects. If `dict`, the keys are used as labels in the `results` 
         DataFrame, and the values are used as the lists of lags to try.
-    return_best : bool, default `True`
+    return_best : bool, default True
         Refit the `forecaster` using the best found parameters on the whole data.
-    n_jobs : int, 'auto', default `'auto'`
+    n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
         skforecast.utils.select_n_jobs_backtesting.
-    verbose : bool, default `True`
+    verbose : bool, default True
         Print number of folds used for cv or backtesting.
-    show_progress : bool, default `True`
+    show_progress : bool, default True
         Whether to show a progress bar.
-    output_file : str, default `None`
+    output_file : str, default None
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
         `None`, the results will not be saved to a file.
@@ -132,18 +138,22 @@ def grid_search_forecaster(
 def random_search_forecaster(
     forecaster: object,
     y: pd.Series,
-    cv: Union[TimeSeriesFold, OneStepAheadFold],
+    cv: TimeSeriesFold | OneStepAheadFold,
     param_distributions: dict,
-    metric: Union[str, Callable, list],
-    exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
-    lags_grid: Optional[Union[list, dict]] = None,
+    metric: str | Callable | list[str | Callable],
+    exog: pd.Series | pd.DataFrame | None = None,
+    lags_grid: (
+        list[int | list[int] | np.ndarray[int] | range[int]]
+        | dict[str, list[int | list[int] | np.ndarray[int] | range[int]]]
+        | None
+    ) = None,
     n_iter: int = 10,
     random_state: int = 123,
     return_best: bool = True,
-    n_jobs: Union[int, str] = 'auto',
+    n_jobs: int | str = 'auto',
     verbose: bool = True,
     show_progress: bool = True,
-    output_file: Optional[str] = None
+    output_file: str | None = None
 ) -> pd.DataFrame:
     """
     Random search over specified parameter values or distributions for a Forecaster 
@@ -171,30 +181,30 @@ def random_search_forecaster(
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
         (Optional) that returns a float.
         - If `list`: List containing multiple strings and/or Callables.
-    exog : pandas Series, pandas DataFrame, default `None`
+    exog : pandas Series, pandas DataFrame, default None
         Exogenous variable/s included as predictor/s. Must have the same
         number of observations as `y` and should be aligned so that y[i] is
         regressed on exog[i]. 
-    lags_grid : list, dict, default `None`
+    lags_grid : list, dict, default None
         Lists of lags to try, containing int, lists, numpy ndarray, or range 
         objects. If `dict`, the keys are used as labels in the `results` 
         DataFrame, and the values are used as the lists of lags to try.
-    n_iter : int, default `10`
+    n_iter : int, default 10
         Number of parameter settings that are sampled per lags configuration. 
         n_iter trades off runtime vs quality of the solution.
-    random_state : int, default `123`
+    random_state : int, default 123
         Sets a seed to the random sampling for reproducible output.
-    return_best : bool, default `True`
+    return_best : bool, default True
         Refit the `forecaster` using the best found parameters on the whole data.
-    n_jobs : int, 'auto', default `'auto'`
+    n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
         skforecast.utils.select_n_jobs_backtesting.
-    verbose : bool, default `True`
+    verbose : bool, default True
         Print number of folds used for cv or backtesting.
-    show_progress : bool, default `True`
+    show_progress : bool, default True
         Whether to show a progress bar.
-    output_file : str, default `None`
+    output_file : str, default None
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
         `None`, the results will not be saved to a file.
@@ -236,16 +246,20 @@ def random_search_forecaster(
 def _evaluate_grid_hyperparameters(
     forecaster: object,
     y: pd.Series,
-    cv: Union[TimeSeriesFold, OneStepAheadFold],
+    cv: TimeSeriesFold | OneStepAheadFold,
     param_grid: dict,
-    metric: Union[str, Callable, list],
-    exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
-    lags_grid: Optional[Union[list, dict]] = None,
+    metric: str | Callable | list[str | Callable],
+    exog: pd.Series | pd.DataFrame | None = None,
+    lags_grid: (
+        list[int | list[int] | np.ndarray[int] | range[int]]
+        | dict[str, list[int | list[int] | np.ndarray[int] | range[int]]]
+        | None
+    ) = None,
     return_best: bool = True,
-    n_jobs: Union[int, str] = 'auto',
+    n_jobs: int | str = 'auto',
     verbose: bool = True,
     show_progress: bool = True,
-    output_file: Optional[str] = None
+    output_file: str | None = None
 ) -> pd.DataFrame:
     """
     Evaluate parameter values for a Forecaster object.
@@ -272,25 +286,25 @@ def _evaluate_grid_hyperparameters(
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
         (Optional) that returns a float.
         - If `list`: List containing multiple strings and/or Callables.
-    exog : pandas Series, pandas DataFrame, default `None`
+    exog : pandas Series, pandas DataFrame, default None
         Exogenous variable/s included as predictor/s. Must have the same
         number of observations as `y` and should be aligned so that y[i] is
         regressed on exog[i]. 
-    lags_grid : list, dict, default `None`
+    lags_grid : list, dict, default None
         Lists of lags to try, containing int, lists, numpy ndarray, or range 
         objects. If `dict`, the keys are used as labels in the `results` 
         DataFrame, and the values are used as the lists of lags to try.
-    return_best : bool, default `True`
+    return_best : bool, default True
         Refit the `forecaster` using the best found parameters on the whole data.
-    n_jobs : int, 'auto', default `'auto'`
+    n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
         skforecast.utils.select_n_jobs_backtesting.
-    verbose : bool, default `True`
+    verbose : bool, default True
         Print number of folds used for cv or backtesting.
-    show_progress : bool, default `True`
+    show_progress : bool, default True
         Whether to show a progress bar.
-    output_file : str, default `None`
+    output_file : str, default None
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
         `None`, the results will not be saved to a file.
@@ -494,20 +508,20 @@ def _evaluate_grid_hyperparameters(
 def bayesian_search_forecaster(
     forecaster: object,
     y: pd.Series,
-    cv: Union[TimeSeriesFold, OneStepAheadFold],
+    cv: TimeSeriesFold | OneStepAheadFold,
     search_space: Callable,
-    metric: Union[str, Callable, list],
-    exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
+    metric: str | Callable | list[str | Callable],
+    exog: pd.Series | pd.DataFrame | None = None,
     n_trials: int = 10,
     random_state: int = 123,
     return_best: bool = True,
-    n_jobs: Union[int, str] = 'auto',
+    n_jobs: int | str = 'auto',
     verbose: bool = True,
     show_progress: bool = True,
-    output_file: Optional[str] = None,
+    output_file: str | None = None,
     kwargs_create_study: dict = {},
     kwargs_study_optimize: dict = {}
-) -> Tuple[pd.DataFrame, object]:
+) -> tuple[pd.DataFrame, object]:
     """
     Bayesian search for hyperparameters of a Forecaster object.
     
@@ -534,36 +548,36 @@ def bayesian_search_forecaster(
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
         (Optional) that returns a float.
         - If `list`: List containing multiple strings and/or Callables.
-    exog : pandas Series, pandas DataFrame, default `None`
+    exog : pandas Series, pandas DataFrame, default None
         Exogenous variable/s included as predictor/s. Must have the same
         number of observations as `y` and should be aligned so that y[i] is
         regressed on exog[i].
-    n_trials : int, default `10`
+    n_trials : int, default 10
         Number of parameter settings that are sampled in each lag configuration.
-    random_state : int, default `123`
+    random_state : int, default 123
         Sets a seed to the sampling for reproducible output. When a new sampler 
         is passed in `kwargs_create_study`, the seed must be set within the 
         sampler. For example `{'sampler': TPESampler(seed=145)}`.
-    return_best : bool, default `True`
+    return_best : bool, default True
         Refit the `forecaster` using the best found parameters on the whole data.
-    n_jobs : int, 'auto', default `'auto'`
+    n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
         skforecast.utils.select_n_jobs_backtesting.
-    verbose : bool, default `True`
+    verbose : bool, default True
         Print number of folds used for cv or backtesting.
-    show_progress : bool, default `True`
+    show_progress : bool, default True
         Whether to show a progress bar.
-    output_file : str, default `None`
+    output_file : str, default None
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
         `None`, the results will not be saved to a file.
         **New in version 0.12.0**
-    kwargs_create_study : dict, default `{}`
+    kwargs_create_study : dict, default {}
         Additional keyword arguments (key, value mappings) to pass to optuna.create_study().
         If default, the direction is set to 'minimize' and a TPESampler(seed=123) 
         sampler is used during optimization.
-    kwargs_study_optimize : dict, default `{}`
+    kwargs_study_optimize : dict, default {}
         Additional keyword arguments (key, value mappings) to pass to study.optimize().
 
     Returns
@@ -610,20 +624,20 @@ def bayesian_search_forecaster(
 def _bayesian_search_optuna(
     forecaster: object,
     y: pd.Series,
-    cv: Union[TimeSeriesFold, OneStepAheadFold],
+    cv: TimeSeriesFold | OneStepAheadFold,
     search_space: Callable,
-    metric: Union[str, Callable, list],
-    exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
+    metric: str | Callable | list[str | Callable],
+    exog: pd.Series | pd.DataFrame | None = None,
     n_trials: int = 10,
     random_state: int = 123,
     return_best: bool = True,
-    n_jobs: Union[int, str] = 'auto',
+    n_jobs: int | str = 'auto',
     verbose: bool = True,
     show_progress: bool = True,
-    output_file: Optional[str] = None,
+    output_file: str | None = None,
     kwargs_create_study: dict = {},
     kwargs_study_optimize: dict = {}
-) -> Tuple[pd.DataFrame, object]:
+) -> tuple[pd.DataFrame, object]:
     """
     Bayesian search for hyperparameters of a Forecaster object using optuna library.
     
@@ -650,36 +664,36 @@ def _bayesian_search_optuna(
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
         (Optional) that returns a float.
         - If `list`: List containing multiple strings and/or Callables.
-    exog : pandas Series, pandas DataFrame, default `None`
+    exog : pandas Series, pandas DataFrame, default None
         Exogenous variable/s included as predictor/s. Must have the same
         number of observations as `y` and should be aligned so that y[i] is
         regressed on exog[i].
-    n_trials : int, default `10`
+    n_trials : int, default 10
         Number of parameter settings that are sampled in each lag configuration.
-    random_state : int, default `123`
+    random_state : int, default 123
         Sets a seed to the sampling for reproducible output. When a new sampler 
         is passed in `kwargs_create_study`, the seed must be set within the 
         sampler. For example `{'sampler': TPESampler(seed=145)}`.
-    return_best : bool, default `True`
+    return_best : bool, default True
         Refit the `forecaster` using the best found parameters on the whole data.
-    n_jobs : int, 'auto', default `'auto'`
+    n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
         skforecast.utils.select_n_jobs_backtesting.
-    verbose : bool, default `True`
+    verbose : bool, default True
         Print number of folds used for cv or backtesting.
-    show_progress : bool, default `True`
+    show_progress : bool, default True
         Whether to show a progress bar.
-    output_file : str, default `None`
+    output_file : str, default None
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
         `None`, the results will not be saved to a file.
         **New in version 0.12.0**
-    kwargs_create_study : dict, default `{}`
+    kwargs_create_study : dict, default {}
         Additional keyword arguments (key, value mappings) to pass to optuna.create_study().
         If default, the direction is set to 'minimize' and a TPESampler(seed=123) 
         sampler is used during optimization.
-    kwargs_study_optimize : dict, default `{}`
+    kwargs_study_optimize : dict, default {}
         Additional keyword arguments (key, value mappings) to pass to study.optimize().
 
     Returns
@@ -929,20 +943,24 @@ def _bayesian_search_optuna(
 
 def grid_search_forecaster_multiseries(
     forecaster: object,
-    series: Union[pd.DataFrame, dict],
-    cv: Union[TimeSeriesFold, OneStepAheadFold],
+    series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
+    cv: TimeSeriesFold | OneStepAheadFold,
     param_grid: dict,
-    metric: Union[str, Callable, list],
-    aggregate_metric: Union[str, list] = ['weighted_average', 'average', 'pooling'],
-    levels: Optional[Union[str, list]] = None,
-    exog: Optional[Union[pd.Series, pd.DataFrame, dict]] = None,
-    lags_grid: Optional[Union[list, dict]] = None,
+    metric: str | Callable | list[str | Callable],
+    aggregate_metric: str | list[str] = ['weighted_average', 'average', 'pooling'],
+    levels: str | list[str] | None = None,
+    exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
+    lags_grid: (
+        list[int | list[int] | np.ndarray[int] | range[int]]
+        | dict[str, list[int | list[int] | np.ndarray[int] | range[int]]]
+        | None
+    ) = None,
     return_best: bool = True,
-    n_jobs: Union[int, str] = 'auto',
+    n_jobs: int | str = 'auto',
     verbose: bool = True,
     show_progress: bool = True,
     suppress_warnings: bool = False,
-    output_file: Optional[str] = None
+    output_file: str | None = None
 ) -> pd.DataFrame:
     """
     Exhaustive search over specified parameter values for a Forecaster object.
@@ -980,30 +998,30 @@ def grid_search_forecaster_multiseries(
         predicted values of each level.
         - 'pooling': the values of all levels are pooled and then the metric is
         calculated.
-    levels : str, list, default `None`
+    levels : str, list, default None
         level (`str`) or levels (`list`) at which the forecaster is optimized. 
         If `None`, all levels are taken into account.
-    exog : pandas Series, pandas DataFrame, dict, default `None`
+    exog : pandas Series, pandas DataFrame, dict, default None
         Exogenous variables.
-    lags_grid : list, dict, default `None`
+    lags_grid : list, dict, default None
         Lists of lags to try, containing int, lists, numpy ndarray, or range 
         objects. If `dict`, the keys are used as labels in the `results` 
         DataFrame, and the values are used as the lists of lags to try.
-    return_best : bool, default `True`
+    return_best : bool, default True
         Refit the `forecaster` using the best found parameters on the whole data.
-    n_jobs : int, 'auto', default `'auto'`
+    n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
         skforecast.utils.select_n_jobs_backtesting.
-    verbose : bool, default `True`
+    verbose : bool, default True
         Print number of folds used for cv or backtesting.
-    show_progress : bool, default `True`
+    show_progress : bool, default True
         Whether to show a progress bar.
-    suppress_warnings: bool, default `False`
+    suppress_warnings: bool, default False
         If `True`, skforecast warnings will be suppressed during the hyperparameter 
         search. See skforecast.exceptions.warn_skforecast_categories for more
         information.
-    output_file : str, default `None`
+    output_file : str, default None
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
         `None`, the results will not be saved to a file.
@@ -1049,22 +1067,26 @@ def grid_search_forecaster_multiseries(
 
 def random_search_forecaster_multiseries(
     forecaster: object,
-    series: Union[pd.DataFrame, dict],
-    cv: Union[TimeSeriesFold, OneStepAheadFold],
+    series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
+    cv: TimeSeriesFold | OneStepAheadFold,
     param_distributions: dict,
-    metric: Union[str, Callable, list],
-    aggregate_metric: Union[str, list] = ['weighted_average', 'average', 'pooling'],
-    levels: Optional[Union[str, list]] = None,
-    exog: Optional[Union[pd.Series, pd.DataFrame, dict]] = None,
-    lags_grid: Optional[Union[list, dict]] = None,
+    metric: str | Callable | list[str | Callable],
+    aggregate_metric: str | list[str] = ['weighted_average', 'average', 'pooling'],
+    levels: str | list[str] | None = None,
+    exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
+    lags_grid: (
+        list[int | list[int] | np.ndarray[int] | range[int]]
+        | dict[str, list[int | list[int] | np.ndarray[int] | range[int]]]
+        | None
+    ) = None,
     n_iter: int = 10,
     random_state: int = 123,
     return_best: bool = True,
-    n_jobs: Union[int, str] = 'auto',
+    n_jobs: int | str = 'auto',
     verbose: bool = True,
     show_progress: bool = True,
     suppress_warnings: bool = False,
-    output_file: Optional[str] = None
+    output_file: str | None = None
 ) -> pd.DataFrame:
     """
     Random search over specified parameter values or distributions for a Forecaster 
@@ -1101,35 +1123,35 @@ def random_search_forecaster_multiseries(
         predicted values of each level.
         - 'pooling': the values of all levels are pooled and then the metric is
         calculated.
-    levels : str, list, default `None`
+    levels : str, list, default None
         level (`str`) or levels (`list`) at which the forecaster is optimized. 
         If `None`, all levels are taken into account.
-    exog : pandas Series, pandas DataFrame, dict, default `None`
+    exog : pandas Series, pandas DataFrame, dict, default None
         Exogenous variables.
-    lags_grid : list, dict, default `None`
+    lags_grid : list, dict, default None
         Lists of lags to try, containing int, lists, numpy ndarray, or range 
         objects. If `dict`, the keys are used as labels in the `results` 
         DataFrame, and the values are used as the lists of lags to try.
-    n_iter : int, default `10`
+    n_iter : int, default 10
         Number of parameter settings that are sampled per lags configuration. 
         n_iter trades off runtime vs quality of the solution.
-    random_state : int, default `123`
+    random_state : int, default 123
         Sets a seed to the random sampling for reproducible output.
-    return_best : bool, default `True`
+    return_best : bool, default True
         Refit the `forecaster` using the best found parameters on the whole data.
-    n_jobs : int, 'auto', default `'auto'`
+    n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
         skforecast.utils.select_n_jobs_backtesting.
-    verbose : bool, default `True`
+    verbose : bool, default True
         Print number of folds used for cv or backtesting.
-    show_progress : bool, default `True`
+    show_progress : bool, default True
         Whether to show a progress bar.
-    suppress_warnings: bool, default `False`
+    suppress_warnings: bool, default False
         If `True`, skforecast warnings will be suppressed during the hyperparameter 
         search. See skforecast.exceptions.warn_skforecast_categories for more
         information.
-    output_file : str, default `None`
+    output_file : str, default None
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
         `None`, the results will not be saved to a file.
@@ -1176,20 +1198,24 @@ def random_search_forecaster_multiseries(
 
 def _evaluate_grid_hyperparameters_multiseries(
     forecaster: object,
-    series: Union[pd.DataFrame, dict],
-    cv: Union[TimeSeriesFold, OneStepAheadFold],
+    series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
+    cv: TimeSeriesFold | OneStepAheadFold,
     param_grid: dict,
-    metric: Union[str, Callable, list],
-    aggregate_metric: Union[str, list] = ['weighted_average', 'average', 'pooling'],
-    levels: Optional[Union[str, list]] = None,
-    exog: Optional[Union[pd.Series, pd.DataFrame, dict]] = None,
-    lags_grid: Optional[Union[list, dict]] = None,
+    metric: str | Callable | list[str | Callable],
+    aggregate_metric: str | list[str] = ['weighted_average', 'average', 'pooling'],
+    levels: str | list[str] | None = None,
+    exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
+    lags_grid: (
+        list[int | list[int] | np.ndarray[int] | range[int]]
+        | dict[str, list[int | list[int] | np.ndarray[int] | range[int]]]
+        | None
+    ) = None,
     return_best: bool = True,
-    n_jobs: Union[int, str] = 'auto',
+    n_jobs: int | str = 'auto',
     verbose: bool = True,
     show_progress: bool = True,
     suppress_warnings: bool = False,
-    output_file: Optional[str] = None
+    output_file: str | None = None
 ) -> pd.DataFrame:
     """
     Evaluate parameter values for a Forecaster object.
@@ -1225,30 +1251,30 @@ def _evaluate_grid_hyperparameters_multiseries(
         predicted values of each level.
         - 'pooling': the values of all levels are pooled and then the metric is
         calculated.
-    levels : str, list, default `None`
+    levels : str, list, default None
         level (`str`) or levels (`list`) at which the forecaster is optimized. 
         If `None`, all levels are taken into account.
-    exog : pandas Series, pandas DataFrame, dict, default `None`
+    exog : pandas Series, pandas DataFrame, dict, default None
         Exogenous variables.
-    lags_grid : list, dict, default `None`
+    lags_grid : list, dict, default None
         Lists of lags to try, containing int, lists, numpy ndarray, or range 
         objects. If `dict`, the keys are used as labels in the `results` 
         DataFrame, and the values are used as the lists of lags to try.
-    return_best : bool, default `True`
+    return_best : bool, default True
         Refit the `forecaster` using the best found parameters on the whole data.
-    n_jobs : int, 'auto', default `'auto'`
+    n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
         skforecast.utils.select_n_jobs_backtesting. 
-    verbose : bool, default `True`
+    verbose : bool, default True
         Print number of folds used for cv or backtesting.
-    show_progress : bool, default `True`
+    show_progress : bool, default True
         Whether to show a progress bar.
-    suppress_warnings: bool, default `False`
+    suppress_warnings: bool, default False
         If `True`, skforecast warnings will be suppressed during the hyperparameter 
         search. See skforecast.exceptions.warn_skforecast_categories for more
         information.
-    output_file : str, default `None`
+    output_file : str, default None
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
         `None`, the results will not be saved to a file.
@@ -1512,24 +1538,24 @@ def _evaluate_grid_hyperparameters_multiseries(
 
 def bayesian_search_forecaster_multiseries(
     forecaster: object,
-    series: Union[pd.DataFrame, dict],
-    cv: Union[TimeSeriesFold, OneStepAheadFold],
+    series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
+    cv: TimeSeriesFold | OneStepAheadFold,
     search_space: Callable,
-    metric: Union[str, Callable, list],
-    aggregate_metric: Union[str, list] = ['weighted_average', 'average', 'pooling'],
-    levels: Optional[Union[str, list]] = None,
-    exog: Optional[Union[pd.Series, pd.DataFrame, dict]] = None,
+    metric: str | Callable | list[str | Callable],
+    aggregate_metric: str | list[str] = ['weighted_average', 'average', 'pooling'],
+    levels: str | list[str] | None = None,
+    exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
     n_trials: int = 10,
     random_state: int = 123,
     return_best: bool = True,
-    n_jobs: Union[int, str] = 'auto',
+    n_jobs: int | str = 'auto',
     verbose: bool = True,
     show_progress: bool = True,
     suppress_warnings: bool = False,
-    output_file: Optional[str] = None,
+    output_file: str | None = None,
     kwargs_create_study: dict = {},
     kwargs_study_optimize: dict = {}
-) -> Tuple[pd.DataFrame, object]:
+) -> tuple[pd.DataFrame, object]:
     """
     Bayesian search for hyperparameters of a Forecaster object using optuna library.
     
@@ -1562,39 +1588,39 @@ def bayesian_search_forecaster_multiseries(
         predicted values of each level.
         - 'pooling': the values of all levels are pooled and then the metric is
         calculated.
-    levels : str, list, default `None`
+    levels : str, list, default None
         level (`str`) or levels (`list`) at which the forecaster is optimized. 
         If `None`, all levels are taken into account.
-    exog : pandas Series, pandas DataFrame, dict, default `None`
+    exog : pandas Series, pandas DataFrame, dict, default None
         Exogenous variables.
-    n_trials : int, default `10`
+    n_trials : int, default 10
         Number of parameter settings that are sampled in each lag configuration.
-    random_state : int, default `123`
+    random_state : int, default 123
         Sets a seed to the sampling for reproducible output.
-    return_best : bool, default `True`
+    return_best : bool, default True
         Refit the `forecaster` using the best found parameters on the whole data.
-    n_jobs : int, 'auto', default `'auto'`
+    n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
         skforecast.utils.select_n_jobs_backtesting.
-    verbose : bool, default `True`
+    verbose : bool, default True
         Print number of folds used for cv or backtesting.
-    show_progress : bool, default `True`
+    show_progress : bool, default True
         Whether to show a progress bar.
-    suppress_warnings: bool, default `False`
+    suppress_warnings: bool, default False
         If `True`, skforecast warnings will be suppressed during the hyperparameter
         search. See skforecast.exceptions.warn_skforecast_categories for more
         information.
-    output_file : str, default `None`
+    output_file : str, default None
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
         `None`, the results will not be saved to a file.
         **New in version 0.12.0**
-    kwargs_create_study : dict, default `{}`
+    kwargs_create_study : dict, default {}
         Additional keyword arguments (key, value mappings) to pass to optuna.create_study().
         If default, the direction is set to 'minimize' and a TPESampler(seed=123) 
         sampler is used during optimization.
-    kwargs_study_optimize : dict, default `{}`
+    kwargs_study_optimize : dict, default {}
         Additional keyword arguments (key, value mappings) to pass to study.optimize().
 
     Returns
@@ -1645,24 +1671,24 @@ def bayesian_search_forecaster_multiseries(
 
 def _bayesian_search_optuna_multiseries(
     forecaster: object,
-    series: Union[pd.DataFrame, dict],
-    cv: Union[TimeSeriesFold, OneStepAheadFold],
+    series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
+    cv: TimeSeriesFold | OneStepAheadFold,
     search_space: Callable,
-    metric: Union[str, Callable, list],
-    aggregate_metric: Union[str, list] = ['weighted_average', 'average', 'pooling'],
-    levels: Optional[Union[str, list]] = None,
-    exog: Optional[Union[pd.Series, pd.DataFrame, dict]] = None,
+    metric: str | Callable | list[str | Callable],
+    aggregate_metric: str | list[str] = ['weighted_average', 'average', 'pooling'],
+    levels: str | list[str] | None = None,
+    exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
     n_trials: int = 10,
     random_state: int = 123,
     return_best: bool = True,
-    n_jobs: Union[int, str] = 'auto',
+    n_jobs: int | str = 'auto',
     verbose: bool = True,
     show_progress: bool = True,
     suppress_warnings: bool = False,
-    output_file: Optional[str] = None,
+    output_file: str | None = None,
     kwargs_create_study: dict = {},
     kwargs_study_optimize: dict = {}
-) -> Tuple[pd.DataFrame, object]:
+) -> tuple[pd.DataFrame, object]:
     """
     Bayesian search for hyperparameters of a Forecaster object using optuna library.
     
@@ -1698,39 +1724,39 @@ def _bayesian_search_optuna_multiseries(
         predicted values of each level.
         - 'pooling': the values of all levels are pooled and then the metric is
         calculated.
-    levels : str, list, default `None`
+    levels : str, list, default None
         level (`str`) or levels (`list`) at which the forecaster is optimized. 
         If `None`, all levels are taken into account.
-    exog : pandas Series, pandas DataFrame, dict, default `None`
+    exog : pandas Series, pandas DataFrame, dict, default None
         Exogenous variables.
-    n_trials : int, default `10`
+    n_trials : int, default 10
         Number of parameter settings that are sampled in each lag configuration.
-    random_state : int, default `123`
+    random_state : int, default 123
         Sets a seed to the sampling for reproducible output.
-    return_best : bool, default `True`
+    return_best : bool, default True
         Refit the `forecaster` using the best found parameters on the whole data.
-    n_jobs : int, 'auto', default `'auto'`
+    n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
         skforecast.utils.select_n_jobs_backtesting.
-    verbose : bool, default `True`
+    verbose : bool, default True
         Print number of folds used for cv or backtesting.
-    show_progress : bool, default `True`
+    show_progress : bool, default True
         Whether to show a progress bar.
-    suppress_warnings: bool, default `False`
+    suppress_warnings: bool, default False
         If `True`, skforecast warnings will be suppressed during the hyperparameter
         search. See skforecast.exceptions.warn_skforecast_categories for more
         information.
-    output_file : str, default `None`
+    output_file : str, default None
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
         `None`, the results will not be saved to a file.
         **New in version 0.12.0**
-    kwargs_create_study : dict, default `{}`
+    kwargs_create_study : dict, default {}
         Additional keyword arguments (key, value mappings) to pass to optuna.create_study().
         If default, the direction is set to 'minimize' and a TPESampler(seed=123) 
         sampler is used during optimization.
-    kwargs_study_optimize : dict, default `{}`
+    kwargs_study_optimize : dict, default {}
         Additional keyword arguments (key, value mappings) to pass to study.optimize().
 
     Returns
@@ -2075,14 +2101,14 @@ def grid_search_sarimax(
     y: pd.Series,
     cv: TimeSeriesFold,
     param_grid: dict,
-    metric: Union[str, Callable, list],
-    exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
+    metric: str | Callable | list[str | Callable],
+    exog: pd.Series | pd.DataFrame | None = None,
     return_best: bool = True,
-    n_jobs: Union[int, str] = 'auto',
+    n_jobs: int | str = 'auto',
     verbose: bool = True,
     suppress_warnings_fit: bool = False,
     show_progress: bool = True,
-    output_file: Optional[str] = None
+    output_file: str | None = None
 ) -> pd.DataFrame:
     """
     Exhaustive search over specified parameter values for a ForecasterSarimax object.
@@ -2109,23 +2135,23 @@ def grid_search_sarimax(
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
         (Optional) that returns a float.
         - If `list`: List containing multiple strings and/or Callables.
-    exog : pandas Series, pandas DataFrame, default `None`
+    exog : pandas Series, pandas DataFrame, default None
         Exogenous variable/s included as predictor/s. Must have the same
         number of observations as `y` and should be aligned so that y[i] is
         regressed on exog[i].
-    return_best : bool, default `True`
+    return_best : bool, default True
         Refit the `forecaster` using the best found parameters on the whole data.
-    n_jobs : int, 'auto', default `'auto'`
+    n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
         skforecast.utils.select_n_jobs_backtesting.
-    verbose : bool, default `True`
+    verbose : bool, default True
         Print number of folds used for cv or backtesting.
-    suppress_warnings_fit : bool, default `False`
+    suppress_warnings_fit : bool, default False
         If `True`, warnings generated during fitting will be ignored.
-    show_progress : bool, default `True`
+    show_progress : bool, default True
         Whether to show a progress bar.
-    output_file : str, default `None`
+    output_file : str, default None
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
         `None`, the results will not be saved to a file.
@@ -2167,16 +2193,16 @@ def random_search_sarimax(
     y: pd.Series,
     cv: TimeSeriesFold,
     param_distributions: dict,
-    metric: Union[str, Callable, list],
-    exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
+    metric: str | Callable | list[str | Callable],
+    exog: pd.Series | pd.DataFrame | None = None,
     n_iter: int = 10,
     random_state: int = 123,
     return_best: bool = True,
-    n_jobs: Union[int, str] = 'auto',
+    n_jobs: int | str = 'auto',
     verbose: bool = True,
     suppress_warnings_fit: bool = False,
     show_progress: bool = True,
-    output_file: Optional[str] = None
+    output_file: str | None = None
 ) -> pd.DataFrame:
     """
     Random search over specified parameter values or distributions for a Forecaster 
@@ -2203,28 +2229,28 @@ def random_search_sarimax(
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
         (Optional) that returns a float.
         - If `list`: List containing multiple strings and/or Callables.
-    exog : pandas Series, pandas DataFrame, default `None`
+    exog : pandas Series, pandas DataFrame, default None
         Exogenous variable/s included as predictor/s. Must have the same
         number of observations as `y` and should be aligned so that y[i] is
         regressed on exog[i].
-    n_iter : int, default `10`
+    n_iter : int, default 10
         Number of parameter settings that are sampled. 
         n_iter trades off runtime vs quality of the solution.
-    random_state : int, default `123`
+    random_state : int, default 123
         Sets a seed to the random sampling for reproducible output.
-    return_best : bool, default `True`
+    return_best : bool, default True
         Refit the `forecaster` using the best found parameters on the whole data.
-    n_jobs : int, 'auto', default `'auto'`
+    n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
         skforecast.utils.select_n_jobs_backtesting.
-    verbose : bool, default `True`
+    verbose : bool, default True
         Print number of folds used for cv or backtesting.
-    suppress_warnings_fit : bool, default `False`
+    suppress_warnings_fit : bool, default False
         If `True`, warnings generated during fitting will be ignored.
-    show_progress : bool, default `True`
+    show_progress : bool, default True
         Whether to show a progress bar.
-    output_file : str, default `None`
+    output_file : str, default None
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
         `None`, the results will not be saved to a file.
@@ -2266,14 +2292,14 @@ def _evaluate_grid_hyperparameters_sarimax(
     y: pd.Series,
     cv: TimeSeriesFold,
     param_grid: dict,
-    metric: Union[str, Callable, list],
-    exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
+    metric: str | Callable | list[str | Callable],
+    exog: pd.Series | pd.DataFrame | None = None,
     return_best: bool = True,
-    n_jobs: Union[int, str] = 'auto',
+    n_jobs: int | str = 'auto',
     verbose: bool = True,
     suppress_warnings_fit: bool = False,
     show_progress: bool = True,
-    output_file: Optional[str] = None
+    output_file: str | None = None
 ) -> pd.DataFrame:
     """
     Evaluate parameter values for a Forecaster object using time series backtesting.
@@ -2299,23 +2325,23 @@ def _evaluate_grid_hyperparameters_sarimax(
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
         (Optional) that returns a float.
         - If `list`: List containing multiple strings and/or Callables.
-    exog : pandas Series, pandas DataFrame, default `None`
+    exog : pandas Series, pandas DataFrame, default None
         Exogenous variable/s included as predictor/s. Must have the same
         number of observations as `y` and should be aligned so that y[i] is
         regressed on exog[i].
-    return_best : bool, default `True`
+    return_best : bool, default True
         Refit the `forecaster` using the best found parameters on the whole data.
-    n_jobs : int, 'auto', default `'auto'`
+    n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
         skforecast.utils.select_n_jobs_backtesting.
-    verbose : bool, default `True`
+    verbose : bool, default True
         Print number of folds used for cv or backtesting.
-    suppress_warnings_fit : bool, default `False`
+    suppress_warnings_fit : bool, default False
         If `True`, warnings generated during fitting will be ignored.
-    show_progress : bool, default `True`
+    show_progress : bool, default True
         Whether to show a progress bar.
-    output_file : str, default `None`
+    output_file : str, default None
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
         `None`, the results will not be saved to a file.
