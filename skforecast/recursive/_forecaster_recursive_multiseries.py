@@ -917,7 +917,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         list[str],
         list[str],
         dict[str, type],
-        dict[str, np.ndarray],
+        dict[str, pd.Series],
     ]:
         """
         Create training matrices from multiple time series and exogenous
