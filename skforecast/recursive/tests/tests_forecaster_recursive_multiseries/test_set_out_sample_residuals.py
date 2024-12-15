@@ -436,8 +436,8 @@ def test_forecaster_set_outsample_residuals_when_transformer_series_and_diferent
     forecaster = ForecasterRecursiveMultiSeries(
                      regressor          = LinearRegression(),
                      lags               = 5,
-                     differentiation    = differentiation,
                      transformer_series = StandardScaler(),
+                     differentiation    = differentiation
                  )
     forecaster.fit(series=series_train)
     forecaster.set_out_sample_residuals(
@@ -456,7 +456,8 @@ def test_forecaster_set_outsample_residuals_when_transformer_series_and_diferent
     residuals = {}
     residuals['l1'] = y_true['l1'] - y_pred['l1']
     residuals['l2'] = y_true['l2'] - y_pred['l2']
-    residuals['_unknown_level'] = np.concatenate([(y_true['l2'] - y_pred['l2']), (y_true['l1'] - y_pred['l1'])])
+    residuals['_unknown_level'] = np.sort(np.concatenate([(y_true['l2'] - y_pred['l2']), (y_true['l1'] - y_pred['l1'])]))
+    forecaster.out_sample_residuals_['_unknown_level'] = np.sort(forecaster.out_sample_residuals_['_unknown_level'])
 
     for key in residuals.keys():
         np.testing.assert_array_almost_equal(residuals[key], forecaster.out_sample_residuals_[key])

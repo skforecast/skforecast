@@ -635,7 +635,10 @@ def test_predict_output_when_series_and_exog_dict():
     pd.testing.assert_frame_equal(predictions, expected)
 
 
-def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differentiation_is_1():
+@pytest.mark.parametrize("differentiation", 
+                         [1, {'1': 1, '2': 1, '_unknown_level': 1}], 
+                         ids = lambda diff: f'differentiation: {diff}')
+def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differentiation_is_1(differentiation):
     """
     Test predict output when using LinearRegression as regressor and differentiation=1.
     """
@@ -658,23 +661,28 @@ def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differe
 
     steps = len(data_diff.loc[end_train + 1:])
 
-    forecaster_1 = ForecasterRecursiveMultiSeries(regressor=LinearRegression(), lags=15,
-                                                transformer_series=None)
+    forecaster_1 = ForecasterRecursiveMultiSeries(
+        regressor=LinearRegression(), lags=15, transformer_series=None
+    )
     forecaster_1.fit(series=data_diff.loc[:end_train], exog=exog_diff.loc[:end_train])
     predictions_diff = forecaster_1.predict(steps=steps, exog=exog_diff.loc[end_train + 1:])
     # Revert the differentiation
     last_value_train = series.loc[:end_train].iloc[[-1]]
     predictions_1 = pd.concat([last_value_train, predictions_diff]).cumsum()[1:]
 
-    forecaster_2 = ForecasterRecursiveMultiSeries(regressor=LinearRegression(), lags=15, 
-                                                differentiation=1, transformer_series=None)
+    forecaster_2 = ForecasterRecursiveMultiSeries(
+        regressor=LinearRegression(), lags=15, transformer_series=None, differentiation=differentiation, 
+    )
     forecaster_2.fit(series=series.loc[:end_train], exog=exog.loc[:end_train])
     predictions_2 = forecaster_2.predict(steps=steps, exog=exog.loc[end_train + 1:])
 
     pd.testing.assert_frame_equal(predictions_1, predictions_2)
 
 
-def test_predict_output_when_regressor_is_LinearRegression_with_exog_differentiation_is_1_and_transformer_series():
+@pytest.mark.parametrize("differentiation", 
+                         [1, {'1': 1, '2': 1, '_unknown_level': 1}], 
+                         ids = lambda diff: f'differentiation: {diff}')
+def test_predict_output_when_regressor_is_LinearRegression_with_exog_differentiation_is_1_and_transformer_series(differentiation):
     """
     Test predict output when using LinearRegression as regressor and differentiation=1,
     and transformer_series is StandardScaler.
@@ -730,8 +738,9 @@ def test_predict_output_when_regressor_is_LinearRegression_with_exog_differentia
 
     steps = len(series_datetime.loc[end_train:])
 
-    forecaster_1 = ForecasterRecursiveMultiSeries(regressor=LinearRegression(), lags=15,
-                                                transformer_series = None)
+    forecaster_1 = ForecasterRecursiveMultiSeries(
+        regressor=LinearRegression(), lags=15, transformer_series=None
+    )
     forecaster_1.fit(series=series_dict_diff, exog=exog_diff)
     predictions_diff = forecaster_1.predict(steps=steps, exog=exog_pred)
     # Revert the differentiation
@@ -740,15 +749,19 @@ def test_predict_output_when_regressor_is_LinearRegression_with_exog_differentia
     for k in scaler_dict.keys():
         predictions_1[k] = scaler_dict[k].inverse_transform(predictions_1[k].to_numpy().reshape(-1, 1))
     
-    forecaster_2 = ForecasterRecursiveMultiSeries(regressor=LinearRegression(), lags=15, 
-                                                differentiation=1, transformer_series = StandardScaler())
+    forecaster_2 = ForecasterRecursiveMultiSeries(
+        regressor=LinearRegression(), lags=15, transformer_series=StandardScaler(), differentiation=differentiation
+    )
     forecaster_2.fit(series=series_dict_datetime, exog=exog_dict_datetime)
     predictions_2 = forecaster_2.predict(steps=steps, exog=exog_pred)
 
     pd.testing.assert_frame_equal(predictions_1.asfreq('D'), predictions_2)
 
 
-def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differentiation_is_2():
+@pytest.mark.parametrize("differentiation", 
+                         [2, {'1': 2, '2': 2, '_unknown_level': 2}], 
+                         ids = lambda diff: f'differentiation: {diff}')
+def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differentiation_is_2(differentiation):
     """
     Test predict output when using LinearRegression as regressor and differentiation=2.
     """
@@ -784,8 +797,9 @@ def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differe
     end_train = '2003-01-30 23:59:00'
     steps = len(series_dt.loc[end_train:])
 
-    forecaster_1 = ForecasterRecursiveMultiSeries(regressor=LinearRegression(), lags=15,
-                                                transformer_series=None)
+    forecaster_1 = ForecasterRecursiveMultiSeries(
+        regressor=LinearRegression(), lags=15, transformer_series=None
+    )
     forecaster_1.fit(series=df_diff_2.loc[:end_train], exog=exog_diff_2.loc[:end_train])
     predictions_diff_2 = forecaster_1.predict(steps=steps, exog=exog_diff_2.loc[end_train:])
     
@@ -795,8 +809,9 @@ def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differe
     last_value_train = series_dt.loc[:end_train].iloc[[-1]]
     predictions_1 = pd.concat([last_value_train, predictions_diff_1]).cumsum()[1:]
 
-    forecaster_2 = ForecasterRecursiveMultiSeries(regressor=LinearRegression(), lags=15, 
-                                                differentiation=2, transformer_series=None)
+    forecaster_2 = ForecasterRecursiveMultiSeries(
+        regressor=LinearRegression(), lags=15, transformer_series=None, differentiation=differentiation
+    )
     forecaster_2.fit(series=series_dt.loc[:end_train], exog=exog.loc[:end_train])
     predictions_2 = forecaster_2.predict(steps=steps, exog=exog.loc[end_train:])
 
@@ -815,9 +830,9 @@ def test_predict_output_when_series_and_exog_dict_encoding_None_unknown_level():
                      lags               = [1, 7, 14],
                      encoding           = None,
                      dropna_from_series = False,
-                     differentiation    = 1,
                      transformer_series = None,
-                     transformer_exog   = StandardScaler()
+                     transformer_exog   = StandardScaler(),
+                     differentiation    = 1
                  )
     forecaster.fit(
         series=series_dict_train, exog=exog_dict_train, suppress_warnings=True
