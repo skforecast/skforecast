@@ -623,43 +623,43 @@ def check_exog_dtypes(
     if isinstance(exog, pd.DataFrame):
         if not exog.select_dtypes(exclude=[np.number, 'category']).columns.empty:
             warnings.warn(
-                (f"{series_id} may contain only `int`, `float` or `category` dtypes. "
-                 f"Most machine learning models do not allow other types of values. "
-                 f"Fitting the forecaster may fail."), 
-                 DataTypeWarning
+                f"{series_id} may contain only `int`, `float` or `category` dtypes. "
+                f"Most machine learning models do not allow other types of values. "
+                f"Fitting the forecaster may fail.", 
+                DataTypeWarning
             )
         for col in exog.select_dtypes(include='category'):
             if exog[col].cat.categories.dtype not in [int, np.int32, np.int64]:
                 raise TypeError(
-                    ("Categorical dtypes in exog must contain only integer values. "
-                     "See skforecast docs for more info about how to include "
-                     "categorical features https://skforecast.org/"
-                     "latest/user_guides/categorical-features.html")
+                    "Categorical dtypes in exog must contain only integer values. "
+                    "See skforecast docs for more info about how to include "
+                    "categorical features https://skforecast.org/"
+                    "latest/user_guides/categorical-features.html"
                 )
     else:
         if exog.dtype.name not in ['int', 'int8', 'int16', 'int32', 'int64', 'float', 
         'float16', 'float32', 'float64', 'uint8', 'uint16', 'uint32', 'uint64', 'category']:
             warnings.warn(
-                (f"{series_id} may contain only `int`, `float` or `category` dtypes. Most "
-                 f"machine learning models do not allow other types of values. "
-                 f"Fitting the forecaster may fail."), 
-                 DataTypeWarning
+                f"{series_id} may contain only `int`, `float` or `category` dtypes. Most "
+                f"machine learning models do not allow other types of values. "
+                f"Fitting the forecaster may fail.", 
+                DataTypeWarning
             )
         if exog.dtype.name == 'category' and exog.cat.categories.dtype not in [int,
         np.int32, np.int64]:
             raise TypeError(
-                ("Categorical dtypes in exog must contain only integer values. "
-                 "See skforecast docs for more info about how to include "
-                 "categorical features https://skforecast.org/"
-                 "latest/user_guides/categorical-features.html")
+                "Categorical dtypes in exog must contain only integer values. "
+                "See skforecast docs for more info about how to include "
+                "categorical features https://skforecast.org/"
+                "latest/user_guides/categorical-features.html"
             )
          
     return
 
 
 def check_interval(
-    interval: Union[list, tuple] = None,
-    quantiles: Union[list, tuple] = None,
+    interval: list[float] | tuple[float] | None = None,
+    quantiles: list[float] | tuple[float] | None = None,
     alpha: float = None
 ) -> None:
     """

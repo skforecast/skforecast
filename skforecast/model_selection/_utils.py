@@ -5,7 +5,8 @@
 ################################################################################
 # coding=utf-8
 
-from typing import Union, Tuple, Optional, Callable, Generator
+from __future__ import annotations
+from typing import Callable, Generator
 import warnings
 import numpy as np
 import pandas as pd
@@ -22,8 +23,12 @@ from ..utils import check_interval
 
 def initialize_lags_grid(
     forecaster: object, 
-    lags_grid: Optional[Union[list, dict]] = None
-) -> Tuple[dict, str]:
+    lags_grid: (
+        list[int | list[int] | np.ndarray[int] | range[int]]
+        | dict[str, list[int | list[int] | np.ndarray[int] | range[int]]]
+        | None
+    ) = None,
+) -> tuple[dict[str, int], str]:
     """
     Initialize lags grid and lags label for model selection. 
 
@@ -32,7 +37,7 @@ def initialize_lags_grid(
     forecaster : Forecaster
         Forecaster model. ForecasterRecursive, ForecasterDirect, 
         ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate.
-    lags_grid : list, dict, default `None`
+    lags_grid : list, dict, default None
         Lists of lags to try, containing int, lists, numpy ndarray, or range 
         objects. If `dict`, the keys are used as labels in the `results` 
         DataFrame, and the values are used as the lists of lags to try.
@@ -48,8 +53,8 @@ def initialize_lags_grid(
 
     if not isinstance(lags_grid, (list, dict, type(None))):
         raise TypeError(
-            (f"`lags_grid` argument must be a list, dict or None. "
-             f"Got {type(lags_grid)}.")
+            f"`lags_grid` argument must be a list, dict or None. "
+            f"Got {type(lags_grid)}."
         )
 
     lags_label = 'values'
@@ -67,18 +72,18 @@ def initialize_lags_grid(
 def check_backtesting_input(
     forecaster: object,
     cv: object,
-    metric: Union[str, Callable, list],
+    metric: str | Callable | list[str | Callable],
     add_aggregated_metric: bool = True,
-    y: Optional[pd.Series] = None,
-    series: Optional[Union[pd.DataFrame, dict]] = None,
-    exog: Optional[Union[pd.Series, pd.DataFrame, dict]] = None,
-    interval: Optional[list] = None,
-    alpha: Optional[float] = None,
+    y: pd.Series | None = None,
+    series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame] = None,
+    exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
+    interval: list[float] | tuple[float] | str | object | None = None,
+    alpha: float | None = None,
     n_boot: int = 250,
     random_state: int = 123,
     use_in_sample_residuals: bool = True,
     use_binned_residuals: bool = False,
-    n_jobs: Union[int, str] = 'auto',
+    n_jobs: int | str = 'auto',
     show_progress: bool = True,
     suppress_warnings: bool = False,
     suppress_warnings_fit: bool = False
@@ -95,19 +100,28 @@ def check_backtesting_input(
         TimeSeriesFold object with the information needed to split the data into folds.
     metric : str, Callable, list
         Metric used to quantify the goodness of fit of the model.
-    add_aggregated_metric : bool, default `True`
+    add_aggregated_metric : bool, default True
         If `True`, the aggregated metrics (average, weighted average and pooling)
         over all levels are also returned (only multiseries).
-    y : pandas Series, default `None`
+    y : pandas Series, default None
         Training time series for uni-series forecasters.
-    series : pandas DataFrame, dict, default `None`
+    series : pandas DataFrame, dict, default None
         Training time series for multi-series forecasters.
-    exog : pandas Series, pandas DataFrame, dict, default `None`
+    exog : pandas Series, pandas DataFrame, dict, default None
         Exogenous variables.
-    interval : list, tuple, default `None`
-        Confidence of the prediction interval estimated. Sequence of percentiles
-        to compute, which must be between 0 and 100 inclusive.
-    alpha : float, default `None`
+    interval : list, tuple, default None
+        Specifies whether probabilistic predictions should be estimated and the 
+        method to use. The following options are supported:
+
+        - If `list`or `tuple`: Sequence of percentiles to compute, each value must 
+        be between 0 and 100 inclusive. For example, a 95% confidence interval can 
+        be specified as `interval = [2.5, 97.5]` or quantiles 0.1, 0.5 and 0.9 as
+        `interval = [10, 50, 90]`.
+        - If 'bootstrapping' (str): `n_boot` bootstrapping predictions will be generated.
+        - If scipy.stats distribution object, the distribution parameters will
+        be estimated for each prediction.
+        - If None, no probabilistic predictions are estimated.
+    alpha : float, default None
         The confidence intervals used in ForecasterSarimax are (1 - alpha) %. 
     n_boot : int, default `250`
         Number of bootstrapping iterations used to estimate prediction
@@ -115,11 +129,11 @@ def check_backtesting_input(
     random_state : int, default `123`
         Sets a seed to the random generator, so that boot intervals are always 
         deterministic.
-    use_in_sample_residuals : bool, default `True`
+    use_in_sample_residuals : bool, default True
         If `True`, residuals from the training data are used as proxy of prediction 
         error to create prediction intervals.  If `False`, out_sample_residuals 
         are used if they are already stored inside the forecaster.
-    use_binned_residuals : bool, default `False`
+    use_binned_residuals : bool, default False
         If `True`, residuals used in each bootstrapping iteration are selected
         conditioning on the predicted values. If `False`, residuals are selected
         randomly without conditioning on the predicted values.
@@ -128,13 +142,13 @@ def check_backtesting_input(
         set to the number of cores. If 'auto', `n_jobs` is set using the fuction
         skforecast.utils.select_n_jobs_fit_forecaster.
         **New in version 0.9.0**
-    show_progress : bool, default `True`
+    show_progress : bool, default True
         Whether to show a progress bar.
-    suppress_warnings: bool, default `False`
+    suppress_warnings: bool, default False
         If `True`, skforecast warnings will be suppressed during the backtesting 
         process. See skforecast.exceptions.warn_skforecast_categories for more
         information.
-    suppress_warnings_fit : bool, default `False`
+    suppress_warnings_fit : bool, default False
         If `True`, warnings generated during fitting will be ignored. Only 
         `ForecasterSarimax`.
 
@@ -168,6 +182,16 @@ def check_backtesting_input(
     ]
     forecasters_multi_dict = [
         "ForecasterRecursiveMultiSeries"
+    ]
+    forecasters_not_interval = [
+        "ForecasterEquivalentDate",
+        "ForecasterRnn"
+    ]
+    forecasters_bootstrapping = [
+        "ForecasterRecursive",
+        "ForecasterDirect",
+        "ForecasterRecursiveMultiSeries",
+        "ForecasterDirectMultiVariate",
     ]
 
     if forecaster_name in forecasters_uni:
@@ -340,7 +364,32 @@ def check_backtesting_input(
         raise TypeError("`suppress_warnings_fit` must be a boolean: `True`, `False`.")
 
     if interval is not None or alpha is not None:
-        check_interval(interval=interval, alpha=alpha)
+        if forecaster_name in forecasters_not_interval:
+            raise ValueError(
+                f"Interval predictions are not allowed for {forecaster_name}. "
+                f"Set `interval` and `alpha` to `None`."
+            )
+        
+        if forecaster_name in forecasters_bootstrapping:
+            if (
+                not isinstance(interval, (list, tuple, str))
+                and (not hasattr(interval, "_pdf") or not callable(getattr(interval, "fit", None)))
+            ):                
+                raise TypeError(
+                    f"`interval` must be a list or tuple of floats, a scipy.stats "
+                    f"distribution object (with methods `_pdf` and `fit`) or "
+                    f"the string 'bootstrapping'. Got {type(interval)}."
+                )
+            if isinstance(interval, (list, tuple)):
+                check_interval(interval=interval, alpha=alpha)
+            elif isinstance(interval, str):
+                if interval != 'bootstrapping':
+                    raise ValueError(
+                        f"When `interval` is a string, it must be 'bootstrapping'."
+                        f"Got {interval}."
+                    )
+        else:
+            check_interval(interval=interval, alpha=alpha)
 
     if not allow_incomplete_fold and data_length - (initial_train_size + gap) < steps:
         raise ValueError(
@@ -353,7 +402,7 @@ def check_backtesting_input(
 
 def select_n_jobs_backtesting(
     forecaster: object,
-    refit: Union[bool, int]
+    refit: bool | int
 ) -> int:
     """
     Select the optimal number of jobs to use in the backtesting process. This
@@ -436,14 +485,15 @@ def select_n_jobs_backtesting(
     return n_jobs
 
 
+# TODO: Remove y, it is not used.
 def _calculate_metrics_one_step_ahead(
     forecaster: object,
     y: pd.Series,
     metrics: list,
     X_train: pd.DataFrame,
-    y_train: Union[pd.Series, dict],
+    y_train: pd.Series | dict[int, pd.Series],
     X_test: pd.DataFrame,
-    y_test: Union[pd.Series, dict]
+    y_test: pd.Series | dict[int, pd.Series]
 ) -> list:
     """
     Calculate metrics when predictions are one-step-ahead. When forecaster is
@@ -459,11 +509,11 @@ def _calculate_metrics_one_step_ahead(
         List of metrics.
     X_train : pandas DataFrame
         Predictor values used to train the model.
-    y_train : pandas Series
+    y_train : pandas Series, dict
         Target values related to each row of `X_train`.
     X_test : pandas DataFrame
         Predictor values used to test the model.
-    y_test : pandas Series
+    y_test : pandas Series, dict
         Target values related to each row of `X_test`.
 
     Returns
@@ -518,8 +568,8 @@ def _calculate_metrics_one_step_ahead(
 
 def _initialize_levels_model_selection_multiseries(
     forecaster: object, 
-    series: Union[pd.DataFrame, dict],
-    levels: Optional[Union[str, list]] = None
+    series:  pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
+    levels: str | list | None = None
 ) -> list:
     """
     Initialize levels for model_selection multi-series functions.
@@ -530,7 +580,7 @@ def _initialize_levels_model_selection_multiseries(
         Forecaster model.
     series : pandas DataFrame, dict
         Training time series.
-    levels : str, list, default `None`
+    levels : str, list, default None
         level (`str`) or levels (`list`) at which the forecaster is optimized. 
         If `None`, all levels are taken into account. The resulting metric will be
         the average of the optimization of all levels.
@@ -550,20 +600,20 @@ def _initialize_levels_model_selection_multiseries(
     if type(forecaster).__name__ in multi_series_forecasters_with_levels  \
         and not isinstance(levels, (str, list, type(None))):
         raise TypeError(
-            (f"`levels` must be a `list` of column names, a `str` of a column "
-             f"name or `None` when using a forecaster of type "
-             f"{multi_series_forecasters_with_levels}. If the forecaster is of "
-             f"type `ForecasterDirectMultiVariate`, this argument is ignored.")
+            f"`levels` must be a `list` of column names, a `str` of a column "
+            f"name or `None` when using a forecaster of type "
+            f"{multi_series_forecasters_with_levels}. If the forecaster is of "
+            f"type `ForecasterDirectMultiVariate`, this argument is ignored."
         )
 
     if type(forecaster).__name__ == 'ForecasterDirectMultiVariate':
         if levels and levels != forecaster.level and levels != [forecaster.level]:
             warnings.warn(
-                (f"`levels` argument have no use when the forecaster is of type "
-                 f"`ForecasterDirectMultiVariate`. The level of this forecaster "
-                 f"is '{forecaster.level}', to predict another level, change "
-                 f"the `level` argument when initializing the forecaster. \n"),
-                 IgnoredArgumentWarning
+                f"`levels` argument have no use when the forecaster is of type "
+                f"`ForecasterDirectMultiVariate`. The level of this forecaster "
+                f"is '{forecaster.level}', to predict another level, change "
+                f"the `level` argument when initializing the forecaster. \n",
+                IgnoredArgumentWarning
             )
         levels = [forecaster.level]
     else:
@@ -580,51 +630,51 @@ def _initialize_levels_model_selection_multiseries(
 
 
 def _extract_data_folds_multiseries(
-    series: Union[pd.Series, pd.DataFrame, dict],
+    series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
     folds: list,
-    span_index: Union[pd.DatetimeIndex, pd.RangeIndex],
+    span_index: pd.DatetimeIndex | pd.RangeIndex,
     window_size: int,
-    exog: Optional[Union[pd.Series, pd.DataFrame, dict]] = None,
+    exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
     dropna_last_window: bool = False,
     externally_fitted: bool = False
 ) -> Generator[
-        Tuple[
-            Union[pd.Series, pd.DataFrame, dict],
+        tuple[
+            pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
             pd.DataFrame,
-            list,
-            Optional[Union[pd.Series, pd.DataFrame, dict]],
-            Optional[Union[pd.Series, pd.DataFrame, dict]],
-            list
+            list[str],
+            pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None,
+            pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None,
+            list[list[int]]
         ],
         None,
         None
     ]:
     """
-    Select the data from series and exog that corresponds to each fold created using the
-    skforecast.model_selection._create_backtesting_folds function.
+    Select the data from series and exog that corresponds to each fold created 
+    using the split method of the OneStepAheadFold or TimeSeriesFold objects.
 
     Parameters
     ----------
-    series : pandas Series, pandas DataFrame, dict
+    series : pandas DataFrame, dict
         Time series.
     folds : list
-        Folds created using the skforecast.model_selection._create_backtesting_folds
-        function.
+        Folds created using the split method of the OneStepAheadFold or 
+        TimeSeriesFold objects.
     span_index : pandas DatetimeIndex, pandas RangeIndex
         Full index from the minimum to the maximum index among all series.
     window_size : int
         Size of the window needed to create the predictors.
-    exog : pandas Series, pandas DataFrame, dict, default `None`
+    exog : pandas Series, pandas DataFrame, dict, default None
         Exogenous variables.
-    dropna_last_window : bool, default `False`
+    dropna_last_window : bool, default False
         If `True`, drop the columns of the last window that have NaN values.
-    externally_fitted : bool, default `False`
+    externally_fitted : bool, default False
         Flag indicating whether the forecaster is already trained. Only used when 
         `initial_train_size` is None and `refit` is False.
 
     Yield
     -----
-    series_train : pandas Series, pandas DataFrame, dict
+    series_train : pandas DataFrame, dict
         Time series corresponding to the training set of the fold.
     series_last_window: pandas DataFrame
         Time series corresponding to the last window of the fold.
@@ -635,7 +685,7 @@ def _extract_data_folds_multiseries(
     exog_test: pandas Series, pandas DataFrame, dict, None
         Exogenous variable corresponding to the test set of the fold.
     fold: list
-        Fold created using the skforecast.model_selection._create_backtesting_folds
+        List containing the indexes of that fold.
 
     """
 
@@ -732,10 +782,10 @@ def _extract_data_folds_multiseries(
 
 
 def _calculate_metrics_backtesting_multiseries(
-    series: Union[pd.DataFrame, dict],
+    series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
     predictions: pd.DataFrame,
-    folds: Union[list, tqdm],
-    span_index: Union[pd.DatetimeIndex, pd.RangeIndex],
+    folds: list[list[int]] | tqdm,
+    span_index: pd.DatetimeIndex | pd.RangeIndex,
     window_size: int,
     metrics: list,
     levels: list,
@@ -769,7 +819,7 @@ def _calculate_metrics_backtesting_multiseries(
         List of metrics to calculate.
     levels : list
         Levels to calculate the metrics.
-    add_aggregated_metric : bool, default `True`
+    add_aggregated_metric : bool, default True
         If `True`, and multiple series (`levels`) are predicted, the aggregated
         metrics (average, weighted average and pooled) are also returned.
 
@@ -934,17 +984,17 @@ def _calculate_metrics_backtesting_multiseries(
 
 def _predict_and_calculate_metrics_one_step_ahead_multiseries(
     forecaster: object,
-    series: Union[pd.DataFrame, dict],
+    series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
     X_train: pd.DataFrame,
-    y_train: Union[pd.Series, dict],
+    y_train: pd.Series | dict[int, pd.Series],
     X_test: pd.DataFrame,
-    y_test: Union[pd.Series, dict],
+    y_test: pd.Series | dict[int, pd.Series],
     X_train_encoding: pd.Series,
     X_test_encoding: pd.Series,
-    levels: list,
-    metrics: list,
+    levels: list[str],
+    metrics: list[str | Callable],
     add_aggregated_metric: bool = True
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """   
     One-step-ahead predictions and metrics for each level and also for all levels
     aggregated using average, weighted average or pooling.
@@ -979,7 +1029,7 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
         Levels to calculate the metrics.
     metrics : list
         List of metrics to calculate.
-    add_aggregated_metric : bool, default `True`
+    add_aggregated_metric : bool, default True
         If `True`, and multiple series (`levels`) are predicted, the aggregated
         metrics (average, weighted average and pooled) are also returned.
 
