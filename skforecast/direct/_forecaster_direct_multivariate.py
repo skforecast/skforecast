@@ -2195,8 +2195,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         
         Parameters
         ----------
-        distribution : Object
-            A distribution object from scipy.stats.
+        distribution : object
+            A distribution object from scipy.stats with methods `_pdf` and `fit`. 
+            For example scipy.stats.norm.
         steps : int, list, None, default None
             Predict n steps. The value of `steps` must be less than or equal to the 
             value of steps defined when initializing the forecaster. Starts at 1.
@@ -2238,6 +2239,12 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             Distribution parameters estimated for each step.
 
         """
+
+        if not hasattr(distribution, "_pdf") or not callable(getattr(distribution, "fit", None)):
+            raise TypeError(
+                "`distribution` must be a valid probability distribution object "
+                "from scipy.stats, with methods `_pdf` and `fit`."
+            )
 
         set_skforecast_warnings(suppress_warnings, action='ignore')
         

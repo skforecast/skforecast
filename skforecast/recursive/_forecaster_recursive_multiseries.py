@@ -322,7 +322,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
     def __init__(
         self,
         regressor: object,
-        lags: int | list[int] | np.ndarray[int] | range | None = None,
+        lags: int | list[int] | np.ndarray[int] | range[int] | None = None,
         window_features: object | list[object] | None = None,
         encoding: str | None = 'ordinal',
         transformer_series: object | dict[str, object] | None = None,
@@ -2686,8 +2686,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         ----------
         steps : int
             Number of future steps predicted.
-        distribution : Object
-            A distribution object from scipy.stats. For example scipy.stats.norm.
+        distribution : object
+            A distribution object from scipy.stats with methods `_pdf` and `fit`. 
+            For example scipy.stats.norm.
         levels : str, list, default None
             Time series to be predicted. If `None` all levels whose last window
             ends at the same datetime index will be predicted together.
@@ -2721,6 +2722,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             Distribution parameters estimated for each step and level.
 
         """
+
+        if not hasattr(distribution, "_pdf") or not callable(getattr(distribution, "fit", None)):
+            raise TypeError(
+                "`distribution` must be a valid probability distribution object "
+                "from scipy.stats, with methods `_pdf` and `fit`."
+            )
 
         set_skforecast_warnings(suppress_warnings, action='ignore')
 
@@ -2805,7 +2812,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
     def set_lags(
         self, 
-        lags: int | list[int] | np.ndarray[int] | range | None = None
+        lags: int | list[int] | np.ndarray[int] | range[int] | None = None
     ) -> None:
         """
         Set new value to the attribute `lags`. Attributes `lags_names`, 
