@@ -5,7 +5,8 @@
 ################################################################################
 # coding=utf-8
 
-from typing import Union, Callable
+from __future__ import annotations
+from typing import Callable
 import numpy as np
 import pandas as pd
 import inspect
@@ -99,9 +100,9 @@ def add_y_train_argument(func: Callable) -> Callable:
 
 
 def mean_absolute_scaled_error(
-    y_true: Union[pd.Series, np.ndarray],
-    y_pred: Union[pd.Series, np.ndarray],
-    y_train: Union[list, pd.Series, np.ndarray],
+    y_true: pd.Series | np.ndarray,
+    y_pred: pd.Series | np.ndarray,
+    y_train: list | pd.Series | np.ndarray,
 ) -> float:
     """
     Mean Absolute Scaled Error (MASE)
@@ -162,9 +163,9 @@ def mean_absolute_scaled_error(
 
 
 def root_mean_squared_scaled_error(
-    y_true: Union[pd.Series, np.ndarray],
-    y_pred: Union[pd.Series, np.ndarray],
-    y_train: Union[list, pd.Series, np.ndarray],
+    y_true: pd.Series | np.ndarray,
+    y_pred: pd.Series | np.ndarray,
+    y_train: list | pd.Series | np.ndarray,
 ) -> float:
     """
     Root Mean Squared Scaled Error (RMSSE)
@@ -224,7 +225,7 @@ def root_mean_squared_scaled_error(
     return rmsse
 
 
-def crps_from_predictions(y_true: float, y_pred: np.ndarray) -> float:
+def crps_from_predictions(y_true: float | int, y_pred: np.ndarray) -> float:
     """
     Compute the Continuous Ranked Probability Score (CRPS) for a set of
     forecast realizations, for example from bootstrapping. The CRPS compares
@@ -244,20 +245,18 @@ def crps_from_predictions(y_true: float, y_pred: np.ndarray) -> float:
     float
         The CRPS score.
     """
-    # Sort forecasted values
-    y_pred = np.sort(y_pred)
+    if not isinstance(y_pred, np.ndarray) or y_pred.ndim != 1:
+        raise TypeError("`y_pred` must be a 1D numpy array.")
     
-    # Define the grid for integration
+    if not isinstance(y_true, (float, int)):
+        raise TypeError("`y_true` must be a float or integer.")
+
+    y_pred = np.sort(y_pred)
+    # Define the grid for integration including the true value
     grid = np.concatenate(([y_true], y_pred))
     grid = np.sort(grid)
-    
-    # Calculate ECDF at grid points
     cdf_values = np.searchsorted(y_pred, grid, side='right') / len(y_pred)
-    
-    # Indicator function for true value
     indicator = grid >= y_true
-    
-    # CRPS computation: Numerical integration using the grid
     diffs = np.diff(grid)
     crps = np.sum(diffs * (cdf_values[:-1] - indicator[:-1])**2)
 
@@ -265,8 +264,8 @@ def crps_from_predictions(y_true: float, y_pred: np.ndarray) -> float:
 
 
 def crps_from_quantiles(
-    true_value: float,
-    predicted_quantiles: np.ndarray,
+    y_true: float,
+    pred_quantiles: np.ndarray,
     quantile_levels: np.ndarray,
     ):
     """
@@ -276,9 +275,9 @@ def crps_from_quantiles(
 
     Parameters
     ----------
-    true_value : float
+    y_true : float
         The true value of the random variable.
-    predicted_quantiles : numpy ndarray
+    pred_quantiles : numpy ndarray
         The predicted quantile values.
     quantile_levels : numpy ndarray
         The quantile levels corresponding to the predicted quantiles.
@@ -288,26 +287,35 @@ def crps_from_quantiles(
     float
         The CRPS score.
     """
-    if len(predicted_quantiles) != len(quantile_levels):
+    if not isinstance(y_true, (float, int)):
+        raise TypeError("`y_true` must be a float or integer.")
+
+    if not isinstance(pred_quantiles, np.ndarray) or pred_quantiles.ndim != 1:
+        raise TypeError("`pred_quantiles` must be a 1D numpy array.")
+    
+    if not isinstance(quantile_levels, np.ndarray) or quantile_levels.ndim != 1:
+        raise TypeError("`quantile_levels` must be a 1D numpy array.")
+    
+    if len(pred_quantiles) != len(quantile_levels):
         raise ValueError(
             "The number of predicted quantiles and quantile levels must be equal."
         )
 
-    sorted_indices = np.argsort(predicted_quantiles)
-    predicted_quantiles = predicted_quantiles[sorted_indices]
+    sorted_indices = np.argsort(pred_quantiles)
+    pred_quantiles = pred_quantiles[sorted_indices]
     quantile_levels = quantile_levels[sorted_indices]
 
     # Define the empirical CDF function using interpolation
     def empirical_cdf(x):
-        return np.interp(x, predicted_quantiles, quantile_levels, left=0.0, right=1.0)
+        return np.interp(x, pred_quantiles, quantile_levels, left=0.0, right=1.0)
 
     # Define the CRPS integrand
     def crps_integrand(x):
-        return (empirical_cdf(x) - (x >= true_value)) ** 2
+        return (empirical_cdf(x) - (x >= y_true)) ** 2
 
     # Integration bounds: Extend slightly beyond predicted quantiles
-    xmin = np.min(predicted_quantiles) * 0.9
-    xmax = np.max(predicted_quantiles) * 1.1
+    xmin = np.min(pred_quantiles) * 0.9
+    xmax = np.max(pred_quantiles) * 1.1
 
     # Create a fine grid of x values for integration
     x_values = np.linspace(xmin, xmax, 1000)
