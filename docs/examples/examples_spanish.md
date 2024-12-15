@@ -41,6 +41,8 @@ Para usuarios experimentados que buscan profundizar en sus habilidades de foreca
 
 <i class="fa-light fa-chart-line fa" style="font-size: 25px; color:#f26e1d;"></i>  [Forecasting probabilístico](https://cienciadedatos.net/documentos/py42-forecasting-probabilistico.html)
 
+<i class="fa-light fa-chart-line fa" style="font-size: 25px; color:rgb(128, 29, 242);"></i>  [Forecasting probabilístico: intervalos de predicción para forecasting multi-step](https://cienciadedatos.net/documentos/py60-forecasting-probabilistico-intervalos-prediccion-forecasting-multi-step.html)
+
 <i class="fa-solid fa-arrow-trend-up" style="font-size: 25px; color: #fbbb09;"></i> [Modelar series temporales con tendencia utilizando modelos de árboles](https://cienciadedatos.net/documentos/py49-modelar-tendencia-en-series-temporales-modelos-de-arboles.html)
 
 <i class="fa-solid fa-magnifying-glass" style="font-size: 25px; color:purple;"></i> [Forecasting de series incompletas con valores faltantes](https://www.cienciadedatos.net/documentos/py46-forecasting-series-temporales-incompletas.html)

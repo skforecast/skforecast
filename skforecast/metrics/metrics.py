@@ -325,3 +325,25 @@ def crps_from_quantiles(
     crps = np.trapz(integrand_values, x_values)
 
     return crps
+
+
+def coverage(y: np.ndarray, lower_bound: np.ndarray, upper_bound: np.ndarray) -> float:
+    """
+    Calculate coverage of a given interval
+    """
+
+    if not isinstance(y, np.ndarray) or y.ndim != 1:
+        raise TypeError("`y` must be a 1D numpy array.")
+    
+    if not isinstance(lower_bound, np.ndarray) or lower_bound.ndim != 1:
+        raise TypeError("`lower_bound` must be a 1D numpy array.")
+    
+    if not isinstance(upper_bound, np.ndarray) or upper_bound.ndim != 1:
+        raise TypeError("`upper_bound` must be a 1D numpy array.")
+    
+    if y.shape != lower_bound.shape or y.shape != upper_bound.shape:
+        raise TypeError("`y`, `lower_bound`, and `upper_bound` must have the same shape.")
+    
+    coverage = np.mean(np.logical_and(y >= lower_bound, y <= upper_bound))
+
+    return coverage

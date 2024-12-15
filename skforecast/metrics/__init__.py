@@ -4,5 +4,6 @@ from .metrics import (
     add_y_train_argument,
     crps_from_predictions,
     crps_from_quantiles,
+    coverage,
     _get_metric,
 )

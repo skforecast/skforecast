@@ -18,6 +18,8 @@ The main changes in this release are:
 
 + Functions `crps_from_predictions` and `crps_from_quantiles` in module `metrics` to calculate the Continuous Ranked Probability Score (CRPS).
 
++ Function `coverage` in module `metrics` to calculate the coverage of the predicted intervals.
+
 **Changed**
 
 + <code>[ForecasterAutoregCustom]</code> and <code>[ForecasterAutoregMultiSeriesCustom]</code> has been deleted (deprecated since skforecast 0.14.0). Window features can be added using the `window_features` argument in the <code>[ForecasterRecursive]</code> and <code>[ForecasterRecursiveMultiSeries]</code>.
