@@ -244,6 +244,7 @@ def crps_from_predictions(y_true: float | int, y_pred: np.ndarray) -> float:
     -------
     float
         The CRPS score.
+        
     """
     if not isinstance(y_pred, np.ndarray) or y_pred.ndim != 1:
         raise TypeError("`y_pred` must be a 1D numpy array.")
@@ -286,6 +287,7 @@ def crps_from_quantiles(
     -------
     float
         The CRPS score.
+
     """
     if not isinstance(y_true, (float, int)):
         raise TypeError("`y_true` must be a float or integer.")
@@ -327,13 +329,28 @@ def crps_from_quantiles(
     return crps
 
 
-def coverage(y: np.ndarray, lower_bound: np.ndarray, upper_bound: np.ndarray) -> float:
+def coverage(y_true: np.ndarray, lower_bound: np.ndarray, upper_bound: np.ndarray) -> float:
     """
-    Calculate coverage of a given interval
-    """
+    Calculate coverage of a given interval as the proportion of true values
+    that fall within the interval.
 
-    if not isinstance(y, np.ndarray) or y.ndim != 1:
-        raise TypeError("`y` must be a 1D numpy array.")
+    Parameters
+    ----------
+    y_true : numpy ndarray
+        True values of the target variable.
+    lower_bound : numpy ndarray
+        Lower bound of the interval.
+    upper_bound : numpy ndarray
+        Upper bound of the interval.
+
+    Returns
+    -------
+    coverage : float
+        Coverage of the interval.
+
+    """
+    if not isinstance(y_true, np.ndarray) or y_true.ndim != 1:
+        raise TypeError("`y_true` must be a 1D numpy array.")
     
     if not isinstance(lower_bound, np.ndarray) or lower_bound.ndim != 1:
         raise TypeError("`lower_bound` must be a 1D numpy array.")
@@ -341,9 +358,9 @@ def coverage(y: np.ndarray, lower_bound: np.ndarray, upper_bound: np.ndarray) ->
     if not isinstance(upper_bound, np.ndarray) or upper_bound.ndim != 1:
         raise TypeError("`upper_bound` must be a 1D numpy array.")
     
-    if y.shape != lower_bound.shape or y.shape != upper_bound.shape:
-        raise TypeError("`y`, `lower_bound` and `upper_bound` must have the same shape.")
+    if y_true.shape != lower_bound.shape or y_true.shape != upper_bound.shape:
+        raise TypeError("`y_true`, `lower_bound` and `upper_bound` must have the same shape.")
     
-    coverage = np.mean(np.logical_and(y >= lower_bound, y <= upper_bound))
+    coverage = np.mean(np.logical_and(y_true >= lower_bound, y_true <= upper_bound))
 
     return coverage
