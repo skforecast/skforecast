@@ -1084,6 +1084,22 @@ def test_check_backtesting_input_raises_when_interval_not_None_and_forecaster_bo
     with pytest.raises(TypeError, match = err_msg):
         check_backtesting_input(**kwargs)
 
+    kwargs['interval'] = ['10', '90']
+    err_msg = re.escape(
+        f"`interval` must be a list or tuple of floats. "
+        f"Got {type('10')} in {kwargs['interval']}."
+    )
+    with pytest.raises(TypeError, match = err_msg):
+        check_backtesting_input(**kwargs)
+
+    kwargs['interval'] = [0, 100, 101]
+    err_msg = re.escape(
+        "When `interval` is a list or tuple, all values must be "
+        "between 0 and 100 inclusive."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        check_backtesting_input(**kwargs)
+
     kwargs['interval'] = 'not_bootstrapping'
     err_msg = re.escape(
         f"When `interval` is a string, it must be 'bootstrapping'."

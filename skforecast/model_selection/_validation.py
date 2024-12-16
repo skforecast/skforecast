@@ -207,7 +207,10 @@ def _backtesting_forecaster(
     if show_progress:
         folds = tqdm(folds)
 
-    def _fit_predict_forecaster(y, exog, forecaster, interval, fold, gap):
+    def _fit_predict_forecaster(
+        fold, forecaster, y, exog, store_in_sample_residuals, gap, interval, 
+        n_boot, random_state, use_in_sample_residuals, use_binned_residuals,
+    ):
         """
         Fit the forecaster and predict `steps` ahead. This is an auxiliary 
         function used to parallelize the backtesting_forecaster function.
@@ -284,11 +287,21 @@ def _backtesting_forecaster(
 
         return pred
 
-    backtest_predictions = (
-        Parallel(n_jobs=n_jobs)
-        (delayed(_fit_predict_forecaster)
-        (y=y, exog=exog, forecaster=forecaster, interval=interval, fold=fold, gap=gap)
-         for fold in folds)
+    kwargs_fit_predict_forecaster = {
+        "forecaster": forecaster,
+        "y": y,
+        "exog": exog,
+        "store_in_sample_residuals": store_in_sample_residuals,
+        "gap": gap,
+        "interval": interval,
+        "n_boot": n_boot,
+        "random_state": random_state,
+        "use_in_sample_residuals": use_in_sample_residuals,
+        "use_binned_residuals": use_binned_residuals,
+    }
+    backtest_predictions = Parallel(n_jobs=n_jobs)(
+        delayed(_fit_predict_forecaster)(fold=fold, **kwargs_fit_predict_forecaster)
+        for fold in folds
     )
 
     backtest_predictions = pd.concat(backtest_predictions)

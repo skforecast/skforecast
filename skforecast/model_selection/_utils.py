@@ -381,7 +381,21 @@ def check_backtesting_input(
                     f"the string 'bootstrapping'. Got {type(interval)}."
                 )
             if isinstance(interval, (list, tuple)):
-                check_interval(interval=interval, alpha=alpha)
+                for i in interval:
+                    if not isinstance(i, (int, float)):
+                        raise TypeError(
+                            f"`interval` must be a list or tuple of floats. "
+                            f"Got {type(i)} in {interval}."
+                        )
+                if len(interval) == 2:
+                    check_interval(interval=interval)
+                else:
+                    for q in interval:
+                        if (q < 0.) or (q > 100.):
+                            raise ValueError(
+                                "When `interval` is a list or tuple, all values must be "
+                                "between 0 and 100 inclusive."
+                            )
             elif isinstance(interval, str):
                 if interval != 'bootstrapping':
                     raise ValueError(

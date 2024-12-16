@@ -739,8 +739,6 @@ def check_interval(
                 f"`alpha` must have a value between 0 and 1. Got {alpha}."
             )
 
-    return
-
 
 def check_predict_input(
     forecaster_name: str,
