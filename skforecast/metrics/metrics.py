@@ -102,7 +102,7 @@ def add_y_train_argument(func: Callable) -> Callable:
 def mean_absolute_scaled_error(
     y_true: pd.Series | np.ndarray,
     y_pred: pd.Series | np.ndarray,
-    y_train: list | pd.Series | np.ndarray,
+    y_train: list[float] | pd.Series | np.ndarray,
 ) -> float:
     """
     Mean Absolute Scaled Error (MASE)
@@ -165,7 +165,7 @@ def mean_absolute_scaled_error(
 def root_mean_squared_scaled_error(
     y_true: pd.Series | np.ndarray,
     y_pred: pd.Series | np.ndarray,
-    y_train: list | pd.Series | np.ndarray,
+    y_train: list[float] | pd.Series | np.ndarray,
 ) -> float:
     """
     Root Mean Squared Scaled Error (RMSSE)
@@ -225,7 +225,7 @@ def root_mean_squared_scaled_error(
     return rmsse
 
 
-def crps_from_predictions(y_true: float | int, y_pred: np.ndarray) -> float:
+def crps_from_predictions(y_true: float, y_pred: np.ndarray) -> float:
     """
     Compute the Continuous Ranked Probability Score (CRPS) for a set of
     forecast realizations, for example from bootstrapping. The CRPS compares
@@ -242,7 +242,7 @@ def crps_from_predictions(y_true: float | int, y_pred: np.ndarray) -> float:
 
     Returns
     -------
-    float
+    crps : float
         The CRPS score.
         
     """
@@ -268,7 +268,7 @@ def crps_from_quantiles(
     y_true: float,
     pred_quantiles: np.ndarray,
     quantile_levels: np.ndarray,
-    ):
+) -> float:
     """
     Calculate the Continuous Ranked Probability Score (CRPS) for a given true value
     and predicted quantiles. The empirical cdf is approximated using linear interpolation
@@ -285,7 +285,7 @@ def crps_from_quantiles(
 
     Returns
     -------
-    float
+    crps : float
         The CRPS score.
 
     """
