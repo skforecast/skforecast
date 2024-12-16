@@ -5,7 +5,8 @@
 ################################################################################
 # coding=utf-8
 
-from typing import Union, Callable
+from __future__ import annotations
+from typing import Callable
 import numpy as np
 import pandas as pd
 import inspect
@@ -99,9 +100,9 @@ def add_y_train_argument(func: Callable) -> Callable:
 
 
 def mean_absolute_scaled_error(
-    y_true: Union[pd.Series, np.ndarray],
-    y_pred: Union[pd.Series, np.ndarray],
-    y_train: Union[list, pd.Series, np.ndarray],
+    y_true: pd.Series | np.ndarray,
+    y_pred: pd.Series | np.ndarray,
+    y_train: list[float] | pd.Series | np.ndarray,
 ) -> float:
     """
     Mean Absolute Scaled Error (MASE)
@@ -162,9 +163,9 @@ def mean_absolute_scaled_error(
 
 
 def root_mean_squared_scaled_error(
-    y_true: Union[pd.Series, np.ndarray],
-    y_pred: Union[pd.Series, np.ndarray],
-    y_train: Union[list, pd.Series, np.ndarray],
+    y_true: pd.Series | np.ndarray,
+    y_pred: pd.Series | np.ndarray,
+    y_train: list[float] | pd.Series | np.ndarray,
 ) -> float:
     """
     Root Mean Squared Scaled Error (RMSSE)
@@ -222,3 +223,144 @@ def root_mean_squared_scaled_error(
     rmsse = np.sqrt(np.mean((y_true - y_pred) ** 2)) / np.sqrt(np.nanmean(naive_forecast ** 2))
     
     return rmsse
+
+
+def crps_from_predictions(y_true: float, y_pred: np.ndarray) -> float:
+    """
+    Compute the Continuous Ranked Probability Score (CRPS) for a set of
+    forecast realizations, for example from bootstrapping. The CRPS compares
+    the empirical distribution of a set of forecasted values to a scalar
+    observation. The smaller the CRPS, the better.
+
+    Parameters
+    ----------
+    y_true : float
+        The true value of the random variable.
+    y_pred : np.ndarray
+        The predicted values of the random variable. These are the multiple
+        forecasted values for a single observation.
+
+    Returns
+    -------
+    crps : float
+        The CRPS score.
+        
+    """
+    if not isinstance(y_pred, np.ndarray) or y_pred.ndim != 1:
+        raise TypeError("`y_pred` must be a 1D numpy array.")
+    
+    if not isinstance(y_true, (float, int)):
+        raise TypeError("`y_true` must be a float or integer.")
+
+    y_pred = np.sort(y_pred)
+    # Define the grid for integration including the true value
+    grid = np.concatenate(([y_true], y_pred))
+    grid = np.sort(grid)
+    cdf_values = np.searchsorted(y_pred, grid, side='right') / len(y_pred)
+    indicator = grid >= y_true
+    diffs = np.diff(grid)
+    crps = np.sum(diffs * (cdf_values[:-1] - indicator[:-1])**2)
+
+    return crps
+
+
+def crps_from_quantiles(
+    y_true: float,
+    pred_quantiles: np.ndarray,
+    quantile_levels: np.ndarray,
+) -> float:
+    """
+    Calculate the Continuous Ranked Probability Score (CRPS) for a given true value
+    and predicted quantiles. The empirical cdf is approximated using linear interpolation
+    between the predicted quantiles.
+
+    Parameters
+    ----------
+    y_true : float
+        The true value of the random variable.
+    pred_quantiles : numpy ndarray
+        The predicted quantile values.
+    quantile_levels : numpy ndarray
+        The quantile levels corresponding to the predicted quantiles.
+
+    Returns
+    -------
+    crps : float
+        The CRPS score.
+
+    """
+    if not isinstance(y_true, (float, int)):
+        raise TypeError("`y_true` must be a float or integer.")
+
+    if not isinstance(pred_quantiles, np.ndarray) or pred_quantiles.ndim != 1:
+        raise TypeError("`pred_quantiles` must be a 1D numpy array.")
+    
+    if not isinstance(quantile_levels, np.ndarray) or quantile_levels.ndim != 1:
+        raise TypeError("`quantile_levels` must be a 1D numpy array.")
+    
+    if len(pred_quantiles) != len(quantile_levels):
+        raise ValueError(
+            "The number of predicted quantiles and quantile levels must be equal."
+        )
+
+    sorted_indices = np.argsort(pred_quantiles)
+    pred_quantiles = pred_quantiles[sorted_indices]
+    quantile_levels = quantile_levels[sorted_indices]
+
+    # Define the empirical CDF function using interpolation
+    def empirical_cdf(x):
+        return np.interp(x, pred_quantiles, quantile_levels, left=0.0, right=1.0)
+
+    # Define the CRPS integrand
+    def crps_integrand(x):
+        return (empirical_cdf(x) - (x >= y_true)) ** 2
+
+    # Integration bounds: Extend slightly beyond predicted quantiles
+    xmin = np.min(pred_quantiles) * 0.9
+    xmax = np.max(pred_quantiles) * 1.1
+
+    # Create a fine grid of x values for integration
+    x_values = np.linspace(xmin, xmax, 1000)
+
+    # Compute the integrand values and integrate using the trapezoidal rule
+    integrand_values = crps_integrand(x_values)
+    crps = np.trapz(integrand_values, x_values)
+
+    return crps
+
+
+def coverage(y_true: np.ndarray, lower_bound: np.ndarray, upper_bound: np.ndarray) -> float:
+    """
+    Calculate coverage of a given interval as the proportion of true values
+    that fall within the interval.
+
+    Parameters
+    ----------
+    y_true : numpy ndarray
+        True values of the target variable.
+    lower_bound : numpy ndarray
+        Lower bound of the interval.
+    upper_bound : numpy ndarray
+        Upper bound of the interval.
+
+    Returns
+    -------
+    coverage : float
+        Coverage of the interval.
+
+    """
+    if not isinstance(y_true, np.ndarray) or y_true.ndim != 1:
+        raise TypeError("`y_true` must be a 1D numpy array.")
+    
+    if not isinstance(lower_bound, np.ndarray) or lower_bound.ndim != 1:
+        raise TypeError("`lower_bound` must be a 1D numpy array.")
+    
+    if not isinstance(upper_bound, np.ndarray) or upper_bound.ndim != 1:
+        raise TypeError("`upper_bound` must be a 1D numpy array.")
+    
+    if y_true.shape != lower_bound.shape or y_true.shape != upper_bound.shape:
+        raise TypeError("`y_true`, `lower_bound` and `upper_bound` must have the same shape.")
+    
+    coverage = np.mean(np.logical_and(y_true >= lower_bound, y_true <= upper_bound))
+
+    return coverage

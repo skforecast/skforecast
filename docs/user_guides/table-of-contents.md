@@ -70,6 +70,7 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 - [Forecasting with delayed historical data](../faq/forecasting-with-delayed-historical-data.html)
 - [Backtesting vs One-step-ahead](../faq/parameters-search-backtesting-vs-one-step-ahead.html)
 - [Cyclical features in time series](../faq/cyclical-features-time-series.html)
+- [Continuous Ranked Probability Score (CRPS)](../faq/probabilistic-forecasting-crps-score.html)
 - [Time series aggregation](../faq/time-series-aggregation.html)
 - [Parallelization in skforecast](../faq/parallelization-skforecast.html)
 - [Profiling skforecast](../faq/profiling-skforecast.html)
