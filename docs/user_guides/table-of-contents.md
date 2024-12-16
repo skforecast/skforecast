@@ -25,6 +25,7 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 - [Data transformations](../user_guides/sklearn-transformers-and-pipeline.html)
 - [Differentiation](../user_guides/time-series-differentiation.html)
 - [Feature selection](../user_guides/feature-selection.html)
+- [Sktime pipelines](../user_guides/sktime-pipelines.html)
 
 <span style="font-size: 1.3em;">Model Evaluation and Tuning</span>
 

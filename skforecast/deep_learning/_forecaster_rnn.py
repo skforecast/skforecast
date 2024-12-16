@@ -7,20 +7,22 @@
 
 import sys
 import warnings
-from copy import deepcopy, copy
+from copy import copy, deepcopy
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+
+import keras
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import keras
-from sklearn.pipeline import Pipeline
 from sklearn.base import clone
+from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import MinMaxScaler
 
 import skforecast
-from ..exceptions import IgnoredArgumentWarning
+
 from ..base import ForecasterBase
+from ..exceptions import IgnoredArgumentWarning
 from ..utils import (
     check_predict_input,
     check_select_fit_kwargs,
@@ -28,8 +30,8 @@ from ..utils import (
     expand_index,
     preprocess_last_window,
     preprocess_y,
-    transform_series,
     set_skforecast_warnings,
+    transform_series,
 )
 
 
@@ -39,7 +41,7 @@ class ForecasterRnn(ForecasterBase):
     """
     This class turns any regressor compatible with the Keras API into a
     Keras RNN multi-serie multi-step forecaster. A unique model is created
-    to forecast all time steps and series. Keras enables workflows on top of 
+    to forecast all time steps and series. Keras enables workflows on top of
     either JAX, TensorFlow, or PyTorch. See documentation for more details.
 
     Parameters
@@ -77,7 +79,7 @@ class ForecasterRnn(ForecasterBase):
         Not used, present here for API consistency by convention.
     n_jobs : Ignored
         Not used, present here for API consistency by convention.
-        
+
     Attributes
     ----------
     regressor : regressor or pipeline compatible with the Keras API
@@ -165,9 +167,13 @@ class ForecasterRnn(ForecasterBase):
         Not used, present here for API consistency by convention.
     differentiation : Ignored
         Not used, present here for API consistency by convention.
+    differentiation_max : Ignored
+        Not used, present here for API consistency by convention.
     differentiator : Ignored
         Not used, present here for API consistency by convention.
-    
+    differentiator_ : Ignored
+        Not used, present here for API consistency by convention.
+
     """
 
     def __init__(
@@ -183,7 +189,7 @@ class ForecasterRnn(ForecasterBase):
         fit_kwargs: Optional[dict] = {},
         forecaster_id: Optional[Union[str, int]] = None,
         n_jobs: Any = None,
-        transformer_exog: Any = None
+        transformer_exog: Any = None,
     ) -> None:
         self.levels = None
         self.transformer_series = transformer_series
@@ -214,7 +220,9 @@ class ForecasterRnn(ForecasterBase):
         self.dropna_from_series = False  # Ignored in this forecaster
         self.encoding = None   # Ignored in this forecaster
         self.differentiation = None   # Ignored in this forecaster
+        self.differentiation_max = None   # Ignored in this forecaster
         self.differentiator = None   # Ignored in this forecaster
+        self.differentiator_ = None   # Ignored in this forecaster
 
         # Infer parameters from the model
         self.regressor = regressor  # TODO: Create copy of regressor copy(regressor)
@@ -227,7 +235,7 @@ class ForecasterRnn(ForecasterBase):
                 self.lags = np.arange(layer_init.output.shape[1]) + 1
 
             warnings.warn(
-                "Setting `lags` = 'auto'. `lags` are inferred from the regressor " 
+                "Setting `lags` = 'auto'. `lags` are inferred from the regressor "
                 "architecture. Avoid the warning with lags=lags."
             )
         elif isinstance(lags, int):
@@ -303,7 +311,6 @@ class ForecasterRnn(ForecasterBase):
             regressor=self.regressor, fit_kwargs=fit_kwargs
         )
 
-
     def __repr__(self) -> str:
         """
         Information displayed when a ForecasterRnn object is printed.
@@ -348,11 +355,7 @@ class ForecasterRnn(ForecasterBase):
 
         return info
 
-
-    def _create_lags(
-        self,
-        y: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    def _create_lags(self, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """
         Transforms a 1d array into a 3d array (X) and a 3d array (y). Each row
         in X is associated with a value of y and it represents the lags that
@@ -388,13 +391,13 @@ class ForecasterRnn(ForecasterBase):
             )
 
         X_data = np.full(
-            shape=(n_splits, (self.max_lag)), fill_value=np.nan, order='F', dtype=float
+            shape=(n_splits, (self.max_lag)), fill_value=np.nan, order="F", dtype=float
         )
         for i, lag in enumerate(range(self.max_lag - 1, -1, -1)):
             X_data[:, i] = y[self.max_lag - lag - 1 : -(lag + self.max_step)]
 
         y_data = np.full(
-            shape=(n_splits, self.max_step), fill_value=np.nan, order='F', dtype=float
+            shape=(n_splits, self.max_step), fill_value=np.nan, order="F", dtype=float
         )
         for step in range(self.max_step):
             y_data[:, step] = y[self.max_lag + step : self.max_lag + step + n_splits]
@@ -536,7 +539,6 @@ class ForecasterRnn(ForecasterBase):
 
         return X_train, y_train, dimension_names
 
-
     def fit(
         self,
         series: pd.DataFrame,
@@ -561,19 +563,21 @@ class ForecasterRnn(ForecasterBase):
         exog : Ignored
             Not used, present here for API consistency by convention.
         suppress_warnings : bool, default `False`
-            If `True`, skforecast warnings will be suppressed during the prediction 
+            If `True`, skforecast warnings will be suppressed during the prediction
             process. See skforecast.exceptions.warn_skforecast_categories for more
             information.
         store_last_window : Ignored
             Not used, present here for API consistency by convention.
+        device : str, default `auto`
+            Torch device. if auto `device = torch.device("cuda" if torch.cuda.is_available() else "cpu")`
         Returns
         -------
         None
 
         """
-        
-        set_skforecast_warnings(suppress_warnings, action='ignore')
-                
+
+        set_skforecast_warnings(suppress_warnings, action="ignore")
+
         # Reset values in case the forecaster has already been fitted.
         self.index_type_ = None
         self.index_freq_ = None
@@ -594,14 +598,35 @@ class ForecasterRnn(ForecasterBase):
         X_train, y_train, X_train_dim_names_ = self.create_train_X_y(series=series)
         self.X_train_dim_names_ = X_train_dim_names_["X_train"]
         self.y_train_dim_names_ = X_train_dim_names_["y_train"]
+        if keras.__version__ > "3.0" and keras.backend.backend() == "torch":
+            import torch
+
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            torch_device = torch.device(device)
+
+            print(f"Using device: {device}")
+            X_train = torch.tensor(X_train).to(torch_device)
+            y_train = torch.tensor(y_train).to(torch_device)
 
         if self.series_val is not None:
+            torch_device = torch.device(device)
             X_val, y_val, _ = self.create_train_X_y(series=self.series_val)
-            history = self.regressor.fit(
-                x=X_train, y=y_train, validation_data=(X_val, y_val), **self.fit_kwargs
-            )
+            if keras.__version__ > "3.0" and keras.backend.backend() == "torch":
+                X_val = torch.tensor(X_val).to(torch_device)
+                y_val = torch.tensor(y_val).to(torch_device)
+                history = self.regressor.fit(
+                    x=X_train,
+                    y=y_train,
+                    validation_data=(X_val, y_val),
+                    **self.fit_kwargs,
+                )
         else:
-            history = self.regressor.fit(x=X_train, y=y_train, **self.fit_kwargs)
+            history = self.regressor.fit(
+                x=X_train,
+                y=y_train,
+                validation_data=(X_val, y_val),
+                **self.fit_kwargs,
+            )
 
         self.history = history.history
         self.is_fitted = True
@@ -616,8 +641,7 @@ class ForecasterRnn(ForecasterBase):
 
         self.last_window_ = series.iloc[-self.max_lag :].copy()
 
-        set_skforecast_warnings(suppress_warnings, action='default')
-
+        set_skforecast_warnings(suppress_warnings, action="default")
 
     def predict(
         self,
@@ -625,7 +649,7 @@ class ForecasterRnn(ForecasterBase):
         levels: Optional[Union[str, list]] = None,
         last_window: Optional[pd.DataFrame] = None,
         exog: Any = None,
-        suppress_warnings: bool = False
+        suppress_warnings: bool = False,
     ) -> pd.DataFrame:
         """
         Predict n steps ahead
@@ -654,10 +678,10 @@ class ForecasterRnn(ForecasterBase):
         exog : Ignored
             Not used, present here for API consistency by convention.
         suppress_warnings : bool, default `False`
-            If `True`, skforecast warnings will be suppressed during the fitting 
+            If `True`, skforecast warnings will be suppressed during the fitting
             process. See skforecast.exceptions.warn_skforecast_categories for more
             information.
-            
+
         Returns
         -------
         predictions : pandas DataFrame
@@ -665,8 +689,8 @@ class ForecasterRnn(ForecasterBase):
 
         """
 
-        set_skforecast_warnings(suppress_warnings, action='ignore')
-                
+        set_skforecast_warnings(suppress_warnings, action="ignore")
+
         if levels is None:
             levels = self.levels
         elif isinstance(levels, str):
@@ -757,11 +781,10 @@ class ForecasterRnn(ForecasterBase):
                 inverse_transform=True,
             )
             predictions.loc[:, serie] = x
-            
-        set_skforecast_warnings(suppress_warnings, action='default')
-                
-        return predictions
 
+        set_skforecast_warnings(suppress_warnings, action="default")
+
+        return predictions
 
     def plot_history(
         self, ax: matplotlib.axes.Axes = None, **fig_kw
@@ -825,7 +848,7 @@ class ForecasterRnn(ForecasterBase):
 
         # Setting x-axis ticks to integers only
         ax.set_xticks(range(1, len(self.history["loss"]) + 1))
-        
+
     # def predict_bootstrapping(
     #     self,
     #     steps: Optional[Union[int, list]] = None,
@@ -1147,11 +1170,7 @@ class ForecasterRnn(ForecasterBase):
 
     #     return predictions
 
-
-    def set_params(
-        self, 
-        params: dict
-    ) -> None:  # TODO testear
+    def set_params(self, params: dict) -> None:  # TODO testear
         """
         Set new values to the parameters of the scikit learn model stored in the
         forecaster. It is important to note that all models share the same
@@ -1172,11 +1191,7 @@ class ForecasterRnn(ForecasterBase):
         self.regressor.reset_states()
         self.regressor.compile(**params)
 
-
-    def set_fit_kwargs(
-        self,
-        fit_kwargs: dict
-    ) -> None:
+    def set_fit_kwargs(self, fit_kwargs: dict) -> None:
         """
         Set new values for the additional keyword arguments passed to the `fit`
         method of the regressor.
@@ -1194,11 +1209,7 @@ class ForecasterRnn(ForecasterBase):
 
         self.fit_kwargs = check_select_fit_kwargs(self.regressor, fit_kwargs=fit_kwargs)
 
-
-    def set_lags(
-        self, 
-        lags: Any
-    ) -> None:
+    def set_lags(self, lags: Any) -> None:
         """
         Not used, present here for API consistency by convention.
 
@@ -1209,7 +1220,6 @@ class ForecasterRnn(ForecasterBase):
         """
 
         pass
-
 
     # def set_out_sample_residuals(
     #     self,

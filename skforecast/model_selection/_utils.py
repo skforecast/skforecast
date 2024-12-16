@@ -251,13 +251,24 @@ def check_backtesting_input(
                 )
 
     if hasattr(forecaster, 'differentiation'):
-        if forecaster.differentiation != cv.differentiation:
-            raise ValueError(
-                f"The differentiation included in the forecaster "
-                f"({forecaster.differentiation}) differs from the differentiation "
-                f"included in the cv ({cv.differentiation}). Set the same value "
-                f"for both using the `differentiation` argument."
-            )
+        if forecaster.differentiation_max != cv.differentiation:
+            if forecaster_name == "ForecasterRecursiveMultiSeries" and isinstance(
+                forecaster.differentiation, dict
+            ):
+                raise ValueError(
+                    f"When using a dict as `differentiation` in ForecasterRecursiveMultiSeries, "
+                    f"the `differentiation` included in the cv ({cv.differentiation}) must be "
+                    f"the same as the maximum `differentiation` included in the forecaster "
+                    f"({forecaster.differentiation_max}). Set the same value "
+                    f"for both using the `differentiation` argument."
+                )
+            else:
+                raise ValueError(
+                    f"The differentiation included in the forecaster "
+                    f"({forecaster.differentiation_max}) differs from the differentiation "
+                    f"included in the cv ({cv.differentiation}). Set the same value "
+                    f"for both using the `differentiation` argument."
+                )
 
     if not isinstance(metric, (str, Callable, list)):
         raise TypeError(
@@ -1073,21 +1084,23 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
 
     if forecaster.differentiation is not None:
         for level in predictions_per_level:
-            predictions_per_level[level]["y_true"] = (
-                forecaster.differentiator_[level].inverse_transform_next_window(
-                    predictions_per_level[level]["y_true"].to_numpy()
+            differentiator = forecaster.differentiator_[level]
+            if differentiator is not None:
+                predictions_per_level[level]["y_true"] = (
+                    differentiator.inverse_transform_next_window(
+                        predictions_per_level[level]["y_true"].to_numpy()
+                    )
                 )
-            )
-            predictions_per_level[level]["y_pred"] = (
-                forecaster.differentiator_[level].inverse_transform_next_window(
-                    predictions_per_level[level]["y_pred"].to_numpy()
-                )   
-            )
-            y_train_per_level[level]["y_train"] = (
-                forecaster.differentiator_[level].inverse_transform_training(
-                    y_train_per_level[level]["y_train"].to_numpy()
+                predictions_per_level[level]["y_pred"] = (
+                    differentiator.inverse_transform_next_window(
+                        predictions_per_level[level]["y_pred"].to_numpy()
+                    )   
                 )
-            )
+                y_train_per_level[level]["y_train"] = (
+                    differentiator.inverse_transform_training(
+                        y_train_per_level[level]["y_train"].to_numpy()
+                    )
+                )
 
     if forecaster.transformer_series is not None:
         for level in predictions_per_level:

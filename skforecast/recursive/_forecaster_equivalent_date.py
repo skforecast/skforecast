@@ -116,6 +116,8 @@ class ForecasterEquivalentDate():
         Not used, present here for API consistency by convention.
     differentiation : Ignored
         Not used, present here for API consistency by convention.
+    differentiation_max : Ignored
+        Not used, present here for API consistency by convention.
 
     """
     
@@ -127,27 +129,28 @@ class ForecasterEquivalentDate():
         forecaster_id: Optional[Union[str, int]] = None
     ) -> None:
         
-        self.offset             = offset
-        self.n_offsets          = n_offsets
-        self.agg_func           = agg_func
-        self.last_window_       = None
-        self.index_type_        = None
-        self.index_freq_        = None
-        self.training_range_    = None
-        self.creation_date      = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
-        self.is_fitted          = False
-        self.fit_date           = None
-        self.skforecast_version = skforecast.__version__
-        self.python_version     = sys.version.split(" ")[0]
-        self.forecaster_id      = forecaster_id
-        self.regressor          = None
-        self.differentiation    = None
+        self.offset              = offset
+        self.n_offsets           = n_offsets
+        self.agg_func            = agg_func
+        self.last_window_        = None
+        self.index_type_         = None
+        self.index_freq_         = None
+        self.training_range_     = None
+        self.creation_date       = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
+        self.is_fitted           = False
+        self.fit_date            = None
+        self.skforecast_version  = skforecast.__version__
+        self.python_version      = sys.version.split(" ")[0]
+        self.forecaster_id       = forecaster_id
+        self.regressor           = None
+        self.differentiation     = None
+        self.differentiation_max = None
        
         if not isinstance(self.offset, (int, pd.tseries.offsets.DateOffset)):
             raise TypeError(
-                ("`offset` must be an integer greater than 0 or a "
-                 "pandas.tseries.offsets. Find more information about offsets in "
-                 "https://pandas.pydata.org/docs/reference/offset_frequency.html")
+                "`offset` must be an integer greater than 0 or a "
+                "pandas.tseries.offsets. Find more information about offsets in "
+                "https://pandas.pydata.org/docs/reference/offset_frequency.html"
             )
         
         self.window_size = self.offset * self.n_offsets

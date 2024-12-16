@@ -49,9 +49,9 @@ def test_init_ValueError_when_no_lags_or_window_features(lags):
     Test ValueError is raised when no lags or window_features are passed.
     """
     err_msg = re.escape(
-        ("At least one of the arguments `lags` or `window_features` "
-         "must be different from None. This is required to create the "
-         "predictors used in training the forecaster.")
+        "At least one of the arguments `lags` or `window_features` "
+        "must be different from None. This is required to create the "
+        "predictors used in training the forecaster."
     )
     with pytest.raises(ValueError, match = err_msg):
         ForecasterDirectMultiVariate(
@@ -191,6 +191,8 @@ def test_init_window_size_is_increased_when_differentiation(dif):
                      differentiation = dif
                  )
     
+    assert forecaster.differentiation == dif
+    assert forecaster.differentiation_max == dif
     assert forecaster.window_size == 5 + dif
 
 

@@ -334,7 +334,7 @@ def _evaluate_grid_hyperparameters(
         cv = deepcopy(cv)
         cv.set_params({
             'window_size': forecaster.window_size,
-            'differentiation': forecaster.differentiation,
+            'differentiation': forecaster.differentiation_max,
             'verbose': verbose
         })
 
@@ -560,11 +560,11 @@ def bayesian_search_forecaster(
         `None`, the results will not be saved to a file.
         **New in version 0.12.0**
     kwargs_create_study : dict, default `{}`
-        Keyword arguments (key, value mappings) to pass to optuna.create_study().
+        Additional keyword arguments (key, value mappings) to pass to optuna.create_study().
         If default, the direction is set to 'minimize' and a TPESampler(seed=123) 
         sampler is used during optimization.
     kwargs_study_optimize : dict, default `{}`
-        Other keyword arguments (key, value mappings) to pass to study.optimize().
+        Additional keyword arguments (key, value mappings) to pass to study.optimize().
 
     Returns
     -------
@@ -676,11 +676,11 @@ def _bayesian_search_optuna(
         `None`, the results will not be saved to a file.
         **New in version 0.12.0**
     kwargs_create_study : dict, default `{}`
-        Keyword arguments (key, value mappings) to pass to optuna.create_study().
+        Additional keyword arguments (key, value mappings) to pass to optuna.create_study().
         If default, the direction is set to 'minimize' and a TPESampler(seed=123) 
         sampler is used during optimization.
     kwargs_study_optimize : dict, default `{}`
-        Other keyword arguments (key, value mappings) to pass to study.optimize().
+        Additional keyword arguments (key, value mappings) to pass to study.optimize().
 
     Returns
     -------
@@ -721,7 +721,7 @@ def _bayesian_search_optuna(
         cv = deepcopy(cv)
         cv.set_params({
             'window_size': forecaster.window_size,
-            'differentiation': forecaster.differentiation,
+            'differentiation': forecaster.differentiation_max,
             'verbose': verbose
         })
     
@@ -905,6 +905,7 @@ def _bayesian_search_optuna(
     results = pd.concat([results, results['params'].apply(pd.Series)], axis=1)
     
     if return_best:
+        
         best_lags = results.loc[0, 'lags']
         best_params = results.loc[0, 'params']
         best_metric = results.loc[0, list(metric_dict.keys())[0]]
@@ -1299,7 +1300,7 @@ def _evaluate_grid_hyperparameters_multiseries(
         cv = deepcopy(cv)
         cv.set_params({
             'window_size': forecaster.window_size,
-            'differentiation': forecaster.differentiation,
+            'differentiation': forecaster.differentiation_max,
             'verbose': verbose
         })
 
@@ -1482,7 +1483,18 @@ def _evaluate_grid_hyperparameters_multiseries(
         forecaster.set_lags(best_lags)
         forecaster.set_params(best_params)
 
-        forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
+        # TODO: Check if including suppress_warnings here fix warnings when return_best
+        forecaster.fit(
+            series                    = series, 
+            exog                      = exog, 
+            store_in_sample_residuals = True, 
+            suppress_warnings         = suppress_warnings
+        )
+
+        if len(levels) > 20:
+            levels_print = levels[:10] + ["..."] + levels[-10:]
+        else:
+            levels_print = levels
         
         print(
             f"`Forecaster` refitted using the best-found lags and parameters, "
@@ -1490,7 +1502,7 @@ def _evaluate_grid_hyperparameters_multiseries(
             f"  Lags: {best_lags} \n"
             f"  Parameters: {best_params}\n"
             f"  Backtesting metric: {best_metric}\n"
-            f"  Levels: {levels}\n"
+            f"  Levels: {levels_print}\n"
         )
 
     set_skforecast_warnings(suppress_warnings, action='default')
@@ -1579,11 +1591,11 @@ def bayesian_search_forecaster_multiseries(
         `None`, the results will not be saved to a file.
         **New in version 0.12.0**
     kwargs_create_study : dict, default `{}`
-        Keyword arguments (key, value mappings) to pass to optuna.create_study().
+        Additional keyword arguments (key, value mappings) to pass to optuna.create_study().
         If default, the direction is set to 'minimize' and a TPESampler(seed=123) 
         sampler is used during optimization.
     kwargs_study_optimize : dict, default `{}`
-        Other keyword arguments (key, value mappings) to pass to study.optimize().
+        Additional keyword arguments (key, value mappings) to pass to study.optimize().
 
     Returns
     -------
@@ -1603,8 +1615,8 @@ def bayesian_search_forecaster_multiseries(
 
     if return_best and exog is not None and (len(exog) != len(series)):
         raise ValueError(
-            (f"`exog` must have same number of samples as `series`. "
-             f"length `exog`: ({len(exog)}), length `series`: ({len(series)})")
+            f"`exog` must have same number of samples as `series`. "
+            f"length `exog`: ({len(exog)}), length `series`: ({len(series)})"
         )
    
     results, best_trial = _bayesian_search_optuna_multiseries(
@@ -1715,11 +1727,11 @@ def _bayesian_search_optuna_multiseries(
         `None`, the results will not be saved to a file.
         **New in version 0.12.0**
     kwargs_create_study : dict, default `{}`
-        Keyword arguments (key, value mappings) to pass to optuna.create_study().
+        Additional keyword arguments (key, value mappings) to pass to optuna.create_study().
         If default, the direction is set to 'minimize' and a TPESampler(seed=123) 
         sampler is used during optimization.
     kwargs_study_optimize : dict, default `{}`
-        Other keyword arguments (key, value mappings) to pass to study.optimize().
+        Additional keyword arguments (key, value mappings) to pass to study.optimize().
 
     Returns
     -------
@@ -1769,7 +1781,7 @@ def _bayesian_search_optuna_multiseries(
         cv = deepcopy(cv)
         cv.set_params({
             'window_size': forecaster.window_size,
-            'differentiation': forecaster.differentiation,
+            'differentiation': forecaster.differentiation_max,
             'verbose': verbose
         })
     
@@ -2031,7 +2043,18 @@ def _bayesian_search_optuna_multiseries(
         forecaster.set_lags(best_lags)
         forecaster.set_params(best_params)
 
-        forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
+        # TODO: Check if including suppress_warnings here fix warnings when return_best
+        forecaster.fit(
+            series                    = series, 
+            exog                      = exog, 
+            store_in_sample_residuals = True, 
+            suppress_warnings         = suppress_warnings
+        )
+
+        if len(levels) > 20:
+            levels_print = levels[:10] + ["..."] + levels[-10:]
+        else:
+            levels_print = levels
         
         print(
             f"`Forecaster` refitted using the best-found lags and parameters, "
@@ -2039,7 +2062,7 @@ def _bayesian_search_optuna_multiseries(
             f"  Lags: {best_lags} \n"
             f"  Parameters: {best_params}\n"
             f"  Backtesting metric: {best_metric}\n"
-            f"  Levels: {levels}\n"
+            f"  Levels: {levels_print}\n"
         )
 
     set_skforecast_warnings(suppress_warnings, action='default')
