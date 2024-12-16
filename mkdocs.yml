@@ -45,6 +45,7 @@ nav:
       - Data transformation: user_guides/sklearn-transformers-and-pipeline.ipynb
       - Differentiation: user_guides/time-series-differentiation.ipynb
       - Feature selection: user_guides/feature-selection.ipynb
+      - Sktime pipelines: user_guides/sktime-pipelines.ipynb
     - Model Evaluation and Tuning:
       - Metrics: user_guides/metrics.ipynb
       - Backtesting forecaster: user_guides/backtesting.ipynb
@@ -78,14 +79,17 @@ nav:
     - Spanish: examples/examples_spanish.md
 
   - API Reference:
-    - ForecasterRecursive: api/ForecasterRecursive.md
-    - ForecasterDirect: api/ForecasterDirect.md
-    - ForecasterRecursiveMultiSeries: api/ForecasterRecursiveMultiSeries.md
-    - ForecasterDirectMultiVariate: api/ForecasterDirectMultiVariate.md
-    - ForecasterRnn: api/ForecasterRnn.md
+    - recursive:
+      - ForecasterRecursive: api/ForecasterRecursive.md
+      - ForecasterRecursiveMultiSeries: api/ForecasterRecursiveMultiSeries.md
+      - ForecasterSarimax: api/ForecasterSarimax.md
+      - ForecasterEquivalentDate: api/ForecasterEquivalentDate.md
+    - direct:
+      - ForecasterDirect: api/ForecasterDirect.md
+      - ForecasterDirectMultiVariate: api/ForecasterDirectMultiVariate.md
+    - deep_learning:
+      - ForecasterRnn: api/ForecasterRnn.md
     - sarimax: api/Sarimax.md
-    - ForecasterSarimax: api/ForecasterSarimax.md
-    - ForecasterEquivalentDate: api/ForecasterEquivalentDate.md
     - model_selection: api/model_selection.md
     - feature_selection: api/feature_selection.md
     - preprocessing: api/preprocessing.md
