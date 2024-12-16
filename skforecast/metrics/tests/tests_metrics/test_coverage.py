@@ -5,25 +5,28 @@ import pytest
 import numpy as np
 from skforecast.metrics import coverage
 
-def test_coverage_raise_error_when_no_valid_inputs():
 
+def test_coverage_raise_error_when_no_valid_inputs():
+    """
+    Test that coverage function raises an error when no valid inputs are provided.
+    """
     y = np.array([1, 2])
     lower_bound = np.array([1, 2])
     upper_bound = np.array([2, 3])
 
-    msg = "`y`, must be a 1D numpy array."
+    msg = "`y` must be a 1D numpy array."
     with pytest.raises(TypeError, match=re.escape(msg)):
         coverage(y='invalid value', lower_bound=lower_bound, upper_bound=upper_bound)
 
-    msg = "`lower_bound`, must be a 1D numpy array."
+    msg = "`lower_bound` must be a 1D numpy array."
     with pytest.raises(TypeError, match=re.escape(msg)):
         coverage(y=y, lower_bound='invalid value', upper_bound=upper_bound)
 
-    msg = "`upper_bound`, must be a 1D numpy array."
+    msg = "`upper_bound` must be a 1D numpy array."
     with pytest.raises(TypeError, match=re.escape(msg)):
         coverage(y=y, lower_bound=lower_bound, upper_bound='invalid value')
 
-    msg = "`y`, `lower_bound`, and `upper_bound` must have the same shape."
+    msg = "`y`, `lower_bound` and `upper_bound` must have the same shape."
     with pytest.raises(TypeError, match=re.escape(msg)):
         coverage(y, lower_bound=np.array([1, 2, 3]), upper_bound=upper_bound)
     with pytest.raises(TypeError, match=re.escape(msg)):
