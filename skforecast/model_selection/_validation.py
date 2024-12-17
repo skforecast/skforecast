@@ -118,11 +118,16 @@ def _backtesting_forecaster(
     metric_values : pandas DataFrame
         Value(s) of the metric(s).
     backtest_predictions : pandas DataFrame
-        Value of predictions and their estimated interval if `interval` is not `None`.
+        Value of predictions and their estimated probabilistic predictions if 
+        `interval` is not `None`.
 
         - column pred: predictions.
-        - column lower_bound: lower bound of the interval.
-        - column upper_bound: upper bound of the interval.
+        - If `interval` is a list or tuple, columns are the percentiles. If `interval`
+        has two elements, they are renamed to 'lower_bound' and 'upper_bound'.
+        - If `interval` is 'bootstrapping', `n_boot` columns are created with the
+        bootstrapping predictions.
+        - If `interval` is a distribution object, columns are the parameters of the
+        distribution.
     
     """
     # TODO: Change docstring to include new options of `interval` parameter.
@@ -427,11 +432,16 @@ def backtesting_forecaster(
     metric_values : pandas DataFrame
         Value(s) of the metric(s).
     backtest_predictions : pandas DataFrame
-        Value of predictions and their estimated interval if `interval` is not `None`.
+        Value of predictions and their estimated probabilistic predictions if 
+        `interval` is not `None`.
 
         - column pred: predictions.
-        - column lower_bound: lower bound of the interval.
-        - column upper_bound: upper bound of the interval.
+        - If `interval` is a list or tuple, columns are the percentiles. If `interval`
+        has two elements, they are renamed to 'lower_bound' and 'upper_bound'.
+        - If `interval` is 'bootstrapping', `n_boot` columns are created with the
+        bootstrapping predictions.
+        - If `interval` is a distribution object, columns are the parameters of the
+        distribution.
     
     """
 
