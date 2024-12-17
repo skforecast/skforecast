@@ -1472,7 +1472,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         weights = None
         weights_samples = None
-        weights_series = None
+        series_weights = None
 
         if self.series_weights is not None:
             # Series not present in series_weights have a weight of 1 in all their samples.
@@ -1496,12 +1496,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             )
 
             if self.encoding == "onehot":
-                weights_series = [
+                series_weights = [
                     np.repeat(self.series_weights_[serie], sum(X_train[serie]))
                     for serie in series_names_in_
                 ]
             else:
-                weights_series = [
+                series_weights = [
                     np.repeat(
                         self.series_weights_[serie],
                         sum(X_train["_level_skforecast"] == self.encoding_mapping_[serie]),
@@ -1509,7 +1509,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     for serie in series_names_in_
                 ]
 
-            weights_series = np.concatenate(weights_series)
+            series_weights = np.concatenate(series_weights)
 
         if self.weight_func is not None:
             if isinstance(self.weight_func, Callable):
@@ -1548,8 +1548,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 weights_samples.append(self.weight_func_[key](idx))
             weights_samples = np.concatenate(weights_samples)
 
-        if weights_series is not None:
-            weights = weights_series
+        if series_weights is not None:
+            weights = series_weights
             if weights_samples is not None:
                 weights = weights * weights_samples
         else:
