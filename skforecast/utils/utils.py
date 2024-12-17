@@ -105,6 +105,7 @@ def initialize_lags(
                     f"tuple or list. Got {type(lags)}."
                 )
         
+        lags = np.sort(lags)
         lags_names = [f'lag_{i}' for i in lags]
         max_lag = max(lags)
 
