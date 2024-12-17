@@ -115,8 +115,8 @@ def check_backtesting_input(
 
         - If `list`or `tuple`: Sequence of percentiles to compute, each value must 
         be between 0 and 100 inclusive. For example, a 95% confidence interval can 
-        be specified as `interval = [2.5, 97.5]` or quantiles 0.1, 0.5 and 0.9 as
-        `interval = [10, 50, 90]`.
+        be specified as `interval = [2.5, 97.5]` or multiple percentiles (e.g. 10, 
+        50 and 90) as `interval = [10, 50, 90]`.
         - If 'bootstrapping' (str): `n_boot` bootstrapping predictions will be generated.
         - If scipy.stats distribution object, the distribution parameters will
         be estimated for each prediction.

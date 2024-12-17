@@ -83,8 +83,8 @@ def _backtesting_forecaster(
 
         - If `list`or `tuple`: Sequence of percentiles to compute, each value must 
         be between 0 and 100 inclusive. For example, a 95% confidence interval can 
-        be specified as `interval = [2.5, 97.5]` or quantiles 0.1, 0.5 and 0.9 as
-        `interval = [10, 50, 90]`.
+        be specified as `interval = [2.5, 97.5]` or multiple percentiles (e.g. 10, 
+        50 and 90) as `interval = [10, 50, 90]`.
         - If 'bootstrapping' (str): `n_boot` bootstrapping predictions will be generated.
         - If scipy.stats distribution object, the distribution parameters will
         be estimated for each prediction.
@@ -214,7 +214,7 @@ def _backtesting_forecaster(
 
     def _fit_predict_forecaster(
         fold, forecaster, y, exog, store_in_sample_residuals, gap, interval, 
-        n_boot, random_state, use_in_sample_residuals, use_binned_residuals,
+        n_boot, random_state, use_in_sample_residuals, use_binned_residuals
     ):
         """
         Fit the forecaster and predict `steps` ahead. This is an auxiliary 
@@ -282,6 +282,8 @@ def _backtesting_forecaster(
                 pred_interval = forecaster.predict_quantiles(quantiles=quantiles, **kwargs_interval)
                 if len(interval) == 2:
                     pred_interval.columns = ['lower_bound', 'upper_bound']
+                else:
+                    pred_interval.columns = [f'p_{p}' for p in interval]
             else:
                 pred_interval = forecaster.predict_dist(distribution=interval, **kwargs_interval)
 
@@ -397,8 +399,8 @@ def backtesting_forecaster(
 
         - If `list`or `tuple`: Sequence of percentiles to compute, each value must 
         be between 0 and 100 inclusive. For example, a 95% confidence interval can 
-        be specified as `interval = [2.5, 97.5]` or quantiles 0.1, 0.5 and 0.9 as
-        `interval = [10, 50, 90]`.
+        be specified as `interval = [2.5, 97.5]` or multiple percentiles (e.g. 10, 
+        50 and 90) as `interval = [10, 50, 90]`.
         - If 'bootstrapping' (str): `n_boot` bootstrapping predictions will be generated.
         - If scipy.stats distribution object, the distribution parameters will
         be estimated for each prediction.
@@ -564,8 +566,8 @@ def _backtesting_forecaster_multiseries(
 
         - If `list`or `tuple`: Sequence of percentiles to compute, each value must 
         be between 0 and 100 inclusive. For example, a 95% confidence interval can 
-        be specified as `interval = [2.5, 97.5]` or quantiles 0.1, 0.5 and 0.9 as
-        `interval = [10, 50, 90]`.
+        be specified as `interval = [2.5, 97.5]` or multiple percentiles (e.g. 10, 
+        50 and 90) as `interval = [10, 50, 90]`.
         - If 'bootstrapping' (str): `n_boot` bootstrapping predictions will be generated.
         - If scipy.stats distribution object, the distribution parameters will
         be estimated for each prediction.
@@ -891,8 +893,8 @@ def backtesting_forecaster_multiseries(
 
         - If `list`or `tuple`: Sequence of percentiles to compute, each value must 
         be between 0 and 100 inclusive. For example, a 95% confidence interval can 
-        be specified as `interval = [2.5, 97.5]` or quantiles 0.1, 0.5 and 0.9 as
-        `interval = [10, 50, 90]`.
+        be specified as `interval = [2.5, 97.5]` or multiple percentiles (e.g. 10, 
+        50 and 90) as `interval = [10, 50, 90]`.
         - If 'bootstrapping' (str): `n_boot` bootstrapping predictions will be generated.
         - If scipy.stats distribution object, the distribution parameters will
         be estimated for each prediction.
