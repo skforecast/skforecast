@@ -20,10 +20,13 @@ The main changes in this release are:
 
 + Added statistic `ewm` (exponential weighted mean) in <code>[RollingFeatures]</code>. Alpha can be specified using the new argument `kwargs_stats`, default `{'ewm': {'alpha': 0.3}}`.
 
++ Added argument `consolidate_dtypes` in `exog_long_to_dict` function to ensure that the data types of the exogenous variables are consistent across all series when `np.nan` values are added and integer columns are converted to float.
 
 **Changed**
 
 + <code>[ForecasterAutoregCustom]</code> and <code>[ForecasterAutoregMultiSeriesCustom]</code> has been deleted (deprecated since skforecast 0.14.0). Window features can be added using the `window_features` argument in the <code>[ForecasterRecursive]</code>, <code>[ForecasterDirect]</code>, <code>[ForecasterDirectMultiVariate]</code> and <code>[ForecasterRecursiveMultiSeries]</code>.
+
++ Argument `dropna` in `exog_long_to_dict` function has been renamed to `drop_all_nan_cols`.
 
 
 **Fixed**

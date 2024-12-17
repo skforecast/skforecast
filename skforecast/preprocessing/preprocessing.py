@@ -436,7 +436,7 @@ def exog_long_to_dict(
     series_id: str,
     index: str,
     freq: str,
-    dropna: bool = False,
+    drop_all_nan_cols: bool = False,
     consolidate_dtypes: bool = True,
     suppress_warnings: bool = False
 ) -> dict[str, pd.DataFrame]:
@@ -456,7 +456,7 @@ def exog_long_to_dict(
         Column name with the time index.
     freq: str
         Frequency of the series.
-    dropna: bool, default False
+    drop_all_nan_cols: bool, default False
         If True, drop columns with all values as NaN. This is useful when
         there are series without some exogenous variables.
     consolidate_dtypes: bool, default True
@@ -481,7 +481,6 @@ def exog_long_to_dict(
         if col not in data.columns:
             raise ValueError(f"Column '{col}' not found in `data`.")
 
-    original_dtypes = dict(data.dtypes)
     cols_float_dtype = set(data.select_dtypes(include=float).columns)
     original_sizes = data.groupby(series_id, observed=True).size()
     exog_dict = dict(tuple(data.groupby(series_id, observed=True)))
@@ -507,15 +506,12 @@ def exog_long_to_dict(
                 if consolidate_dtypes:
                     cols_float_dtype.update(v.select_dtypes(include=float).columns)
 
-    if dropna:
-        if nans_introduced and consolidate_dtypes:
-            exog_dict = {k: v.dropna(how="all", axis=1).astype(original_dtypes) for k, v in exog_dict.items()}
-        else:
-            exog_dict = {k: v.dropna(how="all", axis=1) for k, v in exog_dict.items()}
-
     if consolidate_dtypes and nans_introduced:
         new_dtypes = {k: float for k in cols_float_dtype}
-        exog_dict = {k: v.dropna(how="all", axis=1).astype(new_dtypes) for k, v in exog_dict.items()}
+        exog_dict = {k: v.astype(new_dtypes) for k, v in exog_dict.items()}
+
+    if drop_all_nan_cols:
+        exog_dict = {k: v.dropna(how="all", axis=1) for k, v in exog_dict.items()}
 
     return exog_dict
 
