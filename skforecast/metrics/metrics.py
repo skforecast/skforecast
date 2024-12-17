@@ -17,7 +17,6 @@ from sklearn.metrics import (
     mean_squared_log_error,
     median_absolute_error,
 )
-from statsmodels.tsa.stattools import acf, pacf
 
 
 def _get_metric(metric: str) -> Callable:
@@ -223,78 +222,3 @@ def root_mean_squared_scaled_error(
     rmsse = np.sqrt(np.mean((y_true - y_pred) ** 2)) / np.sqrt(np.nanmean(naive_forecast ** 2))
     
     return rmsse
-
-
-def calculate_autocorrelation(
-    data: pd.Series,
-    n_lags: int = 50,
-    sort_by: str = "partial_autocorrelation_abs",
-    acf_kwargs: dict = {},
-    pacf_kwargs: dict = {},
-) -> pd.DataFrame:
-    """
-    Calculate autocorrelation and partial autocorrelation for a time series.
-    This is a wrapper around statsmodels.tsa.stattools.acf and statsmodels.tsa.stattools.pacf.
-
-    Parameters
-    ----------
-    data : pandas Series
-        Time series to calculate autocorrelation.
-    n_lags : int
-        Number of lags to calculate autocorrelation.
-    sort_by : str, default 'partial_autocorrelation_abs'
-        Sort results by `lag', 'partial_autocorrelation_abs', 'partial_autocorrelation',
-        'autocorrelation_abs' or 'autocorrelation'.
-    acf_kwargs : dict, default {}
-        Optional arguments to pass to statsmodels.tsa.stattools.acf.
-    pacf_kwargs : dict, default {}
-        Optional arguments to pass to statsmodels.tsa.stattools.pacf.
-
-    Returns
-    -------
-    pd.DataFrame
-        Autocorrelation and partial autocorrelation values.
-
-    Examples
-    --------
-    >>> from skforecast.metrics import calculate_autocorrelation
-    >>> import pandas as pd
-    >>> data = pd.Series([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-    >>> calculate_autocorrelation(data = data, n_lags = 4)
-    
-    """
-
-    if sort_by not in [
-        "lag",
-        "partial_autocorrelation_abs",
-        "partial_autocorrelation",
-        "autocorrelation_abs",
-        "autocorrelation",
-    ]:
-        raise ValueError(
-            "`sort_by` must be 'lag', 'partial_autocorrelation_abs', 'partial_autocorrelation', "
-            "'autocorrelation_abs' or 'autocorrelation'."
-        )
-
-    if not isinstance(data, pd.Series):
-        raise ValueError("`data` must be a pandas Series.")
-
-    pacf_values = pacf(data, nlags=n_lags, **pacf_kwargs)
-    acf_values = acf(data, nlags=n_lags, **acf_kwargs)
-
-    results = pd.DataFrame(
-        {
-            "lag": range(n_lags + 1),
-            "partial_autocorrelation_abs": np.abs(pacf_values),
-            "partial_autocorrelation": pacf_values,
-            "autocorrelation_abs": np.abs(acf_values),
-            "autocorrelation": acf_values,
-        }
-    ).iloc[1:]
-
-    if sort_by == "lag":
-        results = results.sort_values(by=sort_by, ascending=True).reset_index(drop=True)
-    else:
-        results = results.sort_values(by=sort_by, ascending=False).reset_index(drop=True)
-
-    return results

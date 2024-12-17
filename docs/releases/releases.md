@@ -22,6 +22,8 @@ The main changes in this release are:
 
 + Added argument `consolidate_dtypes` in `exog_long_to_dict` function to ensure that the data types of the exogenous variables are consistent across all series when `np.nan` values are added and integer columns are converted to float.
 
++ Added <code>calculate_autocorrelation</code> function to the <code>[plot]</code> module to calculate the autocorrelation and partial autocorrelation of a time series.
+
 **Changed**
 
 + <code>[ForecasterAutoregCustom]</code> and <code>[ForecasterAutoregMultiSeriesCustom]</code> has been deleted (deprecated since skforecast 0.14.0). Window features can be added using the `window_features` argument in the <code>[ForecasterRecursive]</code>, <code>[ForecasterDirect]</code>, <code>[ForecasterDirectMultiVariate]</code> and <code>[ForecasterRecursiveMultiSeries]</code>.
@@ -1071,6 +1073,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [plot_multivariate_time_series_corr]: https://skforecast.org/latest/api/plot#skforecast.plot.plot.plot_multivariate_time_series_corr
 [plot_prediction_distribution]: https://skforecast.org/latest/api/plot#skforecast.plot.plot.plot_prediction_distribution
 [plot_prediction_intervals]: https://skforecast.org/latest/api/plot#skforecast.plot.plot.plot_prediction_intervals
+[calculate_prediction_intervals]: https://skforecast.org/latest/api/plot#skforecast.plot.plot.calculate_prediction_intervals
 
 <!-- utils -->
 [utils]: https://skforecast.org/latest/api/utils

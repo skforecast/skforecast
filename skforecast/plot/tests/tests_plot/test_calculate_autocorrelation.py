@@ -2,7 +2,7 @@
 # ==============================================================================
 import pytest
 import pandas as pd
-from ...metrics import calculate_autocorrelation
+from ....plot import calculate_autocorrelation
 
 
 def test_calculate_autocorrelation_raise_error_invalid_sort_by():
