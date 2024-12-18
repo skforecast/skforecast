@@ -5,9 +5,9 @@
 ################################################################################
 # coding=utf-8
 
-from typing import Union, Optional, Tuple
 import warnings
 import sys
+import uuid
 import pandas as pd
 from copy import copy
 import textwrap
@@ -117,10 +117,10 @@ class ForecasterSarimax():
     def __init__(
         self,
         regressor: object,
-        transformer_y: Optional[object] = None,
-        transformer_exog: Optional[object] = None,
-        fit_kwargs: Optional[dict] = None,
-        forecaster_id: Optional[Union[str, int]] = None
+        transformer_y: object | None = None,
+        transformer_exog: object | None = None,
+        fit_kwargs: dict | None = None,
+        forecaster_id: str | int | None = None
     ) -> None:
         
         self.regressor               = copy(regressor)
@@ -168,22 +168,7 @@ class ForecasterSarimax():
         Information displayed when a ForecasterSarimax object is printed.
         """
 
-        params = str(self.params)
-        if len(params) > 58:
-            params = "\n    " + textwrap.fill(
-                params, width=80, subsequent_indent="    "
-            )
-
-        exog_names_in_ = None
-        if self.exog_names_in_ is not None:
-            exog_names_in_ = copy(self.exog_names_in_)
-            if len(exog_names_in_) > 50:
-                exog_names_in_ = exog_names_in_[:50] + ["..."]
-            exog_names_in_ = ", ".join(exog_names_in_)
-            if len(exog_names_in_) > 58:
-                exog_names_in_ = "\n    " + textwrap.fill(
-                    exog_names_in_, width=80, subsequent_indent="    "
-                )
+        params, exog_names_in_ = self._preprocess_repr()
 
         info = (
             f"{'=' * len(type(self).__name__)} \n"
@@ -208,12 +193,183 @@ class ForecasterSarimax():
         )
 
         return info
+    
+    def _repr_html_(
+        self
+    ) -> str:
+        """
+        HTML representation of the object.
+        The "General Information" section is expanded by default.
+        """
+
+        params, exog_names_in_ = self._preprocess_repr()
+        unique_id = str(uuid.uuid4()).replace('-', '')
+        background_color = "#f0f8ff" if self.is_fitted else "#f9f1e2"
+        section_color = "#b3dbfd" if self.is_fitted else "#fae3b3"
+        style = f"""
+        <style>
+            .container-{unique_id} {{
+                font-family: 'Arial', sans-serif;
+                font-size: 0.9em;
+                color: #333333;
+                border: 1px solid #ddd;
+                background-color: {background_color};
+                padding: 5px 15px;
+                border-radius: 8px;
+                max-width: 600px;
+                #margin: auto;
+            }}
+            .container-{unique_id} h2 {{
+                font-size: 1.5em;
+                color: #222222;
+                border-bottom: 2px solid #ddd;
+                padding-bottom: 5px;
+                margin-bottom: 15px;
+                margin-top: 5px;
+            }}
+            .container-{unique_id} details {{
+                margin: 10px 0;
+            }}
+            .container-{unique_id} summary {{
+                font-weight: bold;
+                font-size: 1.1em;
+                color: #000000;
+                cursor: pointer;
+                margin-bottom: 5px;
+                background-color: {section_color};
+                padding: 5px;
+                border-radius: 5px;
+            }}
+            .container-{unique_id} summary:hover {{
+                color: #000000;
+                background-color: #e0e0e0;
+            }}
+            .container-{unique_id} ul {{
+                font-family: 'Courier New', monospace;
+                list-style-type: none;
+                padding-left: 20px;
+                margin: 10px 0;
+                line-height: normal;
+            }}
+            .container-{unique_id} li {{
+                margin: 5px 0;
+                font-family: 'Courier New', monospace;
+            }}
+            .container-{unique_id} li strong {{
+                font-weight: bold;
+                color: #444444;
+            }}
+            .container-{unique_id} li::before {{
+                content: "- ";
+                color: #666666;
+            }}
+            .container-{unique_id} a {{
+                color: #001633;
+                text-decoration: none;
+            }}
+            .container-{unique_id} a:hover {{
+                color: #359ccb; 
+            }}
+        </style>
+        """
+
+        content = f"""
+        <div class="container-{unique_id}">
+            <h2>{type(self).__name__}</h2>
+            <details open>
+                <summary>General Information</summary>
+                <ul>
+                    <li><strong>Regressor:</strong> {type(self.regressor).__name__}</li>
+                    <li><strong>Order:</strong> {self.regressor.order}</li>
+                    <li><strong>Seasonal order:</strong> {self.regressor.seasonal_order}</li>
+                    <li><strong>Trend:</strong> {self.regressor.trend}</li>
+                    <li><strong>Window size:</strong> {self.window_size}</li>
+                    <li><strong>Exogenous included:</strong> {self.exog_in_}</li>
+                    <li><strong>Creation date:</strong> {self.creation_date}</li>
+                    <li><strong>Last fit date:</strong> {self.fit_date}</li>
+                    <li><strong>Skforecast version:</strong> {self.skforecast_version}</li>
+                    <li><strong>Python version:</strong> {self.python_version}</li>
+                    <li><strong>Forecaster id:</strong> {self.forecaster_id}</li>
+                </ul>
+            </details>
+            <details>
+                <summary>Exogenous Variables</summary>
+                <ul>
+                    {exog_names_in_}
+                </ul>
+            </details>
+            <details>
+                <summary>Data Transformations</summary>
+                <ul>
+                    <li><strong>Transformer for y:</strong> {self.transformer_y}</li>
+                    <li><strong>Transformer for exog:</strong> {self.transformer_exog}</li>
+                </ul>
+            </details>
+            <details>
+                <summary>Training Information</summary>
+                <ul>
+                    <li><strong>Training range:</strong> {self.training_range_.to_list() if self.is_fitted else 'Not fitted'}</li>
+                    <li><strong>Training index type:</strong> {str(self.index_type_).split('.')[-1][:-2] if self.is_fitted else 'Not fitted'}</li>
+                    <li><strong>Training index frequency:</strong> {self.index_freq_ if self.is_fitted else 'Not fitted'}</li>
+                </ul>
+            </details>
+            <details>
+                <summary>Regressor Parameters</summary>
+                <ul>
+                    {params}
+                </ul>
+            </details>
+            <details>
+                <summary>Fit Kwargs</summary>
+                <ul>
+                    {self.fit_kwargs}
+                </ul>
+            </details>
+            <p>
+                <a href="https://skforecast.org/{skforecast.__version__}/api/forecastersarimax.html">&#128712 <strong>API Reference</strong></a>
+                &nbsp;&nbsp;
+                <a href="https://skforecast.org/{skforecast.__version__}/user_guides/forecasting-sarimax-arima.html">&#128462 <strong>User Guide</strong></a>
+            </p>
+        </div>
+        """
+
+        # Return the combined style and content
+        return style + content
+    
+    def _preprocess_repr(self) -> list[str]:
+        """
+        Format text for __repr__ method.
+
+        Returns
+        -------
+        text : str
+            Formatted text.
+
+        """
+        params = str(self.params)
+        if len(params) > 58:
+            params = "\n    " + textwrap.fill(
+                params, width=80, subsequent_indent="    "
+            )
+
+        exog_names_in_ = None
+        if self.exog_names_in_ is not None:
+            exog_names_in_ = copy(self.exog_names_in_)
+            if len(exog_names_in_) > 50:
+                exog_names_in_ = exog_names_in_[:50] + ["..."]
+            exog_names_in_ = ", ".join(exog_names_in_)
+            if len(exog_names_in_) > 58:
+                exog_names_in_ = "\n    " + textwrap.fill(
+                    exog_names_in_, width=80, subsequent_indent="    "
+                )
+        
+        return params, exog_names_in_
 
 
     def fit(
         self,
         y: pd.Series,
-        exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
+        exog: pd.Series | pd.DataFrame | None = None,
         store_last_window: bool = True,
         suppress_warnings: bool = False
     ) -> None:
@@ -319,14 +475,10 @@ class ForecasterSarimax():
     def _create_predict_inputs(
         self,
         steps: int,
-        last_window: Optional[pd.Series] = None,
-        last_window_exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
-        exog: Optional[Union[pd.Series, pd.DataFrame]] = None
-    ) -> Tuple[
-            pd.Series,
-            Optional[pd.DataFrame],
-            Optional[pd.DataFrame],
-        ]:
+        last_window: pd.Series | None = None,
+        last_window_exog: pd.Series | pd.DataFrame | None = None,
+        exog: pd.Series | pd.DataFrame | None = None
+    ) -> tuple[pd.Series, pd.DataFrame | None, pd.DataFrame | None]:
         """
         Create inputs needed for the first iteration of the prediction process. 
         Since it is a recursive process, last window is updated at each 
@@ -467,9 +619,9 @@ class ForecasterSarimax():
     def predict(
         self,
         steps: int,
-        last_window: Optional[pd.Series] = None,
-        last_window_exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
-        exog: Optional[Union[pd.Series, pd.DataFrame]] = None
+        last_window: pd.Series | None = None,
+        last_window_exog: pd.Series | pd.DataFrame | None = None,
+        exog: pd.Series | pd.DataFrame | None = None
     ) -> pd.Series:
         """
         Forecast future values.
@@ -545,11 +697,11 @@ class ForecasterSarimax():
     def predict_interval(
         self,
         steps: int,
-        last_window: Optional[pd.Series] = None,
-        last_window_exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
-        exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
+        last_window: pd.Series | None = None,
+        last_window_exog: pd.Series | pd.DataFrame | None = None,
+        exog: pd.Series | pd.DataFrame | None = None,
         alpha: float = 0.05,
-        interval: Union[list, tuple] = None,
+        interval: list | tuple | None = None,
     ) -> pd.DataFrame:
         """
         Forecast future values and their confidence intervals.
