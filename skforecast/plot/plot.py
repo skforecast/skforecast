@@ -331,11 +331,16 @@ def calculate_lag_autocorrelation(
 
     Examples
     --------
-    >>> from skforecast.metrics import calculate_autocorrelation
+    >>> from skforecast.plot import calculate_lag_autocorrelation
     >>> import pandas as pd
     >>> data = pd.Series([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-    >>> calculate_autocorrelation(data = data, n_lags = 4)
-    
+    >>> calculate_lag_autocorrelation(data = data, n_lags = 4)
+       lag  partial_autocorrelation_abs  partial_autocorrelation  autocorrelation_abs  autocorrelation
+    0    1                     0.777778                 0.777778             0.700000         0.700000   
+    1    4                     0.360707                -0.360707             0.078788        -0.078788
+    2    3                     0.274510                -0.274510             0.148485         0.148485
+    3    2                     0.227273                -0.227273             0.412121         0.412121
+
     """
 
     if sort_by not in [
