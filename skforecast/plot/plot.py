@@ -303,8 +303,8 @@ def calculate_lag_autocorrelation(
     data: pd.Series,
     n_lags: int = 50,
     sort_by: str = "partial_autocorrelation_abs",
-    acf_kwargs: dict = {},
-    pacf_kwargs: dict = {},
+    acf_kwargs: dict[str, object] = {},
+    pacf_kwargs: dict[str, object] = {},
 ) -> pd.DataFrame:
     """
     Calculate autocorrelation and partial autocorrelation for a time series.
@@ -317,7 +317,7 @@ def calculate_lag_autocorrelation(
     n_lags : int
         Number of lags to calculate autocorrelation.
     sort_by : str, default 'partial_autocorrelation_abs'
-        Sort results by `lag', 'partial_autocorrelation_abs', 'partial_autocorrelation',
+        Sort results by 'lag', 'partial_autocorrelation_abs', 'partial_autocorrelation',
         'autocorrelation_abs' or 'autocorrelation'.
     acf_kwargs : dict, default {}
         Optional arguments to pass to statsmodels.tsa.stattools.acf.
@@ -326,7 +326,7 @@ def calculate_lag_autocorrelation(
 
     Returns
     -------
-    pd.DataFrame
+    results : pandas DataFrame
         Autocorrelation and partial autocorrelation values.
 
     Examples
