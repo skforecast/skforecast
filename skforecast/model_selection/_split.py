@@ -7,10 +7,12 @@
 
 from copy import deepcopy
 from typing import Union, Optional, Any
+import uuid
 import warnings
 import numpy as np
 import pandas as pd
 import itertools
+import skforecast
 from ..exceptions import IgnoredArgumentWarning
 
 
@@ -320,6 +322,94 @@ class BaseFold():
         for key, value in updated_params.items():
             setattr(self, key, value)
 
+    def _get_style_repr_html(
+        self, 
+    ) -> tuple[str, str]:
+        """
+        Return style and unique_id for HTML representation.
+        
+        Returns
+        -------
+        style : str
+            CSS style.
+        unique_id : str
+            Unique id for the HTML container.
+        
+        """
+
+        unique_id = str(uuid.uuid4()).replace('-', '')
+        background_color = "#f0f8ff"
+        section_color = "#b3dbfd"
+
+        style = f"""
+        <style>
+            .container-{unique_id} {{
+                font-family: 'Arial', sans-serif;
+                font-size: 0.9em;
+                color: #333333;
+                border: 1px solid #ddd;
+                background-color: {background_color};
+                padding: 5px 15px;
+                border-radius: 8px;
+                max-width: 600px;
+                #margin: auto;
+            }}
+            .container-{unique_id} h2 {{
+                font-size: 1.5em;
+                color: #222222;
+                border-bottom: 2px solid #ddd;
+                padding-bottom: 5px;
+                margin-bottom: 15px;
+                margin-top: 5px;
+            }}
+            .container-{unique_id} details {{
+                margin: 10px 0;
+            }}
+            .container-{unique_id} summary {{
+                font-weight: bold;
+                font-size: 1.1em;
+                color: #000000;
+                cursor: pointer;
+                margin-bottom: 5px;
+                background-color: {section_color};
+                padding: 5px;
+                border-radius: 5px;
+            }}
+            .container-{unique_id} summary:hover {{
+                color: #000000;
+                background-color: #e0e0e0;
+            }}
+            .container-{unique_id} ul {{
+                font-family: 'Courier New', monospace;
+                list-style-type: none;
+                padding-left: 20px;
+                margin: 10px 0;
+                line-height: normal;
+            }}
+            .container-{unique_id} li {{
+                margin: 5px 0;
+                font-family: 'Courier New', monospace;
+            }}
+            .container-{unique_id} li strong {{
+                font-weight: bold;
+                color: #444444;
+            }}
+            .container-{unique_id} li::before {{
+                content: "- ";
+                color: #666666;
+            }}
+            .container-{unique_id} a {{
+                color: #001633;
+                text-decoration: none;
+            }}
+            .container-{unique_id} a:hover {{
+                color: #359ccb; 
+            }}
+        </style>
+        """
+    
+        return style, unique_id
+
 
 class OneStepAheadFold(BaseFold):
     """
@@ -391,16 +481,48 @@ class OneStepAheadFold(BaseFold):
         """
         Information displayed when printed.
         """
-            
-        return (
-            f"OneStepAheadFold(\n"
-            f"    initial_train_size = {self.initial_train_size},\n"
-            f"    window_size        = {self.window_size},\n"
-            f"    differentiation    = {self.differentiation},\n"
-            f"    return_all_indexes = {self.return_all_indexes},\n"
-            f"    verbose            = {self.verbose}\n"
-            f")"
+
+        info = (
+            f"{'=' * len(type(self).__name__)} \n"
+            f"{type(self).__name__} \n"
+            f"{'=' * len(type(self).__name__)} \n"
+            f"Initial train size = {self.initial_train_size},\n"
+            f"Window size        = {self.window_size},\n"
+            f"Differentiation    = {self.differentiation},\n"
+            f"Return all indexes = {self.return_all_indexes},\n"
+            f"Verbose            = {self.verbose}\n"
         )
+            
+        return info
+    
+    def _repr_html_(self) -> str:
+        """
+        HTML representation of the object.
+        The "General Information" section is expanded by default.
+        """
+
+        style, unique_id = self._get_style_repr_html()
+        content = f"""
+        <div class="container-{unique_id}">
+            <h2>{type(self).__name__}</h2>
+            <details open>
+                <summary>General Information</summary>
+                <ul>
+                    <li><strong>Initial train size:</strong> {self.initial_train_size}</li>
+                    <li><strong>Window size:</strong> {self.window_size}</li>
+                    <li><strong>Differentiation:</strong> {self.differentiation}</li>
+                    <li><strong>Return all indexes:</strong> {self.return_all_indexes}</li>
+                </ul>
+            </details>
+            <p>
+                <a href="https://skforecast.org/{skforecast.__version__}/api/model_selection#skforecast.model_selection._split.OneStepAheadFold">&#128712 <strong>API Reference</strong></a>
+                &nbsp;&nbsp;
+                <a href="https://skforecast.org/{skforecast.__version__}/faq/parameters-search-backtesting-vs-one-step-ahead">&#128462 <strong>User Guide</strong></a>
+            </p>
+        </div>
+        """
+
+        return style + content
     
     def split(
         self,
@@ -676,22 +798,60 @@ class TimeSeriesFold(BaseFold):
         """
         Information displayed when printed.
         """
-            
-        return (
-            f"TimeSeriesFold(\n"
-            f"    steps                 = {self.steps},\n"
-            f"    initial_train_size    = {self.initial_train_size},\n"
-            f"    window_size           = {self.window_size},\n"
-            f"    differentiation       = {self.differentiation},\n"
-            f"    refit                 = {self.refit},\n"
-            f"    fixed_train_size      = {self.fixed_train_size},\n"
-            f"    gap                   = {self.gap},\n"
-            f"    skip_folds            = {self.skip_folds},\n"
-            f"    allow_incomplete_fold = {self.allow_incomplete_fold},\n"
-            f"    return_all_indexes    = {self.return_all_indexes},\n"
-            f"    verbose               = {self.verbose}\n"
-            f")"
+
+        info = (
+            f"{'=' * len(type(self).__name__)} \n"
+            f"{type(self).__name__} \n"
+            f"{'=' * len(type(self).__name__)} \n"
+            f"Steps                 = {self.steps},\n"
+            f"Initial train size    = {self.initial_train_size},\n"
+            f"Window size           = {self.window_size},\n"
+            f"Differentiation       = {self.differentiation},\n"
+            f"Refit                 = {self.refit},\n"
+            f"Fixed train size      = {self.fixed_train_size},\n"
+            f"Gap                   = {self.gap},\n"
+            f"Skip folds            = {self.skip_folds},\n"
+            f"Allow incomplete fold = {self.allow_incomplete_fold},\n"
+            f"Return all indexes    = {self.return_all_indexes},\n"
+            f"verbose               = {self.verbose}\n"
         )
+
+        return info
+    
+    def _repr_html_(self) -> str:
+        """
+        HTML representation of the object.
+        The "General Information" section is expanded by default.
+        """
+
+        style, unique_id = self._get_style_repr_html()
+        content = f"""
+        <div class="container-{unique_id}">
+            <h2>{type(self).__name__}</h2>
+            <details open>
+                <summary>General Information</summary>
+                <ul>
+                    <li><strong>Initial train size:</strong> {self.initial_train_size}</li>
+                    <li><strong>Steps:</strong> {self.steps}</li>
+                    <li><strong>Window size:</strong> {self.window_size}</li>
+                    <li><strong>Differentiation:</strong> {self.differentiation}</li>
+                    <li><strong>Refit:</strong> {self.refit}</li>
+                    <li><strong>Fixed train size:</strong> {self.fixed_train_size}</li>
+                    <li><strong>Gap:</strong> {self.gap}</li>
+                    <li><strong>Skip folds:</strong> {self.skip_folds}</li>
+                    <li><strong>Allow incomplete fold:</strong> {self.allow_incomplete_fold}</li>
+                    <li><strong>Return all indexes:</strong> {self.return_all_indexes}</li>
+                </ul>
+            </details>
+            <p>
+                <a href="https://skforecast.org/{skforecast.__version__}/api/model_selection#skforecast.model_selection._split.TimeSeriesFold">&#128712 <strong>API Reference</strong></a>
+                &nbsp;&nbsp;
+                <a href="https://skforecast.org/{skforecast.__version__}/user_guides/backtesting#timeseriesfold">&#128462 <strong>User Guide</strong></a>
+            </p>
+        </div>
+        """
+        
+        return style + content
 
     def split(
         self,
