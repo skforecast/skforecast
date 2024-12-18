@@ -16,6 +16,10 @@ The main changes in this release are:
 
 **Added**
 
++ Functions `crps_from_predictions` and `crps_from_quantiles` in module `metrics` to calculate the Continuous Ranked Probability Score (CRPS).
+
++ Function `coverage` in module `metrics` to calculate the coverage of the predicted intervals.
+
 + The `differentiation` argument in <code>[ForecasterRecursiveMultiSeries]</code> can now be a dict to [differentiate each series independently](../user_guides/independent-multi-time-series-forecasting.html#differentiation). This is useful if the user wants to differentiate each series with a different order or not differentiate some of them.
 
 + Added statistic `ewm` (exponential weighted mean) in <code>[RollingFeatures]</code>. Alpha can be specified using the new argument `kwargs_stats`, default `{'ewm': {'alpha': 0.3}}`.
