@@ -22,7 +22,7 @@ The main changes in this release are:
 
 + Added argument `consolidate_dtypes` in `exog_long_to_dict` function to ensure that the data types of the exogenous variables are consistent across all series when `np.nan` values are added and integer columns are converted to float.
 
-+ Added <code>calculate_autocorrelation</code> function to the <code>[plot]</code> module to calculate the autocorrelation and partial autocorrelation of a time series.
++ Added `calculate_lag_autocorrelation` function to the <code>[plot]</code> module to calculate the autocorrelation and partial autocorrelation of a time series.
 
 **Changed**
 

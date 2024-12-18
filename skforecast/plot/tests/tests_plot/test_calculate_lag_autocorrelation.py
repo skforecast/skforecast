@@ -1,28 +1,28 @@
-# Unit test calculate_autocorrelation
+# Unit test calculate_lag_autocorrelation
 # ==============================================================================
 import pytest
 import pandas as pd
-from ....plot import calculate_autocorrelation
+from ... import calculate_lag_autocorrelation
 
 
-def test_calculate_autocorrelation_raise_error_invalid_sort_by():
+def test_ccalculate_lag_autocorrelation_raise_error_invalid_sort_by():
     data = pd.Series([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
     msg = (
         "`sort_by` must be 'lag', 'partial_autocorrelation_abs', 'partial_autocorrelation', "
         "'autocorrelation_abs' or 'autocorrelation'."
     )
     with pytest.raises(ValueError, match=msg):
-        calculate_autocorrelation(data=data, n_lags=4, sort_by="invalid_sort")
+        calculate_lag_autocorrelation(data=data, n_lags=4, sort_by="invalid_sort")
 
 
-def test_calculate_autocorrelation_raise_error_invalid_data():
+def test_calculate_lag_autocorrelation_raise_error_invalid_data():
     data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     msg = "`data` must be a pandas Series."
     with pytest.raises(ValueError, match=msg):
-        calculate_autocorrelation(data=data, n_lags=4)
+        calculate_lag_autocorrelation(data=data, n_lags=4)
 
 
-def test_calculate_autocorrelation_output():
+def test_calculate_lag_autocorrelation_output():
     data = pd.Series([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
     expected = pd.DataFrame(
         {
@@ -54,11 +54,11 @@ def test_calculate_autocorrelation_output():
         }
     )
 
-    results = calculate_autocorrelation(data=data, n_lags=4)
+    results = calculate_lag_autocorrelation(data=data, n_lags=4)
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_calculate_autocorrelation_output_sort_by_lag():
+def test_calculate_lag_autocorrelation_output_sort_by_lag():
     data = pd.Series([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
     expected = pd.DataFrame(
         {
@@ -90,5 +90,5 @@ def test_calculate_autocorrelation_output_sort_by_lag():
         }
     )
 
-    results = calculate_autocorrelation(data=data, n_lags=4, sort_by="lag")
+    results = calculate_lag_autocorrelation(data=data, n_lags=4, sort_by="lag")
     pd.testing.assert_frame_equal(results, expected)

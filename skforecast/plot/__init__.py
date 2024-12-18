@@ -3,6 +3,6 @@ from .plot import (
     plot_multivariate_time_series_corr,
     plot_prediction_distribution,
     plot_prediction_intervals,
-    calculate_autocorrelation,
+    calculate_lag_autocorrelation,
     set_dark_theme
 )

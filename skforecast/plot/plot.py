@@ -299,7 +299,7 @@ def plot_prediction_intervals(
         ax.set_xlim(initial_x_zoom)
 
 
-def calculate_autocorrelation(
+def calculate_lag_autocorrelation(
     data: pd.Series,
     n_lags: int = 50,
     sort_by: str = "partial_autocorrelation_abs",
