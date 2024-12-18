@@ -720,7 +720,9 @@ def _backtesting_forecaster_multiseries(
                      externally_fitted  = externally_fitted
                  )
 
-    def _fit_predict_forecaster(data_fold, forecaster, interval, levels, gap):
+    def _fit_predict_forecaster(
+        data_fold, forecaster, store_in_sample_residuals, levels, interval, 
+        n_boot, random_state, use_in_sample_residuals, gap, suppress_warnings):
         """
         Fit the forecaster and predict `steps` ahead. This is an auxiliary 
         function used to parallelize the backtesting_forecaster_multiseries
@@ -783,14 +785,19 @@ def _backtesting_forecaster_multiseries(
 
         return pred
 
+    kwargs_fit_predict_forecaster = {
+        "forecaster": forecaster,
+        "store_in_sample_residuals": store_in_sample_residuals,
+        "levels": levels,
+        "interval": interval,
+        "n_boot": n_boot,
+        "random_state": random_state,
+        "use_in_sample_residuals": use_in_sample_residuals,
+        "gap": gap,
+        "suppress_warnings": suppress_warnings
+    }
     backtest_predictions = Parallel(n_jobs=n_jobs)(
-        delayed(_fit_predict_forecaster)(
-            data_fold  = data_fold,
-            forecaster = forecaster,
-            interval   = interval,
-            levels     = levels,
-            gap        = gap
-        )
+        delayed(_fit_predict_forecaster)(data_fold=data_fold, **kwargs_fit_predict_forecaster)
         for data_fold in data_folds
     )
 
