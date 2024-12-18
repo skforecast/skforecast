@@ -24,6 +24,7 @@ The main changes in this release are:
 
 + Added statistic `ewm` (exponential weighted mean) in <code>[RollingFeatures]</code>. Alpha can be specified using the new argument `kwargs_stats`, default `{'ewm': {'alpha': 0.3}}`.
 
++ Added method `_rep_html_` to <code>[ForecasterSarimax]</code>, <code>[TimeSeriesFold]</code> and <code>[OneStepAheadFold]</code> to display the object in HTML format.
 
 **Changed**
 
