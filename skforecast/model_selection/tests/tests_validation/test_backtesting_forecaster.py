@@ -39,9 +39,9 @@ def test_backtesting_forecaster_TypeError_when_forecaster_not_supported_types():
             return_all_indexes    = False,
         )
     err_msg = re.escape(
-        (f"`forecaster` must be of type {forecaters_allowed}, for all other types of "
-         f" forecasters use the functions available in the other `model_selection` "
-         f"modules.")
+        f"`forecaster` must be of type {forecaters_allowed}, for all other types of "
+        f" forecasters use the functions available in the other `model_selection` "
+        f"modules."
     )
     
     with pytest.raises(TypeError, match = err_msg):
@@ -79,9 +79,9 @@ def test_backtesting_forecaster_ValueError_when_ForecasterDirect_not_enough_step
             return_all_indexes    = False,
         )
     err_msg = re.escape(
-        (f"When using a ForecasterDirect, the combination of steps "
-         f"+ gap ({cv.steps + cv.gap}) cannot be greater than the `steps` parameter "
-         f"declared when the forecaster is initialized ({forecaster.steps}).")
+        f"When using a ForecasterDirect, the combination of steps "
+        f"+ gap ({cv.steps + cv.gap}) cannot be greater than the `steps` parameter "
+        f"declared when the forecaster is initialized ({forecaster.steps})."
     )
     with pytest.raises(ValueError, match = err_msg):
         backtesting_forecaster(
