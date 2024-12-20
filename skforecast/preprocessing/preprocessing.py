@@ -419,7 +419,7 @@ def series_long_to_dict(
     original_sizes = data.groupby(series_id, observed=True).size()
     series_dict = {}
     for k, v in data.groupby(series_id, observed=True):
-        series_dict[k] = v.set_index(index)[values].asfreq(freq).rename(k)
+        series_dict[k] = v.set_index(index)[values].asfreq(freq, fill_value=np.nan).rename(k)
         series_dict[k].index.name = None
         if not suppress_warnings and len(series_dict[k]) != original_sizes[k]:
             warnings.warn(
@@ -436,7 +436,8 @@ def exog_long_to_dict(
     series_id: str,
     index: str,
     freq: str,
-    dropna: bool = False,
+    drop_all_nan_cols: bool = False,
+    consolidate_dtypes: bool = True,
     suppress_warnings: bool = False
 ) -> dict[str, pd.DataFrame]:
     """
@@ -455,9 +456,13 @@ def exog_long_to_dict(
         Column name with the time index.
     freq: str
         Frequency of the series.
-    dropna: bool, default False
+    drop_all_nan_cols: bool, default False
         If True, drop columns with all values as NaN. This is useful when
         there are series without some exogenous variables.
+    consolidate_dtypes: bool, default True
+        Consolidate the data types of the exogenous variables if, after setting
+        the frequency, NaNs have been introduced and the data types have changed
+        to float.
     suppress_warnings: bool, default False
         If True, suppress warnings when exog is incomplete after setting the
         frequency.
@@ -476,27 +481,37 @@ def exog_long_to_dict(
         if col not in data.columns:
             raise ValueError(f"Column '{col}' not found in `data`.")
 
+    cols_float_dtype = set(data.select_dtypes(include=float).columns)
     original_sizes = data.groupby(series_id, observed=True).size()
     exog_dict = dict(tuple(data.groupby(series_id, observed=True)))
     exog_dict = {
-        k: v.set_index(index).asfreq(freq).drop(columns=series_id)
+        k: v.set_index(index).asfreq(freq, fill_value=np.nan).drop(columns=series_id)
         for k, v in exog_dict.items()
     }
 
     for k in exog_dict.keys():
         exog_dict[k].index.name = None
 
-    if dropna:
-        exog_dict = {k: v.dropna(how="all", axis=1) for k, v in exog_dict.items()}
-    else: 
-        if not suppress_warnings:
-            for k, v in exog_dict.items():
-                if len(v) != original_sizes[k]:
+    nans_introduced = False
+    if not suppress_warnings or consolidate_dtypes:
+        for k, v in exog_dict.items():
+            if len(v) != original_sizes[k]:
+                nans_introduced = True
+                if not suppress_warnings:
                     warnings.warn(
                         f"Exogenous variables for series '{k}' are incomplete. "
                         f"NaNs have been introduced after setting the frequency.",
                         MissingValuesWarning
                     )
+                if consolidate_dtypes:
+                    cols_float_dtype.update(v.select_dtypes(include=float).columns)
+
+    if consolidate_dtypes and nans_introduced:
+        new_dtypes = {k: float for k in cols_float_dtype}
+        exog_dict = {k: v.astype(new_dtypes) for k, v in exog_dict.items()}
+
+    if drop_all_nan_cols:
+        exog_dict = {k: v.dropna(how="all", axis=1) for k, v in exog_dict.items()}
 
     return exog_dict
 

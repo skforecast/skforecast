@@ -1255,7 +1255,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         or DataFrames. Each key in `exog` must be a column in `series` and the 
         values are the exog for each series. Exog must have the same index as 
         `series` (type, length and frequency).
-        - If `series` is a dict of pandas Series, `exog`must be a dict of pandas
+        - If `series` is a dict of pandas Series, `exog` must be a dict of pandas
         Series or DataFrames. The keys in `series` and `exog` must be the same.
         All series and exog must have a pandas DatetimeIndex with the same 
         frequency.

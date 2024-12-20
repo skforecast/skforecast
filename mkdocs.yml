@@ -31,7 +31,7 @@ nav:
       - Recursive multi-step forecasting: user_guides/autoregresive-forecaster.ipynb
       - Direct multi-step forecasting: user_guides/direct-multi-step-forecasting.ipynb
       - ARIMA and SARIMAX forecasting: user_guides/forecasting-sarimax-arima.ipynb
-      - Foreasting baseline: user_guides/forecasting-baseline.ipynb
+      - Forecasting baseline: user_guides/forecasting-baseline.ipynb
     - Global Forecasters (multiple series):
       - Independent multi-time series forecasting: user_guides/independent-multi-time-series-forecasting.ipynb
       - Series with different lengths and different exogenous variables: user_guides/multi-series-with-different-length-and-different_exog.ipynb
@@ -45,6 +45,7 @@ nav:
       - Data transformation: user_guides/sklearn-transformers-and-pipeline.ipynb
       - Differentiation: user_guides/time-series-differentiation.ipynb
       - Feature selection: user_guides/feature-selection.ipynb
+      - Sktime pipelines: user_guides/sktime-pipelines.ipynb
     - Model Evaluation and Tuning:
       - Metrics: user_guides/metrics.ipynb
       - Backtesting forecaster: user_guides/backtesting.ipynb
@@ -78,14 +79,17 @@ nav:
     - Spanish: examples/examples_spanish.md
 
   - API Reference:
-    - ForecasterRecursive: api/ForecasterRecursive.md
-    - ForecasterDirect: api/ForecasterDirect.md
-    - ForecasterRecursiveMultiSeries: api/ForecasterRecursiveMultiSeries.md
-    - ForecasterDirectMultiVariate: api/ForecasterDirectMultiVariate.md
-    - ForecasterRnn: api/ForecasterRnn.md
+    - recursive:
+      - ForecasterRecursive: api/ForecasterRecursive.md
+      - ForecasterRecursiveMultiSeries: api/ForecasterRecursiveMultiSeries.md
+      - ForecasterSarimax: api/ForecasterSarimax.md
+      - ForecasterEquivalentDate: api/ForecasterEquivalentDate.md
+    - direct:
+      - ForecasterDirect: api/ForecasterDirect.md
+      - ForecasterDirectMultiVariate: api/ForecasterDirectMultiVariate.md
+    - deep_learning:
+      - ForecasterRnn: api/ForecasterRnn.md
     - sarimax: api/Sarimax.md
-    - ForecasterSarimax: api/ForecasterSarimax.md
-    - ForecasterEquivalentDate: api/ForecasterEquivalentDate.md
     - model_selection: api/model_selection.md
     - feature_selection: api/feature_selection.md
     - preprocessing: api/preprocessing.md
@@ -103,6 +107,7 @@ nav:
     - Backtesting vs One-step-ahead: faq/parameters-search-backtesting-vs-one-step-ahead.ipynb
     - Cyclical features in time series: faq/cyclical-features-time-series.ipynb
     - Time series aggregation: faq/time-series-aggregation.ipynb
+    - Continuous Ranked Probability Score (CRPS): faq/probabilistic-forecasting-crps-score.ipynb
     - Parallelization in skforecast: faq/parallelization-skforecast.ipynb
     - Profiling skforecast: faq/profiling-skforecast.ipynb
 
