@@ -368,7 +368,10 @@ def test_create_predict_inputs_output_when_series_and_exog_dict():
     assert results[4] == expected[4]
 
 
-def test_create_predict_inputs_output_when_regressor_is_LinearRegression_with_exog_differentiation_is_1_and_transformer_series():
+@pytest.mark.parametrize("differentiation", 
+                         [1, {'1': 1, '2': 1, '_unknown_level': 1}], 
+                         ids = lambda diff: f'differentiation: {diff}')
+def test_create_predict_inputs_output_when_regressor_is_LinearRegression_with_exog_differentiation_is_1_and_transformer_series(differentiation):
     """
     Test _create_predict_inputs output when using LinearRegression as regressor and differentiation=1,
     and transformer_series is StandardScaler.
@@ -404,7 +407,7 @@ def test_create_predict_inputs_output_when_regressor_is_LinearRegression_with_ex
                      regressor          = LinearRegression(), 
                      lags               = 15, 
                      transformer_series = StandardScaler(),    
-                     differentiation    = 1
+                     differentiation    = differentiation
                  )
     forecaster.fit(series=series_dict_datetime, exog=exog_dict_datetime)
     results = forecaster._create_predict_inputs(

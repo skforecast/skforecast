@@ -6,7 +6,7 @@
 # coding=utf-8
 
 from __future__ import annotations
-from typing import Union, Any, Optional
+from typing import Any
 import numpy as np
 import pandas as pd
 from ..utils import check_optional_dependency
@@ -16,16 +16,17 @@ try:
     import matplotlib.pyplot as plt
     import seaborn as sns
     from statsmodels.graphics.tsaplots import plot_acf
+    from statsmodels.tsa.stattools import acf, pacf
 except Exception as e:
     package_name = str(e).split(" ")[-1].replace("'", "")
     check_optional_dependency(package_name=package_name)
 
 
 def plot_residuals(
-    residuals: Union[np.ndarray, pd.Series] = None,
-    y_true: Union[np.ndarray, pd.Series] = None,
-    y_pred: Union[np.ndarray, pd.Series] = None,
-    fig: matplotlib.figure.Figure = None,
+    residuals: np.ndarray | pd.Series | None = None,
+    y_true: np.ndarray | pd.Series | None = None,
+    y_pred: np.ndarray | pd.Series | None = None,
+    fig: matplotlib.figure.Figure | None = None,
     **fig_kw
 ) -> matplotlib.figure.Figure:
     """
@@ -80,7 +81,7 @@ def plot_residuals(
 
 def plot_multivariate_time_series_corr(
     corr: pd.DataFrame,
-    ax: matplotlib.axes.Axes = None,
+    ax: matplotlib.axes.Axes | None = None,
     **fig_kw
 ) -> matplotlib.figure.Figure:
     """
@@ -121,7 +122,7 @@ def plot_multivariate_time_series_corr(
 
 def plot_prediction_distribution(
     bootstrapping_predictions: pd.DataFrame,
-    bw_method: Optional[Any] = None,
+    bw_method: Any | None = None,
     **fig_kw
 ) -> matplotlib.figure.Figure:
     """
@@ -184,7 +185,7 @@ def plot_prediction_distribution(
 
 
 def set_dark_theme(
-    custom_style: Optional[dict] = None
+    custom_style: dict | None = None
 ) -> None:
     """
     Set aspects of the visual theme for all matplotlib plots.
@@ -237,11 +238,11 @@ def plot_prediction_intervals(
     predictions: pd.DataFrame,
     y_true: pd.DataFrame,
     target_variable: str,
-    initial_x_zoom: list = None,
-    title: str = None,
-    xaxis_title: str = None,
-    yaxis_title: str = None,
-    ax: plt.Axes = None,
+    initial_x_zoom: list[str] | None = None,
+    title: str | None = None,
+    xaxis_title: str | None = None,
+    yaxis_title: str | None = None,
+    ax: plt.Axes | None = None,
     kwargs_subplots: dict[str, object] = {'figsize': (7, 3)},
     kwargs_fill_between: dict[str, object] = {'color': '#444444', 'alpha': 0.3}
 ):
@@ -296,3 +297,83 @@ def plot_prediction_intervals(
 
     if initial_x_zoom is not None:
         ax.set_xlim(initial_x_zoom)
+
+
+def calculate_lag_autocorrelation(
+    data: pd.Series,
+    n_lags: int = 50,
+    sort_by: str = "partial_autocorrelation_abs",
+    acf_kwargs: dict[str, object] = {},
+    pacf_kwargs: dict[str, object] = {},
+) -> pd.DataFrame:
+    """
+    Calculate autocorrelation and partial autocorrelation for a time series.
+    This is a wrapper around statsmodels.tsa.stattools.acf and statsmodels.tsa.stattools.pacf.
+
+    Parameters
+    ----------
+    data : pandas Series
+        Time series to calculate autocorrelation.
+    n_lags : int
+        Number of lags to calculate autocorrelation.
+    sort_by : str, default 'partial_autocorrelation_abs'
+        Sort results by 'lag', 'partial_autocorrelation_abs', 'partial_autocorrelation',
+        'autocorrelation_abs' or 'autocorrelation'.
+    acf_kwargs : dict, default {}
+        Optional arguments to pass to statsmodels.tsa.stattools.acf.
+    pacf_kwargs : dict, default {}
+        Optional arguments to pass to statsmodels.tsa.stattools.pacf.
+
+    Returns
+    -------
+    results : pandas DataFrame
+        Autocorrelation and partial autocorrelation values.
+
+    Examples
+    --------
+    >>> from skforecast.plot import calculate_lag_autocorrelation
+    >>> import pandas as pd
+    >>> data = pd.Series([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+    >>> calculate_lag_autocorrelation(data = data, n_lags = 4)
+       lag  partial_autocorrelation_abs  partial_autocorrelation  autocorrelation_abs  autocorrelation
+    0    1                     0.777778                 0.777778             0.700000         0.700000
+    1    4                     0.360707                -0.360707             0.078788        -0.078788
+    2    3                     0.274510                -0.274510             0.148485         0.148485
+    3    2                     0.227273                -0.227273             0.412121         0.412121
+
+    """
+
+    if sort_by not in [
+        "lag",
+        "partial_autocorrelation_abs",
+        "partial_autocorrelation",
+        "autocorrelation_abs",
+        "autocorrelation",
+    ]:
+        raise ValueError(
+            "`sort_by` must be 'lag', 'partial_autocorrelation_abs', 'partial_autocorrelation', "
+            "'autocorrelation_abs' or 'autocorrelation'."
+        )
+
+    if not isinstance(data, pd.Series):
+        raise ValueError("`data` must be a pandas Series.")
+
+    pacf_values = pacf(data, nlags=n_lags, **pacf_kwargs)
+    acf_values = acf(data, nlags=n_lags, **acf_kwargs)
+
+    results = pd.DataFrame(
+        {
+            "lag": range(n_lags + 1),
+            "partial_autocorrelation_abs": np.abs(pacf_values),
+            "partial_autocorrelation": pacf_values,
+            "autocorrelation_abs": np.abs(acf_values),
+            "autocorrelation": acf_values,
+        }
+    ).iloc[1:]
+
+    if sort_by == "lag":
+        results = results.sort_values(by=sort_by, ascending=True).reset_index(drop=True)
+    else:
+        results = results.sort_values(by=sort_by, ascending=False).reset_index(drop=True)
+
+    return results

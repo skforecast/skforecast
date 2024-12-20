@@ -307,9 +307,9 @@ def test_predict_bootstrapping_ValueError_when_out_sample_residuals_is_None():
     forecaster.fit(series=series)
 
     err_msg = re.escape(
-        ("`forecaster.out_sample_residuals_` is `None`. Use "
-         "`use_in_sample_residuals=True` or the "
-         "`set_out_sample_residuals()` method before predicting.")
+        "`forecaster.out_sample_residuals_` is `None`. Use "
+        "`use_in_sample_residuals=True` or the "
+        "`set_out_sample_residuals()` method before predicting."
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster.predict_bootstrapping(
@@ -714,7 +714,10 @@ def test_predict_bootstrapping_output_when_window_features():
         pd.testing.assert_frame_equal(results[key], expected[key])
 
 
-def test_predict_bootstrapping_output_when_differentiation():
+@pytest.mark.parametrize("differentiation", 
+                         [1, {'1': 1, '2': 1, '_unknown_level': 1}], 
+                         ids = lambda diff: f'differentiation: {diff}')
+def test_predict_bootstrapping_output_when_differentiation(differentiation):
     """
     Test output of predict_bootstrapping when regressor is LinearRegression,
     2 steps are predicted, using in-sample residuals, exog is included and both
@@ -725,7 +728,7 @@ def test_predict_bootstrapping_output_when_differentiation():
                      lags               = 3,
                      transformer_series = StandardScaler(),
                      transformer_exog   = transformer_exog,
-                     differentiation    = 1
+                     differentiation    = differentiation
                  )
     forecaster.fit(series=series, exog=exog)
     results = forecaster.predict_bootstrapping(

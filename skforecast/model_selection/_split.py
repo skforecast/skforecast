@@ -5,12 +5,15 @@
 ################################################################################
 # coding=utf-8
 
+from __future__ import annotations
+from typing import Any
 from copy import deepcopy
-from typing import Union, Optional, Any
+import uuid
 import warnings
 import numpy as np
 import pandas as pd
 import itertools
+import skforecast
 from ..exceptions import IgnoredArgumentWarning
 
 
@@ -21,29 +24,29 @@ class BaseFold():
 
     Parameters
     ----------
-    steps : int, default `None`
+    steps : int, default None
         Number of observations used to be predicted in each fold. This is also commonly
         referred to as the forecast horizon or test size.
-    initial_train_size : int, default `None`
+    initial_train_size : int, default None
         Number of observations used for initial training.
-    window_size : int, default `None`
+    window_size : int, default None
         Number of observations needed to generate the autoregressive predictors.
-    differentiation : int, default `None`
+    differentiation : int, default None
         Number of observations to use for differentiation. This is used to extend the
         `last_window` as many observations as the differentiation order.
-    refit : bool, int, default `False`
+    refit : bool, int, default False
         Whether to refit the forecaster in each fold.
 
         - If `True`, the forecaster is refitted in each fold.
         - If `False`, the forecaster is trained only in the first fold.
         - If an integer, the forecaster is trained in the first fold and then refitted
           every `refit` folds.
-    fixed_train_size : bool, default `True`
+    fixed_train_size : bool, default True
         Whether the training size is fixed or increases in each fold.
-    gap : int, default `0`
+    gap : int, default 0
         Number of observations between the end of the training set and the start of the
         test set.
-    skip_folds : int, list, default `None`
+    skip_folds : int, list, default None
         Number of folds to skip.
 
         - If an integer, every 'skip_folds'-th is returned.
@@ -52,12 +55,12 @@ class BaseFold():
         For example, if `skip_folds=3` and there are 10 folds, the returned folds are
         0, 3, 6, and 9. If `skip_folds=[1, 2, 3]`, the returned folds are 0, 4, 5, 6, 7,
         8, and 9.
-    allow_incomplete_fold : bool, default `True`
+    allow_incomplete_fold : bool, default True
         Whether to allow the last fold to include fewer observations than `steps`.
         If `False`, the last fold is excluded if it is incomplete.
-    return_all_indexes : bool, default `False`
+    return_all_indexes : bool, default False
         Whether to return all indexes or only the start and end indexes of each fold.
-    verbose : bool, default `True`
+    verbose : bool, default True
         Whether to print information about generated folds.
 
     Attributes
@@ -92,14 +95,14 @@ class BaseFold():
 
     def __init__(
         self,
-        steps: Optional[int] = None,
-        initial_train_size: Optional[int] = None,
-        window_size: Optional[int] = None,
-        differentiation: Optional[int] = None,
-        refit: Union[bool, int] = False,
+        steps: int | None = None,
+        initial_train_size: int | None = None,
+        window_size: int | None = None,
+        differentiation: int | None = None,
+        refit: bool | int = False,
         fixed_train_size: bool = True,
         gap: int = 0,
-        skip_folds: Optional[Union[int, list]] = None,
+        skip_folds: int | list[int] | None = None,
         allow_incomplete_fold: bool = True,
         return_all_indexes: bool = False,
         verbose: bool = True
@@ -135,14 +138,14 @@ class BaseFold():
     def _validate_params(
         self,
         cv_name: str,
-        steps: Optional[int] = None,
-        initial_train_size: Optional[int] = None,
-        window_size: Optional[int] = None,
-        differentiation: Optional[int] = None,
-        refit: Union[bool, int] = False,
+        steps: int | None = None,
+        initial_train_size: int | None = None,
+        window_size: int | None = None,
+        differentiation: int | None = None,
+        refit: bool | int = False,
         fixed_train_size: bool = True,
         gap: int = 0,
-        skip_folds: Optional[Union[int, list]] = None,
+        skip_folds: int | list[int] | None = None,
         allow_incomplete_fold: bool = True,
         return_all_indexes: bool = False,
         verbose: bool = True
@@ -246,7 +249,7 @@ class BaseFold():
 
     def _extract_index(
         self,
-        X: Union[pd.Series, pd.DataFrame, pd.Index, dict]
+        X: pd.Series | pd.DataFrame | pd.Index | dict[str, pd.Series | pd.DataFrame]
     ) -> pd.Index:
         """
         Extracts and returns the index from the input data X.
@@ -273,8 +276,8 @@ class BaseFold():
                 raise ValueError(
                     "All series with frequency must have the same frequency."
                 )
-            min_idx = min([v.index[0] for v in X.values()])
-            max_idx = max([v.index[-1] for v in X.values()])
+            min_idx = min([v.index[0] for v in X.values() if not v.empty])
+            max_idx = max([v.index[-1] for v in X.values() if not v.empty])
             idx = pd.date_range(start=min_idx, end=max_idx, freq=freqs[0])
         else:
             idx = X
@@ -320,6 +323,98 @@ class BaseFold():
         for key, value in updated_params.items():
             setattr(self, key, value)
 
+    def _get_style_repr_html(
+        self, 
+    ) -> tuple[str, str]:
+        """
+        Return style and unique_id for HTML representation.
+
+        Parameters
+        ----------
+        None
+        
+        Returns
+        -------
+        style : str
+            CSS style.
+        unique_id : str
+            Unique id for the HTML container.
+        
+        """
+
+        unique_id = str(uuid.uuid4()).replace('-', '')
+        background_color = "#f0f8ff"
+        section_color = "#b3dbfd"
+
+        style = f"""
+        <style>
+            .container-{unique_id} {{
+                font-family: 'Arial', sans-serif;
+                font-size: 0.9em;
+                color: #333333;
+                border: 1px solid #ddd;
+                background-color: {background_color};
+                padding: 5px 15px;
+                border-radius: 8px;
+                max-width: 600px;
+                #margin: auto;
+            }}
+            .container-{unique_id} h2 {{
+                font-size: 1.5em;
+                color: #222222;
+                border-bottom: 2px solid #ddd;
+                padding-bottom: 5px;
+                margin-bottom: 15px;
+                margin-top: 5px;
+            }}
+            .container-{unique_id} details {{
+                margin: 10px 0;
+            }}
+            .container-{unique_id} summary {{
+                font-weight: bold;
+                font-size: 1.1em;
+                color: #000000;
+                cursor: pointer;
+                margin-bottom: 5px;
+                background-color: {section_color};
+                padding: 5px;
+                border-radius: 5px;
+            }}
+            .container-{unique_id} summary:hover {{
+                color: #000000;
+                background-color: #e0e0e0;
+            }}
+            .container-{unique_id} ul {{
+                font-family: 'Courier New', monospace;
+                list-style-type: none;
+                padding-left: 20px;
+                margin: 10px 0;
+                line-height: normal;
+            }}
+            .container-{unique_id} li {{
+                margin: 5px 0;
+                font-family: 'Courier New', monospace;
+            }}
+            .container-{unique_id} li strong {{
+                font-weight: bold;
+                color: #444444;
+            }}
+            .container-{unique_id} li::before {{
+                content: "- ";
+                color: #666666;
+            }}
+            .container-{unique_id} a {{
+                color: #001633;
+                text-decoration: none;
+            }}
+            .container-{unique_id} a:hover {{
+                color: #359ccb; 
+            }}
+        </style>
+        """
+    
+        return style, unique_id
+
 
 class OneStepAheadFold(BaseFold):
     """
@@ -330,14 +425,14 @@ class OneStepAheadFold(BaseFold):
     ----------
     initial_train_size : int
         Number of observations used for initial training.
-    window_size : int, default `None`
+    window_size : int, default None
         Number of observations needed to generate the autoregressive predictors.
-    differentiation : int, default `None`
+    differentiation : int, default None
         Number of observations to use for differentiation. This is used to extend the
         `last_window` as many observations as the differentiation order.
-    return_all_indexes : bool, default `False`
+    return_all_indexes : bool, default False
         Whether to return all indexes or only the start and end indexes of each fold.
-    verbose : bool, default `True`
+    verbose : bool, default True
         Whether to print information about generated folds.
 
     Attributes
@@ -371,10 +466,10 @@ class OneStepAheadFold(BaseFold):
     def __init__(
         self,
         initial_train_size: int,
-        window_size: Optional[int] = None,
-        differentiation: Optional[int] = None,
+        window_size: int | None = None,
+        differentiation: int | None = None,
         return_all_indexes: bool = False,
-        verbose: bool = True,
+        verbose: bool = True
     ) -> None:
         
         super().__init__(
@@ -391,23 +486,55 @@ class OneStepAheadFold(BaseFold):
         """
         Information displayed when printed.
         """
-            
-        return (
-            f"OneStepAheadFold(\n"
-            f"    initial_train_size = {self.initial_train_size},\n"
-            f"    window_size        = {self.window_size},\n"
-            f"    differentiation    = {self.differentiation},\n"
-            f"    return_all_indexes = {self.return_all_indexes},\n"
-            f"    verbose            = {self.verbose}\n"
-            f")"
+
+        info = (
+            f"{'=' * len(type(self).__name__)} \n"
+            f"{type(self).__name__} \n"
+            f"{'=' * len(type(self).__name__)} \n"
+            f"Initial train size = {self.initial_train_size},\n"
+            f"Window size        = {self.window_size},\n"
+            f"Differentiation    = {self.differentiation},\n"
+            f"Return all indexes = {self.return_all_indexes},\n"
+            f"Verbose            = {self.verbose}\n"
         )
+            
+        return info
+    
+    def _repr_html_(self) -> str:
+        """
+        HTML representation of the object.
+        The "General Information" section is expanded by default.
+        """
+
+        style, unique_id = self._get_style_repr_html()
+        content = f"""
+        <div class="container-{unique_id}">
+            <h2>{type(self).__name__}</h2>
+            <details open>
+                <summary>General Information</summary>
+                <ul>
+                    <li><strong>Initial train size:</strong> {self.initial_train_size}</li>
+                    <li><strong>Window size:</strong> {self.window_size}</li>
+                    <li><strong>Differentiation:</strong> {self.differentiation}</li>
+                    <li><strong>Return all indexes:</strong> {self.return_all_indexes}</li>
+                </ul>
+            </details>
+            <p>
+                <a href="https://skforecast.org/{skforecast.__version__}/api/model_selection.html#skforecast.model_selection._split.OneStepAheadFold">&#128712 <strong>API Reference</strong></a>
+                &nbsp;&nbsp;
+                <a href="https://skforecast.org/{skforecast.__version__}/faq/parameters-search-backtesting-vs-one-step-ahead.html">&#128462 <strong>User Guide</strong></a>
+            </p>
+        </div>
+        """
+
+        return style + content
     
     def split(
         self,
-        X: Union[pd.Series, pd.DataFrame, pd.Index, dict],
+        X: pd.Series | pd.DataFrame | pd.Index | dict[str, pd.Series | pd.DataFrame],
         as_pandas: bool = False,
         externally_fitted: Any = None
-    ) -> Union[list, pd.DataFrame]:
+    ) -> list | pd.DataFrame:
         """
         Split the time series data into train and test folds.
 
@@ -415,7 +542,7 @@ class OneStepAheadFold(BaseFold):
         ----------
         X : pandas Series, DataFrame, Index, or dictionary
             Time series data or index to split.
-        as_pandas : bool, default `False`
+        as_pandas : bool, default False
             If True, the folds are returned as a DataFrame. This is useful to visualize
             the folds in a more interpretable way.
         externally_fitted : Any
@@ -424,8 +551,8 @@ class OneStepAheadFold(BaseFold):
         Returns
         -------
         fold : list, pandas DataFrame
-            A list of lists containing the indices (position) for for each fold. Each list
-            contains 2 lists the following information:
+            A list of lists containing the indices (position) of the fold. The list
+            contains 2 lists with the following information:
 
             - [train_start, train_end]: list with the start and end positions of the
             training set.
@@ -459,10 +586,7 @@ class OneStepAheadFold(BaseFold):
         ]
 
         if self.verbose:
-            self._print_info(
-                index = index,
-                fold = fold,
-            )
+            self._print_info(index=index, fold=fold)
 
         if self.return_all_indexes:
             fold = [
@@ -499,10 +623,22 @@ class OneStepAheadFold(BaseFold):
     def _print_info(
         self,
         index: pd.Index,
-        fold: list,
+        fold: list[list[int]]
     ) -> None:
         """
         Print information about folds.
+
+        Parameters
+        ----------
+        index : pandas Index
+            Index of the time series data.
+        fold : list
+            A list of lists containing the indices (position) of the fold.
+
+        Returns
+        -------
+        None
+
         """
 
         if self.differentiation is None:
@@ -554,27 +690,27 @@ class TimeSeriesFold(BaseFold):
     steps : int
         Number of observations used to be predicted in each fold. This is also commonly
         referred to as the forecast horizon or test size.
-    initial_train_size : int, default `None`
+    initial_train_size : int, default None
         Number of observations used for initial training. If `None` or 0, the initial
         forecaster is not trained in the first fold.
-    window_size : int, default `None`
+    window_size : int, default None
         Number of observations needed to generate the autoregressive predictors.
-    differentiation : int, default `None`
+    differentiation : int, default None
         Number of observations to use for differentiation. This is used to extend the
         `last_window` as many observations as the differentiation order.
-    refit : bool, int, default `False`
+    refit : bool, int, default False
         Whether to refit the forecaster in each fold.
 
         - If `True`, the forecaster is refitted in each fold.
         - If `False`, the forecaster is trained only in the first fold.
         - If an integer, the forecaster is trained in the first fold and then refitted
           every `refit` folds.
-    fixed_train_size : bool, default `True`
+    fixed_train_size : bool, default True
         Whether the training size is fixed or increases in each fold.
-    gap : int, default `0`
+    gap : int, default 0
         Number of observations between the end of the training set and the start of the
         test set.
-    skip_folds : int, list, default `None`
+    skip_folds : int, list, default None
         Number of folds to skip.
 
         - If an integer, every 'skip_folds'-th is returned.
@@ -583,12 +719,12 @@ class TimeSeriesFold(BaseFold):
         For example, if `skip_folds=3` and there are 10 folds, the returned folds are
         0, 3, 6, and 9. If `skip_folds=[1, 2, 3]`, the returned folds are 0, 4, 5, 6, 7,
         8, and 9.
-    allow_incomplete_fold : bool, default `True`
+    allow_incomplete_fold : bool, default True
         Whether to allow the last fold to include fewer observations than `steps`.
         If `False`, the last fold is excluded if it is incomplete.
-    return_all_indexes : bool, default `False`
+    return_all_indexes : bool, default False
         Whether to return all indexes or only the start and end indexes of each fold.
-    verbose : bool, default `True`
+    verbose : bool, default True
         Whether to print information about generated folds.
 
     Attributes
@@ -644,13 +780,13 @@ class TimeSeriesFold(BaseFold):
     def __init__(
         self,
         steps: int,
-        initial_train_size: Optional[int] = None,
-        window_size: Optional[int] = None,
-        differentiation: Optional[int] = None,
-        refit: Union[bool, int] = False,
+        initial_train_size: int | None = None,
+        window_size: int | None = None,
+        differentiation: int | None = None,
+        refit: bool | int = False,
         fixed_train_size: bool = True,
         gap: int = 0,
-        skip_folds: Optional[Union[int, list]] = None,
+        skip_folds: int | list[int] | None = None,
         allow_incomplete_fold: bool = True,
         return_all_indexes: bool = False,
         verbose: bool = True
@@ -676,28 +812,66 @@ class TimeSeriesFold(BaseFold):
         """
         Information displayed when printed.
         """
-            
-        return (
-            f"TimeSeriesFold(\n"
-            f"    steps                 = {self.steps},\n"
-            f"    initial_train_size    = {self.initial_train_size},\n"
-            f"    window_size           = {self.window_size},\n"
-            f"    differentiation       = {self.differentiation},\n"
-            f"    refit                 = {self.refit},\n"
-            f"    fixed_train_size      = {self.fixed_train_size},\n"
-            f"    gap                   = {self.gap},\n"
-            f"    skip_folds            = {self.skip_folds},\n"
-            f"    allow_incomplete_fold = {self.allow_incomplete_fold},\n"
-            f"    return_all_indexes    = {self.return_all_indexes},\n"
-            f"    verbose               = {self.verbose}\n"
-            f")"
+
+        info = (
+            f"{'=' * len(type(self).__name__)} \n"
+            f"{type(self).__name__} \n"
+            f"{'=' * len(type(self).__name__)} \n"
+            f"Initial train size    = {self.initial_train_size},\n"
+            f"Steps                 = {self.steps},\n"
+            f"Window size           = {self.window_size},\n"
+            f"Differentiation       = {self.differentiation},\n"
+            f"Refit                 = {self.refit},\n"
+            f"Fixed train size      = {self.fixed_train_size},\n"
+            f"Gap                   = {self.gap},\n"
+            f"Skip folds            = {self.skip_folds},\n"
+            f"Allow incomplete fold = {self.allow_incomplete_fold},\n"
+            f"Return all indexes    = {self.return_all_indexes},\n"
+            f"Verbose               = {self.verbose}\n"
         )
+
+        return info
+    
+    def _repr_html_(self) -> str:
+        """
+        HTML representation of the object.
+        The "General Information" section is expanded by default.
+        """
+
+        style, unique_id = self._get_style_repr_html()
+        content = f"""
+        <div class="container-{unique_id}">
+            <h2>{type(self).__name__}</h2>
+            <details open>
+                <summary>General Information</summary>
+                <ul>
+                    <li><strong>Initial train size:</strong> {self.initial_train_size}</li>
+                    <li><strong>Steps:</strong> {self.steps}</li>
+                    <li><strong>Window size:</strong> {self.window_size}</li>
+                    <li><strong>Differentiation:</strong> {self.differentiation}</li>
+                    <li><strong>Refit:</strong> {self.refit}</li>
+                    <li><strong>Fixed train size:</strong> {self.fixed_train_size}</li>
+                    <li><strong>Gap:</strong> {self.gap}</li>
+                    <li><strong>Skip folds:</strong> {self.skip_folds}</li>
+                    <li><strong>Allow incomplete fold:</strong> {self.allow_incomplete_fold}</li>
+                    <li><strong>Return all indexes:</strong> {self.return_all_indexes}</li>
+                </ul>
+            </details>
+            <p>
+                <a href="https://skforecast.org/{skforecast.__version__}/api/model_selection.html#skforecast.model_selection._split.TimeSeriesFold">&#128712 <strong>API Reference</strong></a>
+                &nbsp;&nbsp;
+                <a href="https://skforecast.org/{skforecast.__version__}/user_guides/backtesting.html#timeseriesfold">&#128462 <strong>User Guide</strong></a>
+            </p>
+        </div>
+        """
+        
+        return style + content
 
     def split(
         self,
-        X: Union[pd.Series, pd.DataFrame, pd.Index, dict],
+        X: pd.Series | pd.DataFrame | pd.Index | dict[str, pd.Series | pd.DataFrame],
         as_pandas: bool = False
-    ) -> Union[list, pd.DataFrame]:
+    ) -> list | pd.DataFrame:
         """
         Split the time series data into train and test folds.
 
@@ -705,14 +879,14 @@ class TimeSeriesFold(BaseFold):
         ----------
         X : pandas Series, pandas DataFrame, pandas Index, dict
             Time series data or index to split.
-        as_pandas : bool, default `False`
+        as_pandas : bool, default False
             If True, the folds are returned as a DataFrame. This is useful to visualize
             the folds in a more interpretable way.
 
         Returns
         -------
         folds : list, pandas DataFrame
-            A list of lists containing the indices (position) for for each fold. Each list
+            A list of lists containing the indices (position) for each fold. Each list
             contains 4 lists and a boolean with the following information:
 
             - [train_start, train_end]: list with the start and end positions of the
@@ -932,13 +1106,31 @@ class TimeSeriesFold(BaseFold):
     def _print_info(
         self,
         index: pd.Index,
-        folds: list,
+        folds: list[list[int]],
         externally_fitted: bool,
         last_fold_excluded: bool,
-        index_to_skip: list,
+        index_to_skip: list[int]
     ) -> None:
         """
         Print information about folds.
+
+        Parameters
+        ----------
+        index : pandas Index
+            Index of the time series data.
+        folds : list
+            A list of lists containing the indices (position) for each fold.
+        externally_fitted : bool
+            Whether an already trained forecaster is to be used.
+        last_fold_excluded : bool
+            Whether the last fold has been excluded because it was incomplete.
+        index_to_skip : list
+            Number of folds skipped.
+
+        Returns
+        -------
+        None
+        
         """
 
         print("Information of folds")

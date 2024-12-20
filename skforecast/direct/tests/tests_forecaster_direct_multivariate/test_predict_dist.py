@@ -1,5 +1,7 @@
 # Unit test predict_dist ForecasterDirectMultiVariate
 # ==============================================================================
+import re
+import pytest
 import numpy as np
 import pandas as pd
 from skforecast.direct import ForecasterDirectMultiVariate
@@ -20,6 +22,38 @@ transformer_exog = ColumnTransformer(
                        remainder = 'passthrough',
                        verbose_feature_names_out = False
                    )
+
+
+def test_predict_dist_TypeError_when_distribution_object_is_not_valid():
+    """
+    Test TypeError is raise in predict_dist when `distribution` is not a valid
+    probability distribution object from scipy.stats.
+    """
+    forecaster = ForecasterDirectMultiVariate(
+                     regressor          = LinearRegression(),
+                     steps              = 2,
+                     level              = 'l1',
+                     lags               = 3,
+                     transformer_series = StandardScaler(),
+                     transformer_exog   = transformer_exog
+                 )
+    forecaster.fit(series=series, exog=exog)
+    
+    class CustomObject:  # pragma: no cover
+        pass
+    
+    err_msg = re.escape(
+        "`distribution` must be a valid probability distribution object "
+        "from scipy.stats, with methods `_pdf` and `fit`."
+    )
+    with pytest.raises(TypeError, match = err_msg):
+        forecaster.predict_dist(
+            steps                   = 2,
+            exog                    = exog_predict,
+            distribution            = CustomObject(),
+            n_boot                  = 4,
+            use_in_sample_residuals = True
+        )
 
 
 def test_predict_dist_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_True_exog_and_transformer():

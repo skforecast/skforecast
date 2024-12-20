@@ -474,7 +474,10 @@ def test_create_predict_X_output_when_series_and_exog_dict():
         pd.testing.assert_frame_equal(results[k], expected[k])
 
 
-def test_create_predict_X_output_when_regressor_is_LinearRegression_with_exog_differentiation_is_1_and_transformer_series():
+@pytest.mark.parametrize("differentiation", 
+                         [1, {'1': 1, '2': 1, '_unknown_level': 1}], 
+                         ids = lambda diff: f'differentiation: {diff}')
+def test_create_predict_X_output_when_regressor_is_LinearRegression_with_exog_differentiation_is_1_and_transformer_series(differentiation):
     """
     Test create_predict_X output when using LinearRegression as regressor and differentiation=1,
     and transformer_series is StandardScaler.
@@ -510,7 +513,7 @@ def test_create_predict_X_output_when_regressor_is_LinearRegression_with_exog_di
                      regressor          = LinearRegression(), 
                      lags               = 3, 
                      transformer_series = StandardScaler(),    
-                     differentiation    = 1
+                     differentiation    = differentiation
                  )
     forecaster.fit(series=series_dict_datetime, exog=exog_dict_datetime)
     results = forecaster.create_predict_X(steps=steps, exog=exog_pred)
@@ -919,8 +922,7 @@ def test_create_predict_X_same_predictions_as_predict():
         encoding           = 'ordinal',
         dropna_from_series = False,
         transformer_series = None,
-        transformer_exog   = None,
-        differentiation    = None
+        transformer_exog   = None
     )
     forecaster.fit(
         series=series_dict_train, exog=exog_dict_train, suppress_warnings=True
@@ -966,8 +968,7 @@ def test_create_predict_X_same_predictions_as_predict_transformers():
         encoding           = 'ordinal',
         dropna_from_series = False,
         transformer_series = StandardScaler(),
-        transformer_exog   = StandardScaler(),
-        differentiation    = None
+        transformer_exog   = StandardScaler()
     )
     forecaster.fit(
         series=series_dict_train, exog=exog_dict_train, suppress_warnings=True
@@ -1010,7 +1011,10 @@ def test_create_predict_X_same_predictions_as_predict_transformers():
     np.testing.assert_array_almost_equal(results, expected, decimal=7)
 
 
-def test_create_predict_X_same_predictions_as_predict_transformers_diff():
+@pytest.mark.parametrize("differentiation", 
+    [1, {'id_1000': 1, 'id_1001': 1, 'id_1002': 1, 'id_1003': 1, 'id_1004': 1, '_unknown_level': 1}], 
+    ids = lambda diff: f'differentiation: {diff}')
+def test_create_predict_X_same_predictions_as_predict_transformers_diff(differentiation):
     """
     Test output ForecasterRecursiveMultiSeries create_predict_X matrix returns 
     the same predictions as predict method when passing to the regressor predict 
@@ -1030,7 +1034,7 @@ def test_create_predict_X_same_predictions_as_predict_transformers_diff():
         dropna_from_series = False,
         transformer_series = StandardScaler(),
         transformer_exog   = StandardScaler(),
-        differentiation    = 1
+        differentiation    = differentiation
     )
     forecaster.fit(
         series=series_dict_train, exog=exog_dict_train, suppress_warnings=True

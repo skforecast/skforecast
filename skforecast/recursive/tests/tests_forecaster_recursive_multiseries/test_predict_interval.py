@@ -488,10 +488,10 @@ def test_predict_interval_output_when_series_and_exog_dict_encoding_None_unknown
                      ),
                      lags               = 14,
                      encoding           = None,
-                     differentiation    = 1,
                      dropna_from_series = False,
                      transformer_series = StandardScaler(),
-                     transformer_exog   = StandardScaler()
+                     transformer_exog   = StandardScaler(),
+                     differentiation    = 1
                  )
     forecaster.fit(
         series=series_dict_train, exog=exog_dict_train, suppress_warnings=True
