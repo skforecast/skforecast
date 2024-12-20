@@ -322,7 +322,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
     def __init__(
         self,
         regressor: object,
-        lags: int | list[int] | np.ndarray[int] | range | None = None,
+        lags: int | list[int] | np.ndarray[int] | range[int] | None = None,
         window_features: object | list[object] | None = None,
         encoding: str | None = 'ordinal',
         transformer_series: object | dict[str, object] | None = None,
@@ -917,7 +917,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         list[str],
         list[str],
         dict[str, type],
-        dict[str, np.ndarray],
+        dict[str, pd.Series],
     ]:
         """
         Create training matrices from multiple time series and exogenous
@@ -1472,7 +1472,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         weights = None
         weights_samples = None
-        weights_series = None
+        series_weights = None
 
         if self.series_weights is not None:
             # Series not present in series_weights have a weight of 1 in all their samples.
@@ -1496,12 +1496,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             )
 
             if self.encoding == "onehot":
-                weights_series = [
+                series_weights = [
                     np.repeat(self.series_weights_[serie], sum(X_train[serie]))
                     for serie in series_names_in_
                 ]
             else:
-                weights_series = [
+                series_weights = [
                     np.repeat(
                         self.series_weights_[serie],
                         sum(X_train["_level_skforecast"] == self.encoding_mapping_[serie]),
@@ -1509,7 +1509,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     for serie in series_names_in_
                 ]
 
-            weights_series = np.concatenate(weights_series)
+            series_weights = np.concatenate(series_weights)
 
         if self.weight_func is not None:
             if isinstance(self.weight_func, Callable):
@@ -1548,8 +1548,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 weights_samples.append(self.weight_func_[key](idx))
             weights_samples = np.concatenate(weights_samples)
 
-        if weights_series is not None:
-            weights = weights_series
+        if series_weights is not None:
+            weights = series_weights
             if weights_samples is not None:
                 weights = weights * weights_samples
         else:
@@ -2686,8 +2686,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         ----------
         steps : int
             Number of future steps predicted.
-        distribution : Object
-            A distribution object from scipy.stats. For example scipy.stats.norm.
+        distribution : object
+            A distribution object from scipy.stats with methods `_pdf` and `fit`. 
+            For example scipy.stats.norm.
         levels : str, list, default None
             Time series to be predicted. If `None` all levels whose last window
             ends at the same datetime index will be predicted together.
@@ -2721,6 +2722,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             Distribution parameters estimated for each step and level.
 
         """
+
+        if not hasattr(distribution, "_pdf") or not callable(getattr(distribution, "fit", None)):
+            raise TypeError(
+                "`distribution` must be a valid probability distribution object "
+                "from scipy.stats, with methods `_pdf` and `fit`."
+            )
 
         set_skforecast_warnings(suppress_warnings, action='ignore')
 
@@ -2805,7 +2812,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
     def set_lags(
         self, 
-        lags: int | list[int] | np.ndarray[int] | range | None = None
+        lags: int | list[int] | np.ndarray[int] | range[int] | None = None
     ) -> None:
         """
         Set new value to the attribute `lags`. Attributes `lags_names`, 

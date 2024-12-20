@@ -37,3 +37,5 @@ A detailed overview on how to contribute can be found in the [contributing guide
 + Ignacio Moya, [imMoya](https://github.com/imMoya)
 
 + Pablo Rodríguez Pérez, [pablorodriper](https://github.com/pablorodriper)
+
++ g-rubio, [g-rubio](https://github.com/g-rubio)

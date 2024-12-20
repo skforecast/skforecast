@@ -755,6 +755,65 @@ def test_output_backtesting_forecaster_interval_yes_exog_yes_remainder_with_mock
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
+def test_output_backtesting_forecaster_no_refit_interval_percentiles_yes_exog():
+    """
+    Test output of _backtesting_forecaster with predicted intervals as percentiles.
+    """
+    y_with_index = y.copy()
+    y_with_index.index = pd.date_range(start='2022-01-01', periods=50, freq='D')
+    exog_with_index = exog.copy()
+    exog_with_index.index = pd.date_range(start='2022-01-01', periods=50, freq='D')
+
+    expected_metric = pd.DataFrame({"mean_absolute_error": [0.20679065798842525]})
+    expected_predictions = pd.DataFrame(
+        data = np.array([
+            [0.55538506, 0.23533636, 0.52863287, 0.72025328, 0.88152611],
+            [0.44124674, 0.13882172, 0.3469211 , 0.60508599, 0.66123287],
+            [0.49752366, 0.18057891, 0.43725998, 0.67855329, 0.72622037],
+            [0.53822797, 0.27476583, 0.47734692, 0.70466277, 0.76759585],
+            [0.4793552 , 0.18267852, 0.4027248 , 0.66456235, 0.75629436],
+            [0.43665118, 0.16671114, 0.35636642, 0.63435083, 0.66854792],
+            [0.45763212, 0.15917454, 0.37453374, 0.6357304 , 0.71068696],
+            [0.4460372 , 0.17131581, 0.37504749, 0.63001975, 0.70126425],
+            [0.44402791, 0.21102903, 0.39725803, 0.64947228, 0.7078121 ],
+            [0.44985299, 0.14124637, 0.39105418, 0.65759797, 0.72700334],
+            [0.44647635, 0.15881705, 0.4250537 , 0.60470461, 0.66561349],
+            [0.50023368, 0.23192444, 0.46987301, 0.69005432, 0.75942289],
+            [0.5224527 , 0.25896958, 0.51927629, 0.75228571, 0.85353711],
+            [0.44896854, 0.14251917, 0.42630701, 0.65516243, 0.72293032],
+            [0.45039083, 0.09919271, 0.38121032, 0.66198623, 0.7456592 ],
+            [0.63590572, 0.42921638, 0.58973532, 0.82460654, 0.95541034],
+            [0.6317494 , 0.40030263, 0.5971429 , 0.82899106, 0.94988105],
+            [0.49592041, 0.21688862, 0.44750078, 0.7145989 , 0.80052393],
+            [0.52061567, 0.27821156, 0.4620919 , 0.7350243 , 0.80940119],
+            [0.51002945, 0.2482771 , 0.44473125, 0.70840699, 0.79070849]]),
+        columns = ['pred', 'p_10', 'p_40', 'p_80', 'p_90'],
+        index = pd.date_range(start='2022-01-31', periods=20, freq='D')
+    )
+
+    forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
+    cv = TimeSeriesFold(
+             steps              = 5,
+             initial_train_size = len(y_with_index) - 20,
+             refit              = True
+         )
+    metric, backtest_predictions = _backtesting_forecaster(
+                                       forecaster              = forecaster,
+                                       y                       = y_with_index,
+                                       exog                    = exog_with_index,
+                                       cv                      = cv,
+                                       metric                  = 'mean_absolute_error',
+                                       interval                = (10, 40, 80, 90),
+                                       n_boot                  = 250,
+                                       random_state            = 123,
+                                       use_in_sample_residuals = True,
+                                       verbose                 = False
+                                   )
+
+    pd.testing.assert_frame_equal(expected_metric, metric)
+    pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+
+
 # ******************************************************************************
 # * Out sample residuals                                                       *
 # ******************************************************************************
