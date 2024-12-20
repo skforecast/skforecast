@@ -30,6 +30,8 @@ The main changes in this release are:
 
 + Added <code>[calculate_lag_autocorrelation]</code> function to the <code>[plot]</code> module to calculate the autocorrelation and partial autocorrelation of a time series.
 
++ Added data set `public_transport_madrid` to the <code>[datasets]</code> module.
+
 
 **Changed**
 
