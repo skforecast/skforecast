@@ -613,11 +613,17 @@ class ForecasterRnn(ForecasterBase):
             y_train = torch.tensor(y_train).to(torch_device)
 
         if self.series_val is not None:
-            torch_device = torch.device(device)
             X_val, y_val, _ = self.create_train_X_y(series=self.series_val)
             if keras.__version__ > "3.0" and keras.backend.backend() == "torch":
                 X_val = torch.tensor(X_val).to(torch_device)
                 y_val = torch.tensor(y_val).to(torch_device)
+                history = self.regressor.fit(
+                    x=X_train,
+                    y=y_train,
+                    validation_data=(X_val, y_val),
+                    **self.fit_kwargs,
+                )
+            else:
                 history = self.regressor.fit(
                     x=X_train,
                     y=y_train,
