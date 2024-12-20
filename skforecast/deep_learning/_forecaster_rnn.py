@@ -302,6 +302,9 @@ class ForecasterRnn(ForecasterBase):
                 f"`levels` argument must be a string or a list. Got {type(levels)}."
             )
 
+        self.in_sample_residuals_ = {step: None for step in self.steps}
+        self.out_sample_residuals_ = None
+
         self.series_val = None
         if "series_val" in fit_kwargs:
             self.series_val = fit_kwargs["series_val"]
