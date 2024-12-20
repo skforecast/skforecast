@@ -6,7 +6,7 @@
 # coding=utf-8
 
 from __future__ import annotations
-from typing import Union, Optional, Any
+from typing import Union, Any
 from copy import deepcopy
 import uuid
 import warnings
