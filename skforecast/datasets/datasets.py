@@ -518,7 +518,7 @@ def fetch_dataset(
             'file_type': 'csv',
             'description': (
                 'Data from an electricity transformer station was collected between July '
-                '2016 and July 2018 (2 years × 365 days × 24 hours × 4 intervals per '
+                '2016 and July 2018 (2 years x 365 days x 24 hours x 4 intervals per '
                 'hour = 70,080 data points). Each data point consists of 8 features, '
                 'including the date of the point, the predictive value "Oil Temperature (OT)", '
                 'and 6 different types of external power load features: High UseFul Load (HUFL), '
@@ -551,6 +551,24 @@ def fetch_dataset(
                 'Australian Bureau of Statistics. Catalogue No. 8501.0 '
                 'https://www.abs.gov.au/statistics/industry/retail-and-wholesale-trade/'
                 'retail-trade-australia/apr-2024/8501011.xlsx'
+            )
+        },
+        'public_transport_madrid': {
+            'url': (
+                f'https://raw.githubusercontent.com/skforecast/skforecast-datasets/refs/heads/'
+                f'{version}/data/public-transport-madrid.csv'
+            ),
+            'sep': ',',
+            'index_col': 'date',
+            'date_format': '%Y-%m-%d',
+            'freq': 'D',
+            'file_type': 'csv',
+            'description': (
+                'Daily user of public transport in Madrid (Spain) from 2023-01-01 to 2024-12-15.'
+            ),
+            'source': (
+                'Consorcio Regional de Transportes de Madrid CRTM, CRTM Evolucion demanda diaria '
+                'https://datos.crtm.es/documents/a7210254c4514a19a51b1617cfd61f75/about'
             )
         },
     }
