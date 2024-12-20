@@ -6,7 +6,7 @@
 # coding=utf-8
 
 from __future__ import annotations
-from typing import Union, Any
+from typing import Any
 from copy import deepcopy
 import uuid
 import warnings
@@ -534,7 +534,7 @@ class OneStepAheadFold(BaseFold):
         X: pd.Series | pd.DataFrame | pd.Index | dict[str, pd.Series | pd.DataFrame],
         as_pandas: bool = False,
         externally_fitted: Any = None
-    ) -> Union[list, pd.DataFrame]:
+    ) -> list | pd.DataFrame:
         """
         Split the time series data into train and test folds.
 
@@ -871,7 +871,7 @@ class TimeSeriesFold(BaseFold):
         self,
         X: pd.Series | pd.DataFrame | pd.Index | dict[str, pd.Series | pd.DataFrame],
         as_pandas: bool = False
-    ) -> Union[list, pd.DataFrame]:
+    ) -> list | pd.DataFrame:
         """
         Split the time series data into train and test folds.
 
