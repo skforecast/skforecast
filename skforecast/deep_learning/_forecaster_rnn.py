@@ -32,6 +32,7 @@ from ..utils import (
     preprocess_y,
     set_skforecast_warnings,
     transform_series,
+    transform_numpy
 )
 
 
@@ -627,7 +628,6 @@ class ForecasterRnn(ForecasterBase):
             history = self.regressor.fit(
                 x=X_train,
                 y=y_train,
-                validation_data=(X_val, y_val),
                 **self.fit_kwargs,
             )
 
@@ -792,6 +792,152 @@ class ForecasterRnn(ForecasterBase):
         set_skforecast_warnings(suppress_warnings, action="default")
 
         return predictions
+
+    def predict_bootstrapping(
+            self,
+            steps: Optional[Union[int, list]] = None,
+            last_window: Optional[pd.DataFrame] = None,
+            exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
+            n_boot: int = 250,
+            random_state: int = 123,
+            use_in_sample_residuals: bool = True,
+            suppress_warnings: bool = False,
+            levels: Any = None
+    ) -> dict:
+
+        set_skforecast_warnings(suppress_warnings, action="ignore")
+
+        if levels is None:
+            levels = self.levels
+        elif isinstance(levels, str):
+            levels = [levels]
+        if isinstance(steps, int):
+            steps = list(np.arange(steps) + 1)
+        elif steps is None:
+            if isinstance(self.steps, int):
+                steps = list(np.arange(self.steps) + 1)
+            elif isinstance(self.steps, (list, np.ndarray)):
+                steps = list(np.array(self.steps))
+        elif isinstance(steps, list):
+            steps = list(np.array(steps))
+
+        if self.is_fitted:
+            steps = self.steps
+
+            if use_in_sample_residuals:
+                if not set(steps).issubset(set(self.in_sample_residuals_.keys())):
+                    raise ValueError(
+                        f"Not `forecaster.in_sample_residuals_` for steps: "
+                        f"{set(steps) - set(self.in_sample_residuals_.keys())}."
+                    )
+                residuals = self.in_sample_residuals_
+            else:
+                if self.out_sample_residuals_ is None:
+                    raise ValueError(
+                        "`forecaster.out_sample_residuals_` is `None`. Use "
+                        "`use_in_sample_residuals=True` or the "
+                        "`set_out_sample_residuals()` method before predicting."
+                    )
+                else:
+                    if not set(steps).issubset(set(self.out_sample_residuals_.keys())):
+                        raise ValueError(
+                            f"Not `forecaster.out_sample_residuals_` for steps: "
+                            f"{set(steps) - set(self.out_sample_residuals_.keys())}. "
+                            f"Use method `set_out_sample_residuals()`."
+                        )
+                residuals = self.out_sample_residuals_
+
+            check_residuals = (
+                'forecaster.in_sample_residuals_' if use_in_sample_residuals
+                else 'forecaster.out_sample_residuals_'
+            )
+            for step in steps:
+                if residuals[step] is None:
+                    raise ValueError(
+                        f"forecaster residuals for step {step} are `None`. "
+                        f"Check {check_residuals}."
+                    )
+                elif (any(element is None for element in residuals[step]) or
+                      np.any(np.isnan(residuals[step]))):
+                    raise ValueError(
+                        f"forecaster residuals for step {step} contains `None` "
+                        f"or `NaNs` values. Check {check_residuals}."
+                    )
+
+        if last_window is None:
+            last_window = self.last_window_
+
+        check_predict_input(
+            forecaster_name=type(self).__name__,
+            steps=steps,
+            is_fitted=self.is_fitted,
+            exog_in_=self.exog_in_,
+            index_type_=self.index_type_,
+            index_freq_=self.index_freq_,
+            window_size=self.window_size,
+            last_window=last_window,
+            exog=None,
+            exog_type_in_=None,
+            exog_names_in_=None,
+            interval=None,
+            max_steps=self.max_step,
+            levels=levels,
+            levels_forecaster=self.levels,
+            series_names_in_=self.series_names_in_,
+        )
+
+        last_window = last_window.iloc[-self.window_size:, ].copy()
+
+        for serie_name in self.series_names_in_:
+            last_window_serie = transform_series(
+                series=last_window[serie_name],
+                transformer=self.transformer_series_[serie_name],
+                fit=False,
+                inverse_transform=False,
+            )
+            last_window_values, last_window_index = preprocess_last_window(
+                last_window=last_window_serie
+            )
+            last_window.loc[:, serie_name] = last_window_values
+
+        X = np.reshape(last_window.to_numpy(), (1, self.max_lag, last_window.shape[1]))
+        prediction_index = expand_index(index=last_window_index, steps=max(steps))
+
+        predictions = self.regressor.predict(X, verbose=0)
+        predictions = np.squeeze(predictions, axis=0)
+
+        boot_predictions = {}
+        boot_columns = [f"pred_boot_{i}" for i in range(n_boot)]
+        rng = np.random.default_rng(seed=random_state)
+
+        for j, level in enumerate(self.levels):
+            boot_level = np.tile(predictions[:, j], (n_boot, 1)).T
+
+            for i, step in enumerate(steps):
+                sampled_residuals = residuals[step][rng.integers(low=0, high=len(residuals[step]), size=n_boot), j]
+                boot_level[i, :] += sampled_residuals
+
+            if self.transformer_series_[level]:
+                boot_level = np.apply_along_axis(
+                    func1d=transform_numpy,
+                    axis=0,
+                    arr=boot_level,
+                    transformer=self.transformer_series_[level],
+                    fit=False,
+                    inverse_transform=True
+                )
+
+            boot_level = pd.DataFrame(
+                data=boot_level,
+                index=prediction_index,
+                columns=boot_columns
+            )
+
+            boot_predictions[level] = boot_level
+
+        set_skforecast_warnings(suppress_warnings, action='default')
+
+        return boot_predictions
 
     def plot_history(
         self, ax: matplotlib.axes.Axes = None, **fig_kw
