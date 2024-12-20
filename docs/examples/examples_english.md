@@ -40,7 +40,7 @@ For experienced users looking to deepen their forecasting skills, this section p
 
 <i class="fa-light fa-chart-line fa" style="font-size: 25px; color:rgb(128, 29, 242);"></i>  [Probabilistic forecasting: prediction intervals for multi-step time series forecasting](https://cienciadedatos.net/documentos/py60-probabilistic-forecasting-prediction-intervals-multi-step-forecasting.html)
 
-<i class="fa-solid fa-arrow-trend-up" style="font-size: 25px; color: #fbbb09;"></i> [Modelling time series trend with tree based models](https://www.cienciadedatos.net/documentos/py49-modelling-time-series-trend-with-tree-based-models.html)
+<i class="fa-solid fa-tree" style="font-size: 25px; color:rgb(7, 104, 84);"></i> [Modelling time series trend with tree based models](https://www.cienciadedatos.net/documentos/py49-modelling-time-series-trend-with-tree-based-models.html)
 
 <i class="fa-solid fa-magnifying-glass" style="font-size: 25px; color: purple;"></i> [Forecasting time series with missing values](https://www.cienciadedatos.net/documentos/py46-forecasting-time-series-missing-values.html)
 

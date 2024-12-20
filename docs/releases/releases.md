@@ -24,9 +24,12 @@ The main changes in this release are:
 
 + Added statistic `ewm` (exponential weighted mean) in <code>[RollingFeatures]</code>. Alpha can be specified using the new argument `kwargs_stats`, default `{'ewm': {'alpha': 0.3}}`.
 
++ Added method `_repr_html_` to <code>[ForecasterSarimax]</code>, <code>[TimeSeriesFold]</code> and <code>[OneStepAheadFold]</code> to display the object in HTML format.
+
 + Added argument `consolidate_dtypes` in <code>[exog_long_to_dict]</code> function to ensure that the data types of the exogenous variables are consistent across all series when `np.nan` values are added and integer columns are converted to float.
 
 + Added <code>[calculate_lag_autocorrelation]</code> function to the <code>[plot]</code> module to calculate the autocorrelation and partial autocorrelation of a time series.
+
 
 **Changed**
 
