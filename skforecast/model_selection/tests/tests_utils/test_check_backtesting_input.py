@@ -987,9 +987,7 @@ def test_check_backtesting_input_TypeError_when_n_jobs_not_int_or_auto(n_jobs):
              allow_incomplete_fold = True
          )
     
-    err_msg = re.escape(
-        (f"`n_jobs` must be an integer or `'auto'`. Got {n_jobs}.")
-    )
+    err_msg = re.escape(f"`n_jobs` must be an integer or `'auto'`. Got {n_jobs}.")
     with pytest.raises(TypeError, match = err_msg):
         check_backtesting_input(
             forecaster              = forecaster,
@@ -1004,6 +1002,111 @@ def test_check_backtesting_input_TypeError_when_n_jobs_not_int_or_auto(n_jobs):
             show_progress           = False,
             suppress_warnings       = False
         )
+
+
+def test_check_backtesting_input_ValueError_when_interval_is_not_None_and_forecaster_not_interval():
+    """
+    Test ValueError is raised in check_backtesting_input when interval is not None
+    and the forecaster does not support interval predictions.
+    """
+    forecaster = ForecasterEquivalentDate(
+                     offset    = pd.DateOffset(days=3),
+                     n_offsets = 1
+                 )
+    
+    cv = TimeSeriesFold(
+             steps                 = 3,
+             initial_train_size    = len(y) - 12,
+             refit                 = False,
+             fixed_train_size      = False,
+             gap                   = 0,
+             allow_incomplete_fold = True
+         )
+    
+    err_msg = re.escape(
+        "Interval predictions are not allowed for ForecasterEquivalentDate. "
+        "Set `interval` and `alpha` to `None`."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        check_backtesting_input(
+            forecaster              = forecaster,
+            cv                      = cv,
+            metric                  = 'mean_absolute_error',
+            y                       = y,
+            interval                = [10, 90],
+            n_boot                  = 500,
+            random_state            = 123,
+            use_in_sample_residuals = True,
+            show_progress           = False,
+            suppress_warnings       = False
+        )
+
+
+def test_check_backtesting_input_raises_when_interval_not_None_and_forecaster_bootstrapping():
+    """
+    Test raises errors in check_backtesting_input when interval is not None
+    and the forecaster uses bootstrapping.
+    """
+    forecaster = ForecasterRecursive(regressor=Ridge(), lags=2)
+    cv = TimeSeriesFold(steps=3, initial_train_size=len(y) - 12)
+    
+    kwargs = {
+        'forecaster': forecaster,
+        'cv': cv,
+        'metric': 'mean_absolute_error',
+        'y': y,
+        'interval': [10, 90],
+        'n_boot': 500,
+        'random_state': 123,
+        'use_in_sample_residuals': True,
+        'show_progress': False,
+        'suppress_warnings': False
+    }
+
+    kwargs['interval'] = {'10': 10, '90': 90}
+    err_msg = re.escape(
+        f"`interval` must be a list or tuple of floats, a scipy.stats "
+        f"distribution object (with methods `_pdf` and `fit`) or "
+        f"the string 'bootstrapping'. Got {type(kwargs['interval'])}."
+    )
+    with pytest.raises(TypeError, match = err_msg):
+        check_backtesting_input(**kwargs)
+
+    class CustomObject:  # pragma: no cover
+        pass
+    
+    kwargs['interval'] = CustomObject()
+    err_msg = re.escape(
+        f"`interval` must be a list or tuple of floats, a scipy.stats "
+        f"distribution object (with methods `_pdf` and `fit`) or "
+        f"the string 'bootstrapping'. Got {type(kwargs['interval'])}."
+    )
+    with pytest.raises(TypeError, match = err_msg):
+        check_backtesting_input(**kwargs)
+
+    kwargs['interval'] = ['10', '90']
+    err_msg = re.escape(
+        f"`interval` must be a list or tuple of floats. "
+        f"Got {type('10')} in {kwargs['interval']}."
+    )
+    with pytest.raises(TypeError, match = err_msg):
+        check_backtesting_input(**kwargs)
+
+    kwargs['interval'] = [0, 100, 101]
+    err_msg = re.escape(
+        "When `interval` is a list or tuple, all values must be "
+        "between 0 and 100 inclusive."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        check_backtesting_input(**kwargs)
+
+    kwargs['interval'] = 'not_bootstrapping'
+    err_msg = re.escape(
+        f"When `interval` is a string, it must be 'bootstrapping'."
+        f"Got {kwargs['interval']}."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        check_backtesting_input(**kwargs)
 
 
 @pytest.mark.parametrize("forecaster", 

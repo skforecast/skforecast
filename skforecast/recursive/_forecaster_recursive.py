@@ -245,7 +245,7 @@ class ForecasterRecursive(ForecasterBase):
     def __init__(
         self,
         regressor: object,
-        lags: int | list[int] | np.ndarray[int] | range | None = None,
+        lags: int | list[int] | np.ndarray[int] | range[int] | None = None,
         window_features: object | list[object] | None = None,
         transformer_y: object | None = None,
         transformer_exog: object | None = None,
@@ -1092,7 +1092,7 @@ class ForecasterRecursive(ForecasterBase):
         predict_boot: bool = False,
         use_in_sample_residuals: bool = True,
         use_binned_residuals: bool = False,
-        check_inputs: bool = True,
+        check_inputs: bool = True
     ) -> tuple[np.ndarray, np.ndarray | None, pd.Index, int]:
         """
         Create the inputs needed for the first iteration of the prediction 
@@ -1448,10 +1448,10 @@ class ForecasterRecursive(ForecasterBase):
 
         last_window_values, exog_values, prediction_index, steps = (
             self._create_predict_inputs(
-                steps=steps,
-                last_window=last_window,
-                exog=exog,
-                check_inputs=check_inputs,
+                steps        = steps,
+                last_window  = last_window,
+                exog         = exog,
+                check_inputs = check_inputs,
             )
         )
 
@@ -1846,8 +1846,9 @@ class ForecasterRecursive(ForecasterBase):
             
             + If steps is int, number of steps to predict. 
             + If str or pandas Datetime, the prediction will be up to that date.
-        distribution : Object
-            A distribution object from scipy.stats.
+        distribution : object
+            A distribution object from scipy.stats with methods `_pdf` and `fit`. 
+            For example scipy.stats.norm.
         last_window : pandas Series, pandas DataFrame, default None
             Series values used to create the predictors (lags) needed in the 
             first iteration of the prediction (t + 1).  
@@ -1881,6 +1882,12 @@ class ForecasterRecursive(ForecasterBase):
             Distribution parameters estimated for each step.
 
         """
+
+        if not hasattr(distribution, "_pdf") or not callable(getattr(distribution, "fit", None)):
+            raise TypeError(
+                "`distribution` must be a valid probability distribution object "
+                "from scipy.stats, with methods `_pdf` and `fit`."
+            )
 
         boot_samples = self.predict_bootstrapping(
                            steps                   = steps,
@@ -1952,7 +1959,7 @@ class ForecasterRecursive(ForecasterBase):
 
     def set_lags(
         self, 
-        lags: int | list[int] | np.ndarray[int] | range | None = None
+        lags: int | list[int] | np.ndarray[int] | range[int] | None = None
     ) -> None:
         """
         Set new value to the attribute `lags`. Attributes `lags_names`, 

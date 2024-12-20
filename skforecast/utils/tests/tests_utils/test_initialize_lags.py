@@ -106,6 +106,7 @@ def test_TypeError_initialize_lags_when_lags_is_not_valid_type_ForecasterDirectM
                           ([]              , (None, None, None)),
                           (10              , (np.arange(10) + 1, [f'lag_{i}' for i in range(1, 11)], 10)), 
                           ([1, 2, 3]       , (np.array([1, 2, 3]), ['lag_1', 'lag_2', 'lag_3'], 3)),
+                          ([2, 3, 1]       , (np.array([1, 2, 3]), ['lag_1', 'lag_2', 'lag_3'], 3)),
                           ((4, 5, 6)       , (np.array((4, 5, 6)), ['lag_4', 'lag_5', 'lag_6'], 6)),  
                           (range(1, 4)     , (np.array([1, 2, 3]), ['lag_1', 'lag_2', 'lag_3'], 3)), 
                           (np.arange(1, 10), (np.arange(1, 10), [f'lag_{i}' for i in range(1, 10)], 9))], 

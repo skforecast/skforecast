@@ -24,14 +24,23 @@ The main changes in this release are:
 
 + Added statistic `ewm` (exponential weighted mean) in <code>[RollingFeatures]</code>. Alpha can be specified using the new argument `kwargs_stats`, default `{'ewm': {'alpha': 0.3}}`.
 
-+ Added method `_rep_html_` to <code>[ForecasterSarimax]</code>, <code>[TimeSeriesFold]</code> and <code>[OneStepAheadFold]</code> to display the object in HTML format.
++ Added method `_repr_html_` to <code>[ForecasterSarimax]</code>, <code>[TimeSeriesFold]</code> and <code>[OneStepAheadFold]</code> to display the object in HTML format.
+
++ Added argument `consolidate_dtypes` in <code>[exog_long_to_dict]</code> function to ensure that the data types of the exogenous variables are consistent across all series when `np.nan` values are added and integer columns are converted to float.
+
++ Added <code>[calculate_lag_autocorrelation]</code> function to the <code>[plot]</code> module to calculate the autocorrelation and partial autocorrelation of a time series.
+
 
 **Changed**
 
 + <code>[ForecasterAutoregCustom]</code> and <code>[ForecasterAutoregMultiSeriesCustom]</code> has been deleted (deprecated since skforecast 0.14.0). Window features can be added using the `window_features` argument in the <code>[ForecasterRecursive]</code>, <code>[ForecasterDirect]</code>, <code>[ForecasterDirectMultiVariate]</code> and <code>[ForecasterRecursiveMultiSeries]</code>.
 
++ Argument `dropna` in <code>[exog_long_to_dict]</code> function has been renamed to `drop_all_nan_cols`.
+
 
 **Fixed**
+
++ Now <code>[ForecasterRecursiveMultiSeries]</code> can be saved correctly when `weight_func` is a `dict` with `None` for any series. It now use the method `_weight_func_all_1` to create the weight function for these series.
 
 + Fix `transform_numpy` function in the <code>[utils]</code> module to work when transformers output in `scikit-learn` is `set_output(transform='pandas')`.
 
@@ -1071,6 +1080,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [set_dark_theme]: https://skforecast.org/latest/api/plot#skforecast.plot.plot.set_dark_theme
 [plot_residuals]: https://skforecast.org/latest/api/plot#skforecast.plot.plot.plot_residuals
 [plot_multivariate_time_series_corr]: https://skforecast.org/latest/api/plot#skforecast.plot.plot.plot_multivariate_time_series_corr
+[calculate_lag_autocorrelation]: https://skforecast.org/latest/api/plot#skforecast.plot.plot.calculate_lag_autocorrelation
 [plot_prediction_distribution]: https://skforecast.org/latest/api/plot#skforecast.plot.plot.plot_prediction_distribution
 [plot_prediction_intervals]: https://skforecast.org/latest/api/plot#skforecast.plot.plot.plot_prediction_intervals
 
