@@ -817,6 +817,7 @@ class ForecasterRnn(ForecasterBase):
             levels = self.levels
         elif isinstance(levels, str):
             levels = [levels]
+
         if isinstance(steps, int):
             steps = list(np.arange(steps) + 1)
         elif steps is None:
@@ -827,48 +828,45 @@ class ForecasterRnn(ForecasterBase):
         elif isinstance(steps, list):
             steps = list(np.array(steps))
 
-        if self.is_fitted:
-            steps = self.steps
-
-            if use_in_sample_residuals:
-                if not set(steps).issubset(set(self.in_sample_residuals_.keys())):
-                    raise ValueError(
-                        f"Not `forecaster.in_sample_residuals_` for steps: "
-                        f"{set(steps) - set(self.in_sample_residuals_.keys())}."
-                    )
-                residuals = self.in_sample_residuals_
+        if use_in_sample_residuals:
+            if not set(steps).issubset(set(self.in_sample_residuals_.keys())):
+                raise ValueError(
+                    f"Not `forecaster.in_sample_residuals_` for steps: "
+                    f"{set(steps) - set(self.in_sample_residuals_.keys())}."
+                )
+            residuals = self.in_sample_residuals_
+        else:
+            if self.out_sample_residuals_ is None:
+                raise ValueError(
+                    "`forecaster.out_sample_residuals_` is `None`. Use "
+                    "`use_in_sample_residuals=True` or the "
+                    "`set_out_sample_residuals()` method before predicting."
+                )
             else:
-                if self.out_sample_residuals_ is None:
+                if not set(steps).issubset(set(self.out_sample_residuals_.keys())):
                     raise ValueError(
-                        "`forecaster.out_sample_residuals_` is `None`. Use "
-                        "`use_in_sample_residuals=True` or the "
-                        "`set_out_sample_residuals()` method before predicting."
+                        f"Not `forecaster.out_sample_residuals_` for steps: "
+                        f"{set(steps) - set(self.out_sample_residuals_.keys())}. "
+                        f"Use method `set_out_sample_residuals()`."
                     )
-                else:
-                    if not set(steps).issubset(set(self.out_sample_residuals_.keys())):
-                        raise ValueError(
-                            f"Not `forecaster.out_sample_residuals_` for steps: "
-                            f"{set(steps) - set(self.out_sample_residuals_.keys())}. "
-                            f"Use method `set_out_sample_residuals()`."
-                        )
-                residuals = self.out_sample_residuals_
+            residuals = self.out_sample_residuals_
 
-            check_residuals = (
-                'forecaster.in_sample_residuals_' if use_in_sample_residuals
-                else 'forecaster.out_sample_residuals_'
-            )
-            for step in steps:
-                if residuals[step] is None:
-                    raise ValueError(
-                        f"forecaster residuals for step {step} are `None`. "
-                        f"Check {check_residuals}."
-                    )
-                elif (any(element is None for element in residuals[step]) or
-                      np.any(np.isnan(residuals[step]))):
-                    raise ValueError(
-                        f"forecaster residuals for step {step} contains `None` "
-                        f"or `NaNs` values. Check {check_residuals}."
-                    )
+        check_residuals = (
+            'forecaster.in_sample_residuals_' if use_in_sample_residuals
+            else 'forecaster.out_sample_residuals_'
+        )
+        for step in steps:
+            if residuals[step] is None:
+                raise ValueError(
+                    f"forecaster residuals for step {step} are `None`. "
+                    f"Check {check_residuals}."
+                )
+            elif (any(element is None for element in residuals[step]) or
+                  np.any(np.isnan(residuals[step]))):
+                raise ValueError(
+                    f"forecaster residuals for step {step} contains `None` "
+                    f"or `NaNs` values. Check {check_residuals}."
+                )
 
         if last_window is None:
             last_window = self.last_window_
@@ -934,7 +932,7 @@ class ForecasterRnn(ForecasterBase):
                 )
 
             boot_level = pd.DataFrame(
-                data=boot_level,
+                data=boot_level[np.array(steps) - 1],
                 index=prediction_index,
                 columns=boot_columns
             )
