@@ -5,6 +5,7 @@
 ################################################################################
 # coding=utf-8
 
+from __future__ import annotations
 import warnings
 import sys
 import uuid
@@ -35,20 +36,20 @@ class ForecasterSarimax():
     ----------
     regressor : skforecast.sarimax.Sarimax
         A Sarimax model instance from skforecast.
-    transformer_y : object transformer (preprocessor), default `None`
+    transformer_y : object transformer (preprocessor), default None
         An instance of a transformer (preprocessor) compatible with the scikit-learn
         preprocessing API with methods: fit, transform, fit_transform and inverse_transform.
         ColumnTransformers are not allowed since they do not have inverse_transform method.
         The transformation is applied to `y` before training the forecaster. 
-    transformer_exog : object transformer (preprocessor), default `None`
+    transformer_exog : object transformer (preprocessor), default None
         An instance of a transformer (preprocessor) compatible with the scikit-learn
         preprocessing API. The transformation is applied to `exog` before training the
         forecaster. `inverse_transform` is not available when using ColumnTransformers.
-    fit_kwargs : dict, default `None`
+    fit_kwargs : dict, default None
         Additional arguments to be passed to the `fit` method of the regressor. 
         When using the skforecast Sarimax model, the fit kwargs should be passed 
         using the model parameter `sm_fit_kwargs` and not this one.
-    forecaster_id : str, int default `None`
+    forecaster_id : str, int, default None
         Name used as an identifier of the forecaster.
     
     Attributes
@@ -119,7 +120,7 @@ class ForecasterSarimax():
         regressor: object,
         transformer_y: object | None = None,
         transformer_exog: object | None = None,
-        fit_kwargs: dict | None = None,
+        fit_kwargs: dict[str, object] | None = None,
         forecaster_id: str | int | None = None
     ) -> None:
         
@@ -146,20 +147,48 @@ class ForecasterSarimax():
         
         if not isinstance(self.regressor, skforecast.sarimax.Sarimax):
             raise TypeError(
-                (f"`regressor` must be an instance of type "
-                 f"`skforecast.sarimax.Sarimax`. Got '{type(regressor)}'.")
+                f"`regressor` must be an instance of type "
+                f"`skforecast.sarimax.Sarimax`. Got '{type(regressor)}'."
             )
 
         self.params = self.regressor.get_params(deep=True)
 
         if fit_kwargs:
             warnings.warn(
-                ("When using the skforecast Sarimax model, the fit kwargs should "
-                 "be passed using the model parameter `sm_fit_kwargs`."),
-                 IgnoredArgumentWarning
+                "When using the skforecast Sarimax model, the fit kwargs should "
+                "be passed using the model parameter `sm_fit_kwargs`.",
+                IgnoredArgumentWarning
             )
         self.fit_kwargs = {}
+    
+    def _preprocess_repr(self) -> tuple[str, str]:
+        """
+        Format text for __repr__ method.
 
+        Returns
+        -------
+        text : str
+            Formatted text.
+
+        """
+        params = str(self.params)
+        if len(params) > 58:
+            params = "\n    " + textwrap.fill(
+                params, width=80, subsequent_indent="    "
+            )
+
+        exog_names_in_ = None
+        if self.exog_names_in_ is not None:
+            exog_names_in_ = copy(self.exog_names_in_)
+            if len(exog_names_in_) > 50:
+                exog_names_in_ = exog_names_in_[:50] + ["..."]
+            exog_names_in_ = ", ".join(exog_names_in_)
+            if len(exog_names_in_) > 58:
+                exog_names_in_ = "\n    " + textwrap.fill(
+                    exog_names_in_, width=80, subsequent_indent="    "
+                )
+        
+        return params, exog_names_in_
 
     def __repr__(
         self
@@ -335,36 +364,6 @@ class ForecasterSarimax():
 
         # Return the combined style and content
         return style + content
-    
-    def _preprocess_repr(self) -> list[str]:
-        """
-        Format text for __repr__ method.
-
-        Returns
-        -------
-        text : str
-            Formatted text.
-
-        """
-        params = str(self.params)
-        if len(params) > 58:
-            params = "\n    " + textwrap.fill(
-                params, width=80, subsequent_indent="    "
-            )
-
-        exog_names_in_ = None
-        if self.exog_names_in_ is not None:
-            exog_names_in_ = copy(self.exog_names_in_)
-            if len(exog_names_in_) > 50:
-                exog_names_in_ = exog_names_in_[:50] + ["..."]
-            exog_names_in_ = ", ".join(exog_names_in_)
-            if len(exog_names_in_) > 58:
-                exog_names_in_ = "\n    " + textwrap.fill(
-                    exog_names_in_, width=80, subsequent_indent="    "
-                )
-        
-        return params, exog_names_in_
-
 
     def fit(
         self,
@@ -383,13 +382,13 @@ class ForecasterSarimax():
         ----------
         y : pandas Series
             Training time series.
-        exog : pandas Series, pandas DataFrame, default `None`
+        exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s. Must have the same
             number of observations as `y` and their indexes must be aligned so
             that y[i] is regressed on exog[i].
-        store_last_window : bool, default `True`
+        store_last_window : bool, default True
             Whether or not to store the last window (`last_window_`) of training data.
-        suppress_warnings : bool, default `False`
+        suppress_warnings : bool, default False
             If `True`, warnings generated during fitting will be ignored.
 
         Returns
@@ -402,8 +401,8 @@ class ForecasterSarimax():
         if exog is not None:
             if len(exog) != len(y):
                 raise ValueError(
-                    (f"`exog` must have same number of samples as `y`. "
-                     f"length `exog`: ({len(exog)}), length `y`: ({len(y)})")
+                    f"`exog` must have same number of samples as `y`. "
+                    f"length `exog`: ({len(exog)}), length `y`: ({len(y)})"
                 )
             check_exog(exog=exog)
 
@@ -471,7 +470,6 @@ class ForecasterSarimax():
         self.extended_index_ = self.regressor.sarimax_res.fittedvalues.index.copy()
         self.params = self.regressor.get_params(deep=True)
 
-
     def _create_predict_inputs(
         self,
         steps: int,
@@ -488,28 +486,28 @@ class ForecasterSarimax():
         ----------
         steps : int
             Number of future steps predicted.
-        last_window : pandas Series, default `None`
+        last_window : pandas Series, default None
             Series values used to create the predictors (lags) needed in the 
             first iteration of the prediction (t + 1).
             If `last_window = None`, the values stored in `self.last_window_` are
             used to calculate the initial predictors, and the predictions start
             right after training data.
-        last_window_exog : pandas Series, pandas DataFrame, default `None`
+        last_window_exog : pandas Series, pandas DataFrame, default None
             Values of the exogenous variables aligned with `last_window`. Only
             needed when `last_window` is not None and the forecaster has been
             trained including exogenous variables. Used to make predictions 
             unrelated to the original data. Values have to start at the end 
             of the training data.
-        exog : pandas Series, pandas DataFrame, default `None`
+        exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
 
         Returns
         -------
         last_window : pandas Series
             Series predictors.
-        last_window_exog : pandas DataFrame, default `None`
+        last_window_exog : pandas DataFrame, None
             Values of the exogenous variables aligned with `last_window`.
-        exog : pandas DataFrame, default `None`
+        exog : pandas DataFrame, None
             Exogenous variable/s included as predictor/s.
         
         """
@@ -564,11 +562,11 @@ class ForecasterSarimax():
             expected_index = expand_index(index=self.extended_index_, steps=1)[0]
             if expected_index != last_window.index[0]:
                 raise ValueError(
-                    (f"To make predictions unrelated to the original data, `last_window` "
-                     f"has to start at the end of the index seen by the forecaster.\n"
-                     f"    Series last index         : {self.extended_index_[-1]}.\n"
-                     f"    Expected index            : {expected_index}.\n"
-                     f"    `last_window` index start : {last_window.index[0]}.")
+                    f"To make predictions unrelated to the original data, `last_window` "
+                    f"has to start at the end of the index seen by the forecaster.\n"
+                    f"    Series last index         : {self.extended_index_[-1]}.\n"
+                    f"    Expected index            : {expected_index}.\n"
+                    f"    `last_window` index start : {last_window.index[0]}."
                 )
             
             last_window = transform_series(
@@ -583,11 +581,11 @@ class ForecasterSarimax():
                 # check index last_window_exog
                 if expected_index != last_window_exog.index[0]:
                     raise ValueError(
-                        (f"To make predictions unrelated to the original data, `last_window_exog` "
-                         f"has to start at the end of the index seen by the forecaster.\n"
-                         f"    Series last index              : {self.extended_index_[-1]}.\n"
-                         f"    Expected index                 : {expected_index}.\n"
-                         f"    `last_window_exog` index start : {last_window_exog.index[0]}.")
+                        f"To make predictions unrelated to the original data, `last_window_exog` "
+                        f"has to start at the end of the index seen by the forecaster.\n"
+                        f"    Series last index              : {self.extended_index_[-1]}.\n"
+                        f"    Expected index                 : {expected_index}.\n"
+                        f"    `last_window_exog` index start : {last_window_exog.index[0]}."
                     )
 
                 if isinstance(last_window_exog, pd.Series):
@@ -615,7 +613,6 @@ class ForecasterSarimax():
 
         return last_window, last_window_exog, exog
 
-
     def predict(
         self,
         steps: int,
@@ -642,17 +639,17 @@ class ForecasterSarimax():
         ----------
         steps : int
             Number of future steps predicted.
-        last_window : pandas Series, default `None`
+        last_window : pandas Series, default None
             Series values used to create the predictors needed in the 
             predictions. Used to make predictions unrelated to the original data. 
             Values have to start at the end of the training data.
-        last_window_exog : pandas Series, pandas DataFrame, default `None`
+        last_window_exog : pandas Series, pandas DataFrame, default None
             Values of the exogenous variables aligned with `last_window`. Only
             needed when `last_window` is not None and the forecaster has been
             trained including exogenous variables. Used to make predictions 
             unrelated to the original data. Values have to start at the end 
             of the training data.
-        exog : pandas Series, pandas DataFrame, default `None`
+        exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
 
         Returns
@@ -693,7 +690,6 @@ class ForecasterSarimax():
         
         return predictions
 
-
     def predict_interval(
         self,
         steps: int,
@@ -701,7 +697,7 @@ class ForecasterSarimax():
         last_window_exog: pd.Series | pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | None = None,
         alpha: float = 0.05,
-        interval: list | tuple | None = None,
+        interval: list[float] | tuple[float] | None = None,
     ) -> pd.DataFrame:
         """
         Forecast future values and their confidence intervals.
@@ -722,20 +718,20 @@ class ForecasterSarimax():
         ----------
         steps : int
             Number of future steps predicted.
-        last_window : pandas Series, default `None`
+        last_window : pandas Series, default None
             Series values used to create the predictors needed in the 
             predictions. Used to make predictions unrelated to the original data. 
             Values have to start at the end of the training data.
-        last_window_exog : pandas Series, pandas DataFrame, default `None`
+        last_window_exog : pandas Series, pandas DataFrame, default None
             Values of the exogenous variables aligned with `last_window`. Only
             need when `last_window` is not None and the forecaster has been
             trained including exogenous variables.
-        exog : pandas Series, pandas DataFrame, default `None`
+        exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
-        alpha : float, default `0.05`
+        alpha : float, default 0.05
             The confidence intervals for the forecasts are (1 - alpha) %.
             If both, `alpha` and `interval` are provided, `alpha` will be used.
-        interval : list, tuple, default `None`
+        interval : list, tuple, default None
             Confidence of the prediction interval estimated. The values must be
             symmetric. Sequence of percentiles to compute, which must be between 
             0 and 100 inclusive. For example, interval of 95% should be as 
@@ -757,9 +753,9 @@ class ForecasterSarimax():
         if alpha is None:
             if 100 - interval[1] != interval[0]:
                 raise ValueError(
-                    (f"When using `interval` in ForecasterSarimax, it must be symmetrical. "
-                     f"For example, interval of 95% should be as `interval = [2.5, 97.5]`. "
-                     f"Got {interval}.")
+                    f"When using `interval` in ForecasterSarimax, it must be symmetrical. "
+                    f"For example, interval of 95% should be as `interval = [2.5, 97.5]`. "
+                    f"Got {interval}."
                 )
             alpha = 2 * (100 - interval[1]) / 100
 
@@ -796,10 +792,9 @@ class ForecasterSarimax():
 
         return predictions
 
-    
     def set_params(
         self, 
-        params: dict
+        params: dict[str, object]
     ) -> None:
         """
         Set new values to the parameters of the model stored in the forecaster.
@@ -819,10 +814,9 @@ class ForecasterSarimax():
         self.regressor.set_params(**params)
         self.params = self.regressor.get_params(deep=True)
 
-
     def set_fit_kwargs(
         self, 
-        fit_kwargs: dict
+        fit_kwargs: dict[str, object]
     ) -> None:
         """
         Set new values for the additional keyword arguments passed to the `fit` 
@@ -840,12 +834,11 @@ class ForecasterSarimax():
         """
 
         warnings.warn(
-            ("When using the skforecast Sarimax model, the fit kwargs should "
-             "be passed using the model parameter `sm_fit_kwargs`."),
-             IgnoredArgumentWarning
+            "When using the skforecast Sarimax model, the fit kwargs should "
+            "be passed using the model parameter `sm_fit_kwargs`.",
+            IgnoredArgumentWarning
         )
         self.fit_kwargs = {}
-
 
     def get_feature_importances(
         self,
@@ -856,7 +849,7 @@ class ForecasterSarimax():
 
         Parameters
         ----------
-        sort_importance: bool, default `True`
+        sort_importance: bool, default True
             If `True`, sorts the feature importances in descending order.
 
         Returns
@@ -868,8 +861,8 @@ class ForecasterSarimax():
 
         if not self.is_fitted:
             raise NotFittedError(
-                ("This forecaster is not fitted yet. Call `fit` with appropriate "
-                 "arguments before using `get_feature_importances()`.")
+                "This forecaster is not fitted yet. Call `fit` with appropriate "
+                "arguments before using `get_feature_importances()`."
             )
 
         feature_importances = self.regressor.params().to_frame().reset_index()
@@ -881,7 +874,6 @@ class ForecasterSarimax():
                                   )
 
         return feature_importances
-
 
     def get_info_criteria(
         self, 
@@ -896,10 +888,10 @@ class ForecasterSarimax():
 
         Parameters
         ----------
-        criteria : str, default `'aic'`
+        criteria : str, default 'aic'
             The information criteria to compute. Valid options are {'aic', 'bic',
             'hqic'}.
-        method : str, default `'standard'`
+        method : str, default 'standard'
             The method for information criteria computation. Default is 'standard'
             method; 'lutkepohl' computes the information criteria as in Lütkepohl
             (2007).
@@ -913,20 +905,19 @@ class ForecasterSarimax():
 
         if criteria not in ['aic', 'bic', 'hqic']:
             raise ValueError(
-                ("Invalid value for `criteria`. Valid options are 'aic', 'bic', "
-                 "and 'hqic'.")
+                "Invalid value for `criteria`. Valid options are 'aic', 'bic', "
+                "and 'hqic'."
             )
         
         if method not in ['standard', 'lutkepohl']:
             raise ValueError(
-                ("Invalid value for `method`. Valid options are 'standard' and "
-                 "'lutkepohl'.")
+                "Invalid value for `method`. Valid options are 'standard' and "
+                "'lutkepohl'."
             )
         
         metric = self.regressor.get_info_criteria(criteria=criteria, method=method)
         
         return metric
-
 
     def summary(self) -> None:
         """

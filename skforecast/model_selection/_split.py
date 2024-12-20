@@ -327,6 +327,10 @@ class BaseFold():
     ) -> tuple[str, str]:
         """
         Return style and unique_id for HTML representation.
+
+        Parameters
+        ----------
+        None
         
         Returns
         -------
@@ -515,9 +519,9 @@ class OneStepAheadFold(BaseFold):
                 </ul>
             </details>
             <p>
-                <a href="https://skforecast.org/{skforecast.__version__}/api/model_selection#skforecast.model_selection._split.OneStepAheadFold">&#128712 <strong>API Reference</strong></a>
+                <a href="https://skforecast.org/{skforecast.__version__}/api/model_selection.html#skforecast.model_selection._split.OneStepAheadFold">&#128712 <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
-                <a href="https://skforecast.org/{skforecast.__version__}/faq/parameters-search-backtesting-vs-one-step-ahead">&#128462 <strong>User Guide</strong></a>
+                <a href="https://skforecast.org/{skforecast.__version__}/faq/parameters-search-backtesting-vs-one-step-ahead.html">&#128462 <strong>User Guide</strong></a>
             </p>
         </div>
         """
@@ -803,8 +807,8 @@ class TimeSeriesFold(BaseFold):
             f"{'=' * len(type(self).__name__)} \n"
             f"{type(self).__name__} \n"
             f"{'=' * len(type(self).__name__)} \n"
-            f"Steps                 = {self.steps},\n"
             f"Initial train size    = {self.initial_train_size},\n"
+            f"Steps                 = {self.steps},\n"
             f"Window size           = {self.window_size},\n"
             f"Differentiation       = {self.differentiation},\n"
             f"Refit                 = {self.refit},\n"
@@ -813,7 +817,7 @@ class TimeSeriesFold(BaseFold):
             f"Skip folds            = {self.skip_folds},\n"
             f"Allow incomplete fold = {self.allow_incomplete_fold},\n"
             f"Return all indexes    = {self.return_all_indexes},\n"
-            f"verbose               = {self.verbose}\n"
+            f"Verbose               = {self.verbose}\n"
         )
 
         return info
@@ -844,9 +848,9 @@ class TimeSeriesFold(BaseFold):
                 </ul>
             </details>
             <p>
-                <a href="https://skforecast.org/{skforecast.__version__}/api/model_selection#skforecast.model_selection._split.TimeSeriesFold">&#128712 <strong>API Reference</strong></a>
+                <a href="https://skforecast.org/{skforecast.__version__}/api/model_selection.html#skforecast.model_selection._split.TimeSeriesFold">&#128712 <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
-                <a href="https://skforecast.org/{skforecast.__version__}/user_guides/backtesting#timeseriesfold">&#128462 <strong>User Guide</strong></a>
+                <a href="https://skforecast.org/{skforecast.__version__}/user_guides/backtesting.html#timeseriesfold">&#128462 <strong>User Guide</strong></a>
             </p>
         </div>
         """
