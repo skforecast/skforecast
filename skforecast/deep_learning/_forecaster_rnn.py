@@ -965,7 +965,7 @@ class ForecasterRnn(ForecasterBase):
         boot_columns = [f"pred_boot_{i}" for i in range(n_boot)]
         rng = np.random.default_rng(seed=random_state)
 
-        for j, level in enumerate(self.levels):
+        for j, level in enumerate(levels):
             boot_level = np.tile(predictions[:, j], (n_boot, 1)).T
 
             for i, step in enumerate(steps):
