@@ -1813,16 +1813,21 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         
         """
 
+        input_levels_is_None = True if levels is None else False
         levels, input_levels_is_list = prepare_levels_multiseries(
             X_train_series_names_in_=self.X_train_series_names_in_, levels=levels
         )
 
-        if self.is_fitted and last_window is None:
-            levels, last_window = preprocess_levels_self_last_window_multiseries(
-                                      levels               = levels,
-                                      input_levels_is_list = input_levels_is_list,
-                                      last_window_         = self.last_window_
-                                  )
+        if self.is_fitted:
+            if last_window is None:
+                levels, last_window = preprocess_levels_self_last_window_multiseries(
+                                          levels               = levels,
+                                          input_levels_is_list = input_levels_is_list,
+                                          last_window_         = self.last_window_
+                                      )
+            else:
+                if input_levels_is_None and isinstance(last_window, pd.DataFrame):
+                    levels = last_window.columns.to_list()
             
         if self.is_fitted and predict_boot:
             residuals = prepare_residuals_multiseries(
