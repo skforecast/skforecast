@@ -12,7 +12,7 @@ datasets_keys = [
     'australia_tourism', 'uk_daily_flights', 'wikipedia_visits', 
     'vic_electricity', 'store_sales', 'bicimad', 'm4_daily', 'm4_hourly', 
     'ashrae_daily', 'bdg2_daily', 'bdg2_hourly', 'm5', 'ett_m1', 'ett_m2',
-    'expenditures_australia'
+    'expenditures_australia', 'public_transport_madrid'
 ]
 
 

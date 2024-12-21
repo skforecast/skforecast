@@ -564,7 +564,7 @@ def fetch_dataset(
             'freq': 'D',
             'file_type': 'csv',
             'description': (
-                'Daily user of public transport in Madrid (Spain) from 2023-01-01 to 2024-12-15.'
+                'Daily users of public transport in Madrid (Spain) from 2023-01-01 to 2024-12-15.'
             ),
             'source': (
                 'Consorcio Regional de Transportes de Madrid CRTM, CRTM Evolucion demanda diaria '
