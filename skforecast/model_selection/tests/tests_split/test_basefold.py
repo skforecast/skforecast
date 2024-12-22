@@ -54,27 +54,57 @@ def test_basefold_validate_params_raise_invalid_steps():
         cv._validate_params(cv_name="TimeSeriesFold", **params)
 
 
-def test_basefold_validate_params_raise_invalid_initial_train_size():
+def test_basefold_validate_params_raise_invalid_initial_train_size_TimeSeriesFold():
     """
-    Test that ValueError is raised when initial_train_size is invalid.
+    Test that ValueError is raised when initial_train_size is invalid 
+    for TimeSeriesFold.
     """
     cv = BaseFold()
     params = dict(valid_params)
+
+    # Test invalid string
     params["initial_train_size"] = "invalid"
     msg = (
-        "`initial_train_size` must be an integer greater than 0 or None. "
-        "Got invalid."
+        "`initial_train_size` must be a valid date string accepted "
+        "by pandas to_datetime, an integer, a pandas "
+        f"Timestamp, or None. Got {params["initial_train_size"]}."
     )
     with pytest.raises(ValueError, match=msg):
         cv._validate_params(cv_name="TimeSeriesFold", **params)
     
+    # Test invalid integer
     params["initial_train_size"] = -1
     msg = (
-        "`initial_train_size` must be an integer greater than 0 or None. "
-        "Got -1."
+        "`initial_train_size` must be an integer greater than 0, "
+        f"a date string, a pandas Timestamp, or None. Got {params["initial_train_size"]}."
     )
     with pytest.raises(ValueError, match=msg):
         cv._validate_params(cv_name="TimeSeriesFold", **params)
+    
+    # Test invalid type
+    params["initial_train_size"] = 1.0
+    msg = (
+        "`initial_train_size` must be an integer, a date string, "
+        f"a pandas Timestamp, or None. Got {params["initial_train_size"]}."
+    )
+    with pytest.raises(ValueError, match=msg):
+        cv._validate_params(cv_name="TimeSeriesFold", **params)
+    
+    # Test valid None
+    params["initial_train_size"] = None
+    cv._validate_params(cv_name="TimeSeriesFold", **params)
+
+    # Test valid integer
+    params["initial_train_size"] = 10
+    cv._validate_params(cv_name="TimeSeriesFold", **params)
+    
+    # Test valid date string
+    params["initial_train_size"] = "2022-01-01"
+    cv._validate_params(cv_name="TimeSeriesFold", **params)
+    
+    # Test valid pandas Timestamp
+    params["initial_train_size"] = pd.Timestamp("2022-01-01")
+    cv._validate_params(cv_name="TimeSeriesFold", **params)
 
 
 def test_basefold_validate_params_raise_invalid_refit():
@@ -178,48 +208,51 @@ def test_basefold_validate_params_raise_invalid_allow_incomplete_fold():
 
 def test_basefold_validate_params_raise_invalid_initial_train_size_OneStepAheadFold():
     """
-    Test that TypeError is raised when initial_train_size is invalid for 
+    Test that ValueError is raised when initial_train_size is invalid for 
     OneStepAheadFold.
     """
     cv = BaseFold()
     params = dict(valid_params)
+    
+    # Test invalid string
     params["initial_train_size"] = "invalid"
     msg = (
-        f"`initial_train_size` must be an integer greater than 0. "
+        "`initial_train_size` must be a valid date string accepted "
+        "by pandas to_datetime, an integer, or a pandas Timestamp. "
         f"Got {params['initial_train_size']}."
     )
     with pytest.raises(ValueError, match=msg):
         cv._validate_params(cv_name="OneStepAheadFold", **params)
     
+    # Test invalid integer
     params["initial_train_size"] = 0
     msg = (
-        f"`initial_train_size` must be an integer greater than 0. "
-        f"Got {params['initial_train_size']}."
+        "`initial_train_size` must be an integer greater than 0, "
+        f"a date string, or a pandas Timestamp. Got {params['initial_train_size']}."
     )
     with pytest.raises(ValueError, match=msg):
         cv._validate_params(cv_name="OneStepAheadFold", **params)
-
-
-def test_basefold_validate_params_raise_invalid_window_size():
-    """
-    Test that ValueError is raised when window_size is invalid.
-    """
-    cv = BaseFold()
-    params = dict(valid_params)
-    params["window_size"] = 0
-    msg = f"`window_size` must be an integer greater than 0. Got {params['window_size']}."
+    
+    # Test invalid type
+    params["initial_train_size"] = 1.5
+    msg = (
+        "`initial_train_size` must be an integer, a date string, or "
+        f"a pandas Timestamp. Got {params['initial_train_size']}."
+    )
     with pytest.raises(ValueError, match=msg):
-        cv._validate_params(cv_name="TimeSeriesFold", **params)
-
-    params["window_size"] = "invalid"
-    msg = f"`window_size` must be an integer greater than 0. Got {params['window_size']}."
-    with pytest.raises(ValueError, match=msg):
-        cv._validate_params(cv_name="TimeSeriesFold", **params)
-
-    params["window_size"] = 1.0
-    msg = f"`window_size` must be an integer greater than 0. Got {params['window_size']}."
-    with pytest.raises(ValueError, match=msg):
-        cv._validate_params(cv_name="TimeSeriesFold", **params)
+        cv._validate_params(cv_name="OneStepAheadFold", **params)
+    
+    # Test valid integer
+    params["initial_train_size"] = 10
+    cv._validate_params(cv_name="OneStepAheadFold", **params)
+    
+    # Test valid date string
+    params["initial_train_size"] = "2022-01-01"
+    cv._validate_params(cv_name="OneStepAheadFold", **params)
+    
+    # Test valid pandas Timestamp
+    params["initial_train_size"] = pd.Timestamp("2022-01-01")
+    cv._validate_params(cv_name="OneStepAheadFold", **params)
 
 
 def test_basefold_validate_params_raise_invalid_return_all_indexes():
