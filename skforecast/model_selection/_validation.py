@@ -260,11 +260,6 @@ def _backtesting_forecaster(
                 + 1
             )
 
-        pred = forecaster.predict(
-                   steps       = steps,
-                   last_window = last_window_y,
-                   exog        = next_window_exog
-               )
         if interval is not None:
             kwargs_interval = {
                 'steps': steps,
@@ -287,6 +282,15 @@ def _backtesting_forecaster(
             else:
                 pred_interval = forecaster.predict_dist(distribution=interval, **kwargs_interval)
 
+        # NOTE: This is done after probabilistic predictions to avoid repeating the same checks.
+        pred = forecaster.predict(
+                   steps        = steps,
+                   last_window  = last_window_y,
+                   exog         = next_window_exog,
+                   check_inputs = True if interval is None else False
+               )
+
+        if interval is not None:
             pred = pd.concat((pred, pred_interval), axis=1)
 
         if type(forecaster).__name__ != 'ForecasterDirect' and gap > 0:
@@ -722,7 +726,8 @@ def _backtesting_forecaster_multiseries(
 
     def _fit_predict_forecaster(
         data_fold, forecaster, store_in_sample_residuals, levels, interval, 
-        n_boot, random_state, use_in_sample_residuals, gap, suppress_warnings):
+        n_boot, random_state, use_in_sample_residuals, gap, suppress_warnings
+    ):
         """
         Fit the forecaster and predict `steps` ahead. This is an auxiliary 
         function used to parallelize the backtesting_forecaster_multiseries
@@ -755,30 +760,72 @@ def _backtesting_forecaster_multiseries(
             test_iloc_start = fold[3][0]
             test_iloc_end   = fold[3][1]
             steps = list(np.arange(len(range(test_iloc_start, test_iloc_end))) + gap + 1)
+        
+        # if interval is None:
+        #     pred = forecaster.predict(
+        #                steps             = steps, 
+        #                levels            = levels_predict, 
+        #                last_window       = last_window_series,
+        #                exog              = next_window_exog,
+        #                suppress_warnings = suppress_warnings
+        #            )
+        # else:
+        #     pred = forecaster.predict_interval(
+        #                steps                   = steps,
+        #                levels                  = levels_predict, 
+        #                last_window             = last_window_series,
+        #                exog                    = next_window_exog,
+        #                interval                = interval,
+        #                n_boot                  = n_boot,
+        #                random_state            = random_state,
+        #                use_in_sample_residuals = use_in_sample_residuals,
+        #                suppress_warnings       = suppress_warnings
+        #            )
 
-        levels_predict = [level for level in levels 
-                          if level in last_window_levels]
-        if interval is None:
+        levels_predict = [level for level in levels if level in last_window_levels]
+        if interval is not None:
+            kwargs_interval = {
+                'steps': steps,
+                'levels': levels_predict,
+                'last_window': last_window_series,
+                'exog': next_window_exog,
+                'n_boot': n_boot,
+                'random_state': random_state,
+                'use_in_sample_residuals': use_in_sample_residuals,
+                'suppress_warnings': suppress_warnings
+            }
+            if interval == 'bootstrapping':
+                # TODO: predict_boot devuelve un dict MultiSeries {'level': df_n_boot}, DataFrame MultiVariate
+                pred_interval = forecaster.predict_bootstrapping(**kwargs_interval)
+            elif isinstance(interval, (list, tuple)):
+                quantiles = [q / 100 for q in interval]
+                pred_interval = forecaster.predict_quantiles(quantiles=quantiles, **kwargs_interval)
+                if len(interval) == 2:
+                    cols_names = [
+                        bound 
+                        for level in levels_predict 
+                        for bound in (f'{level}_lower_bound', f'{level}_upper_bound')
+                    ]
+                else:
+                    cols_names = [f'{level}_p_{p}' for level in levels_predict for p in interval]
+                    
+                pred_interval.columns = cols_names
+            else:
+                pred_interval = forecaster.predict_dist(distribution=interval, **kwargs_interval)
 
-            pred = forecaster.predict(
-                       steps             = steps, 
-                       levels            = levels_predict, 
-                       last_window       = last_window_series,
-                       exog              = next_window_exog,
-                       suppress_warnings = suppress_warnings
-                   )
-        else:
-            pred = forecaster.predict_interval(
-                       steps                   = steps,
-                       levels                  = levels_predict, 
-                       last_window             = last_window_series,
-                       exog                    = next_window_exog,
-                       interval                = interval,
-                       n_boot                  = n_boot,
-                       random_state            = random_state,
-                       use_in_sample_residuals = use_in_sample_residuals,
-                       suppress_warnings       = suppress_warnings
-                   )
+        # NOTE: This is done after probabilistic predictions to avoid repeating the same checks.
+        pred = forecaster.predict(
+                   steps             = steps, 
+                   levels            = levels_predict, 
+                   last_window       = last_window_series,
+                   exog              = next_window_exog,
+                   suppress_warnings = suppress_warnings,
+                   check_inputs      = True if interval is None else False
+               )
+        
+        if interval is not None:
+            pred = pd.concat((pred, pred_interval), axis=1)
+            pred = pred.loc[:, pred.columns.sort_values()]
 
         if type(forecaster).__name__ != 'ForecasterDirectMultiVariate' and gap > 0:
             pred = pred.iloc[gap:, ]
@@ -789,11 +836,11 @@ def _backtesting_forecaster_multiseries(
         "forecaster": forecaster,
         "store_in_sample_residuals": store_in_sample_residuals,
         "levels": levels,
+        "gap": gap,
         "interval": interval,
         "n_boot": n_boot,
         "random_state": random_state,
         "use_in_sample_residuals": use_in_sample_residuals,
-        "gap": gap,
         "suppress_warnings": suppress_warnings
     }
     backtest_predictions = Parallel(n_jobs=n_jobs)(
@@ -803,6 +850,7 @@ def _backtesting_forecaster_multiseries(
 
     backtest_predictions = pd.concat(backtest_predictions, axis=0)
 
+    # TODO: Ver si `levels_predict` puede ser un output del Parallel o mejoramos la regex
     levels_in_backtest_predictions = backtest_predictions.columns
     if interval is not None:
         levels_in_backtest_predictions = [

@@ -2650,7 +2650,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                            )
 
         predictions = []
-
         for level in boot_predictions.keys():
             preds_quantiles = (
                 boot_predictions[level].quantile(q=quantiles, axis=1).transpose()
