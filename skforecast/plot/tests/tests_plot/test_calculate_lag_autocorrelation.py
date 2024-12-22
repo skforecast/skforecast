@@ -15,9 +15,18 @@ def test_calculate_lag_autocorrelation_raise_error_invalid_arguments():
     
     wrong_data = np.arange(10)
     err_msg = re.escape(
-        f"`data` must be a pandas Series or DataFrame. Got {type(wrong_data)}."
+        f"`data` must be a pandas Series or a DataFrame with a single column. "
+        f"Got {type(wrong_data)}."
     )
     with pytest.raises(TypeError, match=err_msg):
+        calculate_lag_autocorrelation(data=wrong_data)
+    
+    wrong_data = pd.DataFrame(np.arange(10).reshape(-1, 2))
+    err_msg = re.escape(
+        f"If `data` is a DataFrame, it must have exactly one column. "
+        f"Got {wrong_data.shape[1]} columns."
+    )
+    with pytest.raises(ValueError, match=err_msg):
         calculate_lag_autocorrelation(data=wrong_data)
     
     data = pd.Series([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])

@@ -314,14 +314,16 @@ def calculate_lag_autocorrelation(
     Parameters
     ----------
     data : pandas Series, pandas DataFrame
-        Time series to calculate autocorrelation.
+        Time series to calculate autocorrelation. If a DataFrame is provided,
+        it must have exactly one column.
     n_lags : int
         Number of lags to calculate autocorrelation.
     last_n_samples : int or None, default None
         Number of most recent samples to use. If None, use the entire series. 
         Note that partial correlations can only be computed for lags up to 
         50% of the sample size. For example, if the series has 10 samples, 
-        `n_lags` must be less than or equal to 5.
+        `n_lags` must be less than or equal to 5. This parameter is useful
+        to speed up calculations when the series is very long.
     sort_by : str, default 'partial_autocorrelation_abs'
         Sort results by 'lag', 'partial_autocorrelation_abs', 'partial_autocorrelation',
         'autocorrelation_abs' or 'autocorrelation'.
@@ -350,7 +352,15 @@ def calculate_lag_autocorrelation(
     """
 
     if not isinstance(data, (pd.Series, pd.DataFrame)):
-        raise TypeError(f"`data` must be a pandas Series or DataFrame. Got {type(data)}.")
+        raise TypeError(
+            f"`data` must be a pandas Series or a DataFrame with a single column. "
+            f"Got {type(data)}."
+        )
+    if isinstance(data, pd.DataFrame) and data.shape[1] != 1:
+        raise ValueError(
+            f"If `data` is a DataFrame, it must have exactly one column. "
+            f"Got {data.shape[1]} columns."
+        )
     if not isinstance(n_lags, int) or n_lags <= 0:
         raise TypeError(f"`n_lags` must be a positive integer. Got {n_lags}.")
     
