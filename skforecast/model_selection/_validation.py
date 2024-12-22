@@ -81,7 +81,7 @@ def _backtesting_forecaster(
         Specifies whether probabilistic predictions should be estimated and the 
         method to use. The following options are supported:
 
-        - If `list`or `tuple`: Sequence of percentiles to compute, each value must 
+        - If `list` or `tuple`: Sequence of percentiles to compute, each value must 
         be between 0 and 100 inclusive. For example, a 95% confidence interval can 
         be specified as `interval = [2.5, 97.5]` or multiple percentiles (e.g. 10, 
         50 and 90) as `interval = [10, 50, 90]`.
@@ -401,7 +401,7 @@ def backtesting_forecaster(
         Specifies whether probabilistic predictions should be estimated and the 
         method to use. The following options are supported:
 
-        - If `list`or `tuple`: Sequence of percentiles to compute, each value must 
+        - If `list` or `tuple`: Sequence of percentiles to compute, each value must 
         be between 0 and 100 inclusive. For example, a 95% confidence interval can 
         be specified as `interval = [2.5, 97.5]` or multiple percentiles (e.g. 10, 
         50 and 90) as `interval = [10, 50, 90]`.
@@ -568,7 +568,7 @@ def _backtesting_forecaster_multiseries(
         Specifies whether probabilistic predictions should be estimated and the 
         method to use. The following options are supported:
 
-        - If `list`or `tuple`: Sequence of percentiles to compute, each value must 
+        - If `list` or `tuple`: Sequence of percentiles to compute, each value must 
         be between 0 and 100 inclusive. For example, a 95% confidence interval can 
         be specified as `interval = [2.5, 97.5]` or multiple percentiles (e.g. 10, 
         50 and 90) as `interval = [10, 50, 90]`.
@@ -946,7 +946,7 @@ def backtesting_forecaster_multiseries(
         Specifies whether probabilistic predictions should be estimated and the 
         method to use. The following options are supported:
 
-        - If `list`or `tuple`: Sequence of percentiles to compute, each value must 
+        - If `list` or `tuple`: Sequence of percentiles to compute, each value must 
         be between 0 and 100 inclusive. For example, a 95% confidence interval can 
         be specified as `interval = [2.5, 97.5]` or multiple percentiles (e.g. 10, 
         50 and 90) as `interval = [10, 50, 90]`.
