@@ -856,8 +856,6 @@ def _backtesting_forecaster_multiseries(
     for lst in levels_predict:
         levels_in_backtest_predictions.update(lst)
 
-    print(backtest_predictions)
-
     # TODO: See preferred
     # if hasattr(interval, "_pdf"):
     if (

@@ -2586,3 +2586,132 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
                                    
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+
+
+def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_no_refit_exog_interval_percentiles_with_mocked():
+    """
+    Test output of backtesting_forecaster_multiseries in ForecasterDirectMultiVariate 
+    with no refit and gap with mocked using exog and intervals as percentiles
+    (mocked done in Skforecast v0.15.0).
+    """
+    forecaster = ForecasterDirectMultiVariate(
+                     regressor          = Ridge(random_state=123),
+                     level              = 'l1',
+                     lags               = {'l1': 2, 'l2': [1, 3]},
+                     steps              = 8,
+                     transformer_series = None
+                 )
+    
+    cv = TimeSeriesFold(
+            initial_train_size = len(series) - 20,
+            steps              = 5,
+            gap                = 3,
+            refit              = False
+        )
+
+    metrics_levels, backtest_predictions = backtesting_forecaster_multiseries(
+                                               forecaster              = forecaster,
+                                               series                  = series,
+                                               cv                      = cv,
+                                               levels                  = 'l1',
+                                               metric                  = 'mean_absolute_error',
+                                               add_aggregated_metric   = False,
+                                               exog                    = series['l1'].rename('exog_1'),
+                                               interval                = [5, 50, 95],
+                                               n_boot                  = 150,
+                                               random_state            = 123,
+                                               use_in_sample_residuals = True,
+                                               verbose                 = False
+                                           )
+    
+    expected_metric = pd.DataFrame({'levels': ['l1'], 
+                                    'mean_absolute_error': [0.11791887332493929]})
+    expected_predictions = pd.DataFrame(
+        data = np.array([[0.55880533, 0.38128442, 0.55588061, 0.73357531],
+                         [0.46285725, 0.25050627, 0.45565242, 0.61599977],
+                         [0.35358667, 0.15258482, 0.36293987, 0.53097379],
+                         [0.44404948, 0.27047171, 0.43051981, 0.61037957],
+                         [0.64659616, 0.46670518, 0.63714159, 0.80614649],
+                         [0.70306475, 0.52554383, 0.70014003, 0.87783473],
+                         [0.48677757, 0.27442659, 0.47957273, 0.63992009],
+                         [0.49848981, 0.29748796, 0.50784301, 0.67587692],
+                         [0.31544893, 0.14187117, 0.30191926, 0.48177903],
+                         [0.4450306 , 0.26513962, 0.43557603, 0.60458093],
+                         [0.50164877, 0.32412785, 0.49872405, 0.67641875],
+                         [0.62883248, 0.4164815 , 0.62162764, 0.781975  ],
+                         [0.33387601, 0.13287416, 0.34322921, 0.51126313],
+                         [0.45961408, 0.28603631, 0.44608441, 0.62594417],
+                         [0.63726975, 0.45737877, 0.62781518, 0.79682008],
+                         [0.54013414, 0.36261322, 0.53720942, 0.71490412],
+                         [0.52550978, 0.3131588 , 0.51830495, 0.6786523 ]]),
+        columns = ['l1', 'l1_p_5', 'l1_p_50', 'l1_p_95'],
+        index = pd.RangeIndex(start=33, stop=50, step=1)
+    )
+                                   
+    pd.testing.assert_frame_equal(expected_metric, metrics_levels)
+    pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+
+
+def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_no_refit_exog_interval_distribution_with_mocked():
+    """
+    Test output of backtesting_forecaster_multiseries in ForecasterDirectMultiVariate 
+    with no refit and gap with mocked using exog and intervals as scipy.stats.norm 
+    distribution (mocked done in Skforecast v0.15.0).
+    """
+    forecaster = ForecasterDirectMultiVariate(
+                     regressor          = Ridge(random_state=123),
+                     level              = 'l1',
+                     lags               = {'l1': 2, 'l2': [1, 3]},
+                     steps              = 8,
+                     transformer_series = None
+                 )
+    
+    cv = TimeSeriesFold(
+            initial_train_size = len(series) - 20,
+            steps              = 5,
+            gap                = 3,
+            refit              = False
+        )
+
+    metrics_levels, backtest_predictions = backtesting_forecaster_multiseries(
+                                               forecaster              = forecaster,
+                                               series                  = series,
+                                               cv                      = cv,
+                                               levels                  = 'l1',
+                                               metric                  = 'mean_absolute_error',
+                                               add_aggregated_metric   = False,
+                                               exog                    = series['l1'].rename('exog_1'),
+                                               interval                = norm,
+                                               n_boot                  = 150,
+                                               random_state            = 123,
+                                               use_in_sample_residuals = True,
+                                               verbose                 = False
+                                           )
+    
+    expected_metric = pd.DataFrame({'levels': ['l1'], 
+                                    'mean_absolute_error': [0.11791887332493929]})
+    expected_predictions = pd.DataFrame(
+        data = np.array([[0.55880533, 0.55863664, 0.11294946],
+                         [0.46285725, 0.46532544, 0.11662733],
+                         [0.35358667, 0.34633493, 0.10823561],
+                         [0.44404948, 0.43289758, 0.10734709],
+                         [0.64659616, 0.65154034, 0.10756972],
+                         [0.70306475, 0.70289606, 0.11294946],
+                         [0.48677757, 0.48924576, 0.11662733],
+                         [0.49848981, 0.49123807, 0.10823561],
+                         [0.31544893, 0.30429703, 0.10734709],
+                         [0.4450306 , 0.44997478, 0.10756972],
+                         [0.50164877, 0.50148008, 0.11294946],
+                         [0.62883248, 0.63130067, 0.11662733],
+                         [0.33387601, 0.32662427, 0.10823561],
+                         [0.45961408, 0.44846217, 0.10734709],
+                         [0.63726975, 0.64221393, 0.10756972],
+                         [0.54013414, 0.53996545, 0.11294946],
+                         [0.52550978, 0.52797797, 0.11662733]]),
+        columns = ['l1', 'l1_loc', 'l1_scale'],
+        index = pd.RangeIndex(start=33, stop=50, step=1)
+    )
+                                   
+    pd.testing.assert_frame_equal(expected_metric, metrics_levels)
+    pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+
