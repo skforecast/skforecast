@@ -267,9 +267,21 @@ def test_predict_output_when_regressor_is_LinearRegression_with_last_window():
                      columns = ['1', '2']
                  )
 
+    predictions_4 = forecaster.predict(steps=5, levels=None, last_window=last_window[['1', '2']])
+    expected_4 = pd.DataFrame(
+                     data    = np.array([[50., 100.],
+                                         [51., 101.],
+                                         [52., 102.],
+                                         [53., 103.],
+                                         [54., 104.]]),
+                     index   = pd.RangeIndex(start=50, stop=55, step=1),
+                     columns = ['1', '2']
+                 )
+
     pd.testing.assert_frame_equal(predictions_1, expected_1)
     pd.testing.assert_frame_equal(predictions_2, expected_2)
     pd.testing.assert_frame_equal(predictions_3, expected_3)
+    pd.testing.assert_frame_equal(predictions_4, expected_4)
 
 
 def test_predict_output_when_regressor_is_LinearRegression_with_transform_series():
@@ -818,7 +830,10 @@ def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differe
     pd.testing.assert_frame_equal(predictions_1, predictions_2)
 
 
-def test_predict_output_when_series_and_exog_dict_encoding_None_unknown_level():
+@pytest.mark.parametrize("levels", 
+                         [None, ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']], 
+                         ids = lambda levels: f'levels: {levels}')
+def test_predict_output_when_series_and_exog_dict_encoding_None_unknown_level(levels):
     """
     Test output ForecasterRecursiveMultiSeries predict method when series and 
     exog are dictionaries and encoding is None and unknown level with no exog.
@@ -838,9 +853,9 @@ def test_predict_output_when_series_and_exog_dict_encoding_None_unknown_level():
         series=series_dict_train, exog=exog_dict_train, suppress_warnings=True
     )
 
-    levels = ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']
+    series_to_predict = ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']
     last_window = pd.DataFrame(
-        {k: v for k, v in forecaster.last_window_.items() if k in levels}
+        {k: v for k, v in forecaster.last_window_.items() if k in series_to_predict}
     )
     last_window['id_1005'] = last_window['id_1004'] * 0.9
     predictions = forecaster.predict(
@@ -862,7 +877,10 @@ def test_predict_output_when_series_and_exog_dict_encoding_None_unknown_level():
     pd.testing.assert_frame_equal(predictions, expected)
 
 
-def test_predict_output_when_series_and_exog_dict_encoding_None_transformer_series_unknown_level():
+@pytest.mark.parametrize("levels", 
+                         [None, ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']], 
+                         ids = lambda levels: f'levels: {levels}')
+def test_predict_output_when_series_and_exog_dict_encoding_None_transformer_series_unknown_level(levels):
     """
     Test output ForecasterRecursiveMultiSeries predict method when series and 
     exog are dictionaries and encoding is None and transformer_series is StandardScaler.
@@ -881,9 +899,9 @@ def test_predict_output_when_series_and_exog_dict_encoding_None_transformer_seri
         series=series_dict_train, exog=exog_dict_train, suppress_warnings=True
     )
 
-    levels = ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']
+    series_to_predict = ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']
     last_window = pd.DataFrame(
-        {k: v for k, v in forecaster.last_window_.items() if k in levels}
+        {k: v for k, v in forecaster.last_window_.items() if k in series_to_predict}
     )
     last_window['id_1005'] = last_window['id_1004'] * 0.9
     exog_dict_test_2 = exog_dict_test.copy()
@@ -906,7 +924,10 @@ def test_predict_output_when_series_and_exog_dict_encoding_None_transformer_seri
     pd.testing.assert_frame_equal(predictions, expected)
 
 
-def test_predict_output_when_series_and_exog_dict_unknown_level():
+@pytest.mark.parametrize("levels", 
+                         [None, ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']], 
+                         ids = lambda levels: f'levels: {levels}')
+def test_predict_output_when_series_and_exog_dict_unknown_level(levels):
     """
     Test output ForecasterRecursiveMultiSeries predict method when series and 
     exog are dictionaries and unknown level.
@@ -925,9 +946,9 @@ def test_predict_output_when_series_and_exog_dict_unknown_level():
         series=series_dict_train, exog=exog_dict_train, suppress_warnings=True
     )
 
-    levels = ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']
+    series_to_predict = ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']
     last_window = pd.DataFrame(
-        {k: v for k, v in forecaster.last_window_.items() if k in levels}
+        {k: v for k, v in forecaster.last_window_.items() if k in series_to_predict}
     )
     last_window['id_1005'] = last_window['id_1004'] * 0.9
     exog_dict_test_2 = exog_dict_test.copy()

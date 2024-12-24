@@ -300,8 +300,9 @@ def plot_prediction_intervals(
 
 
 def calculate_lag_autocorrelation(
-    data: pd.Series,
+    data: pd.Series | pd.DataFrame,
     n_lags: int = 50,
+    last_n_samples: int | None = None,
     sort_by: str = "partial_autocorrelation_abs",
     acf_kwargs: dict[str, object] = {},
     pacf_kwargs: dict[str, object] = {},
@@ -312,10 +313,17 @@ def calculate_lag_autocorrelation(
 
     Parameters
     ----------
-    data : pandas Series
-        Time series to calculate autocorrelation.
+    data : pandas Series, pandas DataFrame
+        Time series to calculate autocorrelation. If a DataFrame is provided,
+        it must have exactly one column.
     n_lags : int
         Number of lags to calculate autocorrelation.
+    last_n_samples : int or None, default None
+        Number of most recent samples to use. If None, use the entire series. 
+        Note that partial correlations can only be computed for lags up to 
+        50% of the sample size. For example, if the series has 10 samples, 
+        `n_lags` must be less than or equal to 5. This parameter is useful
+        to speed up calculations when the series is very long.
     sort_by : str, default 'partial_autocorrelation_abs'
         Sort results by 'lag', 'partial_autocorrelation_abs', 
         'partial_autocorrelation', 'autocorrelation_abs' or 'autocorrelation'.
@@ -351,20 +359,32 @@ def calculate_lag_autocorrelation(
 
     """
 
+    if not isinstance(data, (pd.Series, pd.DataFrame)):
+        raise TypeError(
+            f"`data` must be a pandas Series or a DataFrame with a single column. "
+            f"Got {type(data)}."
+        )
+    if isinstance(data, pd.DataFrame) and data.shape[1] != 1:
+        raise ValueError(
+            f"If `data` is a DataFrame, it must have exactly one column. "
+            f"Got {data.shape[1]} columns."
+        )
+    if not isinstance(n_lags, int) or n_lags <= 0:
+        raise TypeError(f"`n_lags` must be a positive integer. Got {n_lags}.")
+    
+    if last_n_samples is not None:
+        if not isinstance(last_n_samples, int) or last_n_samples <= 0:
+            raise TypeError(f"`last_n_samples` must be a positive integer. Got {last_n_samples}.")
+        data = data.iloc[-last_n_samples:]
+
     if sort_by not in [
-        "lag",
-        "partial_autocorrelation_abs",
-        "partial_autocorrelation",
-        "autocorrelation_abs",
-        "autocorrelation",
+        "lag", "partial_autocorrelation_abs", "partial_autocorrelation",
+        "autocorrelation_abs", "autocorrelation",
     ]:
         raise ValueError(
             "`sort_by` must be 'lag', 'partial_autocorrelation_abs', 'partial_autocorrelation', "
             "'autocorrelation_abs' or 'autocorrelation'."
         )
-
-    if not isinstance(data, pd.Series):
-        raise ValueError("`data` must be a pandas Series.")
 
     pacf_values = pacf(data, nlags=n_lags, **pacf_kwargs)
     acf_values = acf(data, nlags=n_lags, **acf_kwargs)

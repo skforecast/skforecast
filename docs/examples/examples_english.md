@@ -48,6 +48,10 @@ For experienced users looking to deepen their forecasting skills, this section p
 
 <i class="fa-solid fa-cubes-stacked fa-rotate-180" style="font-size: 25px; color: #c15d0b;"></i> [Stacking ensemble of machine learning models to improve forecasting](https://cienciadedatos.net/documentos/py52-stacking-ensemble-models-forecasting.html)
 
+<i class="fa-solid fa-ghost" style="font-size: 25px; color: #2f5ee9;"></i> [Time series anomaly detection](https://cienciadedatos.net/documentos/py62-time-series-anomaly-detection.html)
+
+<i class="fa-solid fa-lock-open" style="font-size: 25px; color: #e70d44;"></i> [Data leakage in pre-trained forecasting models](https://cienciadedatos.net/documentos/py63-data-leakage-pre-trained-forecasting-models.html)
+
 
 ## Real-World Challenges and Case Studies
 

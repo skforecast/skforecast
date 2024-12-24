@@ -6,12 +6,12 @@
 # coding=utf-8
 
 from __future__ import annotations
+from copy import copy, deepcopy
 import importlib
 import inspect
-import warnings
-from copy import copy, deepcopy
-from typing import Any, Callable
 from pathlib import Path
+from typing import Any, Callable
+import warnings
 import joblib
 import numpy as np
 import pandas as pd
@@ -23,13 +23,14 @@ from sklearn.exceptions import NotFittedError
 import skforecast
 from ..exceptions import warn_skforecast_categories
 from ..exceptions import (
-    MissingValuesWarning,
-    MissingExogWarning,
     DataTypeWarning,
-    UnknownLevelWarning,
     IgnoredArgumentWarning,
+    IndexWarning,
+    MissingExogWarning,
+    MissingValuesWarning,
     SaveLoadSkforecastWarning,
-    SkforecastVersionWarning
+    SkforecastVersionWarning,
+    UnknownLevelWarning
 )
 
 optional_dependencies = {
@@ -569,7 +570,7 @@ def check_exog(
 
 def get_exog_dtypes(
     exog: pd.Series | pd.DataFrame, 
-) -> dict:
+) -> dict[str, type]:
     """
     Store dtypes of `exog`.
 
@@ -921,14 +922,20 @@ def check_predict_input(
 
         last_window_cols = last_window.columns.to_list()
 
-        if forecaster_name in ['ForecasterRecursiveMultiSeries', 
-                               'ForecasterRnn'] and \
-            len(set(levels) - set(last_window_cols)) != 0:
+        if (
+            forecaster_name in ["ForecasterRecursiveMultiSeries", "ForecasterRnn"]
+            and len(set(levels) - set(last_window_cols)) != 0
+        ):
+            missing_levels = set(levels) - set(last_window_cols)
             raise ValueError(
-                f"`last_window` must contain a column(s) named as the level(s) "
-                f"to be predicted.\n"
-                f"    `levels` : {levels}\n"
-                f"    `last_window` columns : {last_window_cols}"
+                f"`last_window` must contain a column(s) named as the level(s) to be predicted. "
+                f"The following `levels` are missing in `last_window`: {missing_levels}\n"
+                f"Ensure that `last_window` contains all the necessary columns "
+                f"corresponding to the `levels` being predicted.\n"
+                f"    Argument `levels`     : {levels}\n"
+                f"    `last_window` columns : {last_window_cols}\n"
+                f"Example: If `levels = ['series_1', 'series_2']`, make sure "
+                f"`last_window` includes columns named 'series_1' and 'series_2'."
             )
 
         if forecaster_name == 'ForecasterDirectMultiVariate':
@@ -1220,8 +1227,11 @@ def preprocess_y(
         y_index = y.index
     elif isinstance(y.index, pd.DatetimeIndex) and y.index.freq is None:
         warnings.warn(
-            "Series has DatetimeIndex index but no frequency. "
-            "Index is overwritten with a RangeIndex of step 1."
+            "Series has a pandas DatetimeIndex without a frequency. The index "
+            "will be replaced by a RangeIndex starting from 0 with a step of 1. "
+            "To avoid this warning, set the frequency of the DatetimeIndex using "
+            "`y = y.asfreq('desired_frequency', fill_value=np.nan)`.",
+            IndexWarning
         )
         y_index = pd.RangeIndex(
                       start = 0,
@@ -1230,8 +1240,11 @@ def preprocess_y(
                   )
     else:
         warnings.warn(
-            "Series has no DatetimeIndex nor RangeIndex index. "
-            "Index is overwritten with a RangeIndex."
+            "Series has an unsupported index type (not pandas DatetimeIndex or "
+            "RangeIndex). The index will be replaced by a RangeIndex starting "
+            "from 0 with a step of 1. To avoid this warning, ensure that "
+            "`y.index` is a DatetimeIndex with a frequency or a RangeIndex.",
+            IndexWarning
         )
         y_index = pd.RangeIndex(
                       start = 0,
@@ -1282,8 +1295,11 @@ def preprocess_last_window(
         last_window_index = last_window.index
     elif isinstance(last_window.index, pd.DatetimeIndex) and last_window.index.freq is None:
         warnings.warn(
-            "`last_window` has DatetimeIndex index but no frequency. "
-            "Index is overwritten with a RangeIndex of step 1."
+            "`last_window` has a pandas DatetimeIndex without a frequency. The index "
+            "will be replaced by a RangeIndex starting from 0 with a step of 1. "
+            "To avoid this warning, set the frequency of the DatetimeIndex using "
+            "`last_window = last_window.asfreq('desired_frequency', fill_value=np.nan)`.",
+            IndexWarning
         )
         last_window_index = pd.RangeIndex(
                                 start = 0,
@@ -1292,8 +1308,11 @@ def preprocess_last_window(
                             )
     else:
         warnings.warn(
-            "`last_window` has no DatetimeIndex nor RangeIndex index. "
-            "Index is overwritten with a RangeIndex."
+            "`last_window` has an unsupported index type (not pandas DatetimeIndex or "
+            "RangeIndex). The index will be replaced by a RangeIndex starting "
+            "from 0 with a step of 1. To avoid this warning, ensure that "
+            "`last_window.index` is a DatetimeIndex with a frequency or a RangeIndex.",
+            IndexWarning
         )
         last_window_index = pd.RangeIndex(
                                 start = 0,
@@ -1344,8 +1363,11 @@ def preprocess_exog(
         exog_index = exog.index
     elif isinstance(exog.index, pd.DatetimeIndex) and exog.index.freq is None:
         warnings.warn(
-            "`exog` has DatetimeIndex index but no frequency. "
-            "Index is overwritten with a RangeIndex of step 1."
+            "`exog` has a pandas DatetimeIndex without a frequency. The index "
+            "will be replaced by a RangeIndex starting from 0 with a step of 1. "
+            "To avoid this warning, set the frequency of the DatetimeIndex using "
+            "`exog = exog.asfreq('desired_frequency', fill_value=np.nan)`.",
+            IndexWarning
         )
         exog_index = pd.RangeIndex(
                          start = 0,
@@ -1355,8 +1377,11 @@ def preprocess_exog(
 
     else:
         warnings.warn(
-            "`exog` has no DatetimeIndex nor RangeIndex index. "
-            "Index is overwritten with a RangeIndex."
+            "`exog` has an unsupported index type (not pandas DatetimeIndex or "
+            "RangeIndex). The index will be replaced by a RangeIndex starting "
+            "from 0 with a step of 1. To avoid this warning, ensure that "
+            "`exog.index` is a DatetimeIndex with a frequency or a RangeIndex.",
+            IndexWarning
         )
         exog_index = pd.RangeIndex(
                          start = 0,

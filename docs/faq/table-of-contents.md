@@ -11,6 +11,7 @@ Thank you for choosing skforecast and visiting our Frequently Asked Questions (F
 + [Forecasting with delayed historical data](../faq/forecasting-with-delayed-historical-data.html)
 + [Backtesting vs One-step-ahead](../faq/parameters-search-backtesting-vs-one-step-ahead.html)
 + [Continuous Ranked Probability Score (CRPS)](../faq/probabilistic-forecasting-crps-score.html)
++ [Avoid data leakage in pre-trained forecasting models](https://cienciadedatos.net/documentos/py63-data-leakage-pre-trained-forecasting-models.html)
 
 <span style="font-size: 1.3em;">Feature Engineering</span>
 
