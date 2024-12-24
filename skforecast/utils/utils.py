@@ -2227,7 +2227,7 @@ def select_n_jobs_fit_forecaster(
 
 def check_preprocess_series(
     series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
-) -> tuple[dict[str, pd.Series], pd.Index]:
+) -> tuple[dict[str, pd.Series], dict[str, pd.Index]]:
     """
     Check and preprocess `series` argument in `ForecasterRecursiveMultiSeries` class.
 
