@@ -59,6 +59,22 @@ class IgnoredArgumentWarning(UserWarning):
         return self.message + " " + extra_message
 
 
+class IndexWarning(UserWarning):
+    """
+    Warning used to notify that the index of the input data is not a
+    expected type. 
+    """
+    def __init__(self, message):
+        self.message = message
+
+    def __str__(self):
+        extra_message = (
+            "\n You can suppress this warning using: "
+            "warnings.simplefilter('ignore', category=IndexWarning)"
+        )
+        return self.message + " " + extra_message
+
+
 class LongTrainingWarning(UserWarning):
     """
     Warning used to notify that a large number of models will be trained and the
@@ -177,6 +193,7 @@ warn_skforecast_categories = [
     DataTypeWarning,
     DataTransformationWarning,
     IgnoredArgumentWarning,
+    IndexWarning,
     LongTrainingWarning,
     MissingExogWarning,
     MissingValuesWarning,
