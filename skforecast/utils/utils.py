@@ -302,7 +302,7 @@ def initialize_transformer_series(
     forecaster_name: str,
     series_names_in_: list[str],
     encoding: str | None = None,
-    transformer_series: object | dict[str, object] | None = None
+    transformer_series: object | dict[str, object | None] | None = None
 ) -> dict[str, object | None]:
     """
     Initialize `transformer_series_` attribute for the Forecasters Multiseries.
@@ -2304,11 +2304,11 @@ def check_preprocess_series(
 
 def check_preprocess_exog_multiseries(
     input_series_is_dict: bool,
-    series_indexes: dict,
-    series_names_in_: list,
+    series_indexes: dict[str, pd.Index],
+    series_names_in_: list[str],
     exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame | None],
     exog_dict: dict[str, pd.Series | pd.DataFrame | None],
-) -> tuple[dict[str, pd.Series | pd.DataFrame | None], list[str]]:
+) -> tuple[dict[str, pd.DataFrame | None], list[str]]:
     """
     Check and preprocess `exog` argument in `ForecasterRecursiveMultiSeries` class.
 
@@ -2474,10 +2474,10 @@ def check_preprocess_exog_multiseries(
 
 
 def align_series_and_exog_multiseries(
-    series_dict: dict,
+    series_dict: dict[str, pd.Series],
     input_series_is_dict: bool,
-    exog_dict: dict = None
-) -> tuple[pd.Series | pd.DataFrame, pd.Series | pd.DataFrame]:
+    exog_dict: dict[str, pd.DataFrame] | None = None
+) -> tuple[dict[str, pd.Series], dict[str, pd.DataFrame | None]]:
     """
     Align series and exog according to their index. If needed, reindexing is
     applied. Heading and trailing NaNs are removed from all series in 
