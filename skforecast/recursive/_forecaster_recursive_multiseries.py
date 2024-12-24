@@ -2773,7 +2773,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
     def set_params(
         self, 
-        params: dict
+        params: dict[str, object]
     ) -> None:
         """
         Set new values to the parameters of the scikit learn model stored in the
@@ -2795,7 +2795,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
     def set_fit_kwargs(
         self, 
-        fit_kwargs: dict
+        fit_kwargs: dict[str, object]
     ) -> None:
         """
         Set new values for the additional keyword arguments passed to the `fit` 
@@ -2912,8 +2912,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
     def set_out_sample_residuals(
         self, 
-        y_true: dict,
-        y_pred: dict,
+        y_true: dict[int, np.ndarray | pd.Series],
+        y_pred: dict[int, np.ndarray | pd.Series],
         append: bool = True,
         random_state: int = 123
     ) -> None:
@@ -2933,10 +2933,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         Parameters
         ----------
         y_true : dict
-            Dictionary of numpy ndarrays or pandas series with the true values of
+            Dictionary of numpy ndarrays or pandas Series with the true values of
             the time series for each series in the form {series: y_true}.
         y_pred : dict
-            Dictionary of numpy ndarrays or pandas series with the predicted values
+            Dictionary of numpy ndarrays or pandas Series with the predicted values
             of the time series for each series in the form {series: y_pred}.
         append : bool, default False
             If `True`, new residuals are added to the once already stored in the
