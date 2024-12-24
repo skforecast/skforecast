@@ -5,7 +5,7 @@
 ################################################################################
 # coding=utf-8
 
-from typing import Union, Optional
+from __future__ import annotations
 import warnings
 import inspect
 import numpy as np
@@ -35,8 +35,8 @@ def _check_fitted(func):
 
         if not self.fitted:
             raise NotFittedError(
-                ("Sarimax instance is not fitted yet. Call `fit` with "
-                 "appropriate arguments before using this method.")
+                "Sarimax instance is not fitted yet. Call `fit` with "
+                "appropriate arguments before using this method."
             )
         
         result = func(self, *args, **kwargs)
@@ -50,17 +50,14 @@ class Sarimax(BaseEstimator, RegressorMixin):
     """
     A universal scikit-learn style wrapper for statsmodels SARIMAX.
 
-    This class wraps the statsmodels.tsa.statespace.sarimax.SARIMAX model to 
-    follow the scikit-learn style. The following docstring is based on the 
+    This class wraps the statsmodels.tsa.statespace.sarimax.SARIMAX model [1]_ [2]_ 
+    to follow the scikit-learn style. The following docstring is based on the 
     statmodels documentation and it is highly recommended to visit their site 
     for the best level of detail.
 
-    https://www.statsmodels.org/stable/generated/statsmodels.tsa.statespace.sarimax.SARIMAX.html
-    https://www.statsmodels.org/dev/generated/statsmodels.tsa.statespace.sarimax.SARIMAXResults.html
-
     Parameters
     ----------
-    order : tuple, default `(1, 0, 0)`
+    order : tuple, default (1, 0, 0)
         The (p,d,q) order of the model for the number of AR parameters, differences, 
         and MA parameters. 
         
@@ -68,7 +65,7 @@ class Sarimax(BaseEstimator, RegressorMixin):
         - `p` and `q` may either be an integers indicating the AR and MA orders 
         (so that all lags up to those orders are included) or else iterables 
         giving specific AR and / or MA lags to include.
-    seasonal_order : tuple, default `(0, 0, 0, 0)`
+    seasonal_order : tuple, default (0, 0, 0, 0)
         The (P,D,Q,s) order of the seasonal component of the model for the AR 
         parameters, differences, MA parameters, and periodicity. 
         
@@ -78,7 +75,7 @@ class Sarimax(BaseEstimator, RegressorMixin):
         giving specific AR and / or MA lags to include. 
         - `s` is an integer giving the periodicity (number of periods in season),
         often it is 4 for quarterly data or 12 for monthly data.
-    trend : str, default `None`
+    trend : str, default None
         Parameter controlling the deterministic trend polynomial `A(t)`.
             
         - `'c'` indicates a constant (i.e. a degree zero component of the 
@@ -88,18 +85,18 @@ class Sarimax(BaseEstimator, RegressorMixin):
         - Can also be specified as an iterable defining the non-zero polynomial 
         exponents to include, in increasing order. For example, `[1,1,0,1]` 
         denotes `a + b*t + ct^3`.
-    measurement_error : bool, default `False`
+    measurement_error : bool, default False
         Whether or not to assume the endogenous observations `y` were measured 
         with error.
-    time_varying_regression : bool, default `False`
+    time_varying_regression : bool, default False
         Used when an explanatory variables, `exog`, are provided to select whether 
         or not coefficients on the exogenous regressors are allowed to vary over time.
-    mle_regression : bool, default `True`
+    mle_regression : bool, default True
         Whether or not to use estimate the regression coefficients for the
         exogenous variables as part of maximum likelihood estimation or through
         the Kalman filter (i.e. recursive least squares). If 
         `time_varying_regression` is `True`, this must be set to `False`.
-    simple_differencing : bool, default `False`
+    simple_differencing : bool, default False
         Whether or not to use partially conditional maximum likelihood
         estimation. 
         
@@ -108,29 +105,29 @@ class Sarimax(BaseEstimator, RegressorMixin):
         state-space formulation. 
         - If `False`, the full SARIMAX model is put in state-space form so 
         that all datapoints can be used in estimation.
-    enforce_stationarity : bool, default `True`
+    enforce_stationarity : bool, default True
         Whether or not to transform the AR parameters to enforce stationarity
         in the autoregressive component of the model.
-    enforce_invertibility : bool, default `True`
+    enforce_invertibility : bool, default True
         Whether or not to transform the MA parameters to enforce invertibility
         in the moving average component of the model.
-    hamilton_representation : bool, default `False`
+    hamilton_representation : bool, default False
         Whether or not to use the Hamilton representation of an ARMA process
         (if `True`) or the Harvey representation (if `False`).
-    concentrate_scale : bool, default `False`
+    concentrate_scale : bool, default False
         Whether or not to concentrate the scale (variance of the error term)
         out of the likelihood. This reduces the number of parameters estimated
         by maximum likelihood by one, but standard errors will then not
         be available for the scale parameter.
-    trend_offset : int, default `1`
+    trend_offset : int, default 1
         The offset at which to start time trend values. Default is 1, so that
         if `trend='t'` the trend is equal to 1, 2, ..., nobs. Typically is only
         set when the model created by extending a previous dataset.
-    use_exact_diffuse : bool, default `False`
+    use_exact_diffuse : bool, default False
         Whether or not to use exact diffuse initialization for non-stationary
         states. Default is `False` (in which case approximate diffuse
         initialization is used).
-    method : str, default `'lbfgs'`
+    method : str, default 'lbfgs'
         The method determines which solver from scipy.optimize is used, and it 
         can be chosen from among the following strings:
 
@@ -142,23 +139,23 @@ class Sarimax(BaseEstimator, RegressorMixin):
         - `'cg'` for conjugate gradient
         - `'ncg'` for Newton-conjugate gradient
         - `'basinhopping'` for global basin-hopping solver
-    maxiter : int, default `50`
+    maxiter : int, default 50
         The maximum number of iterations to perform.
-    start_params : numpy ndarray, default `None`
+    start_params : numpy ndarray, default None
         Initial guess of the solution for the loglikelihood maximization. 
         If `None`, the default is given by regressor.start_params.
-    disp : bool, default `False`
+    disp : bool, default False
         Set to `True` to print convergence messages.
-    sm_init_kwargs : dict, default `{}`
+    sm_init_kwargs : dict, default {}
         Additional keyword arguments to pass to the statsmodels SARIMAX model 
         when it is initialized.
-    sm_fit_kwargs : dict, default `{}` 
+    sm_fit_kwargs : dict, default {} 
         Additional keyword arguments to pass to the `fit` method of the
         statsmodels SARIMAX model. The statsmodels SARIMAX.fit parameters 
         `method`, `max_iter`, `start_params` and `disp` have been moved to the 
         initialization of this model and will have priority over those provided 
         by the user using via `sm_fit_kwargs`.
-    sm_predict_kwargs : dict, default `{}`
+    sm_predict_kwargs : dict, default {}
         Additional keyword arguments to pass to the `get_forecast` method of the
         statsmodels SARIMAXResults object.
 
@@ -238,6 +235,14 @@ class Sarimax(BaseEstimator, RegressorMixin):
     training_index : pandas Index
         Index of the training series as long as it is a pandas Series or Dataframe.
 
+    References
+    ----------
+    .. [1] Statsmodels SARIMAX API Reference.
+           https://www.statsmodels.org/stable/generated/statsmodels.tsa.statespace.sarimax.SARIMAX.html
+
+    .. [2] Statsmodels SARIMAXResults API Reference.
+           https://www.statsmodels.org/stable/generated/statsmodels.tsa.statespace.sarimax.SARIMAXResults.html
+
     """
 
     def __init__(
@@ -263,9 +268,9 @@ class Sarimax(BaseEstimator, RegressorMixin):
         maxiter: int = 50,
         start_params: np.ndarray = None,
         disp: bool = False,
-        sm_init_kwargs: dict = {},
-        sm_fit_kwargs: dict = {},
-        sm_predict_kwargs: dict = {}
+        sm_init_kwargs: dict[str, object] = {},
+        sm_fit_kwargs: dict[str, object] = {},
+        sm_predict_kwargs: dict[str, object] = {}
     ) -> None:
 
         self.order                   = order
@@ -313,7 +318,6 @@ class Sarimax(BaseEstimator, RegressorMixin):
         self.sarimax_res    = None
         self.training_index = None
 
-
     def __repr__(
         self
     ) -> str:
@@ -325,7 +329,6 @@ class Sarimax(BaseEstimator, RegressorMixin):
         P, D, Q, m = self.seasonal_order
         
         return f"Sarimax({p},{d},{q})({P},{D},{Q})[{m}]"
-
 
     def _consolidate_kwargs(
         self
@@ -381,11 +384,10 @@ class Sarimax(BaseEstimator, RegressorMixin):
         # statsmodels.tsa.statespace.SARIMAXResults.get_forecast parameters
         self._predict_kwargs = self.sm_predict_kwargs.copy()
 
-
     def _create_sarimax(
         self,
-        endog: Union[np.ndarray, pd.Series, pd.DataFrame],
-        exog: Optional[Union[np.ndarray, pd.Series, pd.DataFrame]] = None
+        endog: np.ndarray | pd.Series | pd.DataFrame,
+        exog: np.ndarray | pd.Series | pd.DataFrame | None = None
     ) -> None:
         """
         A helper method to create a new statsmodel SARIMAX model.
@@ -398,7 +400,7 @@ class Sarimax(BaseEstimator, RegressorMixin):
         ----------
         endog : numpy ndarray, pandas Series, pandas DataFrame
             The endogenous variable.
-        exog : numpy ndarray, pandas Series, pandas DataFrame, default `None`
+        exog : numpy ndarray, pandas Series, pandas DataFrame, default None
             The exogenous variables.
         
         Returns
@@ -409,11 +411,10 @@ class Sarimax(BaseEstimator, RegressorMixin):
 
         self.sarimax = SARIMAX(endog=endog, exog=exog, **self._init_kwargs)
 
-
     def fit(
         self,
-        y: Union[np.ndarray, pd.Series, pd.DataFrame],
-        exog: Optional[Union[np.ndarray, pd.Series, pd.DataFrame]] = None
+        y: np.ndarray | pd.Series | pd.DataFrame,
+        exog: np.ndarray | pd.Series | pd.DataFrame | None = None
     ) -> None:
         """
         Fit the model to the data.
@@ -426,7 +427,7 @@ class Sarimax(BaseEstimator, RegressorMixin):
         ----------
         y : numpy ndarray, pandas Series, pandas DataFrame
             Training time series.
-        exog : numpy ndarray, pandas Series, pandas DataFrame, default `None`
+        exog : numpy ndarray, pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s. Must have the same
             number of observations as `y` and their indexes must be aligned so
             that y[i] is regressed on exog[i].
@@ -452,15 +453,14 @@ class Sarimax(BaseEstimator, RegressorMixin):
         if self.output_type == 'pandas':
             self.training_index = y.index
 
-
     @_check_fitted
     def predict(
         self,
         steps: int,
-        exog: Optional[Union[np.ndarray, pd.Series, pd.DataFrame]] = None, 
+        exog: np.ndarray | pd.Series | pd.DataFrame | None = None, 
         return_conf_int: bool = False,
         alpha: float = 0.05
-    ) -> Union[np.ndarray, pd.DataFrame]:
+    ) -> np.ndarray | pd.DataFrame:
         """
         Forecast future values and, if desired, their confidence intervals.
 
@@ -476,12 +476,12 @@ class Sarimax(BaseEstimator, RegressorMixin):
         ----------
         steps : int
             Number of future steps predicted.
-        exog : numpy ndarray, pandas Series, pandas DataFrame, default `None`
+        exog : numpy ndarray, pandas Series, pandas DataFrame, default None
             Value of the exogenous variable/s for the next steps. The number of 
             observations needed is the number of steps to predict. 
-        return_conf_int : bool, default `False`
+        return_conf_int : bool, default False
             Whether to get the confidence intervals of the forecasts.
-        alpha : float, default `0.05`
+        alpha : float, default 0.05
             The confidence intervals for the forecasts are (1 - alpha) %.
 
         Returns
@@ -500,9 +500,9 @@ class Sarimax(BaseEstimator, RegressorMixin):
         # the number of steps
         if exog is not None and len(exog) > steps:
             warnings.warn(
-                (f"When predicting using exogenous variables, the `exog` parameter "
-                 f"must have the same length as the number of predicted steps. Since "
-                 f"len(exog) > steps, only the first {steps} observations are used.")
+                f"When predicting using exogenous variables, the `exog` parameter "
+                f"must have the same length as the number of predicted steps. Since "
+                f"len(exog) > steps, only the first {steps} observations are used."
             )
             exog = exog[:steps]
 
@@ -532,12 +532,11 @@ class Sarimax(BaseEstimator, RegressorMixin):
 
         return predictions
 
-
     @_check_fitted
     def append(
         self,
-        y: Union[np.ndarray, pd.Series, pd.DataFrame],
-        exog: Optional[Union[np.ndarray, pd.Series, pd.DataFrame]] = None,
+        y: np.ndarray | pd.Series | pd.DataFrame,
+        exog: np.ndarray | pd.Series | pd.DataFrame | None = None,
         refit: bool = False,
         copy_initialization: bool = False,
         **kwargs
@@ -546,20 +545,20 @@ class Sarimax(BaseEstimator, RegressorMixin):
         Recreate the results object with new data appended to the original data.
 
         Creates a new result object applied to a dataset that is created by 
-        appending new data to the end of the model's original data. The new 
+        appending new data to the end of the model's original data [1]_. The new 
         results can then be used for analysis or forecasting.
 
         Parameters
         ----------
         y : numpy ndarray, pandas Series, pandas DataFrame
             New observations from the modeled time-series process.
-        exog : numpy ndarray, pandas Series, pandas DataFrame, default `None`
+        exog : numpy ndarray, pandas Series, pandas DataFrame, default None
             New observations of exogenous regressors, if applicable. Must have 
             the same number of observations as `y` and their indexes must be 
             aligned so that y[i] is regressed on exog[i].
-        refit : bool, default `False`
+        refit : bool, default False
             Whether to re-fit the parameters, based on the combined dataset.
-        copy_initialization : bool, default `False`
+        copy_initialization : bool, default False
             Whether or not to copy the initialization from the current results 
             set to the new model. 
         **kwargs
@@ -584,7 +583,10 @@ class Sarimax(BaseEstimator, RegressorMixin):
         to the new data. To apply filtering only to the new data (which can be 
         much faster if the original dataset is large), see the extend method.
 
-        https://www.statsmodels.org/dev/generated/statsmodels.tsa.statespace.mlemodel.MLEResults.append.html#statsmodels.tsa.statespace.mlemodel.MLEResults.append
+        References
+        ----------
+        .. [1] Statsmodels MLEResults append API Reference.
+               https://www.statsmodels.org/stable/generated/statsmodels.tsa.statespace.mlemodel.MLEResults.append.html#statsmodels.tsa.statespace.mlemodel.MLEResults.append
 
         """
 
@@ -599,12 +601,11 @@ class Sarimax(BaseEstimator, RegressorMixin):
                                **kwargs
                            )
 
-
     @_check_fitted
     def apply(
         self,
-        y: Union[np.ndarray, pd.Series, pd.DataFrame],
-        exog: Optional[Union[np.ndarray, pd.Series, pd.DataFrame]] = None,
+        y: np.ndarray | pd.Series | pd.DataFrame,
+        exog: np.ndarray | pd.Series | pd.DataFrame | None = None,
         refit: bool = False,
         copy_initialization: bool = False,
         **kwargs
@@ -614,19 +615,19 @@ class Sarimax(BaseEstimator, RegressorMixin):
 
         Creates a new result object using the current fitted parameters, applied 
         to a completely new dataset that is assumed to be unrelated to the model's
-        original data. The new results can then be used for analysis or forecasting.
+        original data [1]_. The new results can then be used for analysis or forecasting.
 
         Parameters
         ----------
         y : numpy ndarray, pandas Series, pandas DataFrame
             New observations from the modeled time-series process.
-        exog : numpy ndarray, pandas Series, pandas DataFrame, default `None`
+        exog : numpy ndarray, pandas Series, pandas DataFrame, default None
             New observations of exogenous regressors, if applicable. Must have 
             the same number of observations as `y` and their indexes must be 
             aligned so that y[i] is regressed on exog[i].
-        refit : bool, default `False`
+        refit : bool, default False
             Whether to re-fit the parameters, using the new dataset.
-        copy_initialization : bool, default `False`
+        copy_initialization : bool, default False
             Whether or not to copy the initialization from the current results 
             set to the new model. 
         **kwargs
@@ -644,7 +645,10 @@ class Sarimax(BaseEstimator, RegressorMixin):
         observations that continue that original dataset by follow directly after 
         its last element, see the append and extend methods.
 
-        https://www.statsmodels.org/dev/generated/statsmodels.tsa.statespace.mlemodel.MLEResults.apply.html#statsmodels.tsa.statespace.mlemodel.MLEResults.apply
+        References
+        ----------
+        .. [1] Statsmodels MLEResults apply API Reference.
+               https://www.statsmodels.org/stable/generated/statsmodels.tsa.statespace.mlemodel.MLEResults.apply.html#statsmodels.tsa.statespace.mlemodel.MLEResults.apply
 
         """
 
@@ -659,26 +663,25 @@ class Sarimax(BaseEstimator, RegressorMixin):
                                **kwargs
                            )
 
-
     @_check_fitted
     def extend(
         self,
-        y: Union[np.ndarray, pd.Series, pd.DataFrame],
-        exog: Optional[Union[np.ndarray, pd.Series, pd.DataFrame]] = None,
+        y: np.ndarray | pd.Series | pd.DataFrame,
+        exog: np.ndarray | pd.Series | pd.DataFrame | None = None,
         **kwargs
     ) -> None:
         """
         Recreate the results object for new data that extends the original data.
 
         Creates a new result object applied to a new dataset that is assumed to 
-        follow directly from the end of the model's original data. The new 
+        follow directly from the end of the model's original data [1]_. The new 
         results can then be used for analysis or forecasting.
 
         Parameters
         ----------
         y : numpy ndarray, pandas Series, pandas DataFrame
             New observations from the modeled time-series process.
-        exog : numpy ndarray, pandas Series, pandas DataFrame, default `None`
+        exog : numpy ndarray, pandas Series, pandas DataFrame, default None
             New observations of exogenous regressors, if applicable. Must have 
             the same number of observations as `y` and their indexes must be 
             aligned so that y[i] is regressed on exog[i].
@@ -702,7 +705,10 @@ class Sarimax(BaseEstimator, RegressorMixin):
         data. To retrieve results for both the new data and the original data, 
         see the append method.
 
-        https://www.statsmodels.org/dev/generated/statsmodels.tsa.statespace.mlemodel.MLEResults.extend.html#statsmodels.tsa.statespace.mlemodel.MLEResults.extend
+        References
+        ----------
+        .. [1] Statsmodels MLEResults extend API Reference.
+               https://www.statsmodels.org/dev/generated/statsmodels.tsa.statespace.mlemodel.MLEResults.extend.html#statsmodels.tsa.statespace.mlemodel.MLEResults.extend
 
         """
 
@@ -712,10 +718,9 @@ class Sarimax(BaseEstimator, RegressorMixin):
                                **kwargs
                            )
 
-
     def set_params(
         self, 
-        **params: dict
+        **params: dict[str, object]
     ) -> None:
         """
         Set new values to the parameters of the regressor.
@@ -743,11 +748,10 @@ class Sarimax(BaseEstimator, RegressorMixin):
         self.fitted         = False
         self.training_index = None
 
-
     @_check_fitted
     def params(
         self
-    ) -> Union[np.ndarray, pd.Series]:
+    ) -> np.ndarray | pd.Series:
         """
         Get the parameters of the model. The order of variables is the trend
         coefficients, the `k_exog` exogenous coefficients, the `k_ar` AR 
@@ -762,7 +766,6 @@ class Sarimax(BaseEstimator, RegressorMixin):
 
         return self.sarimax_res.params
 
-
     @_check_fitted
     def summary(
         self,
@@ -774,9 +777,9 @@ class Sarimax(BaseEstimator, RegressorMixin):
         
         Parameters
         ----------
-        alpha : float, default `0.05`
+        alpha : float, default 0.05
             The confidence intervals for the forecasts are (1 - alpha) %.
-        start : int, default `None`
+        start : int, default None
             Integer of the start observation.
 
         Returns
@@ -788,7 +791,6 @@ class Sarimax(BaseEstimator, RegressorMixin):
         """
 
         return self.sarimax_res.summary(alpha=alpha, start=start)
-
 
     @_check_fitted
     def get_info_criteria(
@@ -804,10 +806,10 @@ class Sarimax(BaseEstimator, RegressorMixin):
 
         Parameters
         ----------
-        criteria : str, default `'aic'`
+        criteria : str, default 'aic'
             The information criteria to compute. Valid options are {'aic', 'bic',
             'hqic'}.
-        method : str, default `'standard'`
+        method : str, default 'standard'
             The method for information criteria computation. Default is 'standard'
             method; 'lutkepohl' computes the information criteria as in Lütkepohl
             (2007).
@@ -821,14 +823,14 @@ class Sarimax(BaseEstimator, RegressorMixin):
 
         if criteria not in ['aic', 'bic', 'hqic']:
             raise ValueError(
-                ("Invalid value for `criteria`. Valid options are 'aic', 'bic', "
-                 "and 'hqic'.")
+                "Invalid value for `criteria`. Valid options are 'aic', 'bic', "
+                "and 'hqic'."
             )
         
         if method not in ['standard', 'lutkepohl']:
             raise ValueError(
-                ("Invalid value for `method`. Valid options are 'standard' and "
-                 "'lutkepohl'.")
+                "Invalid value for `method`. Valid options are 'standard' and "
+                "'lutkepohl'."
             )
         
         metric = self.sarimax_res.info_criteria(criteria=criteria, method=method)

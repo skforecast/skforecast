@@ -10,7 +10,7 @@ import importlib
 import inspect
 import warnings
 from copy import copy, deepcopy
-from typing import Any, Callable, Optional, Tuple, Union
+from typing import Any, Callable
 from pathlib import Path
 import joblib
 import numpy as np
@@ -300,10 +300,10 @@ def initialize_weights(
 
 def initialize_transformer_series(
     forecaster_name: str,
-    series_names_in_: list,
+    series_names_in_: list[str],
     encoding: str | None = None,
-    transformer_series: Optional[Union[object, dict]] = None
-) -> dict:
+    transformer_series: object | dict[str, object] | None = None
+) -> dict[str, object | None]:
     """
     Initialize `transformer_series_` attribute for the Forecasters Multiseries.
 
@@ -436,8 +436,8 @@ def initialize_differentiator_multiseries(
 
 def check_select_fit_kwargs(
     regressor: object,
-    fit_kwargs: Optional[dict] = None
-) -> dict:
+    fit_kwargs: dict[str, object] | None = None
+) -> dict[str, object]:
     """
     Check if `fit_kwargs` is a dict and select only the keys that are used by
     the `fit` method of the regressor.
@@ -470,23 +470,25 @@ def check_select_fit_kwargs(
                          if k not in inspect.signature(regressor.fit).parameters]
         if non_used_keys:
             warnings.warn(
-                (f"Argument/s {non_used_keys} ignored since they are not used by the "
-                 f"regressor's `fit` method."),
-                 IgnoredArgumentWarning
+                f"Argument/s {non_used_keys} ignored since they are not used by the "
+                f"regressor's `fit` method.",
+                IgnoredArgumentWarning
             )
 
         if 'sample_weight' in fit_kwargs.keys():
             warnings.warn(
-                ("The `sample_weight` argument is ignored. Use `weight_func` to pass "
-                 "a function that defines the individual weights for each sample "
-                 "based on its index."),
-                 IgnoredArgumentWarning
+                "The `sample_weight` argument is ignored. Use `weight_func` to pass "
+                "a function that defines the individual weights for each sample "
+                "based on its index.",
+                IgnoredArgumentWarning
             )
             del fit_kwargs['sample_weight']
 
         # Select only the keyword arguments allowed by the regressor's `fit` method.
-        fit_kwargs = {k: v for k, v in fit_kwargs.items()
-                      if k in inspect.signature(regressor.fit).parameters}
+        fit_kwargs = {
+            k: v for k, v in fit_kwargs.items()
+            if k in inspect.signature(regressor.fit).parameters
+        }
 
     return fit_kwargs
 
@@ -1502,7 +1504,7 @@ def exog_to_direct(
 
 
 def exog_to_direct_numpy(
-    exog: Union[np.ndarray, pd.Series, pd.DataFrame],
+    exog: np.ndarray | pd.Series | pd.DataFrame,
     steps: int
 ) -> tuple[np.ndarray, list[str] | None]:
     """
@@ -2086,7 +2088,7 @@ def check_optional_dependency(
 def multivariate_time_series_corr(
     time_series: pd.Series,
     other: pd.DataFrame,
-    lags: Union[int, list, np.array],
+    lags: int | list[int] | np.ndarray[int],
     method: str = 'pearson'
 ) -> pd.DataFrame:
     """
@@ -2199,8 +2201,8 @@ def select_n_jobs_fit_forecaster(
 
 
 def check_preprocess_series(
-    series: Union[pd.DataFrame, dict],
-) -> Tuple[dict, pd.Index]:
+    series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
+) -> tuple[dict[str, pd.Series], dict[str, pd.Index]]:
     """
     Check and preprocess `series` argument in `ForecasterRecursiveMultiSeries` class.
 
@@ -2240,9 +2242,9 @@ def check_preprocess_series(
         ]
         if not_valid_series:
             raise TypeError(
-                (f"If `series` is a dictionary, all series must be a named "
-                 f"pandas Series or a pandas DataFrame with a single column. "
-                 f"Review series: {not_valid_series}")
+                f"If `series` is a dictionary, all series must be a named "
+                f"pandas Series or a pandas DataFrame with a single column. "
+                f"Review series: {not_valid_series}"
             )
 
         series_dict = {
@@ -2254,9 +2256,9 @@ def check_preprocess_series(
             if isinstance(v, pd.DataFrame):
                 if v.shape[1] != 1:
                     raise ValueError(
-                        (f"If `series` is a dictionary, all series must be a named "
-                         f"pandas Series or a pandas DataFrame with a single column. "
-                         f"Review series: '{k}'")
+                        f"If `series` is a dictionary, all series must be a named "
+                        f"pandas Series or a pandas DataFrame with a single column. "
+                        f"Review series: '{k}'"
                     )
                 series_dict[k] = v.iloc[:, 0]
 
@@ -2269,23 +2271,23 @@ def check_preprocess_series(
         ]
         if not_valid_index:
             raise TypeError(
-                (f"If `series` is a dictionary, all series must have a Pandas "
-                 f"DatetimeIndex as index with the same frequency. "
-                 f"Review series: {not_valid_index}")
+                f"If `series` is a dictionary, all series must have a Pandas "
+                f"DatetimeIndex as index with the same frequency. "
+                f"Review series: {not_valid_index}"
             )
 
         indexes_freq = [f"{v.index.freq}" for v in series_dict.values()]
         indexes_freq = sorted(set(indexes_freq))
         if not len(indexes_freq) == 1:
             raise ValueError(
-                (f"If `series` is a dictionary, all series must have a Pandas "
-                 f"DatetimeIndex as index with the same frequency. "
-                 f"Found frequencies: {indexes_freq}")
+                f"If `series` is a dictionary, all series must have a Pandas "
+                f"DatetimeIndex as index with the same frequency. "
+                f"Found frequencies: {indexes_freq}"
             )
     else:
         raise TypeError(
-            (f"`series` must be a pandas DataFrame or a dict of DataFrames or Series. "
-             f"Got {type(series)}.")
+            f"`series` must be a pandas DataFrame or a dict of DataFrames or Series. "
+            f"Got {type(series)}."
         )
 
     for k, v in series_dict.items():
@@ -2304,9 +2306,9 @@ def check_preprocess_exog_multiseries(
     input_series_is_dict: bool,
     series_indexes: dict,
     series_names_in_: list,
-    exog: Union[pd.Series, pd.DataFrame, dict],
-    exog_dict: dict,
-) -> Tuple[dict, list]:
+    exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame | None],
+    exog_dict: dict[str, pd.Series | pd.DataFrame | None],
+) -> tuple[dict[str, pd.Series | pd.DataFrame | None], list[str]]:
     """
     Check and preprocess `exog` argument in `ForecasterRecursiveMultiSeries` class.
 
@@ -2475,7 +2477,7 @@ def align_series_and_exog_multiseries(
     series_dict: dict,
     input_series_is_dict: bool,
     exog_dict: dict = None
-) -> Tuple[Union[pd.Series, pd.DataFrame], Union[pd.Series, pd.DataFrame]]:
+) -> tuple[pd.Series | pd.DataFrame, pd.Series | pd.DataFrame]:
     """
     Align series and exog according to their index. If needed, reindexing is
     applied. Heading and trailing NaNs are removed from all series in 

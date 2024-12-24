@@ -7,8 +7,8 @@
 
 from __future__ import annotations
 from typing import Callable
-import re
 from copy import deepcopy
+import inspect
 import warnings
 import numpy as np
 import pandas as pd
@@ -830,7 +830,7 @@ def _backtesting_forecaster_multiseries(
         if type(forecaster).__name__ != 'ForecasterDirectMultiVariate' and gap > 0:
             pred = pred.iloc[gap:, ]
 
-        return pred
+        return pred, levels_predict
 
     kwargs_fit_predict_forecaster = {
         "forecaster": forecaster,
@@ -843,28 +843,50 @@ def _backtesting_forecaster_multiseries(
         "use_in_sample_residuals": use_in_sample_residuals,
         "suppress_warnings": suppress_warnings
     }
-    backtest_predictions = Parallel(n_jobs=n_jobs)(
+    results = Parallel(n_jobs=n_jobs)(
         delayed(_fit_predict_forecaster)(data_fold=data_fold, **kwargs_fit_predict_forecaster)
         for data_fold in data_folds
     )
 
-    backtest_predictions = pd.concat(backtest_predictions, axis=0)
+    backtest_predictions = [result[0] for result in results]
+    levels_predict = [result[1] for result in results]
 
-    # TODO: Ver si `levels_predict` puede ser un output del Parallel o mejoramos la regex
-    levels_in_backtest_predictions = backtest_predictions.columns
-    if interval is not None:
-        levels_in_backtest_predictions = [
-            level 
-            for level in levels_in_backtest_predictions
-            if not re.search(r'_lower_bound|_upper_bound', level)
-        ]
+    backtest_predictions = pd.concat(backtest_predictions, axis=0)
+    levels_in_backtest_predictions = set()
+    for lst in levels_predict:
+        levels_in_backtest_predictions.update(lst)
+
+    print(backtest_predictions)
+
+    # TODO: See preferred
+    # if hasattr(interval, "_pdf"):
+    if (
+        interval is not None
+        and not isinstance(interval, (list, tuple))
+        and interval != "bootstrapping"
+    ):
+        param_names = [
+            p for p in inspect.signature(interval._pdf).parameters if not p == "x"
+        ] + ["loc", "scale"]
     for level in levels_in_backtest_predictions:
         valid_index = series[level][series[level].notna()].index
         no_valid_index = backtest_predictions.index.difference(valid_index, sort=False)
-        cols = [level]
-        if interval:
-            cols = cols + [f'{level}_lower_bound', f'{level}_upper_bound']
-        backtest_predictions.loc[no_valid_index, cols] = np.nan
+        if interval is None:
+            cols_level = [level]
+        else:
+            if interval == 'bootstrapping':
+                # TODO: Check because output columns are like 
+                # [f"pred_boot_{i}" for i in range(n_boot)] No level included in the name
+                cols_level = [level] + [f'{level}_boot_{j}' for j in range(n_boot)]
+            elif isinstance(interval, (list, tuple)):
+                if len(interval) == 2:
+                    cols_level = [f'{level}', f'{level}_lower_bound', f'{level}_upper_bound']
+                else:
+                    cols_level = [level] + [f'{level}_p_{p}' for p in interval]
+            else:
+                cols_level = [level] + [f'{level}_{p}' for p in param_names]
+        
+        backtest_predictions.loc[no_valid_index, cols_level] = np.nan
 
     metrics_levels = _calculate_metrics_backtesting_multiseries(
         series                = series,
