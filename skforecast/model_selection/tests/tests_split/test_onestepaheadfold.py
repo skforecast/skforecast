@@ -165,7 +165,7 @@ def test_OneStepAhead_split_initial_train_size_window_size_return_all_indexes_fa
     ],
     ids=lambda x: f'initial_train_size={x}',
 )
-def test_OneStepAhead_split_various_initial_train_size(capfd, initial_train_size, expected):
+def test_OneStepAhead_split_int_and_date_initial_train_size(capfd, initial_train_size, expected):
     """
     Test OneStepAhead splits with different types for initial_train_size.
     """
@@ -189,6 +189,7 @@ def test_OneStepAhead_split_various_initial_train_size(capfd, initial_train_size
 
     assert out == expected_out
     assert folds == expected
+
 
 @pytest.mark.parametrize("invalid_date", [
     "2021-12-31",  # Before the first date in the index
