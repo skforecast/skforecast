@@ -1607,8 +1607,10 @@ def date_to_index_position(
         + If int, returns the same integer.
         + If str or pandas Timestamp, it is converted and expanded into the index.
     method : str, default 'predict'
-        Can be 'validate' or 'predict'. Whether to check if the date is before 
-        the first date in the index or after the last date.
+        Can be 'validate' or 'predict'. 
+        
+        + If 'validate', the date must be within the index range.
+        + If 'predict', the date must be later than the last date in the index.
     date_literal : str, default 'steps'
         Variable name used in error messages.
     kwargs_pd_to_datetime : dict, default {}

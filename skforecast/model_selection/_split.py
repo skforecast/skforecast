@@ -28,8 +28,12 @@ class BaseFold():
     steps : int, default None
         Number of observations used to be predicted in each fold. This is also commonly
         referred to as the forecast horizon or test size.
-    initial_train_size : int, default None
+    initial_train_size : int, str, pandas.Timestamp, default None
         Number of observations used for initial training.
+
+        - If an integer, the number of observations used for initial training.
+        - If a date string or pandas Timestamp, the date used to split the 
+        initial training set.
     window_size : int, default None
         Number of observations needed to generate the autoregressive predictors.
     differentiation : int, default None
@@ -444,8 +448,12 @@ class OneStepAheadFold(BaseFold):
 
     Parameters
     ----------
-    initial_train_size : int
+    initial_train_size : int, str, pandas.Timestamp
         Number of observations used for initial training.
+
+        - If an integer, the number of observations used for initial training.
+        - If a date string or pandas Timestamp, the date used to split the 
+        initial training set.
     window_size : int, default None
         Number of observations needed to generate the autoregressive predictors.
     differentiation : int, default None
@@ -486,7 +494,7 @@ class OneStepAheadFold(BaseFold):
 
     def __init__(
         self,
-        initial_train_size: int | str | pd.Timestamp | None = None,
+        initial_train_size: int | str | pd.Timestamp,
         window_size: int | None = None,
         differentiation: int | None = None,
         return_all_indexes: bool = False,
@@ -724,9 +732,13 @@ class TimeSeriesFold(BaseFold):
     steps : int
         Number of observations used to be predicted in each fold. This is also commonly
         referred to as the forecast horizon or test size.
-    initial_train_size : int, default None
-        Number of observations used for initial training. If `None` or 0, the initial
-        forecaster is not trained in the first fold.
+    initial_train_size : int, str, pandas.Timestamp, default None
+        Number of observations used for initial training. 
+        
+        - If `None` or 0, the initial forecaster is not trained in the first fold.
+        - If an integer, the number of observations used for initial training.
+        - If a date string or pandas Timestamp, the date used to split the
+        initial training set.
     window_size : int, default None
         Number of observations needed to generate the autoregressive predictors.
     differentiation : int, default None
