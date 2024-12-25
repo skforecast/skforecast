@@ -1214,61 +1214,92 @@ def test_TimeSeriesFold_split_as_pandas_return_all_indexes_False(window_size):
     pd.testing.assert_frame_equal(folds, expected)
 
 
-# @pytest.mark.parametrize(
-#     "initial_train_size, expected",
-#     [
-#         (70, [[0, 70], [70, 100], True]),
-#         ("2022-03-11", [[0, 70], [70, 100], True]),
-#         ("2022-03-11 00:00:00", [[0, 70], [70, 100], True]),
-#         (pd.to_datetime("2022-03-11"), [[0, 70], [70, 100], True])
-#     ],
-#     ids=lambda x: f'initial_train_size={x}',
-# )
-# def test_TimeSeriesFold_split_int_and_date_initial_train_size(capfd, initial_train_size, expected):
-#     """
-#     Test TimeSeriesFold splits with different types for initial_train_size.
-#     """
-#     y = pd.Series(np.arange(100))
-#     y.index = pd.date_range(start="2022-01-01", periods=100, freq="D")
-#     cv = TimeSeriesFold(
-#         initial_train_size=initial_train_size,
-#         steps                 = 10
-#         window_size=3,
-#     )
-#     folds = cv.split(X=y)
-#     out, _ = capfd.readouterr()
-#     expected_out = (
-#         "Information of folds\n"
-#         "--------------------\n"
-#         "Number of observations in train: 70\n"
-#         "Number of observations in test: 30\n"
-#         "Training : 2022-01-01 00:00:00 -- 2022-03-12 00:00:00 (n=70)\n"
-#         "Test     : 2022-03-12 00:00:00 -- 2022-04-10 00:00:00 (n=30)\n\n"
-#     )
+@pytest.mark.parametrize("initial_train_size, expected",
+                         [(70, 
+                           [[[0, 70], [60, 70], [70, 82], [75, 82], True],
+                            [[0, 70], [67, 77], [77, 89], [82, 89], False],
+                            [[0, 70], [74, 84], [84, 96], [89, 96], False],
+                            [[0, 70], [81, 91], [91, 100], [96, 100], False]]),
+                            ("2022-03-11", 
+                           [[[0, 70], [60, 70], [70, 82], [75, 82], True],
+                            [[0, 70], [67, 77], [77, 89], [82, 89], False],
+                            [[0, 70], [74, 84], [84, 96], [89, 96], False],
+                            [[0, 70], [81, 91], [91, 100], [96, 100], False]]),
+                            ("2022-03-11 00:00:00",
+                           [[[0, 70], [60, 70], [70, 82], [75, 82], True],
+                            [[0, 70], [67, 77], [77, 89], [82, 89], False],
+                            [[0, 70], [74, 84], [84, 96], [89, 96], False],
+                            [[0, 70], [81, 91], [91, 100], [96, 100], False]]),
+                            (pd.to_datetime("2022-03-11"),
+                           [[[0, 70], [60, 70], [70, 82], [75, 82], True],
+                            [[0, 70], [67, 77], [77, 89], [82, 89], False],
+                            [[0, 70], [74, 84], [84, 96], [89, 96], False],
+                            [[0, 70], [81, 91], [91, 100], [96, 100], False]]),], 
+                         ids = lambda argument: f'{argument}')
+def test_TimeSeriesFold_split_int_and_date_initial_train_size(capfd, initial_train_size, expected):
+    """
+    Test TimeSeriesFold split method output when initial_train_size is 
+    an integer or a date in string and pandas datetime format.
+    """
+    y = pd.Series(np.arange(100))
+    y.index = pd.date_range(start='2022-01-01', periods=100, freq='D')
+    cv = TimeSeriesFold(
+            steps                 = 7,
+            initial_train_size    = initial_train_size,
+            window_size           = 10,
+            gap                   = 5,
+        )
+    folds = cv.split(X=y)
+                    
+    out, _ = capfd.readouterr()
+    print(out)
+    expected_out = (
+        "Information of folds\n"
+        "--------------------\n"
+        "Number of observations used for initial training: 70\n"
+        "Number of observations used for backtesting: 30\n"
+        "    Number of folds: 4\n"
+        "    Number skipped folds: 0 \n"
+        "    Number of steps per fold: 7\n"
+        "    Number of steps to exclude between last observed data (last window) and predictions (gap): 5\n"
+        "    Last fold only includes 4 observations.\n\n"
+        "Fold: 0\n"
+        "    Training:   2022-01-01 00:00:00 -- 2022-03-11 00:00:00  (n=70)\n"
+        "    Validation: 2022-03-17 00:00:00 -- 2022-03-23 00:00:00  (n=7)\n"
+        "Fold: 1\n"
+        "    Training:   No training in this fold\n"
+        "    Validation: 2022-03-24 00:00:00 -- 2022-03-30 00:00:00  (n=7)\n"
+        "Fold: 2\n"
+        "    Training:   No training in this fold\n"
+        "    Validation: 2022-03-31 00:00:00 -- 2022-04-06 00:00:00  (n=7)\n"
+        "Fold: 3\n"
+        "    Training:   No training in this fold\n"
+        "    Validation: 2022-04-07 00:00:00 -- 2022-04-10 00:00:00  (n=4)\n\n"
+    )
 
-#     assert out == expected_out
-#     assert folds == expected
+    assert out == expected_out
+    assert folds == expected
 
 
-# @pytest.mark.parametrize("invalid_date", [
-#     "2021-12-31",  # Before the first date in the index
-#     "2022-04-11",  # After the last date in the index
-# ])
-# def test_TimeSeriesFold_split_invalid_initial_train_size_date(invalid_date):
-#     """
-#     Test that RuntimeError is raised when initial_train_size date is outside the index range.
-#     """
-#     y = pd.Series(np.arange(100))
-#     y.index = pd.date_range(start="2022-01-01", periods=100, freq="D")
-#     cv = TimeSeriesFold(
-#         initial_train_size=invalid_date,
-#         window_size=3,
-#         differentiation=None
-#     )
+@pytest.mark.parametrize("initial_train_size", [
+    "2021-12-31",  # Before the first date in the index
+    "2022-04-11",  # After the last date in the index
+])
+def test_TimeSeriesFold_split_invalid_initial_train_size_date(initial_train_size):
+    """
+    Test that RuntimeError is raised when initial_train_size date is outside the index range.
+    """
+    y = pd.Series(np.arange(100))
+    y.index = pd.date_range(start="2022-01-01", periods=100, freq="D")
+    cv = TimeSeriesFold(
+        steps                 = 7,
+        initial_train_size    = initial_train_size,
+        window_size           = 10,
+    )
     
-#     msg = (
-#         "Error converting initial_train_size date to an index position: The provided date "
-#         "must be later than the first date in the index and earlier than the last date."
-#     )
-#     with pytest.raises(RuntimeError, match=msg):
-#         cv.split(X=y)
+    msg = (
+        "Error converting initial_train_size date to an index position: The provided date "
+        "must be later than the first date in the index and earlier than the last date."
+    )
+    with pytest.raises(RuntimeError, match=msg):
+        cv.split(X=y)

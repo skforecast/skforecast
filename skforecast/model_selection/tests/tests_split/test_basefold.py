@@ -275,7 +275,7 @@ def test_basefold_validate_params_raise_invalid_window_size():
     msg = f"`window_size` must be an integer greater than 0. Got {params['window_size']}."
     with pytest.raises(ValueError, match=msg):
         cv._validate_params(cv_name="TimeSeriesFold", **params)
-        
+
 
 def test_basefold_validate_params_raise_invalid_return_all_indexes():
     """

@@ -155,6 +155,7 @@ def test_OneStepAhead_split_initial_train_size_window_size_return_all_indexes_fa
     assert out == expected_out
     pd.testing.assert_frame_equal(folds, expected_folds)
 
+
 @pytest.mark.parametrize(
     "initial_train_size, expected",
     [
