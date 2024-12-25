@@ -6,12 +6,12 @@
 # coding=utf-8
 
 from __future__ import annotations
+from copy import copy, deepcopy
 import importlib
 import inspect
-import warnings
-from copy import copy, deepcopy
-from typing import Any, Callable, Optional, Tuple, Union
 from pathlib import Path
+from typing import Any, Callable
+import warnings
 import joblib
 import numpy as np
 import pandas as pd
@@ -23,13 +23,14 @@ from sklearn.exceptions import NotFittedError
 import skforecast
 from ..exceptions import warn_skforecast_categories
 from ..exceptions import (
-    MissingValuesWarning,
-    MissingExogWarning,
     DataTypeWarning,
-    UnknownLevelWarning,
     IgnoredArgumentWarning,
+    IndexWarning,
+    MissingExogWarning,
+    MissingValuesWarning,
     SaveLoadSkforecastWarning,
-    SkforecastVersionWarning
+    SkforecastVersionWarning,
+    UnknownLevelWarning
 )
 
 optional_dependencies = {
@@ -300,10 +301,10 @@ def initialize_weights(
 
 def initialize_transformer_series(
     forecaster_name: str,
-    series_names_in_: list,
+    series_names_in_: list[str],
     encoding: str | None = None,
-    transformer_series: Optional[Union[object, dict]] = None
-) -> dict:
+    transformer_series: object | dict[str, object | None] | None = None
+) -> dict[str, object | None]:
     """
     Initialize `transformer_series_` attribute for the Forecasters Multiseries.
 
@@ -436,8 +437,8 @@ def initialize_differentiator_multiseries(
 
 def check_select_fit_kwargs(
     regressor: object,
-    fit_kwargs: Optional[dict] = None
-) -> dict:
+    fit_kwargs: dict[str, object] | None = None
+) -> dict[str, object]:
     """
     Check if `fit_kwargs` is a dict and select only the keys that are used by
     the `fit` method of the regressor.
@@ -470,23 +471,25 @@ def check_select_fit_kwargs(
                          if k not in inspect.signature(regressor.fit).parameters]
         if non_used_keys:
             warnings.warn(
-                (f"Argument/s {non_used_keys} ignored since they are not used by the "
-                 f"regressor's `fit` method."),
-                 IgnoredArgumentWarning
+                f"Argument/s {non_used_keys} ignored since they are not used by the "
+                f"regressor's `fit` method.",
+                IgnoredArgumentWarning
             )
 
         if 'sample_weight' in fit_kwargs.keys():
             warnings.warn(
-                ("The `sample_weight` argument is ignored. Use `weight_func` to pass "
-                 "a function that defines the individual weights for each sample "
-                 "based on its index."),
-                 IgnoredArgumentWarning
+                "The `sample_weight` argument is ignored. Use `weight_func` to pass "
+                "a function that defines the individual weights for each sample "
+                "based on its index.",
+                IgnoredArgumentWarning
             )
             del fit_kwargs['sample_weight']
 
         # Select only the keyword arguments allowed by the regressor's `fit` method.
-        fit_kwargs = {k: v for k, v in fit_kwargs.items()
-                      if k in inspect.signature(regressor.fit).parameters}
+        fit_kwargs = {
+            k: v for k, v in fit_kwargs.items()
+            if k in inspect.signature(regressor.fit).parameters
+        }
 
     return fit_kwargs
 
@@ -567,7 +570,7 @@ def check_exog(
 
 def get_exog_dtypes(
     exog: pd.Series | pd.DataFrame, 
-) -> dict:
+) -> dict[str, type]:
     """
     Store dtypes of `exog`.
 
@@ -919,14 +922,20 @@ def check_predict_input(
 
         last_window_cols = last_window.columns.to_list()
 
-        if forecaster_name in ['ForecasterRecursiveMultiSeries', 
-                               'ForecasterRnn'] and \
-            len(set(levels) - set(last_window_cols)) != 0:
+        if (
+            forecaster_name in ["ForecasterRecursiveMultiSeries", "ForecasterRnn"]
+            and len(set(levels) - set(last_window_cols)) != 0
+        ):
+            missing_levels = set(levels) - set(last_window_cols)
             raise ValueError(
-                f"`last_window` must contain a column(s) named as the level(s) "
-                f"to be predicted.\n"
-                f"    `levels` : {levels}\n"
-                f"    `last_window` columns : {last_window_cols}"
+                f"`last_window` must contain a column(s) named as the level(s) to be predicted. "
+                f"The following `levels` are missing in `last_window`: {missing_levels}\n"
+                f"Ensure that `last_window` contains all the necessary columns "
+                f"corresponding to the `levels` being predicted.\n"
+                f"    Argument `levels`     : {levels}\n"
+                f"    `last_window` columns : {last_window_cols}\n"
+                f"Example: If `levels = ['series_1', 'series_2']`, make sure "
+                f"`last_window` includes columns named 'series_1' and 'series_2'."
             )
 
         if forecaster_name == 'ForecasterDirectMultiVariate':
@@ -1218,8 +1227,11 @@ def preprocess_y(
         y_index = y.index
     elif isinstance(y.index, pd.DatetimeIndex) and y.index.freq is None:
         warnings.warn(
-            "Series has DatetimeIndex index but no frequency. "
-            "Index is overwritten with a RangeIndex of step 1."
+            "Series has a pandas DatetimeIndex without a frequency. The index "
+            "will be replaced by a RangeIndex starting from 0 with a step of 1. "
+            "To avoid this warning, set the frequency of the DatetimeIndex using "
+            "`y = y.asfreq('desired_frequency', fill_value=np.nan)`.",
+            IndexWarning
         )
         y_index = pd.RangeIndex(
                       start = 0,
@@ -1228,8 +1240,11 @@ def preprocess_y(
                   )
     else:
         warnings.warn(
-            "Series has no DatetimeIndex nor RangeIndex index. "
-            "Index is overwritten with a RangeIndex."
+            "Series has an unsupported index type (not pandas DatetimeIndex or "
+            "RangeIndex). The index will be replaced by a RangeIndex starting "
+            "from 0 with a step of 1. To avoid this warning, ensure that "
+            "`y.index` is a DatetimeIndex with a frequency or a RangeIndex.",
+            IndexWarning
         )
         y_index = pd.RangeIndex(
                       start = 0,
@@ -1280,8 +1295,11 @@ def preprocess_last_window(
         last_window_index = last_window.index
     elif isinstance(last_window.index, pd.DatetimeIndex) and last_window.index.freq is None:
         warnings.warn(
-            "`last_window` has DatetimeIndex index but no frequency. "
-            "Index is overwritten with a RangeIndex of step 1."
+            "`last_window` has a pandas DatetimeIndex without a frequency. The index "
+            "will be replaced by a RangeIndex starting from 0 with a step of 1. "
+            "To avoid this warning, set the frequency of the DatetimeIndex using "
+            "`last_window = last_window.asfreq('desired_frequency', fill_value=np.nan)`.",
+            IndexWarning
         )
         last_window_index = pd.RangeIndex(
                                 start = 0,
@@ -1290,8 +1308,11 @@ def preprocess_last_window(
                             )
     else:
         warnings.warn(
-            "`last_window` has no DatetimeIndex nor RangeIndex index. "
-            "Index is overwritten with a RangeIndex."
+            "`last_window` has an unsupported index type (not pandas DatetimeIndex or "
+            "RangeIndex). The index will be replaced by a RangeIndex starting "
+            "from 0 with a step of 1. To avoid this warning, ensure that "
+            "`last_window.index` is a DatetimeIndex with a frequency or a RangeIndex.",
+            IndexWarning
         )
         last_window_index = pd.RangeIndex(
                                 start = 0,
@@ -1342,8 +1363,11 @@ def preprocess_exog(
         exog_index = exog.index
     elif isinstance(exog.index, pd.DatetimeIndex) and exog.index.freq is None:
         warnings.warn(
-            "`exog` has DatetimeIndex index but no frequency. "
-            "Index is overwritten with a RangeIndex of step 1."
+            "`exog` has a pandas DatetimeIndex without a frequency. The index "
+            "will be replaced by a RangeIndex starting from 0 with a step of 1. "
+            "To avoid this warning, set the frequency of the DatetimeIndex using "
+            "`exog = exog.asfreq('desired_frequency', fill_value=np.nan)`.",
+            IndexWarning
         )
         exog_index = pd.RangeIndex(
                          start = 0,
@@ -1353,8 +1377,11 @@ def preprocess_exog(
 
     else:
         warnings.warn(
-            "`exog` has no DatetimeIndex nor RangeIndex index. "
-            "Index is overwritten with a RangeIndex."
+            "`exog` has an unsupported index type (not pandas DatetimeIndex or "
+            "RangeIndex). The index will be replaced by a RangeIndex starting "
+            "from 0 with a step of 1. To avoid this warning, ensure that "
+            "`exog.index` is a DatetimeIndex with a frequency or a RangeIndex.",
+            IndexWarning
         )
         exog_index = pd.RangeIndex(
                          start = 0,
@@ -1502,7 +1529,7 @@ def exog_to_direct(
 
 
 def exog_to_direct_numpy(
-    exog: Union[np.ndarray, pd.Series, pd.DataFrame],
+    exog: np.ndarray | pd.Series | pd.DataFrame,
     steps: int
 ) -> tuple[np.ndarray, list[str] | None]:
     """
@@ -2105,7 +2132,7 @@ def check_optional_dependency(
 def multivariate_time_series_corr(
     time_series: pd.Series,
     other: pd.DataFrame,
-    lags: Union[int, list, np.array],
+    lags: int | list[int] | np.ndarray[int],
     method: str = 'pearson'
 ) -> pd.DataFrame:
     """
@@ -2218,8 +2245,8 @@ def select_n_jobs_fit_forecaster(
 
 
 def check_preprocess_series(
-    series: Union[pd.DataFrame, dict],
-) -> Tuple[dict, pd.Index]:
+    series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
+) -> tuple[dict[str, pd.Series], dict[str, pd.Index]]:
     """
     Check and preprocess `series` argument in `ForecasterRecursiveMultiSeries` class.
 
@@ -2259,9 +2286,9 @@ def check_preprocess_series(
         ]
         if not_valid_series:
             raise TypeError(
-                (f"If `series` is a dictionary, all series must be a named "
-                 f"pandas Series or a pandas DataFrame with a single column. "
-                 f"Review series: {not_valid_series}")
+                f"If `series` is a dictionary, all series must be a named "
+                f"pandas Series or a pandas DataFrame with a single column. "
+                f"Review series: {not_valid_series}"
             )
 
         series_dict = {
@@ -2273,9 +2300,9 @@ def check_preprocess_series(
             if isinstance(v, pd.DataFrame):
                 if v.shape[1] != 1:
                     raise ValueError(
-                        (f"If `series` is a dictionary, all series must be a named "
-                         f"pandas Series or a pandas DataFrame with a single column. "
-                         f"Review series: '{k}'")
+                        f"If `series` is a dictionary, all series must be a named "
+                        f"pandas Series or a pandas DataFrame with a single column. "
+                        f"Review series: '{k}'"
                     )
                 series_dict[k] = v.iloc[:, 0]
 
@@ -2288,23 +2315,23 @@ def check_preprocess_series(
         ]
         if not_valid_index:
             raise TypeError(
-                (f"If `series` is a dictionary, all series must have a Pandas "
-                 f"DatetimeIndex as index with the same frequency. "
-                 f"Review series: {not_valid_index}")
+                f"If `series` is a dictionary, all series must have a Pandas "
+                f"DatetimeIndex as index with the same frequency. "
+                f"Review series: {not_valid_index}"
             )
 
         indexes_freq = [f"{v.index.freq}" for v in series_dict.values()]
         indexes_freq = sorted(set(indexes_freq))
         if not len(indexes_freq) == 1:
             raise ValueError(
-                (f"If `series` is a dictionary, all series must have a Pandas "
-                 f"DatetimeIndex as index with the same frequency. "
-                 f"Found frequencies: {indexes_freq}")
+                f"If `series` is a dictionary, all series must have a Pandas "
+                f"DatetimeIndex as index with the same frequency. "
+                f"Found frequencies: {indexes_freq}"
             )
     else:
         raise TypeError(
-            (f"`series` must be a pandas DataFrame or a dict of DataFrames or Series. "
-             f"Got {type(series)}.")
+            f"`series` must be a pandas DataFrame or a dict of DataFrames or Series. "
+            f"Got {type(series)}."
         )
 
     for k, v in series_dict.items():
@@ -2321,11 +2348,11 @@ def check_preprocess_series(
 
 def check_preprocess_exog_multiseries(
     input_series_is_dict: bool,
-    series_indexes: dict,
-    series_names_in_: list,
-    exog: Union[pd.Series, pd.DataFrame, dict],
-    exog_dict: dict,
-) -> Tuple[dict, list]:
+    series_indexes: dict[str, pd.Index],
+    series_names_in_: list[str],
+    exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame | None],
+    exog_dict: dict[str, pd.Series | pd.DataFrame | None],
+) -> tuple[dict[str, pd.DataFrame | None], list[str]]:
     """
     Check and preprocess `exog` argument in `ForecasterRecursiveMultiSeries` class.
 
@@ -2491,10 +2518,10 @@ def check_preprocess_exog_multiseries(
 
 
 def align_series_and_exog_multiseries(
-    series_dict: dict,
+    series_dict: dict[str, pd.Series],
     input_series_is_dict: bool,
-    exog_dict: dict = None
-) -> Tuple[Union[pd.Series, pd.DataFrame], Union[pd.Series, pd.DataFrame]]:
+    exog_dict: dict[str, pd.DataFrame] | None = None
+) -> tuple[dict[str, pd.Series], dict[str, pd.DataFrame | None]]:
     """
     Align series and exog according to their index. If needed, reindexing is
     applied. Heading and trailing NaNs are removed from all series in 

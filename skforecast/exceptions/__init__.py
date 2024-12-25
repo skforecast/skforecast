@@ -2,6 +2,7 @@ from .exceptions import (
     DataTypeWarning,
     DataTransformationWarning,
     IgnoredArgumentWarning,
+    IndexWarning,
     LongTrainingWarning,
     MissingExogWarning,
     MissingValuesWarning,
