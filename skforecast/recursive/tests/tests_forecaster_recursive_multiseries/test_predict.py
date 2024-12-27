@@ -50,8 +50,8 @@ def test_predict_NotFittedError_when_fitted_is_False():
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=5)
 
     err_msg = re.escape(
-        ("This Forecaster instance is not fitted yet. Call `fit` with "
-         "appropriate arguments before using predict.")
+        "This Forecaster instance is not fitted yet. Call `fit` with "
+        "appropriate arguments before using predict."
     )
     with pytest.raises(NotFittedError, match = err_msg):
         forecaster.predict(steps=5)
@@ -66,10 +66,10 @@ def test_predict_IgnoredArgumentWarning_when_not_available_self_last_window_for_
     forecaster.fit(series=series_2, store_last_window=['1'])
 
     warn_msg = re.escape(
-        ("Levels {'2'} are excluded from prediction "
-         "since they were not stored in `last_window_` attribute "
-         "during training. If you don't want to retrain the "
-         "Forecaster, provide `last_window` as argument.")
+        "Levels {'2'} are excluded from prediction "
+        "since they were not stored in `last_window_` attribute "
+        "during training. If you don't want to retrain the "
+        "Forecaster, provide `last_window` as argument."
     )
     with pytest.warns(IgnoredArgumentWarning, match = warn_msg):
         predictions = forecaster.predict(steps=5, levels=['1', '2'], last_window=None)
@@ -95,9 +95,9 @@ def test_predict_ValueError_when_not_available_self_last_window_for_levels(store
     forecaster.fit(series=series_2, store_last_window=store_last_window)
 
     err_msg = re.escape(
-        ("No series to predict. None of the series {'2'} are present in "
-         "`last_window_` attribute. Provide `last_window` as argument "
-         "in predict method.")
+        "No series to predict. None of the series {'2'} are present in "
+        "`last_window_` attribute. Provide `last_window` as argument "
+        "in predict method."
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster.predict(steps=5, levels=['2'], last_window=None)
@@ -130,10 +130,10 @@ def test_predict_IgnoredArgumentWarning_when_levels_is_list_and_different_last_i
     forecaster.fit(series=series_3, exog=exog_2)
 
     warn_msg = re.escape(
-        ("Only series whose last window ends at the same index "
-         "can be predicted together. Series that do not reach the "
-         "maximum index, '2020-02-19 00:00:00', are excluded "
-         "from prediction: {'2'}.")
+        "Only series whose last window ends at the same index "
+        "can be predicted together. Series that do not reach the "
+        "maximum index, '2020-02-19 00:00:00', are excluded "
+        "from prediction: {'2'}."
     )
     with pytest.warns(IgnoredArgumentWarning, match = warn_msg):
         predictions = forecaster.predict(steps=5, levels=['1', '2'], last_window=None,
