@@ -2404,12 +2404,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                         )
         
         boot_columns = []
-        boot_predictions_full = np.full(
-                                    shape      = (steps, n_levels, n_boot),
-                                    fill_value = np.nan,
-                                    order      = 'F',
-                                    dtype      = float
-                                )
+        boot_predictions = np.full(
+                               shape      = (steps, n_levels, n_boot),
+                               fill_value = np.nan,
+                               order      = 'F',
+                               dtype      = float
+                           )
         
         with warnings.catch_warnings():
             warnings.filterwarnings(
@@ -2420,7 +2420,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             for i in range(n_boot):
 
                 boot_columns.append(f"pred_boot_{i}")
-                boot_predictions_full[:, :, i] = self._recursive_predict(
+                boot_predictions[:, :, i] = self._recursive_predict(
                     steps            = steps,
                     levels           = levels,
                     last_window      = last_window,
@@ -2428,13 +2428,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     residuals        = sample_residuals[:, i, :]
                 )
 
-        boot_predictions = []
         for i, level in enumerate(levels):
 
             if self.differentiation is not None and self.differentiator_[level] is not None:
-                boot_predictions_full[:, i, :] = (
+                boot_predictions[:, i, :] = (
                     self.differentiator_[level]
-                    .inverse_transform_next_window(boot_predictions_full[:, i, :])
+                    .inverse_transform_next_window(boot_predictions[:, i, :])
                 )
             
             transformer_level = self.transformer_series_.get(
@@ -2442,24 +2441,21 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                     self.transformer_series_['_unknown_level']
                                 )
             if transformer_level is not None:
-                boot_predictions_full[:, i, :] = np.apply_along_axis(
+                boot_predictions[:, i, :] = np.apply_along_axis(
                     func1d            = transform_numpy,
                     axis              = 0,
-                    arr               = boot_predictions_full[:, i, :],
+                    arr               = boot_predictions[:, i, :],
                     transformer       = transformer_level,
                     fit               = False,
                     inverse_transform = True
                 )
-            
-            boot_predictions.append(boot_predictions_full[:, i, :])
 
         boot_predictions = pd.DataFrame(
-                               data    = np.concatenate(boot_predictions, axis=0),
-                               index   = np.tile(prediction_index, n_levels),
+                               data    = boot_predictions.reshape(-1, n_boot),
+                               index   = np.repeat(prediction_index, n_levels),
                                columns = boot_columns
                            )
-        boot_predictions.insert(0, 'level', np.repeat(levels, steps))
-        boot_predictions = boot_predictions.sort_index()
+        boot_predictions.insert(0, 'level', np.tile(levels, steps))
         
         set_skforecast_warnings(suppress_warnings, action='default')
 
@@ -2560,8 +2556,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 )
 
         interval = np.array(interval) / 100
-        predictions = []
-
         boot_predictions[['lower_bound', 'upper_bound']] = (
             boot_predictions.iloc[:, 1:].quantile(q=interval, axis=1).transpose()
         )

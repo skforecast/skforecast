@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import Callable
 from copy import deepcopy
 import inspect
+from itertools import chain
 import warnings
 import numpy as np
 import pandas as pd
@@ -760,27 +761,6 @@ def _backtesting_forecaster_multiseries(
             test_iloc_start = fold[3][0]
             test_iloc_end   = fold[3][1]
             steps = list(np.arange(len(range(test_iloc_start, test_iloc_end))) + gap + 1)
-        
-        # if interval is None:
-        #     pred = forecaster.predict(
-        #                steps             = steps, 
-        #                levels            = levels_predict, 
-        #                last_window       = last_window_series,
-        #                exog              = next_window_exog,
-        #                suppress_warnings = suppress_warnings
-        #            )
-        # else:
-        #     pred = forecaster.predict_interval(
-        #                steps                   = steps,
-        #                levels                  = levels_predict, 
-        #                last_window             = last_window_series,
-        #                exog                    = next_window_exog,
-        #                interval                = interval,
-        #                n_boot                  = n_boot,
-        #                random_state            = random_state,
-        #                use_in_sample_residuals = use_in_sample_residuals,
-        #                suppress_warnings       = suppress_warnings
-        #            )
 
         levels_predict = [level for level in levels if level in last_window_levels]
         if interval is not None:
@@ -795,20 +775,14 @@ def _backtesting_forecaster_multiseries(
                 'suppress_warnings': suppress_warnings
             }
             if interval == 'bootstrapping':
-                # TODO: predict_boot devuelve un dict MultiSeries {'level': df_n_boot}, DataFrame MultiVariate
                 pred_interval = forecaster.predict_bootstrapping(**kwargs_interval)
             elif isinstance(interval, (list, tuple)):
                 quantiles = [q / 100 for q in interval]
                 pred_interval = forecaster.predict_quantiles(quantiles=quantiles, **kwargs_interval)
                 if len(interval) == 2:
-                    cols_names = [
-                        bound 
-                        for level in levels_predict 
-                        for bound in (f'{level}_lower_bound', f'{level}_upper_bound')
-                    ]
+                    cols_names = ['level', 'lower_bound', 'upper_bound']
                 else:
-                    cols_names = [f'{level}_p_{p}' for level in levels_predict for p in interval]
-                    
+                    cols_names = ['level'] + [f'p_{p}' for p in interval]  
                 pred_interval.columns = cols_names
             else:
                 pred_interval = forecaster.predict_dist(distribution=interval, **kwargs_interval)
@@ -824,9 +798,9 @@ def _backtesting_forecaster_multiseries(
                )
         
         if interval is not None:
-            pred = pd.concat((pred, pred_interval), axis=1)
-            pred = pred.loc[:, pred.columns.sort_values()]
+            pred = pd.concat([pred, pred_interval.iloc[:, 1:]], axis=1)
 
+        # TODO: CHeck when long format in multivariate
         if type(forecaster).__name__ != 'ForecasterDirectMultiVariate' and gap > 0:
             pred = pred.iloc[gap:, ]
 
@@ -848,47 +822,44 @@ def _backtesting_forecaster_multiseries(
         for data_fold in data_folds
     )
 
-    backtest_predictions = [result[0] for result in results]
-    levels_predict = [result[1] for result in results]
+    backtest_predictions = pd.concat([result[0] for result in results], axis=0)
+    backtest_levels = set(chain(*[result[1] for result in results]))
 
-    backtest_predictions = pd.concat(backtest_predictions, axis=0)
-    levels_in_backtest_predictions = set()
-    for lst in levels_predict:
-        levels_in_backtest_predictions.update(lst)
-
-    # TODO: See preferred
-    # if hasattr(interval, "_pdf"):
-    if (
-        interval is not None
-        and not isinstance(interval, (list, tuple))
-        and interval != "bootstrapping"
-    ):
-        param_names = [
-            p for p in inspect.signature(interval._pdf).parameters if not p == "x"
-        ] + ["loc", "scale"]
-    for level in levels_in_backtest_predictions:
+    cols_backtest_predictions = ['pred']
+    if interval is not None:
+        if interval == 'bootstrapping':
+            cols_backtest_predictions.extend([f'pred_boot_{i}' for i in range(n_boot)])
+        elif isinstance(interval, (list, tuple)):
+            if len(interval) == 2:
+                cols_backtest_predictions.extend(['lower_bound', 'upper_bound'])
+            else:
+                cols_backtest_predictions.extend([f'p_{p}' for p in interval])
+        else:
+            param_names = [
+                p for p in inspect.signature(interval._pdf).parameters if not p == "x"
+            ] + ["loc", "scale"]
+            cols_backtest_predictions.extend(param_names)
+    
+    for level in backtest_levels:
         valid_index = series[level][series[level].notna()].index
         no_valid_index = backtest_predictions.index.difference(valid_index, sort=False)
-        if interval is None:
-            cols_level = [level]
-        else:
-            if interval == 'bootstrapping':
-                # TODO: Check because output columns are like 
-                # [f"pred_boot_{i}" for i in range(n_boot)] No level included in the name
-                cols_level = [level] + [f'{level}_boot_{j}' for j in range(n_boot)]
-            elif isinstance(interval, (list, tuple)):
-                if len(interval) == 2:
-                    cols_level = [f'{level}', f'{level}_lower_bound', f'{level}_upper_bound']
-                else:
-                    cols_level = [level] + [f'{level}_p_{p}' for p in interval]
-            else:
-                cols_level = [level] + [f'{level}_{p}' for p in param_names]
-        
-        backtest_predictions.loc[no_valid_index, cols_level] = np.nan
 
+        mask_level = backtest_predictions.loc[no_valid_index, 'level'] == level
+        backtest_predictions.loc[
+            no_valid_index, cols_backtest_predictions
+        ][mask_level] = np.nan
+
+    # TODO: Refactor to use a long format DataFrame as predictions
+    backtest_predictions_metric = pd.pivot_table(
+        data    = backtest_predictions[['level', 'pred']],
+        index   = backtest_predictions.index,
+        columns = 'level'
+    )
+    backtest_predictions_metric.columns = backtest_predictions_metric.columns.droplevel(0)
+    
     metrics_levels = _calculate_metrics_backtesting_multiseries(
         series                = series,
-        predictions           = backtest_predictions,
+        predictions           = backtest_predictions_metric,
         folds                 = folds,
         span_index            = span_index,
         window_size           = forecaster.window_size,
