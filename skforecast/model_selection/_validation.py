@@ -857,6 +857,7 @@ def _backtesting_forecaster_multiseries(
     )
     backtest_predictions_metric.columns = backtest_predictions_metric.columns.droplevel(0)
     
+    # TODO: Maybe include variable backtest_levels to know real levels in preds
     metrics_levels = _calculate_metrics_backtesting_multiseries(
         series                = series,
         predictions           = backtest_predictions_metric,
