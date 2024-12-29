@@ -29,6 +29,7 @@ from ....recursive import ForecasterRecursiveMultiSeries
 from .fixtures_forecaster_recursive_multiseries import series
 from .fixtures_forecaster_recursive_multiseries import exog
 from .fixtures_forecaster_recursive_multiseries import exog_predict
+from .fixtures_forecaster_recursive_multiseries import expected_df_to_long_format
 
 THIS_DIR = Path(__file__).parent
 series_dict = joblib.load(THIS_DIR/'fixture_sample_multi_series.joblib')
@@ -80,13 +81,7 @@ def test_predict_IgnoredArgumentWarning_when_not_available_self_last_window_for_
                    columns = ['1']
                )
 
-    expected = (
-        expected.melt(var_name="level", value_name="pred", ignore_index=False)
-        .reset_index()
-        .sort_values(by=["index", "level"])
-        .set_index("index")
-        .rename_axis(None, axis=0)
-    )
+    expected = expected_df_to_long_format(expected)
 
     pd.testing.assert_frame_equal(predictions, expected)
 
@@ -153,18 +148,12 @@ def test_predict_IgnoredArgumentWarning_when_levels_is_list_and_different_last_i
                    columns = ['1']
                )
 
-    expected = (
-        expected.melt(var_name="level", value_name="pred", ignore_index=False)
-        .reset_index()
-        .sort_values(by=["index", "level"])
-        .set_index("index")
-        .rename_axis(None, axis=0)
-    )
+    expected = expected_df_to_long_format(expected)
 
     pd.testing.assert_frame_equal(predictions, expected)
 
 
-@pytest.fixture(params=[('1'  , [50., 51., 52., 53., 54.]), 
+@pytest.fixture(params=[('1', [50., 51., 52., 53., 54.]), 
                         (['2'], [100., 101., 102., 103., 104.]),
                         (['1', '2'], [[50., 100.],
                                       [51., 101.],
@@ -191,14 +180,7 @@ def expected_pandas_dataframe(request):
                       columns = levels_names,
                       index   = pd.RangeIndex(start=50, stop=55, step=1)
                   )
-
-    expected_df = (
-        expected_df.melt(var_name="level", value_name="pred", ignore_index=False)
-        .reset_index()
-        .sort_values(by=["index", "level"])
-        .set_index("index")
-        .rename_axis(None, axis=0)
-    )
+    expected_df = expected_df_to_long_format(expected_df)
 
     return levels, expected_df
 
@@ -250,13 +232,7 @@ def test_predict_output_when_regressor_is_LinearRegression():
     
     expected = [expected_1, expected_2, expected_3]
     for i, df in enumerate(expected):
-        expected[i] = (
-            df.melt(var_name="level", value_name="pred", ignore_index=False)
-            .reset_index()
-            .sort_values(by=["index", "level"])
-            .set_index("index")
-            .rename_axis(None, axis=0)
-        )
+        expected[i] = expected_df_to_long_format(df)
 
     pd.testing.assert_frame_equal(predictions_1, expected[0])
     pd.testing.assert_frame_equal(predictions_2, expected[1])
@@ -314,13 +290,7 @@ def test_predict_output_when_regressor_is_LinearRegression_with_last_window():
     
     expected = [expected_1, expected_2, expected_3, expected_4]
     for i, df in enumerate(expected):
-        expected[i] = (
-            df.melt(var_name="level", value_name="pred", ignore_index=False)
-            .reset_index()
-            .sort_values(by=["index", "level"])
-            .set_index("index")
-            .rename_axis(None, axis=0)
-        )
+        expected[i] = expected_df_to_long_format(df)
 
     pd.testing.assert_frame_equal(predictions_1, expected[0])
     pd.testing.assert_frame_equal(predictions_2, expected[1])
@@ -346,13 +316,7 @@ def test_predict_output_when_regressor_is_LinearRegression_with_transform_series
                    columns = ['1']
                )
 
-    expected = (
-        expected.melt(var_name="level", value_name="pred", ignore_index=False)
-        .reset_index()
-        .sort_values(by=["index", "level"])
-        .set_index("index")
-        .rename_axis(None, axis=0)
-    )
+    expected = expected_df_to_long_format(expected)
     
     pd.testing.assert_frame_equal(predictions, expected)
 
@@ -376,13 +340,7 @@ def test_predict_output_when_regressor_is_LinearRegression_with_transform_series
                    columns = ['1']
                )
 
-    expected = (
-        expected.melt(var_name="level", value_name="pred", ignore_index=False)
-        .reset_index()
-        .sort_values(by=["index", "level"])
-        .set_index("index")
-        .rename_axis(None, axis=0)
-    )
+    expected = expected_df_to_long_format(expected)
     
     pd.testing.assert_frame_equal(predictions, expected)
 
@@ -417,13 +375,7 @@ def test_predict_output_when_regressor_is_LinearRegression_with_transform_series
                    columns = ['1']
                )
 
-    expected = (
-        expected.melt(var_name="level", value_name="pred", ignore_index=False)
-        .reset_index()
-        .sort_values(by=["index", "level"])
-        .set_index("index")
-        .rename_axis(None, axis=0)
-    )
+    expected = expected_df_to_long_format(expected)
     
     pd.testing.assert_frame_equal(predictions, expected)
 
@@ -466,13 +418,7 @@ def test_predict_output_when_regressor_is_LinearRegression_with_transform_series
                    columns = ['1', '2']
                )
 
-    expected = (
-        expected.melt(var_name="level", value_name="pred", ignore_index=False)
-        .reset_index()
-        .sort_values(by=["index", "level"])
-        .set_index("index")
-        .rename_axis(None, axis=0)
-    )
+    expected = expected_df_to_long_format(expected)
     
     pd.testing.assert_frame_equal(predictions, expected)
 
@@ -530,13 +476,7 @@ def test_predict_output_when_categorical_features_native_implementation_HistGrad
                    columns = ['1', '2']
                )
 
-    expected = (
-        expected.melt(var_name="level", value_name="pred", ignore_index=False)
-        .reset_index()
-        .sort_values(by=["index", "level"])
-        .set_index("index")
-        .rename_axis(None, axis=0)
-    )
+    expected = expected_df_to_long_format(expected)
     
     pd.testing.assert_frame_equal(predictions, expected)
 
@@ -592,13 +532,7 @@ def test_predict_output_when_categorical_features_native_implementation_LGBMRegr
                    columns = ['1', '2']
                )
 
-    expected = (
-        expected.melt(var_name="level", value_name="pred", ignore_index=False)
-        .reset_index()
-        .sort_values(by=["index", "level"])
-        .set_index("index")
-        .rename_axis(None, axis=0)
-    )
+    expected = expected_df_to_long_format(expected)
 
     pd.testing.assert_frame_equal(predictions, expected)
 
@@ -661,13 +595,7 @@ def test_predict_output_when_categorical_features_native_implementation_LGBMRegr
                    columns = ['1', '2']
                )
 
-    expected = (
-        expected.melt(var_name="level", value_name="pred", ignore_index=False)
-        .reset_index()
-        .sort_values(by=["index", "level"])
-        .set_index("index")
-        .rename_axis(None, axis=0)
-    )
+    expected = expected_df_to_long_format(expected)
     
     pd.testing.assert_frame_equal(predictions, expected)
 
@@ -706,13 +634,7 @@ def test_predict_output_when_window_features():
                    columns = ['1', '2']
                )
 
-    expected = (
-        expected.melt(var_name="level", value_name="pred", ignore_index=False)
-        .reset_index()
-        .sort_values(by=["index", "level"])
-        .set_index("index")
-        .rename_axis(None, axis=0)
-    )
+    expected = expected_df_to_long_format(expected)
     
     pd.testing.assert_frame_equal(predictions, expected)
 
@@ -752,13 +674,7 @@ def test_predict_output_when_series_and_exog_dict():
         columns=["id_1000", "id_1001", "id_1003", "id_1004"],
     )
 
-    expected = (
-        expected.melt(var_name="level", value_name="pred", ignore_index=False)
-        .reset_index()
-        .sort_values(by=["index", "level"])
-        .set_index("index")
-        .rename_axis(None, axis=0)
-    )
+    expected = expected_df_to_long_format(expected)
 
     pd.testing.assert_frame_equal(predictions, expected)
 
@@ -795,8 +711,12 @@ def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differe
     forecaster_1.fit(series=data_diff.loc[:end_train], exog=exog_diff.loc[:end_train])
     predictions_diff = forecaster_1.predict(steps=steps, exog=exog_diff.loc[end_train + 1:])
     # Revert the differentiation
+    predictions_diff = pd.pivot_table(
+        predictions_diff, index=predictions_diff.index, columns="level", values="pred"
+    )
     last_value_train = series.loc[:end_train].iloc[[-1]]
     predictions_1 = pd.concat([last_value_train, predictions_diff]).cumsum()[1:]
+    predictions_1 = expected_df_to_long_format(predictions_1)
 
     forecaster_2 = ForecasterRecursiveMultiSeries(
         regressor=LinearRegression(), lags=15, transformer_series=None, differentiation=differentiation, 
@@ -872,18 +792,22 @@ def test_predict_output_when_regressor_is_LinearRegression_with_exog_differentia
     forecaster_1.fit(series=series_dict_diff, exog=exog_diff)
     predictions_diff = forecaster_1.predict(steps=steps, exog=exog_pred)
     # Revert the differentiation
+    predictions_diff = pd.pivot_table(
+        predictions_diff, index=predictions_diff.index, columns="level", values="pred"
+    )
     predictions_1 = pd.concat([df_last_value_train, predictions_diff]).cumsum()[1:]
     # Revert the scaling
     for k in scaler_dict.keys():
         predictions_1[k] = scaler_dict[k].inverse_transform(predictions_1[k].to_numpy().reshape(-1, 1))
-    
+    predictions_1 = expected_df_to_long_format(predictions_1)
+
     forecaster_2 = ForecasterRecursiveMultiSeries(
         regressor=LinearRegression(), lags=15, transformer_series=StandardScaler(), differentiation=differentiation
     )
     forecaster_2.fit(series=series_dict_datetime, exog=exog_dict_datetime)
     predictions_2 = forecaster_2.predict(steps=steps, exog=exog_pred)
 
-    pd.testing.assert_frame_equal(predictions_1.asfreq('D'), predictions_2)
+    pd.testing.assert_frame_equal(predictions_1, predictions_2)
 
 
 @pytest.mark.parametrize("differentiation", 
@@ -932,10 +856,14 @@ def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differe
     predictions_diff_2 = forecaster_1.predict(steps=steps, exog=exog_diff_2.loc[end_train:])
     
     # Revert the differentiation
+    predictions_diff_2 = pd.pivot_table(
+        predictions_diff_2, index=predictions_diff_2.index, columns="level", values="pred"
+    )
     last_value_train_diff = df_diff_1.loc[:end_train].iloc[[-1]]
     predictions_diff_1 = pd.concat([last_value_train_diff, predictions_diff_2]).cumsum()[1:]
     last_value_train = series_dt.loc[:end_train].iloc[[-1]]
     predictions_1 = pd.concat([last_value_train, predictions_diff_1]).cumsum()[1:]
+    predictions_1 = expected_df_to_long_format(predictions_1)
 
     forecaster_2 = ForecasterRecursiveMultiSeries(
         regressor=LinearRegression(), lags=15, transformer_series=None, differentiation=differentiation
@@ -990,13 +918,7 @@ def test_predict_output_when_series_and_exog_dict_encoding_None_unknown_level(le
         columns=["id_1000", "id_1001", "id_1003", "id_1004", "id_1005"],
     )
 
-    expected = (
-        expected.melt(var_name="level", value_name="pred", ignore_index=False)
-        .reset_index()
-        .sort_values(by=["index", "level"])
-        .set_index("index")
-        .rename_axis(None, axis=0)
-    )
+    expected = expected_df_to_long_format(expected)
 
     pd.testing.assert_frame_equal(predictions, expected)
 
@@ -1045,13 +967,7 @@ def test_predict_output_when_series_and_exog_dict_encoding_None_transformer_seri
         columns=["id_1000", "id_1001", "id_1003", "id_1004", "id_1005"],
     )
 
-    expected = (
-        expected.melt(var_name="level", value_name="pred", ignore_index=False)
-        .reset_index()
-        .sort_values(by=["index", "level"])
-        .set_index("index")
-        .rename_axis(None, axis=0)
-    )
+    expected = expected_df_to_long_format(expected)
 
     pd.testing.assert_frame_equal(predictions, expected)
 
@@ -1100,12 +1016,6 @@ def test_predict_output_when_series_and_exog_dict_unknown_level(levels):
         columns=["id_1000", "id_1001", "id_1003", "id_1004", "id_1005"],
     )
 
-    expected = (
-        expected.melt(var_name="level", value_name="pred", ignore_index=False)
-        .reset_index()
-        .sort_values(by=["index", "level"])
-        .set_index("index")
-        .rename_axis(None, axis=0)
-    )
+    expected = expected_df_to_long_format(expected)
 
     pd.testing.assert_frame_equal(predictions, expected)

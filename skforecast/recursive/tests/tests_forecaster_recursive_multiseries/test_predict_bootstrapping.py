@@ -20,6 +20,7 @@ from ....recursive import ForecasterRecursiveMultiSeries
 from .fixtures_forecaster_recursive_multiseries import series
 from .fixtures_forecaster_recursive_multiseries import exog
 from .fixtures_forecaster_recursive_multiseries import exog_predict
+from .fixtures_forecaster_recursive_multiseries import expected_df_to_long_format
 
 transformer_exog = ColumnTransformer(
                        [('scale', StandardScaler(), ['exog_1']),
@@ -36,8 +37,8 @@ def test_predict_bootstrapping_NotFittedError_when_fitted_is_False():
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=5)
 
     err_msg = re.escape(
-        ("This Forecaster instance is not fitted yet. Call `fit` with "
-         "appropriate arguments before using predict.")
+        "This Forecaster instance is not fitted yet. Call `fit` with "
+        "appropriate arguments before using predict."
     )
     with pytest.raises(NotFittedError, match = err_msg):
         forecaster.predict_bootstrapping(steps=1, levels=None)
@@ -53,10 +54,10 @@ def test_predict_bootstrapping_IgnoredArgumentWarning_when_not_available_self_la
     forecaster.fit(series=series, exog=exog['exog_1'], store_last_window=['1'])
 
     warn_msg = re.escape(
-        ("Levels {'2'} are excluded from prediction "
-         "since they were not stored in `last_window_` attribute "
-         "during training. If you don't want to retrain the "
-         "Forecaster, provide `last_window` as argument.")
+        "Levels {'2'} are excluded from prediction "
+        "since they were not stored in `last_window_` attribute "
+        "during training. If you don't want to retrain the "
+        "Forecaster, provide `last_window` as argument."
     )
     with pytest.warns(IgnoredArgumentWarning, match = warn_msg):
         results = forecaster.predict_bootstrapping(
@@ -67,15 +68,16 @@ def test_predict_bootstrapping_IgnoredArgumentWarning_when_not_available_self_la
                       use_in_sample_residuals = True
                   )
 
-    expected_1 = pd.DataFrame(
-                     data    = np.array([[0.48128438, 0.20172898, 0.07381993, 0.38819631]]),
-                     columns = [f"pred_boot_{i}" for i in range(4)],
-                     index   = pd.RangeIndex(start=50, stop=51)
-                 )
+    expected = {
+        '1': pd.DataFrame(
+                 data    = np.array([[0.48128438, 0.20172898, 0.07381993, 0.38819631]]),
+                 columns = [f"pred_boot_{i}" for i in range(4)],
+                 index   = pd.RangeIndex(start=50, stop=51)
+             )
+    }
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
 
-    expected = {'1': expected_1}
-
-    pd.testing.assert_frame_equal(results['1'], expected['1'])
+    pd.testing.assert_frame_equal(results, expected)
 
 
 @pytest.mark.parametrize("store_last_window",
@@ -90,9 +92,9 @@ def test_predict_bootstrapping_ValueError_when_not_available_self_last_window_fo
     forecaster.fit(series=series, store_last_window=store_last_window)
 
     err_msg = re.escape(
-        ("No series to predict. None of the series {'2'} are present in "
-         "`last_window_` attribute. Provide `last_window` as argument "
-         "in predict method.")
+        "No series to predict. None of the series {'2'} are present in "
+        "`last_window_` attribute. Provide `last_window` as argument "
+        "in predict method."
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster.predict_bootstrapping(steps=5, levels=['2'], last_window=None)
@@ -120,15 +122,16 @@ def test_predict_bootstrapping_IgnoredArgumentWarning_when_levels_is_list_and_di
     }
     exog_2_pred['1'].index = pd.date_range(start='2020-02-20', periods=50)
 
-    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3,
-                                              transformer_series=None)
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=3, transformer_series=None
+    )
     forecaster.fit(series=series_2, exog=exog_2)
 
     warn_msg = re.escape(
-        ("Only series whose last window ends at the same index "
-         "can be predicted together. Series that do not reach the "
-         "maximum index, '2020-02-19 00:00:00', are excluded "
-         "from prediction: {'2'}.")
+        "Only series whose last window ends at the same index "
+        "can be predicted together. Series that do not reach the "
+        "maximum index, '2020-02-19 00:00:00', are excluded "
+        "from prediction: {'2'}."
     )
     with pytest.warns(IgnoredArgumentWarning, match = warn_msg):
         results = forecaster.predict_bootstrapping(
@@ -143,12 +146,12 @@ def test_predict_bootstrapping_IgnoredArgumentWarning_when_levels_is_list_and_di
         '1': pd.DataFrame(
                  data    = np.array([[0.47931483, 0.21880114, 0.10692630, 0.42510201]]),
                  columns = [f"pred_boot_{i}" for i in range(4)],
-                 index   = pd.date_range(start='2020-02-20', periods=1)
+                 index   = pd.date_range(start='2020-02-20', periods=1, freq=None)
              )
     }
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
 
-    for k in results.keys():
-        pd.testing.assert_frame_equal(results[k], expected[k])
+    pd.testing.assert_frame_equal(results, expected)
 
 
 def test_predict_bootstrapping_UnknownLevelWarning_when_not_in_sample_residuals_for_level():
@@ -178,10 +181,10 @@ def test_predict_bootstrapping_UnknownLevelWarning_when_not_in_sample_residuals_
                   )
 
     warn_msg = re.escape(
-        ("`levels` {'3'} are not present in `forecaster.in_sample_residuals_`, "
-         "most likely because they were not present in the training data. "
-         "A random sample of the residuals from other levels will be used. "
-         "This can lead to inaccurate intervals for the unknown levels.")
+        "`levels` {'3'} are not present in `forecaster.in_sample_residuals_`, "
+        "most likely because they were not present in the training data. "
+        "A random sample of the residuals from other levels will be used. "
+        "This can lead to inaccurate intervals for the unknown levels."
     )
     with pytest.warns(UnknownLevelWarning, match = warn_msg):
         results = forecaster.predict_bootstrapping(
@@ -209,9 +212,9 @@ def test_predict_bootstrapping_UnknownLevelWarning_when_not_in_sample_residuals_
                  index   = pd.RangeIndex(50, 51)
              )
     }
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
 
-    for key in results.keys():
-        pd.testing.assert_frame_equal(results[key], expected[key])
+    pd.testing.assert_frame_equal(results, expected)
 
 
 def test_predict_bootstrapping_encoding_None_unknown_level():
@@ -251,9 +254,9 @@ def test_predict_bootstrapping_encoding_None_unknown_level():
                  index   = pd.RangeIndex(50, 51)
              )
     }
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
 
-    for key in results.keys():
-        pd.testing.assert_frame_equal(results[key], expected[key])
+    pd.testing.assert_frame_equal(results, expected)
 
 
 def test_predict_bootstrapping_encoding_None_unknown_level_differentiation():
@@ -293,9 +296,9 @@ def test_predict_bootstrapping_encoding_None_unknown_level_differentiation():
                  index   = pd.RangeIndex(50, 51)
              )
     }
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
 
-    for key in results.keys():
-        pd.testing.assert_frame_equal(results[key], expected[key])
+    pd.testing.assert_frame_equal(results, expected)
 
 
 def test_predict_bootstrapping_ValueError_when_out_sample_residuals_is_None():
@@ -338,8 +341,8 @@ def test_predict_bootstrapping_UnknownLevelWarning_out_sample_residuals_with_enc
         '2': np.array([0, 0, 0, 0, 0])
     }
     warn_msg = re.escape(
-        ("As `encoding` is set to `None`, no distinction between levels "
-         "is made. All residuals are stored in the '_unknown_level' key.")
+        "As `encoding` is set to `None`, no distinction between levels "
+        "is made. All residuals are stored in the '_unknown_level' key."
     )
     with pytest.warns(UnknownLevelWarning, match = warn_msg):
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
@@ -371,9 +374,9 @@ def test_predict_bootstrapping_UnknownLevelWarning_out_sample_residuals_with_enc
               index   = pd.RangeIndex(50, 51)
           )
     }
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
 
-    for key in results.keys():
-        pd.testing.assert_frame_equal(results[key], expected[key])
+    pd.testing.assert_frame_equal(results, expected)
 
 
 @pytest.mark.parametrize("transformer_series", 
@@ -421,8 +424,8 @@ def test_predict_bootstrapping_ValueError_when_level_out_sample_residuals_value_
     }
 
     err_msg = re.escape(
-        ("forecaster residuals for level '2' contains `None` "
-         "or `NaNs` values. Check `forecaster.out_sample_residuals_`.")
+        "forecaster residuals for level '2' contains `None` "
+        "or `NaNs` values. Check `forecaster.out_sample_residuals_`."
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster.predict_bootstrapping(steps=3, use_in_sample_residuals=False)
@@ -455,9 +458,9 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_s
                  )
 
     expected = {'1': expected_1, '2': expected_2}
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
 
-    for key in results.keys():
-        pd.testing.assert_frame_equal(results[key], expected[key])
+    pd.testing.assert_frame_equal(results, expected)
     
     
 def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_steps_is_2_in_sample_residuals_is_True():
@@ -489,9 +492,9 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_s
                  )    
 
     expected = {'1': expected_1, '2': expected_2}
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
 
-    for key in results.keys():
-        pd.testing.assert_frame_equal(results[key], expected[key])
+    pd.testing.assert_frame_equal(results, expected)
     
     
 def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_steps_is_1_in_sample_residuals_is_False():
@@ -523,9 +526,9 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_s
                  )
 
     expected = {'1': expected_1, '2': expected_2}
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
 
-    for key in results.keys():
-        pd.testing.assert_frame_equal(results[key], expected[key])
+    pd.testing.assert_frame_equal(results, expected)
     
     
 def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_steps_is_2_in_sample_residuals_is_False():
@@ -558,9 +561,9 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_s
                  )    
 
     expected = {'1': expected_1, '2': expected_2}
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
 
-    for key in results.keys():
-        pd.testing.assert_frame_equal(results[key], expected[key])
+    pd.testing.assert_frame_equal(results, expected)
 
 
 def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_True_exog_and_transformer_fixed_to_zero():
@@ -600,9 +603,9 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_
                  )
 
     expected = {'1': expected_1, '2': expected_2}
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
 
-    for key in results.keys():
-        pd.testing.assert_frame_equal(results[key], expected[key])
+    pd.testing.assert_frame_equal(results, expected)
 
 
 def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_True_exog_and_transformer():
@@ -639,9 +642,9 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_
                  )
 
     expected = {'1': expected_1, '2': expected_2}
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
 
-    for key in results.keys():
-        pd.testing.assert_frame_equal(results[key], expected[key])
+    pd.testing.assert_frame_equal(results, expected)
 
 
 def test_predict_bootstrapping_output_when_window_features():
@@ -709,9 +712,9 @@ def test_predict_bootstrapping_output_when_window_features():
                  )
 
     expected = {'1': expected_1, '2': expected_2}
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
 
-    for key in results.keys():
-        pd.testing.assert_frame_equal(results[key], expected[key])
+    pd.testing.assert_frame_equal(results, expected)
 
 
 @pytest.mark.parametrize("differentiation", 
@@ -762,6 +765,6 @@ def test_predict_bootstrapping_output_when_differentiation(differentiation):
                  )
 
     expected = {'1': expected_1, '2': expected_2}
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
 
-    for key in results.keys():
-        pd.testing.assert_frame_equal(results[key], expected[key])
+    pd.testing.assert_frame_equal(results, expected)

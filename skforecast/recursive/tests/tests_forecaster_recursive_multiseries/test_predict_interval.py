@@ -18,6 +18,8 @@ from ....recursive import ForecasterRecursiveMultiSeries
 from .fixtures_forecaster_recursive_multiseries import series
 from .fixtures_forecaster_recursive_multiseries import exog
 from .fixtures_forecaster_recursive_multiseries import exog_predict
+from .fixtures_forecaster_recursive_multiseries import expected_df_to_long_format
+
 THIS_DIR = Path(__file__).parent
 series_dict = joblib.load(THIS_DIR/'fixture_sample_multi_series.joblib')
 exog_dict = joblib.load(THIS_DIR/'fixture_sample_multi_series_exog.joblib')
@@ -58,6 +60,7 @@ def expected_pandas_dataframe(request):
                       columns = np.concatenate(column_names),
                       index   = pd.RangeIndex(start=10, stop=11, step=1)
                   )
+    expected_df = expected_df_to_long_format(expected_df, method='interval')
 
     return levels, expected_df
 
@@ -75,6 +78,7 @@ def test_predict_output_when_regressor_is_LinearRegression_steps_is_1_in_sample_
 
     predictions = forecaster.predict_interval(steps=1, levels=expected_pandas_dataframe[0], 
                                               use_in_sample_residuals=True, suppress_warnings=True)
+    
     expected = expected_pandas_dataframe[1]
 
     pd.testing.assert_frame_equal(predictions, expected)
@@ -112,9 +116,13 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_1_
                  )
     results_3 = forecaster.predict_interval(steps=1, levels=None, use_in_sample_residuals=True)
 
-    pd.testing.assert_frame_equal(results_1, expected_1)
-    pd.testing.assert_frame_equal(results_2, expected_2)
-    pd.testing.assert_frame_equal(results_3, expected_3)
+    expected = [expected_1, expected_2, expected_3]
+    for i, df in enumerate(expected):
+        expected[i] = expected_df_to_long_format(df, method='interval')
+
+    pd.testing.assert_frame_equal(results_1, expected[0])
+    pd.testing.assert_frame_equal(results_2, expected[1])
+    pd.testing.assert_frame_equal(results_3, expected[2])
 
 
 @pytest.fixture(params=[('1', np.array([[10., 20., 20.],
@@ -148,6 +156,7 @@ def expected_pandas_dataframe_2(request):
                       columns = np.concatenate(column_names),
                       index   = pd.RangeIndex(start=10, stop=12, step=1)
                   )
+    expected_df = expected_df_to_long_format(expected_df, method='interval')
 
     return levels, expected_df
 
@@ -209,9 +218,13 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_2_
                  )
     results_3 = forecaster.predict_interval(steps=2, levels=['1', '2'], use_in_sample_residuals=True)
 
-    pd.testing.assert_frame_equal(results_1, expected_1)
-    pd.testing.assert_frame_equal(results_2, expected_2)
-    pd.testing.assert_frame_equal(results_3, expected_3)
+    expected = [expected_1, expected_2, expected_3]
+    for i, df in enumerate(expected):
+        expected[i] = expected_df_to_long_format(df, method='interval')
+
+    pd.testing.assert_frame_equal(results_1, expected[0])
+    pd.testing.assert_frame_equal(results_2, expected[1])
+    pd.testing.assert_frame_equal(results_3, expected[2])
 
 
 def test_predict_output_when_regressor_is_LinearRegression_steps_is_1_in_sample_residuals_is_False_with_fixture(expected_pandas_dataframe):
@@ -277,6 +290,7 @@ def test_predict_interval_output_when_regressor_is_LinearRegression_with_transfo
                    index = pd.RangeIndex(start=50, stop=55, step=1),
                    columns = ['1', '1_lower_bound', '1_upper_bound']
                )
+    expected = expected_df_to_long_format(expected, method='interval')
     
     pd.testing.assert_frame_equal(predictions, expected)
 
@@ -303,6 +317,7 @@ def test_predict_interval_output_when_regressor_is_LinearRegression_with_transfo
                    index = pd.RangeIndex(start=50, stop=55, step=1),
                    columns = ['1', '1_lower_bound', '1_upper_bound']
                )
+    expected = expected_df_to_long_format(expected, method='interval')
     
     pd.testing.assert_frame_equal(predictions, expected)
 
@@ -338,6 +353,7 @@ def test_predict_interval_output_when_regressor_is_LinearRegression_with_transfo
                    index = pd.RangeIndex(start=50, stop=55, step=1),
                    columns = ['1', '1_lower_bound', '1_upper_bound', '2', '2_lower_bound', '2_upper_bound']
                )
+    expected = expected_df_to_long_format(expected, method='interval')
     
     pd.testing.assert_frame_equal(predictions, expected)
 
@@ -397,6 +413,7 @@ def test_predict_interval_output_when_series_and_exog_dict():
             'id_1004_upper_bound'
         ]
     )
+    expected = expected_df_to_long_format(expected, method='interval')
 
     pd.testing.assert_frame_equal(predictions, expected)
 
@@ -473,6 +490,7 @@ def test_predict_interval_output_when_series_and_exog_dict_unknown_level():
             'id_1005_upper_bound'
         ]
     )
+    expected = expected_df_to_long_format(expected, method='interval')
 
     pd.testing.assert_frame_equal(predictions, expected)
 
@@ -550,5 +568,6 @@ def test_predict_interval_output_when_series_and_exog_dict_encoding_None_unknown
             'id_1005_upper_bound'
         ]
     )
+    expected = expected_df_to_long_format(expected, method='interval')
 
     pd.testing.assert_frame_equal(predictions, expected)
