@@ -2360,7 +2360,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         Returns
         -------
         boot_predictions : pandas DataFrame
-            Long format DataFrame with the bootstrapping predictions. The columns
+            Long-format DataFrame with the bootstrapping predictions. The columns
             are `level`, `pred_boot_0`, `pred_boot_1`, ..., `pred_boot_n_boot`.
 
         Notes
@@ -2518,7 +2518,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         Returns
         -------
         predictions : pandas DataFrame
-            Long format DataFrame with the predictions and the lower and upper
+            Long-format DataFrame with the predictions and the lower and upper
             bounds of the estimated interval. The columns are `level`, `pred`,
             `lower_bound`, `upper_bound`.
 
@@ -2624,7 +2624,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         Returns
         -------
         predictions : pandas DataFrame
-            Long format DataFrame with the quantiles predicted by the forecaster.
+            Long-format DataFrame with the quantiles predicted by the forecaster.
             For example, if `quantiles = [0.05, 0.5, 0.95]`, the columns are
             `level`, `q_0.05`, `q_0.5`, `q_0.95`.
 
@@ -2717,7 +2717,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         Returns
         -------
         predictions : pandas DataFrame
-            Long format DataFrame with the parameters of the fitted distribution
+            Long-format DataFrame with the parameters of the fitted distribution
             for each step. The columns are `level`, `param_0`, `param_1`, ..., 
             `param_n`, where `param_i` are the parameters of the distribution.
 

@@ -605,14 +605,23 @@ def _backtesting_forecaster_multiseries(
     -------
     metrics_levels : pandas DataFrame
         Value(s) of the metric(s). Index are the levels and columns the metrics.
-    backtest_predictions : pandas Dataframe
-        Value of predictions and their estimated interval if `interval` is not `None`. 
-        If there is more than one level, this structure will be repeated for each of them.
+    backtest_predictions : pandas DataFrame
+        Long-format DataFrame containing the predicted values for each series. The 
+        DataFrame includes the following columns:
+        
+        - `level`: Identifier for the time series or level being predicted.
+        - `pred`: Predicted values for the corresponding series and time steps.
 
-        - column pred: predictions.
-        - column lower_bound: lower bound of the interval.
-        - column upper_bound: upper bound of the interval.
-    
+        If `interval` is not `None`, additional columns are included depending on the method:
+        
+        - For `list` or `tuple` of 2 elements: Columns `lower_bound` and `upper_bound`.
+        - For `list` or `tuple` with multiple percentiles: One column per percentile 
+        (e.g., `p_10`, `p_50`, `p_90`).
+        - For `'bootstrapping'`: One column per bootstrapping iteration 
+        (e.g., `pred_boot_0`, `pred_boot_1`, ..., `pred_boot_n`).
+        - For `scipy.stats` distribution objects: One column for each estimated 
+        parameter of the distribution (e.g., `loc`, `scale`).
+
     """
 
     set_skforecast_warnings(suppress_warnings, action='ignore')
@@ -840,27 +849,39 @@ def _backtesting_forecaster_multiseries(
             ] + ["loc", "scale"]
             cols_backtest_predictions.extend(param_names)
     
+    backtest_predictions = (
+        backtest_predictions
+        .rename_axis('idx', axis=0)
+        .set_index('level', append=True)
+    )
     for level in backtest_levels:
         valid_index = series[level][series[level].notna()].index
-        no_valid_index = backtest_predictions.index.difference(valid_index, sort=False)
+        no_valid_index = backtest_predictions.index.get_level_values("idx").difference(
+            valid_index, sort=False
+        )
+        
+        # no_valid_index = backtest_predictions.index.difference(valid_index, sort=False)
 
-        mask_level = backtest_predictions.loc[no_valid_index, 'level'] == level
+        # mask_level = backtest_predictions.loc[no_valid_index, 'level'] == level
+        # backtest_predictions.loc[
+        #     no_valid_index, cols_backtest_predictions
+        # ][mask_level] = np.nan
+
         backtest_predictions.loc[
-            no_valid_index, cols_backtest_predictions
-        ][mask_level] = np.nan
+            (backtest_predictions.index.get_level_values('idx').isin(no_valid_index)) & 
+            (backtest_predictions.index.get_level_values('level') == level), 
+            'pred'
+        ] = np.nan
 
-    # TODO: Refactor to use a long format DataFrame as predictions
-    backtest_predictions_metric = pd.pivot_table(
-        data    = backtest_predictions[['level', 'pred']],
-        index   = backtest_predictions.index,
-        columns = 'level'
+    backtest_predictions = (
+        backtest_predictions
+        .reset_index('level')
+        .rename_axis(None, axis=0)
     )
-    backtest_predictions_metric.columns = backtest_predictions_metric.columns.droplevel(0)
-    
-    # TODO: Maybe include variable backtest_levels to know real levels in preds
+
     metrics_levels = _calculate_metrics_backtesting_multiseries(
         series                = series,
-        predictions           = backtest_predictions_metric,
+        predictions           = backtest_predictions[['level', 'pred']],
         folds                 = folds,
         span_index            = span_index,
         window_size           = forecaster.window_size,
@@ -975,12 +996,21 @@ def backtesting_forecaster_multiseries(
     metrics_levels : pandas DataFrame
         Value(s) of the metric(s). Index are the levels and columns the metrics.
     backtest_predictions : pandas DataFrame
-        Value of predictions and their estimated interval if `interval` is not `None`.
-        If there is more than one level, this structure will be repeated for each of them.
+        Long-format DataFrame containing the predicted values for each series. The 
+        DataFrame includes the following columns:
+        
+        - `level`: Identifier for the time series or level being predicted.
+        - `pred`: Predicted values for the corresponding series and time steps.
 
-        - column pred: predictions.
-        - column lower_bound: lower bound of the interval.
-        - column upper_bound: upper bound of the interval.
+        If `interval` is not `None`, additional columns are included depending on the method:
+        
+        - For `list` or `tuple` of 2 elements: Columns `lower_bound` and `upper_bound`.
+        - For `list` or `tuple` with multiple percentiles: One column per percentile 
+        (e.g., `p_10`, `p_50`, `p_90`).
+        - For `'bootstrapping'`: One column per bootstrapping iteration 
+        (e.g., `pred_boot_0`, `pred_boot_1`, ..., `pred_boot_n`).
+        - For `scipy.stats` distribution objects: One column for each estimated 
+        parameter of the distribution (e.g., `loc`, `scale`).
     
     """
 
@@ -1103,7 +1133,7 @@ def _backtesting_sarimax(
     metric_values : pandas DataFrame
         Value(s) of the metric(s).
     backtest_predictions : pandas DataFrame
-        Value of predictions and their estimated interval if `interval` is not `None`.
+        Predicted values and their estimated interval if `interval` is not `None`.
 
         - column pred: predictions.
         - column lower_bound: lower bound of the interval.
@@ -1141,9 +1171,9 @@ def _backtesting_sarimax(
                      )
         elif not isinstance(refit, bool) and refit != 1 and n_jobs != 1:
             warnings.warn(
-                ("If `refit` is an integer other than 1 (intermittent refit). `n_jobs` "
-                 "is set to 1 to avoid unexpected results during parallelization."),
-                 IgnoredArgumentWarning
+                "If `refit` is an integer other than 1 (intermittent refit). `n_jobs` "
+                "is set to 1 to avoid unexpected results during parallelization.",
+                IgnoredArgumentWarning
             )
             n_jobs = 1
         else:
@@ -1372,7 +1402,7 @@ def backtesting_sarimax(
     metric_values : pandas DataFrame
         Value(s) of the metric(s).
     backtest_predictions : pandas DataFrame
-        Value of predictions and their estimated interval if `interval` is not `None`.
+        Predicted values and their estimated interval if `interval` is not `None`.
 
         - column pred: predictions.
         - column lower_bound: lower bound of the interval.
