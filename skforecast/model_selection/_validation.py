@@ -855,21 +855,13 @@ def _backtesting_forecaster_multiseries(
         .set_index('level', append=True)
     )
     for level in backtest_levels:
-        valid_index = series[level][series[level].notna()].index
+        valid_index = series[level].dropna().index
         no_valid_index = backtest_predictions.index.get_level_values("idx").difference(
             valid_index, sort=False
         )
-        
-        # no_valid_index = backtest_predictions.index.difference(valid_index, sort=False)
-
-        # mask_level = backtest_predictions.loc[no_valid_index, 'level'] == level
-        # backtest_predictions.loc[
-        #     no_valid_index, cols_backtest_predictions
-        # ][mask_level] = np.nan
-
         backtest_predictions.loc[
-            (backtest_predictions.index.get_level_values('idx').isin(no_valid_index)) & 
-            (backtest_predictions.index.get_level_values('level') == level), 
+            (backtest_predictions.index.get_level_values('level') == level) &
+            (backtest_predictions.index.get_level_values('idx').isin(no_valid_index)), 
             'pred'
         ] = np.nan
 
