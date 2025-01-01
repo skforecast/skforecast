@@ -1588,6 +1588,7 @@ def exog_to_direct_numpy(
 def date_to_index_position(
     index: pd.Index,
     date_input: int | str | pd.Timestamp,
+    method: str = 'predict',
     date_literal: str = 'steps',
     kwargs_pd_to_datetime: dict = {}
 ) -> int:
@@ -1605,6 +1606,11 @@ def date_to_index_position(
         
         + If int, returns the same integer.
         + If str or pandas Timestamp, it is converted and expanded into the index.
+    method : str, default 'predict'
+        Can be 'validate' or 'predict'. 
+        
+        + If 'validate', the date must be within the index range.
+        + If 'predict', the date must be later than the last date in the index.
     date_literal : str, default 'steps'
         Variable name used in error messages.
     kwargs_pd_to_datetime : dict, default {}
@@ -1626,16 +1632,31 @@ def date_to_index_position(
         
         target_date = pd.to_datetime(date_input, **kwargs_pd_to_datetime)
         last_date = pd.to_datetime(index[-1])
-        if target_date <= last_date:
-            raise ValueError(
-                "The provided date must be later than the last date in the index."
-            )
-        
-        steps_diff = pd.date_range(start=last_date, end=target_date, freq=index.freq)
-        date_position = len(steps_diff) - 1
+        if method == 'predict':
+            if target_date <= last_date:
+                raise ValueError(
+                    "The provided date must be later than the last date in the index."
+                )
+            steps_diff = pd.date_range(start=last_date, end=target_date, freq=index.freq)
+
+        elif method == 'validate':
+            start_date = pd.to_datetime(index[0])
+            if target_date < start_date or target_date > last_date:
+                raise ValueError(
+                    "The provided date must be later than the first date in the index "
+                    "and earlier than the last date."
+                )
+            steps_diff = pd.date_range(start=start_date, end=target_date, freq=index.freq)
+            
+        date_position = len(steps_diff)-1
     
     elif isinstance(date_input, (int, np.integer)):
+        if method == 'validate' and (date_input < 0 or date_input >= len(index)):
+            raise ValueError(
+                f"The provided integer must be between 0 and {len(index)-1}."
+            )
         date_position = date_input
+        
     else:
         raise TypeError(
             f"`{date_literal}` must be an integer, string, or pandas Timestamp."
