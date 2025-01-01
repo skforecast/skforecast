@@ -166,8 +166,8 @@ class BaseFold():
                 )
             if not isinstance(initial_train_size, (int, np.integer, str, pd.Timestamp, type(None))):
                 raise ValueError(
-                    f"`initial_train_size` must be an integer, a date string, "
-                    f"a pandas Timestamp, or None. Got {initial_train_size}."
+                    f"`initial_train_size` must be an integer greater than 0, a date "
+                    f"string, a pandas Timestamp, or None. Got {initial_train_size}."
                 )
             if isinstance(initial_train_size, (int, np.integer)) and initial_train_size < 1:
                 raise ValueError(
@@ -175,14 +175,7 @@ class BaseFold():
                     f"a date string, a pandas Timestamp, or None. Got {initial_train_size}."
                 )
             if isinstance(initial_train_size, str):
-                try:
-                    pd.to_datetime(initial_train_size)
-                except ValueError:
-                    raise ValueError(
-                        f"`initial_train_size` must be a valid date string accepted "
-                        f"by pandas to_datetime, an integer, a pandas "
-                        f"Timestamp, or None. Got {initial_train_size}."
-                    )
+                pd.to_datetime(initial_train_size)
             if not isinstance(refit, (bool, int, np.integer)):
                 raise TypeError(
                     f"`refit` must be a boolean or an integer equal or greater than 0. "
@@ -228,8 +221,8 @@ class BaseFold():
         if cv_name == "OneStepAheadFold":
             if not isinstance(initial_train_size, (int, np.integer, str, pd.Timestamp)):
                 raise ValueError(
-                    f"`initial_train_size` must be an integer, a date string, or "
-                    f"a pandas Timestamp. Got {initial_train_size}."
+                    f"`initial_train_size` must be an integer greater than 0 a date "
+                    f"string, or a pandas Timestamp. Got {initial_train_size}."
                 )
             if isinstance(initial_train_size, (int, np.integer)) and initial_train_size < 1:
                 raise ValueError(
@@ -237,14 +230,7 @@ class BaseFold():
                     f"a date string, or a pandas Timestamp. Got {initial_train_size}."
                 )
             if isinstance(initial_train_size, str):
-                try:
-                    pd.to_datetime(initial_train_size)
-                except ValueError:
-                    raise ValueError(
-                        f"`initial_train_size` must be a valid date string accepted "
-                        f"by pandas to_datetime, an integer, or a pandas Timestamp. "
-                        f"Got {initial_train_size}."
-                    )
+                pd.to_datetime(initial_train_size)
         
         if (
             not isinstance(window_size, (int, np.integer, pd.DateOffset, type(None)))
