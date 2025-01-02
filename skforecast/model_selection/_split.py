@@ -221,7 +221,7 @@ class BaseFold():
         if cv_name == "OneStepAheadFold":
             if not isinstance(initial_train_size, (int, np.integer, str, pd.Timestamp)):
                 raise ValueError(
-                    f"`initial_train_size` must be an integer greater than 0 a date "
+                    f"`initial_train_size` must be an integer greater than 0, a date "
                     f"string, or a pandas Timestamp. Got {initial_train_size}."
                 )
             if isinstance(initial_train_size, (int, np.integer)) and initial_train_size < 1:

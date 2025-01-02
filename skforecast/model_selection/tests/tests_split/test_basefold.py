@@ -65,9 +65,7 @@ def test_basefold_validate_params_raise_invalid_initial_train_size_TimeSeriesFol
     # Test invalid string
     params["initial_train_size"] = "invalid"
     msg = (
-        "`initial_train_size` must be a valid date string accepted "
-        "by pandas to_datetime, an integer, a pandas "
-        f"Timestamp, or None. Got {params['initial_train_size']}."
+        "Unknown datetime string format, unable to parse: invalid, at position 0"
     )
     with pytest.raises(ValueError, match=msg):
         cv._validate_params(cv_name="TimeSeriesFold", **params)
@@ -84,7 +82,7 @@ def test_basefold_validate_params_raise_invalid_initial_train_size_TimeSeriesFol
     # Test invalid type
     params["initial_train_size"] = 1.0
     msg = (
-        "`initial_train_size` must be an integer, a date string, "
+        "`initial_train_size` must be an integer greater than 0, a date string, "
         f"a pandas Timestamp, or None. Got {params['initial_train_size']}."
     )
     with pytest.raises(ValueError, match=msg):
@@ -217,9 +215,7 @@ def test_basefold_validate_params_raise_invalid_initial_train_size_OneStepAheadF
     # Test invalid string
     params["initial_train_size"] = "invalid"
     msg = (
-        "`initial_train_size` must be a valid date string accepted "
-        "by pandas to_datetime, an integer, or a pandas Timestamp. "
-        f"Got {params['initial_train_size']}."
+        "Unknown datetime string format, unable to parse: invalid, at position 0"
     )
     with pytest.raises(ValueError, match=msg):
         cv._validate_params(cv_name="OneStepAheadFold", **params)
@@ -236,7 +232,7 @@ def test_basefold_validate_params_raise_invalid_initial_train_size_OneStepAheadF
     # Test invalid type
     params["initial_train_size"] = 1.5
     msg = (
-        "`initial_train_size` must be an integer, a date string, or "
+        "`initial_train_size` must be an integer greater than 0, a date string, or "
         f"a pandas Timestamp. Got {params['initial_train_size']}."
     )
     with pytest.raises(ValueError, match=msg):
