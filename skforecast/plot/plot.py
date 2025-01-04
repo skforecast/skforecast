@@ -209,9 +209,9 @@ def set_dark_theme(
 
     plt.style.use('fivethirtyeight')
     dark_style = {
-        'figure.facecolor': '#212946',
-        'axes.facecolor': '#212946',
-        'savefig.facecolor': '#212946',
+        'figure.facecolor': '#001633', # #212946
+        'axes.facecolor': '#001633',
+        'savefig.facecolor': '#001633',
         'axes.grid': True,
         'axes.grid.which': 'both',
         'axes.spines.left': False,
