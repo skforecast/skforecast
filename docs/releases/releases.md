@@ -41,14 +41,14 @@ The main changes in this release are:
 
 + Argument `dropna` in <code>[exog_long_to_dict]</code> function has been renamed to `drop_all_nan_cols`.
 
++ `set_dark_theme` background color changed to `#001633` to improve readability.
+
 
 **Fixed**
 
 + Now <code>[ForecasterRecursiveMultiSeries]</code> can be saved correctly when `weight_func` is a `dict` with `None` for any series. It now use the method `_weight_func_all_1` to create the weight function for these series.
 
 + Fix `transform_numpy` function in the <code>[utils]</code> module to work when transformers output in `scikit-learn` is `set_output(transform='pandas')`.
-
-+ `set_dark_theme` background color changed to `#001633` to improve readability.
 
 
 ## 0.14.0 <small>Nov 11, 2024</small> { id="0.14.0" }
