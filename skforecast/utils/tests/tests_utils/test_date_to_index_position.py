@@ -80,10 +80,10 @@ def test_output_date_to_index_position_when_date_input_is_string_date_with_kwarg
     assert results == expected
 
 
-def test_ValueError_date_to_index_position_when_date_is_out_of_range_and_method_is_validate():
+def test_ValueError_date_to_index_position_when_date_is_out_of_range_and_method_is_validation():
     """
     Test ValueError is raised when date_input is out of the index range
-    and method is 'validate'.
+    and method is 'validation'.
     """
     index = pd.date_range(start='1990-01-01', periods=3, freq='D')
     
@@ -95,56 +95,58 @@ def test_ValueError_date_to_index_position_when_date_is_out_of_range_and_method_
         date_to_index_position(
             index=index,
             date_input='1990-01-10',
-            method='validate'
+            method='validation'
         )
 
 
-def test_output_date_to_index_position_when_date_in_range_and_method_is_validate():
+def test_output_date_to_index_position_when_date_in_range_and_method_is_validation():
     """
     Test correct position is returned when date_input is within the index range
-    and method is 'validate'.
+    and method is 'validation'.
     """
     index = pd.date_range(start='1990-01-01', periods=5, freq='D')
     results = date_to_index_position(
-        index=index,
-        date_input='1990-01-03',
-        method='validate'
-    )
+                  index      = index,
+                  date_input = '1990-01-03',
+                  method     = 'validation'
+              )
 
     expected = 2  # Position within the range
 
     assert results == expected
 
 
-def test_output_date_to_index_position_when_date_is_first_date_and_method_is_validate():
+def test_output_date_to_index_position_when_date_is_first_date_and_method_is_validation():
     """
     Test it returns the correct position when date_input is exactly the first date
-    in the index and method is 'validate'.
+    in the index and method is 'validation'.
     """
     index = pd.date_range(start='1990-01-01', periods=5, freq='D')
-    results = date_to_index_position(index=index, date_input='1990-01-01', method='validate')
+    results = date_to_index_position(
+        index=index, date_input='1990-01-01', method='validation'
+    )
 
     assert results == 0
 
 
-def test_ValueError_date_to_index_position_when_integer_is_negative_and_method_is_validate():
+def test_ValueError_date_to_index_position_when_integer_is_negative_and_method_is_validation():
     """
-    Test ValueError is raised when integer input is negative and method is 'validate'.
+    Test ValueError is raised when integer input is negative and method is 'validation'.
     """
     index = pd.date_range(start='1990-01-01', periods=3, freq='D')
 
-    err_msg = f"The provided integer must be between 0 and {len(index)-1}."
+    err_msg = f"The provided integer must be between 0 and {len(index) - 1}."
     with pytest.raises(ValueError, match=err_msg):
-        date_to_index_position(index=index, date_input=-1, method='validate')
+        date_to_index_position(index=index, date_input=-1, method='validation')
 
 
-def test_ValueError_date_to_index_position_when_integer_is_bigger_than_index_range_and_method_is_validate():
+def test_ValueError_date_to_index_position_when_integer_is_bigger_than_index_range_and_method_is_validation():
     """
     Test ValueError is raised when integer input is bigger than the index range
-    and method is 'validate'.
+    and method is 'validation'.
     """
     index = pd.date_range(start='1990-01-01', periods=3, freq='D')
 
-    err_msg = f"The provided integer must be between 0 and {len(index)-1}."
+    err_msg = f"The provided integer must be between 0 and {len(index) - 1}."
     with pytest.raises(ValueError, match=err_msg):
-        date_to_index_position(index=index, date_input=10, method='validate')
+        date_to_index_position(index=index, date_input=10, method='validation')

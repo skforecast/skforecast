@@ -1588,7 +1588,7 @@ def exog_to_direct_numpy(
 def date_to_index_position(
     index: pd.Index,
     date_input: int | str | pd.Timestamp,
-    method: str = 'predict',
+    method: str = 'prediction',
     date_literal: str = 'steps',
     kwargs_pd_to_datetime: dict = {}
 ) -> int:
@@ -1606,11 +1606,11 @@ def date_to_index_position(
         
         + If int, returns the same integer.
         + If str or pandas Timestamp, it is converted and expanded into the index.
-    method : str, default 'predict'
-        Can be 'validate' or 'predict'. 
+    method : str, default 'prediction'
+        Can be 'prediction' or 'validation'. 
         
-        + If 'validate', the date must be within the index range.
-        + If 'predict', the date must be later than the last date in the index.
+        + If 'prediction', the date must be later than the last date in the index.
+        + If 'validation', the date must be within the index range.
     date_literal : str, default 'steps'
         Variable name used in error messages.
     kwargs_pd_to_datetime : dict, default {}
@@ -1618,10 +1618,20 @@ def date_to_index_position(
     
     Returns
     -------
-    date_position : int
-        Integer representing the position of the datetime in the index.
+    output : int
+        `date_input` transformed to integer position in the `index`.
+        
+        + If `date_input` is an integer, it returns the same integer.
+        + If method is 'prediction', number of steps to predict from the last
+        date in the index.
+        + If method is 'validation', position plus one of the date in the index,
+        this is done to include the target date in the training set when using 
+        pandas iloc).
     
     """
+
+    if method not in ['prediction', 'validation']:
+        raise ValueError("`method` must be 'prediction' or 'validation'.")
     
     if isinstance(date_input, (str, pd.Timestamp)):
         if not isinstance(index, pd.DatetimeIndex):
@@ -1632,37 +1642,34 @@ def date_to_index_position(
         
         target_date = pd.to_datetime(date_input, **kwargs_pd_to_datetime)
         last_date = pd.to_datetime(index[-1])
-        if method == 'predict':
+
+        if method == 'prediction':
             if target_date <= last_date:
                 raise ValueError(
-                    "The provided date must be later than the last date in the index."
+                    "If `steps` is a date, it must be greater than the last date "
+                    "in the index."
                 )
-            steps_diff = pd.date_range(start=last_date, end=target_date, freq=index.freq)
-
-        elif method == 'validate':
-            start_date = pd.to_datetime(index[0])
-            if target_date < start_date or target_date > last_date:
+            span_index = pd.date_range(start=last_date, end=target_date, freq=index.freq) 
+            output = len(span_index) - 1
+        elif method == 'validation':
+            first_date = pd.to_datetime(index[0])
+            if target_date < first_date or target_date > last_date:
                 raise ValueError(
-                    "The provided date must be later than the first date in the index "
-                    "and earlier than the last date."
+                    "If `initial_train_size` is a date, it must be greater than "
+                    "the first date in the index and less than the last date."
                 )
-            steps_diff = pd.date_range(start=start_date, end=target_date, freq=index.freq)
-            
-        date_position = len(steps_diff)-1
-    
+            span_index = pd.date_range(start=first_date, end=target_date, freq=index.freq)
+            output = len(span_index)
+
     elif isinstance(date_input, (int, np.integer)):
-        if method == 'validate' and (date_input < 0 or date_input >= len(index)):
-            raise ValueError(
-                f"The provided integer must be between 0 and {len(index)-1}."
-            )
-        date_position = date_input
-        
+        output = date_input
+
     else:
         raise TypeError(
             f"`{date_literal}` must be an integer, string, or pandas Timestamp."
         )
     
-    return date_position
+    return output
 
 
 def expand_index(

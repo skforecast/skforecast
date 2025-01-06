@@ -18,7 +18,7 @@ from sklearn.exceptions import NotFittedError
 
 from ..exceptions import IgnoredArgumentWarning
 from ..metrics import add_y_train_argument, _get_metric
-from ..utils import check_interval
+from ..utils import check_interval, date_to_index_position
 
 
 def initialize_lags_grid(
@@ -310,6 +310,17 @@ def check_backtesting_input(
                 f"and smaller than the length of `{data_name}` ({data_length})."
             )
     elif initial_train_size is not None:
+        if forecaster_name in forecasters_uni:
+            index = cv._extract_index(y)
+        else:
+            index = cv._extract_index(series)
+
+        initial_train_size = date_to_index_position(
+                                 index        = index, 
+                                 date_input   = initial_train_size, 
+                                 method       = 'validation',
+                                 date_literal = 'initial_train_size'
+                             )
         if initial_train_size < forecaster.window_size or initial_train_size >= data_length:
             raise ValueError(
                 f"If used, `initial_train_size` must be an integer greater than "
@@ -405,7 +416,11 @@ def check_backtesting_input(
         else:
             check_interval(interval=interval, alpha=alpha)
 
-    if not allow_incomplete_fold and data_length - (initial_train_size + gap) < steps:
+    if (
+        not allow_incomplete_fold
+        and initial_train_size is not None
+        and data_length - (initial_train_size + gap) < steps
+    ):        
         raise ValueError(
             f"There is not enough data to evaluate {steps} steps in a single "
             f"fold. Set `allow_incomplete_fold` to `True` to allow incomplete folds.\n"

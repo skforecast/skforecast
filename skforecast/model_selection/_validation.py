@@ -142,9 +142,7 @@ def _backtesting_forecaster(
         'verbose': verbose
     })
 
-    initial_train_size = cv.initial_train_size
     refit = cv.refit
-    gap = cv.gap
     
     if n_jobs == 'auto':
         n_jobs = select_n_jobs_backtesting(
@@ -178,7 +176,9 @@ def _backtesting_forecaster(
     store_in_sample_residuals = False if interval is None else True
 
     folds = cv.split(X=y, as_pandas=False)
+    initial_train_size = cv.initial_train_size
     window_size = cv.window_size
+    gap = cv.gap
 
     if initial_train_size is not None:
         # First model training, this is done to allow parallelization when `refit`
