@@ -1913,6 +1913,52 @@ class ForecasterRecursive(ForecasterBase):
                       )
 
         return predictions
+    
+    def predict_conformal(
+        self,
+        steps: int | str | pd.Timestamp,
+        last_window: pd.Series | pd.DataFrame | None = None,
+        exog: pd.Series | pd.DataFrame | None = None,
+        nominal_coverage: float = 0.95,
+        random_state: int = 123,
+        use_in_sample_residuals: bool = True,
+        use_binned_residuals: bool = False
+    ) -> pd.DataFrame:
+        
+        """
+        """
+
+        if use_in_sample_residuals:
+            residuals = self.in_sample_residuals_
+            residuals_by_bin = self.in_sample_residuals_by_bin_
+        else:
+            residuals = self.out_sample_residuals_
+            residuals_by_bin = self.out_sample_residuals_by_bin_
+        
+        predictions = self.predict(
+                          steps        = steps,
+                          last_window  = last_window,
+                          exog         = exog,
+                          check_inputs = False
+                      )
+        
+        correction_factor = np.quantile(np.abs(residuals), 0.8)
+        correction_factor_by_bin = {
+            k: np.quantile(np.abs(v), 0.8)
+            for k, v in residuals_by_bin.items()
+        }
+
+        predictions = pd.DataFrame({
+                            'pred': predictions,
+                            'lower_bound': predictions - correction_factor,
+                            'upper_bound': predictions + correction_factor
+                        },
+                        index = predictions.index
+                    )
+
+        return predictions       
+
+
 
     def set_params(
         self, 
