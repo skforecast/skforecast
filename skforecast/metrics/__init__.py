@@ -4,6 +4,7 @@ from .metrics import (
     add_y_train_argument,
     crps_from_predictions,
     crps_from_quantiles,
-    coverage,
+    calculate_coverage,
+    create_mean_pinball_loss,
     _get_metric,
 )

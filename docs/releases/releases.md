@@ -18,7 +18,7 @@ The main changes in this release are:
 
 + Functions `crps_from_predictions` and `crps_from_quantiles` in module `metrics` to calculate the Continuous Ranked Probability Score (CRPS).
 
-+ Function `coverage` in module `metrics` to calculate the coverage of the predicted intervals.
++ Function `calculate_coverage` in module `metrics` to calculate the coverage of the predicted intervals.
 
 + The `differentiation` argument in <code>[ForecasterRecursiveMultiSeries]</code> can now be a dict to [differentiate each series independently](../user_guides/independent-multi-time-series-forecasting.html#differentiation). This is useful if the user wants to differentiate each series with a different order or not differentiate some of them.
 
@@ -32,6 +32,8 @@ The main changes in this release are:
 
 + Added data set `public_transport_madrid` to the <code>[datasets]</code> module.
 
++ Added function `create_mean_pinball_loss` in the <code>[metrics]</code> module to create a function to calculate the mean pinball loss for a given quantile.
+
 
 **Changed**
 
@@ -40,6 +42,8 @@ The main changes in this release are:
 + Argument `dropna` in <code>[exog_long_to_dict]</code> function has been renamed to `drop_all_nan_cols`.
 
 + Argument `initial_train_size` can be a `str` or a `pandas datetime` in <code>[TimeSeriesFold]</code> and <code>[OneStepAheadFold]</code>. If so, the cv object will use the specified date to split the data. (contribution by [@g-rubio](https://github.com/g-rubio) [#898](https://github.com/skforecast/skforecast/pull/898)).
+
++ `set_dark_theme` background color changed to `#001633` to improve readability.
 
 
 **Fixed**

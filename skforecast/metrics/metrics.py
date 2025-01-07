@@ -17,6 +17,7 @@ from sklearn.metrics import (
     mean_absolute_percentage_error,
     mean_squared_log_error,
     median_absolute_error,
+    mean_pinball_loss
 )
 
 
@@ -329,18 +330,22 @@ def crps_from_quantiles(
     return crps
 
 
-def coverage(y_true: np.ndarray, lower_bound: np.ndarray, upper_bound: np.ndarray) -> float:
+def calculate_coverage(
+    y_true: np.ndarray | pd.Series,
+    lower_bound: np.ndarray | pd.Series,
+    upper_bound: np.ndarray | pd.Series,
+) -> float:
     """
     Calculate coverage of a given interval as the proportion of true values
     that fall within the interval.
 
     Parameters
     ----------
-    y_true : numpy ndarray
+    y_true : numpy ndarray, pandas Series
         True values of the target variable.
-    lower_bound : numpy ndarray
+    lower_bound : numpy ndarray, pandas Series
         Lower bound of the interval.
-    upper_bound : numpy ndarray
+    upper_bound : numpy ndarray, pandas Series
         Upper bound of the interval.
 
     Returns
@@ -349,18 +354,48 @@ def coverage(y_true: np.ndarray, lower_bound: np.ndarray, upper_bound: np.ndarra
         Coverage of the interval.
 
     """
-    if not isinstance(y_true, np.ndarray) or y_true.ndim != 1:
-        raise TypeError("`y_true` must be a 1D numpy array.")
-    
-    if not isinstance(lower_bound, np.ndarray) or lower_bound.ndim != 1:
-        raise TypeError("`lower_bound` must be a 1D numpy array.")
-    
-    if not isinstance(upper_bound, np.ndarray) or upper_bound.ndim != 1:
-        raise TypeError("`upper_bound` must be a 1D numpy array.")
-    
+    if not isinstance(y_true, (np.ndarray, pd.Series)) or y_true.ndim != 1:
+        raise TypeError("`y_true` must be a 1D numpy array or pandas Series.")
+
+    if not isinstance(lower_bound, (np.ndarray, pd.Series)) or lower_bound.ndim != 1:
+        raise TypeError("`lower_bound` must be a 1D numpy array or pandas Series.")
+
+    if not isinstance(upper_bound, (np.ndarray, pd.Series)) or upper_bound.ndim != 1:
+        raise TypeError("`upper_bound` must be a 1D numpy array or pandas Series.")
+
+    y_true = np.asarray(y_true)
+    lower_bound = np.asarray(lower_bound)
+    upper_bound = np.asarray(upper_bound)
+
     if y_true.shape != lower_bound.shape or y_true.shape != upper_bound.shape:
-        raise TypeError("`y_true`, `lower_bound` and `upper_bound` must have the same shape.")
-    
+        raise TypeError(
+            "`y_true`, `lower_bound` and `upper_bound` must have the same shape."
+        )
+
     coverage = np.mean(np.logical_and(y_true >= lower_bound, y_true <= upper_bound))
 
     return coverage
+
+
+def create_mean_pinball_loss(alpha: float) -> callable:
+    """
+    Create pinball loss, also known as quantile loss, for a given quantile.
+    Internally, it uses the `mean_pinball_loss` function from scikit-learn.
+
+    Parameters
+    ----------
+    alpha: float
+        Quantile for which the Pinball loss is calculated. Must be between 0 and 1, inclusive.
+
+    Returns
+    -------
+    mean_pinball_loss_q: callable
+        Mean Pinball loss for the given quantile.
+
+    """
+    if not (0 <= alpha <= 1):
+        raise ValueError("alpha must be between 0 and 1, both inclusive.")
+
+    def mean_pinball_loss_q(y_true, y_pred):
+        return mean_pinball_loss(y_true, y_pred, alpha=alpha)
+    return mean_pinball_loss_q
