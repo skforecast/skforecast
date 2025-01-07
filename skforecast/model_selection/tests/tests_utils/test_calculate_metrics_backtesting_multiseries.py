@@ -1,8 +1,8 @@
 # Unit test calculate_metrics_multiseries
 # ==============================================================================
-import pandas as pd
+import pytest
 import numpy as np
-import pytest as pytest
+import pandas as pd
 from skforecast.model_selection._utils import _calculate_metrics_backtesting_multiseries
 from skforecast.metrics import add_y_train_argument
 from sklearn.metrics import mean_absolute_error

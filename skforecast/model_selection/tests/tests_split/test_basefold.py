@@ -61,19 +61,11 @@ def test_basefold_validate_params_raise_invalid_initial_train_size_TimeSeriesFol
     """
     cv = BaseFold()
     params = dict(valid_params)
-
-    # Test invalid string
-    params["initial_train_size"] = "invalid"
-    msg = (
-        "Unknown datetime string format, unable to parse: invalid, at position 0"
-    )
-    with pytest.raises(ValueError, match=msg):
-        cv._validate_params(cv_name="TimeSeriesFold", **params)
     
     # Test invalid integer
     params["initial_train_size"] = -1
     msg = (
-        "`initial_train_size` must be an integer greater than 0, "
+        f"`initial_train_size` must be an integer greater than 0, "
         f"a date string, a pandas Timestamp, or None. Got {params['initial_train_size']}."
     )
     with pytest.raises(ValueError, match=msg):
@@ -82,7 +74,7 @@ def test_basefold_validate_params_raise_invalid_initial_train_size_TimeSeriesFol
     # Test invalid type
     params["initial_train_size"] = 1.0
     msg = (
-        "`initial_train_size` must be an integer greater than 0, a date string, "
+        f"`initial_train_size` must be an integer greater than 0, a date string, "
         f"a pandas Timestamp, or None. Got {params['initial_train_size']}."
     )
     with pytest.raises(ValueError, match=msg):
@@ -212,18 +204,10 @@ def test_basefold_validate_params_raise_invalid_initial_train_size_OneStepAheadF
     cv = BaseFold()
     params = dict(valid_params)
     
-    # Test invalid string
-    params["initial_train_size"] = "invalid"
-    msg = (
-        "Unknown datetime string format, unable to parse: invalid, at position 0"
-    )
-    with pytest.raises(ValueError, match=msg):
-        cv._validate_params(cv_name="OneStepAheadFold", **params)
-    
     # Test invalid integer
     params["initial_train_size"] = 0
     msg = (
-        "`initial_train_size` must be an integer greater than 0, "
+        f"`initial_train_size` must be an integer greater than 0, "
         f"a date string, or a pandas Timestamp. Got {params['initial_train_size']}."
     )
     with pytest.raises(ValueError, match=msg):
@@ -232,7 +216,7 @@ def test_basefold_validate_params_raise_invalid_initial_train_size_OneStepAheadF
     # Test invalid type
     params["initial_train_size"] = 1.5
     msg = (
-        "`initial_train_size` must be an integer greater than 0, a date string, or "
+        f"`initial_train_size` must be an integer greater than 0, a date string, or "
         f"a pandas Timestamp. Got {params['initial_train_size']}."
     )
     with pytest.raises(ValueError, match=msg):

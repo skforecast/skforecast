@@ -13,8 +13,10 @@ def test_TimeSeriesFold_split_TypeError_when_X_is_not_series_dataframe_or_dict()
     """
     X = np.arange(100)
     cv = TimeSeriesFold(steps=10, initial_train_size=70)
-    msg = (f"X must be a pandas Series, DataFrame, Index or a dictionary. Got {type(X)}.")
-    with pytest.raises(TypeError, match=msg):
+    err_msg = re.escape(
+        f"X must be a pandas Series, DataFrame, Index or a dictionary. Got {type(X)}."
+    )
+    with pytest.raises(TypeError, match=err_msg):
         cv.split(X=X)
 
 
@@ -24,14 +26,14 @@ def test_TimeSeriesFold_split_ValueError_when_initial_train_size_and_window_size
     """
     X = pd.Series(np.arange(100))
     cv = TimeSeriesFold(steps=10, initial_train_size=None, window_size=None)
-    msg = re.escape(
+    err_msg = re.escape(
         "To use split method when `initial_train_size` is None, "
         "`window_size` must be an integer greater than 0. "
         "Although no initial training is done and all data is used to "
         "evaluate the model, the first `window_size` observations are "
         "needed to create the initial predictors. Got `window_size` = None."
     )
-    with pytest.raises(ValueError, match=msg):
+    with pytest.raises(ValueError, match=err_msg):
         cv.split(X=X)
 
 
@@ -43,11 +45,11 @@ def test_TimeSeriesFold_split_ValueError_when_initial_train_size_None_and_refit(
     cv = TimeSeriesFold(
         steps=10, initial_train_size=None, window_size=5, refit=True
     )
-    msg = re.escape(
+    err_msg = re.escape(
         "`refit` is only allowed when `initial_train_size` is not `None`. "
         "Set `refit` to `False` if you want to use `initial_train_size = None`."
     )
-    with pytest.raises(ValueError, match=msg):
+    with pytest.raises(ValueError, match=err_msg):
         cv.split(X=X)
 
 
@@ -59,9 +61,35 @@ def test_TimeSeriesFold_split_warning_when_window_size_is_None():
     cv = TimeSeriesFold(
         steps=10, initial_train_size=10, window_size=None
     )
-    warn_msg = re.escape("Last window cannot be calculated because `window_size` is None.")
+    warn_msg = re.escape(
+        "Last window cannot be calculated because `window_size` is None."
+    )
     with pytest.warns(UserWarning, match=warn_msg):
         cv.split(X=X)
+
+
+@pytest.mark.parametrize("initial_train_size", [
+    "2021-12-31",  # Before the first date in the index
+    "2022-04-11",  # After the last date in the index
+])
+def test_TimeSeriesFold_split_invalid_initial_train_size_date(initial_train_size):
+    """
+    Test that ValueError is raised when initial_train_size date is outside the index range.
+    """
+    y = pd.Series(np.arange(100))
+    y.index = pd.date_range(start="2022-01-01", periods=100, freq="D")
+    cv = TimeSeriesFold(
+        steps                 = 7,
+        initial_train_size    = initial_train_size,
+        window_size           = 10,
+    )
+    
+    err_msg = re.escape(
+        "If `initial_train_size` is a date, it must be greater than "
+        "the first date in the index and less than the last date."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        cv.split(X=y)
 
 
 def test_TimeSeriesFold_split_ValueError_when_time_series_not_enough_data():
@@ -1279,27 +1307,3 @@ def test_TimeSeriesFold_split_int_and_date_initial_train_size(capfd, initial_tra
 
     assert out == expected_out
     assert folds == expected
-
-
-@pytest.mark.parametrize("initial_train_size", [
-    "2021-12-31",  # Before the first date in the index
-    "2022-04-11",  # After the last date in the index
-])
-def test_TimeSeriesFold_split_invalid_initial_train_size_date(initial_train_size):
-    """
-    Test that RuntimeError is raised when initial_train_size date is outside the index range.
-    """
-    y = pd.Series(np.arange(100))
-    y.index = pd.date_range(start="2022-01-01", periods=100, freq="D")
-    cv = TimeSeriesFold(
-        steps                 = 7,
-        initial_train_size    = initial_train_size,
-        window_size           = 10,
-    )
-    
-    msg = (
-        "Error converting initial_train_size date to an index position: The provided date "
-        "must be later than the first date in the index and earlier than the last date."
-    )
-    with pytest.raises(RuntimeError, match=msg):
-        cv.split(X=y)
