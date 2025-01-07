@@ -142,9 +142,7 @@ def _backtesting_forecaster(
         'verbose': verbose
     })
 
-    initial_train_size = cv.initial_train_size
     refit = cv.refit
-    gap = cv.gap
     
     if n_jobs == 'auto':
         n_jobs = select_n_jobs_backtesting(
@@ -178,7 +176,9 @@ def _backtesting_forecaster(
     store_in_sample_residuals = False if interval is None else True
 
     folds = cv.split(X=y, as_pandas=False)
+    initial_train_size = cv.initial_train_size
     window_size = cv.window_size
+    gap = cv.gap
 
     if initial_train_size is not None:
         # First model training, this is done to allow parallelization when `refit`
@@ -622,9 +622,7 @@ def _backtesting_forecaster_multiseries(
         'verbose': verbose
     })
 
-    initial_train_size = cv.initial_train_size
     refit = cv.refit
-    gap = cv.gap
 
     if n_jobs == 'auto':
         n_jobs = select_n_jobs_backtesting(
@@ -665,6 +663,8 @@ def _backtesting_forecaster_multiseries(
 
     folds = cv.split(X=series, as_pandas=False)
     span_index = cv._extract_index(X=series)
+    initial_train_size = cv.initial_train_size
+    gap = cv.gap
 
     if initial_train_size is not None:
         # First model training, this is done to allow parallelization when `refit`
@@ -1080,10 +1080,7 @@ def _backtesting_sarimax(
         'verbose': verbose
     })
 
-    steps = cv.steps
-    initial_train_size = cv.initial_train_size
     refit = cv.refit
-    gap = cv.gap
     
     if refit == False:
         if n_jobs != 'auto' and n_jobs != 1:
@@ -1122,6 +1119,11 @@ def _backtesting_sarimax(
             else add_y_train_argument(m) 
             for m in metric
         ]
+    
+    folds = cv.split(X=y, as_pandas=False)
+    initial_train_size = cv.initial_train_size
+    steps = cv.steps
+    gap = cv.gap
 
     # initial_train_size cannot be None because of append method in Sarimax
     # First model training, this is done to allow parallelization when `refit` 
@@ -1132,8 +1134,6 @@ def _backtesting_sarimax(
         exog              = exog_train,
         suppress_warnings = suppress_warnings_fit
     )
-    
-    folds = cv.split(X=y, as_pandas=False)
     # This is done to allow parallelization when `refit` is `False`. The initial 
     # Forecaster fit is outside the auxiliary function.
     folds[0][4] = False
@@ -1142,9 +1142,9 @@ def _backtesting_sarimax(
         n_of_fits = int(len(folds) / refit)
         if n_of_fits > 50:
             warnings.warn(
-                (f"The forecaster will be fit {n_of_fits} times. This can take substantial "
-                 f"amounts of time. If not feasible, try with `refit = False`.\n"),
-                 LongTrainingWarning
+                f"The forecaster will be fit {n_of_fits} times. This can take substantial "
+                f"amounts of time. If not feasible, try with `refit = False`.\n",
+                LongTrainingWarning
             )
        
     folds_tqdm = tqdm(folds) if show_progress else folds

@@ -6,7 +6,7 @@
 # coding=utf-8
 
 from __future__ import annotations
-from typing import Union, Optional, Callable, Any
+from typing import Callable, Any
 import warnings
 import sys
 import numpy as np

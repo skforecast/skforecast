@@ -3,6 +3,7 @@
 import pytest
 import numpy as np
 import pandas as pd
+import platform
 from ...preprocessing import exog_long_to_dict
 from ....exceptions import MissingValuesWarning
 
@@ -233,4 +234,8 @@ def test_series_long_to_dict_output_when_npnan_are_added_in_interger_columns_and
         suppress_warnings=True,
     )
     assert exog_dict['series_1'].dtypes.astype(str).to_list() == ['float64', 'category', 'float64']
-    assert exog_dict['series_2'].dtypes.astype(str).to_list() == ['float64', 'category', 'int64']
+
+    if platform.system() == 'Windows':
+        assert exog_dict['series_2'].dtypes.astype(str).to_list() == ['float64', 'category', 'int32']
+    else:
+        assert exog_dict['series_2'].dtypes.astype(str).to_list() == ['float64', 'category', 'int64']

@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 import itertools
 import skforecast
+from ..utils.utils import date_to_index_position
 from ..exceptions import IgnoredArgumentWarning
 
 
@@ -27,8 +28,12 @@ class BaseFold():
     steps : int, default None
         Number of observations used to be predicted in each fold. This is also commonly
         referred to as the forecast horizon or test size.
-    initial_train_size : int, default None
+    initial_train_size : int, str, pandas Timestamp, default None
         Number of observations used for initial training.
+
+        - If an integer, the number of observations used for initial training.
+        - If a date string or pandas Timestamp, it is the last date included in 
+        the initial training set.
     window_size : int, default None
         Number of observations needed to generate the autoregressive predictors.
     differentiation : int, default None
@@ -96,7 +101,7 @@ class BaseFold():
     def __init__(
         self,
         steps: int | None = None,
-        initial_train_size: int | None = None,
+        initial_train_size: int | str | pd.Timestamp | None = None,
         window_size: int | None = None,
         differentiation: int | None = None,
         refit: bool | int = False,
@@ -139,7 +144,7 @@ class BaseFold():
         self,
         cv_name: str,
         steps: int | None = None,
-        initial_train_size: int | None = None,
+        initial_train_size: int | str | pd.Timestamp | None = None,
         window_size: int | None = None,
         differentiation: int | None = None,
         refit: bool | int = False,
@@ -159,15 +164,15 @@ class BaseFold():
                 raise ValueError(
                     f"`steps` must be an integer greater than 0. Got {steps}."
                 )
-            if not isinstance(initial_train_size, (int, np.integer, type(None))):
+            if not isinstance(initial_train_size, (int, np.integer, str, pd.Timestamp, type(None))):
                 raise ValueError(
-                    f"`initial_train_size` must be an integer greater than 0 or None. "
-                    f"Got {initial_train_size}."
+                    f"`initial_train_size` must be an integer greater than 0, a date "
+                    f"string, a pandas Timestamp, or None. Got {initial_train_size}."
                 )
-            if initial_train_size is not None and initial_train_size < 1:
+            if isinstance(initial_train_size, (int, np.integer)) and initial_train_size < 1:
                 raise ValueError(
-                    f"`initial_train_size` must be an integer greater than 0 or None. "
-                    f"Got {initial_train_size}."
+                    f"`initial_train_size` must be an integer greater than 0, "
+                    f"a date string, a pandas Timestamp, or None. Got {initial_train_size}."
                 )
             if not isinstance(refit, (bool, int, np.integer)):
                 raise TypeError(
@@ -212,13 +217,15 @@ class BaseFold():
                 )
             
         if cv_name == "OneStepAheadFold":
-            if (
-                not isinstance(initial_train_size, (int, np.integer))
-                or initial_train_size < 1
-            ):
+            if not isinstance(initial_train_size, (int, np.integer, str, pd.Timestamp)):
                 raise ValueError(
-                    f"`initial_train_size` must be an integer greater than 0. "
-                    f"Got {initial_train_size}."
+                    f"`initial_train_size` must be an integer greater than 0, a date "
+                    f"string, or a pandas Timestamp. Got {initial_train_size}."
+                )
+            if isinstance(initial_train_size, (int, np.integer)) and initial_train_size < 1:
+                raise ValueError(
+                    f"`initial_train_size` must be an integer greater than 0, "
+                    f"a date string, or a pandas Timestamp. Got {initial_train_size}."
                 )
         
         if (
@@ -423,8 +430,12 @@ class OneStepAheadFold(BaseFold):
 
     Parameters
     ----------
-    initial_train_size : int
+    initial_train_size : int, str, pandas Timestamp
         Number of observations used for initial training.
+
+        - If an integer, the number of observations used for initial training.
+        - If a date string or pandas Timestamp, it is the last date included in 
+        the initial training set.
     window_size : int, default None
         Number of observations needed to generate the autoregressive predictors.
     differentiation : int, default None
@@ -465,7 +476,7 @@ class OneStepAheadFold(BaseFold):
 
     def __init__(
         self,
-        initial_train_size: int,
+        initial_train_size: int | str | pd.Timestamp,
         window_size: int | None = None,
         differentiation: int | None = None,
         return_all_indexes: bool = False,
@@ -579,6 +590,14 @@ class OneStepAheadFold(BaseFold):
             )
 
         index = self._extract_index(X)
+
+        self.initial_train_size = date_to_index_position(
+                                      index        = index, 
+                                      date_input   = self.initial_train_size, 
+                                      method       = 'validation',
+                                      date_literal = 'initial_train_size'
+                                  )
+
         fold = [
             [0, self.initial_train_size],
             [self.initial_train_size, len(X)],
@@ -690,9 +709,13 @@ class TimeSeriesFold(BaseFold):
     steps : int
         Number of observations used to be predicted in each fold. This is also commonly
         referred to as the forecast horizon or test size.
-    initial_train_size : int, default None
-        Number of observations used for initial training. If `None` or 0, the initial
-        forecaster is not trained in the first fold.
+    initial_train_size : int, str, pandas Timestamp, default None
+        Number of observations used for initial training. 
+        
+        - If `None` or 0, the initial forecaster is not trained in the first fold.
+        - If an integer, the number of observations used for initial training.
+        - If a date string or pandas Timestamp, it is the last date included in 
+        the initial training set.
     window_size : int, default None
         Number of observations needed to generate the autoregressive predictors.
     differentiation : int, default None
@@ -780,7 +803,7 @@ class TimeSeriesFold(BaseFold):
     def __init__(
         self,
         steps: int,
-        initial_train_size: int | None = None,
+        initial_train_size: int | str | pd.Timestamp | None = None,
         window_size: int | None = None,
         differentiation: int | None = None,
         refit: bool | int = False,
@@ -972,6 +995,13 @@ class TimeSeriesFold(BaseFold):
         folds = []
         i = 0
         last_fold_excluded = False
+
+        self.initial_train_size = date_to_index_position(
+                                      index        = index, 
+                                      date_input   = self.initial_train_size, 
+                                      method       = 'validation',
+                                      date_literal = 'initial_train_size'
+                                  )
 
         if len(index) < self.initial_train_size + self.steps:
             raise ValueError(

@@ -1155,6 +1155,7 @@ class ForecasterRecursive(ForecasterBase):
             steps = date_to_index_position(
                         index        = last_window.index,
                         date_input   = steps,
+                        method       = 'prediction',
                         date_literal = 'steps'
                     )
 

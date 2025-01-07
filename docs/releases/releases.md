@@ -41,6 +41,8 @@ The main changes in this release are:
 
 + Argument `dropna` in <code>[exog_long_to_dict]</code> function has been renamed to `drop_all_nan_cols`.
 
++ Argument `initial_train_size` can be a `str` or a `pandas datetime` in <code>[TimeSeriesFold]</code> and <code>[OneStepAheadFold]</code>. If so, the cv object will use the specified date to split the data. (contribution by [@g-rubio](https://github.com/g-rubio) [#898](https://github.com/skforecast/skforecast/pull/898)).
+
 + `set_dark_theme` background color changed to `#001633` to improve readability.
 
 
