@@ -38,6 +38,7 @@ from ..utils import (
     date_to_index_position,
     expand_index,
     transform_numpy,
+    transform_series,
     transform_dataframe,
 )
 from ..preprocessing import TimeSeriesDifferentiator
@@ -1914,7 +1915,7 @@ class ForecasterRecursive(ForecasterBase):
 
         return predictions
     
-    def predict_conformal(
+    def predict_conformal_intervals(
         self,
         steps: int | str | pd.Timestamp,
         last_window: pd.Series | pd.DataFrame | None = None,
@@ -1983,35 +1984,46 @@ class ForecasterRecursive(ForecasterBase):
                 k: np.quantile(np.abs(v), nominal_coverage)
                 for k, v in residuals_by_bin.items()
             }
-            predictions = pd.DataFrame({
-                                'pred': predictions,
-                                'bin': self.binner.transform(predictions)
-                            }, index = prediction_index
-                           )
-            predictions['lower_bound'] = predictions['pred'] - predictions['bin'].map(correction_factor_by_bin)
-            predictions['upper_bound'] = predictions['pred'] + predictions['bin'].map(correction_factor_by_bin)
+            replace_func = np.vectorize(lambda x: correction_factor_by_bin.get(x, x))
+            predictions_bin = self.binner.transform(predictions)
+            correction_factor = replace_func(predictions_bin)
+            lower_bound = predictions - correction_factor
+            upper_bound = predictions + correction_factor
+
         else:
             correction_factor = np.quantile(np.abs(residuals), nominal_coverage)
-            predictions = pd.DataFrame({
-                                'pred': predictions,
-                                'lower_bound': predictions - correction_factor,
-                                'upper_bound': predictions + correction_factor
-                            },
-                            index = prediction_index
-                        )
-            
-        if self.differentiation is not None:
-            predictions['pred'] = self.differentiator.inverse_transform_next_window(predictions['pred'])
-            predictions['lower_bound'] = self.differentiator.inverse_transform_next_window(predictions['lower_bound'])
-            predictions['upper_bound'] = self.differentiator.inverse_transform_next_window(predictions['upper_bound'])
+            lower_bound = predictions - correction_factor
+            upper_bound = predictions + correction_factor
 
-        for col in predictions.columns:
-            predictions[col] = transform_numpy(
-                            array             = predictions[col],
-                            transformer       = self.transformer_y,
-                            fit               = False,
-                            inverse_transform = True
-                        )
+        if self.differentiation is not None:
+            predictions = self.differentiator.inverse_transform_next_window(predictions)
+            lower_bound = self.differentiator.inverse_transform_next_window(lower_bound)
+            upper_bound = self.differentiator.inverse_transform_next_window(upper_bound)
+    
+        predictions = transform_numpy(
+                        array             = predictions,
+                        transformer       = self.transformer_y,
+                        fit               = False,
+                        inverse_transform = True
+                    )
+        lower_bound = transform_numpy(
+                        array             = lower_bound,
+                        transformer       = self.transformer_y,
+                        fit               = False,
+                        inverse_transform = True
+                    )
+        upper_bound = transform_numpy(
+                        array             = upper_bound,
+                        transformer       = self.transformer_y,
+                        fit               = False,
+                        inverse_transform = True
+                    )
+        
+        predictions = pd.DataFrame(
+                        data    = np.column_stack((predictions, lower_bound, upper_bound)),
+                        columns = ["pred", "lower_bound", "upper_bound"],
+                        index   = prediction_index
+                    )
 
         return predictions       
 
