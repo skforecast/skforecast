@@ -1519,9 +1519,6 @@ class ForecasterRecursive(ForecasterBase):
             Exogenous variable/s included as predictor/s.
         n_boot : int, default 250
             Number of bootstrapping iterations used to estimate predictions.
-        random_state : int, default 123
-            Sets a seed to the random generator, so that boot predictions are always 
-            deterministic.
         use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
             prediction error to create predictions. If `False`, out of sample 
@@ -1535,6 +1532,9 @@ class ForecasterRecursive(ForecasterBase):
             **WARNING: This argument is newly introduced and requires special attention.
             It is still experimental and may undergo changes.
             **New in version 0.12.0**
+         random_state : int, default 123
+            Sets a seed to the random generator, so that boot predictions are always 
+            deterministic.
 
         Returns
         -------
@@ -1645,9 +1645,9 @@ class ForecasterRecursive(ForecasterBase):
         exog: pd.Series | pd.DataFrame | None = None,
         interval: list[float] | tuple[float] = [5, 95],
         n_boot: int = 250,
-        random_state: int = 123,
         use_in_sample_residuals: bool = True,
-        use_binned_residuals: bool = False
+        use_binned_residuals: bool = False,
+        random_state: int = 123
     ) -> pd.DataFrame:
         """
         Iterative process in which each prediction is used as a predictor
@@ -1675,9 +1675,6 @@ class ForecasterRecursive(ForecasterBase):
             For example, interval of 95% should be as `interval = [2.5, 97.5]`.
         n_boot : int, default 250
             Number of bootstrapping iterations used to estimate predictions.
-        random_state : int, default 123
-            Sets a seed to the random generator, so that boot predictions are always 
-            deterministic.
         use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
             prediction error to create predictions. If `False`, out of sample 
@@ -1691,6 +1688,9 @@ class ForecasterRecursive(ForecasterBase):
             **WARNING: This argument is newly introduced and requires special attention.
             It is still experimental and may undergo changes.
             **New in version 0.12.0**
+        random_state : int, default 123
+            Sets a seed to the random generator, so that boot predictions are always 
+            deterministic.
 
         Returns
         -------
@@ -1744,9 +1744,9 @@ class ForecasterRecursive(ForecasterBase):
         exog: pd.Series | pd.DataFrame | None = None,
         quantiles: list[float] | tuple[float] = [0.05, 0.5, 0.95],
         n_boot: int = 250,
-        random_state: int = 123,
         use_in_sample_residuals: bool = True,
-        use_binned_residuals: bool = False
+        use_binned_residuals: bool = False,
+        random_state: int = 123,
     ) -> pd.DataFrame:
         """
         Calculate the specified quantiles for each step. After generating 
@@ -1774,9 +1774,6 @@ class ForecasterRecursive(ForecasterBase):
             `quantiles = [0.05, 0.5, 0.95]`.
         n_boot : int, default 250
             Number of bootstrapping iterations used to estimate quantiles.
-        random_state : int, default 123
-            Sets a seed to the random generator, so that boot quantiles are always 
-            deterministic.
         use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
             prediction error to create prediction quantiles. If `False`, out of
@@ -1790,6 +1787,9 @@ class ForecasterRecursive(ForecasterBase):
             **WARNING: This argument is newly introduced and requires special attention.
             It is still experimental and may undergo changes.
             **New in version 0.12.0**
+         random_state : int, default 123
+            Sets a seed to the random generator, so that boot quantiles are always 
+            deterministic.
 
         Returns
         -------
@@ -1830,9 +1830,9 @@ class ForecasterRecursive(ForecasterBase):
         last_window: pd.Series | pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | None = None,
         n_boot: int = 250,
-        random_state: int = 123,
         use_in_sample_residuals: bool = True,
-        use_binned_residuals: bool = False
+        use_binned_residuals: bool = False,
+        random_state: int = 123,
     ) -> pd.DataFrame:
         """
         Fit a given probability distribution for each step. After generating 
@@ -1859,9 +1859,6 @@ class ForecasterRecursive(ForecasterBase):
             Exogenous variable/s included as predictor/s.
         n_boot : int, default 250
             Number of bootstrapping iterations used to estimate predictions.
-        random_state : int, default 123
-            Sets a seed to the random generator, so that boot predictions are always 
-            deterministic.
         use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
             prediction error to create predictions. If `False`, out of sample 
@@ -1875,6 +1872,9 @@ class ForecasterRecursive(ForecasterBase):
             **WARNING: This argument is newly introduced and requires special attention.
             It is still experimental and may undergo changes.
             **New in version 0.12.0**
+        random_state : int, default 123
+            Sets a seed to the random generator, so that boot predictions are always 
+            deterministic.
 
         Returns
         -------
@@ -1920,12 +1920,35 @@ class ForecasterRecursive(ForecasterBase):
         last_window: pd.Series | pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | None = None,
         nominal_coverage: float = 0.95,
-        random_state: int = 123,
         use_in_sample_residuals: bool = True,
-        use_binned_residuals: bool = False
+        use_binned_residuals: bool = False,
+        random_state: int = 123,
     ) -> pd.DataFrame:
         
         """
+        Generate prediction intervals using the conformal prediction framework.
+
+        Parameters
+        ----------
+        steps : int, str, pandas Timestamp
+            Number of steps to predict. 
+            
+            + If steps is int, number of steps to predict. 
+            + If str or pandas Datetime, the prediction will be up to that date.
+        last_window : pandas Series, pandas DataFrame, default None
+            Series values used to create the predictors (lags) needed in the 
+            first iteration of the prediction (t + 1).
+            If `last_window = None`, the values stored in` self.last_window_` are
+            used to calculate the initial predictors, and the predictions start
+            right after training data.
+        exog : pandas Series, pandas DataFrame, default None
+            Exogenous variable/s included as predictor/s.
+        nominal_coverage : float, default 0.95
+            Nominal coverage of the prediction intervals. Must be between 0 and 1.
+        random_state : int, default 123
+            Sets a seed to the random generator, so that boot predictions are always
+            deterministic.
+
         """
 
         if use_in_sample_residuals:
@@ -1935,29 +1958,62 @@ class ForecasterRecursive(ForecasterBase):
             residuals = self.out_sample_residuals_
             residuals_by_bin = self.out_sample_residuals_by_bin_
         
-        predictions = self.predict(
-                          steps        = steps,
-                          last_window  = last_window,
-                          exog         = exog,
-                          check_inputs = False
-                      )
-        
-        correction_factor = np.quantile(np.abs(residuals), 0.8)
-        correction_factor_by_bin = {
-            k: np.quantile(np.abs(v), 0.8)
-            for k, v in residuals_by_bin.items()
-        }
+        last_window_values, exog_values, prediction_index, steps = (
+            self._create_predict_inputs(
+                steps        = steps,
+                last_window  = last_window,
+                exog         = exog
+            )
+        )
 
-        predictions = pd.DataFrame({
-                            'pred': predictions,
-                            'lower_bound': predictions - correction_factor,
-                            'upper_bound': predictions + correction_factor
-                        },
-                        index = predictions.index
-                    )
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", 
+                message="X does not have valid feature names", 
+                category=UserWarning
+            )
+            predictions = self._recursive_predict(
+                              steps              = steps,
+                              last_window_values = last_window_values,
+                              exog_values        = exog_values
+                          )
+        
+        if use_binned_residuals:
+            correction_factor_by_bin = {
+                k: np.quantile(np.abs(v), nominal_coverage)
+                for k, v in residuals_by_bin.items()
+            }
+            predictions = pd.DataFrame({
+                                'pred': predictions,
+                                'bin': self.binner.transform(predictions)
+                            }, index = prediction_index
+                           )
+            predictions['lower_bound'] = predictions['pred'] - predictions['bin'].map(correction_factor_by_bin)
+            predictions['upper_bound'] = predictions['pred'] + predictions['bin'].map(correction_factor_by_bin)
+        else:
+            correction_factor = np.quantile(np.abs(residuals), nominal_coverage)
+            predictions = pd.DataFrame({
+                                'pred': predictions,
+                                'lower_bound': predictions - correction_factor,
+                                'upper_bound': predictions + correction_factor
+                            },
+                            index = prediction_index
+                        )
+            
+        if self.differentiation is not None:
+            predictions['pred'] = self.differentiator.inverse_transform_next_window(predictions['pred'])
+            predictions['lower_bound'] = self.differentiator.inverse_transform_next_window(predictions['lower_bound'])
+            predictions['upper_bound'] = self.differentiator.inverse_transform_next_window(predictions['upper_bound'])
+
+        for col in predictions.columns:
+            predictions[col] = transform_numpy(
+                            array             = predictions[col],
+                            transformer       = self.transformer_y,
+                            fit               = False,
+                            inverse_transform = True
+                        )
 
         return predictions       
-
 
 
     def set_params(
