@@ -41,6 +41,7 @@ The main changes in this release are:
 
 + Argument `initial_train_size` can be a `str` or a `pandas datetime` in <code>[TimeSeriesFold]</code> and <code>[OneStepAheadFold]</code>. If so, the cv object will use the specified date to split the data. (contribution by [@g-rubio](https://github.com/g-rubio) [#898](https://github.com/skforecast/skforecast/pull/898)).
 
+
 **Fixed**
 
 + Now <code>[ForecasterRecursiveMultiSeries]</code> can be saved correctly when `weight_func` is a `dict` with `None` for any series. It now use the method `_weight_func_all_1` to create the weight function for these series.
