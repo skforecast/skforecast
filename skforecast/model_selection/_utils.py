@@ -303,11 +303,15 @@ def check_backtesting_input(
     if forecaster_name == "ForecasterEquivalentDate" and isinstance(
         forecaster.offset, pd.tseries.offsets.DateOffset
     ):
+        # NOTE: Checks when initial_train_size is not None cannot be done here
+        # because the forecaster is not fitted yet and we don't know the
+        # window_size since pd.DateOffset is not a fixed window size.
         if initial_train_size is None:
             raise ValueError(
                 f"`initial_train_size` must be an integer greater than "
                 f"the `window_size` of the forecaster ({forecaster.window_size}) "
-                f"and smaller than the length of `{data_name}` ({data_length})."
+                f"and smaller than the length of `{data_name}` ({data_length}) or "
+                f"a date within this range of the index."
             )
     elif initial_train_size is not None:
         if forecaster_name in forecasters_uni:
@@ -323,14 +327,15 @@ def check_backtesting_input(
                              )
         if initial_train_size < forecaster.window_size or initial_train_size >= data_length:
             raise ValueError(
-                f"If used, `initial_train_size` must be an integer greater than "
+                f"If `initial_train_size` is an integer, it must be greater than "
                 f"the `window_size` of the forecaster ({forecaster.window_size}) "
-                f"and smaller than the length of `{data_name}` ({data_length})."
+                f"and smaller than the length of `{data_name}` ({data_length}). If "
+                f"it is a date, it must be within this range of the index."
             )
         if initial_train_size + gap >= data_length:
             raise ValueError(
-                f"The combination of initial_train_size {initial_train_size} and "
-                f"gap {gap} cannot be greater than the length of `{data_name}` "
+                f"The total size of `initial_train_size` {initial_train_size} plus "
+                f"`gap` {gap} cannot be greater than the length of `{data_name}` "
                 f"({data_length})."
             )
     else:

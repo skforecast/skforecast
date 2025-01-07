@@ -598,7 +598,8 @@ def test_check_backtesting_input_ValueError_when_initial_train_size_is_None_Fore
     err_msg = re.escape(
         f"`initial_train_size` must be an integer greater than "
         f"the `window_size` of the forecaster ({forecaster.window_size}) "
-        f"and smaller than the length of `{data_name}` ({data_length})."
+        f"and smaller than the length of `{data_name}` ({data_length}) or "
+        f"a date within this range of the index."
     )
     with pytest.raises(ValueError, match = err_msg):
         check_backtesting_input(
@@ -616,28 +617,36 @@ def test_check_backtesting_input_ValueError_when_initial_train_size_is_None_Fore
 
 
 @pytest.mark.parametrize("initial_train_size", 
-                         ['greater', 'smaller'], 
+                         ['greater', 'smaller', 'date'], 
                          ids = lambda initial: f'initial_train_size: {initial}')
 @pytest.mark.parametrize("forecaster", 
-                         [ForecasterRecursive(regressor=Ridge(), lags=2),
-                          ForecasterRecursiveMultiSeries(regressor=Ridge(), lags=2)], 
+                         [ForecasterRecursive(regressor=Ridge(), lags=3),
+                          ForecasterRecursiveMultiSeries(regressor=Ridge(), lags=3)], 
                          ids = lambda fr: f'forecaster: {type(fr).__name__}')
 def test_check_backtesting_input_ValueError_when_initial_train_size_not_correct_value(initial_train_size, forecaster):
     """
     Test ValueError is raised in check_backtesting_input when 
     initial_train_size >= length `y` or `series` or initial_train_size < window_size.
     """
+    y_datetime = y.copy()
+    y_datetime.index = pd.date_range(start='2000-01-01', periods=len(y), freq='D')
+
+    series_datetime = series.copy()
+    series_datetime.index = pd.date_range(start='2000-01-01', periods=len(y), freq='D')
+
     if type(forecaster).__name__ == 'ForecasterRecursive':
-        data_length = len(y)
+        data_length = len(y_datetime)
         data_name = 'y'
     else:
-        data_length = len(series)
+        data_length = len(series_datetime)
         data_name = 'series'
 
     if initial_train_size == 'greater':
         initial_train_size = data_length
-    else:
+    elif initial_train_size == 'smaller':
         initial_train_size = forecaster.window_size - 1
+    else:
+        initial_train_size = '2000-01-02'  # Smaller than window_size
     
     cv = TimeSeriesFold(
              steps                 = 3,
@@ -649,17 +658,18 @@ def test_check_backtesting_input_ValueError_when_initial_train_size_not_correct_
          )
     
     err_msg = re.escape(
-        f"If used, `initial_train_size` must be an integer greater than "
+        f"If `initial_train_size` is an integer, it must be greater than "
         f"the `window_size` of the forecaster ({forecaster.window_size}) "
-        f"and smaller than the length of `{data_name}` ({data_length})."
+        f"and smaller than the length of `{data_name}` ({data_length}). If "
+        f"it is a date, it must be within this range of the index."
     )
     with pytest.raises(ValueError, match = err_msg):
         check_backtesting_input(
             forecaster              = forecaster,
             cv                      = cv,
             metric                  = 'mean_absolute_error',
-            y                       = y,
-            series                  = series,
+            y                       = y_datetime,
+            series                  = series_datetime,
             interval                = None,
             alpha                   = None,
             n_boot                  = 500,
@@ -670,21 +680,35 @@ def test_check_backtesting_input_ValueError_when_initial_train_size_not_correct_
         )
 
 
+@pytest.mark.parametrize("initial_train_size", 
+                         ['int', 'date'], 
+                         ids = lambda initial: f'initial_train_size: {initial}')
 @pytest.mark.parametrize("forecaster", 
                          [ForecasterRecursive(regressor=Ridge(), lags=2),
                           ForecasterRecursiveMultiSeries(regressor=Ridge(), lags=2)], 
                          ids = lambda fr: f'forecaster: {type(fr).__name__}')
-def test_check_backtesting_input_ValueError_when_initial_train_size_plus_gap_less_than_data_length(forecaster):
+def test_check_backtesting_input_ValueError_when_initial_train_size_plus_gap_less_than_data_length(forecaster, initial_train_size):
     """
     Test ValueError is raised in check_backtesting_input when 
     initial_train_size + gap >= length `y` or `series` depending on the forecaster.
     """
+    y_datetime = y.copy()
+    y_datetime.index = pd.date_range(start='2000-01-01', periods=len(y), freq='D')
+
+    series_datetime = series.copy()
+    series_datetime.index = pd.date_range(start='2000-01-01', periods=len(y), freq='D')
+
     if type(forecaster).__name__ == 'ForecasterRecursive':
-        data_length = len(y)
+        data_length = len(y_datetime)
         data_name = 'y'
     else:
-        data_length = len(series)
+        data_length = len(series_datetime)
         data_name = 'series'
+
+    if initial_train_size == 'int':
+        initial_train_size = data_length - 1
+    else:
+        initial_train_size = '2000-02-19'
     
     cv = TimeSeriesFold(
              steps                 = 3,
@@ -696,9 +720,9 @@ def test_check_backtesting_input_ValueError_when_initial_train_size_plus_gap_les
          )
     
     err_msg = re.escape(
-        (f"The combination of initial_train_size {cv.initial_train_size} and "
-         f"gap {cv.gap} cannot be greater than the length of `{data_name}` "
-         f"({data_length}).")
+        f"The total size of `initial_train_size` {cv.initial_train_size} plus "
+        f"`gap` {cv.gap} cannot be greater than the length of `{data_name}` "
+        f"({data_length})."
     )
     with pytest.raises(ValueError, match = err_msg):
         check_backtesting_input(
