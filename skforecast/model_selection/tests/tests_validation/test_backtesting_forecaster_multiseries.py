@@ -23,6 +23,7 @@ from skforecast.preprocessing import RollingFeatures
 # Fixtures
 from ..fixtures_model_selection_multiseries import series
 from ..fixtures_model_selection_multiseries import custom_metric
+from ....recursive.tests.tests_forecaster_recursive_multiseries.fixtures_forecaster_recursive_multiseries import expected_df_to_long_format
 THIS_DIR = Path(__file__).parent.parent
 series_dict = joblib.load(THIS_DIR/'fixture_sample_multi_series.joblib')
 exog_dict = joblib.load(THIS_DIR/'fixture_sample_multi_series_exog.joblib')
@@ -52,11 +53,11 @@ def test_backtesting_forecaster_multiseries_TypeError_when_forecaster_not_a_fore
             fixed_train_size   = False
          )
     err_msg = re.escape(
-        ("`forecaster` must be of type ['ForecasterRecursiveMultiSeries', "
-         "'ForecasterDirectMultiVariate', 'ForecasterRnn'], for all "
-         "other types of forecasters use the functions "
-         "available in the `model_selection` module. "
-         f"Got {type(forecaster).__name__}")
+        "`forecaster` must be of type ['ForecasterRecursiveMultiSeries', "
+        "'ForecasterDirectMultiVariate', 'ForecasterRnn'], for all "
+        "other types of forecasters use the functions "
+        "available in the `model_selection` module. "
+        f"Got {type(forecaster).__name__}"
     )
     with pytest.raises(TypeError, match = err_msg):
         backtesting_forecaster_multiseries(
@@ -75,14 +76,14 @@ def test_backtesting_forecaster_multiseries_TypeError_when_forecaster_not_a_fore
 # ======================================================================================================================
 @pytest.mark.parametrize("forecaster, n_jobs", 
                          [(ForecasterRecursiveMultiSeries(regressor=Ridge(random_state=123), 
-                                                        lags=2, transformer_series=None,
-                                                        encoding='onehot'), -1),
+                                                          lags=2, transformer_series=None,
+                                                          encoding='onehot'), -1),
                           (ForecasterRecursiveMultiSeries(regressor=Ridge(random_state=123), 
-                                                        lags=2, transformer_series=None,
-                                                        encoding='onehot'), 1),
+                                                          lags=2, transformer_series=None,
+                                                          encoding='onehot'), 1),
                           (ForecasterRecursiveMultiSeries(regressor=Ridge(random_state=123), 
-                                                        lags=2, transformer_series=None,
-                                                        encoding='onehot'), 'auto')], 
+                                                          lags=2, transformer_series=None,
+                                                          encoding='onehot'), 'auto')], 
                          ids=lambda fc: f'forecaster, n_jobs: {fc}')
 def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_not_refit_with_mocked(forecaster, n_jobs):
     """
@@ -118,6 +119,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                                                0.49868447, 0.4859614 , 0.48480032])},
                                index=pd.RangeIndex(start=38, stop=50, step=1)
                            )
+    expected_predictions = expected_df_to_long_format(expected_predictions)
                                    
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
@@ -171,6 +173,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                         0.50850968, 0.53127329, 0.49010354])},
         index=pd.RangeIndex(start=2, stop=50, step=1)
     )
+    expected_predictions = expected_df_to_long_format(expected_predictions)
                                    
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
@@ -220,6 +223,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                                                0.48298309, 0.47778385, 0.47776533])},
                                index=pd.RangeIndex(start=38, stop=50, step=1)
                            )
+    expected_predictions = expected_df_to_long_format(expected_predictions)
                                    
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
@@ -269,6 +273,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                         0.4973047492523979, 0.4899104838474172, 0.4891085370228432])},
         index=pd.RangeIndex(start=38, stop=50, step=1)
     )
+    expected_predictions = expected_df_to_long_format(expected_predictions)
                                    
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
@@ -312,6 +317,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                         0.4973047492523979, 0.4899104838474172, 0.4891085370228432])},
         index=pd.RangeIndex(start=38, stop=50, step=1)
     )
+    expected_predictions = expected_df_to_long_format(expected_predictions)
                                    
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
@@ -359,6 +365,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                         0.52211914, 0.51092531])},
         index=pd.RangeIndex(start=38, stop=50, step=1)
     )
+    expected_predictions = expected_df_to_long_format(expected_predictions)
                                    
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
@@ -406,6 +413,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                         0.52555989, 0.51801796])},
         index=pd.RangeIndex(start=38, stop=50, step=1)
     )
+    expected_predictions = expected_df_to_long_format(expected_predictions)
                                    
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
@@ -460,6 +468,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                                columns = ['l1', 'l1_lower_bound', 'l1_upper_bound'],
                                index = pd.RangeIndex(start=38, stop=50, step=1)
                            )
+    expected_predictions = expected_df_to_long_format(expected_predictions, method='interval')
                                    
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
@@ -515,6 +524,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                                columns = ['l1', 'l1_lower_bound', 'l1_upper_bound'],
                                index = pd.RangeIndex(start=38, stop=50, step=1)
                            )
+    expected_predictions = expected_df_to_long_format(expected_predictions, method='interval')
                                    
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
@@ -576,6 +586,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                                columns = ['l1', 'l1_lower_bound', 'l1_upper_bound'],
                                index = pd.RangeIndex(start=33, stop=50, step=1)
                            )
+    expected_predictions = expected_df_to_long_format(expected_predictions, method='interval')
                                    
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
@@ -636,6 +647,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                                columns = ['l1', 'l1_lower_bound', 'l1_upper_bound'],
                                index = pd.RangeIndex(start=33, stop=48, step=1)
                            )
+    expected_predictions = expected_df_to_long_format(expected_predictions, method='interval')
                                    
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
@@ -698,6 +710,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
         columns = ['l1', 'l1_lower_bound', 'l1_upper_bound'],
         index = pd.date_range(start='2022-02-05', periods=15, freq='D')
     )
+    expected_predictions = expected_df_to_long_format(expected_predictions, method='interval')
                                    
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
@@ -759,6 +772,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
         columns = ['l1', 'l1_lower_bound', 'l1_upper_bound'],
         index = pd.RangeIndex(start=33, stop=50, step=1)
     )
+    expected_predictions = expected_df_to_long_format(expected_predictions, method='interval')
                                    
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
@@ -818,6 +832,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                                columns = ['l1', 'l1_lower_bound', 'l1_upper_bound'],
                                index = pd.RangeIndex(start=33, stop=48, step=1)
                            )
+    expected_predictions = expected_df_to_long_format(expected_predictions, method='interval')
                                    
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
@@ -880,6 +895,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
         columns = ['l1', 'l1_lower_bound', 'l1_upper_bound'],
         index = pd.date_range(start='2022-02-05', periods=15, freq='D')
     )
+    expected_predictions = expected_df_to_long_format(expected_predictions, method='interval')
                                    
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
@@ -967,6 +983,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
         columns = ['l1', 'l1_lower_bound', 'l1_upper_bound', 'l2', 'l2_lower_bound', 'l2_upper_bound'],
         index = pd.RangeIndex(start=30, stop=50, step=1)
     )
+    expected_predictions = expected_df_to_long_format(expected_predictions, method='interval')
                                    
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
@@ -1034,6 +1051,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
         columns = ['l2', 'l2_lower_bound', 'l2_upper_bound'],
         index = pd.date_range(start='2022-02-03', periods=16, freq='D')
     )
+    expected_predictions = expected_df_to_long_format(expected_predictions, method='interval')
                                    
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
@@ -1055,11 +1073,11 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
         transformer_exog=StandardScaler(),
     )
     cv = TimeSeriesFold(
-            initial_train_size = len(series_dict_train['id_1000']),
-            steps              = 24,
-            refit              = False,
-            fixed_train_size   = True,
-            allow_incomplete_fold = True,
+             initial_train_size    = len(series_dict_train['id_1000']),
+             steps                 = 24,
+             refit                 = False,
+             fixed_train_size      = True,
+             allow_incomplete_fold = True,
          )
     
     metrics, predictions = backtesting_forecaster_multiseries(
@@ -1098,9 +1116,10 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
         index=pd.date_range('2016-08-01', periods=10, freq='D'),
         columns=['id_1000', 'id_1001', 'id_1003', 'id_1004']
     )
+    expected_predictions = expected_df_to_long_format(expected_predictions)
 
     pd.testing.assert_frame_equal(metrics, expected_metrics)
-    pd.testing.assert_frame_equal(predictions.head(10), expected_predictions)
+    pd.testing.assert_frame_equal(predictions.head(40), expected_predictions)
 
 
 def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_series_and_exog_dict_with_window_features():
@@ -1125,11 +1144,11 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
         transformer_exog=StandardScaler(),
     )
     cv = TimeSeriesFold(
-            initial_train_size = len(series_dict_train['id_1000']),
-            steps              = 24,
-            refit              = False,
-            fixed_train_size   = True,
-            allow_incomplete_fold = True,
+             initial_train_size    = len(series_dict_train['id_1000']),
+             steps                 = 24,
+             refit                 = False,
+             fixed_train_size      = True,
+             allow_incomplete_fold = True,
          )
     
     metrics, predictions = backtesting_forecaster_multiseries(
@@ -1168,9 +1187,10 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
         index=pd.date_range('2016-08-01', periods=10, freq='D'),
         columns=['id_1000', 'id_1001', 'id_1003', 'id_1004']
     )
+    expected_predictions = expected_df_to_long_format(expected_predictions)
 
     pd.testing.assert_frame_equal(metrics, expected_metrics)
-    pd.testing.assert_frame_equal(predictions.head(10), expected_predictions)
+    pd.testing.assert_frame_equal(predictions.head(40), expected_predictions)
 
 
 def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_aggregate_metrics_true():
@@ -1183,22 +1203,22 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     )
 
     cv = TimeSeriesFold(
-            initial_train_size = len(series) - 12,
-            steps              = 5,
-            refit              = False,
-            fixed_train_size   = False,
+             initial_train_size = len(series) - 12,
+             steps              = 5,
+             refit              = False,
+             fixed_train_size   = False,
          )
 
     metrics, backtest_predictions = backtesting_forecaster_multiseries(
-                                               forecaster            = forecaster,
-                                               series                = series,
-                                               cv                    = cv,
-                                               levels                = None,
-                                               metric                = ['mean_absolute_error', 'mean_absolute_scaled_error'],
-                                               add_aggregated_metric = True,
-                                               exog                  = None,
-                                               verbose               = False
-                                           )
+                                        forecaster            = forecaster,
+                                        series                = series,
+                                        cv                    = cv,
+                                        levels                = None,
+                                        metric                = ['mean_absolute_error', 'mean_absolute_scaled_error'],
+                                        add_aggregated_metric = True,
+                                        exog                  = None,
+                                        verbose               = False
+                                    )
 
     expected_metrics = pd.DataFrame(
         {
@@ -1220,38 +1240,39 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
         }
     )
     expected_predictions = pd.DataFrame(
-                            {
-                                "l1": [
-                                    0.4978839,
-                                    0.46288427,
-                                    0.48433446,
-                                    0.48677605,
-                                    0.48562473,
-                                    0.50259242,
-                                    0.49536197,
-                                    0.48478881,
-                                    0.48496106,
-                                    0.48555902,
-                                    0.49673897,
-                                    0.4576795,
-                                ],
-                                "l2": [
-                                    0.50266337,
-                                    0.53045945,
-                                    0.50527774,
-                                    0.50315834,
-                                    0.50452649,
-                                    0.47372756,
-                                    0.51226827,
-                                    0.50650107,
-                                    0.50420766,
-                                    0.50448097,
-                                    0.52211914,
-                                    0.51092531,
-                                ],
-                            },
-                            index=pd.RangeIndex(start=38, stop=50, step=1),
-                            )
+        {
+            "l1": [
+                0.4978839,
+                0.46288427,
+                0.48433446,
+                0.48677605,
+                0.48562473,
+                0.50259242,
+                0.49536197,
+                0.48478881,
+                0.48496106,
+                0.48555902,
+                0.49673897,
+                0.4576795,
+            ],
+            "l2": [
+                0.50266337,
+                0.53045945,
+                0.50527774,
+                0.50315834,
+                0.50452649,
+                0.47372756,
+                0.51226827,
+                0.50650107,
+                0.50420766,
+                0.50448097,
+                0.52211914,
+                0.51092531,
+            ],
+        },
+        index=pd.RangeIndex(start=38, stop=50, step=1),
+    )
+    expected_predictions = expected_df_to_long_format(expected_predictions)
 
     pd.testing.assert_frame_equal(expected_metrics, metrics)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
@@ -1294,49 +1315,50 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     )
 
     expected_metrics = pd.DataFrame({
-                        'levels': {0: 'id_1000',
-                        1: 'id_1001',
-                        2: 'id_1002',
-                        3: 'id_1003',
-                        4: 'id_1004',
-                        5: 'average',
-                        6: 'weighted_average',
-                        7: 'pooling'},
-                        'mean_absolute_error': {0: 286.6227398656757,
-                        1: 1364.7345740769094,
-                        2: np.nan,
-                        3: 237.4894217124842,
-                        4: 1267.85941538558,
-                        5: 789.1765377601623,
-                        6: 745.7085483145497,
-                        7: 745.7085483145497},
-                        'mean_squared_error': {0: 105816.86051259708,
-                        1: 2175934.9583102698,
-                        2: np.nan,
-                        3: 95856.72602398091,
-                        4: 2269796.338792736,
-                        5: 1161851.2209098958,
-                        6: 1024317.153152019,
-                        7: 1024317.1531520189}
-                })
+        'levels': {0: 'id_1000',
+            1: 'id_1001',
+            2: 'id_1002',
+            3: 'id_1003',
+            4: 'id_1004',
+            5: 'average',
+            6: 'weighted_average',
+            7: 'pooling'},
+        'mean_absolute_error': {0: 286.6227398656757,
+            1: 1364.7345740769094,
+            2: np.nan,
+            3: 237.4894217124842,
+            4: 1267.85941538558,
+            5: 789.1765377601623,
+            6: 745.7085483145497,
+            7: 745.7085483145497},
+        'mean_squared_error': {0: 105816.86051259708,
+            1: 2175934.9583102698,
+            2: np.nan,
+            3: 95856.72602398091,
+            4: 2269796.338792736,
+            5: 1161851.2209098958,
+            6: 1024317.153152019,
+            7: 1024317.1531520189}
+    })
     
     expected_predictions = pd.DataFrame(
-    data=np.array([[1438.14154717, 2090.79352613, 2166.9832933, 7285.52781428],
-                   [1438.14154717, 2089.11038884, 2074.55994929, 7488.18398744],
-                   [1438.14154717, 2089.11038884, 2035.99448247, 7488.18398744],
-                   [1403.93625654, 2089.11038884, 2035.99448247, 7488.18398744],
-                   [1403.93625654, 2089.11038884, 2035.99448247, 7488.18398744],
-                   [1403.93625654, 2076.10228838, 2035.99448247, 7250.69119259],
-                   [1403.93625654, 2076.10228838, np.nan, 7085.32315355],
-                   [1403.93625654, 2000.42985714, np.nan, 7285.52781428],
-                   [1403.93625654, 2013.4379576, np.nan, 7285.52781428],
-                   [1403.93625654, 2013.4379576, np.nan, 7285.52781428]]),
-    columns=['id_1000', 'id_1001', 'id_1003', 'id_1004'],
-    index=pd.date_range('2016-08-01', periods=10, freq='D')
-)
+        data=np.array([[1438.14154717, 2090.79352613, 2166.9832933, 7285.52781428],
+                       [1438.14154717, 2089.11038884, 2074.55994929, 7488.18398744],
+                       [1438.14154717, 2089.11038884, 2035.99448247, 7488.18398744],
+                       [1403.93625654, 2089.11038884, 2035.99448247, 7488.18398744],
+                       [1403.93625654, 2089.11038884, 2035.99448247, 7488.18398744],
+                       [1403.93625654, 2076.10228838, 2035.99448247, 7250.69119259],
+                       [1403.93625654, 2076.10228838, np.nan, 7085.32315355],
+                       [1403.93625654, 2000.42985714, np.nan, 7285.52781428],
+                       [1403.93625654, 2013.4379576, np.nan, 7285.52781428],
+                       [1403.93625654, 2013.4379576, np.nan, 7285.52781428]]),
+        columns=['id_1000', 'id_1001', 'id_1003', 'id_1004'],
+        index=pd.date_range('2016-08-01', periods=10, freq='D')
+    )
+    expected_predictions = expected_df_to_long_format(expected_predictions)
 
     pd.testing.assert_frame_equal(metrics, expected_metrics)
-    pd.testing.assert_frame_equal(predictions.head(10), expected_predictions)
+    pd.testing.assert_frame_equal(predictions.head(40), expected_predictions)
 
 
 def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_series_and_exog_dict_with_mocked_skip_folds_2():
@@ -1364,15 +1386,15 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
         )
     
     metrics, predictions = backtesting_forecaster_multiseries(
-        forecaster            = forecaster,
-        series                = series_dict,
-        exog                  = exog_dict,
-        cv                    = cv,
-        metric                = 'mean_absolute_error',
-        n_jobs                = 'auto',
-        verbose               = True,
-        show_progress         = True,
-        suppress_warnings     = True
+        forecaster        = forecaster,
+        series            = series_dict,
+        exog              = exog_dict,
+        cv                = cv,
+        metric            = 'mean_absolute_error',
+        n_jobs            = 'auto',
+        verbose           = True,
+        show_progress     = True,
+        suppress_warnings = True
     )
 
     expected_metrics = pd.DataFrame(
@@ -1404,9 +1426,10 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                 dtype='datetime64[ns]', freq=None),
         columns=['id_1000', 'id_1001', 'id_1003', 'id_1004']
     )
+    expected_predictions = expected_df_to_long_format(expected_predictions)
 
     pd.testing.assert_frame_equal(metrics, expected_metrics)
-    pd.testing.assert_frame_equal(predictions.head(10), expected_predictions)
+    pd.testing.assert_frame_equal(predictions.head(40), expected_predictions)
 
 
 def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_series_and_exog_dict_encoding_None_differentiation():
@@ -1428,24 +1451,24 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     )
     
     cv = TimeSeriesFold(
-            initial_train_size = len(series_dict_train['id_1000']),
-            steps              = 24,
-            refit              = False,
-            fixed_train_size   = True,
-            gap                = 0,
-            differentiation    = forecaster.differentiation_max
-        )
+             initial_train_size = len(series_dict_train['id_1000']),
+             steps              = 24,
+             refit              = False,
+             fixed_train_size   = True,
+             gap                = 0,
+             differentiation    = forecaster.differentiation_max
+         )
     
     metrics, predictions = backtesting_forecaster_multiseries(
-        forecaster            = forecaster,
-        series                = series_dict,
-        exog                  = exog_dict,
-        cv                    = cv,
-        metric                = ['mean_absolute_error', 'mean_absolute_scaled_error'],
-        n_jobs                = 'auto',
-        verbose               = True,
-        show_progress         = True,
-        suppress_warnings     = True
+        forecaster        = forecaster,
+        series            = series_dict,
+        exog              = exog_dict,
+        cv                = cv,
+        metric            = ['mean_absolute_error', 'mean_absolute_scaled_error'],
+        n_jobs            = 'auto',
+        verbose           = True,
+        show_progress     = True,
+        suppress_warnings = True
     )
 
     expected_metrics = pd.DataFrame(
@@ -1479,9 +1502,10 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
         index=pd.date_range('2016-08-01', periods=10, freq='D'),
         columns=['id_1000', 'id_1001', 'id_1003', 'id_1004']
     )
+    expected_predictions = expected_df_to_long_format(expected_predictions)
 
     pd.testing.assert_frame_equal(metrics, expected_metrics)
-    pd.testing.assert_frame_equal(predictions.head(10), expected_predictions)
+    pd.testing.assert_frame_equal(predictions.head(40), expected_predictions)
 
 
 def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_series_and_exog_dict_differentiation_dict():
@@ -1576,6 +1600,189 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
         index=pd.date_range('2016-08-01', periods=10, freq='D'),
         columns=['id_1000', 'id_1001', 'id_1003', 'id_1004']
     )
+    expected_predictions = expected_df_to_long_format(expected_predictions)
+
+    pd.testing.assert_frame_equal(metrics, expected_metrics)
+    pd.testing.assert_frame_equal(predictions.head(40), expected_predictions)
+
+
+def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_series_and_exog_dict_interval_bootstrapping():
+    """
+    Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 
+    when series and exog are dictionaries, encoding='ordinal', and interval as 5
+    bootstrapping iterations (mocked done in Skforecast v0.15.0).
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+        regressor=LGBMRegressor(
+            n_estimators=30, random_state=123, verbose=-1, max_depth=4
+        ),
+        lags=[1, 7, 14],
+        encoding='ordinal',
+        dropna_from_series=False,
+        transformer_series=None,
+        transformer_exog=StandardScaler(),
+    )
+
+    cv = TimeSeriesFold(
+             initial_train_size = len(series_dict_train['id_1000']),
+             steps              = 24,
+             refit              = False
+         )
+    
+    metrics, predictions = backtesting_forecaster_multiseries(
+        forecaster        = forecaster,
+        series            = series_dict,
+        exog              = exog_dict,
+        cv                = cv,
+        metric            = ['mean_absolute_error', 'mean_absolute_scaled_error'],
+        interval          = "bootstrapping",
+        n_boot            = 5,
+        n_jobs            = 'auto',
+        verbose           = False,
+        show_progress     = True,
+        suppress_warnings = True
+    )
+
+    expected_metrics = pd.DataFrame(
+        {
+            "levels": {
+                0: "id_1000",
+                1: "id_1001",
+                2: "id_1002",
+                3: "id_1003",
+                4: "id_1004",
+                5: "average",
+                6: "weighted_average",
+                7: "pooling",
+            },
+            "mean_absolute_error": {
+                0: 177.94640447766702,
+                1: 1451.3480109896332,
+                2: np.nan,
+                3: 277.78113362955673,
+                4: 993.6769068120083,
+                5: 725.1881139772163,
+                6: 724.9604804988818,
+                7: 724.960480498882,
+            },
+            "mean_absolute_scaled_error": {
+                0: 0.8178593233613526,
+                1: 4.1364664709651064,
+                2: np.nan,
+                3: 1.1323827428361022,
+                4: 0.8271748048818786,
+                5: 1.72847083551111,
+                6: 2.0965105153721213,
+                7: 1.760615501057647,
+            },
+        }
+    )
+    expected_predictions = pd.DataFrame(
+        {
+            "level": [
+                "id_1000",
+                "id_1001",
+                "id_1003",
+                "id_1004",
+                "id_1000",
+                "id_1001",
+                "id_1003",
+                "id_1004",
+                "id_1000",
+                "id_1001",
+            ],
+            "pred": [
+                1559.6918278739745,
+                2934.363291873329,
+                3392.6095502790795,
+                7097.054479229451,
+                1572.8044765344362,
+                3503.7475024125847,
+                3118.0493908325134,
+                8301.53364484904,
+                1537.6749468304602,
+                3354.2752034001587,
+            ],
+            "pred_boot_0": [
+                1244.2487779414616,
+                3249.3099580454227,
+                3026.660773746065,
+                7283.009034196002,
+                1379.325669602402,
+                2700.01667124113,
+                3034.5049394996236,
+                8133.9504544000665,
+                1645.746552367544,
+                2161.096995835602,
+            ],
+            "pred_boot_1": [
+                1465.818251789675,
+                1749.4308557013514,
+                3209.353725050357,
+                7596.364313849582,
+                1549.9990717200433,
+                2456.5235020742034,
+                2727.686547196392,
+                7934.2179814613755,
+                1482.0354924313588,
+                2118.013348030759,
+            ],
+            "pred_boot_2": [
+                1426.9105599999878,
+                2154.9574614057674,
+                3300.752739211812,
+                8581.874365472368,
+                1472.404037564884,
+                2138.1376247083017,
+                2965.978799872021,
+                9417.261118654871,
+                1504.0231525311342,
+                1838.1870081278496,
+            ],
+            "pred_boot_3": [
+                1694.8630142768532,
+                2630.418618988223,
+                3433.808066331928,
+                8810.79839032039,
+                1704.69978628218,
+                3090.1184264796143,
+                3208.1917726246043,
+                7948.341186101785,
+                1460.1402826616131,
+                2169.342767228181,
+            ],
+            "pred_boot_4": [
+                1366.5475543161697,
+                2562.3887885124836,
+                3316.595598427939,
+                7283.009034196002,
+                1487.411991726873,
+                2138.1376247083017,
+                3225.084699103416,
+                7880.217194939906,
+                1504.0231525311342,
+                2150.5287792591175,
+            ],
+        },
+        index=pd.DatetimeIndex(
+            [
+                "2016-08-01",
+                "2016-08-01",
+                "2016-08-01",
+                "2016-08-01",
+                "2016-08-02",
+                "2016-08-02",
+                "2016-08-02",
+                "2016-08-02",
+                "2016-08-03",
+                "2016-08-03",
+            ],
+            dtype="datetime64[ns]",
+            freq=None,
+        ),
+        columns=['level', 'pred', 'pred_boot_0', 'pred_boot_1', 'pred_boot_2',
+                 'pred_boot_3', 'pred_boot_4'],
+    )
 
     pd.testing.assert_frame_equal(metrics, expected_metrics)
     pd.testing.assert_frame_equal(predictions.head(10), expected_predictions)
@@ -1585,6 +1792,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     """
     Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 
     when series and exog are dictionaries, encoding='ordinal', and interval as percentiles.
+    (mocked done in Skforecast v0.15.0).
     """
     forecaster = ForecasterRecursiveMultiSeries(
         regressor=LGBMRegressor(
@@ -1652,52 +1860,85 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
         }
     )
     expected_predictions = pd.DataFrame(
-        data=np.array([
-            [1559.69182787,  1254.39376005,  1467.3747505 ,  1662.19298302,
-             2934.36329187,  2250.04701738,  2677.24610914,  3379.48021319,
-             3392.60955028,  2985.32070762,  3329.15273493,  3507.05051942,
-             7097.05447923,  5354.05508931,  6929.47128878,  7765.27512661],
-            [1572.80447653,  1403.57171697,  1484.16309484,  1554.52561974,
-             3503.74750241,  1951.50201221,  2700.01667124,  3358.05498883,
-             3118.04939083,  2632.72766857,  2959.31845356,  3257.40053314,
-             8301.53364485,  6939.0729599 ,  7973.74849672,  8875.19795652],
-            [1537.67494683,  1366.36219005,  1456.1544357 ,  1544.77559824,
-             3354.2752034 ,  1932.69082122,  2669.95892891,  3799.39212471,
-             3118.04939083,  2070.70729371,  2947.64796768,  3446.49223196,
-             8466.83628992,  7499.6207183 ,  8139.05114179,  9068.02513931],
-            [1480.69426693,  1307.22715019,  1435.43561161,  1572.43940521,
-             3537.13889916,  2357.41941102,  3068.6224638 ,  3841.85903141,
-             2687.48648381,  1684.25483699,  2274.06616863,  2807.18004392,
-             8652.97166708,  7945.37019245,  8479.47404957,  9780.46029039],
-            [1472.61090534,  1288.95635883,  1389.1162396 ,  1459.53479577,
-             3200.84494385,  1718.0460028 ,  2857.6801117 ,  3645.96186517,
-             1835.99400007,  1620.40185403,  1786.05808982,  2620.94057422,
-             8613.37020561,  7645.65389082,  8989.3595333 , 10114.17875653],
-            [1213.90236266,  1015.10090344,  1123.08975389,  1224.45019788,
-             2429.13188451,  1997.90508335,  2598.84215913,  3065.72870821,
-             2076.89996695,  1821.97564878,  2017.54657079,  2712.90892275,
-             6320.46731452,  5556.29132735,  6377.63663775,  6873.42632672],
-            [1114.62377445,   955.03532246,  1041.93021433,  1236.98763276,
-             2541.61148589,  1709.17761942,  2429.57733102,  2935.97098951,
-                    np.nan,         np.nan,         np.nan,         np.nan,
-             5299.66719171,  4110.76897485,  5061.38418619,  5990.70363532],
-            [1457.61728074,  1203.45324611,  1374.9420862 ,  1515.37841868,
-             2890.62349455,  1535.84802047,  2368.39269512,  3118.90442018,
-                    np.nan,         np.nan,         np.nan,         np.nan,
-             6301.59181845,  5756.26018551,  6315.11732099,  7403.10231922],
-            [1533.61644713,  1358.08038962,  1448.37110131,  1574.3939801 ,
-             3048.88347375,  2072.2308379 ,  2591.76446359,  3634.3795967 ,
-                    np.nan,         np.nan,         np.nan,         np.nan,
-             7219.15402044,  6189.6871517 ,  7274.29170113,  8814.49238999],
-            [1508.14706137,  1282.71079267,  1406.19012369,  1574.64525979,
-             3126.60843907,  1848.40562551,  2532.52220717,  3648.63735664,
-                    np.nan,         np.nan,         np.nan,         np.nan,
-             8245.06031644,  6737.4417026 ,  7589.04341095,  8660.03930364]]),
-        index=pd.date_range('2016-08-01', periods=10, freq='D'),
-        columns=['id_1000', 'id_1000_p_10', 'id_1000_p_50', 'id_1000_p_90', 'id_1001',
-                 'id_1001_p_10', 'id_1001_p_50', 'id_1001_p_90', 'id_1003',
-                 'id_1003_p_10', 'id_1003_p_50', 'id_1003_p_90', 'id_1004',
-                 'id_1004_p_10', 'id_1004_p_50', 'id_1004_p_90']
+        {
+            "level": [
+                "id_1000",
+                "id_1001",
+                "id_1003",
+                "id_1004",
+                "id_1000",
+                "id_1001",
+                "id_1003",
+                "id_1004",
+                "id_1000",
+                "id_1001",
+            ],
+            "pred": [
+                1559.6918278739745,
+                2934.363291873329,
+                3392.6095502790795,
+                7097.054479229451,
+                1572.8044765344362,
+                3503.7475024125847,
+                3118.0493908325134,
+                8301.53364484904,
+                1537.6749468304602,
+                3354.2752034001587,
+            ],
+            "p_10": [
+                1254.3937600463285,
+                2250.0470173812155,
+                2985.320707618097,
+                5354.055089308734,
+                1403.5717169677177,
+                1951.5020122145777,
+                2632.727668573485,
+                6939.072959904811,
+                1366.3621900495914,
+                1932.690821216753,
+            ],
+            "p_50": [
+                1467.3747504982232,
+                2677.246109137839,
+                3329.152734925742,
+                6929.471288780478,
+                1484.163094840302,
+                2700.01667124113,
+                2959.318453557907,
+                7973.74849672378,
+                1456.154435701382,
+                2669.958928908045,
+            ],
+            "p_90": [
+                1662.1929830180393,
+                3379.480213187932,
+                3507.050519419739,
+                7765.275126610016,
+                1554.52561973504,
+                3358.054988829244,
+                3257.4005331397716,
+                8875.197956517535,
+                1544.7755982424908,
+                3799.3921247147614,
+            ],
+        },
+        index=pd.DatetimeIndex(
+            [
+                "2016-08-01",
+                "2016-08-01",
+                "2016-08-01",
+                "2016-08-01",
+                "2016-08-02",
+                "2016-08-02",
+                "2016-08-02",
+                "2016-08-02",
+                "2016-08-03",
+                "2016-08-03",
+            ],
+            dtype="datetime64[ns]",
+            freq=None,
+        ),
+        columns=["level", "pred", "p_10", "p_50", "p_90"],
     )
 
     pd.testing.assert_frame_equal(metrics, expected_metrics)
@@ -1708,7 +1949,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     """
     Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 
     when series and exog are dictionaries, encoding='ordinal', and interval as a
-    scipy.stats norm distribution.
+    scipy.stats norm distribution. (mocked done in Skforecast v0.15.0).
     """
     forecaster = ForecasterRecursiveMultiSeries(
         regressor=LGBMRegressor(
@@ -1776,41 +2017,73 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
         }
     )
     expected_predictions = pd.DataFrame(
-        data=np.array([
-            [1559.69182787, 1446.93581986,  171.66343358, 2934.36329187,
-             2738.99229845,  476.13018745, 3392.60955028, 3285.49512256,
-              254.33164031, 7097.05447923, 6901.15599599,  930.8659121 ],
-            [1572.80447653, 1481.35511731,   75.01701475, 3503.74750241,
-             2676.91909653,  595.80407354, 3118.04939083, 2945.42032254,
-              434.03240802, 8301.53364485, 8004.38824145,  905.03703795],
-            [1537.67494683, 1453.75176554,   84.7294755 , 3354.2752034 ,
-             2732.56581839,  678.25751156, 3118.04939083, 2813.94368549,
-              637.92012714, 8466.83628992, 8267.68914986,  792.49132562],
-            [1480.69426693, 1429.97572138,   98.59861312, 3537.13889916,
-             3099.75121966,  655.2848398 , 2687.48648381, 2302.71838396,
-              585.67463419, 8652.97166708, 8620.93678941,  943.37266194],
-            [1472.61090534, 1395.4895971 ,   89.0778098 , 3200.84494385,
-             2749.72104765,  721.7836647 , 1835.99400007, 1938.17003599,
-              444.13125476, 8613.37020561, 8767.79513532,  943.90972333],
-            [1213.90236266, 1119.07196282,   80.77853592, 2429.13188451,
-             2522.22340744,  492.65035187, 2076.89996695, 2121.69458421,
-              352.42229744, 6320.46731452, 6283.23495914,  755.51548912],
-            [1114.62377445, 1065.39476041,  104.58402523, 2541.61148589,
-             2371.00760694,  470.97808135,        np.nan,        np.nan,
-                    np.nan, 5299.66719171, 5048.86492253,  765.80906399],
-            [1457.61728074, 1371.81259036,  143.11988525, 2890.62349455,
-             2391.75860299,  594.08769665,        np.nan,        np.nan,
-                    np.nan, 6301.59181845, 6380.84689638,  602.60200971],
-            [1533.61644713, 1438.26216856,  132.80078811, 3048.88347375,
-             2668.10487685,  663.72595299,        np.nan,        np.nan,
-                    np.nan, 7219.15402044, 7427.79773119, 1089.69529419],
-            [1508.14706137, 1413.38549449,  143.01193824, 3126.60843907,
-             2686.69659066,  806.60389414,        np.nan,        np.nan,
-                    np.nan, 8245.06031644, 7674.86819444,  808.05518064]]),
-        index=pd.date_range('2016-08-01', periods=10, freq='D'),
-        columns=['id_1000', 'id_1000_loc', 'id_1000_scale', 'id_1001', 'id_1001_loc',
-                 'id_1001_scale', 'id_1003', 'id_1003_loc', 'id_1003_scale', 'id_1004',
-                 'id_1004_loc', 'id_1004_scale']
+        {
+            "level": [
+                "id_1000",
+                "id_1001",
+                "id_1003",
+                "id_1004",
+                "id_1000",
+                "id_1001",
+                "id_1003",
+                "id_1004",
+                "id_1000",
+                "id_1001",
+            ],
+            "pred": [
+                1559.6918278739745,
+                2934.363291873329,
+                3392.6095502790795,
+                7097.054479229451,
+                1572.8044765344362,
+                3503.7475024125847,
+                3118.0493908325134,
+                8301.53364484904,
+                1537.6749468304602,
+                3354.2752034001587,
+            ],
+            "loc": [
+                1446.9358198599687,
+                2738.992298449951,
+                3285.495122563763,
+                6901.155995994967,
+                1481.355117305214,
+                2676.9190965330286,
+                2945.420322544557,
+                8004.388241447931,
+                1453.751765541335,
+                2732.5658183877763,
+            ],
+            "scale": [
+                171.66343357536252,
+                476.1301874517562,
+                254.33164031416072,
+                930.8659121040267,
+                75.0170147519068,
+                595.8040735431155,
+                434.0324080210821,
+                905.0370379547618,
+                84.72947549974545,
+                678.2575115584594,
+            ],
+        },
+        index=pd.DatetimeIndex(
+            [
+                "2016-08-01",
+                "2016-08-01",
+                "2016-08-01",
+                "2016-08-01",
+                "2016-08-02",
+                "2016-08-02",
+                "2016-08-02",
+                "2016-08-02",
+                "2016-08-03",
+                "2016-08-03",
+            ],
+            dtype="datetime64[ns]",
+            freq=None,
+        ),
+        columns=["level", "pred", "loc", "scale"],
     )
 
     pd.testing.assert_frame_equal(metrics, expected_metrics)
@@ -1840,11 +2113,11 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
                      transformer_series = None
                  )
     cv = TimeSeriesFold(
-            initial_train_size = len(series) - 12,
-            steps              = 3,
-            refit              = False,
-            fixed_train_size   = False,
-        )
+             initial_train_size = len(series) - 12,
+             steps              = 3,
+             refit              = False,
+             fixed_train_size   = False,
+         )
 
     metrics_levels, backtest_predictions = backtesting_forecaster_multiseries(
                                                forecaster            = forecaster,
@@ -1861,12 +2134,13 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
     expected_metric = pd.DataFrame({'levels': ['l1'],
                                     'mean_absolute_error': [0.2056686186667702]})
     expected_predictions = pd.DataFrame({
-                               'l1':np.array([0.55397908, 0.48026456, 0.52368724,
-                                              0.48490132, 0.46928502, 0.52511441, 
-                                              0.46529858, 0.45430583, 0.51706306, 
-                                              0.50561424, 0.47109786, 0.45568319])},
+                               'l1': np.array([0.55397908, 0.48026456, 0.52368724,
+                                               0.48490132, 0.46928502, 0.52511441, 
+                                               0.46529858, 0.45430583, 0.51706306, 
+                                               0.50561424, 0.47109786, 0.45568319])},
                                index=pd.RangeIndex(start=38, stop=50, step=1)
                            )
+    expected_predictions = expected_df_to_long_format(expected_predictions)
                                    
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
@@ -1888,11 +2162,11 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
                  )
     forecaster.fit(series=series)
     cv = TimeSeriesFold(
-            initial_train_size = None,
-            steps              = 1,
-            refit              = False,
-            fixed_train_size   = False,
-        )
+             initial_train_size = None,
+             steps              = 1,
+             refit              = False,
+             fixed_train_size   = False,
+         )
     metrics_levels, backtest_predictions = backtesting_forecaster_multiseries(
                                                forecaster            = forecaster,
                                                series                = series,
@@ -1919,6 +2193,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
                         0.57546277, 0.57700474, 0.50898628])},
         index=pd.RangeIndex(start=2, stop=50, step=1)
     )
+    expected_predictions = expected_df_to_long_format(expected_predictions)
                                    
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
@@ -1940,11 +2215,11 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
                      transformer_series = None
                  )
     cv = TimeSeriesFold(
-            initial_train_size = len(series) - 12,
-            steps              = 3,
-            refit              = True,
-            fixed_train_size   = True,
-        )
+             initial_train_size = len(series) - 12,
+             steps              = 3,
+             refit              = True,
+             fixed_train_size   = True,
+         )
 
     metrics_levels, backtest_predictions = backtesting_forecaster_multiseries(
                                                forecaster            = forecaster,
@@ -1967,6 +2242,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
                                                0.51476103, 0.48480385, 0.53470992])},
                                index=pd.RangeIndex(start=38, stop=50, step=1)
                            )
+    expected_predictions = expected_df_to_long_format(expected_predictions)
                                    
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
@@ -1993,11 +2269,11 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
                      transformer_series = None
                  )
     cv = TimeSeriesFold(
-            initial_train_size = len(series) - 12,
-            steps              = 3,
-            refit              = True,
-            fixed_train_size   = True,
-        )
+             initial_train_size = len(series) - 12,
+             steps              = 3,
+             refit              = True,
+             fixed_train_size   = True,
+         )
 
     metrics_levels, backtest_predictions = backtesting_forecaster_multiseries(
                                                forecaster            = forecaster,
@@ -2019,6 +2295,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
                                                0.43536832, 0.5907553])},
                                index=pd.RangeIndex(start=38, stop=50, step=1)
                            )
+    expected_predictions = expected_df_to_long_format(expected_predictions)
                                    
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
@@ -2067,6 +2344,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
                                                0.55296942, 0.53498642, 0.44772825])},
                                index=pd.RangeIndex(start=38, stop=50, step=1)
                            )
+    expected_predictions = expected_df_to_long_format(expected_predictions)
                                    
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
@@ -2115,6 +2393,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
                                                0.55296942, 0.53498642, 0.44772825])},
                                index=pd.RangeIndex(start=38, stop=50, step=1)
                            )
+    expected_predictions = expected_df_to_long_format(expected_predictions)
                                    
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
@@ -2175,6 +2454,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
         columns = ['l1', 'l1_lower_bound', 'l1_upper_bound'],
         index = pd.RangeIndex(start=38, stop=50, step=1)
     )
+    expected_predictions = expected_df_to_long_format(expected_predictions, method='interval')
                                    
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
@@ -2234,6 +2514,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
         columns = ['l1', 'l1_lower_bound', 'l1_upper_bound'],
         index = pd.RangeIndex(start=38, stop=50, step=1)
     )
+    expected_predictions = expected_df_to_long_format(expected_predictions, method='interval')
                                    
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
@@ -2299,6 +2580,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
         columns = ['l1', 'l1_lower_bound', 'l1_upper_bound'],
         index = pd.RangeIndex(start=33, stop=50, step=1)
     )
+    expected_predictions = expected_df_to_long_format(expected_predictions, method='interval')
                                    
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
@@ -2362,6 +2644,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
                                columns = ['l1', 'l1_lower_bound', 'l1_upper_bound'],
                                index = pd.RangeIndex(start=33, stop=48, step=1)
                            )
+    expected_predictions = expected_df_to_long_format(expected_predictions, method='interval')
                                    
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
@@ -2428,6 +2711,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
         columns = ['l1', 'l1_lower_bound', 'l1_upper_bound'],
         index = pd.date_range(start='2022-02-05', periods=15, freq='D')
     )
+    expected_predictions = expected_df_to_long_format(expected_predictions, method='interval')
                                    
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
@@ -2504,6 +2788,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
         columns = ['l1', 'l1_lower_bound', 'l1_upper_bound'],
         index = pd.RangeIndex(start=30, stop=50, step=1)
     )
+    expected_predictions = expected_df_to_long_format(expected_predictions, method='interval')
                                    
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
@@ -2583,6 +2868,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
         columns = ['l1', 'l1_lower_bound', 'l1_upper_bound'],
         index = pd.date_range(start='2022-01-24', periods=24, freq='D')
     )
+    expected_predictions = expected_df_to_long_format(expected_predictions, method='interval')
                                    
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)

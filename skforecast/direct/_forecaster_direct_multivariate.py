@@ -1805,9 +1805,10 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             ])
 
         if self.differentiation is not None:
-            predictions = self.differentiator_[
-                self.level
-            ].inverse_transform_next_window(predictions)
+            predictions = (
+                self.differentiator_[self.level]
+                .inverse_transform_next_window(predictions)
+            )
         
         predictions = transform_numpy(
                           array             = predictions,
@@ -1815,12 +1816,12 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                           fit               = False,
                           inverse_transform = True
                       )
-            
+        
+        # TODO: This DataFrame has freq because it only contain 1 level
         predictions = pd.DataFrame(
-                          data    = predictions,
-                          columns = [self.level],
-                          index   = prediction_index
-                      )
+            {"level": np.tile([self.level], len(steps)), "pred": predictions},
+            index = prediction_index,
+        )
         
         set_skforecast_warnings(suppress_warnings, action='default')
 

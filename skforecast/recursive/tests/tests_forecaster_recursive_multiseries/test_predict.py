@@ -688,9 +688,9 @@ def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differe
     """
     end_train = 30
     # Data differentiated
-    diferenciator = TimeSeriesDifferentiator(order=1)
-    series_1_diff = diferenciator.fit_transform(series['1'].to_numpy())
-    series_2_diff = diferenciator.fit_transform(series['2'].to_numpy())
+    differentiator = TimeSeriesDifferentiator(order=1)
+    series_1_diff = differentiator.fit_transform(series['1'].to_numpy())
+    series_2_diff = differentiator.fit_transform(series['2'].to_numpy())
     data_diff = pd.DataFrame(
         {'1': series_1_diff, '2': series_2_diff}
     ).dropna()
@@ -825,14 +825,14 @@ def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differe
     df_diff_2 = pd.DataFrame()
     for col in series_dt.columns:
 
-        diferenciator_1 = TimeSeriesDifferentiator(order=1)
-        diferenciator_2 = TimeSeriesDifferentiator(order=2)
+        differentiator_1 = TimeSeriesDifferentiator(order=1)
+        differentiator_2 = TimeSeriesDifferentiator(order=2)
 
-        data_diff_1 = diferenciator_1.fit_transform(series_dt[col].to_numpy())
+        data_diff_1 = differentiator_1.fit_transform(series_dt[col].to_numpy())
         data_diff_1 = pd.Series(data_diff_1).dropna()
         df_diff_1[col] = data_diff_1
 
-        data_diff_2 = diferenciator_2.fit_transform(series_dt[col].to_numpy())
+        data_diff_2 = differentiator_2.fit_transform(series_dt[col].to_numpy())
         data_diff_2 = pd.Series(data_diff_2).dropna()
         df_diff_2[col] = data_diff_2
 
