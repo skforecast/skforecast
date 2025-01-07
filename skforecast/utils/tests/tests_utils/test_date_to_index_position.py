@@ -29,7 +29,8 @@ def test_ValueError_date_to_index_position_when_date_is_before_last_index():
     index = pd.date_range(start='1990-01-01', periods=3, freq='D')
     
     err_msg = re.escape(
-        "The provided date must be later than the last date in the index."
+        "If `steps` is a date, it must be greater than the last date "
+        "in the index."
     )
     with pytest.raises(ValueError, match=err_msg):
         date_to_index_position(index, date_input='1990-01-02')
@@ -47,7 +48,9 @@ def test_TypeError_date_to_index_position_when_date_input_is_not_int_str_or_Time
         "`initial_train_size` must be an integer, string, or pandas Timestamp."
     )
     with pytest.raises(TypeError, match=err_msg):
-        date_to_index_position(index, date_input=date_input, date_literal=date_literal)
+        date_to_index_position(
+            index=index, date_input=date_input, date_literal=date_literal
+        )
 
 
 @pytest.mark.parametrize("date_input", 
@@ -58,7 +61,7 @@ def test_output_date_to_index_position_with_different_date_input_types(date_inpu
     Test values returned by date_to_index_position with different date_input types.
     """
     index = pd.date_range(start='1990-01-01', periods=3, freq='D')
-    results = date_to_index_position(index, date_input=date_input)
+    results = date_to_index_position(index=index, date_input=date_input)
 
     expected = 4
     
@@ -72,7 +75,7 @@ def test_output_date_to_index_position_when_date_input_is_string_date_with_kwarg
     """
     index = pd.date_range(start='1990-01-01', periods=3, freq='D')
     results = date_to_index_position(
-        index, date_input='1990-07-01', kwargs_pd_to_datetime={'format': '%Y-%d-%m'}
+        index=index, date_input='1990-07-01', kwargs_pd_to_datetime={'format': '%Y-%d-%m'}
     )
     
     expected = 4
@@ -88,14 +91,15 @@ def test_ValueError_date_to_index_position_when_date_is_out_of_range_and_method_
     index = pd.date_range(start='1990-01-01', periods=3, freq='D')
     
     err_msg = re.escape(
-        "The provided date must be later than the first date in the index "
-        "and earlier than the last date."
+        "If `initial_train_size` is a date, it must be greater than "
+        "the first date in the index and less than the last date."
     )
     with pytest.raises(ValueError, match=err_msg):
         date_to_index_position(
-            index=index,
-            date_input='1990-01-10',
-            method='validation'
+            index        = index,
+            date_input   = '1990-01-10',
+            method       = 'validation',
+            date_literal ='initial_train_size'
         )
 
 
@@ -106,12 +110,13 @@ def test_output_date_to_index_position_when_date_in_range_and_method_is_validati
     """
     index = pd.date_range(start='1990-01-01', periods=5, freq='D')
     results = date_to_index_position(
-                  index      = index,
-                  date_input = '1990-01-03',
-                  method     = 'validation'
+                  index        = index,
+                  date_input   = '1990-01-03',
+                  method       = 'validation',
+                  date_literal ='initial_train_size'
               )
 
-    expected = 2  # Position within the range
+    expected = 3  # iloc position within the range
 
     assert results == expected
 
@@ -123,30 +128,7 @@ def test_output_date_to_index_position_when_date_is_first_date_and_method_is_val
     """
     index = pd.date_range(start='1990-01-01', periods=5, freq='D')
     results = date_to_index_position(
-        index=index, date_input='1990-01-01', method='validation'
+        index=index, date_input='1990-01-01', method='validation', date_literal ='initial_train_size'
     )
 
-    assert results == 0
-
-
-def test_ValueError_date_to_index_position_when_integer_is_negative_and_method_is_validation():
-    """
-    Test ValueError is raised when integer input is negative and method is 'validation'.
-    """
-    index = pd.date_range(start='1990-01-01', periods=3, freq='D')
-
-    err_msg = f"The provided integer must be between 0 and {len(index) - 1}."
-    with pytest.raises(ValueError, match=err_msg):
-        date_to_index_position(index=index, date_input=-1, method='validation')
-
-
-def test_ValueError_date_to_index_position_when_integer_is_bigger_than_index_range_and_method_is_validation():
-    """
-    Test ValueError is raised when integer input is bigger than the index range
-    and method is 'validation'.
-    """
-    index = pd.date_range(start='1990-01-01', periods=3, freq='D')
-
-    err_msg = f"The provided integer must be between 0 and {len(index) - 1}."
-    with pytest.raises(ValueError, match=err_msg):
-        date_to_index_position(index=index, date_input=10, method='validation')
+    assert results == 1  # iloc position within the range

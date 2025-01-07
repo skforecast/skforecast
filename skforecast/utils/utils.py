@@ -1626,7 +1626,7 @@ def date_to_index_position(
         date in the index.
         + If method is 'validation', position plus one of the date in the index,
         this is done to include the target date in the training set when using 
-        pandas iloc).
+        pandas iloc with slices.
     
     """
 
