@@ -5,7 +5,8 @@
 ################################################################################
 # coding=utf-8
 
-from typing import Union, Tuple, Optional, Callable, Any
+from __future__ import annotations
+from typing import Callable, Any
 import warnings
 import sys
 import numpy as np
@@ -98,7 +99,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         method. The resulting `sample_weight` cannot have negative values.
     fit_kwargs : dict, default None
         Additional arguments to be passed to the `fit` method of the regressor.
-    n_jobs : int, 'auto', default `'auto'`
+    n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
         skforecast.utils.select_n_jobs_fit_forecaster.
@@ -260,15 +261,15 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         regressor: object,
         level: str,
         steps: int,
-        lags: Optional[Union[int, list, np.ndarray, range, dict]] = None,
-        window_features: Optional[Union[object, list]] = None,
-        transformer_series: Optional[Union[object, dict]] = StandardScaler(),
-        transformer_exog: Optional[object] = None,
-        weight_func: Optional[Callable] = None,
-        differentiation: Optional[int] = None,
-        fit_kwargs: Optional[dict] = None,
-        n_jobs: Union[int, str] = 'auto',
-        forecaster_id: Optional[Union[str, int]] = None
+        lags: int | list[int] | np.ndarray[int] | range[int] | dict[str, int | list] | None = None,
+        window_features: object | list[object] | None = None,
+        transformer_series: object | dict[str, object] | None = StandardScaler(),
+        transformer_exog: object | None = None,
+        weight_func: Callable | None = None,
+        differentiation: int | None = None,
+        fit_kwargs: dict[str, object] | None = None,
+        n_jobs: int | str = 'auto',
+        forecaster_id: str | int | None = None
     ) -> None:
         
         self.regressor                          = copy(regressor)
@@ -560,8 +561,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
     
     def _create_data_to_return_dict(
         self, 
-        series_names_in_: list
-    ) -> Tuple[dict, list]:
+        series_names_in_: list[str]
+    ) -> tuple[dict[str, str], list[str]]:
         """
         Create `data_to_return_dict` based on series names and lags configuration.
         The dictionary contains the information to decide what data to return in 
@@ -576,7 +577,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         -------
         data_to_return_dict : dict
             Dictionary with the information to decide what data to return in the
-            `_create_lags` method.
+            `_create_lags` method. Options are 'X', 'y' or 'both'.
         X_train_series_names_in_ : list
             Names of the series added to `X_train` when creating the training
             matrices with `_create_train_X_y` method. It is a subset of 
@@ -588,11 +589,11 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             lags_keys = list(self.lags.keys())
             if set(lags_keys) != set(series_names_in_):  # Set to avoid order
                 raise ValueError(
-                    (f"When `lags` parameter is a `dict`, its keys must be the "
-                     f"same as `series` column names. If don't want to include lags, "
-                      "add '{column: None}' to the lags dict.\n"
-                     f"  Lags keys        : {lags_keys}.\n"
-                     f"  `series` columns : {series_names_in_}.")
+                    f"When `lags` parameter is a `dict`, its keys must be the "
+                    f"same as `series` column names. If don't want to include lags, "
+                     "add '{column: None}' to the lags dict.\n"
+                    f"  Lags keys        : {lags_keys}.\n"
+                    f"  `series` columns : {series_names_in_}."
                 )
             self.lags_ = copy(self.lags)
         else:
@@ -637,8 +638,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         self, 
         y: np.ndarray,
         lags: np.ndarray,
-        data_to_return: Optional[str] = 'both'
-    ) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
+        data_to_return: str | None = 'both'
+    ) -> tuple[np.ndarray | None, np.ndarray | None]:
         """
         Create the lagged values and their target variable from a time series.
         
@@ -693,7 +694,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         y: pd.Series,
         train_index: pd.Index,
         X_as_pandas: bool = False,
-    ) -> Tuple[list, list]:
+    ) -> tuple[list[np.ndarray | pd.DataFrame], list[str]]:
         """
         
         Parameters
@@ -703,7 +704,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         train_index : pandas Index
             Index of the training data. It is used to create the pandas DataFrame
             `X_train_window_features` when `X_as_pandas` is `True`.
-        X_as_pandas : bool, default `False`
+        X_as_pandas : bool, default False
             If `True`, the returned matrix `X_train_window_features` is a 
             pandas DataFrame.
 
@@ -723,15 +724,15 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             X_train_wf = wf.transform_batch(y)
             if not isinstance(X_train_wf, pd.DataFrame):
                 raise TypeError(
-                    (f"The method `transform_batch` of {type(wf).__name__} "
-                     f"must return a pandas DataFrame.")
+                    f"The method `transform_batch` of {type(wf).__name__} "
+                    f"must return a pandas DataFrame."
                 )
             X_train_wf = X_train_wf.iloc[-len_train_index:]
             if not len(X_train_wf) == len_train_index:
                 raise ValueError(
-                    (f"The method `transform_batch` of {type(wf).__name__} "
-                     f"must return a DataFrame with the same number of rows as "
-                     f"the input time series - (`window_size` + (`steps` - 1)): {len_train_index}.")
+                    f"The method `transform_batch` of {type(wf).__name__} "
+                    f"must return a DataFrame with the same number of rows as "
+                    f"the input time series - (`window_size` + (`steps` - 1)): {len_train_index}."
                 )
             X_train_wf.index = train_index
             
@@ -747,8 +748,17 @@ class ForecasterDirectMultiVariate(ForecasterBase):
     def _create_train_X_y(
         self,
         series: pd.DataFrame,
-        exog: Optional[Union[pd.Series, pd.DataFrame]] = None
-    ) -> Tuple[pd.DataFrame, dict, list, list, list, list, list, dict]:
+        exog: pd.Series | pd.DataFrame | None = None
+    ) -> tuple[
+        pd.DataFrame, 
+        dict[int, pd.Series], 
+        list[str], 
+        list[str], 
+        list[str], 
+        list[str], 
+        list[str], 
+        dict[str, type]
+    ]:
         """
         Create training matrices from multiple time series and exogenous
         variables. The resulting matrices contain the target variable and predictors
@@ -1049,9 +1059,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
     def create_train_X_y(
         self,
         series: pd.DataFrame,
-        exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
+        exog: pd.Series | pd.DataFrame | None = None,
         suppress_warnings: bool = False
-    ) -> Tuple[pd.DataFrame, dict]:
+    ) -> tuple[pd.DataFrame, dict[int, pd.Series]]:
         """
         Create training matrices from multiple time series and exogenous
         variables. The resulting matrices contain the target variable and predictors
@@ -1064,7 +1074,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s. Must have the same
             number of observations as `series` and their indexes must be aligned.
-        suppress_warnings : bool, default `False`
+        suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the creation
             of the training matrices. See skforecast.exceptions.warn_skforecast_categories 
             for more information.
@@ -1100,9 +1110,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         self,
         step: int,
         X_train: pd.DataFrame,
-        y_train: dict,
+        y_train: dict[int, pd.Series],
         remove_suffix: bool = False
-    ) -> Tuple[pd.DataFrame, pd.Series]:
+    ) -> tuple[pd.DataFrame, pd.Series]:
         """
         Select the columns needed to train a forecaster for a specific step.  
         The input matrices should be created using `_create_train_X_y` method. 
@@ -1118,7 +1128,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             Dataframe created with the `_create_train_X_y` method, first return.
         y_train : dict
             Dict created with the `_create_train_X_y` method, second return.
-        remove_suffix : bool, default `False`
+        remove_suffix : bool, default False
             If True, suffix "_step_i" is removed from the column names.
 
         Returns
@@ -1132,8 +1142,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         if (step < 1) or (step > self.steps):
             raise ValueError(
-                (f"Invalid value `step`. For this forecaster, minimum value is 1 "
-                 f"and the maximum step is {self.steps}.")
+                f"Invalid value `step`. For this forecaster, minimum value is 1 "
+                f"and the maximum step is {self.steps}."
             )
 
         y_train_step = y_train[step]
@@ -1172,8 +1182,15 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         self,
         series: pd.DataFrame,
         initial_train_size: int,
-        exog: Optional[Union[pd.Series, pd.DataFrame]] = None
-    ) -> Tuple[pd.DataFrame, dict, pd.DataFrame, dict, pd.Series, pd.Series]:
+        exog: pd.Series | pd.DataFrame | None = None
+    ) -> tuple[
+        pd.DataFrame, 
+        dict[int, pd.Series], 
+        pd.DataFrame, 
+        dict[int, pd.Series], 
+        pd.Series, 
+        pd.Series
+    ]:
         """
         Create matrices needed to train and test the forecaster for one-step-ahead
         predictions.
@@ -1310,7 +1327,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
     def fit(
         self,
         series: pd.DataFrame,
-        exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
+        exog: pd.Series | pd.DataFrame | None = None,
         store_last_window: bool = True,
         store_in_sample_residuals: bool = True,
         suppress_warnings: bool = False
@@ -1329,12 +1346,12 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             Exogenous variable/s included as predictor/s. Must have the same
             number of observations as `series` and their indexes must be aligned so
             that series[i] is regressed on exog[i].
-        store_last_window : bool, default `True`
+        store_last_window : bool, default True
             Whether or not to store the last window (`last_window_`) of training data.
-        store_in_sample_residuals : bool, default `True`
+        store_in_sample_residuals : bool, default True
             If `True`, in-sample residuals will be stored in the forecaster object
             after fitting (`in_sample_residuals_` attribute).
-        suppress_warnings : bool, default `False`
+        suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the training 
             process. See skforecast.exceptions.warn_skforecast_categories for more
             information.
@@ -1492,11 +1509,11 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
     def _create_predict_inputs(
         self,
-        steps: Optional[Union[int, list]] = None,
-        last_window: Optional[pd.DataFrame] = None,
-        exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
+        steps: int | list[int] | None = None,
+        last_window: pd.DataFrame | None = None,
+        exog: pd.Series | pd.DataFrame | None = None,
         check_inputs: bool = True
-    ) -> Tuple[list, list, list, pd.Index]:
+    ) -> tuple[list[np.ndarray], list[str], list[int], pd.Index]:
         """
         Create the inputs needed for the prediction process.
         
@@ -1519,7 +1536,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             right after training data.
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
-        check_inputs : bool, default `True`
+        check_inputs : bool, default True
             If `True`, the input is checked for possible warnings and errors 
             with the `check_predict_input` function. This argument is created 
             for internal use and is not recommended to be changed.
@@ -1652,9 +1669,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
     def create_predict_X(
         self,
-        steps: Optional[Union[int, list]] = None,
-        last_window: Optional[pd.DataFrame] = None,
-        exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
+        steps: int | list[int] | None = None,
+        last_window: pd.DataFrame | None = None,
+        exog: pd.Series | pd.DataFrame | None = None,
         suppress_warnings: bool = False
     ) -> pd.DataFrame:
         """
@@ -1679,7 +1696,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             right after training data.
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
-        suppress_warnings : bool, default `False`
+        suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the prediction 
             process. See skforecast.exceptions.warn_skforecast_categories for more
             information.
@@ -1722,9 +1739,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
     def predict(
         self,
-        steps: Optional[Union[int, list]] = None,
-        last_window: Optional[pd.DataFrame] = None,
-        exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
+        steps: int | list[int] | None = None,
+        last_window: pd.DataFrame | None = None,
+        exog: pd.Series | pd.DataFrame | None = None,
         suppress_warnings: bool = False,
         check_inputs: bool = True,
         levels: Any = None
@@ -1751,11 +1768,11 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             right after training data.
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
-        suppress_warnings : bool, default `False`
+        suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the prediction 
             process. See skforecast.exceptions.warn_skforecast_categories for more
             information.
-        check_inputs : bool, default `True`
+        check_inputs : bool, default True
             If `True`, the input is checked for possible warnings and errors 
             with the `check_predict_input` function. This argument is created 
             for internal use and is not recommended to be changed.
@@ -1765,7 +1782,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         Returns
         -------
         predictions : pandas DataFrame
-            Predicted values.
+            Long-format DataFrame with the predictions. The columns are `level`
+            and `pred`.
 
         """
 
@@ -1788,9 +1806,10 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             ])
 
         if self.differentiation is not None:
-            predictions = self.differentiator_[
-                self.level
-            ].inverse_transform_next_window(predictions)
+            predictions = (
+                self.differentiator_[self.level]
+                .inverse_transform_next_window(predictions)
+            )
         
         predictions = transform_numpy(
                           array             = predictions,
@@ -1798,12 +1817,18 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                           fit               = False,
                           inverse_transform = True
                       )
-            
+        
+        # TODO: This DataFrame has freq because it only contain 1 level
+        # TODO: Adapt to multiple levels
+        # n_steps, n_levels = predictions.shape
+        # predictions = pd.DataFrame(
+        #     {"level": np.tile(levels, n_steps), "pred": predictions.ravel()},
+        #     index = np.repeat(prediction_index, n_levels),
+        # )
         predictions = pd.DataFrame(
-                          data    = predictions,
-                          columns = [self.level],
-                          index   = prediction_index
-                      )
+            {"level": np.tile([self.level], len(steps)), "pred": predictions},
+            index = prediction_index,
+        )
         
         set_skforecast_warnings(suppress_warnings, action='default')
 
@@ -1812,9 +1837,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
     def predict_bootstrapping(
         self,
-        steps: Optional[Union[int, list]] = None,
-        last_window: Optional[pd.DataFrame] = None,
-        exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
+        steps: int | list[int] | None = None,
+        last_window: pd.DataFrame | None = None,
+        exog: pd.Series | pd.DataFrame | None = None,
         n_boot: int = 250,
         random_state: int = 123,
         use_in_sample_residuals: bool = True,
@@ -1846,18 +1871,18 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             right after training data.
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.     
-        n_boot : int, default `250`
+        n_boot : int, default 250
             Number of bootstrapping iterations used to estimate predictions.
-        random_state : int, default `123`
+        random_state : int, default 123
             Sets a seed to the random generator, so that boot predictions are always 
             deterministic.               
-        use_in_sample_residuals : bool, default `True`
+        use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
             prediction error to create predictions. If `False`, out of sample 
             residuals are used. In the latter case, the user should have
             calculated and stored the residuals within the forecaster (see
             `set_out_sample_residuals()`).
-        suppress_warnings : bool, default `False`
+        suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the prediction 
             process. See skforecast.exceptions.warn_skforecast_categories for more
             information.
@@ -1867,8 +1892,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         Returns
         -------
         boot_predictions : pandas DataFrame
-            Predictions generated by bootstrapping.
-            Shape: (steps, n_boot)
+            Long-format DataFrame with the bootstrapping predictions. The columns
+            are `level`, `pred_boot_0`, `pred_boot_1`, ..., `pred_boot_n_boot`.
 
         Notes
         -----
@@ -1968,12 +1993,15 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                                    fit               = False,
                                    inverse_transform = True
                                )
-    
+        
+        # TODO: This DataFrame has freq because it only contain 1 level
+        # TODO: Adapt to multiple levels
         boot_predictions = pd.DataFrame(
                                data    = boot_predictions,
                                index   = prediction_index,
                                columns = boot_columns
                            )
+        boot_predictions.insert(0, 'level', np.tile([self.level], len(steps)))
 
         set_skforecast_warnings(suppress_warnings, action='default')
         
@@ -1982,10 +2010,10 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
     def predict_interval(
         self,
-        steps: Optional[Union[int, list]] = None,
-        last_window: Optional[pd.DataFrame] = None,
-        exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
-        interval: Union[list, tuple] = [5, 95],
+        steps: int | list[int] | None = None,
+        last_window: pd.DataFrame | None = None,
+        exog: pd.Series | pd.DataFrame | None = None,
+        interval: list[float] | tuple[float] = [5, 95],
         n_boot: int = 250,
         random_state: int = 123,
         use_in_sample_residuals: bool = True,
@@ -2015,22 +2043,22 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             right after training data.
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
-        interval : list, tuple, default `[5, 95]`
+        interval : list, tuple, default [5, 95]
             Confidence of the prediction interval estimated. Sequence of 
             percentiles to compute, which must be between 0 and 100 inclusive. 
             For example, interval of 95% should be as `interval = [2.5, 97.5]`.
-        n_boot : int, default `250`
+        n_boot : int, default 250
             Number of bootstrapping iterations used to estimate predictions.
-        random_state : int, default `123`
+        random_state : int, default 123
             Sets a seed to the random generator, so that boot predictions are always 
             deterministic.
-        use_in_sample_residuals : bool, default `True`
+        use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
             prediction error to create predictions. If `False`, out of sample 
             residuals are used. In the latter case, the user should have
             calculated and stored the residuals within the forecaster (see
             `set_out_sample_residuals()`).
-        suppress_warnings : bool, default `False`
+        suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the prediction 
             process. See skforecast.exceptions.warn_skforecast_categories for more
             information.
@@ -2040,11 +2068,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         Returns
         -------
         predictions : pandas DataFrame
-            Values predicted by the forecaster and their estimated interval.
-
-            - pred: predictions.
-            - lower_bound: lower bound of the interval.
-            - upper_bound: upper bound of the interval.
+            Long-format DataFrame with the predictions and the lower and upper
+            bounds of the estimated interval. The columns are `level`, `pred`,
+            `lower_bound`, `upper_bound`.
 
         Notes
         -----
@@ -2076,9 +2102,13 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                       )
 
         interval = np.array(interval) / 100
-        predictions_interval = boot_predictions.quantile(q=interval, axis=1).transpose()
-        predictions_interval.columns = [f'{self.level}_lower_bound', f'{self.level}_upper_bound']
-        predictions = pd.concat((predictions, predictions_interval), axis=1)
+        boot_predictions[['lower_bound', 'upper_bound']] = (
+            boot_predictions.iloc[:, 1:].quantile(q=interval, axis=1).transpose()
+        )
+
+        predictions = pd.concat([
+            predictions, boot_predictions[['lower_bound', 'upper_bound']]
+        ], axis=1)
 
         set_skforecast_warnings(suppress_warnings, action='default')
 
@@ -2087,10 +2117,10 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
     def predict_quantiles(
         self,
-        steps: Optional[Union[int, list]] = None,
-        last_window: Optional[pd.DataFrame] = None,
-        exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
-        quantiles: Union[list, tuple] = [0.05, 0.5, 0.95],
+        steps: int | list[int] | None = None,
+        last_window: pd.DataFrame | None = None,
+        exog: pd.Series | pd.DataFrame | None = None,
+        quantiles: list[float] | tuple[float] = [0.05, 0.5, 0.95],
         n_boot: int = 250,
         random_state: int = 123,
         use_in_sample_residuals: bool = True,
@@ -2123,18 +2153,18 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             Sequence of quantiles to compute, which must be between 0 and 1 
             inclusive. For example, quantiles of 0.05, 0.5 and 0.95 should be as 
             `quantiles = [0.05, 0.5, 0.95]`.
-        n_boot : int, default `250`
+        n_boot : int, default 250
             Number of bootstrapping iterations used to estimate quantiles.
-        random_state : int, default `123`
+        random_state : int, default 123
             Sets a seed to the random generator, so that boot quantiles are always 
             deterministic.
-        use_in_sample_residuals : bool, default `True`
+        use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
             prediction error to create quantiles. If `False`, out of sample 
             residuals are used. In the latter case, the user should have
             calculated and stored the residuals within the forecaster (see
             `set_out_sample_residuals()`).
-        suppress_warnings : bool, default `False`
+        suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the prediction 
             process. See skforecast.exceptions.warn_skforecast_categories for more
             information.
@@ -2144,7 +2174,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         Returns
         -------
         predictions : pandas DataFrame
-            Quantiles predicted by the forecaster.
+            Long-format DataFrame with the quantiles predicted by the forecaster.
+            For example, if `quantiles = [0.05, 0.5, 0.95]`, the columns are
+            `level`, `q_0.05`, `q_0.5`, `q_0.95`.
 
         Notes
         -----
@@ -2159,17 +2191,20 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         check_interval(quantiles=quantiles)
 
-        boot_predictions = self.predict_bootstrapping(
-                               steps                   = steps,
-                               last_window             = last_window,
-                               exog                    = exog,
-                               n_boot                  = n_boot,
-                               random_state            = random_state,
-                               use_in_sample_residuals = use_in_sample_residuals
-                           )
+        predictions = self.predict_bootstrapping(
+                          steps                   = steps,
+                          last_window             = last_window,
+                          exog                    = exog,
+                          n_boot                  = n_boot,
+                          random_state            = random_state,
+                          use_in_sample_residuals = use_in_sample_residuals
+                      )
 
-        predictions = boot_predictions.quantile(q=quantiles, axis=1).transpose()
-        predictions.columns = [f'{self.level}_q_{q}' for q in quantiles]
+        quantiles_cols = [f'q_{q}' for q in quantiles]
+        predictions[quantiles_cols] = (
+            predictions.iloc[:, 1:].quantile(q=quantiles, axis=1).transpose()
+        )
+        predictions = predictions[['level'] + quantiles_cols]
 
         set_skforecast_warnings(suppress_warnings, action='default')
 
@@ -2179,9 +2214,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
     def predict_dist(
         self,
         distribution: object,
-        steps: Optional[Union[int, list]] = None,
-        last_window: Optional[pd.DataFrame] = None,
-        exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
+        steps: int | list[int] | None = None,
+        last_window: pd.DataFrame | None = None,
+        exog: pd.Series | pd.DataFrame | None = None,
         n_boot: int = 250,
         random_state: int = 123,
         use_in_sample_residuals: bool = True,
@@ -2215,18 +2250,18 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             right after training data.
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
-        n_boot : int, default `250`
+        n_boot : int, default 250
             Number of bootstrapping iterations used to estimate predictions.
-        random_state : int, default `123`
+        random_state : int, default 123
             Sets a seed to the random generator, so that boot predictions are always 
             deterministic.
-        use_in_sample_residuals : bool, default `True`
+        use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
             prediction error to create predictions. If `False`, out of sample 
             residuals are used. In the latter case, the user should have
             calculated and stored the residuals within the forecaster (see
             `set_out_sample_residuals()`).
-        suppress_warnings : bool, default `False`
+        suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the prediction 
             process. See skforecast.exceptions.warn_skforecast_categories for more
             information.
@@ -2236,7 +2271,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         Returns
         -------
         predictions : pandas DataFrame
-            Distribution parameters estimated for each step.
+            Long-format DataFrame with the parameters of the fitted distribution
+            for each step. The columns are `level`, `param_0`, `param_1`, ..., 
+            `param_n`, where `param_i` are the parameters of the distribution.
 
         """
 
@@ -2248,38 +2285,33 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         set_skforecast_warnings(suppress_warnings, action='ignore')
         
-        boot_samples = self.predict_bootstrapping(
-                           steps                   = steps,
-                           last_window             = last_window,
-                           exog                    = exog,
-                           n_boot                  = n_boot,
-                           random_state            = random_state,
-                           use_in_sample_residuals = use_in_sample_residuals
-                       )       
-
-        param_names = [p for p in inspect.signature(distribution._pdf).parameters 
-                       if not p == 'x'] + ["loc", "scale"]
-        param_values = np.apply_along_axis(
-                           lambda x: distribution.fit(x),
-                           axis = 1,
-                           arr  = boot_samples
-                       )
-        
-        level_param_names = [f'{self.level}_{p}' for p in param_names]
-        predictions = pd.DataFrame(
-                          data    = param_values,
-                          columns = level_param_names,
-                          index   = boot_samples.index
+        predictions = self.predict_bootstrapping(
+                          steps                   = steps,
+                          last_window             = last_window,
+                          exog                    = exog,
+                          n_boot                  = n_boot,
+                          random_state            = random_state,
+                          use_in_sample_residuals = use_in_sample_residuals
                       )
+
+        param_names = [
+            p for p in inspect.signature(distribution._pdf).parameters if not p == "x"
+        ] + ["loc", "scale"]
+
+        predictions[param_names] = (
+            predictions.iloc[:, 1:].apply(
+                lambda x: distribution.fit(x), axis=1, result_type='expand'
+            )
+        )
+        predictions = predictions[['level'] + param_names]
 
         set_skforecast_warnings(suppress_warnings, action='default')
 
         return predictions
 
-
     def set_params(
         self, 
-        params: dict
+        params: dict[str, object]
     ) -> None:
         """
         Set new values to the parameters of the scikit learn model stored in the
@@ -2302,10 +2334,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         self.regressors_ = {step: clone(self.regressor)
                             for step in range(1, self.steps + 1)}
 
-
     def set_fit_kwargs(
         self, 
-        fit_kwargs: dict
+        fit_kwargs: dict[str, object]
     ) -> None:
         """
         Set new values for the additional keyword arguments passed to the `fit` 
@@ -2324,10 +2355,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         self.fit_kwargs = check_select_fit_kwargs(self.regressor, fit_kwargs=fit_kwargs)
 
-        
     def set_lags(
         self, 
-        lags: Optional[Union[int, list, np.ndarray, range, dict]] = None
+        lags: int | list[int] | np.ndarray[int] | range[int] | dict[str, int | list] | None = None,
     ) -> None:
         """
         Set new value to the attribute `lags`. Attributes `lags_names`, 
@@ -2403,7 +2433,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
     def set_window_features(
         self, 
-        window_features: Optional[Union[object, list]] = None
+        window_features: object | list[object] | None = None
     ) -> None:
         """
         Set new value to the attribute `window_features`. Attributes 
@@ -2424,9 +2454,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         if window_features is None and self.max_lag is None:
             raise ValueError(
-                ("At least one of the arguments `lags` or `window_features` "
-                 "must be different from None. This is required to create the "
-                 "predictors used in training the forecaster.")
+                "At least one of the arguments `lags` or `window_features` "
+                "must be different from None. This is required to create the "
+                "predictors used in training the forecaster."
             )
         
         self.window_features, self.window_features_names, self.max_size_window_features = (
@@ -2447,8 +2477,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
     def set_out_sample_residuals(
         self,
-        y_true: dict,
-        y_pred: dict,
+        y_true: dict[int, np.ndarray | pd.Series],
+        y_pred: dict[int, np.ndarray | pd.Series],
         append: bool = False,
         random_state: int = 123
     ) -> None:
@@ -2473,12 +2503,12 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         y_pred : dict
             Dictionary of numpy ndarrays or pandas Series with the predicted values
             of the time series for each model in the form {step: y_pred}.
-        append : bool, default `False`
+        append : bool, default False
             If `True`, new residuals are added to the once already stored in the
             attribute `out_sample_residuals_`. If after appending the new residuals,
             the limit of 10_000 samples is exceeded, a random sample of 10_000 is
             kept.
-        random_state : int, default `123`
+        random_state : int, default 123
             Sets a seed to the random sampling for reproducible output.
 
         Returns
@@ -2606,7 +2636,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         step : int
             Model from which retrieve information (a separate model is created 
             for each forecast time step). First step is 1.
-        sort_importance: bool, default `True`
+        sort_importance: bool, default True
             If `True`, sorts the feature importances in descending order.
 
         Returns
@@ -2623,14 +2653,14 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         if not self.is_fitted:
             raise NotFittedError(
-                ("This forecaster is not fitted yet. Call `fit` with appropriate "
-                 "arguments before using `get_feature_importances()`.")
+                "This forecaster is not fitted yet. Call `fit` with appropriate "
+                "arguments before using `get_feature_importances()`."
             )
 
         if (step < 1) or (step > self.steps):
             raise ValueError(
-                (f"The step must have a value from 1 to the maximum number of steps "
-                 f"({self.steps}). Got {step}.")
+                f"The step must have a value from 1 to the maximum number of steps "
+                f"({self.steps}). Got {step}."
             )
 
         if isinstance(self.regressor, Pipeline):
@@ -2666,10 +2696,10 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             feature_importances = estimator.coef_
         else:
             warnings.warn(
-                (f"Impossible to access feature importances for regressor of type "
-                 f"{type(estimator)}. This method is only valid when the "
-                 f"regressor stores internally the feature importances in the "
-                 f"attribute `feature_importances_` or `coef_`.")
+                f"Impossible to access feature importances for regressor of type "
+                f"{type(estimator)}. This method is only valid when the "
+                f"regressor stores internally the feature importances in the "
+                f"attribute `feature_importances_` or `coef_`."
             )
             feature_importances = None
 

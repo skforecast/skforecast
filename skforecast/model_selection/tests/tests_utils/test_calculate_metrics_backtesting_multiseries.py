@@ -74,8 +74,14 @@ predictions = pd.DataFrame(
     },
     index=pd.date_range(start="2012-01-26", periods=25)
 )
-
-predictions_missing_level = predictions.drop(columns="item_3").copy()
+predictions = (
+    predictions.melt(var_name="level", value_name="pred", ignore_index=False)
+    .reset_index()
+    .sort_values(by=["index", "level"])
+    .set_index("index")
+    .rename_axis(None, axis=0)
+)
+predictions_missing_level = predictions.query("level != 'item_3'").copy()
 
 predictions_different_lenght = pd.DataFrame(
     data={
@@ -102,8 +108,15 @@ predictions_different_lenght = pd.DataFrame(
     },
     index=pd.date_range(start="2012-01-26", periods=25)
 )
+predictions_different_lenght = (
+    predictions_different_lenght.melt(var_name="level", value_name="pred", ignore_index=False)
+    .reset_index()
+    .sort_values(by=["index", "level"])
+    .set_index("index")
+    .rename_axis(None, axis=0)
+)
 
-span_index = span_index = pd.date_range(start="2012-01-01", end="2012-02-19", freq="D")
+span_index = pd.date_range(start="2012-01-01", end="2012-02-19", freq="D")
 
 folds = [
     [[0, 25], [24, 25], [25, 35], [25, 35], False],

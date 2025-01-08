@@ -14,6 +14,9 @@ All significant changes to this project are documented in this release file.
 
 The main changes in this release are:
 
++ Probabilistic predictions in <code>[ForecasterRecursiveMultiSeries]</code> and <code>[ForecasterDirectMultiVariate]</code> are now returned as a long format DataFrame.
+
+
 **Added**
 
 + Functions `crps_from_predictions` and `crps_from_quantiles` in module `metrics` to calculate the Continuous Ranked Probability Score (CRPS).
@@ -36,6 +39,14 @@ The main changes in this release are:
 
 
 **Changed**
+
++ Predictions from `predict_bootstrapping` in <code>[ForecasterRecursiveMultiSeries]</code> and <code>[ForecasterDirectMultiVariate]</code> are now returned as a long format DataFrame with the bootstrapping predictions. The columns are `level`, `pred_boot_0`, `pred_boot_1`, ..., `pred_boot_n_boot`.
+
++ Predictions from `predict_interval` in <code>[ForecasterRecursiveMultiSeries]</code> and <code>[ForecasterDirectMultiVariate]</code> are now returned as long format DataFrame with the predictions and the lower and upper bounds of the estimated interval. The columns are `level`, `pred`, `lower_bound`, `upper_bound`.
+
++ Predictions from `predict_quantiles` in <code>[ForecasterRecursiveMultiSeries]</code> and <code>[ForecasterDirectMultiVariate]</code> are now returned as long format DataFrame with the quantiles predicted by the forecaster. For example, if `quantiles = [0.05, 0.5, 0.95]`, the columns are `level`, `q_0.05`, `q_0.5`, `q_0.95`.
+
++ Predictions from `predict_dist` in <code>[ForecasterRecursiveMultiSeries]</code> and <code>[ForecasterDirectMultiVariate]</code> are now returned as long format DataFrame with the parameters of the fitted distribution for each step. The columns are `level`, `param_0`, `param_1`, ..., `param_n`, where `param_i` are the parameters of the distribution.
 
 + <code>[ForecasterAutoregCustom]</code> and <code>[ForecasterAutoregMultiSeriesCustom]</code> has been deleted (deprecated since skforecast 0.14.0). Window features can be added using the `window_features` argument in the <code>[ForecasterRecursive]</code>, <code>[ForecasterDirect]</code>, <code>[ForecasterDirectMultiVariate]</code> and <code>[ForecasterRecursiveMultiSeries]</code>.
 

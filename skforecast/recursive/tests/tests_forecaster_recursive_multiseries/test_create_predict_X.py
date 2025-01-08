@@ -25,6 +25,7 @@ from ....recursive import ForecasterRecursiveMultiSeries
 from .fixtures_forecaster_recursive_multiseries import series
 from .fixtures_forecaster_recursive_multiseries import exog
 from .fixtures_forecaster_recursive_multiseries import exog_predict
+from .fixtures_forecaster_recursive_multiseries import expected_df_to_long_format
 
 THIS_DIR = Path(__file__).parent
 series_dict = joblib.load(THIS_DIR/'fixture_sample_multi_series.joblib')
@@ -46,8 +47,8 @@ def test_create_predict_X_NotFittedError_when_fitted_is_False():
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=5)
 
     err_msg = re.escape(
-        ("This Forecaster instance is not fitted yet. Call `fit` with "
-         "appropriate arguments before using predict.")
+        "This Forecaster instance is not fitted yet. Call `fit` with "
+        "appropriate arguments before using predict."
     )
     with pytest.raises(NotFittedError, match = err_msg):
         forecaster.create_predict_X(steps=5)
@@ -944,7 +945,8 @@ def test_create_predict_X_same_predictions_as_predict():
 
     expected = forecaster.predict(
         steps=steps, levels=levels, last_window=last_window, exog=exog_dict_test
-    ).to_numpy()
+    )
+    expected = expected.pivot(columns='level', values='pred').to_numpy()
     
     np.testing.assert_array_almost_equal(results, expected, decimal=7)
 
@@ -1006,7 +1008,8 @@ def test_create_predict_X_same_predictions_as_predict_transformers():
 
     expected = forecaster.predict(
         steps=steps, levels=levels, last_window=last_window, exog=exog_dict_test
-    ).to_numpy()
+    )
+    expected = expected.pivot(columns='level', values='pred').to_numpy()
     
     np.testing.assert_array_almost_equal(results, expected, decimal=7)
 
@@ -1078,6 +1081,7 @@ def test_create_predict_X_same_predictions_as_predict_transformers_diff(differen
 
     expected = forecaster.predict(
         steps=steps, levels=levels, last_window=last_window, exog=exog_dict_test
-    ).to_numpy()
+    )
+    expected = expected.pivot(columns='level', values='pred').to_numpy()
     
     np.testing.assert_array_almost_equal(results, expected, decimal=7)

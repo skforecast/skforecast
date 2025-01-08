@@ -27,6 +27,7 @@ from .fixtures_forecaster_direct_multivariate import series
 from .fixtures_forecaster_direct_multivariate import exog
 from .fixtures_forecaster_direct_multivariate import exog_predict
 from .fixtures_forecaster_direct_multivariate import data  # to test results when using differentiation
+from ....recursive.tests.tests_forecaster_recursive_multiseries.fixtures_forecaster_recursive_multiseries import expected_df_to_long_format
 
 transformer_exog = ColumnTransformer(
                        [('scale', StandardScaler(), ['exog_1']),
@@ -47,8 +48,8 @@ def test_predict_TypeError_when_steps_list_contain_floats(steps):
     forecaster.fit(series=series)
 
     err_msg = re.escape(
-        (f"`steps` argument must be an int, a list of ints or `None`. "
-         f"Got {type(steps)}.")
+        f"`steps` argument must be an int, a list of ints or `None`. "
+        f"Got {type(steps)}."
     )
     with pytest.raises(TypeError, match = err_msg):
         forecaster.predict(steps=steps)
@@ -62,8 +63,8 @@ def test_predict_NotFittedError_when_fitted_is_False():
                                                lags=3, steps=3)
 
     err_msg = re.escape(
-        ("This Forecaster instance is not fitted yet. Call `fit` with "
-         "appropriate arguments before using predict.")
+        "This Forecaster instance is not fitted yet. Call `fit` with "
+        "appropriate arguments before using predict."
     )
     with pytest.raises(NotFittedError, match = err_msg):
         forecaster.predict(steps=5)
@@ -84,6 +85,7 @@ def test_predict_output_when_regressor_is_LinearRegression(steps):
                    index   = pd.RangeIndex(start=50, stop=53, step=1),
                    columns = ['l1']
                )
+    expected = expected_df_to_long_format(expected)
     
     pd.testing.assert_frame_equal(results, expected)
 
@@ -102,6 +104,7 @@ def test_predict_output_when_regressor_is_LinearRegression_with_list_intersperse
                    index   = pd.RangeIndex(start=50, stop=55, step=1)[[0, 3]],
                    columns = ['l2']
                )
+    expected = expected_df_to_long_format(expected)
     
     pd.testing.assert_frame_equal(results, expected)
 
@@ -120,6 +123,7 @@ def test_predict_output_when_regressor_is_LinearRegression_with_different_lags()
                    index   = pd.RangeIndex(start=50, stop=53, step=1),
                    columns = ['l2']
                )
+    expected = expected_df_to_long_format(expected)
     
     pd.testing.assert_frame_equal(results, expected)
 
@@ -138,6 +142,7 @@ def test_predict_output_when_regressor_is_LinearRegression_with_lags_dict_with_N
                    index   = pd.RangeIndex(start=50, stop=53, step=1),
                    columns = ['l2']
                )
+    expected = expected_df_to_long_format(expected)
     
     pd.testing.assert_frame_equal(results, expected)
 
@@ -156,6 +161,7 @@ def test_predict_output_when_regressor_is_LinearRegression_with_lags_dict_with_N
                    index   = pd.RangeIndex(start=50, stop=53, step=1),
                    columns = ['l1']
                )
+    expected = expected_df_to_long_format(expected)
     
     pd.testing.assert_frame_equal(results, expected)
 
@@ -180,6 +186,7 @@ def test_predict_output_when_regressor_is_LinearRegression_using_last_window():
                    index   = pd.RangeIndex(start=50, stop=52, step=1),
                    columns = ['l1']
                )
+    expected = expected_df_to_long_format(expected)
     
     pd.testing.assert_frame_equal(results, expected)
 
@@ -197,6 +204,7 @@ def test_predict_output_when_regressor_is_LinearRegression_using_exog():
                    index   = pd.RangeIndex(start=40, stop=43, step=1),
                    columns = ['l1']
                )
+    expected = expected_df_to_long_format(expected)
     
     pd.testing.assert_frame_equal(results, expected)
 
@@ -219,6 +227,7 @@ def test_predict_output_when_regressor_is_LinearRegression_with_transform_series
                    index   = pd.RangeIndex(start=50, stop=55, step=1),
                    columns = ['l1']
                )
+    expected = expected_df_to_long_format(expected)
     
     pd.testing.assert_frame_equal(results, expected)
 
@@ -238,10 +247,11 @@ def test_predict_output_when_regressor_is_LinearRegression_with_transform_series
     forecaster.fit(series=series)
     results = forecaster.predict()
     expected = pd.DataFrame(
-                   data    = np.array([0.65049981, 0.57548048, 0.64278726, 0.54421867, 0.7851753 ]),
+                   data    = np.array([0.65049981, 0.57548048, 0.64278726, 0.54421867, 0.7851753]),
                    index   = pd.RangeIndex(start=50, stop=55, step=1),
                    columns = ['l2']
                )
+    expected = expected_df_to_long_format(expected)
     
     pd.testing.assert_frame_equal(results, expected)
 
@@ -269,6 +279,7 @@ def test_predict_output_when_regressor_is_LinearRegression_with_transform_series
                    index   = pd.RangeIndex(start=50, stop=55, step=1),
                    columns = ['l1']
                )
+    expected = expected_df_to_long_format(expected)
     
     pd.testing.assert_frame_equal(results, expected)
 
@@ -294,6 +305,7 @@ def test_predict_output_when_regressor_is_LinearRegression_and_weight_func():
                    index   = pd.RangeIndex(start=50, stop=53, step=1),
                    columns = ['l1']
                )
+    expected = expected_df_to_long_format(expected)
     
     pd.testing.assert_frame_equal(results, expected)
 
@@ -345,6 +357,7 @@ def test_predict_output_when_categorical_features_native_implementation_HistGrad
                    index   = pd.RangeIndex(start=50, stop=60, step=1),
                    columns = ['l1']
                )
+    expected = expected_df_to_long_format(expected)
     
     pd.testing.assert_frame_equal(predictions, expected)
 
@@ -354,8 +367,8 @@ def test_predict_output_when_categorical_features_native_implementation_LGBMRegr
     Test predict output when using LGBMRegressor and categorical variables.
     """
     df_exog = pd.DataFrame({'exog_1': exog['exog_1'],
-                            'exog_2': ['a', 'b', 'c', 'd', 'e']*10,
-                            'exog_3': pd.Categorical(['F', 'G', 'H', 'I', 'J']*10)})
+                            'exog_2': ['a', 'b', 'c', 'd', 'e'] * 10,
+                            'exog_3': pd.Categorical(['F', 'G', 'H', 'I', 'J'] * 10)})
     
     exog_predict = df_exog.copy()
     exog_predict.index = pd.RangeIndex(start=50, stop=100)
@@ -394,6 +407,7 @@ def test_predict_output_when_categorical_features_native_implementation_LGBMRegr
                    index   = pd.RangeIndex(start=50, stop=60, step=1),
                    columns = ['l1']
                )
+    expected = expected_df_to_long_format(expected)
     
     pd.testing.assert_frame_equal(predictions, expected)
 
@@ -450,6 +464,7 @@ def test_predict_output_when_categorical_features_native_implementation_LGBMRegr
                    index   = pd.RangeIndex(start=50, stop=60, step=1),
                    columns = ['l1']
                )
+    expected = expected_df_to_long_format(expected)
     
     pd.testing.assert_frame_equal(predictions, expected)
 
@@ -468,10 +483,10 @@ def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differe
     )
 
     # Data differentiated
-    diferenciator = TimeSeriesDifferentiator(order=1)
+    differentiator = TimeSeriesDifferentiator(order=1)
     series_diff = pd.DataFrame(
-        {'l1': diferenciator.fit_transform(arr),
-         'l2': diferenciator.fit_transform(arr * 1.6)},
+        {'l1': differentiator.fit_transform(arr),
+         'l2': differentiator.fit_transform(arr * 1.6)},
         index=data.index
     ).dropna()
 
@@ -489,8 +504,12 @@ def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differe
     forecaster_1.fit(series=series_diff.loc[:end_train], exog=exog_diff.loc[:end_train])
     predictions_diff = forecaster_1.predict(exog=exog_diff.loc[end_train:])
     # Revert the differentiation
+    predictions_diff = pd.pivot_table(
+        predictions_diff, index=predictions_diff.index, columns="level", values="pred"
+    )
     last_value_train = series_2[['l1']].loc[:end_train].iloc[[-1]]
     predictions_1 = pd.concat([last_value_train, predictions_diff]).cumsum()[1:]
+    predictions_1 = expected_df_to_long_format(predictions_1)
 
     forecaster_2 = ForecasterDirectMultiVariate(
         regressor=LinearRegression(), level='l1', steps=1, lags=15, transformer_series=None, differentiation=1
@@ -498,7 +517,7 @@ def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differe
     forecaster_2.fit(series=series_2.loc[:end_train], exog=exog.loc[:end_train])
     predictions_2 = forecaster_2.predict(exog=exog.loc[end_train:])
 
-    pd.testing.assert_frame_equal(predictions_1.asfreq('MS'), predictions_2, check_names=False)
+    pd.testing.assert_frame_equal(predictions_1.asfreq('MS'), predictions_2)
 
 
 def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differentiation_is_1_steps_10():
@@ -515,10 +534,10 @@ def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differe
     )
 
     # Data differentiated
-    diferenciator = TimeSeriesDifferentiator(order=1)
+    differentiator = TimeSeriesDifferentiator(order=1)
     series_diff = pd.DataFrame(
-        {'l1': diferenciator.fit_transform(arr),
-         'l2': diferenciator.fit_transform(arr * 1.6)},
+        {'l1': differentiator.fit_transform(arr),
+         'l2': differentiator.fit_transform(arr * 1.6)},
         index=data.index
     ).dropna()
 
@@ -535,10 +554,13 @@ def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differe
     )
     forecaster_1.fit(series=series_diff.loc[:end_train], exog=exog_diff.loc[:end_train])
     predictions_diff = forecaster_1.predict(exog=exog_diff.loc[end_train:])
-    
     # Revert the differentiation
+    predictions_diff = pd.pivot_table(
+        predictions_diff, index=predictions_diff.index, columns="level", values="pred"
+    )
     last_value_train = series_dt[['l1']].loc[:end_train].iloc[[-1]]
     predictions_1 = pd.concat([last_value_train, predictions_diff]).cumsum()[1:]
+    predictions_1 = expected_df_to_long_format(predictions_1)
 
     forecaster_2 = ForecasterDirectMultiVariate(
         regressor=LinearRegression(), level='l1', steps=10, lags=15, transformer_series=None, differentiation=1
@@ -546,7 +568,7 @@ def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differe
     forecaster_2.fit(series=series_dt.loc[:end_train], exog=exog_dt.loc[:end_train])
     predictions_2 = forecaster_2.predict(exog=exog_dt.loc[end_train:])
 
-    pd.testing.assert_frame_equal(predictions_1.asfreq('MS'), predictions_2, check_names=False)
+    pd.testing.assert_frame_equal(predictions_1.asfreq('MS'), predictions_2)
 
 
 def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differentiation_is_2():
@@ -566,14 +588,14 @@ def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differe
     df_diff_2 = pd.DataFrame()
     for col in series_dt.columns:
 
-        diferenciator_1 = TimeSeriesDifferentiator(order=1)
-        diferenciator_2 = TimeSeriesDifferentiator(order=2)
+        differentiator_1 = TimeSeriesDifferentiator(order=1)
+        differentiator_2 = TimeSeriesDifferentiator(order=2)
 
-        data_diff_1 = diferenciator_1.fit_transform(series_dt[col].to_numpy())
+        data_diff_1 = differentiator_1.fit_transform(series_dt[col].to_numpy())
         data_diff_1 = pd.Series(data_diff_1).dropna()
         df_diff_1[col] = data_diff_1
 
-        data_diff_2 = diferenciator_2.fit_transform(series_dt[col].to_numpy())
+        data_diff_2 = differentiator_2.fit_transform(series_dt[col].to_numpy())
         data_diff_2 = pd.Series(data_diff_2).dropna()
         df_diff_2[col] = data_diff_2
 
@@ -595,10 +617,14 @@ def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differe
     predictions_diff_2 = forecaster_1.predict(exog=exog_diff_2.loc[end_train:])
     
     # Revert the differentiation
+    predictions_diff_2 = pd.pivot_table(
+        predictions_diff_2, index=predictions_diff_2.index, columns="level", values="pred"
+    )
     last_value_train_diff = df_diff_1[['l1']].loc[:end_train].iloc[[-1]]
     predictions_diff_1 = pd.concat([last_value_train_diff, predictions_diff_2]).cumsum()[1:]
     last_value_train = series_dt[['l1']].loc[:end_train].iloc[[-1]]
     predictions_1 = pd.concat([last_value_train, predictions_diff_1]).cumsum()[1:]
+    predictions_1 = expected_df_to_long_format(predictions_1)
 
     forecaster_2 = ForecasterDirectMultiVariate(
         regressor=LinearRegression(), level='l1', steps=1, lags=15, 
@@ -628,14 +654,14 @@ def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differe
     df_diff_2 = pd.DataFrame()
     for col in series_dt.columns:
 
-        diferenciator_1 = TimeSeriesDifferentiator(order=1)
-        diferenciator_2 = TimeSeriesDifferentiator(order=2)
+        differentiator_1 = TimeSeriesDifferentiator(order=1)
+        differentiator_2 = TimeSeriesDifferentiator(order=2)
 
-        data_diff_1 = diferenciator_1.fit_transform(series_dt[col].to_numpy())
+        data_diff_1 = differentiator_1.fit_transform(series_dt[col].to_numpy())
         data_diff_1 = pd.Series(data_diff_1).dropna()
         df_diff_1[col] = data_diff_1
 
-        data_diff_2 = diferenciator_2.fit_transform(series_dt[col].to_numpy())
+        data_diff_2 = differentiator_2.fit_transform(series_dt[col].to_numpy())
         data_diff_2 = pd.Series(data_diff_2).dropna()
         df_diff_2[col] = data_diff_2
 
@@ -655,12 +681,16 @@ def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differe
     )
     forecaster_1.fit(series=df_diff_2.loc[:end_train], exog=exog_diff_2.loc[:end_train])
     predictions_diff_2 = forecaster_1.predict(exog=exog_diff_2.loc[end_train:])
-    
+
     # Revert the differentiation
+    predictions_diff_2 = pd.pivot_table(
+        predictions_diff_2, index=predictions_diff_2.index, columns="level", values="pred"
+    )
     last_value_train_diff = df_diff_1[['l1']].loc[:end_train].iloc[[-1]]
     predictions_diff_1 = pd.concat([last_value_train_diff, predictions_diff_2]).cumsum()[1:]
     last_value_train = series_dt[['l1']].loc[:end_train].iloc[[-1]]
     predictions_1 = pd.concat([last_value_train, predictions_diff_1]).cumsum()[1:]
+    predictions_1 = expected_df_to_long_format(predictions_1)
 
     forecaster_2 = ForecasterDirectMultiVariate(
         regressor=LinearRegression(), level='l1', steps=10, lags=15, 
@@ -669,7 +699,7 @@ def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differe
     forecaster_2.fit(series=series_dt.loc[:end_train], exog=exog.loc[:end_train])
     predictions_2 = forecaster_2.predict(exog=exog.loc[end_train:])
 
-    pd.testing.assert_frame_equal(predictions_1.asfreq('MS'), predictions_2, check_names=False)
+    pd.testing.assert_frame_equal(predictions_1.asfreq('MS'), predictions_2)
 
 
 def test_predict_output_when_window_features_steps_1():
@@ -691,6 +721,7 @@ def test_predict_output_when_window_features_steps_1():
                    index   = pd.RangeIndex(start=50, stop=51, step=1),
                    columns = ['l1']
                )
+    expected = expected_df_to_long_format(expected)
     
     pd.testing.assert_frame_equal(predictions, expected)
 
@@ -723,5 +754,6 @@ def test_predict_output_when_window_features_steps_10():
                    index   = pd.RangeIndex(start=50, stop=60, step=1),
                    columns = ['l1']
                )
+    expected = expected_df_to_long_format(expected)
     
     pd.testing.assert_frame_equal(predictions, expected)

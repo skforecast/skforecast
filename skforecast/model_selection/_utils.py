@@ -840,7 +840,7 @@ def _calculate_metrics_backtesting_multiseries(
     series : pandas DataFrame, dict
         Series data used for backtesting.
     predictions : pandas DataFrame
-        Predictions generated during the backtesting process.
+        Predictions generated during the backtesting multiseries process.
     folds : list, tqdm
         Folds created during the backtesting process.
     span_index : pandas DatetimeIndex, pandas RangeIndex
@@ -872,8 +872,8 @@ def _calculate_metrics_backtesting_multiseries(
 
     if not isinstance(series, (pd.DataFrame, dict)):
         raise TypeError(
-            ("`series` must be a pandas DataFrame or a dictionary of pandas "
-             "DataFrames.")
+            "`series` must be a pandas DataFrame or a dictionary of pandas "
+            "DataFrames."
         )
     if not isinstance(predictions, pd.DataFrame):
         raise TypeError("`predictions` must be a pandas DataFrame.")
@@ -891,17 +891,17 @@ def _calculate_metrics_backtesting_multiseries(
         raise TypeError("`add_aggregated_metric` must be a boolean.")
     
     metric_names = [(m if isinstance(m, str) else m.__name__) for m in metrics]
+    levels_in_predictions = predictions['level'].unique()
 
     y_true_pred_levels = []
     y_train_levels = []
     for level in levels:
         y_true_pred_level = None
         y_train = None
-        if level in predictions.columns:
-            # TODO: avoid merges inside the loop, instead merge outside and then filter
+        if level in levels_in_predictions:
             y_true_pred_level = pd.merge(
                 series[level],
-                predictions[level],
+                predictions.loc[predictions['level'] == level, 'pred'],
                 left_index  = True,
                 right_index = True,
                 how         = "inner",
@@ -929,7 +929,7 @@ def _calculate_metrics_backtesting_multiseries(
                 m(
                     y_true = y_true_pred_levels[i].iloc[:, 0],
                     y_pred = y_true_pred_levels[i].iloc[:, 1],
-                    y_train = y_train_levels[i].iloc[window_size:]  # Exclude observations used to create predictors
+                    y_train = y_train_levels[i].iloc[window_size:]  # NOTE: Exclude observations used to create predictors
                 )
                 for m in metrics
             ]
@@ -955,17 +955,16 @@ def _calculate_metrics_backtesting_multiseries(
         average['levels'] = 'average'
 
         # aggregation: weighted_average
-        weighted_averages = {}
         n_predictions_levels = (
-            predictions
-            .notna()
-            .sum()
-            .to_frame(name='n_predictions')
-            .reset_index(names='levels')
+            predictions.groupby("level")["pred"]
+            .apply(lambda x: x.notna().sum())
+            .reset_index(name="n_predictions")
+            .rename(columns={"level": "levels"})
         )
         metrics_levels_no_missing = (
             metrics_levels.merge(n_predictions_levels, on='levels', how='inner')
         )
+        weighted_averages = {}
         for col in metric_names:
             weighted_averages[col] = np.average(
                 metrics_levels_no_missing[col],
@@ -1232,7 +1231,6 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
         average['levels'] = 'average'
 
         # aggregation: weighted_average
-        weighted_averages = {}
         n_predictions_levels = {
             k: v['y_pred'].notna().sum()
             for k, v in predictions_per_level.items()
@@ -1244,6 +1242,7 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
         metrics_levels_no_missing = (
             metrics_levels.merge(n_predictions_levels, on='levels', how='inner')
         )
+        weighted_averages = {}
         for col in metric_names:
             weighted_averages[col] = np.average(
                 metrics_levels_no_missing[col],

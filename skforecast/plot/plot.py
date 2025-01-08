@@ -309,7 +309,7 @@ def calculate_lag_autocorrelation(
 ) -> pd.DataFrame:
     """
     Calculate autocorrelation and partial autocorrelation for a time series.
-    This is a wrapper around statsmodels.tsa.stattools.acf and statsmodels.tsa.stattools.pacf.
+    This is a wrapper around statsmodels.acf [1]_ and statsmodels.pacf [2]_.
 
     Parameters
     ----------
@@ -325,8 +325,8 @@ def calculate_lag_autocorrelation(
         `n_lags` must be less than or equal to 5. This parameter is useful
         to speed up calculations when the series is very long.
     sort_by : str, default 'partial_autocorrelation_abs'
-        Sort results by 'lag', 'partial_autocorrelation_abs', 'partial_autocorrelation',
-        'autocorrelation_abs' or 'autocorrelation'.
+        Sort results by 'lag', 'partial_autocorrelation_abs', 
+        'partial_autocorrelation', 'autocorrelation_abs' or 'autocorrelation'.
     acf_kwargs : dict, default {}
         Optional arguments to pass to statsmodels.tsa.stattools.acf.
     pacf_kwargs : dict, default {}
@@ -336,6 +336,14 @@ def calculate_lag_autocorrelation(
     -------
     results : pandas DataFrame
         Autocorrelation and partial autocorrelation values.
+
+    References
+    ----------
+    .. [1] Statsmodels acf API Reference.
+           https://www.statsmodels.org/stable/generated/statsmodels.tsa.stattools.acf.html
+    
+    .. [2] Statsmodels pacf API Reference.
+           https://www.statsmodels.org/stable/generated/statsmodels.tsa.stattools.pacf.html
 
     Examples
     --------

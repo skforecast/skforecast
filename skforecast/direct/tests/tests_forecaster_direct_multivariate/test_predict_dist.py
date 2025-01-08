@@ -83,9 +83,10 @@ def test_predict_dist_output_when_forecaster_is_LinearRegression_steps_is_2_in_s
     expected = pd.DataFrame(
                    data    = np.array([[0.53808076, 0.11721631],
                                        [0.32552242, 0.1713172]]),
-                   columns = ['l1_loc', 'l1_scale'],
+                   columns = ['loc', 'scale'],
                    index   = pd.RangeIndex(start=50, stop=52)
                )
+    expected.insert(0, 'level', np.tile(['l1'], 2))
     
     pd.testing.assert_frame_equal(expected, results)
 
@@ -118,8 +119,9 @@ def test_predict_dist_output_when_forecaster_is_LinearRegression_steps_is_2_in_s
     expected = pd.DataFrame(
                    data    = np.array([[0.53808076, 0.11721631],
                                        [0.32552242, 0.1713172]]),
-                   columns = ['l1_loc', 'l1_scale'],
+                   columns = ['loc', 'scale'],
                    index   = pd.RangeIndex(start=50, stop=52)
                )
+    expected.insert(0, 'level', np.tile(['l1'], 2))
 
     pd.testing.assert_frame_equal(expected, results)

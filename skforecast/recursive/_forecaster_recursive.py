@@ -906,8 +906,8 @@ class ForecasterRecursive(ForecasterBase):
                 )
             if np.sum(sample_weight) == 0:
                 raise ValueError(
-                    ("The resulting `sample_weight` cannot be normalized because "
-                     "the sum of the weights is zero.")
+                    "The resulting `sample_weight` cannot be normalized because "
+                    "the sum of the weights is zero."
                 )
 
         return sample_weight
@@ -1917,7 +1917,7 @@ class ForecasterRecursive(ForecasterBase):
 
     def set_params(
         self, 
-        params: dict
+        params: dict[str, object]
     ) -> None:
         """
         Set new values to the parameters of the scikit learn model stored in the
@@ -1939,7 +1939,7 @@ class ForecasterRecursive(ForecasterBase):
 
     def set_fit_kwargs(
         self, 
-        fit_kwargs: dict
+        fit_kwargs: dict[str, object]
     ) -> None:
         """
         Set new values for the additional keyword arguments passed to the `fit` 
@@ -2044,8 +2044,8 @@ class ForecasterRecursive(ForecasterBase):
 
     def set_out_sample_residuals(
         self,
-        y_true: pd.Series | np.ndarray,
-        y_pred: pd.Series | np.ndarray,
+        y_true: np.ndarray | pd.Series,
+        y_pred: np.ndarray | pd.Series,
         append: bool = False,
         random_state: int = 123
     ) -> None:
@@ -2074,10 +2074,10 @@ class ForecasterRecursive(ForecasterBase):
         
         Parameters
         ----------
-        y_true : pandas Series, numpy ndarray
+        y_true : numpy ndarray, pandas Series
             True values of the time series from which the residuals have been
             calculated.
-        y_pred : pandas Series, numpy ndarray
+        y_pred : numpy ndarray, pandas Series
             Predicted values of the time series.
         append : bool, default False
             If `True`, new residuals are added to the once already stored in the

@@ -50,11 +50,12 @@ def test_predict_quantiles_output_when_forecaster_is_LinearRegression_steps_is_2
               )
     
     expected = pd.DataFrame(
-                   data    = np.array([[0.12837500, 0.33920342, 0.47157640],
-                                       [0.09385929, 0.32079042, 0.62315962]]),
-                   columns = ['1_q_0.05', '1_q_0.55', '1_q_0.95'],
-                   index   = pd.RangeIndex(start=50, stop=52)
-               )
+        {'level': ['1', '1'],
+         'q_0.05': [0.1283750019253314, 0.09385929028369558],
+         'q_0.55': [0.3392034161273868, 0.3207904249631374],
+         'q_0.95': [0.47157639833964976, 0.6231596160709784]},
+        index = pd.RangeIndex(start=50, stop=52)
+    )
     
     pd.testing.assert_frame_equal(results, expected)
 
@@ -74,7 +75,7 @@ def test_predict_quantiles_output_when_forecaster_is_LinearRegression_steps_is_2
                      transformer_series = StandardScaler(),
                      transformer_exog   = transformer_exog,
                  )
-    
+
     forecaster.fit(series=series, exog=exog)
     forecaster.out_sample_residuals_ = forecaster.in_sample_residuals_
     results = forecaster.predict_quantiles(
@@ -87,10 +88,28 @@ def test_predict_quantiles_output_when_forecaster_is_LinearRegression_steps_is_2
               )
     
     expected = pd.DataFrame(
-                   data    = np.array([[0.12837500, 0.33920342, 0.47157640, 0.16153615, 0.65521692, 0.92455144],
-                                       [0.09385929, 0.32079042, 0.62315962, 0.07374959, 0.10749931, 0.21846331]]),
-                   columns = ['1_q_0.05', '1_q_0.55', '1_q_0.95', '2_q_0.05', '2_q_0.55', '2_q_0.95'],
-                   index   = pd.RangeIndex(start=50, stop=52)
-               )
+        {
+            "level": ["1", "2", "1", "2"],
+            "q_0.05": [
+                0.1283750019253314,
+                0.1615361493231256,
+                0.09385929028369558,
+                0.07374959117551036,
+            ],
+            "q_0.55": [
+                0.3392034161273868,
+                0.6552169189586099,
+                0.3207904249631374,
+                0.10749930737109713,
+            ],
+            "q_0.95": [
+                0.47157639833964976,
+                0.9245514385384845,
+                0.6231596160709784,
+                0.2184633069802528,
+            ],
+        },
+        index=pd.Index([50, 50, 51, 51]),
+    )
 
     pd.testing.assert_frame_equal(results, expected)
