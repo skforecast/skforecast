@@ -368,7 +368,7 @@ def test_basefold_extract_index_raise_error_when_X_is_dict_with_series_with_diff
     cv = BaseFold()
     X = {
         "a": pd.Series(np.arange(10), index=pd.date_range(start="2022-01-01", periods=10, freq="D")),
-        "b": pd.Series(np.arange(10), index=pd.date_range(start="2022-01-10", periods=10, freq="H")),
+        "b": pd.Series(np.arange(10), index=pd.date_range(start="2022-01-10", periods=10, freq="h")),
     }
     msg = 'All series with frequency must have the same frequency.'
     with pytest.raises(ValueError, match=msg):

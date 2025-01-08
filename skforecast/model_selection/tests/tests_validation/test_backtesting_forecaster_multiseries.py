@@ -989,7 +989,10 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
-def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_refit_int_interval_yes_exog_not_allow_remainder_gap_with_mocked():
+@pytest.mark.parametrize("initial_train_size", 
+                         [len(series) - 20, "2022-01-30 00:00:00"],
+                         ids=lambda init: f'initial_train_size: {init}')
+def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_refit_int_interval_yes_exog_not_allow_remainder_gap_with_mocked(initial_train_size):
     """
     Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 
     with refit int, interval, gap, with mocked using exog and intervals 
@@ -1004,7 +1007,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     exog_with_index = series['l1'].rename('exog_1').copy()
     exog_with_index.index = pd.date_range(start='2022-01-01', periods=50, freq='D')
     cv = TimeSeriesFold(
-            initial_train_size = len(series) - 20,
+            initial_train_size = initial_train_size,
             steps              = 4,
             gap                = 3,
             refit              = 3,
@@ -1122,7 +1125,10 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     pd.testing.assert_frame_equal(predictions.head(40), expected_predictions)
 
 
-def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_series_and_exog_dict_with_window_features():
+@pytest.mark.parametrize("initial_train_size", 
+                         [len(series_dict_train['id_1000']), "2016-07-31 00:00:00"],
+                         ids=lambda init: f'initial_train_size: {init}')
+def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_series_and_exog_dict_with_window_features(initial_train_size):
     """
     Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 
     when series and exog are dictionaries and window features
@@ -1144,7 +1150,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
         transformer_exog=StandardScaler(),
     )
     cv = TimeSeriesFold(
-             initial_train_size    = len(series_dict_train['id_1000']),
+             initial_train_size    = initial_train_size,
              steps                 = 24,
              refit                 = False,
              fixed_train_size      = True,
@@ -2250,12 +2256,17 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
 
 @pytest.mark.parametrize("n_jobs", [1, -1, 'auto'],
                          ids=lambda n: f'n_jobs: {n}')
-def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_window_features(n_jobs):
+@pytest.mark.parametrize("initial_train_size", [38, '2020-02-07 00:00:00'],
+                         ids=lambda init: f'initial_train_size: {init}')
+def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_window_features(n_jobs, initial_train_size):
     """
     Test output of backtesting_forecaster_multiseries in ForecasterDirectMultiVariate with refit,
     fixed_train_size with window features with mocked 
     (mocked done in Skforecast v0.14.0).
     """
+    series_dt = series.copy()
+    series_dt.index = pd.date_range(start='2020-01-01', periods=len(series), freq='D')
+
     window_features = RollingFeatures(
         stats = ['mean', 'std', 'min', 'max', 'sum', 'median', 'ratio_min_max', 'coef_variation'],
         window_sizes = 3,
@@ -2269,7 +2280,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
                      transformer_series = None
                  )
     cv = TimeSeriesFold(
-             initial_train_size = len(series) - 12,
+             initial_train_size = initial_train_size,
              steps              = 3,
              refit              = True,
              fixed_train_size   = True,
@@ -2277,7 +2288,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
 
     metrics_levels, backtest_predictions = backtesting_forecaster_multiseries(
                                                forecaster            = forecaster,
-                                               series                = series,
+                                               series                = series_dt,
                                                cv                    = cv,
                                                levels                = None,
                                                metric                = 'mean_absolute_error',
@@ -2290,15 +2301,19 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
     expected_metric = pd.DataFrame({'levels': ['l2'],
                                     'mean_absolute_error': [0.23856556]})
     expected_predictions = pd.DataFrame({
-                               'l2': np.array([0.55657737, 0.37891865, 0.43460762, 0.58417451, 0.59388689,
-                                               0.55074551, 0.3267003 , 0.33008016, 0.40918253, 0.5313121 ,
-                                               0.43536832, 0.5907553])},
-                               index=pd.RangeIndex(start=38, stop=50, step=1)
-                           )
+        'l2': np.array([0.55657737, 0.37891865, 0.43460762, 0.58417451, 0.59388689,
+                        0.55074551, 0.3267003 , 0.33008016, 0.40918253, 0.5313121 ,
+                        0.43536832, 0.5907553])},
+        index=pd.DatetimeIndex(
+                    ['2020-02-08', '2020-02-09', '2020-02-10', '2020-02-11', 
+                     '2020-02-12', '2020-02-13', '2020-02-14', '2020-02-15', 
+                     '2020-02-16', '2020-02-17', '2020-02-18', '2020-02-19'],
+                    dtype='datetime64[ns]', freq=None)
+    )
     expected_predictions = expected_df_to_long_format(expected_predictions)
                                    
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
-    pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+    pd.testing.assert_frame_equal(expected_predictions.asfreq('D'), backtest_predictions)
 
 
 @pytest.mark.parametrize("n_jobs", [1, -1, 'auto'],
@@ -2732,13 +2747,13 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
                      transformer_series = None
                  )
     cv = TimeSeriesFold(
-            initial_train_size = len(series) - 20,
-            steps                   = 2,
-            refit                   = 2,
-            fixed_train_size        = True,
-            allow_incomplete_fold   = False,
-            gap                     = 0,
-        )
+             initial_train_size    = len(series) - 20,
+             steps                 = 2,
+             refit                 = 2,
+             fixed_train_size      = True,
+             allow_incomplete_fold = False,
+             gap                   = 0,
+         )
 
     warn_msg = re.escape(
         "If `refit` is an integer other than 1 (intermittent refit). `n_jobs` "
@@ -2814,13 +2829,13 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
                      transformer_series = None
                  )
     cv = TimeSeriesFold(
-            initial_train_size = len(series) - 30,
-            steps                   = 4,
-            refit                   = 3,
-            fixed_train_size        = False,
-            allow_incomplete_fold   = False,
-            gap                     = 3,
-        )
+             initial_train_size    = len(series) - 30,
+             steps                 = 4,
+             refit                 = 3,
+             fixed_train_size      = False,
+             allow_incomplete_fold = False,
+             gap                   = 3,
+         )
 
     metrics_levels, backtest_predictions = backtesting_forecaster_multiseries(
                                                forecaster              = forecaster,
