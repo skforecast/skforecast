@@ -2667,13 +2667,13 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
                      transformer_series = None
                  )
     cv = TimeSeriesFold(
-            initial_train_size = len(series) - 20,
-            steps                   = 5,
-            refit                   = True,
-            fixed_train_size        = True,
-            allow_incomplete_fold   = False,
-            gap                     = 5,
-        )
+             initial_train_size = len(series) - 20,
+             steps                   = 5,
+             refit                   = True,
+             fixed_train_size        = True,
+             allow_incomplete_fold   = False,
+             gap                     = 5,
+         )
 
     metrics_levels, backtest_predictions = backtesting_forecaster_multiseries(
                                                forecaster              = forecaster,
@@ -2712,6 +2712,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
         index = pd.date_range(start='2022-02-05', periods=15, freq='D')
     )
     expected_predictions = expected_df_to_long_format(expected_predictions, method='interval')
+    expected_predictions = expected_predictions.asfreq('D')
                                    
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
@@ -2869,6 +2870,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
         index = pd.date_range(start='2022-01-24', periods=24, freq='D')
     )
     expected_predictions = expected_df_to_long_format(expected_predictions, method='interval')
+    expected_predictions = expected_predictions.asfreq('D')
                                    
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
@@ -2930,9 +2932,10 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
                          [0.63726975, 0.45737877, 0.62781518, 0.79682008],
                          [0.54013414, 0.36261322, 0.53720942, 0.71490412],
                          [0.52550978, 0.3131588 , 0.51830495, 0.6786523 ]]),
-        columns = ['l1', 'l1_p_5', 'l1_p_50', 'l1_p_95'],
+        columns = ['pred', 'p_5', 'p_50', 'p_95'],
         index = pd.RangeIndex(start=33, stop=50, step=1)
     )
+    expected_predictions.insert(0, 'level', np.tile(['l1'], len(expected_predictions)))
                                    
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
@@ -2994,9 +2997,10 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
                          [0.63726975, 0.64221393, 0.10756972],
                          [0.54013414, 0.53996545, 0.11294946],
                          [0.52550978, 0.52797797, 0.11662733]]),
-        columns = ['l1', 'l1_loc', 'l1_scale'],
+        columns = ['pred', 'loc', 'scale'],
         index = pd.RangeIndex(start=33, stop=50, step=1)
     )
+    expected_predictions.insert(0, 'level', np.tile(['l1'], len(expected_predictions)))
                                    
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)

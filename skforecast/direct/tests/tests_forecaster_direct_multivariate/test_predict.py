@@ -617,10 +617,14 @@ def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differe
     predictions_diff_2 = forecaster_1.predict(exog=exog_diff_2.loc[end_train:])
     
     # Revert the differentiation
+    predictions_diff_2 = pd.pivot_table(
+        predictions_diff_2, index=predictions_diff_2.index, columns="level", values="pred"
+    )
     last_value_train_diff = df_diff_1[['l1']].loc[:end_train].iloc[[-1]]
     predictions_diff_1 = pd.concat([last_value_train_diff, predictions_diff_2]).cumsum()[1:]
     last_value_train = series_dt[['l1']].loc[:end_train].iloc[[-1]]
     predictions_1 = pd.concat([last_value_train, predictions_diff_1]).cumsum()[1:]
+    predictions_1 = expected_df_to_long_format(predictions_1)
 
     forecaster_2 = ForecasterDirectMultiVariate(
         regressor=LinearRegression(), level='l1', steps=1, lags=15, 
@@ -677,12 +681,16 @@ def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differe
     )
     forecaster_1.fit(series=df_diff_2.loc[:end_train], exog=exog_diff_2.loc[:end_train])
     predictions_diff_2 = forecaster_1.predict(exog=exog_diff_2.loc[end_train:])
-    
+
     # Revert the differentiation
+    predictions_diff_2 = pd.pivot_table(
+        predictions_diff_2, index=predictions_diff_2.index, columns="level", values="pred"
+    )
     last_value_train_diff = df_diff_1[['l1']].loc[:end_train].iloc[[-1]]
     predictions_diff_1 = pd.concat([last_value_train_diff, predictions_diff_2]).cumsum()[1:]
     last_value_train = series_dt[['l1']].loc[:end_train].iloc[[-1]]
     predictions_1 = pd.concat([last_value_train, predictions_diff_1]).cumsum()[1:]
+    predictions_1 = expected_df_to_long_format(predictions_1)
 
     forecaster_2 = ForecasterDirectMultiVariate(
         regressor=LinearRegression(), level='l1', steps=10, lags=15, 
@@ -691,7 +699,7 @@ def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differe
     forecaster_2.fit(series=series_dt.loc[:end_train], exog=exog.loc[:end_train])
     predictions_2 = forecaster_2.predict(exog=exog.loc[end_train:])
 
-    pd.testing.assert_frame_equal(predictions_1, predictions_2, check_names=False)
+    pd.testing.assert_frame_equal(predictions_1.asfreq('MS'), predictions_2)
 
 
 def test_predict_output_when_window_features_steps_1():
