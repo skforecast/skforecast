@@ -2249,7 +2249,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         Returns
         -------
         predictions : pandas DataFrame
-            Predicted values, one column for each level.
+            Long-format DataFrame with the predictions. The columns are `level`
+            and `pred`.
 
         """
 
@@ -2546,14 +2547,14 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                suppress_warnings       = suppress_warnings
                            )
         
-        preds = self.predict(
-                    steps             = steps,
-                    levels            = levels,
-                    last_window       = last_window,
-                    exog              = exog,
-                    suppress_warnings = suppress_warnings,
-                    check_inputs      = False
-                )
+        predictions = self.predict(
+                          steps             = steps,
+                          levels            = levels,
+                          last_window       = last_window,
+                          exog              = exog,
+                          suppress_warnings = suppress_warnings,
+                          check_inputs      = False
+                      )
 
         interval = np.array(interval) / 100
         boot_predictions[['lower_bound', 'upper_bound']] = (
@@ -2561,7 +2562,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         )
 
         predictions = pd.concat([
-            preds, boot_predictions[['lower_bound', 'upper_bound']]
+            predictions, boot_predictions[['lower_bound', 'upper_bound']]
         ], axis=1)
         
         set_skforecast_warnings(suppress_warnings, action='default')
