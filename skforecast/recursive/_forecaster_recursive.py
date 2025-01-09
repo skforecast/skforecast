@@ -143,8 +143,13 @@ class ForecasterRecursive(ForecasterBase):
         **WARNING: This argument is newly introduced and requires special attention. It
         is still experimental and may undergo changes.**
         **New in version 0.10.0**
-    binner : sklearn.preprocessing.KBinsDiscretizer
-        `KBinsDiscretizer` used to discretize residuals into k bins according 
+     differentiation_max : int
+        Maximum order of differentiation. For this Forecaster, it is equal to
+        the value of the `differentiation` parameter.
+    differentiator : TimeSeriesDifferentiator
+        Skforecast object used to differentiate the time series.
+    binner : skforecast.preprocessing.QuantileBinner
+        `QuantileBinner` used to discretize residuals into k bins according 
         to the predicted values associated with each residual.
         **New in version 0.12.0**
     binner_intervals_ : dict
@@ -160,14 +165,6 @@ class ForecasterRecursive(ForecasterBase):
         **New in version 0.14.0**
     source_code_weight_func : str
         Source code of the custom function used to create weights.
-    differentiation : int
-        Order of differencing applied to the time series before training the 
-        forecaster.
-    differentiation_max : int
-        Maximum order of differentiation. For this Forecaster, it is equal to
-        the value of the `differentiation` parameter.
-    differentiator : TimeSeriesDifferentiator
-        Skforecast object used to differentiate the time series.
     last_window_ : pandas DataFrame
         This window represents the most recent data observed by the predictor
         during its training phase. It contains the values needed to predict the
@@ -226,7 +223,7 @@ class ForecasterRecursive(ForecasterBase):
         in the transformed scale. If `differentiation` is not `None`, residuals are
         stored after differentiation. The number of residuals stored per bin is
         limited to `10_000 // self.binner.n_bins_`.
-        **New in version 0.12.0**
+        **New in version 0.14.0**
     creation_date : str
         Date of creation.
     is_fitted : bool
