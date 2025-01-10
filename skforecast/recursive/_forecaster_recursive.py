@@ -1035,13 +1035,11 @@ class ForecasterRecursive(ForecasterBase):
         to the predicted value each residual is associated with. Residuals are
         stored in the forecaster object as `in_sample_residuals_` and
         `in_sample_residuals_by_bin_`.
-        If `transformer_y` is not `None`, `y_true` and `y_pred` are transformed
-        before calculating residuals. If `differentiation` is not `None`, `y_true`
-        and `y_pred` are differentiated before calculating residuals. If both,
-        `transformer_y` and `differentiation` are not `None`, transformation is
-        done before differentiation. The number of residuals stored per bin is
-        limited to  `10_000 // self.binner.n_bins_`. The total number of residuals
-        stored is `10_000`.
+        `y_true` and `y_pred` assumed to be differentiated and or transformed
+        according to the attributes `differentiation` and `transformer_y`.
+        The number of residuals stored per bin is limited to 
+        `10_000 // self.binner.n_bins_`. The total number of residuals stored is
+        `10_000`.
         **New in version 0.14.0**
 
         Parameters

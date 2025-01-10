@@ -383,7 +383,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self.differentiation_max                = None
         self.differentiator                     = None
         self.differentiator_                    = None
-        self.binner                             = None
+        self.binner                             = {}
         self.binner_intervals_                  = None
         self.dropna_from_series                 = dropna_from_series
         self.last_window_                       = None
@@ -400,7 +400,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self.X_train_exog_names_out_            = None
         self.X_train_features_names_out_        = None
         self.in_sample_residuals_               = None
+        self.in_sample_residuals_by_bin         = None
         self.out_sample_residuals_              = None
+        self.out_sample_residuals_by_bin_       = None
         self.creation_date                      = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
         self.is_fitted                          = False
         self.fit_date                           = None
@@ -1751,7 +1753,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         if store_in_sample_residuals:
 
             #residuals = (y_train - self.regressor.predict(X_train_regressor)).to_numpy()
-            y_pred = self.regressor.predict(X_train_regressor).to_numpy()
+            y_pred = self.regressor.predict(X_train_regressor)
             #rng = np.random.default_rng(seed=123)
             if self.encoding is not None:
                 for level in X_train_series_names_in_:
@@ -1815,14 +1817,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         to the predicted value each residual is associated with. Residuals are
         stored in the forecaster object as `in_sample_residuals_` and
         `in_sample_residuals_by_bin_`.
-        If `transformer_y` is not `None`, `y_true` and `y_pred` are transformed
-        before calculating residuals. If `differentiation` is not `None`, `y_true`
-        and `y_pred` are differentiated before calculating residuals. If both,
-        `transformer_y` and `differentiation` are not `None`, transformation is
-        done before differentiation. The number of residuals stored per bin is
-        limited to  `10_000 // self.binner.n_bins_`. The total number of residuals
-        stored is `10_000`.
-        **New in version 0.14.0**
+        `y_true` and `y_pred` assumed to be differentiated and or transformed
+        according to the attributes `differentiation` and `transformer_series`.
+        The number of residuals stored per bin is limited to 
+        `10_000 // self.binner.n_bins_`. The total number of residuals stored is
+        `10_000`.
+        **New in version 0.15.0**
 
         Parameters
         ----------
@@ -1839,9 +1839,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         None
         
         """
-        self.binner_[level] = QuantileBinner(**self.binner_kwargs)
+        self.binner[level] = QuantileBinner(**self.binner_kwargs)
         data = pd.DataFrame({'prediction': y_pred, 'residuals': (y_true - y_pred)})
-        data['bin'] = self.binner_[level].fit_transform(y_pred).astype(int)
+        data['bin'] = self.binner[level].fit_transform(y_pred).astype(int)
         self.in_sample_residuals_by_bin_[level] = (
             data.groupby('bin')['residuals'].apply(np.array).to_dict()
         )
