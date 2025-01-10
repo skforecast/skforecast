@@ -791,6 +791,15 @@ class ForecasterRnn(ForecasterBase):
             )
             predictions.loc[:, serie] = x
 
+        # Temporal standardization. Pending full refactoring
+        predictions = (
+            predictions.melt(var_name="level", value_name="pred", ignore_index=False)
+            .reset_index()
+            .sort_values(by=["index", "level"])
+            .set_index("index")
+            .rename_axis(None, axis=0)
+        )
+
         set_skforecast_warnings(suppress_warnings, action="default")
 
         return predictions
