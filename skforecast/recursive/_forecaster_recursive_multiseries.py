@@ -3117,6 +3117,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             )
         
         residuals = {}
+        residuals_by_bin = {}
         rng = np.random.default_rng(seed=random_state)
         y_true = y_true.copy()
         y_pred = y_pred.copy()
@@ -3135,32 +3136,61 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 if differentiator_[k] is not None:
                     differentiator_[k].set_params(window_size=None)
 
-        for k in series_to_update:
-            if isinstance(y_true[k], pd.Series):
-                y_true[k] = y_true[k].to_numpy()
-            if isinstance(y_pred[k], pd.Series):
-                y_pred[k] = y_pred[k].to_numpy()
+        for level in series_to_update:
+            y_true_level = y_true[level]
+            y_pred_level = y_pred[level]
+            transformer_level = self.transformer_series_[level]
+            if isinstance(y_true_level, pd.Series):
+                y_true_level = y_true_level.to_numpy()
+            if isinstance(y_pred_level, pd.Series):
+                y_pred_level = y_pred_level.to_numpy()
             if self.transformer_series:
-                y_true[k] = transform_numpy(
-                                array             = y_true[k],
-                                transformer       = self.transformer_series_[k],
-                                fit               = False,
-                                inverse_transform = False
-                            )
-                y_pred[k] = transform_numpy(
-                                array             = y_pred[k],
-                                transformer       = self.transformer_series_[k],
-                                fit               = False,
-                                inverse_transform = False
-                            )
+                y_true_level = transform_numpy(
+                                    array             = y_true_level,
+                                    transformer       = transformer_level,
+                                    fit               = False,
+                                    inverse_transform = False
+                                )
+                y_pred_level = transform_numpy(
+                                    array             = y_pred_level,
+                                    transformer       = transformer_level,
+                                    fit               = False,
+                                    inverse_transform = False
+                                )
             
             if self.differentiation is not None:
                 differentiator = differentiator_[k]
                 if differentiator is not None:
-                    y_true[k] = differentiator.fit_transform(y_true[k])[differentiator.order:]
-                    y_pred[k] = differentiator.fit_transform(y_pred[k])[differentiator.order:]
+                    y_true_level = differentiator.fit_transform(y_true_level)[differentiator.order:]
+                    y_pred_level = differentiator.fit_transform(y_pred_level)[differentiator.order:]
 
-            residuals[k] = y_true[k] - y_pred[k]
+            residuals_level = y_true_level - y_pred_level
+            data = pd.DataFrame({'prediction': y_pred, 'residuals': residuals})
+            data['bin'] = self.binner[level].transform(y_pred).astype(int)
+            residuals_level_by_bin = data.groupby('bin')['residuals'].apply(np.array).to_dict()
+            residuals[level] = residuals_level
+            residuals_by_bin[level] = residuals_level_by_bin
+
+            if append and self.out_sample_residuals_by_bin_[level] is not None:
+                for k, v in residuals_by_bin[level].items():
+                    if k in self.out_sample_residuals_by_bin_:
+                        self.out_sample_residuals_by_bin_[level][k] = np.concatenate((
+                            self.out_sample_residuals_by_bin_[level][k], v)
+                        )
+                    else:
+                        self.out_sample_residuals_by_bin_[level][k] = v
+            else:
+                self.out_sample_residuals_[level] = residuals[level]
+                self.out_sample_residuals_by_bin_[level] = residuals_by_bin[level]
+
+            max_samples = 10_000 // self.binner[level].n_bins_
+            rng = np.random.default_rng(seed=random_state)
+            for k, v in self.out_sample_residuals_by_bin_[level].items():
+                if len(v) > max_samples:
+                    sample = rng.choice(a=v, size=max_samples, replace=False)
+                    self.out_sample_residuals_by_bin_[level][k] = sample
+
+        
 
         if '_unknown_level' not in residuals:
             residuals['_unknown_level'] = np.concatenate(list(residuals.values()))
