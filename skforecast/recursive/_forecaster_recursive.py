@@ -947,6 +947,7 @@ class ForecasterRecursive(ForecasterBase):
         
         """
 
+        # TODO: create a method reset_forecaster() to reset all attributes
         # Reset values in case the forecaster has already been fitted.
         self.last_window_                       = None
         self.index_type_                        = None
@@ -960,6 +961,7 @@ class ForecasterRecursive(ForecasterBase):
         self.X_train_exog_names_out_            = None
         self.X_train_features_names_out_        = None
         self.in_sample_residuals_               = None
+        self.in_sample_residuals_by_bin_        = None
         self.is_fitted                          = False
         self.fit_date                           = None
 

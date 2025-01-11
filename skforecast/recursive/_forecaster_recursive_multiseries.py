@@ -384,7 +384,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self.differentiator                     = None
         self.differentiator_                    = None
         self.binner                             = {}
-        self.binner_intervals_                  = None
+        self.binner_intervals_                  = {}
         self.dropna_from_series                 = dropna_from_series
         self.last_window_                       = None
         self.index_type_                        = None
@@ -399,10 +399,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self.X_train_window_features_names_out_ = None
         self.X_train_exog_names_out_            = None
         self.X_train_features_names_out_        = None
-        self.in_sample_residuals_               = None
-        self.in_sample_residuals_by_bin         = None
-        self.out_sample_residuals_              = None
-        self.out_sample_residuals_by_bin_       = None
+        self.in_sample_residuals_               = {}
+        self.in_sample_residuals_by_bin_        = {}
+        self.out_sample_residuals_              = {}
+        self.out_sample_residuals_by_bin_       = {}
         self.creation_date                      = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
         self.is_fitted                          = False
         self.fit_date                           = None
@@ -1675,6 +1675,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         set_skforecast_warnings(suppress_warnings, action='ignore')
 
+        # TODO: create a method reset_forecaster() to reset all attributes
         # Reset values in case the forecaster has already been fitted.
         self.last_window_                       = None
         self.index_type_                        = None
@@ -1689,7 +1690,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self.X_train_window_features_names_out_ = None
         self.X_train_exog_names_out_            = None
         self.X_train_features_names_out_        = None
-        self.in_sample_residuals_               = None
+        self.in_sample_residuals_               = {}
+        self.in_sample_residuals_by_bin_        = {}
         self.is_fitted                          = False
         self.fit_date                           = None
 
@@ -1749,12 +1751,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             self.exog_dtypes_in_ = exog_dtypes_in_
             self.X_train_exog_names_out_ = X_train_exog_names_out_
 
-        #in_sample_residuals_ = {}
         if store_in_sample_residuals:
-
-            #residuals = (y_train - self.regressor.predict(X_train_regressor)).to_numpy()
             y_pred = self.regressor.predict(X_train_regressor)
-            #rng = np.random.default_rng(seed=123)
             if self.encoding is not None:
                 for level in X_train_series_names_in_:
                     if self.encoding == 'onehot':
@@ -1768,34 +1766,18 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                         y_true = y_train[mask],
                         y_pred = y_pred[mask]
                     )
-                    
-                    #residuals_level = residuals[mask]
-                    # if len(residuals_level) > 1000:
-                    #     residuals_level = rng.choice(
-                    #                         a       = residuals_level,
-                    #                         size    = 1000,
-                    #                         replace = False
-                    #                     )
-                    # in_sample_residuals_[level] = residuals_level
             
-            # if len(residuals) > 1000:
-            #     in_sample_residuals_['_unknown_level'] = rng.choice(
-            #                                                  a       = residuals,
-            #                                                  size    = 1000,
-            #                                                  replace = False
-            #                                              )
-            else:
-                #in_sample_residuals_['_unknown_level'] = residuals
-                self._binning_in_sample_residuals(
-                        level = '_unknown_level',
-                        y_true = y_train,
-                        y_pred = y_pred
-                    )
+            # NOTE: the _unknown_level is a random sample of 10_000 residualsof all levels.
+            self._binning_in_sample_residuals(
+                    level = '_unknown_level',
+                    y_true = y_train,
+                    y_pred = y_pred
+                )
         else:
             if self.encoding is not None:
-                for level in X_train_series_names_in_:
+                for level in X_train_series_names_in_ + ['_unknown_level']:
                     self.in_sample_residuals_[level] = None
-            self.in_sample_residuals_['_unknown_level'] = None
+                    self.in_sample_residuals_by_bin_[level] = None
 
         if store_last_window:
             self.last_window_ = last_window_
@@ -1847,7 +1829,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         )
 
         rng = np.random.default_rng(seed=random_state)
-        max_sample = 10_000 // self.binner.n_bins_
+        max_sample = 10_000 // self.binner[level].n_bins_
         for k, v in self.in_sample_residuals_by_bin_[level].items():
             
             if len(v) > max_sample:
@@ -2429,6 +2411,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         n_boot: int = 250,
         random_state: int = 123,
         use_in_sample_residuals: bool = True,
+        use_binned_residuals: bool = False,
         suppress_warnings: bool = False
     ) -> pd.DataFrame:
         """
@@ -2464,6 +2447,13 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             residuals are used. In the latter case, the user should have
             calculated and stored the residuals within the forecaster (see
             `set_out_sample_residuals()`).
+        use_binned_residuals : bool, default False
+            If `True`, residuals used in each bootstrapping iteration are selected
+            conditioning on the predicted values. If `False`, residuals are selected
+            randomly without conditioning on the predicted values.
+            **WARNING: This argument is newly introduced and requires special attention.
+            It is still experimental and may undergo changes.
+            **New in version 0.15.0**
         suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the prediction 
             process. See skforecast.exceptions.warn_skforecast_categories for more
@@ -2497,8 +2487,16 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             last_window             = last_window,
             exog                    = exog,
             predict_boot            = True,
-            use_in_sample_residuals = use_in_sample_residuals
+            use_in_sample_residuals = use_in_sample_residuals,
+            use_binned_residuals    = use_binned_residuals
         )
+
+        if use_in_sample_residuals:
+            residuals = self.in_sample_residuals_
+            residuals_by_bin = self.in_sample_residuals_by_bin_
+        else:
+            residuals = self.out_sample_residuals_
+            residuals_by_bin = self.out_sample_residuals_by_bin_
 
         n_levels = len(levels)
         rng = np.random.default_rng(seed=random_state)
