@@ -1762,7 +1762,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                         mask = X_train['_level_skforecast'].to_numpy() == encoded_value
 
                     self._binning_in_sample_residuals(
-                        level = level,
+                        level  = level,
                         y_true = y_train[mask],
                         y_pred = y_pred[mask]
                     )
@@ -1775,9 +1775,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 )
         else:
             if self.encoding is not None:
-                for level in X_train_series_names_in_ + ['_unknown_level']:
+                for level in X_train_series_names_in_:
                     self.in_sample_residuals_[level] = None
                     self.in_sample_residuals_by_bin_[level] = None
+            self.in_sample_residuals_['_unknown_level'] = None
+            self.in_sample_residuals_by_bin_['_unknown_level'] = None
 
         if store_last_window:
             self.last_window_ = last_window_
@@ -2052,7 +2054,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         levels: list,
         last_window: pd.DataFrame,
         exog_values_dict: dict[str, np.ndarray] | None = None,
-        residuals: np.ndarray | None = None
+        residuals: np.ndarray | None = None,
+        use_binned_residuals: bool = False,
     ) -> np.ndarray:
         """
         Predict n steps for one or multiple levels. It is an iterative process
@@ -2074,6 +2077,13 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         residuals : numpy ndarray, default None
             Residuals used to generate bootstrapping predictions in the form
             (steps, levels).
+        use_binned_residuals : bool, default False
+            If `True`, residuals used in each bootstrapping iteration are selected
+            conditioning on the predicted values. If `False`, residuals are selected
+            randomly without conditioning on the predicted values.
+            **WARNING: This argument is newly introduced and requires special attention.
+            It is still experimental and may undergo changes.
+            **New in version 0.15.0**
 
         Returns
         -------
@@ -2141,7 +2151,15 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             pred = self.regressor.predict(features)
             
             if residuals is not None:
-                pred += residuals[i, :]
+
+                # TODO: AQUIIIIIIIIIIIIIII!!!!!!
+                if use_binned_residuals:
+                    predicted_bin = (
+                        self.binner.transform(pred).item()
+                    )
+                    step_residual = residuals[predicted_bin][i]
+                else:
+                    pred += residuals[i, :]
             
             predictions[i, :] = pred 
 
@@ -2500,18 +2518,29 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         n_levels = len(levels)
         rng = np.random.default_rng(seed=random_state)
-        sample_residuals = np.full(
-                               shape      = (steps, n_boot, n_levels),
-                               fill_value = np.nan,
-                               order      = 'F',
-                               dtype      = float
-                           )
-        for i, level in enumerate(levels):
-            sample_residuals[:, :, i] = rng.choice(
-                                            a       = residuals[level],
-                                            size    = (steps, n_boot),
-                                            replace = True
-                                        )
+        sampled_residuals_grid = np.full(
+                                    shape      = (steps, n_boot, n_levels),
+                                    fill_value = np.nan,
+                                    order      = 'F',
+                                    dtype      = float
+                                )
+        if use_binned_residuals:
+            sampled_residuals = {k: sampled_residuals_grid.copy() for k in range(self.binner_kwargs['n_bins'])}
+            for bin in sampled_residuals.keys():
+                for i, level in enumerate(levels):
+                    sampled_residuals[bin][:, :, i] = rng.choice(
+                                                        a       = residuals_by_bin[level][bin],
+                                                        size    = (steps, n_boot),
+                                                        replace = True
+                                                    )
+        else:
+            for i, level in enumerate(levels):
+                sampled_residuals_grid[:, :, i] = rng.choice(
+                                                a       = residuals[level],
+                                                size    = (steps, n_boot),
+                                                replace = True
+                                            )
+            sampled_residuals = {'all': sampled_residuals_grid}
         
         boot_columns = []
         boot_predictions = np.full(
@@ -2529,13 +2558,22 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             )
             for i in range(n_boot):
 
+                if use_binned_residuals:
+                    boot_sampled_residuals = {
+                        k: v[:, i, :]
+                        for k, v in sampled_residuals.items()
+                    }
+                else:
+                    boot_sampled_residuals = sampled_residuals['all'][:, i, :]
+
                 boot_columns.append(f"pred_boot_{i}")
                 boot_predictions[:, :, i] = self._recursive_predict(
-                    steps            = steps,
-                    levels           = levels,
-                    last_window      = last_window,
-                    exog_values_dict = exog_values_dict,
-                    residuals        = sample_residuals[:, i, :]
+                    steps                = steps,
+                    levels               = levels,
+                    last_window          = last_window,
+                    exog_values_dict     = exog_values_dict,
+                    residuals            = boot_sampled_residuals,
+                    use_binned_residuals = use_binned_residuals,
                 )
 
         for i, level in enumerate(levels):
