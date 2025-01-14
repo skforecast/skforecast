@@ -277,7 +277,7 @@ def create_and_compile_model(
     return model
 
 
-def create_and_compile_model_exo(
+def create_and_compile_model_exog(
     series: pd.DataFrame,
     lags: Union[int, list],
     steps: Union[int, list],

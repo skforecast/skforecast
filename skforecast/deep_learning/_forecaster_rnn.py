@@ -20,12 +20,20 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import MinMaxScaler
 
 import skforecast
+from skforecast.utils.utils import transform_dataframe
 
 from ..base import ForecasterBase
 from ..exceptions import IgnoredArgumentWarning
-from ..utils import (check_predict_input, check_select_fit_kwargs, check_y,
-                     expand_index, preprocess_last_window, preprocess_y,
-                     set_skforecast_warnings, transform_series)
+from ..utils import (
+    check_predict_input,
+    check_select_fit_kwargs,
+    check_y,
+    expand_index,
+    preprocess_last_window,
+    preprocess_y,
+    set_skforecast_warnings,
+    transform_series,
+)
 
 
 # TODO. Test Interval
@@ -174,16 +182,18 @@ class ForecasterRnn(ForecasterBase):
         transformer_series: Optional[Union[object, dict]] = MinMaxScaler(
             feature_range=(0, 1)
         ),
+        transformer_exog: Optional[Union[object, dict]] = MinMaxScaler(
+            feature_range=(0, 1)
+        ),
         weight_func: Optional[Callable] = None,
         fit_kwargs: Optional[dict] = {},
         forecaster_id: Optional[Union[str, int]] = None,
         n_jobs: Any = None,
-        transformer_exog: Any = None,
     ) -> None:
         self.levels = None
         self.transformer_series = transformer_series
         self.transformer_series_ = None
-        self.transformer_exog = None
+        self.transformer_exog = transformer_exog
         self.weight_func = weight_func
         self.source_code_weight_func = None
         self.max_lag = None
@@ -290,9 +300,16 @@ class ForecasterRnn(ForecasterBase):
             )
 
         self.series_val = None
+        self.exog_val = None
+
+        # TODO check that series_val & exog_val should be both available if exog is not None
         if "series_val" in fit_kwargs:
             self.series_val = fit_kwargs["series_val"]
             fit_kwargs.pop("series_val")
+
+        if "exog_val" in fit_kwargs:
+            self.exog_val = fit_kwargs["exog_val"]
+            fit_kwargs.pop("exog_val")
 
         self.fit_kwargs = check_select_fit_kwargs(
             regressor=self.regressor, fit_kwargs=fit_kwargs
@@ -398,7 +415,7 @@ class ForecasterRnn(ForecasterBase):
         return X_data, y_data
 
     def create_train_X_y(
-        self, series: pd.DataFrame, exog: Any = None
+        self, series: pd.DataFrame, exog: pd.DataFrame = None
     ) -> Tuple[np.ndarray, np.ndarray, dict]:
         """
         Create training matrices. The resulting multi-dimensional matrices contain
@@ -524,13 +541,29 @@ class ForecasterRnn(ForecasterBase):
             },
         }
 
-        return X_train, y_train, dimension_names
+        if exog is not None:
+            exog_train = exog.loc[train_index, :]
+            exog_train = transform_dataframe(
+                df=exog_train,
+                transformer=self.transformer_exog,
+                fit=True,
+                inverse_transform=False,
+            )
+
+            dimension_names["exog_train"] = {
+                0: train_index,
+                1: exog_train.columns.to_list(),
+            }
+        else:
+            exog_train = None
+
+        return X_train, exog_train, y_train, dimension_names
 
     def fit(
         self,
         series: pd.DataFrame,
         store_in_sample_residuals: bool = True,
-        exog: Any = None,
+        exog: pd.DataFrame = None,
         suppress_warnings: bool = False,
         store_last_window: str = "Ignored",
     ) -> None:
@@ -580,12 +613,16 @@ class ForecasterRnn(ForecasterBase):
         self.is_fitted = False
         self.training_range_ = None
 
-        # TODO. ask @XIMO deveríamos eliminar las columnas no incluidas en series y en levels?
+        # TODO. ask @XIMO deberíamos eliminar las columnas no incluidas en series y en levels?
         self.series_names_in_ = list(series.columns)
 
-        X_train, y_train, X_train_dim_names_ = self.create_train_X_y(series=series)
+        X_train, exog_train, y_train, X_train_dim_names_ = self.create_train_X_y(
+            series=series, exog=exog
+        )
         self.X_train_dim_names_ = X_train_dim_names_["X_train"]
         self.y_train_dim_names_ = X_train_dim_names_["y_train"]
+        self.exog_train_dim_names_ = X_train_dim_names_["exog_train"]
+
         if keras.__version__ > "3.0" and keras.backend.backend() == "torch":
             import torch
 
@@ -595,14 +632,28 @@ class ForecasterRnn(ForecasterBase):
             print(f"Using device: {device}")
             X_train = torch.tensor(X_train).to(torch_device)
             y_train = torch.tensor(y_train).to(torch_device)
+            if exog_train:
+                exog_train = torch.tensor(exog_train).to(torch_device)
 
-        if self.series_val is not None:
+        if self.series_val:
             # TODO. ask @XIMO deveríamos eliminar las columnas no incluidas en series y en levels?
-            torch_device = torch.device(device)
-            X_val, y_val, _ = self.create_train_X_y(series=self.series_val)
+            X_val, exog_val, y_val, _ = self.create_train_X_y(
+                series=self.series_val, exog=self.exog_val
+            )
             if keras.__version__ > "3.0" and keras.backend.backend() == "torch":
                 X_val = torch.tensor(X_val).to(torch_device)
                 y_val = torch.tensor(y_val).to(torch_device)
+                if exog_val:
+                    exog_val = torch.tensor(exog_val).to(torch_device)
+
+            if exog_val:
+                history = self.regressor.fit(
+                    x=[X_train, exog_train],
+                    y=y_train,
+                    validation_data=([X_val, exog_val], y_val),
+                    **self.fit_kwargs,
+                )
+            else:
                 history = self.regressor.fit(
                     x=X_train,
                     y=y_train,
@@ -610,12 +661,18 @@ class ForecasterRnn(ForecasterBase):
                     **self.fit_kwargs,
                 )
         else:
-            history = self.regressor.fit(
-                x=X_train,
-                y=y_train,
-                validation_data=(X_val, y_val),
-                **self.fit_kwargs,
-            )
+            if exog_train:
+                history = self.regressor.fit(
+                    x=[X_train, exog_train],
+                    y=y_train,
+                    **self.fit_kwargs,
+                )
+            else:
+                history = self.regressor.fit(
+                    x=X_train,
+                    y=y_train,
+                    **self.fit_kwargs,
+                )
 
         self.history = history.history
         self.is_fitted = True
@@ -637,7 +694,7 @@ class ForecasterRnn(ForecasterBase):
         steps: Optional[Union[int, list]] = None,
         levels: Optional[Union[str, list]] = None,
         last_window: Optional[pd.DataFrame] = None,
-        exog: Any = None,
+        exog: Optional[pd.DataFrame] = None,
         suppress_warnings: bool = False,
     ) -> pd.DataFrame:
         """
@@ -715,7 +772,7 @@ class ForecasterRnn(ForecasterBase):
             index_freq_=self.index_freq_,
             window_size=self.window_size,
             last_window=last_window,
-            exog=None,
+            exog=exog,  ## review from here @XIMO
             exog_type_in_=None,
             exog_names_in_=None,
             interval=None,
