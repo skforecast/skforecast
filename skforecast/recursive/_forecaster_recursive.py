@@ -1090,7 +1090,7 @@ class ForecasterRecursive(ForecasterBase):
         steps: int | str | pd.Timestamp, 
         last_window: pd.Series | pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | None = None,
-        predict_boot: bool = False,
+        predict_probabilistic: bool = False,
         use_in_sample_residuals: bool = True,
         use_binned_residuals: bool = False,
         check_inputs: bool = True
@@ -1115,8 +1115,9 @@ class ForecasterRecursive(ForecasterBase):
             right after training data.
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
-        predict_boot : bool, default False
-            If `True`, residuals are returned to generate bootstrapping predictions.
+        predict_probabilistic : bool, default False
+            If `True`, the necessary checks for probabilistic predictions will be 
+            performed.
         use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
             prediction error to create predictions. If `False`, out of sample 
@@ -1174,8 +1175,9 @@ class ForecasterRecursive(ForecasterBase):
                 exog_names_in_   = self.exog_names_in_,
                 interval         = None
             )
-        
-            if predict_boot and not use_in_sample_residuals:
+
+            # TODO: Añadir checks de in_sample_residuals y hacer una función
+            if predict_probabilistic and not use_in_sample_residuals:
                 if not use_binned_residuals and self.out_sample_residuals_ is None:
                     raise ValueError(
                         "`forecaster.out_sample_residuals_` is `None`. Use "
@@ -1447,14 +1449,17 @@ class ForecasterRecursive(ForecasterBase):
         
         """
 
-        last_window_values, exog_values, prediction_index, steps = (
-            self._create_predict_inputs(
+        (
+            last_window_values,
+            exog_values,
+            prediction_index,
+            steps
+        ) = self._create_predict_inputs(
                 steps        = steps,
                 last_window  = last_window,
                 exog         = exog,
                 check_inputs = check_inputs,
             )
-        )
 
         with warnings.catch_warnings():
             warnings.filterwarnings(
@@ -1557,13 +1562,13 @@ class ForecasterRecursive(ForecasterBase):
             prediction_index,
             steps
         ) = self._create_predict_inputs(
-            steps                   = steps, 
-            last_window             = last_window, 
-            exog                    = exog,
-            predict_boot            = True, 
-            use_in_sample_residuals = use_in_sample_residuals,
-            use_binned_residuals    = use_binned_residuals
-        )
+                steps                   = steps, 
+                last_window             = last_window, 
+                exog                    = exog,
+                predict_probabilistic   = True, 
+                use_in_sample_residuals = use_in_sample_residuals,
+                use_binned_residuals    = use_binned_residuals
+            )
 
         if use_in_sample_residuals:
             residuals = self.in_sample_residuals_
@@ -1951,6 +1956,20 @@ class ForecasterRecursive(ForecasterBase):
             deterministic.
 
         """
+        
+        (
+            last_window_values,
+            exog_values,
+            prediction_index,
+            steps
+        ) = self._create_predict_inputs(
+                steps                   = steps,
+                last_window             = last_window,
+                exog                    = exog,
+                predict_probabilistic   = True,
+                use_in_sample_residuals = use_in_sample_residuals,
+                use_binned_residuals    = use_binned_residuals
+            )
 
         if use_in_sample_residuals:
             residuals = self.in_sample_residuals_
@@ -1958,14 +1977,6 @@ class ForecasterRecursive(ForecasterBase):
         else:
             residuals = self.out_sample_residuals_
             residuals_by_bin = self.out_sample_residuals_by_bin_
-        
-        last_window_values, exog_values, prediction_index, steps = (
-            self._create_predict_inputs(
-                steps        = steps,
-                last_window  = last_window,
-                exog         = exog
-            )
-        )
 
         with warnings.catch_warnings():
             warnings.filterwarnings(
@@ -1989,41 +2000,33 @@ class ForecasterRecursive(ForecasterBase):
             correction_factor = replace_func(predictions_bin)
             lower_bound = predictions - correction_factor
             upper_bound = predictions + correction_factor
-
         else:
             correction_factor = np.quantile(np.abs(residuals), nominal_coverage)
             lower_bound = predictions - correction_factor
             upper_bound = predictions + correction_factor
 
+        predictions = np.column_stack([predictions, lower_bound, upper_bound])
+
         if self.differentiation is not None:
-            predictions = self.differentiator.inverse_transform_next_window(predictions)
-            lower_bound = self.differentiator.inverse_transform_next_window(lower_bound)
-            upper_bound = self.differentiator.inverse_transform_next_window(upper_bound)
-    
-        predictions = transform_numpy(
-                        array             = predictions,
-                        transformer       = self.transformer_y,
-                        fit               = False,
-                        inverse_transform = True
-                    )
-        lower_bound = transform_numpy(
-                        array             = lower_bound,
-                        transformer       = self.transformer_y,
-                        fit               = False,
-                        inverse_transform = True
-                    )
-        upper_bound = transform_numpy(
-                        array             = upper_bound,
-                        transformer       = self.transformer_y,
-                        fit               = False,
-                        inverse_transform = True
-                    )
+            predictions = (
+                self.differentiator.inverse_transform_next_window(predictions)
+            )
+        
+        if self.transformer_y:
+            predictions = np.apply_along_axis(
+                              func1d            = transform_numpy,
+                              axis              = 0,
+                              arr               = predictions,
+                              transformer       = self.transformer_y,
+                              fit               = False,
+                              inverse_transform = True
+                          )
         
         predictions = pd.DataFrame(
-                        data    = np.column_stack((predictions, lower_bound, upper_bound)),
-                        columns = ["pred", "lower_bound", "upper_bound"],
-                        index   = prediction_index
-                    )
+                          data    = predictions,
+                          index   = prediction_index,
+                          columns = ["pred", "lower_bound", "upper_bound"]
+                      )
 
         return predictions       
 
