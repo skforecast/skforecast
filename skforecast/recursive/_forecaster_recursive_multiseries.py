@@ -1826,7 +1826,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         
         """
         self.binner[level] = QuantileBinner(**self.binner_kwargs)
-        data = pd.DataFrame({'prediction': y_pred, 'residuals': (y_true - y_pred)})
+        residuals = y_true - y_pred
+        data = pd.DataFrame({'prediction': y_pred, 'residuals': residuals})
         data['bin'] = self.binner[level].fit_transform(y_pred).astype(int)
         self.in_sample_residuals_by_bin_[level] = (
             data.groupby('bin')['residuals'].apply(np.array).to_dict()
@@ -1835,15 +1836,14 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         rng = np.random.default_rng(seed=random_state)
         max_sample = 10_000 // self.binner[level].n_bins_
         for k, v in self.in_sample_residuals_by_bin_[level].items():
-            
             if len(v) > max_sample:
                 sample = v[rng.integers(low=0, high=len(v), size=max_sample)]
                 self.in_sample_residuals_by_bin_[level][k] = sample
 
-        self.in_sample_residuals_[level] = np.concatenate(list(
-            self.in_sample_residuals_by_bin_[level].values()
-        ))
-
+        if len(residuals) > 10_000:
+            residuals = residuals[rng.integers(low=0, high=len(residuals), size=max_sample)]
+        
+        self.in_sample_residuals_[level] = residuals
         self.binner_intervals_[level] = self.binner[level].intervals_
 
 
@@ -3383,11 +3383,13 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             for k in empty_bins:
                 outsample_residuals_by_bin[k] = rng.choice(
                     a       = residuals,
-                    size    = max_samples,
-                    replace = True
+                    size    = min(max_samples, len(residuals)),
+                    replace = False
                 )
         
-        outsample_residuals = np.concatenate(list(outsample_residuals_by_bin.values()))
+        if len(residuals) > 10_000:
+            residuals = rng.choice(a=residuals, size=10_000, replace=False)
+        outsample_residuals = residuals
 
         return outsample_residuals, outsample_residuals_by_bin
     
