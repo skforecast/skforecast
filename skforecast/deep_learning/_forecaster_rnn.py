@@ -791,6 +791,15 @@ class ForecasterRnn(ForecasterBase):
             )
             predictions.loc[:, serie] = x
 
+        # Temporal standardization. Pending full refactoring
+        predictions = (
+            predictions.melt(var_name="level", value_name="pred", ignore_index=False)
+            .reset_index()
+            .sort_values(by=["index", "level"])
+            .set_index("index")
+            .rename_axis(None, axis=0)
+        )
+
         set_skforecast_warnings(suppress_warnings, action="default")
 
         return predictions
@@ -985,6 +994,20 @@ class ForecasterRnn(ForecasterBase):
             )
 
             boot_predictions[level] = boot_level
+
+        # Temporal standardization. Pending full code refactoring:
+        boot_predictions = (
+            pd.concat([value.assign(level=key) for key, value in boot_predictions.items()])
+            .reset_index()
+            .sort_values(by=["index", "level"])
+            .set_index("index")
+            .rename_axis(None, axis=0)
+        )
+        boot_predictions = boot_predictions[
+            ["level"] + [col for col in boot_predictions.columns if col not in ["level", "index"]]
+            ]
+        if isinstance(boot_predictions.index, pd.DatetimeIndex) and boot_predictions.index.freq is not None:
+            boot_predictions.index.freq = None
 
         set_skforecast_warnings(suppress_warnings, action='default')
 
