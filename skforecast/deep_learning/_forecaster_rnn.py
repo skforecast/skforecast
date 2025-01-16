@@ -1120,6 +1120,99 @@ class ForecasterRnn(ForecasterBase):
 
         return predictions
 
+    def predict_quantiles(
+            self,
+            steps: int,
+            levels: str | list[str] | None = None,
+            last_window: pd.DataFrame | None = None,
+            exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
+            quantiles: list[int] | tuple[int] = [0.05, 0.5, 0.95],
+            n_boot: int = 250,
+            random_state: int = 123,
+            use_in_sample_residuals: bool = True,
+            suppress_warnings: bool = False
+    ) -> pd.DataFrame:
+        """
+        Calculate the specified quantiles for each step. After generating
+        multiple forecasting predictions through a bootstrapping process, each
+        quantile is calculated for each step.
+
+        Parameters
+        ----------
+        steps : int
+            Number of future steps predicted.
+        levels : str, list, default None
+            Time series to be predicted. If `None` all levels whose last window
+            ends at the same datetime index will be predicted together.
+        last_window : pandas DataFrame, default None
+            Series values used to create the predictors (lags) needed in the
+            first iteration of the prediction (t + 1).
+            If `last_window = None`, the values stored in `self.last_window_` are
+            used to calculate the initial predictors, and the predictions start
+            right after training data.
+        exog : pandas Series, pandas DataFrame, dict, default None
+            Exogenous variable/s included as predictor/s.
+        quantiles : list, tuple, default [0.05, 0.5, 0.95]
+            Sequence of quantiles to compute, which must be between 0 and 1
+            inclusive. For example, quantiles of 0.05, 0.5 and 0.95 should be as
+            `quantiles = [0.05, 0.5, 0.95]`.
+        n_boot : int, default 250
+            Number of bootstrapping iterations used to estimate quantiles.
+        random_state : int, default 123
+            Sets a seed to the random generator, so that boot quantiles are always
+            deterministic.
+        use_in_sample_residuals : bool, default True
+            If `True`, residuals from the training data are used as proxy of
+            prediction error to create quantiles. If `False`, out of sample
+            residuals are used. In the latter case, the user should have
+            calculated and stored the residuals within the forecaster (see
+            `set_out_sample_residuals()`).
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings will be suppressed during the prediction
+            process. See skforecast.exceptions.warn_skforecast_categories for more
+            information.
+
+        Returns
+        -------
+        predictions : pandas DataFrame
+            Long-format DataFrame with the quantiles predicted by the forecaster.
+            For example, if `quantiles = [0.05, 0.5, 0.95]`, the columns are
+            `level`, `q_0.05`, `q_0.5`, `q_0.95`.
+
+        Notes
+        -----
+        More information about prediction intervals in forecasting:
+        https://otexts.com/fpp2/prediction-intervals.html
+        Forecasting: Principles and Practice (2nd ed) Rob J Hyndman and
+        George Athanasopoulos.
+
+        """
+
+        set_skforecast_warnings(suppress_warnings, action='ignore')
+
+        check_interval(quantiles=quantiles)
+
+        predictions = self.predict_bootstrapping(
+            steps=steps,
+            levels=levels,
+            last_window=last_window,
+            exog=exog,
+            n_boot=n_boot,
+            random_state=random_state,
+            use_in_sample_residuals=use_in_sample_residuals,
+            suppress_warnings=suppress_warnings
+        )
+
+        quantiles_cols = [f'q_{q}' for q in quantiles]
+        predictions[quantiles_cols] = (
+            predictions.iloc[:, 1:].quantile(q=quantiles, axis=1).transpose()
+        )
+        predictions = predictions[['level'] + quantiles_cols]
+
+        set_skforecast_warnings(suppress_warnings, action='default')
+
+        return predictions
+
     def plot_history(
         self, ax: matplotlib.axes.Axes = None, **fig_kw
     ) -> matplotlib.figure.Figure:
