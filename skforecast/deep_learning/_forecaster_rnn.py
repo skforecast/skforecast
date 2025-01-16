@@ -1126,7 +1126,7 @@ class ForecasterRnn(ForecasterBase):
             levels: str | list[str] | None = None,
             last_window: pd.DataFrame | None = None,
             exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
-            quantiles: list[int] | tuple[int] = [0.05, 0.5, 0.95],
+            quantiles: list[float] | tuple[float] = [0.05, 0.5, 0.95],
             n_boot: int = 250,
             random_state: int = 123,
             use_in_sample_residuals: bool = True,
