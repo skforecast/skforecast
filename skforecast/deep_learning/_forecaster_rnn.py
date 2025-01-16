@@ -27,6 +27,7 @@ from ..utils import (
     check_predict_input,
     check_select_fit_kwargs,
     check_y,
+    check_interval,
     expand_index,
     preprocess_last_window,
     preprocess_y,
@@ -1012,6 +1013,112 @@ class ForecasterRnn(ForecasterBase):
         set_skforecast_warnings(suppress_warnings, action='default')
 
         return boot_predictions
+
+    def predict_interval(
+            self,
+            steps: int,
+            levels: str | list[str] | None = None,
+            last_window: pd.DataFrame | None = None,
+            exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
+            interval: list[float] | tuple[float] = [5, 95],
+            n_boot: int = 250,
+            random_state: int = 123,
+            use_in_sample_residuals: bool = True,
+            suppress_warnings: bool = False
+    ) -> pd.DataFrame:
+        """
+        Iterative process in which, each prediction, is used as a predictor
+        for the next step and bootstrapping is used to estimate prediction
+        intervals. Both predictions and intervals are returned.
+
+        Parameters
+        ----------
+        steps : int
+            Number of future steps predicted.
+        levels : str, list, default None
+            Time series to be predicted. If `None` all levels whose last window
+            ends at the same datetime index will be predicted together.
+        last_window : pandas DataFrame, default None
+            Series values used to create the predictors (lags) needed in the
+            first iteration of the prediction (t + 1).
+            If `last_window = None`, the values stored in `self.last_window_` are
+            used to calculate the initial predictors, and the predictions start
+            right after training data.
+        exog : pandas Series, pandas DataFrame, dict, default None
+            Exogenous variable/s included as predictor/s.
+        interval : list, tuple, default `[5, 95]`
+            Confidence of the prediction interval estimated. Sequence of
+            percentiles to compute, which must be between 0 and 100 inclusive.
+            For example, interval of 95% should be as `interval = [2.5, 97.5]`.
+        n_boot : int, default 250
+            Number of bootstrapping iterations used to estimate prediction
+            intervals.
+        random_state : int, default 123
+            Sets a seed to the random generator, so that boot predictions are always
+            deterministic.
+        use_in_sample_residuals : bool, default True
+            If `True`, residuals from the training data are used as proxy of
+            prediction error to create predictions. If `False`, out of sample
+            residuals are used. In the latter case, the user should have
+            calculated and stored the residuals within the forecaster (see
+            `set_out_sample_residuals()`).
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings will be suppressed during the prediction
+            process. See skforecast.exceptions.warn_skforecast_categories for more
+            information.
+
+        Returns
+        -------
+        predictions : pandas DataFrame
+            Long-format DataFrame with the predictions and the lower and upper
+            bounds of the estimated interval. The columns are `level`, `pred`,
+            `lower_bound`, `upper_bound`.
+
+        Notes
+        -----
+        More information about prediction intervals in forecasting:
+        https://otexts.com/fpp2/prediction-intervals.html
+        Forecasting: Principles and Practice (2nd ed) Rob J Hyndman and
+        George Athanasopoulos.
+
+        """
+
+        set_skforecast_warnings(suppress_warnings, action='ignore')
+
+        check_interval(interval=interval)
+
+        boot_predictions = self.predict_bootstrapping(
+            steps=steps,
+            levels=levels,
+            last_window=last_window,
+            exog=exog,
+            n_boot=n_boot,
+            random_state=random_state,
+            use_in_sample_residuals=use_in_sample_residuals,
+            suppress_warnings=suppress_warnings
+        )
+
+        predictions = self.predict(
+            steps=steps,
+            levels=levels,
+            last_window=last_window,
+            exog=exog,
+            suppress_warnings=suppress_warnings
+            #check_inputs=False
+        )
+
+        interval = np.array(interval) / 100
+        boot_predictions[['lower_bound', 'upper_bound']] = (
+            boot_predictions.iloc[:, 1:].quantile(q=interval, axis=1).transpose()
+        )
+
+        predictions = pd.concat([
+            predictions, boot_predictions[['lower_bound', 'upper_bound']]
+        ], axis=1)
+
+        set_skforecast_warnings(suppress_warnings, action='default')
+
+        return predictions
 
     def plot_history(
         self, ax: matplotlib.axes.Axes = None, **fig_kw
