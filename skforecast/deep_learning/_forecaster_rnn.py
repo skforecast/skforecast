@@ -9,7 +9,7 @@ import sys
 import warnings
 from copy import copy, deepcopy
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
-
+import inspect
 import keras
 import matplotlib
 import matplotlib.pyplot as plt
@@ -1212,6 +1212,101 @@ class ForecasterRnn(ForecasterBase):
         set_skforecast_warnings(suppress_warnings, action='default')
 
         return predictions
+
+    def predict_dist(
+            self,
+            steps: int,
+            distribution: object,
+            levels: str | list[str] | None = None,
+            last_window: pd.DataFrame | None = None,
+            exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
+            n_boot: int = 250,
+            random_state: int = 123,
+            use_in_sample_residuals: bool = True,
+            suppress_warnings: bool = False
+    ) -> pd.DataFrame:
+        """
+        Fit a given probability distribution for each step. After generating
+        multiple forecasting predictions through a bootstrapping process, each
+        step is fitted to the given distribution.
+
+        Parameters
+        ----------
+        steps : int
+            Number of future steps predicted.
+        distribution : object
+            A distribution object from scipy.stats with methods `_pdf` and `fit`.
+            For example scipy.stats.norm.
+        levels : str, list, default None
+            Time series to be predicted. If `None` all levels whose last window
+            ends at the same datetime index will be predicted together.
+        last_window : pandas DataFrame, default None
+            Series values used to create the predictors (lags) needed in the
+            first iteration of the prediction (t + 1).
+            If `last_window = None`, the values stored in `self.last_window_` are
+            used to calculate the initial predictors, and the predictions start
+            right after training data.
+        exog : pandas Series, pandas DataFrame, dict, default None
+            Exogenous variable/s included as predictor/s.
+        n_boot : int, default 250
+            Number of bootstrapping iterations used to estimate predictions.
+        random_state : int, default 123
+            Sets a seed to the random generator, so that boot predictions are always
+            deterministic.
+        use_in_sample_residuals : bool, default True
+            If `True`, residuals from the training data are used as proxy of
+            prediction error to create predictions. If `False`, out of sample
+            residuals are used. In the latter case, the user should have
+            calculated and stored the residuals within the forecaster (see
+            `set_out_sample_residuals()`).
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings will be suppressed during the prediction
+            process. See skforecast.exceptions.warn_skforecast_categories for more
+            information.
+
+        Returns
+        -------
+        predictions : pandas DataFrame
+            Long-format DataFrame with the parameters of the fitted distribution
+            for each step. The columns are `level`, `param_0`, `param_1`, ...,
+            `param_n`, where `param_i` are the parameters of the distribution.
+
+        """
+
+        if not hasattr(distribution, "_pdf") or not callable(getattr(distribution, "fit", None)):
+            raise TypeError(
+                "`distribution` must be a valid probability distribution object "
+                "from scipy.stats, with methods `_pdf` and `fit`."
+            )
+
+        set_skforecast_warnings(suppress_warnings, action='ignore')
+
+        predictions = self.predict_bootstrapping(
+            steps=steps,
+            levels=levels,
+            last_window=last_window,
+            exog=exog,
+            n_boot=n_boot,
+            random_state=random_state,
+            use_in_sample_residuals=use_in_sample_residuals,
+            suppress_warnings=suppress_warnings
+        )
+
+        param_names = [
+                          p for p in inspect.signature(distribution._pdf).parameters if not p == "x"
+                      ] + ["loc", "scale"]
+
+        predictions[param_names] = (
+            predictions.iloc[:, 1:].apply(
+                lambda x: distribution.fit(x), axis=1, result_type='expand'
+            )
+        )
+        predictions = predictions[['level'] + param_names]
+
+        set_skforecast_warnings(suppress_warnings, action='default')
+
+        return predictions
+
 
     def plot_history(
         self, ax: matplotlib.axes.Axes = None, **fig_kw
