@@ -1643,13 +1643,16 @@ class ForecasterRecursive(ForecasterBase):
 
         return boot_predictions
 
-
+    # TODO: Review all docstring
+    # TODO: Cambiar docstring use_binned_residuals
+    # TODO: Add conformal prediction intervals reference.
     def predict_interval(
         self,
         steps: int | str | pd.Timestamp,
         last_window: pd.Series | pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | None = None,
-        interval: list[float] | tuple[float] = [5, 95],
+        method: str = 'bootstrapping',
+        interval: float | list[float] | tuple[float] = [5, 95],
         n_boot: int = 250,
         use_in_sample_residuals: bool = True,
         use_binned_residuals: bool = False,
@@ -1675,10 +1678,24 @@ class ForecasterRecursive(ForecasterBase):
             right after training data.
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
-        interval : list, tuple, default [5, 95]
-            Confidence of the prediction interval estimated. Sequence of 
-            percentiles to compute, which must be between 0 and 100 inclusive. 
-            For example, interval of 95% should be as `interval = [2.5, 97.5]`.
+        method : str, default 'bootstrapping'
+            Method used to estimate prediction intervals. Available methods:
+
+            + 'bootstrapping': Bootstrapping is used to estimate prediction 
+            intervals [1]_.
+            + 'conformal': Conformal prediction framework is used to estimate 
+            prediction intervals.
+        interval : float, list, tuple, default [5, 95]
+            Confidence of the prediction interval estimated. When using 
+            `method = 'conformal'`, `interval` should be a float or a list/tuple
+            containing a symmetric interval. 
+            
+            + If `float`, confidence of the symmetric prediction interval. Must 
+            be between 0 and 1.For example, interval of [2.5, 97.5] should be 
+            as `interval = 0.95`.
+            + If `list` or `tuple`, sequence of percentiles to compute, which 
+            must be between 0 and 100 inclusive. For example, interval 
+            of 95% should be as `interval = [2.5, 97.5]`.
         n_boot : int, default 250
             Number of bootstrapping iterations used to estimate predictions.
         use_in_sample_residuals : bool, default True
@@ -1707,38 +1724,186 @@ class ForecasterRecursive(ForecasterBase):
             - lower_bound: lower bound of the interval.
             - upper_bound: upper bound of the interval.
 
-        Notes
-        -----
-        More information about prediction intervals in forecasting:
-        https://otexts.com/fpp2/prediction-intervals.html
-        Forecasting: Principles and Practice (2nd ed) Rob J Hyndman and
-        George Athanasopoulos.
-        
+        References
+        ----------
+        .. [1] Forecasting: Principles and Practice (2nd ed) Rob J Hyndman and George Athanasopoulos.
+               https://otexts.com/fpp2/prediction-intervals.html
+    
         """
 
-        check_interval(interval=interval)
+        if method == "bootstrapping":
 
-        boot_predictions = self.predict_bootstrapping(
-                               steps                   = steps,
-                               last_window             = last_window,
-                               exog                    = exog,
-                               n_boot                  = n_boot,
-                               random_state            = random_state,
-                               use_in_sample_residuals = use_in_sample_residuals,
-                               use_binned_residuals    = use_binned_residuals
-                           )
+            check_interval(interval=interval, ensure_symmetric_intervals=False)
 
-        predictions = self.predict(
-                          steps        = steps,
-                          last_window  = last_window,
-                          exog         = exog,
-                          check_inputs = False
+            boot_predictions = self.predict_bootstrapping(
+                                steps                   = steps,
+                                last_window             = last_window,
+                                exog                    = exog,
+                                n_boot                  = n_boot,
+                                random_state            = random_state,
+                                use_in_sample_residuals = use_in_sample_residuals,
+                                use_binned_residuals    = use_binned_residuals
+                            )
+
+            predictions = self.predict(
+                            steps        = steps,
+                            last_window  = last_window,
+                            exog         = exog,
+                            check_inputs = False
+                        )
+
+            interval = np.array(interval) / 100
+            predictions_interval = boot_predictions.quantile(q=interval, axis=1).transpose()
+            predictions_interval.columns = ['lower_bound', 'upper_bound']
+            predictions = pd.concat((predictions, predictions_interval), axis=1)
+
+        elif method == 'conformal':
+
+            if isinstance(interval, (list, tuple)):
+                check_interval(interval=interval, ensure_symmetric_intervals=True)
+                nominal_coverage = (interval[1] - interval[0]) / 100
+            else:
+                check_interval(alpha=interval, alpha_literal='interval')
+                nominal_coverage = interval
+            
+            predictions = self._predict_interval_conformal(
+                              steps                   = steps,
+                              last_window             = last_window,
+                              exog                    = exog,
+                              nominal_coverage        = nominal_coverage,
+                              use_in_sample_residuals = use_in_sample_residuals,
+                              use_binned_residuals    = use_binned_residuals
+                          )
+        else:
+            raise ValueError(
+                f"Invalid `method` '{method}'. Choose 'bootstrapping' or 'conformal'."
+            )
+
+        return predictions
+    
+    # TODO: Cambiar docstring use_binned_residuals
+    # TODO: Incluir references conformal prediction intervals
+    def _predict_interval_conformal(
+        self,
+        steps: int | str | pd.Timestamp,
+        last_window: pd.Series | pd.DataFrame | None = None,
+        exog: pd.Series | pd.DataFrame | None = None,
+        nominal_coverage: float = 0.95,
+        use_in_sample_residuals: bool = True,
+        use_binned_residuals: bool = False
+    ) -> pd.DataFrame:
+        """
+        Generate prediction intervals using the conformal prediction framework.
+
+        Parameters
+        ----------
+        steps : int, str, pandas Timestamp
+            Number of steps to predict. 
+            
+            + If steps is int, number of steps to predict. 
+            + If str or pandas Datetime, the prediction will be up to that date.
+        last_window : pandas Series, pandas DataFrame, default None
+            Series values used to create the predictors (lags) needed in the 
+            first iteration of the prediction (t + 1).
+            If `last_window = None`, the values stored in` self.last_window_` are
+            used to calculate the initial predictors, and the predictions start
+            right after training data.
+        exog : pandas Series, pandas DataFrame, default None
+            Exogenous variable/s included as predictor/s.
+        nominal_coverage : float, default 0.95
+            Nominal coverage of the prediction intervals. Must be between 0 and 1.
+        use_in_sample_residuals : bool, default True
+            If `True`, residuals from the training data are used as proxy of
+            prediction error to create predictions. If `False`, out of sample 
+            residuals are used. In the latter case, the user should have
+            calculated and stored the residuals within the forecaster (see
+            `set_out_sample_residuals()`).
+        use_binned_residuals : bool, default False
+            If `True`, residuals used in each bootstrapping iteration are selected
+            conditioning on the predicted values. If `False`, residuals are selected
+            randomly without conditioning on the predicted values.
+
+        Returns
+        -------
+        predictions : pandas DataFrame
+            Values predicted by the forecaster and their estimated interval.
+
+            - pred: predictions.
+            - lower_bound: lower bound of the interval.
+            - upper_bound: upper bound of the interval.
+
+        """
+        
+        (
+            last_window_values,
+            exog_values,
+            prediction_index,
+            steps
+        ) = self._create_predict_inputs(
+                steps                   = steps,
+                last_window             = last_window,
+                exog                    = exog,
+                predict_probabilistic   = True,
+                use_in_sample_residuals = use_in_sample_residuals,
+                use_binned_residuals    = use_binned_residuals
+            )
+
+        if use_in_sample_residuals:
+            residuals = self.in_sample_residuals_
+            residuals_by_bin = self.in_sample_residuals_by_bin_
+        else:
+            residuals = self.out_sample_residuals_
+            residuals_by_bin = self.out_sample_residuals_by_bin_
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", 
+                message="X does not have valid feature names", 
+                category=UserWarning
+            )
+            predictions = self._recursive_predict(
+                              steps              = steps,
+                              last_window_values = last_window_values,
+                              exog_values        = exog_values
+                          )
+        
+        if use_binned_residuals:
+            correction_factor_by_bin = {
+                k: np.quantile(np.abs(v), nominal_coverage)
+                for k, v in residuals_by_bin.items()
+            }
+            replace_func = np.vectorize(lambda x: correction_factor_by_bin.get(x, x))
+            predictions_bin = self.binner.transform(predictions)
+            correction_factor = replace_func(predictions_bin)
+            lower_bound = predictions - correction_factor
+            upper_bound = predictions + correction_factor
+        else:
+            correction_factor = np.quantile(np.abs(residuals), nominal_coverage)
+            lower_bound = predictions - correction_factor
+            upper_bound = predictions + correction_factor
+
+        predictions = np.column_stack([predictions, lower_bound, upper_bound])
+
+        if self.differentiation is not None:
+            predictions = (
+                self.differentiator.inverse_transform_next_window(predictions)
+            )
+        
+        if self.transformer_y:
+            predictions = np.apply_along_axis(
+                              func1d            = transform_numpy,
+                              axis              = 0,
+                              arr               = predictions,
+                              transformer       = self.transformer_y,
+                              fit               = False,
+                              inverse_transform = True
+                          )
+        
+        predictions = pd.DataFrame(
+                          data    = predictions,
+                          index   = prediction_index,
+                          columns = ["pred", "lower_bound", "upper_bound"]
                       )
-
-        interval = np.array(interval) / 100
-        predictions_interval = boot_predictions.quantile(q=interval, axis=1).transpose()
-        predictions_interval.columns = ['lower_bound', 'upper_bound']
-        predictions = pd.concat((predictions, predictions_interval), axis=1)
 
         return predictions
 
@@ -1918,117 +2083,7 @@ class ForecasterRecursive(ForecasterBase):
                           index   = boot_samples.index
                       )
 
-        return predictions
-    
-    def predict_conformal_intervals(
-        self,
-        steps: int | str | pd.Timestamp,
-        last_window: pd.Series | pd.DataFrame | None = None,
-        exog: pd.Series | pd.DataFrame | None = None,
-        nominal_coverage: float = 0.95,
-        use_in_sample_residuals: bool = True,
-        use_binned_residuals: bool = False,
-        random_state: int = 123,
-    ) -> pd.DataFrame:
-        
-        """
-        Generate prediction intervals using the conformal prediction framework.
-
-        Parameters
-        ----------
-        steps : int, str, pandas Timestamp
-            Number of steps to predict. 
-            
-            + If steps is int, number of steps to predict. 
-            + If str or pandas Datetime, the prediction will be up to that date.
-        last_window : pandas Series, pandas DataFrame, default None
-            Series values used to create the predictors (lags) needed in the 
-            first iteration of the prediction (t + 1).
-            If `last_window = None`, the values stored in` self.last_window_` are
-            used to calculate the initial predictors, and the predictions start
-            right after training data.
-        exog : pandas Series, pandas DataFrame, default None
-            Exogenous variable/s included as predictor/s.
-        nominal_coverage : float, default 0.95
-            Nominal coverage of the prediction intervals. Must be between 0 and 1.
-        random_state : int, default 123
-            Sets a seed to the random generator, so that boot predictions are always
-            deterministic.
-
-        """
-        
-        (
-            last_window_values,
-            exog_values,
-            prediction_index,
-            steps
-        ) = self._create_predict_inputs(
-                steps                   = steps,
-                last_window             = last_window,
-                exog                    = exog,
-                predict_probabilistic   = True,
-                use_in_sample_residuals = use_in_sample_residuals,
-                use_binned_residuals    = use_binned_residuals
-            )
-
-        if use_in_sample_residuals:
-            residuals = self.in_sample_residuals_
-            residuals_by_bin = self.in_sample_residuals_by_bin_
-        else:
-            residuals = self.out_sample_residuals_
-            residuals_by_bin = self.out_sample_residuals_by_bin_
-
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", 
-                message="X does not have valid feature names", 
-                category=UserWarning
-            )
-            predictions = self._recursive_predict(
-                              steps              = steps,
-                              last_window_values = last_window_values,
-                              exog_values        = exog_values
-                          )
-        
-        if use_binned_residuals:
-            correction_factor_by_bin = {
-                k: np.quantile(np.abs(v), nominal_coverage)
-                for k, v in residuals_by_bin.items()
-            }
-            replace_func = np.vectorize(lambda x: correction_factor_by_bin.get(x, x))
-            predictions_bin = self.binner.transform(predictions)
-            correction_factor = replace_func(predictions_bin)
-            lower_bound = predictions - correction_factor
-            upper_bound = predictions + correction_factor
-        else:
-            correction_factor = np.quantile(np.abs(residuals), nominal_coverage)
-            lower_bound = predictions - correction_factor
-            upper_bound = predictions + correction_factor
-
-        predictions = np.column_stack([predictions, lower_bound, upper_bound])
-
-        if self.differentiation is not None:
-            predictions = (
-                self.differentiator.inverse_transform_next_window(predictions)
-            )
-        
-        if self.transformer_y:
-            predictions = np.apply_along_axis(
-                              func1d            = transform_numpy,
-                              axis              = 0,
-                              arr               = predictions,
-                              transformer       = self.transformer_y,
-                              fit               = False,
-                              inverse_transform = True
-                          )
-        
-        predictions = pd.DataFrame(
-                          data    = predictions,
-                          index   = prediction_index,
-                          columns = ["pred", "lower_bound", "upper_bound"]
-                      )
-
-        return predictions       
+        return predictions  
 
 
     def set_params(

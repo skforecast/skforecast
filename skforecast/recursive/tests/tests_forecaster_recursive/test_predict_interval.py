@@ -1,5 +1,7 @@
 # Unit test predict_interval ForecasterRecursive
 # ==============================================================================
+import re
+import pytest
 import numpy as np
 import pandas as pd
 from skforecast.recursive import ForecasterRecursive
@@ -10,6 +12,21 @@ from sklearn.linear_model import LinearRegression
 
 # Fixtures
 from .fixtures_forecaster_recursive import y
+
+
+def test_check_interval_ValueError_when_method_is_not_valid_method():
+    """
+    Check `ValueError` is raised when `method` is not 'bootstrapping' or 'conformal'.
+    """
+    forecaster = ForecasterRecursive(LinearRegression(), lags=3)
+    forecaster.fit(y=pd.Series(np.arange(10)))
+
+    method = 'not_valid_method'
+    err_msg = re.escape(
+        f"Invalid `method` '{method}'. Choose 'bootstrapping' or 'conformal'."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        forecaster.predict_interval(steps=1, method=method)
 
 
 def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_1_in_sample_residuals_is_True():
@@ -65,32 +82,6 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_1_
     results = forecaster.predict_interval(steps=1, use_in_sample_residuals=False)
 
     pd.testing.assert_frame_equal(results, expected)
-
-
-def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_5_in_sample_residuals_is_True_binned_residuals_is_True():
-    """
-    Test output when regressor is LinearRegression 5 step ahead is predicted
-    using in sample residuals.
-    """
-    forecaster = ForecasterRecursive(LinearRegression(), lags=3, binner_kwargs={'n_bins': 15})
-    forecaster.fit(y=y)
-    results = forecaster.predict_interval(
-        steps=5, use_in_sample_residuals=True, use_binned_residuals=True
-    )
-
-    expected = pd.DataFrame(
-                    data    = np.array(
-                                [[0.56842545, 0.25304752, 0.98664822],
-                                [0.50873285, 0.05687183, 0.95641577],
-                                [0.51189344, 0.23219067, 0.9780938 ],
-                                [0.51559104, 0.16866501, 0.97647946],
-                                [0.51060927, 0.12764843, 0.9697876 ]]
-                            ),
-                    columns = ['pred', 'lower_bound', 'upper_bound'],
-                    index   = pd.RangeIndex(start=50, stop=55, step=1)
-                )
-
-    pd.testing.assert_frame_equal(results, expected)
     
     
 def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_is_False():
@@ -137,6 +128,44 @@ def test_predict_interval_output_when_regressor_is_LinearRegression_with_transfo
                                     [-0.13711051, -1.89299245,  1.47330827],
                                     [-0.01966358, -1.60143134,  1.59908257],
                                     [-0.03228613, -1.73050679,  1.51878244]]),
+                   index = pd.RangeIndex(start=20, stop=25, step=1),
+                   columns = ['pred', 'lower_bound', 'upper_bound']
+               )
+    
+    pd.testing.assert_frame_equal(predictions, expected)
+
+
+@pytest.mark.parametrize("interval", 
+                         [0.95, (2.5, 97.5)], 
+                         ids = lambda value: f'interval: {value}')
+def test_predict_interval_conformal_output_when_regressor_is_LinearRegression_with_transform_y(interval):
+    """
+    Test predict output when using LinearRegression as regressor and StandardScaler
+    and conformal prediction.
+    """
+    y = pd.Series(
+            np.array([-0.59,  0.02, -0.9 ,  1.09, -3.61,  0.72, -0.11, -0.4 ,  0.49,
+                       0.67,  0.54, -0.17,  0.54,  1.49, -2.26, -0.41, -0.64, -0.8 ,
+                      -0.61, -0.88])
+        )
+    forecaster = ForecasterRecursive(
+                     regressor     = LinearRegression(),
+                     lags          = 5,
+                     transformer_y = StandardScaler(),
+                     binner_kwargs = {'n_bins': 15}
+                 )
+    forecaster.fit(y=y)
+    predictions = forecaster.predict_interval(
+        steps=5, method='conformal', interval=interval
+    )
+
+    expected = pd.DataFrame(
+                   data = np.array([
+                              [-0.1578203 , -1.91279656,  1.59715596],
+                              [-0.18459942, -1.93957568,  1.57037684],
+                              [-0.13711051, -1.89208677,  1.61786574],
+                              [-0.01966358, -1.77463983,  1.73531268],
+                              [-0.03228613, -1.78726239,  1.72269012]]),
                    index = pd.RangeIndex(start=20, stop=25, step=1),
                    columns = ['pred', 'lower_bound', 'upper_bound']
                )
@@ -212,4 +241,30 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_5_
                    index   = pd.RangeIndex(start=50, stop=55, step=1)
                )
     
+    pd.testing.assert_frame_equal(results, expected)
+
+
+def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_5_in_sample_residuals_is_True_binned_residuals_is_True():
+    """
+    Test output when regressor is LinearRegression 5 step ahead is predicted
+    using in sample residuals.
+    """
+    forecaster = ForecasterRecursive(LinearRegression(), lags=3, binner_kwargs={'n_bins': 15})
+    forecaster.fit(y=y)
+    results = forecaster.predict_interval(
+        steps=5, use_in_sample_residuals=True, use_binned_residuals=True
+    )
+
+    expected = pd.DataFrame(
+                    data    = np.array(
+                                [[0.56842545, 0.25304752, 0.98664822],
+                                [0.50873285, 0.05687183, 0.95641577],
+                                [0.51189344, 0.23219067, 0.9780938 ],
+                                [0.51559104, 0.16866501, 0.97647946],
+                                [0.51060927, 0.12764843, 0.9697876 ]]
+                            ),
+                    columns = ['pred', 'lower_bound', 'upper_bound'],
+                    index   = pd.RangeIndex(start=50, stop=55, step=1)
+                )
+
     pd.testing.assert_frame_equal(results, expected)

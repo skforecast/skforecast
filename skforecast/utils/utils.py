@@ -663,8 +663,10 @@ def check_exog_dtypes(
 
 def check_interval(
     interval: list[float] | tuple[float] | None = None,
+    ensure_symmetric_intervals: bool = False,
     quantiles: list[float] | tuple[float] | None = None,
-    alpha: float = None
+    alpha: float = None,
+    alpha_literal: str | None = 'alpha'
 ) -> None:
     """
     Check provided confidence interval sequence is valid.
@@ -675,12 +677,16 @@ def check_interval(
         Confidence of the prediction interval estimated. Sequence of percentiles
         to compute, which must be between 0 and 100 inclusive. For example, 
         interval of 95% should be as `interval = [2.5, 97.5]`.
+    ensure_symmetric_intervals : bool, default False
+        If True, ensure that the intervals are symmetric.
     quantiles : list, tuple, default None
         Sequence of quantiles to compute, which must be between 0 and 1 
         inclusive. For example, quantiles of 0.05, 0.5 and 0.95 should be as 
         `quantiles = [0.05, 0.5, 0.95]`.
     alpha : float, default None
         The confidence intervals used in ForecasterSarimax are (1 - alpha) %.
+    alpha_literal : str, default 'alpha'
+        Literal used in the exception message when `alpha` is provided.
 
     Returns
     -------
@@ -718,6 +724,13 @@ def check_interval(
                 f"upper interval bound ({interval[1]})."
             )
         
+        if ensure_symmetric_intervals and interval[0] + interval[1] != 100:
+            raise ValueError(
+                f"Interval must be symmetric, the sum of the lower, ({interval[0]}), "
+                f"and upper, ({interval[1]}), interval bounds must be equal to "
+                f"100. Got {interval[0] + interval[1]}."
+            )
+        
     if quantiles is not None:
         if not isinstance(quantiles, (list, tuple)):
             raise TypeError(
@@ -734,13 +747,13 @@ def check_interval(
     if alpha is not None:
         if not isinstance(alpha, float):
             raise TypeError(
-                "`alpha` must be a `float`. For example, interval of 95% "
-                "should be as `alpha = 0.05`."
+                f"`{alpha_literal}` must be a `float`. For example, interval of 95% "
+                f"should be as `alpha = 0.05`."
             )
 
         if (alpha <= 0.) or (alpha >= 1):
             raise ValueError(
-                f"`alpha` must have a value between 0 and 1. Got {alpha}."
+                f"`{alpha_literal}` must have a value between 0 and 1. Got {alpha}."
             )
 
 

@@ -2,8 +2,6 @@
 # ==============================================================================
 import re
 import pytest
-import numpy as np
-import pandas as pd
 from skforecast.utils.utils import check_interval
 
 
@@ -69,9 +67,7 @@ def test_check_interval_ValueError_when_interval_upper_bound_greater_than_100():
     """
     Check `ValueError` is raised when upper bound is greater than 100.
     """
-    err_msg = re.escape(
-                ('Upper interval bound (101.0) must be > 0 and <= 100.')
-              )
+    err_msg = re.escape('Upper interval bound (101.0) must be > 0 and <= 100.')
     with pytest.raises(ValueError, match = err_msg):
         check_interval(interval = [2.5, 101.0])
 
@@ -90,6 +86,22 @@ def test_check_interval_ValueError_when_interval_lower_bound_greater_than_or_equ
     )
     with pytest.raises(ValueError, match = err_msg):
         check_interval(interval = interval)
+
+
+@pytest.mark.parametrize("interval", 
+                         [[0, 95], (20, 81)], 
+                         ids = lambda value: f'interval: {value}')
+def test_check_interval_ValueError_when_interval_is_not_symmetric(interval):
+    """
+    Check `ValueError` is raised when interval is not symmetric.
+    """
+    err_msg = re.escape(
+        f"Interval must be symmetric, the sum of the lower, ({interval[0]}), "
+        f"and upper, ({interval[1]}), interval bounds must be equal to "
+        f"100. Got {interval[0] + interval[1]}."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        check_interval(interval = interval, ensure_symmetric_intervals = True)
 
 
 def test_check_interval_TypeError_when_quantiles_is_not_a_list():
@@ -136,6 +148,6 @@ def test_check_interval_ValueError_when_alpha_is_out_of_bounds(alpha):
     """
     Check `ValueError` is raised when alpha is not between 0 and 1.
     """
-    err_msg = re.escape(f'`alpha` must have a value between 0 and 1. Got {alpha}.')
+    err_msg = re.escape(f'`interval` must have a value between 0 and 1. Got {alpha}.')
     with pytest.raises(ValueError, match = err_msg):
-        check_interval(alpha=alpha)
+        check_interval(alpha=alpha, alpha_literal='interval')
