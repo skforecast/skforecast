@@ -1,4 +1,4 @@
-# Unit test predict bootstrapping method
+# Unit test predict distribution method
 # ==============================================================================
 import os
 import keras

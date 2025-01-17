@@ -1,4 +1,4 @@
-# Unit test predict bootstrapping method
+# Unit test predict quantiles method
 # ==============================================================================
 import os
 import keras

@@ -1,4 +1,4 @@
-# Unit test predict bootstrapping method
+# Unit test predict interval method
 # ==============================================================================
 import os
 import keras
