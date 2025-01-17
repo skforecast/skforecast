@@ -1841,7 +1841,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 self.in_sample_residuals_by_bin_[level][k] = sample
 
         if len(residuals) > 10_000:
-            residuals = residuals[rng.integers(low=0, high=len(residuals), size=max_sample)]
+            residuals = residuals[
+                rng.integers(low=0, high=len(residuals), size=max_sample)
+            ]
         
         self.in_sample_residuals_[level] = residuals
         self.binner_intervals_[level] = self.binner[level].intervals_
@@ -3243,7 +3245,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             #         self.out_sample_residuals_by_bin_[level][k] = sample
 
             residuals_level, residuals_by_bin_level = (
-                self._binning_out_sample_residuals(
+                self._binning_out_sample_residuals_level(
                     level        = level,
                     y_true       = y_true[level],
                     y_pred       = y_pred[level],
@@ -3271,7 +3273,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             self.out_sample_residuals_by_bin_['_unknown_level'] = residuals_by_bin_level
 
 
-    def _binning_out_sample_residuals(
+    def _binning_out_sample_residuals_level(
         self,
         level: str,
         y_true: np.ndarray,
@@ -3289,11 +3291,16 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         Parameters
         ----------
         level : str
-            Name of the level.
+            Name of the level y_true and y_pred belong to.
         y_true : numpy ndarray
             True values of the time series.
         y_pred : numpy ndarray
             Predicted values of the time series.
+        append : bool
+            If `True`, new residuals are added to the once already stored in the
+            attribute `out_sample_residuals_`. If after appending the new residuals,
+            the limit of 10_000 samples is exceeded, a random sample of 10_000 is
+            kept.
         random_state : int, default 123
             Set a seed for the random generator so that the stored sample 
             residuals are always deterministic.
@@ -3316,6 +3323,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         outsample_residuals_by_bin = copy(self.out_sample_residuals_by_bin_.get(level, {}))
         insample_residuals_by_bin = self.in_sample_residuals_by_bin_.get(level, {})
 
+        # TODO: is this copy needed?
         y_true = y_true.copy()
         y_pred = y_pred.copy()
         if isinstance(y_true, pd.Series):
