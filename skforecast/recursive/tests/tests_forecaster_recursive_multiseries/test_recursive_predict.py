@@ -375,3 +375,54 @@ def test_recursive_predict_output_with_residuals():
                )
 
     np.testing.assert_array_almost_equal(predictions, expected)
+
+
+def test_recursive_predict_output_with_residuals_binned():
+    """
+    Test _recursive_predict output with residuals when residuals are binned.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     regressor          = LinearRegression(),
+                     lags               = 5,
+                     transformer_series = None,
+                     binner_kwargs      = {'n_bins': 2}
+                 )
+    forecaster.fit(series=series_2)
+
+    last_window, exog_values_dict, levels, _, _ = (
+        forecaster._create_predict_inputs(steps=5)
+    )
+    residuals = {
+        0: np.array([
+               [1, 300], 
+               [1, 300],
+               [1, 300],
+               [1, 300],
+               [1, 300]
+           ]),
+        1: np.array([
+               [20, 4000], 
+               [20, 4000], 
+               [20, 4000], 
+               [20, 4000], 
+               [20, 4000]
+           ])
+    }
+    predictions = forecaster._recursive_predict(
+                      steps                = 5,
+                      levels               = levels,
+                      last_window          = last_window,
+                      exog_values_dict     = exog_values_dict,
+                      residuals            = residuals,
+                      use_binned_residuals = True
+                  )
+    
+    expected = np.array([
+                   [70., 4100.],
+                   [75., 4901.],
+                   [80.8, 5862.],
+                   [87.56, 7015.],
+                   [95.472, 8398.4]
+               ])
+
+    np.testing.assert_array_almost_equal(predictions, expected)

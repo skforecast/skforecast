@@ -2156,14 +2156,19 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             
             if residuals is not None:
 
-                # TODO: AQUIIIIIIIIIIIIIII!!!!!!
                 if use_binned_residuals:
-                    predicted_bin = (
-                        self.binner.transform(pred).item()
+                    step_residual = np.full(
+                        shape=n_levels, fill_value=np.nan, dtype=float
                     )
-                    step_residual = residuals[predicted_bin][i]
+                    for j, level in enumerate(levels):
+                        predicted_bin = (
+                            self.binner[level].transform(pred[j]).item()
+                        )
+                        step_residual[j] = residuals[predicted_bin][i, j]
                 else:
-                    pred += residuals[i, :]
+                    step_residual = residuals[i, :]
+                
+                pred += step_residual
             
             predictions[i, :] = pred 
 
@@ -2523,27 +2528,30 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         n_levels = len(levels)
         rng = np.random.default_rng(seed=random_state)
         sampled_residuals_grid = np.full(
-                                    shape      = (steps, n_boot, n_levels),
-                                    fill_value = np.nan,
-                                    order      = 'F',
-                                    dtype      = float
-                                )
+                                     shape      = (steps, n_boot, n_levels),
+                                     fill_value = np.nan,
+                                     order      = 'F',
+                                     dtype      = float
+                                 )
         if use_binned_residuals:
-            sampled_residuals = {k: sampled_residuals_grid.copy() for k in range(self.binner_kwargs['n_bins'])}
+            sampled_residuals = {
+                k: sampled_residuals_grid.copy() 
+                for k in range(self.binner_kwargs['n_bins'])
+            }
             for bin in sampled_residuals.keys():
                 for i, level in enumerate(levels):
                     sampled_residuals[bin][:, :, i] = rng.choice(
-                                                        a       = residuals_by_bin[level][bin],
-                                                        size    = (steps, n_boot),
-                                                        replace = True
-                                                    )
+                        a       = residuals_by_bin[level][bin],
+                        size    = (steps, n_boot),
+                        replace = True
+                    )
         else:
             for i, level in enumerate(levels):
                 sampled_residuals_grid[:, :, i] = rng.choice(
-                                                a       = residuals[level],
-                                                size    = (steps, n_boot),
-                                                replace = True
-                                            )
+                                                      a       = residuals[level],
+                                                      size    = (steps, n_boot),
+                                                      replace = True
+                                                  )
             sampled_residuals = {'all': sampled_residuals_grid}
         
         boot_columns = []
