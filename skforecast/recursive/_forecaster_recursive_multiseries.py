@@ -12,7 +12,7 @@ import sys
 import numpy as np
 import pandas as pd
 import inspect
-from copy import copy
+from copy import copy, deepcopy
 import sklearn
 from sklearn.exceptions import NotFittedError
 from sklearn.pipeline import Pipeline
@@ -3050,8 +3050,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
     def set_out_sample_residuals(
         self, 
-        y_true: dict[int, np.ndarray | pd.Series],
-        y_pred: dict[int, np.ndarray | pd.Series],
+        y_true: dict[str, np.ndarray | pd.Series],
+        y_pred: dict[str, np.ndarray | pd.Series],
         append: bool = True,
         random_state: int = 123
     ) -> None:
@@ -3170,82 +3170,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 "seen during `fit`. Residuals cannot be updated."
             )
         
-        # residuals = {}
-        # residuals_by_bin = {}
-        # rng = np.random.default_rng(seed=random_state)
-        # y_true = y_true.copy()
-        # y_pred = y_pred.copy()
-        
-        # if self.differentiation is not None:
-        #     differentiator_ = {
-        #         series: copy(
-        #             self.differentiator_.get(
-        #                 series, self.differentiator_["_unknown_level"]
-        #             )
-        #         )
-        #         for series in series_to_update
-        #     }
-
-        #     for k in series_to_update:
-        #         if differentiator_[k] is not None:
-        #             differentiator_[k].set_params(window_size=None)
-
         for level in series_to_update:
-            # y_true_level = y_true[level]
-            # y_pred_level = y_pred[level]
-            # transformer_level = self.transformer_series_[level]
-            # if isinstance(y_true_level, pd.Series):
-            #     y_true_level = y_true_level.to_numpy()
-            # if isinstance(y_pred_level, pd.Series):
-            #     y_pred_level = y_pred_level.to_numpy()
-            # if self.transformer_series:
-            #     y_true_level = transform_numpy(
-            #                         array             = y_true_level,
-            #                         transformer       = transformer_level,
-            #                         fit               = False,
-            #                         inverse_transform = False
-            #                     )
-            #     y_pred_level = transform_numpy(
-            #                         array             = y_pred_level,
-            #                         transformer       = transformer_level,
-            #                         fit               = False,
-            #                         inverse_transform = False
-            #                     )
-            
-            # if self.differentiation is not None:
-            #     differentiator = differentiator_[k]
-            #     if differentiator is not None:
-            #         y_true_level = differentiator.fit_transform(y_true_level)[differentiator.order:]
-            #         y_pred_level = differentiator.fit_transform(y_pred_level)[differentiator.order:]
-
-            # residuals_level = y_true_level - y_pred_level
-            # data = pd.DataFrame({'prediction': y_pred, 'residuals': residuals})
-            # data['bin'] = self.binner[level].transform(y_pred).astype(int)
-            # residuals_level_by_bin = data.groupby('bin')['residuals'].apply(np.array).to_dict()
-            # residuals[level] = residuals_level
-            # residuals_by_bin[level] = residuals_level_by_bin
-
-            # if append and self.out_sample_residuals_by_bin_[level] is not None:
-            #     for k, v in residuals_by_bin[level].items():
-            #         if k in self.out_sample_residuals_by_bin_:
-            #             self.out_sample_residuals_by_bin_[level][k] = np.concatenate((
-            #                 self.out_sample_residuals_by_bin_[level][k], v)
-            #             )
-            #         else:
-            #             self.out_sample_residuals_by_bin_[level][k] = v
-            # else:
-            #     self.out_sample_residuals_[level] = residuals[level]
-            #     self.out_sample_residuals_by_bin_[level] = residuals_by_bin[level]
-
-            # max_samples = 10_000 // self.binner[level].n_bins_
-            # rng = np.random.default_rng(seed=random_state)
-            # for k, v in self.out_sample_residuals_by_bin_[level].items():
-            #     if len(v) > max_samples:
-            #         sample = rng.choice(a=v, size=max_samples, replace=False)
-            #         self.out_sample_residuals_by_bin_[level][k] = sample
 
             residuals_level, residuals_by_bin_level = (
-                self._binning_out_sample_residuals_level(
+                self._binning_out_sample_residuals(
                     level        = level,
                     y_true       = y_true[level],
                     y_pred       = y_pred[level],
@@ -3273,14 +3201,14 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             self.out_sample_residuals_by_bin_['_unknown_level'] = residuals_by_bin_level
 
 
-    def _binning_out_sample_residuals_level(
+    def _binning_out_sample_residuals(
         self,
         level: str,
         y_true: np.ndarray,
         y_pred: np.ndarray,
         append: bool,
         random_state: int = 123
-    ) -> list[dict, np.ndarray]:
+    ) -> tuple[np.ndarray, dict[str, np.ndarray]]:
         """
         Bin new out sample residuals using the already fitted binner.
         `y_true` and `y_pred` are expected to be in the original scale of the
@@ -3314,18 +3242,15 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 
         """
         transformer = self.transformer_series_[level]
-        differentiator = copy(
-            self.differentiator_.get(level, self.differentiator_["_unknown_level"])
-        )
-        if differentiator is not None:
+        if self.differentiation is not None:
+            differentiator = copy(
+                self.differentiator_.get(level, self.differentiator_["_unknown_level"])
+            )
             differentiator.set_params(window_size=None)
         binner = self.binner[level]
-        outsample_residuals_by_bin = copy(self.out_sample_residuals_by_bin_.get(level, {}))
+        outsample_residuals_by_bin = deepcopy(self.out_sample_residuals_by_bin_.get(level, {}))
         insample_residuals_by_bin = self.in_sample_residuals_by_bin_.get(level, {})
 
-        # TODO: is this copy needed?
-        y_true = y_true.copy()
-        y_pred = y_pred.copy()
         if isinstance(y_true, pd.Series):
             y_true = y_true.to_numpy()
         if isinstance(y_pred, pd.Series):
@@ -3345,7 +3270,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                         inverse_transform = False
                       )
             
-        if differentiator is not None:
+        if self.differentiation is not None:
             y_true = differentiator.fit_transform(y_true)[differentiator.order:]
             y_pred = differentiator.fit_transform(y_pred)[differentiator.order:]
 
