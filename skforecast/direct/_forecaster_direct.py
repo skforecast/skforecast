@@ -1522,8 +1522,8 @@ class ForecasterDirect(ForecasterBase):
         use_in_sample_residuals : bool, default `True`
             If `True`, residuals from the training data are used as proxy of
             prediction error to create predictions. If `False`, out of sample 
-            residuals are used. In the latter case, the user should have
-            calculated and stored the residuals within the forecaster (see
+            residuals (calibration) are used. In the latter case, the user should 
+            have calculated and stored the residuals within the forecaster (see
             `set_out_sample_residuals()`).
         use_binned_residuals : Ignored
             Not used, present here for API consistency by convention.
@@ -1684,8 +1684,8 @@ class ForecasterDirect(ForecasterBase):
         use_in_sample_residuals : bool, default `True`
             If `True`, residuals from the training data are used as proxy of
             prediction error to create predictions. If `False`, out of sample 
-            residuals are used. In the latter case, the user should have
-            calculated and stored the residuals within the forecaster (see
+            residuals (calibration) are used. In the latter case, the user should 
+            have calculated and stored the residuals within the forecaster (see
             `set_out_sample_residuals()`).
         use_binned_residuals : Ignored
             Not used, present here for API consistency by convention.
@@ -1860,8 +1860,8 @@ class ForecasterDirect(ForecasterBase):
         use_in_sample_residuals : bool, default `True`
             If `True`, residuals from the training data are used as proxy of
             prediction error to create predictions. If `False`, out of sample 
-            residuals are used. In the latter case, the user should have
-            calculated and stored the residuals within the forecaster (see
+            residuals (calibration) are used. In the latter case, the user should 
+            have calculated and stored the residuals within the forecaster (see
             `set_out_sample_residuals()`).
         use_binned_residuals : Ignored
             Not used, present here for API consistency by convention.

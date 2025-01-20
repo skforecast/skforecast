@@ -97,8 +97,8 @@ def _backtesting_forecaster(
         deterministic.
     use_in_sample_residuals : bool, default True
         If `True`, residuals from the training data are used as proxy of prediction 
-        error to create prediction intervals. If `False`, out_sample_residuals 
-        are used if they are already stored inside the forecaster.
+        error to create prediction intervals. If `False`, out of sample residuals 
+        (calibration) are used if they are already stored inside the forecaster.
     use_binned_residuals : bool, default False
         If `True`, residuals used in each bootstrapping iteration are selected
         conditioning on the predicted values. If `False`, residuals are selected
@@ -413,8 +413,8 @@ def backtesting_forecaster(
         deterministic.
     use_in_sample_residuals : bool, default True
         If `True`, residuals from the training data are used as proxy of prediction 
-        error to create prediction intervals. If `False`, out_sample_residuals 
-        are used if they are already stored inside the forecaster.
+        error to create prediction intervals. If `False`, out of sample residuals 
+        (calibration) are used if they are already stored inside the forecaster.
     use_binned_residuals : bool, default False
         If `True`, residuals used in each bootstrapping iteration are selected
         conditioning on the predicted values. If `False`, residuals are selected
@@ -914,8 +914,8 @@ def backtesting_forecaster_multiseries(
         deterministic.
     use_in_sample_residuals : bool, default True
         If `True`, residuals from the training data are used as proxy of prediction 
-        error to create prediction intervals. If `False`, out_sample_residuals 
-        are used if they are already stored inside the forecaster.
+        error to create prediction intervals. If `False`, out of sample residuals 
+        (calibration) are used if they are already stored inside the forecaster.
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
