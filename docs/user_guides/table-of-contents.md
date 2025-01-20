@@ -7,7 +7,7 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 - [Recursive multi-step forecasting](../user_guides/autoregresive-forecaster.html)
 - [Direct multi-step forecasting](../user_guides/direct-multi-step-forecasting.html)
 - [ARIMA and SARIMAX forecasting](../user_guides/forecasting-sarimax-arima.html)
-- [Foreasting baseline](../user_guides/forecasting-baseline.html)
+- [Forecasting baseline](../user_guides/forecasting-baseline.html)
 
 <span style="font-size: 1.3em;">Global Forecasters (multiple series)</span>
 
@@ -25,6 +25,7 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 - [Data transformations](../user_guides/sklearn-transformers-and-pipeline.html)
 - [Differentiation](../user_guides/time-series-differentiation.html)
 - [Feature selection](../user_guides/feature-selection.html)
+- [Sktime pipelines](../user_guides/sktime-pipelines.html)
 
 <span style="font-size: 1.3em;">Model Evaluation and Tuning</span>
 
@@ -69,6 +70,7 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 - [Forecasting with delayed historical data](../faq/forecasting-with-delayed-historical-data.html)
 - [Backtesting vs One-step-ahead](../faq/parameters-search-backtesting-vs-one-step-ahead.html)
 - [Cyclical features in time series](../faq/cyclical-features-time-series.html)
+- [Continuous Ranked Probability Score (CRPS)](../faq/probabilistic-forecasting-crps-score.html)
 - [Time series aggregation](../faq/time-series-aggregation.html)
 - [Parallelization in skforecast](../faq/parallelization-skforecast.html)
 - [Profiling skforecast](../faq/profiling-skforecast.html)

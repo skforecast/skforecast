@@ -487,7 +487,7 @@ def test_create_predict_X_same_predictions_as_predict():
 
     for i, step in enumerate(range(1, forecaster.steps + 1)):
         results = forecaster.regressors_[step].predict(X_predict.iloc[[i]])
-        expected = forecaster.predict(steps=[step], exog=exog.loc[end_train:]).to_numpy().item()
+        expected = forecaster.predict(steps=[step], exog=exog.loc[end_train:])[['pred']].to_numpy().item()
         np.testing.assert_array_almost_equal(results, expected, decimal=7)
 
 
@@ -544,7 +544,7 @@ def test_create_predict_X_same_predictions_as_predict_transformers():
                       fit               = False,
                       inverse_transform = True
                   )
-        expected = forecaster.predict(steps=[step], exog=exog.loc[end_train:]).to_numpy().item()
+        expected = forecaster.predict(steps=[step], exog=exog.loc[end_train:])[['pred']].to_numpy().item()
         np.testing.assert_array_almost_equal(results, expected, decimal=7)
 
 
@@ -602,5 +602,5 @@ def test_create_predict_X_same_predictions_as_predict_transformers_diff():
                       fit               = False,
                       inverse_transform = True
                   )
-        expected = forecaster.predict(steps=[step], exog=exog.loc[end_train:]).to_numpy().item()
+        expected = forecaster.predict(steps=[step], exog=exog.loc[end_train:])[['pred']].to_numpy().item()
         np.testing.assert_array_almost_equal(results, expected, decimal=7)

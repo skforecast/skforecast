@@ -47,7 +47,7 @@ We value your input! Here are a few ways you can participate:
 - **Contribute** to the project by [submitting code](https://github.com/skforecast/skforecast/blob/master/CONTRIBUTING.md), adding new features, or improving the documentation.
 - **Share your feedback** on LinkedIn to help spread the word about skforecast!
 
-Together, we can make time series forecasting accessible to everyone.
+Together, we can make time series forecasting accessible to everyone. Discover more in our contribution [contribution guide](https://github.com/skforecast/skforecast/blob/master/CONTRIBUTING.md)
 
 
 ## Installation & Dependencies

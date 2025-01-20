@@ -57,7 +57,11 @@ def test_fit_correct_dict_create_series_weights_weight_func_transformer_series()
         'l3': None,
         '_unknown_level': forecaster.transformer_series_['_unknown_level']
     }
-    expected_weight_func_ = {'l1': lambda index: np.ones_like(index, dtype=float), 'l2': custom_weights, 'l3': lambda index: np.ones_like(index, dtype=float)}
+    expected_weight_func_ = {
+        'l1': forecaster._weight_func_all_1, 
+        'l2': custom_weights, 
+        'l3': forecaster._weight_func_all_1
+    }
     expected_series_weights_ = {'l1': 3., 'l2': 1., 'l3': 0.5}
 
     assert forecaster.transformer_series_.keys() == expected_transformer_series_.keys()
@@ -78,7 +82,7 @@ def test_fit_correct_dict_create_series_weights_weight_func_transformer_series()
         'l2': None,
         '_unknown_level': forecaster.transformer_series_['_unknown_level']
     }
-    expected_weight_func_ = {'l1': lambda index: np.ones_like(index, dtype=float), 'l2': custom_weights}
+    expected_weight_func_ = {'l1': forecaster._weight_func_all_1, 'l2': custom_weights}
     expected_series_weights_ = {'l1': 3., 'l2': 1.}
 
     assert forecaster.transformer_series_.keys() == expected_transformer_series_.keys()
@@ -264,8 +268,9 @@ def test_fit_in_sample_residuals_not_stored(encoding):
     series = pd.DataFrame({'1': pd.Series(np.arange(5)), 
                            '2': pd.Series(np.arange(5))})
 
-    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3,
-                                              encoding=encoding)
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=3, encoding=encoding
+    )
     forecaster.fit(series=series, store_in_sample_residuals=False)
     results = forecaster.in_sample_residuals_
 
@@ -284,8 +289,9 @@ def test_fit_in_sample_residuals_not_stored_encoding_None():
     series = pd.DataFrame({'1': pd.Series(np.arange(5)), 
                            '2': pd.Series(np.arange(5))})
 
-    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3,
-                                              encoding=None)
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=3, encoding=None
+    )
     forecaster.fit(series=series, store_in_sample_residuals=False)
     results = forecaster.in_sample_residuals_
 

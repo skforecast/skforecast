@@ -212,7 +212,7 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_equival
              initial_train_size = initial_train_size,
              steps              = 1,
              refit              = False,
-             differentiation    = forecaster.differentiation
+             differentiation    = forecaster.differentiation_max
          )
 
     metrics_backtesting, pred_backtesting = backtesting_forecaster_multiseries(
@@ -224,6 +224,13 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_equival
         levels=levels,
         add_aggregated_metric=True,
         show_progress=False
+    )
+    pred_backtesting = (
+        pred_backtesting
+        .pivot(columns='level', values='pred')
+        .rename_axis(None, axis=0)
+        .rename_axis(None, axis=1)
+        .asfreq('D')
     )
 
     (
@@ -257,18 +264,21 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_equival
     pd.testing.assert_frame_equal(pred_one_step_ahead, pred_backtesting)
 
 
-def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_ForecasterRecursiveMultiSeries_differentiation():
+@pytest.mark.parametrize("differentiation", 
+    [1, {'item_1': 1, 'item_2': 1, 'item_3': 1, '_unknown_level': 1}], 
+     ids = lambda diff: f'differentiation: {diff}')
+def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_ForecasterRecursiveMultiSeries_differentiation(differentiation):
     """
     Test that the output of _predict_and_calculate_metrics_one_step_ahead_multiseries 
     when ForecasterRecursiveMultiSeries is used with differentiation.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor=Ridge(random_state=678),
-                     lags=3,
-                     transformer_series=StandardScaler(),
-                     transformer_exog=StandardScaler(),
-                     differentiation=1,
-                     forecaster_id='multiseries_transformer_diff'
+                     regressor          = Ridge(random_state=678),
+                     lags               = 3,
+                     transformer_series = StandardScaler(),
+                     transformer_exog   = StandardScaler(),
+                     differentiation    = differentiation,
+                     forecaster_id      = 'multiseries_transformer_diff'
                  )
 
     initial_train_size = 927
@@ -349,20 +359,122 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_Forecas
     pd.testing.assert_frame_equal(results[1].head(10), expected[1])
 
 
+def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_ForecasterRecursiveMultiSeries_differentiation_dict():
+    """
+    Test that the output of _predict_and_calculate_metrics_one_step_ahead_multiseries 
+    when ForecasterRecursiveMultiSeries is used with differentiation as dict.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     regressor          = Ridge(random_state=678),
+                     lags               = 3,
+                     transformer_series = StandardScaler(),
+                     transformer_exog   = StandardScaler(),
+                     differentiation    = {'item_1': 1, 'item_2': None, 'item_3': 2, '_unknown_level': None},
+                     forecaster_id      = 'multiseries_transformer_diff'
+                 )
+
+    initial_train_size = 927
+    metrics = ['mean_absolute_error', mean_absolute_percentage_error, mean_absolute_scaled_error]
+    levels = ['item_1', 'item_2', 'item_3']
+
+    (
+        X_train,
+        y_train,
+        X_test,
+        y_test,
+        X_train_encoding,
+        X_test_encoding
+    ) = forecaster._train_test_split_one_step_ahead(
+            series             = series,
+            exog               = exog,
+            initial_train_size = initial_train_size,
+        )
+
+    results = _predict_and_calculate_metrics_one_step_ahead_multiseries(
+        forecaster=forecaster,
+        series=series,
+        X_train = X_train,
+        y_train = y_train,
+        X_test = X_test,
+        y_test = y_test,
+        X_train_encoding = X_train_encoding,
+        X_test_encoding = X_test_encoding,
+        levels = levels,
+        metrics = metrics,
+        add_aggregated_metric = True
+    )
+
+    expected = (
+        pd.DataFrame(
+            {
+                "levels": {
+                    0: "item_1",
+                    1: "item_2",
+                    2: "item_3",
+                    3: "average",
+                    4: "weighted_average",
+                    5: "pooling",
+                },
+                "mean_absolute_error": {
+                    0: 3.3727768904389137,
+                    1: 3.2454861506987474,
+                    2: 125.29749202738702,
+                    3: 43.97191835617489,
+                    4: 43.971918356174896,
+                    5: 43.9719183561749,
+                },
+                "mean_absolute_percentage_error": {
+                    0: 0.16768637909858158,
+                    1: 0.23902627227111134,
+                    2: 7.127463509732804,
+                    3: 2.5113920537008325,
+                    4: 2.5113920537008325,
+                    5: 2.511392053700832,
+                },
+                "mean_absolute_scaled_error": {
+                    0: 2.204480978912765,
+                    1: 1.3765145512362387,
+                    2: 33.712615977712886,
+                    3: 12.431203835953964,
+                    4: 12.431203835953964,
+                    5: 17.347393898836998,
+                },
+            }
+        ),
+        pd.DataFrame(
+            data = np.array([[25.86570499, 15.18029154,  8.97046675],
+                             [26.32581267, 15.07864711,  8.59274604],
+                             [26.71670307, 14.60073761,  7.7959118 ],
+                             [26.03183899, 14.55994232,  7.25551897],
+                             [25.44757003, 13.60961291,  5.69205946],
+                             [26.29183264, 16.14084149,  3.01541324],
+                             [25.96578123, 16.13231006,  2.10568015],
+                             [25.6248342 , 15.46833359,  2.92044047],
+                             [26.28049127, 14.83278091,  2.2656061 ],
+                             [26.71633178, 14.01618597,  1.79968493]]),
+            columns = ['item_1', 'item_2', 'item_3'],
+            index = pd.date_range(start='2014-07-16', periods=10, freq='D')
+        )
+    )
+
+    pd.testing.assert_frame_equal(results[0], expected[0])
+    pd.testing.assert_frame_equal(results[1].head(10), expected[1])
+
+
 def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_ForecasterDirectMultiVariate_differentiation():
     """
     Test that the output of _predict_and_calculate_metrics_one_step_ahead_multiseries 
     when ForecasterDirectMultiVariate is used with differentiation.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor=Ridge(random_state=678),
-                     level='item_1',
-                     lags=3,
-                     steps=1,
-                     transformer_series=StandardScaler(),
-                     transformer_exog=StandardScaler(),
-                     differentiation=1,
-                     forecaster_id='multivariate_transformer_diff'
+                     regressor          = Ridge(random_state=678),
+                     level              = 'item_1',
+                     lags               = 3,
+                     steps              = 1,
+                     transformer_series = StandardScaler(),
+                     transformer_exog   = StandardScaler(),
+                     differentiation    = 1,
+                     forecaster_id      = 'multivariate_transformer_diff'
                  )
 
     initial_train_size = 927
@@ -469,6 +581,13 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_equival
         add_aggregated_metric=True,
         show_progress=False
     )
+    pred_backtesting = (
+        pred_backtesting
+        .pivot(columns='level', values='pred')
+        .rename_axis(None, axis=0)
+        .rename_axis(None, axis=1)
+        .asfreq('D')
+    )
 
     (
         X_train,
@@ -482,6 +601,7 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_equival
             exog               = exog_dict,
             initial_train_size = initial_train_size,
         )
+    
     metrics_one_step_ahead, pred_one_step_ahead = _predict_and_calculate_metrics_one_step_ahead_multiseries(
         forecaster=forecaster,
         series=series_dict,

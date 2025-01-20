@@ -1,5 +1,6 @@
 # Unit test OneStepAheadFold
 # ==============================================================================
+import re
 import pytest
 import numpy as np
 import pandas as pd
@@ -13,12 +14,36 @@ def test_OneStepAheadFold_split_raise_error_when_X_is_not_series_dataframe_or_di
     X = np.arange(100)
     cv = OneStepAheadFold(initial_train_size=70)
     
-    msg = (
+    err_msg = re.escape(
         f"X must be a pandas Series, DataFrame, Index or a dictionary. "
         f"Got {type(X)}."
     )
-    with pytest.raises(TypeError, match=msg):
+    with pytest.raises(TypeError, match=err_msg):
         cv.split(X=X)
+
+
+@pytest.mark.parametrize("invalid_date", [
+    "2021-12-31",  # Before the first date in the index
+    "2022-04-11",  # After the last date in the index
+])
+def test_OneStepAhead_split_invalid_initial_train_size_date(invalid_date):
+    """
+    Test that ValueError is raised when initial_train_size date is outside the index range.
+    """
+    y = pd.Series(np.arange(100))
+    y.index = pd.date_range(start="2022-01-01", periods=100, freq="D")
+    cv = OneStepAheadFold(
+        initial_train_size=invalid_date,
+        window_size=3,
+        differentiation=None
+    )
+    
+    err_msg = re.escape(
+        "If `initial_train_size` is a date, it must be greater than "
+        "the first date in the index and less than the last date."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        cv.split(X=y)
 
 
 @pytest.mark.parametrize("return_all_indexes, expected",
@@ -154,3 +179,39 @@ def test_OneStepAhead_split_initial_train_size_window_size_return_all_indexes_fa
 
     assert out == expected_out
     pd.testing.assert_frame_equal(folds, expected_folds)
+
+
+@pytest.mark.parametrize(
+    "initial_train_size, expected",
+    [
+        (70, [[0, 70], [70, 100], True]),
+        ("2022-03-11", [[0, 70], [70, 100], True]),
+        ("2022-03-11 00:00:00", [[0, 70], [70, 100], True]),
+        (pd.to_datetime("2022-03-11"), [[0, 70], [70, 100], True])
+    ],
+    ids=lambda x: f'initial_train_size={x}',
+)
+def test_OneStepAhead_split_int_and_date_initial_train_size(capfd, initial_train_size, expected):
+    """
+    Test OneStepAhead splits with different types for initial_train_size.
+    """
+    y = pd.Series(np.arange(100))
+    y.index = pd.date_range(start="2022-01-01", periods=100, freq="D")
+    cv = OneStepAheadFold(
+        initial_train_size=initial_train_size,
+        window_size=3,
+        differentiation=None
+    )
+    folds = cv.split(X=y)
+    out, _ = capfd.readouterr()
+    expected_out = (
+        "Information of folds\n"
+        "--------------------\n"
+        "Number of observations in train: 70\n"
+        "Number of observations in test: 30\n"
+        "Training : 2022-01-01 00:00:00 -- 2022-03-12 00:00:00 (n=70)\n"
+        "Test     : 2022-03-12 00:00:00 -- 2022-04-10 00:00:00 (n=30)\n\n"
+    )
+
+    assert out == expected_out
+    assert folds == expected

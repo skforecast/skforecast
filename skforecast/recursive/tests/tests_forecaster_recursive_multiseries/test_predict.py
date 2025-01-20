@@ -29,6 +29,7 @@ from ....recursive import ForecasterRecursiveMultiSeries
 from .fixtures_forecaster_recursive_multiseries import series
 from .fixtures_forecaster_recursive_multiseries import exog
 from .fixtures_forecaster_recursive_multiseries import exog_predict
+from .fixtures_forecaster_recursive_multiseries import expected_df_to_long_format
 
 THIS_DIR = Path(__file__).parent
 series_dict = joblib.load(THIS_DIR/'fixture_sample_multi_series.joblib')
@@ -50,8 +51,8 @@ def test_predict_NotFittedError_when_fitted_is_False():
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=5)
 
     err_msg = re.escape(
-        ("This Forecaster instance is not fitted yet. Call `fit` with "
-         "appropriate arguments before using predict.")
+        "This Forecaster instance is not fitted yet. Call `fit` with "
+        "appropriate arguments before using predict."
     )
     with pytest.raises(NotFittedError, match = err_msg):
         forecaster.predict(steps=5)
@@ -66,10 +67,10 @@ def test_predict_IgnoredArgumentWarning_when_not_available_self_last_window_for_
     forecaster.fit(series=series_2, store_last_window=['1'])
 
     warn_msg = re.escape(
-        ("Levels {'2'} are excluded from prediction "
-         "since they were not stored in `last_window_` attribute "
-         "during training. If you don't want to retrain the "
-         "Forecaster, provide `last_window` as argument.")
+        "Levels {'2'} are excluded from prediction "
+        "since they were not stored in `last_window_` attribute "
+        "during training. If you don't want to retrain the "
+        "Forecaster, provide `last_window` as argument."
     )
     with pytest.warns(IgnoredArgumentWarning, match = warn_msg):
         predictions = forecaster.predict(steps=5, levels=['1', '2'], last_window=None)
@@ -79,6 +80,8 @@ def test_predict_IgnoredArgumentWarning_when_not_available_self_last_window_for_
                    index   = pd.RangeIndex(start=50, stop=55, step=1),
                    columns = ['1']
                )
+
+    expected = expected_df_to_long_format(expected)
 
     pd.testing.assert_frame_equal(predictions, expected)
 
@@ -95,9 +98,9 @@ def test_predict_ValueError_when_not_available_self_last_window_for_levels(store
     forecaster.fit(series=series_2, store_last_window=store_last_window)
 
     err_msg = re.escape(
-        ("No series to predict. None of the series {'2'} are present in "
-         "`last_window_` attribute. Provide `last_window` as argument "
-         "in predict method.")
+        "No series to predict. None of the series {'2'} are present in "
+        "`last_window_` attribute. Provide `last_window` as argument "
+        "in predict method."
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster.predict(steps=5, levels=['2'], last_window=None)
@@ -130,10 +133,10 @@ def test_predict_IgnoredArgumentWarning_when_levels_is_list_and_different_last_i
     forecaster.fit(series=series_3, exog=exog_2)
 
     warn_msg = re.escape(
-        ("Only series whose last window ends at the same index "
-         "can be predicted together. Series that do not reach the "
-         "maximum index, '2020-02-19 00:00:00', are excluded "
-         "from prediction: {'2'}.")
+        "Only series whose last window ends at the same index "
+        "can be predicted together. Series that do not reach the "
+        "maximum index, '2020-02-19 00:00:00', are excluded "
+        "from prediction: {'2'}."
     )
     with pytest.warns(IgnoredArgumentWarning, match = warn_msg):
         predictions = forecaster.predict(steps=5, levels=['1', '2'], last_window=None,
@@ -145,10 +148,12 @@ def test_predict_IgnoredArgumentWarning_when_levels_is_list_and_different_last_i
                    columns = ['1']
                )
 
+    expected = expected_df_to_long_format(expected)
+
     pd.testing.assert_frame_equal(predictions, expected)
 
 
-@pytest.fixture(params=[('1'  , [50., 51., 52., 53., 54.]), 
+@pytest.fixture(params=[('1', [50., 51., 52., 53., 54.]), 
                         (['2'], [100., 101., 102., 103., 104.]),
                         (['1', '2'], [[50., 100.],
                                       [51., 101.],
@@ -175,6 +180,7 @@ def expected_pandas_dataframe(request):
                       columns = levels_names,
                       index   = pd.RangeIndex(start=50, stop=55, step=1)
                   )
+    expected_df = expected_df_to_long_format(expected_df)
 
     return levels, expected_df
 
@@ -223,10 +229,14 @@ def test_predict_output_when_regressor_is_LinearRegression():
                      index   = pd.RangeIndex(start=50, stop=55, step=1),
                      columns = ['1', '2']
                  )
+    
+    expected = [expected_1, expected_2, expected_3]
+    for i, df in enumerate(expected):
+        expected[i] = expected_df_to_long_format(df)
 
-    pd.testing.assert_frame_equal(predictions_1, expected_1)
-    pd.testing.assert_frame_equal(predictions_2, expected_2)
-    pd.testing.assert_frame_equal(predictions_3, expected_3)
+    pd.testing.assert_frame_equal(predictions_1, expected[0])
+    pd.testing.assert_frame_equal(predictions_2, expected[1])
+    pd.testing.assert_frame_equal(predictions_3, expected[2])
 
 
 def test_predict_output_when_regressor_is_LinearRegression_with_last_window():
@@ -267,9 +277,25 @@ def test_predict_output_when_regressor_is_LinearRegression_with_last_window():
                      columns = ['1', '2']
                  )
 
-    pd.testing.assert_frame_equal(predictions_1, expected_1)
-    pd.testing.assert_frame_equal(predictions_2, expected_2)
-    pd.testing.assert_frame_equal(predictions_3, expected_3)
+    predictions_4 = forecaster.predict(steps=5, levels=None, last_window=last_window[['1', '2']])
+    expected_4 = pd.DataFrame(
+                     data    = np.array([[50., 100.],
+                                         [51., 101.],
+                                         [52., 102.],
+                                         [53., 103.],
+                                         [54., 104.]]),
+                     index   = pd.RangeIndex(start=50, stop=55, step=1),
+                     columns = ['1', '2']
+                 )
+    
+    expected = [expected_1, expected_2, expected_3, expected_4]
+    for i, df in enumerate(expected):
+        expected[i] = expected_df_to_long_format(df)
+
+    pd.testing.assert_frame_equal(predictions_1, expected[0])
+    pd.testing.assert_frame_equal(predictions_2, expected[1])
+    pd.testing.assert_frame_equal(predictions_3, expected[2])
+    pd.testing.assert_frame_equal(predictions_4, expected[3])
 
 
 def test_predict_output_when_regressor_is_LinearRegression_with_transform_series():
@@ -289,6 +315,8 @@ def test_predict_output_when_regressor_is_LinearRegression_with_transform_series
                    index   = pd.RangeIndex(start=50, stop=55, step=1),
                    columns = ['1']
                )
+
+    expected = expected_df_to_long_format(expected)
     
     pd.testing.assert_frame_equal(predictions, expected)
 
@@ -311,6 +339,8 @@ def test_predict_output_when_regressor_is_LinearRegression_with_transform_series
                    index   = pd.RangeIndex(start=50, stop=55, step=1),
                    columns = ['1']
                )
+
+    expected = expected_df_to_long_format(expected)
     
     pd.testing.assert_frame_equal(predictions, expected)
 
@@ -344,6 +374,8 @@ def test_predict_output_when_regressor_is_LinearRegression_with_transform_series
                    index   = pd.RangeIndex(start=50, stop=55, step=1),
                    columns = ['1']
                )
+
+    expected = expected_df_to_long_format(expected)
     
     pd.testing.assert_frame_equal(predictions, expected)
 
@@ -385,6 +417,8 @@ def test_predict_output_when_regressor_is_LinearRegression_with_transform_series
                    index   = pd.RangeIndex(start=50, stop=55, step=1),
                    columns = ['1', '2']
                )
+
+    expected = expected_df_to_long_format(expected)
     
     pd.testing.assert_frame_equal(predictions, expected)
 
@@ -441,6 +475,8 @@ def test_predict_output_when_categorical_features_native_implementation_HistGrad
                    index   = pd.RangeIndex(start=50, stop=60, step=1),
                    columns = ['1', '2']
                )
+
+    expected = expected_df_to_long_format(expected)
     
     pd.testing.assert_frame_equal(predictions, expected)
 
@@ -452,7 +488,7 @@ def test_predict_output_when_categorical_features_native_implementation_LGBMRegr
     df_exog = pd.DataFrame({'exog_1': exog['exog_1'],
                             'exog_2': ['a', 'b', 'c', 'd', 'e'] * 10,
                             'exog_3': pd.Categorical(['F', 'G', 'H', 'I', 'J'] * 10)})
-    
+
     exog_predict = df_exog.copy()
     exog_predict.index = pd.RangeIndex(start=50, stop=100)
 
@@ -470,7 +506,7 @@ def test_predict_output_when_categorical_features_native_implementation_LGBMRegr
                            remainder="passthrough",
                            verbose_feature_names_out=False,
                        ).set_output(transform="pandas")
-    
+
     forecaster = ForecasterRecursiveMultiSeries(
                      regressor          = LGBMRegressor(random_state=123),
                      lags               = 5,
@@ -495,7 +531,9 @@ def test_predict_output_when_categorical_features_native_implementation_LGBMRegr
                    index   = pd.RangeIndex(start=50, stop=60, step=1),
                    columns = ['1', '2']
                )
-    
+
+    expected = expected_df_to_long_format(expected)
+
     pd.testing.assert_frame_equal(predictions, expected)
 
 
@@ -556,6 +594,8 @@ def test_predict_output_when_categorical_features_native_implementation_LGBMRegr
                    index   = pd.RangeIndex(start=50, stop=60, step=1),
                    columns = ['1', '2']
                )
+
+    expected = expected_df_to_long_format(expected)
     
     pd.testing.assert_frame_equal(predictions, expected)
 
@@ -593,6 +633,8 @@ def test_predict_output_when_window_features():
                    index   = pd.RangeIndex(start=50, stop=55, step=1),
                    columns = ['1', '2']
                )
+
+    expected = expected_df_to_long_format(expected)
     
     pd.testing.assert_frame_equal(predictions, expected)
 
@@ -632,18 +674,23 @@ def test_predict_output_when_series_and_exog_dict():
         columns=["id_1000", "id_1001", "id_1003", "id_1004"],
     )
 
+    expected = expected_df_to_long_format(expected)
+
     pd.testing.assert_frame_equal(predictions, expected)
 
 
-def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differentiation_is_1():
+@pytest.mark.parametrize("differentiation", 
+                         [1, {'1': 1, '2': 1, '_unknown_level': 1}], 
+                         ids = lambda diff: f'differentiation: {diff}')
+def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differentiation_is_1(differentiation):
     """
     Test predict output when using LinearRegression as regressor and differentiation=1.
     """
     end_train = 30
     # Data differentiated
-    diferenciator = TimeSeriesDifferentiator(order=1)
-    series_1_diff = diferenciator.fit_transform(series['1'].to_numpy())
-    series_2_diff = diferenciator.fit_transform(series['2'].to_numpy())
+    differentiator = TimeSeriesDifferentiator(order=1)
+    series_1_diff = differentiator.fit_transform(series['1'].to_numpy())
+    series_2_diff = differentiator.fit_transform(series['2'].to_numpy())
     data_diff = pd.DataFrame(
         {'1': series_1_diff, '2': series_2_diff}
     ).dropna()
@@ -658,23 +705,32 @@ def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differe
 
     steps = len(data_diff.loc[end_train + 1:])
 
-    forecaster_1 = ForecasterRecursiveMultiSeries(regressor=LinearRegression(), lags=15,
-                                                transformer_series=None)
+    forecaster_1 = ForecasterRecursiveMultiSeries(
+        regressor=LinearRegression(), lags=15, transformer_series=None
+    )
     forecaster_1.fit(series=data_diff.loc[:end_train], exog=exog_diff.loc[:end_train])
     predictions_diff = forecaster_1.predict(steps=steps, exog=exog_diff.loc[end_train + 1:])
     # Revert the differentiation
+    predictions_diff = pd.pivot_table(
+        predictions_diff, index=predictions_diff.index, columns="level", values="pred"
+    )
     last_value_train = series.loc[:end_train].iloc[[-1]]
     predictions_1 = pd.concat([last_value_train, predictions_diff]).cumsum()[1:]
+    predictions_1 = expected_df_to_long_format(predictions_1)
 
-    forecaster_2 = ForecasterRecursiveMultiSeries(regressor=LinearRegression(), lags=15, 
-                                                differentiation=1, transformer_series=None)
+    forecaster_2 = ForecasterRecursiveMultiSeries(
+        regressor=LinearRegression(), lags=15, transformer_series=None, differentiation=differentiation, 
+    )
     forecaster_2.fit(series=series.loc[:end_train], exog=exog.loc[:end_train])
     predictions_2 = forecaster_2.predict(steps=steps, exog=exog.loc[end_train + 1:])
 
     pd.testing.assert_frame_equal(predictions_1, predictions_2)
 
 
-def test_predict_output_when_regressor_is_LinearRegression_with_exog_differentiation_is_1_and_transformer_series():
+@pytest.mark.parametrize("differentiation", 
+                         [1, {'1': 1, '2': 1, '_unknown_level': 1}], 
+                         ids = lambda diff: f'differentiation: {diff}')
+def test_predict_output_when_regressor_is_LinearRegression_with_exog_differentiation_is_1_and_transformer_series(differentiation):
     """
     Test predict output when using LinearRegression as regressor and differentiation=1,
     and transformer_series is StandardScaler.
@@ -730,25 +786,34 @@ def test_predict_output_when_regressor_is_LinearRegression_with_exog_differentia
 
     steps = len(series_datetime.loc[end_train:])
 
-    forecaster_1 = ForecasterRecursiveMultiSeries(regressor=LinearRegression(), lags=15,
-                                                transformer_series = None)
+    forecaster_1 = ForecasterRecursiveMultiSeries(
+        regressor=LinearRegression(), lags=15, transformer_series=None
+    )
     forecaster_1.fit(series=series_dict_diff, exog=exog_diff)
     predictions_diff = forecaster_1.predict(steps=steps, exog=exog_pred)
     # Revert the differentiation
+    predictions_diff = pd.pivot_table(
+        predictions_diff, index=predictions_diff.index, columns="level", values="pred"
+    )
     predictions_1 = pd.concat([df_last_value_train, predictions_diff]).cumsum()[1:]
     # Revert the scaling
     for k in scaler_dict.keys():
         predictions_1[k] = scaler_dict[k].inverse_transform(predictions_1[k].to_numpy().reshape(-1, 1))
-    
-    forecaster_2 = ForecasterRecursiveMultiSeries(regressor=LinearRegression(), lags=15, 
-                                                differentiation=1, transformer_series = StandardScaler())
+    predictions_1 = expected_df_to_long_format(predictions_1)
+
+    forecaster_2 = ForecasterRecursiveMultiSeries(
+        regressor=LinearRegression(), lags=15, transformer_series=StandardScaler(), differentiation=differentiation
+    )
     forecaster_2.fit(series=series_dict_datetime, exog=exog_dict_datetime)
     predictions_2 = forecaster_2.predict(steps=steps, exog=exog_pred)
 
-    pd.testing.assert_frame_equal(predictions_1.asfreq('D'), predictions_2)
+    pd.testing.assert_frame_equal(predictions_1, predictions_2)
 
 
-def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differentiation_is_2():
+@pytest.mark.parametrize("differentiation", 
+                         [2, {'1': 2, '2': 2, '_unknown_level': 2}], 
+                         ids = lambda diff: f'differentiation: {diff}')
+def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differentiation_is_2(differentiation):
     """
     Test predict output when using LinearRegression as regressor and differentiation=2.
     """
@@ -760,14 +825,14 @@ def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differe
     df_diff_2 = pd.DataFrame()
     for col in series_dt.columns:
 
-        diferenciator_1 = TimeSeriesDifferentiator(order=1)
-        diferenciator_2 = TimeSeriesDifferentiator(order=2)
+        differentiator_1 = TimeSeriesDifferentiator(order=1)
+        differentiator_2 = TimeSeriesDifferentiator(order=2)
 
-        data_diff_1 = diferenciator_1.fit_transform(series_dt[col].to_numpy())
+        data_diff_1 = differentiator_1.fit_transform(series_dt[col].to_numpy())
         data_diff_1 = pd.Series(data_diff_1).dropna()
         df_diff_1[col] = data_diff_1
 
-        data_diff_2 = diferenciator_2.fit_transform(series_dt[col].to_numpy())
+        data_diff_2 = differentiator_2.fit_transform(series_dt[col].to_numpy())
         data_diff_2 = pd.Series(data_diff_2).dropna()
         df_diff_2[col] = data_diff_2
 
@@ -784,26 +849,35 @@ def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differe
     end_train = '2003-01-30 23:59:00'
     steps = len(series_dt.loc[end_train:])
 
-    forecaster_1 = ForecasterRecursiveMultiSeries(regressor=LinearRegression(), lags=15,
-                                                transformer_series=None)
+    forecaster_1 = ForecasterRecursiveMultiSeries(
+        regressor=LinearRegression(), lags=15, transformer_series=None
+    )
     forecaster_1.fit(series=df_diff_2.loc[:end_train], exog=exog_diff_2.loc[:end_train])
     predictions_diff_2 = forecaster_1.predict(steps=steps, exog=exog_diff_2.loc[end_train:])
     
     # Revert the differentiation
+    predictions_diff_2 = pd.pivot_table(
+        predictions_diff_2, index=predictions_diff_2.index, columns="level", values="pred"
+    )
     last_value_train_diff = df_diff_1.loc[:end_train].iloc[[-1]]
     predictions_diff_1 = pd.concat([last_value_train_diff, predictions_diff_2]).cumsum()[1:]
     last_value_train = series_dt.loc[:end_train].iloc[[-1]]
     predictions_1 = pd.concat([last_value_train, predictions_diff_1]).cumsum()[1:]
+    predictions_1 = expected_df_to_long_format(predictions_1)
 
-    forecaster_2 = ForecasterRecursiveMultiSeries(regressor=LinearRegression(), lags=15, 
-                                                differentiation=2, transformer_series=None)
+    forecaster_2 = ForecasterRecursiveMultiSeries(
+        regressor=LinearRegression(), lags=15, transformer_series=None, differentiation=differentiation
+    )
     forecaster_2.fit(series=series_dt.loc[:end_train], exog=exog.loc[:end_train])
     predictions_2 = forecaster_2.predict(steps=steps, exog=exog.loc[end_train:])
 
     pd.testing.assert_frame_equal(predictions_1, predictions_2)
 
 
-def test_predict_output_when_series_and_exog_dict_encoding_None_unknown_level():
+@pytest.mark.parametrize("levels", 
+                         [None, ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']], 
+                         ids = lambda levels: f'levels: {levels}')
+def test_predict_output_when_series_and_exog_dict_encoding_None_unknown_level(levels):
     """
     Test output ForecasterRecursiveMultiSeries predict method when series and 
     exog are dictionaries and encoding is None and unknown level with no exog.
@@ -815,17 +889,17 @@ def test_predict_output_when_series_and_exog_dict_encoding_None_unknown_level():
                      lags               = [1, 7, 14],
                      encoding           = None,
                      dropna_from_series = False,
-                     differentiation    = 1,
                      transformer_series = None,
-                     transformer_exog   = StandardScaler()
+                     transformer_exog   = StandardScaler(),
+                     differentiation    = 1
                  )
     forecaster.fit(
         series=series_dict_train, exog=exog_dict_train, suppress_warnings=True
     )
 
-    levels = ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']
+    series_to_predict = ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']
     last_window = pd.DataFrame(
-        {k: v for k, v in forecaster.last_window_.items() if k in levels}
+        {k: v for k, v in forecaster.last_window_.items() if k in series_to_predict}
     )
     last_window['id_1005'] = last_window['id_1004'] * 0.9
     predictions = forecaster.predict(
@@ -844,10 +918,15 @@ def test_predict_output_when_series_and_exog_dict_encoding_None_unknown_level():
         columns=["id_1000", "id_1001", "id_1003", "id_1004", "id_1005"],
     )
 
+    expected = expected_df_to_long_format(expected)
+
     pd.testing.assert_frame_equal(predictions, expected)
 
 
-def test_predict_output_when_series_and_exog_dict_encoding_None_transformer_series_unknown_level():
+@pytest.mark.parametrize("levels", 
+                         [None, ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']], 
+                         ids = lambda levels: f'levels: {levels}')
+def test_predict_output_when_series_and_exog_dict_encoding_None_transformer_series_unknown_level(levels):
     """
     Test output ForecasterRecursiveMultiSeries predict method when series and 
     exog are dictionaries and encoding is None and transformer_series is StandardScaler.
@@ -866,9 +945,9 @@ def test_predict_output_when_series_and_exog_dict_encoding_None_transformer_seri
         series=series_dict_train, exog=exog_dict_train, suppress_warnings=True
     )
 
-    levels = ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']
+    series_to_predict = ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']
     last_window = pd.DataFrame(
-        {k: v for k, v in forecaster.last_window_.items() if k in levels}
+        {k: v for k, v in forecaster.last_window_.items() if k in series_to_predict}
     )
     last_window['id_1005'] = last_window['id_1004'] * 0.9
     exog_dict_test_2 = exog_dict_test.copy()
@@ -888,10 +967,15 @@ def test_predict_output_when_series_and_exog_dict_encoding_None_transformer_seri
         columns=["id_1000", "id_1001", "id_1003", "id_1004", "id_1005"],
     )
 
+    expected = expected_df_to_long_format(expected)
+
     pd.testing.assert_frame_equal(predictions, expected)
 
 
-def test_predict_output_when_series_and_exog_dict_unknown_level():
+@pytest.mark.parametrize("levels", 
+                         [None, ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']], 
+                         ids = lambda levels: f'levels: {levels}')
+def test_predict_output_when_series_and_exog_dict_unknown_level(levels):
     """
     Test output ForecasterRecursiveMultiSeries predict method when series and 
     exog are dictionaries and unknown level.
@@ -910,9 +994,9 @@ def test_predict_output_when_series_and_exog_dict_unknown_level():
         series=series_dict_train, exog=exog_dict_train, suppress_warnings=True
     )
 
-    levels = ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']
+    series_to_predict = ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']
     last_window = pd.DataFrame(
-        {k: v for k, v in forecaster.last_window_.items() if k in levels}
+        {k: v for k, v in forecaster.last_window_.items() if k in series_to_predict}
     )
     last_window['id_1005'] = last_window['id_1004'] * 0.9
     exog_dict_test_2 = exog_dict_test.copy()
@@ -931,5 +1015,7 @@ def test_predict_output_when_series_and_exog_dict_unknown_level():
         index=pd.date_range(start="2016-08-01", periods=5, freq="D"),
         columns=["id_1000", "id_1001", "id_1003", "id_1004", "id_1005"],
     )
+
+    expected = expected_df_to_long_format(expected)
 
     pd.testing.assert_frame_equal(predictions, expected)

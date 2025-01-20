@@ -5,7 +5,8 @@
 ################################################################################
 # coding=utf-8
 
-from typing import Union, Tuple, Optional, Callable
+from __future__ import annotations
+from typing import Callable
 import warnings
 import sys
 import numpy as np
@@ -31,6 +32,7 @@ from ..utils import (
     initialize_window_features,
     initialize_weights,
     initialize_transformer_series,
+    initialize_differentiator_multiseries,
     check_select_fit_kwargs,
     check_preprocess_series,
     check_preprocess_exog_multiseries,
@@ -62,17 +64,17 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
     ----------
     regressor : regressor or pipeline compatible with the scikit-learn API
         An instance of a regressor or pipeline compatible with the scikit-learn API.
-    lags : int, list, numpy ndarray, range, default `None`
+    lags : int, list, numpy ndarray, range, default None
         Lags used as predictors. Index starts at 1, so lag 1 is equal to t-1.
     
         - `int`: include lags from 1 to `lags` (included).
         - `list`, `1d numpy ndarray` or `range`: include only lags present in 
         `lags`, all elements must be int.
         - `None`: no lags are included as predictors. 
-    window_features : object, list, default `None`
+    window_features : object, list, default None
         Instance or list of instances used to create window features. Window features
         are created from the original time series and are included as predictors.
-    encoding : str, None, default `'ordinal'`
+    encoding : str, None, default 'ordinal'
         Encoding used to identify the different series. 
         
         - If `'ordinal'`, a single column is created with integer values from 0 
@@ -85,7 +87,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         series are identified as an integer from 0 to n_series - 1, but no column
         is created in the training matrices.
         **Changed to 'ordinal' in version 0.14.0**
-    transformer_series : transformer (preprocessor), dict, default `None`
+    transformer_series : transformer (preprocessor), dict, default None
         An instance of a transformer (preprocessor) compatible with the scikit-learn
         preprocessing API with methods: fit, transform, fit_transform and 
         inverse_transform. Transformation is applied to each `series` before training 
@@ -94,11 +96,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         - If single transformer: it is cloned and applied to all series. 
         - If `dict` of transformers: a different transformer can be used for each series.
-    transformer_exog : transformer, default `None`
+    transformer_exog : transformer, default None
         An instance of a transformer (preprocessor) compatible with the scikit-learn
         preprocessing API. The transformation is applied to `exog` before training the
         forecaster. `inverse_transform` is not available when using ColumnTransformers.
-    weight_func : Callable, dict, default `None`
+    weight_func : Callable, dict, default None
         Function that defines the individual weights for each sample based on the
         index. For example, a function that assigns a lower weight to certain dates. 
         Ignored if `regressor` does not have the argument `sample_weight` in its 
@@ -108,7 +110,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         - If `dict` {'series_column_name' : Callable}: a different function can be
         used for each series, a weight of 1 is given to all series not present in 
         `weight_func`.
-    series_weights : dict, default `None`
+    series_weights : dict, default None
         Weights associated with each series {'series_column_name' : float}. It is only
         applied if the `regressor` used accepts `sample_weight` in its `fit` method. 
         See Notes section for more details on the use of the weights.
@@ -116,23 +118,28 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         - If a `dict` is provided, a weight of 1 is given to all series not present
         in `series_weights`.
         - If `None`, all levels have the same weight.
-    differentiation : int, default `None`
+    differentiation : int, dict, default None
         Order of differencing applied to the time series before training the forecaster.
-        If `None`, no differencing is applied. The order of differentiation is the number
-        of times the differencing operation is applied to a time series. Differencing
-        involves computing the differences between consecutive data points in the series.
-        Differentiation is reversed in the output of `predict()` and `predict_interval()`.
-        **WARNING: This argument is newly introduced and requires special attention. It
-        is still experimental and may undergo changes.**
-    dropna_from_series : bool, default `False`
+        The order of differentiation is the numberof times the differencing operation 
+        is applied to a time series. Differencing involves computing the differences 
+        between consecutive data points in the series. Differentiation is reversed 
+        in the output of the predictions methods.
+        
+        - If `int`, the same order of differentiation is applied to all series.
+        - If `dict`, a different order of differentiation (including None) can 
+        be used for each series. The keys must be the names of the series used
+        to fit the forecaster. If a series is not present in the dictionary, no
+        differencing is applied.
+        - If `None`, no differencing is applied.
+    dropna_from_series : bool, default False
         Determine whether NaN detected in the training matrices will be dropped.
 
         - If `True`, drop NaNs in X_train and same rows in y_train.
         - If `False`, leave NaNs in X_train and warn the user.
         **New in version 0.12.0**
-    fit_kwargs : dict, default `None`
+    fit_kwargs : dict, default None
         Additional arguments to be passed to the `fit` method of the regressor.
-    forecaster_id : str, int, default `None`
+    forecaster_id : str, int, default None
         Name used as an identifier of the forecaster.
     
     Attributes
@@ -216,13 +223,15 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         in `series_weights`.
         - If `None`, all levels have the same weight.
     series_weights_ : dict
-        Weights associated with each series.It is created as a clone of `series_weights`
+        Weights associated with each series. It is created as a clone of `series_weights`
         and is used internally to avoid overwriting.
-    differentiation : int
-        Order of differencing applied to the time series before training the 
+    differentiation : int, dict
+        The order of differencing applied to the time series prior to training the 
         forecaster.
-    differentiator : TimeSeriesDifferentiator
-        Skforecast object used to differentiate the time series.
+    differentiation_max : int
+        Maximum order of differentiation.
+    differentiator : TimeSeriesDifferentiator, dict
+        Skforecast object (or dict of objects) used to differentiate the time series.
     differentiator_ : dict
         Dictionary with the `differentiator` for each series. It is created cloning the
         objects in `differentiator` and is used internally to avoid overwriting.
@@ -313,17 +322,17 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
     def __init__(
         self,
         regressor: object,
-        lags: Optional[Union[int, list, np.ndarray, range]] = None,
-        window_features: Optional[Union[object, list]] = None,
-        encoding: Optional[str] = 'ordinal',
-        transformer_series: Optional[Union[object, dict]] = None,
-        transformer_exog: Optional[object] = None,
-        weight_func: Optional[Union[Callable, dict]] = None,
-        series_weights: Optional[dict] = None,
-        differentiation: Optional[int] = None,
+        lags: int | list[int] | np.ndarray[int] | range[int] | None = None,
+        window_features: object | list[object] | None = None,
+        encoding: str | None = 'ordinal',
+        transformer_series: object | dict[str, object] | None = None,
+        transformer_exog: object | None = None,
+        weight_func: Callable | dict[str, Callable] | None = None,
+        series_weights: dict[str, float] | None = None,
+        differentiation: int | dict[str, int | None] | None = None,
         dropna_from_series: bool = False,
-        fit_kwargs: Optional[dict] = None,
-        forecaster_id: Optional[Union[str, int]] = None
+        fit_kwargs: dict[str, object] | None = None,
+        forecaster_id: str | int | None = None
     ) -> None:
 
         self.regressor                          = copy(regressor)
@@ -339,6 +348,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self.series_weights                     = series_weights
         self.series_weights_                    = None
         self.differentiation                    = differentiation
+        self.differentiation_max                = None
         self.differentiator                     = None
         self.differentiator_                    = None
         self.dropna_from_series                 = dropna_from_series
@@ -383,32 +393,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         if window_features is not None:
             self.window_features_class_names = [
                 type(wf).__name__ for wf in self.window_features
-            ] 
-
-        self.weight_func, self.source_code_weight_func, self.series_weights = (
-            initialize_weights(
-                forecaster_name = type(self).__name__,
-                regressor       = regressor,
-                weight_func     = weight_func,
-                series_weights  = series_weights,
-            )
-        )
-
-        if self.differentiation is not None:
-            if not isinstance(differentiation, int) or differentiation < 1:
-                raise ValueError(
-                    f"Argument `differentiation` must be an integer equal to or "
-                    f"greater than 1. Got {differentiation}."
-                )
-            self.window_size += self.differentiation
-            self.differentiator = TimeSeriesDifferentiator(
-                order=self.differentiation, window_size=self.window_size
-            )
-
-        self.fit_kwargs = check_select_fit_kwargs(
-                              regressor  = regressor,
-                              fit_kwargs = fit_kwargs
-                          )
+            ]
 
         if self.encoding not in ['ordinal', 'ordinal_category', 'onehot', None]:
             raise ValueError(
@@ -455,6 +440,85 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     "Add the key '_unknown_level' to `transformer_series`. "
                     "For example: {'_unknown_level': your_transformer}."
                 )
+
+        self.weight_func, self.source_code_weight_func, self.series_weights = (
+            initialize_weights(
+                forecaster_name = type(self).__name__,
+                regressor       = regressor,
+                weight_func     = weight_func,
+                series_weights  = series_weights,
+            )
+        )
+
+        if differentiation is not None:
+            if isinstance(differentiation, int):
+                if differentiation < 1:
+                    raise ValueError(
+                        f"If `differentiation` is an integer, it must be equal "
+                        f"to or greater than 1. Got {differentiation}."
+                    )
+                self.differentiation = differentiation
+                self.differentiation_max = differentiation
+                self.window_size += self.differentiation_max
+                self.differentiator = TimeSeriesDifferentiator(
+                    order=differentiation, window_size=self.window_size
+                )
+            elif isinstance(differentiation, dict):
+
+                if self.encoding is None:
+                    raise TypeError(
+                        "When `encoding` is None, `differentiation` must be an "
+                        "integer equal to or greater than 1. Same differentiation "
+                        "must be applied to all series."
+                    )
+                if '_unknown_level' not in differentiation.keys():
+                    raise ValueError(
+                        "If `differentiation` is a `dict`, an order must be provided "
+                        "to differentiate series that do not exist during training. "
+                        "Add the key '_unknown_level' to `differentiation`. "
+                        "For example: {'_unknown_level': 1}."
+                    )
+                
+                differentiation_max = []
+                for level, diff in differentiation.items():
+                    if diff is not None:
+                        if not isinstance(diff, int) or diff < 1:
+                            raise ValueError(
+                                f"If `differentiation` is a dict, the values must be "
+                                f"None or integers equal to or greater than 1. "
+                                f"Got {diff} for series '{level}'."
+                            )
+                        differentiation_max.append(diff)
+
+                if len(differentiation_max) == 0:
+                    raise ValueError(
+                        "If `differentiation` is a dict, at least one value must be "
+                        "different from None. Got all values equal to None. If you "
+                        "do not want to differentiate any series, set `differentiation` "
+                        "to None."
+                    )
+                
+                self.differentiation = differentiation
+                self.differentiation_max = max(differentiation_max)
+                self.window_size += self.differentiation_max
+                self.differentiator = {
+                    level: (
+                        TimeSeriesDifferentiator(order=diff, window_size=self.window_size)
+                        if diff is not None else None
+                    )
+                    for level, diff in differentiation.items()
+                }
+            else:
+                raise TypeError(
+                    f"When including `differentiation`, this argument must be "
+                    f"an integer (equal to or greater than 1) or a dict of "
+                    f"integers. Got {type(differentiation)}."
+                )
+
+        self.fit_kwargs = check_select_fit_kwargs(
+                              regressor  = regressor,
+                              fit_kwargs = fit_kwargs
+                          )
 
     def __repr__(
         self
@@ -605,8 +669,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self,
         y: np.ndarray,
         X_as_pandas: bool = False,
-        train_index: Optional[pd.Index] = None
-    ) -> Tuple[Optional[Union[np.ndarray, pd.DataFrame]], np.ndarray]:
+        train_index: pd.Index | None = None
+    ) -> tuple[np.ndarray | pd.DataFrame | None, np.ndarray]:
         """
         Create the lagged values and their target variable from a time series.
         
@@ -617,9 +681,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         ----------
         y : numpy ndarray
             Training time series values.
-        X_as_pandas : bool, default `False`
+        X_as_pandas : bool, default False
             If `True`, the returned matrix `X_data` is a pandas DataFrame.
-        train_index : pandas Index, default `None`
+        train_index : pandas Index, default None
             Index of the training data. It is used to create the pandas DataFrame
             `X_data` when `X_as_pandas` is `True`.
 
@@ -658,7 +722,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         y: pd.Series,
         train_index: pd.Index,
         X_as_pandas: bool = False,
-    ) -> Tuple[list, list]:
+    ) -> tuple[list[np.ndarray | pd.DataFrame], list[str]]:
         """
         
         Parameters
@@ -668,7 +732,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         train_index : pandas Index
             Index of the training data. It is used to create the pandas DataFrame
             `X_train_window_features` when `X_as_pandas` is `True`.
-        X_as_pandas : bool, default `False`
+        X_as_pandas : bool, default False
             If `True`, the returned matrix `X_train_window_features` is a 
             pandas DataFrame.
 
@@ -688,21 +752,21 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             X_train_wf = wf.transform_batch(y)
             if not isinstance(X_train_wf, pd.DataFrame):
                 raise TypeError(
-                    (f"The method `transform_batch` of {type(wf).__name__} "
-                     f"must return a pandas DataFrame.")
+                    f"The method `transform_batch` of {type(wf).__name__} "
+                    f"must return a pandas DataFrame."
                 )
             X_train_wf = X_train_wf.iloc[-len_train_index:]
             if not len(X_train_wf) == len_train_index:
                 raise ValueError(
-                    (f"The method `transform_batch` of {type(wf).__name__} "
-                     f"must return a DataFrame with the same number of rows as "
-                     f"the input time series - `window_size`: {len_train_index}.")
+                    f"The method `transform_batch` of {type(wf).__name__} "
+                    f"must return a DataFrame with the same number of rows as "
+                    f"the input time series - `window_size`: {len_train_index}."
                 )
             if not (X_train_wf.index == train_index).all():
                 raise ValueError(
-                    (f"The method `transform_batch` of {type(wf).__name__} "
-                     f"must return a DataFrame with the same index as "
-                     f"the input time series - `window_size`.")
+                    f"The method `transform_batch` of {type(wf).__name__} "
+                    f"must return a DataFrame with the same index as "
+                    f"the input time series - `window_size`."
                 )
             
             X_train_window_features_names_out_.extend(X_train_wf.columns)
@@ -717,8 +781,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self,
         y: pd.Series,
         ignore_exog: bool,
-        exog: Optional[pd.DataFrame] = None
-    ) -> Tuple[pd.DataFrame, list, pd.DataFrame, pd.Series]:
+        exog: pd.DataFrame | None = None
+    ) -> tuple[pd.DataFrame, list[str], pd.DataFrame, pd.Series]:
         """
         Create training matrices from univariate time series and exogenous
         variables. This method does not transform the exog variables.
@@ -729,7 +793,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             Training time series.
         ignore_exog : bool
             If `True`, `exog` is ignored.
-        exog : pandas DataFrame, default `None`
+        exog : pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
 
         Returns
@@ -776,7 +840,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         y_values = y.to_numpy()
         y_index = y.index
 
-        if self.differentiation is not None:
+        if self.differentiator_[series_name] is not None:
             if not self.is_fitted:
                 y_values = self.differentiator_[series_name].fit_transform(y_values)
             else:
@@ -794,7 +858,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         
         X_train_window_features_names_out_ = None
         if self.window_features is not None:
-            n_diff = 0 if self.differentiation is None else self.differentiation
+            # NOTE: The first `self.differentiation_max` positions of `y_values`
+            # must be removed to match the length of `y_train` after creating
+            # the window features. This is because `y_train` is created using the 
+            # global window size of the Forecaster, which includes the maximum 
+            # differentiation (self.differentiation_max).
+            n_diff = 0 if self.differentiation is None else self.differentiation_max
             y_window_features = pd.Series(y_values[n_diff:], index=y_index[n_diff:])
             X_train_window_features, X_train_window_features_names_out_ = (
                 self._create_window_features(
@@ -835,10 +904,21 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
     def _create_train_X_y(
         self,
-        series: Union[pd.DataFrame, dict],
-        exog: Optional[Union[pd.Series, pd.DataFrame, dict]] = None,
-        store_last_window: Union[bool, list] = True,
-    ) -> Tuple[pd.DataFrame, pd.Series, dict, list, list, list, list, list, dict, dict]:
+        series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
+        exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
+        store_last_window: bool | list[str] = True,
+    ) -> tuple[
+        pd.DataFrame,
+        pd.Series,
+        dict[str, pd.Index],
+        list[str],
+        list[str],
+        list[str],
+        list[str],
+        list[str],
+        dict[str, type],
+        dict[str, pd.Series],
+    ]:
         """
         Create training matrices from multiple time series and exogenous
         variables. See Notes section for more details depending on the type of
@@ -848,9 +928,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         ----------
         series : pandas DataFrame, dict
             Training time series.
-        exog : pandas Series, pandas DataFrame, dict, default `None`
+        exog : pandas Series, pandas DataFrame, dict, default None
             Exogenous variable/s included as predictor/s.
-        store_last_window : bool, list, default `True`
+        store_last_window : bool, list, default True
             Whether or not to store the last window (`last_window_`) of training data.
 
             - If `True`, last window is stored for all series. 
@@ -910,10 +990,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         if self.is_fitted and not set(series_names_in_).issubset(set(self.series_names_in_)):
             raise ValueError(
-                (f"Once the Forecaster has been trained, `series` must contain "
-                 f"the same series names as those used during training:\n"
-                 f" Got      : {series_names_in_}\n"
-                 f" Expected : {self.series_names_in_}")
+                f"Once the Forecaster has been trained, `series` must contain "
+                f"the same series names as those used during training:\n"
+                f" Got      : {series_names_in_}\n"
+                f" Expected : {self.series_names_in_}"
             )
 
         exog_dict = {serie: None for serie in series_names_in_}
@@ -931,16 +1011,16 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             if self.is_fitted:
                 if self.exog_names_in_ is None:
                     raise ValueError(
-                        ("Once the Forecaster has been trained, `exog` must be `None` "
-                         "because no exogenous variables were added during training.")
+                        "Once the Forecaster has been trained, `exog` must be `None` "
+                        "because no exogenous variables were added during training."
                     )
                 else:
                     if not set(exog_names_in_) == set(self.exog_names_in_):
                         raise ValueError(
-                            (f"Once the Forecaster has been trained, `exog` must contain "
-                             f"the same exogenous variables as those used during training:\n"
-                             f" Got      : {exog_names_in_}\n"
-                             f" Expected : {self.exog_names_in_}")
+                            f"Once the Forecaster has been trained, `exog` must contain "
+                            f"the same exogenous variables as those used during training:\n"
+                            f" Got      : {exog_names_in_}\n"
+                            f" Expected : {self.exog_names_in_}"
                         )
 
         if not self.is_fitted:
@@ -950,14 +1030,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                            encoding           = self.encoding,
                                            transformer_series = self.transformer_series
                                        )
-
-        if self.differentiation is None:
-            self.differentiator_ = {serie: None for serie in series_names_in_}
-        else:
-            if not self.is_fitted:
-                self.differentiator_ = {
-                    serie: copy(self.differentiator) for serie in series_names_in_
-                }
+            
+            self.differentiator_ = initialize_differentiator_multiseries(
+                                       series_names_in_ = series_names_in_,
+                                       differentiator   = self.differentiator
+                                   )
 
         series_dict, exog_dict = align_series_and_exog_multiseries(
                                      series_dict          = series_dict,
@@ -1043,8 +1120,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             check_exog_dtypes(X_train_exog, call_check_exog=False)
             if not (X_train_exog.index == X_train.index).all():
                 raise ValueError(
-                    ("Different index for `series` and `exog` after transformation. "
-                     "They must be equal to ensure the correct alignment of values.")
+                    "Different index for `series` and `exog` after transformation. "
+                    "They must be equal to ensure the correct alignment of values."
                 )
 
             X_train_exog_names_out_ = X_train_exog.columns.to_list()
@@ -1055,11 +1132,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             y_train = y_train.iloc[mask]
             X_train = X_train.iloc[mask,]
             warnings.warn(
-                ("NaNs detected in `y_train`. They have been dropped because the "
-                 "target variable cannot have NaN values. Same rows have been "
-                 "dropped from `X_train` to maintain alignment. This is caused by "
-                 "series with interspersed NaNs."),
-                 MissingValuesWarning
+                "NaNs detected in `y_train`. They have been dropped because the "
+                "target variable cannot have NaN values. Same rows have been "
+                "dropped from `X_train` to maintain alignment. This is caused by "
+                "series with interspersed NaNs.",
+                MissingValuesWarning
             )
 
         if self.dropna_from_series:
@@ -1068,25 +1145,25 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 X_train = X_train.iloc[mask, ]
                 y_train = y_train.iloc[mask]
                 warnings.warn(
-                    ("NaNs detected in `X_train`. They have been dropped. If "
-                     "you want to keep them, set `forecaster.dropna_from_series = False`. "
-                     "Same rows have been removed from `y_train` to maintain alignment. "
-                     "This caused by series with interspersed NaNs."),
-                     MissingValuesWarning
+                    "NaNs detected in `X_train`. They have been dropped. If "
+                    "you want to keep them, set `forecaster.dropna_from_series = False`. "
+                    "Same rows have been removed from `y_train` to maintain alignment. "
+                    "This caused by series with interspersed NaNs.",
+                    MissingValuesWarning
                 )
         else:
             if np.any(X_train.isnull().to_numpy()):
                 warnings.warn(
-                    ("NaNs detected in `X_train`. Some regressors do not allow "
-                     "NaN values during training. If you want to drop them, "
-                     "set `forecaster.dropna_from_series = True`."),
-                     MissingValuesWarning
+                    "NaNs detected in `X_train`. Some regressors do not allow "
+                    "NaN values during training. If you want to drop them, "
+                    "set `forecaster.dropna_from_series = True`.",
+                    MissingValuesWarning
                 )
 
         if X_train.empty:
             raise ValueError(
-                ("All samples have been removed due to NaNs. Set "
-                 "`forecaster.dropna_from_series = False` or review `exog` values.")
+                "All samples have been removed due to NaNs. Set "
+                "`forecaster.dropna_from_series = False` or review `exog` values."
             )
         
         if self.encoding == 'onehot':
@@ -1112,8 +1189,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             series_not_in_series_dict = set(series_to_store) - set(X_train_series_names_in_)
             if series_not_in_series_dict:
                 warnings.warn(
-                    (f"Series {series_not_in_series_dict} are not present in "
-                     f"`series`. No last window is stored for them."),
+                    f"Series {series_not_in_series_dict} are not present in "
+                    f"`series`. No last window is stored for them.",
                     IgnoredArgumentWarning
                 )
                 series_to_store = [s for s in series_to_store 
@@ -1142,10 +1219,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
     def create_train_X_y(
         self,
-        series: Union[pd.DataFrame, dict],
-        exog: Optional[Union[pd.Series, pd.DataFrame, dict]] = None,
+        series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
+        exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
         suppress_warnings: bool = False
-    ) -> Tuple[pd.DataFrame, pd.Series]:
+    ) -> tuple[pd.DataFrame, pd.Series]:
         """
         Create training matrices from multiple time series and exogenous
         variables. See Notes section for more details depending on the type of
@@ -1155,9 +1232,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         ----------
         series : pandas DataFrame, dict
             Training time series.
-        exog : pandas Series, pandas DataFrame, dict, default `None`
+        exog : pandas Series, pandas DataFrame, dict, default None
             Exogenous variable/s included as predictor/s.
-        suppress_warnings : bool, default `False`
+        suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the creation
             of the training matrices. See skforecast.exceptions.warn_skforecast_categories 
             for more information.
@@ -1178,7 +1255,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         or DataFrames. Each key in `exog` must be a column in `series` and the 
         values are the exog for each series. Exog must have the same index as 
         `series` (type, length and frequency).
-        - If `series` is a dict of pandas Series, `exog`must be a dict of pandas
+        - If `series` is a dict of pandas Series, `exog` must be a dict of pandas
         Series or DataFrames. The keys in `series` and `exog` must be the same.
         All series and exog must have a pandas DatetimeIndex with the same 
         frequency.
@@ -1203,13 +1280,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         return X_train, y_train
 
-
     def _train_test_split_one_step_ahead(
         self,
-        series: Union[pd.DataFrame, dict],
+        series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
         initial_train_size: int,
-        exog: Optional[Union[pd.Series, pd.DataFrame, dict]] = None
-    ) -> Tuple[pd.DataFrame, pd.Series, pd.DataFrame, pd.Series, pd.Series, pd.Series]:
+        exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None
+    ) -> tuple[pd.DataFrame, pd.Series, pd.DataFrame, pd.Series, pd.Series, pd.Series]:
         """
         Create matrices needed to train and test the forecaster for one-step-ahead
         predictions.
@@ -1221,7 +1297,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         initial_train_size : int
             Initial size of the training set. It is the number of observations used
             to train the forecaster before making the first prediction.
-        exog : pandas Series, pandas DataFrame, dict, default `None`
+        exog : pandas Series, pandas DataFrame, dict, default None
             Exogenous variable/s included as predictor/s.
         
         Returns
@@ -1249,8 +1325,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 raise ValueError(
                     "All series with frequency must have the same frequency."
                 )
-            min_index = min([v.index[0] for v in series.values()])
-            max_index = max([v.index[-1] for v in series.values()])
+            
+            min_index = min([v.index[0] for v in series.values() if not v.empty])
+            max_index = max([v.index[-1] for v in series.values() if not v.empty])
             span_index = pd.date_range(start=min_index, end=max_index, freq=freqs[0])
         else:
             span_index = series.index
@@ -1345,7 +1422,29 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         ).fillna("_unknown_level")
         
         return X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding
+    
+    def _weight_func_all_1(
+        self, 
+        index: pd.Index
+    ) -> np.ndarray:
+        """
+        Weight function that assigns a weight of 1 to all observations.
 
+        Parameters
+        ----------
+        index : pandas Index
+            Index of the series.
+        
+        Returns
+        -------
+        weights : numpy ndarray
+            Weights to use in `fit` method.
+
+        """
+
+        weights = np.ones(len(index), dtype=float)
+
+        return weights
 
     def create_sample_weights(
         self,
@@ -1373,7 +1472,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         weights = None
         weights_samples = None
-        weights_series = None
+        series_weights = None
 
         if self.series_weights is not None:
             # Series not present in series_weights have a weight of 1 in all their samples.
@@ -1383,24 +1482,26 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             )
             if series_not_in_series_weights:
                 warnings.warn(
-                    (f"{series_not_in_series_weights} not present in `series_weights`. "
-                     f"A weight of 1 is given to all their samples."),
-                     IgnoredArgumentWarning
+                    f"{series_not_in_series_weights} not present in `series_weights`. "
+                    f"A weight of 1 is given to all their samples.",
+                    IgnoredArgumentWarning
                 )
             self.series_weights_ = {col: 1. for col in series_names_in_}
             self.series_weights_.update(
-                (k, v)
-                for k, v in self.series_weights.items()
-                if k in self.series_weights_
+                {
+                    k: v
+                    for k, v in self.series_weights.items()
+                    if k in self.series_weights_
+                }
             )
 
             if self.encoding == "onehot":
-                weights_series = [
+                series_weights = [
                     np.repeat(self.series_weights_[serie], sum(X_train[serie]))
                     for serie in series_names_in_
                 ]
             else:
-                weights_series = [
+                series_weights = [
                     np.repeat(
                         self.series_weights_[serie],
                         sum(X_train["_level_skforecast"] == self.encoding_mapping_[serie]),
@@ -1408,7 +1509,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     for serie in series_names_in_
                 ]
 
-            weights_series = np.concatenate(weights_series)
+            series_weights = np.concatenate(series_weights)
 
         if self.weight_func is not None:
             if isinstance(self.weight_func, Callable):
@@ -1421,16 +1522,19 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 )
                 if series_not_in_weight_func:
                     warnings.warn(
-                        (f"{series_not_in_weight_func} not present in `weight_func`. "
-                         f"A weight of 1 is given to all their samples."),
-                         IgnoredArgumentWarning
+                        f"{series_not_in_weight_func} not present in `weight_func`. "
+                        f"A weight of 1 is given to all their samples.",
+                        IgnoredArgumentWarning
                     )
-                self.weight_func_ = {col: lambda x: np.ones_like(x, dtype=float) 
-                                     for col in series_names_in_}
+                self.weight_func_ = {
+                    col: self._weight_func_all_1 for col in series_names_in_
+                }
                 self.weight_func_.update(
-                    (k, v)
-                    for k, v in self.weight_func.items()
-                    if k in self.weight_func_
+                    {
+                        k: v
+                        for k, v in self.weight_func.items()
+                        if k in self.weight_func_
+                    }
                 )
 
             weights_samples = []
@@ -1439,13 +1543,13 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     idx = X_train.index[X_train[key] == 1.0]
                 else:
                     idx = X_train.index[
-                            X_train["_level_skforecast"] == self.encoding_mapping_[key]
-                         ]
+                        X_train["_level_skforecast"] == self.encoding_mapping_[key]
+                    ]
                 weights_samples.append(self.weight_func_[key](idx))
             weights_samples = np.concatenate(weights_samples)
 
-        if weights_series is not None:
-            weights = weights_series
+        if series_weights is not None:
+            weights = series_weights
             if weights_samples is not None:
                 weights = weights * weights_samples
         else:
@@ -1463,8 +1567,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 )
             if np.sum(weights) == 0:
                 raise ValueError(
-                    ("The resulting `weights` cannot be normalized because "
-                     "the sum of the weights is zero.")
+                    "The resulting `weights` cannot be normalized because "
+                    "the sum of the weights is zero."
                 )
 
         return weights
@@ -1472,9 +1576,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
     def fit(
         self,
-        series: Union[pd.DataFrame, dict],
-        exog: Optional[Union[pd.Series, pd.DataFrame, dict]] = None,
-        store_last_window: Union[bool, list] = True,
+        series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
+        exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
+        store_last_window: bool | list[str] = True,
         store_in_sample_residuals: bool = True,
         suppress_warnings: bool = False
     ) -> None:
@@ -1489,18 +1593,18 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         ----------
         series : pandas DataFrame, dict
             Training time series.
-        exog : pandas Series, pandas DataFrame, dict, default `None`
+        exog : pandas Series, pandas DataFrame, dict, default None
             Exogenous variable/s included as predictor/s.
-        store_last_window : bool, list, default `True`
+        store_last_window : bool, list, default True
             Whether or not to store the last window (`last_window_`) of training data.
 
             - If `True`, last window is stored for all series. 
             - If `list`, last window is stored for the series present in the list.
             - If `False`, last window is not stored.
-        store_in_sample_residuals : bool, default `True`
+        store_in_sample_residuals : bool, default True
             If `True`, in-sample residuals will be stored in the forecaster object
             after fitting (`in_sample_residuals_` attribute).
-        suppress_warnings : bool, default `False`
+        suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the training 
             process. See skforecast.exceptions.warn_skforecast_categories for more
             information.
@@ -1626,10 +1730,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             
             if len(residuals) > 1000:
                 in_sample_residuals_['_unknown_level'] = rng.choice(
-                                                            a       = residuals,
-                                                            size    = 1000,
-                                                            replace = False
-                                                        )
+                                                             a       = residuals,
+                                                             size    = 1000,
+                                                             replace = False
+                                                         )
             else:
                 in_sample_residuals_['_unknown_level'] = residuals
         else:
@@ -1649,13 +1753,13 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
     def _create_predict_inputs(
         self,
         steps: int,
-        levels: Optional[Union[str, list]] = None,
-        last_window: Optional[pd.DataFrame] = None,
-        exog: Optional[Union[pd.Series, pd.DataFrame, dict]] = None,
+        levels: str | list[str] | None = None,
+        last_window: pd.DataFrame | None = None,
+        exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
         predict_boot: bool = False,
         use_in_sample_residuals: bool = True,
         check_inputs: bool = True
-    ) -> Tuple[pd.DataFrame, Optional[dict], list, pd.Index, Optional[dict]]:
+    ) -> tuple[pd.DataFrame, dict[str, np.ndarray] | None, list[str], pd.Index, dict[str, np.ndarray] | None]:
         """
         Create the inputs needed for the first iteration of the prediction 
         process. As this is a recursive process, the last window is updated at 
@@ -1665,26 +1769,26 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         ----------
         steps : int
             Number of future steps predicted.
-        levels : str, list, default `None`
+        levels : str, list, default None
             Time series to be predicted. If `None` all levels whose last window
             ends at the same datetime index will be predicted together.
-        last_window : pandas DataFrame, default `None`
+        last_window : pandas DataFrame, default None
             Series values used to create the predictors (lags) needed in the 
             first iteration of the prediction (t + 1).
             If `last_window = None`, the values stored in `self.last_window_` are
             used to calculate the initial predictors, and the predictions start
             right after training data.
-        exog : pandas Series, pandas DataFrame, default `None`
+        exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
-        predict_boot : bool, default `False`
+        predict_boot : bool, default False
             If `True`, residuals are returned to generate bootstrapping predictions.
-        use_in_sample_residuals : bool, default `True`
+        use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
             prediction error to create predictions. If `False`, out of sample 
             residuals are used. In the latter case, the user should have
             calculated and stored the residuals within the forecaster (see
             `set_out_sample_residuals()`).
-        check_inputs : bool, default `True`
+        check_inputs : bool, default True
             If `True`, the input is checked for possible warnings and errors 
             with the `check_predict_input` function. This argument is created 
             for internal use and is not recommended to be changed.
@@ -1709,16 +1813,21 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         
         """
 
+        input_levels_is_None = True if levels is None else False
         levels, input_levels_is_list = prepare_levels_multiseries(
             X_train_series_names_in_=self.X_train_series_names_in_, levels=levels
         )
 
-        if self.is_fitted and last_window is None:
-            levels, last_window = preprocess_levels_self_last_window_multiseries(
-                                      levels               = levels,
-                                      input_levels_is_list = input_levels_is_list,
-                                      last_window_         = self.last_window_
-                                  )
+        if self.is_fitted:
+            if last_window is None:
+                levels, last_window = preprocess_levels_self_last_window_multiseries(
+                                          levels               = levels,
+                                          input_levels_is_list = input_levels_is_list,
+                                          last_window_         = self.last_window_
+                                      )
+            else:
+                if input_levels_is_None and isinstance(last_window, pd.DataFrame):
+                    levels = last_window.columns.to_list()
             
         if self.is_fitted and predict_boot:
             residuals = prepare_residuals_multiseries(
@@ -1794,13 +1903,14 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 fit               = False,
                 inverse_transform = False
             )
-   
+
             if self.differentiation is not None:
                 if level not in self.differentiator_.keys():
-                    self.differentiator_[level] = copy(self.differentiator)
-                last_window_level = (
-                    self.differentiator_[level].fit_transform(last_window_level)
-                )
+                    self.differentiator_[level] = copy(self.differentiator_['_unknown_level'])
+                if self.differentiator_[level] is not None:
+                    last_window_level = (
+                        self.differentiator_[level].fit_transform(last_window_level)
+                    )
             
             last_window[level] = last_window_level
 
@@ -1848,8 +1958,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         steps: int,
         levels: list,
         last_window: pd.DataFrame,
-        exog_values_dict: Optional[dict] = None,
-        residuals: Optional[np.ndarray] = None
+        exog_values_dict: dict[str, np.ndarray] | None = None,
+        residuals: np.ndarray | None = None
     ) -> np.ndarray:
         """
         Predict n steps for one or multiple levels. It is an iterative process
@@ -1864,11 +1974,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         last_window : pandas DataFrame
             Series values used to create the predictors needed in the first 
             iteration of the prediction (t + 1).
-        exog_values_dict : dict, default `None`
+        exog_values_dict : dict, default None
             Exogenous variable/s included as predictor/s for each series in 
             each step. The keys are the steps and the values are numpy arrays
             where each column is an exog and each row a series (level).
-        residuals : numpy ndarray, default `None`
+        residuals : numpy ndarray, default None
             Residuals used to generate bootstrapping predictions in the form
             (steps, levels).
 
@@ -1952,9 +2062,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
     def create_predict_X(
         self,
         steps: int,
-        levels: Optional[Union[str, list]] = None,
-        last_window: Optional[pd.DataFrame] = None,
-        exog: Optional[Union[pd.Series, pd.DataFrame, dict]] = None,
+        levels: str | list[str] | None = None,
+        last_window: pd.DataFrame | None = None,
+        exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
         suppress_warnings: bool = False
     ) -> dict:
         """
@@ -1966,18 +2076,18 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         ----------
         steps : int
             Number of future steps predicted.
-        levels : str, list, default `None`
+        levels : str, list, default None
             Time series to be predicted. If `None` all levels whose last window
             ends at the same datetime index will be predicted together.
-        last_window : pandas DataFrame, default `None`
+        last_window : pandas DataFrame, default None
             Series values used to create the predictors (lags) needed in the 
             first iteration of the prediction (t + 1).
             If `last_window = None`, the values stored in `self.last_window_` are
             used to calculate the initial predictors, and the predictions start
             right after training data.
-        exog : pandas Series, pandas DataFrame, default `None`
+        exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
-        suppress_warnings : bool, default `False`
+        suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the prediction 
             process. See skforecast.exceptions.warn_skforecast_categories for more
             information.
@@ -2101,9 +2211,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
     def predict(
         self,
         steps: int,
-        levels: Optional[Union[str, list]] = None,
-        last_window: Optional[pd.DataFrame] = None,
-        exog: Optional[Union[pd.Series, pd.DataFrame, dict]] = None,
+        levels: str | list[str] | None = None,
+        last_window: pd.DataFrame | None = None,
+        exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
         suppress_warnings: bool = False,
         check_inputs: bool = True
     ) -> pd.DataFrame:
@@ -2116,22 +2226,22 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         ----------
         steps : int
             Number of future steps predicted.
-        levels : str, list, default `None`
+        levels : str, list, default None
             Time series to be predicted. If `None` all levels whose last window
             ends at the same datetime index will be predicted together.
-        last_window : pandas DataFrame, default `None`
+        last_window : pandas DataFrame, default None
             Series values used to create the predictors (lags) needed in the 
             first iteration of the prediction (t + 1).
             If `last_window = None`, the values stored in `self.last_window_` are
             used to calculate the initial predictors, and the predictions start
             right after training data.
-        exog : pandas Series, pandas DataFrame, dict, default `None`
+        exog : pandas Series, pandas DataFrame, dict, default None
             Exogenous variable/s included as predictor/s.
-        suppress_warnings : bool, default `False`
+        suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the prediction 
             process. See skforecast.exceptions.warn_skforecast_categories for more
             information.
-        check_inputs : bool, default `True`
+        check_inputs : bool, default True
             If `True`, the input is checked for possible warnings and errors 
             with the `check_predict_input` function. This argument is created 
             for internal use and is not recommended to be changed.
@@ -2139,7 +2249,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         Returns
         -------
         predictions : pandas DataFrame
-            Predicted values, one column for each level.
+            Long-format DataFrame with the predictions. The columns are `level`
+            and `pred`.
 
         """
 
@@ -2173,7 +2284,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                           )
         
         for i, level in enumerate(levels):
-            if self.differentiation is not None:
+            if self.differentiation is not None and self.differentiator_[level] is not None:
                 predictions[:, i] = (
                     self
                     .differentiator_[level]
@@ -2186,12 +2297,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 fit               = False,
                 inverse_transform = True
             )
-
+        
+        n_steps, n_levels = predictions.shape
         predictions = pd.DataFrame(
-                          data    = predictions,
-                          index   = prediction_index,
-                          columns = levels
-                      )
+            {"level": np.tile(levels, n_steps), "pred": predictions.ravel()},
+            index = np.repeat(prediction_index, n_levels),
+        )
         
         set_skforecast_warnings(suppress_warnings, action='default')
 
@@ -2201,14 +2312,14 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
     def predict_bootstrapping(
         self,
         steps: int,
-        levels: Optional[Union[str, list]] = None,
-        last_window: Optional[pd.DataFrame] = None,
-        exog: Optional[Union[pd.Series, pd.DataFrame, dict]] = None,
+        levels: str | list[str] | None = None,
+        last_window: pd.DataFrame | None = None,
+        exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
         n_boot: int = 250,
         random_state: int = 123,
         use_in_sample_residuals: bool = True,
         suppress_warnings: bool = False
-    ) -> dict:
+    ) -> pd.DataFrame:
         """
         Generate multiple forecasting predictions using a bootstrapping process. 
         By sampling from a collection of past observed errors (the residuals),
@@ -2220,38 +2331,38 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         ----------
         steps : int
             Number of future steps predicted.
-        levels : str, list, default `None`
+        levels : str, list, default None
             Time series to be predicted. If `None` all levels whose last window
             ends at the same datetime index will be predicted together.
-        last_window : pandas DataFrame, default `None`
+        last_window : pandas DataFrame, default None
             Series values used to create the predictors (lags) needed in the 
             first iteration of the prediction (t + 1).
             If `last_window = None`, the values stored in `self.last_window_` are
             used to calculate the initial predictors, and the predictions start
             right after training data.
-        exog : pandas Series, pandas DataFrame, dict, default `None`
+        exog : pandas Series, pandas DataFrame, dict, default None
             Exogenous variable/s included as predictor/s.
-        n_boot : int, default `250`
+        n_boot : int, default 250
             Number of bootstrapping iterations used to estimate predictions.
-        random_state : int, default `123`
+        random_state : int, default 123
             Sets a seed to the random generator, so that boot predictions are always 
             deterministic.
-        use_in_sample_residuals : bool, default `True`
+        use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
             prediction error to create predictions. If `False`, out of sample 
             residuals are used. In the latter case, the user should have
             calculated and stored the residuals within the forecaster (see
             `set_out_sample_residuals()`).
-        suppress_warnings : bool, default `False`
+        suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the prediction 
             process. See skforecast.exceptions.warn_skforecast_categories for more
             information.
 
         Returns
         -------
-        boot_predictions : dict
-            Predictions generated by bootstrapping for each level.
-            {level: pandas DataFrame, shape (steps, n_boot)}
+        boot_predictions : pandas DataFrame
+            Long-format DataFrame with the bootstrapping predictions. The columns
+            are `level`, `pred_boot_0`, `pred_boot_1`, ..., `pred_boot_n_boot`.
 
         Notes
         -----
@@ -2294,12 +2405,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                         )
         
         boot_columns = []
-        boot_predictions_full = np.full(
-                                    shape      = (steps, n_levels, n_boot),
-                                    fill_value = np.nan,
-                                    order      = 'F',
-                                    dtype      = float
-                                )
+        boot_predictions = np.full(
+                               shape      = (steps, n_levels, n_boot),
+                               fill_value = np.nan,
+                               order      = 'F',
+                               dtype      = float
+                           )
         
         with warnings.catch_warnings():
             warnings.filterwarnings(
@@ -2310,7 +2421,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             for i in range(n_boot):
 
                 boot_columns.append(f"pred_boot_{i}")
-                boot_predictions_full[:, :, i] = self._recursive_predict(
+                boot_predictions[:, :, i] = self._recursive_predict(
                     steps            = steps,
                     levels           = levels,
                     last_window      = last_window,
@@ -2318,13 +2429,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     residuals        = sample_residuals[:, i, :]
                 )
 
-        boot_predictions = {}
         for i, level in enumerate(levels):
 
-            if self.differentiation is not None:
-                boot_predictions_full[:, i, :] = (
+            if self.differentiation is not None and self.differentiator_[level] is not None:
+                boot_predictions[:, i, :] = (
                     self.differentiator_[level]
-                    .inverse_transform_next_window(boot_predictions_full[:, i, :])
+                    .inverse_transform_next_window(boot_predictions[:, i, :])
                 )
             
             transformer_level = self.transformer_series_.get(
@@ -2332,20 +2442,21 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                     self.transformer_series_['_unknown_level']
                                 )
             if transformer_level is not None:
-                boot_predictions_full[:, i, :] = np.apply_along_axis(
+                boot_predictions[:, i, :] = np.apply_along_axis(
                     func1d            = transform_numpy,
                     axis              = 0,
-                    arr               = boot_predictions_full[:, i, :],
+                    arr               = boot_predictions[:, i, :],
                     transformer       = transformer_level,
                     fit               = False,
                     inverse_transform = True
                 )
-    
-            boot_predictions[level] = pd.DataFrame(
-                                          data    = boot_predictions_full[:, i, :],
-                                          index   = prediction_index,
-                                          columns = boot_columns
-                                      )
+
+        boot_predictions = pd.DataFrame(
+                               data    = boot_predictions.reshape(-1, n_boot),
+                               index   = np.repeat(prediction_index, n_levels),
+                               columns = boot_columns
+                           )
+        boot_predictions.insert(0, 'level', np.tile(levels, steps))
         
         set_skforecast_warnings(suppress_warnings, action='default')
 
@@ -2355,10 +2466,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
     def predict_interval(
         self,
         steps: int,
-        levels: Optional[Union[str, list]] = None,
-        last_window: Optional[pd.DataFrame] = None,
-        exog: Optional[Union[pd.Series, pd.DataFrame, dict]] = None,
-        interval: Union[list, tuple] = [5, 95],
+        levels: str | list[str] | None = None,
+        last_window: pd.DataFrame | None = None,
+        exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
+        interval: list[float] | tuple[float] = [5, 95],
         n_boot: int = 250,
         random_state: int = 123,
         use_in_sample_residuals: bool = True,
@@ -2373,34 +2484,34 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         ----------
         steps : int
             Number of future steps predicted.
-        levels : str, list, default `None`
+        levels : str, list, default None
             Time series to be predicted. If `None` all levels whose last window
             ends at the same datetime index will be predicted together.
-        last_window : pandas DataFrame, default `None`
+        last_window : pandas DataFrame, default None
             Series values used to create the predictors (lags) needed in the 
             first iteration of the prediction (t + 1).
             If `last_window = None`, the values stored in `self.last_window_` are
             used to calculate the initial predictors, and the predictions start
             right after training data.
-        exog : pandas Series, pandas DataFrame, dict, default `None`
+        exog : pandas Series, pandas DataFrame, dict, default None
             Exogenous variable/s included as predictor/s.
         interval : list, tuple, default `[5, 95]`
             Confidence of the prediction interval estimated. Sequence of 
             percentiles to compute, which must be between 0 and 100 inclusive. 
             For example, interval of 95% should be as `interval = [2.5, 97.5]`.
-        n_boot : int, default `250`
+        n_boot : int, default 250
             Number of bootstrapping iterations used to estimate prediction 
             intervals.
-        random_state : int, default `123`
+        random_state : int, default 123
             Sets a seed to the random generator, so that boot predictions are always 
             deterministic.
-        use_in_sample_residuals : bool, default `True`
+        use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
             prediction error to create predictions. If `False`, out of sample 
             residuals are used. In the latter case, the user should have
             calculated and stored the residuals within the forecaster (see
             `set_out_sample_residuals()`).
-        suppress_warnings : bool, default `False`
+        suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the prediction 
             process. See skforecast.exceptions.warn_skforecast_categories for more
             information.
@@ -2408,11 +2519,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         Returns
         -------
         predictions : pandas DataFrame
-            Values predicted by the forecaster and their estimated interval.
-
-            - level: predictions.
-            - level_lower_bound: lower bound of the interval.
-            - level_upper_bound: upper bound of the interval.
+            Long-format DataFrame with the predictions and the lower and upper
+            bounds of the estimated interval. The columns are `level`, `pred`,
+            `lower_bound`, `upper_bound`.
 
         Notes
         -----
@@ -2438,25 +2547,23 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                suppress_warnings       = suppress_warnings
                            )
         
-        preds = self.predict(
-                    steps             = steps,
-                    levels            = levels,
-                    last_window       = last_window,
-                    exog              = exog,
-                    suppress_warnings = suppress_warnings,
-                    check_inputs      = False
-                )
+        predictions = self.predict(
+                          steps             = steps,
+                          levels            = levels,
+                          last_window       = last_window,
+                          exog              = exog,
+                          suppress_warnings = suppress_warnings,
+                          check_inputs      = False
+                      )
 
         interval = np.array(interval) / 100
-        predictions = []
+        boot_predictions[['lower_bound', 'upper_bound']] = (
+            boot_predictions.iloc[:, 1:].quantile(q=interval, axis=1).transpose()
+        )
 
-        for level in preds.columns:
-            preds_interval = boot_predictions[level].quantile(q=interval, axis=1).transpose()
-            preds_interval.columns = [f'{level}_lower_bound', f'{level}_upper_bound']
-            predictions.append(preds[level])
-            predictions.append(preds_interval)
-
-        predictions = pd.concat(predictions, axis=1)
+        predictions = pd.concat([
+            predictions, boot_predictions[['lower_bound', 'upper_bound']]
+        ], axis=1)
         
         set_skforecast_warnings(suppress_warnings, action='default')
 
@@ -2466,10 +2573,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
     def predict_quantiles(
         self,
         steps: int,
-        levels: Optional[Union[str, list]] = None,
-        last_window: Optional[pd.DataFrame] = None,
-        exog: Optional[Union[pd.Series, pd.DataFrame, dict]] = None,
-        quantiles: Union[list, tuple] = [0.05, 0.5, 0.95],
+        levels: str | list[str] | None = None,
+        last_window: pd.DataFrame | None = None,
+        exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
+        quantiles: list[float] | tuple[float] = [0.05, 0.5, 0.95],
         n_boot: int = 250,
         random_state: int = 123,
         use_in_sample_residuals: bool = True,
@@ -2484,33 +2591,33 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         ----------
         steps : int
             Number of future steps predicted.
-        levels : str, list, default `None`
+        levels : str, list, default None
             Time series to be predicted. If `None` all levels whose last window
             ends at the same datetime index will be predicted together.
-        last_window : pandas DataFrame, default `None`
+        last_window : pandas DataFrame, default None
             Series values used to create the predictors (lags) needed in the 
             first iteration of the prediction (t + 1).
             If `last_window = None`, the values stored in `self.last_window_` are
             used to calculate the initial predictors, and the predictions start
             right after training data.
-        exog : pandas Series, pandas DataFrame, dict, default `None`
+        exog : pandas Series, pandas DataFrame, dict, default None
             Exogenous variable/s included as predictor/s.
         quantiles : list, tuple, default [0.05, 0.5, 0.95]
             Sequence of quantiles to compute, which must be between 0 and 1 
             inclusive. For example, quantiles of 0.05, 0.5 and 0.95 should be as 
             `quantiles = [0.05, 0.5, 0.95]`.
-        n_boot : int, default `250`
+        n_boot : int, default 250
             Number of bootstrapping iterations used to estimate quantiles.
-        random_state : int, default `123`
+        random_state : int, default 123
             Sets a seed to the random generator, so that boot quantiles are always 
             deterministic.
-        use_in_sample_residuals : bool, default `True`
+        use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
             prediction error to create quantiles. If `False`, out of sample 
             residuals are used. In the latter case, the user should have
             calculated and stored the residuals within the forecaster (see
             `set_out_sample_residuals()`).
-        suppress_warnings : bool, default `False`
+        suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the prediction 
             process. See skforecast.exceptions.warn_skforecast_categories for more
             information.
@@ -2518,7 +2625,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         Returns
         -------
         predictions : pandas DataFrame
-            Quantiles predicted by the forecaster.
+            Long-format DataFrame with the quantiles predicted by the forecaster.
+            For example, if `quantiles = [0.05, 0.5, 0.95]`, the columns are
+            `level`, `q_0.05`, `q_0.5`, `q_0.95`.
 
         Notes
         -----
@@ -2533,27 +2642,22 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         check_interval(quantiles=quantiles)
 
-        boot_predictions = self.predict_bootstrapping(
-                               steps                   = steps,
-                               levels                  = levels,
-                               last_window             = last_window,
-                               exog                    = exog,
-                               n_boot                  = n_boot,
-                               random_state            = random_state,
-                               use_in_sample_residuals = use_in_sample_residuals,
-                               suppress_warnings       = suppress_warnings
-                           )
-
-        predictions = []
-
-        for level in boot_predictions.keys():
-            preds_quantiles = (
-                boot_predictions[level].quantile(q=quantiles, axis=1).transpose()
-            )
-            preds_quantiles.columns = [f'{level}_q_{q}' for q in quantiles]
-            predictions.append(preds_quantiles)
-
-        predictions = pd.concat(predictions, axis=1)
+        predictions = self.predict_bootstrapping(
+                          steps                   = steps,
+                          levels                  = levels,
+                          last_window             = last_window,
+                          exog                    = exog,
+                          n_boot                  = n_boot,
+                          random_state            = random_state,
+                          use_in_sample_residuals = use_in_sample_residuals,
+                          suppress_warnings       = suppress_warnings
+                      )
+        
+        quantiles_cols = [f'q_{q}' for q in quantiles]
+        predictions[quantiles_cols] = (
+            predictions.iloc[:, 1:].quantile(q=quantiles, axis=1).transpose()
+        )
+        predictions = predictions[['level'] + quantiles_cols]
         
         set_skforecast_warnings(suppress_warnings, action='default')
 
@@ -2564,9 +2668,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self,
         steps: int,
         distribution: object,
-        levels: Optional[Union[str, list]] = None,
-        last_window: Optional[pd.DataFrame] = None,
-        exog: Optional[Union[pd.Series, pd.DataFrame, dict]] = None,
+        levels: str | list[str] | None = None,
+        last_window: pd.DataFrame | None = None,
+        exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
         n_boot: int = 250,
         random_state: int = 123,
         use_in_sample_residuals: bool = True,
@@ -2581,31 +2685,32 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         ----------
         steps : int
             Number of future steps predicted.
-        distribution : Object
-            A distribution object from scipy.stats. For example scipy.stats.norm.
-        levels : str, list, default `None`
+        distribution : object
+            A distribution object from scipy.stats with methods `_pdf` and `fit`. 
+            For example scipy.stats.norm.
+        levels : str, list, default None
             Time series to be predicted. If `None` all levels whose last window
             ends at the same datetime index will be predicted together.
-        last_window : pandas DataFrame, default `None`
+        last_window : pandas DataFrame, default None
             Series values used to create the predictors (lags) needed in the 
             first iteration of the prediction (t + 1).
             If `last_window = None`, the values stored in `self.last_window_` are
             used to calculate the initial predictors, and the predictions start
             right after training data.
-        exog : pandas Series, pandas DataFrame, dict, default `None`
+        exog : pandas Series, pandas DataFrame, dict, default None
             Exogenous variable/s included as predictor/s.
-        n_boot : int, default `250`
+        n_boot : int, default 250
             Number of bootstrapping iterations used to estimate predictions.
-        random_state : int, default `123`
+        random_state : int, default 123
             Sets a seed to the random generator, so that boot predictions are always 
             deterministic.
-        use_in_sample_residuals : bool, default `True`
+        use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
             prediction error to create predictions. If `False`, out of sample 
             residuals are used. In the latter case, the user should have
             calculated and stored the residuals within the forecaster (see
             `set_out_sample_residuals()`).
-        suppress_warnings : bool, default `False`
+        suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the prediction 
             process. See skforecast.exceptions.warn_skforecast_categories for more
             information.
@@ -2613,51 +2718,49 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         Returns
         -------
         predictions : pandas DataFrame
-            Distribution parameters estimated for each step and level.
+            Long-format DataFrame with the parameters of the fitted distribution
+            for each step. The columns are `level`, `param_0`, `param_1`, ..., 
+            `param_n`, where `param_i` are the parameters of the distribution.
 
         """
 
+        if not hasattr(distribution, "_pdf") or not callable(getattr(distribution, "fit", None)):
+            raise TypeError(
+                "`distribution` must be a valid probability distribution object "
+                "from scipy.stats, with methods `_pdf` and `fit`."
+            )
+
         set_skforecast_warnings(suppress_warnings, action='ignore')
 
-        boot_samples = self.predict_bootstrapping(
-                           steps                   = steps,
-                           levels                  = levels,
-                           last_window             = last_window,
-                           exog                    = exog,
-                           n_boot                  = n_boot,
-                           random_state            = random_state,
-                           use_in_sample_residuals = use_in_sample_residuals,
-                           suppress_warnings       = suppress_warnings
-                       )
+        predictions = self.predict_bootstrapping(
+                          steps                   = steps,
+                          levels                  = levels,
+                          last_window             = last_window,
+                          exog                    = exog,
+                          n_boot                  = n_boot,
+                          random_state            = random_state,
+                          use_in_sample_residuals = use_in_sample_residuals,
+                          suppress_warnings       = suppress_warnings
+                      )
 
         param_names = [
             p for p in inspect.signature(distribution._pdf).parameters if not p == "x"
         ] + ["loc", "scale"]
-        predictions = []
 
-        for level in boot_samples.keys():
-            param_values = np.apply_along_axis(
-                lambda x: distribution.fit(x), axis=1, arr=boot_samples[level]
+        predictions[param_names] = (
+            predictions.iloc[:, 1:].apply(
+                lambda x: distribution.fit(x), axis=1, result_type='expand'
             )
-            level_param_names = [f'{level}_{p}' for p in param_names]
+        )
+        predictions = predictions[['level'] + param_names]
 
-            pred_level = pd.DataFrame(
-                             data    = param_values,
-                             columns = level_param_names,
-                             index   = boot_samples[level].index
-                         )
-
-            predictions.append(pred_level)
-
-        predictions = pd.concat(predictions, axis=1)
-        
         set_skforecast_warnings(suppress_warnings, action='default')
 
         return predictions
 
     def set_params(
         self, 
-        params: dict
+        params: dict[str, object]
     ) -> None:
         """
         Set new values to the parameters of the scikit learn model stored in the
@@ -2679,7 +2782,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
     def set_fit_kwargs(
         self, 
-        fit_kwargs: dict
+        fit_kwargs: dict[str, object]
     ) -> None:
         """
         Set new values for the additional keyword arguments passed to the `fit` 
@@ -2700,7 +2803,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
     def set_lags(
         self, 
-        lags: Optional[Union[int, list, np.ndarray, range]] = None
+        lags: int | list[int] | np.ndarray[int] | range[int] | None = None
     ) -> None:
         """
         Set new value to the attribute `lags`. Attributes `lags_names`, 
@@ -2708,7 +2811,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         
         Parameters
         ----------
-        lags : int, list, numpy ndarray, range, default `None`
+        lags : int, list, numpy ndarray, range, default None
             Lags used as predictors. Index starts at 1, so lag 1 is equal to t-1. 
         
             - `int`: include lags from 1 to `lags` (included).
@@ -2734,13 +2837,19 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             [ws for ws in [self.max_lag, self.max_size_window_features] 
              if ws is not None]
         )
+        
         if self.differentiation is not None:
-            self.window_size += self.differentiation
-            self.differentiator.set_params(window_size=self.window_size)
+            self.window_size += self.differentiation_max
+            if isinstance(self.differentiator, dict):
+                for series in self.differentiator.keys():
+                    if self.differentiator[series] is not None:
+                        self.differentiator[series].set_params(window_size=self.window_size)
+            else:
+                self.differentiator.set_params(window_size=self.window_size)
 
     def set_window_features(
         self, 
-        window_features: Optional[Union[object, list]] = None
+        window_features: object | list[object] | None = None
     ) -> None:
         """
         Set new value to the attribute `window_features`. Attributes 
@@ -2749,7 +2858,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         
         Parameters
         ----------
-        window_features : object, list, default `None`
+        window_features : object, list, default None
             Instance or list of instances used to create window features. Window features
             are created from the original time series and are included as predictors.
 
@@ -2778,14 +2887,20 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             [ws for ws in [self.max_lag, self.max_size_window_features] 
              if ws is not None]
         )
+
         if self.differentiation is not None:
-            self.window_size += self.differentiation
-            self.differentiator.set_params(window_size=self.window_size)
+            self.window_size += self.differentiation_max
+            if isinstance(self.differentiator, dict):
+                for series in self.differentiator.keys():
+                    if self.differentiator[series] is not None:
+                        self.differentiator[series].set_params(window_size=self.window_size)
+            else:
+                self.differentiator.set_params(window_size=self.window_size)
 
     def set_out_sample_residuals(
         self, 
-        y_true: dict,
-        y_pred: dict,
+        y_true: dict[int, np.ndarray | pd.Series],
+        y_pred: dict[int, np.ndarray | pd.Series],
         append: bool = True,
         random_state: int = 123
     ) -> None:
@@ -2805,22 +2920,27 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         Parameters
         ----------
         y_true : dict
-            Dictionary of numpy ndarrays or pandas series with the true values of
+            Dictionary of numpy ndarrays or pandas Series with the true values of
             the time series for each series in the form {series: y_true}.
         y_pred : dict
-            Dictionary of numpy ndarrays or pandas series with the predicted values
+            Dictionary of numpy ndarrays or pandas Series with the predicted values
             of the time series for each series in the form {series: y_pred}.
-        append : bool, default `False`
+        append : bool, default False
             If `True`, new residuals are added to the once already stored in the
             attribute `out_sample_residuals_`. If after appending the new residuals,
             the limit of 10_000 samples is exceeded, a random sample of 10_000 is
             kept.
-        random_state : int, default `123`
+        random_state : int, default 123
             Sets a seed to the random sampling for reproducible output.
         
         Returns
         -------
         None
+
+        Notes
+        -----
+        Out-of-sample residuals can only be stored for series seen during 
+        fit. To save residuals for unseen levels use the key '_unknown_level'. 
 
         """
 
@@ -2871,13 +2991,16 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                         f"`y_pred` must have the same index. Error with series '{k}'."
                     )
 
-        levels = self.series_names_in_ + ['_unknown_level']
-        if self.out_sample_residuals_ is None and self.encoding is not None:
-            self.out_sample_residuals_ = {level: None for level in levels}
-        elif self.out_sample_residuals_ is None:
-            self.out_sample_residuals_ = {'_unknown_level': None}
+        # NOTE: Out-of-sample residuals can only be stored for series seen during 
+        # fit. To save residuals for unseen levels use the key '_unknown_level'. 
+        series_names_in_ = self.series_names_in_ + ['_unknown_level']        
+        if self.out_sample_residuals_ is None:
+            if self.encoding is not None:
+                self.out_sample_residuals_ = {level: None for level in series_names_in_}
+            else:
+                self.out_sample_residuals_ = {'_unknown_level': None}
     
-        series_to_update = set(y_pred.keys()).intersection(set(levels))
+        series_to_update = set(y_pred.keys()).intersection(set(series_names_in_))
         if not series_to_update:
             raise ValueError(
                 "Provided keys in `y_pred` and `y_true` do not match any series "
@@ -2888,9 +3011,20 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         rng = np.random.default_rng(seed=random_state)
         y_true = y_true.copy()
         y_pred = y_pred.copy()
+        
         if self.differentiation is not None:
-            differentiator = copy(self.differentiator)
-            differentiator.set_params(window_size=None)
+            differentiator_ = {
+                series: copy(
+                    self.differentiator_.get(
+                        series, self.differentiator_["_unknown_level"]
+                    )
+                )
+                for series in series_to_update
+            }
+
+            for k in series_to_update:
+                if differentiator_[k] is not None:
+                    differentiator_[k].set_params(window_size=None)
 
         for k in series_to_update:
             if isinstance(y_true[k], pd.Series):
@@ -2910,9 +3044,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                 fit               = False,
                                 inverse_transform = False
                             )
+            
             if self.differentiation is not None:
-                y_true[k] = differentiator.fit_transform(y_true[k])[self.differentiation:]
-                y_pred[k] = differentiator.fit_transform(y_pred[k])[self.differentiation:]
+                differentiator = differentiator_[k]
+                if differentiator is not None:
+                    y_true[k] = differentiator.fit_transform(y_true[k])[differentiator.order:]
+                    y_pred[k] = differentiator.fit_transform(y_pred[k])[differentiator.order:]
 
             residuals[k] = y_true[k] - y_pred[k]
 
@@ -2949,7 +3086,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         Parameters
         ----------
-        sort_importance: bool, default `True`
+        sort_importance: bool, default True
             If `True`, sorts the feature importances in descending order.
 
         Returns

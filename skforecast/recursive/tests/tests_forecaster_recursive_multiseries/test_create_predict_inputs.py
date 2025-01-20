@@ -368,7 +368,10 @@ def test_create_predict_inputs_output_when_series_and_exog_dict():
     assert results[4] == expected[4]
 
 
-def test_create_predict_inputs_output_when_regressor_is_LinearRegression_with_exog_differentiation_is_1_and_transformer_series():
+@pytest.mark.parametrize("differentiation", 
+                         [1, {'1': 1, '2': 1, '_unknown_level': 1}], 
+                         ids = lambda diff: f'differentiation: {diff}')
+def test_create_predict_inputs_output_when_regressor_is_LinearRegression_with_exog_differentiation_is_1_and_transformer_series(differentiation):
     """
     Test _create_predict_inputs output when using LinearRegression as regressor and differentiation=1,
     and transformer_series is StandardScaler.
@@ -404,7 +407,7 @@ def test_create_predict_inputs_output_when_regressor_is_LinearRegression_with_ex
                      regressor          = LinearRegression(), 
                      lags               = 15, 
                      transformer_series = StandardScaler(),    
-                     differentiation    = 1
+                     differentiation    = differentiation
                  )
     forecaster.fit(series=series_dict_datetime, exog=exog_dict_datetime)
     results = forecaster._create_predict_inputs(
@@ -474,8 +477,8 @@ def test_create_predict_inputs_output_when_regressor_is_LinearRegression_with_ex
                         -0.16591436,  0.61386783,  0.49003355,  0.32481062, -0.050827  ,
                         -0.46246282, -0.20198051, -0.22783566,  0.43875451]),
          '2': np.array([-0.11905336, -0.96448195,  0.20875269,  0.7334418 , -0.45287812,
-                        0.20410656,  0.27482526,  0.12415931, -1.10570249, -0.08341689,
-                        0.83327134,  0.37868888, -0.69352672,  0.66181368])}
+                         0.20410656,  0.27482526,  0.12415931, -1.10570249, -0.08341689,
+                         0.83327134,  0.37868888, -0.69352672,  0.66181368])}
     )
 
     pd.testing.assert_frame_equal(results[0], expected[0])
@@ -487,7 +490,10 @@ def test_create_predict_inputs_output_when_regressor_is_LinearRegression_with_ex
         np.testing.assert_array_almost_equal(results[4][k], expected[4][k])
 
 
-def test_create_predict_inputs_output_when_series_and_exog_dict_unknown_level():
+@pytest.mark.parametrize("levels", 
+                         [None, ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']], 
+                         ids = lambda levels: f'levels: {levels}')
+def test_create_predict_inputs_output_when_series_and_exog_dict_unknown_level(levels):
     """
     Test output ForecasterRecursiveMultiSeries _create_predict_inputs method when 
     series and exog are dictionaries and unknown level.
@@ -505,9 +511,10 @@ def test_create_predict_inputs_output_when_series_and_exog_dict_unknown_level():
     forecaster.fit(
         series=series_dict_train, exog=exog_dict_train, suppress_warnings=True
     )
-    levels = ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']
+
+    series_to_predict = ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']
     last_window = pd.DataFrame(
-        {k: v for k, v in forecaster.last_window_.items() if k in levels}
+        {k: v for k, v in forecaster.last_window_.items() if k in series_to_predict}
     )
     last_window['id_1005'] = last_window['id_1004']
     exog_dict_test_2 = exog_dict_test.copy()
@@ -564,7 +571,10 @@ def test_create_predict_inputs_output_when_series_and_exog_dict_unknown_level():
     assert results[4] == expected[4]
 
 
-def test_create_predict_inputs_output_when_series_and_exog_dict_unknown_level_encoding_None():
+@pytest.mark.parametrize("levels", 
+                         [None, ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']], 
+                         ids = lambda levels: f'levels: {levels}')
+def test_create_predict_inputs_output_when_series_and_exog_dict_unknown_level_encoding_None(levels):
     """
     Test output ForecasterRecursiveMultiSeries _create_predict_inputs method when 
     series and exog are dictionaries and unknown level with encoding=None.
@@ -582,9 +592,10 @@ def test_create_predict_inputs_output_when_series_and_exog_dict_unknown_level_en
     forecaster.fit(
         series=series_dict_train, exog=exog_dict_train, suppress_warnings=True
     )
-    levels = ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']
+
+    series_to_predict = ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']
     last_window = pd.DataFrame(
-        {k: v for k, v in forecaster.last_window_.items() if k in levels}
+        {k: v for k, v in forecaster.last_window_.items() if k in series_to_predict}
     )
     last_window['id_1005'] = last_window['id_1004']
     results = forecaster._create_predict_inputs(

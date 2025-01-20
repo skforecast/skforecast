@@ -3,10 +3,9 @@
 import re
 import pytest
 import numpy as np
-import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
-from ....preprocessing import RollingFeatures
+from ....preprocessing import RollingFeatures, TimeSeriesDifferentiator
 from ....recursive import ForecasterRecursiveMultiSeries
 
 
@@ -63,41 +62,6 @@ def test_init_window_size_correctly_stored(lags, window_features, expected):
     else:
         assert forecaster.window_features_names is None
         assert forecaster.window_features_class_names is None
-
-
-@pytest.mark.parametrize("dif", 
-                         [0, 0.5, 1.5, 'not_int'], 
-                         ids = lambda dif: f'differentiation: {dif}')
-def test_init_ValueError_when_differentiation_argument_is_not_int_or_greater_than_0(dif):
-    """
-    Test ValueError is raised when differentiation is not an int or greater than 0.
-    """
-    err_msg = re.escape(
-        f"Argument `differentiation` must be an integer equal to or "
-        f"greater than 1. Got {dif}."
-    )
-    with pytest.raises(ValueError, match = err_msg):
-        ForecasterRecursiveMultiSeries(
-            regressor       = LinearRegression(),
-            lags            = 5,
-            differentiation = dif
-        )
-
-
-@pytest.mark.parametrize("dif", 
-                         [1, 2], 
-                         ids = lambda dif: f'differentiation: {dif}')
-def test_init_window_size_is_increased_when_differentiation(dif):
-    """
-    Test window_size is increased when including differentiation.
-    """
-    forecaster = ForecasterRecursiveMultiSeries(
-                     regressor       = LinearRegression(),
-                     lags            = 5,
-                     differentiation = dif
-                 )
-    
-    assert forecaster.window_size == 5 + dif
 
 
 def test_init_ValueError_invalid_encoding():
@@ -173,3 +137,168 @@ def test_init_ValueError_transformer_series_dict_with_no_unknown_level():
             encoding           = 'ordinal',
             transformer_series = {'1': StandardScaler()}
         )
+
+
+@pytest.mark.parametrize("diff", 
+                         [1.5, 'not_int_dict'], 
+                         ids = lambda diff: f'differentiation: {diff}')
+def test_init_TypeError_when_differentiation_argument_is_not_int_or_dict(diff):
+    """
+    Test TypeError is raised when differentiation is not an int or dict.
+    """
+    err_msg = re.escape(
+        f"When including `differentiation`, this argument must be "
+        f"an integer (equal to or greater than 1) or a dict of "
+        f"integers. Got {type(diff)}."
+    )
+    with pytest.raises(TypeError, match = err_msg):
+        ForecasterRecursiveMultiSeries(
+            regressor       = LinearRegression(),
+            lags            = 5,
+            differentiation = diff
+        )
+
+
+@pytest.mark.parametrize("diff", 
+                         [-1, 0], 
+                         ids = lambda diff: f'differentiation: {diff}')
+def test_init_ValueError_when_differentiation_is_int_but_not_greater_than_0(diff):
+    """
+    Test ValueError is raised when differentiation is an int not greater than 0.
+    """
+    err_msg = re.escape(
+        f"If `differentiation` is an integer, it must be equal "
+        f"to or greater than 1. Got {diff}."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        ForecasterRecursiveMultiSeries(
+            regressor       = LinearRegression(),
+            lags            = 5,
+            differentiation = diff
+        )
+
+
+@pytest.mark.parametrize("diff", 
+                         [1, 2], 
+                         ids = lambda diff: f'differentiation: {diff}')
+def test_init_when_differentiation_is_integer(diff):
+    """
+    Test differentiation is correctly stored when it is an integer.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     regressor       = LinearRegression(),
+                     lags            = 5,
+                     differentiation = diff
+                 )
+    
+    assert forecaster.differentiation == diff
+    assert forecaster.differentiation_max == diff
+    assert forecaster.window_size == 5 + diff
+    assert isinstance(forecaster.differentiator, TimeSeriesDifferentiator)
+
+
+def test_init_TypeError_when_differentiation_is_dict_with_encoding_None():
+    """
+    Test TypeError is raised when differentiation is a dict but encoding is None.
+    """
+    err_msg = re.escape(
+        "When `encoding` is None, `differentiation` must be an "
+        "integer equal to or greater than 1. Same differentiation "
+        "must be applied to all series."
+    )
+    with pytest.raises(TypeError, match = err_msg):
+        ForecasterRecursiveMultiSeries(
+            regressor       = LinearRegression(),
+            lags            = 5,
+            encoding        = None,
+            differentiation = {'l1': 1, 'l2': 1, '_unknown_level': 1}
+        )
+
+
+def test_init_ValueError_when_differentiation_is_dict_with_no_unknown_level():
+    """
+    Test ValueError is raised when differentiation is a dict but encoding is None.
+    """
+    err_msg = re.escape(
+        "If `differentiation` is a `dict`, an order must be provided "
+        "to differentiate series that do not exist during training. "
+        "Add the key '_unknown_level' to `differentiation`. "
+        "For example: {'_unknown_level': 1}."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        ForecasterRecursiveMultiSeries(
+            regressor       = LinearRegression(),
+            lags            = 5,
+            encoding        = 'ordinal',
+            differentiation = {'l1': 1, 'l2': 1}
+        )
+
+
+@pytest.mark.parametrize("diff", 
+                         [{'l1': 1, 'l2': 'not_int', '_unknown_level': 1}, 
+                          {'l1': None, 'l2': 0, '_unknown_level': 1}], 
+                         ids = lambda diff: f'differentiation: {diff}')
+def test_init_ValueError_when_differentiation_is_dict_with_int_not_greater_than_0(diff):
+    """
+    Test ValueError is raised when differentiation is a dict containing 
+    integers not greater than 0 or not None.
+    """
+    err_msg = re.escape(
+        f"If `differentiation` is a dict, the values must be "
+        f"None or integers equal to or greater than 1. "
+        f"Got {diff['l2']} for series 'l2'."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        ForecasterRecursiveMultiSeries(
+            regressor       = LinearRegression(),
+            lags            = 5,
+            differentiation = diff
+        )
+
+
+def test_init_ValueError_when_differentiation_is_dict_with_all_None():
+    """
+    Test ValueError is raised when differentiation is a dict with all values None.
+    """
+    err_msg = re.escape(
+        "If `differentiation` is a dict, at least one value must be "
+        "different from None. Got all values equal to None. If you "
+        "do not want to differentiate any series, set `differentiation` "
+        "to None."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        ForecasterRecursiveMultiSeries(
+            regressor       = LinearRegression(),
+            lags            = 5,
+            differentiation = {'l1': None, 'l2': None, '_unknown_level': None}
+        )
+
+
+@pytest.mark.parametrize("diff", 
+                         [{'l1': 1, 'l2': 2, '_unknown_level': 1}, 
+                          {'l1': None, 'l2': 1, '_unknown_level': 1}], 
+                         ids = lambda diff: f'differentiation: {diff}')
+def test_init_when_differentiation_is_dict(diff):
+    """
+    Test differentiation is correctly stored when it is a dict.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     regressor       = LinearRegression(),
+                     lags            = 5,
+                     differentiation = diff
+                 )
+    
+    if diff['l1']:
+        assert forecaster.differentiation == {'l1': 1, 'l2': 2, '_unknown_level': 1}
+        assert forecaster.differentiation_max == 2
+        assert forecaster.window_size == 5 + 2
+        assert isinstance(forecaster.differentiator['l1'], TimeSeriesDifferentiator)
+        assert isinstance(forecaster.differentiator['l2'], TimeSeriesDifferentiator)
+        assert isinstance(forecaster.differentiator['_unknown_level'], TimeSeriesDifferentiator)
+    else:
+        assert forecaster.differentiation == {'l1': None, 'l2': 1, '_unknown_level': 1}
+        assert forecaster.differentiation_max == 1
+        assert forecaster.window_size == 5 + 1
+        assert forecaster.differentiator['l1'] is None
+        assert isinstance(forecaster.differentiator['l2'], TimeSeriesDifferentiator)
+        assert isinstance(forecaster.differentiator['_unknown_level'], TimeSeriesDifferentiator)

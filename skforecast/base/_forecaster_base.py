@@ -5,10 +5,11 @@
 ################################################################################
 # coding=utf-8
 
+from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing import Union, Tuple, Optional
 import uuid
 import textwrap
+import numpy as np
 import pandas as pd
 from sklearn.pipeline import Pipeline
 
@@ -22,11 +23,11 @@ class ForecasterBase(ABC):
     def _preprocess_repr(
         self,
         regressor: object,
-        training_range_: Optional[dict] = None,
-        series_names_in_: Optional[list] = None,
-        exog_names_in_: Optional[list] = None,
-        transformer_series: Optional[Union[str, dict]] = None
-    ) -> Tuple[str, Optional[str], Optional[str], Optional[str], Optional[Union[str, object]]]:
+        training_range_: dict[str, str] | None = None,
+        series_names_in_: list[str] | None = None,
+        exog_names_in_: list[str] | None = None,
+        transformer_series: object | dict[str, object] | None = None
+    ) -> tuple[str, str | None, str | None, str | None, str | None]:
         """
         Prepare the information to be displayed when a Forecaster object is printed.
 
@@ -34,13 +35,26 @@ class ForecasterBase(ABC):
         ----------
         regressor : object
             Regressor object.
-        training_range_ : dict, default `None`
+        training_range_ : dict, default None
             Training range. Only used for `ForecasterRecursiveMultiSeries`.
-        series_names_in_ : list, default `None`
+        series_names_in_ : list, default None
             Names of the series used in the forecaster. Only used for `ForecasterRecursiveMultiSeries`.
-        exog_names_in_ : list, default `None`
+        exog_names_in_ : list, default None
             Names of the exogenous variables used in the forecaster.
-        transformer_series : str, dict, default `None`
+        transformer_series : object, dict, default None
+            Transformer used in the series. Only used for `ForecasterRecursiveMultiSeries`.
+
+        Returns
+        -------
+        params : str
+            Parameters of the regressor.
+        training_range_ : str, None
+            Training range. Only used for `ForecasterRecursiveMultiSeries`.
+        series_names_in_ : str, None
+            Names of the series used in the forecaster. Only used for `ForecasterRecursiveMultiSeries`.
+        exog_names_in_ : str, None
+            Names of the exogenous variables used in the forecaster.
+        transformer_series : str, None
             Transformer used in the series. Only used for `ForecasterRecursiveMultiSeries`.
         
         """
@@ -100,11 +114,11 @@ class ForecasterBase(ABC):
         ----------
         text : str
             Text to format.
-        max_text_length : int, default `58`
+        max_text_length : int, default 58
             Maximum length of the text before wrapping.
-        width : int, default `80`
+        width : int, default 80
             Maximum width of the text.
-        indent : str, default `"    "`
+        indent : str, default "    "
             Indentation of the text.
         
         Returns
@@ -124,7 +138,7 @@ class ForecasterBase(ABC):
     def _get_style_repr_html(
         self, 
         is_fitted: bool
-    ) -> Tuple[str, str]:
+    ) -> tuple[str, str]:
         """
         Return style and unique_id for HTML representation.
 
@@ -219,8 +233,8 @@ class ForecasterBase(ABC):
     def create_train_X_y(
         self,
         y: pd.Series,
-        exog: Optional[Union[pd.Series, pd.DataFrame]] = None
-    ) -> Tuple[pd.DataFrame, pd.Series]:
+        exog: pd.Series | pd.DataFrame | None = None
+    ) -> tuple[pd.DataFrame, pd.Series]:
         """
         Create training matrices from univariate time series and exogenous
         variables.
@@ -229,7 +243,7 @@ class ForecasterBase(ABC):
         ----------
         y : pandas Series
             Training time series.
-        exog : pandas Series, pandas DataFrame, default `None`
+        exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s. Must have the same
             number of observations as `y` and their indexes must be aligned.
 
@@ -250,7 +264,7 @@ class ForecasterBase(ABC):
     def fit(
         self,
         y: pd.Series,
-        exog: Optional[Union[pd.Series, pd.DataFrame]] = None
+        exog: pd.Series | pd.DataFrame | None = None
     ) -> None:
         """
         Training Forecaster.
@@ -259,7 +273,7 @@ class ForecasterBase(ABC):
         ----------
         y : pandas Series
             Training time series.
-        exog : pandas Series, pandas DataFrame, default `None`
+        exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s. Must have the same
             number of observations as `y` and their indexes must be aligned so
             that y[i] is regressed on exog[i].
@@ -276,8 +290,8 @@ class ForecasterBase(ABC):
     def predict(
         self,
         steps: int,
-        last_window: Optional[pd.Series] = None,
-        exog: Optional[Union[pd.Series, pd.DataFrame]] = None
+        last_window: pd.Series | pd.DataFrame | None = None,
+        exog: pd.Series | pd.DataFrame | None = None
     ) -> pd.Series:
         """
         Predict n steps ahead.
@@ -286,13 +300,13 @@ class ForecasterBase(ABC):
         ----------
         steps : int
             Number of future steps predicted.
-        last_window : pandas Series, default `None`
+        last_window : pandas Series, pandas DataFrame, default None
             Series values used to create the predictors (lags) needed in the 
             first iteration of the prediction (t + 1).
             If `last_window = None`, the values stored in `self.last_window` are
             used to calculate the initial predictors, and the predictions start
             right after training data.
-        exog : pandas Series, pandas DataFrame, default `None`
+        exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
 
         Returns
@@ -305,7 +319,7 @@ class ForecasterBase(ABC):
         pass
         
     @abstractmethod
-    def set_params(self, params: dict) -> None:
+    def set_params(self, params: dict[str, object]) -> None:
         """
         Set new values to the parameters of the scikit learn model stored in the
         forecaster.
@@ -323,19 +337,23 @@ class ForecasterBase(ABC):
         
         pass
         
-    def set_lags(self, lags: int) -> None:
+    def set_lags(
+        self, 
+        lags: int | list[int] | np.ndarray[int] | range[int] | None = None
+    ) -> None:
         """
         Set new value to the attribute `lags`.
         Attributes `max_lag` and `window_size` are also updated.
         
         Parameters
         ----------
-        lags : int, list, numpy ndarray, range
-            Lags used as predictors. Index starts at 1, so lag 1 is equal to t-1.
-
+        lags : int, list, numpy ndarray, range, default None
+            Lags used as predictors. Index starts at 1, so lag 1 is equal to t-1. 
+        
             - `int`: include lags from 1 to `lags` (included).
             - `list`, `1d numpy ndarray` or `range`: include only lags present in 
             `lags`, all elements must be int.
+            - `None`: no lags are included as predictors. 
 
         Returns
         -------
@@ -343,6 +361,29 @@ class ForecasterBase(ABC):
         
         """
         
+        pass
+
+    def set_window_features(
+        self, 
+        window_features: object | list[object] | None = None
+    ) -> None:
+        """
+        Set new value to the attribute `window_features`. Attributes 
+        `max_size_window_features`, `window_features_names`, 
+        `window_features_class_names` and `window_size` are also updated.
+        
+        Parameters
+        ----------
+        window_features : object, list, default None
+            Instance or list of instances used to create window features. Window features
+            are created from the original time series and are included as predictors.
+
+        Returns
+        -------
+        None
+        
+        """
+
         pass
 
     def summary(self) -> None:

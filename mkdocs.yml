@@ -7,7 +7,7 @@ remote_branch: docs_dev
 site_description: Python library for time series forecasting using machine learning models. It works with any regressor compatible with the scikit-learn API, including popular options like LightGBM, XGBoost, CatBoost, Keras, and many others.
 site_author: Joaquin Amat Rodrigo and Javier Escobar Ortiz
 use_directory_urls: false
-copyright: Copyright &copy; 2021 - 2024 Joaquín Amat Rodrigo, Javier Escobar Ortiz
+copyright: Copyright &copy; 2021 - 2030 Joaquín Amat Rodrigo, Javier Escobar Ortiz
 
 nav:
   - Home: 
@@ -31,7 +31,7 @@ nav:
       - Recursive multi-step forecasting: user_guides/autoregresive-forecaster.ipynb
       - Direct multi-step forecasting: user_guides/direct-multi-step-forecasting.ipynb
       - ARIMA and SARIMAX forecasting: user_guides/forecasting-sarimax-arima.ipynb
-      - Foreasting baseline: user_guides/forecasting-baseline.ipynb
+      - Forecasting baseline: user_guides/forecasting-baseline.ipynb
     - Global Forecasters (multiple series):
       - Independent multi-time series forecasting: user_guides/independent-multi-time-series-forecasting.ipynb
       - Series with different lengths and different exogenous variables: user_guides/multi-series-with-different-length-and-different_exog.ipynb
@@ -45,6 +45,7 @@ nav:
       - Data transformation: user_guides/sklearn-transformers-and-pipeline.ipynb
       - Differentiation: user_guides/time-series-differentiation.ipynb
       - Feature selection: user_guides/feature-selection.ipynb
+      - Sktime pipelines: user_guides/sktime-pipelines.ipynb
     - Model Evaluation and Tuning:
       - Metrics: user_guides/metrics.ipynb
       - Backtesting forecaster: user_guides/backtesting.ipynb
@@ -78,14 +79,17 @@ nav:
     - Spanish: examples/examples_spanish.md
 
   - API Reference:
-    - ForecasterRecursive: api/ForecasterRecursive.md
-    - ForecasterDirect: api/ForecasterDirect.md
-    - ForecasterRecursiveMultiSeries: api/ForecasterRecursiveMultiSeries.md
-    - ForecasterDirectMultiVariate: api/ForecasterDirectMultiVariate.md
-    - ForecasterRnn: api/ForecasterRnn.md
+    - recursive:
+      - ForecasterRecursive: api/ForecasterRecursive.md
+      - ForecasterRecursiveMultiSeries: api/ForecasterRecursiveMultiSeries.md
+      - ForecasterSarimax: api/ForecasterSarimax.md
+      - ForecasterEquivalentDate: api/ForecasterEquivalentDate.md
+    - direct:
+      - ForecasterDirect: api/ForecasterDirect.md
+      - ForecasterDirectMultiVariate: api/ForecasterDirectMultiVariate.md
+    - deep_learning:
+      - ForecasterRnn: api/ForecasterRnn.md
     - sarimax: api/Sarimax.md
-    - ForecasterSarimax: api/ForecasterSarimax.md
-    - ForecasterEquivalentDate: api/ForecasterEquivalentDate.md
     - model_selection: api/model_selection.md
     - feature_selection: api/feature_selection.md
     - preprocessing: api/preprocessing.md
@@ -103,6 +107,7 @@ nav:
     - Backtesting vs One-step-ahead: faq/parameters-search-backtesting-vs-one-step-ahead.ipynb
     - Cyclical features in time series: faq/cyclical-features-time-series.ipynb
     - Time series aggregation: faq/time-series-aggregation.ipynb
+    - Continuous Ranked Probability Score (CRPS): faq/probabilistic-forecasting-crps-score.ipynb
     - Parallelization in skforecast: faq/parallelization-skforecast.ipynb
     - Profiling skforecast: faq/profiling-skforecast.ipynb
 
@@ -122,33 +127,34 @@ plugins:
           options:
             docstring_style: numpy
             docstring_section_style: table
-            show_root_heading: true
-            show_root_full_path: true
-            merge_init_into_class: true
-            show_symbol_type_heading: false
-            separate_signature: true
-            show_signature_annotations: false
-            summary: true
-            filters: ["!__"] # exclude all members starting with __
-            members_order: source
             docstring_options:
               ignore_init_summary: true
               show_if_no_docstring: true
+            filters: ["!__"] # exclude all members starting with __
+            members_order: source
+            merge_init_into_class: true
+            render_references: true
+            separate_signature: true
+            show_root_full_path: true
+            show_root_heading: true
+            show_signature_annotations: false
+            show_symbol_type_heading: false
+            summary: true
   - mkdocs-jupyter:
-      ignore_h1_titles: True
-      include_source: True
-      execute: False
       allow_errors: False
+      execute: False
+      ignore_h1_titles: True
       include_requirejs: True
-  - search
+      include_source: True
   - mike:
       alias_type: redirect
-      redirect_template: null
-      deploy_prefix: ''
       canonical_version: null
-      version_selector: true
       css_dir: css
+      deploy_prefix: ''
       javascript_dir: js
+      redirect_template: null
+      version_selector: true
+  - search
 
 theme:
   name: material

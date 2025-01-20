@@ -35,8 +35,8 @@ def test_predict_NotFittedError_when_fitted_is_False():
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
 
     err_msg = re.escape(
-        ("This Forecaster instance is not fitted yet. Call `fit` with "
-         "appropriate arguments before using predict.")
+        "This Forecaster instance is not fitted yet. Call `fit` with "
+        "appropriate arguments before using predict."
     )
     with pytest.raises(NotFittedError, match = err_msg):
         forecaster.predict(steps=5)

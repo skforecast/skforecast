@@ -4,7 +4,9 @@
 
 Skforecast is a community-driven open-source project that relies on contributions from people like you. Every contribution, no matter how big or small, can make a significant impact on the project. Even if you've never contributed to an open-source project before, don't worry! Skforecast is a great place to start. Your help will be appreciated and welcomed with gratitude.
 
-Primarily, skforecast development consists of adding and creating new *Forecasters*, new validation strategies, or improving the performance of the current code. However, there are many other ways to contribute:
+### Ways to Contribute
+
+Primarily, **Skforecast** development focuses on adding new *Forecasters*, creating new validation strategies, or improving the performance of the current code. However, there are many other ways to contribute:
 
 - Submit a bug report or feature request on [GitHub Issues](https://github.com/skforecast/skforecast/issues).
 - Contribute a Jupyter notebook to our [examples](https://skforecast.org/latest/examples/examples_english.html).
@@ -13,17 +15,21 @@ Primarily, skforecast development consists of adding and creating new *Forecaste
 - Translate our documentation into another language.
 - Write a blog post, tweet, or share our project with others.
 
-As you can see, there are lots of ways to get involved and we would be very happy for you to join us! Before you start, please open an issue with a brief proposal description so we can align.
+### Before You Start
 
-Visit our [authors section](https://skforecast.org/latest/authors/authors.html) to meet all the contributors to skforecast.
+To make sure we are aligned, please **open an issue** with a brief description of your proposed contribution. Once you are ready to proceed, you must read and agree to the [**Contributor License Agreement**](./CONTRIBUTOR_LICENSE_AGREEMENT.md).
+
+We are excited to have you involved in this project!
+
+Visit our [authors section](https://skforecast.org/latest/authors/authors.html) to meet all the contributors to **Skforecast**.
 
 
 ## Testing
 
-To run the test suite, first install the testing dependencies that are located in the main folder:
+To run the test suite, first install the test dependencies, which are located in the `pyproject.toml` file under the `test` label:
 
 ```bash
-$ pip install -r requirements_test.txt
+$ pip install -r skforecast[test]
 ```
 
 All unit tests can be run at once as follows from the root of the project:
@@ -54,31 +60,31 @@ class ForecasterRecursive(ForecasterBase):
     ----------
     regressor : regressor or pipeline compatible with the scikit-learn API
         An instance of a regressor or pipeline compatible with the scikit-learn API.
-    lags : int, list, numpy ndarray, range, default `None`
+    lags : int, list, numpy ndarray, range, default None
         Lags used as predictors. Index starts at 1, so lag 1 is equal to t-1.
     
         - `int`: include lags from 1 to `lags` (included).
         - `list`, `1d numpy ndarray` or `range`: include only lags present in 
         `lags`, all elements must be int.
         - `None`: no lags are included as predictors. 
-    window_features : object, list, default `None`
+    window_features : object, list, default None
         Instance or list of instances used to create window features. Window features
         are created from the original time series and are included as predictors.
-    transformer_y : object transformer (preprocessor), default `None`
+    transformer_y : object transformer (preprocessor), default None
         An instance of a transformer (preprocessor) compatible with the scikit-learn
         preprocessing API with methods: fit, transform, fit_transform and inverse_transform.
         ColumnTransformers are not allowed since they do not have inverse_transform method.
         The transformation is applied to `y` before training the forecaster. 
-    transformer_exog : object transformer (preprocessor), default `None`
+    transformer_exog : object transformer (preprocessor), default None
         An instance of a transformer (preprocessor) compatible with the scikit-learn
         preprocessing API. The transformation is applied to `exog` before training the
         forecaster. `inverse_transform` is not available when using ColumnTransformers.
-    weight_func : Callable, default `None`
+    weight_func : Callable, default None
         Function that defines the individual weights for each sample based on the
         index. For example, a function that assigns a lower weight to certain dates.
         Ignored if `regressor` does not have the argument `sample_weight` in its `fit`
         method. The resulting `sample_weight` cannot have negative values.
-    differentiation : int, default `None`
+    differentiation : int, default None
         Order of differencing applied to the time series before training the forecaster.
         If `None`, no differencing is applied. The order of differentiation is the number
         of times the differencing operation is applied to a time series. Differencing
@@ -86,16 +92,16 @@ class ForecasterRecursive(ForecasterBase):
         Differentiation is reversed in the output of `predict()` and `predict_interval()`.
         **WARNING: This argument is newly introduced and requires special attention. It
         is still experimental and may undergo changes.**
-    fit_kwargs : dict, default `None`
+    fit_kwargs : dict, default None
         Additional arguments to be passed to the `fit` method of the regressor.
-    binner_kwargs : dict, default `None`
+    binner_kwargs : dict, default None
         Additional arguments to pass to the `QuantileBinner` used to discretize 
         the residuals into k bins according to the predicted values associated 
         with each residual. Available arguments are: `n_bins`, `method`, `subsample`,
         `random_state` and `dtype`. Argument `method` is passed internally to the
         fucntion `numpy.percentile`.
         **New in version 0.14.0**
-    forecaster_id : str, int, default `None`
+    forecaster_id : str, int, default None
         Name used as an identifier of the forecaster.
     
     Attributes
@@ -164,6 +170,9 @@ class ForecasterRecursive(ForecasterBase):
     differentiation : int
         Order of differencing applied to the time series before training the 
         forecaster.
+    differentiation_max : int
+        Maximum order of differentiation. For this Forecaster, it is equal to
+        the value of the `differentiation` parameter.
     differentiator : TimeSeriesDifferentiator
         Skforecast object used to differentiate the time series.
     last_window_ : pandas DataFrame
@@ -244,7 +253,7 @@ class ForecasterRecursive(ForecasterBase):
 ```python
 def preprocess_y(
     y: pd.Series
-) -> Tuple[np.ndarray, pd.Index]:
+) -> tuple[np.ndarray, pd.Index]:
     """
     Return values and index of series separately. Index is overwritten 
     according to the next rules:
@@ -260,7 +269,7 @@ def preprocess_y(
     ----------
     y : pandas Series, pandas DataFrame
         Time series.
-    return_values : bool, default `True`
+    return_values : bool, default True
         If `True` return the values of `y` as numpy ndarray. This option is 
         intended to avoid copying data when it is not necessary.
 

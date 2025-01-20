@@ -4,8 +4,9 @@
 # This work by skforecast team is licensed under the BSD 3-Clause License.     #
 ################################################################################
 # coding=utf-8
- 
-from typing import Union, Any, Optional
+
+from __future__ import annotations
+from typing import Any
 import numpy as np
 import pandas as pd
 from ..utils import check_optional_dependency
@@ -15,29 +16,30 @@ try:
     import matplotlib.pyplot as plt
     import seaborn as sns
     from statsmodels.graphics.tsaplots import plot_acf
+    from statsmodels.tsa.stattools import acf, pacf
 except Exception as e:
     package_name = str(e).split(" ")[-1].replace("'", "")
     check_optional_dependency(package_name=package_name)
 
 
 def plot_residuals(
-    residuals: Union[np.ndarray, pd.Series] = None,
-    y_true: Union[np.ndarray, pd.Series] = None,
-    y_pred: Union[np.ndarray, pd.Series] = None,
-    fig: matplotlib.figure.Figure = None,
+    residuals: np.ndarray | pd.Series | None = None,
+    y_true: np.ndarray | pd.Series | None = None,
+    y_pred: np.ndarray | pd.Series | None = None,
+    fig: matplotlib.figure.Figure | None = None,
     **fig_kw
 ) -> matplotlib.figure.Figure:
     """
     Parameters
     ----------
-    residuals : pandas Series, numpy ndarray, default `None`.
+    residuals : pandas Series, numpy ndarray, default None.
         Values of residuals. If `None`, residuals are calculated internally using
         `y_true` and `y_true`.
-    y_true : pandas Series, numpy ndarray, default `None`.
+    y_true : pandas Series, numpy ndarray, default None.
         Ground truth (correct) values. Ignored if residuals is not `None`.
-    y_pred : pandas Series, numpy ndarray, default `None`. 
+    y_pred : pandas Series, numpy ndarray, default None. 
         Values of predictions. Ignored if residuals is not `None`.
-    fig : matplotlib.figure.Figure, default `None`. 
+    fig : matplotlib.figure.Figure, default None. 
         Pre-existing fig for the plot. Otherwise, call matplotlib.pyplot.figure()
         internally.
     fig_kw : dict
@@ -79,7 +81,7 @@ def plot_residuals(
 
 def plot_multivariate_time_series_corr(
     corr: pd.DataFrame,
-    ax: matplotlib.axes.Axes = None,
+    ax: matplotlib.axes.Axes | None = None,
     **fig_kw
 ) -> matplotlib.figure.Figure:
     """
@@ -89,7 +91,7 @@ def plot_multivariate_time_series_corr(
     ----------
     corr : pandas DataFrame
         correlation matrix
-    ax : matplotlib.axes.Axes, default `None`. 
+    ax : matplotlib.axes.Axes, default None
         Pre-existing ax for the plot. Otherwise, call matplotlib.pyplot.subplots() 
         internally.
     fig_kw : dict
@@ -120,7 +122,7 @@ def plot_multivariate_time_series_corr(
 
 def plot_prediction_distribution(
     bootstrapping_predictions: pd.DataFrame,
-    bw_method: Optional[Any] = None,
+    bw_method: Any | None = None,
     **fig_kw
 ) -> matplotlib.figure.Figure:
     """
@@ -131,7 +133,7 @@ def plot_prediction_distribution(
     ----------
     bootstrapping_predictions : pandas DataFrame
         Bootstrapping predictions created with `Forecaster.predict_bootstrapping`.
-    bw_method : str, scalar, Callable, default `None`
+    bw_method : str, scalar, Callable, default None
         The method used to calculate the estimator bandwidth. This can be 'scott', 
         'silverman', a scalar constant or a Callable. If None (default), 'scott' 
         is used. See scipy.stats.gaussian_kde for more information.
@@ -183,7 +185,7 @@ def plot_prediction_distribution(
 
 
 def set_dark_theme(
-    custom_style: Optional[dict] = None
+    custom_style: dict | None = None
 ) -> None:
     """
     Set aspects of the visual theme for all matplotlib plots.
@@ -207,16 +209,16 @@ def set_dark_theme(
 
     plt.style.use('fivethirtyeight')
     dark_style = {
-        'figure.facecolor': '#212946',
-        'axes.facecolor': '#212946',
-        'savefig.facecolor': '#212946',
+        'figure.facecolor': '#001633',
+        'axes.facecolor': '#001633',
+        'savefig.facecolor': '#001633',
         'axes.grid': True,
         'axes.grid.which': 'both',
         'axes.spines.left': False,
         'axes.spines.right': False,
         'axes.spines.top': False,
         'axes.spines.bottom': False,
-        'grid.color': '#2A3459',
+        'grid.color': '#212946',
         'grid.linewidth': '1',
         'text.color': '0.9',
         'axes.labelcolor': '0.9',
@@ -236,11 +238,13 @@ def plot_prediction_intervals(
     predictions: pd.DataFrame,
     y_true: pd.DataFrame,
     target_variable: str,
-    initial_x_zoom: list = None,
-    title: str = None,
-    xaxis_title: str = None,
-    yaxis_title: str = None,
-    ax: plt.Axes = None
+    initial_x_zoom: list[str] | None = None,
+    title: str | None = None,
+    xaxis_title: str | None = None,
+    yaxis_title: str | None = None,
+    ax: plt.Axes | None = None,
+    kwargs_subplots: dict[str, object] = {'figsize': (7, 3)},
+    kwargs_fill_between: dict[str, object] = {'color': '#444444', 'alpha': 0.3}
 ):
     """
     Plot predicted intervals vs real values using matplotlib.
@@ -254,16 +258,20 @@ def plot_prediction_intervals(
         Real values of target variable.
     target_variable : str
         Name of target variable.
-    initial_x_zoom : list, default `None`
+    initial_x_zoom : list, default None
         Initial zoom of x-axis, by default None.
-    title : str, default `None`
+    title : str, default None
         Title of the plot, by default None.
-    xaxis_title : str, default `None`
+    xaxis_title : str, default None
         Title of x-axis, by default None.
-    yaxis_title : str, default `None`
+    yaxis_title : str, default None
         Title of y-axis, by default None.
-    ax : matplotlib axes, default `None`
+    ax : matplotlib axes, default None
         Axes where to plot, by default None.
+    kwargs_subplots : dict, default {'figsize': (7, 3)}
+        Additional keyword arguments (key, value mappings) to pass to `plt.subplots`.
+    kwargs_fill_between : dict, default {'color': '#444444', 'alpha': 0.3}
+        Additional keyword arguments (key, value mappings) to pass to `ax.fill_between`.
 
     Returns
     -------
@@ -272,7 +280,7 @@ def plot_prediction_intervals(
     """
     
     if ax is None:
-        fig, ax = plt.subplots(figsize=(7, 3))
+        fig, ax = plt.subplots(**kwargs_subplots)
 
     y_true.loc[predictions.index, target_variable].plot(ax=ax, label='Real value')
     predictions['pred'].plot(ax=ax, label='prediction')
@@ -280,8 +288,7 @@ def plot_prediction_intervals(
         predictions.index,
         predictions['lower_bound'],
         predictions['upper_bound'],
-        color = '#444444',
-        alpha = 0.3,
+        **kwargs_fill_between
     )
     ax.set_ylabel(yaxis_title)
     ax.set_xlabel(xaxis_title)
@@ -290,3 +297,111 @@ def plot_prediction_intervals(
 
     if initial_x_zoom is not None:
         ax.set_xlim(initial_x_zoom)
+
+
+def calculate_lag_autocorrelation(
+    data: pd.Series | pd.DataFrame,
+    n_lags: int = 50,
+    last_n_samples: int | None = None,
+    sort_by: str = "partial_autocorrelation_abs",
+    acf_kwargs: dict[str, object] = {},
+    pacf_kwargs: dict[str, object] = {},
+) -> pd.DataFrame:
+    """
+    Calculate autocorrelation and partial autocorrelation for a time series.
+    This is a wrapper around statsmodels.acf [1]_ and statsmodels.pacf [2]_.
+
+    Parameters
+    ----------
+    data : pandas Series, pandas DataFrame
+        Time series to calculate autocorrelation. If a DataFrame is provided,
+        it must have exactly one column.
+    n_lags : int
+        Number of lags to calculate autocorrelation.
+    last_n_samples : int or None, default None
+        Number of most recent samples to use. If None, use the entire series. 
+        Note that partial correlations can only be computed for lags up to 
+        50% of the sample size. For example, if the series has 10 samples, 
+        `n_lags` must be less than or equal to 5. This parameter is useful
+        to speed up calculations when the series is very long.
+    sort_by : str, default 'partial_autocorrelation_abs'
+        Sort results by 'lag', 'partial_autocorrelation_abs', 
+        'partial_autocorrelation', 'autocorrelation_abs' or 'autocorrelation'.
+    acf_kwargs : dict, default {}
+        Optional arguments to pass to statsmodels.tsa.stattools.acf.
+    pacf_kwargs : dict, default {}
+        Optional arguments to pass to statsmodels.tsa.stattools.pacf.
+
+    Returns
+    -------
+    results : pandas DataFrame
+        Autocorrelation and partial autocorrelation values.
+
+    References
+    ----------
+    .. [1] Statsmodels acf API Reference.
+           https://www.statsmodels.org/stable/generated/statsmodels.tsa.stattools.acf.html
+    
+    .. [2] Statsmodels pacf API Reference.
+           https://www.statsmodels.org/stable/generated/statsmodels.tsa.stattools.pacf.html
+
+    Examples
+    --------
+    >>> from skforecast.plot import calculate_lag_autocorrelation
+    >>> import pandas as pd
+    >>> data = pd.Series([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+    >>> calculate_lag_autocorrelation(data = data, n_lags = 4)
+       lag  partial_autocorrelation_abs  partial_autocorrelation  autocorrelation_abs  autocorrelation
+    0    1                     0.777778                 0.777778             0.700000         0.700000
+    1    4                     0.360707                -0.360707             0.078788        -0.078788
+    2    3                     0.274510                -0.274510             0.148485         0.148485
+    3    2                     0.227273                -0.227273             0.412121         0.412121
+
+    """
+
+    if not isinstance(data, (pd.Series, pd.DataFrame)):
+        raise TypeError(
+            f"`data` must be a pandas Series or a DataFrame with a single column. "
+            f"Got {type(data)}."
+        )
+    if isinstance(data, pd.DataFrame) and data.shape[1] != 1:
+        raise ValueError(
+            f"If `data` is a DataFrame, it must have exactly one column. "
+            f"Got {data.shape[1]} columns."
+        )
+    if not isinstance(n_lags, int) or n_lags <= 0:
+        raise TypeError(f"`n_lags` must be a positive integer. Got {n_lags}.")
+    
+    if last_n_samples is not None:
+        if not isinstance(last_n_samples, int) or last_n_samples <= 0:
+            raise TypeError(f"`last_n_samples` must be a positive integer. Got {last_n_samples}.")
+        data = data.iloc[-last_n_samples:]
+
+    if sort_by not in [
+        "lag", "partial_autocorrelation_abs", "partial_autocorrelation",
+        "autocorrelation_abs", "autocorrelation",
+    ]:
+        raise ValueError(
+            "`sort_by` must be 'lag', 'partial_autocorrelation_abs', 'partial_autocorrelation', "
+            "'autocorrelation_abs' or 'autocorrelation'."
+        )
+
+    pacf_values = pacf(data, nlags=n_lags, **pacf_kwargs)
+    acf_values = acf(data, nlags=n_lags, **acf_kwargs)
+
+    results = pd.DataFrame(
+        {
+            "lag": range(n_lags + 1),
+            "partial_autocorrelation_abs": np.abs(pacf_values),
+            "partial_autocorrelation": pacf_values,
+            "autocorrelation_abs": np.abs(acf_values),
+            "autocorrelation": acf_values,
+        }
+    ).iloc[1:]
+
+    if sort_by == "lag":
+        results = results.sort_values(by=sort_by, ascending=True).reset_index(drop=True)
+    else:
+        results = results.sort_values(by=sort_by, ascending=False).reset_index(drop=True)
+
+    return results

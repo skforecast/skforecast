@@ -36,9 +36,9 @@ def test_backtesting_forecaster_TypeError_when_forecaster_not_supported_types():
          )
 
     err_msg = re.escape(
-        ("`forecaster` must be of type `ForecasterSarimax`, for all other "
-         "types of forecasters use the functions available in the other "
-         "`model_selection` modules.")
+        "`forecaster` must be of type `ForecasterSarimax`, for all other "
+        "types of forecasters use the functions available in the other "
+        "`model_selection` modules."
     )
     with pytest.raises(TypeError, match = err_msg):
         backtesting_sarimax(
@@ -99,7 +99,10 @@ def test_output_backtesting_sarimax_no_refit_no_exog_no_remainder_with_mocked(n_
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
 
 
-def test_output_backtesting_sarimax_no_refit_no_exog_remainder_with_mocked():
+@pytest.mark.parametrize("initial_train_size", 
+                         [len(y_datetime) - 12, "2037-12-31"],
+                         ids=lambda init: f'initial_train_size: {init}')
+def test_output_backtesting_sarimax_no_refit_no_exog_remainder_with_mocked(initial_train_size):
     """
     Test output of backtesting_sarimax with backtesting mocked, Series y is mocked, no exog, 
     yes refit, 12 observations to backtest, steps=5 (remainder), metric='mean_squared_error'. 
@@ -111,7 +114,7 @@ def test_output_backtesting_sarimax_no_refit_no_exog_remainder_with_mocked():
     
     cv = TimeSeriesFold(
              steps                 = 5,
-             initial_train_size    = len(y_datetime) - 12,
+             initial_train_size    = initial_train_size,
              refit                 = False,
              fixed_train_size      = False,
              gap                   = 0,
