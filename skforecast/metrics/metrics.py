@@ -135,6 +135,10 @@ def mean_absolute_scaled_error(
     
     """
 
+    # NOTE: When using this metric in validation, `y_train`` doesn't include
+    # the first window_size observartions used to create the predictors and/or
+    # rolling features.
+
     if not isinstance(y_true, (pd.Series, np.ndarray)):
         raise TypeError("`y_true` must be a pandas Series or numpy ndarray.")
     if not isinstance(y_pred, (pd.Series, np.ndarray)):
@@ -145,8 +149,8 @@ def mean_absolute_scaled_error(
         for x in y_train:
             if not isinstance(x, (pd.Series, np.ndarray)):
                 raise TypeError(
-                    ("When `y_train` is a list, each element must be a pandas Series "
-                     "or numpy ndarray.")
+                    "When `y_train` is a list, each element must be a pandas Series "
+                    "or numpy ndarray."
                 )
     if len(y_true) != len(y_pred):
         raise ValueError("`y_true` and `y_pred` must have the same length.")
@@ -197,6 +201,10 @@ def root_mean_squared_scaled_error(
         RMSSE value.
     
     """
+
+    # NOTE: When using this metric in validation, `y_train`` doesn't include
+    # the first window_size observartions used to create the predictors and/or
+    # rolling features.
 
     if not isinstance(y_true, (pd.Series, np.ndarray)):
         raise TypeError("`y_true` must be a pandas Series or numpy ndarray.")

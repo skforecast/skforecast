@@ -324,7 +324,10 @@ def _backtesting_forecaster(
     for i, fold in enumerate(folds):
         fit_fold = fold[-1]
         if i == 0 or fit_fold:
-            train_iloc_start = fold[0][0] + window_size  # Exclude observations used to create predictors
+            # NOTE: When using a scaled metric, `y_train`` doesn't include the
+            # first window_size observartions used to create the predictors and/or
+            # rolling features.
+            train_iloc_start = fold[0][0] + window_size
             train_iloc_end = fold[0][1]
             train_indexes.append(np.arange(train_iloc_start, train_iloc_end))
     
