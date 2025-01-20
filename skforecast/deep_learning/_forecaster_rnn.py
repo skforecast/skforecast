@@ -5,11 +5,12 @@
 ################################################################################
 # coding=utf-8
 
+import inspect
 import sys
 import warnings
 from copy import copy, deepcopy
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
-import inspect
+
 import keras
 import matplotlib
 import matplotlib.pyplot as plt
@@ -20,20 +21,21 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import MinMaxScaler
 
 import skforecast
+from skforecast.utils.utils import transform_dataframe
 
 from ..base import ForecasterBase
 from ..exceptions import IgnoredArgumentWarning
 from ..utils import (
+    check_interval,
     check_predict_input,
     check_select_fit_kwargs,
     check_y,
-    check_interval,
     expand_index,
     preprocess_last_window,
     preprocess_y,
     set_skforecast_warnings,
+    transform_numpy,
     transform_series,
-    transform_numpy
 )
 
 
@@ -187,16 +189,18 @@ class ForecasterRnn(ForecasterBase):
         transformer_series: Optional[Union[object, dict]] = MinMaxScaler(
             feature_range=(0, 1)
         ),
+        transformer_exog: Optional[Union[object, dict]] = MinMaxScaler(
+            feature_range=(0, 1)
+        ),
         weight_func: Optional[Callable] = None,
         fit_kwargs: Optional[dict] = {},
         forecaster_id: Optional[Union[str, int]] = None,
         n_jobs: Any = None,
-        transformer_exog: Any = None,
     ) -> None:
         self.levels = None
         self.transformer_series = transformer_series
         self.transformer_series_ = None
-        self.transformer_exog = None
+        self.transformer_exog = transformer_exog
         self.weight_func = weight_func
         self.source_code_weight_func = None
         self.max_lag = None
@@ -220,11 +224,11 @@ class ForecasterRnn(ForecasterBase):
         self.forecaster_id = forecaster_id
         self.history = None  # TODO: Change to history_ as come from fit method?
         self.dropna_from_series = False  # Ignored in this forecaster
-        self.encoding = None   # Ignored in this forecaster
-        self.differentiation = None   # Ignored in this forecaster
-        self.differentiation_max = None   # Ignored in this forecaster
-        self.differentiator = None   # Ignored in this forecaster
-        self.differentiator_ = None   # Ignored in this forecaster
+        self.encoding = None  # Ignored in this forecaster
+        self.differentiation = None  # Ignored in this forecaster
+        self.differentiation_max = None  # Ignored in this forecaster
+        self.differentiator = None  # Ignored in this forecaster
+        self.differentiator_ = None  # Ignored in this forecaster
 
         # Infer parameters from the model
         self.regressor = regressor  # TODO: Create copy of regressor copy(regressor)
@@ -304,10 +308,21 @@ class ForecasterRnn(ForecasterBase):
                 f"`levels` argument must be a string or a list. Got {type(levels)}."
             )
 
+        self.series_val = None
+        self.exog_val = None
+
+        # TODO check that series_val & exog_val should be both available if exog is not None
+        if "series_val" in fit_kwargs:
+            self.series_val = fit_kwargs["series_val"]
+            fit_kwargs.pop("series_val")
+
+        if "exog_val" in fit_kwargs:
+            self.exog_val = fit_kwargs["exog_val"]
+            fit_kwargs.pop("exog_val")
+
         self.in_sample_residuals_ = {step: None for step in self.steps}
         self.out_sample_residuals_ = None
 
-        self.series_val = fit_kwargs.pop("series_val", None)
         self.fit_kwargs = check_select_fit_kwargs(
             regressor=self.regressor, fit_kwargs=fit_kwargs
         )
@@ -412,7 +427,7 @@ class ForecasterRnn(ForecasterBase):
         return X_data, y_data
 
     def create_train_X_y(
-        self, series: pd.DataFrame, exog: Any = None
+        self, series: pd.DataFrame, exog: pd.DataFrame = None
     ) -> Tuple[np.ndarray, np.ndarray, dict]:
         """
         Create training matrices. The resulting multi-dimensional matrices contain
@@ -538,13 +553,29 @@ class ForecasterRnn(ForecasterBase):
             },
         }
 
-        return X_train, y_train, dimension_names
+        if exog is not None:
+            exog_train = exog.loc[train_index, :]
+            exog_train = transform_dataframe(
+                df=exog_train,
+                transformer=self.transformer_exog,
+                fit=True,
+                inverse_transform=False,
+            )
+
+            dimension_names["exog_train"] = {
+                0: train_index,
+                1: exog_train.columns.to_list(),
+            }
+        else:
+            exog_train = None
+
+        return X_train, exog_train, y_train, dimension_names
 
     def fit(
         self,
         series: pd.DataFrame,
         store_in_sample_residuals: bool = True,
-        exog: Any = None,
+        exog: pd.DataFrame = None,
         suppress_warnings: bool = False,
         store_last_window: str = "Ignored",
     ) -> None:
@@ -594,11 +625,16 @@ class ForecasterRnn(ForecasterBase):
         self.is_fitted = False
         self.training_range_ = None
 
+        # TODO. ask @XIMO deberíamos eliminar las columnas no incluidas en series y en levels?
         self.series_names_in_ = list(series.columns)
 
-        X_train, y_train, X_train_dim_names_ = self.create_train_X_y(series=series)
+        X_train, exog_train, y_train, X_train_dim_names_ = self.create_train_X_y(
+            series=series, exog=exog
+        )
         self.X_train_dim_names_ = X_train_dim_names_["X_train"]
         self.y_train_dim_names_ = X_train_dim_names_["y_train"]
+        self.exog_train_dim_names_ = X_train_dim_names_["exog_train"]
+
         if keras.__version__ > "3.0" and keras.backend.backend() == "torch":
             import torch
 
@@ -608,16 +644,25 @@ class ForecasterRnn(ForecasterBase):
             print(f"Using device: {device}")
             X_train = torch.tensor(X_train).to(torch_device)
             y_train = torch.tensor(y_train).to(torch_device)
+            if exog_train:
+                exog_train = torch.tensor(exog_train).to(torch_device)
 
-        if self.series_val is not None:
-            X_val, y_val, _ = self.create_train_X_y(series=self.series_val)
+        if self.series_val:
+            # TODO. ask @XIMO deveríamos eliminar las columnas no incluidas en series y en levels?
+            X_val, exog_val, y_val, _ = self.create_train_X_y(
+                series=self.series_val, exog=self.exog_val
+            )
             if keras.__version__ > "3.0" and keras.backend.backend() == "torch":
                 X_val = torch.tensor(X_val).to(torch_device)
                 y_val = torch.tensor(y_val).to(torch_device)
+                if exog_val:
+                    exog_val = torch.tensor(exog_val).to(torch_device)
+
+            if exog_val:
                 history = self.regressor.fit(
-                    x=X_train,
+                    x=[X_train, exog_train],
                     y=y_train,
-                    validation_data=(X_val, y_val),
+                    validation_data=([X_val, exog_val], y_val),
                     **self.fit_kwargs,
                 )
             else:
@@ -627,12 +672,20 @@ class ForecasterRnn(ForecasterBase):
                     validation_data=(X_val, y_val),
                     **self.fit_kwargs,
                 )
+
         else:
-            history = self.regressor.fit(
-                x=X_train,
-                y=y_train,
-                **self.fit_kwargs,
-            )
+            if exog_train:
+                history = self.regressor.fit(
+                    x=[X_train, exog_train],
+                    y=y_train,
+                    **self.fit_kwargs,
+                )
+            else:
+                history = self.regressor.fit(
+                    x=X_train,
+                    y=y_train,
+                    **self.fit_kwargs,
+                )
 
         self.history = history.history
         self.is_fitted = True
@@ -651,14 +704,16 @@ class ForecasterRnn(ForecasterBase):
 
         if store_in_sample_residuals:
             residuals = y_train - self.regressor.predict(x=X_train, verbose=0)
-            self.in_sample_residuals_ = {step: residuals[:, i, :] for i, step in enumerate(self.steps)}
+            self.in_sample_residuals_ = {
+                step: residuals[:, i, :] for i, step in enumerate(self.steps)
+            }
 
     def predict(
         self,
         steps: Optional[Union[int, list]] = None,
         levels: Optional[Union[str, list]] = None,
         last_window: Optional[pd.DataFrame] = None,
-        exog: Any = None,
+        exog: Optional[pd.DataFrame] = None,
         suppress_warnings: bool = False,
     ) -> pd.DataFrame:
         """
@@ -736,7 +791,7 @@ class ForecasterRnn(ForecasterBase):
             index_freq_=self.index_freq_,
             window_size=self.window_size,
             last_window=last_window,
-            exog=None,
+            exog=exog,  ## review from here @XIMO
             exog_type_in_=None,
             exog_names_in_=None,
             interval=None,
@@ -806,15 +861,15 @@ class ForecasterRnn(ForecasterBase):
         return predictions
 
     def predict_bootstrapping(
-            self,
-            steps: Optional[Union[int, list]] = None,
-            last_window: Optional[pd.DataFrame] = None,
-            exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
-            n_boot: int = 250,
-            random_state: int = 123,
-            use_in_sample_residuals: bool = True,
-            suppress_warnings: bool = False,
-            levels: Any = None
+        self,
+        steps: Optional[Union[int, list]] = None,
+        last_window: Optional[pd.DataFrame] = None,
+        exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
+        n_boot: int = 250,
+        random_state: int = 123,
+        use_in_sample_residuals: bool = True,
+        suppress_warnings: bool = False,
+        levels: Any = None,
     ) -> dict:
         """
         Generate multiple forecasting predictions using a bootstrapping process.
@@ -909,8 +964,9 @@ class ForecasterRnn(ForecasterBase):
             residuals = self.out_sample_residuals_
 
         check_residuals = (
-            'forecaster.in_sample_residuals_' if use_in_sample_residuals
-            else 'forecaster.out_sample_residuals_'
+            "forecaster.in_sample_residuals_"
+            if use_in_sample_residuals
+            else "forecaster.out_sample_residuals_"
         )
         for step in steps:
             if residuals[step] is None:
@@ -918,8 +974,9 @@ class ForecasterRnn(ForecasterBase):
                     f"forecaster residuals for step {step} are `None`. "
                     f"Check {check_residuals}."
                 )
-            elif (any(element is None for element in residuals[step]) or
-                  np.any(np.isnan(residuals[step]))):
+            elif any(element is None for element in residuals[step]) or np.any(
+                np.isnan(residuals[step])
+            ):
                 raise ValueError(
                     f"forecaster residuals for step {step} contains `None` "
                     f"or `NaNs` values. Check {check_residuals}."
@@ -947,7 +1004,7 @@ class ForecasterRnn(ForecasterBase):
             series_names_in_=self.series_names_in_,
         )
 
-        last_window = last_window.iloc[-self.window_size:, ].copy()
+        last_window = last_window.iloc[-self.window_size :,].copy()
 
         for serie_name in self.series_names_in_:
             last_window_serie = transform_series(
@@ -975,7 +1032,9 @@ class ForecasterRnn(ForecasterBase):
             boot_level = np.tile(predictions[:, j], (n_boot, 1)).T
 
             for i, step in enumerate(steps):
-                sampled_residuals = residuals[step][rng.integers(low=0, high=len(residuals[step]), size=n_boot), j]
+                sampled_residuals = residuals[step][
+                    rng.integers(low=0, high=len(residuals[step]), size=n_boot), j
+                ]
                 boot_level[i, :] += sampled_residuals
 
             if self.transformer_series_[level]:
@@ -985,46 +1044,54 @@ class ForecasterRnn(ForecasterBase):
                     arr=boot_level,
                     transformer=self.transformer_series_[level],
                     fit=False,
-                    inverse_transform=True
+                    inverse_transform=True,
                 )
 
             boot_level = pd.DataFrame(
                 data=boot_level[np.array(steps) - 1],
                 index=prediction_index,
-                columns=boot_columns
+                columns=boot_columns,
             )
 
             boot_predictions[level] = boot_level
 
         # Temporal standardization. Pending full code refactoring:
         boot_predictions = (
-            pd.concat([value.assign(level=key) for key, value in boot_predictions.items()])
+            pd.concat(
+                [value.assign(level=key) for key, value in boot_predictions.items()]
+            )
             .reset_index()
             .sort_values(by=["index", "level"])
             .set_index("index")
             .rename_axis(None, axis=0)
         )
         boot_predictions = boot_predictions[
-            ["level"] + [col for col in boot_predictions.columns if col not in ["level", "index"]]
-            ]
-        if isinstance(boot_predictions.index, pd.DatetimeIndex) and boot_predictions.index.freq is not None:
+            ["level"]
+            + [col for col in boot_predictions.columns if col not in ["level", "index"]]
+        ]
+        if (
+            isinstance(boot_predictions.index, pd.DatetimeIndex)
+            and boot_predictions.index.freq is not None
+        ):
             boot_predictions.index.freq = None
 
-        set_skforecast_warnings(suppress_warnings, action='default')
+        set_skforecast_warnings(suppress_warnings, action="default")
 
         return boot_predictions
 
     def predict_interval(
-            self,
-            steps: int,
-            levels: str | list[str] | None = None,
-            last_window: pd.DataFrame | None = None,
-            exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
-            interval: list[float] | tuple[float] = [5, 95],
-            n_boot: int = 250,
-            random_state: int = 123,
-            use_in_sample_residuals: bool = True,
-            suppress_warnings: bool = False
+        self,
+        steps: int,
+        levels: str | list[str] | None = None,
+        last_window: pd.DataFrame | None = None,
+        exog: (
+            pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None
+        ) = None,
+        interval: list[float] | tuple[float] = [5, 95],
+        n_boot: int = 250,
+        random_state: int = 123,
+        use_in_sample_residuals: bool = True,
+        suppress_warnings: bool = False,
     ) -> pd.DataFrame:
         """
         Iterative process in which, each prediction, is used as a predictor
@@ -1083,7 +1150,7 @@ class ForecasterRnn(ForecasterBase):
 
         """
 
-        set_skforecast_warnings(suppress_warnings, action='ignore')
+        set_skforecast_warnings(suppress_warnings, action="ignore")
 
         check_interval(interval=interval)
 
@@ -1095,7 +1162,7 @@ class ForecasterRnn(ForecasterBase):
             n_boot=n_boot,
             random_state=random_state,
             use_in_sample_residuals=use_in_sample_residuals,
-            suppress_warnings=suppress_warnings
+            suppress_warnings=suppress_warnings,
         )
 
         predictions = self.predict(
@@ -1103,34 +1170,36 @@ class ForecasterRnn(ForecasterBase):
             levels=levels,
             last_window=last_window,
             exog=exog,
-            suppress_warnings=suppress_warnings
-            #check_inputs=False
+            suppress_warnings=suppress_warnings,
+            # check_inputs=False
         )
 
         interval = np.array(interval) / 100
-        boot_predictions[['lower_bound', 'upper_bound']] = (
+        boot_predictions[["lower_bound", "upper_bound"]] = (
             boot_predictions.iloc[:, 1:].quantile(q=interval, axis=1).transpose()
         )
 
-        predictions = pd.concat([
-            predictions, boot_predictions[['lower_bound', 'upper_bound']]
-        ], axis=1)
+        predictions = pd.concat(
+            [predictions, boot_predictions[["lower_bound", "upper_bound"]]], axis=1
+        )
 
-        set_skforecast_warnings(suppress_warnings, action='default')
+        set_skforecast_warnings(suppress_warnings, action="default")
 
         return predictions
 
     def predict_quantiles(
-            self,
-            steps: int,
-            levels: str | list[str] | None = None,
-            last_window: pd.DataFrame | None = None,
-            exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
-            quantiles: list[float] | tuple[float] = [0.05, 0.5, 0.95],
-            n_boot: int = 250,
-            random_state: int = 123,
-            use_in_sample_residuals: bool = True,
-            suppress_warnings: bool = False
+        self,
+        steps: int,
+        levels: str | list[str] | None = None,
+        last_window: pd.DataFrame | None = None,
+        exog: (
+            pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None
+        ) = None,
+        quantiles: list[float] | tuple[float] = [0.05, 0.5, 0.95],
+        n_boot: int = 250,
+        random_state: int = 123,
+        use_in_sample_residuals: bool = True,
+        suppress_warnings: bool = False,
     ) -> pd.DataFrame:
         """
         Calculate the specified quantiles for each step. After generating
@@ -1188,7 +1257,7 @@ class ForecasterRnn(ForecasterBase):
 
         """
 
-        set_skforecast_warnings(suppress_warnings, action='ignore')
+        set_skforecast_warnings(suppress_warnings, action="ignore")
 
         check_interval(quantiles=quantiles)
 
@@ -1200,30 +1269,32 @@ class ForecasterRnn(ForecasterBase):
             n_boot=n_boot,
             random_state=random_state,
             use_in_sample_residuals=use_in_sample_residuals,
-            suppress_warnings=suppress_warnings
+            suppress_warnings=suppress_warnings,
         )
 
-        quantiles_cols = [f'q_{q}' for q in quantiles]
+        quantiles_cols = [f"q_{q}" for q in quantiles]
         predictions[quantiles_cols] = (
             predictions.iloc[:, 1:].quantile(q=quantiles, axis=1).transpose()
         )
-        predictions = predictions[['level'] + quantiles_cols]
+        predictions = predictions[["level"] + quantiles_cols]
 
-        set_skforecast_warnings(suppress_warnings, action='default')
+        set_skforecast_warnings(suppress_warnings, action="default")
 
         return predictions
 
     def predict_dist(
-            self,
-            steps: int,
-            distribution: object,
-            levels: str | list[str] | None = None,
-            last_window: pd.DataFrame | None = None,
-            exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
-            n_boot: int = 250,
-            random_state: int = 123,
-            use_in_sample_residuals: bool = True,
-            suppress_warnings: bool = False
+        self,
+        steps: int,
+        distribution: object,
+        levels: str | list[str] | None = None,
+        last_window: pd.DataFrame | None = None,
+        exog: (
+            pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None
+        ) = None,
+        n_boot: int = 250,
+        random_state: int = 123,
+        use_in_sample_residuals: bool = True,
+        suppress_warnings: bool = False,
     ) -> pd.DataFrame:
         """
         Fit a given probability distribution for each step. After generating
@@ -1273,13 +1344,15 @@ class ForecasterRnn(ForecasterBase):
 
         """
 
-        if not hasattr(distribution, "_pdf") or not callable(getattr(distribution, "fit", None)):
+        if not hasattr(distribution, "_pdf") or not callable(
+            getattr(distribution, "fit", None)
+        ):
             raise TypeError(
                 "`distribution` must be a valid probability distribution object "
                 "from scipy.stats, with methods `_pdf` and `fit`."
             )
 
-        set_skforecast_warnings(suppress_warnings, action='ignore')
+        set_skforecast_warnings(suppress_warnings, action="ignore")
 
         predictions = self.predict_bootstrapping(
             steps=steps,
@@ -1289,30 +1362,30 @@ class ForecasterRnn(ForecasterBase):
             n_boot=n_boot,
             random_state=random_state,
             use_in_sample_residuals=use_in_sample_residuals,
-            suppress_warnings=suppress_warnings
+            suppress_warnings=suppress_warnings,
         )
 
         param_names = [
-                          p for p in inspect.signature(distribution._pdf).parameters if not p == "x"
-                      ] + ["loc", "scale"]
+            p for p in inspect.signature(distribution._pdf).parameters if not p == "x"
+        ] + ["loc", "scale"]
 
-        predictions[param_names] = (
-            predictions.iloc[:, 1:].apply(
-                lambda x: distribution.fit(x), axis=1, result_type='expand'
-            )
+        predictions[param_names] = predictions.iloc[:, 1:].apply(
+            lambda x: distribution.fit(x), axis=1, result_type="expand"
         )
-        predictions = predictions[['level'] + param_names]
+        predictions = predictions[["level"] + param_names]
 
-        set_skforecast_warnings(suppress_warnings, action='default')
+        set_skforecast_warnings(suppress_warnings, action="default")
 
         return predictions
 
-
     def plot_history(
-        self, ax: matplotlib.axes.Axes = None, **fig_kw
+        self,
+        ax: matplotlib.axes.Axes = None,
+        exclude_first_iteration: bool = False,
+        **fig_kw,
     ) -> matplotlib.figure.Figure:
         """
-        Plots the training and validation loss curves from the given history object stores
+        Plots the training and validation loss curves from the given history object stored
         in the ForecasterRnn.
 
         Parameters
@@ -1320,6 +1393,8 @@ class ForecasterRnn(ForecasterBase):
         ax : matplotlib.axes.Axes, default `None`
             Pre-existing ax for the plot. Otherwise, call matplotlib.pyplot.subplots()
             internally.
+        exclude_first_iteration : bool, default `False`
+            Whether to exclude the first epoch from the plot.
         fig_kw : dict
             Other keyword arguments are passed to matplotlib.pyplot.subplots().
 
@@ -1327,7 +1402,6 @@ class ForecasterRnn(ForecasterBase):
         -------
         fig: matplotlib.figure.Figure
             Matplotlib Figure.
-
         """
 
         if ax is None:
@@ -1336,14 +1410,20 @@ class ForecasterRnn(ForecasterBase):
             fig = ax.get_figure()
 
         # Setting up the plot style
-
         if self.history is None:
             raise ValueError("ForecasterRnn has not been fitted yet.")
 
+        # Determine the range of epochs to plot, excluding the first one if specified
+        epoch_range = range(1, len(self.history["loss"]) + 1)
+        if exclude_first_iteration:
+            epoch_range = range(2, len(self.history["loss"]) + 1)
+
         # Plotting training loss
         ax.plot(
-            range(1, len(self.history["loss"]) + 1),
-            self.history["loss"],
+            epoch_range,
+            self.history["loss"][
+                exclude_first_iteration:
+            ],  # Skip first element if specified
             color="b",
             label="Training Loss",
         )
@@ -1351,8 +1431,10 @@ class ForecasterRnn(ForecasterBase):
         # Plotting validation loss
         if "val_loss" in self.history:
             ax.plot(
-                range(1, len(self.history["val_loss"]) + 1),
-                self.history["val_loss"],
+                epoch_range,
+                self.history["val_loss"][
+                    exclude_first_iteration:
+                ],  # Skip first element if specified
                 color="r",
                 label="Validation Loss",
             )
@@ -1369,7 +1451,9 @@ class ForecasterRnn(ForecasterBase):
         ax.grid(True, linestyle="--", alpha=0.7)
 
         # Setting x-axis ticks to integers only
-        ax.set_xticks(range(1, len(self.history["loss"]) + 1))
+        ax.set_xticks(epoch_range)
+
+        return fig
 
     # def predict_bootstrapping(
     #     self,
