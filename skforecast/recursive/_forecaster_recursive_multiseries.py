@@ -2746,7 +2746,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                        )
 
         param_names = [
-            p for p in inspect.signature(distribution._pdf).parameters if not p == "x"
+            p for p in inspect.signature(distribution._pdf).parameters 
+            if not p == "x"
         ] + ["loc", "scale"]
         predictions = []
 

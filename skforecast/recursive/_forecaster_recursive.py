@@ -2056,8 +2056,10 @@ class ForecasterRecursive(ForecasterBase):
                            use_binned_residuals    = use_binned_residuals
                        )       
 
-        param_names = [p for p in inspect.signature(distribution._pdf).parameters
-                       if not p == 'x'] + ["loc", "scale"]
+        param_names = [
+            p for p in inspect.signature(distribution._pdf).parameters
+            if not p == 'x'
+        ] + ["loc", "scale"]
         param_values = np.apply_along_axis(
                            lambda x: distribution.fit(x),
                            axis = 1,
