@@ -1522,18 +1522,18 @@ class ForecasterDirect(ForecasterBase):
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
         n_boot : int, default 250
-            Number of bootstrapping iterations used to estimate predictions.
-        random_state : int, default 123
-            Sets a seed to the random generator, so that boot predictions are always 
-            deterministic.
+            Number of bootstrapping iterations to perform when estimating prediction
+            intervals.
         use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
-            prediction error to create predictions. If `False`, out of sample 
-            residuals are used. In the latter case, the user should have
-            calculated and stored the residuals within the forecaster (see
-            `set_out_sample_residuals()`).
+            prediction error to create predictions. 
+            If `False`, out of sample residuals (calibration) are used. 
+            Out-of-sample residuals must be precomputed using Forecaster's
+            `set_out_sample_residuals()` method.
         use_binned_residuals : Ignored
             Not used, present here for API consistency by convention.
+        random_state : int, default 123
+            Seed for the random number generator to ensure reproducibility.
 
         Returns
         -------
@@ -1684,18 +1684,18 @@ class ForecasterDirect(ForecasterBase):
             percentiles to compute, which must be between 0 and 100 inclusive. 
             For example, interval of 95% should be as `interval = [2.5, 97.5]`.
         n_boot : int, default 250
-            Number of bootstrapping iterations used to estimate predictions.
-        random_state : int, default 123
-            Sets a seed to the random generator, so that boot predictions are always 
-            deterministic.
+            Number of bootstrapping iterations to perform when estimating prediction
+            intervals.
         use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
-            prediction error to create predictions. If `False`, out of sample 
-            residuals are used. In the latter case, the user should have
-            calculated and stored the residuals within the forecaster (see
-            `set_out_sample_residuals()`).
+            prediction error to create predictions. 
+            If `False`, out of sample residuals (calibration) are used. 
+            Out-of-sample residuals must be precomputed using Forecaster's
+            `set_out_sample_residuals()` method.
         use_binned_residuals : Ignored
             Not used, present here for API consistency by convention.
+        random_state : int, default 123
+            Seed for the random number generator to ensure reproducibility.
 
         Returns
         -------
@@ -1778,18 +1778,17 @@ class ForecasterDirect(ForecasterBase):
             inclusive. For example, quantiles of 0.05, 0.5 and 0.95 should be as 
             `quantiles = [0.05, 0.5, 0.95]`.
         n_boot : int, default 250
-            Number of bootstrapping iterations used to estimate quantiles.
-        random_state : int, default 123
-            Sets a seed to the random generator, so that boot quantiles are always 
-            deterministic.
+            Number of bootstrapping iterations to perform when estimating quantiles.
         use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
-            prediction error to create prediction quantiles. If `False`, out of
-            sample residuals are used. In the latter case, the user should have
-            calculated and stored the residuals within the forecaster (see
-            `set_out_sample_residuals()`).
+            prediction error to create predictions. 
+            If `False`, out of sample residuals (calibration) are used. 
+            Out-of-sample residuals must be precomputed using Forecaster's
+            `set_out_sample_residuals()` method.
         use_binned_residuals : Ignored
             Not used, present here for API consistency by convention.
+        random_state : int, default 123
+            Seed for the random number generator to ensure reproducibility.
 
         Returns
         -------
@@ -1860,18 +1859,18 @@ class ForecasterDirect(ForecasterBase):
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
         n_boot : int, default 250
-            Number of bootstrapping iterations used to estimate predictions.
-        random_state : int, default 123
-            Sets a seed to the random generator, so that boot predictions are always 
-            deterministic.
+            Number of bootstrapping iterations to perform when estimating prediction
+            intervals.
         use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
-            prediction error to create predictions. If `False`, out of sample 
-            residuals are used. In the latter case, the user should have
-            calculated and stored the residuals within the forecaster (see
-            `set_out_sample_residuals()`).
+            prediction error to create predictions. 
+            If `False`, out of sample residuals (calibration) are used. 
+            Out-of-sample residuals must be precomputed using Forecaster's
+            `set_out_sample_residuals()` method.
         use_binned_residuals : Ignored
             Not used, present here for API consistency by convention.
+        random_state : int, default 123
+            Seed for the random number generator to ensure reproducibility.
 
         Returns
         -------

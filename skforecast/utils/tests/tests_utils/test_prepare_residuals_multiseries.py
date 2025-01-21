@@ -3,7 +3,6 @@
 import re
 import pytest
 import numpy as np
-import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
 from skforecast.exceptions import UnknownLevelWarning
@@ -25,10 +24,10 @@ def test_prepare_residuals_multiseries_ValueError_when_not_in_sample_residuals_f
     forecaster.fit(series=series['1'].to_frame())
 
     warn_msg = re.escape(
-        ("`levels` {'2'} are not present in `forecaster.in_sample_residuals_`, "
-         "most likely because they were not present in the training data. "
-         "A random sample of the residuals from other levels will be used. "
-         "This can lead to inaccurate intervals for the unknown levels.")
+        "`levels` {'2'} are not present in `forecaster.in_sample_residuals_`, "
+        "most likely because they were not present in the training data. "
+        "A random sample of the residuals from other levels will be used. "
+        "This can lead to inaccurate intervals for the unknown levels."
     )
     with pytest.warns(UnknownLevelWarning, match = warn_msg):
         residuals = prepare_residuals_multiseries(
@@ -61,9 +60,9 @@ def test_prepare_residuals_multiseries_ValueError_when_out_sample_residuals_is_N
     forecaster.fit(series=series)
 
     err_msg = re.escape(
-        ("`forecaster.out_sample_residuals_` is `None`. Use "
-         "`use_in_sample_residuals=True` or the `set_out_sample_residuals()` "
-         "method before predicting.")
+        "`forecaster.out_sample_residuals_` is `None`. Use "
+        "`use_in_sample_residuals=True` or the `set_out_sample_residuals()` "
+        "method before predicting."
     )
     with pytest.raises(ValueError, match = err_msg):
         prepare_residuals_multiseries(
@@ -91,11 +90,11 @@ def test_prepare_residuals_multiseries_ValueError_when_not_out_sample_residuals_
     }
 
     warn_msg = re.escape(
-        ("`levels` {'2'} are not present in `forecaster.out_sample_residuals_`. "
-         "A random sample of the residuals from other levels will be used. "
-         "This can lead to inaccurate intervals for the unknown levels. "
-         "Otherwise, Use the `set_out_sample_residuals()` method before "
-         "predicting to set the residuals for these levels."),
+        "`levels` {'2'} are not present in `forecaster.out_sample_residuals_`. "
+        "A random sample of the residuals from other levels will be used. "
+        "This can lead to inaccurate intervals for the unknown levels. "
+        "Otherwise, Use the `set_out_sample_residuals()` method before "
+        "predicting to set the residuals for these levels."
     )
     with pytest.warns(UnknownLevelWarning, match = warn_msg):
         residuals = prepare_residuals_multiseries(
@@ -139,8 +138,8 @@ def test_prepare_residuals_multiseries_ValueError_when_level_out_sample_residual
         }
 
     err_msg = re.escape(
-        ("Not available residuals for level '2'. "
-         "Check `forecaster.out_sample_residuals_`.")
+        "Not available residuals for level '2'. "
+        "Check `forecaster.out_sample_residuals_`."
     )
     with pytest.raises(ValueError, match = err_msg):
         prepare_residuals_multiseries(
@@ -150,6 +149,7 @@ def test_prepare_residuals_multiseries_ValueError_when_level_out_sample_residual
             in_sample_residuals_    = forecaster.in_sample_residuals_,
             out_sample_residuals_   = forecaster.out_sample_residuals_
         )
+
 
 @pytest.mark.parametrize("use_in_sample_residuals", 
                          [True, False],

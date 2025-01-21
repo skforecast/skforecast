@@ -91,15 +91,16 @@ def _backtesting_forecaster(
         be estimated for each prediction.
         - If None, no probabilistic predictions are estimated.
     n_boot : int, default 250
-        Number of bootstrapping iterations used to estimate prediction
+        Number of bootstrapping iterations to perform when estimating prediction
         intervals.
     random_state : int, default 123
-        Sets a seed to the random generator, so that boot intervals are always 
-        deterministic.
+        Seed for the random number generator to ensure reproducibility.
     use_in_sample_residuals : bool, default True
-        If `True`, residuals from the training data are used as proxy of prediction 
-        error to create prediction intervals. If `False`, out_sample_residuals 
-        are used if they are already stored inside the forecaster.
+        If `True`, residuals from the training data are used as proxy of
+        prediction error to create predictions. 
+        If `False`, out of sample residuals (calibration) are used. 
+        Out-of-sample residuals must be precomputed using Forecaster's
+        `set_out_sample_residuals()` method.
     use_binned_residuals : bool, default False
         If `True`, residuals used in each bootstrapping iteration are selected
         conditioning on the predicted values. If `False`, residuals are selected
@@ -411,15 +412,16 @@ def backtesting_forecaster(
         be estimated for each prediction.
         - If None, no probabilistic predictions are estimated.
     n_boot : int, default 250
-        Number of bootstrapping iterations used to estimate prediction
+        Number of bootstrapping iterations to perform when estimating prediction
         intervals.
     random_state : int, default 123
-        Sets a seed to the random generator, so that boot intervals are always 
-        deterministic.
+        Seed for the random number generator to ensure reproducibility.
     use_in_sample_residuals : bool, default True
-        If `True`, residuals from the training data are used as proxy of prediction 
-        error to create prediction intervals. If `False`, out_sample_residuals 
-        are used if they are already stored inside the forecaster.
+        If `True`, residuals from the training data are used as proxy of
+        prediction error to create predictions. 
+        If `False`, out of sample residuals (calibration) are used. 
+        Out-of-sample residuals must be precomputed using Forecaster's
+        `set_out_sample_residuals()` method.
     use_binned_residuals : bool, default False
         If `True`, residuals used in each bootstrapping iteration are selected
         conditioning on the predicted values. If `False`, residuals are selected
@@ -578,15 +580,16 @@ def _backtesting_forecaster_multiseries(
         be estimated for each prediction.
         - If None, no probabilistic predictions are estimated.
     n_boot : int, default 250
-        Number of bootstrapping iterations used to estimate prediction
+        Number of bootstrapping iterations to perform when estimating prediction
         intervals.
     random_state : int, default 123
-        Sets a seed to the random generator, so that boot intervals are always 
-        deterministic.
+        Seed for the random number generator to ensure reproducibility.
     use_in_sample_residuals : bool, default True
-        If `True`, residuals from the training data are used as proxy of prediction
-        error to create prediction intervals. If `False`, out_sample_residuals 
-        are used if they are already stored inside the forecaster.
+        If `True`, residuals from the training data are used as proxy of
+        prediction error to create predictions. 
+        If `False`, out of sample residuals (calibration) are used. 
+        Out-of-sample residuals must be precomputed using Forecaster's
+        `set_out_sample_residuals()` method.
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
@@ -960,15 +963,16 @@ def backtesting_forecaster_multiseries(
         be estimated for each prediction.
         - If None, no probabilistic predictions are estimated.
     n_boot : int, default 250
-        Number of bootstrapping iterations used to estimate prediction
+        Number of bootstrapping iterations to perform when estimating prediction 
         intervals.
     random_state : int, default 123
-        Sets a seed to the random generator, so that boot intervals are always 
-        deterministic.
+        Seed for the random number generator to ensure reproducibility.
     use_in_sample_residuals : bool, default True
-        If `True`, residuals from the training data are used as proxy of prediction 
-        error to create prediction intervals. If `False`, out_sample_residuals 
-        are used if they are already stored inside the forecaster.
+        If `True`, residuals from the training data are used as proxy of
+        prediction error to create predictions. 
+        If `False`, out of sample residuals (calibration) are used. 
+        Out-of-sample residuals must be precomputed using Forecaster's
+        `set_out_sample_residuals()` method.
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
