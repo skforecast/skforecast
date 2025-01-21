@@ -703,7 +703,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         train_index : pandas Index
             Index of the training data. It is used to create the pandas DataFrame
             `X_train_window_features` when `X_as_pandas` is `True`.
-        X_as_pandas : bool, default `False`
+        X_as_pandas : bool, default False
             If `True`, the returned matrix `X_train_window_features` is a 
             pandas DataFrame.
 
@@ -1064,7 +1064,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s. Must have the same
             number of observations as `series` and their indexes must be aligned.
-        suppress_warnings : bool, default `False`
+        suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the creation
             of the training matrices. See skforecast.exceptions.warn_skforecast_categories 
             for more information.
@@ -1118,7 +1118,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             Dataframe created with the `_create_train_X_y` method, first return.
         y_train : dict
             Dict created with the `_create_train_X_y` method, second return.
-        remove_suffix : bool, default `False`
+        remove_suffix : bool, default False
             If True, suffix "_step_i" is removed from the column names.
 
         Returns
@@ -1334,7 +1334,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         store_in_sample_residuals : bool, default `True`
             If `True`, in-sample residuals will be stored in the forecaster object
             after fitting (`in_sample_residuals_` attribute).
-        suppress_warnings : bool, default `False`
+        suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the training 
             process. See skforecast.exceptions.warn_skforecast_categories for more
             information.
@@ -1679,7 +1679,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             right after training data.
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
-        suppress_warnings : bool, default `False`
+        suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the prediction 
             process. See skforecast.exceptions.warn_skforecast_categories for more
             information.
@@ -1751,7 +1751,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             right after training data.
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
-        suppress_warnings : bool, default `False`
+        suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the prediction 
             process. See skforecast.exceptions.warn_skforecast_categories for more
             information.
@@ -1848,16 +1848,16 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             Exogenous variable/s included as predictor/s.     
         n_boot : int, default `250`
             Number of bootstrapping iterations to perform when estimating prediction
-            intervals.
-        random_state : int, default `123`
-            Seed for the random number generator to ensure reproducibility.               
+            intervals.            
         use_in_sample_residuals : bool, default `True`
             If `True`, residuals from the training data are used as proxy of
             prediction error to create predictions. 
             If `False`, out of sample residuals (calibration) are used. 
             Out-of-sample residuals must be precomputed using Forecaster's
             `set_out_sample_residuals()` method.
-        suppress_warnings : bool, default `False`
+        random_state : int, default `123`
+            Seed for the random number generator to ensure reproducibility.   
+        suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the prediction 
             process. See skforecast.exceptions.warn_skforecast_categories for more
             information.
@@ -2022,15 +2022,15 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         n_boot : int, default `250`
             Number of bootstrapping iterations to perform when estimating prediction
             intervals.
-        random_state : int, default `123`
-            Seed for the random number generator to ensure reproducibility.
         use_in_sample_residuals : bool, default `True`
             If `True`, residuals from the training data are used as proxy of
             prediction error to create predictions. 
             If `False`, out of sample residuals (calibration) are used. 
             Out-of-sample residuals must be precomputed using Forecaster's
             `set_out_sample_residuals()` method.
-        suppress_warnings : bool, default `False`
+        random_state : int, default `123`
+            Seed for the random number generator to ensure reproducibility.
+        suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the prediction 
             process. See skforecast.exceptions.warn_skforecast_categories for more
             information.
@@ -2125,15 +2125,15 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             `quantiles = [0.05, 0.5, 0.95]`.
         n_boot : int, default `250`
             Number of bootstrapping iterations to perform when estimating quantiles.
-        random_state : int, default `123`
-            Seed for the random number generator to ensure reproducibility.
         use_in_sample_residuals : bool, default `True`
             If `True`, residuals from the training data are used as proxy of
             prediction error to create predictions. 
             If `False`, out of sample residuals (calibration) are used. 
             Out-of-sample residuals must be precomputed using Forecaster's
             `set_out_sample_residuals()` method.
-        suppress_warnings : bool, default `False`
+        random_state : int, default `123`
+            Seed for the random number generator to ensure reproducibility.
+        suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the prediction 
             process. See skforecast.exceptions.warn_skforecast_categories for more
             information.
@@ -2217,15 +2217,15 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         n_boot : int, default `250`
             Number of bootstrapping iterations to perform when estimating prediction
             intervals.
-        random_state : int, default `123`
-            Seed for the random number generator to ensure reproducibility.
         use_in_sample_residuals : bool, default `True`
             If `True`, residuals from the training data are used as proxy of
             prediction error to create predictions. 
             If `False`, out of sample residuals (calibration) are used. 
             Out-of-sample residuals must be precomputed using Forecaster's
             `set_out_sample_residuals()` method.
-        suppress_warnings : bool, default `False`
+        random_state : int, default `123`
+            Seed for the random number generator to ensure reproducibility.
+        suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the prediction 
             process. See skforecast.exceptions.warn_skforecast_categories for more
             information.
@@ -2472,7 +2472,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         y_pred : dict
             Dictionary of numpy ndarrays or pandas Series with the predicted values
             of the time series for each model in the form {step: y_pred}.
-        append : bool, default `False`
+        append : bool, default False
             If `True`, new residuals are added to the once already stored in the
             attribute `out_sample_residuals_`. If after appending the new residuals,
             the limit of 10_000 samples is exceeded, a random sample of 10_000 is

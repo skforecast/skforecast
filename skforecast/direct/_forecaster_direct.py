@@ -1517,8 +1517,6 @@ class ForecasterDirect(ForecasterBase):
         n_boot : int, default `250`
             Number of bootstrapping iterations to perform when estimating prediction
             intervals.
-        random_state : int, default `123`
-            Seed for the random number generator to ensure reproducibility.
         use_in_sample_residuals : bool, default `True`
             If `True`, residuals from the training data are used as proxy of
             prediction error to create predictions. 
@@ -1527,6 +1525,8 @@ class ForecasterDirect(ForecasterBase):
             `set_out_sample_residuals()` method.
         use_binned_residuals : Ignored
             Not used, present here for API consistency by convention.
+        random_state : int, default `123`
+            Seed for the random number generator to ensure reproducibility.
 
         Returns
         -------
@@ -1679,8 +1679,6 @@ class ForecasterDirect(ForecasterBase):
         n_boot : int, default `250`
             Number of bootstrapping iterations to perform when estimating prediction
             intervals.
-        random_state : int, default `123`
-            Seed for the random number generator to ensure reproducibility.
         use_in_sample_residuals : bool, default `True`
             If `True`, residuals from the training data are used as proxy of
             prediction error to create predictions. 
@@ -1689,6 +1687,8 @@ class ForecasterDirect(ForecasterBase):
             `set_out_sample_residuals()` method.
         use_binned_residuals : Ignored
             Not used, present here for API consistency by convention.
+        random_state : int, default `123`
+            Seed for the random number generator to ensure reproducibility.
 
         Returns
         -------
@@ -1772,8 +1772,6 @@ class ForecasterDirect(ForecasterBase):
             `quantiles = [0.05, 0.5, 0.95]`.
         n_boot : int, default `250`
             Number of bootstrapping iterations to perform when estimating quantiles.
-        random_state : int, default `123`
-            Seed for the random number generator to ensure reproducibility.
         use_in_sample_residuals : bool, default `True`
             If `True`, residuals from the training data are used as proxy of
             prediction error to create predictions. 
@@ -1782,6 +1780,8 @@ class ForecasterDirect(ForecasterBase):
             `set_out_sample_residuals()` method.
         use_binned_residuals : Ignored
             Not used, present here for API consistency by convention.
+        random_state : int, default `123`
+            Seed for the random number generator to ensure reproducibility.
 
         Returns
         -------
@@ -1854,8 +1854,6 @@ class ForecasterDirect(ForecasterBase):
         n_boot : int, default `250`
             Number of bootstrapping iterations to perform when estimating prediction
             intervals.
-        random_state : int, default `123`
-            Seed for the random number generator to ensure reproducibility.
         use_in_sample_residuals : bool, default `True`
             If `True`, residuals from the training data are used as proxy of
             prediction error to create predictions. 
@@ -1864,6 +1862,8 @@ class ForecasterDirect(ForecasterBase):
             `set_out_sample_residuals()` method.
         use_binned_residuals : Ignored
             Not used, present here for API consistency by convention.
+        random_state : int, default `123`
+            Seed for the random number generator to ensure reproducibility.
 
         Returns
         -------

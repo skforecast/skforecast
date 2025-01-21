@@ -2344,14 +2344,14 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         n_boot : int, default 250
             Number of bootstrapping iterations to perform when estimating prediction
             intervals.
-        random_state : int, default 123
-            Seed for the random number generator to ensure reproducibility.
         use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
             prediction error to create predictions. 
             If `False`, out of sample residuals (calibration) are used. 
             Out-of-sample residuals must be precomputed using Forecaster's
             `set_out_sample_residuals()` method.
+        random_state : int, default 123
+            Seed for the random number generator to ensure reproducibility.
         suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the prediction 
             process. See skforecast.exceptions.warn_skforecast_categories for more
@@ -2501,14 +2501,14 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         n_boot : int, default 250
             Number of bootstrapping iterations to perform when estimating prediction
             intervals.
-        random_state : int, default 123
-            Seed for the random number generator to ensure reproducibility.
         use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
             prediction error to create predictions. 
             If `False`, out of sample residuals (calibration) are used. 
             Out-of-sample residuals must be precomputed using Forecaster's
             `set_out_sample_residuals()` method.
+        random_state : int, default 123
+            Seed for the random number generator to ensure reproducibility.
         suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the prediction 
             process. See skforecast.exceptions.warn_skforecast_categories for more
@@ -2610,14 +2610,14 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             `quantiles = [0.05, 0.5, 0.95]`.
         n_boot : int, default 250
             Number of bootstrapping iterations to perform when estimating quantiles.
-        random_state : int, default 123
-            Seed for the random number generator to ensure reproducibility.
         use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
             prediction error to create predictions. 
             If `False`, out of sample residuals (calibration) are used. 
             Out-of-sample residuals must be precomputed using Forecaster's
             `set_out_sample_residuals()` method.
+        random_state : int, default 123
+            Seed for the random number generator to ensure reproducibility.
         suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the prediction 
             process. See skforecast.exceptions.warn_skforecast_categories for more
@@ -2706,14 +2706,14 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         n_boot : int, default 250
             Number of bootstrapping iterations to perform when estimating prediction
             intervals.
-        random_state : int, default 123
-            Seed for the random number generator to ensure reproducibility.
         use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
             prediction error to create predictions. 
             If `False`, out of sample residuals (calibration) are used. 
             Out-of-sample residuals must be precomputed using Forecaster's
             `set_out_sample_residuals()` method.
+        random_state : int, default 123
+            Seed for the random number generator to ensure reproducibility.
         suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the prediction 
             process. See skforecast.exceptions.warn_skforecast_categories for more
