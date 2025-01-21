@@ -1811,7 +1811,7 @@ class ForecasterRecursive(ForecasterBase):
             must be between 0 and 100 inclusive. For example, interval 
             of 95% should be as `interval = [2.5, 97.5]`.
             - When using `method='conformal'`, the interval must be a float or 
-            a symmetric list/tuple.
+            a list/tuple defining a symmetric interval.
         n_boot : int, default 250
             Number of bootstrapping iterations to perform when estimating prediction
             intervals.

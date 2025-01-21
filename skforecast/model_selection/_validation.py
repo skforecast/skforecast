@@ -272,27 +272,33 @@ def _backtesting_forecaster(
                 'use_in_sample_residuals': use_in_sample_residuals,
                 'use_binned_residuals': use_binned_residuals
             }
-            if interval == 'bootstrapping':
-                pred_interval = forecaster.predict_bootstrapping(**kwargs_interval)
-            elif isinstance(interval, (list, tuple)):
-                quantiles = [q / 100 for q in interval]
-                pred_interval = forecaster.predict_quantiles(quantiles=quantiles, **kwargs_interval)
-                if len(interval) == 2:
-                    pred_interval.columns = ['lower_bound', 'upper_bound']
+            if method == 'bootstrapping':
+                if interval == 'bootstrapping':
+                    pred_interval = forecaster.predict_bootstrapping(**kwargs_interval)
+                elif isinstance(interval, (list, tuple)):
+                    quantiles = [q / 100 for q in interval]
+                    pred_interval = forecaster.predict_quantiles(quantiles=quantiles, **kwargs_interval)
+                    if len(interval) == 2:
+                        pred_interval.columns = ['lower_bound', 'upper_bound']
+                    else:
+                        pred_interval.columns = [f'p_{p}' for p in interval]
                 else:
-                    pred_interval.columns = [f'p_{p}' for p in interval]
+                    pred_interval = forecaster.predict_dist(distribution=interval, **kwargs_interval)
             else:
-                pred_interval = forecaster.predict_dist(distribution=interval, **kwargs_interval)
+                pred = forecaster.predict_interval(
+                    method='conformal', interval=interval, **kwargs_interval
+                )
 
         # NOTE: This is done after probabilistic predictions to avoid repeating the same checks.
-        pred = forecaster.predict(
-                   steps        = steps,
-                   last_window  = last_window_y,
-                   exog         = next_window_exog,
-                   check_inputs = True if interval is None else False
-               )
+        if interval is None or method != 'conformal':
+            pred = forecaster.predict(
+                       steps        = steps,
+                       last_window  = last_window_y,
+                       exog         = next_window_exog,
+                       check_inputs = True if interval is None else False
+                   )
 
-        if interval is not None:
+        if interval is not None and method != 'conformal':
             pred = pd.concat((pred, pred_interval), axis=1)
 
         if type(forecaster).__name__ != 'ForecasterDirect' and gap > 0:
@@ -306,6 +312,7 @@ def _backtesting_forecaster(
         "exog": exog,
         "store_in_sample_residuals": store_in_sample_residuals,
         "gap": gap,
+        "method": method,
         "interval": interval,
         "n_boot": n_boot,
         "random_state": random_state,
