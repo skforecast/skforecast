@@ -390,7 +390,7 @@ def test_set_out_sample_residuals_when_residuals_keys_partially_match():
     expected = {
         'l1': np.array([-1,  0,  1,  2,  3]),
         'l2': None,
-        '_unknown_level': np.array([-1,  0,  1,  2,  3])
+        '_unknown_level': np.array([-1, 0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
     }
     for key in expected.keys():
         if expected[key] is not None:

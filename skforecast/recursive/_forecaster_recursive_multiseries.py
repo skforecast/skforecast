@@ -1751,9 +1751,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             self.exog_dtypes_in_ = exog_dtypes_in_
             self.X_train_exog_names_out_ = X_train_exog_names_out_
 
+        self.in_sample_residuals_ = {}
+        self.in_sample_residuals_by_bin_ = {}
         if store_in_sample_residuals:
-            self.in_sample_residuals_ = {k: None for k in series_names_in_}
-            self.in_sample_residuals_by_bin_ = {k: None for k in series_names_in_}
             y_pred = self.regressor.predict(X_train_regressor)
             if self.encoding is not None:
                 for level in X_train_series_names_in_:
@@ -3149,7 +3149,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                         f"When containing pandas Series, elements in `y_true` and "
                         f"`y_pred` must have the same index. Error with series '{k}'."
                     )
-                
+
+        # TODO: esto está mal!
         if self.encoding is None:
             if list(y_true.keys()) != ['_unknown_level']:
                 warnings.warn(
@@ -3157,8 +3158,13 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     "is made. All residuals are stored in the '_unknown_level' key.",
                     UnknownLevelWarning
                 )
-            y_true = {'_unknown_level': np.concatenate(list(y_true.values()))}
-            y_pred = {'_unknown_level': np.concatenate(list(y_pred.values()))}
+            sorted_keys = sorted(y_true.keys())
+            y_true = {
+                '_unknown_level': np.concatenate([y_true[key] for key in sorted_keys])
+            }
+            y_pred = {
+                '_unknown_level': np.concatenate([y_pred[key] for key in sorted_keys])
+            }
 
         # NOTE: Out-of-sample residuals can only be stored for series seen during 
         # fit. To save residuals for unseen levels use the key '_unknown_level'. 
@@ -3194,8 +3200,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             self.out_sample_residuals_by_bin_[level] = residuals_by_bin_level
 
         if '_unknown_level' not in series_to_update:
-            y_true = np.concatenate(list(y_true.values()))
-            y_pred = np.concatenate(list(y_pred.values()))
+            print(y_true.keys())
+            print(y_pred.keys())
+            sorted_keys = sorted(y_true.keys())
+            y_true = np.concatenate([y_true[key] for key in sorted_keys])
+            y_pred = np.concatenate([y_pred[key] for key in sorted_keys])
             residuals_level, residuals_by_bin_level = (
                 self._binning_out_sample_residuals(
                     level        = '_unknown_level',
