@@ -6,7 +6,7 @@
 # coding=utf-8
 
 from __future__ import annotations
-from typing import Union, Tuple, Optional, Callable, Any
+from typing import Callable, Any
 import warnings
 import sys
 import numpy as np
@@ -243,15 +243,15 @@ class ForecasterDirect(ForecasterBase):
         self,
         regressor: object,
         steps: int,
-        lags: Optional[Union[int, list, np.ndarray, range]] = None,
-        window_features: Optional[Union[object, list]] = None,
-        transformer_y: Optional[object] = None,
-        transformer_exog: Optional[object] = None,
-        weight_func: Optional[Callable] = None,
-        differentiation: Optional[int] = None,
-        fit_kwargs: Optional[dict] = None,
-        n_jobs: Union[int, str] = 'auto',
-        forecaster_id: Optional[Union[str, int]] = None
+        lags: int | list[int] | np.ndarray[int] | range[int] | None = None,
+        window_features: object | list[object] | None = None,
+        transformer_y: object | None = None,
+        transformer_exog: object | None = None,
+        weight_func: Callable | None = None,
+        differentiation: int | None = None,
+        fit_kwargs: dict[str, object] | None = None,
+        n_jobs: int | str = 'auto',
+        forecaster_id: str | int | None = None
     ) -> None:
         
         self.regressor                          = copy(regressor)
@@ -498,8 +498,8 @@ class ForecasterDirect(ForecasterBase):
         self, 
         y: np.ndarray,
         X_as_pandas: bool = False,
-        train_index: Optional[pd.Index] = None
-    ) -> Tuple[Optional[Union[np.ndarray, pd.DataFrame]], np.ndarray]:
+        train_index: pd.Index | None = None
+    ) -> tuple[np.ndarray | pd.DataFrame | None, np.ndarray]:
         """
         Create the lagged values and their target variable from a time series.
         
@@ -510,7 +510,7 @@ class ForecasterDirect(ForecasterBase):
         ----------
         y : numpy ndarray
             Training time series values.
-        X_as_pandas : bool, default `False`
+        X_as_pandas : bool, default False
             If `True`, the returned matrix `X_data` is a pandas DataFrame.
         train_index : pandas Index, default None
             Index of the training data. It is used to create the pandas DataFrame
@@ -555,7 +555,7 @@ class ForecasterDirect(ForecasterBase):
         y: pd.Series,
         train_index: pd.Index,
         X_as_pandas: bool = False,
-    ) -> Tuple[list, list]:
+    ) -> tuple[list[np.ndarray | pd.DataFrame], list[str]]:
         """
         
         Parameters
@@ -565,7 +565,7 @@ class ForecasterDirect(ForecasterBase):
         train_index : pandas Index
             Index of the training data. It is used to create the pandas DataFrame
             `X_train_window_features` when `X_as_pandas` is `True`.
-        X_as_pandas : bool, default `False`
+        X_as_pandas : bool, default False
             If `True`, the returned matrix `X_train_window_features` is a 
             pandas DataFrame.
 
@@ -585,15 +585,15 @@ class ForecasterDirect(ForecasterBase):
             X_train_wf = wf.transform_batch(y)
             if not isinstance(X_train_wf, pd.DataFrame):
                 raise TypeError(
-                    (f"The method `transform_batch` of {type(wf).__name__} "
-                     f"must return a pandas DataFrame.")
+                    f"The method `transform_batch` of {type(wf).__name__} "
+                    f"must return a pandas DataFrame."
                 )
             X_train_wf = X_train_wf.iloc[-len_train_index:]
             if not len(X_train_wf) == len_train_index:
                 raise ValueError(
-                    (f"The method `transform_batch` of {type(wf).__name__} "
-                     f"must return a DataFrame with the same number of rows as "
-                     f"the input time series - (`window_size` + (`steps` - 1)): {len_train_index}.")
+                    f"The method `transform_batch` of {type(wf).__name__} "
+                    f"must return a DataFrame with the same number of rows as "
+                    f"the input time series - (`window_size` + (`steps` - 1)): {len_train_index}."
                 )
             X_train_wf.index = train_index
             
@@ -607,8 +607,15 @@ class ForecasterDirect(ForecasterBase):
     def _create_train_X_y(
         self,
         y: pd.Series,
-        exog: Optional[Union[pd.Series, pd.DataFrame]] = None
-    ) -> Tuple[pd.DataFrame, dict, list, list, list, dict]:
+        exog: pd.Series | pd.DataFrame | None = None
+    ) -> tuple[
+        pd.DataFrame, 
+        dict[int, pd.Series], 
+        list[str], 
+        list[str], 
+        list[str], 
+        dict[str, type]
+    ]:
         """
         Create training matrices from univariate time series and exogenous
         variables. The resulting matrices contain the target variable and 
@@ -825,8 +832,8 @@ class ForecasterDirect(ForecasterBase):
     def create_train_X_y(
         self,
         y: pd.Series,
-        exog: Optional[Union[pd.Series, pd.DataFrame]] = None
-    ) -> Tuple[pd.DataFrame, dict]:
+        exog: pd.Series | pd.DataFrame | None = None,
+    ) -> tuple[pd.DataFrame, dict[int, pd.Series]]:
         """
         Create training matrices from univariate time series and exogenous
         variables. The resulting matrices contain the target variable and 
@@ -863,9 +870,9 @@ class ForecasterDirect(ForecasterBase):
         self,
         step: int,
         X_train: pd.DataFrame,
-        y_train: dict,
+        y_train: dict[int, pd.Series],
         remove_suffix: bool = False
-    ) -> Tuple[pd.DataFrame, pd.Series]:
+    ) -> tuple[pd.DataFrame, pd.Series]:
         """
         Select the columns needed to train a forecaster for a specific step.  
         The input matrices should be created using `create_train_X_y` method. 
@@ -881,7 +888,7 @@ class ForecasterDirect(ForecasterBase):
             Dataframe created with the `create_train_X_y` method, first return.
         y_train : dict
             Dict created with the `create_train_X_y` method, second return.
-        remove_suffix : bool, default `False`
+        remove_suffix : bool, default False
             If True, suffix "_step_i" is removed from the column names.
 
         Returns
@@ -895,8 +902,8 @@ class ForecasterDirect(ForecasterBase):
 
         if (step < 1) or (step > self.steps):
             raise ValueError(
-                (f"Invalid value `step`. For this forecaster, minimum value is 1 "
-                 f"and the maximum step is {self.steps}.")
+                f"Invalid value `step`. For this forecaster, minimum value is 1 "
+                f"and the maximum step is {self.steps}."
             )
 
         y_train_step = y_train[step]
@@ -932,8 +939,8 @@ class ForecasterDirect(ForecasterBase):
         self,
         y: pd.Series,
         initial_train_size: int,
-        exog: Optional[Union[pd.Series, pd.DataFrame]] = None
-    ) -> Tuple[pd.DataFrame, dict, pd.DataFrame, dict]:
+        exog: pd.Series | pd.DataFrame | None = None
+    ) -> tuple[pd.DataFrame, dict[int, pd.Series], pd.DataFrame, dict[int, pd.Series]]:
         """
         Create matrices needed to train and test the forecaster for one-step-ahead
         predictions.
@@ -1019,8 +1026,8 @@ class ForecasterDirect(ForecasterBase):
                 )
             if np.sum(sample_weight) == 0:
                 raise ValueError(
-                    ("The resulting `sample_weight` cannot be normalized because "
-                     "the sum of the weights is zero.")
+                    "The resulting `sample_weight` cannot be normalized because "
+                    "the sum of the weights is zero."
                 )
 
         return sample_weight
@@ -1028,7 +1035,7 @@ class ForecasterDirect(ForecasterBase):
     def fit(
         self,
         y: pd.Series,
-        exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
+        exog: pd.Series | pd.DataFrame | None = None,
         store_last_window: bool = True,
         store_in_sample_residuals: bool = True
     ) -> None:
@@ -1046,9 +1053,9 @@ class ForecasterDirect(ForecasterBase):
             Exogenous variable/s included as predictor/s. Must have the same
             number of observations as `y` and their indexes must be aligned so
             that y[i] is regressed on exog[i].
-        store_last_window : bool, default `True`
+        store_last_window : bool, default True
             Whether or not to store the last window (`last_window_`) of training data.
-        store_in_sample_residuals : bool, default `True`
+        store_in_sample_residuals : bool, default True
             If `True`, in-sample residuals will be stored in the forecaster object
             after fitting (`in_sample_residuals_` attribute).
 
@@ -1195,11 +1202,11 @@ class ForecasterDirect(ForecasterBase):
 
     def _create_predict_inputs(
         self,
-        steps: Optional[Union[int, list]] = None,
-        last_window: Optional[Union[pd.Series, pd.DataFrame]] = None,
-        exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
+        steps: int | list[int] | None = None,
+        last_window: pd.Series | pd.DataFrame | None = None,
+        exog: pd.Series | pd.DataFrame | None = None,
         check_inputs: bool = True
-    ) -> Tuple[list, list, list, pd.Index]:
+    ) -> tuple[list[np.ndarray], list[str], list[int], pd.Index]:
         """
         Create the inputs needed for the prediction process.
         
@@ -1222,7 +1229,7 @@ class ForecasterDirect(ForecasterBase):
             right after training data.
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
-        check_inputs : bool, default `True`
+        check_inputs : bool, default True
             If `True`, the input is checked for possible warnings and errors 
             with the `check_predict_input` function. This argument is created 
             for internal use and is not recommended to be changed.
@@ -1346,9 +1353,9 @@ class ForecasterDirect(ForecasterBase):
 
     def create_predict_X(
         self,
-        steps: Optional[Union[int, list]] = None,
-        last_window: Optional[Union[pd.Series, pd.DataFrame]] = None,
-        exog: Optional[Union[pd.Series, pd.DataFrame]] = None
+        steps: int | list[int] | None = None,
+        last_window: pd.Series | pd.DataFrame | None = None,
+        exog: pd.Series | pd.DataFrame | None = None
     ) -> pd.DataFrame:
         """
         Create the predictors needed to predict `steps` ahead.
@@ -1406,9 +1413,9 @@ class ForecasterDirect(ForecasterBase):
 
     def predict(
         self,
-        steps: Optional[Union[int, list]] = None,
-        last_window: Optional[Union[pd.Series, pd.DataFrame]] = None,
-        exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
+        steps: int | list[int] | None = None,
+        last_window: pd.Series | pd.DataFrame | None = None,
+        exog: pd.Series | pd.DataFrame | None = None,
         check_inputs: bool = True
     ) -> pd.Series:
         """
@@ -1433,7 +1440,7 @@ class ForecasterDirect(ForecasterBase):
             right after training data.
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
-        check_inputs : bool, default `True`
+        check_inputs : bool, default True
             If `True`, the input is checked for possible warnings and errors 
             with the `check_predict_input` function. This argument is created 
             for internal use and is not recommended to be changed.
@@ -1481,9 +1488,9 @@ class ForecasterDirect(ForecasterBase):
 
     def predict_bootstrapping(
         self,
-        steps: Optional[Union[int, list]] = None,
-        last_window: Optional[pd.Series] = None,
-        exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
+        steps: int | list[int] | None = None,
+        last_window: pd.Series | pd.DataFrame | None = None,
+        exog: pd.Series | pd.DataFrame | None = None,
         n_boot: int = 250,
         random_state: int = 123,
         use_in_sample_residuals: bool = True,
@@ -1506,7 +1513,7 @@ class ForecasterDirect(ForecasterBase):
             are predicted.
             - If `None`: As many steps are predicted as were defined at 
             initialization.
-        last_window : pandas Series, default None
+        last_window : pandas Series, pandas DataFrame, default None
             Series values used to create the predictors (lags) needed to 
             predict `steps`.
             If `last_window = None`, the values stored in` self.last_window_` are
@@ -1514,10 +1521,10 @@ class ForecasterDirect(ForecasterBase):
             right after training data.
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
-        n_boot : int, default `250`
+        n_boot : int, default 250
             Number of bootstrapping iterations to perform when estimating prediction
             intervals.
-        use_in_sample_residuals : bool, default `True`
+        use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
             prediction error to create predictions. 
             If `False`, out of sample residuals (calibration) are used. 
@@ -1525,7 +1532,7 @@ class ForecasterDirect(ForecasterBase):
             `set_out_sample_residuals()` method.
         use_binned_residuals : Ignored
             Not used, present here for API consistency by convention.
-        random_state : int, default `123`
+        random_state : int, default 123
             Seed for the random number generator to ensure reproducibility.
 
         Returns
@@ -1640,10 +1647,10 @@ class ForecasterDirect(ForecasterBase):
 
     def predict_interval(
         self,
-        steps: Optional[Union[int, list]] = None,
-        last_window: Optional[pd.Series] = None,
-        exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
-        interval: Union[list, tuple] = [5, 95],
+        steps: int | list[int] | None = None,
+        last_window: pd.Series | pd.DataFrame | None = None,
+        exog: pd.Series | pd.DataFrame | None = None,
+        interval: list[float] | tuple[float] = [5, 95],
         n_boot: int = 250,
         random_state: int = 123,
         use_in_sample_residuals: bool = True,
@@ -1664,7 +1671,7 @@ class ForecasterDirect(ForecasterBase):
             are predicted.
             - If `None`: As many steps are predicted as were defined at 
             initialization.
-        last_window : pandas Series, default None
+        last_window : pandas Series, pandas DataFrame, default None
             Series values used to create the predictors (lags) needed to 
             predict `steps`.
             If `last_window = None`, the values stored in` self.last_window_` are
@@ -1672,14 +1679,14 @@ class ForecasterDirect(ForecasterBase):
             right after training data.
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
-        interval : list, tuple, default `[5, 95]`
+        interval : list, tuple, default [5, 95]
             Confidence of the prediction interval estimated. Sequence of 
             percentiles to compute, which must be between 0 and 100 inclusive. 
             For example, interval of 95% should be as `interval = [2.5, 97.5]`.
-        n_boot : int, default `250`
+        n_boot : int, default 250
             Number of bootstrapping iterations to perform when estimating prediction
             intervals.
-        use_in_sample_residuals : bool, default `True`
+        use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
             prediction error to create predictions. 
             If `False`, out of sample residuals (calibration) are used. 
@@ -1687,7 +1694,7 @@ class ForecasterDirect(ForecasterBase):
             `set_out_sample_residuals()` method.
         use_binned_residuals : Ignored
             Not used, present here for API consistency by convention.
-        random_state : int, default `123`
+        random_state : int, default 123
             Seed for the random number generator to ensure reproducibility.
 
         Returns
@@ -1735,10 +1742,10 @@ class ForecasterDirect(ForecasterBase):
 
     def predict_quantiles(
         self,
-        steps: Optional[Union[int, list]] = None,
-        last_window: Optional[pd.Series] = None,
-        exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
-        quantiles: Union[list, tuple] = [0.05, 0.5, 0.95],
+        steps: int | list[int] | None = None,
+        last_window: pd.Series | pd.DataFrame | None = None,
+        exog: pd.Series | pd.DataFrame | None = None,
+        quantiles: list[float] | tuple[float] = [0.05, 0.5, 0.95],
         n_boot: int = 250,
         random_state: int = 123,
         use_in_sample_residuals: bool = True,
@@ -1758,7 +1765,7 @@ class ForecasterDirect(ForecasterBase):
             are predicted.
             - If `None`: As many steps are predicted as were defined at 
             initialization.
-        last_window : pandas Series, default None
+        last_window : pandas Series, pandas DataFrame, default None
             Series values used to create the predictors (lags) needed to 
             predict `steps`.
             If `last_window = None`, the values stored in` self.last_window_` are
@@ -1770,9 +1777,9 @@ class ForecasterDirect(ForecasterBase):
             Sequence of quantiles to compute, which must be between 0 and 1 
             inclusive. For example, quantiles of 0.05, 0.5 and 0.95 should be as 
             `quantiles = [0.05, 0.5, 0.95]`.
-        n_boot : int, default `250`
+        n_boot : int, default 250
             Number of bootstrapping iterations to perform when estimating quantiles.
-        use_in_sample_residuals : bool, default `True`
+        use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
             prediction error to create predictions. 
             If `False`, out of sample residuals (calibration) are used. 
@@ -1780,7 +1787,7 @@ class ForecasterDirect(ForecasterBase):
             `set_out_sample_residuals()` method.
         use_binned_residuals : Ignored
             Not used, present here for API consistency by convention.
-        random_state : int, default `123`
+        random_state : int, default 123
             Seed for the random number generator to ensure reproducibility.
 
         Returns
@@ -1816,9 +1823,9 @@ class ForecasterDirect(ForecasterBase):
     def predict_dist(
         self,
         distribution: object,
-        steps: Optional[Union[int, list]] = None,
-        last_window: Optional[pd.Series] = None,
-        exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
+        steps: int | list[int] | None = None,
+        last_window: pd.Series | pd.DataFrame | None = None,
+        exog: pd.Series | pd.DataFrame | None = None,
         n_boot: int = 250,
         random_state: int = 123,
         use_in_sample_residuals: bool = True,
@@ -1843,7 +1850,7 @@ class ForecasterDirect(ForecasterBase):
             are predicted.
             - If `None`: As many steps are predicted as were defined at 
             initialization.
-        last_window : pandas Series, default None
+        last_window : pandas Series, pandas DataFrame, default None
             Series values used to create the predictors (lags) needed to 
             predict `steps`.
             If `last_window = None`, the values stored in` self.last_window_` are
@@ -1851,10 +1858,10 @@ class ForecasterDirect(ForecasterBase):
             right after training data.
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
-        n_boot : int, default `250`
+        n_boot : int, default 250
             Number of bootstrapping iterations to perform when estimating prediction
             intervals.
-        use_in_sample_residuals : bool, default `True`
+        use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
             prediction error to create predictions. 
             If `False`, out of sample residuals (calibration) are used. 
@@ -1862,7 +1869,7 @@ class ForecasterDirect(ForecasterBase):
             `set_out_sample_residuals()` method.
         use_binned_residuals : Ignored
             Not used, present here for API consistency by convention.
-        random_state : int, default `123`
+        random_state : int, default 123
             Seed for the random number generator to ensure reproducibility.
 
         Returns
@@ -1904,7 +1911,7 @@ class ForecasterDirect(ForecasterBase):
 
     def set_params(
         self, 
-        params: dict
+        params: dict[str, object]
     ) -> None:
         """
         Set new values to the parameters of the scikit learn model stored in the
@@ -1931,7 +1938,7 @@ class ForecasterDirect(ForecasterBase):
 
     def set_fit_kwargs(
         self, 
-        fit_kwargs: dict
+        fit_kwargs: dict[str, object]
     ) -> None:
         """
         Set new values for the additional keyword arguments passed to the `fit` 
@@ -1952,7 +1959,7 @@ class ForecasterDirect(ForecasterBase):
 
     def set_lags(
         self, 
-        lags: Optional[Union[int, list, np.ndarray, range]] = None
+        lags: int | list[int] | np.ndarray[int] | range[int] | None = None
     ) -> None:
         """
         Set new value to the attribute `lags`. Attributes `lags_names`, 
@@ -1976,9 +1983,9 @@ class ForecasterDirect(ForecasterBase):
 
         if self.window_features is None and lags is None:
             raise ValueError(
-                ("At least one of the arguments `lags` or `window_features` "
-                 "must be different from None. This is required to create the "
-                 "predictors used in training the forecaster.")
+                "At least one of the arguments `lags` or `window_features` "
+                "must be different from None. This is required to create the "
+                "predictors used in training the forecaster."
             )
         
         self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
@@ -1992,7 +1999,7 @@ class ForecasterDirect(ForecasterBase):
 
     def set_window_features(
         self, 
-        window_features: Optional[Union[object, list]] = None
+        window_features: object | list[object] | None = None
     ) -> None:
         """
         Set new value to the attribute `window_features`. Attributes 
@@ -2013,9 +2020,9 @@ class ForecasterDirect(ForecasterBase):
 
         if window_features is None and self.lags is None:
             raise ValueError(
-                ("At least one of the arguments `lags` or `window_features` "
-                 "must be different from None. This is required to create the "
-                 "predictors used in training the forecaster.")
+                "At least one of the arguments `lags` or `window_features` "
+                "must be different from None. This is required to create the "
+                "predictors used in training the forecaster."
             )
         
         self.window_features, self.window_features_names, self.max_size_window_features = (
@@ -2036,8 +2043,8 @@ class ForecasterDirect(ForecasterBase):
 
     def set_out_sample_residuals(
         self,
-        y_true: dict,
-        y_pred: dict,
+        y_true: dict[int, np.ndarray | pd.Series],
+        y_pred: dict[int, np.ndarray | pd.Series],
         append: bool = False,
         random_state: int = 36987
     ) -> None:
@@ -2062,12 +2069,12 @@ class ForecasterDirect(ForecasterBase):
         y_pred : dict
             Dictionary of numpy ndarrays or pandas Series with the predicted values
             of the time series for each model in the form {step: y_pred}.
-        append : bool, default `False`
+        append : bool, default False
             If `True`, new residuals are added to the once already stored in the
             attribute `out_sample_residuals_`. If after appending the new residuals,
             the limit of 10_000 samples is exceeded, a random sample of 10_000 is
             kept.
-        random_state : int, default `36987`
+        random_state : int, default 36987
             Sets a seed to the random sampling for reproducible output.
 
         Returns
@@ -2195,7 +2202,7 @@ class ForecasterDirect(ForecasterBase):
         step : int
             Model from which retrieve information (a separate model is created 
             for each forecast time step). First step is 1.
-        sort_importance: bool, default `True`
+        sort_importance: bool, default True
             If `True`, sorts the feature importances in descending order.
 
         Returns
@@ -2249,10 +2256,10 @@ class ForecasterDirect(ForecasterBase):
             feature_importances = estimator.coef_
         else:
             warnings.warn(
-                (f"Impossible to access feature importances for regressor of type "
-                 f"{type(estimator)}. This method is only valid when the "
-                 f"regressor stores internally the feature importances in the "
-                 f"attribute `feature_importances_` or `coef_`.")
+                f"Impossible to access feature importances for regressor of type "
+                f"{type(estimator)}. This method is only valid when the "
+                f"regressor stores internally the feature importances in the "
+                f"attribute `feature_importances_` or `coef_`."
             )
             feature_importances = None
 

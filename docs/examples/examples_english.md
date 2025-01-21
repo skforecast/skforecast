@@ -23,11 +23,11 @@ This section provides essential tutorials for users who are just getting started
 
 These tutorials focus on global models and multi-series forecasting, where you can explore the use of techniques that handle multiple time series simultaneously and compare performance across different forecasting approaches.
 
-<i class="fa-duotone fa-water fa" style="font-size: 25px; color: teal;"></i> [Global Forecasting Models: Multi-series forecasting](https://www.cienciadedatos.net/documentos/py44-multi-series-forecasting-skforecast.html)
+<i class="fa-duotone fa-water fa" style="font-size: 25px; color: teal;"></i> [Global Forecasting Models I: Multi-series forecasting](https://www.cienciadedatos.net/documentos/py44-multi-series-forecasting-skforecast.html)
 
-<i class="fa-solid fa-stairs" style="font-size: 25px; color: #B197FC;"></i> [Scalable Forecasting: Modeling thousand time series with a single global model](https://www.cienciadedatos.net/documentos/py59-scalable-forecasting-models.html)
+<i class="fa-solid fa-stairs" style="font-size: 25px; color: #B197FC;"></i> [Global Forecasting Models II: Modeling thousand time series with a single global model](https://www.cienciadedatos.net/documentos/py59-scalable-forecasting-models.html)
 
-<i class="fa-solid fa-globe" style="font-size: 25px; color: #6b8e23;"></i> [Global Forecasting Models: Comparative Analysis of Single and Multi-Series Forecasting Modeling](https://www.cienciadedatos.net/documentos/py53-global-forecasting-models.html)
+<i class="fa-solid fa-globe" style="font-size: 25px; color: #6b8e23;"></i> [Global Forecasting Models III: Comparative Analysis of Single and Multi-Series Forecasting Modeling](https://www.cienciadedatos.net/documentos/py53-global-forecasting-models.html)
 
 <i class="fa-solid fa-layer-group" style="font-size: 25px; color: #001633;"></i> [Forecasting with Deep Learning](https://cienciadedatos.net/documentos/py54-forecasting-with-deep-learning)
 
@@ -59,6 +59,8 @@ This section includes real-world applications of time series forecasting to tack
 
 <i class="fa-duotone fa-lightbulb fa" style="font-size: 25px; color: #fcea2b;"></i> [Forecasting energy demand with machine learning](https://www.cienciadedatos.net/documentos/py29-forecasting-electricity-power-demand-python.html)
 
+<i class="fa-solid fa-basket-shopping" style="font-size: 25px; color: #74C0FC;"></i> [The M5 Accuracy competition: the success of global forecasting models](https://www.cienciadedatos.net/documentos/py61-m5-forecasting-competition.html)
+
 <i class="fa-duotone fa-rss fa" style="font-size: 25px; color: #666666;"></i> [Forecasting web traffic with machine learning and Python](https://www.cienciadedatos.net/documentos/py37-forecasting-web-traffic-machine-learning.html)
 
 <i class="fa-solid fa-wave-square" style="font-size: 25px; color: #fbbb09;"></i> [Intermittent demand forecasting](https://www.cienciadedatos.net/documentos/py48-intermittent-demand-forecasting.html)
@@ -66,5 +68,3 @@ This section includes real-world applications of time series forecasting to tack
 <i class="fa-solid fa-virus-covid" style="font-size: 25px; color:red;"></i> [Mitigating the impact of covid on forecasting models](https://www.cienciadedatos.net/documentos/py45-weighted-time-series-forecasting.html)
 
 <i class="fa-brands fa-bitcoin fa" style="font-size: 25px; color: #f7931a;"></i> [Bitcoin price prediction with Python](https://www.cienciadedatos.net/documentos/py41-forecasting-cryptocurrency-bitcoin-machine-learning-python.html)
-
-<i class="fa-regular fa-basket-shopping" style="font-size: 25px; color: #74C0FC;"></i> [The M5 Accuracy competition: the success of global forecasting models](https://www.cienciadedatos.net/documentos/py61-m5-forecasting-competition.html)

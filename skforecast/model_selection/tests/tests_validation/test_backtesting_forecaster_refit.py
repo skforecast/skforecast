@@ -755,7 +755,10 @@ def test_output_backtesting_forecaster_interval_yes_exog_yes_remainder_with_mock
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
-def test_output_backtesting_forecaster_no_refit_interval_percentiles_yes_exog():
+@pytest.mark.parametrize("initial_train_size", 
+                         [len(y) - 20, "2022-01-30 00:00:00"],
+                         ids=lambda init: f'initial_train_size: {init}')
+def test_output_backtesting_forecaster_refit_interval_percentiles_yes_exog(initial_train_size):
     """
     Test output of _backtesting_forecaster with predicted intervals as percentiles.
     """
@@ -793,8 +796,8 @@ def test_output_backtesting_forecaster_no_refit_interval_percentiles_yes_exog():
 
     forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
     cv = TimeSeriesFold(
+             initial_train_size = initial_train_size,
              steps              = 5,
-             initial_train_size = len(y_with_index) - 20,
              refit              = True
          )
     metric, backtest_predictions = _backtesting_forecaster(
@@ -1319,7 +1322,7 @@ def test_output_backtesting_forecaster_interval_yes_exog_yes_remainder_gap_with_
 
 def test_output_backtesting_forecaster_interval_yes_exog_not_allow_remainder_gap_with_mocked():
     """
-    Test output of _backtesting_forecaster_no_refit with backtesting mocked, interval yes. 
+    Test output of _backtesting_forecaster with backtesting mocked, interval yes. 
     Regressor is LinearRegression with lags=3, Series y is mocked, exog is mocked, 
     20 observations to backtest, steps=5 and gap=3, metric='mean_squared_error',
     'use_in_sample_residuals = True', allow_incomplete_fold = False
@@ -1464,7 +1467,7 @@ def test_output_backtesting_forecaster_refit_int_interval_yes_exog_yes_remainder
 
 def test_output_backtesting_forecaster_refit_int_interval_yes_exog_not_allow_remainder_gap_with_mocked():
     """
-    Test output of _backtesting_forecaster_no_refit with backtesting mocked, interval yes. 
+    Test output of _backtesting_forecaster with backtesting mocked, interval yes. 
     Regressor is LinearRegression with lags=3, Series y is mocked, exog is mocked, 
     20 observations to backtest, steps=5 and gap=3, metric='mean_squared_error',
     'use_in_sample_residuals = True', allow_incomplete_fold = False. Refit int.

@@ -225,6 +225,13 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_equival
         add_aggregated_metric=True,
         show_progress=False
     )
+    pred_backtesting = (
+        pred_backtesting
+        .pivot(columns='level', values='pred')
+        .rename_axis(None, axis=0)
+        .rename_axis(None, axis=1)
+        .asfreq('D')
+    )
 
     (
         X_train,
@@ -574,6 +581,13 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_equival
         add_aggregated_metric=True,
         show_progress=False
     )
+    pred_backtesting = (
+        pred_backtesting
+        .pivot(columns='level', values='pred')
+        .rename_axis(None, axis=0)
+        .rename_axis(None, axis=1)
+        .asfreq('D')
+    )
 
     (
         X_train,
@@ -587,6 +601,7 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_equival
             exog               = exog_dict,
             initial_train_size = initial_train_size,
         )
+    
     metrics_one_step_ahead, pred_one_step_ahead = _predict_and_calculate_metrics_one_step_ahead_multiseries(
         forecaster=forecaster,
         series=series_dict,

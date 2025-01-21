@@ -171,15 +171,17 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_
                      transformer_exog   = transformer_exog
                  )
     forecaster.fit(series=series, exog=exog)
-    results = forecaster.predict_bootstrapping(steps=steps, exog=exog_predict, 
-                                               n_boot=4, use_in_sample_residuals=True)
+    results = forecaster.predict_bootstrapping(
+        steps=steps, exog=exog_predict, n_boot=4, use_in_sample_residuals=True
+    )
     
     expected = pd.DataFrame(
-                    data = np.array([[0.68370403, 0.61428329, 0.38628787, 0.46804785],
-                                     [0.23010355, 0.19812106, 0.62028743, 0.25357764]]),
-                    columns = [f"pred_boot_{i}" for i in range(4)],
-                    index   = pd.RangeIndex(start=50, stop=52)
-                )
+                   data = np.array([[0.68370403, 0.61428329, 0.38628787, 0.46804785],
+                                    [0.23010355, 0.19812106, 0.62028743, 0.25357764]]),
+                   columns = [f"pred_boot_{i}" for i in range(4)],
+                   index   = pd.RangeIndex(start=50, stop=52)
+               )
+    expected.insert(0, 'level', np.tile(['l1'], 2))
     
     pd.testing.assert_frame_equal(expected, results)
 
@@ -200,15 +202,17 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_
                  )
     forecaster.fit(series=series, exog=exog)
     forecaster.out_sample_residuals_ = forecaster.in_sample_residuals_
-    results = forecaster.predict_bootstrapping(steps=2, exog=exog_predict, 
-                                               n_boot=4, use_in_sample_residuals=False)
+    results = forecaster.predict_bootstrapping(
+        steps=2, exog=exog_predict, n_boot=4, use_in_sample_residuals=False
+    )
     
     expected = pd.DataFrame(
-                    data = np.array([[0.68370403, 0.61428329, 0.38628787, 0.46804785],
-                                     [0.23010355, 0.19812106, 0.62028743, 0.25357764]]),
-                    columns = [f"pred_boot_{i}" for i in range(4)],
-                    index   = pd.RangeIndex(start=50, stop=52)
-                )
+                   data = np.array([[0.68370403, 0.61428329, 0.38628787, 0.46804785],
+                                    [0.23010355, 0.19812106, 0.62028743, 0.25357764]]),
+                   columns = [f"pred_boot_{i}" for i in range(4)],
+                   index   = pd.RangeIndex(start=50, stop=52)
+               )
+    expected.insert(0, 'level', np.tile(['l1'], 2))
     
     pd.testing.assert_frame_equal(expected, results)
 
@@ -228,8 +232,9 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_
     forecaster.fit(series=series, exog=exog['exog_1'])
     forecaster.in_sample_residuals_ = {1: pd.Series([1, 1, 1, 1, 1, 1, 1]),
                                        2: pd.Series([5, 5, 5, 5, 5, 5, 5])}
-    results = forecaster.predict_bootstrapping(steps=2, exog=exog_predict['exog_1'], 
-                                               n_boot=4, use_in_sample_residuals=True)
+    results = forecaster.predict_bootstrapping(
+        steps=2, exog=exog_predict['exog_1'], n_boot=4, use_in_sample_residuals=True
+    )
     
     expected = pd.DataFrame(
                    data = np.array([[1.57457831, 1.57457831, 1.57457831, 1.57457831],
@@ -237,6 +242,7 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_
                    columns = [f"pred_boot_{i}" for i in range(4)],
                    index   = pd.RangeIndex(start=50, stop=52)
                )
+    expected.insert(0, 'level', np.tile(['l1'], 2))
     
     pd.testing.assert_frame_equal(expected, results)
 
@@ -280,7 +286,7 @@ def test_predict_bootstrapping_output_when_regressor_is_LinearRegression_with_ex
 
     # Revert the differentiation
     last_value_train = series_2[['l1']].loc[:end_train].iloc[[-1]]
-    boot_predictions_1 = boot_predictions_diff.copy()
+    boot_predictions_1 = boot_predictions_diff.drop(columns='level').copy()
     last_value_train = pd.DataFrame(
         np.full(shape=(1, 10), fill_value=last_value_train.values[0]), 
         columns = boot_predictions_1.columns, 
@@ -290,6 +296,7 @@ def test_predict_bootstrapping_output_when_regressor_is_LinearRegression_with_ex
     boot_predictions_1 = boot_predictions_1.sort_index()
     boot_predictions_1 = boot_predictions_1.cumsum(axis=0).iloc[1:,]
     boot_predictions_1 = boot_predictions_1.asfreq('MS')
+    boot_predictions_1.insert(0, 'level', np.tile(['l1'], 1))
 
     forecaster_2 = ForecasterDirectMultiVariate(
         regressor=LinearRegression(), level='l1', steps=1, lags=15, transformer_series=None, differentiation=1
@@ -341,7 +348,7 @@ def test_predict_bootstrapping_output_when_regressor_is_LinearRegression_with_ex
 
     # Revert the differentiation
     last_value_train = series_2[['l1']].loc[:end_train].iloc[[-1]]
-    boot_predictions_1 = boot_predictions_diff.copy()
+    boot_predictions_1 = boot_predictions_diff.drop(columns='level').copy()
     last_value_train = pd.DataFrame(
         np.full(shape=(1, 10), fill_value=last_value_train.values[0]), 
         columns = boot_predictions_1.columns, 
@@ -351,6 +358,7 @@ def test_predict_bootstrapping_output_when_regressor_is_LinearRegression_with_ex
     boot_predictions_1 = boot_predictions_1.sort_index()
     boot_predictions_1 = boot_predictions_1.cumsum(axis=0).iloc[1:,]
     boot_predictions_1 = boot_predictions_1.asfreq('MS')
+    boot_predictions_1.insert(0, 'level', np.tile(['l1'], 10))
 
     forecaster_2 = ForecasterDirectMultiVariate(
         regressor=LinearRegression(), level='l1', steps=10, lags=15, transformer_series=None, differentiation=1
@@ -387,6 +395,7 @@ def test_predict_output_when_window_features_steps_1():
                    columns = [f"pred_boot_{i}" for i in range(10)],
                    index   = pd.RangeIndex(start=50, stop=51)
                )
+    expected.insert(0, 'level', np.tile(['l1'], 1))
     
     pd.testing.assert_frame_equal(predictions, expected)
 
@@ -433,5 +442,6 @@ def test_predict_output_when_window_features_steps_10():
                    columns = [f"pred_boot_{i}" for i in range(10)],
                    index   = pd.RangeIndex(start=50, stop=60)
                )
+    expected.insert(0, 'level', np.tile(['l1'], 10))
     
     pd.testing.assert_frame_equal(predictions, expected)

@@ -69,7 +69,7 @@ def test_predict_dist_output_when_forecaster_is_LinearRegression_steps_is_2_in_s
                      transformer_series = StandardScaler(),
                      transformer_exog   = transformer_exog,
                  )
-    
+
     forecaster.fit(series=series, exog=exog)
     results = forecaster.predict_dist(
                   steps                   = 2,
@@ -80,14 +80,16 @@ def test_predict_dist_output_when_forecaster_is_LinearRegression_steps_is_2_in_s
                   use_in_sample_residuals = True,
                   suppress_warnings       = True
               )
-    
+
     expected = pd.DataFrame(
-                   data    = np.array([[0.30718046, 0.14355782],
-                                       [0.33695529, 0.21900963]]),
-                   columns = ['1_loc', '1_scale'],
-                   index   = pd.RangeIndex(start=50, stop=52)
-               )
-    
+        {
+            "level": ["1", "1"],
+            "loc": [0.3071804611998517, 0.33695529446570166],
+            "scale": [0.1435578185939024, 0.21900963160500286],
+        },
+        index=pd.RangeIndex(start=50, stop=52),
+    )
+
     pd.testing.assert_frame_equal(results, expected)
 
 
@@ -106,7 +108,7 @@ def test_predict_dist_output_when_forecaster_is_LinearRegression_steps_is_2_in_s
                      transformer_series = StandardScaler(),
                      transformer_exog   = transformer_exog,
                  )
-    
+
     forecaster.fit(series=series, exog=exog)
     forecaster.out_sample_residuals_ = forecaster.in_sample_residuals_
     results = forecaster.predict_dist(
@@ -117,12 +119,24 @@ def test_predict_dist_output_when_forecaster_is_LinearRegression_steps_is_2_in_s
                   n_boot                  = 4,
                   use_in_sample_residuals = False
               )
-    
+
     expected = pd.DataFrame(
-                   data    = np.array([[0.30718046, 0.14355782, 0.58121270, 0.31737888],
-                                       [0.33695529, 0.21900963, 0.12968874, 0.06418038]]),
-                   columns = ['1_loc', '1_scale', '2_loc', '2_scale'],
-                   index   = pd.RangeIndex(start=50, stop=52)
-               )
+        {
+            "level": ["1", "2", "1", "2"],
+            "loc": [
+                0.3071804611998517,
+                0.5812127014174517,
+                0.33695529446570166,
+                0.1296887412374588,
+            ],
+            "scale": [
+                0.1435578185939024,
+                0.317378881479421,
+                0.21900963160500286,
+                0.06418038020863531,
+            ],
+        },
+        index=pd.Index([50, 50, 51, 51]),
+    )
 
     pd.testing.assert_frame_equal(results, expected)

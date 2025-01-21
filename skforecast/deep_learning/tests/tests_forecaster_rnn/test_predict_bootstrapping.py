@@ -1,16 +1,11 @@
-# Unit test predict method
+# Unit test predict bootstrapping method
 # ==============================================================================
-import os
-
+import keras
 import numpy as np
 import pandas as pd
-import pytest
 
 from skforecast.deep_learning import ForecasterRnn
 from skforecast.deep_learning.utils import create_and_compile_model
-
-os.environ["KERAS_BACKEND"] = "torch"
-import keras
 
 series = pd.DataFrame(
     {
@@ -42,33 +37,47 @@ model = create_and_compile_model(
 )
 
 
-# Test case for predicting 3 steps ahead
-def test_predict_3_steps_ahead():
+def test_predict_bootstrapping_output_size_with_steps_by_default():
     """
-    Test case for predicting 3 steps ahead
+    Test output sizes for predicting steps defined by default with bootstrapping
     """
     # Create a ForecasterRnn object
     forecaster = ForecasterRnn(model, levels, lags=lags)
     forecaster.fit(series)
 
     # Call the predict method
-    predictions = forecaster.predict(steps=3)
+    boot_preds = forecaster.predict_bootstrapping()
 
     # Check the shape and values of the predictions
-    assert predictions.shape == (6, 2)
+    assert boot_preds.shape == (steps * len(levels), 251)
 
 
-# Test case for predicting 2 steps ahead with specific levels
+def test_predict_bootstrapping_output_size_3_steps_ahead():
+    """
+    Test output sizes for predicting 3 steps ahead with bootstrapping
+    """
+    # Create a ForecasterRnn object
+    forecaster = ForecasterRnn(model, levels, lags=lags)
+    forecaster.fit(series)
+
+    # Call the predict method
+    boot_preds = forecaster.predict_bootstrapping(steps=3)
+
+    # Check the shape and values of the predictions
+    assert boot_preds.shape == (3 * len(levels), 251)
+
+
 def test_predict_2_steps_ahead_specific_levels():
     """
-    Test case for predicting 2 steps ahead with specific levels
+    Test output sizes for predicting 2 steps ahead with bootstrapping and specific levels
     """
     # Create a ForecasterRnn object
     forecaster = ForecasterRnn(model, levels, lags=lags)
     forecaster.fit(series)
 
     # Call the predict method
-    predictions = forecaster.predict(steps=3, levels="1")
+    boot_preds = forecaster.predict_bootstrapping(steps=2, levels="1")
 
     # Check the shape and values of the predictions
-    assert predictions.shape == (3, 2)
+    assert boot_preds.shape == (2 * 1, 251)
+

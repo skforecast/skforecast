@@ -18,7 +18,7 @@ from sklearn.exceptions import NotFittedError
 
 from ..exceptions import IgnoredArgumentWarning
 from ..metrics import add_y_train_argument, _get_metric
-from ..utils import check_interval
+from ..utils import check_interval, date_to_index_position
 
 
 def initialize_lags_grid(
@@ -302,23 +302,39 @@ def check_backtesting_input(
     if forecaster_name == "ForecasterEquivalentDate" and isinstance(
         forecaster.offset, pd.tseries.offsets.DateOffset
     ):
+        # NOTE: Checks when initial_train_size is not None cannot be done here
+        # because the forecaster is not fitted yet and we don't know the
+        # window_size since pd.DateOffset is not a fixed window size.
         if initial_train_size is None:
             raise ValueError(
                 f"`initial_train_size` must be an integer greater than "
                 f"the `window_size` of the forecaster ({forecaster.window_size}) "
-                f"and smaller than the length of `{data_name}` ({data_length})."
+                f"and smaller than the length of `{data_name}` ({data_length}) or "
+                f"a date within this range of the index."
             )
     elif initial_train_size is not None:
+        if forecaster_name in forecasters_uni:
+            index = cv._extract_index(y)
+        else:
+            index = cv._extract_index(series)
+
+        initial_train_size = date_to_index_position(
+                                 index        = index, 
+                                 date_input   = initial_train_size, 
+                                 method       = 'validation',
+                                 date_literal = 'initial_train_size'
+                             )
         if initial_train_size < forecaster.window_size or initial_train_size >= data_length:
             raise ValueError(
-                f"If used, `initial_train_size` must be an integer greater than "
+                f"If `initial_train_size` is an integer, it must be greater than "
                 f"the `window_size` of the forecaster ({forecaster.window_size}) "
-                f"and smaller than the length of `{data_name}` ({data_length})."
+                f"and smaller than the length of `{data_name}` ({data_length}). If "
+                f"it is a date, it must be within this range of the index."
             )
         if initial_train_size + gap >= data_length:
             raise ValueError(
-                f"The combination of initial_train_size {initial_train_size} and "
-                f"gap {gap} cannot be greater than the length of `{data_name}` "
+                f"The total size of `initial_train_size` {initial_train_size} plus "
+                f"`gap` {gap} cannot be greater than the length of `{data_name}` "
                 f"({data_length})."
             )
     else:
@@ -404,7 +420,11 @@ def check_backtesting_input(
         else:
             check_interval(interval=interval, alpha=alpha)
 
-    if not allow_incomplete_fold and data_length - (initial_train_size + gap) < steps:
+    if (
+        not allow_incomplete_fold
+        and initial_train_size is not None
+        and data_length - (initial_train_size + gap) < steps
+    ):        
         raise ValueError(
             f"There is not enough data to evaluate {steps} steps in a single "
             f"fold. Set `allow_incomplete_fold` to `True` to allow incomplete folds.\n"
@@ -819,7 +839,7 @@ def _calculate_metrics_backtesting_multiseries(
     series : pandas DataFrame, dict
         Series data used for backtesting.
     predictions : pandas DataFrame
-        Predictions generated during the backtesting process.
+        Predictions generated during the backtesting multiseries process.
     folds : list, tqdm
         Folds created during the backtesting process.
     span_index : pandas DatetimeIndex, pandas RangeIndex
@@ -851,8 +871,8 @@ def _calculate_metrics_backtesting_multiseries(
 
     if not isinstance(series, (pd.DataFrame, dict)):
         raise TypeError(
-            ("`series` must be a pandas DataFrame or a dictionary of pandas "
-             "DataFrames.")
+            "`series` must be a pandas DataFrame or a dictionary of pandas "
+            "DataFrames."
         )
     if not isinstance(predictions, pd.DataFrame):
         raise TypeError("`predictions` must be a pandas DataFrame.")
@@ -870,17 +890,17 @@ def _calculate_metrics_backtesting_multiseries(
         raise TypeError("`add_aggregated_metric` must be a boolean.")
     
     metric_names = [(m if isinstance(m, str) else m.__name__) for m in metrics]
+    levels_in_predictions = predictions['level'].unique()
 
     y_true_pred_levels = []
     y_train_levels = []
     for level in levels:
         y_true_pred_level = None
         y_train = None
-        if level in predictions.columns:
-            # TODO: avoid merges inside the loop, instead merge outside and then filter
+        if level in levels_in_predictions:
             y_true_pred_level = pd.merge(
                 series[level],
-                predictions[level],
+                predictions.loc[predictions['level'] == level, 'pred'],
                 left_index  = True,
                 right_index = True,
                 how         = "inner",
@@ -908,7 +928,7 @@ def _calculate_metrics_backtesting_multiseries(
                 m(
                     y_true = y_true_pred_levels[i].iloc[:, 0],
                     y_pred = y_true_pred_levels[i].iloc[:, 1],
-                    y_train = y_train_levels[i].iloc[window_size:]  # Exclude observations used to create predictors
+                    y_train = y_train_levels[i].iloc[window_size:]  # NOTE: Exclude observations used to create predictors
                 )
                 for m in metrics
             ]
@@ -934,17 +954,16 @@ def _calculate_metrics_backtesting_multiseries(
         average['levels'] = 'average'
 
         # aggregation: weighted_average
-        weighted_averages = {}
         n_predictions_levels = (
-            predictions
-            .notna()
-            .sum()
-            .to_frame(name='n_predictions')
-            .reset_index(names='levels')
+            predictions.groupby("level")["pred"]
+            .apply(lambda x: x.notna().sum())
+            .reset_index(name="n_predictions")
+            .rename(columns={"level": "levels"})
         )
         metrics_levels_no_missing = (
             metrics_levels.merge(n_predictions_levels, on='levels', how='inner')
         )
+        weighted_averages = {}
         for col in metric_names:
             weighted_averages[col] = np.average(
                 metrics_levels_no_missing[col],
@@ -1211,7 +1230,6 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
         average['levels'] = 'average'
 
         # aggregation: weighted_average
-        weighted_averages = {}
         n_predictions_levels = {
             k: v['y_pred'].notna().sum()
             for k, v in predictions_per_level.items()
@@ -1223,6 +1241,7 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
         metrics_levels_no_missing = (
             metrics_levels.merge(n_predictions_levels, on='levels', how='inner')
         )
+        weighted_averages = {}
         for col in metric_names:
             weighted_averages[col] = np.average(
                 metrics_levels_no_missing[col],

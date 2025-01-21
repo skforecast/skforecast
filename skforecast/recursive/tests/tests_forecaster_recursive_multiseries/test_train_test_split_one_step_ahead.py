@@ -38,7 +38,7 @@ def test_train_test_split_one_step_ahead_raise_error_when_series_is_dict_with_di
         "series_1": pd.Series(np.arange(15, dtype=float), 
                               index=pd.date_range("2020-01-01", periods=15, freq="D")),
         "series_2": pd.Series(np.arange(50, 65, dtype=float), 
-                              index=pd.date_range("2020-01-01", periods=15, freq="H"))
+                              index=pd.date_range("2020-01-01", periods=15, freq="h"))
     }
 
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=5)

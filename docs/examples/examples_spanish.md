@@ -26,11 +26,11 @@ Universidad de Deusto / Deustuko Unibertsitatea](https://youtu.be/MlktVhReO0E)
 
 Estos tutoriales se centran en modelos globales y en el pronóstico de series múltiples, donde puedes explorar el uso de técnicas que manejan varias series temporales simultáneamente y comparar el rendimiento entre diferentes enfoques de forecasting.
 
-<i class="fa-duotone fa-water fa" style="font-size: 25px; color: teal;"></i> [Modelos de Forecasting Globales: Multi-series forecasting](https://www.cienciadedatos.net/documentos/py44-multi-series-forecasting-skforecast-español.html)
+<i class="fa-duotone fa-water fa" style="font-size: 25px; color: teal;"></i> [Modelos de Forecasting Globales I: Multi-series forecasting](https://www.cienciadedatos.net/documentos/py44-multi-series-forecasting-skforecast-español.html)
 
-<i class="fa-solid fa-stairs" style="font-size: 25px; color: #B197FC;"></i> [Forecasting Escalable: Modelado de mil series temporales con un único modelo global](https://www.cienciadedatos.net/documentos/py59-modelos-forecasting-escalables.html)
+<i class="fa-solid fa-stairs" style="font-size: 25px; color: #B197FC;"></i> [Modelos de Forecasting Globales II: Predecir mil series temporales con un único modelo](https://www.cienciadedatos.net/documentos/py59-modelos-forecasting-escalables.html)
 
-<i class="fa-solid fa-globe" style="font-size: 25px; color: #6b8e23;"></i> [Modelos de Forecasting Globales: Análisis comparativo de modelos de una y múltiples series](https://www.cienciadedatos.net/documentos/py53-modelos-forecasting-globales.html)
+<i class="fa-solid fa-globe" style="font-size: 25px; color: #6b8e23;"></i> [Modelos de Forecasting Globales III: Análisis comparativo de modelos de una y múltiples series](https://www.cienciadedatos.net/documentos/py53-modelos-forecasting-globales.html)
 
 <i class="fa-solid fa-layer-group" style="font-size: 25px; color: #001633;"></i> [Forecasting con Deep Learning](https://cienciadedatos.net/documentos/py54-forecasting-con-deep-learning)
 

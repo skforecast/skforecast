@@ -7,8 +7,9 @@
 
 from __future__ import annotations
 from typing import Callable
-import re
 from copy import deepcopy
+import inspect
+from itertools import chain
 import warnings
 import numpy as np
 import pandas as pd
@@ -81,7 +82,7 @@ def _backtesting_forecaster(
         Specifies whether probabilistic predictions should be estimated and the 
         method to use. The following options are supported:
 
-        - If `list`or `tuple`: Sequence of percentiles to compute, each value must 
+        - If `list` or `tuple`: Sequence of percentiles to compute, each value must 
         be between 0 and 100 inclusive. For example, a 95% confidence interval can 
         be specified as `interval = [2.5, 97.5]` or multiple percentiles (e.g. 10, 
         50 and 90) as `interval = [10, 50, 90]`.
@@ -143,9 +144,7 @@ def _backtesting_forecaster(
         'verbose': verbose
     })
 
-    initial_train_size = cv.initial_train_size
     refit = cv.refit
-    gap = cv.gap
     
     if n_jobs == 'auto':
         n_jobs = select_n_jobs_backtesting(
@@ -179,7 +178,9 @@ def _backtesting_forecaster(
     store_in_sample_residuals = False if interval is None else True
 
     folds = cv.split(X=y, as_pandas=False)
+    initial_train_size = cv.initial_train_size
     window_size = cv.window_size
+    gap = cv.gap
 
     if initial_train_size is not None:
         # First model training, this is done to allow parallelization when `refit`
@@ -261,11 +262,6 @@ def _backtesting_forecaster(
                 + 1
             )
 
-        pred = forecaster.predict(
-                   steps       = steps,
-                   last_window = last_window_y,
-                   exog        = next_window_exog
-               )
         if interval is not None:
             kwargs_interval = {
                 'steps': steps,
@@ -288,6 +284,15 @@ def _backtesting_forecaster(
             else:
                 pred_interval = forecaster.predict_dist(distribution=interval, **kwargs_interval)
 
+        # NOTE: This is done after probabilistic predictions to avoid repeating the same checks.
+        pred = forecaster.predict(
+                   steps        = steps,
+                   last_window  = last_window_y,
+                   exog         = next_window_exog,
+                   check_inputs = True if interval is None else False
+               )
+
+        if interval is not None:
             pred = pd.concat((pred, pred_interval), axis=1)
 
         if type(forecaster).__name__ != 'ForecasterDirect' and gap > 0:
@@ -398,7 +403,7 @@ def backtesting_forecaster(
         Specifies whether probabilistic predictions should be estimated and the 
         method to use. The following options are supported:
 
-        - If `list`or `tuple`: Sequence of percentiles to compute, each value must 
+        - If `list` or `tuple`: Sequence of percentiles to compute, each value must 
         be between 0 and 100 inclusive. For example, a 95% confidence interval can 
         be specified as `interval = [2.5, 97.5]` or multiple percentiles (e.g. 10, 
         50 and 90) as `interval = [10, 50, 90]`.
@@ -566,7 +571,7 @@ def _backtesting_forecaster_multiseries(
         Specifies whether probabilistic predictions should be estimated and the 
         method to use. The following options are supported:
 
-        - If `list`or `tuple`: Sequence of percentiles to compute, each value must 
+        - If `list` or `tuple`: Sequence of percentiles to compute, each value must 
         be between 0 and 100 inclusive. For example, a 95% confidence interval can 
         be specified as `interval = [2.5, 97.5]` or multiple percentiles (e.g. 10, 
         50 and 90) as `interval = [10, 50, 90]`.
@@ -603,14 +608,23 @@ def _backtesting_forecaster_multiseries(
     -------
     metrics_levels : pandas DataFrame
         Value(s) of the metric(s). Index are the levels and columns the metrics.
-    backtest_predictions : pandas Dataframe
-        Value of predictions and their estimated interval if `interval` is not `None`. 
-        If there is more than one level, this structure will be repeated for each of them.
+    backtest_predictions : pandas DataFrame
+        Long-format DataFrame containing the predicted values for each series. The 
+        DataFrame includes the following columns:
+        
+        - `level`: Identifier for the time series or level being predicted.
+        - `pred`: Predicted values for the corresponding series and time steps.
 
-        - column pred: predictions.
-        - column lower_bound: lower bound of the interval.
-        - column upper_bound: upper bound of the interval.
-    
+        If `interval` is not `None`, additional columns are included depending on the method:
+        
+        - For `list` or `tuple` of 2 elements: Columns `lower_bound` and `upper_bound`.
+        - For `list` or `tuple` with multiple percentiles: One column per percentile 
+        (e.g., `p_10`, `p_50`, `p_90`).
+        - For `'bootstrapping'`: One column per bootstrapping iteration 
+        (e.g., `pred_boot_0`, `pred_boot_1`, ..., `pred_boot_n`).
+        - For `scipy.stats` distribution objects: One column for each estimated 
+        parameter of the distribution (e.g., `loc`, `scale`).
+
     """
 
     set_skforecast_warnings(suppress_warnings, action='ignore')
@@ -625,9 +639,7 @@ def _backtesting_forecaster_multiseries(
         'verbose': verbose
     })
 
-    initial_train_size = cv.initial_train_size
     refit = cv.refit
-    gap = cv.gap
 
     if n_jobs == 'auto':
         n_jobs = select_n_jobs_backtesting(
@@ -668,6 +680,8 @@ def _backtesting_forecaster_multiseries(
 
     folds = cv.split(X=series, as_pandas=False)
     span_index = cv._extract_index(X=series)
+    initial_train_size = cv.initial_train_size
+    gap = cv.gap
 
     if initial_train_size is not None:
         # First model training, this is done to allow parallelization when `refit`
@@ -725,7 +739,8 @@ def _backtesting_forecaster_multiseries(
 
     def _fit_predict_forecaster(
         data_fold, forecaster, store_in_sample_residuals, levels, interval, 
-        n_boot, random_state, use_in_sample_residuals, gap, suppress_warnings):
+        n_boot, random_state, use_in_sample_residuals, gap, suppress_warnings
+    ):
         """
         Fit the forecaster and predict `steps` ahead. This is an auxiliary 
         function used to parallelize the backtesting_forecaster_multiseries
@@ -759,71 +774,109 @@ def _backtesting_forecaster_multiseries(
             test_iloc_end   = fold[3][1]
             steps = list(np.arange(len(range(test_iloc_start, test_iloc_end))) + gap + 1)
 
-        levels_predict = [level for level in levels 
-                          if level in last_window_levels]
-        if interval is None:
+        levels_predict = [level for level in levels if level in last_window_levels]
+        if interval is not None:
+            kwargs_interval = {
+                'steps': steps,
+                'levels': levels_predict,
+                'last_window': last_window_series,
+                'exog': next_window_exog,
+                'n_boot': n_boot,
+                'random_state': random_state,
+                'use_in_sample_residuals': use_in_sample_residuals,
+                'suppress_warnings': suppress_warnings
+            }
+            if interval == 'bootstrapping':
+                pred_interval = forecaster.predict_bootstrapping(**kwargs_interval)
+            elif isinstance(interval, (list, tuple)):
+                quantiles = [q / 100 for q in interval]
+                pred_interval = forecaster.predict_quantiles(quantiles=quantiles, **kwargs_interval)
+                if len(interval) == 2:
+                    cols_names = ['level', 'lower_bound', 'upper_bound']
+                else:
+                    cols_names = ['level'] + [f'p_{p}' for p in interval]  
+                pred_interval.columns = cols_names
+            else:
+                pred_interval = forecaster.predict_dist(distribution=interval, **kwargs_interval)
 
-            pred = forecaster.predict(
-                       steps             = steps, 
-                       levels            = levels_predict, 
-                       last_window       = last_window_series,
-                       exog              = next_window_exog,
-                       suppress_warnings = suppress_warnings
-                   )
-        else:
-            pred = forecaster.predict_interval(
-                       steps                   = steps,
-                       levels                  = levels_predict, 
-                       last_window             = last_window_series,
-                       exog                    = next_window_exog,
-                       interval                = interval,
-                       n_boot                  = n_boot,
-                       random_state            = random_state,
-                       use_in_sample_residuals = use_in_sample_residuals,
-                       suppress_warnings       = suppress_warnings
-                   )
+        # NOTE: This is done after probabilistic predictions to avoid repeating the same checks.
+        pred = forecaster.predict(
+                   steps             = steps, 
+                   levels            = levels_predict, 
+                   last_window       = last_window_series,
+                   exog              = next_window_exog,
+                   suppress_warnings = suppress_warnings,
+                   check_inputs      = True if interval is None else False
+               )
+        
+        if interval is not None:
+            pred = pd.concat([pred, pred_interval.iloc[:, 1:]], axis=1)
 
+        # TODO: CHeck when long format in multivariate
         if type(forecaster).__name__ != 'ForecasterDirectMultiVariate' and gap > 0:
             pred = pred.iloc[gap:, ]
 
-        return pred
+        return pred, levels_predict
 
     kwargs_fit_predict_forecaster = {
         "forecaster": forecaster,
         "store_in_sample_residuals": store_in_sample_residuals,
         "levels": levels,
+        "gap": gap,
         "interval": interval,
         "n_boot": n_boot,
         "random_state": random_state,
         "use_in_sample_residuals": use_in_sample_residuals,
-        "gap": gap,
         "suppress_warnings": suppress_warnings
     }
-    backtest_predictions = Parallel(n_jobs=n_jobs)(
+    results = Parallel(n_jobs=n_jobs)(
         delayed(_fit_predict_forecaster)(data_fold=data_fold, **kwargs_fit_predict_forecaster)
         for data_fold in data_folds
     )
 
-    backtest_predictions = pd.concat(backtest_predictions, axis=0)
+    backtest_predictions = pd.concat([result[0] for result in results], axis=0)
+    backtest_levels = set(chain(*[result[1] for result in results]))
 
-    levels_in_backtest_predictions = backtest_predictions.columns
+    cols_backtest_predictions = ['pred']
     if interval is not None:
-        levels_in_backtest_predictions = [
-            level 
-            for level in levels_in_backtest_predictions
-            if not re.search(r'_lower_bound|_upper_bound', level)
-        ]
-    for level in levels_in_backtest_predictions:
-        valid_index = series[level][series[level].notna()].index
-        no_valid_index = backtest_predictions.index.difference(valid_index, sort=False)
-        cols = [level]
-        if interval:
-            cols = cols + [f'{level}_lower_bound', f'{level}_upper_bound']
-        backtest_predictions.loc[no_valid_index, cols] = np.nan
+        if interval == 'bootstrapping':
+            cols_backtest_predictions.extend([f'pred_boot_{i}' for i in range(n_boot)])
+        elif isinstance(interval, (list, tuple)):
+            if len(interval) == 2:
+                cols_backtest_predictions.extend(['lower_bound', 'upper_bound'])
+            else:
+                cols_backtest_predictions.extend([f'p_{p}' for p in interval])
+        else:
+            param_names = [
+                p for p in inspect.signature(interval._pdf).parameters if not p == "x"
+            ] + ["loc", "scale"]
+            cols_backtest_predictions.extend(param_names)
+    
+    backtest_predictions = (
+        backtest_predictions
+        .rename_axis('idx', axis=0)
+        .set_index('level', append=True)
+    )
+    for level in backtest_levels:
+        valid_index = series[level].dropna().index
+        no_valid_index = backtest_predictions.index.get_level_values("idx").difference(
+            valid_index, sort=False
+        )
+        backtest_predictions.loc[
+            (backtest_predictions.index.get_level_values('level') == level) &
+            (backtest_predictions.index.get_level_values('idx').isin(no_valid_index)), 
+            'pred'
+        ] = np.nan
+
+    backtest_predictions = (
+        backtest_predictions
+        .reset_index('level')
+        .rename_axis(None, axis=0)
+    )
 
     metrics_levels = _calculate_metrics_backtesting_multiseries(
         series                = series,
-        predictions           = backtest_predictions,
+        predictions           = backtest_predictions[['level', 'pred']],
         folds                 = folds,
         span_index            = span_index,
         window_size           = forecaster.window_size,
@@ -901,7 +954,7 @@ def backtesting_forecaster_multiseries(
         Specifies whether probabilistic predictions should be estimated and the 
         method to use. The following options are supported:
 
-        - If `list`or `tuple`: Sequence of percentiles to compute, each value must 
+        - If `list` or `tuple`: Sequence of percentiles to compute, each value must 
         be between 0 and 100 inclusive. For example, a 95% confidence interval can 
         be specified as `interval = [2.5, 97.5]` or multiple percentiles (e.g. 10, 
         50 and 90) as `interval = [10, 50, 90]`.
@@ -939,12 +992,21 @@ def backtesting_forecaster_multiseries(
     metrics_levels : pandas DataFrame
         Value(s) of the metric(s). Index are the levels and columns the metrics.
     backtest_predictions : pandas DataFrame
-        Value of predictions and their estimated interval if `interval` is not `None`.
-        If there is more than one level, this structure will be repeated for each of them.
+        Long-format DataFrame containing the predicted values for each series. The 
+        DataFrame includes the following columns:
+        
+        - `level`: Identifier for the time series or level being predicted.
+        - `pred`: Predicted values for the corresponding series and time steps.
 
-        - column pred: predictions.
-        - column lower_bound: lower bound of the interval.
-        - column upper_bound: upper bound of the interval.
+        If `interval` is not `None`, additional columns are included depending on the method:
+        
+        - For `list` or `tuple` of 2 elements: Columns `lower_bound` and `upper_bound`.
+        - For `list` or `tuple` with multiple percentiles: One column per percentile 
+        (e.g., `p_10`, `p_50`, `p_90`).
+        - For `'bootstrapping'`: One column per bootstrapping iteration 
+        (e.g., `pred_boot_0`, `pred_boot_1`, ..., `pred_boot_n`).
+        - For `scipy.stats` distribution objects: One column for each estimated 
+        parameter of the distribution (e.g., `loc`, `scale`).
     
     """
 
@@ -1067,7 +1129,7 @@ def _backtesting_sarimax(
     metric_values : pandas DataFrame
         Value(s) of the metric(s).
     backtest_predictions : pandas DataFrame
-        Value of predictions and their estimated interval if `interval` is not `None`.
+        Predicted values and their estimated interval if `interval` is not `None`.
 
         - column pred: predictions.
         - column lower_bound: lower bound of the interval.
@@ -1084,10 +1146,7 @@ def _backtesting_sarimax(
         'verbose': verbose
     })
 
-    steps = cv.steps
-    initial_train_size = cv.initial_train_size
     refit = cv.refit
-    gap = cv.gap
     
     if refit == False:
         if n_jobs != 'auto' and n_jobs != 1:
@@ -1105,9 +1164,9 @@ def _backtesting_sarimax(
                      )
         elif not isinstance(refit, bool) and refit != 1 and n_jobs != 1:
             warnings.warn(
-                ("If `refit` is an integer other than 1 (intermittent refit). `n_jobs` "
-                 "is set to 1 to avoid unexpected results during parallelization."),
-                 IgnoredArgumentWarning
+                "If `refit` is an integer other than 1 (intermittent refit). `n_jobs` "
+                "is set to 1 to avoid unexpected results during parallelization.",
+                IgnoredArgumentWarning
             )
             n_jobs = 1
         else:
@@ -1126,6 +1185,11 @@ def _backtesting_sarimax(
             else add_y_train_argument(m) 
             for m in metric
         ]
+    
+    folds = cv.split(X=y, as_pandas=False)
+    initial_train_size = cv.initial_train_size
+    steps = cv.steps
+    gap = cv.gap
 
     # initial_train_size cannot be None because of append method in Sarimax
     # First model training, this is done to allow parallelization when `refit` 
@@ -1136,8 +1200,6 @@ def _backtesting_sarimax(
         exog              = exog_train,
         suppress_warnings = suppress_warnings_fit
     )
-    
-    folds = cv.split(X=y, as_pandas=False)
     # This is done to allow parallelization when `refit` is `False`. The initial 
     # Forecaster fit is outside the auxiliary function.
     folds[0][4] = False
@@ -1146,9 +1208,9 @@ def _backtesting_sarimax(
         n_of_fits = int(len(folds) / refit)
         if n_of_fits > 50:
             warnings.warn(
-                (f"The forecaster will be fit {n_of_fits} times. This can take substantial "
-                 f"amounts of time. If not feasible, try with `refit = False`.\n"),
-                 LongTrainingWarning
+                f"The forecaster will be fit {n_of_fits} times. This can take substantial "
+                f"amounts of time. If not feasible, try with `refit = False`.\n",
+                LongTrainingWarning
             )
        
     folds_tqdm = tqdm(folds) if show_progress else folds
@@ -1336,7 +1398,7 @@ def backtesting_sarimax(
     metric_values : pandas DataFrame
         Value(s) of the metric(s).
     backtest_predictions : pandas DataFrame
-        Value of predictions and their estimated interval if `interval` is not `None`.
+        Predicted values and their estimated interval if `interval` is not `None`.
 
         - column pred: predictions.
         - column lower_bound: lower bound of the interval.

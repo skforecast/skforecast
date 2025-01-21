@@ -880,9 +880,9 @@ def _bayesian_search_optuna(
 
     if search_space(best_trial).keys() != best_trial.params.keys():
         raise ValueError(
-            (f"Some of the key values do not match the search_space key names.\n"
-             f"  Search Space keys  : {list(search_space(best_trial).keys())}\n"
-             f"  Trial objects keys : {list(best_trial.params.keys())}.")
+            f"Some of the key values do not match the search_space key names.\n"
+            f"  Search Space keys  : {list(search_space(best_trial).keys())}\n"
+            f"  Trial objects keys : {list(best_trial.params.keys())}."
         )
     warnings.filterwarnings('default')
     
