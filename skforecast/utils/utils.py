@@ -2697,7 +2697,82 @@ def preprocess_levels_self_last_window_multiseries(
 
     return levels, last_window
 
+# TODO: REview docstring if include dicts
+def check_residuals_input(
+    use_in_sample_residuals: bool,
+    in_sample_residuals_: np.ndarray | None,
+    out_sample_residuals_: np.ndarray | None,
+    use_binned_residuals: bool,
+    in_sample_residuals_by_bin_: dict[int, np.ndarray] | None,
+    out_sample_residuals_by_bin_: dict[int, np.ndarray] | None
+) -> None:
+    """
+    Check residuals input arguments in Forecasters.
 
+    Parameters
+    ----------
+    use_in_sample_residuals : bool
+        Indicates if in sample or out sample residuals are used.
+    in_sample_residuals_ : numpy ndarray
+        Residuals of the model when predicting training data.
+    out_sample_residuals_ : numpy ndarray
+        Residuals of the model when predicting non training data.
+    use_binned_residuals : bool
+        Indicates if residuals are binned.
+    in_sample_residuals_by_bin_ : dict
+        In sample residuals binned according to the predicted value each residual
+        is associated with.
+    out_sample_residuals_by_bin_ : dict
+        Out of sample residuals binned according to the predicted value each residual
+        is associated with.
+
+    Returns
+    -------
+    None
+    
+    """
+
+    if use_in_sample_residuals:
+        if use_binned_residuals:
+            residuals = in_sample_residuals_by_bin_
+            literal = "in_sample_residuals_by_bin_"
+        else:
+            residuals = in_sample_residuals_
+            literal = "in_sample_residuals_"
+        
+        # NOTE: Check also if residuals is an empty dict
+        if residuals is None or not residuals:
+            raise ValueError(
+                f"`forecaster.{literal}` is None. Use `store_in_sample_residuals = True` "
+                f"when fitting the forecaster to store in-sample residuals."
+            )
+    else:
+        if use_binned_residuals:
+            residuals = out_sample_residuals_by_bin_
+            literal = "out_sample_residuals_by_bin_"
+        else:
+            residuals = out_sample_residuals_
+            literal = "out_sample_residuals_"
+        
+        # NOTE: Check also if residuals is an empty dict
+        if residuals is None or not residuals:
+            raise ValueError(
+                f"`forecaster.{literal}` is None. Use `use_in_sample_residuals = True` "
+                f"or the `set_out_sample_residuals()` method before predicting."
+            )
+    
+
+def check_residuals_input_direct(
+    use_in_sample_residuals: bool,
+    in_sample_residuals_: dict[int, np.ndarray] | None,
+    out_sample_residuals_: dict[int, np.ndarray] | None,
+    use_binned_residuals: bool,
+    in_sample_residuals_by_bin_: dict[int, dict[int, np.ndarray]] | None,
+    out_sample_residuals_by_bin_: dict[int, dict[int, np.ndarray]] | None
+) -> None:
+    pass
+
+# TODO: Review name with new residuals function
 def prepare_residuals_multiseries(
     levels: list,
     use_in_sample_residuals: bool,
@@ -2770,14 +2845,15 @@ def prepare_residuals_multiseries(
     )
     for level in levels:
         if level in unknown_levels:
-            residuals[level] = residuals['_unknown_level']
+            residuals[level] = residuals["_unknown_level"]
         if residuals[level] is None or len(residuals[level]) == 0:
             raise ValueError(
                 f"Not available residuals for level '{level}'. "
                 f"Check `{check_residuals}`."
             )
-        elif (any(element is None for element in residuals[level]) or
-              np.any(np.isnan(residuals[level]))):
+        elif any(element is None for element in residuals[level]) or np.any(
+            np.isnan(residuals[level])
+        ):
             raise ValueError(
                 f"forecaster residuals for level '{level}' contains `None` "
                 f"or `NaNs` values. Check `{check_residuals}`."

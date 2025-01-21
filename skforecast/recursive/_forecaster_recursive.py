@@ -30,6 +30,7 @@ from ..utils import (
     get_exog_dtypes,
     check_exog_dtypes,
     check_predict_input,
+    check_residuals_input,
     check_interval,
     preprocess_y,
     preprocess_last_window,
@@ -38,7 +39,6 @@ from ..utils import (
     date_to_index_position,
     expand_index,
     transform_numpy,
-    transform_series,
     transform_dataframe,
 )
 from ..preprocessing import TimeSeriesDifferentiator
@@ -1120,17 +1120,14 @@ class ForecasterRecursive(ForecasterBase):
             performed.
         use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
-            prediction error to create predictions. If `False`, out of sample 
-            residuals (calibration) are used. In the latter case, the user should 
-            have calculated and stored the residuals within the forecaster (see
-            `set_out_sample_residuals()`).
+            prediction error to create predictions. 
+            If `False`, out of sample residuals (calibration) are used. 
+            Out-of-sample residuals must be precomputed using Forecaster's
+            `set_out_sample_residuals()` method.
         use_binned_residuals : bool, default False
-            If `True`, residuals used in each bootstrapping iteration are selected
-            conditioning on the predicted values. If `False`, residuals are selected
-            randomly without conditioning on the predicted values.
-            **WARNING: This argument is newly introduced and requires special attention.
-            It is still experimental and may undergo changes.
-            **New in version 0.12.0**
+            If `True`, residuals are selected based on the predicted values 
+            (binned selection).
+            If `False`, residuals are selected randomly.
         check_inputs : bool, default True
             If `True`, the input is checked for possible warnings and errors 
             with the `check_predict_input` function. This argument is created 
@@ -1176,20 +1173,15 @@ class ForecasterRecursive(ForecasterBase):
                 interval         = None
             )
 
-            # TODO: Añadir checks de in_sample_residuals y hacer una función
-            if predict_probabilistic and not use_in_sample_residuals:
-                if not use_binned_residuals and self.out_sample_residuals_ is None:
-                    raise ValueError(
-                        "`forecaster.out_sample_residuals_` is `None`. Use "
-                        "`use_in_sample_residuals=True` or the "
-                        "`set_out_sample_residuals()` method before predicting."
-                    )
-                if use_binned_residuals and self.out_sample_residuals_by_bin_ is None:
-                    raise ValueError(
-                        "`forecaster.out_sample_residuals_by_bin_` is `None`. Use "
-                        "`use_in_sample_residuals=True` or the "
-                        "`set_out_sample_residuals()` method before predicting."
-                    )
+            if predict_probabilistic:
+                check_residuals_input(
+                    use_in_sample_residuals      = use_in_sample_residuals,
+                    in_sample_residuals_         = self.in_sample_residuals_,
+                    out_sample_residuals_        = self.out_sample_residuals_,
+                    use_binned_residuals         = use_binned_residuals,
+                    in_sample_residuals_by_bin_  = self.in_sample_residuals_by_bin_,
+                    out_sample_residuals_by_bin_ = self.out_sample_residuals_by_bin_
+                )
 
         last_window = last_window.iloc[-self.window_size:].copy()
         last_window_values, last_window_index = preprocess_last_window(
@@ -1251,12 +1243,9 @@ class ForecasterRecursive(ForecasterBase):
         residuals : numpy ndarray, dict, default None
             Residuals used to generate bootstrapping predictions.
         use_binned_residuals : bool, default False
-            If `True`, residuals used in each bootstrapping iteration are selected
-            conditioning on the predicted values. If `False`, residuals are selected
-            randomly without conditioning on the predicted values.
-            **WARNING: This argument is newly introduced and requires special attention.
-            It is still experimental and may undergo changes.
-            **New in version 0.12.0**
+            If `True`, residuals are selected based on the predicted values 
+            (binned selection).
+            If `False`, residuals are selected randomly.
 
         Returns
         -------
@@ -1524,23 +1513,20 @@ class ForecasterRecursive(ForecasterBase):
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
         n_boot : int, default 250
-            Number of bootstrapping iterations used to estimate predictions.
+            Number of bootstrapping iterations to perform when estimating prediction
+            intervals.
         use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
-            prediction error to create predictions. If `False`, out of sample 
-            residuals (calibration) are used. In the latter case, the user should 
-            have calculated and stored the residuals within the forecaster (see
-            `set_out_sample_residuals()`).
+            prediction error to create predictions. 
+            If `False`, out of sample residuals (calibration) are used. 
+            Out-of-sample residuals must be precomputed using Forecaster's
+            `set_out_sample_residuals()` method.
         use_binned_residuals : bool, default False
-            If `True`, residuals used in each bootstrapping iteration are selected
-            conditioning on the predicted values. If `False`, residuals are selected
-            randomly without conditioning on the predicted values.
-            **WARNING: This argument is newly introduced and requires special attention.
-            It is still experimental and may undergo changes.
-            **New in version 0.12.0**
+            If `True`, residuals are selected based on the predicted values 
+            (binned selection).
+            If `False`, residuals are selected randomly.
          random_state : int, default 123
-            Sets a seed to the random generator, so that boot predictions are always 
-            deterministic.
+            Seed for the random number generator to ensure reproducibility.
 
         Returns
         -------
@@ -1643,8 +1629,6 @@ class ForecasterRecursive(ForecasterBase):
 
         return boot_predictions
     
-    # TODO: Cambiar docstring use_binned_residuals
-    # TODO: Incluir references conformal prediction intervals
     def _predict_interval_conformal(
         self,
         steps: int | str | pd.Timestamp,
@@ -1678,19 +1662,14 @@ class ForecasterRecursive(ForecasterBase):
             intervals. Must be between 0 and 1.
         use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
-            prediction error to create predictions. If `False`, out of sample 
-            residuals (calibration) are used. In the latter case, the user should 
-            have calculated and stored the residuals within the forecaster (see
-            `set_out_sample_residuals()`).
-            If `True`, residuals from the training data are used as proxy of
-            prediction error to create predictions. If `False`, out of sample 
-            residuals (calibration) are used. In the latter case, the user should 
-            have calculated and stored the residuals within the forecaster (see
-            `set_out_sample_residuals()`).
+            prediction error to create predictions. 
+            If `False`, out of sample residuals (calibration) are used. 
+            Out-of-sample residuals must be precomputed using Forecaster's
+            `set_out_sample_residuals()` method.
         use_binned_residuals : bool, default False
-            If `True`, residuals used in each bootstrapping iteration are selected
-            conditioning on the predicted values. If `False`, residuals are selected
-            randomly without conditioning on the predicted values.
+            If `True`, residuals are selected based on the predicted values 
+            (binned selection).
+            If `False`, residuals are selected randomly.
 
         Returns
         -------
@@ -1781,8 +1760,6 @@ class ForecasterRecursive(ForecasterBase):
 
         return predictions
 
-    # TODO: Review all docstring
-    # TODO: Cambiar docstring use_binned_residuals
     def predict_interval(
         self,
         steps: int | str | pd.Timestamp,
@@ -1796,9 +1773,9 @@ class ForecasterRecursive(ForecasterBase):
         random_state: int = 123
     ) -> pd.DataFrame:
         """
-        Predict n steps ahead and estimate prediction intervals. The available
-        methods are bootstrapping and conformal prediction intervals. See the
-        References section for more information.
+        Predict n steps ahead and estimate prediction intervals using either 
+        bootstrapping or conformal prediction methods. Refer to the References 
+        section for additional details on these methods.
         
         Parameters
         ----------
@@ -1816,41 +1793,39 @@ class ForecasterRecursive(ForecasterBase):
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
         method : str, default 'bootstrapping'
-            Method used to estimate prediction intervals. Available methods:
+            Technique used to estimate prediction intervals. Available options:
 
-            + 'bootstrapping': Bootstrapping is used to estimate prediction 
+            + 'bootstrapping': Bootstrapping is used to generate prediction 
             intervals [1]_.
-            + 'conformal': Conformal prediction split method is used to estimate 
-            prediction intervals [2]_.
+            + 'conformal': Employs the conformal prediction split method for 
+            interval estimation [2]_.
         interval : float, list, tuple, default [5, 95]
-            Confidence of the prediction interval estimated. When using 
-            `method = 'conformal'`, `interval` should be a float or a list/tuple
-            containing a symmetric interval. 
+            Confidence level of the prediction interval. Interpretation depends 
+            on the method used:
             
-            + If `float`, nominal coverage (expected coverage) of the 
-            prediction intervals. Must be between 0 and 1. For example, when 
-            `interval = 0.95`, it is equivalent to `interval = [2.5, 97.5]`.
-            + If `list` or `tuple`, sequence of percentiles to compute, which 
+            - If `float`, represents the nominal (expected) coverage (between 0 
+            and 1). For instance, `interval=0.95` corresponds to `[2.5, 97.5]` 
+            percentiles.
+            - If `list` or `tuple`, defines the exact percentiles to compute, which 
             must be between 0 and 100 inclusive. For example, interval 
             of 95% should be as `interval = [2.5, 97.5]`.
+            - When using `method='conformal'`, the interval must be a float or 
+            a symmetric list/tuple.
         n_boot : int, default 250
-            Number of bootstrapping iterations used to estimate predictions.
+            Number of bootstrapping iterations to perform when estimating prediction
+            intervals.
         use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
-            prediction error to create predictions. If `False`, out of sample 
-            residuals (calibration) are used. In the latter case, the user should 
-            have calculated and stored the residuals within the forecaster (see
-            `set_out_sample_residuals()`).
+            prediction error to create predictions. 
+            If `False`, out of sample residuals (calibration) are used. 
+            Out-of-sample residuals must be precomputed using Forecaster's
+            `set_out_sample_residuals()` method.
         use_binned_residuals : bool, default False
-            If `True`, residuals used in each bootstrapping iteration are selected
-            conditioning on the predicted values. If `False`, residuals are selected
-            randomly without conditioning on the predicted values.
-            **WARNING: This argument is newly introduced and requires special attention.
-            It is still experimental and may undergo changes.
-            **New in version 0.12.0**
+            If `True`, residuals are selected based on the predicted values 
+            (binned selection).
+            If `False`, residuals are selected randomly.
         random_state : int, default 123
-            Sets a seed to the random generator, so that boot predictions are always 
-            deterministic.
+            Seed for the random number generator to ensure reproducibility.
 
         Returns
         -------
@@ -1872,8 +1847,13 @@ class ForecasterRecursive(ForecasterBase):
         """
 
         if method == "bootstrapping":
-
-            check_interval(interval=interval, ensure_symmetric_intervals=False)
+            
+            if isinstance(interval, (list, tuple)):
+                check_interval(interval=interval, ensure_symmetric_intervals=False)
+                interval = np.array(interval) / 100
+            else:
+                check_interval(alpha=interval, alpha_literal='interval')
+                interval = np.array([0.5 - interval / 2, 0.5 + interval / 2])
 
             boot_predictions = self.predict_bootstrapping(
                                 steps                   = steps,
@@ -1891,8 +1871,7 @@ class ForecasterRecursive(ForecasterBase):
                             exog         = exog,
                             check_inputs = False
                         )
-
-            interval = np.array(interval) / 100
+            
             predictions_interval = boot_predictions.quantile(q=interval, axis=1).transpose()
             predictions_interval.columns = ['lower_bound', 'upper_bound']
             predictions = pd.concat((predictions, predictions_interval), axis=1)
@@ -1958,23 +1937,19 @@ class ForecasterRecursive(ForecasterBase):
             inclusive. For example, quantiles of 0.05, 0.5 and 0.95 should be as 
             `quantiles = [0.05, 0.5, 0.95]`.
         n_boot : int, default 250
-            Number of bootstrapping iterations used to estimate quantiles.
+            Number of bootstrapping iterations to perform when estimating quantiles.
         use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
-            prediction error to create prediction quantiles. If `False`, out of
-            sample residuals are used. In the latter case, the user should have
-            calculated and stored the residuals within the forecaster (see
-            `set_out_sample_residuals()`).
+            prediction error to create predictions. 
+            If `False`, out of sample residuals (calibration) are used. 
+            Out-of-sample residuals must be precomputed using Forecaster's
+            `set_out_sample_residuals()` method.
         use_binned_residuals : bool, default False
-            If `True`, residuals used in each bootstrapping iteration are selected
-            conditioning on the predicted values. If `False`, residuals are selected
-            randomly without conditioning on the predicted values.
-            **WARNING: This argument is newly introduced and requires special attention.
-            It is still experimental and may undergo changes.
-            **New in version 0.12.0**
+            If `True`, residuals are selected based on the predicted values 
+            (binned selection).
+            If `False`, residuals are selected randomly.
          random_state : int, default 123
-            Sets a seed to the random generator, so that boot quantiles are always 
-            deterministic.
+            Seed for the random number generator to ensure reproducibility.
 
         Returns
         -------
@@ -2043,23 +2018,20 @@ class ForecasterRecursive(ForecasterBase):
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
         n_boot : int, default 250
-            Number of bootstrapping iterations used to estimate predictions.
+            Number of bootstrapping iterations to perform when estimating prediction
+            intervals.
         use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
-            prediction error to create predictions. If `False`, out of sample 
-            residuals (calibration) are used. In the latter case, the user should 
-            have calculated and stored the residuals within the forecaster (see
-            `set_out_sample_residuals()`).
+            prediction error to create predictions. 
+            If `False`, out of sample residuals (calibration) are used. 
+            Out-of-sample residuals must be precomputed using Forecaster's
+            `set_out_sample_residuals()` method.
         use_binned_residuals : bool, default False
-            If `True`, residuals used in each bootstrapping iteration are selected
-            conditioning on the predicted values. If `False`, residuals are selected
-            randomly without conditioning on the predicted values.
-            **WARNING: This argument is newly introduced and requires special attention.
-            It is still experimental and may undergo changes.
-            **New in version 0.12.0**
+            If `True`, residuals are selected based on the predicted values 
+            (binned selection).
+            If `False`, residuals are selected randomly.
         random_state : int, default 123
-            Sets a seed to the random generator, so that boot predictions are always 
-            deterministic.
+            Seed for the random number generator to ensure reproducibility.
 
         Returns
         -------
