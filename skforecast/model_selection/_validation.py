@@ -527,7 +527,7 @@ def backtesting_forecaster(
         show_progress           = show_progress
     )
     
-    # TODO: Moved to check_backtesting_input
+    # TODO: Moved to check_backtesting_input, remove after testing.
     # if type(forecaster).__name__ == 'ForecasterDirect' and \
     #    forecaster.steps < cv.steps + cv.gap:
     #     raise ValueError(

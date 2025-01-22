@@ -2791,6 +2791,7 @@ def check_residuals_input(
     
 
 def check_residuals_input_direct(
+    steps: list[int],
     use_in_sample_residuals: bool,
     in_sample_residuals_: dict[int, np.ndarray] | None,
     out_sample_residuals_: dict[int, np.ndarray] | None,
@@ -2798,7 +2799,59 @@ def check_residuals_input_direct(
     in_sample_residuals_by_bin_: dict[int, dict[int, np.ndarray]] | None,
     out_sample_residuals_by_bin_: dict[int, dict[int, np.ndarray]] | None
 ) -> None:
-    pass
+    """
+    """
+
+    check_residuals_input(
+        use_in_sample_residuals      = use_in_sample_residuals,
+        in_sample_residuals_         = in_sample_residuals_,
+        out_sample_residuals_        = out_sample_residuals_,
+        use_binned_residuals         = use_binned_residuals,
+        in_sample_residuals_by_bin_  = in_sample_residuals_by_bin_,
+        out_sample_residuals_by_bin_ = out_sample_residuals_by_bin_
+    )
+
+    if use_in_sample_residuals:
+        if use_binned_residuals:
+            residuals = in_sample_residuals_by_bin_
+            literal = "in_sample_residuals_by_bin_"
+        else:
+            residuals = in_sample_residuals_
+            literal = "in_sample_residuals_"
+        
+        if not set(steps).issubset(set(residuals.keys())):
+            raise ValueError(
+                f"Not `forecaster.{literal}` for steps: "
+                f"{set(steps) - set(residuals.keys())}."
+            )
+    else:
+        if use_binned_residuals:
+            residuals = out_sample_residuals_by_bin_
+            literal = "out_sample_residuals_by_bin_"
+        else:
+            residuals = out_sample_residuals_
+            literal = "out_sample_residuals_"
+
+        if not set(steps).issubset(set(residuals.keys())):
+            raise ValueError(
+                f"No `forecaster.out_sample_residuals_` for steps: "
+                f"{set(steps) - set(residuals.keys())}. "
+                f"Use method `set_out_sample_residuals()`."
+            )
+    
+    for step in steps:
+        if residuals[step] is None:
+            raise ValueError(
+                f"forecaster residuals for step {step} are None. "
+                f"Check `forecaster.{literal}`."
+            )
+        # TODO: This check has sense? Check if it is necessary
+        # Need to adapt when {step: {bin: residuals}}
+        elif any(x is None or np.isnan(x) for x in residuals[step]):
+            raise ValueError(
+                f"forecaster residuals for step {step} contains None values. "
+                f"Check `forecaster.{literal}`."
+            )
 
 # TODO: Review name with new residuals function
 def prepare_residuals_multiseries(

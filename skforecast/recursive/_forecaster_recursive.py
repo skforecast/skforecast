@@ -41,8 +41,7 @@ from ..utils import (
     transform_numpy,
     transform_dataframe,
 )
-from ..preprocessing import TimeSeriesDifferentiator
-from ..preprocessing import QuantileBinner
+from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
 
 
 class ForecasterRecursive(ForecasterBase):
@@ -83,9 +82,7 @@ class ForecasterRecursive(ForecasterBase):
         If `None`, no differencing is applied. The order of differentiation is the number
         of times the differencing operation is applied to a time series. Differencing
         involves computing the differences between consecutive data points in the series.
-        Differentiation is reversed in the output of `predict()` and `predict_interval()`.
-        **WARNING: This argument is newly introduced and requires special attention. It
-        is still experimental and may undergo changes.**
+        Before returning a prediction, the differencing operation is reversed.
     fit_kwargs : dict, default None
         Additional arguments to be passed to the `fit` method of the regressor.
     binner_kwargs : dict, default None
@@ -93,7 +90,7 @@ class ForecasterRecursive(ForecasterBase):
         the residuals into k bins according to the predicted values associated 
         with each residual. Available arguments are: `n_bins`, `method`, `subsample`,
         `random_state` and `dtype`. Argument `method` is passed internally to the
-        fucntion `numpy.percentile`.
+        function `numpy.percentile`.
         **New in version 0.14.0**
     forecaster_id : str, int, default None
         Name used as an identifier of the forecaster.
@@ -135,30 +132,6 @@ class ForecasterRecursive(ForecasterBase):
         index. For example, a function that assigns a lower weight to certain dates.
         Ignored if `regressor` does not have the argument `sample_weight` in its `fit`
         method. The resulting `sample_weight` cannot have negative values.
-    differentiation : int
-        Order of differencing applied to the time series before training the forecaster.
-        If `None`, no differencing is applied. The order of differentiation is the number
-        of times the differencing operation is applied to a time series. Differencing
-        involves computing the differences between consecutive data points in the series.
-        Differentiation is reversed in the output of `predict()` and `predict_interval()`.
-        **WARNING: This argument is newly introduced and requires special attention. It
-        is still experimental and may undergo changes.**
-        **New in version 0.10.0**
-    binner : sklearn.preprocessing.KBinsDiscretizer
-        `KBinsDiscretizer` used to discretize residuals into k bins according 
-        to the predicted values associated with each residual.
-        **New in version 0.12.0**
-    binner_intervals_ : dict
-        Intervals used to discretize residuals into k bins according to the predicted
-        values associated with each residual.
-        **New in version 0.12.0**
-    binner_kwargs : dict
-        Additional arguments to pass to the `QuantileBinner` used to discretize 
-        the residuals into k bins according to the predicted values associated 
-        with each residual. Available arguments are: `n_bins`, `method`, `subsample`,
-        `random_state` and `dtype`. Argument `method` is passed internally to the
-        fucntion `numpy.percentile`.
-        **New in version 0.14.0**
     source_code_weight_func : str
         Source code of the custom function used to create weights.
     differentiation : int
@@ -215,7 +188,6 @@ class ForecasterRecursive(ForecasterBase):
         in the transformed scale. If `differentiation` is not `None`, residuals are
         stored after differentiation. The number of residuals stored per bin is
         limited to `10_000 // self.binner.n_bins_`.
-        **New in version 0.14.0**
     out_sample_residuals_ : numpy ndarray
         Residuals of the model when predicting non training data. Only stored up to
         10_000 values. If `transformer_y` is not `None`, residuals are stored in
@@ -227,7 +199,18 @@ class ForecasterRecursive(ForecasterBase):
         in the transformed scale. If `differentiation` is not `None`, residuals are
         stored after differentiation. The number of residuals stored per bin is
         limited to `10_000 // self.binner.n_bins_`.
-        **New in version 0.12.0**
+    binner : skforecast.preprocessing.QuantileBinner
+        `QuantileBinner` used to discretize residuals into k bins according 
+        to the predicted values associated with each residual.
+    binner_intervals_ : dict
+        Intervals used to discretize residuals into k bins according to the predicted
+        values associated with each residual.
+    binner_kwargs : dict
+        Additional arguments to pass to the `QuantileBinner` used to discretize 
+        the residuals into k bins according to the predicted values associated 
+        with each residual. Available arguments are: `n_bins`, `method`, `subsample`,
+        `random_state` and `dtype`. Argument `method` is passed internally to the
+        fucntion `numpy.percentile`.
     creation_date : str
         Date of creation.
     is_fitted : bool
@@ -940,7 +923,8 @@ class ForecasterRecursive(ForecasterBase):
             Whether or not to store the last window (`last_window_`) of training data.
         store_in_sample_residuals : bool, default True
             If `True`, in-sample residuals will be stored in the forecaster object
-            after fitting (`in_sample_residuals_` attribute).
+            after fitting (`in_sample_residuals_` and `in_sample_residuals_by_bin_`
+            attributes).
         random_state : int, default 123
             Set a seed for the random generator so that the stored sample 
             residuals are always deterministic.

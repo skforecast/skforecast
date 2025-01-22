@@ -97,6 +97,12 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         index. For example, a function that assigns a lower weight to certain dates.
         Ignored if `regressor` does not have the argument `sample_weight` in its `fit`
         method. The resulting `sample_weight` cannot have negative values.
+    differentiation : int, default None
+        Order of differencing applied to the time series before training the forecaster.
+        If `None`, no differencing is applied. The order of differentiation is the number
+        of times the differencing operation is applied to a time series. Differencing
+        involves computing the differences between consecutive data points in the series.
+        Before returning a prediction, the differencing operation is reversed.
     fit_kwargs : dict, default None
         Additional arguments to be passed to the `fit` method of the regressor.
     n_jobs : int, 'auto', default 'auto'
@@ -1350,7 +1356,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             Whether or not to store the last window (`last_window_`) of training data.
         store_in_sample_residuals : bool, default True
             If `True`, in-sample residuals will be stored in the forecaster object
-            after fitting (`in_sample_residuals_` attribute).
+            after fitting (`in_sample_residuals_` and `in_sample_residuals_by_bin_`
+            attributes).
         suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the training 
             process. See skforecast.exceptions.warn_skforecast_categories for more
@@ -1411,7 +1418,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 Step of the forecaster to be fitted.
             store_in_sample_residuals : bool
                 If `True`, in-sample residuals will be stored in the forecaster object
-                after fitting (`in_sample_residuals_` attribute).
+                after fitting (`in_sample_residuals_` and `in_sample_residuals_by_bin_`
+                attributes).
             
             Returns
             -------
