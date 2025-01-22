@@ -3150,22 +3150,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                         f"`y_pred` must have the same index. Error with series '{k}'."
                     )
 
-        # TODO: esto está mal!
-        if self.encoding is None:
-            if list(y_true.keys()) != ['_unknown_level']:
-                warnings.warn(
-                    "As `encoding` is set to `None`, no distinction between levels "
-                    "is made. All residuals are stored in the '_unknown_level' key.",
-                    UnknownLevelWarning
-                )
-            sorted_keys = sorted(y_true.keys())
-            y_true = {
-                '_unknown_level': np.concatenate([y_true[key] for key in sorted_keys])
-            }
-            y_pred = {
-                '_unknown_level': np.concatenate([y_pred[key] for key in sorted_keys])
-            }
-
+       
         # NOTE: Out-of-sample residuals can only be stored for series seen during 
         # fit. To save residuals for unseen levels use the key '_unknown_level'. 
         series_names_in_ = self.series_names_in_ + ['_unknown_level']        
@@ -3199,23 +3184,52 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             self.out_sample_residuals_[level] = residuals_level
             self.out_sample_residuals_by_bin_[level] = residuals_by_bin_level
 
-        if '_unknown_level' not in series_to_update:
-            print(y_true.keys())
-            print(y_pred.keys())
-            sorted_keys = sorted(y_true.keys())
-            y_true = np.concatenate([y_true[key] for key in sorted_keys])
-            y_pred = np.concatenate([y_pred[key] for key in sorted_keys])
-            residuals_level, residuals_by_bin_level = (
-                self._binning_out_sample_residuals(
-                    level        = '_unknown_level',
-                    y_true       = y_true,
-                    y_pred       = y_pred,
-                    append       = append,
-                    random_state = random_state
+        if self.encoding is None or '_unknown_level' not in series_to_update:
+            if list(y_true.keys()) != ['_unknown_level']:
+                warnings.warn(
+                    "As `encoding` is set to `None`, no distinction between levels "
+                    "is made. All residuals are stored in the '_unknown_level' key.",
+                    UnknownLevelWarning
                 )
+
+            # NOTE: when encoding is None, all levels are combined in '_unknown_level'.
+            residuals_all_levels = np.concatenate(
+                [np.atleast_1d(value) for value in self.out_sample_residuals_.values()]
             )
-            self.out_sample_residuals_['_unknown_level'] = residuals_level
-            self.out_sample_residuals_by_bin_['_unknown_level'] = residuals_by_bin_level
+            if len(residuals_all_levels) > 10_000:
+                rng = np.random.default_rng(seed=random_state)
+                residuals_all_levels = rng.choice(
+                                            a       = residuals_all_levels,
+                                            size    = 10_000,
+                                            replace = False
+                                        )
+            all_keys = set(
+                key
+                for d in self.out_sample_residuals_by_bin_.values() if d is not None
+                for key in d
+            )
+            residuals_by_bin_all_levels = {
+                key: np.concatenate([
+                        d.get(key, np.array([]))
+                        for d in self.out_sample_residuals_by_bin_.values() if d is not None
+                    ])
+                for key in all_keys
+            }
+            for key in residuals_by_bin_all_levels.keys():
+                if len(residuals_by_bin_all_levels[key]) > 10_000:
+                    rng = np.random.default_rng(seed=random_state)
+                    residuals_by_bin_all_levels[key] = rng.choice(
+                        a       = residuals_by_bin_all_levels[key],
+                        size    = 10_000,
+                        replace = False
+                    )
+
+            if self.encoding is None:
+                self.out_sample_residuals_ = {'_unknown_level': residuals_all_levels}
+                self.out_sample_residuals_ = {'_unknown_level': residuals_by_bin_all_levels}
+            else:
+                self.out_sample_residuals_['_unknown_level'] = residuals_all_levels
+                self.out_sample_residuals_by_bin_['_unknown_level'] = residuals_by_bin_all_levels
 
 
     def _binning_out_sample_residuals(
@@ -3258,13 +3272,16 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             Dictionary with the residuals binned by the fitted binner.
                 
         """
-        transformer = self.transformer_series_[level]
+
+        # NOTE: if the level is not known or encoding is None, then transformer,
+        # differentiator and binner used are the ones of "_unknown_level"
+        transformer = self.transformer_series_.get(level, self.transformer_series_['_unknown_level'])
         if self.differentiation is not None:
             differentiator = copy(
                 self.differentiator_.get(level, self.differentiator_["_unknown_level"])
             )
             differentiator.set_params(window_size=None)
-        binner = self.binner[level]
+        binner = self.binner.get(level, self.binner['_unknown_level'])
         outsample_residuals_by_bin = deepcopy(self.out_sample_residuals_by_bin_.get(level, {}))
         insample_residuals_by_bin = self.in_sample_residuals_by_bin_.get(level, {})
 
