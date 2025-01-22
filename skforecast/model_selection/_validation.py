@@ -972,7 +972,7 @@ def backtesting_forecaster_multiseries(
     levels: str | list[str] | None = None,
     add_aggregated_metric: bool = True,
     exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
-    interval: list[float] | tuple[float] | str | object | None = None,
+    interval: float | list[float] | tuple[float] | str | object | None = None,
     interval_method: str = 'bootstrapping',
     n_boot: int = 250,
     random_state: int = 123,
