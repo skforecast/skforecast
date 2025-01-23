@@ -3263,7 +3263,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             differentiator = copy(
                 self.differentiator_.get(level, self.differentiator_["_unknown_level"])
             )
-            differentiator.set_params(window_size=None)
+            if differentiator is not None:
+                differentiator.set_params(window_size=None)
+        else:
+            differentiator = None
+
         binner = self.binner[level]
         outsample_residuals_by_bin = deepcopy(self.out_sample_residuals_by_bin_.get(level, {}))
         insample_residuals_by_bin = self.in_sample_residuals_by_bin_.get(level, {})
@@ -3287,7 +3291,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                         inverse_transform = False
                       )
             
-        if self.differentiation is not None:
+        if differentiator is not None:
             y_true = differentiator.fit_transform(y_true)[differentiator.order:]
             y_pred = differentiator.fit_transform(y_pred)[differentiator.order:]
 
