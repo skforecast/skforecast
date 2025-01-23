@@ -303,7 +303,11 @@ def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_and_a
     expected = {
         'l1': np.array([1, 1, 1, 1, 1] * 2), 
         'l2': np.array([2, 2, 2, 2, 2] * 2),
-        '_unknown_level': np.array([2, 2, 2, 2, 2, 1, 1, 1, 1, 1] * 2)
+        '_unknown_level': np.concatenate([
+            np.array([1, 1, 1, 1, 1] * 2),
+            np.array([2, 2, 2, 2, 2] * 2)
+
+        ])
     }
 
     assert expected.keys() == results.keys()
@@ -390,7 +394,7 @@ def test_set_out_sample_residuals_when_residuals_keys_partially_match():
     expected = {
         'l1': np.array([-1,  0,  1,  2,  3]),
         'l2': None,
-        '_unknown_level': np.array([-1, 0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+        '_unknown_level': np.array([-1, 0, 1, 2, 3])
     }
     for key in expected.keys():
         if expected[key] is not None:
