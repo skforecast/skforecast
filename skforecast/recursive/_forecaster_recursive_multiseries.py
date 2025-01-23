@@ -3170,7 +3170,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             )
         
         for level in series_to_update:
-
             residuals_level, residuals_by_bin_level = (
                 self._binning_out_sample_residuals(
                     level        = level,
@@ -3180,7 +3179,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     random_state = random_state
                 )
             )
-
             self.out_sample_residuals_[level] = residuals_level
             self.out_sample_residuals_by_bin_[level] = residuals_by_bin_level
 
