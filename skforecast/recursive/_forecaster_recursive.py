@@ -2031,32 +2031,29 @@ class ForecasterRecursive(ForecasterBase):
                 "from scipy.stats, with methods `_pdf` and `fit`."
             )
 
-        boot_samples = self.predict_bootstrapping(
-                           steps                   = steps,
-                           last_window             = last_window,
-                           exog                    = exog,
-                           n_boot                  = n_boot,
-                           random_state            = random_state,
-                           use_in_sample_residuals = use_in_sample_residuals,
-                           use_binned_residuals    = use_binned_residuals
-                       )       
+        predictions = self.predict_bootstrapping(
+                          steps                   = steps,
+                          last_window             = last_window,
+                          exog                    = exog,
+                          n_boot                  = n_boot,
+                          random_state            = random_state,
+                          use_in_sample_residuals = use_in_sample_residuals,
+                          use_binned_residuals    = use_binned_residuals
+                      )       
 
         param_names = [
             p for p in inspect.signature(distribution._pdf).parameters
             if not p == 'x'
         ] + ["loc", "scale"]
-        param_values = np.apply_along_axis(
-                           lambda x: distribution.fit(x),
-                           axis = 1,
-                           arr  = boot_samples
-                       )
-        predictions = pd.DataFrame(
-                          data    = param_values,
-                          columns = param_names,
-                          index   = boot_samples.index
-                      )
 
-        return predictions  
+        predictions[param_names] = (
+            predictions.apply(
+                lambda x: distribution.fit(x), axis=1, result_type='expand'
+            )
+        )
+        predictions = predictions[param_names]
+
+        return predictions
 
 
     def set_params(

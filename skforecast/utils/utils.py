@@ -2782,7 +2782,7 @@ def check_residuals_input(
             residuals = out_sample_residuals_
             literal = "out_sample_residuals_"
         
-        # NOTE: Check also if residuals is an empty dict
+        # NOTE: This checks also if residuals is an empty dict
         if residuals is None or not residuals:
             raise ValueError(
                 f"`forecaster.{literal}` is None. Use `use_in_sample_residuals = True` "
@@ -2821,7 +2821,7 @@ def check_residuals_input_direct(
         
         if not set(steps).issubset(set(residuals.keys())):
             raise ValueError(
-                f"Not `forecaster.{literal}` for steps: "
+                f"`forecaster.{literal}` doesn't contain residuals for steps: "
                 f"{set(steps) - set(residuals.keys())}."
             )
     else:
@@ -2834,7 +2834,7 @@ def check_residuals_input_direct(
 
         if not set(steps).issubset(set(residuals.keys())):
             raise ValueError(
-                f"No `forecaster.out_sample_residuals_` for steps: "
+                f"`forecaster.{literal}` doesn't contain residuals for steps: "
                 f"{set(steps) - set(residuals.keys())}. "
                 f"Use method `set_out_sample_residuals()`."
             )
@@ -2842,14 +2842,13 @@ def check_residuals_input_direct(
     for step in steps:
         if residuals[step] is None:
             raise ValueError(
-                f"forecaster residuals for step {step} are None. "
-                f"Check `forecaster.{literal}`."
+                f"Residuals for step {step} are None. Check `forecaster.{literal}`."
             )
         # TODO: This check has sense? Check if it is necessary
         # Need to adapt when {step: {bin: residuals}}
         elif any(x is None or np.isnan(x) for x in residuals[step]):
             raise ValueError(
-                f"forecaster residuals for step {step} contains None values. "
+                f"Residuals for step {step} contains None values. "
                 f"Check `forecaster.{literal}`."
             )
 

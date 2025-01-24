@@ -8,7 +8,7 @@ from skforecast.utils import check_residuals_input
 @pytest.mark.parametrize("use_binned_residuals", 
                          [True, False],
                          ids = lambda binned: f'use_binned_residuals: {binned}')
-def test_check_residuals_input_ValueError_when_not_in_sample_residualsl(use_binned_residuals):
+def test_check_residuals_input_ValueError_when_not_in_sample_residuals(use_binned_residuals):
     """
     Test ValueError is raised when there is no in_sample_residuals_ or 
     in_sample_residuals_by_bin_.
@@ -39,7 +39,7 @@ def test_check_residuals_input_ValueError_when_not_in_sample_residualsl(use_binn
 @pytest.mark.parametrize("use_binned_residuals", 
                          [True, False],
                          ids = lambda binned: f'use_binned_residuals: {binned}')
-def test_check_residuals_input_ValueError_when_not_out_sample_residualsl(use_binned_residuals):
+def test_check_residuals_input_ValueError_when_not_out_sample_residuals(use_binned_residuals):
     """
     Test ValueError is raised when there is no out_sample_residuals_ or 
     out_sample_residuals_by_bin_.
