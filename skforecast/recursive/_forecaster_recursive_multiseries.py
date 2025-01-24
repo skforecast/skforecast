@@ -1857,6 +1857,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
         predict_boot: bool = False,
         use_in_sample_residuals: bool = True,
+        use_binned_residuals: bool = False,
         check_inputs: bool = True
     ) -> tuple[pd.DataFrame, dict[str, np.ndarray] | None, list[str], pd.Index, dict[str, np.ndarray] | None]:
         """
