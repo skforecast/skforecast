@@ -237,7 +237,8 @@ def test_predict_output_when_regressor_is_LinearRegression_steps_is_1_in_sample_
     forecaster.fit(series=series_2, store_in_sample_residuals=True)
     forecaster.out_sample_residuals_ = {
         '1': np.full_like(forecaster.in_sample_residuals_['1'], fill_value=10), 
-        '2': np.full_like(forecaster.in_sample_residuals_['2'], fill_value=20)
+        '2': np.full_like(forecaster.in_sample_residuals_['2'], fill_value=20),
+        '_unknown_level': np.full(shape=20, fill_value=10)
     }
 
     predictions = forecaster.predict_interval(
@@ -259,7 +260,8 @@ def test_predict_output_when_regressor_is_LinearRegression_steps_is_2_in_sample_
     forecaster.fit(series=series_2, store_in_sample_residuals=True)
     forecaster.out_sample_residuals_ = {
         '1': np.full_like(forecaster.in_sample_residuals_['1'], fill_value=10), 
-        '2': np.full_like(forecaster.in_sample_residuals_['2'], fill_value=20)
+        '2': np.full_like(forecaster.in_sample_residuals_['2'], fill_value=20),
+        '_unknown_level': np.full(shape=20, fill_value=10)
     }
     predictions = forecaster.predict_interval(
         steps=2, levels=expected_pandas_dataframe_2[0], use_in_sample_residuals=False

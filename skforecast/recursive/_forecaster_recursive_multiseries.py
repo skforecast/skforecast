@@ -2519,6 +2519,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             use_binned_residuals    = use_binned_residuals
         )
 
+        print(residuals.keys())
+
+        # TODO: results is returned in _create_predict_inputs but now we overwrite it
+        # ???????????????????????????
         if use_in_sample_residuals:
             residuals = self.in_sample_residuals_
             residuals_by_bin = self.in_sample_residuals_by_bin_
@@ -2542,17 +2546,18 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             for bin in sampled_residuals.keys():
                 for i, level in enumerate(levels):
                     sampled_residuals[bin][:, :, i] = rng.choice(
-                        a       = residuals_by_bin[level][bin],
+                        a       = residuals_by_bin.get(level, residuals['_unknown_level'])[bin],
                         size    = (steps, n_boot),
                         replace = True
                     )
         else:
+            print(residuals.keys())
             for i, level in enumerate(levels):
                 sampled_residuals_grid[:, :, i] = rng.choice(
-                                                      a       = residuals[level],
-                                                      size    = (steps, n_boot),
-                                                      replace = True
-                                                  )
+                    a       = residuals.get(level, residuals['_unknown_level']),
+                    size    = (steps, n_boot),
+                    replace = True
+                )
             sampled_residuals = {'all': sampled_residuals_grid}
         
         boot_columns = []
