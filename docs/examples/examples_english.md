@@ -31,6 +31,7 @@ These tutorials focus on global models and multi-series forecasting, where you c
 
 <i class="fa-solid fa-layer-group" style="font-size: 25px; color: #001633;"></i> [Forecasting with Deep Learning](https://cienciadedatos.net/documentos/py54-forecasting-with-deep-learning)
 
+<i class="fa-solid fa-circle-nodes" style="font-size: 25px; color: #2f5ee9;"></i> [Clustering time series to improve forecasting](https://cienciadedatos.net/documentos/py64-clustering-time-series-forecasting.html)
 
 ## Advanced Techniques: Beyond Basic Models
 
