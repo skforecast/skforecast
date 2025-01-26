@@ -12,7 +12,7 @@ import sys
 import numpy as np
 import pandas as pd
 import inspect
-from copy import copy
+from copy import copy, deepcopy
 import sklearn
 from sklearn.exceptions import NotFittedError
 from sklearn.pipeline import Pipeline
@@ -52,6 +52,7 @@ from ..utils import (
     set_skforecast_warnings
 )
 from ..preprocessing import TimeSeriesDifferentiator
+from ..preprocessing import QuantileBinner
 from ..model_selection._utils import _extract_data_folds_multiseries
 
 
@@ -235,6 +236,22 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
     differentiator_ : dict
         Dictionary with the `differentiator` for each series. It is created cloning the
         objects in `differentiator` and is used internally to avoid overwriting.
+    binner : dict
+        Dictionary of `skforecast.preprocessing.QuantileBinner` used to discretize
+        residuals of each series into k bins according to the predicted values associated
+        with each residual.
+        **New in version 0.15.0**
+    binner_intervals_ : dict
+        Intervals used to discretize residuals into k bins according to the predicted
+        values associated with each residual.
+        **New in version 0.15.0**
+    binner_kwargs : dict
+        Additional arguments to pass to the `QuantileBinner` used to discretize 
+        the residuals into k bins according to the predicted values associated 
+        with each residual. Available arguments are: `n_bins`, `method`, `subsample`,
+        `random_state` and `dtype`. Argument `method` is passed internally to the
+        fucntion `numpy.percentile`.
+        **New in version 0.14.0**
     dropna_from_series : bool
         Determine whether NaN detected in the training matrices will be dropped.
     last_window_ : dict
@@ -283,11 +300,25 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         Residuals of the model when predicting training data. Only stored up to
         1000 values in the form `{level: residuals}`. If `transformer_series` 
         is not `None`, residuals are stored in the transformed scale.
+    in_sample_residuals_by_bin_ : dict
+        In sample residuals binned according to the predicted value each residual
+        is associated with. If `transformer_y` is not `None`, residuals are stored
+        in the transformed scale. If `differentiation` is not `None`, residuals are
+        stored after differentiation. The number of residuals stored per bin is
+        limited to `10_000 // self.binner.n_bins_`.
+        **New in version 0.15.0**
     out_sample_residuals_ : dict
         Residuals of the model when predicting non-training data. Only stored
         up to 1000 values in the form `{level: residuals}`. If `transformer_series` 
         is not `None`, residuals are assumed to be in the transformed scale. Use 
         `set_out_sample_residuals()` method to set values.
+    out_sample_residuals_by_bin_ : dict
+        Out of sample residuals binned according to the predicted value each residual
+        is associated with. If `transformer_y` is not `None`, residuals are stored
+        in the transformed scale. If `differentiation` is not `None`, residuals are
+        stored after differentiation. The number of residuals stored per bin is
+        limited to `10_000 // self.binner.n_bins_`.
+        **New in version 0.15.0**
     creation_date : str
         Date of creation.
     is_fitted : bool
@@ -332,6 +363,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         differentiation: int | dict[str, int | None] | None = None,
         dropna_from_series: bool = False,
         fit_kwargs: dict[str, object] | None = None,
+        binner_kwargs: dict[str, object] | None = None,
         forecaster_id: str | int | None = None
     ) -> None:
 
@@ -351,6 +383,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self.differentiation_max                = None
         self.differentiator                     = None
         self.differentiator_                    = None
+        self.binner                             = {}
+        self.binner_intervals_                  = {}
         self.dropna_from_series                 = dropna_from_series
         self.last_window_                       = None
         self.index_type_                        = None
@@ -366,7 +400,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self.X_train_exog_names_out_            = None
         self.X_train_features_names_out_        = None
         self.in_sample_residuals_               = None
+        self.in_sample_residuals_by_bin_        = None
         self.out_sample_residuals_              = None
+        self.out_sample_residuals_by_bin_       = None
         self.creation_date                      = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
         self.is_fitted                          = False
         self.fit_date                           = None
@@ -519,6 +555,14 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                               regressor  = regressor,
                               fit_kwargs = fit_kwargs
                           )
+        
+        self.binner_kwargs = binner_kwargs
+        if binner_kwargs is None:
+            self.binner_kwargs = {
+                'n_bins': 10, 'method': 'linear', 'subsample': 200000,
+                'random_state': 789654, 'dtype': np.float64
+            }
+        
 
     def __repr__(
         self
@@ -1632,6 +1676,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         set_skforecast_warnings(suppress_warnings, action='ignore')
 
+        # TODO: create a method reset_forecaster() to reset all attributes
         # Reset values in case the forecaster has already been fitted.
         self.last_window_                       = None
         self.index_type_                        = None
@@ -1647,6 +1692,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self.X_train_exog_names_out_            = None
         self.X_train_features_names_out_        = None
         self.in_sample_residuals_               = None
+        self.in_sample_residuals_by_bin_        = None
         self.is_fitted                          = False
         self.fit_date                           = None
 
@@ -1706,49 +1752,102 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             self.exog_dtypes_in_ = exog_dtypes_in_
             self.X_train_exog_names_out_ = X_train_exog_names_out_
 
-        in_sample_residuals_ = {}
+        self.in_sample_residuals_ = {}
+        self.in_sample_residuals_by_bin_ = {}
         if store_in_sample_residuals:
-
-            residuals = (y_train - self.regressor.predict(X_train_regressor)).to_numpy()
-            
-            rng = np.random.default_rng(seed=123)
+            y_pred = self.regressor.predict(X_train_regressor)
             if self.encoding is not None:
-                for col in X_train_series_names_in_:
+                for level in X_train_series_names_in_:
                     if self.encoding == 'onehot':
-                        mask = X_train[col].to_numpy() == 1.
+                        mask = X_train[level].to_numpy() == 1.
                     else:
-                        encoded_value = self.encoding_mapping_[col]
+                        encoded_value = self.encoding_mapping_[level]
                         mask = X_train['_level_skforecast'].to_numpy() == encoded_value
-                    
-                    residuals_col = residuals[mask]
-                    if len(residuals_col) > 1000:
-                        residuals_col = rng.choice(
-                                            a       = residuals_col,
-                                            size    = 1000,
-                                            replace = False
-                                        )
-                    in_sample_residuals_[col] = residuals_col
+
+                    self._binning_in_sample_residuals(
+                        level  = level,
+                        y_true = y_train[mask],
+                        y_pred = y_pred[mask]
+                    )
             
-            if len(residuals) > 1000:
-                in_sample_residuals_['_unknown_level'] = rng.choice(
-                                                             a       = residuals,
-                                                             size    = 1000,
-                                                             replace = False
-                                                         )
-            else:
-                in_sample_residuals_['_unknown_level'] = residuals
+            # NOTE: the _unknown_level is a random sample of 10_000 residuals of all levels.
+            self._binning_in_sample_residuals(
+                    level = '_unknown_level',
+                    y_true = y_train,
+                    y_pred = y_pred
+                )
         else:
             if self.encoding is not None:
-                for col in X_train_series_names_in_:
-                    in_sample_residuals_[col] = None
-            in_sample_residuals_['_unknown_level'] = None
-
-        self.in_sample_residuals_ = in_sample_residuals_
+                for level in X_train_series_names_in_:
+                    self.in_sample_residuals_[level] = None
+                    self.in_sample_residuals_by_bin_[level] = None
+            self.in_sample_residuals_['_unknown_level'] = None
+            self.in_sample_residuals_by_bin_['_unknown_level'] = None
 
         if store_last_window:
             self.last_window_ = last_window_
         
         set_skforecast_warnings(suppress_warnings, action='default')
+
+    
+    def _binning_in_sample_residuals(
+        self,
+        level: str,
+        y_true: np.ndarray,
+        y_pred: np.ndarray,
+        random_state: int = 123
+    ) -> None:
+        """
+        Binning residuals according to the predicted value each residual is
+        associated with. First a skforecast.preprocessing.QuantileBinner object
+        is fitted to the predicted values. Then, residuals are binned according
+        to the predicted value each residual is associated with. Residuals are
+        stored in the forecaster object as `in_sample_residuals_` and
+        `in_sample_residuals_by_bin_`.
+        `y_true` and `y_pred` assumed to be differentiated and or transformed
+        according to the attributes `differentiation` and `transformer_series`.
+        The number of residuals stored per bin is limited to 
+        `10_000 // self.binner.n_bins_`. The total number of residuals stored is
+        `10_000`.
+        **New in version 0.15.0**
+
+        Parameters
+        ----------
+        y_true : numpy ndarray
+            True values of the time series.
+        y_pred : numpy ndarray
+            Predicted values of the time series.
+        random_state : int, default 123
+            Set a seed for the random generator so that the stored sample 
+            residuals are always deterministic.
+
+        Returns
+        -------
+        None
+        
+        """
+        self.binner[level] = QuantileBinner(**self.binner_kwargs)
+        residuals = y_true - y_pred
+        data = pd.DataFrame({'prediction': y_pred, 'residuals': residuals})
+        data['bin'] = self.binner[level].fit_transform(y_pred).astype(int)
+        self.in_sample_residuals_by_bin_[level] = (
+            data.groupby('bin')['residuals'].apply(np.array).to_dict()
+        )
+
+        rng = np.random.default_rng(seed=random_state)
+        max_sample = 10_000 // self.binner[level].n_bins_
+        for k, v in self.in_sample_residuals_by_bin_[level].items():
+            if len(v) > max_sample:
+                sample = v[rng.integers(low=0, high=len(v), size=max_sample)]
+                self.in_sample_residuals_by_bin_[level][k] = sample
+
+        if len(residuals) > 10_000:
+            residuals = residuals[
+                rng.integers(low=0, high=len(residuals), size=max_sample)
+            ]
+        
+        self.in_sample_residuals_[level] = residuals
+        self.binner_intervals_[level] = self.binner[level].intervals_
 
 
     def _create_predict_inputs(
@@ -1759,6 +1858,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
         predict_boot: bool = False,
         use_in_sample_residuals: bool = True,
+        use_binned_residuals: bool = False,
         check_inputs: bool = True
     ) -> tuple[pd.DataFrame, dict[str, np.ndarray] | None, list[str], pd.Index, dict[str, np.ndarray] | None]:
         """
@@ -1960,7 +2060,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         levels: list,
         last_window: pd.DataFrame,
         exog_values_dict: dict[str, np.ndarray] | None = None,
-        residuals: np.ndarray | None = None
+        residuals: np.ndarray | None = None,
+        use_binned_residuals: bool = False,
     ) -> np.ndarray:
         """
         Predict n steps for one or multiple levels. It is an iterative process
@@ -1982,6 +2083,13 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         residuals : numpy ndarray, default None
             Residuals used to generate bootstrapping predictions in the form
             (steps, levels).
+        use_binned_residuals : bool, default False
+            If `True`, residuals used in each bootstrapping iteration are selected
+            conditioning on the predicted values. If `False`, residuals are selected
+            randomly without conditioning on the predicted values.
+            **WARNING: This argument is newly introduced and requires special attention.
+            It is still experimental and may undergo changes.
+            **New in version 0.15.0**
 
         Returns
         -------
@@ -2049,7 +2157,20 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             pred = self.regressor.predict(features)
             
             if residuals is not None:
-                pred += residuals[i, :]
+
+                if use_binned_residuals:
+                    step_residual = np.full(
+                        shape=n_levels, fill_value=np.nan, dtype=float
+                    )
+                    for j, level in enumerate(levels):
+                        predicted_bin = (
+                            self.binner[level].transform(pred[j]).item()
+                        )
+                        step_residual[j] = residuals[predicted_bin][i, j]
+                else:
+                    step_residual = residuals[i, :]
+                
+                pred += step_residual
             
             predictions[i, :] = pred 
 
@@ -2317,8 +2438,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         last_window: pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
         n_boot: int = 250,
-        random_state: int = 123,
         use_in_sample_residuals: bool = True,
+        use_binned_residuals: bool = False,
+        random_state: int = 123,
         suppress_warnings: bool = False
     ) -> pd.DataFrame:
         """
@@ -2352,6 +2474,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             If `False`, out of sample residuals (calibration) are used. 
             Out-of-sample residuals must be precomputed using Forecaster's
             `set_out_sample_residuals()` method.
+        use_binned_residuals : bool, default False
+            If `True`, residuals are selected based on the predicted values 
+            (binned selection).
+            If `False`, residuals are selected randomly.
+            **New in version 0.15.0**
         random_state : int, default 123
             Seed for the random number generator to ensure reproducibility.
         suppress_warnings : bool, default False
@@ -2387,23 +2514,50 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             last_window             = last_window,
             exog                    = exog,
             predict_boot            = True,
-            use_in_sample_residuals = use_in_sample_residuals
+            use_in_sample_residuals = use_in_sample_residuals,
+            use_binned_residuals    = use_binned_residuals
         )
+
+        print(residuals.keys())
+
+        # TODO: results is returned in _create_predict_inputs but now we overwrite it
+        # ???????????????????????????
+        if use_in_sample_residuals:
+            residuals = self.in_sample_residuals_
+            residuals_by_bin = self.in_sample_residuals_by_bin_
+        else:
+            residuals = self.out_sample_residuals_
+            residuals_by_bin = self.out_sample_residuals_by_bin_
 
         n_levels = len(levels)
         rng = np.random.default_rng(seed=random_state)
-        sample_residuals = np.full(
-                               shape      = (steps, n_boot, n_levels),
-                               fill_value = np.nan,
-                               order      = 'F',
-                               dtype      = float
-                           )
-        for i, level in enumerate(levels):
-            sample_residuals[:, :, i] = rng.choice(
-                                            a       = residuals[level],
-                                            size    = (steps, n_boot),
-                                            replace = True
-                                        )
+        sampled_residuals_grid = np.full(
+                                     shape      = (steps, n_boot, n_levels),
+                                     fill_value = np.nan,
+                                     order      = 'F',
+                                     dtype      = float
+                                 )
+        if use_binned_residuals:
+            sampled_residuals = {
+                k: sampled_residuals_grid.copy() 
+                for k in range(self.binner_kwargs['n_bins'])
+            }
+            for bin in sampled_residuals.keys():
+                for i, level in enumerate(levels):
+                    sampled_residuals[bin][:, :, i] = rng.choice(
+                        a       = residuals_by_bin.get(level, residuals['_unknown_level'])[bin],
+                        size    = (steps, n_boot),
+                        replace = True
+                    )
+        else:
+            print(residuals.keys())
+            for i, level in enumerate(levels):
+                sampled_residuals_grid[:, :, i] = rng.choice(
+                    a       = residuals.get(level, residuals['_unknown_level']),
+                    size    = (steps, n_boot),
+                    replace = True
+                )
+            sampled_residuals = {'all': sampled_residuals_grid}
         
         boot_columns = []
         boot_predictions = np.full(
@@ -2421,13 +2575,22 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             )
             for i in range(n_boot):
 
+                if use_binned_residuals:
+                    boot_sampled_residuals = {
+                        k: v[:, i, :]
+                        for k, v in sampled_residuals.items()
+                    }
+                else:
+                    boot_sampled_residuals = sampled_residuals['all'][:, i, :]
+
                 boot_columns.append(f"pred_boot_{i}")
                 boot_predictions[:, :, i] = self._recursive_predict(
-                    steps            = steps,
-                    levels           = levels,
-                    last_window      = last_window,
-                    exog_values_dict = exog_values_dict,
-                    residuals        = sample_residuals[:, i, :]
+                    steps                = steps,
+                    levels               = levels,
+                    last_window          = last_window,
+                    exog_values_dict     = exog_values_dict,
+                    residuals            = boot_sampled_residuals,
+                    use_binned_residuals = use_binned_residuals,
                 )
 
         for i, level in enumerate(levels):
@@ -2899,8 +3062,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
     def set_out_sample_residuals(
         self, 
-        y_true: dict[int, np.ndarray | pd.Series],
-        y_pred: dict[int, np.ndarray | pd.Series],
+        y_true: dict[str, np.ndarray | pd.Series],
+        y_pred: dict[str, np.ndarray | pd.Series],
         append: bool = True,
         random_state: int = 123
     ) -> None:
@@ -2991,14 +3154,17 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                         f"`y_pred` must have the same index. Error with series '{k}'."
                     )
 
+       
         # NOTE: Out-of-sample residuals can only be stored for series seen during 
         # fit. To save residuals for unseen levels use the key '_unknown_level'. 
         series_names_in_ = self.series_names_in_ + ['_unknown_level']        
         if self.out_sample_residuals_ is None:
             if self.encoding is not None:
                 self.out_sample_residuals_ = {level: None for level in series_names_in_}
+                self.out_sample_residuals_by_bin_ = {level: {} for level in series_names_in_}
             else:
                 self.out_sample_residuals_ = {'_unknown_level': None}
+                self.out_sample_residuals_by_bin_ = {'_unknown_level': {}}
     
         series_to_update = set(y_pred.keys()).intersection(set(series_names_in_))
         if not series_to_update:
@@ -3007,73 +3173,204 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 "seen during `fit`. Residuals cannot be updated."
             )
         
-        residuals = {}
-        rng = np.random.default_rng(seed=random_state)
-        y_true = y_true.copy()
-        y_pred = y_pred.copy()
-        
-        if self.differentiation is not None:
-            differentiator_ = {
-                series: copy(
-                    self.differentiator_.get(
-                        series, self.differentiator_["_unknown_level"]
-                    )
+        for level in series_to_update:
+            residuals_level, residuals_by_bin_level = (
+                self._binning_out_sample_residuals(
+                    level        = level,
+                    y_true       = y_true[level],
+                    y_pred       = y_pred[level],
+                    append       = append,
+                    random_state = random_state
                 )
-                for series in series_to_update
-            }
+            )
+            self.out_sample_residuals_[level] = residuals_level
+            self.out_sample_residuals_by_bin_[level] = residuals_by_bin_level
 
-            for k in series_to_update:
-                if differentiator_[k] is not None:
-                    differentiator_[k].set_params(window_size=None)
-
-        for k in series_to_update:
-            if isinstance(y_true[k], pd.Series):
-                y_true[k] = y_true[k].to_numpy()
-            if isinstance(y_pred[k], pd.Series):
-                y_pred[k] = y_pred[k].to_numpy()
-            if self.transformer_series:
-                y_true[k] = transform_numpy(
-                                array             = y_true[k],
-                                transformer       = self.transformer_series_[k],
-                                fit               = False,
-                                inverse_transform = False
-                            )
-                y_pred[k] = transform_numpy(
-                                array             = y_pred[k],
-                                transformer       = self.transformer_series_[k],
-                                fit               = False,
-                                inverse_transform = False
-                            )
-            
-            if self.differentiation is not None:
-                differentiator = differentiator_[k]
-                if differentiator is not None:
-                    y_true[k] = differentiator.fit_transform(y_true[k])[differentiator.order:]
-                    y_pred[k] = differentiator.fit_transform(y_pred[k])[differentiator.order:]
-
-            residuals[k] = y_true[k] - y_pred[k]
-
-        if '_unknown_level' not in residuals:
-            residuals['_unknown_level'] = np.concatenate(list(residuals.values()))
-
-        if self.encoding is None:
-            if list(residuals.keys()) != ['_unknown_level']:
+        if self.encoding is None or '_unknown_level' not in series_to_update:
+            if list(y_true.keys()) != ['_unknown_level']:
                 warnings.warn(
                     "As `encoding` is set to `None`, no distinction between levels "
                     "is made. All residuals are stored in the '_unknown_level' key.",
                     UnknownLevelWarning
                 )
-            residuals = {'_unknown_level': residuals['_unknown_level']}
 
-        for key, value in residuals.items():
-            if append and self.out_sample_residuals_[key] is not None:
-                value = np.concatenate((
-                            self.out_sample_residuals_[key],
-                            value
-                        ))
-            if len(value) > 10000:
-                value = rng.choice(value, size=10000, replace=False)
-            self.out_sample_residuals_[key] = value
+            # NOTE: when encoding is None, all levels are combined in '_unknown_level'.
+            if list(self.out_sample_residuals_.keys()) != ['_unknown_level']:
+                # To latelly refresh completly _unknown_level
+                self.out_sample_residuals_.pop('_unknown_level', None)
+            residuals_all_levels = np.concatenate(
+                [value for value in self.out_sample_residuals_.values() if value is not None]
+            )
+            if len(residuals_all_levels) > 10_000:
+                rng = np.random.default_rng(seed=random_state)
+                residuals_all_levels = rng.choice(
+                                            a       = residuals_all_levels,
+                                            size    = 10_000,
+                                            replace = False
+                                        )
+            all_keys = set(
+                key
+                for d in self.out_sample_residuals_by_bin_.values()
+                for key in d
+            )
+            residuals_by_bin_all_levels = {
+                key: np.concatenate([
+                        d.get(key, np.array([]))
+                        for d in self.out_sample_residuals_by_bin_.values()
+                    ])
+                for key in all_keys
+            }
+            for key in residuals_by_bin_all_levels.keys():
+                if len(residuals_by_bin_all_levels[key]) > 10_000:
+                    rng = np.random.default_rng(seed=random_state)
+                    residuals_by_bin_all_levels[key] = rng.choice(
+                        a       = residuals_by_bin_all_levels[key],
+                        size    = 10_000,
+                        replace = False
+                    )
+
+            if self.encoding is None:
+                self.out_sample_residuals_ = {'_unknown_level': residuals_all_levels}
+                self.out_sample_residuals_by_bin_ = {'_unknown_level': residuals_by_bin_all_levels}
+            else:
+                self.out_sample_residuals_['_unknown_level'] = residuals_all_levels
+                self.out_sample_residuals_by_bin_['_unknown_level'] = residuals_by_bin_all_levels
+
+
+    def _binning_out_sample_residuals(
+        self,
+        level: str,
+        y_true: np.ndarray,
+        y_pred: np.ndarray,
+        append: bool,
+        random_state: int = 123
+    ) -> tuple[np.ndarray, dict[str, np.ndarray]]:
+        """
+        Bin new out sample residuals using the already fitted binner.
+        `y_true` and `y_pred` are expected to be in the original scale of the
+        time series. Residuals are calculated as `y_true` - `y_pred`, after 
+        applying the necessary transformations and differentiations if the
+        forecaster includes them (`self.transformer_series` and `self.differentiation`).
+
+        Parameters
+        ----------
+        level : str
+            Name of the level y_true and y_pred belong to.
+        y_true : numpy ndarray
+            True values of the time series.
+        y_pred : numpy ndarray
+            Predicted values of the time series.
+        append : bool
+            If `True`, new residuals are added to the once already stored in the
+            attribute `out_sample_residuals_`. If after appending the new residuals,
+            the limit of 10_000 samples is exceeded, a random sample of 10_000 is
+            kept.
+        random_state : int, default 123
+            Set a seed for the random generator so that the stored sample 
+            residuals are always deterministic.
+
+        Returns
+        -------
+        residuals : numpy ndarray
+            Array with the residuals.
+        binned_residuals : dict
+            Dictionary with the residuals binned by the fitted binner.
+                
+        """
+
+        # NOTE: if the level is not known or encoding is None, then transformer,
+        # differentiator and binner used are the ones of "_unknown_level"
+        transformer = self.transformer_series_.get(level, self.transformer_series_['_unknown_level'])
+        differentiator = copy(
+                self.differentiator_.get(level, self.differentiator_["_unknown_level"])
+            )
+        if differentiator is not None:
+            differentiator.set_params(window_size=None)
+        binner = self.binner.get(level, self.binner['_unknown_level'])
+        outsample_residuals_by_bin = deepcopy(self.out_sample_residuals_by_bin_.get(level, {}))
+        outsample_residuals = self.out_sample_residuals_.get(level, np.array([]))
+        insample_residuals_by_bin = self.in_sample_residuals_by_bin_.get(level, {})
+
+        if isinstance(y_true, pd.Series):
+            y_true = y_true.to_numpy()
+        if isinstance(y_pred, pd.Series):
+            y_pred = y_pred.to_numpy()
+
+        if self.transformer_series:
+            y_true = transform_numpy(
+                        array             = y_true,
+                        transformer       = transformer,
+                        fit               = False,
+                        inverse_transform = False
+                     )
+            y_pred = transform_numpy(
+                        array             = y_pred,
+                        transformer       = transformer,
+                        fit               = False,
+                        inverse_transform = False
+                      )
+            
+        if differentiator is not None:
+            y_true = differentiator.fit_transform(y_true)[differentiator.order:]
+            y_pred = differentiator.fit_transform(y_pred)[differentiator.order:]
+
+        residuals = y_true - y_pred
+        data = pd.DataFrame({'prediction': y_pred, 'residuals': residuals})
+        data['bin'] = binner.transform(y_pred).astype(int)
+        residuals_by_bin = data.groupby('bin')['residuals'].apply(np.array).to_dict()
+
+        if append:
+            for k, v in residuals_by_bin.items():
+                if k in outsample_residuals_by_bin:
+                    outsample_residuals_by_bin[k] = np.concatenate((
+                        outsample_residuals_by_bin[k], v)
+                    )
+                else:
+                    outsample_residuals_by_bin[k] = v
+
+            outsample_residuals = np.concatenate([
+                outsample_residuals if outsample_residuals is not None else np.array([]),
+                residuals,
+            ])
+        else:
+            outsample_residuals_by_bin = residuals_by_bin
+            outsample_residuals = residuals
+
+        max_samples = 10_000 // binner.n_bins_
+        rng = np.random.default_rng(seed=random_state)
+        for k, v in outsample_residuals_by_bin.items():
+            if len(v) > max_samples:
+                sample = rng.choice(a=v, size=max_samples, replace=False)
+                outsample_residuals_by_bin[k] = sample
+
+        for k in insample_residuals_by_bin.keys():
+            if k not in outsample_residuals_by_bin:
+                outsample_residuals_by_bin[k] = np.array([])
+
+        empty_bins = [
+            k for k, v in outsample_residuals_by_bin.items()
+            if len(v) == 0
+        ]
+
+        if empty_bins:
+            warnings.warn(
+                f"The following bins of level {level} have no out of sample residuals: "
+                f"{empty_bins}. No predicted values fall in the interval "
+                f"{[self.binner_intervals_[level][bin] for bin in empty_bins]}. "
+                f"Empty bins will be filled with a random sample of residuals."
+            )
+            for k in empty_bins:
+                outsample_residuals_by_bin[k] = rng.choice(
+                    a       = residuals,
+                    size    = min(max_samples, len(residuals)),
+                    replace = False
+                )
+        
+        if len(outsample_residuals) > 10_000:
+            outsample_residuals = rng.choice(a=residuals, size=10_000, replace=False)
+
+        return outsample_residuals, outsample_residuals_by_bin
+    
 
     def get_feature_importances(
         self,

@@ -355,21 +355,7 @@ def test_create_sample_weights_output_using_weight_func_dict(weight_func, expect
     [
         (
             {"series_1": custom_weights},
-            np.array(
-                [
-                    1.0,
-                    0.0,
-                    0.0,
-                    0.0,
-                    1.0,
-                    1.0,
-                    1.0,
-                    1.0,
-                    1.0,
-                    1.0,
-                    1.0,
-                ]
-            ),
+            np.array([1., 0., 0., 0., 1., 1., 1., 1., 1., 1., 1.]),
         ),
         (
             {"series_2": custom_weights_2},
