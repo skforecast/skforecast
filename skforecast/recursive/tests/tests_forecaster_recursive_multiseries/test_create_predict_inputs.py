@@ -49,8 +49,8 @@ def test_create_predict_inputs_NotFittedError_when_fitted_is_False():
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=5)
 
     err_msg = re.escape(
-        ("This Forecaster instance is not fitted yet. Call `fit` with "
-         "appropriate arguments before using predict.")
+        "This Forecaster instance is not fitted yet. Call `fit` with "
+        "appropriate arguments before using predict."
     )
     with pytest.raises(NotFittedError, match = err_msg):
         forecaster._create_predict_inputs(steps=5)
@@ -73,15 +73,13 @@ def test_output_create_predict_inputs_when_regressor_is_LinearRegression():
         ),
         None,
         ['1', '2'],
-        pd.RangeIndex(start=50, stop=55, step=1),
-        None
+        pd.RangeIndex(start=50, stop=55, step=1)
     )
 
     pd.testing.assert_frame_equal(results[0], expected[0])
     assert results[1] == expected[1]
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
-    assert results[4] == expected[4]
 
 
 def test_create_predict_inputs_output_when_regressor_is_LinearRegression_with_transform_series():
@@ -106,15 +104,13 @@ def test_create_predict_inputs_output_when_regressor_is_LinearRegression_with_tr
         ),
         None,
         ['1'],
-        pd.RangeIndex(start=50, stop=55, step=1),
-        None
+        pd.RangeIndex(start=50, stop=55, step=1)
     )
 
     pd.testing.assert_frame_equal(results[0], expected[0])
     assert results[1] == expected[1]
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
-    assert results[4] == expected[4]
 
 
 @pytest.mark.parametrize("transformer_series", 
@@ -139,7 +135,9 @@ def test_create_predict_inputs_output_when_regressor_is_LinearRegression_with_tr
                      transformer_exog   = transformer_exog,
                  )
     forecaster.fit(series=series, exog=exog)
-    results = forecaster._create_predict_inputs(steps=5, levels='1', exog=exog_predict)
+    results = forecaster._create_predict_inputs(
+        steps=5, levels='1', exog=exog_predict
+    )
     
     expected = (
         pd.DataFrame(
@@ -155,8 +153,7 @@ def test_create_predict_inputs_output_when_regressor_is_LinearRegression_with_tr
          5: np.array([[-0.77240468,  1., 0.]])
         },
         ['1'],
-        pd.RangeIndex(start=50, stop=55, step=1),
-        None
+        pd.RangeIndex(start=50, stop=55, step=1)
     )
 
     pd.testing.assert_frame_equal(results[0], expected[0])
@@ -164,7 +161,6 @@ def test_create_predict_inputs_output_when_regressor_is_LinearRegression_with_tr
         np.testing.assert_array_almost_equal(results[1][k], expected[1][k])
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
-    assert results[4] == expected[4]
 
 
 @pytest.mark.parametrize("transformer_series", 
@@ -213,8 +209,7 @@ def test_create_predict_inputs_output_when_regressor_is_LinearRegression_with_tr
                       [-0.76323054,  1., 0.]])
         },
         ['1', '2'],
-        pd.RangeIndex(start=50, stop=55, step=1),
-        None
+        pd.RangeIndex(start=50, stop=55, step=1)
     )
 
     pd.testing.assert_frame_equal(results[0], expected[0])
@@ -222,7 +217,6 @@ def test_create_predict_inputs_output_when_regressor_is_LinearRegression_with_tr
         np.testing.assert_array_almost_equal(results[1][k], expected[1][k])
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
-    assert results[4] == expected[4]
 
 
 def test_create_predict_inputs_output_when_categorical_features_native_implementation_HistGradientBoostingRegressor():
@@ -294,8 +288,7 @@ def test_create_predict_inputs_output_when_categorical_features_native_implement
 
         },
         ['1', '2'],
-        pd.RangeIndex(start=50, stop=60, step=1),
-        None
+        pd.RangeIndex(start=50, stop=60, step=1)
     )
 
     pd.testing.assert_frame_equal(results[0], expected[0])
@@ -303,7 +296,6 @@ def test_create_predict_inputs_output_when_categorical_features_native_implement
         np.testing.assert_array_almost_equal(results[1][k], expected[1][k])
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
-    assert results[4] == expected[4]
 
 
 def test_create_predict_inputs_output_when_series_and_exog_dict():
@@ -356,8 +348,7 @@ def test_create_predict_inputs_output_when_series_and_exog_dict():
                       [-0.60444947, -1.26286725, 1.00599776, -0.62314633]])
         },
         ['id_1000', 'id_1001', 'id_1003', 'id_1004'],
-        pd.date_range(start='2016-08-01', periods=5, freq='D'),
-        None
+        pd.date_range(start='2016-08-01', periods=5, freq='D')
     )
 
     pd.testing.assert_frame_equal(results[0], expected[0])
@@ -365,7 +356,6 @@ def test_create_predict_inputs_output_when_series_and_exog_dict():
         np.testing.assert_array_almost_equal(results[1][k], expected[1][k])
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
-    assert results[4] == expected[4]
 
 
 @pytest.mark.parametrize("differentiation", 
@@ -411,7 +401,7 @@ def test_create_predict_inputs_output_when_regressor_is_LinearRegression_with_ex
                  )
     forecaster.fit(series=series_dict_datetime, exog=exog_dict_datetime)
     results = forecaster._create_predict_inputs(
-        steps=steps, exog=exog_pred, predict_boot=True
+        steps=steps, exog=exog_pred, predict_probabilistic=True
     )
     
     expected = (
@@ -472,13 +462,7 @@ def test_create_predict_inputs_output_when_regressor_is_LinearRegression_with_ex
                        [0.14269745]])
         },
         ['1', '2'],
-        pd.date_range(start='2003-01-31', periods=steps, freq='D'),
-        {'1': np.array([0.11250873, -0.45215401,  0.50931909, -1.2515849 ,  0.32346492,
-                        -0.16591436,  0.61386783,  0.49003355,  0.32481062, -0.050827  ,
-                        -0.46246282, -0.20198051, -0.22783566,  0.43875451]),
-         '2': np.array([-0.11905336, -0.96448195,  0.20875269,  0.7334418 , -0.45287812,
-                         0.20410656,  0.27482526,  0.12415931, -1.10570249, -0.08341689,
-                         0.83327134,  0.37868888, -0.69352672,  0.66181368])}
+        pd.date_range(start='2003-01-31', periods=steps, freq='D')
     )
 
     pd.testing.assert_frame_equal(results[0], expected[0])
@@ -486,8 +470,6 @@ def test_create_predict_inputs_output_when_regressor_is_LinearRegression_with_ex
         np.testing.assert_array_almost_equal(results[1][k], expected[1][k])
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
-    for k in expected[4].keys():
-        np.testing.assert_array_almost_equal(results[4][k], expected[4][k])
 
 
 @pytest.mark.parametrize("levels", 
@@ -559,8 +541,7 @@ def test_create_predict_inputs_output_when_series_and_exog_dict_unknown_level(le
                       [-0.60444947, -1.26286725, 1.00599776, -0.62314633]])
         },
         ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005'],
-        pd.date_range(start='2016-08-01', periods=5, freq='D'),
-        None
+        pd.date_range(start='2016-08-01', periods=5, freq='D')
     )
 
     pd.testing.assert_frame_equal(results[0], expected[0])
@@ -568,7 +549,6 @@ def test_create_predict_inputs_output_when_series_and_exog_dict_unknown_level(le
         np.testing.assert_array_almost_equal(results[1][k], expected[1][k])
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
-    assert results[4] == expected[4]
 
 
 @pytest.mark.parametrize("levels", 
@@ -638,8 +618,7 @@ def test_create_predict_inputs_output_when_series_and_exog_dict_unknown_level_en
                       [np.nan, np.nan, np.nan, np.nan]])
         },
         ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005'],
-        pd.date_range(start='2016-08-01', periods=5, freq='D'),
-        None
+        pd.date_range(start='2016-08-01', periods=5, freq='D')
     )
 
     pd.testing.assert_frame_equal(results[0], expected[0])
@@ -647,4 +626,3 @@ def test_create_predict_inputs_output_when_series_and_exog_dict_unknown_level_en
         np.testing.assert_array_almost_equal(results[1][k], expected[1][k])
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
-    assert results[4] == expected[4]
