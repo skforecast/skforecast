@@ -1160,6 +1160,7 @@ class ForecasterRecursive(ForecasterBase):
 
             if predict_probabilistic:
                 check_residuals_input(
+                    forecaster_name              = type(self).__name__,
                     use_in_sample_residuals      = use_in_sample_residuals,
                     in_sample_residuals_         = self.in_sample_residuals_,
                     out_sample_residuals_        = self.out_sample_residuals_,
@@ -1841,21 +1842,21 @@ class ForecasterRecursive(ForecasterBase):
                 interval = np.array([0.5 - interval / 2, 0.5 + interval / 2])
 
             boot_predictions = self.predict_bootstrapping(
-                                steps                   = steps,
-                                last_window             = last_window,
-                                exog                    = exog,
-                                n_boot                  = n_boot,
-                                random_state            = random_state,
-                                use_in_sample_residuals = use_in_sample_residuals,
-                                use_binned_residuals    = use_binned_residuals
-                            )
+                                   steps                   = steps,
+                                   last_window             = last_window,
+                                   exog                    = exog,
+                                   n_boot                  = n_boot,
+                                   random_state            = random_state,
+                                   use_in_sample_residuals = use_in_sample_residuals,
+                                   use_binned_residuals    = use_binned_residuals
+                               )
 
             predictions = self.predict(
-                            steps        = steps,
-                            last_window  = last_window,
-                            exog         = exog,
-                            check_inputs = False
-                        )
+                              steps        = steps,
+                              last_window  = last_window,
+                              exog         = exog,
+                              check_inputs = False
+                          )
             
             predictions_interval = boot_predictions.quantile(q=interval, axis=1).transpose()
             predictions_interval.columns = ['lower_bound', 'upper_bound']
@@ -2290,8 +2291,12 @@ class ForecasterRecursive(ForecasterBase):
             y_true = differentiator.fit_transform(y_true)[self.differentiation:]
             y_pred = differentiator.fit_transform(y_pred)[self.differentiation:]
         
-        residuals = y_true - y_pred
-        data = pd.DataFrame({'prediction': y_pred, 'residuals': residuals})
+        data = pd.DataFrame(
+            {'prediction': y_pred, 'residuals': y_true - y_pred}
+        ).dropna()
+        y_pred = data['prediction'].to_numpy()
+        residuals = data['residuals'].to_numpy()
+
         data['bin'] = self.binner.transform(y_pred).astype(int)
         residuals_by_bin = data.groupby('bin')['residuals'].apply(np.array).to_dict()
 

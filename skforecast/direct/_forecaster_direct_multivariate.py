@@ -35,7 +35,7 @@ from ..utils import (
     get_exog_dtypes,
     check_exog_dtypes,
     check_predict_input,
-    check_residuals_input_direct,
+    check_residuals_input,
     check_interval,
     preprocess_y,
     preprocess_last_window,
@@ -1605,14 +1605,15 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             )
 
             if predict_probabilistic:
-                check_residuals_input_direct(
-                    steps                        = steps,
+                check_residuals_input(
+                    forecaster_name              = type(self).__name__,
                     use_in_sample_residuals      = use_in_sample_residuals,
                     in_sample_residuals_         = self.in_sample_residuals_,
                     out_sample_residuals_        = self.out_sample_residuals_,
                     use_binned_residuals         = use_binned_residuals,
                     in_sample_residuals_by_bin_  = self.in_sample_residuals_by_bin_,
-                    out_sample_residuals_by_bin_ = self.out_sample_residuals_by_bin_
+                    out_sample_residuals_by_bin_ = self.out_sample_residuals_by_bin_,
+                    steps                        = steps
                 )
 
         last_window = last_window.iloc[

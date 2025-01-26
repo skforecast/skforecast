@@ -39,10 +39,10 @@ from ..utils import (
     align_series_and_exog_multiseries,
     prepare_levels_multiseries,
     preprocess_levels_self_last_window_multiseries,
-    prepare_residuals_multiseries,
     get_exog_dtypes,
     check_exog_dtypes,
     check_predict_input,
+    check_residuals_input,
     check_interval,
     preprocess_last_window,
     expand_index,
@@ -1849,18 +1849,17 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self.in_sample_residuals_[level] = residuals
         self.binner_intervals_[level] = self.binner[level].intervals_
 
-
     def _create_predict_inputs(
         self,
         steps: int,
         levels: str | list[str] | None = None,
         last_window: pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
-        predict_boot: bool = False,
+        predict_probabilistic: bool = False,
         use_in_sample_residuals: bool = True,
         use_binned_residuals: bool = False,
         check_inputs: bool = True
-    ) -> tuple[pd.DataFrame, dict[str, np.ndarray] | None, list[str], pd.Index, dict[str, np.ndarray] | None]:
+    ) -> tuple[pd.DataFrame, dict[str, np.ndarray] | None, list[str], pd.Index]:
         """
         Create the inputs needed for the first iteration of the prediction 
         process. As this is a recursive process, the last window is updated at 
@@ -1881,14 +1880,19 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             right after training data.
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
-        predict_boot : bool, default False
-            If `True`, residuals are returned to generate bootstrapping predictions.
+        predict_probabilistic : bool, default False
+            If `True`, the necessary checks for probabilistic predictions will be 
+            performed.
         use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
             prediction error to create predictions. 
             If `False`, out of sample residuals (calibration) are used. 
             Out-of-sample residuals must be precomputed using Forecaster's
             `set_out_sample_residuals()` method.
+        use_binned_residuals : bool, default False
+            If `True`, residuals are selected based on the predicted values 
+            (binned selection).
+            If `False`, residuals are selected randomly.
         check_inputs : bool, default True
             If `True`, the input is checked for possible warnings and errors 
             with the `check_predict_input` function. This argument is created 
@@ -1907,10 +1911,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             Names of the series (levels) to be predicted.
         prediction_index : pandas Index
             Index of the predictions.
-        residuals : dict, None
-            Residuals used to generate bootstrapping predictions for each level 
-            in the form `{level: residuals}`. If `predict_boot = False`, 
-            `residuals` is `None`.
         
         """
 
@@ -1929,17 +1929,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             else:
                 if input_levels_is_None and isinstance(last_window, pd.DataFrame):
                     levels = last_window.columns.to_list()
-            
-        if self.is_fitted and predict_boot:
-            residuals = prepare_residuals_multiseries(
-                            levels                  = levels,
-                            use_in_sample_residuals = use_in_sample_residuals,
-                            encoding                = self.encoding,
-                            in_sample_residuals_    = self.in_sample_residuals_,
-                            out_sample_residuals_   = self.out_sample_residuals_
-                        )
-        else:
-            residuals = None
 
         if check_inputs:
             check_predict_input(
@@ -1959,6 +1948,19 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 series_names_in_ = self.series_names_in_,
                 encoding         = self.encoding
             )
+
+            if predict_probabilistic:
+                check_residuals_input(
+                    forecaster_name              = type(self).__name__,
+                    use_in_sample_residuals      = use_in_sample_residuals,
+                    in_sample_residuals_         = self.in_sample_residuals_,
+                    out_sample_residuals_        = self.out_sample_residuals_,
+                    use_binned_residuals         = use_binned_residuals,
+                    in_sample_residuals_by_bin_  = self.in_sample_residuals_by_bin_,
+                    out_sample_residuals_by_bin_ = self.out_sample_residuals_by_bin_,
+                    levels                       = levels,
+                    encoding                     = self.encoding
+                )
 
         last_window = last_window.iloc[
             -self.window_size :, last_window.columns.get_indexer(levels)
@@ -2051,7 +2053,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         else:
             exog_values_dict = None
 
-        return last_window, exog_values_dict, levels, prediction_index, residuals
+        return last_window, exog_values_dict, levels, prediction_index
 
 
     def _recursive_predict(
@@ -2228,8 +2230,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             last_window,
             exog_values_dict,
             levels,
-            prediction_index,
-            _
+            prediction_index
         ) = self._create_predict_inputs(
             steps        = steps,
             levels       = levels,
@@ -2382,8 +2383,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             last_window,
             exog_values_dict,
             levels,
-            prediction_index,
-            _
+            prediction_index
         ) = self._create_predict_inputs(
             steps        = steps,
             levels       = levels,
@@ -2506,22 +2506,17 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             last_window,
             exog_values_dict,
             levels,
-            prediction_index,
-            residuals
+            prediction_index
         ) = self._create_predict_inputs(
-            steps                   = steps,
-            levels                  = levels,
-            last_window             = last_window,
-            exog                    = exog,
-            predict_boot            = True,
-            use_in_sample_residuals = use_in_sample_residuals,
-            use_binned_residuals    = use_binned_residuals
-        )
+                steps                   = steps,
+                levels                  = levels,
+                last_window             = last_window,
+                exog                    = exog,
+                predict_probabilistic   = True,
+                use_in_sample_residuals = use_in_sample_residuals,
+                use_binned_residuals    = use_binned_residuals
+            )
 
-        print(residuals.keys())
-
-        # TODO: results is returned in _create_predict_inputs but now we overwrite it
-        # ???????????????????????????
         if use_in_sample_residuals:
             residuals = self.in_sample_residuals_
             residuals_by_bin = self.in_sample_residuals_by_bin_
@@ -2545,12 +2540,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             for bin in sampled_residuals.keys():
                 for i, level in enumerate(levels):
                     sampled_residuals[bin][:, :, i] = rng.choice(
-                        a       = residuals_by_bin.get(level, residuals['_unknown_level'])[bin],
+                        a       = residuals_by_bin.get(level, residuals_by_bin['_unknown_level'])[bin],
                         size    = (steps, n_boot),
                         replace = True
                     )
         else:
-            print(residuals.keys())
             for i, level in enumerate(levels):
                 sampled_residuals_grid[:, :, i] = rng.choice(
                     a       = residuals.get(level, residuals['_unknown_level']),
@@ -3154,7 +3148,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                         f"`y_pred` must have the same index. Error with series '{k}'."
                     )
 
-       
         # NOTE: Out-of-sample residuals can only be stored for series seen during 
         # fit. To save residuals for unseen levels use the key '_unknown_level'. 
         series_names_in_ = self.series_names_in_ + ['_unknown_level']        
@@ -3314,8 +3307,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             y_true = differentiator.fit_transform(y_true)[differentiator.order:]
             y_pred = differentiator.fit_transform(y_pred)[differentiator.order:]
 
-        residuals = y_true - y_pred
-        data = pd.DataFrame({'prediction': y_pred, 'residuals': residuals})
+        data = pd.DataFrame(
+            {'prediction': y_pred, 'residuals': y_true - y_pred}
+        ).dropna()
+        y_pred = data['prediction'].to_numpy()
+        residuals = data['residuals'].to_numpy()
+
         data['bin'] = binner.transform(y_pred).astype(int)
         residuals_by_bin = data.groupby('bin')['residuals'].apply(np.array).to_dict()
 
