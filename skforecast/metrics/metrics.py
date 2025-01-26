@@ -234,7 +234,10 @@ def root_mean_squared_scaled_error(
     return rmsse
 
 
-def crps_from_predictions(y_true: float, y_pred: np.ndarray) -> float:
+def crps_from_predictions(
+    y_true: float, 
+    y_pred: np.ndarray
+) -> float:
     """
     Compute the Continuous Ranked Probability Score (CRPS) for a set of
     forecast realizations, for example from bootstrapping. The CRPS compares
@@ -376,7 +379,7 @@ def calculate_coverage(
     upper_bound = np.asarray(upper_bound)
 
     if y_true.shape != lower_bound.shape or y_true.shape != upper_bound.shape:
-        raise TypeError(
+        raise ValueError(
             "`y_true`, `lower_bound` and `upper_bound` must have the same shape."
         )
 
@@ -406,4 +409,5 @@ def create_mean_pinball_loss(alpha: float) -> callable:
 
     def mean_pinball_loss_q(y_true, y_pred):
         return mean_pinball_loss(y_true, y_pred, alpha=alpha)
+    
     return mean_pinball_loss_q

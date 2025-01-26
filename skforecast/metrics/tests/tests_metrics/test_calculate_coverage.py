@@ -28,11 +28,11 @@ def test_calculate_coverage_raise_error_when_no_valid_inputs():
         calculate_coverage(y_true=y_true, lower_bound=lower_bound, upper_bound='invalid value')
 
     msg = "`y_true`, `lower_bound` and `upper_bound` must have the same shape."
-    with pytest.raises(TypeError, match=re.escape(msg)):
+    with pytest.raises(ValueError, match=re.escape(msg)):
         calculate_coverage(y_true, lower_bound=np.array([1, 2, 3]), upper_bound=upper_bound)
-    with pytest.raises(TypeError, match=re.escape(msg)):
+    with pytest.raises(ValueError, match=re.escape(msg)):
         calculate_coverage(y_true, lower_bound=lower_bound, upper_bound=np.array([1, 2, 3]))
-    with pytest.raises(TypeError, match=re.escape(msg)):
+    with pytest.raises(ValueError, match=re.escape(msg)):
         calculate_coverage(y_true=np.array([1, 2, 3]), lower_bound=lower_bound, upper_bound=upper_bound)
 
     

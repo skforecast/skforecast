@@ -19,6 +19,10 @@ The main changes in this release are:
 
 **Added**
 
++ Conformal
+
++ Binned in rest of Forecasters.
+
 + Functions `crps_from_predictions` and `crps_from_quantiles` in module `metrics` to calculate the Continuous Ranked Probability Score (CRPS).
 
 + Function `calculate_coverage` in module `metrics` to calculate the coverage of the predicted intervals.
