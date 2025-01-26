@@ -34,7 +34,8 @@ def _backtesting_forecaster(
     metric: str | Callable | list[str | Callable],
     cv: TimeSeriesFold,
     exog: pd.Series | pd.DataFrame | None = None,
-    interval: list[float] | tuple[float] | str | object | None = None,
+    interval: float | list[float] | tuple[float] | str | object | None = None,
+    interval_method: str = 'bootstrapping',
     n_boot: int = 250,
     random_state: int = 123,
     use_in_sample_residuals: bool = True,
@@ -78,10 +79,12 @@ def _backtesting_forecaster(
         Exogenous variable/s included as predictor/s. Must have the same
         number of observations as `y` and should be aligned so that y[i] is
         regressed on exog[i].
-    interval : list, tuple, str, object, default None
+    interval : float, list, tuple, str, object, default None
         Specifies whether probabilistic predictions should be estimated and the 
         method to use. The following options are supported:
 
+        - If `float`, represents the nominal (expected) coverage (between 0 and 1). 
+        For instance, `interval=0.95` corresponds to `[2.5, 97.5]` percentiles.
         - If `list` or `tuple`: Sequence of percentiles to compute, each value must 
         be between 0 and 100 inclusive. For example, a 95% confidence interval can 
         be specified as `interval = [2.5, 97.5]` or multiple percentiles (e.g. 10, 
@@ -90,6 +93,13 @@ def _backtesting_forecaster(
         - If scipy.stats distribution object, the distribution parameters will
         be estimated for each prediction.
         - If None, no probabilistic predictions are estimated.
+    interval_method : str, default 'bootstrapping'
+        Technique used to estimate prediction intervals. Available options:
+
+        + 'bootstrapping': Bootstrapping is used to generate prediction 
+        intervals [1]_.
+        + 'conformal': Employs the conformal prediction split method for 
+        interval estimation [2]_.
     n_boot : int, default 250
         Number of bootstrapping iterations to perform when estimating prediction
         intervals.
@@ -124,12 +134,21 @@ def _backtesting_forecaster(
         `interval` is not `None`.
 
         - column pred: predictions.
+        - If `interval` is a float, columns 'lower_bound' and 'upper_bound' are created.
         - If `interval` is a list or tuple, columns are the percentiles. If `interval`
         has two elements, they are renamed to 'lower_bound' and 'upper_bound'.
         - If `interval` is 'bootstrapping', `n_boot` columns are created with the
         bootstrapping predictions.
         - If `interval` is a distribution object, columns are the parameters of the
         distribution.
+
+    References
+    ----------
+    .. [1] Forecasting: Principles and Practice (2nd ed) Rob J Hyndman and George Athanasopoulos.
+           https://otexts.com/fpp2/prediction-intervals.html
+    
+    .. [2] MAPIE - Model Agnostic Prediction Interval Estimator.
+           https://mapie.readthedocs.io/en/stable/theoretical_description_regression.html#the-split-method
     
     """
     # TODO: Change docstring to include new options of `interval` parameter.
@@ -272,27 +291,33 @@ def _backtesting_forecaster(
                 'use_in_sample_residuals': use_in_sample_residuals,
                 'use_binned_residuals': use_binned_residuals
             }
-            if interval == 'bootstrapping':
-                pred_interval = forecaster.predict_bootstrapping(**kwargs_interval)
-            elif isinstance(interval, (list, tuple)):
-                quantiles = [q / 100 for q in interval]
-                pred_interval = forecaster.predict_quantiles(quantiles=quantiles, **kwargs_interval)
-                if len(interval) == 2:
-                    pred_interval.columns = ['lower_bound', 'upper_bound']
+            if interval_method == 'bootstrapping':
+                if interval == 'bootstrapping':
+                    pred_interval = forecaster.predict_bootstrapping(**kwargs_interval)
+                elif isinstance(interval, (list, tuple)):
+                    quantiles = [q / 100 for q in interval]
+                    pred_interval = forecaster.predict_quantiles(quantiles=quantiles, **kwargs_interval)
+                    if len(interval) == 2:
+                        pred_interval.columns = ['lower_bound', 'upper_bound']
+                    else:
+                        pred_interval.columns = [f'p_{p}' for p in interval]
                 else:
-                    pred_interval.columns = [f'p_{p}' for p in interval]
+                    pred_interval = forecaster.predict_dist(distribution=interval, **kwargs_interval)
             else:
-                pred_interval = forecaster.predict_dist(distribution=interval, **kwargs_interval)
+                pred = forecaster.predict_interval(
+                    method='conformal', interval=interval, **kwargs_interval
+                )
 
         # NOTE: This is done after probabilistic predictions to avoid repeating the same checks.
-        pred = forecaster.predict(
-                   steps        = steps,
-                   last_window  = last_window_y,
-                   exog         = next_window_exog,
-                   check_inputs = True if interval is None else False
-               )
+        if interval is None or interval_method != 'conformal':
+            pred = forecaster.predict(
+                       steps        = steps,
+                       last_window  = last_window_y,
+                       exog         = next_window_exog,
+                       check_inputs = True if interval is None else False
+                   )
 
-        if interval is not None:
+        if interval is not None and interval_method != 'conformal':
             pred = pd.concat((pred, pred_interval), axis=1)
 
         if type(forecaster).__name__ != 'ForecasterDirect' and gap > 0:
@@ -307,6 +332,7 @@ def _backtesting_forecaster(
         "store_in_sample_residuals": store_in_sample_residuals,
         "gap": gap,
         "interval": interval,
+        "interval_method": interval_method,
         "n_boot": n_boot,
         "random_state": random_state,
         "use_in_sample_residuals": use_in_sample_residuals,
@@ -355,7 +381,8 @@ def backtesting_forecaster(
     cv: TimeSeriesFold,
     metric: str | Callable | list[str | Callable],
     exog: pd.Series | pd.DataFrame | None = None,
-    interval: list[float] | tuple[float] | str | object | None = None,
+    interval: float | list[float] | tuple[float] | str | object | None = None,
+    interval_method: str = 'bootstrapping',
     n_boot: int = 250,
     random_state: int = 123,
     use_in_sample_residuals: bool = True,
@@ -399,10 +426,12 @@ def backtesting_forecaster(
         Exogenous variable/s included as predictor/s. Must have the same
         number of observations as `y` and should be aligned so that y[i] is
         regressed on exog[i].
-    interval : list, tuple, str, object, default None
+    interval : float, list, tuple, str, object, default None
         Specifies whether probabilistic predictions should be estimated and the 
         method to use. The following options are supported:
 
+        - If `float`, represents the nominal (expected) coverage (between 0 and 1). 
+        For instance, `interval=0.95` corresponds to `[2.5, 97.5]` percentiles.
         - If `list` or `tuple`: Sequence of percentiles to compute, each value must 
         be between 0 and 100 inclusive. For example, a 95% confidence interval can 
         be specified as `interval = [2.5, 97.5]` or multiple percentiles (e.g. 10, 
@@ -411,6 +440,13 @@ def backtesting_forecaster(
         - If scipy.stats distribution object, the distribution parameters will
         be estimated for each prediction.
         - If None, no probabilistic predictions are estimated.
+    interval_method : str, default 'bootstrapping'
+        Technique used to estimate prediction intervals. Available options:
+
+        + 'bootstrapping': Bootstrapping is used to generate prediction 
+        intervals [1]_.
+        + 'conformal': Employs the conformal prediction split method for 
+        interval estimation [2]_.
     n_boot : int, default 250
         Number of bootstrapping iterations to perform when estimating prediction
         intervals.
@@ -445,12 +481,21 @@ def backtesting_forecaster(
         `interval` is not `None`.
 
         - column pred: predictions.
+        - If `interval` is a float, columns 'lower_bound' and 'upper_bound' are created.
         - If `interval` is a list or tuple, columns are the percentiles. If `interval`
         has two elements, they are renamed to 'lower_bound' and 'upper_bound'.
         - If `interval` is 'bootstrapping', `n_boot` columns are created with the
         bootstrapping predictions.
         - If `interval` is a distribution object, columns are the parameters of the
         distribution.
+
+    References
+    ----------
+    .. [1] Forecasting: Principles and Practice (2nd ed) Rob J Hyndman and George Athanasopoulos.
+           https://otexts.com/fpp2/prediction-intervals.html
+    
+    .. [2] MAPIE - Model Agnostic Prediction Interval Estimator.
+           https://mapie.readthedocs.io/en/stable/theoretical_description_regression.html#the-split-method
     
     """
 
@@ -473,6 +518,7 @@ def backtesting_forecaster(
         y                       = y,
         metric                  = metric,
         interval                = interval,
+        interval_method         = interval_method,
         n_boot                  = n_boot,
         random_state            = random_state,
         use_in_sample_residuals = use_in_sample_residuals,
@@ -481,13 +527,14 @@ def backtesting_forecaster(
         show_progress           = show_progress
     )
     
-    if type(forecaster).__name__ == 'ForecasterDirect' and \
-       forecaster.steps < cv.steps + cv.gap:
-        raise ValueError(
-            f"When using a ForecasterDirect, the combination of steps "
-            f"+ gap ({cv.steps + cv.gap}) cannot be greater than the `steps` parameter "
-            f"declared when the forecaster is initialized ({forecaster.steps})."
-        )
+    # TODO: Moved to check_backtesting_input, remove after testing.
+    # if type(forecaster).__name__ == 'ForecasterDirect' and \
+    #    forecaster.steps < cv.steps + cv.gap:
+    #     raise ValueError(
+    #         f"When using a ForecasterDirect, the combination of steps "
+    #         f"+ gap ({cv.steps + cv.gap}) cannot be greater than the `steps` parameter "
+    #         f"declared when the forecaster is initialized ({forecaster.steps})."
+    #     )
     
     metric_values, backtest_predictions = _backtesting_forecaster(
         forecaster              = forecaster,
@@ -496,6 +543,7 @@ def backtesting_forecaster(
         metric                  = metric,
         exog                    = exog,
         interval                = interval,
+        interval_method         = interval_method,
         n_boot                  = n_boot,
         random_state            = random_state,
         use_in_sample_residuals = use_in_sample_residuals,
@@ -516,7 +564,8 @@ def _backtesting_forecaster_multiseries(
     levels: str | list[str] | None = None,
     add_aggregated_metric: bool = True,
     exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
-    interval: list[float] | tuple[float] | str | object | None = None,
+    interval: float | list[float] | tuple[float] | str | object | None = None,
+    interval_method: str = 'bootstrapping',
     n_boot: int = 250,
     random_state: int = 123,
     use_in_sample_residuals: bool = True,
@@ -571,6 +620,8 @@ def _backtesting_forecaster_multiseries(
         Specifies whether probabilistic predictions should be estimated and the 
         method to use. The following options are supported:
 
+        - If `float`, represents the nominal (expected) coverage (between 0 and 1). 
+        For instance, `interval=0.95` corresponds to `[2.5, 97.5]` percentiles.
         - If `list` or `tuple`: Sequence of percentiles to compute, each value must 
         be between 0 and 100 inclusive. For example, a 95% confidence interval can 
         be specified as `interval = [2.5, 97.5]` or multiple percentiles (e.g. 10, 
@@ -579,6 +630,13 @@ def _backtesting_forecaster_multiseries(
         - If scipy.stats distribution object, the distribution parameters will
         be estimated for each prediction.
         - If None, no probabilistic predictions are estimated.
+    interval_method : str, default 'bootstrapping'
+        Technique used to estimate prediction intervals. Available options:
+
+        + 'bootstrapping': Bootstrapping is used to generate prediction 
+        intervals [1]_.
+        + 'conformal': Employs the conformal prediction split method for 
+        interval estimation [2]_.
     n_boot : int, default 250
         Number of bootstrapping iterations to perform when estimating prediction
         intervals.
@@ -617,6 +675,7 @@ def _backtesting_forecaster_multiseries(
 
         If `interval` is not `None`, additional columns are included depending on the method:
         
+        - For `float`: Columns `lower_bound` and `upper_bound`.
         - For `list` or `tuple` of 2 elements: Columns `lower_bound` and `upper_bound`.
         - For `list` or `tuple` with multiple percentiles: One column per percentile 
         (e.g., `p_10`, `p_50`, `p_90`).
@@ -624,6 +683,14 @@ def _backtesting_forecaster_multiseries(
         (e.g., `pred_boot_0`, `pred_boot_1`, ..., `pred_boot_n`).
         - For `scipy.stats` distribution objects: One column for each estimated 
         parameter of the distribution (e.g., `loc`, `scale`).
+
+    References
+    ----------
+    .. [1] Forecasting: Principles and Practice (2nd ed) Rob J Hyndman and George Athanasopoulos.
+           https://otexts.com/fpp2/prediction-intervals.html
+    
+    .. [2] MAPIE - Model Agnostic Prediction Interval Estimator.
+           https://mapie.readthedocs.io/en/stable/theoretical_description_regression.html#the-split-method
 
     """
 
@@ -786,33 +853,39 @@ def _backtesting_forecaster_multiseries(
                 'use_in_sample_residuals': use_in_sample_residuals,
                 'suppress_warnings': suppress_warnings
             }
-            if interval == 'bootstrapping':
-                pred_interval = forecaster.predict_bootstrapping(**kwargs_interval)
-            elif isinstance(interval, (list, tuple)):
-                quantiles = [q / 100 for q in interval]
-                pred_interval = forecaster.predict_quantiles(quantiles=quantiles, **kwargs_interval)
-                if len(interval) == 2:
-                    cols_names = ['level', 'lower_bound', 'upper_bound']
+            if interval_method == 'bootstrapping':
+                if interval == 'bootstrapping':
+                    pred_interval = forecaster.predict_bootstrapping(**kwargs_interval)
+                elif isinstance(interval, (list, tuple)):
+                    quantiles = [q / 100 for q in interval]
+                    pred_interval = forecaster.predict_quantiles(quantiles=quantiles, **kwargs_interval)
+                    if len(interval) == 2:
+                        cols_names = ['level', 'lower_bound', 'upper_bound']
+                    else:
+                        cols_names = ['level'] + [f'p_{p}' for p in interval]  
+                    pred_interval.columns = cols_names
                 else:
-                    cols_names = ['level'] + [f'p_{p}' for p in interval]  
-                pred_interval.columns = cols_names
+                    pred_interval = forecaster.predict_dist(distribution=interval, **kwargs_interval)
             else:
-                pred_interval = forecaster.predict_dist(distribution=interval, **kwargs_interval)
+                pred = forecaster.predict_interval(
+                    method='conformal', interval=interval, **kwargs_interval
+                )
 
         # NOTE: This is done after probabilistic predictions to avoid repeating the same checks.
-        pred = forecaster.predict(
-                   steps             = steps, 
-                   levels            = levels_predict, 
-                   last_window       = last_window_series,
-                   exog              = next_window_exog,
-                   suppress_warnings = suppress_warnings,
-                   check_inputs      = True if interval is None else False
-               )
-        
-        if interval is not None:
+        if interval is None or interval_method != 'conformal':
+            pred = forecaster.predict(
+                       steps             = steps, 
+                       levels            = levels_predict, 
+                       last_window       = last_window_series,
+                       exog              = next_window_exog,
+                       suppress_warnings = suppress_warnings,
+                       check_inputs      = True if interval is None else False
+                   )
+
+        if interval is not None and interval_method != 'conformal':
             pred = pd.concat([pred, pred_interval.iloc[:, 1:]], axis=1)
 
-        # TODO: CHeck when long format in multivariate
+        # TODO: CHeck when long format with multiple levels in multivariate
         if type(forecaster).__name__ != 'ForecasterDirectMultiVariate' and gap > 0:
             pred = pred.iloc[gap:, ]
 
@@ -824,6 +897,7 @@ def _backtesting_forecaster_multiseries(
         "levels": levels,
         "gap": gap,
         "interval": interval,
+        "interval_method": interval_method,
         "n_boot": n_boot,
         "random_state": random_state,
         "use_in_sample_residuals": use_in_sample_residuals,
@@ -898,7 +972,8 @@ def backtesting_forecaster_multiseries(
     levels: str | list[str] | None = None,
     add_aggregated_metric: bool = True,
     exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
-    interval: list[float] | tuple[float] | str | object | None = None,
+    interval: float | list[float] | tuple[float] | str | object | None = None,
+    interval_method: str = 'bootstrapping',
     n_boot: int = 250,
     random_state: int = 123,
     use_in_sample_residuals: bool = True,
@@ -950,10 +1025,12 @@ def backtesting_forecaster_multiseries(
         calculated.
     exog : pandas Series, pandas DataFrame, dict, default None
         Exogenous variables.
-    interval : list, tuple, str, object, default None
+    interval : float, list, tuple, str, object, default None
         Specifies whether probabilistic predictions should be estimated and the 
         method to use. The following options are supported:
 
+        - If `float`, represents the nominal (expected) coverage (between 0 and 1). 
+        For instance, `interval=0.95` corresponds to `[2.5, 97.5]` percentiles.
         - If `list` or `tuple`: Sequence of percentiles to compute, each value must 
         be between 0 and 100 inclusive. For example, a 95% confidence interval can 
         be specified as `interval = [2.5, 97.5]` or multiple percentiles (e.g. 10, 
@@ -962,6 +1039,13 @@ def backtesting_forecaster_multiseries(
         - If scipy.stats distribution object, the distribution parameters will
         be estimated for each prediction.
         - If None, no probabilistic predictions are estimated.
+    interval_method : str, default 'bootstrapping'
+        Technique used to estimate prediction intervals. Available options:
+
+        + 'bootstrapping': Bootstrapping is used to generate prediction 
+        intervals [1]_.
+        + 'conformal': Employs the conformal prediction split method for 
+        interval estimation [2]_.
     n_boot : int, default 250
         Number of bootstrapping iterations to perform when estimating prediction 
         intervals.
@@ -1000,6 +1084,7 @@ def backtesting_forecaster_multiseries(
 
         If `interval` is not `None`, additional columns are included depending on the method:
         
+        - For `float`: Columns `lower_bound` and `upper_bound`.
         - For `list` or `tuple` of 2 elements: Columns `lower_bound` and `upper_bound`.
         - For `list` or `tuple` with multiple percentiles: One column per percentile 
         (e.g., `p_10`, `p_50`, `p_90`).
@@ -1007,6 +1092,14 @@ def backtesting_forecaster_multiseries(
         (e.g., `pred_boot_0`, `pred_boot_1`, ..., `pred_boot_n`).
         - For `scipy.stats` distribution objects: One column for each estimated 
         parameter of the distribution (e.g., `loc`, `scale`).
+
+    References
+    ----------
+    .. [1] Forecasting: Principles and Practice (2nd ed) Rob J Hyndman and George Athanasopoulos.
+           https://otexts.com/fpp2/prediction-intervals.html
+    
+    .. [2] MAPIE - Model Agnostic Prediction Interval Estimator.
+           https://mapie.readthedocs.io/en/stable/theoretical_description_regression.html#the-split-method
     
     """
 
@@ -1033,6 +1126,7 @@ def backtesting_forecaster_multiseries(
         series                  = series,
         exog                    = exog,
         interval                = interval,
+        interval_method         = interval_method,
         n_boot                  = n_boot,
         random_state            = random_state,
         use_in_sample_residuals = use_in_sample_residuals,
@@ -1050,6 +1144,7 @@ def backtesting_forecaster_multiseries(
         add_aggregated_metric   = add_aggregated_metric,
         exog                    = exog,
         interval                = interval,
+        interval_method         = interval_method,
         n_boot                  = n_boot,
         random_state            = random_state,
         use_in_sample_residuals = use_in_sample_residuals,

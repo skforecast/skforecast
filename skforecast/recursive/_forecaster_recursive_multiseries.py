@@ -122,8 +122,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         Order of differencing applied to the time series before training the forecaster.
         The order of differentiation is the numberof times the differencing operation 
         is applied to a time series. Differencing involves computing the differences 
-        between consecutive data points in the series. Differentiation is reversed 
-        in the output of the predictions methods.
+        between consecutive data points in the series. Before returning a prediction, 
+        the differencing operation is reversed.
         
         - If `int`, the same order of differentiation is applied to all series.
         - If `dict`, a different order of differentiation (including None) can 
@@ -1603,7 +1603,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             - If `False`, last window is not stored.
         store_in_sample_residuals : bool, default True
             If `True`, in-sample residuals will be stored in the forecaster object
-            after fitting (`in_sample_residuals_` attribute).
+            after fitting (`in_sample_residuals_` and `in_sample_residuals_by_bin_`
+            attributes).
         suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the training 
             process. See skforecast.exceptions.warn_skforecast_categories for more
