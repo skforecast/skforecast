@@ -37,9 +37,9 @@ def _backtesting_forecaster(
     interval: float | list[float] | tuple[float] | str | object | None = None,
     interval_method: str = 'bootstrapping',
     n_boot: int = 250,
-    random_state: int = 123,
     use_in_sample_residuals: bool = True,
     use_binned_residuals: bool = False,
+    random_state: int = 123,
     n_jobs: int | str = 'auto',
     verbose: bool = False,
     show_progress: bool = True
@@ -103,8 +103,6 @@ def _backtesting_forecaster(
     n_boot : int, default 250
         Number of bootstrapping iterations to perform when estimating prediction
         intervals.
-    random_state : int, default 123
-        Seed for the random number generator to ensure reproducibility.
     use_in_sample_residuals : bool, default True
         If `True`, residuals from the training data are used as proxy of
         prediction error to create predictions. 
@@ -112,9 +110,11 @@ def _backtesting_forecaster(
         Out-of-sample residuals must be precomputed using Forecaster's
         `set_out_sample_residuals()` method.
     use_binned_residuals : bool, default False
-        If `True`, residuals used in each bootstrapping iteration are selected
-        conditioning on the predicted values. If `False`, residuals are selected
-        randomly without conditioning on the predicted values.
+        If `True`, residuals are selected based on the predicted values 
+        (binned selection).
+        If `False`, residuals are selected randomly.
+    random_state : int, default 123
+        Seed for the random number generator to ensure reproducibility.
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
@@ -235,8 +235,9 @@ def _backtesting_forecaster(
 
     def _fit_predict_forecaster(
         fold, forecaster, y, exog, store_in_sample_residuals, gap, interval, 
-        n_boot, random_state, use_in_sample_residuals, use_binned_residuals
-    ):
+        interval_method, n_boot, use_in_sample_residuals, use_binned_residuals, 
+        random_state
+    ) -> pd.DataFrame:
         """
         Fit the forecaster and predict `steps` ahead. This is an auxiliary 
         function used to parallelize the backtesting_forecaster function.
@@ -287,9 +288,9 @@ def _backtesting_forecaster(
                 'last_window': last_window_y,
                 'exog': next_window_exog,
                 'n_boot': n_boot,
-                'random_state': random_state,
                 'use_in_sample_residuals': use_in_sample_residuals,
-                'use_binned_residuals': use_binned_residuals
+                'use_binned_residuals': use_binned_residuals,
+                'random_state': random_state
             }
             if interval_method == 'bootstrapping':
                 if interval == 'bootstrapping':
@@ -334,9 +335,9 @@ def _backtesting_forecaster(
         "interval": interval,
         "interval_method": interval_method,
         "n_boot": n_boot,
-        "random_state": random_state,
         "use_in_sample_residuals": use_in_sample_residuals,
         "use_binned_residuals": use_binned_residuals,
+        "random_state": random_state,
     }
     backtest_predictions = Parallel(n_jobs=n_jobs)(
         delayed(_fit_predict_forecaster)(fold=fold, **kwargs_fit_predict_forecaster)
@@ -387,9 +388,9 @@ def backtesting_forecaster(
     interval: float | list[float] | tuple[float] | str | object | None = None,
     interval_method: str = 'bootstrapping',
     n_boot: int = 250,
-    random_state: int = 123,
     use_in_sample_residuals: bool = True,
     use_binned_residuals: bool = False,
+    random_state: int = 123,
     n_jobs: int | str = 'auto',
     verbose: bool = False,
     show_progress: bool = True
@@ -453,8 +454,6 @@ def backtesting_forecaster(
     n_boot : int, default 250
         Number of bootstrapping iterations to perform when estimating prediction
         intervals.
-    random_state : int, default 123
-        Seed for the random number generator to ensure reproducibility.
     use_in_sample_residuals : bool, default True
         If `True`, residuals from the training data are used as proxy of
         prediction error to create predictions. 
@@ -462,9 +461,11 @@ def backtesting_forecaster(
         Out-of-sample residuals must be precomputed using Forecaster's
         `set_out_sample_residuals()` method.
     use_binned_residuals : bool, default False
-        If `True`, residuals used in each bootstrapping iteration are selected
-        conditioning on the predicted values. If `False`, residuals are selected
-        randomly without conditioning on the predicted values.
+        If `True`, residuals are selected based on the predicted values 
+        (binned selection).
+        If `False`, residuals are selected randomly.
+    random_state : int, default 123
+        Seed for the random number generator to ensure reproducibility.
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
@@ -523,9 +524,9 @@ def backtesting_forecaster(
         interval                = interval,
         interval_method         = interval_method,
         n_boot                  = n_boot,
-        random_state            = random_state,
         use_in_sample_residuals = use_in_sample_residuals,
         use_binned_residuals    = use_binned_residuals,
+        random_state            = random_state,
         n_jobs                  = n_jobs,
         show_progress           = show_progress
     )
@@ -548,9 +549,9 @@ def backtesting_forecaster(
         interval                = interval,
         interval_method         = interval_method,
         n_boot                  = n_boot,
-        random_state            = random_state,
         use_in_sample_residuals = use_in_sample_residuals,
         use_binned_residuals    = use_binned_residuals,
+        random_state            = random_state,
         n_jobs                  = n_jobs,
         verbose                 = verbose,
         show_progress           = show_progress
@@ -570,8 +571,9 @@ def _backtesting_forecaster_multiseries(
     interval: float | list[float] | tuple[float] | str | object | None = None,
     interval_method: str = 'bootstrapping',
     n_boot: int = 250,
-    random_state: int = 123,
     use_in_sample_residuals: bool = True,
+    use_binned_residuals: bool = False,
+    random_state: int = 123,
     n_jobs: int | str = 'auto',
     verbose: bool = False,
     show_progress: bool = True,
@@ -643,14 +645,18 @@ def _backtesting_forecaster_multiseries(
     n_boot : int, default 250
         Number of bootstrapping iterations to perform when estimating prediction
         intervals.
-    random_state : int, default 123
-        Seed for the random number generator to ensure reproducibility.
     use_in_sample_residuals : bool, default True
         If `True`, residuals from the training data are used as proxy of
         prediction error to create predictions. 
         If `False`, out of sample residuals (calibration) are used. 
         Out-of-sample residuals must be precomputed using Forecaster's
         `set_out_sample_residuals()` method.
+    use_binned_residuals : bool, default False
+        If `True`, residuals are selected based on the predicted values 
+        (binned selection).
+        If `False`, residuals are selected randomly.
+    random_state : int, default 123
+        Seed for the random number generator to ensure reproducibility.
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
@@ -808,9 +814,10 @@ def _backtesting_forecaster_multiseries(
                  )
 
     def _fit_predict_forecaster(
-        data_fold, forecaster, store_in_sample_residuals, levels, interval, 
-        n_boot, random_state, use_in_sample_residuals, gap, suppress_warnings
-    ):
+        data_fold, forecaster, store_in_sample_residuals, levels, gap, 
+        interval, interval_method, n_boot, use_in_sample_residuals, 
+        use_binned_residuals, random_state, suppress_warnings
+    ) -> pd.DataFrame:
         """
         Fit the forecaster and predict `steps` ahead. This is an auxiliary 
         function used to parallelize the backtesting_forecaster_multiseries
@@ -852,8 +859,9 @@ def _backtesting_forecaster_multiseries(
                 'last_window': last_window_series,
                 'exog': next_window_exog,
                 'n_boot': n_boot,
-                'random_state': random_state,
                 'use_in_sample_residuals': use_in_sample_residuals,
+                'use_binned_residuals': use_binned_residuals,
+                'random_state': random_state,
                 'suppress_warnings': suppress_warnings
             }
             if interval_method == 'bootstrapping':
@@ -902,8 +910,9 @@ def _backtesting_forecaster_multiseries(
         "interval": interval,
         "interval_method": interval_method,
         "n_boot": n_boot,
-        "random_state": random_state,
         "use_in_sample_residuals": use_in_sample_residuals,
+        "use_binned_residuals": use_binned_residuals,
+        "random_state": random_state,
         "suppress_warnings": suppress_warnings
     }
     results = Parallel(n_jobs=n_jobs)(
@@ -978,8 +987,9 @@ def backtesting_forecaster_multiseries(
     interval: float | list[float] | tuple[float] | str | object | None = None,
     interval_method: str = 'bootstrapping',
     n_boot: int = 250,
-    random_state: int = 123,
     use_in_sample_residuals: bool = True,
+    use_binned_residuals: bool = False,
+    random_state: int = 123,
     n_jobs: int | str = 'auto',
     verbose: bool = False,
     show_progress: bool = True,
@@ -1052,14 +1062,18 @@ def backtesting_forecaster_multiseries(
     n_boot : int, default 250
         Number of bootstrapping iterations to perform when estimating prediction 
         intervals.
-    random_state : int, default 123
-        Seed for the random number generator to ensure reproducibility.
     use_in_sample_residuals : bool, default True
         If `True`, residuals from the training data are used as proxy of
         prediction error to create predictions. 
         If `False`, out of sample residuals (calibration) are used. 
         Out-of-sample residuals must be precomputed using Forecaster's
         `set_out_sample_residuals()` method.
+    use_binned_residuals : bool, default False
+        If `True`, residuals are selected based on the predicted values 
+        (binned selection).
+        If `False`, residuals are selected randomly.
+    random_state : int, default 123
+        Seed for the random number generator to ensure reproducibility.
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
@@ -1131,8 +1145,9 @@ def backtesting_forecaster_multiseries(
         interval                = interval,
         interval_method         = interval_method,
         n_boot                  = n_boot,
-        random_state            = random_state,
         use_in_sample_residuals = use_in_sample_residuals,
+        use_binned_residuals    = use_binned_residuals,
+        random_state            = random_state,
         n_jobs                  = n_jobs,
         show_progress           = show_progress,
         suppress_warnings       = suppress_warnings
@@ -1149,8 +1164,9 @@ def backtesting_forecaster_multiseries(
         interval                = interval,
         interval_method         = interval_method,
         n_boot                  = n_boot,
-        random_state            = random_state,
         use_in_sample_residuals = use_in_sample_residuals,
+        use_binned_residuals    = use_binned_residuals,
+        random_state            = random_state,
         n_jobs                  = n_jobs,
         verbose                 = verbose,
         show_progress           = show_progress,
@@ -1313,7 +1329,9 @@ def _backtesting_sarimax(
        
     folds_tqdm = tqdm(folds) if show_progress else folds
 
-    def _fit_predict_forecaster(y, exog, forecaster, alpha, interval, fold, steps, gap):
+    def _fit_predict_forecaster(
+        y, exog, forecaster, alpha, interval, fold, steps, gap
+    ) -> pd.DataFrame:
         """
         Fit the forecaster and predict `steps` ahead. This is an auxiliary 
         function used to parallelize the backtesting_forecaster function.
