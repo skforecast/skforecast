@@ -49,7 +49,7 @@ from ..utils import (
     select_n_jobs_fit_forecaster,
     set_skforecast_warnings
 )
-from ..preprocessing import TimeSeriesDifferentiator
+from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
 from ..model_selection._utils import _extract_data_folds_multiseries
 
 
@@ -106,6 +106,13 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         Before returning a prediction, the differencing operation is reversed.
     fit_kwargs : dict, default None
         Additional arguments to be passed to the `fit` method of the regressor.
+    binner_kwargs : dict, default None
+        Additional arguments to pass to the `QuantileBinner` used to discretize 
+        the residuals into k bins according to the predicted values associated 
+        with each residual. Available arguments are: `n_bins`, `method`, `subsample`,
+        `random_state` and `dtype`. Argument `method` is passed internally to the
+        function `numpy.percentile`.
+        **New in version 0.15.0**
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
@@ -227,14 +234,45 @@ class ForecasterDirectMultiVariate(ForecasterBase):
     fit_kwargs : dict
         Additional arguments to be passed to the `fit` method of the regressor.
     in_sample_residuals_ : dict
-        Residuals of the models when predicting training data. Only stored up to
-        1000 values per model in the form `{step: residuals}`. If `transformer_series` 
-        is not `None`, residuals are stored in the transformed scale.
+        Residuals of the model when predicting training data. Only stored up 
+        to 10_000 values per step in the form `{step: residuals}`. If 
+        `transformer_series` is not `None`, residuals are stored in the 
+        transformed scale. If `differentiation` is not `None`, residuals are 
+        stored after differentiation.
+    in_sample_residuals_by_bin_ : dict
+        In sample residuals binned according to the predicted value each residual
+        is associated with. The number of residuals stored per bin is limited to 
+        `10_000 // self.binner.n_bins_` per step in the form `{step: residuals}`.
+        If `transformer_series` is not `None`, residuals are stored in the 
+        transformed scale. If `differentiation` is not `None`, residuals are 
+        stored after differentiation. 
+        **New in version 0.15.0**
     out_sample_residuals_ : dict
-        Residuals of the models when predicting non training data. Only stored
-        up to 1000 values per model in the form `{step: residuals}`. If `transformer_series` 
-        is not `None`, residuals are assumed to be in the transformed scale. Use 
-        `set_out_sample_residuals()` method to set values.
+        Residuals of the model when predicting non-training data. Only stored up 
+        to 10_000 values per step in the form `{step: residuals}`. Use 
+        `set_out_sample_residuals()` method to set values. If `transformer_series` 
+        is not `None`, residuals are stored in the transformed scale. If 
+        `differentiation` is not `None`, residuals are stored after differentiation. 
+    out_sample_residuals_by_bin_ : dict
+        Out of sample residuals binned according to the predicted value each residual
+        is associated with. The number of residuals stored per bin is limited to 
+        `10_000 // self.binner.n_bins_` per step in the form `{step: residuals}`.
+        If `transformer_series` is not `None`, residuals are stored in the 
+        transformed scale. If `differentiation` is not `None`, residuals are 
+        stored after differentiation. 
+        **New in version 0.15.0**
+    binner : dict
+        Dictionary of `skforecast.preprocessing.QuantileBinner` used to discretize
+        residuals of each step into k bins according to the predicted values 
+        associated with each residual. In the form `{step: binner}`.
+        **New in version 0.15.0**
+    binner_intervals_ : dict
+        Intervals used to discretize residuals into k bins according to the predicted
+        values associated with each residual. In the form `{step: binner_intervals_}`.
+        **New in version 0.15.0**
+    binner_kwargs : dict
+        Additional arguments to pass to the `QuantileBinner`.
+        **New in version 0.15.0**
     creation_date : str
         Date of creation.
     is_fitted : bool
@@ -306,6 +344,10 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         self.X_train_exog_names_out_            = None
         self.X_train_direct_exog_names_out_     = None
         self.X_train_features_names_out_        = None
+        self.in_sample_residuals_               = None
+        self.out_sample_residuals_              = None
+        self.in_sample_residuals_by_bin_        = None
+        self.out_sample_residuals_by_bin_       = None
         self.creation_date                      = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
         self.is_fitted                          = False
         self.fit_date                           = None
@@ -382,7 +424,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             ]
 
         self.in_sample_residuals_ = {step: None for step in range(1, steps + 1)}
-        self.out_sample_residuals_ = None
+        self.in_sample_residuals_by_bin_ = {step: None for step in range(1, steps + 1)}
         
         self.weight_func, self.source_code_weight_func, _ = initialize_weights(
             forecaster_name = type(self).__name__, 
@@ -1389,6 +1431,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         self.X_train_direct_exog_names_out_     = None
         self.X_train_features_names_out_        = None
         self.in_sample_residuals_               = {step: None for step in range(1, self.steps + 1)}
+        self.in_sample_residuals_by_bin_        = {step: None for step in range(1, self.steps + 1)}
         self.is_fitted                          = False
         self.fit_date                           = None
 

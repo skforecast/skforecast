@@ -184,21 +184,22 @@ class ForecasterRecursive(ForecasterBase):
         stored after differentiation.
     in_sample_residuals_by_bin_ : dict
         In sample residuals binned according to the predicted value each residual
-        is associated with. If `transformer_y` is not `None`, residuals are stored
-        in the transformed scale. If `differentiation` is not `None`, residuals are
-        stored after differentiation. The number of residuals stored per bin is
-        limited to `10_000 // self.binner.n_bins_`.
+        is associated with. The number of residuals stored per bin is limited to 
+        `10_000 // self.binner.n_bins_`. If `transformer_y` is not `None`, 
+        residuals are stored in the transformed scale. If `differentiation` is 
+        not `None`, residuals are stored after differentiation. 
     out_sample_residuals_ : numpy ndarray
-        Residuals of the model when predicting non training data. Only stored up to
-        10_000 values. If `transformer_y` is not `None`, residuals are stored in
-        the transformed scale. If `differentiation` is not `None`, residuals are
-        stored after differentiation.
+        Residuals of the model when predicting non-training data. Only stored up to
+        10_000 values. Use `set_out_sample_residuals()` method to set values. If 
+        `transformer_y` is not `None`, residuals are stored in the transformed 
+        scale. If `differentiation` is not `None`, residuals are stored after 
+        differentiation.
     out_sample_residuals_by_bin_ : dict
         Out of sample residuals binned according to the predicted value each residual
-        is associated with. If `transformer_y` is not `None`, residuals are stored
-        in the transformed scale. If `differentiation` is not `None`, residuals are
-        stored after differentiation. The number of residuals stored per bin is
-        limited to `10_000 // self.binner.n_bins_`.
+        is associated with. The number of residuals stored per bin is limited to 
+        `10_000 // self.binner.n_bins_`. If `transformer_y` is not `None`, 
+        residuals are stored in the transformed scale. If `differentiation` 
+        is not `None`, residuals are stored after differentiation. 
     binner : skforecast.preprocessing.QuantileBinner
         `QuantileBinner` used to discretize residuals into k bins according 
         to the predicted values associated with each residual.
@@ -206,11 +207,7 @@ class ForecasterRecursive(ForecasterBase):
         Intervals used to discretize residuals into k bins according to the predicted
         values associated with each residual.
     binner_kwargs : dict
-        Additional arguments to pass to the `QuantileBinner` used to discretize 
-        the residuals into k bins according to the predicted values associated 
-        with each residual. Available arguments are: `n_bins`, `method`, `subsample`,
-        `random_state` and `dtype`. Argument `method` is passed internally to the
-        fucntion `numpy.percentile`.
+        Additional arguments to pass to the `QuantileBinner`.
     creation_date : str
         Date of creation.
     is_fitted : bool
@@ -1019,12 +1016,13 @@ class ForecasterRecursive(ForecasterBase):
         random_state: int = 123
     ) -> None:
         """
-        Binning residuals according to the predicted value each residual is
-        associated with. First a skforecast.preprocessing.QuantileBinner object
+        Bin residuals according to the predicted value each residual is
+        associated with. First a `skforecast.preprocessing.QuantileBinner` object
         is fitted to the predicted values. Then, residuals are binned according
         to the predicted value each residual is associated with. Residuals are
         stored in the forecaster object as `in_sample_residuals_` and
         `in_sample_residuals_by_bin_`.
+
         `y_true` and `y_pred` assumed to be differentiated and or transformed
         according to the attributes `differentiation` and `transformer_y`.
         The number of residuals stored per bin is limited to 
@@ -1048,7 +1046,7 @@ class ForecasterRecursive(ForecasterBase):
         
         """
 
-        data = pd.DataFrame({'prediction': y_pred, 'residuals': (y_true - y_pred)})
+        data = pd.DataFrame({'prediction': y_pred, 'residuals': y_true - y_pred})
         data['bin'] = self.binner.fit_transform(y_pred).astype(int)
         self.in_sample_residuals_by_bin_ = (
             data.groupby('bin')['residuals'].apply(np.array).to_dict()
@@ -1061,6 +1059,15 @@ class ForecasterRecursive(ForecasterBase):
             if len(v) > max_sample:
                 sample = v[rng.integers(low=0, high=len(v), size=max_sample)]
                 self.in_sample_residuals_by_bin_[k] = sample
+
+        # TODO: No hacemos nada si len residuals es > 10_000
+        # Concatenamos todos los residuos, es el error que comentamos de 
+        # cambiar la distribución de los residuos.
+        # Este es el código del multiseries que sustituye al de abajo.
+        # if len(residuals) > 10_000:
+        #     residuals = residuals[
+        #         rng.integers(low=0, high=len(residuals), size=max_sample)
+        #     ]
 
         self.in_sample_residuals_ = np.concatenate(list(
             self.in_sample_residuals_by_bin_.values()
@@ -1473,9 +1480,9 @@ class ForecasterRecursive(ForecasterBase):
         last_window: pd.Series | pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | None = None,
         n_boot: int = 250,
-        random_state: int = 123,
         use_in_sample_residuals: bool = True,
-        use_binned_residuals: bool = False
+        use_binned_residuals: bool = False,
+        random_state: int = 123
     ) -> pd.DataFrame:
         """
         Generate multiple forecasting predictions using a bootstrapping process. 

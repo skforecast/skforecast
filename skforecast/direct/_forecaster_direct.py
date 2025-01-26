@@ -203,33 +203,44 @@ class ForecasterDirect(ForecasterBase):
     fit_kwargs : dict
         Additional arguments to be passed to the `fit` method of the regressor.
     in_sample_residuals_ : dict
-        Residuals of the models when predicting training data. Only stored up to
-        1000 values per model in the form `{step: residuals}`.If `transformer_y`
-        is not `None`, residuals are stored in the transformed scale. If 
-        `differentiation` is not `None`, residuals are stored after differentiation.
+        Residuals of the model when predicting training data. Only stored up 
+        to 10_000 values per step in the form `{step: residuals}`. If 
+        `transformer_y` is not `None`, residuals are stored in the 
+        transformed scale. If `differentiation` is not `None`, residuals are 
+        stored after differentiation.
     in_sample_residuals_by_bin_ : dict
-
+        In sample residuals binned according to the predicted value each residual
+        is associated with. The number of residuals stored per bin is limited to 
+        `10_000 // self.binner.n_bins_` per step in the form `{step: residuals}`.
+        If `transformer_y` is not `None`, residuals are stored in the 
+        transformed scale. If `differentiation` is not `None`, residuals are 
+        stored after differentiation. 
+        **New in version 0.15.0**
     out_sample_residuals_ : dict
-        Residuals of the models when predicting non training data. Only stored
-        up to 1000 values per model in the form `{step: residuals}`. If `transformer_y` 
-        is not `None`, residuals are assumed to be in the transformed scale. Use 
-        `set_out_sample_residuals()` method to set values.
-    out_sample_residuals_by_bin_ : dict.
-
-    binner : skforecast.preprocessing.QuantileBinner
-        `QuantileBinner` used to discretize residuals into k bins according 
-        to the predicted values associated with each residual.
+        Residuals of the model when predicting non-training data. Only stored up 
+        to 10_000 values per step in the form `{step: residuals}`. Use 
+        `set_out_sample_residuals()` method to set values. If `transformer_y` 
+        is not `None`, residuals are stored in the transformed scale. If 
+        `differentiation` is not `None`, residuals are stored after differentiation. 
+    out_sample_residuals_by_bin_ : dict
+        Out of sample residuals binned according to the predicted value each residual
+        is associated with. The number of residuals stored per bin is limited to 
+        `10_000 // self.binner.n_bins_` per step in the form `{step: residuals}`.
+        If `transformer_y` is not `None`, residuals are stored in the 
+        transformed scale. If `differentiation` is not `None`, residuals are 
+        stored after differentiation. 
+        **New in version 0.15.0**
+    binner : dict
+        Dictionary of `skforecast.preprocessing.QuantileBinner` used to discretize
+        residuals of each step into k bins according to the predicted values 
+        associated with each residual. In the form `{step: binner}`.
         **New in version 0.15.0**
     binner_intervals_ : dict
         Intervals used to discretize residuals into k bins according to the predicted
-        values associated with each residual.
+        values associated with each residual. In the form `{step: binner_intervals_}`.
         **New in version 0.15.0**
     binner_kwargs : dict
-        Additional arguments to pass to the `QuantileBinner` used to discretize 
-        the residuals into k bins according to the predicted values associated 
-        with each residual. Available arguments are: `n_bins`, `method`, `subsample`,
-        `random_state` and `dtype`. Argument `method` is passed internally to the
-        fucntion `numpy.percentile`.
+        Additional arguments to pass to the `QuantileBinner`.
         **New in version 0.15.0**
     creation_date : str
         Date of creation.
