@@ -35,6 +35,7 @@ from ..utils import (
     get_exog_dtypes,
     check_exog_dtypes,
     check_predict_input,
+    check_residuals_input_direct,
     check_interval,
     preprocess_y,
     preprocess_last_window,
@@ -97,6 +98,12 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         index. For example, a function that assigns a lower weight to certain dates.
         Ignored if `regressor` does not have the argument `sample_weight` in its `fit`
         method. The resulting `sample_weight` cannot have negative values.
+    differentiation : int, default None
+        Order of differencing applied to the time series before training the forecaster.
+        If `None`, no differencing is applied. The order of differentiation is the number
+        of times the differencing operation is applied to a time series. Differencing
+        involves computing the differences between consecutive data points in the series.
+        Before returning a prediction, the differencing operation is reversed.
     fit_kwargs : dict, default None
         Additional arguments to be passed to the `fit` method of the regressor.
     n_jobs : int, 'auto', default 'auto'
@@ -1350,7 +1357,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             Whether or not to store the last window (`last_window_`) of training data.
         store_in_sample_residuals : bool, default True
             If `True`, in-sample residuals will be stored in the forecaster object
-            after fitting (`in_sample_residuals_` attribute).
+            after fitting (`in_sample_residuals_` and `in_sample_residuals_by_bin_`
+            attributes).
         suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the training 
             process. See skforecast.exceptions.warn_skforecast_categories for more
@@ -1411,7 +1419,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 Step of the forecaster to be fitted.
             store_in_sample_residuals : bool
                 If `True`, in-sample residuals will be stored in the forecaster object
-                after fitting (`in_sample_residuals_` attribute).
+                after fitting (`in_sample_residuals_` and `in_sample_residuals_by_bin_`
+                attributes).
             
             Returns
             -------
@@ -1506,12 +1515,14 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         
         set_skforecast_warnings(suppress_warnings, action='default')
 
-
     def _create_predict_inputs(
         self,
         steps: int | list[int] | None = None,
         last_window: pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | None = None,
+        predict_probabilistic: bool = False,
+        use_in_sample_residuals: bool = True,
+        use_binned_residuals: bool = False,
         check_inputs: bool = True
     ) -> tuple[list[np.ndarray], list[str], list[int], pd.Index]:
         """
@@ -1536,6 +1547,19 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             right after training data.
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
+        predict_probabilistic : bool, default False
+            If `True`, the necessary checks for probabilistic predictions will be 
+            performed.
+        use_in_sample_residuals : bool, default True
+            If `True`, residuals from the training data are used as proxy of
+            prediction error to create predictions. 
+            If `False`, out of sample residuals (calibration) are used. 
+            Out-of-sample residuals must be precomputed using Forecaster's
+            `set_out_sample_residuals()` method.
+        use_binned_residuals : bool, default False
+            If `True`, residuals are selected based on the predicted values 
+            (binned selection).
+            If `False`, residuals are selected randomly.
         check_inputs : bool, default True
             If `True`, the input is checked for possible warnings and errors 
             with the `check_predict_input` function. This argument is created 
@@ -1579,6 +1603,17 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 max_steps        = self.steps,
                 series_names_in_ = self.X_train_series_names_in_
             )
+
+            if predict_probabilistic:
+                check_residuals_input_direct(
+                    steps                        = steps,
+                    use_in_sample_residuals      = use_in_sample_residuals,
+                    in_sample_residuals_         = self.in_sample_residuals_,
+                    out_sample_residuals_        = self.out_sample_residuals_,
+                    use_binned_residuals         = use_binned_residuals,
+                    in_sample_residuals_by_bin_  = self.in_sample_residuals_by_bin_,
+                    out_sample_residuals_by_bin_ = self.out_sample_residuals_by_bin_
+                )
 
         last_window = last_window.iloc[
             -self.window_size:, last_window.columns.get_indexer(self.X_train_series_names_in_)
@@ -1711,9 +1746,16 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         set_skforecast_warnings(suppress_warnings, action='ignore')
 
-        Xs, Xs_col_names, steps, prediction_index = self._create_predict_inputs(
-            steps=steps, last_window=last_window, exog=exog
-        )
+        (
+            Xs,
+            Xs_col_names,
+            steps,
+            prediction_index
+        ) = self._create_predict_inputs(
+                steps        = steps,
+                last_window  = last_window,
+                exog         = exog
+            )
 
         X_predict = pd.DataFrame(
                         data    = np.concatenate(Xs, axis=0), 
@@ -1789,9 +1831,17 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         set_skforecast_warnings(suppress_warnings, action='ignore')
 
-        Xs, _, steps, prediction_index = self._create_predict_inputs(
-            steps=steps, last_window=last_window, exog=exog, check_inputs=check_inputs
-        )
+        (
+            Xs,
+            _,
+            steps,
+            prediction_index
+        ) = self._create_predict_inputs(
+                steps        = steps,
+                last_window  = last_window,
+                exog         = exog,
+                check_inputs = check_inputs,
+            )
 
         regressors = [self.regressors_[step] for step in steps]
         with warnings.catch_warnings():
@@ -1834,7 +1884,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         return predictions
 
-
     def predict_bootstrapping(
         self,
         steps: int | list[int] | None = None,
@@ -1843,6 +1892,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         n_boot: int = 250,
         random_state: int = 123,
         use_in_sample_residuals: bool = True,
+        use_binned_residuals: bool = False,
         suppress_warnings: bool = False,
         levels: Any = None
     ) -> pd.DataFrame:
@@ -1872,16 +1922,20 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.     
         n_boot : int, default 250
-            Number of bootstrapping iterations used to estimate predictions.
-        random_state : int, default 123
-            Sets a seed to the random generator, so that boot predictions are always 
-            deterministic.               
+            Number of bootstrapping iterations to perform when estimating prediction
+            intervals.            
         use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
-            prediction error to create predictions. If `False`, out of sample 
-            residuals are used. In the latter case, the user should have
-            calculated and stored the residuals within the forecaster (see
-            `set_out_sample_residuals()`).
+            prediction error to create predictions. 
+            If `False`, out of sample residuals (calibration) are used. 
+            Out-of-sample residuals must be precomputed using Forecaster's
+            `set_out_sample_residuals()` method.
+        use_binned_residuals : bool, default False
+            If `True`, residuals are selected based on the predicted values 
+            (binned selection).
+            If `False`, residuals are selected randomly.
+        random_state : int, default 123
+            Seed for the random number generator to ensure reproducibility.   
         suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the prediction 
             process. See skforecast.exceptions.warn_skforecast_categories for more
@@ -1904,57 +1958,27 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         """
 
         set_skforecast_warnings(suppress_warnings, action='ignore')
-
-        if self.is_fitted:
-            
-            steps = prepare_steps_direct(
-                        steps    = steps,
-                        max_step = self.steps
-                    )
-
-            if use_in_sample_residuals:
-                if not set(steps).issubset(set(self.in_sample_residuals_.keys())):
-                    raise ValueError(
-                        f"Not `forecaster.in_sample_residuals_` for steps: "
-                        f"{set(steps) - set(self.in_sample_residuals_.keys())}."
-                    )
-                residuals = self.in_sample_residuals_
-            else:
-                if self.out_sample_residuals_ is None:
-                    raise ValueError(
-                        "`forecaster.out_sample_residuals_` is `None`. Use "
-                        "`use_in_sample_residuals=True` or the "
-                        "`set_out_sample_residuals()` method before predicting."
-                    )
-                else:
-                    if not set(steps).issubset(set(self.out_sample_residuals_.keys())):
-                        raise ValueError(
-                            f"Not `forecaster.out_sample_residuals_` for steps: "
-                            f"{set(steps) - set(self.out_sample_residuals_.keys())}. "
-                            f"Use method `set_out_sample_residuals()`."
-                        )
-                residuals = self.out_sample_residuals_
-            
-            check_residuals = (
-                'forecaster.in_sample_residuals_' if use_in_sample_residuals
-                else 'forecaster.out_sample_residuals_'
+        
+        (
+            Xs,
+            _,
+            steps,
+            prediction_index
+        ) = self._create_predict_inputs(
+                steps                   = steps, 
+                last_window             = last_window, 
+                exog                    = exog,
+                predict_probabilistic   = True, 
+                use_in_sample_residuals = use_in_sample_residuals,
+                use_binned_residuals    = use_binned_residuals
             )
-            for step in steps:
-                if residuals[step] is None:
-                    raise ValueError(
-                        f"forecaster residuals for step {step} are `None`. "
-                        f"Check {check_residuals}."
-                    )
-                elif (any(element is None for element in residuals[step]) or
-                      np.any(np.isnan(residuals[step]))):
-                    raise ValueError(
-                        f"forecaster residuals for step {step} contains `None` "
-                        f"or `NaNs` values. Check {check_residuals}."
-                    )
 
-        Xs, _, steps, prediction_index = self._create_predict_inputs(
-            steps=steps, last_window=last_window, exog=exog
-        )
+        if use_in_sample_residuals:
+            residuals = self.in_sample_residuals_
+            residuals_by_bin = self.in_sample_residuals_by_bin_
+        else:
+            residuals = self.out_sample_residuals_
+            residuals_by_bin = self.out_sample_residuals_by_bin_
 
         # NOTE: Predictions must be transformed and differenced before adding residuals
         regressors = [self.regressors_[step] for step in steps]
@@ -2015,8 +2039,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         exog: pd.Series | pd.DataFrame | None = None,
         interval: list[float] | tuple[float] = [5, 95],
         n_boot: int = 250,
-        random_state: int = 123,
         use_in_sample_residuals: bool = True,
+        use_binned_residuals: bool = False,
+        random_state: int = 123,
         suppress_warnings: bool = False,
         levels: Any = None
     ) -> pd.DataFrame:
@@ -2048,16 +2073,20 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             percentiles to compute, which must be between 0 and 100 inclusive. 
             For example, interval of 95% should be as `interval = [2.5, 97.5]`.
         n_boot : int, default 250
-            Number of bootstrapping iterations used to estimate predictions.
-        random_state : int, default 123
-            Sets a seed to the random generator, so that boot predictions are always 
-            deterministic.
+            Number of bootstrapping iterations to perform when estimating prediction
+            intervals.
         use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
-            prediction error to create predictions. If `False`, out of sample 
-            residuals are used. In the latter case, the user should have
-            calculated and stored the residuals within the forecaster (see
-            `set_out_sample_residuals()`).
+            prediction error to create predictions. 
+            If `False`, out of sample residuals (calibration) are used. 
+            Out-of-sample residuals must be precomputed using Forecaster's
+            `set_out_sample_residuals()` method.
+        use_binned_residuals : bool, default False
+            If `True`, residuals are selected based on the predicted values 
+            (binned selection).
+            If `False`, residuals are selected randomly.
+        random_state : int, default 123
+            Seed for the random number generator to ensure reproducibility.
         suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the prediction 
             process. See skforecast.exceptions.warn_skforecast_categories for more
@@ -2091,7 +2120,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                                exog                    = exog,
                                n_boot                  = n_boot,
                                random_state            = random_state,
-                               use_in_sample_residuals = use_in_sample_residuals
+                               use_in_sample_residuals = use_in_sample_residuals,
+                               use_binned_residuals    = use_binned_residuals
                            )
 
         predictions = self.predict(
@@ -2122,8 +2152,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         exog: pd.Series | pd.DataFrame | None = None,
         quantiles: list[float] | tuple[float] = [0.05, 0.5, 0.95],
         n_boot: int = 250,
-        random_state: int = 123,
         use_in_sample_residuals: bool = True,
+        use_binned_residuals: bool = False,
+        random_state: int = 123,
         suppress_warnings: bool = False,
         levels: Any = None
     ) -> pd.DataFrame:
@@ -2154,16 +2185,19 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             inclusive. For example, quantiles of 0.05, 0.5 and 0.95 should be as 
             `quantiles = [0.05, 0.5, 0.95]`.
         n_boot : int, default 250
-            Number of bootstrapping iterations used to estimate quantiles.
-        random_state : int, default 123
-            Sets a seed to the random generator, so that boot quantiles are always 
-            deterministic.
+            Number of bootstrapping iterations to perform when estimating quantiles.
         use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
-            prediction error to create quantiles. If `False`, out of sample 
-            residuals are used. In the latter case, the user should have
-            calculated and stored the residuals within the forecaster (see
-            `set_out_sample_residuals()`).
+            prediction error to create predictions. 
+            If `False`, out of sample residuals (calibration) are used. 
+            Out-of-sample residuals must be precomputed using Forecaster's
+            `set_out_sample_residuals()` method.
+        use_binned_residuals : bool, default False
+            If `True`, residuals are selected based on the predicted values 
+            (binned selection).
+            If `False`, residuals are selected randomly.
+        random_state : int, default 123
+            Seed for the random number generator to ensure reproducibility.
         suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the prediction 
             process. See skforecast.exceptions.warn_skforecast_categories for more
@@ -2197,7 +2231,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                           exog                    = exog,
                           n_boot                  = n_boot,
                           random_state            = random_state,
-                          use_in_sample_residuals = use_in_sample_residuals
+                          use_in_sample_residuals = use_in_sample_residuals,
+                          use_binned_residuals    = use_binned_residuals
                       )
 
         quantiles_cols = [f'q_{q}' for q in quantiles]
@@ -2218,8 +2253,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         last_window: pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | None = None,
         n_boot: int = 250,
-        random_state: int = 123,
         use_in_sample_residuals: bool = True,
+        use_binned_residuals: bool = False,
+        random_state: int = 123,
         suppress_warnings: bool = False,
         levels: Any = None
     ) -> pd.DataFrame:
@@ -2251,16 +2287,20 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
         n_boot : int, default 250
-            Number of bootstrapping iterations used to estimate predictions.
-        random_state : int, default 123
-            Sets a seed to the random generator, so that boot predictions are always 
-            deterministic.
+            Number of bootstrapping iterations to perform when estimating prediction
+            intervals.
         use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
-            prediction error to create predictions. If `False`, out of sample 
-            residuals are used. In the latter case, the user should have
-            calculated and stored the residuals within the forecaster (see
-            `set_out_sample_residuals()`).
+            prediction error to create predictions. 
+            If `False`, out of sample residuals (calibration) are used. 
+            Out-of-sample residuals must be precomputed using Forecaster's
+            `set_out_sample_residuals()` method.
+        use_binned_residuals : bool, default False
+            If `True`, residuals are selected based on the predicted values 
+            (binned selection).
+            If `False`, residuals are selected randomly.
+        random_state : int, default 123
+            Seed for the random number generator to ensure reproducibility.
         suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the prediction 
             process. See skforecast.exceptions.warn_skforecast_categories for more
@@ -2291,7 +2331,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                           exog                    = exog,
                           n_boot                  = n_boot,
                           random_state            = random_state,
-                          use_in_sample_residuals = use_in_sample_residuals
+                          use_in_sample_residuals = use_in_sample_residuals,
+                          use_binned_residuals    = use_binned_residuals
                       )
 
         param_names = [

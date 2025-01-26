@@ -1066,10 +1066,10 @@ def test_check_backtesting_input_ValueError_when_interval_is_not_None_and_foreca
         )
 
 
-def test_check_backtesting_input_raises_when_interval_not_None_and_forecaster_bootstrapping():
+def test_check_backtesting_input_raises_when_interval_not_None_and_interval_method():
     """
     Test raises errors in check_backtesting_input when interval is not None
-    and the forecaster uses bootstrapping.
+    and the forecaster uses bootstrapping or conformal.
     """
     forecaster = ForecasterRecursive(regressor=Ridge(), lags=2)
     cv = TimeSeriesFold(steps=3, initial_train_size=len(y) - 12)
@@ -1080,6 +1080,7 @@ def test_check_backtesting_input_raises_when_interval_not_None_and_forecaster_bo
         'metric': 'mean_absolute_error',
         'y': y,
         'interval': [10, 90],
+        'interval_method': 'bootstrapping',
         'n_boot': 500,
         'random_state': 123,
         'use_in_sample_residuals': True,
@@ -1088,10 +1089,22 @@ def test_check_backtesting_input_raises_when_interval_not_None_and_forecaster_bo
     }
 
     kwargs['interval'] = {'10': 10, '90': 90}
+    kwargs['interval_method'] = 'conformal'
     err_msg = re.escape(
-        f"`interval` must be a list or tuple of floats, a scipy.stats "
-        f"distribution object (with methods `_pdf` and `fit`) or "
-        f"the string 'bootstrapping'. Got {type(kwargs['interval'])}."
+        f"When `interval_method` is 'conformal', `interval` must "
+        f"be a float or a list/tuple defining a symmetric interval. "
+        f"Got {type(kwargs['interval'])}."
+    )
+    with pytest.raises(TypeError, match = err_msg):
+        check_backtesting_input(**kwargs)
+
+    kwargs['interval'] = {'10': 10, '90': 90}
+    kwargs['interval_method'] = 'bootstrapping'
+    err_msg = re.escape(
+        f"When `interval_method` is 'bootstrapping', `interval` "
+        f"must be a float, a list or tuple of floats, a "
+        f"scipy.stats distribution object (with methods `_pdf` and "
+        f"`fit`) or the string 'bootstrapping'. Got {type(kwargs['interval'])}."
     )
     with pytest.raises(TypeError, match = err_msg):
         check_backtesting_input(**kwargs)
@@ -1101,9 +1114,10 @@ def test_check_backtesting_input_raises_when_interval_not_None_and_forecaster_bo
     
     kwargs['interval'] = CustomObject()
     err_msg = re.escape(
-        f"`interval` must be a list or tuple of floats, a scipy.stats "
-        f"distribution object (with methods `_pdf` and `fit`) or "
-        f"the string 'bootstrapping'. Got {type(kwargs['interval'])}."
+        f"When `interval_method` is 'bootstrapping', `interval` "
+        f"must be a float, a list or tuple of floats, a "
+        f"scipy.stats distribution object (with methods `_pdf` and "
+        f"`fit`) or the string 'bootstrapping'. Got {type(kwargs['interval'])}."
     )
     with pytest.raises(TypeError, match = err_msg):
         check_backtesting_input(**kwargs)
@@ -1128,6 +1142,14 @@ def test_check_backtesting_input_raises_when_interval_not_None_and_forecaster_bo
     err_msg = re.escape(
         f"When `interval` is a string, it must be 'bootstrapping'."
         f"Got {kwargs['interval']}."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        check_backtesting_input(**kwargs)
+
+    kwargs['interval_method'] = 'not_bootstrapping_or_conformal'
+    err_msg = re.escape(
+        f"`interval_method` must be 'bootstrapping' or 'conformal'. "
+        f"Got {kwargs['interval_method']}."
     )
     with pytest.raises(ValueError, match = err_msg):
         check_backtesting_input(**kwargs)
@@ -1176,4 +1198,44 @@ def test_check_backtesting_input_ValueError_when_not_enough_data_to_create_a_fol
             use_in_sample_residuals = True,
             show_progress           = False,
             suppress_warnings       = False
+        )
+
+
+@pytest.mark.parametrize("forecaster", 
+                         [ForecasterDirect(regressor=Ridge(), lags=5, steps=5),
+                          ForecasterDirectMultiVariate(regressor=Ridge(), level='l1', lags=5, steps=5)], 
+                         ids = lambda fr: f'forecaster: {type(fr).__name__}')
+def test_check_backtesting_input_ValueError_when_Direct_forecaster_not_enough_steps(forecaster):
+    """
+    Test ValueError is raised in check_backtesting_input when there is not enough 
+    steps to predict steps + gap in a Direct forecaster.
+    """
+    
+    cv = TimeSeriesFold(
+             steps                 = 1,
+             initial_train_size    = len(y[:-12]),
+             window_size           = None,
+             differentiation       = None,
+             refit                 = False,
+             fixed_train_size      = True,
+             gap                   = 5,
+             skip_folds            = None,
+             allow_incomplete_fold = True,
+             return_all_indexes    = False,
+         )
+    
+    err_msg = re.escape(
+        f"When using a {type(forecaster).__name__}, the combination of steps "
+        f"+ gap ({cv.steps + cv.gap}) cannot be greater than the `steps` parameter "
+        f"declared when the forecaster is initialized ({forecaster.steps})."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        check_backtesting_input(
+            forecaster        = forecaster,
+            cv                = cv,
+            metric            = 'mean_absolute_error',
+            y                 = y,
+            series            = series,
+            show_progress     = False,
+            suppress_warnings = False
         )

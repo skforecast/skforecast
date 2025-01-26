@@ -29,7 +29,7 @@ def test_ValueError_check_preprocess_series_when_all_series_values_are_missing_D
     is a pandas DataFrame.
     """
     series_nan = pd.DataFrame({'1': pd.Series(np.arange(7)), 
-                               '2': pd.Series([np.nan]*7)})
+                               '2': pd.Series([np.nan] * 7)})
     series_nan.index = pd.date_range(start='2022-01-01', periods=7, freq='1D')
 
     err_msg = re.escape("All values of series '2' are NaN.")
@@ -196,7 +196,7 @@ def test_ValueError_check_preprocess_series_when_all_series_values_are_missing_d
     is a dict.
     """
     series_nan = pd.DataFrame({'l1': pd.Series(np.arange(7)), 
-                               'l2': pd.Series([np.nan]*7)})
+                               'l2': pd.Series([np.nan] * 7)})
     series_nan.index = pd.date_range(start='2022-01-01', periods=7, freq='1D')
     series_nan = series_nan.to_dict("series")
 

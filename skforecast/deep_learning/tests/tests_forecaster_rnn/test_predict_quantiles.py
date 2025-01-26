@@ -1,16 +1,11 @@
-# Unit test predict method
+# Unit test predict quantiles method
 # ==============================================================================
-import os
-
+import keras
 import numpy as np
 import pandas as pd
-import pytest
 
 from skforecast.deep_learning import ForecasterRnn
 from skforecast.deep_learning.utils import create_and_compile_model
-
-os.environ["KERAS_BACKEND"] = "torch"
-import keras
 
 series = pd.DataFrame(
     {
@@ -41,46 +36,65 @@ model = create_and_compile_model(
     loss=loss,
 )
 
-def test_predict_bootstrapping_output_size_with_steps_by_default():
+# Adjust after including steps by default
+"""
+def test_predict_quantiles_output_size_with_steps_by_default():
+    
+    #Test output sizes for predicting steps defined by default with quantiles
+    
+    # Create a ForecasterRnn object
+    forecaster = ForecasterRnn(model, levels, lags=lags)
+    forecaster.fit(series)
+
+    # Call the predict method
+    quant_preds = forecaster.predict_quantiles()
+
+    # Check the shape and values of the predictions
+    assert quant_preds.shape == (steps * len(levels), 4)
     """
-    Test output sizes for predicting steps defined by default with bootstrapping
+
+
+def test_predict_quantiles_output_size_3_steps_ahead():
+    """
+    Test output sizes for predicting 3 steps ahead with quantiles by default
     """
     # Create a ForecasterRnn object
     forecaster = ForecasterRnn(model, levels, lags=lags)
     forecaster.fit(series)
 
     # Call the predict method
-    boot_preds = forecaster.predict_bootstrapping()
+    quant_preds = forecaster.predict_quantiles(steps=3)
 
     # Check the shape and values of the predictions
-    assert boot_preds.shape == (steps * len(levels), 251)
+    assert quant_preds.shape == (3 * len(levels), 4)
 
-
-def test_predict_bootstrapping_output_size_3_steps_ahead():
+def test_predict_deciles_output_size_3_steps_ahead():
     """
-    Test output sizes for predicting 3 steps ahead with bootstrapping
+    Test output sizes for predicting 3 steps ahead with deciles
     """
     # Create a ForecasterRnn object
     forecaster = ForecasterRnn(model, levels, lags=lags)
     forecaster.fit(series)
 
     # Call the predict method
-    boot_preds = forecaster.predict_bootstrapping(steps=3)
+    quant_preds = forecaster.predict_quantiles(steps=3,
+                                               quantiles = [0.1 * i for i in range(1, 10)])
 
     # Check the shape and values of the predictions
-    assert boot_preds.shape == (3 * len(levels), 251)
+    assert quant_preds.shape == (3 * len(levels), 10)
 
 
-def test_predict_2_steps_ahead_specific_levels():
+def test_predict_quantiles_output_size_2_steps_ahead_specific_levels():
     """
-    Test output sizes for predicting 2 steps ahead with bootstrapping and specific levels
+    Test output sizes for predicting 2 steps ahead with quantiles by default and specific levels
     """
     # Create a ForecasterRnn object
     forecaster = ForecasterRnn(model, levels, lags=lags)
     forecaster.fit(series)
 
     # Call the predict method
-    boot_preds = forecaster.predict_bootstrapping(steps=2, levels="1")
+    quant_preds = forecaster.predict_quantiles(steps=2, levels="1")
 
     # Check the shape and values of the predictions
-    assert boot_preds.shape == (2 * 1, 251)
+    assert quant_preds.shape == (2 * 1, 4)
+

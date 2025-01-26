@@ -663,8 +663,10 @@ def check_exog_dtypes(
 
 def check_interval(
     interval: list[float] | tuple[float] | None = None,
+    ensure_symmetric_intervals: bool = False,
     quantiles: list[float] | tuple[float] | None = None,
-    alpha: float = None
+    alpha: float = None,
+    alpha_literal: str | None = 'alpha'
 ) -> None:
     """
     Check provided confidence interval sequence is valid.
@@ -675,12 +677,16 @@ def check_interval(
         Confidence of the prediction interval estimated. Sequence of percentiles
         to compute, which must be between 0 and 100 inclusive. For example, 
         interval of 95% should be as `interval = [2.5, 97.5]`.
+    ensure_symmetric_intervals : bool, default False
+        If True, ensure that the intervals are symmetric.
     quantiles : list, tuple, default None
         Sequence of quantiles to compute, which must be between 0 and 1 
         inclusive. For example, quantiles of 0.05, 0.5 and 0.95 should be as 
         `quantiles = [0.05, 0.5, 0.95]`.
     alpha : float, default None
         The confidence intervals used in ForecasterSarimax are (1 - alpha) %.
+    alpha_literal : str, default 'alpha'
+        Literal used in the exception message when `alpha` is provided.
 
     Returns
     -------
@@ -718,6 +724,13 @@ def check_interval(
                 f"upper interval bound ({interval[1]})."
             )
         
+        if ensure_symmetric_intervals and interval[0] + interval[1] != 100:
+            raise ValueError(
+                f"Interval must be symmetric, the sum of the lower, ({interval[0]}), "
+                f"and upper, ({interval[1]}), interval bounds must be equal to "
+                f"100. Got {interval[0] + interval[1]}."
+            )
+        
     if quantiles is not None:
         if not isinstance(quantiles, (list, tuple)):
             raise TypeError(
@@ -734,13 +747,13 @@ def check_interval(
     if alpha is not None:
         if not isinstance(alpha, float):
             raise TypeError(
-                "`alpha` must be a `float`. For example, interval of 95% "
-                "should be as `alpha = 0.05`."
+                f"`{alpha_literal}` must be a `float`. For example, interval of 95% "
+                f"should be as `alpha = 0.05`."
             )
 
         if (alpha <= 0.) or (alpha >= 1):
             raise ValueError(
-                f"`alpha` must have a value between 0 and 1. Got {alpha}."
+                f"`{alpha_literal}` must have a value between 0 and 1. Got {alpha}."
             )
 
 
@@ -2712,7 +2725,134 @@ def preprocess_levels_self_last_window_multiseries(
 
     return levels, last_window
 
+# TODO: REview docstring if include dicts
+def check_residuals_input(
+    use_in_sample_residuals: bool,
+    in_sample_residuals_: np.ndarray | None,
+    out_sample_residuals_: np.ndarray | None,
+    use_binned_residuals: bool,
+    in_sample_residuals_by_bin_: dict[int, np.ndarray] | None,
+    out_sample_residuals_by_bin_: dict[int, np.ndarray] | None
+) -> None:
+    """
+    Check residuals input arguments in Forecasters.
 
+    Parameters
+    ----------
+    use_in_sample_residuals : bool
+        Indicates if in sample or out sample residuals are used.
+    in_sample_residuals_ : numpy ndarray
+        Residuals of the model when predicting training data.
+    out_sample_residuals_ : numpy ndarray
+        Residuals of the model when predicting non training data.
+    use_binned_residuals : bool
+        Indicates if residuals are binned.
+    in_sample_residuals_by_bin_ : dict
+        In sample residuals binned according to the predicted value each residual
+        is associated with.
+    out_sample_residuals_by_bin_ : dict
+        Out of sample residuals binned according to the predicted value each residual
+        is associated with.
+
+    Returns
+    -------
+    None
+    
+    """
+
+    if use_in_sample_residuals:
+        if use_binned_residuals:
+            residuals = in_sample_residuals_by_bin_
+            literal = "in_sample_residuals_by_bin_"
+        else:
+            residuals = in_sample_residuals_
+            literal = "in_sample_residuals_"
+        
+        # NOTE: Check also if residuals is an empty dict
+        if residuals is None or not residuals:
+            raise ValueError(
+                f"`forecaster.{literal}` is None. Use `store_in_sample_residuals = True` "
+                f"when fitting the forecaster to store in-sample residuals."
+            )
+    else:
+        if use_binned_residuals:
+            residuals = out_sample_residuals_by_bin_
+            literal = "out_sample_residuals_by_bin_"
+        else:
+            residuals = out_sample_residuals_
+            literal = "out_sample_residuals_"
+        
+        # NOTE: This checks also if residuals is an empty dict
+        if residuals is None or not residuals:
+            raise ValueError(
+                f"`forecaster.{literal}` is None. Use `use_in_sample_residuals = True` "
+                f"or the `set_out_sample_residuals()` method before predicting."
+            )
+    
+
+def check_residuals_input_direct(
+    steps: list[int],
+    use_in_sample_residuals: bool,
+    in_sample_residuals_: dict[int, np.ndarray] | None,
+    out_sample_residuals_: dict[int, np.ndarray] | None,
+    use_binned_residuals: bool,
+    in_sample_residuals_by_bin_: dict[int, dict[int, np.ndarray]] | None,
+    out_sample_residuals_by_bin_: dict[int, dict[int, np.ndarray]] | None
+) -> None:
+    """
+    """
+
+    check_residuals_input(
+        use_in_sample_residuals      = use_in_sample_residuals,
+        in_sample_residuals_         = in_sample_residuals_,
+        out_sample_residuals_        = out_sample_residuals_,
+        use_binned_residuals         = use_binned_residuals,
+        in_sample_residuals_by_bin_  = in_sample_residuals_by_bin_,
+        out_sample_residuals_by_bin_ = out_sample_residuals_by_bin_
+    )
+
+    if use_in_sample_residuals:
+        if use_binned_residuals:
+            residuals = in_sample_residuals_by_bin_
+            literal = "in_sample_residuals_by_bin_"
+        else:
+            residuals = in_sample_residuals_
+            literal = "in_sample_residuals_"
+        
+        if not set(steps).issubset(set(residuals.keys())):
+            raise ValueError(
+                f"`forecaster.{literal}` doesn't contain residuals for steps: "
+                f"{set(steps) - set(residuals.keys())}."
+            )
+    else:
+        if use_binned_residuals:
+            residuals = out_sample_residuals_by_bin_
+            literal = "out_sample_residuals_by_bin_"
+        else:
+            residuals = out_sample_residuals_
+            literal = "out_sample_residuals_"
+
+        if not set(steps).issubset(set(residuals.keys())):
+            raise ValueError(
+                f"`forecaster.{literal}` doesn't contain residuals for steps: "
+                f"{set(steps) - set(residuals.keys())}. "
+                f"Use method `set_out_sample_residuals()`."
+            )
+    
+    for step in steps:
+        if residuals[step] is None:
+            raise ValueError(
+                f"Residuals for step {step} are None. Check `forecaster.{literal}`."
+            )
+        # TODO: This check has sense? Check if it is necessary
+        # Need to adapt when {step: {bin: residuals}}
+        elif any(x is None or np.isnan(x) for x in residuals[step]):
+            raise ValueError(
+                f"Residuals for step {step} contains None values. "
+                f"Check `forecaster.{literal}`."
+            )
+
+# TODO: Review name with new residuals function
 def prepare_residuals_multiseries(
     levels: list,
     use_in_sample_residuals: bool,
@@ -2785,14 +2925,15 @@ def prepare_residuals_multiseries(
     )
     for level in levels:
         if level in unknown_levels:
-            residuals[level] = residuals['_unknown_level']
+            residuals[level] = residuals["_unknown_level"]
         if residuals[level] is None or len(residuals[level]) == 0:
             raise ValueError(
                 f"Not available residuals for level '{level}'. "
                 f"Check `{check_residuals}`."
             )
-        elif (any(element is None for element in residuals[level]) or
-              np.any(np.isnan(residuals[level]))):
+        elif any(element is None for element in residuals[level]) or np.any(
+            np.isnan(residuals[level])
+        ):
             raise ValueError(
                 f"forecaster residuals for level '{level}' contains `None` "
                 f"or `NaNs` values. Check `{check_residuals}`."

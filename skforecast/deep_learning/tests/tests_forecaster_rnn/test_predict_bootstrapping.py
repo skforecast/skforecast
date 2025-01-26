@@ -49,9 +49,7 @@ def test_predict_bootstrapping_output_size_with_steps_by_default():
     boot_preds = forecaster.predict_bootstrapping()
 
     # Check the shape and values of the predictions
-    assert list(boot_preds.keys()) == levels
-    for level in levels:
-        assert boot_preds[level].shape == (steps, 250)
+    assert boot_preds.shape == (steps * len(levels), 251)
 
 
 def test_predict_bootstrapping_output_size_3_steps_ahead():
@@ -66,9 +64,7 @@ def test_predict_bootstrapping_output_size_3_steps_ahead():
     boot_preds = forecaster.predict_bootstrapping(steps=3)
 
     # Check the shape and values of the predictions
-    assert list(boot_preds.keys()) == levels
-    for level in levels:
-        assert boot_preds[level].shape == (3, 250)
+    assert boot_preds.shape == (3 * len(levels), 251)
 
 
 def test_predict_2_steps_ahead_specific_levels():
@@ -83,6 +79,5 @@ def test_predict_2_steps_ahead_specific_levels():
     boot_preds = forecaster.predict_bootstrapping(steps=2, levels="1")
 
     # Check the shape and values of the predictions
-    assert list(boot_preds.keys()) == ["1"]
-    for level in list(boot_preds.keys()):
-        assert boot_preds[level].shape == (2, 250)
+    assert boot_preds.shape == (2 * 1, 251)
+

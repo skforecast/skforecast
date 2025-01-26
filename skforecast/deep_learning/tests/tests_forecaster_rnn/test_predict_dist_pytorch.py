@@ -1,16 +1,15 @@
-# Unit test predict method
+# Unit test predict distribution method
 # ==============================================================================
 import os
-
+import keras
 import numpy as np
 import pandas as pd
-import pytest
+import scipy
 
 from skforecast.deep_learning import ForecasterRnn
 from skforecast.deep_learning.utils import create_and_compile_model
 
 os.environ["KERAS_BACKEND"] = "torch"
-import keras
 
 series = pd.DataFrame(
     {
@@ -21,6 +20,7 @@ series = pd.DataFrame(
 )
 lags = 3
 steps = 4
+distribution = scipy.stats.norm
 levels = ["1", "2"]
 activation = "relu"
 optimizer = keras.optimizers.Adam(learning_rate=0.01)
@@ -41,34 +41,50 @@ model = create_and_compile_model(
     loss=loss,
 )
 
+# Adjust after including steps by default
+"""
+def test_predict_dist_output_size_with_steps_by_default():
+    
+    #Test output sizes for predicting distribution with steps defined by default
+    
+    # Create a ForecasterRnn object
+    forecaster = ForecasterRnn(model, levels, lags=lags)
+    forecaster.fit(series)
 
-# Test case for predicting 3 steps ahead
-def test_predict_3_steps_ahead():
+    # Call the predict method
+    dist_preds = forecaster.predict_dist(distribution = distribution)
+
+    # Check the shape and values of the predictions
+    assert dist_preds.shape == (steps * len(levels), 3)
     """
-    Test case for predicting 3 steps ahead
+
+
+def test_predict_dist_output_size_3_steps_ahead():
+    """
+    Test output sizes for predicting distribution 3 steps ahead
     """
     # Create a ForecasterRnn object
     forecaster = ForecasterRnn(model, levels, lags=lags)
     forecaster.fit(series)
 
     # Call the predict method
-    predictions = forecaster.predict(steps=3)
+    dist_preds = forecaster.predict_dist(steps=3, distribution=distribution)
 
     # Check the shape and values of the predictions
-    assert predictions.shape == (6, 2)
+    assert dist_preds.shape == (3 * len(levels), 3)
 
 
-# Test case for predicting 2 steps ahead with specific levels
-def test_predict_2_steps_ahead_specific_levels():
+def test_predict_dist_output_size_2_steps_ahead_specific_levels():
     """
-    Test case for predicting 2 steps ahead with specific levels
+    Test output sizes for predicting distribution 2 steps ahead and specific levels
     """
     # Create a ForecasterRnn object
     forecaster = ForecasterRnn(model, levels, lags=lags)
     forecaster.fit(series)
 
     # Call the predict method
-    predictions = forecaster.predict(steps=3, levels="1")
+    dist_preds = forecaster.predict_dist(steps=2, distribution=distribution, levels="1")
 
     # Check the shape and values of the predictions
-    assert predictions.shape == (3, 2)
+    assert dist_preds.shape == (2 * 1, 3)
+

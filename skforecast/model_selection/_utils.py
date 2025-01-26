@@ -77,7 +77,8 @@ def check_backtesting_input(
     y: pd.Series | None = None,
     series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame] = None,
     exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
-    interval: list[float] | tuple[float] | str | object | None = None,
+    interval: float | list[float] | tuple[float] | str | object | None = None,
+    interval_method: str = 'bootstrapping',    
     alpha: float | None = None,
     n_boot: int = 250,
     random_state: int = 123,
@@ -109,11 +110,13 @@ def check_backtesting_input(
         Training time series for multi-series forecasters.
     exog : pandas Series, pandas DataFrame, dict, default None
         Exogenous variables.
-    interval : list, tuple, default None
+    interval : float, list, tuple, str, object, default None
         Specifies whether probabilistic predictions should be estimated and the 
         method to use. The following options are supported:
 
-        - If `list`or `tuple`: Sequence of percentiles to compute, each value must 
+        - If `float`, represents the nominal (expected) coverage (between 0 and 1). 
+        For instance, `interval=0.95` corresponds to `[2.5, 97.5]` percentiles.
+        - If `list` or `tuple`: Sequence of percentiles to compute, each value must 
         be between 0 and 100 inclusive. For example, a 95% confidence interval can 
         be specified as `interval = [2.5, 97.5]` or multiple percentiles (e.g. 10, 
         50 and 90) as `interval = [10, 50, 90]`.
@@ -121,14 +124,20 @@ def check_backtesting_input(
         - If scipy.stats distribution object, the distribution parameters will
         be estimated for each prediction.
         - If None, no probabilistic predictions are estimated.
+    interval_method : str, default 'bootstrapping'
+        Technique used to estimate prediction intervals. Available options:
+
+        + 'bootstrapping': Bootstrapping is used to generate prediction 
+        intervals.
+        + 'conformal': Employs the conformal prediction split method for 
+        interval estimation.
     alpha : float, default None
         The confidence intervals used in ForecasterSarimax are (1 - alpha) %. 
     n_boot : int, default `250`
-        Number of bootstrapping iterations used to estimate prediction
-        intervals.
+        Number of bootstrapping iterations to perform when estimating prediction
+            intervals.
     random_state : int, default `123`
-        Sets a seed to the random generator, so that boot intervals are always 
-        deterministic.
+        Seed for the random number generator to ensure reproducibility.
     use_in_sample_residuals : bool, default True
         If `True`, residuals from the training data are used as proxy of prediction 
         error to create prediction intervals.  If `False`, out_sample_residuals 
@@ -176,22 +185,27 @@ def check_backtesting_input(
         "ForecasterSarimax",
         "ForecasterEquivalentDate",
     ]
-    forecasters_multi = [
+    forecasters_direct = [
+        "ForecasterDirect",
+        "ForecasterDirectMultiVariate"
+    ]
+    forecasters_multi_no_dict = [
         "ForecasterDirectMultiVariate",
         "ForecasterRnn",
     ]
     forecasters_multi_dict = [
         "ForecasterRecursiveMultiSeries"
     ]
-    forecasters_not_interval = [
-        "ForecasterEquivalentDate",
-        "ForecasterRnn"
-    ]
-    forecasters_bootstrapping = [
+    forecasters_boot_conformal = [
         "ForecasterRecursive",
         "ForecasterDirect",
         "ForecasterRecursiveMultiSeries",
         "ForecasterDirectMultiVariate",
+    ]
+    # NOTE: ForecasterSarimax has interval but not with bootstrapping or conformal
+    forecasters_not_interval = [
+        "ForecasterEquivalentDate",
+        "ForecasterRnn"
     ]
 
     if forecaster_name in forecasters_uni:
@@ -200,7 +214,7 @@ def check_backtesting_input(
         data_name = 'y'
         data_length = len(y)
 
-    elif forecaster_name in forecasters_multi:
+    elif forecaster_name in forecasters_multi_no_dict:
         if not isinstance(series, pd.DataFrame):
             raise TypeError("`series` must be a pandas DataFrame.")
         data_name = 'series'
@@ -386,38 +400,53 @@ def check_backtesting_input(
                 f"Set `interval` and `alpha` to `None`."
             )
         
-        if forecaster_name in forecasters_bootstrapping:
-            if (
-                not isinstance(interval, (list, tuple, str))
-                and (not hasattr(interval, "_pdf") or not callable(getattr(interval, "fit", None)))
-            ):                
-                raise TypeError(
-                    f"`interval` must be a list or tuple of floats, a scipy.stats "
-                    f"distribution object (with methods `_pdf` and `fit`) or "
-                    f"the string 'bootstrapping'. Got {type(interval)}."
-                )
-            if isinstance(interval, (list, tuple)):
-                for i in interval:
-                    if not isinstance(i, (int, float)):
-                        raise TypeError(
-                            f"`interval` must be a list or tuple of floats. "
-                            f"Got {type(i)} in {interval}."
-                        )
-                if len(interval) == 2:
-                    check_interval(interval=interval)
-                else:
-                    for q in interval:
-                        if (q < 0.) or (q > 100.):
-                            raise ValueError(
-                                "When `interval` is a list or tuple, all values must be "
-                                "between 0 and 100 inclusive."
-                            )
-            elif isinstance(interval, str):
-                if interval != 'bootstrapping':
-                    raise ValueError(
-                        f"When `interval` is a string, it must be 'bootstrapping'."
-                        f"Got {interval}."
+        if forecaster_name in forecasters_boot_conformal:
+
+            if interval_method == 'conformal':
+                if not isinstance(interval, (float, list, tuple)):
+                    raise TypeError(
+                        f"When `interval_method` is 'conformal', `interval` must "
+                        f"be a float or a list/tuple defining a symmetric interval. "
+                        f"Got {type(interval)}."
                     )
+            elif interval_method == 'bootstrapping':
+                if (
+                    not isinstance(interval, (float, list, tuple, str))
+                    and (not hasattr(interval, "_pdf") or not callable(getattr(interval, "fit", None)))
+                ):                
+                    raise TypeError(
+                        f"When `interval_method` is 'bootstrapping', `interval` "
+                        f"must be a float, a list or tuple of floats, a "
+                        f"scipy.stats distribution object (with methods `_pdf` and "
+                        f"`fit`) or the string 'bootstrapping'. Got {type(interval)}."
+                    )
+                if isinstance(interval, (list, tuple)):
+                    for i in interval:
+                        if not isinstance(i, (int, float)):
+                            raise TypeError(
+                                f"`interval` must be a list or tuple of floats. "
+                                f"Got {type(i)} in {interval}."
+                            )
+                    if len(interval) == 2:
+                        check_interval(interval=interval)
+                    else:
+                        for q in interval:
+                            if (q < 0.) or (q > 100.):
+                                raise ValueError(
+                                    "When `interval` is a list or tuple, all values must be "
+                                    "between 0 and 100 inclusive."
+                                )
+                elif isinstance(interval, str):
+                    if interval != 'bootstrapping':
+                        raise ValueError(
+                            f"When `interval` is a string, it must be 'bootstrapping'."
+                            f"Got {interval}."
+                        )
+            else:
+                raise ValueError(
+                    f"`interval_method` must be 'bootstrapping' or 'conformal'. "
+                    f"Got {interval_method}."
+                )
         else:
             check_interval(interval=interval, alpha=alpha)
 
@@ -431,6 +460,13 @@ def check_backtesting_input(
             f"fold. Set `allow_incomplete_fold` to `True` to allow incomplete folds.\n"
             f"    Data available for test : {data_length - (initial_train_size + gap)}\n"
             f"    Steps                   : {steps}"
+        )
+    
+    if forecaster_name in forecasters_direct and forecaster.steps < steps + gap:
+        raise ValueError(
+            f"When using a {forecaster_name}, the combination of steps "
+            f"+ gap ({steps + gap}) cannot be greater than the `steps` parameter "
+            f"declared when the forecaster is initialized ({forecaster.steps})."
         )
 
 

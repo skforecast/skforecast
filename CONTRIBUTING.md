@@ -4,7 +4,9 @@
 
 Skforecast is a community-driven open-source project that relies on contributions from people like you. Every contribution, no matter how big or small, can make a significant impact on the project. Even if you've never contributed to an open-source project before, don't worry! Skforecast is a great place to start. Your help will be appreciated and welcomed with gratitude.
 
-Primarily, skforecast development consists of adding and creating new *Forecasters*, new validation strategies, or improving the performance of the current code. However, there are many other ways to contribute:
+### Ways to Contribute
+
+Primarily, **Skforecast** development focuses on adding new *Forecasters*, creating new validation strategies, or improving the performance of the current code. However, there are many other ways to contribute:
 
 - Submit a bug report or feature request on [GitHub Issues](https://github.com/skforecast/skforecast/issues).
 - Contribute a Jupyter notebook to our [examples](https://skforecast.org/latest/examples/examples_english.html).
@@ -13,9 +15,13 @@ Primarily, skforecast development consists of adding and creating new *Forecaste
 - Translate our documentation into another language.
 - Write a blog post, tweet, or share our project with others.
 
-As you can see, there are lots of ways to get involved and we would be very happy for you to join us! Before you start, please open an issue with a brief proposal description so we can align.
+### Before You Start
 
-Visit our [authors section](https://skforecast.org/latest/authors/authors.html) to meet all the contributors to skforecast.
+To make sure we are aligned, please **open an issue** with a brief description of your proposed contribution. Once you are ready to proceed, you must read and agree to the [**Contributor License Agreement**](./CONTRIBUTOR_LICENSE_AGREEMENT.md).
+
+We are excited to have you involved in this project!
+
+Visit our [authors section](https://skforecast.org/latest/authors/authors.html) to meet all the contributors to **Skforecast**.
 
 
 ## Testing
