@@ -969,8 +969,7 @@ def test_check_backtesting_input_TypeError_when_integer_arguments_not_int_or_gre
              allow_incomplete_fold = True
          )
     
-    integer_arguments = {'n_boot': 500,
-                         'random_state': 123}
+    integer_arguments = {'n_boot': 500, 'random_state': 123}
     integer_arguments[int_argument] = value
     
     err_msg = re.escape(f"`{int_argument}` must be an integer greater than 0. Got {value}.")
@@ -1082,8 +1081,9 @@ def test_check_backtesting_input_raises_when_interval_not_None_and_interval_meth
         'interval': [10, 90],
         'interval_method': 'bootstrapping',
         'n_boot': 500,
-        'random_state': 123,
         'use_in_sample_residuals': True,
+        'use_binned_residuals': False,
+        'random_state': 123,
         'show_progress': False,
         'suppress_warnings': False
     }

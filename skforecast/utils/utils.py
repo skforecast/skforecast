@@ -1210,7 +1210,7 @@ def check_residuals_input(
     out_sample_residuals_by_bin_: dict[str | int, np.ndarray | dict[int, np.ndarray]] | None,
     steps: list[int] | None = None,
     levels: list[str] | None = None,
-    encoding : str | None = None
+    encoding: str | None = None
 ) -> None:
     """
     Check residuals input arguments in Forecasters.

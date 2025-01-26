@@ -378,12 +378,12 @@ def check_backtesting_input(
         raise TypeError("`add_aggregated_metric` must be a boolean: `True`, `False`.")
     if not isinstance(n_boot, (int, np.integer)) or n_boot < 0:
         raise TypeError(f"`n_boot` must be an integer greater than 0. Got {n_boot}.")
-    if not isinstance(random_state, (int, np.integer)) or random_state < 0:
-        raise TypeError(f"`random_state` must be an integer greater than 0. Got {random_state}.")
     if not isinstance(use_in_sample_residuals, bool):
         raise TypeError("`use_in_sample_residuals` must be a boolean: `True`, `False`.")
     if not isinstance(use_binned_residuals, bool):
         raise TypeError("`use_binned_residuals` must be a boolean: `True`, `False`.")
+    if not isinstance(random_state, (int, np.integer)) or random_state < 0:
+        raise TypeError(f"`random_state` must be an integer greater than 0. Got {random_state}.")
     if not isinstance(n_jobs, int) and n_jobs != 'auto':
         raise TypeError(f"`n_jobs` must be an integer or `'auto'`. Got {n_jobs}.")
     if not isinstance(show_progress, bool):
