@@ -25,6 +25,7 @@ from ..exceptions import (
     DataTransformationWarning,
     IgnoredArgumentWarning,
     MissingValuesWarning,
+    ResidualsUsageWarning,
     UnknownLevelWarning
 )
 from ..utils import (
@@ -3402,7 +3403,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 f"The following bins of level {level} have no out of sample residuals: "
                 f"{empty_bins}. No predicted values fall in the interval "
                 f"{[self.binner_intervals_[level][bin] for bin in empty_bins]}. "
-                f"Empty bins will be filled with a random sample of residuals."
+                f"Empty bins will be filled with a random sample of residuals.", 
+                ResidualsUsageWarning
             )
             for k in empty_bins:
                 out_sample_residuals_by_bin[k] = rng.choice(
@@ -3455,10 +3457,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             feature_importances = estimator.coef_
         else:
             warnings.warn(
-                (f"Impossible to access feature importances for regressor of type "
-                 f"{type(estimator)}. This method is only valid when the "
-                 f"regressor stores internally the feature importances in the "
-                 f"attribute `feature_importances_` or `coef_`.")
+                f"Impossible to access feature importances for regressor of type "
+                f"{type(estimator)}. This method is only valid when the "
+                f"regressor stores internally the feature importances in the "
+                f"attribute `feature_importances_` or `coef_`."
             )
             feature_importances = None
 

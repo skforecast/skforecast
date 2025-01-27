@@ -19,7 +19,7 @@ from sklearn.base import clone
 
 import skforecast
 from ..base import ForecasterBase
-from ..exceptions import DataTransformationWarning
+from ..exceptions import DataTransformationWarning, ResidualsUsageWarning
 from ..utils import (
     initialize_lags,
     initialize_window_features,
@@ -185,9 +185,10 @@ class ForecasterRecursive(ForecasterBase):
     in_sample_residuals_by_bin_ : dict
         In sample residuals binned according to the predicted value each residual
         is associated with. The number of residuals stored per bin is limited to 
-        `10_000 // self.binner.n_bins_`. If `transformer_y` is not `None`, 
-        residuals are stored in the transformed scale. If `differentiation` is 
-        not `None`, residuals are stored after differentiation. 
+        `10_000 // self.binner.n_bins_` in the form `{bin: residuals}`. If 
+        `transformer_y` is not `None`, residuals are stored in the transformed 
+        scale. If `differentiation` is not `None`, residuals are stored after 
+        differentiation. 
     out_sample_residuals_ : numpy ndarray
         Residuals of the model when predicting non-training data. Only stored up to
         10_000 values. Use `set_out_sample_residuals()` method to set values. If 
@@ -197,9 +198,10 @@ class ForecasterRecursive(ForecasterBase):
     out_sample_residuals_by_bin_ : dict
         Out of sample residuals binned according to the predicted value each residual
         is associated with. The number of residuals stored per bin is limited to 
-        `10_000 // self.binner.n_bins_`. If `transformer_y` is not `None`, 
-        residuals are stored in the transformed scale. If `differentiation` 
-        is not `None`, residuals are stored after differentiation. 
+        `10_000 // self.binner.n_bins_` in the form `{bin: residuals}`. If 
+        `transformer_y` is not `None`, residuals are stored in the transformed 
+        scale. If `differentiation` is not `None`, residuals are stored after 
+        differentiation. 
     binner : skforecast.preprocessing.QuantileBinner
         `QuantileBinner` used to discretize residuals into k bins according 
         to the predicted values associated with each residual.
@@ -2334,7 +2336,8 @@ class ForecasterRecursive(ForecasterBase):
                 f"The following bins have no out of sample residuals: {empty_bins}. "
                 f"No predicted values fall in the interval "
                 f"{[self.binner_intervals_[bin] for bin in empty_bins]}. "
-                f"Empty bins will be filled with a random sample of residuals."
+                f"Empty bins will be filled with a random sample of residuals.",
+                ResidualsUsageWarning
             )
             for k in empty_bins:
                 self.out_sample_residuals_by_bin_[k] = rng.choice(

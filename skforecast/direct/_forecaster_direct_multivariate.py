@@ -22,7 +22,7 @@ from itertools import chain
 
 import skforecast
 from ..base import ForecasterBase
-from ..exceptions import DataTransformationWarning
+from ..exceptions import DataTransformationWarning, ResidualsUsageWarning
 from ..utils import (
     initialize_lags,
     initialize_window_features,
@@ -242,10 +242,10 @@ class ForecasterDirectMultiVariate(ForecasterBase):
     in_sample_residuals_by_bin_ : dict
         In sample residuals binned according to the predicted value each residual
         is associated with. The number of residuals stored per bin is limited to 
-        `10_000 // self.binner.n_bins_` per step in the form `{step: residuals}`.
-        If `transformer_series` is not `None`, residuals are stored in the 
-        transformed scale. If `differentiation` is not `None`, residuals are 
-        stored after differentiation. 
+        `10_000 // self.binner.n_bins_` in the form `{bin: residuals}`. If 
+        `transformer_series` is not `None`, residuals are stored in the transformed 
+        scale. If `differentiation` is not `None`, residuals are stored after 
+        differentiation. 
         **New in version 0.15.0**
     out_sample_residuals_ : dict
         Residuals of the model when predicting non-training data. Only stored up 
@@ -256,19 +256,18 @@ class ForecasterDirectMultiVariate(ForecasterBase):
     out_sample_residuals_by_bin_ : dict
         Out of sample residuals binned according to the predicted value each residual
         is associated with. The number of residuals stored per bin is limited to 
-        `10_000 // self.binner.n_bins_` per step in the form `{step: residuals}`.
-        If `transformer_series` is not `None`, residuals are stored in the 
-        transformed scale. If `differentiation` is not `None`, residuals are 
-        stored after differentiation. 
+        `10_000 // self.binner.n_bins_` in the form `{bin: residuals}`. If 
+        `transformer_series` is not `None`, residuals are stored in the transformed 
+        scale. If `differentiation` is not `None`, residuals are stored after 
+        differentiation. 
         **New in version 0.15.0**
-    binner : dict
-        Dictionary of `skforecast.preprocessing.QuantileBinner` used to discretize
-        residuals of each step into k bins according to the predicted values 
-        associated with each residual. In the form `{step: binner}`.
+    binner : skforecast.preprocessing.QuantileBinner
+        `QuantileBinner` used to discretize residuals into k bins according 
+        to the predicted values associated with each residual.
         **New in version 0.15.0**
     binner_intervals_ : dict
         Intervals used to discretize residuals into k bins according to the predicted
-        values associated with each residual. In the form `{step: binner_intervals_}`.
+        values associated with each residual.
         **New in version 0.15.0**
     binner_kwargs : dict
         Additional arguments to pass to the `QuantileBinner`.
@@ -313,6 +312,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         weight_func: Callable | None = None,
         differentiation: int | None = None,
         fit_kwargs: dict[str, object] | None = None,
+        binner_kwargs: dict[str, object] | None = None,
         n_jobs: int | str = 'auto',
         forecaster_id: str | int | None = None
     ) -> None:
@@ -424,7 +424,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             ]
 
         self.in_sample_residuals_ = {step: None for step in range(1, steps + 1)}
-        self.in_sample_residuals_by_bin_ = {step: None for step in range(1, steps + 1)}
         
         self.weight_func, self.source_code_weight_func, _ = initialize_weights(
             forecaster_name = type(self).__name__, 
@@ -1431,7 +1430,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         self.X_train_direct_exog_names_out_     = None
         self.X_train_features_names_out_        = None
         self.in_sample_residuals_               = {step: None for step in range(1, self.steps + 1)}
-        self.in_sample_residuals_by_bin_        = {step: None for step in range(1, self.steps + 1)}
+        self.in_sample_residuals_by_bin_        = None
         self.is_fitted                          = False
         self.fit_date                           = None
 
@@ -2022,6 +2021,16 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         else:
             residuals = self.out_sample_residuals_
             residuals_by_bin = self.out_sample_residuals_by_bin_
+
+        recommended_n_boot = len(residuals[steps[-1]])
+        if n_boot > recommended_n_boot:
+            warnings.warn(
+                f"`n_boot`, {n_boot}, is greater than the number of available "
+                f"residuals, {recommended_n_boot}. Additional iterations doesn't "
+                f"add new information to the bootstrapping process but increases "
+                f"the computational cost.",
+                ResidualsUsageWarning
+            )
 
         # NOTE: Predictions must be transformed and differenced before adding residuals
         regressors = [self.regressors_[step] for step in steps]

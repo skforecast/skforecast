@@ -8,6 +8,7 @@
 ::: skforecast.exceptions.exceptions.MissingExogWarning
 ::: skforecast.exceptions.exceptions.MissingValuesWarning
 ::: skforecast.exceptions.exceptions.OneStepAheadValidationWarning
+::: skforecast.exceptions.exceptions.ResidualsUsageWarning
 ::: skforecast.exceptions.exceptions.UnknownLevelWarning
 ::: skforecast.exceptions.exceptions.SaveLoadSkforecastWarning
 ::: skforecast.exceptions.exceptions.SkforecastVersionWarning
