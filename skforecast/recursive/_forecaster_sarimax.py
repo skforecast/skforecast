@@ -485,7 +485,7 @@ class ForecasterSarimax():
         Parameters
         ----------
         steps : int
-            Number of future steps predicted.
+            Number of steps to predict. 
         last_window : pandas Series, default None
             Series values used to create the predictors (lags) needed in the 
             first iteration of the prediction (t + 1).
@@ -638,7 +638,7 @@ class ForecasterSarimax():
         Parameters
         ----------
         steps : int
-            Number of future steps predicted.
+            Number of steps to predict. 
         last_window : pandas Series, default None
             Series values used to create the predictors needed in the 
             predictions. Used to make predictions unrelated to the original data. 
@@ -717,7 +717,7 @@ class ForecasterSarimax():
         Parameters
         ----------
         steps : int
-            Number of future steps predicted.
+            Number of steps to predict. 
         last_window : pandas Series, default None
             Series values used to create the predictors needed in the 
             predictions. Used to make predictions unrelated to the original data. 

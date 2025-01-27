@@ -184,21 +184,22 @@ class ForecasterRecursive(ForecasterBase):
         stored after differentiation.
     in_sample_residuals_by_bin_ : dict
         In sample residuals binned according to the predicted value each residual
-        is associated with. If `transformer_y` is not `None`, residuals are stored
-        in the transformed scale. If `differentiation` is not `None`, residuals are
-        stored after differentiation. The number of residuals stored per bin is
-        limited to `10_000 // self.binner.n_bins_`.
+        is associated with. The number of residuals stored per bin is limited to 
+        `10_000 // self.binner.n_bins_`. If `transformer_y` is not `None`, 
+        residuals are stored in the transformed scale. If `differentiation` is 
+        not `None`, residuals are stored after differentiation. 
     out_sample_residuals_ : numpy ndarray
-        Residuals of the model when predicting non training data. Only stored up to
-        10_000 values. If `transformer_y` is not `None`, residuals are stored in
-        the transformed scale. If `differentiation` is not `None`, residuals are
-        stored after differentiation.
+        Residuals of the model when predicting non-training data. Only stored up to
+        10_000 values. Use `set_out_sample_residuals()` method to set values. If 
+        `transformer_y` is not `None`, residuals are stored in the transformed 
+        scale. If `differentiation` is not `None`, residuals are stored after 
+        differentiation.
     out_sample_residuals_by_bin_ : dict
         Out of sample residuals binned according to the predicted value each residual
-        is associated with. If `transformer_y` is not `None`, residuals are stored
-        in the transformed scale. If `differentiation` is not `None`, residuals are
-        stored after differentiation. The number of residuals stored per bin is
-        limited to `10_000 // self.binner.n_bins_`.
+        is associated with. The number of residuals stored per bin is limited to 
+        `10_000 // self.binner.n_bins_`. If `transformer_y` is not `None`, 
+        residuals are stored in the transformed scale. If `differentiation` 
+        is not `None`, residuals are stored after differentiation. 
     binner : skforecast.preprocessing.QuantileBinner
         `QuantileBinner` used to discretize residuals into k bins according 
         to the predicted values associated with each residual.
@@ -206,11 +207,7 @@ class ForecasterRecursive(ForecasterBase):
         Intervals used to discretize residuals into k bins according to the predicted
         values associated with each residual.
     binner_kwargs : dict
-        Additional arguments to pass to the `QuantileBinner` used to discretize 
-        the residuals into k bins according to the predicted values associated 
-        with each residual. Available arguments are: `n_bins`, `method`, `subsample`,
-        `random_state` and `dtype`. Argument `method` is passed internally to the
-        fucntion `numpy.percentile`.
+        Additional arguments to pass to the `QuantileBinner`.
     creation_date : str
         Date of creation.
     is_fitted : bool
@@ -1019,12 +1016,13 @@ class ForecasterRecursive(ForecasterBase):
         random_state: int = 123
     ) -> None:
         """
-        Binning residuals according to the predicted value each residual is
-        associated with. First a skforecast.preprocessing.QuantileBinner object
+        Bin residuals according to the predicted value each residual is
+        associated with. First a `skforecast.preprocessing.QuantileBinner` object
         is fitted to the predicted values. Then, residuals are binned according
         to the predicted value each residual is associated with. Residuals are
         stored in the forecaster object as `in_sample_residuals_` and
         `in_sample_residuals_by_bin_`.
+
         `y_true` and `y_pred` assumed to be differentiated and or transformed
         according to the attributes `differentiation` and `transformer_y`.
         The number of residuals stored per bin is limited to 
@@ -1048,7 +1046,7 @@ class ForecasterRecursive(ForecasterBase):
         
         """
 
-        data = pd.DataFrame({'prediction': y_pred, 'residuals': (y_true - y_pred)})
+        data = pd.DataFrame({'prediction': y_pred, 'residuals': y_true - y_pred})
         data['bin'] = self.binner.fit_transform(y_pred).astype(int)
         self.in_sample_residuals_by_bin_ = (
             data.groupby('bin')['residuals'].apply(np.array).to_dict()
@@ -1061,6 +1059,15 @@ class ForecasterRecursive(ForecasterBase):
             if len(v) > max_sample:
                 sample = v[rng.integers(low=0, high=len(v), size=max_sample)]
                 self.in_sample_residuals_by_bin_[k] = sample
+
+        # TODO: No hacemos nada si len residuals es > 10_000
+        # Concatenamos todos los residuos, es el error que comentamos de 
+        # cambiar la distribución de los residuos.
+        # Este es el código del multiseries que sustituye al de abajo.
+        # if len(residuals) > 10_000:
+        #     residuals = residuals[
+        #         rng.integers(low=0, high=len(residuals), size=max_sample)
+        #     ]
 
         self.in_sample_residuals_ = np.concatenate(list(
             self.in_sample_residuals_by_bin_.values()
@@ -1089,8 +1096,8 @@ class ForecasterRecursive(ForecasterBase):
         steps : int, str, pandas Timestamp
             Number of steps to predict. 
             
-            + If steps is int, number of steps to predict. 
-            + If str or pandas Datetime, the prediction will be up to that date.
+            - If steps is int, number of steps to predict. 
+            - If str or pandas Datetime, the prediction will be up to that date.
         last_window : pandas Series, pandas DataFrame, default None
             Series values used to create the predictors (lags) needed in the 
             first iteration of the prediction (t + 1).
@@ -1160,6 +1167,7 @@ class ForecasterRecursive(ForecasterBase):
 
             if predict_probabilistic:
                 check_residuals_input(
+                    forecaster_name              = type(self).__name__,
                     use_in_sample_residuals      = use_in_sample_residuals,
                     in_sample_residuals_         = self.in_sample_residuals_,
                     out_sample_residuals_        = self.out_sample_residuals_,
@@ -1219,7 +1227,7 @@ class ForecasterRecursive(ForecasterBase):
         Parameters
         ----------
         steps : int
-            Number of future steps predicted.
+            Number of steps to predict. 
         last_window_values : numpy ndarray
             Series values used to create the predictors needed in the first 
             iteration of the prediction (t + 1).
@@ -1305,8 +1313,8 @@ class ForecasterRecursive(ForecasterBase):
         steps : int, str, pandas Timestamp
             Number of steps to predict. 
             
-            + If steps is int, number of steps to predict. 
-            + If str or pandas Datetime, the prediction will be up to that date.
+            - If steps is int, number of steps to predict. 
+            - If str or pandas Datetime, the prediction will be up to that date.
         last_window : pandas Series, pandas DataFrame, default None
             Series values used to create the predictors (lags) needed in the 
             first iteration of the prediction (t + 1).
@@ -1401,8 +1409,8 @@ class ForecasterRecursive(ForecasterBase):
         steps : int, str, pandas Timestamp
             Number of steps to predict. 
             
-            + If steps is int, number of steps to predict. 
-            + If str or pandas Datetime, the prediction will be up to that date.
+            - If steps is int, number of steps to predict. 
+            - If str or pandas Datetime, the prediction will be up to that date.
         last_window : pandas Series, pandas DataFrame, default None
             Series values used to create the predictors (lags) needed in the 
             first iteration of the prediction (t + 1).
@@ -1472,23 +1480,23 @@ class ForecasterRecursive(ForecasterBase):
         last_window: pd.Series | pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | None = None,
         n_boot: int = 250,
-        random_state: int = 123,
         use_in_sample_residuals: bool = True,
-        use_binned_residuals: bool = False
+        use_binned_residuals: bool = False,
+        random_state: int = 123
     ) -> pd.DataFrame:
         """
-        Generate multiple forecasting predictions using a bootstrapping process. 
+        Generate multiple forecasting predictions using a bootstrapping process.
         By sampling from a collection of past observed errors (the residuals),
         each iteration of bootstrapping generates a different set of predictions. 
-        See the Notes section for more information. 
+        See the References section for more information. 
         
         Parameters
         ----------
         steps : int, str, pandas Timestamp
             Number of steps to predict. 
             
-            + If steps is int, number of steps to predict. 
-            + If str or pandas Datetime, the prediction will be up to that date.
+            - If steps is int, number of steps to predict. 
+            - If str or pandas Datetime, the prediction will be up to that date.
         last_window : pandas Series, pandas DataFrame, default None
             Series values used to create the predictors (lags) needed in the 
             first iteration of the prediction (t + 1).
@@ -1519,11 +1527,10 @@ class ForecasterRecursive(ForecasterBase):
             Predictions generated by bootstrapping.
             Shape: (steps, n_boot)
 
-        Notes
-        -----
-        More information about prediction intervals in forecasting:
-        https://otexts.com/fpp3/prediction-intervals.html#prediction-intervals-from-bootstrapped-residuals
-        Forecasting: Principles and Practice (3nd ed) Rob J Hyndman and George Athanasopoulos.
+        References
+        ----------
+        .. [1] Forecasting: Principles and Practice (3rd ed) Rob J Hyndman and George Athanasopoulos.
+               https://otexts.com/fpp3/prediction-intervals.html
 
         """
 
@@ -1632,8 +1639,8 @@ class ForecasterRecursive(ForecasterBase):
         steps : int, str, pandas Timestamp
             Number of steps to predict. 
             
-            + If steps is int, number of steps to predict. 
-            + If str or pandas Datetime, the prediction will be up to that date.
+            - If steps is int, number of steps to predict. 
+            - If str or pandas Datetime, the prediction will be up to that date.
         last_window : pandas Series, pandas DataFrame, default None
             Series values used to create the predictors (lags) needed in the 
             first iteration of the prediction (t + 1).
@@ -1767,8 +1774,8 @@ class ForecasterRecursive(ForecasterBase):
         steps : int, str, pandas Timestamp
             Number of steps to predict. 
             
-            + If steps is int, number of steps to predict. 
-            + If str or pandas Datetime, the prediction will be up to that date.
+            - If steps is int, number of steps to predict. 
+            - If str or pandas Datetime, the prediction will be up to that date.
         last_window : pandas Series, pandas DataFrame, default None
             Series values used to create the predictors (lags) needed in the 
             first iteration of the prediction (t + 1).
@@ -1780,9 +1787,9 @@ class ForecasterRecursive(ForecasterBase):
         method : str, default 'bootstrapping'
             Technique used to estimate prediction intervals. Available options:
 
-            + 'bootstrapping': Bootstrapping is used to generate prediction 
+            - 'bootstrapping': Bootstrapping is used to generate prediction 
             intervals [1]_.
-            + 'conformal': Employs the conformal prediction split method for 
+            - 'conformal': Employs the conformal prediction split method for 
             interval estimation [2]_.
         interval : float, list, tuple, default [5, 95]
             Confidence level of the prediction interval. Interpretation depends 
@@ -1823,8 +1830,8 @@ class ForecasterRecursive(ForecasterBase):
 
         References
         ----------
-        .. [1] Forecasting: Principles and Practice (2nd ed) Rob J Hyndman and George Athanasopoulos.
-               https://otexts.com/fpp2/prediction-intervals.html
+        .. [1] Forecasting: Principles and Practice (3rd ed) Rob J Hyndman and George Athanasopoulos.
+               https://otexts.com/fpp3/prediction-intervals.html
         
         .. [2] MAPIE - Model Agnostic Prediction Interval Estimator.
                https://mapie.readthedocs.io/en/stable/theoretical_description_regression.html#the-split-method
@@ -1841,21 +1848,21 @@ class ForecasterRecursive(ForecasterBase):
                 interval = np.array([0.5 - interval / 2, 0.5 + interval / 2])
 
             boot_predictions = self.predict_bootstrapping(
-                                steps                   = steps,
-                                last_window             = last_window,
-                                exog                    = exog,
-                                n_boot                  = n_boot,
-                                random_state            = random_state,
-                                use_in_sample_residuals = use_in_sample_residuals,
-                                use_binned_residuals    = use_binned_residuals
-                            )
+                                   steps                   = steps,
+                                   last_window             = last_window,
+                                   exog                    = exog,
+                                   n_boot                  = n_boot,
+                                   random_state            = random_state,
+                                   use_in_sample_residuals = use_in_sample_residuals,
+                                   use_binned_residuals    = use_binned_residuals
+                               )
 
             predictions = self.predict(
-                            steps        = steps,
-                            last_window  = last_window,
-                            exog         = exog,
-                            check_inputs = False
-                        )
+                              steps        = steps,
+                              last_window  = last_window,
+                              exog         = exog,
+                              check_inputs = False
+                          )
             
             predictions_interval = boot_predictions.quantile(q=interval, axis=1).transpose()
             predictions_interval.columns = ['lower_bound', 'upper_bound']
@@ -1907,8 +1914,8 @@ class ForecasterRecursive(ForecasterBase):
         steps : int, str, pandas Timestamp
             Number of steps to predict. 
             
-            + If steps is int, number of steps to predict. 
-            + If str or pandas Datetime, the prediction will be up to that date.
+            - If steps is int, number of steps to predict. 
+            - If str or pandas Datetime, the prediction will be up to that date.
         last_window : pandas Series, pandas DataFrame, default None
             Series values used to create the predictors (lags) needed in the 
             first iteration of the prediction (t + 1).
@@ -1941,12 +1948,10 @@ class ForecasterRecursive(ForecasterBase):
         predictions : pandas DataFrame
             Quantiles predicted by the forecaster.
 
-        Notes
-        -----
-        More information about prediction intervals in forecasting:
-        https://otexts.com/fpp2/prediction-intervals.html
-        Forecasting: Principles and Practice (2nd ed) Rob J Hyndman and
-        George Athanasopoulos.
+        References
+        ----------
+        .. [1] Forecasting: Principles and Practice (3rd ed) Rob J Hyndman and George Athanasopoulos.
+               https://otexts.com/fpp3/prediction-intervals.html
         
         """
 
@@ -1989,8 +1994,8 @@ class ForecasterRecursive(ForecasterBase):
         steps : int, str, pandas Timestamp
             Number of steps to predict. 
             
-            + If steps is int, number of steps to predict. 
-            + If str or pandas Datetime, the prediction will be up to that date.
+            - If steps is int, number of steps to predict. 
+            - If str or pandas Datetime, the prediction will be up to that date.
         distribution : object
             A distribution object from scipy.stats with methods `_pdf` and `fit`. 
             For example scipy.stats.norm.
@@ -2022,6 +2027,11 @@ class ForecasterRecursive(ForecasterBase):
         -------
         predictions : pandas DataFrame
             Distribution parameters estimated for each step.
+
+        References
+        ----------
+        .. [1] Forecasting: Principles and Practice (3rd ed) Rob J Hyndman and George Athanasopoulos.
+               https://otexts.com/fpp3/prediction-intervals.html
 
         """
 
@@ -2290,8 +2300,12 @@ class ForecasterRecursive(ForecasterBase):
             y_true = differentiator.fit_transform(y_true)[self.differentiation:]
             y_pred = differentiator.fit_transform(y_pred)[self.differentiation:]
         
-        residuals = y_true - y_pred
-        data = pd.DataFrame({'prediction': y_pred, 'residuals': residuals})
+        data = pd.DataFrame(
+            {'prediction': y_pred, 'residuals': y_true - y_pred}
+        ).dropna()
+        y_pred = data['prediction'].to_numpy()
+        residuals = data['residuals'].to_numpy()
+
         data['bin'] = self.binner.transform(y_pred).astype(int)
         residuals_by_bin = data.groupby('bin')['residuals'].apply(np.array).to_dict()
 

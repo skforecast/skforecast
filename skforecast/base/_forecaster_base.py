@@ -299,7 +299,7 @@ class ForecasterBase(ABC):
         Parameters
         ----------
         steps : int
-            Number of future steps predicted.
+            Number of steps to predict. 
         last_window : pandas Series, pandas DataFrame, default None
             Series values used to create the predictors (lags) needed in the 
             first iteration of the prediction (t + 1).

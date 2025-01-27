@@ -43,9 +43,9 @@ def test_predict_bootstrapping_ValueError_when_out_sample_residuals_is_None():
     forecaster.fit(y=pd.Series(np.arange(10)))
 
     err_msg = re.escape(
-        ("`forecaster.out_sample_residuals_` is `None`. Use "
-         "`use_in_sample_residuals=True` or the "
-         "`set_out_sample_residuals()` method before predicting.")
+        "`forecaster.out_sample_residuals_` is either None or empty. Use "
+        "`use_in_sample_residuals = True` or the "
+        "`set_out_sample_residuals()` method before predicting."
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster.predict_bootstrapping(steps=1, use_in_sample_residuals=False)
@@ -60,13 +60,14 @@ def test_predict_bootstrapping_ValueError_when_out_sample_residuals_by_bin_is_No
     forecaster.fit(y=pd.Series(np.arange(10)))
 
     err_msg = re.escape(
-        ("`forecaster.out_sample_residuals_by_bin_` is `None`. Use "
-         "`use_in_sample_residuals=True` or the "
-         "`set_out_sample_residuals()` method before predicting.")
+        "`forecaster.out_sample_residuals_by_bin_` is either None or empty. Use "
+        "`use_in_sample_residuals = True` or the "
+        "`set_out_sample_residuals()` method before predicting."
     )
     with pytest.raises(ValueError, match = err_msg):
-        forecaster.predict_bootstrapping(steps=1, use_in_sample_residuals=False,
-                                         use_binned_residuals=True)
+        forecaster.predict_bootstrapping(
+            steps=1, use_in_sample_residuals=False, use_binned_residuals=True
+        )
 
 
 def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_steps_is_1_in_sample_residuals_is_True():

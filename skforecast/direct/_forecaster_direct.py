@@ -32,7 +32,7 @@ from ..utils import (
     check_exog_dtypes,
     prepare_steps_direct,
     check_predict_input,
-    check_residuals_input_direct,
+    check_residuals_input,
     check_interval,
     preprocess_y,
     preprocess_last_window,
@@ -203,33 +203,44 @@ class ForecasterDirect(ForecasterBase):
     fit_kwargs : dict
         Additional arguments to be passed to the `fit` method of the regressor.
     in_sample_residuals_ : dict
-        Residuals of the models when predicting training data. Only stored up to
-        1000 values per model in the form `{step: residuals}`.If `transformer_y`
-        is not `None`, residuals are stored in the transformed scale. If 
-        `differentiation` is not `None`, residuals are stored after differentiation.
+        Residuals of the model when predicting training data. Only stored up 
+        to 10_000 values per step in the form `{step: residuals}`. If 
+        `transformer_y` is not `None`, residuals are stored in the 
+        transformed scale. If `differentiation` is not `None`, residuals are 
+        stored after differentiation.
     in_sample_residuals_by_bin_ : dict
-
+        In sample residuals binned according to the predicted value each residual
+        is associated with. The number of residuals stored per bin is limited to 
+        `10_000 // self.binner.n_bins_` per step in the form `{step: residuals}`.
+        If `transformer_y` is not `None`, residuals are stored in the 
+        transformed scale. If `differentiation` is not `None`, residuals are 
+        stored after differentiation. 
+        **New in version 0.15.0**
     out_sample_residuals_ : dict
-        Residuals of the models when predicting non training data. Only stored
-        up to 1000 values per model in the form `{step: residuals}`. If `transformer_y` 
-        is not `None`, residuals are assumed to be in the transformed scale. Use 
-        `set_out_sample_residuals()` method to set values.
-    out_sample_residuals_by_bin_ : dict.
-
-    binner : skforecast.preprocessing.QuantileBinner
-        `QuantileBinner` used to discretize residuals into k bins according 
-        to the predicted values associated with each residual.
+        Residuals of the model when predicting non-training data. Only stored up 
+        to 10_000 values per step in the form `{step: residuals}`. Use 
+        `set_out_sample_residuals()` method to set values. If `transformer_y` 
+        is not `None`, residuals are stored in the transformed scale. If 
+        `differentiation` is not `None`, residuals are stored after differentiation. 
+    out_sample_residuals_by_bin_ : dict
+        Out of sample residuals binned according to the predicted value each residual
+        is associated with. The number of residuals stored per bin is limited to 
+        `10_000 // self.binner.n_bins_` per step in the form `{step: residuals}`.
+        If `transformer_y` is not `None`, residuals are stored in the 
+        transformed scale. If `differentiation` is not `None`, residuals are 
+        stored after differentiation. 
+        **New in version 0.15.0**
+    binner : dict
+        Dictionary of `skforecast.preprocessing.QuantileBinner` used to discretize
+        residuals of each step into k bins according to the predicted values 
+        associated with each residual. In the form `{step: binner}`.
         **New in version 0.15.0**
     binner_intervals_ : dict
         Intervals used to discretize residuals into k bins according to the predicted
-        values associated with each residual.
+        values associated with each residual. In the form `{step: binner_intervals_}`.
         **New in version 0.15.0**
     binner_kwargs : dict
-        Additional arguments to pass to the `QuantileBinner` used to discretize 
-        the residuals into k bins according to the predicted values associated 
-        with each residual. Available arguments are: `n_bins`, `method`, `subsample`,
-        `random_state` and `dtype`. Argument `method` is passed internally to the
-        fucntion `numpy.percentile`.
+        Additional arguments to pass to the `QuantileBinner`.
         **New in version 0.15.0**
     creation_date : str
         Date of creation.
@@ -1322,14 +1333,15 @@ class ForecasterDirect(ForecasterBase):
             )
 
             if predict_probabilistic:
-                check_residuals_input_direct(
-                    steps                        = steps,
+                check_residuals_input(
+                    forecaster_name              = type(self).__name__,
                     use_in_sample_residuals      = use_in_sample_residuals,
                     in_sample_residuals_         = self.in_sample_residuals_,
                     out_sample_residuals_        = self.out_sample_residuals_,
                     use_binned_residuals         = use_binned_residuals,
                     in_sample_residuals_by_bin_  = self.in_sample_residuals_by_bin_,
-                    out_sample_residuals_by_bin_ = self.out_sample_residuals_by_bin_
+                    out_sample_residuals_by_bin_ = self.out_sample_residuals_by_bin_,
+                    steps                        = steps
                 )
 
         last_window = last_window.iloc[-self.window_size:].copy()
@@ -1575,7 +1587,7 @@ class ForecasterDirect(ForecasterBase):
         Generate multiple forecasting predictions using a bootstrapping process. 
         By sampling from a collection of past observed errors (the residuals),
         each iteration of bootstrapping generates a different set of predictions. 
-        See the Notes section for more information. 
+        See the References section for more information. 
         
         Parameters
         ----------
@@ -1618,60 +1630,12 @@ class ForecasterDirect(ForecasterBase):
             Predictions generated by bootstrapping.
             Shape: (steps, n_boot)
 
-        Notes
-        -----
-        More information about prediction intervals in forecasting:
-        https://otexts.com/fpp3/prediction-intervals.html#prediction-intervals-from-bootstrapped-residuals
-        Forecasting: Principles and Practice (3nd ed) Rob J Hyndman and George Athanasopoulos.
+        References
+        ----------
+        .. [1] Forecasting: Principles and Practice (3rd ed) Rob J Hyndman and George Athanasopoulos.
+               https://otexts.com/fpp3/prediction-intervals.html
 
         """
-
-        # TODO: Delete after testing, moved to _create_predict_inputs
-        # if self.is_fitted:
-            
-        #     steps = prepare_steps_direct(
-        #                 steps    = steps,
-        #                 max_step = self.steps
-        #             )
-            
-        #     if use_in_sample_residuals:
-        #         if not set(steps).issubset(set(self.in_sample_residuals_.keys())):
-        #             raise ValueError(
-        #                 f"Not `forecaster.in_sample_residuals_` for steps: "
-        #                 f"{set(steps) - set(self.in_sample_residuals_.keys())}."
-        #             )
-        #         residuals = self.in_sample_residuals_
-        #     else:
-        #         if self.out_sample_residuals_ is None:
-        #             raise ValueError(
-        #                 "`forecaster.out_sample_residuals_` is `None`. Use "
-        #                 "`use_in_sample_residuals=True` or the "
-        #                 "`set_out_sample_residuals()` method before predicting."
-        #             )
-        #         else:
-        #             if not set(steps).issubset(set(self.out_sample_residuals_.keys())):
-        #                 raise ValueError(
-        #                     f"No `forecaster.out_sample_residuals_` for steps: "
-        #                     f"{set(steps) - set(self.out_sample_residuals_.keys())}. "
-        #                     f"Use method `set_out_sample_residuals()`."
-        #                 )
-        #         residuals = self.out_sample_residuals_
-            
-        #     check_residuals = (
-        #         "forecaster.in_sample_residuals_" if use_in_sample_residuals
-        #         else "forecaster.out_sample_residuals_"
-        #     )
-        #     for step in steps:
-        #         if residuals[step] is None:
-        #             raise ValueError(
-        #                 f"forecaster residuals for step {step} are `None`. "
-        #                 f"Check {check_residuals}."
-        #             )
-        #         elif any(x is None or np.isnan(x) for x in residuals[step]):
-        #             raise ValueError(
-        #                 f"forecaster residuals for step {step} contains `None` values. "
-        #                 f"Check {check_residuals}."
-        #             )
 
         (
             Xs,
@@ -1745,15 +1709,17 @@ class ForecasterDirect(ForecasterBase):
         steps: int | list[int] | None = None,
         last_window: pd.Series | pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | None = None,
-        interval: list[float] | tuple[float] = [5, 95],
+        method: str = 'bootstrapping',
+        interval: float | list[float] | tuple[float] = [5, 95],
         n_boot: int = 250,
         use_in_sample_residuals: bool = True,
         use_binned_residuals: bool = False,
         random_state: int = 123
     ) -> pd.DataFrame:
         """
-        Bootstrapping based predicted intervals.
-        Both predictions and intervals are returned.
+        Predict n steps ahead and estimate prediction intervals using either 
+        bootstrapping or conformal prediction methods. Refer to the References 
+        section for additional details on these methods.
         
         Parameters
         ----------
@@ -1774,10 +1740,25 @@ class ForecasterDirect(ForecasterBase):
             right after training data.
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
-        interval : list, tuple, default [5, 95]
-            Confidence of the prediction interval estimated. Sequence of 
-            percentiles to compute, which must be between 0 and 100 inclusive. 
-            For example, interval of 95% should be as `interval = [2.5, 97.5]`.
+        method : str, default 'bootstrapping'
+            Technique used to estimate prediction intervals. Available options:
+
+            - 'bootstrapping': Bootstrapping is used to generate prediction 
+            intervals [1]_.
+            - 'conformal': Employs the conformal prediction split method for 
+            interval estimation [2]_.
+        interval : float, list, tuple, default [5, 95]
+            Confidence level of the prediction interval. Interpretation depends 
+            on the method used:
+            
+            - If `float`, represents the nominal (expected) coverage (between 0 
+            and 1). For instance, `interval=0.95` corresponds to `[2.5, 97.5]` 
+            percentiles.
+            - If `list` or `tuple`, defines the exact percentiles to compute, which 
+            must be between 0 and 100 inclusive. For example, interval 
+            of 95% should be as `interval = [2.5, 97.5]`.
+            - When using `method='conformal'`, the interval must be a float or 
+            a list/tuple defining a symmetric interval.
         n_boot : int, default 250
             Number of bootstrapping iterations to perform when estimating prediction
             intervals.
@@ -1803,13 +1784,14 @@ class ForecasterDirect(ForecasterBase):
             - lower_bound: lower bound of the interval.
             - upper_bound: upper bound of the interval.
 
-        Notes
-        -----
-        More information about prediction intervals in forecasting:
-        https://otexts.com/fpp2/prediction-intervals.html
-        Forecasting: Principles and Practice (2nd ed) Rob J Hyndman and
-        George Athanasopoulos.
+        References
+        ----------
+        .. [1] Forecasting: Principles and Practice (3rd ed) Rob J Hyndman and George Athanasopoulos.
+               https://otexts.com/fpp3/prediction-intervals.html
         
+        .. [2] MAPIE - Model Agnostic Prediction Interval Estimator.
+               https://mapie.readthedocs.io/en/stable/theoretical_description_regression.html#the-split-method
+    
         """
 
         check_interval(interval=interval)
@@ -1895,12 +1877,10 @@ class ForecasterDirect(ForecasterBase):
         predictions : pandas DataFrame
             Quantiles predicted by the forecaster.
 
-        Notes
-        -----
-        More information about prediction intervals in forecasting:
-        https://otexts.com/fpp2/prediction-intervals.html
-        Forecasting: Principles and Practice (2nd ed) Rob J Hyndman and
-        George Athanasopoulos.
+        References
+        ----------
+        .. [1] Forecasting: Principles and Practice (3rd ed) Rob J Hyndman and George Athanasopoulos.
+               https://otexts.com/fpp3/prediction-intervals.html
         
         """
         
@@ -1979,6 +1959,11 @@ class ForecasterDirect(ForecasterBase):
         -------
         predictions : pandas DataFrame
             Distribution parameters estimated for each step.
+
+        References
+        ----------
+        .. [1] Forecasting: Principles and Practice (3rd ed) Rob J Hyndman and George Athanasopoulos.
+               https://otexts.com/fpp3/prediction-intervals.html
 
         """
 

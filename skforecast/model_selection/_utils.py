@@ -81,9 +81,9 @@ def check_backtesting_input(
     interval_method: str = 'bootstrapping',    
     alpha: float | None = None,
     n_boot: int = 250,
-    random_state: int = 123,
     use_in_sample_residuals: bool = True,
     use_binned_residuals: bool = False,
+    random_state: int = 123,
     n_jobs: int | str = 'auto',
     show_progress: bool = True,
     suppress_warnings: bool = False,
@@ -136,8 +136,6 @@ def check_backtesting_input(
     n_boot : int, default `250`
         Number of bootstrapping iterations to perform when estimating prediction
             intervals.
-    random_state : int, default `123`
-        Seed for the random number generator to ensure reproducibility.
     use_in_sample_residuals : bool, default True
         If `True`, residuals from the training data are used as proxy of prediction 
         error to create prediction intervals.  If `False`, out_sample_residuals 
@@ -146,6 +144,8 @@ def check_backtesting_input(
         If `True`, residuals used in each bootstrapping iteration are selected
         conditioning on the predicted values. If `False`, residuals are selected
         randomly without conditioning on the predicted values.
+    random_state : int, default `123`
+        Seed for the random number generator to ensure reproducibility.
     n_jobs : int, 'auto', default `'auto'`
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the fuction
@@ -378,12 +378,12 @@ def check_backtesting_input(
         raise TypeError("`add_aggregated_metric` must be a boolean: `True`, `False`.")
     if not isinstance(n_boot, (int, np.integer)) or n_boot < 0:
         raise TypeError(f"`n_boot` must be an integer greater than 0. Got {n_boot}.")
-    if not isinstance(random_state, (int, np.integer)) or random_state < 0:
-        raise TypeError(f"`random_state` must be an integer greater than 0. Got {random_state}.")
     if not isinstance(use_in_sample_residuals, bool):
         raise TypeError("`use_in_sample_residuals` must be a boolean: `True`, `False`.")
     if not isinstance(use_binned_residuals, bool):
         raise TypeError("`use_binned_residuals` must be a boolean: `True`, `False`.")
+    if not isinstance(random_state, (int, np.integer)) or random_state < 0:
+        raise TypeError(f"`random_state` must be an integer greater than 0. Got {random_state}.")
     if not isinstance(n_jobs, int) and n_jobs != 'auto':
         raise TypeError(f"`n_jobs` must be an integer or `'auto'`. Got {n_jobs}.")
     if not isinstance(show_progress, bool):

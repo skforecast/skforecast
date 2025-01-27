@@ -310,8 +310,8 @@ def test_predict_bootstrapping_ValueError_when_out_sample_residuals_is_None():
     forecaster.fit(series=series)
 
     err_msg = re.escape(
-        "`forecaster.out_sample_residuals_` is `None`. Use "
-        "`use_in_sample_residuals=True` or the "
+        "`forecaster.out_sample_residuals_` is either None or empty. Use "
+        "`use_in_sample_residuals = True` or the "
         "`set_out_sample_residuals()` method before predicting."
     )
     with pytest.raises(ValueError, match = err_msg):
@@ -398,34 +398,7 @@ def test_predict_bootstrapping_ValueError_when_not_level_in_out_sample_residuals
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
 
     err_msg = re.escape(
-        "Not available residuals for level '2'. Check `forecaster.out_sample_residuals_`."
-    )
-    with pytest.raises(ValueError, match = err_msg):
-        forecaster.predict_bootstrapping(steps=3, use_in_sample_residuals=False)
-
-
-@pytest.mark.parametrize("transformer_series", 
-                         [None, StandardScaler()],
-                         ids = lambda tr: f'transformer_series type: {type(tr)}')
-def test_predict_bootstrapping_ValueError_when_level_out_sample_residuals_value_contains_None_or_NaNs(transformer_series):
-    """
-    Test ValueError is raised when use_in_sample_residuals=False and
-    forecaster.out_sample_residuals_ has a level with a None or NaN value.
-    """
-    forecaster = ForecasterRecursiveMultiSeries(
-        LinearRegression(),
-        lags=3,
-        transformer_series=transformer_series
-    )
-    forecaster.fit(series=series)
-    forecaster.out_sample_residuals_ = {
-        '1': np.array([1, 2, 3, 4, 5]),
-        '2': np.array([1, 2, 3, 4, None])
-    }
-
-    err_msg = re.escape(
-        "forecaster residuals for level '2' contains `None` "
-        "or `NaNs` values. Check `forecaster.out_sample_residuals_`."
+        "Residuals for level '2' are None. Check `forecaster.out_sample_residuals_`."
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster.predict_bootstrapping(steps=3, use_in_sample_residuals=False)
