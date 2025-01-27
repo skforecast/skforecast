@@ -20,7 +20,7 @@ from joblib import Parallel, delayed, cpu_count
 
 import skforecast
 from ..base import ForecasterBase
-from ..exceptions import DataTransformationWarning
+from ..exceptions import DataTransformationWarning, ResidualsUsageWarning
 from ..utils import (
     initialize_lags,
     initialize_window_features,
@@ -211,10 +211,10 @@ class ForecasterDirect(ForecasterBase):
     in_sample_residuals_by_bin_ : dict
         In sample residuals binned according to the predicted value each residual
         is associated with. The number of residuals stored per bin is limited to 
-        `10_000 // self.binner.n_bins_` per step in the form `{step: residuals}`.
-        If `transformer_y` is not `None`, residuals are stored in the 
-        transformed scale. If `differentiation` is not `None`, residuals are 
-        stored after differentiation. 
+        `10_000 // self.binner.n_bins_` in the form `{bin: residuals}`. If 
+        `transformer_y` is not `None`, residuals are stored in the transformed 
+        scale. If `differentiation` is not `None`, residuals are stored after 
+        differentiation. 
         **New in version 0.15.0**
     out_sample_residuals_ : dict
         Residuals of the model when predicting non-training data. Only stored up 
@@ -225,19 +225,18 @@ class ForecasterDirect(ForecasterBase):
     out_sample_residuals_by_bin_ : dict
         Out of sample residuals binned according to the predicted value each residual
         is associated with. The number of residuals stored per bin is limited to 
-        `10_000 // self.binner.n_bins_` per step in the form `{step: residuals}`.
-        If `transformer_y` is not `None`, residuals are stored in the 
-        transformed scale. If `differentiation` is not `None`, residuals are 
-        stored after differentiation. 
+        `10_000 // self.binner.n_bins_` in the form `{bin: residuals}`. If 
+        `transformer_y` is not `None`, residuals are stored in the transformed 
+        scale. If `differentiation` is not `None`, residuals are stored after 
+        differentiation. 
         **New in version 0.15.0**
-    binner : dict
-        Dictionary of `skforecast.preprocessing.QuantileBinner` used to discretize
-        residuals of each step into k bins according to the predicted values 
-        associated with each residual. In the form `{step: binner}`.
+    binner : skforecast.preprocessing.QuantileBinner
+        `QuantileBinner` used to discretize residuals into k bins according 
+        to the predicted values associated with each residual.
         **New in version 0.15.0**
     binner_intervals_ : dict
         Intervals used to discretize residuals into k bins according to the predicted
-        values associated with each residual. In the form `{step: binner_intervals_}`.
+        values associated with each residual.
         **New in version 0.15.0**
     binner_kwargs : dict
         Additional arguments to pass to the `QuantileBinner`.
@@ -352,7 +351,6 @@ class ForecasterDirect(ForecasterBase):
             ]
 
         self.in_sample_residuals_ = {step: None for step in range(1, steps + 1)}
-        self.in_sample_residuals_by_bin_ = {step: None for step in range(1, steps + 1)}
 
         self.weight_func, self.source_code_weight_func, _ = initialize_weights(
             forecaster_name = type(self).__name__, 
@@ -1121,7 +1119,7 @@ class ForecasterDirect(ForecasterBase):
         self.X_train_direct_exog_names_out_     = None
         self.X_train_features_names_out_        = None
         self.in_sample_residuals_               = {step: None for step in range(1, self.steps + 1)}
-        self.in_sample_residuals_by_bin_        = {step: None for step in range(1, self.steps + 1)}
+        self.in_sample_residuals_by_bin_        = None
         self.is_fitted                          = False
         self.fit_date                           = None
 
