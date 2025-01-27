@@ -1853,7 +1853,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         if len(residuals) > 10_000:
             residuals = residuals[
-                rng.integers(low=0, high=len(residuals), size=max_sample)
+                rng.integers(low=0, high=len(residuals), size=10_000)
             ]
         
         self.in_sample_residuals_[level] = residuals

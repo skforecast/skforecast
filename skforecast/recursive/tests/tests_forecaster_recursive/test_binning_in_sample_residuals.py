@@ -26,15 +26,15 @@ def test_binning_in_sample_residuals_output():
         y_true=y_true,
     )
 
-    expected_1 = np.array([
-                     34.58035615,  22.08911948,  15.6081091 ,   7.0808798 ,
-                     55.47454021,   1.80092458,  12.2624188 , -12.32822882,
-                     -0.451743  ,  11.83152763,  -7.11862253,   6.32581108,
-                     -20.92461257, -21.95291202, -10.55026794, -27.43753138,
-                     -6.24112163, -25.62685698,  -4.31327121, -18.40910724
-                 ])
+    expected_residuals = np.array([
+        34.58035615,  22.08911948,  15.6081091 ,   7.0808798 ,
+        55.47454021,   1.80092458,  12.2624188 , -12.32822882,
+        -0.451743  ,  11.83152763,  -7.11862253,   6.32581108,
+        -20.92461257, -21.95291202, -10.55026794, -27.43753138,
+        -6.24112163, -25.62685698,  -4.31327121, -18.40910724
+    ])
 
-    expected_2 = {
+    expected_residuals_binned = {
         0: np.array([
                34.58035615, 22.08911948, 15.6081091,  7.0808798, 55.47454021,
                1.80092458, 12.2624188
@@ -49,21 +49,21 @@ def test_binning_in_sample_residuals_output():
            ])
     }
 
-    expected_3 = {
+    expected_binner_intervals = {
         0: (70.70705405481715, 90.25638761254116),
         1: (90.25638761254116, 109.36821559391004),
         2: (109.36821559391004, 135.2111448156828)
     }
 
-    np.testing.assert_almost_equal(forecaster.in_sample_residuals_, expected_1)
-    for k in expected_2.keys():
-        np.testing.assert_almost_equal(forecaster.in_sample_residuals_by_bin_[k], expected_2[k])
-    assert forecaster.binner_intervals_ == expected_3
+    np.testing.assert_almost_equal(np.sort(forecaster.in_sample_residuals_), np.sort(expected_residuals))
+    for k in expected_residuals_binned.keys():
+        np.testing.assert_almost_equal(forecaster.in_sample_residuals_by_bin_[k], expected_residuals_binned[k])
+    assert forecaster.binner_intervals_ == expected_binner_intervals
 
 
 def test_binning_in_sample_residuals_stores_maximum_10000_residuals():
     """
-    Test that maximum 10000 residuals are stored.
+    Test that maximum 10_000 residuals are stored.
     """
 
     n = 15000
@@ -79,13 +79,6 @@ def test_binning_in_sample_residuals_stores_maximum_10000_residuals():
     forecaster.fit(y)
     max_residuals_per_bin = int(10_000 // forecaster.binner.n_bins_)
 
+    assert len(forecaster.in_sample_residuals_) == 10_000
     for v in forecaster.in_sample_residuals_by_bin_.values():
         assert len(v) == max_residuals_per_bin
-        assert len(v) > 0
-
-    np.testing.assert_array_almost_equal(
-        forecaster.in_sample_residuals_,
-        np.concatenate(list(forecaster.in_sample_residuals_by_bin_.values()))
-    )
-
-    assert len(forecaster.in_sample_residuals_) == 10_000

@@ -1046,7 +1046,9 @@ class ForecasterRecursive(ForecasterBase):
         
         """
 
-        data = pd.DataFrame({'prediction': y_pred, 'residuals': y_true - y_pred})
+        residuals = y_true - y_pred
+        data = pd.DataFrame({'prediction': y_pred, 'residuals': residuals})
+
         data['bin'] = self.binner.fit_transform(y_pred).astype(int)
         self.in_sample_residuals_by_bin_ = (
             data.groupby('bin')['residuals'].apply(np.array).to_dict()
@@ -1055,24 +1057,16 @@ class ForecasterRecursive(ForecasterBase):
         rng = np.random.default_rng(seed=random_state)
         max_sample = 10_000 // self.binner.n_bins_
         for k, v in self.in_sample_residuals_by_bin_.items():
-            
             if len(v) > max_sample:
                 sample = v[rng.integers(low=0, high=len(v), size=max_sample)]
                 self.in_sample_residuals_by_bin_[k] = sample
 
-        # TODO: No hacemos nada si len residuals es > 10_000
-        # Concatenamos todos los residuos, es el error que comentamos de 
-        # cambiar la distribución de los residuos.
-        # Este es el código del multiseries que sustituye al de abajo.
-        # if len(residuals) > 10_000:
-        #     residuals = residuals[
-        #         rng.integers(low=0, high=len(residuals), size=max_sample)
-        #     ]
+        if len(residuals) > 10_000:
+            residuals = residuals[
+                rng.integers(low=0, high=len(residuals), size=10_000)
+            ]
 
-        self.in_sample_residuals_ = np.concatenate(list(
-            self.in_sample_residuals_by_bin_.values()
-        ))
-
+        self.in_sample_residuals_ = residuals
         self.binner_intervals_ = self.binner.intervals_
 
 
