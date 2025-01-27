@@ -96,9 +96,9 @@ def _backtesting_forecaster(
     interval_method : str, default 'bootstrapping'
         Technique used to estimate prediction intervals. Available options:
 
-        + 'bootstrapping': Bootstrapping is used to generate prediction 
+        - 'bootstrapping': Bootstrapping is used to generate prediction 
         intervals [1]_.
-        + 'conformal': Employs the conformal prediction split method for 
+        - 'conformal': Employs the conformal prediction split method for 
         interval estimation [2]_.
     n_boot : int, default 250
         Number of bootstrapping iterations to perform when estimating prediction
@@ -144,8 +144,8 @@ def _backtesting_forecaster(
 
     References
     ----------
-    .. [1] Forecasting: Principles and Practice (2nd ed) Rob J Hyndman and George Athanasopoulos.
-           https://otexts.com/fpp2/prediction-intervals.html
+    .. [1] Forecasting: Principles and Practice (3rd ed) Rob J Hyndman and George Athanasopoulos.
+           https://otexts.com/fpp3/prediction-intervals.html
     
     .. [2] MAPIE - Model Agnostic Prediction Interval Estimator.
            https://mapie.readthedocs.io/en/stable/theoretical_description_regression.html#the-split-method
@@ -447,9 +447,9 @@ def backtesting_forecaster(
     interval_method : str, default 'bootstrapping'
         Technique used to estimate prediction intervals. Available options:
 
-        + 'bootstrapping': Bootstrapping is used to generate prediction 
+        - 'bootstrapping': Bootstrapping is used to generate prediction 
         intervals [1]_.
-        + 'conformal': Employs the conformal prediction split method for 
+        - 'conformal': Employs the conformal prediction split method for 
         interval estimation [2]_.
     n_boot : int, default 250
         Number of bootstrapping iterations to perform when estimating prediction
@@ -495,8 +495,8 @@ def backtesting_forecaster(
 
     References
     ----------
-    .. [1] Forecasting: Principles and Practice (2nd ed) Rob J Hyndman and George Athanasopoulos.
-           https://otexts.com/fpp2/prediction-intervals.html
+    .. [1] Forecasting: Principles and Practice (3rd ed) Rob J Hyndman and George Athanasopoulos.
+           https://otexts.com/fpp3/prediction-intervals.html
     
     .. [2] MAPIE - Model Agnostic Prediction Interval Estimator.
            https://mapie.readthedocs.io/en/stable/theoretical_description_regression.html#the-split-method
@@ -638,9 +638,9 @@ def _backtesting_forecaster_multiseries(
     interval_method : str, default 'bootstrapping'
         Technique used to estimate prediction intervals. Available options:
 
-        + 'bootstrapping': Bootstrapping is used to generate prediction 
+        - 'bootstrapping': Bootstrapping is used to generate prediction 
         intervals [1]_.
-        + 'conformal': Employs the conformal prediction split method for 
+        - 'conformal': Employs the conformal prediction split method for 
         interval estimation [2]_.
     n_boot : int, default 250
         Number of bootstrapping iterations to perform when estimating prediction
@@ -695,8 +695,8 @@ def _backtesting_forecaster_multiseries(
 
     References
     ----------
-    .. [1] Forecasting: Principles and Practice (2nd ed) Rob J Hyndman and George Athanasopoulos.
-           https://otexts.com/fpp2/prediction-intervals.html
+    .. [1] Forecasting: Principles and Practice (3rd ed) Rob J Hyndman and George Athanasopoulos.
+           https://otexts.com/fpp3/prediction-intervals.html
     
     .. [2] MAPIE - Model Agnostic Prediction Interval Estimator.
            https://mapie.readthedocs.io/en/stable/theoretical_description_regression.html#the-split-method
@@ -1055,9 +1055,9 @@ def backtesting_forecaster_multiseries(
     interval_method : str, default 'bootstrapping'
         Technique used to estimate prediction intervals. Available options:
 
-        + 'bootstrapping': Bootstrapping is used to generate prediction 
+        - 'bootstrapping': Bootstrapping is used to generate prediction 
         intervals [1]_.
-        + 'conformal': Employs the conformal prediction split method for 
+        - 'conformal': Employs the conformal prediction split method for 
         interval estimation [2]_.
     n_boot : int, default 250
         Number of bootstrapping iterations to perform when estimating prediction 
@@ -1112,8 +1112,8 @@ def backtesting_forecaster_multiseries(
 
     References
     ----------
-    .. [1] Forecasting: Principles and Practice (2nd ed) Rob J Hyndman and George Athanasopoulos.
-           https://otexts.com/fpp2/prediction-intervals.html
+    .. [1] Forecasting: Principles and Practice (3rd ed) Rob J Hyndman and George Athanasopoulos.
+           https://otexts.com/fpp3/prediction-intervals.html
     
     .. [2] MAPIE - Model Agnostic Prediction Interval Estimator.
            https://mapie.readthedocs.io/en/stable/theoretical_description_regression.html#the-split-method

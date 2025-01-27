@@ -475,7 +475,7 @@ class Sarimax(BaseEstimator, RegressorMixin):
         Parameters
         ----------
         steps : int
-            Number of future steps predicted.
+            Number of steps to predict. 
         exog : numpy ndarray, pandas Series, pandas DataFrame, default None
             Value of the exogenous variable/s for the next steps. The number of 
             observations needed is the number of steps to predict. 

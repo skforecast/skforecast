@@ -1944,7 +1944,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         Generate multiple forecasting predictions using a bootstrapping process. 
         By sampling from a collection of past observed errors (the residuals),
         each iteration of bootstrapping generates a different set of predictions. 
-        See the Notes section for more information. 
+        See the References section for more information. 
         
         Parameters
         ----------
@@ -1993,11 +1993,10 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             Long-format DataFrame with the bootstrapping predictions. The columns
             are `level`, `pred_boot_0`, `pred_boot_1`, ..., `pred_boot_n_boot`.
 
-        Notes
-        -----
-        More information about prediction intervals in forecasting:
-        https://otexts.com/fpp3/prediction-intervals.html#prediction-intervals-from-bootstrapped-residuals
-        Forecasting: Principles and Practice (3nd ed) Rob J Hyndman and George Athanasopoulos.
+        References
+        ----------
+        .. [1] MAPIE - Model Agnostic Prediction Interval Estimator.
+               https://mapie.readthedocs.io/en/stable/theoretical_description_regression.html#the-split-method
 
         """
 
@@ -2075,13 +2074,13 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         
         return boot_predictions
 
-
     def predict_interval(
         self,
         steps: int | list[int] | None = None,
         last_window: pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | None = None,
-        interval: list[float] | tuple[float] = [5, 95],
+        method: str = 'bootstrapping',
+        interval: float | list[float] | tuple[float] = [5, 95],
         n_boot: int = 250,
         use_in_sample_residuals: bool = True,
         use_binned_residuals: bool = False,
@@ -2090,8 +2089,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         levels: Any = None
     ) -> pd.DataFrame:
         """
-        Bootstrapping based predicted intervals.
-        Both predictions and intervals are returned.
+        Predict n steps ahead and estimate prediction intervals using either 
+        bootstrapping or conformal prediction methods. Refer to the References 
+        section for additional details on these methods.
         
         Parameters
         ----------
@@ -2112,10 +2112,25 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             right after training data.
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
-        interval : list, tuple, default [5, 95]
-            Confidence of the prediction interval estimated. Sequence of 
-            percentiles to compute, which must be between 0 and 100 inclusive. 
-            For example, interval of 95% should be as `interval = [2.5, 97.5]`.
+        method : str, default 'bootstrapping'
+            Technique used to estimate prediction intervals. Available options:
+
+            - 'bootstrapping': Bootstrapping is used to generate prediction 
+            intervals [1]_.
+            - 'conformal': Employs the conformal prediction split method for 
+            interval estimation [2]_.
+        interval : float, list, tuple, default [5, 95]
+            Confidence level of the prediction interval. Interpretation depends 
+            on the method used:
+            
+            - If `float`, represents the nominal (expected) coverage (between 0 
+            and 1). For instance, `interval=0.95` corresponds to `[2.5, 97.5]` 
+            percentiles.
+            - If `list` or `tuple`, defines the exact percentiles to compute, which 
+            must be between 0 and 100 inclusive. For example, interval 
+            of 95% should be as `interval = [2.5, 97.5]`.
+            - When using `method='conformal'`, the interval must be a float or 
+            a list/tuple defining a symmetric interval.
         n_boot : int, default 250
             Number of bootstrapping iterations to perform when estimating prediction
             intervals.
@@ -2145,13 +2160,14 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             bounds of the estimated interval. The columns are `level`, `pred`,
             `lower_bound`, `upper_bound`.
 
-        Notes
-        -----
-        More information about prediction intervals in forecasting:
-        https://otexts.com/fpp2/prediction-intervals.html
-        Forecasting: Principles and Practice (2nd ed) Rob J Hyndman and
-        George Athanasopoulos.
+        References
+        ----------
+        .. [1] Forecasting: Principles and Practice (3rd ed) Rob J Hyndman and George Athanasopoulos.
+               https://otexts.com/fpp3/prediction-intervals.html
         
+        .. [2] MAPIE - Model Agnostic Prediction Interval Estimator.
+               https://mapie.readthedocs.io/en/stable/theoretical_description_regression.html#the-split-method
+    
         """
 
         set_skforecast_warnings(suppress_warnings, action='ignore')
@@ -2187,7 +2203,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         set_skforecast_warnings(suppress_warnings, action='default')
 
         return predictions
-
 
     def predict_quantiles(
         self,
@@ -2256,12 +2271,10 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             For example, if `quantiles = [0.05, 0.5, 0.95]`, the columns are
             `level`, `q_0.05`, `q_0.5`, `q_0.95`.
 
-        Notes
-        -----
-        More information about prediction intervals in forecasting:
-        https://otexts.com/fpp2/prediction-intervals.html
-        Forecasting: Principles and Practice (2nd ed) Rob J Hyndman and
-        George Athanasopoulos.
+        References
+        ----------
+        .. [1] Forecasting: Principles and Practice (3rd ed) Rob J Hyndman and George Athanasopoulos.
+               https://otexts.com/fpp3/prediction-intervals.html
         
         """
 
@@ -2288,7 +2301,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         set_skforecast_warnings(suppress_warnings, action='default')
 
         return predictions
-    
 
     def predict_dist(
         self,
@@ -2358,6 +2370,11 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             Long-format DataFrame with the parameters of the fitted distribution
             for each step. The columns are `level`, `param_0`, `param_1`, ..., 
             `param_n`, where `param_i` are the parameters of the distribution.
+
+        References
+        ----------
+        .. [1] Forecasting: Principles and Practice (3rd ed) Rob J Hyndman and George Athanasopoulos.
+               https://otexts.com/fpp3/prediction-intervals.html
 
         """
 

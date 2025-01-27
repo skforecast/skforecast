@@ -826,7 +826,7 @@ class ForecasterRnn(ForecasterBase):
         Parameters
         ----------
         steps : int
-            Number of future steps predicted.
+            Number of steps to predict. 
         levels : str, list, default None
             Time series to be predicted. If `None` all levels whose last window
             ends at the same datetime index will be predicted together.
@@ -864,7 +864,7 @@ class ForecasterRnn(ForecasterBase):
         -----
         More information about prediction intervals in forecasting:
         https://otexts.com/fpp3/prediction-intervals.html#prediction-intervals-from-bootstrapped-residuals
-        Forecasting: Principles and Practice (3nd ed) Rob J Hyndman and George Athanasopoulos.
+        Forecasting: Principles and Practice (3rd ed) Rob J Hyndman and George Athanasopoulos.
 
         """
 
@@ -1034,7 +1034,7 @@ class ForecasterRnn(ForecasterBase):
         Parameters
         ----------
         steps : int
-            Number of future steps predicted.
+            Number of steps to predict. 
         levels : str, list, default None
             Time series to be predicted. If `None` all levels whose last window
             ends at the same datetime index will be predicted together.
@@ -1077,8 +1077,8 @@ class ForecasterRnn(ForecasterBase):
         Notes
         -----
         More information about prediction intervals in forecasting:
-        https://otexts.com/fpp2/prediction-intervals.html
-        Forecasting: Principles and Practice (2nd ed) Rob J Hyndman and
+        https://otexts.com/fpp3/prediction-intervals.html
+        Forecasting: Principles and Practice (3rd ed) Rob J Hyndman and
         George Athanasopoulos.
 
         """
@@ -1140,7 +1140,7 @@ class ForecasterRnn(ForecasterBase):
         Parameters
         ----------
         steps : int
-            Number of future steps predicted.
+            Number of steps to predict. 
         levels : str, list, default None
             Time series to be predicted. If `None` all levels whose last window
             ends at the same datetime index will be predicted together.
@@ -1182,8 +1182,8 @@ class ForecasterRnn(ForecasterBase):
         Notes
         -----
         More information about prediction intervals in forecasting:
-        https://otexts.com/fpp2/prediction-intervals.html
-        Forecasting: Principles and Practice (2nd ed) Rob J Hyndman and
+        https://otexts.com/fpp3/prediction-intervals.html
+        Forecasting: Principles and Practice (3rd ed) Rob J Hyndman and
         George Athanasopoulos.
 
         """
@@ -1233,7 +1233,7 @@ class ForecasterRnn(ForecasterBase):
         Parameters
         ----------
         steps : int
-            Number of future steps predicted.
+            Number of steps to predict. 
         distribution : object
             A distribution object from scipy.stats with methods `_pdf` and `fit`.
             For example scipy.stats.norm.
@@ -1431,7 +1431,7 @@ class ForecasterRnn(ForecasterBase):
     #     -----
     #     More information about prediction intervals in forecasting:
     #     https://otexts.com/fpp3/prediction-intervals.html#prediction-intervals-from-bootstrapped-residuals
-    #     Forecasting: Principles and Practice (3nd ed) Rob J Hyndman and George Athanasopoulos.
+    #     Forecasting: Principles and Practice (3rd ed) Rob J Hyndman and George Athanasopoulos.
 
     #     """
 
@@ -1586,8 +1586,8 @@ class ForecasterRnn(ForecasterBase):
     #     Notes
     #     -----
     #     More information about prediction intervals in forecasting:
-    #     https://otexts.com/fpp2/prediction-intervals.html
-    #     Forecasting: Principles and Practice (2nd ed) Rob J Hyndman and
+    #     https://otexts.com/fpp3/prediction-intervals.html
+    #     Forecasting: Principles and Practice (3rd ed) Rob J Hyndman and
     #     George Athanasopoulos.
 
     #     """

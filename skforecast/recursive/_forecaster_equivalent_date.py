@@ -286,7 +286,7 @@ class ForecasterEquivalentDate():
         Parameters
         ----------
         steps : int
-            Number of future steps predicted.
+            Number of steps to predict. 
         last_window : pandas Series, default None
             Past values needed to select the last equivalent dates according to 
             the offset. If `last_window = None`, the values stored in 
