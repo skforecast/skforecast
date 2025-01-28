@@ -126,11 +126,11 @@ def test_predict_interval_output_when_regressor_is_LinearRegression_with_transfo
     predictions = forecaster.predict_interval(steps=5, interval=interval)
 
     expected = pd.DataFrame(
-                   data = np.array([[-0.1578203 , -2.02104471,  1.55076389],
-                                    [-0.18459942, -1.98567931,  1.49673592],
-                                    [-0.13711051, -1.89299245,  1.47330827],
-                                    [-0.01966358, -1.60143134,  1.59908257],
-                                    [-0.03228613, -1.73050679,  1.51878244]]),
+                   data = np.array([[-0.1578203 , -1.62232019,  1.55076389],
+                                    [-0.18459942, -1.34560738,  0.70468515],
+                                    [-0.13711051, -1.13938789,  1.49421349],
+                                    [-0.01966358, -1.80104291,  1.07222337],
+                                    [-0.03228613, -1.83428241,  1.15257045]]),
                    index = pd.RangeIndex(start=20, stop=25, step=1),
                    columns = ['pred', 'lower_bound', 'upper_bound']
                )
