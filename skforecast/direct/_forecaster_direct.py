@@ -377,15 +377,14 @@ class ForecasterDirect(ForecasterBase):
                               fit_kwargs = fit_kwargs
                           )
         
-        # TODO: Review when adding binner_kwargs
-        # self.binner_kwargs = binner_kwargs
-        # if binner_kwargs is None:
-        #     self.binner_kwargs = {
-        #         'n_bins': 10, 'method': 'linear', 'subsample': 200000,
-        #         'random_state': 789654, 'dtype': np.float64
-        #     }
-        # self.binner = QuantileBinner(**self.binner_kwargs)
-        # self.binner_intervals_ = None
+        self.binner_kwargs = binner_kwargs
+        if binner_kwargs is None:
+            self.binner_kwargs = {
+                'n_bins': 10, 'method': 'linear', 'subsample': 200000,
+                'random_state': 789654, 'dtype': np.float64
+            }
+        self.binner = QuantileBinner(**self.binner_kwargs)
+        self.binner_intervals_ = None
 
         if n_jobs == 'auto':
             self.n_jobs = select_n_jobs_fit_forecaster(
@@ -1076,7 +1075,8 @@ class ForecasterDirect(ForecasterBase):
         y: pd.Series,
         exog: pd.Series | pd.DataFrame | None = None,
         store_last_window: bool = True,
-        store_in_sample_residuals: bool = True
+        store_in_sample_residuals: bool = True,
+        random_state: int = 123
     ) -> None:
         """
         Training Forecaster.
@@ -1098,6 +1098,9 @@ class ForecasterDirect(ForecasterBase):
             If `True`, in-sample residuals will be stored in the forecaster object
             after fitting (`in_sample_residuals_` and `in_sample_residuals_by_bin_`
             attributes).
+        random_state : int, default 123
+            Set a seed for the random generator so that the stored sample 
+            residuals are always deterministic.
 
         Returns
         -------
@@ -1132,7 +1135,7 @@ class ForecasterDirect(ForecasterBase):
             exog_dtypes_in_
         ) = self._create_train_X_y(y=y, exog=exog)
 
-        def fit_forecaster(regressor, X_train, y_train, step, store_in_sample_residuals):
+        def fit_forecaster(regressor, X_train, y_train, step, store_in_sample_residuals, random_state):
             """
             Auxiliary function to fit each of the forecaster's regressors in parallel.
 
@@ -1150,6 +1153,9 @@ class ForecasterDirect(ForecasterBase):
                 If `True`, in-sample residuals will be stored in the forecaster object
                 after fitting (`in_sample_residuals_` and `in_sample_residuals_by_bin_`
                 attributes).
+            random_state : int, default 123
+                Set a seed for the random generator so that the stored sample 
+                residuals are always deterministic.
             
             Returns
             -------
@@ -1180,21 +1186,21 @@ class ForecasterDirect(ForecasterBase):
 
             # This is done to save time during fit in functions such as backtesting()
             if store_in_sample_residuals:
-                residuals = (
-                    (y_train_step - regressor.predict(X_train_step))
-                ).to_numpy()
+                y_true_step = y_train_step.to_numpy()
+                y_pred_step = regressor.predict(X_train_step)
+                residuals = y_true_step - y_pred_step
 
-                if len(residuals) > 1000:
-                    rng = np.random.default_rng(seed=123)
-                    residuals = rng.choice(
-                                    a       = residuals, 
-                                    size    = 1000, 
-                                    replace = False
-                                )
+                if len(residuals) > 10_000:
+                    rng = np.random.default_rng(seed=random_state)
+                    residuals = residuals[
+                        rng.integers(low=0, high=len(residuals), size=10_000)
+                    ]
             else:
+                y_true_step = None
+                y_pred_step = None
                 residuals = None
 
-            return step, regressor, residuals
+            return step, regressor, residuals, y_true_step, y_pred_step
 
         results_fit = (
             Parallel(n_jobs=self.n_jobs)
@@ -1204,18 +1210,26 @@ class ForecasterDirect(ForecasterBase):
                 X_train                   = X_train,
                 y_train                   = y_train,
                 step                      = step,
-                store_in_sample_residuals = store_in_sample_residuals
+                store_in_sample_residuals = store_in_sample_residuals,
+                random_state              = random_state
             )
             for step in range(1, self.steps + 1))
         )
 
-        self.regressors_ = {step: regressor for step, regressor, _ in results_fit}
+        self.regressors_ = {step: regressor for step, regressor, *_ in results_fit}
 
         if store_in_sample_residuals:
             self.in_sample_residuals_ = {
                 step: residuals 
-                for step, _, residuals in results_fit
+                for step, _, residuals, *_ in results_fit
             }
+
+            y_true, y_pred = zip(*[(y_true, y_pred) for *_, y_true, y_pred in results_fit])
+            self._binning_in_sample_residuals(
+                y_true       = np.concatenate(y_true),
+                y_pred       = np.concatenate(y_pred),
+                random_state = random_state
+            )
         
         self.X_train_features_names_out_ = X_train_features_names_out_
 
@@ -1241,6 +1255,60 @@ class ForecasterDirect(ForecasterBase):
                 .copy()
                 .to_frame(name=y.name if y.name is not None else 'y')
             )
+
+    def _binning_in_sample_residuals(
+        self,
+        y_true: np.ndarray,
+        y_pred: np.ndarray,
+        random_state: int = 123
+    ) -> None:
+        """
+        Bin residuals according to the predicted value each residual is
+        associated with. First a `skforecast.preprocessing.QuantileBinner` object
+        is fitted to the predicted values. Then, residuals are binned according
+        to the predicted value each residual is associated with. Residuals are
+        stored in the forecaster object as `in_sample_residuals_` and
+        `in_sample_residuals_by_bin_`.
+
+        `y_true` and `y_pred` assumed to be differentiated and or transformed
+        according to the attributes `differentiation` and `transformer_y`.
+        The number of residuals stored per bin is limited to 
+        `10_000 // self.binner.n_bins_`. The total number of residuals stored is
+        `10_000`.
+        **New in version 0.15.0**
+
+        Parameters
+        ----------
+        y_true : numpy ndarray
+            True values of the time series.
+        y_pred : numpy ndarray
+            Predicted values of the time series.
+        random_state : int, default 123
+            Set a seed for the random generator so that the stored sample 
+            residuals are always deterministic.
+
+        Returns
+        -------
+        None
+        
+        """
+
+        residuals = y_true - y_pred
+        data = pd.DataFrame({'prediction': y_pred, 'residuals': residuals})
+
+        data['bin'] = self.binner.fit_transform(y_pred).astype(int)
+        self.in_sample_residuals_by_bin_ = (
+            data.groupby('bin')['residuals'].apply(np.array).to_dict()
+        )
+
+        rng = np.random.default_rng(seed=random_state)
+        max_sample = 10_000 // self.binner.n_bins_
+        for k, v in self.in_sample_residuals_by_bin_.items():
+            if len(v) > max_sample:
+                sample = v[rng.integers(low=0, high=len(v), size=max_sample)]
+                self.in_sample_residuals_by_bin_[k] = sample
+
+        self.binner_intervals_ = self.binner.intervals_
 
     def _create_predict_inputs(
         self,
@@ -1656,12 +1724,12 @@ class ForecasterDirect(ForecasterBase):
             residuals = self.out_sample_residuals_
             residuals_by_bin = self.out_sample_residuals_by_bin_
 
-        # TODO: Change replace = True to un if/else
+        # TODO: Review warnings with Ximo
         if use_binned_residuals:
             # NOTE: As residuals are {bin: residuals}, more n_boot iterations
             # that the total number of residual, doesn't add new information 
             # to the bootstrapping process.
-            recommended_n_boot = np.sum([len(v) for v in residuals_by_bin.values()])
+            recommended_n_boot = np.max([len(v) for v in residuals_by_bin.values()])
             warnings_msg = (
                 f"`n_boot`, {n_boot}, is greater than the total number of "
                 f"residuals, {recommended_n_boot}. Additional iterations don't "
@@ -1682,7 +1750,7 @@ class ForecasterDirect(ForecasterBase):
         if n_boot > recommended_n_boot:
             warnings.warn(warnings_msg, ResidualsUsageWarning)
 
-        # NOTE: Predictions must be transformed and differenced before adding residuals
+        # NOTE: Predictors and Residuals are transformed and differenced.  
         regressors = [self.regressors_[step] for step in steps]
         with warnings.catch_warnings():
             warnings.filterwarnings(
@@ -1698,7 +1766,6 @@ class ForecasterDirect(ForecasterBase):
         boot_predictions = np.tile(predictions, (n_boot, 1)).T
         boot_columns = [f"pred_boot_{i}" for i in range(n_boot)]
 
-        rng = np.random.default_rng(seed=random_state)
         # for i, step in enumerate(steps):
         #     sampled_residuals = residuals[step][
         #         rng.integers(low=0, high=len(residuals[step]), size=n_boot)
@@ -1706,27 +1773,41 @@ class ForecasterDirect(ForecasterBase):
         #     boot_predictions[i, :] = boot_predictions[i, :] + sampled_residuals
 
         # TODO: Adapt for binned residuals
+        rng = np.random.default_rng(seed=random_state)
         for i, step in enumerate(steps):
+
+            if use_binned_residuals:
+                predicted_bin = self.binner.transform(predictions[i]).item()
+                step_residuals = residuals_by_bin[predicted_bin]
+            else:
+                step_residuals = residuals[step]
+            len_step_residuals = len(step_residuals)
+
+            # NOTE: If n_boot == recommended_n_boot, don't need to sample the
+            # step/bin with the maximum number of residuals. For the other 
+            # steps/bins, pick all the residuals and sample the remaining amount.
             if n_boot == recommended_n_boot:
-                sampled_residuals = residuals[step]
-                if len(residuals[step]) < recommended_n_boot:
-                    sampled_residuals = np.concatenate(
+                if len_step_residuals < recommended_n_boot:
+                    step_residuals = np.concatenate(
                         (
-                            residuals[step],
-                            residuals[step][
+                            step_residuals,
+                            step_residuals[
                                 rng.integers(
                                     low  = 0,
-                                    high = len(residuals[step]),
-                                    size = n_boot - len(residuals[step]),
+                                    high = len_step_residuals,
+                                    size = n_boot - len_step_residuals,
                                 )
                             ],
                         )
                     )
             else:
-                sampled_residuals = residuals[step][
-                    rng.integers(low=0, high=len(residuals[step]), size=n_boot)
-                ]
-            boot_predictions[i, :] = boot_predictions[i, :] + sampled_residuals
+                # NOTE: If len_step_residuals == n_boot, don't need to sample
+                if n_boot != len_step_residuals:  
+                    step_residuals = step_residuals[
+                        rng.integers(low=0, high=len_step_residuals, size=n_boot)
+                    ]
+            
+            boot_predictions[i, :] = boot_predictions[i, :] + step_residuals
 
         if self.differentiation is not None:
             boot_predictions = (
@@ -1750,6 +1831,144 @@ class ForecasterDirect(ForecasterBase):
                            )
         
         return boot_predictions
+    
+    def _predict_interval_conformal(
+        self,
+        steps: int | list[int] | None = None,
+        last_window: pd.Series | pd.DataFrame | None = None,
+        exog: pd.Series | pd.DataFrame | None = None,
+        nominal_coverage: float = 0.95,
+        use_in_sample_residuals: bool = True,
+        use_binned_residuals: bool = False
+    ) -> pd.DataFrame:
+        """
+        Generate prediction intervals using the conformal prediction 
+        split method [1]_.
+
+        Parameters
+        ----------
+        steps : int, list, None, default None
+            Predict n steps. The value of `steps` must be less than or equal to the 
+            value of steps defined when initializing the forecaster. Starts at 1.
+        
+            - If `int`: Only steps within the range of 1 to int are predicted.
+            - If `list`: List of ints. Only the steps contained in the list 
+            are predicted.
+            - If `None`: As many steps are predicted as were defined at 
+            initialization.
+        last_window : pandas Series, pandas DataFrame, default None
+            Series values used to create the predictors (lags) needed to 
+            predict `steps`.
+            If `last_window = None`, the values stored in` self.last_window_` are
+            used to calculate the initial predictors, and the predictions start
+            right after training data.
+        exog : pandas Series, pandas DataFrame, default None
+            Exogenous variable/s included as predictor/s.
+        nominal_coverage : float, default 0.95
+            Nominal coverage, also known as expected coverage, of the prediction
+            intervals. Must be between 0 and 1.
+        use_in_sample_residuals : bool, default True
+            If `True`, residuals from the training data are used as proxy of
+            prediction error to create predictions. 
+            If `False`, out of sample residuals (calibration) are used. 
+            Out-of-sample residuals must be precomputed using Forecaster's
+            `set_out_sample_residuals()` method.
+        use_binned_residuals : bool, default False
+            If `True`, residuals are selected based on the predicted values 
+            (binned selection).
+            If `False`, residuals are selected randomly.
+
+        Returns
+        -------
+        predictions : pandas DataFrame
+            Values predicted by the forecaster and their estimated interval.
+
+            - pred: predictions.
+            - lower_bound: lower bound of the interval.
+            - upper_bound: upper bound of the interval.
+
+        References
+        ----------
+        .. [1] MAPIE - Model Agnostic Prediction Interval Estimator.
+               https://mapie.readthedocs.io/en/stable/theoretical_description_regression.html#the-split-method
+
+        """
+
+        (
+            Xs,
+            _,
+            steps,
+            prediction_index
+        ) = self._create_predict_inputs(
+                steps                   = steps, 
+                last_window             = last_window, 
+                exog                    = exog,
+                predict_probabilistic   = True, 
+                use_in_sample_residuals = use_in_sample_residuals,
+                use_binned_residuals    = use_binned_residuals
+            )
+
+        if use_in_sample_residuals:
+            residuals = self.in_sample_residuals_
+            residuals_by_bin = self.in_sample_residuals_by_bin_
+        else:
+            residuals = self.out_sample_residuals_
+            residuals_by_bin = self.out_sample_residuals_by_bin_
+
+        # NOTE: Predictors and Residuals are transformed and differenced.  
+        regressors = [self.regressors_[step] for step in steps]
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", 
+                message="X does not have valid feature names", 
+                category=UserWarning
+            )
+            predictions = np.array([
+                regressor.predict(X).ravel()[0] 
+                for regressor, X in zip(regressors, Xs)
+            ])
+        
+        if use_binned_residuals:
+            # TODO: Check when residuals_by_bin available
+            correction_factor_by_bin = {
+                k: np.quantile(np.abs(v), nominal_coverage)
+                for k, v in residuals_by_bin.items()
+            }
+            replace_func = np.vectorize(lambda x: correction_factor_by_bin[x])
+            predictions_bin = self.binner.transform(predictions)
+            correction_factor = replace_func(predictions_bin)
+            lower_bound = predictions - correction_factor
+            upper_bound = predictions + correction_factor
+        else:
+            for step in steps:
+                correction_factor = np.quantile(np.abs(residuals[step]), nominal_coverage)
+                lower_bound = predictions - correction_factor
+                upper_bound = predictions + correction_factor
+
+        predictions = np.column_stack([predictions, lower_bound, upper_bound])
+
+        if self.differentiation is not None:
+            predictions = (
+                self.differentiator.inverse_transform_next_window(predictions)
+            )
+        
+        if self.transformer_y:
+            predictions = np.apply_along_axis(
+                              func1d            = transform_numpy,
+                              axis              = 0,
+                              arr               = predictions,
+                              transformer       = self.transformer_y,
+                              fit               = False,
+                              inverse_transform = True
+                          )
+        
+        predictions = pd.DataFrame(
+                          data    = predictions,
+                          index   = prediction_index,
+                          columns = ["pred", "lower_bound", "upper_bound"]
+                      )
+
+        return predictions
 
     def predict_interval(
         self,
@@ -1841,29 +2060,57 @@ class ForecasterDirect(ForecasterBase):
     
         """
 
-        check_interval(interval=interval)
+        if method == "bootstrapping":
+            
+            if isinstance(interval, (list, tuple)):
+                check_interval(interval=interval, ensure_symmetric_intervals=False)
+                interval = np.array(interval) / 100
+            else:
+                check_interval(alpha=interval, alpha_literal='interval')
+                interval = np.array([0.5 - interval / 2, 0.5 + interval / 2])
 
-        boot_predictions = self.predict_bootstrapping(
-                               steps                   = steps,
-                               last_window             = last_window,
-                               exog                    = exog,
-                               n_boot                  = n_boot,
-                               random_state            = random_state,
-                               use_in_sample_residuals = use_in_sample_residuals,
-                               use_binned_residuals    = use_binned_residuals
-                           )
+            boot_predictions = self.predict_bootstrapping(
+                                   steps                   = steps,
+                                   last_window             = last_window,
+                                   exog                    = exog,
+                                   n_boot                  = n_boot,
+                                   random_state            = random_state,
+                                   use_in_sample_residuals = use_in_sample_residuals,
+                                   use_binned_residuals    = use_binned_residuals
+                               )
+    
+            predictions = self.predict(
+                              steps        = steps,
+                              last_window  = last_window,
+                              exog         = exog,
+                              check_inputs = False
+                          )
+    
+            predictions_interval = boot_predictions.quantile(q=interval, axis=1).transpose()
+            predictions_interval.columns = ['lower_bound', 'upper_bound']
+            predictions = pd.concat((predictions, predictions_interval), axis=1)
 
-        predictions = self.predict(
-                          steps        = steps,
-                          last_window  = last_window,
-                          exog         = exog,
-                          check_inputs = False
-                      )
+        elif method == 'conformal':
 
-        interval = np.array(interval) / 100
-        predictions_interval = boot_predictions.quantile(q=interval, axis=1).transpose()
-        predictions_interval.columns = ['lower_bound', 'upper_bound']
-        predictions = pd.concat((predictions, predictions_interval), axis=1)
+            if isinstance(interval, (list, tuple)):
+                check_interval(interval=interval, ensure_symmetric_intervals=True)
+                nominal_coverage = (interval[1] - interval[0]) / 100
+            else:
+                check_interval(alpha=interval, alpha_literal='interval')
+                nominal_coverage = interval
+            
+            predictions = self._predict_interval_conformal(
+                              steps                   = steps,
+                              last_window             = last_window,
+                              exog                    = exog,
+                              nominal_coverage        = nominal_coverage,
+                              use_in_sample_residuals = use_in_sample_residuals,
+                              use_binned_residuals    = use_binned_residuals
+                          )
+        else:
+            raise ValueError(
+                f"Invalid `method` '{method}'. Choose 'bootstrapping' or 'conformal'."
+            )
 
         return predictions
 
@@ -2309,15 +2556,14 @@ class ForecasterDirect(ForecasterBase):
 
             residuals[k] = y_true[k] - y_pred[k]
 
-        for key, value in residuals.items():
-            if append and self.out_sample_residuals_[key] is not None:
-                value = np.concatenate((
-                            self.out_sample_residuals_[key],
-                            value
-                        ))
-            if len(value) > 10000:
-                value = rng.choice(value, size=10000, replace=False)
-            self.out_sample_residuals_[key] = value
+        for k, v in residuals.items():
+            if append and self.out_sample_residuals_[k] is not None:
+                v = np.concatenate(
+                    (self.out_sample_residuals_[k], v)
+                )
+            if len(v) > 10_000:
+                v = rng.choice(v, size=10_000, replace=False)
+            self.out_sample_residuals_[k] = v
 
     def get_feature_importances(
         self, 

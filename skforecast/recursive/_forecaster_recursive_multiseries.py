@@ -3308,8 +3308,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             the limit of 10_000 samples is exceeded, a random sample of 10_000 is
             kept.
         random_state : int, default 123
-            Set a seed for the random generator so that the stored sample 
-            residuals are always deterministic.
+            Sets a seed to the random sampling for reproducible output.
 
         Returns
         -------
@@ -3368,8 +3367,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         if append:
             for k, v in residuals_by_bin.items():
                 if k in out_sample_residuals_by_bin:
-                    out_sample_residuals_by_bin[k] = np.concatenate((
-                        out_sample_residuals_by_bin[k], v)
+                    out_sample_residuals_by_bin[k] = np.concatenate(
+                        (out_sample_residuals_by_bin[k], v)
                     )
                 else:
                     out_sample_residuals_by_bin[k] = v

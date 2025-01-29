@@ -2032,7 +2032,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 ResidualsUsageWarning
             )
 
-        # NOTE: Predictions must be transformed and differenced before adding residuals
+        # NOTE: Predictors and Residuals are transformed and differenced.
         regressors = [self.regressors_[step] for step in steps]
         with warnings.catch_warnings():
             warnings.filterwarnings(

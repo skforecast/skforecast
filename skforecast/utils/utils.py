@@ -1267,7 +1267,8 @@ def check_residuals_input(
                 f"forecaster to store in-sample residuals."
             )
         
-        if forecaster_name in forecaster_direct:
+        # NOTE: If use_binned_residuals, residuals is {bin: residuals}
+        if forecaster_name in forecaster_direct and not use_binned_residuals:
             if not set(steps).issubset(set(residuals.keys())):
                 raise ValueError(
                     f"`forecaster.{literal}` doesn't contain residuals for steps: "
@@ -1303,7 +1304,8 @@ def check_residuals_input(
                 f"`set_out_sample_residuals()` method before predicting."
             )
 
-        if forecaster_name in forecaster_direct:
+        # NOTE: If use_binned_residuals, residuals is {bin: residuals}
+        if forecaster_name in forecaster_direct and not use_binned_residuals:
             if not set(steps).issubset(set(residuals.keys())):
                 raise ValueError(
                     f"`forecaster.{literal}` doesn't contain residuals for steps: "
@@ -1323,7 +1325,8 @@ def check_residuals_input(
                     UnknownLevelWarning
                 )
 
-    if forecaster_name in forecaster_direct:
+    # NOTE: If use_binned_residuals, residuals is {bin: residuals}
+    if forecaster_name in forecaster_direct and not use_binned_residuals:
         for step in steps:
             if residuals[step] is None or len(residuals[step]) == 0:
                 raise ValueError(

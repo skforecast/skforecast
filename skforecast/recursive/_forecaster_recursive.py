@@ -1010,7 +1010,6 @@ class ForecasterRecursive(ForecasterBase):
                 .to_frame(name=y.name if y.name is not None else 'y')
             )
 
-
     def _binning_in_sample_residuals(
         self,
         y_true: np.ndarray,
@@ -1713,7 +1712,7 @@ class ForecasterRecursive(ForecasterBase):
                 k: np.quantile(np.abs(v), nominal_coverage)
                 for k, v in residuals_by_bin.items()
             }
-            replace_func = np.vectorize(lambda x: correction_factor_by_bin.get(x, x))
+            replace_func = np.vectorize(lambda x: correction_factor_by_bin[x])
             predictions_bin = self.binner.transform(predictions)
             correction_factor = replace_func(predictions_bin)
             lower_bound = predictions - correction_factor
