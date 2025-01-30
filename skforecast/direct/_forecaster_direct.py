@@ -12,7 +12,7 @@ import sys
 import numpy as np
 import pandas as pd
 import inspect
-from copy import copy
+from copy import copy, deepcopy
 from sklearn.exceptions import NotFittedError
 from sklearn.pipeline import Pipeline
 from sklearn.base import clone
@@ -1123,6 +1123,7 @@ class ForecasterDirect(ForecasterBase):
         self.X_train_features_names_out_        = None
         self.in_sample_residuals_               = {step: None for step in range(1, self.steps + 1)}
         self.in_sample_residuals_by_bin_        = None
+        self.binner_intervals_                  = None
         self.is_fitted                          = False
         self.fit_date                           = None
 
@@ -1159,7 +1160,8 @@ class ForecasterDirect(ForecasterBase):
             
             Returns
             -------
-            Tuple with the step, fitted regressor and in-sample residuals.
+            Tuple with the step, fitted regressor, in-sample residuals, true values
+            and predicted values for the step.
 
             """
 
@@ -1772,7 +1774,7 @@ class ForecasterDirect(ForecasterBase):
         #     ]
         #     boot_predictions[i, :] = boot_predictions[i, :] + sampled_residuals
 
-        # TODO: Adapt for binned residuals
+        # TODO: Review with Ximo adaptation for binned residuals
         rng = np.random.default_rng(seed=random_state)
         for i, step in enumerate(steps):
 
@@ -2512,58 +2514,129 @@ class ForecasterDirect(ForecasterBase):
                         f"`y_pred` must have the same index. Error in step {k}."
                     )
         
-        if self.out_sample_residuals_ is None:
-            self.out_sample_residuals_ = {
-                step: None for step in range(1, self.steps + 1)
-            }
-        
         steps_to_update = set(range(1, self.steps + 1)).intersection(set(y_pred.keys()))
         if not steps_to_update:
             raise ValueError(
                 "Provided keys in `y_pred` and `y_true` do not match any step. "
                 "Residuals cannot be updated."
             )
-
-        residuals = {}
-        rng = np.random.default_rng(seed=random_state)
-        y_true = y_true.copy()
-        y_pred = y_pred.copy()
+        
+        y_true = deepcopy(y_true)
+        y_pred = deepcopy(y_pred)
         if self.differentiation is not None:
             differentiator = copy(self.differentiator)
             differentiator.set_params(window_size=None)
         
-        for k in steps_to_update:
-            if isinstance(y_true[k], pd.Series):
-                y_true[k] = y_true[k].to_numpy()
-            if isinstance(y_pred[k], pd.Series):
-                y_pred[k] = y_pred[k].to_numpy()
+        residuals = {}
+        for step in steps_to_update:
+            if isinstance(y_true[step], pd.Series):
+                y_true[step] = y_true[step].to_numpy()
+            if isinstance(y_pred[step], pd.Series):
+                y_pred[step] = y_pred[step].to_numpy()
             if self.transformer_y:
-                y_true[k] = transform_numpy(
-                                array             = y_true[k],
-                                transformer       = self.transformer_y,
-                                fit               = False,
-                                inverse_transform = False
-                            )
-                y_pred[k] = transform_numpy(
-                                array             = y_pred[k],
-                                transformer       = self.transformer_y,
-                                fit               = False,
-                                inverse_transform = False
-                            )
+                y_true[step] = transform_numpy(
+                                   array             = y_true[step],
+                                   transformer       = self.transformer_y,
+                                   fit               = False,
+                                   inverse_transform = False
+                               )
+                y_pred[step] = transform_numpy(
+                                   array             = y_pred[step],
+                                   transformer       = self.transformer_y,
+                                   fit               = False,
+                                   inverse_transform = False
+                               )
             if self.differentiation is not None:
-                y_true[k] = differentiator.fit_transform(y_true[k])[self.differentiation:]
-                y_pred[k] = differentiator.fit_transform(y_pred[k])[self.differentiation:]
+                y_true[step] = differentiator.fit_transform(y_true[step])[self.differentiation:]
+                y_pred[step] = differentiator.fit_transform(y_pred[step])[self.differentiation:]
 
-            residuals[k] = y_true[k] - y_pred[k]
+            residuals[step] = y_true[step] - y_pred[step]
 
-        for k, v in residuals.items():
-            if append and self.out_sample_residuals_[k] is not None:
-                v = np.concatenate(
-                    (self.out_sample_residuals_[k], v)
+        y_true = np.concatenate(list(y_true.values()))
+        y_pred = np.concatenate(list(y_pred.values()))
+        data = pd.DataFrame(
+            {'prediction': y_pred, 'residuals': y_true - y_pred}
+        ).dropna()
+        y_pred = data['prediction'].to_numpy()
+        residuals_all_steps = data['residuals'].to_numpy()
+
+        data['bin'] = self.binner.transform(y_pred).astype(int)
+        residuals_by_bin = data.groupby('bin')['residuals'].apply(np.array).to_dict()
+        
+        out_sample_residuals = (
+            {step: None for step in range(1, self.steps + 1)}
+            if self.out_sample_residuals_ is None
+            else self.out_sample_residuals_
+        )
+
+        rng = np.random.default_rng(seed=random_state)
+        for step, residuals_step in residuals.items():
+            if append and out_sample_residuals[step] is not None:
+                out_sample_residuals_step = np.concatenate(
+                    [out_sample_residuals[step], residuals_step]
                 )
-            if len(v) > 10_000:
-                v = rng.choice(v, size=10_000, replace=False)
-            self.out_sample_residuals_[k] = v
+            else:
+                out_sample_residuals_step = residuals_step
+            
+            if len(out_sample_residuals_step) > 10_000:
+                out_sample_residuals_step = rng.choice(
+                    out_sample_residuals_step, size=10_000, replace=False
+                )
+            
+            out_sample_residuals[step] = out_sample_residuals_step
+
+        out_sample_residuals_by_bin = (
+            {} 
+            if self.out_sample_residuals_by_bin_ is None
+            else self.out_sample_residuals_by_bin_
+        )
+        if append:
+            for k, v in residuals_by_bin.items():
+                if k in out_sample_residuals_by_bin:
+                    out_sample_residuals_by_bin[k] = np.concatenate(
+                        (out_sample_residuals_by_bin[k], v)
+                    )
+                else:
+                    out_sample_residuals_by_bin[k] = v
+        else:
+            out_sample_residuals_by_bin = residuals_by_bin
+
+        max_samples = 10_000 // self.binner.n_bins_
+        for k, v in out_sample_residuals_by_bin.items():
+            if len(v) > max_samples:
+                sample = rng.choice(a=v, size=max_samples, replace=False)
+                out_sample_residuals_by_bin[k] = sample
+
+        in_sample_residuals_by_bin = (
+            {}
+            if self.in_sample_residuals_by_bin_ is None
+            else self.in_sample_residuals_by_bin_
+        )
+        for k in in_sample_residuals_by_bin.keys():
+            if k not in out_sample_residuals_by_bin:
+                out_sample_residuals_by_bin[k] = np.array([])
+
+        empty_bins = [
+            k for k, v in out_sample_residuals_by_bin.items() 
+            if v.size == 0
+        ]
+        if empty_bins:
+            warnings.warn(
+                f"The following bins have no out of sample residuals: {empty_bins}. "
+                f"No predicted values fall in the interval "
+                f"{[self.binner_intervals_[bin] for bin in empty_bins]}. "
+                f"Empty bins will be filled with a random sample of residuals.",
+                ResidualsUsageWarning
+            )
+            for k in empty_bins:
+                out_sample_residuals_by_bin[k] = rng.choice(
+                    a       = residuals_all_steps,
+                    size    = min(max_samples, len(residuals_all_steps)),
+                    replace = False
+                )
+
+        self.out_sample_residuals_ = out_sample_residuals
+        self.out_sample_residuals_by_bin_ = out_sample_residuals_by_bin
 
     def get_feature_importances(
         self, 
