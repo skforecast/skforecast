@@ -119,18 +119,17 @@ def test_predict_interval_output_when_regressor_is_LinearRegression_with_transfo
     forecaster = ForecasterRecursive(
                      regressor     = LinearRegression(),
                      lags          = 5,
-                     transformer_y = transformer_y,
-                     binner_kwargs = {'n_bins': 15}
+                     transformer_y = transformer_y
                  )
     forecaster.fit(y=y)
     predictions = forecaster.predict_interval(steps=5, interval=interval)
 
     expected = pd.DataFrame(
-                   data = np.array([[-0.1578203 , -2.02104471,  1.55076389],
-                                    [-0.18459942, -1.98567931,  1.49673592],
-                                    [-0.13711051, -1.89299245,  1.47330827],
-                                    [-0.01966358, -1.60143134,  1.59908257],
-                                    [-0.03228613, -1.73050679,  1.51878244]]),
+                   data = np.array([[-0.1578203 , -1.62232019,  1.55076389],
+                                    [-0.18459942, -1.34560738,  0.70468515],
+                                    [-0.13711051, -1.13938789,  1.49421349],
+                                    [-0.01966358, -1.80104291,  1.07222337],
+                                    [-0.03228613, -1.83428241,  1.15257045]]),
                    index = pd.RangeIndex(start=20, stop=25, step=1),
                    columns = ['pred', 'lower_bound', 'upper_bound']
                )
@@ -154,8 +153,7 @@ def test_predict_interval_conformal_output_when_regressor_is_LinearRegression_wi
     forecaster = ForecasterRecursive(
                      regressor     = LinearRegression(),
                      lags          = 5,
-                     transformer_y = StandardScaler(),
-                     binner_kwargs = {'n_bins': 15}
+                     transformer_y = StandardScaler()
                  )
     forecaster.fit(y=y)
     predictions = forecaster.predict_interval(
@@ -169,6 +167,44 @@ def test_predict_interval_conformal_output_when_regressor_is_LinearRegression_wi
                               [-0.13711051, -1.89208677,  1.61786574],
                               [-0.01966358, -1.77463983,  1.73531268],
                               [-0.03228613, -1.78726239,  1.72269012]]),
+                   index = pd.RangeIndex(start=20, stop=25, step=1),
+                   columns = ['pred', 'lower_bound', 'upper_bound']
+               )
+    
+    pd.testing.assert_frame_equal(predictions, expected)
+
+
+@pytest.mark.parametrize("interval", 
+                         [0.95, (2.5, 97.5)], 
+                         ids = lambda value: f'interval: {value}')
+def test_predict_interval_conformal_output_when_binned_residuals(interval):
+    """
+    Test predict output when using LinearRegression as regressor and StandardScaler
+    and conformal prediction with binned residuals.
+    """
+    y = pd.Series(
+            np.array([-0.59,  0.02, -0.9 ,  1.09, -3.61,  0.72, -0.11, -0.4 ,  0.49,
+                       0.67,  0.54, -0.17,  0.54,  1.49, -2.26, -0.41, -0.64, -0.8 ,
+                      -0.61, -0.88])
+        )
+    forecaster = ForecasterRecursive(
+                     regressor     = LinearRegression(),
+                     lags          = 5,
+                     transformer_y = StandardScaler(),
+                     binner_kwargs = {'n_bins': 3}
+                 )
+    forecaster.fit(y=y)
+    predictions = forecaster.predict_interval(
+        steps=5, method='conformal', interval=interval, use_binned_residuals=True
+    )
+
+    expected = pd.DataFrame(
+                   data = np.array([
+                              [-0.1578203 , -1.64020145,  1.32456084],
+                              [-0.18459942, -1.66698056,  1.29778173],
+                              [-0.13711051, -1.61949166,  1.34527063],
+                              [-0.01966358, -1.50204472,  1.46271757],
+                              [-0.03228613, -1.51466728,  1.45009501]]),
                    index = pd.RangeIndex(start=20, stop=25, step=1),
                    columns = ['pred', 'lower_bound', 'upper_bound']
                )

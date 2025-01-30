@@ -1701,6 +1701,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self.X_train_features_names_out_        = None
         self.in_sample_residuals_               = None
         self.in_sample_residuals_by_bin_        = None
+        self.binner_intervals_                  = None
         self.is_fitted                          = False
         self.fit_date                           = None
 
@@ -3372,7 +3373,18 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         out_sample_residuals = self.out_sample_residuals_.get(level, np.array([]))
         out_sample_residuals_by_bin = deepcopy(self.out_sample_residuals_by_bin_.get(level, {}))
         
+        out_sample_residuals = (
+            np.array([]) 
+            if out_sample_residuals is None
+            else out_sample_residuals
+        )
+        out_sample_residuals_by_bin = (
+            {} 
+            if out_sample_residuals_by_bin is None
+            else out_sample_residuals_by_bin
+        )
         if append:
+            out_sample_residuals = np.concatenate([out_sample_residuals, residuals])
             for k, v in residuals_by_bin.items():
                 if k in out_sample_residuals_by_bin:
                     out_sample_residuals_by_bin[k] = np.concatenate(
@@ -3380,14 +3392,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     )
                 else:
                     out_sample_residuals_by_bin[k] = v
-
-            out_sample_residuals = np.concatenate([
-                out_sample_residuals if out_sample_residuals is not None else np.array([]),
-                residuals,
-            ])
         else:
-            out_sample_residuals_by_bin = residuals_by_bin
             out_sample_residuals = residuals
+            out_sample_residuals_by_bin = residuals_by_bin
 
         max_samples = 10_000 // binner.n_bins_
         rng = np.random.default_rng(seed=random_state)
@@ -3396,6 +3403,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 sample = rng.choice(a=v, size=max_samples, replace=False)
                 out_sample_residuals_by_bin[k] = sample
 
+        in_sample_residuals_by_bin = (
+            {}
+            if in_sample_residuals_by_bin is None
+            else in_sample_residuals_by_bin
+        )
         for k in in_sample_residuals_by_bin.keys():
             if k not in out_sample_residuals_by_bin:
                 out_sample_residuals_by_bin[k] = np.array([])
