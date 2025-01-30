@@ -174,11 +174,16 @@ def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_and_n
     y_pred = {1: np.array([0, 1, 2, 3, 4]), 2: np.array([0, 1, 2, 3, 4])}
 
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
-    expected = {1: np.array([1, 1, 1, 1, 1]), 2: np.array([2, 2, 2, 2, 2])}
     results = forecaster.out_sample_residuals_
 
+    expected = {
+        1: np.array([1, 1, 1, 1, 1]), 
+        2: np.array([2, 2, 2, 2, 2])
+    }
+
     assert expected.keys() == results.keys()
-    assert all(all(expected[k] == results[k]) for k in expected.keys())
+    for key in results.keys():
+        np.testing.assert_array_almost_equal(expected[key], results[key])
 
 
 def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_and_append():
@@ -198,19 +203,21 @@ def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_and_a
 
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred, append=True)
+    results = forecaster.out_sample_residuals_
+
     expected = {
         1: np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1]),
         2: np.array([2, 2, 2, 2, 2, 2, 2, 2, 2, 2])
     }
-    results = forecaster.out_sample_residuals_
 
     assert expected.keys() == results.keys()
-    assert all(all(expected[k] == results[k]) for k in expected.keys())
+    for key in results.keys():
+        np.testing.assert_array_almost_equal(expected[key], results[key])
 
 
 def test_set_out_sample_residuals_when_residuals_length_is_greater_than_10000():
     """
-    Test len residuals stored when its length is greater than 10000.
+    Test len residuals stored when its length is greater than 10_000.
     """
     forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=2)
     forecaster.fit(y=y)
@@ -220,24 +227,28 @@ def test_set_out_sample_residuals_when_residuals_length_is_greater_than_10000():
     results = forecaster.out_sample_residuals_
 
     assert list(results.keys()) == [1, 2]
-    assert all(len(value) == 10_000 for value in results.values())
+    for key in results.keys():
+        assert len(results[key]) == 10_000
 
 
 def test_set_out_sample_residuals_when_residuals_length_is_more_than_10000_and_append():
     """
-    Test residuals stored when new residuals length is more than 10000 and append is True.
+    Test residuals stored when new residuals length is more than 10_000 and append is True.
     """
     forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=2)
     forecaster.fit(y=y)
     y_true = {1: np.random.normal(size=5_000), 2: np.random.normal(size=5_000)}
     y_pred = {1: np.random.normal(size=5_000), 2: np.random.normal(size=5_000)}
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
+
     y_true = {1: np.random.normal(size=10_000), 2: np.random.normal(size=10_000)}
     y_pred = {1: np.random.normal(size=10_000), 2: np.random.normal(size=10_000)}
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred, append=True)
     results = forecaster.out_sample_residuals_
 
-    assert all([len(v) == 10_000 for v in results.values()])
+    assert list(results.keys()) == [1, 2]
+    for key in results.keys():
+        assert len(results[key]) == 10_000
 
 
 def test_set_out_sample_residuals_when_residuals_keys_partially_match():
@@ -250,10 +261,12 @@ def test_set_out_sample_residuals_when_residuals_keys_partially_match():
     y_true = {1: np.arange(5), 4: np.arange(10)}
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
     results = forecaster.out_sample_residuals_
+    
     expected = {1: np.array([-1,  0,  1,  2,  3]), 2: None}
-    for key in expected.keys():
-        if expected[key] is not None:
-            assert np.allclose(expected[key], results[key])
+
+    for key in results.keys():
+        if results[key] is not None:
+            np.testing.assert_array_almost_equal(results[key], expected[key])
         else:
             assert results[key] is None
 
@@ -299,5 +312,6 @@ def test_forecaster_set_outsample_residuals_when_transformer_y_and_diferentiatio
     residuals[1] = y_true[1] - y_pred[1]
     residuals[2] = y_true[2] - y_pred[2]
 
+    assert forecaster.out_sample_residuals_.keys() == residuals.keys()
     for key in residuals.keys():
-        assert np.allclose(residuals[key], forecaster.out_sample_residuals_[key])
+        np.testing.assert_array_almost_equal(forecaster.out_sample_residuals_[key], residuals[key])

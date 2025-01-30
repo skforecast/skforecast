@@ -1726,12 +1726,12 @@ class ForecasterDirect(ForecasterBase):
             residuals = self.out_sample_residuals_
             residuals_by_bin = self.out_sample_residuals_by_bin_
 
-        # TODO: Review warnings with Ximo
+        # TODO: Review warnings message with Ximo
         if use_binned_residuals:
             # NOTE: As residuals are {bin: residuals}, more n_boot iterations
             # that the total number of residual, doesn't add new information 
             # to the bootstrapping process.
-            recommended_n_boot = np.max([len(v) for v in residuals_by_bin.values()])
+            recommended_n_boot = np.max([v.size for v in residuals_by_bin.values()])
             warnings_msg = (
                 f"`n_boot`, {n_boot}, is greater than the total number of "
                 f"residuals, {recommended_n_boot}. Additional iterations don't "
@@ -1742,7 +1742,7 @@ class ForecasterDirect(ForecasterBase):
             # NOTE: As residuals are {step: residuals}, more n_boot iterations
             # that the number of residual for the step with more residuals, 
             # doesn't add new information to the bootstrapping process.
-            recommended_n_boot = np.max([len(v) for v in residuals.values()])
+            recommended_n_boot = np.max([v.size for v in residuals.values()])
             warnings_msg = (
                 f"`n_boot`, {n_boot}, is greater than the number of available "
                 f"residuals, {recommended_n_boot}. Additional iterations don't "
@@ -1931,7 +1931,6 @@ class ForecasterDirect(ForecasterBase):
             ])
         
         if use_binned_residuals:
-            # TODO: Check when residuals_by_bin available
             correction_factor_by_bin = {
                 k: np.quantile(np.abs(v), nominal_coverage)
                 for k, v in residuals_by_bin.items()

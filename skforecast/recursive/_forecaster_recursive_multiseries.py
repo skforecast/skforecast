@@ -391,8 +391,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self.differentiation_max                = None
         self.differentiator                     = None
         self.differentiator_                    = None
-        self.binner                             = {}
-        self.binner_intervals_                  = {}
         self.dropna_from_series                 = dropna_from_series
         self.last_window_                       = None
         self.index_type_                        = None
@@ -564,6 +562,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                               fit_kwargs = fit_kwargs
                           )
         
+        self.binner = {}
+        self.binner_intervals_ = {}
         self.binner_kwargs = binner_kwargs
         if binner_kwargs is None:
             self.binner_kwargs = {
@@ -1701,7 +1701,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self.X_train_features_names_out_        = None
         self.in_sample_residuals_               = None
         self.in_sample_residuals_by_bin_        = None
-        self.binner_intervals_                  = None
+        self.binner                             = {}
+        self.binner_intervals_                  = {}
         self.is_fitted                          = False
         self.fit_date                           = None
 
