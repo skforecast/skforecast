@@ -180,9 +180,9 @@ def test_out_sample_residuals_by_bin_and_in_sample_reseiduals_by_bin_equivalence
         )
 
 
-def test_set_out_sample_residuals_stores_maximum_1000_residuals_per_bin_when_n_bin_is_10():
+def test_set_out_sample_residuals_stores_maximum_10000_residuals_per_bin_when_n_bin_is_10():
     """
-    Test that set_out_sample_residuals stores a maximum of 1000 residuals per bin
+    Test that set_out_sample_residuals stores a maximum of 10_000 residuals per bin
     when n_bins = 10.
     """
     y = pd.Series(
@@ -199,13 +199,9 @@ def test_set_out_sample_residuals_stores_maximum_1000_residuals_per_bin_when_n_b
         y_pred=y_pred
     )
 
+    assert forecaster.out_sample_residuals_.shape[0] == 10_000
     for v in forecaster.out_sample_residuals_by_bin_.values():
-        assert len(v) <= 1000
-
-    np.testing.assert_array_almost_equal(
-        forecaster.out_sample_residuals_,
-        np.concatenate(list(forecaster.out_sample_residuals_by_bin_.values())),
-    )
+        assert len(v) <= 10000
 
 
 def test_set_out_sample_residuals_append_new_residuals_per_bin():
@@ -237,9 +233,9 @@ def test_set_out_sample_residuals_when_there_are_no_residuals_for_some_bins():
     """
     rng = np.random.default_rng(12345)
     y = pd.Series(
-        data=rng.normal(loc=10, scale=1, size=100),
-        index=pd.date_range(start="01-01-2000", periods=100, freq="h"),
-    )
+            data=rng.normal(loc=10, scale=1, size=100),
+            index=pd.date_range(start="01-01-2000", periods=100, freq="h"),
+        )
 
     forecaster = ForecasterRecursive(
         regressor=LinearRegression(), lags=5, binner_kwargs={"n_bins": 3}
@@ -257,7 +253,7 @@ def test_set_out_sample_residuals_when_there_are_no_residuals_for_some_bins():
     with pytest.warns(UserWarning, match=warn_msg):
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred, append=True)
 
-    assert len(forecaster.out_sample_residuals_by_bin_[0]) == 3333
+    assert len(forecaster.out_sample_residuals_by_bin_[0]) == len(y_pred)
 
 
 def test_forecaster_set_outsample_residuals_when_transformer_y_and_diferentiation():

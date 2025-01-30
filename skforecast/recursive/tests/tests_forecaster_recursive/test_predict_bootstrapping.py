@@ -27,46 +27,36 @@ def test_predict_bootstrapping_NotFittedError_when_fitted_is_False():
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
 
     err_msg = re.escape(
-        ("This Forecaster instance is not fitted yet. Call `fit` with "
-         "appropriate arguments before using predict.")
+        "This Forecaster instance is not fitted yet. Call `fit` with "
+        "appropriate arguments before using predict."
     )
     with pytest.raises(NotFittedError, match = err_msg):
         forecaster.predict_bootstrapping(steps=1)
 
 
-def test_predict_bootstrapping_ValueError_when_out_sample_residuals_is_None():
+@pytest.mark.parametrize("use_binned_residuals", [True, False], 
+                         ids=lambda binned: f'use_binned_residuals: {binned}')
+def test_predict_bootstrapping_ValueError_when_out_sample_residuals_is_None(use_binned_residuals):
     """
     Test ValueError is raised when use_in_sample_residuals=False and
-    forecaster.out_sample_residuals_ is None.
+    out sample residuals is None.
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
     forecaster.fit(y=pd.Series(np.arange(10)))
 
-    err_msg = re.escape(
-        "`forecaster.out_sample_residuals_` is either None or empty. Use "
-        "`use_in_sample_residuals = True` or the "
-        "`set_out_sample_residuals()` method before predicting."
-    )
-    with pytest.raises(ValueError, match = err_msg):
-        forecaster.predict_bootstrapping(steps=1, use_in_sample_residuals=False)
-
-
-def test_predict_bootstrapping_ValueError_when_out_sample_residuals_by_bin_is_None():
-    """
-    Test ValueError is raised when use_in_sample_residuals=False and
-    forecaster.out_sample_residuals_by_bin_ is None.
-    """
-    forecaster = ForecasterRecursive(LinearRegression(), lags=3)
-    forecaster.fit(y=pd.Series(np.arange(10)))
+    if use_binned_residuals:
+        literal = "out_sample_residuals_by_bin_"
+    else:
+        literal = "out_sample_residuals_"
 
     err_msg = re.escape(
-        "`forecaster.out_sample_residuals_by_bin_` is either None or empty. Use "
-        "`use_in_sample_residuals = True` or the "
-        "`set_out_sample_residuals()` method before predicting."
+        f"`forecaster.{literal}` is either None or empty. Use "
+        f"`use_in_sample_residuals = True` or the "
+        f"`set_out_sample_residuals()` method before predicting."
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster.predict_bootstrapping(
-            steps=1, use_in_sample_residuals=False, use_binned_residuals=True
+            steps=1, use_in_sample_residuals=False, use_binned_residuals=use_binned_residuals
         )
 
 
@@ -75,7 +65,7 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_s
     Test output of predict_bootstrapping when regressor is LinearRegression and
     1 step ahead is predicted with exog using in-sample residuals.
     """
-    forecaster = ForecasterRecursive(LinearRegression(), lags=3, binner_kwargs={'n_bins': 15})
+    forecaster = ForecasterRecursive(LinearRegression(), lags=3)
     forecaster.fit(y=y, exog=exog)
     results = forecaster.predict_bootstrapping(
         steps=1, n_boot=4, exog=exog_predict, use_in_sample_residuals=True
@@ -95,7 +85,7 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_s
     Test output of predict_bootstrapping when regressor is LinearRegression and
     2 steps ahead are predicted with exog using in-sample residuals.
     """
-    forecaster = ForecasterRecursive(LinearRegression(), lags=3, binner_kwargs={'n_bins': 15})
+    forecaster = ForecasterRecursive(LinearRegression(), lags=3)
     forecaster.fit(y=y, exog=exog)
     results = forecaster.predict_bootstrapping(
         steps=2, n_boot=4, exog=exog_predict, use_in_sample_residuals=True
@@ -118,7 +108,7 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_s
     Test output of predict_bootstrapping when regressor is LinearRegression and
     1 step ahead is predicted with exog using out-sample residuals.
     """
-    forecaster = ForecasterRecursive(LinearRegression(), lags=3, binner_kwargs={'n_bins': 15})
+    forecaster = ForecasterRecursive(LinearRegression(), lags=3)
     forecaster.fit(y=y, exog=exog)
     forecaster.out_sample_residuals_ = forecaster.in_sample_residuals_
     results = forecaster.predict_bootstrapping(
@@ -139,7 +129,7 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_s
     Test output of predict_bootstrapping when regressor is LinearRegression and
     2 steps ahead are predicted with exog using out-sample residuals.
     """
-    forecaster = ForecasterRecursive(LinearRegression(), lags=3, binner_kwargs={'n_bins': 15})
+    forecaster = ForecasterRecursive(LinearRegression(), lags=3)
     forecaster.fit(y=y, exog=exog)
     forecaster.out_sample_residuals_ = forecaster.in_sample_residuals_
     results = forecaster.predict_bootstrapping(
@@ -147,8 +137,10 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_s
     )
     
     expected = pd.DataFrame(
-                   data    = np.array([[0.73973959, 0.58492661, 0.20772943, 0.54529631],
-                                       [0.19861311, 0.09020108, 0.38592691, 0.69637052]]),
+                   data    = np.array(
+                                 [[0.73973959, 0.58492661, 0.20772943, 0.54529631],
+                                  [0.19861311, 0.09020108, 0.38592691, 0.69637052]]
+                             ),
                    columns = [f"pred_boot_{i}" for i in range(4)],
                    index   = pd.RangeIndex(start=50, stop=52)
                )
@@ -190,13 +182,11 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_
     2 steps are predicted, using in-sample residuals, exog is included and both
     inputs are transformed.
     """
-
     forecaster = ForecasterRecursive(
                      regressor        = LinearRegression(),
                      lags             = 3,
                      transformer_y    = StandardScaler(),
-                     transformer_exog = StandardScaler(),
-                     binner_kwargs    = {'n_bins': 15}
+                     transformer_exog = StandardScaler()
                  )
     forecaster.fit(y=y, exog=exog)
     results = forecaster.predict_bootstrapping(

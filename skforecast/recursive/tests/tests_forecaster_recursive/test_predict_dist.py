@@ -50,8 +50,7 @@ def test_predict_dist_output_when_forecaster_is_LinearRegression_steps_is_2_in_s
                      regressor        = LinearRegression(),
                      lags             = 3,
                      transformer_y    = StandardScaler(),
-                     transformer_exog = StandardScaler(),
-                     binner_kwargs    = {'n_bins': 15}
+                     transformer_exog = StandardScaler()
                  )
 
     forecaster.fit(y=y, exog=exog)
@@ -65,7 +64,7 @@ def test_predict_dist_output_when_forecaster_is_LinearRegression_steps_is_2_in_s
     
     expected = pd.DataFrame(
                    data    = np.array([[0.51942298, 0.19406985],
-                                        [0.34277791, 0.22992831]]),
+                                       [0.34277791, 0.22992831]]),
                    columns = ['loc', 'scale'],
                    index   = pd.RangeIndex(start=50, stop=52)
                )
