@@ -7,6 +7,7 @@ import pandas as pd
 from sklearn.linear_model import LinearRegression
 from sklearn.exceptions import NotFittedError
 from sklearn.preprocessing import StandardScaler
+from skforecast.exceptions import ResidualsUsageWarning
 from skforecast.direct import ForecasterDirect
 
 # Fixtures
@@ -166,89 +167,187 @@ def test_set_out_sample_residuals_ValueError_when_inputs_does_not_match_any_step
 
 def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_and_no_append():
     """
-    Test residuals stored when new residuals length is less than 10000 and append is False.
+    Test residuals stored when new residuals length is less than 10_000 and 
+    append is False.
     """
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=2)
-    forecaster.fit(y=y)
-    y_true = {1: np.array([1, 2, 3, 4, 5]), 2: np.array([2, 3, 4, 5, 6])}
-    y_pred = {1: np.array([0, 1, 2, 3, 4]), 2: np.array([0, 1, 2, 3, 4])}
-
-    forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
-    results = forecaster.out_sample_residuals_
-
-    expected = {
-        1: np.array([1, 1, 1, 1, 1]), 
-        2: np.array([2, 2, 2, 2, 2])
+    rng = np.random.default_rng(123)
+    y_true = {
+        1: pd.Series(rng.normal(loc=10, scale=10, size=1000)), 
+        2: pd.Series(rng.normal(loc=10, scale=10, size=1000))}
+    y_pred = {
+        1: pd.Series(rng.normal(loc=10, scale=10, size=1000)), 
+        2: pd.Series(rng.normal(loc=10, scale=10, size=1000))
     }
 
-    assert expected.keys() == results.keys()
+    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=2)
+    forecaster.fit(y=y)
+    forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
+    forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred, append=False)
+    results = {
+        1: np.sort(forecaster.out_sample_residuals_[1]),
+        2: np.sort(forecaster.out_sample_residuals_[2])
+    }
+
+    expected = {
+        1: np.sort(y_true[1] - y_pred[1]),
+        2: np.sort(y_true[2] - y_pred[2])
+    }
+
+    assert forecaster.out_sample_residuals_.keys() == expected.keys()
     for key in results.keys():
         np.testing.assert_array_almost_equal(expected[key], results[key])
 
 
 def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_and_append():
     """
-    Test residuals stored when new residuals length is less than 10000 and append is True.
+    Test residuals stored when new residuals length is less than 10_000 and 
+    append is True.
     """
+    rng = np.random.default_rng(123)
+    y_true = {
+        1: pd.Series(rng.normal(loc=10, scale=10, size=1000)), 
+        2: pd.Series(rng.normal(loc=10, scale=10, size=1000))}
+    y_pred = {
+        1: pd.Series(rng.normal(loc=10, scale=10, size=1000)), 
+        2: pd.Series(rng.normal(loc=10, scale=10, size=1000))
+    }
+
     forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=2)
     forecaster.fit(y=y)
-    y_true = {
-        1: pd.Series(np.array([1, 2, 3, 4, 5])), 
-        2: pd.Series(np.array([2, 3, 4, 5, 6]))
-    }
-    y_pred = {
-        1: pd.Series(np.array([0, 1, 2, 3, 4])), 
-        2: pd.Series(np.array([0, 1, 2, 3, 4]))
-    }
-
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred, append=True)
-    results = forecaster.out_sample_residuals_
-
-    expected = {
-        1: np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1]),
-        2: np.array([2, 2, 2, 2, 2, 2, 2, 2, 2, 2])
+    results = {
+        1: np.sort(forecaster.out_sample_residuals_[1]),
+        2: np.sort(forecaster.out_sample_residuals_[2])
     }
 
-    assert expected.keys() == results.keys()
+    residuals_1 = (y_true[1] - y_pred[1])
+    residuals_2 = (y_true[2] - y_pred[2])
+    expected = {
+        1: np.sort(np.concatenate((residuals_1, residuals_1))),
+        2: np.sort(np.concatenate((residuals_2, residuals_2)))
+    }
+
+    assert forecaster.out_sample_residuals_.keys() == expected.keys()
     for key in results.keys():
         np.testing.assert_array_almost_equal(expected[key], results[key])
 
 
 def test_set_out_sample_residuals_when_residuals_length_is_greater_than_10000():
     """
-    Test len residuals stored when its length is greater than 10_000.
+    Test length residuals stored when its length is greater than 10_000.
     """
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=2)
-    forecaster.fit(y=y)
-    y_true = {1: np.arange(20_000), 2: np.arange(20_000)}
-    y_pred = {1: np.arange(20_000) + 1, 2: np.arange(20_000) + 2}
-    forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
-    results = forecaster.out_sample_residuals_
+    rng = np.random.RandomState(42)
+    y_fit = pd.Series(rng.normal(loc=10, scale=10, size=50_000))
 
-    assert list(results.keys()) == [1, 2]
-    for key in results.keys():
-        assert len(results[key]) == 10_000
+    forecaster = ForecasterDirect(
+        LinearRegression(), lags=1, steps=1, binner_kwargs={"n_bins": 10}
+    )
+    forecaster.fit(y=y_fit)
+    X_train, y_train = forecaster.create_train_X_y(y_fit)
+    X_train_step_1, y_train_step_1 = forecaster.filter_train_X_y_for_step(
+        step=1, X_train=X_train, y_train=y_train
+    )
 
-
-def test_set_out_sample_residuals_when_residuals_length_is_more_than_10000_and_append():
-    """
-    Test residuals stored when new residuals length is more than 10_000 and append is True.
-    """
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=2)
-    forecaster.fit(y=y)
-    y_true = {1: np.random.normal(size=5_000), 2: np.random.normal(size=5_000)}
-    y_pred = {1: np.random.normal(size=5_000), 2: np.random.normal(size=5_000)}
+    y_true = {1: y_train_step_1}
+    y_pred = {1: forecaster.regressors_[1].predict(X_train_step_1)}
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
 
-    y_true = {1: np.random.normal(size=10_000), 2: np.random.normal(size=10_000)}
-    y_pred = {1: np.random.normal(size=10_000), 2: np.random.normal(size=10_000)}
-    forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred, append=True)
-    results = forecaster.out_sample_residuals_
+    assert list(forecaster.out_sample_residuals_.keys()) == [1]
+    for v in forecaster.out_sample_residuals_.values():
+        assert len(v) == 10_000
+    for v in forecaster.out_sample_residuals_by_bin_.values():
+        assert len(v) == 1_000
 
-    assert list(results.keys()) == [1, 2]
-    for key in results.keys():
-        assert len(results[key]) == 10_000
+
+def test_out_sample_residuals_by_bin_and_in_sample_reseiduals_by_bin_equivalence():
+    """
+    Test out sample residuals by bin are quivalent to insample residuals by bin
+    when training data and training predictions are passed.
+    """
+    forecaster = ForecasterDirect(
+                     regressor     = LinearRegression(),
+                     steps         = 3,
+                     lags          = 5,
+                     binner_kwargs = {'n_bins': 3}
+                 )
+    forecaster.fit(y)
+    X_train, y_train = forecaster.create_train_X_y(y)
+
+    y_true = {}
+    y_pred = {}
+    for step in range(1, forecaster.steps + 1):
+        X_train_step, y_train_step = forecaster.filter_train_X_y_for_step(
+            step=step, X_train=X_train, y_train=y_train
+        )
+        y_true[step] = y_train_step
+        y_pred[step] = forecaster.regressors_[step].predict(X_train_step)
+
+    forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
+
+    assert forecaster.in_sample_residuals_by_bin_.keys() == forecaster.out_sample_residuals_by_bin_.keys()
+    for k in forecaster.out_sample_residuals_by_bin_.keys():
+        np.testing.assert_array_almost_equal(
+            forecaster.in_sample_residuals_by_bin_[k],
+            forecaster.out_sample_residuals_by_bin_[k]
+        )
+
+
+def test_set_out_sample_residuals_append_new_residuals_per_bin():
+    """
+    Test that set_out_sample_residuals append residuals per bin until it
+    reaches the max allowed size of 10_000 // n_bins
+    """
+    rng = np.random.default_rng(12345)
+    y_fit = pd.Series(
+        data=rng.normal(loc=10, scale=1, size=1001),
+        index=pd.date_range(start="01-01-2000", periods=1001, freq="h"),
+    )
+
+    forecaster = ForecasterDirect(
+        LinearRegression(), lags=1, steps=1, binner_kwargs={"n_bins": 2}
+    )
+    forecaster.fit(y=y_fit)
+    X_train, y_train = forecaster.create_train_X_y(y_fit)
+    X_train_step_1, y_train_step_1 = forecaster.filter_train_X_y_for_step(
+        step=1, X_train=X_train, y_train=y_train
+    )
+
+    y_true = {1: y_train_step_1}
+    y_pred = {1: forecaster.regressors_[1].predict(X_train_step_1)}
+    for i in range(1, 20):
+        forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred, append=True)
+        for v in forecaster.out_sample_residuals_by_bin_.values():
+            assert len(v) == min(5_000, 500 * i)
+
+
+def test_set_out_sample_residuals_when_there_are_no_residuals_for_some_bins():
+    """
+    Test that set_out_sample_residuals works when there are no residuals for some bins.
+    """
+    rng = np.random.default_rng(12345)
+    y = pd.Series(
+            data=rng.normal(loc=10, scale=1, size=100),
+            index=pd.date_range(start="01-01-2000", periods=100, freq="h"),
+        )
+
+    forecaster = ForecasterDirect(
+        regressor=LinearRegression(), steps=1, lags=5, binner_kwargs={"n_bins": 3}
+    )
+    forecaster.fit(y)
+    y_pred = {1: y.loc[y > 10]}
+    y_true = {1: y_pred[1] + rng.normal(loc=0, scale=1, size=len(y_pred[1]))}
+
+    warn_msg = re.escape(
+        f"The following bins have no out of sample residuals: [0]. "
+        f"No predicted values fall in the interval "
+        f"[{forecaster.binner_intervals_[0]}]. "
+        f"Empty bins will be filled with a random sample of residuals."
+    )
+    with pytest.warns(ResidualsUsageWarning, match=warn_msg):
+        forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred, append=True)
+
+    assert len(forecaster.out_sample_residuals_by_bin_[0]) == len(y_pred[1])
 
 
 def test_set_out_sample_residuals_when_residuals_keys_partially_match():

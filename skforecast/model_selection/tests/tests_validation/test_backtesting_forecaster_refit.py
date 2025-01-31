@@ -817,6 +817,120 @@ def test_output_backtesting_forecaster_refit_interval_percentiles_yes_exog(initi
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
+@pytest.mark.parametrize("interval", 
+                         [0.90, (5, 95)], 
+                         ids = lambda value: f'interval: {value}')
+def test_output_backtesting_forecaster_interval_conformal_and_binned_with_mocked(interval):
+    """
+    Test output of _backtesting_forecaster with backtesting mocked, interval yes. 
+    Regressor is LinearRegression with lags=3, Series y is mocked, exog is mocked, 
+    12 observations to backtest, steps=5 (2 remainder), conformal=True, binned=True.
+    """
+    expected_metric = pd.DataFrame({"mean_squared_error": [0.064250191230055]})
+    expected_predictions = pd.DataFrame(
+        data = np.array([
+            [0.59059622, 0.2974502 , 0.88374223],
+            [0.47257504, 0.22356317, 0.72158691],
+            [0.53024098, 0.14339956, 0.91708239],
+            [0.46163343, 0.21262156, 0.7106453 ],
+            [0.50035119, 0.35604735, 0.64465502],
+            [0.41975558, 0.20182965, 0.63768151],
+            [0.4256614 , 0.03773832, 0.81358449],
+            [0.41176005, 0.19383413, 0.62968598],
+            [0.52357817, 0.43392621, 0.61323014],
+            [0.509974  , 0.42032204, 0.59962597],
+            [0.65354628, 0.29763244, 1.00946013],
+            [0.48210726, 0.17026625, 0.79394828]]),
+        columns=['pred', 'lower_bound', 'upper_bound'],
+        index=pd.RangeIndex(start=38, stop=50, step=1)
+    )
+    
+    forecaster = ForecasterRecursive(
+        regressor=LinearRegression(), lags=3, binner_kwargs={'n_bins': 10}
+    )
+    n_backtest = 12
+    y_train = y[:-n_backtest]
+    cv = TimeSeriesFold(
+             steps              = 5,
+             initial_train_size = len(y_train),
+             refit              = True
+         )
+    metric, backtest_predictions = _backtesting_forecaster(
+                                        forecaster              = forecaster,
+                                        y                       = y,
+                                        exog                    = exog,
+                                        cv                      = cv,
+                                        metric                  = 'mean_squared_error',
+                                        interval                = interval,
+                                        interval_method         = 'conformal',
+                                        use_in_sample_residuals = True,
+                                        use_binned_residuals    = True,
+                                        random_state            = 123,
+                                        verbose                 = False,
+                                        show_progress           = False
+                                   )
+    
+    pd.testing.assert_frame_equal(expected_metric, metric)
+    pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+
+
+@pytest.mark.parametrize("interval", 
+                         [0.90, (5, 95)], 
+                         ids = lambda value: f'interval: {value}')
+def test_output_backtesting_forecaster_interval_conformal_and_binned_with_mocked_ForecasterDirect(interval):
+    """
+    Test output of _backtesting_forecaster with backtesting mocked, interval yes. 
+    Regressor is LinearRegression with lags=3, Series y is mocked, exog is mocked, 
+    12 observations to backtest, steps=5 (2 remainder), conformal=True, binned=True.
+    """
+    expected_metric = pd.DataFrame({"mean_squared_error": [0.063171531991472]})
+    expected_predictions = pd.DataFrame(
+        data = np.array([
+            [0.55584775, 0.37659309, 0.73510242],
+            [0.45718425, 0.08077419, 0.83359431],
+            [0.57242372, 0.36697393, 0.77787352],
+            [0.47236513, 0.10146645, 0.84326382],
+            [0.50476389, 0.16013181, 0.84939597],
+            [0.4728662 , 0.19898146, 0.74675095],
+            [0.44052992, 0.08322808, 0.79783176],
+            [0.43209886, 0.07171779, 0.79247994],
+            [0.53187641, 0.18347366, 0.88027916],
+            [0.54659151, 0.19818876, 0.89499426],
+            [0.67106981, 0.31897701, 1.02316261],
+            [0.54582075, 0.13585815, 0.95578335]]),
+        columns=['pred', 'lower_bound', 'upper_bound'],
+        index=pd.RangeIndex(start=38, stop=50, step=1)
+    )
+    
+    forecaster = ForecasterDirect(
+        regressor=LinearRegression(), steps=5, lags=3, binner_kwargs={'n_bins': 10}
+    )
+    n_backtest = 12
+    y_train = y[:-n_backtest]
+    cv = TimeSeriesFold(
+             steps              = 5,
+             initial_train_size = len(y_train),
+             refit              = True
+         )
+    metric, backtest_predictions = _backtesting_forecaster(
+                                        forecaster              = forecaster,
+                                        y                       = y,
+                                        exog                    = exog,
+                                        cv                      = cv,
+                                        metric                  = 'mean_squared_error',
+                                        interval                = interval,
+                                        interval_method         = 'conformal',
+                                        use_in_sample_residuals = True,
+                                        use_binned_residuals    = True,
+                                        random_state            = 123,
+                                        verbose                 = False,
+                                        show_progress           = False
+                                   )
+    
+    pd.testing.assert_frame_equal(expected_metric, metric)
+    pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+
+
 # ******************************************************************************
 # * Out sample residuals                                                       *
 # ******************************************************************************

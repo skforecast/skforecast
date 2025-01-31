@@ -4,10 +4,11 @@ import re
 import pytest
 import numpy as np
 import pandas as pd
-from skforecast.recursive import ForecasterRecursive
 from sklearn.linear_model import LinearRegression
 from sklearn.exceptions import NotFittedError
 from sklearn.preprocessing import StandardScaler
+from skforecast.exceptions import ResidualsUsageWarning
+from skforecast.recursive import ForecasterRecursive
 
 # Fixtures
 from .fixtures_forecaster_recursive import y
@@ -99,58 +100,66 @@ def test_set_out_sample_residuals_ValueError_when_y_true_and_y_pred_have_differe
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
 
 
+def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_and_no_append():
+    """
+    Test residuals stored when new residuals length is less than 10_000 and 
+    append is False.
+    """
+    rng = np.random.default_rng(12345)
+    y_true = pd.Series(rng.normal(loc=10, scale=10, size=1000))
+    y_pred = pd.Series(rng.normal(loc=10, scale=10, size=1000))
+
+    forecaster = ForecasterRecursive(LinearRegression(), lags=3)
+    forecaster.fit(y_true)
+    forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
+    forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred, append=False)
+    results = np.sort(forecaster.out_sample_residuals_)
+
+    expected = np.sort(y_true - y_pred)
+
+    np.testing.assert_array_almost_equal(results, expected)
+
+
+def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_and_append():
+    """
+    Test residuals stored when new residuals length is less than 10_000 and 
+    append is True.
+    """
+    rng = np.random.default_rng(12345)
+    y_true = pd.Series(rng.normal(loc=10, scale=10, size=1000))
+    y_pred = pd.Series(rng.normal(loc=10, scale=10, size=1000))
+
+    forecaster = ForecasterRecursive(LinearRegression(), lags=3)
+    forecaster.fit(y_true)
+    forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
+    forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred, append=True)
+    results = np.sort(forecaster.out_sample_residuals_)
+    
+    residuals = (y_true - y_pred)
+    expected = np.sort(np.concatenate((residuals, residuals)))
+
+    np.testing.assert_array_almost_equal(results, expected)
+
+
 def test_set_out_sample_residuals_when_residuals_length_is_greater_than_10000():
     """
     Test length residuals stored when its length is greater than 10_000.
     """
     rng = np.random.RandomState(42)
-    y_true = pd.Series(rng.normal(loc=10, scale=10, size=50_000))
-    forecaster = ForecasterRecursive(LinearRegression(), lags=1)
-    forecaster.fit(y_true)
-    X_train, y_train = forecaster.create_train_X_y(y_true)
-    y_pred = forecaster.regressor.predict(X_train)    
+    y_fit = pd.Series(rng.normal(loc=10, scale=10, size=50_000))
+
+    forecaster = ForecasterRecursive(
+        LinearRegression(), lags=1, binner_kwargs={"n_bins": 10}
+    )
+    forecaster.fit(y_fit)
+    X_train, y_train = forecaster.create_train_X_y(y_fit)
+
+    y_pred = forecaster.regressor.predict(X_train)
     forecaster.set_out_sample_residuals(y_true=y_train, y_pred=y_pred)
 
-    for v in forecaster.out_sample_residuals_by_bin_.values():
-        assert len(v) == 1000
     assert len(forecaster.out_sample_residuals_) == 10_000
-
-
-def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_and_no_append():
-    """
-    Test residuals stored when new residuals length is less than 10_000 and append
-    is False.
-    """
-    rng = np.random.default_rng(12345)
-    y_true = pd.Series(rng.normal(loc=10, scale=10, size=1000))
-    y_pred = pd.Series(rng.normal(loc=10, scale=10, size=1000))
-    forecaster = ForecasterRecursive(LinearRegression(), lags=3)
-    forecaster.fit(y_true)
-    forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
-    forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred, append=False)
-    expected = np.sort(y_true - y_pred)
-    results = np.sort(forecaster.out_sample_residuals_)
-
-    np.testing.assert_almost_equal(results, expected)
-
-
-def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_and_append():
-    """
-    Test residuals stored when new residuals length is less than 10_000 and append
-    is True.
-    """
-    rng = np.random.default_rng(12345)
-    y_true = pd.Series(rng.normal(loc=10, scale=10, size=1000))
-    y_pred = pd.Series(rng.normal(loc=10, scale=10, size=1000))
-    forecaster = ForecasterRecursive(LinearRegression(), lags=3)
-    forecaster.fit(y_true)
-    forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
-    forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred, append=True)
-    residuals = (y_true - y_pred)
-    expected = np.sort(np.concatenate((residuals, residuals)))
-    results = np.sort(forecaster.out_sample_residuals_)
-
-    np.testing.assert_almost_equal(results, expected)
+    for v in forecaster.out_sample_residuals_by_bin_.values():
+        assert len(v) == 1_000
 
 
 def test_out_sample_residuals_by_bin_and_in_sample_reseiduals_by_bin_equivalence():
@@ -173,35 +182,12 @@ def test_out_sample_residuals_by_bin_and_in_sample_reseiduals_by_bin_equivalence
         y_pred=predictions
     )
 
+    assert forecaster.in_sample_residuals_by_bin_.keys() == forecaster.out_sample_residuals_by_bin_.keys()
     for k in forecaster.out_sample_residuals_by_bin_.keys():
-        np.testing.assert_almost_equal(
+        np.testing.assert_array_almost_equal(
             forecaster.in_sample_residuals_by_bin_[k],
             forecaster.out_sample_residuals_by_bin_[k]
         )
-
-
-def test_set_out_sample_residuals_stores_maximum_10000_residuals_per_bin_when_n_bin_is_10():
-    """
-    Test that set_out_sample_residuals stores a maximum of 10_000 residuals per bin
-    when n_bins = 10.
-    """
-    y = pd.Series(
-        data=np.random.normal(loc=10, scale=1, size=20_000),
-        index=pd.date_range(start="01-01-2000", periods=20_000, freq="h"),
-    )
-    y_pred = y
-    forecaster = ForecasterRecursive(
-        regressor=LinearRegression(), lags=5, binner_kwargs={"n_bins": 10}
-    )
-    forecaster.fit(y)
-    forecaster.set_out_sample_residuals(
-        y_true=y,
-        y_pred=y_pred
-    )
-
-    assert forecaster.out_sample_residuals_.shape[0] == 10_000
-    for v in forecaster.out_sample_residuals_by_bin_.values():
-        assert len(v) <= 10000
 
 
 def test_set_out_sample_residuals_append_new_residuals_per_bin():
@@ -210,15 +196,16 @@ def test_set_out_sample_residuals_append_new_residuals_per_bin():
     reaches the max allowed size of 10_000 // n_bins
     """
     rng = np.random.default_rng(12345)
-    y = pd.Series(
-        data=rng.normal(loc=10, scale=1, size=1001),
-        index=pd.date_range(start="01-01-2000", periods=1001, freq="h"),
-    )
+    y_fit = pd.Series(
+                data=rng.normal(loc=10, scale=1, size=1001),
+                index=pd.date_range(start="01-01-2000", periods=1001, freq="h"),
+            )
+
     forecaster = ForecasterRecursive(
         regressor=LinearRegression(), lags=1, binner_kwargs={"n_bins": 2}
     )
-    forecaster.fit(y)   
-    X_train, y_train = forecaster.create_train_X_y(y=y)
+    forecaster.fit(y_fit)   
+    X_train, y_train = forecaster.create_train_X_y(y=y_fit)
     y_pred = forecaster.regressor.predict(X_train)
 
     for i in range(1, 20):
@@ -250,7 +237,7 @@ def test_set_out_sample_residuals_when_there_are_no_residuals_for_some_bins():
         f"[{forecaster.binner_intervals_[0]}]. "
         f"Empty bins will be filled with a random sample of residuals."
     )
-    with pytest.warns(UserWarning, match=warn_msg):
+    with pytest.warns(ResidualsUsageWarning, match=warn_msg):
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred, append=True)
 
     assert len(forecaster.out_sample_residuals_by_bin_[0]) == len(y_pred)
