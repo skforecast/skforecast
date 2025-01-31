@@ -16,7 +16,7 @@ from sklearn.pipeline import Pipeline
 import sklearn.linear_model
 from sklearn.exceptions import NotFittedError
 
-from ..exceptions import IgnoredArgumentWarning
+from ..exceptions import IgnoredArgumentWarning, OneStepAheadValidationWarning
 from ..metrics import add_y_train_argument, _get_metric
 from ..utils import check_interval, date_to_index_position
 
@@ -150,7 +150,6 @@ def check_backtesting_input(
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the fuction
         skforecast.utils.select_n_jobs_fit_forecaster.
-        **New in version 0.9.0**
     show_progress : bool, default True
         Whether to show a progress bar.
     suppress_warnings: bool, default False
@@ -171,7 +170,7 @@ def check_backtesting_input(
     cv_name = type(cv).__name__
 
     if cv_name != "TimeSeriesFold":
-        raise TypeError(f"`cv` must be a TimeSeriesFold object. Got {cv_name}.")
+        raise TypeError(f"`cv` must be a 'TimeSeriesFold' object. Got '{cv_name}'.")
 
     steps = cv.steps
     initial_train_size = cv.initial_train_size
@@ -467,6 +466,218 @@ def check_backtesting_input(
             f"When using a {forecaster_name}, the combination of steps "
             f"+ gap ({steps + gap}) cannot be greater than the `steps` parameter "
             f"declared when the forecaster is initialized ({forecaster.steps})."
+        )
+
+
+def check_one_step_ahead_input(
+    forecaster: object,
+    cv: object,
+    metric: str | Callable | list[str | Callable],
+    y: pd.Series | None = None,
+    series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame] = None,
+    exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
+    show_progress: bool = True,
+    suppress_warnings: bool = False
+) -> None:
+    """
+    This is a helper function to check most inputs of hyperparameter tuning
+    functions in modules `model_selection` when using a `OneStepAheadFold`.
+
+    Parameters
+    ----------
+    forecaster : Forecaster
+        Forecaster model.
+    cv : OneStepAheadFold
+        OneStepAheadFold object with the information needed to split the data into folds.
+    metric : str, Callable, list
+        Metric used to quantify the goodness of fit of the model.
+    y : pandas Series, default None
+        Training time series for uni-series forecasters.
+    series : pandas DataFrame, dict, default None
+        Training time series for multi-series forecasters.
+    exog : pandas Series, pandas DataFrame, dict, default None
+        Exogenous variables.
+    show_progress : bool, default True
+        Whether to show a progress bar.
+    suppress_warnings: bool, default False
+        If `True`, skforecast warnings will be suppressed during the hyperparameter 
+        search. See skforecast.exceptions.warn_skforecast_categories for more
+        information.
+
+    Returns
+    -------
+    None
+    
+    """
+
+    forecaster_name = type(forecaster).__name__
+    cv_name = type(cv).__name__
+
+    if cv_name != "OneStepAheadFold":
+        raise TypeError(f"`cv` must be a 'OneStepAheadFold' object. Got '{cv_name}'.")
+
+    initial_train_size = cv.initial_train_size
+
+    forecasters_one_step_ahead = [
+        "ForecasterRecursive",
+        "ForecasterDirect",
+        'ForecasterRecursiveMultiSeries',
+        'ForecasterDirectMultiVariate'
+    ]
+    if forecaster_name not in forecasters_one_step_ahead:
+        raise TypeError(
+            f"Only forecasters of type {forecasters_one_step_ahead} are allowed "
+            f"when using `cv` of type `OneStepAheadFold`. Got {forecaster_name}."
+        )
+
+    forecasters_uni = [
+        "ForecasterRecursive",
+        "ForecasterDirect",
+    ]
+    forecasters_multi_no_dict = [
+        "ForecasterDirectMultiVariate",
+    ]
+    forecasters_multi_dict = [
+        "ForecasterRecursiveMultiSeries"
+    ]
+
+    if forecaster_name in forecasters_uni:
+        if not isinstance(y, pd.Series):
+            raise TypeError(f"`y` must be a pandas Series. Got {type(y)}")
+        data_name = 'y'
+        data_length = len(y)
+
+    elif forecaster_name in forecasters_multi_no_dict:
+        if not isinstance(series, pd.DataFrame):
+            raise TypeError(f"`series` must be a pandas DataFrame. Got {type(series)}")
+        data_name = 'series'
+        data_length = len(series)
+    
+    elif forecaster_name in forecasters_multi_dict:
+        if not isinstance(series, (pd.DataFrame, dict)):
+            raise TypeError(
+                f"`series` must be a pandas DataFrame or a dict of DataFrames or Series. "
+                f"Got {type(series)}."
+            )
+        
+        data_name = 'series'
+        if isinstance(series, dict):
+            not_valid_series = [
+                k 
+                for k, v in series.items()
+                if not isinstance(v, (pd.Series, pd.DataFrame))
+            ]
+            if not_valid_series:
+                raise TypeError(
+                    f"If `series` is a dictionary, all series must be a named "
+                    f"pandas Series or a pandas DataFrame with a single column. "
+                    f"Review series: {not_valid_series}"
+                )
+            not_valid_index = [
+                k 
+                for k, v in series.items()
+                if not isinstance(v.index, pd.DatetimeIndex)
+            ]
+            if not_valid_index:
+                raise ValueError(
+                    f"If `series` is a dictionary, all series must have a Pandas "
+                    f"DatetimeIndex as index with the same frequency. "
+                    f"Review series: {not_valid_index}"
+                )
+
+            indexes_freq = [f'{v.index.freq}' for v in series.values()]
+            indexes_freq = sorted(set(indexes_freq))
+            if not len(indexes_freq) == 1:
+                raise ValueError(
+                    f"If `series` is a dictionary, all series must have a Pandas "
+                    f"DatetimeIndex as index with the same frequency. "
+                    f"Found frequencies: {indexes_freq}"
+                )
+            data_length = max([len(series[serie]) for serie in series])
+        else:
+            data_length = len(series)
+
+    if exog is not None:
+        if forecaster_name in forecasters_multi_dict:
+            if not isinstance(exog, (pd.Series, pd.DataFrame, dict)):
+                raise TypeError(
+                    f"`exog` must be a pandas Series, DataFrame, dictionary of pandas "
+                    f"Series/DataFrames or None. Got {type(exog)}."
+                )
+            if isinstance(exog, dict):
+                not_valid_exog = [
+                    k 
+                    for k, v in exog.items()
+                    if not isinstance(v, (pd.Series, pd.DataFrame, type(None)))
+                ]
+                if not_valid_exog:
+                    raise TypeError(
+                        f"If `exog` is a dictionary, All exog must be a named pandas "
+                        f"Series, a pandas DataFrame or None. Review exog: {not_valid_exog}"
+                    )
+        else:
+            if not isinstance(exog, (pd.Series, pd.DataFrame)):
+                raise TypeError(
+                    f"`exog` must be a pandas Series, DataFrame or None. Got {type(exog)}."
+                )
+
+    if hasattr(forecaster, 'differentiation'):
+        if forecaster.differentiation_max != cv.differentiation:
+            if forecaster_name == "ForecasterRecursiveMultiSeries" and isinstance(
+                forecaster.differentiation, dict
+            ):
+                raise ValueError(
+                    f"When using a dict as `differentiation` in ForecasterRecursiveMultiSeries, "
+                    f"the `differentiation` included in the cv ({cv.differentiation}) must be "
+                    f"the same as the maximum `differentiation` included in the forecaster "
+                    f"({forecaster.differentiation_max}). Set the same value "
+                    f"for both using the `differentiation` argument."
+                )
+            else:
+                raise ValueError(
+                    f"The differentiation included in the forecaster "
+                    f"({forecaster.differentiation_max}) differs from the differentiation "
+                    f"included in the cv ({cv.differentiation}). Set the same value "
+                    f"for both using the `differentiation` argument."
+                )
+
+    if not isinstance(metric, (str, Callable, list)):
+        raise TypeError(
+            f"`metric` must be a string, a callable function, or a list containing "
+            f"multiple strings and/or callables. Got {type(metric)}."
+        )
+
+    if initial_train_size is not None:
+        if forecaster_name in forecasters_uni:
+            index = cv._extract_index(y)
+        else:
+            index = cv._extract_index(series)
+
+        initial_train_size = date_to_index_position(
+                                 index        = index, 
+                                 date_input   = initial_train_size, 
+                                 method       = 'validation',
+                                 date_literal = 'initial_train_size'
+                             )
+        if initial_train_size < forecaster.window_size or initial_train_size >= data_length:
+            raise ValueError(
+                f"If `initial_train_size` is an integer, it must be greater than "
+                f"the `window_size` of the forecaster ({forecaster.window_size}) "
+                f"and smaller than the length of `{data_name}` ({data_length}). If "
+                f"it is a date, it must be within this range of the index."
+            )
+
+    if not isinstance(show_progress, bool):
+        raise TypeError("`show_progress` must be a boolean: `True`, `False`.")
+    if not isinstance(suppress_warnings, bool):
+        raise TypeError("`suppress_warnings` must be a boolean: `True`, `False`.")
+    
+    if not suppress_warnings:
+        warnings.warn(
+            "One-step-ahead predictions are used for faster model comparison, but they "
+            "may not fully represent multi-step prediction performance. It is recommended "
+            "to backtest the final model for a more accurate multi-step performance "
+            "estimate.", OneStepAheadValidationWarning
         )
 
 

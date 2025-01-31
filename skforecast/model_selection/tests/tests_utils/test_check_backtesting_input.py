@@ -21,7 +21,7 @@ from skforecast.model_selection.tests.fixtures_model_selection import y
 from skforecast.model_selection.tests.fixtures_model_selection_multiseries import series
 
 
-def test_check_backtesting_input_TypeError_when_cv_not_TimeSeries_Fold():
+def test_check_backtesting_input_TypeError_when_cv_not_TimeSeriesFold():
     """
     Test TypeError is raised in check_backtesting_input if `cv` is not a
     TimeSeriesFold object.
@@ -33,7 +33,7 @@ def test_check_backtesting_input_TypeError_when_cv_not_TimeSeries_Fold():
     class BadCv():
         pass
 
-    err_msg = re.escape("`cv` must be a TimeSeriesFold object. Got BadCv.")
+    err_msg = re.escape("`cv` must be a 'TimeSeriesFold' object. Got 'BadCv'.")
     with pytest.raises(TypeError, match = err_msg):
         check_backtesting_input(
             forecaster              = forecaster,
@@ -761,8 +761,8 @@ def test_check_backtesting_input_ValueError_Sarimax_Equivalent_when_initial_trai
          )
     
     err_msg = re.escape(
-        (f"`initial_train_size` must be an integer smaller than the "
-         f"length of `y` ({len(y)}).")
+        f"`initial_train_size` must be an integer smaller than the "
+        f"length of `y` ({len(y)})."
     )
     with pytest.raises(ValueError, match = err_msg):
         check_backtesting_input(
@@ -800,8 +800,8 @@ def test_check_backtesting_input_NotFittedError_when_initial_train_size_None_and
          )
     
     err_msg = re.escape(
-        ("`forecaster` must be already trained if no `initial_train_size` "
-         "is provided.")
+        "`forecaster` must be already trained if no `initial_train_size` "
+        "is provided."
     )
     with pytest.raises(NotFittedError, match = err_msg):
         check_backtesting_input(

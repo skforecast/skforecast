@@ -72,47 +72,6 @@ def test_TypeError_bayesian_search_optuna_when_cv_not_valid():
         )
 
 
-def test_TypeError_bayesian_search_optuna_when_forecaster_not_OneStepAhead():
-    """
-    Test TypeError is raised in _bayesian_search_optuna when forecaster is not
-    allowed to use OneStepAheadFold.
-    """
-
-    cv = OneStepAheadFold(
-             initial_train_size    = 100,
-             return_all_indexes    = False,
-         )
-    
-    class DummyForecaster:
-        pass
-    forecaster = DummyForecaster()
-    
-    def search_space(trial):  # pragma: no cover
-        search_space  = {
-            'alpha': trial.suggest_float('not_alpha', 1e-2, 1.0),
-            'lags': trial.suggest_categorical('lags', [2, 4])
-        }
-
-        return search_space
-    
-    err_msg = re.escape(
-        f"Only forecasters of type ['ForecasterRecursive', 'ForecasterDirect'] are allowed "
-        f"when using `cv` of type `OneStepAheadFold`. Got {type(forecaster).__name__}."
-    )
-    with pytest.raises(TypeError, match = err_msg):
-        _bayesian_search_optuna(
-            forecaster         = forecaster,
-            y                  = y,
-            cv                 = cv,
-            search_space       = search_space,
-            metric             = ['mean_absolute_error', mean_absolute_error],
-            n_trials           = 10,
-            random_state       = 123,
-            return_best        = False,
-            verbose            = False,
-        )
-
-
 def test_ValueError_bayesian_search_optuna_metric_list_duplicate_names():
     """
     Test ValueError is raised in _bayesian_search_optuna when a `list` of 
