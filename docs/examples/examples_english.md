@@ -2,7 +2,7 @@
 
 # Examples and Tutorials
 
-Practical examples and tutorials to help you understand and apply skforecast.
+Practical examples and tutorials to help you understand and apply skforecast. You can also find them in the free track [**Forecasting with Python**](https://cienciadedatos.net/en/forecasting-python).
 
 ## Getting Started: Fundamental Forecasting
 
