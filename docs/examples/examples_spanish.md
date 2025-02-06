@@ -2,7 +2,7 @@
 
 # Ejemplos y Tutoriales
 
-Ejemplos prácticos y tutoriales para ayudarte a entender y aplicar skforecast.
+Ejemplos prácticos y tutoriales para ayudarte a entender y aplicar skforecast. También puedes encontrarlos todo este material gratuito en [**Forecasting con Python**](https://cienciadedatos.net/forecasting-python).
 
 ## Primeros Pasos: Forecasting Fundamental
 
@@ -34,6 +34,8 @@ Estos tutoriales se centran en modelos globales y en el pronóstico de series m�
 
 <i class="fa-solid fa-layer-group" style="font-size: 25px; color: #001633;"></i> [Forecasting con Deep Learning](https://cienciadedatos.net/documentos/py54-forecasting-con-deep-learning)
 
+<i class="fa-solid fa-circle-nodes" style="font-size: 25px; color: #2f5ee9;"></i> [Clustering de series temporales para mejorar los modelos de forecasting](https://cienciadedatos.net/documentos/py64-clustering-series-temporales-forecasting.html)
+
 
 ## Técnicas Avanzadas: Más Allá de los Modelos Básicos
 
@@ -48,6 +50,12 @@ Para usuarios experimentados que buscan profundizar en sus habilidades de foreca
 <i class="fa-solid fa-magnifying-glass" style="font-size: 25px; color: purple;"></i> [Forecasting de series incompletas con valores faltantes](https://www.cienciadedatos.net/documentos/py46-forecasting-series-temporales-incompletas.html)
 
 <i class="fa-solid fa-chart-gantt" style="font-size: 25px; color: #ff004f;"></i> [Interpretabilidad en modelos de forecasting](https://www.cienciadedatos.net/documentos/py57-modelos-forecasting-interpretables.html)
+
+<i class="fa-solid fa-cubes-stacked fa-rotate-180" style="font-size: 25px; color: #c15d0b;"></i> [Stacking ensemble de modelos para mejorar el forecasting](https://cienciadedatos.net/documentos/py52-stacking-ensemble-modelos-forecasting.html)
+
+<i class="fa-solid fa-ghost" style="font-size: 25px; color: #2f5ee9;"></i> [Detección de anomalías en series temporales](https://cienciadedatos.net/documentos/py62-deteccion-anomalias-series-temporales.html)
+
+<i class="fa-solid fa-lock-open" style="font-size: 25px; color: #e70d44;"></i> [Data leakage en modelos de forecasting preentrenados](https://cienciadedatos.net/documentos/py63-data-leakage-modelos-forecasting-preentrenados.html)
 
 
 ## Desafíos del Mundo Real y Estudios de Caso
