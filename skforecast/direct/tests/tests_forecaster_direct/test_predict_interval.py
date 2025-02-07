@@ -53,7 +53,7 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_2_
     recommended_n_boot = np.max([len(v) for v in forecaster.in_sample_residuals_.values()])
     warn_msg = re.escape(
         f"`n_boot`, {n_boot}, is greater than the number of available "
-        f"residuals, {recommended_n_boot}. Additional iterations don't "
+        f"residuals. More than {recommended_n_boot} iterations don't "
         f"add new information to the bootstrapping process, but increase "
         f"the computational cost."
     )
@@ -97,7 +97,7 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_2_
     recommended_n_boot = np.max([len(v) for v in forecaster.in_sample_residuals_.values()])
     warn_msg = re.escape(
         f"`n_boot`, {n_boot}, is greater than the number of available "
-        f"residuals, {recommended_n_boot}. Additional iterations don't "
+        f"residuals. More than {recommended_n_boot} iterations don't "
         f"add new information to the bootstrapping process, but increase "
         f"the computational cost."
     )
@@ -136,8 +136,8 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_5_
 
     recommended_n_boot = np.max([len(v) for v in forecaster.in_sample_residuals_by_bin_.values()])
     warn_msg = re.escape(
-        f"`n_boot`, 250, is greater than the total number of "
-        f"residuals, {recommended_n_boot}. Additional iterations don't "
+        f"`n_boot`, 250, is greater than the number of available "
+        f"residuals. More than {recommended_n_boot} iterations don't "
         f"add new information to the bootstrapping process, but increase "
         f"the computational cost."
     )
@@ -178,8 +178,8 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_5_
 
     recommended_n_boot = np.max([len(v) for v in forecaster.out_sample_residuals_by_bin_.values()])
     warn_msg = re.escape(
-        f"`n_boot`, 250, is greater than the total number of "
-        f"residuals, {recommended_n_boot}. Additional iterations don't "
+        f"`n_boot`, 250, is greater than the number of available "
+        f"residuals. More than {recommended_n_boot} iterations don't "
         f"add new information to the bootstrapping process, but increase "
         f"the computational cost."
     )
@@ -232,7 +232,7 @@ def test_predict_interval_conformal_output_when_regressor_is_LinearRegression_wi
                               [-0.07720596, -1.83615751,  1.68174558],
                               [-0.54638907, -2.30534062,  1.21256247],
                               [-0.08892596, -1.8478775 ,  1.67002558]]),
-                   index = pd.RangeIndex(start=20, stop=25, step=1),
+                   index = pd.RangeIndex(start=20, stop=23, step=1),
                    columns = ['pred', 'lower_bound', 'upper_bound']
                )
     
@@ -268,7 +268,7 @@ def test_predict_interval_conformal_output_when_binned_residuals(interval):
                               [-0.07720596, -1.96803865,  1.81362673],
                               [-0.54638907, -3.1153822 ,  2.02260406],
                               [-0.08892596, -1.97975865,  1.80190673]]),
-                   index = pd.RangeIndex(start=20, stop=25, step=1),
+                   index = pd.RangeIndex(start=20, stop=23, step=1),
                    columns = ['pred', 'lower_bound', 'upper_bound']
                )
     

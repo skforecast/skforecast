@@ -495,16 +495,16 @@ def test_output_backtesting_forecaster_interval_no_exog_yes_remainder_with_mocke
             return_all_indexes    = False,
         )
     metric, backtest_predictions = _backtesting_forecaster(
-                                        forecaster              = forecaster,
-                                        y                       = y,
-                                        exog                    = None,
-                                        cv                      = cv,
-                                        metric                  = 'mean_squared_error',
-                                        interval                = [5, 95],
-                                        n_boot                  = 500,
-                                        random_state            = 123,
-                                        use_in_sample_residuals = True,
-                                        verbose                 = False
+                                       forecaster              = forecaster,
+                                       y                       = y,
+                                       exog                    = None,
+                                       cv                      = cv,
+                                       metric                  = 'mean_squared_error',
+                                       interval                = [5, 95],
+                                       n_boot                  = 500,
+                                       random_state            = 123,
+                                       use_in_sample_residuals = True,
+                                       verbose                 = False
                                    )
     
     pd.testing.assert_frame_equal(expected_metric, metric)

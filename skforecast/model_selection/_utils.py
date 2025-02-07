@@ -647,25 +647,24 @@ def check_one_step_ahead_input(
             f"multiple strings and/or callables. Got {type(metric)}."
         )
 
-    if initial_train_size is not None:
-        if forecaster_name in forecasters_uni:
-            index = cv._extract_index(y)
-        else:
-            index = cv._extract_index(series)
+    if forecaster_name in forecasters_uni:
+        index = cv._extract_index(y)
+    else:
+        index = cv._extract_index(series)
 
-        initial_train_size = date_to_index_position(
-                                 index        = index, 
-                                 date_input   = initial_train_size, 
-                                 method       = 'validation',
-                                 date_literal = 'initial_train_size'
-                             )
-        if initial_train_size < forecaster.window_size or initial_train_size >= data_length:
-            raise ValueError(
-                f"If `initial_train_size` is an integer, it must be greater than "
-                f"the `window_size` of the forecaster ({forecaster.window_size}) "
-                f"and smaller than the length of `{data_name}` ({data_length}). If "
-                f"it is a date, it must be within this range of the index."
-            )
+    initial_train_size = date_to_index_position(
+                             index        = index, 
+                             date_input   = initial_train_size, 
+                             method       = 'validation',
+                             date_literal = 'initial_train_size'
+                         )
+    if initial_train_size < forecaster.window_size or initial_train_size >= data_length:
+        raise ValueError(
+            f"If `initial_train_size` is an integer, it must be greater than "
+            f"the `window_size` of the forecaster ({forecaster.window_size}) "
+            f"and smaller than the length of `{data_name}` ({data_length}). If "
+            f"it is a date, it must be within this range of the index."
+        )
 
     if not isinstance(show_progress, bool):
         raise TypeError("`show_progress` must be a boolean: `True`, `False`.")

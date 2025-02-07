@@ -72,7 +72,9 @@ def test_predict_bootstrapping_ValueError_when_out_sample_residuals_is_None(use_
         f"method before predicting."
     )
     with pytest.raises(ValueError, match = err_msg):
-        forecaster.predict_bootstrapping(steps=1, use_in_sample_residuals=False)
+        forecaster.predict_bootstrapping(
+            steps=1, use_in_sample_residuals=False, use_binned_residuals=use_binned_residuals
+        )
 
 
 def test_predict_bootstrapping_ValueError_when_not_out_sample_residuals_for_all_steps_predicted():
@@ -387,10 +389,8 @@ def test_predict_bootstrapping_output_when_recommended_n_boot():
     forecaster.fit(y=y)
 
     recommended_n_boot = 5
-    forecaster.in_sample_residuals_[1] = forecaster.in_sample_residuals_[1][:recommended_n_boot]
     for k, v in forecaster.in_sample_residuals_.items():
-        if k != 1:
-            forecaster.in_sample_residuals_[k] = v[:recommended_n_boot - 1]
+        forecaster.in_sample_residuals_[k] = v[:recommended_n_boot]
         
     results = forecaster.predict_bootstrapping(
         steps=5, n_boot=recommended_n_boot, use_in_sample_residuals=True
@@ -399,10 +399,10 @@ def test_predict_bootstrapping_output_when_recommended_n_boot():
     expected = pd.DataFrame(
                    data = np.array([
                               [0.48721565, 1.02484437, 0.61905973, 0.56793914, 0.5081311 ],
-                              [0.9590885 , 0.61539607, 0.49375752, 0.43661094, 0.9590885 ],
-                              [0.58708183, 0.38215125, 0.35461588, 0.3501964 , 0.35461588],
-                              [0.38407239, 0.29983844, 0.29727213, 0.73461524, 0.29727213],
-                              [0.29604462, 0.28561801, 0.73504556, 0.52313719, 0.29604462]
+                              [0.9590885 , 0.61539607, 0.49375752, 0.43661094, 0.37422496],
+                              [0.58708183, 0.38215125, 0.35461588, 0.3501964 , 0.77520526],
+                              [0.38407239, 0.29983844, 0.29727213, 0.73461524, 0.51531151],
+                              [0.29604462, 0.28561801, 0.73504556, 0.52313719, 0.05451923]
                           ]),
                    columns = [f"pred_boot_{i}" for i in range(5)],
                    index   = pd.RangeIndex(start=50, stop=55)
@@ -424,10 +424,8 @@ def test_predict_bootstrapping_output_when_recommended_n_boot_binned_residuals()
     forecaster.fit(y=y)
 
     recommended_n_boot = 5
-    forecaster.in_sample_residuals_by_bin_[1] = forecaster.in_sample_residuals_by_bin_[1][:recommended_n_boot]
     for k, v in forecaster.in_sample_residuals_by_bin_.items():
-        if k != 1:
-            forecaster.in_sample_residuals_by_bin_[k] = v[:recommended_n_boot - 1]
+        forecaster.in_sample_residuals_by_bin_[k] = v[:recommended_n_boot]
         
     results = forecaster.predict_bootstrapping(
         steps=5, n_boot=recommended_n_boot, use_in_sample_residuals=True, use_binned_residuals=True
@@ -435,9 +433,9 @@ def test_predict_bootstrapping_output_when_recommended_n_boot_binned_residuals()
     
     expected = pd.DataFrame(
                    data = np.array([
-                              [0.0871959 , 0.42151611, 0.31312881, 0.93930242, 0.0871959 ],
-                              [0.41707327, 0.42057899, 0.17540809, 0.60089178, 0.17540809],
-                              [0.40475029, 0.4001072 , 0.17872038, 0.24435799, 0.17872038],
+                              [0.0871959 , 0.42151611, 0.31312881, 0.93930242, 0.50375378],
+                              [0.41707327, 0.42057899, 0.17540809, 0.60089178, 0.87562183],
+                              [0.40475029, 0.4001072 , 0.17872038, 0.24435799, 0.31957347],
                               [0.42421302, 0.73008654, 0.43387046, 0.38206866, 0.22417746],
                               [0.43065853, 0.73653206, 0.44031597, 0.38851417, 0.23062297]
                           ]),

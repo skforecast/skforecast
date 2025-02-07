@@ -1726,31 +1726,22 @@ class ForecasterDirect(ForecasterBase):
             residuals = self.out_sample_residuals_
             residuals_by_bin = self.out_sample_residuals_by_bin_
 
-        # TODO: Review warnings message with Ximo
+        # NOTE: As residuals are {step/bin: residuals}, more n_boot iterations
+        # that the number of residual for the step/bin with more residuals, 
+        # doesn't add new information to the bootstrapping process.
         if use_binned_residuals:
-            # NOTE: As residuals are {bin: residuals}, more n_boot iterations
-            # that the total number of residual, doesn't add new information 
-            # to the bootstrapping process.
             recommended_n_boot = np.max([v.size for v in residuals_by_bin.values()])
-            warnings_msg = (
-                f"`n_boot`, {n_boot}, is greater than the total number of "
-                f"residuals, {recommended_n_boot}. Additional iterations don't "
-                f"add new information to the bootstrapping process, but increase "
-                f"the computational cost."
-            )
         else:
-            # NOTE: As residuals are {step: residuals}, more n_boot iterations
-            # that the number of residual for the step with more residuals, 
-            # doesn't add new information to the bootstrapping process.
             recommended_n_boot = np.max([v.size for v in residuals.values()])
-            warnings_msg = (
-                f"`n_boot`, {n_boot}, is greater than the number of available "
-                f"residuals, {recommended_n_boot}. Additional iterations don't "
-                f"add new information to the bootstrapping process, but increase "
-                f"the computational cost."
-            )
+        
         if n_boot > recommended_n_boot:
-            warnings.warn(warnings_msg, ResidualsUsageWarning)
+            warnings.warn(
+                f"`n_boot`, {n_boot}, is greater than the number of available "
+                f"residuals. More than {recommended_n_boot} iterations don't "
+                f"add new information to the bootstrapping process, but increase "
+                f"the computational cost.",
+                ResidualsUsageWarning
+            )
 
         # NOTE: Predictors and Residuals are transformed and differenced.  
         regressors = [self.regressors_[step] for step in steps]
@@ -1767,14 +1758,7 @@ class ForecasterDirect(ForecasterBase):
 
         boot_predictions = np.tile(predictions, (n_boot, 1)).T
         boot_columns = [f"pred_boot_{i}" for i in range(n_boot)]
-
-        # for i, step in enumerate(steps):
-        #     sampled_residuals = residuals[step][
-        #         rng.integers(low=0, high=len(residuals[step]), size=n_boot)
-        #     ]
-        #     boot_predictions[i, :] = boot_predictions[i, :] + sampled_residuals
-
-        # TODO: Review with Ximo adaptation for binned residuals
+        
         rng = np.random.default_rng(seed=random_state)
         for i, step in enumerate(steps):
 
@@ -1785,29 +1769,12 @@ class ForecasterDirect(ForecasterBase):
                 step_residuals = residuals[step]
             len_step_residuals = len(step_residuals)
 
-            # NOTE: If n_boot == recommended_n_boot, don't need to sample the
-            # step/bin with the maximum number of residuals. For the other 
-            # steps/bins, pick all the residuals and sample the remaining amount.
-            if n_boot == recommended_n_boot:
-                if len_step_residuals < recommended_n_boot:
-                    step_residuals = np.concatenate(
-                        (
-                            step_residuals,
-                            step_residuals[
-                                rng.integers(
-                                    low  = 0,
-                                    high = len_step_residuals,
-                                    size = n_boot - len_step_residuals,
-                                )
-                            ],
-                        )
-                    )
-            else:
-                # NOTE: If len_step_residuals == n_boot, don't need to sample
-                if n_boot != len_step_residuals:  
-                    step_residuals = step_residuals[
-                        rng.integers(low=0, high=len_step_residuals, size=n_boot)
-                    ]
+            # NOTE: If n_boot != len_step_residuals, upsample or downsample the 
+            # residuals from the step/bin to match n_boot.
+            if len_step_residuals != n_boot:
+                step_residuals = step_residuals[
+                    rng.integers(low=0, high=len_step_residuals, size=n_boot)
+                ]
             
             boot_predictions[i, :] = boot_predictions[i, :] + step_residuals
 

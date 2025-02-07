@@ -1505,7 +1505,7 @@ class QuantileBinner:
 
         self.n_bins_ = len(self.bin_edges_) - 1
         self.intervals_ = {
-            float(i): (float(self.bin_edges_[i]), float(self.bin_edges_[i + 1]))
+            int(i): (float(self.bin_edges_[i]), float(self.bin_edges_[i + 1]))
             for i in range(self.n_bins_)
         }
 
