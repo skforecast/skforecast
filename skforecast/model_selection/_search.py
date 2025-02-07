@@ -17,7 +17,7 @@ from tqdm.auto import tqdm
 import optuna
 from optuna.samplers import TPESampler
 from sklearn.model_selection import ParameterGrid, ParameterSampler
-from ..exceptions import warn_skforecast_categories, OneStepAheadValidationWarning
+from ..exceptions import warn_skforecast_categories
 from ..model_selection._split import TimeSeriesFold, OneStepAheadFold
 from ..model_selection._validation import (
     backtesting_forecaster, 
@@ -26,6 +26,7 @@ from ..model_selection._validation import (
 )
 from ..metrics import add_y_train_argument, _get_metric
 from ..model_selection._utils import (
+    check_one_step_ahead_input,
     initialize_lags_grid,
     _initialize_levels_model_selection_multiseries,
     _calculate_metrics_one_step_ahead,
@@ -324,8 +325,6 @@ def _evaluate_grid_hyperparameters(
     """
 
     cv_name = type(cv).__name__
-    forecaster_name = type(forecaster).__name__
-
     if cv_name not in ['TimeSeriesFold', 'OneStepAheadFold']:
         raise TypeError(
             f"`cv` must be an instance of `TimeSeriesFold` or `OneStepAheadFold`. "
@@ -333,17 +332,14 @@ def _evaluate_grid_hyperparameters(
         )
     
     if cv_name == 'OneStepAheadFold':
-        forecasters_one_step_ahead = ['ForecasterRecursive', 'ForecasterDirect']
-        if forecaster_name not in forecasters_one_step_ahead:
-            raise TypeError(
-                f"Only forecasters of type {forecasters_one_step_ahead} are allowed "
-                f"when using `cv` of type `OneStepAheadFold`. Got {forecaster_name}."
-            )
-        warnings.warn(
-            "One-step-ahead predictions are used for faster model comparison, but they "
-            "may not fully represent multi-step prediction performance. It is recommended "
-            "to backtest the final model for a more accurate multi-step performance "
-            "estimate.", OneStepAheadValidationWarning
+        check_one_step_ahead_input(
+            forecaster        = forecaster,
+            cv                = cv,
+            metric            = metric,
+            y                 = y,
+            exog              = exog,
+            show_progress     = show_progress,
+            suppress_warnings = False
         )
         cv = deepcopy(cv)
         cv.set_params({
@@ -357,8 +353,6 @@ def _evaluate_grid_hyperparameters(
             f"`exog` must have same number of samples as `y`. "
             f"length `exog`: ({len(exog)}), length `y`: ({len(y)})"
         )
-
-    lags_grid, lags_label = initialize_lags_grid(forecaster, lags_grid)
    
     if not isinstance(metric, list):
         metric = [metric] 
@@ -378,6 +372,7 @@ def _evaluate_grid_hyperparameters(
             "When `metric` is a `list`, each metric name must be unique."
         )
 
+    lags_grid, lags_label = initialize_lags_grid(forecaster, lags_grid)
     if verbose:
         print(f"Number of models compared: {len(param_grid) * len(lags_grid)}.")
 
@@ -434,7 +429,6 @@ def _evaluate_grid_hyperparameters(
 
                 metric_values = _calculate_metrics_one_step_ahead(
                                     forecaster = forecaster,
-                                    y          = y,
                                     metrics    = metric,
                                     X_train    = X_train,
                                     y_train    = y_train,
@@ -710,8 +704,8 @@ def _bayesian_search_optuna(
 
     """
     
-    cv_name = type(cv).__name__
     forecaster_name = type(forecaster).__name__
+    cv_name = type(cv).__name__
 
     if cv_name not in ['TimeSeriesFold', 'OneStepAheadFold']:
         raise TypeError(
@@ -720,17 +714,14 @@ def _bayesian_search_optuna(
         )
     
     if cv_name == 'OneStepAheadFold':
-        forecasters_one_step_ahead = ['ForecasterRecursive', 'ForecasterDirect']
-        if forecaster_name not in forecasters_one_step_ahead:
-            raise TypeError(
-                f"Only forecasters of type {forecasters_one_step_ahead} are allowed "
-                f"when using `cv` of type `OneStepAheadFold`. Got {forecaster_name}."
-            )
-        warnings.warn(
-            "One-step-ahead predictions are used for faster model comparison, but they "
-            "may not fully represent multi-step prediction performance. It is recommended "
-            "to backtest the final model for a more accurate multi-step performance "
-            "estimate.", OneStepAheadValidationWarning
+        check_one_step_ahead_input(
+            forecaster        = forecaster,
+            cv                = cv,
+            metric            = metric,
+            y                 = y,
+            exog              = exog,
+            show_progress     = show_progress,
+            suppress_warnings = False
         )
         cv = deepcopy(cv)
         cv.set_params({
@@ -825,7 +816,6 @@ def _bayesian_search_optuna(
 
             metrics = _calculate_metrics_one_step_ahead(
                           forecaster = forecaster,
-                          y          = y,
                           metrics    = metric,
                           X_train    = X_train,
                           y_train    = y_train,
@@ -901,7 +891,7 @@ def _bayesian_search_optuna(
             metric_dict[m_name].append(m_values)
     
     lags_list = [
-        initialize_lags(forecaster_name=forecaster_name, lags = lag)[0]
+        initialize_lags(forecaster_name=forecaster_name, lags=lag)[0]
         for lag in lags_list
     ]
 
@@ -1299,8 +1289,6 @@ def _evaluate_grid_hyperparameters_multiseries(
     set_skforecast_warnings(suppress_warnings, action='ignore')
 
     cv_name = type(cv).__name__
-    forecaster_name = type(forecaster).__name__
-
     if cv_name not in ['TimeSeriesFold', 'OneStepAheadFold']:
         raise TypeError(
             f"`cv` must be an instance of `TimeSeriesFold` or `OneStepAheadFold`. "
@@ -1308,20 +1296,14 @@ def _evaluate_grid_hyperparameters_multiseries(
         )
     
     if cv_name == 'OneStepAheadFold':
-        forecasters_one_step_ahead = [
-            'ForecasterRecursiveMultiSeries',
-            'ForecasterDirectMultiVariate'
-        ]
-        if forecaster_name not in forecasters_one_step_ahead:
-            raise TypeError(
-                f"Only forecasters of type {forecasters_one_step_ahead} are allowed "
-                f"when using `cv` of type `OneStepAheadFold`. Got {forecaster_name}."
-            )
-        warnings.warn(
-            "One-step-ahead predictions are used for faster model comparison, but they "
-            "may not fully represent multi-step prediction performance. It is recommended "
-            "to backtest the final model for a more accurate multi-step performance "
-            "estimate.", OneStepAheadValidationWarning
+        check_one_step_ahead_input(
+            forecaster        = forecaster,
+            cv                = cv,
+            metric            = metric,
+            series            = series,
+            exog              = exog,
+            show_progress     = show_progress,
+            suppress_warnings = suppress_warnings
         )
         cv = deepcopy(cv)
         cv.set_params({
@@ -1344,23 +1326,12 @@ def _evaluate_grid_hyperparameters_multiseries(
             f"Allowed `aggregate_metric` are: {allowed_aggregate_metrics}. "
             f"Got: {aggregate_metric}."
         )
-    
-    levels = _initialize_levels_model_selection_multiseries(
-                 forecaster = forecaster,
-                 series     = series,
-                 levels     = levels
-             )
-
-    add_aggregated_metric = True if len(levels) > 1 else False
-
-    lags_grid, lags_label = initialize_lags_grid(forecaster, lags_grid)
    
     if not isinstance(metric, list):
         metric = [metric]
     metric = [
         _get_metric(metric=m)
-        if isinstance(m, str)
-        else add_y_train_argument(m) 
+        if isinstance(m, str) else add_y_train_argument(m) 
         for m in metric
     ]
     metric_names = [(m if isinstance(m, str) else m.__name__) for m in metric]
@@ -1369,6 +1340,13 @@ def _evaluate_grid_hyperparameters_multiseries(
             "When `metric` is a `list`, each metric name must be unique."
         )
     
+    levels = _initialize_levels_model_selection_multiseries(
+                 forecaster = forecaster,
+                 series     = series,
+                 levels     = levels
+             )
+    
+    add_aggregated_metric = True if len(levels) > 1 else False
     if add_aggregated_metric:
         metric_names = [
             f"{metric_name}__{aggregation}"
@@ -1376,6 +1354,7 @@ def _evaluate_grid_hyperparameters_multiseries(
             for aggregation in aggregate_metric
         ]
 
+    lags_grid, lags_label = initialize_lags_grid(forecaster, lags_grid)
     if verbose:
         print(
             f"{len(param_grid) * len(lags_grid)} models compared for {len(levels)} "
@@ -1779,8 +1758,8 @@ def _bayesian_search_optuna_multiseries(
     
     set_skforecast_warnings(suppress_warnings, action='ignore')
 
-    cv_name = type(cv).__name__
     forecaster_name = type(forecaster).__name__
+    cv_name = type(cv).__name__
 
     if cv_name not in ['TimeSeriesFold', 'OneStepAheadFold']:
         raise TypeError(
@@ -1789,20 +1768,14 @@ def _bayesian_search_optuna_multiseries(
         )
     
     if cv_name == 'OneStepAheadFold':
-        forecasters_one_step_ahead = [
-            'ForecasterRecursiveMultiSeries',
-            'ForecasterDirectMultiVariate'
-        ]
-        if forecaster_name not in forecasters_one_step_ahead:
-            raise TypeError(
-                f"Only forecasters of type {forecasters_one_step_ahead} are allowed "
-                f"when using `cv` of type `OneStepAheadFold`. Got {forecaster_name}."
-            )
-        warnings.warn(
-            "One-step-ahead predictions are used for faster model comparison, but they "
-            "may not fully represent multi-step prediction performance. It is recommended "
-            "to backtest the final model for a more accurate multi-step performance "
-            "estimate.", OneStepAheadValidationWarning
+        check_one_step_ahead_input(
+            forecaster        = forecaster,
+            cv                = cv,
+            metric            = metric,
+            series            = series,
+            exog              = exog,
+            show_progress     = show_progress,
+            suppress_warnings = suppress_warnings
         )
         cv = deepcopy(cv)
         cv.set_params({
@@ -1819,13 +1792,6 @@ def _bayesian_search_optuna_multiseries(
             (f"Allowed `aggregate_metric` are: {allowed_aggregate_metrics}. "
              f"Got: {aggregate_metric}.")
         )
-    
-    levels = _initialize_levels_model_selection_multiseries(
-                 forecaster = forecaster,
-                 series     = series,
-                 levels     = levels
-             )
-    add_aggregated_metric = True if len(levels) > 1 else False
 
     if not isinstance(metric, list):
         metric = [metric]
@@ -1841,6 +1807,12 @@ def _bayesian_search_optuna_multiseries(
             "When `metric` is a `list`, each metric name must be unique."
         )
     
+    levels = _initialize_levels_model_selection_multiseries(
+                 forecaster = forecaster,
+                 series     = series,
+                 levels     = levels
+             )
+    add_aggregated_metric = True if len(levels) > 1 else False
     if add_aggregated_metric:
         metric_names = [
             f"{metric_name}__{aggregation}"
@@ -2025,7 +1997,7 @@ def _bayesian_search_optuna_multiseries(
     
     if forecaster_name not in ['ForecasterDirectMultiVariate']:
         lags_list = [
-            initialize_lags(forecaster_name=forecaster_name, lags = lag)[0]
+            initialize_lags(forecaster_name=forecaster_name, lags=lag)[0]
             for lag in lags_list
         ]
     else:

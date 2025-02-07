@@ -949,6 +949,7 @@ class ForecasterRecursive(ForecasterBase):
         self.X_train_features_names_out_        = None
         self.in_sample_residuals_               = None
         self.in_sample_residuals_by_bin_        = None
+        self.binner_intervals_                  = None
         self.is_fitted                          = False
         self.fit_date                           = None
 
@@ -1009,7 +1010,6 @@ class ForecasterRecursive(ForecasterBase):
                 .copy()
                 .to_frame(name=y.name if y.name is not None else 'y')
             )
-
 
     def _binning_in_sample_residuals(
         self,
@@ -1275,9 +1275,7 @@ class ForecasterRecursive(ForecasterBase):
             
             if residuals is not None:
                 if use_binned_residuals:
-                    predicted_bin = (
-                        self.binner.transform(pred).item()
-                    )
+                    predicted_bin = self.binner.transform(pred).item()
                     step_residual = residuals[predicted_bin][i]
                 else:
                     step_residual = residuals[i]
@@ -1713,7 +1711,7 @@ class ForecasterRecursive(ForecasterBase):
                 k: np.quantile(np.abs(v), nominal_coverage)
                 for k, v in residuals_by_bin.items()
             }
-            replace_func = np.vectorize(lambda x: correction_factor_by_bin.get(x, x))
+            replace_func = np.vectorize(lambda x: correction_factor_by_bin[x])
             predictions_bin = self.binner.transform(predictions)
             correction_factor = replace_func(predictions_bin)
             lower_bound = predictions - correction_factor
@@ -2272,7 +2270,6 @@ class ForecasterRecursive(ForecasterBase):
 
         if not isinstance(y_pred, np.ndarray):
             y_pred = y_pred.to_numpy()
-
         if not isinstance(y_true, np.ndarray):
             y_true = y_true.to_numpy()
 
@@ -2305,31 +2302,48 @@ class ForecasterRecursive(ForecasterBase):
         data['bin'] = self.binner.transform(y_pred).astype(int)
         residuals_by_bin = data.groupby('bin')['residuals'].apply(np.array).to_dict()
 
-        if append and self.out_sample_residuals_by_bin_ is not None:
+        out_sample_residuals = (
+            np.array([]) 
+            if self.out_sample_residuals_ is None
+            else self.out_sample_residuals_
+        )
+        out_sample_residuals_by_bin = (
+            {} 
+            if self.out_sample_residuals_by_bin_ is None
+            else self.out_sample_residuals_by_bin_
+        )
+        if append:
+            out_sample_residuals = np.concatenate([out_sample_residuals, residuals])
             for k, v in residuals_by_bin.items():
-                if k in self.out_sample_residuals_by_bin_:
-                    self.out_sample_residuals_by_bin_[k] = np.concatenate((
-                        self.out_sample_residuals_by_bin_[k], v)
+                if k in out_sample_residuals_by_bin:
+                    out_sample_residuals_by_bin[k] = np.concatenate(
+                        (out_sample_residuals_by_bin[k], v)
                     )
                 else:
-                    self.out_sample_residuals_by_bin_[k] = v
+                    out_sample_residuals_by_bin[k] = v
         else:
-            self.out_sample_residuals_by_bin_ = residuals_by_bin
+            out_sample_residuals = residuals
+            out_sample_residuals_by_bin = residuals_by_bin
 
         max_samples = 10_000 // self.binner.n_bins_
         rng = np.random.default_rng(seed=random_state)
-        for k, v in self.out_sample_residuals_by_bin_.items():
+        for k, v in out_sample_residuals_by_bin.items():
             if len(v) > max_samples:
                 sample = rng.choice(a=v, size=max_samples, replace=False)
-                self.out_sample_residuals_by_bin_[k] = sample
+                out_sample_residuals_by_bin[k] = sample
 
-        for k in self.in_sample_residuals_by_bin_.keys():
-            if k not in self.out_sample_residuals_by_bin_:
-                self.out_sample_residuals_by_bin_[k] = np.array([])
+        in_sample_residuals_by_bin = (
+            {}
+            if self.in_sample_residuals_by_bin_ is None
+            else self.in_sample_residuals_by_bin_
+        )
+        for k in in_sample_residuals_by_bin.keys():
+            if k not in out_sample_residuals_by_bin:
+                out_sample_residuals_by_bin[k] = np.array([])
 
         empty_bins = [
-            k for k, v in self.out_sample_residuals_by_bin_.items() 
-            if len(v) == 0
+            k for k, v in out_sample_residuals_by_bin.items() 
+            if v.size == 0
         ]
         if empty_bins:
             warnings.warn(
@@ -2340,15 +2354,21 @@ class ForecasterRecursive(ForecasterBase):
                 ResidualsUsageWarning
             )
             for k in empty_bins:
-                self.out_sample_residuals_by_bin_[k] = rng.choice(
-                    a       = residuals,
-                    size    = max_samples,
-                    replace = True
+                out_sample_residuals_by_bin[k] = rng.choice(
+                    a       = out_sample_residuals,
+                    size    = min(max_samples, len(out_sample_residuals)),
+                    replace = False
                 )
 
-        self.out_sample_residuals_ = np.concatenate(list(
-                                         self.out_sample_residuals_by_bin_.values()
-                                     ))
+        if len(out_sample_residuals) > 10_000:
+            out_sample_residuals = rng.choice(
+                a       = out_sample_residuals, 
+                size    = 10_000, 
+                replace = False
+            )
+
+        self.out_sample_residuals_ = out_sample_residuals
+        self.out_sample_residuals_by_bin_ = out_sample_residuals_by_bin
 
     def get_feature_importances(
         self,

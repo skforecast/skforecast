@@ -49,8 +49,9 @@ def test_predict_bootstrapping_IgnoredArgumentWarning_when_not_available_self_la
     Test IgnoredArgumentWarning is raised when last_window is not available for 
     levels because it was not stored during fit.
     """
-    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3,
-                                              transformer_series=None)
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=3, transformer_series=None
+    )
     forecaster.fit(series=series, exog=exog['exog_1'], store_last_window=['1'])
 
     warn_msg = re.escape(

@@ -151,7 +151,6 @@ def _backtesting_forecaster(
            https://mapie.readthedocs.io/en/stable/theoretical_description_regression.html#the-split-method
     
     """
-    # TODO: Change docstring to include new options of `interval` parameter.
 
     forecaster = deepcopy(forecaster)
     cv = deepcopy(cv)
@@ -530,15 +529,6 @@ def backtesting_forecaster(
         n_jobs                  = n_jobs,
         show_progress           = show_progress
     )
-    
-    # TODO: Moved to check_backtesting_input, remove after testing.
-    # if type(forecaster).__name__ == 'ForecasterDirect' and \
-    #    forecaster.steps < cv.steps + cv.gap:
-    #     raise ValueError(
-    #         f"When using a ForecasterDirect, the combination of steps "
-    #         f"+ gap ({cv.steps + cv.gap}) cannot be greater than the `steps` parameter "
-    #         f"declared when the forecaster is initialized ({forecaster.steps})."
-    #     )
     
     metric_values, backtest_predictions = _backtesting_forecaster(
         forecaster              = forecaster,

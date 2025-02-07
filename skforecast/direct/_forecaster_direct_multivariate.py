@@ -1431,6 +1431,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         self.X_train_features_names_out_        = None
         self.in_sample_residuals_               = {step: None for step in range(1, self.steps + 1)}
         self.in_sample_residuals_by_bin_        = None
+        self.binner_intervals_                  = None
         self.is_fitted                          = False
         self.fit_date                           = None
 
@@ -2032,7 +2033,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 ResidualsUsageWarning
             )
 
-        # NOTE: Predictions must be transformed and differenced before adding residuals
+        # NOTE: Predictors and Residuals are transformed and differenced.
         regressors = [self.regressors_[step] for step in steps]
         with warnings.catch_warnings():
             warnings.filterwarnings(

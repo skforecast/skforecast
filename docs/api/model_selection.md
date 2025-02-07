@@ -16,4 +16,5 @@
 ::: skforecast.model_selection._split.OneStepAheadFold
 ::: skforecast.model_selection._utils.initialize_lags_grid
 ::: skforecast.model_selection._utils.check_backtesting_input
+::: skforecast.model_selection._utils.check_one_step_ahead_input
 ::: skforecast.model_selection._utils.select_n_jobs_backtesting
