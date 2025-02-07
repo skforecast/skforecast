@@ -5,6 +5,7 @@
 ################################################################################
 # coding=utf-8
 
+from __future__ import annotations
 import inspect
 import sys
 import warnings
@@ -24,12 +25,20 @@ import skforecast
 from skforecast.utils.utils import transform_dataframe
 
 from ..base import ForecasterBase
-from ..exceptions import IgnoredArgumentWarning
+from ..exceptions import (
+    DataTransformationWarning,
+    IgnoredArgumentWarning,
+    MissingValuesWarning,
+    ResidualsUsageWarning,
+    UnknownLevelWarning
+)
 from ..utils import (
     check_interval,
     check_predict_input,
     check_select_fit_kwargs,
     check_y,
+    check_exog,
+    input_to_frame,
     expand_index,
     preprocess_last_window,
     preprocess_y,
@@ -56,33 +65,34 @@ class ForecasterRnn(ForecasterBase):
         Name of one or more time series to be predicted. This determine the series
         the forecaster will be handling. If `None`, all series used during training
         will be available for prediction.
-    lags : int, list, str, default `'auto'`
-        Lags used as predictors. If 'auto', lags used are from 1 to N, where N is
-        extracted from the input layer `self.regressor.layers[0].input_shape[0][1]`.
-    transformer_series : object, dict, default `sklearn.preprocessing.MinMaxScaler(feature_range=(0, 1))`
+    steps : int, list, str, default `'auto'`
+        Steps to be predicted. If 'auto', steps used are from 1 to N, where N is
+        extracted from the output layer `self.regressor.layers[-1].output_shape[1]`.
+    lags : int, list, numpy ndarray, range, str, default 'auto'
+        Lags used as predictors. Index starts at 1, so lag 1 is equal to t-1.
+    
+        -`auto`: lags used are from 1 to N, where N is extracted from the input
+        layer `self.regressor.layers[0].input_shape[0][1]`.
+        - `int`: include lags from 1 to `lags` (included).
+        - `list`, `1d numpy ndarray` or `range`: include only lags present in 
+        `lags`, all elements must be int.
+    transformer_series : transformer (preprocessor), dict, default None
         An instance of a transformer (preprocessor) compatible with the scikit-learn
-        preprocessing API with methods: fit, transform, fit_transform and
-        inverse_transform. Transformation is applied to each `series` before training
-        the forecaster. ColumnTransformers are not allowed since they do not have
+        preprocessing API with methods: fit, transform, fit_transform and 
+        inverse_transform. Transformation is applied to each `series` before training 
+        the forecaster. ColumnTransformers are not allowed since they do not have 
         inverse_transform method.
 
-        - If single transformer: it is cloned and applied to all series.
+        - If single transformer: it is cloned and applied to all series. 
         - If `dict` of transformers: a different transformer can be used for each series.
+    transformer_exog : transformer, default None
+        An instance of a transformer (preprocessor) compatible with the scikit-learn
+        preprocessing API. The transformation is applied to `exog` before training the
+        forecaster. `inverse_transform` is not available when using ColumnTransformers.
     fit_kwargs : dict, default `None`
         Additional arguments to be passed to the `fit` method of the regressor.
     forecaster_id : str, int, default `None`
         Name used as an identifier of the forecaster.
-    steps : int, list, str, default `'auto'`
-        Steps to be predicted. If 'auto', steps used are from 1 to N, where N is
-        extracted from the output layer `self.regressor.layers[-1].output_shape[1]`.
-    lags  : Ignored
-        Not used, present here for API consistency by convention.
-    transformer_exog : Ignored
-        Not used, present here for API consistency by convention.
-    weight_func : Ignored
-        Not used, present here for API consistency by convention.
-    n_jobs : Ignored
-        Not used, present here for API consistency by convention.
 
     Attributes
     ----------
@@ -95,12 +105,14 @@ class ForecasterRnn(ForecasterBase):
         the forecaster will be handling. If `None`, all series used during training
         will be available for prediction.
     steps : numpy ndarray
-        Number of future steps the forecaster will predict when using method
-        `predict()`. Since a different model is created for each step, this value
-        should be defined before training.
+        Future steps the forecaster will predict when using prediction methods.
     lags : numpy ndarray
         Lags used as predictors.
-    transformer_series : object, dict
+    max_lag : int
+        Maximum lag included in `lags`.
+    window_size : int
+        Size of the window needed to create the predictors.
+     transformer_series : object, dict
         An instance of a transformer (preprocessor) compatible with the scikit-learn
         preprocessing API with methods: fit, transform, fit_transform and
         inverse_transform. Transformation is applied to each `series` before training
@@ -109,15 +121,16 @@ class ForecasterRnn(ForecasterBase):
     transformer_series_ : dict
         Dictionary with the transformer for each series. It is created cloning the
         objects in `transformer_series` and is used internally to avoid overwriting.
-    transformer_exog : Ignored
-        Not used, present here for API consistency by convention.
-    max_lag : int
-        Maximum lag included in `lags`.
-    window_size : int
-        Size of the window needed to create the predictors.
-    last_window_ : pandas Series
-        Last window seen by the forecaster during training. It stores the values
-        needed to predict the next `step` immediately after the training data.
+    transformer_exog : transformer
+        An instance of a transformer (preprocessor) compatible with the scikit-learn
+        preprocessing API. The transformation is applied to `exog` before training the
+        forecaster. `inverse_transform` is not available when using ColumnTransformers.
+    last_window_ : pandas DataFrame
+        This window represents the most recent data observed by the predictor
+        during its training phase. It contains the values needed to predict the
+        next step immediately after the training data. These values are stored
+        in the original scale of the time series before undergoing any transformations
+        or differentiation.
     index_type_ : type
         Type of index of the input used in training.
     index_freq_ : str
@@ -133,23 +146,27 @@ class ForecasterRnn(ForecasterBase):
     exog_type_in_ : type
         Type of exogenous variable/s used in training.
     exog_dtypes_in_ : dict
-        Type of each exogenous variable/s used in training. If `transformer_exog`
+        Type of each exogenous variable/s used in training. If `transformer_exog` 
         is used, the dtypes are calculated after the transformation.
     X_train_dim_names_ : dict
         Labels for the multi-dimensional arrays created internally for training.
     y_train_dim_names_ : dict
         Labels for the multi-dimensional arrays created internally for training.
+    history : dict
+        Dictionary with the history of the training of each step. It is created
+        internally to avoid overwriting.
     fit_kwargs : dict
         Additional arguments to be passed to the `fit` method of the regressor.
     in_sample_residuals_ : dict
-        Residuals of the models when predicting training data. Only stored up to
-        1000 values per model in the form `{step: residuals}`. If `transformer_series`
+        Residuals of the model when predicting training data. Only stored up 
+        to 10_000 values per step in the form `{step: residuals}`. If 
+        `transformer_series` is not `None`, residuals are stored in the 
+        transformed scale.
+    out_sample_residuals_ : dict
+        Residuals of the model when predicting non-training data. Only stored up 
+        to 10_000 values per step in the form `{step: residuals}`. Use 
+        `set_out_sample_residuals()` method to set values. If `transformer_series` 
         is not `None`, residuals are stored in the transformed scale.
-    out_sample_residuals : dict
-        Residuals of the models when predicting non training data. Only stored
-        up to 1000 values per model in the form `{step: residuals}`. If `transformer_series`
-        is not `None`, residuals are assumed to be in the transformed scale. Use
-        `set_out_sample_residuals()` method to set values.
     creation_date : str
         Date of creation.
     is_fitted : bool
@@ -162,9 +179,6 @@ class ForecasterRnn(ForecasterBase):
         Version of python used to create the forecaster.
     forecaster_id : str, int
         Name used as an identifier of the forecaster.
-    history : dict
-        Dictionary with the history of the training of each step. It is created
-        internally to avoid overwriting.
     dropna_from_series : Ignored
         Not used, present here for API consistency by convention.
     encoding : Ignored
@@ -184,45 +198,43 @@ class ForecasterRnn(ForecasterBase):
         self,
         regressor: object,
         levels: Union[str, list],
-        lags: Optional[Union[int, list, str]] = "auto",
         steps: Optional[Union[int, list, str]] = "auto",
+        lags: Optional[Union[int, list, str]] = "auto",
         transformer_series: Optional[Union[object, dict]] = MinMaxScaler(
             feature_range=(0, 1)
         ),
         transformer_exog: Optional[Union[object, dict]] = MinMaxScaler(
             feature_range=(0, 1)
         ),
-        weight_func: Optional[Callable] = None,
         fit_kwargs: Optional[dict] = {},
         forecaster_id: Optional[Union[str, int]] = None,
-        n_jobs: Any = None,
     ) -> None:
         self.levels = None
         self.transformer_series = transformer_series
         self.transformer_series_ = None
         self.transformer_exog = transformer_exog
-        self.weight_func = weight_func
-        self.source_code_weight_func = None
         self.max_lag = None
         self.window_size = None
         self.last_window_ = None
         self.index_type_ = None
         self.index_freq_ = None
         self.training_range_ = None
+        self.series_names_in_ = None
         self.exog_in_ = False
+        self.exog_names_in_ = None
         self.exog_type_in_ = None
         self.exog_dtypes_in_ = None
-        self.exog_names_in_ = None
-        self.series_names_in_ = None
         self.X_train_dim_names_ = None
         self.y_train_dim_names_ = None
+        self.history_ = None 
         self.is_fitted = False
         self.creation_date = pd.Timestamp.today().strftime("%Y-%m-%d %H:%M:%S")
         self.fit_date = None
         self.skforecast_version = skforecast.__version__
         self.python_version = sys.version.split(" ")[0]
         self.forecaster_id = forecaster_id
-        self.history = None  # TODO: Change to history_ as come from fit method?
+        self.weight_func = None # Ignored in this forecaster
+        self.source_code_weight_func = None # Ignored in this forecaster
         self.dropna_from_series = False  # Ignored in this forecaster
         self.encoding = None  # Ignored in this forecaster
         self.differentiation = None  # Ignored in this forecaster
@@ -231,7 +243,7 @@ class ForecasterRnn(ForecasterBase):
         self.differentiator_ = None  # Ignored in this forecaster
 
         # Infer parameters from the model
-        self.regressor = regressor  # TODO: Create copy of regressor copy(regressor)
+        self.regressor = deepcopy(regressor)
         layer_init = self.regressor.layers[0]
 
         if lags == "auto":
@@ -240,10 +252,6 @@ class ForecasterRnn(ForecasterBase):
             else:
                 self.lags = np.arange(layer_init.output.shape[1]) + 1
 
-            warnings.warn(
-                "Setting `lags` = 'auto'. `lags` are inferred from the regressor "
-                "architecture. Avoid the warning with lags=lags."
-            )
         elif isinstance(lags, int):
             self.lags = np.arange(lags) + 1
         elif isinstance(lags, list):
@@ -256,15 +264,14 @@ class ForecasterRnn(ForecasterBase):
         self.max_lag = np.max(self.lags)
         self.window_size = self.max_lag
 
+        # TODO: move this check to fit. check that the number of series match
+        # the dims of the last layer
         layer_end = self.regressor.layers[-1]
-
         try:
             if keras.__version__ < "3.0":
-                self.series = layer_end.output_shape[-1]
+                layer_end.output_shape[-1]
             else:
-                self.series = layer_end.output.shape[-1]
-        # if does not work, break the and raise an error the input shape should
-        # be shape=(lags, n_series))
+                layer_end.output.shape[-1]
         except:
             raise TypeError(
                 "Input shape of the regressor should be Input(shape=(lags, n_series))."
@@ -275,10 +282,6 @@ class ForecasterRnn(ForecasterBase):
                 self.steps = np.arange(layer_end.output_shape[1]) + 1
             else:
                 self.steps = np.arange(layer_end.output.shape[1]) + 1
-            warnings.warn(
-                "`steps` default value = 'auto'. `steps` inferred from regressor "
-                "architecture. Avoid the warning with steps=steps."
-            )
         elif isinstance(steps, int):
             self.steps = np.arange(steps) + 1
         elif isinstance(steps, list):
@@ -350,12 +353,15 @@ class ForecasterRnn(ForecasterBase):
             f"{type(self).__name__} \n"
             f"{'=' * len(type(self).__name__)} \n"
             f"Regressor: {self.regressor} \n"
-            f"Lags: {self.lags} \n"
-            f"Transformer for series: {self.transformer_series} \n"
-            f"Window size: {self.window_size} \n"
             f"Target series, levels: {self.levels} \n"
-            f"Multivariate series (names): {self.series_names_in_} \n"
             f"Maximum steps predicted: {self.steps} \n"
+            f"Lags: {self.lags} \n"
+            f"Window size: {self.window_size} \n"
+            f"Multivariate series: {self.series_names_in_} \n"
+            f"Exogenous included: {self.exog_in_} \n"
+            f"Exogenous names: {self.exog_names_in_} \n"
+            f"Transformer for series: {self.transformer_series} \n"
+            f"Transformer for exog: {self.transformer_exog} \n"
             f"Training range: {self.training_range_.to_list() if self.is_fitted else None} \n"
             f"Training index type: {str(self.index_type_).split('.')[-1][:-2] if self.is_fitted else None} \n"
             f"Training index frequency: {self.index_freq_ if self.is_fitted else None} \n"
@@ -427,7 +433,9 @@ class ForecasterRnn(ForecasterBase):
         return X_data, y_data
 
     def create_train_X_y(
-        self, series: pd.DataFrame, exog: pd.DataFrame = None
+        self,
+        series: pd.DataFrame,
+        exog: pd.Series | pd.DataFrame | None = None
     ) -> Tuple[np.ndarray, np.ndarray, dict]:
         """
         Create training matrices. The resulting multi-dimensional matrices contain
@@ -437,15 +445,17 @@ class ForecasterRnn(ForecasterBase):
         ----------
         series : pandas DataFrame
             Training time series.
-        exog : Ignored
-            Not used, present here for API consistency by convention. This type of
-            forecaster does not allow exogenous variables.
+        exog : pandas Series, pandas DataFrame, default None
+            Exogenous variable/s included as predictor/s. Must have the same
+            number of observations as `series` and their indexes must be aligned.
 
         Returns
         -------
         X_train : np.ndarray
             Training values (predictors) for each step. The resulting array has
             3 dimensions: (time_points, n_lags, n_series)
+        exog_train: np.array
+
         y_train : np.ndarray
             Values (target) of the time series related to each row of `X_train`.
             The resulting array has 3 dimensions: (time_points, n_steps, n_levels)
@@ -554,7 +564,12 @@ class ForecasterRnn(ForecasterBase):
         }
 
         if exog is not None:
+            check_exog(exog=exog, allow_nan=False)
+            exog = input_to_frame(data=exog, input_name='exog')
+            #TODO: mejorar el mensaje de error si exog no tiene alguno de los
+            # indices en train_index
             exog_train = exog.loc[train_index, :]
+            
             exog_train = transform_dataframe(
                 df=exog_train,
                 transformer=self.transformer_exog,
@@ -628,12 +643,12 @@ class ForecasterRnn(ForecasterBase):
         # TODO. ask @XIMO deberíamos eliminar las columnas no incluidas en series y en levels?
         self.series_names_in_ = list(series.columns)
 
-        X_train, exog_train, y_train, X_train_dim_names_ = self.create_train_X_y(
+        X_train, exog_train, y_train, dimension_names = self.create_train_X_y(
             series=series, exog=exog
         )
-        self.X_train_dim_names_ = X_train_dim_names_["X_train"]
-        self.y_train_dim_names_ = X_train_dim_names_["y_train"]
-        self.exog_train_dim_names_ = X_train_dim_names_["exog_train"]
+        self.X_train_dim_names_ = dimension_names["X_train"]
+        self.y_train_dim_names_ = dimension_names["y_train"]
+        self.exog_train_dim_names_ = dimension_names["exog_train"]
 
         if keras.__version__ > "3.0" and keras.backend.backend() == "torch":
             import torch
@@ -687,7 +702,7 @@ class ForecasterRnn(ForecasterBase):
                     **self.fit_kwargs,
                 )
 
-        self.history = history.history
+        self.history_ = history.history
         self.is_fitted = True
         self.fit_date = pd.Timestamp.today().strftime("%Y-%m-%d %H:%M:%S")
         _, y_index = preprocess_y(y=series[self.levels], return_values=False)
@@ -698,7 +713,7 @@ class ForecasterRnn(ForecasterBase):
         else:
             self.index_freq_ = y_index.step
 
-        self.last_window_ = series.iloc[-self.max_lag :].copy()
+        self.last_window_ = series.iloc[-self.max_lag :, :].copy()
 
         set_skforecast_warnings(suppress_warnings, action="default")
 
@@ -1410,18 +1425,18 @@ class ForecasterRnn(ForecasterBase):
             fig = ax.get_figure()
 
         # Setting up the plot style
-        if self.history is None:
+        if self.history_ is None:
             raise ValueError("ForecasterRnn has not been fitted yet.")
 
         # Determine the range of epochs to plot, excluding the first one if specified
-        epoch_range = range(1, len(self.history["loss"]) + 1)
+        epoch_range = range(1, len(self.history_["loss"]) + 1)
         if exclude_first_iteration:
-            epoch_range = range(2, len(self.history["loss"]) + 1)
+            epoch_range = range(2, len(self.history_["loss"]) + 1)
 
         # Plotting training loss
         ax.plot(
             epoch_range,
-            self.history["loss"][
+            self.history_["loss"][
                 exclude_first_iteration:
             ],  # Skip first element if specified
             color="b",
@@ -1429,10 +1444,10 @@ class ForecasterRnn(ForecasterBase):
         )
 
         # Plotting validation loss
-        if "val_loss" in self.history:
+        if "val_loss" in self.history_:
             ax.plot(
                 epoch_range,
-                self.history["val_loss"][
+                self.history_["val_loss"][
                     exclude_first_iteration:
                 ],  # Skip first element if specified
                 color="r",
