@@ -17,7 +17,7 @@ from tqdm.auto import tqdm
 import optuna
 from optuna.samplers import TPESampler
 from sklearn.model_selection import ParameterGrid, ParameterSampler
-from ..exceptions import warn_skforecast_categories, OneStepAheadValidationWarning
+from ..exceptions import warn_skforecast_categories
 from ..model_selection._split import TimeSeriesFold, OneStepAheadFold
 from ..model_selection._validation import (
     backtesting_forecaster, 
@@ -429,7 +429,6 @@ def _evaluate_grid_hyperparameters(
 
                 metric_values = _calculate_metrics_one_step_ahead(
                                     forecaster = forecaster,
-                                    y          = y,
                                     metrics    = metric,
                                     X_train    = X_train,
                                     y_train    = y_train,
@@ -817,7 +816,6 @@ def _bayesian_search_optuna(
 
             metrics = _calculate_metrics_one_step_ahead(
                           forecaster = forecaster,
-                          y          = y,
                           metrics    = metric,
                           X_train    = X_train,
                           y_train    = y_train,

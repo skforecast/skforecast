@@ -765,10 +765,8 @@ def select_n_jobs_backtesting(
     return n_jobs
 
 
-# TODO: Remove y, it is not used.
 def _calculate_metrics_one_step_ahead(
     forecaster: object,
-    y: pd.Series,
     metrics: list,
     X_train: pd.DataFrame,
     y_train: pd.Series | dict[int, pd.Series],
@@ -783,8 +781,6 @@ def _calculate_metrics_one_step_ahead(
     ----------
     forecaster : object
         Forecaster model.
-    y : pandas Series
-        Time series data used to train and test the model.
     metrics : list
         List of metrics.
     X_train : pandas DataFrame
@@ -837,6 +833,9 @@ def _calculate_metrics_one_step_ahead(
         y_pred = forecaster.transformer_y.inverse_transform(y_pred.reshape(-1, 1))
         y_train = forecaster.transformer_y.inverse_transform(y_train.reshape(-1, 1))
 
+    # NOTE: When using this metric in validation, `y_train` doesn't include
+    # the first window_size observartions used to create the predictors and/or
+    # rolling features.
     metric_values = []
     for m in metrics:
         metric_values.append(
@@ -1408,7 +1407,7 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
         {"y_train": y_train, "_level_skforecast": X_train_encoding},
         index=y_train.index,
     ).groupby("_level_skforecast")
-    # Interleaved Nan values were excluded fom y_train. They are reestored
+    # NOTE: Interleaved Nan values were excluded fom y_train. They are reestored
     y_train_per_level = {key: group.asfreq(freq) for key, group in y_train_per_level}
 
     if forecaster.differentiation is not None:
@@ -1443,7 +1442,10 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
             y_train_per_level[level]["y_train"] = transformer.inverse_transform(
                 y_train_per_level[level][["y_train"]]
             )
-    
+
+    # NOTE: When using this metric in validation, `y_train` doesn't include
+    # the first window_size observartions used to create the predictors and/or
+    # rolling features.
     metrics_levels = []
     for level in levels:
         if level in predictions_per_level:
