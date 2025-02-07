@@ -1275,9 +1275,7 @@ class ForecasterRecursive(ForecasterBase):
             
             if residuals is not None:
                 if use_binned_residuals:
-                    predicted_bin = (
-                        self.binner.transform(pred).item()
-                    )
+                    predicted_bin = self.binner.transform(pred).item()
                     step_residual = residuals[predicted_bin][i]
                 else:
                     step_residual = residuals[i]

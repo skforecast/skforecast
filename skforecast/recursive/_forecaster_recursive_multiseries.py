@@ -2176,9 +2176,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                         shape=n_levels, fill_value=np.nan, dtype=float
                     )
                     for j, level in enumerate(levels):
-                        predicted_bin = (
-                            self.binner[level].transform(pred[j]).item()
-                        )
+                        predicted_bin = self.binner[level].transform(pred[j]).item()
                         step_residual[j] = residuals[predicted_bin][i, j]
                 else:
                     step_residual = residuals[i, :]
