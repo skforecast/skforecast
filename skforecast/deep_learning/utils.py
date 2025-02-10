@@ -21,18 +21,21 @@ except Exception as e:
     check_optional_dependency(package_name=package_name)
 
 
+
+
+#  this function includes both predefined loss functions (as strings) and custom loss functions (as callables).
 def create_and_compile_model(
     series: pd.DataFrame,
     lags: Union[int, list],
     steps: Union[int, list],
-    levels: Optional[Union[str, int, list]]=None,
-    recurrent_layer: str="LSTM",
-    recurrent_units: Union[int, list]=100,
-    dense_units: Union[int, list]=64,
-    activation: Union[str, dict]="relu",
-    optimizer: object=Adam(learning_rate=0.01),
-    loss: object=MeanSquaredError(),
-    compile_kwargs: dict={},
+    levels: Optional[Union[str, int, list]] = None,
+    recurrent_layer: str = "LSTM",
+    recurrent_units: Union[int, list] = 100,
+    dense_units: Union[int, list] = 64,
+    activation: Union[str, dict] = "relu",
+    optimizer: object = Adam(learning_rate=0.01),
+    loss: Union[str, Callable] = MeanSquaredError(),
+    compile_kwargs: dict = {},
 ) -> keras.models.Model:
     """
     Creates a neural network model for time series prediction with flexible recurrent layers.
@@ -63,8 +66,10 @@ def create_and_compile_model(
         for 'recurrent_units' and 'dense_units'.
     optimizer : object, default `Adam(learning_rate=0.01)`
         Optimization algorithm and learning rate.
-    loss : object, default `MeanSquaredError()`
-        Loss function for model training.
+    loss : str or callable, default `MeanSquaredError()`
+        Loss function for model training. Can be a string identifier for a predefined 
+        loss (e.g., 'mse', 'mae') or a callable custom loss function that accepts 
+        y_true and y_pred as arguments.
     compile_kwargs : dict, default `{}` 
         Additional arguments for model compilation.
 
@@ -81,7 +86,6 @@ def create_and_compile_model(
         If the activation dictionary does not have the required keys or if the 
         lengths of the lists in the activation dictionary do not match the 
         corresponding parameters.
-    
     """
     
     if keras.__version__ > "3":
@@ -130,6 +134,13 @@ def create_and_compile_model(
     if not isinstance(levels, (str, int, list, type(None))):
         raise TypeError(
             f"`levels` argument must be a string, list or int. Got {type(levels)}."
+        )
+
+    # Validate loss argument
+    if not (isinstance(loss, str) or callable(loss)):
+        raise TypeError(
+            "`loss` must be a string (predefined loss) or a callable (custom loss function). "
+            f"Got {type(loss)}."
         )
 
     if isinstance(lags, list):
@@ -213,15 +224,11 @@ def create_and_compile_model(
 
     # Output layer
     x = Dense(levels * steps, activation="linear")(x)
-    # model = Model(inputs=input_layer, outputs=x)
     output_layer = keras.layers.Reshape((steps, levels))(x)
     model = Model(inputs=input_layer, outputs=output_layer)
 
     # Compile the model if optimizer, loss or compile_kwargs are passed
     if optimizer is not None or loss is not None or compile_kwargs:
-        # give more priority to the parameters passed in the function check if the 
-        # parameters passes in compile_kwargs include optimizer and loss if so, 
-        # delete them from compile_kwargs and raise a warning
         if "optimizer" in compile_kwargs.keys():
             compile_kwargs.pop("optimizer")
             warnings.warn("`optimizer` passed in `compile_kwargs`. Ignoring it.")
