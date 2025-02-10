@@ -264,24 +264,14 @@ class ForecasterRnn(ForecasterBase):
         self.max_lag = np.max(self.lags)
         self.window_size = self.max_lag
 
-        # TODO: move this check to fit. check that the number of series match
-        # the dims of the last layer
         layer_end = self.regressor.layers[-1]
-        try:
-            if keras.__version__ < "3.0":
-                layer_end.output_shape[-1]
-            else:
-                layer_end.output.shape[-1]
-        except:
-            raise TypeError(
-                "Input shape of the regressor should be Input(shape=(lags, n_series))."
-            )
-
         if steps == "auto":
             if keras.__version__ < "3.0":
                 self.steps = np.arange(layer_end.output_shape[1]) + 1
+                self.n_series = layer_end.output_shape[-1]
             else:
                 self.steps = np.arange(layer_end.output.shape[1]) + 1
+                self.n_series = layer_end.output.shape[-1]
         elif isinstance(steps, int):
             self.steps = np.arange(steps) + 1
         elif isinstance(steps, list):
@@ -454,15 +444,17 @@ class ForecasterRnn(ForecasterBase):
         X_train : np.ndarray
             Training values (predictors) for each step. The resulting array has
             3 dimensions: (time_points, n_lags, n_series)
-        exog_train: np.array
-
+        exog_train: np.ndarray
+            Value of exogenous variables aligned with X_train. (time_points, n_exog)
         y_train : np.ndarray
-            Values (target) of the time series related to each row of `X_train`.
+            Values (target) of the time series related to each row of `X_train`
             The resulting array has 3 dimensions: (time_points, n_steps, n_levels)
         dimension_names : dict
-            Labels for the multi-dimensional arrays created internally for training.
+            Labels for the multi-dimensional arrays created internally for training
 
         """
+        # TODO: 
+        # check that number of series match self.n_series
 
         if not isinstance(series, pd.DataFrame):
             raise TypeError(f"`series` must be a pandas DataFrame. Got {type(series)}.")
@@ -583,6 +575,7 @@ class ForecasterRnn(ForecasterBase):
             }
         else:
             exog_train = None
+            dimension_names["exog_train"] = None
 
         return X_train, exog_train, y_train, dimension_names
 
@@ -640,9 +633,7 @@ class ForecasterRnn(ForecasterBase):
         self.is_fitted = False
         self.training_range_ = None
 
-        # TODO. ask @XIMO deberíamos eliminar las columnas no incluidas en series y en levels?
         self.series_names_in_ = list(series.columns)
-
         X_train, exog_train, y_train, dimension_names = self.create_train_X_y(
             series=series, exog=exog
         )
@@ -663,9 +654,14 @@ class ForecasterRnn(ForecasterBase):
                 exog_train = torch.tensor(exog_train).to(torch_device)
 
         if self.series_val:
-            # TODO. ask @XIMO deveríamos eliminar las columnas no incluidas en series y en levels?
+            series_val = self.series_val[self.series_names_in_]
+            if exog:
+                # TODO: raise error if exog_val do not exist
+                exog_val = self.exog_val[self.exog_names_in_]
+            else:
+                exog_val = None
             X_val, exog_val, y_val, _ = self.create_train_X_y(
-                series=self.series_val, exog=self.exog_val
+                series=series_val, exog=exog_val
             )
             if keras.__version__ > "3.0" and keras.backend.backend() == "torch":
                 X_val = torch.tensor(X_val).to(torch_device)
@@ -728,7 +724,7 @@ class ForecasterRnn(ForecasterBase):
         steps: Optional[Union[int, list]] = None,
         levels: Optional[Union[str, list]] = None,
         last_window: Optional[pd.DataFrame] = None,
-        exog: Optional[pd.DataFrame] = None,
+        exog: pd.Series | pd.DataFrame | None = None,
         suppress_warnings: bool = False,
     ) -> pd.DataFrame:
         """
@@ -755,8 +751,8 @@ class ForecasterRnn(ForecasterBase):
             If `last_window = None`, the values stored in `self.last_window_` are
             used to calculate the initial predictors, and the predictions start
             right after training data.
-        exog : Ignored
-            Not used, present here for API consistency by convention.
+        exog : pandas Series, pandas DataFrame, default None
+            Exogenous variable/s included as predictor/s.
         suppress_warnings : bool, default `False`
             If `True`, skforecast warnings will be suppressed during the fitting
             process. See skforecast.exceptions.warn_skforecast_categories for more
@@ -806,7 +802,7 @@ class ForecasterRnn(ForecasterBase):
             index_freq_=self.index_freq_,
             window_size=self.window_size,
             last_window=last_window,
-            exog=exog,  ## review from here @XIMO
+            exog=exog,
             exog_type_in_=None,
             exog_names_in_=None,
             interval=None,
@@ -831,10 +827,16 @@ class ForecasterRnn(ForecasterBase):
             last_window.loc[:, serie_name] = last_window_values
 
         X = np.reshape(last_window.to_numpy(), (1, self.max_lag, last_window.shape[1]))
-        predictions = self.regressor.predict(X, verbose=0)
+        if not exog:
+            predictions = self.regressor.predict(X, verbose=0)
+        else:
+            # TODO: preprocess exog id exog_transform
+            predictions = self.regressor.predict([X, exog], verbose=0)
+        
         predictions_reshaped = np.reshape(
-            predictions, (predictions.shape[1], predictions.shape[2])
-        )
+                predictions, (predictions.shape[1], predictions.shape[2])
+            )
+
 
         # if len(self.levels) == 1:
         #     predictions_reshaped = np.reshape(predictions, (predictions.shape[1], 1))
