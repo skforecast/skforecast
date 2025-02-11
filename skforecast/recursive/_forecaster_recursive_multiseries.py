@@ -1838,6 +1838,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         
         """
         
+        y_true = np.asarray(y_true)
+        y_pred = np.asarray(y_pred)
         residuals = y_true - y_pred
         data = pd.DataFrame({'prediction': y_pred, 'residuals': residuals})
 
