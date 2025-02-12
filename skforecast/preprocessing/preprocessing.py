@@ -1599,3 +1599,114 @@ class QuantileBinner:
 
         for param, value in params.items():
             setattr(self, param, value)
+
+
+class ConformalInterval:
+    """
+    Transformer that corrects the prediction interval to achieve the desired coverage
+    based on conformity scores.
+    """
+
+    def __init__(self):
+        self.nominal_coverage = None
+        self.correction_factor = None
+
+    def fit(
+        self,
+        y_true_calibrarion: np.ndarray | pd.Series,
+        calibration_interval: np.ndarray | pd.DataFrame,
+        nominal_coverage: float
+    ):
+        """
+        Learn the correction factor needed to achieve the desired coverage.
+
+        Parameters
+        ----------
+        y_true_calibrarion : numpy ndarray, pandas Series
+            True target values.
+        calibration_interval : numpy ndarray, pandas DataFrame
+            Prediction interval.
+        nominal_coverage : float
+            Desired coverage.
+
+        Returns
+        -------
+        self
+
+        """
+
+        if isinstance(y_true_calibrarion, pd.Series):
+            y_true_calibrarion = y_true_calibrarion.to_numpy()
+        if isinstance(calibration_interval, pd.DataFrame):
+            calibration_interval = calibration_interval.to_numpy()
+
+        lower_bound = calibration_interval[:, 0]
+        upper_bound = calibration_interval[:, 1]
+        conformity_scores = np.max(
+            [
+                lower_bound - y_true_calibrarion,
+                y_true_calibrarion - upper_bound,
+            ],
+            axis=0,
+        )
+
+        self.correction_factor = np.quantile(conformity_scores, nominal_coverage)
+
+        return self
+
+    def transform(self, prediction_interval: np.ndarray | pd.DataFrame):
+        """
+        Apply the correction factor to the prediction interval to achieve the desired
+        coverage.
+
+        Parameters
+        ----------
+        prediction_interval : numpy ndarray, pandas DataFrame
+            Prediction interval.
+
+        Returns
+        -------
+        prediction_interval_conformal : pandas DataFrame
+            Prediction interval with the correction factor applied.
+        """
+
+        if prediction_interval.shape[1] != 2:
+            raise ValueError(
+                "Prediction interval must have 2 columns (lower and upper bounds)."
+            )
+
+        columns = ["lower_bound", "upper_bound"]
+        index = np.range(prediction_interval.shape[0])
+        if isinstance(prediction_interval, pd.DataFrame):
+            columns = prediction_interval.columns
+            index = prediction_interval.index
+            prediction_interval = prediction_interval.to_numpy()
+
+        prediction_interval_conformal = prediction_interval.copy()
+        prediction_interval_conformal[:, 0] = (
+            prediction_interval_conformal[:, 0] - self.correction_factor
+        )
+        prediction_interval_conformal[:, 1] = (
+            prediction_interval_conformal[:, 1] + self.correction_factor
+        )
+
+        # If upper bound is less than lower bound, swap them
+        mask = (
+            prediction_interval_conformal[:, 1]
+            < prediction_interval_conformal[:, 0]
+        )
+        (
+            prediction_interval_conformal[mask, 0],
+            prediction_interval_conformal[mask, 1],
+        ) = (
+            prediction_interval_conformal[mask, 1],
+            prediction_interval_conformal[mask, 0],
+        )
+
+        prediction_interval_conformal = pd.DataFrame(
+            prediction_interval_conformal,
+            columns=columns,
+            index=index,
+        )
+
+        return prediction_interval_conformal
