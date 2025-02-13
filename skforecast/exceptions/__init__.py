@@ -7,6 +7,7 @@ from .exceptions import (
     MissingExogWarning,
     MissingValuesWarning,
     OneStepAheadValidationWarning,
+    ResidualsUsageWarning,
     UnknownLevelWarning,
     SaveLoadSkforecastWarning,
     SkforecastVersionWarning,

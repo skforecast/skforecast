@@ -38,6 +38,7 @@ from ..utils import (
     check_select_fit_kwargs,
     check_y,
     check_exog,
+    check_exog_dtypes,
     input_to_frame,
     expand_index,
     preprocess_last_window,
@@ -575,7 +576,10 @@ class ForecasterRnn(ForecasterBase):
             }
         else:
             exog_train = None
-            dimension_names["exog_train"] = None
+            dimension_names["exog_train"] = {
+                0: None,
+                1: None,
+            }
 
         return X_train, exog_train, y_train, dimension_names
 
@@ -629,17 +633,19 @@ class ForecasterRnn(ForecasterBase):
         self.series_names_in_ = None
         self.X_train_dim_names_ = None
         self.y_train_dim_names_ = None
+        self.exog_train_dim_names_ = None
         self.in_sample_residuals_ = None
         self.is_fitted = False
         self.training_range_ = None
 
-        self.series_names_in_ = list(series.columns)
         X_train, exog_train, y_train, dimension_names = self.create_train_X_y(
             series=series, exog=exog
         )
-        self.X_train_dim_names_ = dimension_names["X_train"]
-        self.y_train_dim_names_ = dimension_names["y_train"]
+        self.X_train_dim_names_    = dimension_names["X_train"]
+        self.y_train_dim_names_    = dimension_names["y_train"]
         self.exog_train_dim_names_ = dimension_names["exog_train"]
+        self.series_names_in_      = dimension_names["X_train"][2]
+        self.exog_names_in_        = dimension_names["exog_train"][1]
 
         if keras.__version__ > "3.0" and keras.backend.backend() == "torch":
             import torch
@@ -650,12 +656,12 @@ class ForecasterRnn(ForecasterBase):
             print(f"Using device: {device}")
             X_train = torch.tensor(X_train).to(torch_device)
             y_train = torch.tensor(y_train).to(torch_device)
-            if exog_train:
-                exog_train = torch.tensor(exog_train).to(torch_device)
+            if exog_train is not None:
+                exog_train = torch.tensor(exog_train.to_numpy()).to(torch_device)
 
-        if self.series_val:
+        if self.series_val is not None:
             series_val = self.series_val[self.series_names_in_]
-            if exog:
+            if exog is not None:
                 # TODO: raise error if exog_val do not exist
                 exog_val = self.exog_val[self.exog_names_in_]
             else:
@@ -685,7 +691,7 @@ class ForecasterRnn(ForecasterBase):
                 )
 
         else:
-            if exog_train:
+            if exog_train is not None:
                 history = self.regressor.fit(
                     x=[X_train, exog_train],
                     y=y_train,
@@ -830,8 +836,19 @@ class ForecasterRnn(ForecasterBase):
         if not exog:
             predictions = self.regressor.predict(X, verbose=0)
         else:
-            # TODO: preprocess exog id exog_transform
-            predictions = self.regressor.predict([X, exog], verbose=0)
+            if isinstance(exog, pd.Series):
+                exog = exog.to_frame()
+            
+            exog = exog.loc[:, self.exog_names_in_]
+            exog = transform_dataframe(
+                        df                = exog,
+                        transformer       = self.transformer_exog,
+                        fit               = False,
+                        inverse_transform = False
+                    )
+            check_exog_dtypes(exog=exog)
+            exog_values = exog.to_numpy()[:steps]
+            predictions = self.regressor.predict([X, exog_values], verbose=0)
         
         predictions_reshaped = np.reshape(
                 predictions, (predictions.shape[1], predictions.shape[2])

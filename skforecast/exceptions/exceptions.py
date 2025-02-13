@@ -141,6 +141,22 @@ class OneStepAheadValidationWarning(UserWarning):
         return self.message + " " + extra_message
 
 
+class ResidualsUsageWarning(UserWarning):
+    """
+    Warning used to notify that a residual are not correctly used in the
+    probabilitic forecasting process.
+    """
+    def __init__(self, message):
+        self.message = message
+
+    def __str__(self):
+        extra_message = (
+            "\n You can suppress this warning using: "
+            "warnings.simplefilter('ignore', category=ResidualsUsageWarning)"
+        )
+        return self.message + " " + extra_message
+
+
 class UnknownLevelWarning(UserWarning):
     """
     Warning used to notify that a level being predicted was not part of the
@@ -198,7 +214,8 @@ warn_skforecast_categories = [
     MissingExogWarning,
     MissingValuesWarning,
     OneStepAheadValidationWarning,
+    ResidualsUsageWarning,
     UnknownLevelWarning,
     SaveLoadSkforecastWarning,
-    SkforecastVersionWarning
+    SkforecastVersionWarning,    
 ]
