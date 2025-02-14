@@ -4,6 +4,14 @@
 
 Skforecast is a community-driven open-source project that relies on contributions from people like you. Every contribution, no matter how big or small, can make a significant impact on the project. Even if you've never contributed to an open-source project before, don't worry! Skforecast is a great place to start. Your help will be appreciated and welcomed with gratitude.
 
+**Recent Enhancement Example**  
+*Custom Loss Function Support*  
+We recently enhanced model flexibility by enabling custom loss functions in our forecasting models. Contributors can now:
+- Pass custom loss functions directly to `create_and_compile()` in ForecasterRNN
+- Use either string identifiers for predefined losses or custom callables
+- Maintain compatibility with existing compilation arguments
+- Validate loss function signatures during model compilation
+
 Primarily, skforecast development consists of adding and creating new *Forecasters*, new validation strategies, or improving the performance of the current code. However, there are many other ways to contribute:
 
 - Submit a bug report or feature request on [GitHub Issues](https://github.com/skforecast/skforecast/issues).
