@@ -51,7 +51,11 @@ nav:
       - Backtesting forecaster: user_guides/backtesting.ipynb
       - Hyperparameter tuning and lags selection: user_guides/hyperparameter-tuning-and-lags-selection.ipynb
       - Feature selection: user_guides/feature-selection.ipynb
-    - Probabilistic Forecasting: user_guides/probabilistic-forecasting.ipynb
+    - Probabilistic Forecasting: 
+      - Probabilistic forecasting: user_guides/probabilistic-forecasting.ipynb
+      - Bootstraped residuals: user_guides/probabilistic-forecasting-bootstrapped-residuals.ipynb
+      - Conformal predictions: user_guides/probabilistic-forecasting-conformal-regression.ipynb
+      - Queantile forecasting: user_guides/probabilistic-forecasting-quantile-regression.ipynb
     - Model Explainability: user_guides/explainability.ipynb
     - Model deployment:
       - Save and load forecaster: user_guides/save-load-forecaster.ipynb
