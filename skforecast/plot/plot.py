@@ -244,7 +244,7 @@ def plot_prediction_intervals(
     yaxis_title: str | None = None,
     ax: plt.Axes | None = None,
     kwargs_subplots: dict[str, object] = {'figsize': (7, 3)},
-    kwargs_fill_between: dict[str, object] = {'color': '#444444', 'alpha': 0.3}
+    kwargs_fill_between: dict[str, object] = {'color': '#444444', 'alpha': 0.3, 'zorder': 1}
 ):
     """
     Plot predicted intervals vs real values using matplotlib.
