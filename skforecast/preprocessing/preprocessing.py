@@ -1603,7 +1603,7 @@ class QuantileBinner:
 
 class ConformalInterval:
     """
-    Transformer that corrects the prediction interval to achieve the desired coverage
+    Transformer that calibrates the prediction interval to achieve the desired coverage
     based on conformity scores.
     """
 
@@ -1625,7 +1625,7 @@ class ConformalInterval:
         y_true_calibrarion : numpy ndarray, pandas Series
             True target values.
         calibration_interval : numpy ndarray, pandas DataFrame
-            Prediction interval.
+            Prediction interval calculated on the calibration set.
         nominal_coverage : float
             Desired coverage.
 
