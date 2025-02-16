@@ -1609,7 +1609,7 @@ class ConformalInterval:
 
     def __init__(self):
         self.nominal_coverage = None
-        self.correction_factor = None
+        self.correction_factor_ = None
 
     def fit(
         self,
@@ -1650,7 +1650,7 @@ class ConformalInterval:
             axis=0,
         )
 
-        self.correction_factor = np.quantile(conformity_scores, nominal_coverage)
+        self.correction_factor_ = np.quantile(conformity_scores, nominal_coverage)
 
         return self
 
@@ -1684,10 +1684,10 @@ class ConformalInterval:
 
         prediction_interval_conformal = prediction_interval.copy()
         prediction_interval_conformal[:, 0] = (
-            prediction_interval_conformal[:, 0] - self.correction_factor
+            prediction_interval_conformal[:, 0] - self.correction_factor_
         )
         prediction_interval_conformal[:, 1] = (
-            prediction_interval_conformal[:, 1] + self.correction_factor
+            prediction_interval_conformal[:, 1] + self.correction_factor_
         )
 
         # If upper bound is less than lower bound, swap them
