@@ -1934,7 +1934,7 @@ class ForecasterRecursive(ForecasterBase):
             If `True`, residuals are selected based on the predicted values 
             (binned selection).
             If `False`, residuals are selected randomly.
-         random_state : int, default 123
+        random_state : int, default 123
             Seed for the random number generator to ensure reproducibility.
 
         Returns
