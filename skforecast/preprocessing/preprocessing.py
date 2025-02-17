@@ -1601,33 +1601,46 @@ class QuantileBinner:
             setattr(self, param, value)
 
 
-class ConformalInterval:
+class ConformalIntervalCalibrator:
     """
-    Transformer that calibrates the prediction interval to achieve the desired coverage
-    based on conformity scores.
+    Transformer that calibrates the prediction interval to achieve the desired 
+    coverage based on conformity scores.
+
+    Parameters
+    ----------
+    nominal_coverage : float, default 0.8
+        Desired coverage. This is the desired probability that the true value 
+        falls within the calibrated interval.
+
+    Attributes
+    ----------
+    nominal_coverage : float
+        Desired coverage. This is the desired probability that the true value 
+        falls within the calibrated interval.
+    correction_factor_ : float
+        Correction factor to achieve the desired coverage.
+    
     """
 
-    def __init__(self):
-        self.nominal_coverage = None
+    def __init__(self, nominal_coverage: float = 0.8):
+        self.nominal_coverage = nominal_coverage
         self.correction_factor_ = None
 
     def fit(
         self,
-        y_true_calibrarion: np.ndarray | pd.Series,
-        calibration_interval: np.ndarray | pd.DataFrame,
-        nominal_coverage: float
+        y_true: np.ndarray | pd.Series,
+        y_pred_interval: np.ndarray | pd.DataFrame
     ):
         """
         Learn the correction factor needed to achieve the desired coverage.
 
         Parameters
         ----------
-        y_true_calibrarion : numpy ndarray, pandas Series
+        y_true : numpy ndarray, pandas Series
             True target values.
-        calibration_interval : numpy ndarray, pandas DataFrame
-            Prediction interval calculated on the calibration set.
-        nominal_coverage : float
-            Desired coverage.
+        y_pred_interval : numpy ndarray, pandas DataFrame
+            Prediction interval calculated on the true target values. It must have
+            two columns: lower bound and upper bound.
 
         Returns
         -------
@@ -1635,78 +1648,82 @@ class ConformalInterval:
 
         """
 
-        if isinstance(y_true_calibrarion, pd.Series):
-            y_true_calibrarion = y_true_calibrarion.to_numpy()
-        if isinstance(calibration_interval, pd.DataFrame):
-            calibration_interval = calibration_interval.to_numpy()
+        if isinstance(y_true, pd.Series):
+            y_true = y_true.to_numpy()
+        if isinstance(y_pred_interval, pd.DataFrame):
+            y_pred_interval = y_pred_interval.to_numpy()
 
-        lower_bound = calibration_interval[:, 0]
-        upper_bound = calibration_interval[:, 1]
+        lower_bound = y_pred_interval[:, 0]
+        upper_bound = y_pred_interval[:, 1]
         conformity_scores = np.max(
             [
-                lower_bound - y_true_calibrarion,
-                y_true_calibrarion - upper_bound,
+                lower_bound - y_true,
+                y_true - upper_bound,
             ],
             axis=0,
         )
 
-        self.correction_factor_ = np.quantile(conformity_scores, nominal_coverage)
+        self.correction_factor_ = np.quantile(conformity_scores, self.nominal_coverage)
 
         return self
 
-    def transform(self, prediction_interval: np.ndarray | pd.DataFrame):
+    def transform(
+        self, 
+        y_pred_interval: np.ndarray | pd.DataFrame
+    ) -> pd.DataFrame:
         """
         Apply the correction factor to the prediction interval to achieve the desired
         coverage.
 
         Parameters
         ----------
-        prediction_interval : numpy ndarray, pandas DataFrame
+        y_pred_interval : numpy ndarray, pandas DataFrame
             Prediction interval.
 
         Returns
         -------
-        prediction_interval_conformal : pandas DataFrame
+        y_pred_interval_conformal : pandas DataFrame
             Prediction interval with the correction factor applied.
+        
         """
 
-        if prediction_interval.shape[1] != 2:
+        if y_pred_interval.shape[1] != 2:
             raise ValueError(
                 "Prediction interval must have 2 columns (lower and upper bounds)."
             )
 
         columns = ["lower_bound", "upper_bound"]
-        index = np.range(prediction_interval.shape[0])
-        if isinstance(prediction_interval, pd.DataFrame):
-            columns = prediction_interval.columns
-            index = prediction_interval.index
-            prediction_interval = prediction_interval.to_numpy()
+        index = np.arange(y_pred_interval.shape[0])
+        if isinstance(y_pred_interval, pd.DataFrame):
+            columns = y_pred_interval.columns
+            index = y_pred_interval.index
+            y_pred_interval = y_pred_interval.to_numpy()
 
-        prediction_interval_conformal = prediction_interval.copy()
-        prediction_interval_conformal[:, 0] = (
-            prediction_interval_conformal[:, 0] - self.correction_factor_
+        y_pred_interval_conformal = y_pred_interval.copy()
+        y_pred_interval_conformal[:, 0] = (
+            y_pred_interval_conformal[:, 0] - self.correction_factor_
         )
-        prediction_interval_conformal[:, 1] = (
-            prediction_interval_conformal[:, 1] + self.correction_factor_
+        y_pred_interval_conformal[:, 1] = (
+            y_pred_interval_conformal[:, 1] + self.correction_factor_
         )
 
         # If upper bound is less than lower bound, swap them
         mask = (
-            prediction_interval_conformal[:, 1]
-            < prediction_interval_conformal[:, 0]
+            y_pred_interval_conformal[:, 1]
+            < y_pred_interval_conformal[:, 0]
         )
         (
-            prediction_interval_conformal[mask, 0],
-            prediction_interval_conformal[mask, 1],
+            y_pred_interval_conformal[mask, 0],
+            y_pred_interval_conformal[mask, 1],
         ) = (
-            prediction_interval_conformal[mask, 1],
-            prediction_interval_conformal[mask, 0],
+            y_pred_interval_conformal[mask, 1],
+            y_pred_interval_conformal[mask, 0],
         )
 
-        prediction_interval_conformal = pd.DataFrame(
-            prediction_interval_conformal,
-            columns=columns,
-            index=index,
+        y_pred_interval_conformal = pd.DataFrame(
+            data    = y_pred_interval_conformal,
+            columns = columns,
+            index   = index,
         )
 
-        return prediction_interval_conformal
+        return y_pred_interval_conformal

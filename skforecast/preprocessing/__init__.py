@@ -6,5 +6,5 @@ from .preprocessing import (
     series_long_to_dict,
     RollingFeatures,
     QuantileBinner,
-    ConformalInterval,
+    ConformalIntervalCalibrator,
 )

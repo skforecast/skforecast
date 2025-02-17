@@ -21,6 +21,8 @@ The main changes in this release are:
 
 + Conformal
 
++ <code>[ConformalIntervalCalibrator]</code>
+
 + Binned in rest of Forecasters.
 
 + Functions `crps_from_predictions` and `crps_from_quantiles` in module `metrics` to calculate the Continuous Ranked Probability Score (CRPS).
@@ -1093,6 +1095,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [exog_long_to_dict]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.exog_long_to_dict
 [TimeSeriesDifferentiator]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.TimeSeriesDifferentiator
 [QuantileBinner]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.QuantileBinner
+[ConformalIntervalCalibrator]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.ConformalIntervalCalibrator
 
 <!-- metrics -->
 [metrics]: https://skforecast.org/latest/api/metrics
