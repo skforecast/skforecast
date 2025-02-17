@@ -12,6 +12,7 @@
 ::: skforecast.utils.utils.check_exog_dtypes
 ::: skforecast.utils.utils.check_interval
 ::: skforecast.utils.utils.check_predict_input
+::: skforecast.utils.utils.check_residuals_input
 ::: skforecast.utils.utils.preprocess_y
 ::: skforecast.utils.utils.preprocess_last_window
 ::: skforecast.utils.utils.preprocess_exog
@@ -30,4 +31,5 @@
 ::: skforecast.utils.utils.align_series_and_exog_multiseries
 ::: skforecast.utils.utils.prepare_levels_multiseries
 ::: skforecast.utils.utils.preprocess_levels_self_last_window_multiseries
+::: skforecast.utils.utils.prepare_steps_direct
 ::: skforecast.utils.utils.set_skforecast_warnings

@@ -1465,11 +1465,11 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
-      <a href="../user_guides/probabilistic-forecasting.html" class="md-nav__link">
+      <a href="../user_guides/probabilistic-forecasting-overview.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Probabilistic forecasting
+    Overview
   </span>
   
 
@@ -9569,13 +9569,25 @@ Out-of-sample residuals must be precomputed using Forecaster's
               <div class="doc-md-description">
                 <p>If <code>True</code>, residuals are selected based on the predicted values 
 (binned selection).
-If <code>False</code>, residuals are selected randomly.
-random_state : int, default 123
-Seed for the random number generator to ensure reproducibility.</p>
+If <code>False</code>, residuals are selected randomly.</p>
               </div>
             </td>
             <td>
                   <code>False</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>random_state</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Seed for the random number generator to ensure reproducibility.</p>
+              </div>
+            </td>
+            <td>
+                  <code>123</code>
             </td>
           </tr>
       </tbody>
@@ -9736,7 +9748,7 @@ Seed for the random number generator to ensure reproducibility.</p>
 <span class="sd">        If `True`, residuals are selected based on the predicted values </span>
 <span class="sd">        (binned selection).</span>
 <span class="sd">        If `False`, residuals are selected randomly.</span>
-<span class="sd">     random_state : int, default 123</span>
+<span class="sd">    random_state : int, default 123</span>
 <span class="sd">        Seed for the random number generator to ensure reproducibility.</span>
 
 <span class="sd">    Returns</span>

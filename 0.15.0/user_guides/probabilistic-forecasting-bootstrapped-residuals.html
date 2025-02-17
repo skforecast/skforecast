@@ -15,7 +15,7 @@
         <link rel="canonical" href="https://skforecast.org/0.15.0/user_guides/probabilistic-forecasting-bootstrapped-residuals.html">
       
       
-        <link rel="prev" href="probabilistic-forecasting.html">
+        <link rel="prev" href="probabilistic-forecasting-overview.html">
       
       
         <link rel="next" href="probabilistic-forecasting-conformal-prediction.html">
@@ -1470,11 +1470,11 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
-      <a href="probabilistic-forecasting.html" class="md-nav__link">
+      <a href="probabilistic-forecasting-overview.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Probabilistic forecasting
+    Overview
   </span>
   
 
@@ -1537,26 +1537,11 @@ This is documentation for an unstable development version.
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#prediction-intervals" class="md-nav__link">
-    <span class="md-ellipsis">
-      Prediction intervals
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Prediction intervals">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
   <a href="#libraries-and-data" class="md-nav__link">
     <span class="md-ellipsis">
       Libraries and data
     </span>
   </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -3606,24 +3591,13 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </style>
 <!-- End of mermaid configuration --><div class="jupyter-wrapper">
 <div class="jp-Notebook" data-jp-theme-light="true" data-jp-theme-name="JupyterLab Light">
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=0b41c625">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h1 id="probabilistic-forecasting-bootstrapped-residuals">Probabilistic Forecasting: Bootstrapped Residuals<a class="anchor-link" href="#probabilistic-forecasting-bootstrapped-residuals">¶</a></h1>
-</div>
-</div>
-</div>
-</div>
 <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=24c2cd1f">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="prediction-intervals">Prediction intervals<a class="anchor-link" href="#prediction-intervals">¶</a></h2><p>Forecasting intervals with bootstrapped residuals is a method used to estimate the uncertainty in predictions by resampling past prediction errors (residuals). The goal is to generate prediction intervals that capture the variability in the forecast, giving a range of possible future values instead of just a single point estimate.</p>
+<h1 id="probabilistic-forecasting-bootstrapped-residuals">Probabilistic Forecasting: Bootstrapped Residuals<a class="anchor-link" href="#probabilistic-forecasting-bootstrapped-residuals">¶</a></h1><p>Forecasting intervals with bootstrapped residuals is a method used to estimate the uncertainty in predictions by resampling past prediction errors (residuals). The goal is to generate prediction intervals that capture the variability in the forecast, giving a range of possible future values instead of just a single point estimate.</p>
 <p>The error of a one-step-ahead forecast is defined as the difference between the actual value and the predicted value ($e_t = y_t - \hat{y}_{t|t-1}$). By assuming that future errors will be similar to past errors, it is possible to simulate different predictions by taking samples from the collection of errors previously seen in the past (i.e., the residuals) and adding them to the predictions.</p>
 <p style="text-align: center">
 <img alt="No description has been provided for this image" src="../img/diagram-bootstrapping-prediction-intervals.png" style="width: 500px;"/>
@@ -3686,7 +3660,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="libraries-and-data">Libraries and data<a class="anchor-link" href="#libraries-and-data">¶</a></h3>
+<h2 id="libraries-and-data">Libraries and data<a class="anchor-link" href="#libraries-and-data">¶</a></h2>
 </div>
 </div>
 </div>

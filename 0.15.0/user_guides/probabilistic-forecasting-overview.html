@@ -12,7 +12,7 @@
         <meta name="author" content="Joaquin Amat Rodrigo and Javier Escobar Ortiz">
       
       
-        <link rel="canonical" href="https://skforecast.org/0.15.0/user_guides/probabilistic-forecasting.html">
+        <link rel="canonical" href="https://skforecast.org/0.15.0/user_guides/probabilistic-forecasting-overview.html">
       
       
         <link rel="prev" href="feature-selection.html">
@@ -26,7 +26,7 @@
     
     
       
-        <title>Probabilistic forecasting - Skforecast Docs</title>
+        <title>Overview - Skforecast Docs</title>
       
     
     
@@ -143,7 +143,7 @@ This is documentation for an unstable development version.
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Probabilistic forecasting
+              Overview
             
           </span>
         </div>
@@ -1483,18 +1483,18 @@ This is documentation for an unstable development version.
           
   
   <span class="md-ellipsis">
-    Probabilistic forecasting
+    Overview
   </span>
   
 
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <a href="probabilistic-forecasting.html" class="md-nav__link md-nav__link--active">
+      <a href="probabilistic-forecasting-overview.html" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
-    Probabilistic forecasting
+    Overview
   </span>
   
 
@@ -3592,7 +3592,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="bootstrapped-residuals">Bootstrapped residuals<a class="anchor-link" href="#bootstrapped-residuals">¶</a></h2><p>Bootstrapping is a statistical technique that allows for estimating the distribution of a statistic by resampling the data with replacement. In the context of forecasting, bootstrapping the residuals of a model allows for estimating the distribution of the errors, which can be used to create prediction intervals. Four methods are available in Skforecast for bootstrapping the residuals:</p>
+<h3 id="bootstrapped-residuals">Bootstrapped residuals<a class="anchor-link" href="#bootstrapped-residuals">¶</a></h3><p>Bootstrapping is a statistical technique that allows for estimating the distribution of a statistic by resampling the data with replacement. In the context of forecasting, bootstrapping the residuals of a model allows for estimating the distribution of the errors, which can be used to create prediction intervals. Four methods are available in Skforecast for bootstrapping the residuals:</p>
 <ul>
 <li><p><code>predict_bootstrapping</code>: this method generates multiple forecasting predictions through a bootstrapping process. By sampling from a collection of past observed errors (the residuals), each bootstrapping iteration generates a different set of predictions. The output is a <code>pandas DataFrame</code> with one row for each predicted step and one column for each bootstrapping iteration.</p>
 </li>
@@ -3615,7 +3615,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="quantile-regression">Quantile regression<a class="anchor-link" href="#quantile-regression">¶</a></h2><p>Quantile regression is a technique for estimating the conditional quantiles of a response variable. By combining the predictions of two quantile regressors, an interval can be constructed, with each model estimating one of the bounds of the interval. For example, models trained on $Q = 0.1$ and $Q = 0.9$ produce an 80% prediction interval ($90\% - 10\% = 80\%$).</p>
+<h3 id="quantile-regression">Quantile regression<a class="anchor-link" href="#quantile-regression">¶</a></h3><p>Quantile regression is a technique for estimating the conditional quantiles of a response variable. By combining the predictions of two quantile regressors, an interval can be constructed, with each model estimating one of the bounds of the interval. For example, models trained on $Q = 0.1$ and $Q = 0.9$ produce an 80% prediction interval ($90\% - 10\% = 80\%$).</p>
 <p>If a machine learning algorithm capable of modeling quantiles is used as the <code>regressor</code> in a forecaster, the <code>predict</code> method will return predictions for a specified quantile. By creating two forecasters, each configured with a different quantile, their predictions can be combined to generate a prediction interval.</p>
 <p>Discover how to use this method in <a href="./probabilistic-forecasting-quantile-regression.html">Probabilistic forecasting with quantile regression</a>.</p>
 </div>
@@ -3628,7 +3628,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="conformal-prediction">Conformal prediction<a class="anchor-link" href="#conformal-prediction">¶</a></h2><p>Conformal prediction is a framework for constructing prediction intervals that are guaranteed to contain the true value with a specified probability (coverage probability). It works by combining the predictions of a point-forecasting model with its past residuals—differences between previous predictions and actual values. These residuals help estimate the uncertainty in the forecast and determine the width of the prediction interval that is then added to the point forecast. Skforecast implements Split Conformal Prediction (SCP) through the <code>predict_interval(method='conformal')</code> method.</p>
+<h3 id="conformal-prediction">Conformal prediction<a class="anchor-link" href="#conformal-prediction">¶</a></h3><p>Conformal prediction is a framework for constructing prediction intervals that are guaranteed to contain the true value with a specified probability (coverage probability). It works by combining the predictions of a point-forecasting model with its past residuals—differences between previous predictions and actual values. These residuals help estimate the uncertainty in the forecast and determine the width of the prediction interval that is then added to the point forecast. Skforecast implements Split Conformal Prediction (SCP) through the <code>predict_interval(method='conformal')</code> method.</p>
 <p>Conformal methods can also calibrate prediction intervals generated by other techniques, such as quantile regression or bootstrapped residuals. In this case, the conformal method adjusts the prediction intervals to ensure that they remain valid with respect to the coverage probability. Skforecast provides this functionality through the <code>ConformalIntervalCalibrator</code> transformer.</p>
 <p>Discover how to use these methods in <a href="./probabilistic-forecasting-conformal-prediction.html">Probabilistic forecasting with conformal prediction</a>.</p>
 </div>
@@ -3658,7 +3658,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="which-method-to-use">Which Method to Use?<a class="anchor-link" href="#which-method-to-use">¶</a></h2><p>There is no definitive answer to this question, as the resulting coverage may vary depending on the dataset and regressor. However, some general guidelines can be followed:</p>
+<h3 id="which-method-to-use">Which Method to Use?<a class="anchor-link" href="#which-method-to-use">¶</a></h3><p>There is no definitive answer to this question, as the resulting coverage may vary depending on the dataset and regressor. However, some general guidelines can be followed:</p>
 <ul>
 <li><p><strong>Bootstrapped residuals</strong>: This method achieves good results in most cases, especially when using residuals conditioned on the predicted value (<code>use_binned_residuals = True</code>). However, it is computationally expensive, especially when using a large number of bootstrapping iterations, and may not scale well to large datasets or multiple time series.</p>
 </li>

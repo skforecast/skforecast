@@ -1465,11 +1465,11 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
-      <a href="../user_guides/probabilistic-forecasting.html" class="md-nav__link">
+      <a href="../user_guides/probabilistic-forecasting-overview.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Probabilistic forecasting
+    Overview
   </span>
   
 
@@ -2838,6 +2838,15 @@ This is documentation for an unstable development version.
 </li>
       
         <li class="md-nav__item">
+  <a href="#skforecast.utils.utils.check_residuals_input" class="md-nav__link">
+    <span class="md-ellipsis">
+      check_residuals_input
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#skforecast.utils.utils.preprocess_y" class="md-nav__link">
     <span class="md-ellipsis">
       preprocess_y
@@ -2994,6 +3003,15 @@ This is documentation for an unstable development version.
   <a href="#skforecast.utils.utils.preprocess_levels_self_last_window_multiseries" class="md-nav__link">
     <span class="md-ellipsis">
       preprocess_levels_self_last_window_multiseries
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#skforecast.utils.utils.prepare_steps_direct" class="md-nav__link">
+    <span class="md-ellipsis">
+      prepare_steps_direct
     </span>
   </a>
   
@@ -7093,6 +7111,497 @@ and `ForecasterRnn).</p>
                         <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">last_window_exog</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; was not observed during training. &quot;</span>
                         <span class="sa">f</span><span class="s2">&quot;Exogenous variables must be: </span><span class="si">{</span><span class="n">exog_names_in_</span><span class="si">}</span><span class="s2">.&quot;</span>
                     <span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="skforecast.utils.utils.check_residuals_input" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">skforecast.utils.utils.check_residuals_input</span>
+
+
+<a href="#skforecast.utils.utils.check_residuals_input" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">check_residuals_input</span><span class="p">(</span>
+    <span class="n">forecaster_name</span><span class="p">,</span>
+    <span class="n">use_in_sample_residuals</span><span class="p">,</span>
+    <span class="n">in_sample_residuals_</span><span class="p">,</span>
+    <span class="n">out_sample_residuals_</span><span class="p">,</span>
+    <span class="n">use_binned_residuals</span><span class="p">,</span>
+    <span class="n">in_sample_residuals_by_bin_</span><span class="p">,</span>
+    <span class="n">out_sample_residuals_by_bin_</span><span class="p">,</span>
+    <span class="n">steps</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">levels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">encoding</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents first">
+
+        <p>Check residuals input arguments in Forecasters.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>forecaster_name</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Forecaster name.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>use_in_sample_residuals</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Indicates if in sample or out sample residuals are used.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>in_sample_residuals_</code></td>
+            <td>
+                  <code>numpy ndarray</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Residuals of the model when predicting training data.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>out_sample_residuals_</code></td>
+            <td>
+                  <code>numpy ndarray</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Residuals of the model when predicting non training data.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>use_binned_residuals</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Indicates if residuals are binned.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>in_sample_residuals_by_bin_</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>In sample residuals binned according to the predicted value each residual
+is associated with.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>out_sample_residuals_by_bin_</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Out of sample residuals binned according to the predicted value each residual
+is associated with.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>steps</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Steps to be predicted (Direct forecasters)</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>levels</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Names of the series (levels) to be predicted (ForecasterRecursiveMultiSeries).</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>encoding</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Encoding used to identify the different series (ForecasterRecursiveMultiSeries).</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code>None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+            <details class="quote">
+              <summary>Source code in <code>skforecast/utils/utils.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1203</span>
+<span class="normal">1204</span>
+<span class="normal">1205</span>
+<span class="normal">1206</span>
+<span class="normal">1207</span>
+<span class="normal">1208</span>
+<span class="normal">1209</span>
+<span class="normal">1210</span>
+<span class="normal">1211</span>
+<span class="normal">1212</span>
+<span class="normal">1213</span>
+<span class="normal">1214</span>
+<span class="normal">1215</span>
+<span class="normal">1216</span>
+<span class="normal">1217</span>
+<span class="normal">1218</span>
+<span class="normal">1219</span>
+<span class="normal">1220</span>
+<span class="normal">1221</span>
+<span class="normal">1222</span>
+<span class="normal">1223</span>
+<span class="normal">1224</span>
+<span class="normal">1225</span>
+<span class="normal">1226</span>
+<span class="normal">1227</span>
+<span class="normal">1228</span>
+<span class="normal">1229</span>
+<span class="normal">1230</span>
+<span class="normal">1231</span>
+<span class="normal">1232</span>
+<span class="normal">1233</span>
+<span class="normal">1234</span>
+<span class="normal">1235</span>
+<span class="normal">1236</span>
+<span class="normal">1237</span>
+<span class="normal">1238</span>
+<span class="normal">1239</span>
+<span class="normal">1240</span>
+<span class="normal">1241</span>
+<span class="normal">1242</span>
+<span class="normal">1243</span>
+<span class="normal">1244</span>
+<span class="normal">1245</span>
+<span class="normal">1246</span>
+<span class="normal">1247</span>
+<span class="normal">1248</span>
+<span class="normal">1249</span>
+<span class="normal">1250</span>
+<span class="normal">1251</span>
+<span class="normal">1252</span>
+<span class="normal">1253</span>
+<span class="normal">1254</span>
+<span class="normal">1255</span>
+<span class="normal">1256</span>
+<span class="normal">1257</span>
+<span class="normal">1258</span>
+<span class="normal">1259</span>
+<span class="normal">1260</span>
+<span class="normal">1261</span>
+<span class="normal">1262</span>
+<span class="normal">1263</span>
+<span class="normal">1264</span>
+<span class="normal">1265</span>
+<span class="normal">1266</span>
+<span class="normal">1267</span>
+<span class="normal">1268</span>
+<span class="normal">1269</span>
+<span class="normal">1270</span>
+<span class="normal">1271</span>
+<span class="normal">1272</span>
+<span class="normal">1273</span>
+<span class="normal">1274</span>
+<span class="normal">1275</span>
+<span class="normal">1276</span>
+<span class="normal">1277</span>
+<span class="normal">1278</span>
+<span class="normal">1279</span>
+<span class="normal">1280</span>
+<span class="normal">1281</span>
+<span class="normal">1282</span>
+<span class="normal">1283</span>
+<span class="normal">1284</span>
+<span class="normal">1285</span>
+<span class="normal">1286</span>
+<span class="normal">1287</span>
+<span class="normal">1288</span>
+<span class="normal">1289</span>
+<span class="normal">1290</span>
+<span class="normal">1291</span>
+<span class="normal">1292</span>
+<span class="normal">1293</span>
+<span class="normal">1294</span>
+<span class="normal">1295</span>
+<span class="normal">1296</span>
+<span class="normal">1297</span>
+<span class="normal">1298</span>
+<span class="normal">1299</span>
+<span class="normal">1300</span>
+<span class="normal">1301</span>
+<span class="normal">1302</span>
+<span class="normal">1303</span>
+<span class="normal">1304</span>
+<span class="normal">1305</span>
+<span class="normal">1306</span>
+<span class="normal">1307</span>
+<span class="normal">1308</span>
+<span class="normal">1309</span>
+<span class="normal">1310</span>
+<span class="normal">1311</span>
+<span class="normal">1312</span>
+<span class="normal">1313</span>
+<span class="normal">1314</span>
+<span class="normal">1315</span>
+<span class="normal">1316</span>
+<span class="normal">1317</span>
+<span class="normal">1318</span>
+<span class="normal">1319</span>
+<span class="normal">1320</span>
+<span class="normal">1321</span>
+<span class="normal">1322</span>
+<span class="normal">1323</span>
+<span class="normal">1324</span>
+<span class="normal">1325</span>
+<span class="normal">1326</span>
+<span class="normal">1327</span>
+<span class="normal">1328</span>
+<span class="normal">1329</span>
+<span class="normal">1330</span>
+<span class="normal">1331</span>
+<span class="normal">1332</span>
+<span class="normal">1333</span>
+<span class="normal">1334</span>
+<span class="normal">1335</span>
+<span class="normal">1336</span>
+<span class="normal">1337</span>
+<span class="normal">1338</span>
+<span class="normal">1339</span>
+<span class="normal">1340</span>
+<span class="normal">1341</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">check_residuals_input</span><span class="p">(</span>
+    <span class="n">forecaster_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">use_in_sample_residuals</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">in_sample_residuals_</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">out_sample_residuals_</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">use_binned_residuals</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">in_sample_residuals_by_bin_</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">out_sample_residuals_by_bin_</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">steps</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">levels</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">encoding</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Check residuals input arguments in Forecasters.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    forecaster_name : str</span>
+<span class="sd">        Forecaster name.</span>
+<span class="sd">    use_in_sample_residuals : bool</span>
+<span class="sd">        Indicates if in sample or out sample residuals are used.</span>
+<span class="sd">    in_sample_residuals_ : numpy ndarray</span>
+<span class="sd">        Residuals of the model when predicting training data.</span>
+<span class="sd">    out_sample_residuals_ : numpy ndarray</span>
+<span class="sd">        Residuals of the model when predicting non training data.</span>
+<span class="sd">    use_binned_residuals : bool</span>
+<span class="sd">        Indicates if residuals are binned.</span>
+<span class="sd">    in_sample_residuals_by_bin_ : dict</span>
+<span class="sd">        In sample residuals binned according to the predicted value each residual</span>
+<span class="sd">        is associated with.</span>
+<span class="sd">    out_sample_residuals_by_bin_ : dict</span>
+<span class="sd">        Out of sample residuals binned according to the predicted value each residual</span>
+<span class="sd">        is associated with.</span>
+<span class="sd">    steps : list, default None</span>
+<span class="sd">        Steps to be predicted (Direct forecasters)</span>
+<span class="sd">    levels : list, default None</span>
+<span class="sd">        Names of the series (levels) to be predicted (ForecasterRecursiveMultiSeries).</span>
+<span class="sd">    encoding : str, default None</span>
+<span class="sd">        Encoding used to identify the different series (ForecasterRecursiveMultiSeries).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    None</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">forecaster_direct</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;ForecasterDirect&#39;</span><span class="p">,</span> <span class="s1">&#39;ForecasterDirectMultiVariate&#39;</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">use_in_sample_residuals</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">use_binned_residuals</span><span class="p">:</span>
+            <span class="n">residuals</span> <span class="o">=</span> <span class="n">in_sample_residuals_by_bin_</span>
+            <span class="n">literal</span> <span class="o">=</span> <span class="s2">&quot;in_sample_residuals_by_bin_&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">residuals</span> <span class="o">=</span> <span class="n">in_sample_residuals_</span>
+            <span class="n">literal</span> <span class="o">=</span> <span class="s2">&quot;in_sample_residuals_&quot;</span>
+
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">residuals</span> <span class="ow">is</span> <span class="kc">None</span>
+            <span class="ow">or</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">residuals</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">residuals</span><span class="p">)</span>
+            <span class="ow">or</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">residuals</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="n">residuals</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;`forecaster.</span><span class="si">{</span><span class="n">literal</span><span class="si">}</span><span class="s2">` is either None or empty. Use &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;`store_in_sample_residuals = True` when fitting the &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;forecaster to store in-sample residuals.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># NOTE: If use_binned_residuals, residuals is {bin: residuals}</span>
+        <span class="k">if</span> <span class="n">forecaster_name</span> <span class="ow">in</span> <span class="n">forecaster_direct</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">use_binned_residuals</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">steps</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">residuals</span><span class="o">.</span><span class="n">keys</span><span class="p">())):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;`forecaster.</span><span class="si">{</span><span class="n">literal</span><span class="si">}</span><span class="s2">` doesn&#39;t contain residuals for steps: &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">set</span><span class="p">(</span><span class="n">steps</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nb">set</span><span class="p">(</span><span class="n">residuals</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">forecaster_name</span> <span class="o">==</span> <span class="s1">&#39;ForecasterRecursiveMultiSeries&#39;</span><span class="p">:</span>
+            <span class="n">unknown_levels</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">levels</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">residuals</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="k">if</span> <span class="n">unknown_levels</span> <span class="ow">and</span> <span class="n">encoding</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;`levels` </span><span class="si">{</span><span class="n">unknown_levels</span><span class="si">}</span><span class="s2"> are not present in `forecaster.</span><span class="si">{</span><span class="n">literal</span><span class="si">}</span><span class="s2">`, &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;most likely because they were not present in the training data. &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;A random sample of the residuals from other levels will be used. &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;This can lead to inaccurate intervals for the unknown levels.&quot;</span><span class="p">,</span>
+                    <span class="n">UnknownLevelWarning</span>
+                <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">use_binned_residuals</span><span class="p">:</span>
+            <span class="n">residuals</span> <span class="o">=</span> <span class="n">out_sample_residuals_by_bin_</span>
+            <span class="n">literal</span> <span class="o">=</span> <span class="s2">&quot;out_sample_residuals_by_bin_&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">residuals</span> <span class="o">=</span> <span class="n">out_sample_residuals_</span>
+            <span class="n">literal</span> <span class="o">=</span> <span class="s2">&quot;out_sample_residuals_&quot;</span>
+
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">residuals</span> <span class="ow">is</span> <span class="kc">None</span>
+            <span class="ow">or</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">residuals</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">residuals</span><span class="p">)</span>
+            <span class="ow">or</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">residuals</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="n">residuals</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;`forecaster.</span><span class="si">{</span><span class="n">literal</span><span class="si">}</span><span class="s2">` is either None or empty. Use &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;`use_in_sample_residuals = True` or the &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;`set_out_sample_residuals()` method before predicting.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># NOTE: If use_binned_residuals, residuals is {bin: residuals}</span>
+        <span class="k">if</span> <span class="n">forecaster_name</span> <span class="ow">in</span> <span class="n">forecaster_direct</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">use_binned_residuals</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">steps</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">residuals</span><span class="o">.</span><span class="n">keys</span><span class="p">())):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;`forecaster.</span><span class="si">{</span><span class="n">literal</span><span class="si">}</span><span class="s2">` doesn&#39;t contain residuals for steps: &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">set</span><span class="p">(</span><span class="n">steps</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nb">set</span><span class="p">(</span><span class="n">residuals</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">. &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;Use method `set_out_sample_residuals()`.&quot;</span>
+                <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">forecaster_name</span> <span class="o">==</span> <span class="s1">&#39;ForecasterRecursiveMultiSeries&#39;</span><span class="p">:</span>
+            <span class="n">unknown_levels</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">levels</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">residuals</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="k">if</span> <span class="n">unknown_levels</span> <span class="ow">and</span> <span class="n">encoding</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;`levels` </span><span class="si">{</span><span class="n">unknown_levels</span><span class="si">}</span><span class="s2"> are not present in `forecaster.</span><span class="si">{</span><span class="n">literal</span><span class="si">}</span><span class="s2">`. &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;A random sample of the residuals from other levels will be used. &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;This can lead to inaccurate intervals for the unknown levels. &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;Otherwise, Use the `set_out_sample_residuals()` method before &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;predicting to set the residuals for these levels.&quot;</span><span class="p">,</span>
+                    <span class="n">UnknownLevelWarning</span>
+                <span class="p">)</span>
+
+    <span class="c1"># NOTE: If use_binned_residuals, residuals is {bin: residuals}</span>
+    <span class="k">if</span> <span class="n">forecaster_name</span> <span class="ow">in</span> <span class="n">forecaster_direct</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">use_binned_residuals</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="n">steps</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">residuals</span><span class="p">[</span><span class="n">step</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">residuals</span><span class="p">[</span><span class="n">step</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Residuals for step </span><span class="si">{</span><span class="n">step</span><span class="si">}</span><span class="s2"> are None. Check `forecaster.</span><span class="si">{</span><span class="n">literal</span><span class="si">}</span><span class="s2">`.&quot;</span>
+                <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">forecaster_name</span> <span class="o">==</span> <span class="s1">&#39;ForecasterRecursiveMultiSeries&#39;</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">level</span> <span class="ow">in</span> <span class="n">residuals</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">residuals</span><span class="p">[</span><span class="n">level</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">residuals</span><span class="p">[</span><span class="n">level</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Residuals for level &#39;</span><span class="si">{</span><span class="n">level</span><span class="si">}</span><span class="s2">&#39; are None. Check `forecaster.</span><span class="si">{</span><span class="n">literal</span><span class="si">}</span><span class="s2">`.&quot;</span>
+                <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -11493,6 +12002,197 @@ first iteration of the prediction (t + 1).</p>
     <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">levels</span><span class="p">,</span> <span class="n">last_window</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="skforecast.utils.utils.prepare_steps_direct" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">skforecast.utils.utils.prepare_steps_direct</span>
+
+
+<a href="#skforecast.utils.utils.prepare_steps_direct" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">prepare_steps_direct</span><span class="p">(</span><span class="n">max_step</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents first">
+
+        <p>Prepare list of steps to be predicted in Direct Forecasters.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>max_step</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Maximum number of future steps the forecaster will predict 
+when using method <code>predict()</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>steps</code></td>
+            <td>
+                  <code>(<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a>, None)</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Predict n steps. The value of <code>steps</code> must be less than or equal to the 
+value of steps defined when initializing the forecaster. Starts at 1.</p>
+<ul>
+<li>If <code>int</code>: Only steps within the range of 1 to int are predicted.</li>
+<li>If <code>list</code>: List of ints. Only the steps contained in the list 
+are predicted.</li>
+<li>If <code>None</code>: As many steps are predicted as were defined at 
+initialization.</li>
+</ul>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>steps</code></td>            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Steps to be predicted.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+            <details class="quote">
+              <summary>Source code in <code>skforecast/utils/utils.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2868</span>
+<span class="normal">2869</span>
+<span class="normal">2870</span>
+<span class="normal">2871</span>
+<span class="normal">2872</span>
+<span class="normal">2873</span>
+<span class="normal">2874</span>
+<span class="normal">2875</span>
+<span class="normal">2876</span>
+<span class="normal">2877</span>
+<span class="normal">2878</span>
+<span class="normal">2879</span>
+<span class="normal">2880</span>
+<span class="normal">2881</span>
+<span class="normal">2882</span>
+<span class="normal">2883</span>
+<span class="normal">2884</span>
+<span class="normal">2885</span>
+<span class="normal">2886</span>
+<span class="normal">2887</span>
+<span class="normal">2888</span>
+<span class="normal">2889</span>
+<span class="normal">2890</span>
+<span class="normal">2891</span>
+<span class="normal">2892</span>
+<span class="normal">2893</span>
+<span class="normal">2894</span>
+<span class="normal">2895</span>
+<span class="normal">2896</span>
+<span class="normal">2897</span>
+<span class="normal">2898</span>
+<span class="normal">2899</span>
+<span class="normal">2900</span>
+<span class="normal">2901</span>
+<span class="normal">2902</span>
+<span class="normal">2903</span>
+<span class="normal">2904</span>
+<span class="normal">2905</span>
+<span class="normal">2906</span>
+<span class="normal">2907</span>
+<span class="normal">2908</span>
+<span class="normal">2909</span>
+<span class="normal">2910</span>
+<span class="normal">2911</span>
+<span class="normal">2912</span>
+<span class="normal">2913</span>
+<span class="normal">2914</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">prepare_steps_direct</span><span class="p">(</span>
+    <span class="n">max_step</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Prepare list of steps to be predicted in Direct Forecasters.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    max_step : int</span>
+<span class="sd">        Maximum number of future steps the forecaster will predict </span>
+<span class="sd">        when using method `predict()`.</span>
+<span class="sd">    steps : int, list, None, default None</span>
+<span class="sd">        Predict n steps. The value of `steps` must be less than or equal to the </span>
+<span class="sd">        value of steps defined when initializing the forecaster. Starts at 1.</span>
+
+<span class="sd">        - If `int`: Only steps within the range of 1 to int are predicted.</span>
+<span class="sd">        - If `list`: List of ints. Only the steps contained in the list </span>
+<span class="sd">        are predicted.</span>
+<span class="sd">        - If `None`: As many steps are predicted as were defined at </span>
+<span class="sd">        initialization.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    steps : list</span>
+<span class="sd">        Steps to be predicted.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">steps</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="n">steps</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">steps</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">steps</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">steps</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">max_step</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">steps</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">steps</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">steps</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="n">steps</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;`steps` argument must be an int, a list of ints or `None`. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">steps</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+
+    <span class="c1"># Required since numpy 2.0</span>
+    <span class="n">steps</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">step</span><span class="p">)</span> <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="n">steps</span> <span class="k">if</span> <span class="n">step</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">steps</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
