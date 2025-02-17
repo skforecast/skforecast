@@ -257,6 +257,8 @@ def format_warning_handler(message, category, filename, lineno, file=None, line=
 
         wrapped_message = textwrap.fill(str(message), width=width - 2, expand_tabs=True, replace_whitespace=True)
         title_top_border = f"╭{'─' * ((width - len(title) - 2) // 2)} {title} {'─' * ((width - len(title) - 2) // 2)}╮"
+        if len(title) % 2 != 0:
+            title_top_border = title_top_border[:-1] + '─' + "╮"
         bottom_border = f"╰{'─' * width}╯"
         output_text.append(title_top_border)
 
