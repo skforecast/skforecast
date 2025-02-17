@@ -1,0 +1,4905 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Python library for time series forecasting using machine learning models. It works with any regressor compatible with the scikit-learn API, including popular options like LightGBM, XGBoost, CatBoost, Keras, and many others.">
+      
+      
+        <meta name="author" content="Joaquin Amat Rodrigo and Javier Escobar Ortiz">
+      
+      
+        <link rel="canonical" href="https://skforecast.org/0.15.0/api/datasets.html">
+      
+      
+        <link rel="prev" href="utils.html">
+      
+      
+        <link rel="next" href="exceptions.html">
+      
+      
+      <link rel="icon" href="../img/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.39">
+    
+    
+      
+        <title>datasets - Skforecast Docs</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.8c3ca2c6.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,700,700i%7CUbuntu+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Open Sans";--md-code-font:"Ubuntu Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+  
+
+
+  
+  
+
+<script id="__analytics">function __md_analytics(){function e(){dataLayer.push(arguments)}window.dataLayer=window.dataLayer||[],e("js",new Date),e("config","G-GR8X9Z9LKL"),document.addEventListener("DOMContentLoaded",(function(){document.forms.search&&document.forms.search.query.addEventListener("blur",(function(){this.value&&e("event","search",{search_term:this.value})}));document$.subscribe((function(){var t=document.forms.feedback;if(void 0!==t)for(var a of t.querySelectorAll("[type=submit]"))a.addEventListener("click",(function(a){a.preventDefault();var n=document.location.pathname,d=this.getAttribute("data-md-value");e("event","feedback",{page:n,data:d}),t.firstElementChild.disabled=!0;var r=t.querySelector(".md-feedback__note [data-md-value='"+d+"']");r&&(r.hidden=!1)})),t.hidden=!1})),location$.subscribe((function(t){e("config","G-GR8X9Z9LKL",{page_path:t.pathname})}))}));var t=document.createElement("script");t.async=!0,t.src="https://www.googletagmanager.com/gtag/js?id=G-GR8X9Z9LKL",document.getElementById("__analytics").insertAdjacentElement("afterEnd",t)}</script>
+  
+    <script>if("undefined"!=typeof __md_analytics){var consent=__md_get("__consent");consent&&consent.analytics&&__md_analytics()}</script>
+  
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="light" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#datasets" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+          <aside class="md-banner md-banner--warning">
+            <div class="md-banner__inner md-grid md-typeset">
+              
+This is documentation for an unstable development version.
+  <a href="../..">
+    <strong>Switch to latest stable version.</strong>
+  </a>
+
+            </div>
+            <script>var el=document.querySelector("[data-md-component=outdated]"),outdated=__md_get("__outdated",sessionStorage);!0===outdated&&el&&(el.hidden=!1)</script>
+          </aside>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Skforecast Docs" class="md-header__button md-logo" aria-label="Skforecast Docs" data-md-component="logo">
+      
+  <img src="../img/logo-skforecast.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Skforecast Docs
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              datasets
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="light" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/skforecast/skforecast" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../index.html" class="md-tabs__link">
+          
+  
+  Home
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../introduction-forecasting/introduction-forecasting.html" class="md-tabs__link">
+        
+  
+    
+  
+  Intro to Forecasting
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../user_guides/migration-guide.html" class="md-tabs__link">
+        
+  
+    
+  
+  Skforecast 0.14
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../quick-start/quick-start-skforecast.html" class="md-tabs__link">
+          
+  
+  Quick start
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../user_guides/table-of-contents.html" class="md-tabs__link">
+          
+  
+  User Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../examples/examples_english.html" class="md-tabs__link">
+          
+  
+  Examples and tutorials
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+    
+  
+  
+    
+    
+      
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="ForecasterRecursive.html" class="md-tabs__link">
+          
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../faq/table-of-contents.html" class="md-tabs__link">
+          
+  
+  FAQ and Tips
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../releases/releases.html" class="md-tabs__link">
+        
+  
+    
+  
+  Releases
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../authors/authors.html" class="md-tabs__link">
+        
+  
+    
+  
+  Authors
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Skforecast Docs" class="md-nav__button md-logo" aria-label="Skforecast Docs" data-md-component="logo">
+      
+  <img src="../img/logo-skforecast.png" alt="logo">
+
+    </a>
+    Skforecast Docs
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/skforecast/skforecast" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            Home
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../index.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Welcome to skforecast
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../introduction-forecasting/introduction-forecasting.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Intro to Forecasting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/migration-guide.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Skforecast 0.14
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Quick start
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Quick start
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quick-start/quick-start-skforecast.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Quick start
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quick-start/forecaster-parameters.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Forecaster Parameters
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quick-start/forecaster-attributes.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Forecaster Attributes
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quick-start/how-to-install.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    How to install
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    User Guides
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            User Guides
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/table-of-contents.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Table of contents
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/migration-guide.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Skforecast 0.14 Migration guide
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/input-data.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Input data
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_4" id="__nav_5_4_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Single series Forecasters
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_4">
+            <span class="md-nav__icon md-icon"></span>
+            Single series Forecasters
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/autoregresive-forecaster.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Recursive multi-step forecasting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/direct-multi-step-forecasting.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Direct multi-step forecasting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/forecasting-sarimax-arima.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ARIMA and SARIMAX forecasting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/forecasting-baseline.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Forecasting baseline
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Global Forecasters (multiple series)
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_5">
+            <span class="md-nav__icon md-icon"></span>
+            Global Forecasters (multiple series)
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/independent-multi-time-series-forecasting.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Independent multi-time series forecasting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/multi-series-with-different-length-and-different_exog.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Series with different lengths and different exogenous variables
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/dependent-multi-series-multivariate-forecasting.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dependent multivariate series forecasting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/forecasting-with-deep-learning-rnn-lstm.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Deep learning Recurrent Neural Networks
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Feature Engineering
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_6">
+            <span class="md-nav__icon md-icon"></span>
+            Feature Engineering
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/exogenous-variables.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Exogenous variables
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/window-features-and-custom-features.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Window and custom features
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/categorical-features.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Categorical features
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/calendar-features.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Calendars features
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/sklearn-transformers-and-pipeline.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Data transformation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/time-series-differentiation.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Differentiation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/feature-selection.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Feature selection
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/sktime-pipelines.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sktime pipelines
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_7" id="__nav_5_7_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Model Evaluation and Tuning
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_7">
+            <span class="md-nav__icon md-icon"></span>
+            Model Evaluation and Tuning
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/metrics.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Metrics
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/backtesting.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Backtesting forecaster
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/hyperparameter-tuning-and-lags-selection.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Hyperparameter tuning and lags selection
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/feature-selection.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Feature selection
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_8" id="__nav_5_8_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Probabilistic Forecasting
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_8">
+            <span class="md-nav__icon md-icon"></span>
+            Probabilistic Forecasting
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/probabilistic-forecasting.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Probabilistic forecasting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/probabilistic-forecasting-bootstrapped-residuals.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Bootstrapped residuals
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/probabilistic-forecasting-conformal-prediction.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Conformal predictions
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/probabilistic-forecasting-quantile-regression.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Quantile forecasting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/probabilistic-forecasting-calibrate-intervals.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Calibrate intervals
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/probabilistic-forecasting-metrics.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Metrics in probabilistic forecasting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/probabilistic-forecasting-crps-score.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Continuous Ranked Probability Score (CRPS)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/explainability.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Model Explainability
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_10" id="__nav_5_10_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Model deployment
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_10">
+            <span class="md-nav__icon md-icon"></span>
+            Model deployment
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/save-load-forecaster.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Save and load forecaster
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/forecaster-in-production.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Forecaster in production
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/plotting.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Plotting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/datasets.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Datasets
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_13" id="__nav_5_13_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Additional Resources
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_13">
+            <span class="md-nav__icon md-icon"></span>
+            Additional Resources
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/training-and-prediction-matrices.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Extract training and prediction matrices
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/weighted-time-series-forecasting.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Weighted time series forecasting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/stacking-ensemble-models-forecasting.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Stacking multiple models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/forecasting-xgboost-lightgbm.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Forecasting with XGBoost and LightGBM
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user_guides/skforecast-in-GPU.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Skforecast in GPU
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_14" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_14" id="__nav_5_14_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    FAQ and forecasting tips
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_14_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_14">
+            <span class="md-nav__icon md-icon"></span>
+            FAQ and forecasting tips
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/non-negative-predictions.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Avoid negative predictions when forecasting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/forecasting-time-series-with-missing-values.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Forecasting time series with missing values
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/forecasting-with-delayed-historical-data.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Forecasting with delayed historical data
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/parameters-search-backtesting-vs-one-step-ahead.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Backtesting vs One-step-ahead
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/cyclical-features-time-series.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Cyclical features in time series
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/time-series-aggregation.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Time series aggregation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/parallelization-skforecast.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Parallelization in skforecast
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/profiling-skforecast.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Profiling skforecast
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Examples and tutorials
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Examples and tutorials
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/examples_english.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    English
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/examples_spanish.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Spanish
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+      
+        
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    API Reference
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            API Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_7_1" id="__nav_7_1_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    recursive
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7_1">
+            <span class="md-nav__icon md-icon"></span>
+            recursive
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="ForecasterRecursive.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ForecasterRecursive
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="ForecasterRecursiveMultiSeries.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ForecasterRecursiveMultiSeries
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="ForecasterSarimax.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ForecasterSarimax
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="ForecasterEquivalentDate.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ForecasterEquivalentDate
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_7_2" id="__nav_7_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    direct
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7_2">
+            <span class="md-nav__icon md-icon"></span>
+            direct
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="ForecasterDirect.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ForecasterDirect
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="ForecasterDirectMultiVariate.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ForecasterDirectMultiVariate
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_7_3" id="__nav_7_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    deep_learning
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7_3">
+            <span class="md-nav__icon md-icon"></span>
+            deep_learning
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="ForecasterRnn.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ForecasterRnn
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Sarimax.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    sarimax
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="model_selection.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    model_selection
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="feature_selection.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    feature_selection
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="preprocessing.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    preprocessing
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="metrics.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    metrics
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="plot.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    plot
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="utils.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    utils
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    datasets
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="datasets.html" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    datasets
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#skforecast.datasets.fetch_dataset" class="md-nav__link">
+    <span class="md-ellipsis">
+      fetch_dataset
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#skforecast.datasets.load_demo_dataset" class="md-nav__link">
+    <span class="md-ellipsis">
+      load_demo_dataset
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="exceptions.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    exceptions
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    FAQ and Tips
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            FAQ and Tips
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/table-of-contents.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Table of contents
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/non-negative-predictions.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Avoid negative predictions when forecasting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/forecasting-time-series-with-missing-values.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Forecasting time series with missing values
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/forecasting-with-delayed-historical-data.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Forecasting with delayed historical data
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/parameters-search-backtesting-vs-one-step-ahead.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Backtesting vs One-step-ahead
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/cyclical-features-time-series.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Cyclical features in time series
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/time-series-aggregation.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Time series aggregation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/probabilistic-forecasting-crps-score.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Continuous Ranked Probability Score (CRPS)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/parallelization-skforecast.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Parallelization in skforecast
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/profiling-skforecast.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Profiling skforecast
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../releases/releases.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Releases
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../authors/authors.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Authors
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="datasets"><code>Datasets</code><a class="headerlink" href="#datasets" title="Permanent link">&para;</a></h1>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="skforecast.datasets.fetch_dataset" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">skforecast.datasets.fetch_dataset</span>
+
+
+<a href="#skforecast.datasets.fetch_dataset" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">fetch_dataset</span><span class="p">(</span>
+    <span class="n">name</span><span class="p">,</span>
+    <span class="n">version</span><span class="o">=</span><span class="s2">&quot;latest&quot;</span><span class="p">,</span>
+    <span class="n">raw</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">kwargs_read_csv</span><span class="o">=</span><span class="p">{},</span>
+    <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents first">
+
+        <p>Fetch a dataset from the skforecast-datasets repository.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>name</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Name of the dataset to fetch.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>version</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Version of the dataset to fetch. If 'latest', the lastest version will be 
+fetched (the one in the main branch). For a list of available versions, 
+see the repository branches.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;latest&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>raw</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If True, the raw dataset is fetched. If False, the preprocessed dataset 
+is fetched. The preprocessing consists of setting the column with the 
+date/time as index and converting the index to datetime. A frequency is 
+also set to the index.</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>kwargs_read_csv</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Kwargs to pass to pandas <code>read_csv</code> function.</p>
+              </div>
+            </td>
+            <td>
+                  <code>{}</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>verbose</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If True, print information about the dataset.</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>df</code></td>            <td>
+                  <code>pandas DataFrame</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Dataset.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+            <details class="quote">
+              <summary>Source code in <code>skforecast/datasets/datasets.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 13</span>
+<span class="normal"> 14</span>
+<span class="normal"> 15</span>
+<span class="normal"> 16</span>
+<span class="normal"> 17</span>
+<span class="normal"> 18</span>
+<span class="normal"> 19</span>
+<span class="normal"> 20</span>
+<span class="normal"> 21</span>
+<span class="normal"> 22</span>
+<span class="normal"> 23</span>
+<span class="normal"> 24</span>
+<span class="normal"> 25</span>
+<span class="normal"> 26</span>
+<span class="normal"> 27</span>
+<span class="normal"> 28</span>
+<span class="normal"> 29</span>
+<span class="normal"> 30</span>
+<span class="normal"> 31</span>
+<span class="normal"> 32</span>
+<span class="normal"> 33</span>
+<span class="normal"> 34</span>
+<span class="normal"> 35</span>
+<span class="normal"> 36</span>
+<span class="normal"> 37</span>
+<span class="normal"> 38</span>
+<span class="normal"> 39</span>
+<span class="normal"> 40</span>
+<span class="normal"> 41</span>
+<span class="normal"> 42</span>
+<span class="normal"> 43</span>
+<span class="normal"> 44</span>
+<span class="normal"> 45</span>
+<span class="normal"> 46</span>
+<span class="normal"> 47</span>
+<span class="normal"> 48</span>
+<span class="normal"> 49</span>
+<span class="normal"> 50</span>
+<span class="normal"> 51</span>
+<span class="normal"> 52</span>
+<span class="normal"> 53</span>
+<span class="normal"> 54</span>
+<span class="normal"> 55</span>
+<span class="normal"> 56</span>
+<span class="normal"> 57</span>
+<span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span>
+<span class="normal">244</span>
+<span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span>
+<span class="normal">249</span>
+<span class="normal">250</span>
+<span class="normal">251</span>
+<span class="normal">252</span>
+<span class="normal">253</span>
+<span class="normal">254</span>
+<span class="normal">255</span>
+<span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span>
+<span class="normal">259</span>
+<span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span>
+<span class="normal">286</span>
+<span class="normal">287</span>
+<span class="normal">288</span>
+<span class="normal">289</span>
+<span class="normal">290</span>
+<span class="normal">291</span>
+<span class="normal">292</span>
+<span class="normal">293</span>
+<span class="normal">294</span>
+<span class="normal">295</span>
+<span class="normal">296</span>
+<span class="normal">297</span>
+<span class="normal">298</span>
+<span class="normal">299</span>
+<span class="normal">300</span>
+<span class="normal">301</span>
+<span class="normal">302</span>
+<span class="normal">303</span>
+<span class="normal">304</span>
+<span class="normal">305</span>
+<span class="normal">306</span>
+<span class="normal">307</span>
+<span class="normal">308</span>
+<span class="normal">309</span>
+<span class="normal">310</span>
+<span class="normal">311</span>
+<span class="normal">312</span>
+<span class="normal">313</span>
+<span class="normal">314</span>
+<span class="normal">315</span>
+<span class="normal">316</span>
+<span class="normal">317</span>
+<span class="normal">318</span>
+<span class="normal">319</span>
+<span class="normal">320</span>
+<span class="normal">321</span>
+<span class="normal">322</span>
+<span class="normal">323</span>
+<span class="normal">324</span>
+<span class="normal">325</span>
+<span class="normal">326</span>
+<span class="normal">327</span>
+<span class="normal">328</span>
+<span class="normal">329</span>
+<span class="normal">330</span>
+<span class="normal">331</span>
+<span class="normal">332</span>
+<span class="normal">333</span>
+<span class="normal">334</span>
+<span class="normal">335</span>
+<span class="normal">336</span>
+<span class="normal">337</span>
+<span class="normal">338</span>
+<span class="normal">339</span>
+<span class="normal">340</span>
+<span class="normal">341</span>
+<span class="normal">342</span>
+<span class="normal">343</span>
+<span class="normal">344</span>
+<span class="normal">345</span>
+<span class="normal">346</span>
+<span class="normal">347</span>
+<span class="normal">348</span>
+<span class="normal">349</span>
+<span class="normal">350</span>
+<span class="normal">351</span>
+<span class="normal">352</span>
+<span class="normal">353</span>
+<span class="normal">354</span>
+<span class="normal">355</span>
+<span class="normal">356</span>
+<span class="normal">357</span>
+<span class="normal">358</span>
+<span class="normal">359</span>
+<span class="normal">360</span>
+<span class="normal">361</span>
+<span class="normal">362</span>
+<span class="normal">363</span>
+<span class="normal">364</span>
+<span class="normal">365</span>
+<span class="normal">366</span>
+<span class="normal">367</span>
+<span class="normal">368</span>
+<span class="normal">369</span>
+<span class="normal">370</span>
+<span class="normal">371</span>
+<span class="normal">372</span>
+<span class="normal">373</span>
+<span class="normal">374</span>
+<span class="normal">375</span>
+<span class="normal">376</span>
+<span class="normal">377</span>
+<span class="normal">378</span>
+<span class="normal">379</span>
+<span class="normal">380</span>
+<span class="normal">381</span>
+<span class="normal">382</span>
+<span class="normal">383</span>
+<span class="normal">384</span>
+<span class="normal">385</span>
+<span class="normal">386</span>
+<span class="normal">387</span>
+<span class="normal">388</span>
+<span class="normal">389</span>
+<span class="normal">390</span>
+<span class="normal">391</span>
+<span class="normal">392</span>
+<span class="normal">393</span>
+<span class="normal">394</span>
+<span class="normal">395</span>
+<span class="normal">396</span>
+<span class="normal">397</span>
+<span class="normal">398</span>
+<span class="normal">399</span>
+<span class="normal">400</span>
+<span class="normal">401</span>
+<span class="normal">402</span>
+<span class="normal">403</span>
+<span class="normal">404</span>
+<span class="normal">405</span>
+<span class="normal">406</span>
+<span class="normal">407</span>
+<span class="normal">408</span>
+<span class="normal">409</span>
+<span class="normal">410</span>
+<span class="normal">411</span>
+<span class="normal">412</span>
+<span class="normal">413</span>
+<span class="normal">414</span>
+<span class="normal">415</span>
+<span class="normal">416</span>
+<span class="normal">417</span>
+<span class="normal">418</span>
+<span class="normal">419</span>
+<span class="normal">420</span>
+<span class="normal">421</span>
+<span class="normal">422</span>
+<span class="normal">423</span>
+<span class="normal">424</span>
+<span class="normal">425</span>
+<span class="normal">426</span>
+<span class="normal">427</span>
+<span class="normal">428</span>
+<span class="normal">429</span>
+<span class="normal">430</span>
+<span class="normal">431</span>
+<span class="normal">432</span>
+<span class="normal">433</span>
+<span class="normal">434</span>
+<span class="normal">435</span>
+<span class="normal">436</span>
+<span class="normal">437</span>
+<span class="normal">438</span>
+<span class="normal">439</span>
+<span class="normal">440</span>
+<span class="normal">441</span>
+<span class="normal">442</span>
+<span class="normal">443</span>
+<span class="normal">444</span>
+<span class="normal">445</span>
+<span class="normal">446</span>
+<span class="normal">447</span>
+<span class="normal">448</span>
+<span class="normal">449</span>
+<span class="normal">450</span>
+<span class="normal">451</span>
+<span class="normal">452</span>
+<span class="normal">453</span>
+<span class="normal">454</span>
+<span class="normal">455</span>
+<span class="normal">456</span>
+<span class="normal">457</span>
+<span class="normal">458</span>
+<span class="normal">459</span>
+<span class="normal">460</span>
+<span class="normal">461</span>
+<span class="normal">462</span>
+<span class="normal">463</span>
+<span class="normal">464</span>
+<span class="normal">465</span>
+<span class="normal">466</span>
+<span class="normal">467</span>
+<span class="normal">468</span>
+<span class="normal">469</span>
+<span class="normal">470</span>
+<span class="normal">471</span>
+<span class="normal">472</span>
+<span class="normal">473</span>
+<span class="normal">474</span>
+<span class="normal">475</span>
+<span class="normal">476</span>
+<span class="normal">477</span>
+<span class="normal">478</span>
+<span class="normal">479</span>
+<span class="normal">480</span>
+<span class="normal">481</span>
+<span class="normal">482</span>
+<span class="normal">483</span>
+<span class="normal">484</span>
+<span class="normal">485</span>
+<span class="normal">486</span>
+<span class="normal">487</span>
+<span class="normal">488</span>
+<span class="normal">489</span>
+<span class="normal">490</span>
+<span class="normal">491</span>
+<span class="normal">492</span>
+<span class="normal">493</span>
+<span class="normal">494</span>
+<span class="normal">495</span>
+<span class="normal">496</span>
+<span class="normal">497</span>
+<span class="normal">498</span>
+<span class="normal">499</span>
+<span class="normal">500</span>
+<span class="normal">501</span>
+<span class="normal">502</span>
+<span class="normal">503</span>
+<span class="normal">504</span>
+<span class="normal">505</span>
+<span class="normal">506</span>
+<span class="normal">507</span>
+<span class="normal">508</span>
+<span class="normal">509</span>
+<span class="normal">510</span>
+<span class="normal">511</span>
+<span class="normal">512</span>
+<span class="normal">513</span>
+<span class="normal">514</span>
+<span class="normal">515</span>
+<span class="normal">516</span>
+<span class="normal">517</span>
+<span class="normal">518</span>
+<span class="normal">519</span>
+<span class="normal">520</span>
+<span class="normal">521</span>
+<span class="normal">522</span>
+<span class="normal">523</span>
+<span class="normal">524</span>
+<span class="normal">525</span>
+<span class="normal">526</span>
+<span class="normal">527</span>
+<span class="normal">528</span>
+<span class="normal">529</span>
+<span class="normal">530</span>
+<span class="normal">531</span>
+<span class="normal">532</span>
+<span class="normal">533</span>
+<span class="normal">534</span>
+<span class="normal">535</span>
+<span class="normal">536</span>
+<span class="normal">537</span>
+<span class="normal">538</span>
+<span class="normal">539</span>
+<span class="normal">540</span>
+<span class="normal">541</span>
+<span class="normal">542</span>
+<span class="normal">543</span>
+<span class="normal">544</span>
+<span class="normal">545</span>
+<span class="normal">546</span>
+<span class="normal">547</span>
+<span class="normal">548</span>
+<span class="normal">549</span>
+<span class="normal">550</span>
+<span class="normal">551</span>
+<span class="normal">552</span>
+<span class="normal">553</span>
+<span class="normal">554</span>
+<span class="normal">555</span>
+<span class="normal">556</span>
+<span class="normal">557</span>
+<span class="normal">558</span>
+<span class="normal">559</span>
+<span class="normal">560</span>
+<span class="normal">561</span>
+<span class="normal">562</span>
+<span class="normal">563</span>
+<span class="normal">564</span>
+<span class="normal">565</span>
+<span class="normal">566</span>
+<span class="normal">567</span>
+<span class="normal">568</span>
+<span class="normal">569</span>
+<span class="normal">570</span>
+<span class="normal">571</span>
+<span class="normal">572</span>
+<span class="normal">573</span>
+<span class="normal">574</span>
+<span class="normal">575</span>
+<span class="normal">576</span>
+<span class="normal">577</span>
+<span class="normal">578</span>
+<span class="normal">579</span>
+<span class="normal">580</span>
+<span class="normal">581</span>
+<span class="normal">582</span>
+<span class="normal">583</span>
+<span class="normal">584</span>
+<span class="normal">585</span>
+<span class="normal">586</span>
+<span class="normal">587</span>
+<span class="normal">588</span>
+<span class="normal">589</span>
+<span class="normal">590</span>
+<span class="normal">591</span>
+<span class="normal">592</span>
+<span class="normal">593</span>
+<span class="normal">594</span>
+<span class="normal">595</span>
+<span class="normal">596</span>
+<span class="normal">597</span>
+<span class="normal">598</span>
+<span class="normal">599</span>
+<span class="normal">600</span>
+<span class="normal">601</span>
+<span class="normal">602</span>
+<span class="normal">603</span>
+<span class="normal">604</span>
+<span class="normal">605</span>
+<span class="normal">606</span>
+<span class="normal">607</span>
+<span class="normal">608</span>
+<span class="normal">609</span>
+<span class="normal">610</span>
+<span class="normal">611</span>
+<span class="normal">612</span>
+<span class="normal">613</span>
+<span class="normal">614</span>
+<span class="normal">615</span>
+<span class="normal">616</span>
+<span class="normal">617</span>
+<span class="normal">618</span>
+<span class="normal">619</span>
+<span class="normal">620</span>
+<span class="normal">621</span>
+<span class="normal">622</span>
+<span class="normal">623</span>
+<span class="normal">624</span>
+<span class="normal">625</span>
+<span class="normal">626</span>
+<span class="normal">627</span>
+<span class="normal">628</span>
+<span class="normal">629</span>
+<span class="normal">630</span>
+<span class="normal">631</span>
+<span class="normal">632</span>
+<span class="normal">633</span>
+<span class="normal">634</span>
+<span class="normal">635</span>
+<span class="normal">636</span>
+<span class="normal">637</span>
+<span class="normal">638</span>
+<span class="normal">639</span>
+<span class="normal">640</span>
+<span class="normal">641</span>
+<span class="normal">642</span>
+<span class="normal">643</span>
+<span class="normal">644</span>
+<span class="normal">645</span>
+<span class="normal">646</span>
+<span class="normal">647</span>
+<span class="normal">648</span>
+<span class="normal">649</span>
+<span class="normal">650</span>
+<span class="normal">651</span>
+<span class="normal">652</span>
+<span class="normal">653</span>
+<span class="normal">654</span>
+<span class="normal">655</span>
+<span class="normal">656</span>
+<span class="normal">657</span>
+<span class="normal">658</span>
+<span class="normal">659</span>
+<span class="normal">660</span>
+<span class="normal">661</span>
+<span class="normal">662</span>
+<span class="normal">663</span>
+<span class="normal">664</span>
+<span class="normal">665</span>
+<span class="normal">666</span>
+<span class="normal">667</span>
+<span class="normal">668</span>
+<span class="normal">669</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">fetch_dataset</span><span class="p">(</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">version</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;latest&#39;</span><span class="p">,</span>
+    <span class="n">raw</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">kwargs_read_csv</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{},</span>
+    <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Fetch a dataset from the skforecast-datasets repository.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    name: str</span>
+<span class="sd">        Name of the dataset to fetch.</span>
+<span class="sd">    version: str, int, default `&#39;latest&#39;`</span>
+<span class="sd">        Version of the dataset to fetch. If &#39;latest&#39;, the lastest version will be </span>
+<span class="sd">        fetched (the one in the main branch). For a list of available versions, </span>
+<span class="sd">        see the repository branches.</span>
+<span class="sd">    raw: bool, default `False`</span>
+<span class="sd">        If True, the raw dataset is fetched. If False, the preprocessed dataset </span>
+<span class="sd">        is fetched. The preprocessing consists of setting the column with the </span>
+<span class="sd">        date/time as index and converting the index to datetime. A frequency is </span>
+<span class="sd">        also set to the index.</span>
+<span class="sd">    kwargs_read_csv: dict, default `{}`</span>
+<span class="sd">        Kwargs to pass to pandas `read_csv` function.</span>
+<span class="sd">    verbose: bool, default `True`</span>
+<span class="sd">        If True, print information about the dataset.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    df: pandas DataFrame</span>
+<span class="sd">        Dataset.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">version</span> <span class="o">=</span> <span class="s1">&#39;main&#39;</span> <span class="k">if</span> <span class="n">version</span> <span class="o">==</span> <span class="s1">&#39;latest&#39;</span> <span class="k">else</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s1">&#39;</span>
+
+    <span class="n">datasets</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;h2o&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;https://raw.githubusercontent.com/skforecast/&#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;skforecast-datasets/</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s1">/data/h2o.csv&#39;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;sep&#39;</span><span class="p">:</span> <span class="s1">&#39;,&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;index_col&#39;</span><span class="p">:</span> <span class="s1">&#39;fecha&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;date_format&#39;</span><span class="p">:</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;freq&#39;</span><span class="p">:</span> <span class="s1">&#39;MS&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;file_type&#39;</span><span class="p">:</span> <span class="s1">&#39;csv&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s1">&#39;Monthly expenditure ($AUD) on corticosteroid drugs that the &#39;</span>
+                <span class="s1">&#39;Australian health system had between 1991 and 2008. &#39;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s1">&#39;Hyndman R (2023). fpp3: Data for Forecasting: Principles and Practice&#39;</span>
+                <span class="s1">&#39;(3rd Edition). http://pkg.robjhyndman.com/fpp3package/,&#39;</span>
+                <span class="s1">&#39;https://github.com/robjhyndman/fpp3package, http://OTexts.com/fpp3.&#39;</span>
+            <span class="p">)</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;h2o_exog&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;https://raw.githubusercontent.com/skforecast/&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;skforecast-datasets/</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2">/data/h2o_exog.csv&quot;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;sep&#39;</span><span class="p">:</span> <span class="s1">&#39;,&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;index_col&#39;</span><span class="p">:</span> <span class="s1">&#39;fecha&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;date_format&#39;</span><span class="p">:</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;freq&#39;</span><span class="p">:</span> <span class="s1">&#39;MS&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;file_type&#39;</span><span class="p">:</span> <span class="s1">&#39;csv&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s1">&#39;Monthly expenditure ($AUD) on corticosteroid drugs that the &#39;</span>
+                <span class="s1">&#39;Australian health system had between 1991 and 2008. Two additional &#39;</span>
+                <span class="s1">&#39;variables (exog_1, exog_2) are simulated.&#39;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s2">&quot;Hyndman R (2023). fpp3: Data for Forecasting: Principles and Practice &quot;</span>
+                <span class="s2">&quot;(3rd Edition). http://pkg.robjhyndman.com/fpp3package/, &quot;</span>
+                <span class="s2">&quot;https://github.com/robjhyndman/fpp3package, http://OTexts.com/fpp3.&quot;</span>
+            <span class="p">)</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;fuel_consumption&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;https://raw.githubusercontent.com/skforecast/&#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;skforecast-datasets/</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s1">/data/consumos-combustibles-mensual.csv&#39;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;sep&#39;</span><span class="p">:</span> <span class="s1">&#39;,&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;index_col&#39;</span><span class="p">:</span> <span class="s1">&#39;Fecha&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;date_format&#39;</span><span class="p">:</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;freq&#39;</span><span class="p">:</span> <span class="s1">&#39;MS&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;file_type&#39;</span><span class="p">:</span> <span class="s1">&#39;csv&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s1">&#39;Monthly fuel consumption in Spain from 1969-01-01 to 2022-08-01.&#39;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s1">&#39;Obtained from Corporación de Reservas Estratégicas de Productos &#39;</span>
+                <span class="s1">&#39;Petrolíferos and Corporación de Derecho Público tutelada por el &#39;</span>
+                <span class="s1">&#39;Ministerio para la Transición Ecológica y el Reto Demográfico. &#39;</span>
+                <span class="s1">&#39;https://www.cores.es/es/estadisticas&#39;</span>
+            <span class="p">)</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;items_sales&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;https://raw.githubusercontent.com/skforecast/&#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;skforecast-datasets/</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s1">/data/simulated_items_sales.csv&#39;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;sep&#39;</span><span class="p">:</span> <span class="s1">&#39;,&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;index_col&#39;</span><span class="p">:</span> <span class="s1">&#39;date&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;date_format&#39;</span><span class="p">:</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;freq&#39;</span><span class="p">:</span> <span class="s1">&#39;D&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;file_type&#39;</span><span class="p">:</span> <span class="s1">&#39;csv&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="s1">&#39;Simulated time series for the sales of 3 different items.&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="s1">&#39;Simulated data.&#39;</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;air_quality_valencia&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;https://raw.githubusercontent.com/skforecast/&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;skforecast-datasets/</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2">/data/air_quality_valencia.csv&quot;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;sep&#39;</span><span class="p">:</span> <span class="s1">&#39;,&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;index_col&#39;</span><span class="p">:</span> <span class="s1">&#39;datetime&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;date_format&#39;</span><span class="p">:</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;freq&#39;</span><span class="p">:</span> <span class="s1">&#39;H&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;file_type&#39;</span><span class="p">:</span> <span class="s1">&#39;csv&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s1">&#39;Hourly measures of several air chemical pollutant at Valencia city &#39;</span>
+                <span class="s1">&#39;(Avd. Francia) from 2019-01-01 to 20213-12-31. Including the following &#39;</span>
+                <span class="s1">&#39;variables: pm2.5 (µg/m³), CO (mg/m³), NO (µg/m³), NO2 (µg/m³), &#39;</span>
+                <span class="s1">&#39;PM10 (µg/m³), NOx (µg/m³), O3 (µg/m³), Veloc. (m/s), Direc. (degrees), &#39;</span>
+                <span class="s1">&#39;SO2 (µg/m³).&#39;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s2">&quot;Red de Vigilancia y Control de la Contaminación Atmosférica, &quot;</span>
+                <span class="s2">&quot;46250047-València - Av. França, &quot;</span>
+                <span class="s2">&quot;https://mediambient.gva.es/es/web/calidad-ambiental/datos-historicos.&quot;</span>
+            <span class="p">)</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;air_quality_valencia_no_missing&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;https://raw.githubusercontent.com/skforecast/&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;skforecast-datasets/</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2">/data/air_quality_valencia_no_missing.csv&quot;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;sep&#39;</span><span class="p">:</span> <span class="s1">&#39;,&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;index_col&#39;</span><span class="p">:</span> <span class="s1">&#39;datetime&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;date_format&#39;</span><span class="p">:</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;freq&#39;</span><span class="p">:</span> <span class="s1">&#39;H&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;file_type&#39;</span><span class="p">:</span> <span class="s1">&#39;csv&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s1">&#39;Hourly measures of several air chemical pollutant at Valencia city &#39;</span>
+                <span class="s1">&#39;(Avd. Francia) from 2019-01-01 to 20213-12-31. Including the following &#39;</span>
+                <span class="s1">&#39;variables: pm2.5 (µg/m³), CO (mg/m³), NO (µg/m³), NO2 (µg/m³), &#39;</span>
+                <span class="s1">&#39;PM10 (µg/m³), NOx (µg/m³), O3 (µg/m³), Veloc. (m/s), Direc. (degrees), &#39;</span>
+                <span class="s1">&#39;SO2 (µg/m³). Missing values have been imputed using linear interpolation.&#39;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s2">&quot;Red de Vigilancia y Control de la Contaminación Atmosférica, &quot;</span>
+                <span class="s2">&quot;46250047-València - Av. França, &quot;</span>
+                <span class="s2">&quot;https://mediambient.gva.es/es/web/calidad-ambiental/datos-historicos.&quot;</span>
+            <span class="p">)</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;website_visits&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;https://raw.githubusercontent.com/skforecast/&#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;skforecast-datasets/</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s1">/data/visitas_por_dia_web_cienciadedatos.csv&#39;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;sep&#39;</span><span class="p">:</span> <span class="s1">&#39;,&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;index_col&#39;</span><span class="p">:</span> <span class="s1">&#39;date&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;date_format&#39;</span><span class="p">:</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;freq&#39;</span><span class="p">:</span> <span class="s1">&#39;1D&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;file_type&#39;</span><span class="p">:</span> <span class="s1">&#39;csv&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s1">&#39;Daily visits to the cienciadedatos.net website registered with the &#39;</span>
+                <span class="s1">&#39;google analytics service.&#39;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s2">&quot;Amat Rodrigo, J. (2021). cienciadedatos.net (1.0.0). Zenodo. &quot;</span>
+                <span class="s2">&quot;https://doi.org/10.5281/zenodo.10006330&quot;</span>
+            <span class="p">)</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;bike_sharing&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;https://raw.githubusercontent.com/skforecast/&#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;skforecast-datasets/</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s1">/data/bike_sharing_dataset_clean.csv&#39;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;sep&#39;</span><span class="p">:</span> <span class="s1">&#39;,&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;index_col&#39;</span><span class="p">:</span> <span class="s1">&#39;date_time&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;date_format&#39;</span><span class="p">:</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;freq&#39;</span><span class="p">:</span> <span class="s1">&#39;H&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;file_type&#39;</span><span class="p">:</span> <span class="s1">&#39;csv&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s1">&#39;Hourly usage of the bike share system in the city of Washington D.C. &#39;</span>
+                <span class="s1">&#39;during the years 2011 and 2012. In addition to the number of users per &#39;</span>
+                <span class="s1">&#39;hour, information about weather conditions and holidays is available.&#39;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s2">&quot;Fanaee-T,Hadi. (2013). Bike Sharing Dataset. UCI Machine Learning &quot;</span>
+                <span class="s2">&quot;Repository. https://doi.org/10.24432/C5W894.&quot;</span>
+            <span class="p">)</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;bike_sharing_extended_features&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;https://raw.githubusercontent.com/skforecast/&#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;skforecast-datasets/</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s1">/data/bike_sharing_extended_features.csv&#39;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;sep&#39;</span><span class="p">:</span> <span class="s1">&#39;,&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;index_col&#39;</span><span class="p">:</span> <span class="s1">&#39;date_time&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;date_format&#39;</span><span class="p">:</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;freq&#39;</span><span class="p">:</span> <span class="s1">&#39;H&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;file_type&#39;</span><span class="p">:</span> <span class="s1">&#39;csv&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s1">&#39;Hourly usage of the bike share system in the city of Washington D.C. &#39;</span>
+                <span class="s1">&#39;during the years 2011 and 2012. In addition to the number of users per &#39;</span>
+                <span class="s1">&#39;hour, the dataset was enriched by introducing supplementary features. &#39;</span>
+                <span class="s1">&#39;Addition includes calendar-based variables (day of the week, hour of &#39;</span>
+                <span class="s1">&#39;the day, month, etc.), indicators for sunlight, incorporation of &#39;</span>
+                <span class="s1">&#39;rolling temperature averages, and the creation of polynomial features &#39;</span>
+                <span class="s1">&#39;generated from variable pairs. All cyclic variables are encoded using &#39;</span>
+                <span class="s1">&#39;sine and cosine functions to ensure accurate representation.&#39;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s2">&quot;Fanaee-T,Hadi. (2013). Bike Sharing Dataset. UCI Machine Learning &quot;</span>
+                <span class="s2">&quot;Repository. https://doi.org/10.24432/C5W894.&quot;</span>
+            <span class="p">)</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;australia_tourism&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;https://raw.githubusercontent.com/skforecast/&#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;skforecast-datasets/</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s1">/data/australia_tourism.csv&#39;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;sep&#39;</span><span class="p">:</span> <span class="s1">&#39;,&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;index_col&#39;</span><span class="p">:</span> <span class="s1">&#39;date_time&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;date_format&#39;</span><span class="p">:</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;freq&#39;</span><span class="p">:</span> <span class="s1">&#39;Q&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;file_type&#39;</span><span class="p">:</span> <span class="s1">&#39;csv&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s2">&quot;Quarterly overnight trips (in thousands) from 1998 Q1 to 2016 Q4 &quot;</span>
+                <span class="s2">&quot;across Australia. The tourism regions are formed through the &quot;</span>
+                <span class="s2">&quot;aggregation of Statistical Local Areas (SLAs) which are defined by &quot;</span>
+                <span class="s2">&quot;the various State and Territory tourism authorities according to &quot;</span>
+                <span class="s2">&quot;their research and marketing needs.&quot;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s2">&quot;Wang, E, D Cook, and RJ Hyndman (2020). A new tidy data structure to &quot;</span>
+                <span class="s2">&quot;support exploration and modeling of temporal data, Journal of &quot;</span>
+                <span class="s2">&quot;Computational and Graphical Statistics, 29:3, 466-478, &quot;</span>
+                <span class="s2">&quot;doi:10.1080/10618600.2019.1695624.&quot;</span>
+            <span class="p">)</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;uk_daily_flights&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;https://raw.githubusercontent.com/skforecast/&#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;skforecast-datasets/</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s1">/data/uk_daily_flights.csv&#39;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;sep&#39;</span><span class="p">:</span> <span class="s1">&#39;,&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;index_col&#39;</span><span class="p">:</span> <span class="s1">&#39;Date&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;date_format&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">%d</span><span class="s1">/%m/%Y&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;freq&#39;</span><span class="p">:</span> <span class="s1">&#39;D&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;file_type&#39;</span><span class="p">:</span> <span class="s1">&#39;csv&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="s1">&#39;Daily number of flights in UK from 02/01/2019 to 23/01/2022.&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s1">&#39;Experimental statistics published as part of the Economic activity and &#39;</span>
+                <span class="s1">&#39;social change in the UK, real-time indicators release, Published 27 &#39;</span>
+                <span class="s1">&#39;January 2022. Daily flight numbers are available in the dashboard &#39;</span>
+                <span class="s1">&#39;provided by the European Organisation for the Safety of Air Navigation &#39;</span>
+                <span class="s1">&#39;(EUROCONTROL). &#39;</span>
+                <span class="s1">&#39;https://www.ons.gov.uk/economy/economicoutputandproductivity/output/&#39;</span>
+                <span class="s1">&#39;bulletins/economicactivityandsocialchangeintheukrealtimeindicators/latest&#39;</span>
+            <span class="p">)</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;wikipedia_visits&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;https://raw.githubusercontent.com/skforecast/&#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;skforecast-datasets/</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s1">/data/wikipedia_visits.csv&#39;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;sep&#39;</span><span class="p">:</span> <span class="s1">&#39;,&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;index_col&#39;</span><span class="p">:</span> <span class="s1">&#39;date&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;date_format&#39;</span><span class="p">:</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;freq&#39;</span><span class="p">:</span> <span class="s1">&#39;D&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;file_type&#39;</span><span class="p">:</span> <span class="s1">&#39;csv&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s1">&#39;Log daily page views for the Wikipedia page for Peyton Manning. &#39;</span>
+                <span class="s1">&#39;Scraped data using the Wikipediatrend package in R.&#39;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s1">&#39;https://github.com/facebook/prophet/blob/main/examples/&#39;</span>
+                <span class="s1">&#39;example_wp_log_peyton_manning.csv&#39;</span>
+            <span class="p">)</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;vic_electricity&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;https://raw.githubusercontent.com/skforecast/&#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;skforecast-datasets/</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s1">/data/vic_electricity.csv&#39;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;sep&#39;</span><span class="p">:</span> <span class="s1">&#39;,&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;index_col&#39;</span><span class="p">:</span> <span class="s1">&#39;Time&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;date_format&#39;</span><span class="p">:</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">T%H:%M:%SZ&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;freq&#39;</span><span class="p">:</span> <span class="s1">&#39;30min&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;file_type&#39;</span><span class="p">:</span> <span class="s1">&#39;csv&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="s1">&#39;Half-hourly electricity demand for Victoria, Australia&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s2">&quot;O&#39;Hara-Wild M, Hyndman R, Wang E, Godahewa R (2022).tsibbledata: Diverse &quot;</span>
+                <span class="s2">&quot;Datasets for &#39;tsibble&#39;. https://tsibbledata.tidyverts.org/, &quot;</span>
+                <span class="s2">&quot;https://github.com/tidyverts/tsibbledata/. &quot;</span>
+                <span class="s2">&quot;https://tsibbledata.tidyverts.org/reference/vic_elec.html&quot;</span>
+            <span class="p">)</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;store_sales&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;https://raw.githubusercontent.com/skforecast/&#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;skforecast-datasets/</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s1">/data/store_sales.csv&#39;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;sep&#39;</span><span class="p">:</span> <span class="s1">&#39;,&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;index_col&#39;</span><span class="p">:</span> <span class="s1">&#39;date&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;date_format&#39;</span><span class="p">:</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;freq&#39;</span><span class="p">:</span> <span class="s1">&#39;D&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;file_type&#39;</span><span class="p">:</span> <span class="s1">&#39;csv&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s1">&#39;This dataset contains 913,000 sales transactions from 2013-01-01 to &#39;</span>
+                <span class="s1">&#39;2017-12-31 for 50 products (SKU) in 10 stores.&#39;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s1">&#39;The original data was obtained from: inversion. (2018). Store Item &#39;</span>
+                <span class="s1">&#39;Demand Forecasting Challenge. Kaggle. &#39;</span>
+                <span class="s1">&#39;https://kaggle.com/competitions/demand-forecasting-kernels-only&#39;</span>
+            <span class="p">)</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;bicimad&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;https://raw.githubusercontent.com/skforecast/&#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;skforecast-datasets/</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s1">/data/bicimad_users.csv&#39;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;sep&#39;</span><span class="p">:</span> <span class="s1">&#39;,&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;index_col&#39;</span><span class="p">:</span> <span class="s1">&#39;date&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;date_format&#39;</span><span class="p">:</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;freq&#39;</span><span class="p">:</span> <span class="s1">&#39;D&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;file_type&#39;</span><span class="p">:</span> <span class="s1">&#39;csv&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s1">&#39;This dataset contains the daily users of the bicycle rental &#39;</span>
+                <span class="s1">&#39;service (BiciMad) in the city of Madrid (Spain) from 2014-06-23 &#39;</span>
+                <span class="s1">&#39;to 2022-09-30.&#39;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s1">&#39;The original data was obtained from: Portal de datos abiertos &#39;</span>
+                <span class="s1">&#39;del Ayuntamiento de Madrid https://datos.madrid.es/portal/site/egob&#39;</span>
+            <span class="p">)</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;m4_daily&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;https://raw.githubusercontent.com/skforecast/&#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;skforecast-datasets/</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s1">/data/m4_daily.parquet&#39;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;sep&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;index_col&#39;</span><span class="p">:</span> <span class="s1">&#39;timestamp&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;date_format&#39;</span><span class="p">:</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;freq&#39;</span><span class="p">:</span> <span class="s1">&#39;D&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;file_type&#39;</span><span class="p">:</span> <span class="s1">&#39;parquet&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="s2">&quot;Time series with daily frequency from the M4 competition.&quot;</span><span class="p">,</span>
+            <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s2">&quot;Monash Time Series Forecasting Repository  &quot;</span>
+                <span class="s2">&quot;(https://zenodo.org/communities/forecasting) Godahewa, R., Bergmeir, &quot;</span>
+                <span class="s2">&quot;C., Webb, G. I., Hyndman, R. J., &amp; Montero-Manso, P. (2021). Monash &quot;</span>
+                <span class="s2">&quot;Time Series Forecasting Archive. In Neural Information Processing &quot;</span>
+                <span class="s2">&quot;Systems Track on Datasets and Benchmarks. </span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Raw data, available in .tsf format, has been converted to Pandas &quot;</span>
+                <span class="s2">&quot;format using the code provided by the authors in &quot;</span>
+                <span class="s2">&quot;https://github.com/rakshitha123/TSForecasting/blob/master/utils/data_loader.py </span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;The category of each time series has been included in the dataset. This &quot;</span>
+                <span class="s2">&quot;information has been obtainded from the Kaggle competition page: &quot;</span>
+                <span class="s2">&quot;https://www.kaggle.com/datasets/yogesh94/m4-forecasting-competition-dataset&quot;</span>
+            <span class="p">)</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;m4_hourly&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;https://raw.githubusercontent.com/skforecast/&#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;skforecast-datasets/</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s1">/data/m4_hourly.parquet&#39;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;sep&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;index_col&#39;</span><span class="p">:</span> <span class="s1">&#39;timestamp&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;date_format&#39;</span><span class="p">:</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;freq&#39;</span><span class="p">:</span> <span class="s1">&#39;H&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;file_type&#39;</span><span class="p">:</span> <span class="s1">&#39;parquet&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="s2">&quot;Time series with hourly frequency from the M4 competition.&quot;</span><span class="p">,</span>
+            <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s2">&quot;Monash Time Series Forecasting Repository  &quot;</span>
+                <span class="s2">&quot;(https://zenodo.org/communities/forecasting) Godahewa, R., Bergmeir, &quot;</span>
+                <span class="s2">&quot;C., Webb, G. I., Hyndman, R. J., &amp; Montero-Manso, P. (2021). Monash &quot;</span>
+                <span class="s2">&quot;Time Series Forecasting Archive. In Neural Information Processing &quot;</span>
+                <span class="s2">&quot;Systems Track on Datasets and Benchmarks. </span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Raw data, available in .tsf format, has been converted to Pandas &quot;</span>
+                <span class="s2">&quot;format using the code provided by the authors in &quot;</span>
+                <span class="s2">&quot;https://github.com/rakshitha123/TSForecasting/blob/master/utils/data_loader.py </span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;The category of each time series has been included in the dataset. This &quot;</span>
+                <span class="s2">&quot;information has been obtainded from the Kaggle competition page: &quot;</span>
+                <span class="s2">&quot;https://www.kaggle.com/datasets/yogesh94/m4-forecasting-competition-dataset&quot;</span>
+            <span class="p">)</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;ashrae_daily&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="s1">&#39;https://drive.google.com/file/d/1fMsYjfhrFLmeFjKG3jenXjDa5s984ThC/view?usp=sharing&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;sep&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;index_col&#39;</span><span class="p">:</span> <span class="s1">&#39;timestamp&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;date_format&#39;</span><span class="p">:</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;freq&#39;</span><span class="p">:</span> <span class="s1">&#39;D&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;file_type&#39;</span><span class="p">:</span> <span class="s1">&#39;parquet&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s2">&quot;Daily energy consumption data from the ASHRAE competition with &quot;</span>
+                <span class="s2">&quot;building metadata and weather data.&quot;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s2">&quot;Kaggle competition Addison Howard, Chris Balbach, Clayton Miller, &quot;</span>
+                <span class="s2">&quot;Jeff Haberl, Krishnan Gowri, Sohier Dane. (2019). ASHRAE - Great Energy &quot;</span>
+                <span class="s2">&quot;Predictor III. Kaggle. https://www.kaggle.com/c/ashrae-energy-prediction/overview&quot;</span>
+            <span class="p">)</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;bdg2_daily&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="s1">&#39;https://drive.google.com/file/d/1KHYopzclKvS1F6Gt6GoJWKnxiuZ2aqen/view?usp=sharing&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;sep&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;index_col&#39;</span><span class="p">:</span> <span class="s1">&#39;timestamp&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;date_format&#39;</span><span class="p">:</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;freq&#39;</span><span class="p">:</span> <span class="s1">&#39;D&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;file_type&#39;</span><span class="p">:</span> <span class="s1">&#39;parquet&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s2">&quot;Daily energy consumption data from the The Building Data Genome Project 2 &quot;</span>
+                <span class="s2">&quot;with building metadata and weather data. &quot;</span>
+                <span class="s2">&quot;https://github.com/buds-lab/building-data-genome-project-2&quot;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s2">&quot;Miller, C., Kathirgamanathan, A., Picchetti, B. et al. The Building Data &quot;</span>
+                <span class="s2">&quot;Genome Project 2, energy meter data from the ASHRAE Great Energy &quot;</span>
+                <span class="s2">&quot;Predictor III competition. Sci Data 7, 368 (2020). &quot;</span>
+                <span class="s2">&quot;https://doi.org/10.1038/s41597-020-00712-x&quot;</span>
+            <span class="p">)</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;bdg2_hourly&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="s1">&#39;https://drive.google.com/file/d/1I2i5mZJ82Cl_SHPTaWJmLoaXnntdCgh7/view?usp=sharing&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;sep&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;index_col&#39;</span><span class="p">:</span> <span class="s1">&#39;timestamp&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;date_format&#39;</span><span class="p">:</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;freq&#39;</span><span class="p">:</span> <span class="s1">&#39;H&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;file_type&#39;</span><span class="p">:</span> <span class="s1">&#39;parquet&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s2">&quot;Hourly energy consumption data from the The Building Data Genome Project 2 &quot;</span>
+                <span class="s2">&quot;with building metadata and weather data. &quot;</span>
+                <span class="s2">&quot;https://github.com/buds-lab/building-data-genome-project-2&quot;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s2">&quot;Miller, C., Kathirgamanathan, A., Picchetti, B. et al. The Building Data &quot;</span>
+                <span class="s2">&quot;Genome Project 2, energy meter data from the ASHRAE Great Energy &quot;</span>
+                <span class="s2">&quot;Predictor III competition. Sci Data 7, 368 (2020). &quot;</span>
+                <span class="s2">&quot;https://doi.org/10.1038/s41597-020-00712-x&quot;</span>
+            <span class="p">)</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;m5&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="s1">&#39;https://drive.google.com/file/d/1JOqBsSHegly6iSJFgmkugAko734c6ZW5/view?usp=sharing&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;https://drive.google.com/file/d/1BhO1BUvs-d7ipXrm7caC3Wd_d0C_6PZ8/view?usp=sharing&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;https://drive.google.com/file/d/1oHwkQ_QycJVTZMb6bH8C2klQB971gXXA/view?usp=sharing&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;https://drive.google.com/file/d/1OvYzFlDG04YgTvju2k02vHEOj0nIuwei/view?usp=sharing&#39;</span>
+            <span class="p">],</span>
+            <span class="s1">&#39;sep&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;index_col&#39;</span><span class="p">:</span> <span class="s1">&#39;timestamp&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;date_format&#39;</span><span class="p">:</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;freq&#39;</span><span class="p">:</span> <span class="s1">&#39;D&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;file_type&#39;</span><span class="p">:</span> <span class="s1">&#39;parquet&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s2">&quot;Daily sales data from the M5 competition with product metadata and calendar data.&quot;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s2">&quot;Addison Howard, inversion, Spyros Makridakis, and vangelis. &quot;</span>
+                <span class="s2">&quot;M5 Forecasting - Accuracy. https://kaggle.com/competitions/m5-forecasting-accuracy, 2020. Kaggle.&quot;</span>
+            <span class="p">)</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;ett_m1&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;https://raw.githubusercontent.com/skforecast/&#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;skforecast-datasets/refs/heads/</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s1">/data/ETTm1.csv&#39;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;sep&#39;</span><span class="p">:</span> <span class="s1">&#39;,&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;index_col&#39;</span><span class="p">:</span> <span class="s1">&#39;date&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;date_format&#39;</span><span class="p">:</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;freq&#39;</span><span class="p">:</span> <span class="s1">&#39;15min&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;file_type&#39;</span><span class="p">:</span> <span class="s1">&#39;csv&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s1">&#39;Data from an electricity transformer station was collected between July &#39;</span>
+                <span class="s1">&#39;2016 and July 2018 (2 years × 365 days × 24 hours × 4 intervals per &#39;</span>
+                <span class="s1">&#39;hour = 70,080 data points). Each data point consists of 8 features, &#39;</span>
+                <span class="s1">&#39;including the date of the point, the predictive value &quot;Oil Temperature (OT)&quot;, &#39;</span>
+                <span class="s1">&#39;and 6 different types of external power load features: High UseFul Load (HUFL), &#39;</span>
+                <span class="s1">&#39;High UseLess Load (HULL), Middle UseFul Load (MUFL), Middle UseLess Load (MULL), &#39;</span>
+                <span class="s1">&#39;Low UseFul Load (LUFL), Low UseLess Load(LULL).&#39;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s1">&#39;Zhou, Haoyi &amp; Zhang, Shanghang &amp; Peng, Jieqi &amp; Zhang, Shuai &amp; Li, &#39;</span>
+                <span class="s1">&#39;Jianxin &amp; Xiong, Hui &amp; Zhang, Wancai. (2020). Informer: Beyond Efficient &#39;</span>
+                <span class="s1">&#39;Transformer for Long Sequence Time-Series Forecasting. &#39;</span>
+                <span class="s1">&#39;[10.48550/arXiv.2012.07436](https://arxiv.org/abs/2012.07436). &#39;</span>
+                <span class="s1">&#39;https://github.com/zhouhaoyi/ETDataset&#39;</span>
+            <span class="p">)</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;ett_m2&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;https://raw.githubusercontent.com/skforecast/&#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;skforecast-datasets/</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s1">/data/ETTm2.csv&#39;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;sep&#39;</span><span class="p">:</span> <span class="s1">&#39;,&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;index_col&#39;</span><span class="p">:</span> <span class="s1">&#39;date&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;date_format&#39;</span><span class="p">:</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;freq&#39;</span><span class="p">:</span> <span class="s1">&#39;15min&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;file_type&#39;</span><span class="p">:</span> <span class="s1">&#39;csv&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s1">&#39;Data from an electricity transformer station was collected between July &#39;</span>
+                <span class="s1">&#39;2016 and July 2018 (2 years x 365 days x 24 hours x 4 intervals per &#39;</span>
+                <span class="s1">&#39;hour = 70,080 data points). Each data point consists of 8 features, &#39;</span>
+                <span class="s1">&#39;including the date of the point, the predictive value &quot;Oil Temperature (OT)&quot;, &#39;</span>
+                <span class="s1">&#39;and 6 different types of external power load features: High UseFul Load (HUFL), &#39;</span>
+                <span class="s1">&#39;High UseLess Load (HULL), Middle UseFul Load (MUFL), Middle UseLess Load (MULL), &#39;</span>
+                <span class="s1">&#39;Low UseFul Load (LUFL), Low UseLess Load(LULL).&#39;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s1">&#39;Zhou, Haoyi &amp; Zhang, Shanghang &amp; Peng, Jieqi &amp; Zhang, Shuai &amp; Li, &#39;</span>
+                <span class="s1">&#39;Jianxin &amp; Xiong, Hui &amp; Zhang, Wancai. (2020). Informer: Beyond Efficient &#39;</span>
+                <span class="s1">&#39;Transformer for Long Sequence Time-Series Forecasting. &#39;</span>
+                <span class="s1">&#39;[10.48550/arXiv.2012.07436](https://arxiv.org/abs/2012.07436). &#39;</span>
+                <span class="s1">&#39;https://github.com/zhouhaoyi/ETDataset&#39;</span>
+            <span class="p">)</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;ett_m2_extended&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;https://raw.githubusercontent.com/skforecast/&#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;skforecast-datasets/</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s1">/data/ETTm2_extended.csv&#39;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;sep&#39;</span><span class="p">:</span> <span class="s1">&#39;,&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;index_col&#39;</span><span class="p">:</span> <span class="s1">&#39;date&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;date_format&#39;</span><span class="p">:</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;freq&#39;</span><span class="p">:</span> <span class="s1">&#39;15min&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;file_type&#39;</span><span class="p">:</span> <span class="s1">&#39;csv&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s1">&#39;Data from an electricity transformer station was collected between July &#39;</span>
+                <span class="s1">&#39;2016 and July 2018 (2 years x 365 days x 24 hours x 4 intervals per &#39;</span>
+                <span class="s1">&#39;hour = 70,080 data points). Each data point consists of 8 features, &#39;</span>
+                <span class="s1">&#39;including the date of the point, the predictive value &quot;Oil Temperature (OT)&quot;, &#39;</span>
+                <span class="s1">&#39;and 6 different types of external power load features: High UseFul Load (HUFL), &#39;</span>
+                <span class="s1">&#39;High UseLess Load (HULL), Middle UseFul Load (MUFL), Middle UseLess Load (MULL), &#39;</span>
+                <span class="s1">&#39;Low UseFul Load (LUFL), Low UseLess Load(LULL). Additional variables are &#39;</span>
+                <span class="s1">&#39;created based on calendar information (year, month, week, day of the week, &#39;</span>
+                <span class="s1">&#39;and hour). These variables have been encoded using the cyclical encoding &#39;</span>
+                <span class="s1">&#39;technique (sin and cos transformations) to preserve the cyclical nature &#39;</span>
+                <span class="s1">&#39;of the data.&#39;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s1">&#39;Zhou, Haoyi &amp; Zhang, Shanghang &amp; Peng, Jieqi &amp; Zhang, Shuai &amp; Li, &#39;</span>
+                <span class="s1">&#39;Jianxin &amp; Xiong, Hui &amp; Zhang, Wancai. (2020). Informer: Beyond Efficient &#39;</span>
+                <span class="s1">&#39;Transformer for Long Sequence Time-Series Forecasting. &#39;</span>
+                <span class="s1">&#39;[10.48550/arXiv.2012.07436](https://arxiv.org/abs/2012.07436). &#39;</span>
+                <span class="s1">&#39;https://github.com/zhouhaoyi/ETDataset&#39;</span>
+            <span class="p">)</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;expenditures_australia&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;https://raw.githubusercontent.com/skforecast/skforecast-datasets/refs/heads/&#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s1">/data/expenditures_australia.csv&#39;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;sep&#39;</span><span class="p">:</span> <span class="s1">&#39;,&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;index_col&#39;</span><span class="p">:</span> <span class="s1">&#39;date&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;date_format&#39;</span><span class="p">:</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;freq&#39;</span><span class="p">:</span> <span class="s1">&#39;MS&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;file_type&#39;</span><span class="p">:</span> <span class="s1">&#39;csv&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s1">&#39;Monthly expenditure on cafes, restaurants and takeaway food services &#39;</span>
+                <span class="s1">&#39;in Victoria (Australia) from April 1982 up to April 2024.&#39;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s1">&#39;Australian Bureau of Statistics. Catalogue No. 8501.0 &#39;</span>
+                <span class="s1">&#39;https://www.abs.gov.au/statistics/industry/retail-and-wholesale-trade/&#39;</span>
+                <span class="s1">&#39;retail-trade-australia/apr-2024/8501011.xlsx&#39;</span>
+            <span class="p">)</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;public_transport_madrid&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;https://raw.githubusercontent.com/skforecast/skforecast-datasets/refs/heads/&#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s1">/data/public-transport-madrid.csv&#39;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;sep&#39;</span><span class="p">:</span> <span class="s1">&#39;,&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;index_col&#39;</span><span class="p">:</span> <span class="s1">&#39;date&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;date_format&#39;</span><span class="p">:</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;freq&#39;</span><span class="p">:</span> <span class="s1">&#39;D&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;file_type&#39;</span><span class="p">:</span> <span class="s1">&#39;csv&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s1">&#39;Daily users of public transport in Madrid (Spain) from 2023-01-01 to 2024-12-15.&#39;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s1">&#39;Consorcio Regional de Transportes de Madrid CRTM, CRTM Evolucion demanda diaria &#39;</span>
+                <span class="s1">&#39;https://datos.crtm.es/documents/a7210254c4514a19a51b1617cfd61f75/about&#39;</span>
+            <span class="p">)</span>
+        <span class="p">},</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">datasets</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Dataset &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; not found. Available datasets are: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">datasets</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">url</span> <span class="o">=</span> <span class="n">datasets</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s1">&#39;url&#39;</span><span class="p">]</span>
+    <span class="n">file_type</span> <span class="o">=</span> <span class="n">datasets</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s1">&#39;file_type&#39;</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;https://drive.google.com&#39;</span><span class="p">):</span>
+            <span class="n">file_id</span> <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;https://drive.google.com/uc?id=&#39;</span> <span class="o">+</span> <span class="n">file_id</span>
+        <span class="k">if</span> <span class="n">file_type</span> <span class="o">==</span> <span class="s1">&#39;csv&#39;</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">sep</span> <span class="o">=</span> <span class="n">datasets</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s1">&#39;sep&#39;</span><span class="p">]</span>
+                <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="n">sep</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs_read_csv</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Error reading dataset &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; from </span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s2">. Try to version = &#39;latest&#39;&quot;</span>
+                <span class="p">)</span>
+        <span class="k">if</span> <span class="n">file_type</span> <span class="o">==</span> <span class="s1">&#39;parquet&#39;</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Error reading dataset &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; from </span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s2">. Try to version = &#39;latest&#39;&quot;</span>
+                <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span> 
+            <span class="n">df</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">url_partition</span> <span class="ow">in</span> <span class="n">url</span><span class="p">:</span>
+                <span class="n">path</span> <span class="o">=</span> <span class="s1">&#39;https://drive.google.com/uc?export=download&amp;id=&#39;</span> <span class="o">+</span> <span class="n">url_partition</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+                <span class="n">df</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Error reading dataset &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; from </span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s2">. Try to version = &#39;latest&#39;&quot;</span>
+            <span class="p">)</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">raw</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">index_col</span> <span class="o">=</span> <span class="n">datasets</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s1">&#39;index_col&#39;</span><span class="p">]</span>
+            <span class="n">freq</span> <span class="o">=</span> <span class="n">datasets</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s1">&#39;freq&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">freq</span> <span class="o">==</span> <span class="s1">&#39;H&#39;</span> <span class="ow">and</span> <span class="n">pd</span><span class="o">.</span><span class="n">__version__</span> <span class="o">&gt;=</span> <span class="s1">&#39;2.2.0&#39;</span><span class="p">:</span>
+                <span class="n">freq</span> <span class="o">=</span> <span class="s2">&quot;h&quot;</span>
+            <span class="n">date_format</span> <span class="o">=</span> <span class="n">datasets</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s1">&#39;date_format&#39;</span><span class="p">]</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">index_col</span><span class="p">)</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="n">date_format</span><span class="p">)</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">asfreq</span><span class="p">(</span><span class="n">freq</span><span class="p">)</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">sort_index</span><span class="p">()</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;-&#39;</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+        <span class="n">description</span> <span class="o">=</span> <span class="n">textwrap</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">datasets</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s1">&#39;description&#39;</span><span class="p">],</span> <span class="n">width</span><span class="o">=</span><span class="mi">80</span><span class="p">)</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="n">textwrap</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">datasets</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s1">&#39;source&#39;</span><span class="p">],</span> <span class="n">width</span><span class="o">=</span><span class="mi">80</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">description</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Shape of the dataset: </span><span class="si">{</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">df</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="skforecast.datasets.load_demo_dataset" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">skforecast.datasets.load_demo_dataset</span>
+
+
+<a href="#skforecast.datasets.load_demo_dataset" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">load_demo_dataset</span><span class="p">(</span><span class="n">version</span><span class="o">=</span><span class="s1">&#39;latest&#39;</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents first">
+
+        <p>Load demo data set with monthly expenditure ($AUD) on corticosteroid drugs that
+the Australian health system had between 1991 and 2008. Obtained from the book:
+Forecasting: Principles and Practice by Rob J Hyndman and George Athanasopoulos.
+Index is set to datetime with monthly frequency and sorted.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>version</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Version of the dataset to fetch. If 'latest', the lastest version will be
+fetched (the one in the main branch). For a list of available versions,
+see the repository branches.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;latest&#39;</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>df</code></td>            <td>
+                  <code>pandas Series</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Dataset.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+            <details class="quote">
+              <summary>Source code in <code>skforecast/datasets/datasets.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">672</span>
+<span class="normal">673</span>
+<span class="normal">674</span>
+<span class="normal">675</span>
+<span class="normal">676</span>
+<span class="normal">677</span>
+<span class="normal">678</span>
+<span class="normal">679</span>
+<span class="normal">680</span>
+<span class="normal">681</span>
+<span class="normal">682</span>
+<span class="normal">683</span>
+<span class="normal">684</span>
+<span class="normal">685</span>
+<span class="normal">686</span>
+<span class="normal">687</span>
+<span class="normal">688</span>
+<span class="normal">689</span>
+<span class="normal">690</span>
+<span class="normal">691</span>
+<span class="normal">692</span>
+<span class="normal">693</span>
+<span class="normal">694</span>
+<span class="normal">695</span>
+<span class="normal">696</span>
+<span class="normal">697</span>
+<span class="normal">698</span>
+<span class="normal">699</span>
+<span class="normal">700</span>
+<span class="normal">701</span>
+<span class="normal">702</span>
+<span class="normal">703</span>
+<span class="normal">704</span>
+<span class="normal">705</span>
+<span class="normal">706</span>
+<span class="normal">707</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">load_demo_dataset</span><span class="p">(</span><span class="n">version</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;latest&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Load demo data set with monthly expenditure ($AUD) on corticosteroid drugs that</span>
+<span class="sd">    the Australian health system had between 1991 and 2008. Obtained from the book:</span>
+<span class="sd">    Forecasting: Principles and Practice by Rob J Hyndman and George Athanasopoulos.</span>
+<span class="sd">    Index is set to datetime with monthly frequency and sorted.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    version: str, default `&#39;latest&#39;`</span>
+<span class="sd">        Version of the dataset to fetch. If &#39;latest&#39;, the lastest version will be</span>
+<span class="sd">        fetched (the one in the main branch). For a list of available versions,</span>
+<span class="sd">        see the repository branches.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    df: pandas Series</span>
+<span class="sd">        Dataset.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">version</span> <span class="o">=</span> <span class="s1">&#39;main&#39;</span> <span class="k">if</span> <span class="n">version</span> <span class="o">==</span> <span class="s1">&#39;latest&#39;</span> <span class="k">else</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s1">&#39;</span>
+
+    <span class="n">url</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s1">&#39;https://raw.githubusercontent.com/skforecast/skforecast-datasets/</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s1">/&#39;</span>
+        <span class="s1">&#39;data/h2o.csv&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="s1">&#39;datetime&#39;</span><span class="p">])</span>
+    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;datetime&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;datetime&#39;</span><span class="p">],</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;datetime&#39;</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">asfreq</span><span class="p">(</span><span class="s1">&#39;MS&#39;</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">]</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">sort_index</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">df</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2021 - 2030 Joaquín Amat Rodrigo, Javier Escobar Ortiz
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://www.linkedin.com/company/skforecast/" target="_blank" rel="noopener" title="www.linkedin.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3M135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3 0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2 0 38.5 17.3 38.5 38.5 0 21.3-17.2 38.5-38.5 38.5m282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/skforecast/skforecast" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8M97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener" title="creativecommons.org" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="m245.83 214.87-33.22 17.28c-9.43-19.58-25.24-19.93-27.46-19.93-22.13 0-33.22 14.61-33.22 43.84 0 23.57 9.21 43.84 33.22 43.84 14.47 0 24.65-7.09 30.57-21.26l30.55 15.5c-6.17 11.51-25.69 38.98-65.1 38.98-22.6 0-73.96-10.32-73.96-77.05 0-58.69 43-77.06 72.63-77.06 30.72-.01 52.7 11.95 65.99 35.86m143.05 0-32.78 17.28c-9.5-19.77-25.72-19.93-27.9-19.93-22.14 0-33.22 14.61-33.22 43.84 0 23.55 9.23 43.84 33.22 43.84 14.45 0 24.65-7.09 30.54-21.26l31 15.5c-2.1 3.75-21.39 38.98-65.09 38.98-22.69 0-73.96-9.87-73.96-77.05 0-58.67 42.97-77.06 72.63-77.06 30.71-.01 52.58 11.95 65.56 35.86M247.56 8.05C104.74 8.05 0 123.11 0 256.05c0 138.49 113.6 248 247.56 248 129.93 0 248.44-100.87 248.44-248 0-137.87-106.62-248-248.44-248m.87 450.81c-112.54 0-203.7-93.04-203.7-202.81 0-105.42 85.43-203.27 203.72-203.27 112.53 0 202.82 89.46 202.82 203.26-.01 121.69-99.68 202.82-202.84 202.82"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+      <div class="md-consent" data-md-component="consent" id="__consent" hidden>
+        <div class="md-consent__overlay"></div>
+        <aside class="md-consent__inner">
+          <form class="md-consent__form md-grid md-typeset" name="consent">
+            
+
+  
+    
+  
+
+
+  
+    
+  
+
+
+
+  
+
+
+<h4>Cookie consent</h4>
+<p>We use cookies to recognize your repeated visits and preferences, as well as to measure the effectiveness of our documentation and whether users find what they're searching for. With your consent, you're helping us to make our documentation better.</p>
+<input class="md-toggle" type="checkbox" id="__settings" >
+<div class="md-consent__settings">
+  <ul class="task-list">
+    
+      
+      
+        
+        
+      
+      <li class="task-list-item">
+        <label class="task-list-control">
+          <input type="checkbox" name="analytics" checked>
+          <span class="task-list-indicator"></span>
+          Google Analytics
+        </label>
+      </li>
+    
+      
+      
+        
+        
+      
+      <li class="task-list-item">
+        <label class="task-list-control">
+          <input type="checkbox" name="github" checked>
+          <span class="task-list-indicator"></span>
+          GitHub
+        </label>
+      </li>
+    
+  </ul>
+</div>
+<div class="md-consent__controls">
+  
+    
+      <button class="md-button md-button--primary">Accept</button>
+    
+    
+    
+  
+    
+    
+    
+      <label class="md-button" for="__settings">Manage settings</label>
+    
+  
+</div>
+          </form>
+        </aside>
+      </div>
+      <script>var consent=__md_get("__consent");if(consent)for(var input of document.forms.consent.elements)input.name&&(input.checked=consent[input.name]||!1);else"file:"!==location.protocol&&setTimeout((function(){document.querySelector("[data-md-component=consent]").hidden=!1}),250);var form=document.forms.consent;for(var action of["submit","reset"])form.addEventListener(action,(function(e){if(e.preventDefault(),"reset"===e.type)for(var n of document.forms.consent.elements)n.name&&(n.checked=!1);__md_set("__consent",Object.fromEntries(Array.from(new FormData(form).keys()).map((function(e){return[e,!0]})))),location.hash="",location.reload()}))</script>
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.top", "toc.integrate", "navigation.breadcrumbs"], "search": "../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.525ec568.min.js"></script>
+      
+    
+  </body>
+</html>
