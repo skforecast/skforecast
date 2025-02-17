@@ -1838,6 +1838,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         
         """
         
+        y_true = np.asarray(y_true)
+        y_pred = np.asarray(y_pred)
         residuals = y_true - y_pred
         data = pd.DataFrame({'prediction': y_pred, 'residuals': residuals})
 
@@ -3229,7 +3231,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             self.out_sample_residuals_by_bin_[level] = residuals_by_bin_level
 
         if self.encoding is None or '_unknown_level' not in series_to_update:
-            if list(y_true.keys()) != ['_unknown_level']:
+            if self.encoding is None and list(y_true.keys()) != ['_unknown_level']:
                 warnings.warn(
                     "As `encoding` is set to `None`, no distinction between levels "
                     "is made. All residuals are stored in the '_unknown_level' key.",

@@ -37,6 +37,12 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 <span style="font-size: 1.3em;">Probabilistic Forecasting</span>
 
 - [Probabilistic forecasting](../user_guides/probabilistic-forecasting.html)
+- [Bootstrapped residuals](../user_guides/probabilistic-forecasting-bootstrapped-residuals.html)
+- [Conformal predictions](../user_guides/probabilistic-forecasting-conformal-regression.html)
+- [Quantile forecasting](../user_guides/probabilistic-forecasting-quantile-regression.html)
+- [Calibrate intervals](../user_guides/probabilistic-forecasting-calibrate-intervals.html)
+- [Metrics in probabilistic forecasting](../user_guides/probabilistic-forecasting-metrics.html)
+- [Continuous Ranked Probability Score (CRPS)](../faq/probabilistic-forecasting-crps-score.html)
 
 <span style="font-size: 1.3em;">Model Explainability</span>
 

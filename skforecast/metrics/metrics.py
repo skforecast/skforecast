@@ -336,7 +336,10 @@ def crps_from_quantiles(
 
     # Compute the integrand values and integrate using the trapezoidal rule
     integrand_values = crps_integrand(x_values)
-    crps = np.trapz(integrand_values, x_values)
+    if np.__version__ >= "2.0.0":
+        crps = np.trapezoid(integrand_values, x=x_values)
+    else:
+        crps = np.trapz(integrand_values, x_values)
 
     return crps
 
