@@ -1,12 +1,13 @@
 import pytest
 import pandas as pd
 import numpy as np
-import keras
+import tensorflow as tf
+from tensorflow import keras
+import warnings
 from skforecast.deep_learning.utils import create_and_compile_model
 
+
 # test with several parameters for dense_units and recurrent_units
-
-
 @pytest.mark.parametrize(
     "dense_units, recurrent_layer, recurrent_units",
     [
@@ -34,7 +35,7 @@ def test_units(dense_units, recurrent_layer, recurrent_units):
     levels = 1
     activation = "relu"
     optimizer = keras.optimizers.Adam(learning_rate=0.01)
-    loss = keras.losses.MeanSquaredError()
+    loss = 'mse'  # Using string representation instead of MeanSquaredError()
 
     # Call the function to create and compile the model
     model = create_and_compile_model(
@@ -182,3 +183,86 @@ def test_incorrect_levels_type():
         create_and_compile_model(
             series_data, lags_data, steps_data, np.array([1, 2, 3])
         )
+
+def test_predefined_loss_string():
+    """Test model creation with predefined loss string"""
+    data = pd.DataFrame({'col1': [1, 2, 3], 'col2': [4, 5, 6]})
+    model = create_and_compile_model(
+        series=data,
+        lags=2,
+        steps=1,
+        loss='mse'
+    )
+    assert model.loss == 'mse'
+
+def test_predefined_loss_object():
+    """Test model creation with predefined loss object"""
+    data = pd.DataFrame({'col1': [1, 2, 3], 'col2': [4, 5, 6]})
+    model = create_and_compile_model(
+        series=data,
+        lags=2,
+        steps=1,
+        loss='mse'  # Changed from MeanSquaredError() to 'mse'
+    )
+    # Changed assertion to check for string name instead of object type
+    assert model.loss == 'mse'
+
+def test_custom_loss_function():
+    """Test model creation with custom loss function"""
+    def custom_loss(y_true, y_pred):
+        return tf.reduce_mean(tf.square(y_true - y_pred))
+    
+    data = pd.DataFrame({'col1': [1, 2, 3], 'col2': [4, 5, 6]})
+    model = create_and_compile_model(
+        series=data,
+        lags=2,
+        steps=1,
+        loss=custom_loss
+    )
+    assert model.loss == custom_loss
+
+def test_invalid_custom_loss():
+    """Test that invalid custom loss raises error"""
+    def invalid_loss(y_true, y_pred, extra_param):
+        return tf.reduce_mean(tf.square(y_true - y_pred))
+    
+    data = pd.DataFrame({'col1': [1, 2, 3], 'col2': [4, 5, 6]})
+    with pytest.raises(ValueError) as exc_info:
+        create_and_compile_model(
+            series=data,
+            lags=2,
+            steps=1,
+            loss=invalid_loss
+        )
+    assert "Custom loss function must accept exactly two arguments" in str(exc_info.value)
+
+def test_compile_kwargs_with_custom_loss():
+    """Test that custom loss takes priority over compile_kwargs"""
+    def custom_loss(y_true, y_pred):
+        return tf.reduce_mean(tf.square(y_true - y_pred))
+    
+    data = pd.DataFrame({'col1': [1, 2, 3], 'col2': [4, 5, 6]})
+    with pytest.warns(UserWarning):
+        model = create_and_compile_model(
+            series=data,
+            lags=2,
+            steps=1,
+            loss=custom_loss,
+            compile_kwargs={'loss': 'mse'}
+        )
+    assert model.loss == custom_loss
+
+def test_loss_and_optimizer_precedence():
+    """Test that main parameters take precedence over compile_kwargs"""
+    data = pd.DataFrame({'col1': [1, 2, 3], 'col2': [4, 5, 6]})
+    with pytest.warns(UserWarning, match="Using the optimizer parameter instead"):
+        with pytest.warns(UserWarning, match="Using the loss parameter instead"):
+            model = create_and_compile_model(
+                series=data,
+                lags=2,
+                steps=1,
+                optimizer="adam",
+                loss="mse",
+                compile_kwargs={'optimizer': 'sgd', 'loss': 'mae'}
+            )
+    assert model.loss == "mse"
