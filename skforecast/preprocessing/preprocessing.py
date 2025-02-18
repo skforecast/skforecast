@@ -1605,7 +1605,7 @@ class QuantileBinner:
 class ConformalIntervalCalibrator:
     """
     Transformer that calibrates the prediction interval to achieve the desired 
-    coverage based on conformity scores.
+    coverage based on conformity scores. It uses the conformal split method.
 
     Parameters
     ----------
