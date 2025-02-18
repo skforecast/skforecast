@@ -16,6 +16,7 @@ from sklearn.base import TransformerMixin
 from sklearn.exceptions import NotFittedError
 from ..exceptions import MissingValuesWarning
 from numba import njit
+from copy import deepcopy
 
 
 def _check_X_numpy_ndarray_1d(ensure_1d=True):
@@ -1617,113 +1618,206 @@ class ConformalIntervalCalibrator:
     nominal_coverage : float
         Desired coverage. This is the desired probability that the true value 
         falls within the calibrated interval.
-    correction_factor_ : float
+    correction_factor_ : dict
         Correction factor to achieve the desired coverage.
     
     """
 
     def __init__(self, nominal_coverage: float = 0.8):
         self.nominal_coverage = nominal_coverage
-        self.correction_factor_ = None
+        self.correction_factor_ = {}
+        self.fit_input_type_ = None
+        self.fit_series_names_ = None
 
     def fit(
         self,
-        y_true: np.ndarray | pd.Series,
-        y_pred_interval: np.ndarray | pd.DataFrame
+        y_true: np.ndarray | pd.Series | dict[np.ndarray | pd.Series],
+        y_pred_interval: np.ndarray | pd.DataFrame | dict[np.ndarray | pd.DataFrame]
     ):
         """
         Learn the correction factor needed to achieve the desired coverage.
 
         Parameters
         ----------
-        y_true : numpy ndarray, pandas Series
-            True target values.
-        y_pred_interval : numpy ndarray, pandas DataFrame
+        y_true : numpy ndarray, pandas Series, dict
+            True target values. When only one series is available, it can be a
+            numpy array or pandas Series. When multiple series are available, it
+            must be a dictionary with series names as keys.
+        y_pred_interval : numpy ndarray, pandas DataFrame, dict
             Prediction interval calculated on the true target values. It must have
-            two columns: lower bound and upper bound.
+            two columns: lower bound and upper bound. If multiple series are available,
+            it must be a dictionary with series names as keys.
 
         Returns
         -------
         self
 
         """
+        if not isinstance(y_true, (np.ndarray, pd.Series, dict)):
+            raise ValueError(
+                "`y_true` must be a numpy array, pandas Series, or a dictionary."
+            )
+        
+        if not isinstance(y_pred_interval, (np.ndarray, pd.DataFrame, dict)):
+            raise ValueError(
+                "`y_pred_interval` must be a numpy array, pandas DataFrame, or a dictionary."
+            )
 
-        if isinstance(y_true, pd.Series):
-            y_true = y_true.to_numpy()
-        if isinstance(y_pred_interval, pd.DataFrame):
-            y_pred_interval = y_pred_interval.to_numpy()
+        if (isinstance(y_true, dict) and not isinstance(y_pred_interval, dict)) or  (not isinstance(y_true, dict) and isinstance(y_pred_interval, dict)):
+            raise ValueError(
+                "y_true and y_pred_interval must be both dictionaries or both single series."
+            )
 
-        lower_bound = y_pred_interval[:, 0]
-        upper_bound = y_pred_interval[:, 1]
-        conformity_scores = np.max(
-            [
-                lower_bound - y_true,
-                y_true - upper_bound,
-            ],
-            axis=0,
-        )
+        if isinstance(y_true, dict) != isinstance(y_pred_interval, dict):
+            raise ValueError(
+                    "`y_true` and `y_pred_interval` must both be dictionaries if one of them is."
+                )
+        
+        if not isinstance(y_true, dict):
+            self.fit_input_type_ = "single"    
+            y_true = {'y': y_true}
+            y_pred_interval = {'y': y_pred_interval}
+        else:
+            self.fit_input_type_ = "multi"
 
-        self.correction_factor_ = np.quantile(conformity_scores, self.nominal_coverage)
+        for k in y_true.keys():
+            y_true_ = deepcopy(y_true[k])
+            y_pred_interval_ = deepcopy(y_pred_interval[k])
+
+            if not isinstance(y_true_, (np.ndarray, pd.Series)):
+                raise ValueError(
+                    f"All values in `y_true` must be numpy arrays or pandas Series. "
+                    f"Got {type(y_true_)}."
+                )
+            if not isinstance(y_pred_interval_, (np.ndarray, pd.DataFrame)):
+                raise ValueError(
+                    f"All values in `y_pred_interval` must be numpy arrays or pandas DataFrames. "
+                    f"Got {type(y_pred_interval_)}."
+                )
+            
+            y_true_ = np.asarray(y_true_)
+            y_pred_interval_ = np.asarray(y_pred_interval_)
+            lower_bound = y_pred_interval_[:, 0]
+            upper_bound = y_pred_interval_[:, 1]
+            conformity_scores = np.max(
+                [
+                    lower_bound - y_true_,
+                    y_true_ - upper_bound,
+                ],
+                axis=0,
+            )
+
+            self.correction_factor_[k] = np.quantile(conformity_scores, self.nominal_coverage)
+
+        self.fit_series_names_ = list(y_true.keys())
 
         return self
 
     def transform(
         self, 
-        y_pred_interval: np.ndarray | pd.DataFrame
-    ) -> pd.DataFrame:
+        y_pred_interval: np.ndarray | pd.DataFrame | dict[np.ndarray | pd.DataFrame]
+    ) -> np.ndarray | pd.DataFrame | dict[np.ndarray | pd.DataFrame]:
         """
         Apply the correction factor to the prediction interval to achieve the desired
         coverage.
 
         Parameters
         ----------
-        y_pred_interval : numpy ndarray, pandas DataFrame
-            Prediction interval.
+        y_pred_interval : numpy ndarray, pandas DataFrame, dict
+            Prediction interval to be calibrated using conformal method. It must have
+            two columns: lower bound and upper bound. If multiple series are available,
+            it must be a dictionary with series names as keys.
 
         Returns
         -------
-        y_pred_interval_conformal : pandas DataFrame
+        y_pred_interval_conformal : pandas DataFrame, numpy ndarray, dict
             Prediction interval with the correction factor applied.
         
         """
 
-        if y_pred_interval.shape[1] != 2:
+        if not isinstance(y_pred_interval, (np.ndarray, pd.DataFrame, dict)):
             raise ValueError(
-                "Prediction interval must have 2 columns (lower and upper bounds)."
+                "`y_pred_interval` must be a numpy array, pandas DataFrame, or a dictionary."
+            )
+        
+        if isinstance(y_pred_interval, dict) and self.fit_input_type_ != "multi":
+            raise ValueError(
+                f"The transformer was fitted with a single series. `y_pred_interval` "
+                f"must be a pandas DataFrame or numpy array with the lower and upper bounds "
+                f"of the prediction interval. Got a {type(y_pred_interval)}."
+            )
+        
+        if isinstance(y_pred_interval, (pd.DataFrame, np.ndarray)) and self.fit_input_type_ != "single":
+            raise ValueError(
+                f"The transformer was fitted with multiple series. `y_pred_interval` "
+                f"must be a dictionary with series names as keys. Got a {type(y_pred_interval)}."
+            )
+        
+        if not isinstance(y_pred_interval, dict):
+            y_pred_interval = {'y': y_pred_interval}
+
+        conformalized_intervals = {}
+
+        for k in y_pred_interval.keys():
+
+            if k not in self.fit_series_names_:
+                raise ValueError(
+                    f"Series '{k}' was not seen during fit. Available series are: "
+                    f"{self.fit_series_names_}."
+                )
+            correction_factor = self.correction_factor_[k]
+            
+            y_pred_interval_ = deepcopy(y_pred_interval[k])
+
+            if not isinstance(y_pred_interval_, (np.ndarray, pd.DataFrame)):
+                raise ValueError(
+                    f"All values in `y_pred_interval` must be numpy arrays or pandas DataFrames. "
+                    f"Got {type(y_pred_interval_)}."
+                )
+            
+            if y_pred_interval_.shape[1] != 2:
+                raise ValueError(
+                    "All values in `y_pred_interval` must have 2 columns that represent the "
+                    "lower and upper bounds of the prediction interval."
+                )
+            
+            columns = ["lower_bound", "upper_bound"]
+            index = np.arange(y_pred_interval_.shape[0])
+            if isinstance(y_pred_interval_, pd.DataFrame):
+                columns = y_pred_interval_.columns
+                index = y_pred_interval_.index
+                y_pred_interval_ = y_pred_interval_.to_numpy()
+
+            y_pred_interval_conformal = y_pred_interval_.copy()
+            y_pred_interval_conformal[:, 0] = (
+                y_pred_interval_conformal[:, 0] - correction_factor
+            )
+            y_pred_interval_conformal[:, 1] = (
+                y_pred_interval_conformal[:, 1] + correction_factor
             )
 
-        columns = ["lower_bound", "upper_bound"]
-        index = np.arange(y_pred_interval.shape[0])
-        if isinstance(y_pred_interval, pd.DataFrame):
-            columns = y_pred_interval.columns
-            index = y_pred_interval.index
-            y_pred_interval = y_pred_interval.to_numpy()
+            # If upper bound is less than lower bound, swap them
+            mask = (
+                y_pred_interval_conformal[:, 1]
+                < y_pred_interval_conformal[:, 0]
+            )
+            (
+                y_pred_interval_conformal[mask, 0],
+                y_pred_interval_conformal[mask, 1],
+            ) = (
+                y_pred_interval_conformal[mask, 1],
+                y_pred_interval_conformal[mask, 0],
+            )
 
-        y_pred_interval_conformal = y_pred_interval.copy()
-        y_pred_interval_conformal[:, 0] = (
-            y_pred_interval_conformal[:, 0] - self.correction_factor_
-        )
-        y_pred_interval_conformal[:, 1] = (
-            y_pred_interval_conformal[:, 1] + self.correction_factor_
-        )
+            y_pred_interval_conformal = pd.DataFrame(
+                data    = y_pred_interval_conformal,
+                columns = columns,
+                index   = index,
+            )
 
-        # If upper bound is less than lower bound, swap them
-        mask = (
-            y_pred_interval_conformal[:, 1]
-            < y_pred_interval_conformal[:, 0]
-        )
-        (
-            y_pred_interval_conformal[mask, 0],
-            y_pred_interval_conformal[mask, 1],
-        ) = (
-            y_pred_interval_conformal[mask, 1],
-            y_pred_interval_conformal[mask, 0],
-        )
+            conformalized_intervals[k] = y_pred_interval_conformal
+        
+        if self.fit_input_type_ == "single":
+            conformalized_intervals = conformalized_intervals['y']
 
-        y_pred_interval_conformal = pd.DataFrame(
-            data    = y_pred_interval_conformal,
-            columns = columns,
-            index   = index,
-        )
-
-        return y_pred_interval_conformal
+        return conformalized_intervals
