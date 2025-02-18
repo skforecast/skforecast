@@ -224,6 +224,7 @@ warn_skforecast_categories = [
     SkforecastVersionWarning,    
 ]
 
+
 def format_warning_handler(message, category, filename, lineno, file=None, line=None):
     """
     Custom warning handler to format warnings in a box for skforecast custom
@@ -282,9 +283,13 @@ def rich_warning_handler(message, category, filename, lineno, file=None, line=No
     """
     if isinstance(message, tuple(warn_skforecast_categories)):
         console = Console()
+        len_category_name = len(category.__name__)
         panel = Panel(
             Text(
-                f"{message}\n\nCategory: {category.__name__}\nLocation: {filename}:{lineno}",
+                f"{message.message}\n\n"
+                f"Category: {category.__name__}\n"
+                f"Location: {filename}:{lineno}\n"
+                f"Supress: {str(message)[-(79 + len_category_name) :]}",
                 justify="left",
             ),
             title=category.__name__,
