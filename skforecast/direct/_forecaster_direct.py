@@ -313,9 +313,6 @@ class ForecasterDirect(ForecasterBase):
         self.skforecast_version                 = skforecast.__version__
         self.python_version                     = sys.version.split(" ")[0]
         self.forecaster_id                      = forecaster_id
-        self.binner                             = None
-        self.binner_intervals_                  = None
-        self.binner_kwargs                      = None
 
         if not isinstance(steps, int):
             raise TypeError(
@@ -1726,9 +1723,9 @@ class ForecasterDirect(ForecasterBase):
             residuals = self.out_sample_residuals_
             residuals_by_bin = self.out_sample_residuals_by_bin_
 
-        # NOTE: As residuals are {step/bin: residuals}, more n_boot iterations
-        # that the number of residual for the step/bin with more residuals, 
-        # doesn't add new information to the bootstrapping process.
+        # NOTE: Since residuals are {step/bin: residuals}, more n_boot iterations
+        # than the number of residuals for the step/bin with more residuals, 
+        # doesn't add any new information to the bootstrapping process.
         if use_binned_residuals:
             recommended_n_boot = np.max([v.size for v in residuals_by_bin.values()])
         else:

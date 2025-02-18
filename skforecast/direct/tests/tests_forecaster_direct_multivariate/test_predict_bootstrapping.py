@@ -63,22 +63,32 @@ def test_predict_bootstrapping_ValueError_when_not_in_sample_residuals_for_some_
         forecaster.predict_bootstrapping(steps=None, use_in_sample_residuals=True)
 
 
-def test_predict_bootstrapping_ValueError_when_out_sample_residuals_is_None():
+@pytest.mark.parametrize("use_binned_residuals", [True, False], 
+                         ids=lambda binned: f'use_binned_residuals: {binned}')
+def test_predict_bootstrapping_ValueError_when_out_sample_residuals_is_None(use_binned_residuals):
     """
     Test ValueError is raised when use_in_sample_residuals=False and
     forecaster.out_sample_residuals_ is None.
     """
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1',
-                                               lags=3, steps=2)
+    forecaster = ForecasterDirectMultiVariate(
+        LinearRegression(), level='l1', lags=3, steps=2
+    )
     forecaster.fit(series=series)
 
+    if use_binned_residuals:
+        literal = "out_sample_residuals_by_bin_"
+    else:
+        literal = "out_sample_residuals_"
+
     err_msg = re.escape(
-        "`forecaster.out_sample_residuals_` is either None or empty. Use "
-        "`use_in_sample_residuals = True` or the `set_out_sample_residuals()` "
-        "method before predicting."
+        f"`forecaster.{literal}` is either None or empty. Use "
+        f"`use_in_sample_residuals = True` or the `set_out_sample_residuals()` "
+        f"method before predicting."
     )
     with pytest.raises(ValueError, match = err_msg):
-        forecaster.predict_bootstrapping(steps=1, use_in_sample_residuals=False)
+        forecaster.predict_bootstrapping(
+            steps=1, use_in_sample_residuals=False, use_binned_residuals=use_binned_residuals
+        )
 
 
 def test_predict_bootstrapping_ValueError_when_not_out_sample_residuals_for_all_steps_predicted():
@@ -419,3 +429,77 @@ def test_predict_output_when_window_features_steps_10():
     expected.insert(0, 'level', np.tile(['l1'], 10))
     
     pd.testing.assert_frame_equal(predictions, expected)
+
+
+def test_predict_bootstrapping_output_when_recommended_n_boot():
+    """
+    Test output of predict_bootstrapping when regressor is LinearRegression,
+    5 steps are predicted, using recommended n_boot.
+    """
+    forecaster = ForecasterDirectMultiVariate(
+                     regressor = LinearRegression(),
+                     level     = 'l1',
+                     steps     = 5,
+                     lags      = 5
+                 )
+    forecaster.fit(series=series)
+
+    recommended_n_boot = 5
+    for k, v in forecaster.in_sample_residuals_.items():
+        forecaster.in_sample_residuals_[k] = v[:recommended_n_boot]
+        
+    results = forecaster.predict_bootstrapping(
+        steps=5, n_boot=recommended_n_boot, use_in_sample_residuals=True
+    )
+    
+    expected = pd.DataFrame(
+                   data = np.array([
+                              [0.47205022, 0.98950112, 0.68481511, 0.68584113, 0.59849854],
+                              [0.80767016, 0.5800906 , 0.50603608, 0.39370766, 0.27603111],
+                              [0.46384638, 0.39252358, 0.27605498, 0.18799982, 0.55115865],
+                              [0.49217581, 0.3449488 , 0.30432267, 0.73228185, 0.52068247],
+                              [0.23775143, 0.26042536, 0.70757427, 0.51939237, 0.07577542]
+                          ]),
+                   columns = [f"pred_boot_{i}" for i in range(5)],
+                   index   = pd.RangeIndex(start=50, stop=55)
+               )
+    expected.insert(0, 'level', np.tile(['l1'], 5))
+    
+    pd.testing.assert_frame_equal(expected, results)
+
+
+def test_predict_bootstrapping_output_when_recommended_n_boot_binned_residuals():
+    """
+    Test output of predict_bootstrapping when regressor is LinearRegression,
+    5 steps are predicted, using recommended n_boot and binned residuals.
+    """
+    forecaster = ForecasterDirectMultiVariate(
+                     regressor = LinearRegression(),
+                     level     = 'l1',
+                     steps     = 5,
+                     lags      = 5
+                 )
+    forecaster.fit(series=series)
+
+    recommended_n_boot = 5
+    for k, v in forecaster.in_sample_residuals_by_bin_.items():
+        forecaster.in_sample_residuals_by_bin_[k] = v[:recommended_n_boot]
+        
+    results = forecaster.predict_bootstrapping(
+        steps=5, n_boot=recommended_n_boot, use_in_sample_residuals=True, use_binned_residuals=True
+    )
+    
+    expected = pd.DataFrame(
+                   data = np.array([
+                              [0.98950112, 0.68481511, 0.88114584, 0.7556436 , 0.97899051],
+                              [0.75212361, 0.45230689, 0.62572451, 0.41465675, 0.26430958],
+                              [0.30609163, 0.40967018, 0.42519328, 0.41910018, 0.38359395],
+                              [0.03661046, 0.74549056, 0.28977873, 0.46779981, 0.60740805],
+                              [0.48660788, 0.39926529, 0.64537401, 0.3644564 , 0.09744978]
+                          ]),
+                   columns = [f"pred_boot_{i}" for i in range(5)],
+                   index   = pd.RangeIndex(start=50, stop=55)
+               )
+    expected.insert(0, 'level', np.tile(['l1'], 5))
+    
+    pd.testing.assert_frame_equal(expected, results)

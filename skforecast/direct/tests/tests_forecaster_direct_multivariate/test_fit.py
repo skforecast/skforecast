@@ -1,6 +1,7 @@
 # Unit test fit ForecasterDirectMultiVariate
 # ==============================================================================
 import pytest
+from pytest import approx
 import numpy as np
 import pandas as pd
 from sklearn.compose import ColumnTransformer
@@ -111,8 +112,9 @@ def test_forecaster_DatetimeIndex_index_freq_stored():
 
     series.index = pd.date_range(start='2022-01-01', periods=10, freq='1D')
 
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), 
-                                               level='l1', lags=3, steps=1)
+    forecaster = ForecasterDirectMultiVariate(
+        LinearRegression(), level='l1', lags=3, steps=1
+    )
     forecaster.fit(series=series)
     expected = series.index.freqstr
     results = forecaster.index_freq_
@@ -127,8 +129,9 @@ def test_forecaster_index_step_stored():
     series = pd.DataFrame({'l1': pd.Series(np.arange(10)), 
                            'l2': pd.Series(np.arange(10))})
     
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), 
-                                               level='l1', lags=3, steps=2)
+    forecaster = ForecasterDirectMultiVariate(
+        LinearRegression(), level='l1', lags=3, steps=2
+    )
     forecaster.fit(series=series)
     expected = series.index.step
     results = forecaster.index_freq_
@@ -145,48 +148,131 @@ def test_fit_in_sample_residuals_stored(n_jobs):
     series = pd.DataFrame({'l1': pd.Series(np.arange(10)), 
                            'l2': pd.Series(np.arange(10))})
     
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1', 
-                                               lags=3, steps=2, n_jobs=n_jobs)
+    forecaster = ForecasterDirectMultiVariate(
+        LinearRegression(), level='l1', lags=3, steps=2, n_jobs=n_jobs
+    )
     forecaster.fit(series=series)
-    expected = {1: np.array([0.0000000e+00, 0.0000000e+00, 0.0000000e+00, 
-                             0.0000000e+00, 0.0000000e+00, 8.8817842e-16]),
-                2: np.array([0., 0., 0., 0., 0., 0.])}
+    expected = {
+        1: np.array([0.0000000e+00, 0.0000000e+00, 0.0000000e+00, 
+                     0.0000000e+00, 0.0000000e+00, 8.8817842e-16]),
+        2: np.array([0., 0., 0., 0., 0., 0.])
+    }
     results = forecaster.in_sample_residuals_
 
     assert isinstance(results, dict)
-    assert np.all(isinstance(x, np.ndarray) for x in results.values())
     assert results.keys() == expected.keys()
-    assert np.all(np.all(np.isclose(results[k], expected[k])) for k in expected.keys())
+    for k in expected.keys():
+        assert isinstance(results[k], np.ndarray)
+        np.testing.assert_array_almost_equal(results[k], expected[k])
 
 
 @pytest.mark.parametrize("n_jobs", [1, -1, 'auto'], 
                          ids=lambda n_jobs: f'n_jobs: {n_jobs}')
-def test_fit_same_residuals_when_residuals_greater_than_1000(n_jobs):
+def test_fit_same_residuals_when_residuals_greater_than_10000(n_jobs):
     """
-    Test fit return same residuals when residuals len is greater than 1000.
+    Test fit return same residuals when residuals len is greater than 10_000.
     Testing with two different forecaster.
     """
-    series = pd.DataFrame({'l1': pd.Series(np.arange(1200)), 
-                           'l2': pd.Series(np.arange(1200))})
+    series = pd.DataFrame({'l1': pd.Series(np.arange(12_000)), 
+                           'l2': pd.Series(np.arange(12_000))})
     
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1', 
-                                               lags=3, steps=2, n_jobs=n_jobs)
+    forecaster = ForecasterDirectMultiVariate(
+        LinearRegression(), level='l1', lags=3, steps=2, n_jobs=n_jobs
+    )
     forecaster.fit(series=series)
     results_1 = forecaster.in_sample_residuals_
 
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(),  
-                                               level='l1', lags=3, steps=2)
+    forecaster = ForecasterDirectMultiVariate(
+        LinearRegression(), level='l1', lags=3, steps=2, n_jobs=n_jobs
+    )
     forecaster.fit(series=series)
     results_2 = forecaster.in_sample_residuals_
 
     assert isinstance(results_1, dict)
-    assert np.all(isinstance(x, np.ndarray) for x in results_1.values())
     assert isinstance(results_2, dict)
-    assert np.all(isinstance(x, np.ndarray) for x in results_2.values())
     assert results_1.keys() == results_2.keys()
-    assert np.all(len(results_1[k] == 1000) for k in results_1.keys())
-    assert np.all(len(results_2[k] == 1000) for k in results_2.keys())
-    assert np.all(np.all(results_1[k] == results_2[k]) for k in results_2.keys())
+    for k in results_1.keys():
+        assert isinstance(results_1[k], np.ndarray)
+        assert isinstance(results_2[k], np.ndarray)
+        assert len(results_1[k] == 10_000)
+        assert len(results_2[k] == 10_000)
+        np.testing.assert_array_equal(results_1[k], results_2[k])
+
+
+@pytest.mark.parametrize("n_jobs", [1, -1, 'auto'], 
+                         ids=lambda n_jobs: f'n_jobs: {n_jobs}')
+def test_fit_in_sample_residuals_by_bin_stored(n_jobs):
+    """
+    Test that values of in_sample_residuals_by_bin are stored after fitting.
+    """
+    forecaster = ForecasterDirectMultiVariate(
+        LinearRegression(), level='l1', lags=3, steps=2, binner_kwargs={'n_bins': 3}, n_jobs=n_jobs
+    )
+    forecaster.fit(series=series_fixtures)
+
+    expected_1 = {
+        1: np.array([0.61351689,  0.71846659, -0.46065047,  1.8740517 ,  0.35951685,
+                0.36635782, -0.3225934 , -0.86465358,  0.82252715, -0.2741012 ,
+                -1.70423914, -0.33664349,  1.16033533, -1.66552242, -1.26639479,
+                0.18116919, -0.35795787,  1.02694562,  1.33431561,  0.98054222,
+                0.94382542,  0.57275958, -1.52361509, -0.76119268, -0.84770863,
+                -1.07296309,  0.20287787, -1.30813619,  0.3000927 , -0.59338942,
+                0.52690419, -0.5786443 , -0.43975004,  0.23252597,  1.25096008,
+                1.05277835, -0.17913321,  0.65860599, -1.73952616,  0.00926585,
+                -0.74486859,  1.56624963, -0.89792655,  0.1841916 ,  1.34397847,
+                -0.34315036]),
+        2: np.array([ 0.89701176, -0.41773024,  1.82467126,  0.72112853,  0.40786125,
+                -0.61189293, -0.60896505,  0.65160718, -0.30338729, -1.93442134,
+                -0.79019702,  0.95739893, -1.24036132, -1.99937927,  0.22147022,
+                0.12771388,  0.72032178,  1.67692078,  0.86091935,  0.9791868 ,
+                0.59836304, -0.8500661 , -0.88860757, -0.87948968, -0.67394226,
+                0.29203755, -1.50705801,  0.1996901 , -0.79372163,  0.47123556,
+                -0.65428718, -0.94038195, -0.16313875,  1.38627477,  1.49653973,
+                -0.01688572,  0.7562465 , -1.50022778, -0.32925933, -0.60151835,
+                1.26646515, -1.08437562, -0.21536791,  1.62120186,  0.11599908,
+                0.75439722])
+    }
+
+    expected_2 = {
+        0: np.array([0.61351689,  0.36635782, -0.3225934 , -1.70423914,  1.16033533,
+                -1.26639479,  1.02694562,  0.94382542, -0.84770863, -1.30813619,
+                0.3000927 ,  0.52690419, -0.43975004,  0.23252597,  0.00926585,
+                -0.89792655,  0.1841916 ,  0.40786125,  0.72032178,  1.67692078,
+                0.9791868 , -0.87948968, -0.67394226, -1.50705801,  0.1996901 ,
+                0.47123556, -0.16313875,  0.7562465 , -1.50022778, -0.32925933,
+                0.75439722]),
+        1: np.array([-0.46065047,  0.82252715, -0.2741012 , -0.33664349,  0.18116919,
+                1.33431561,  0.98054222, -0.76119268, -1.07296309,  0.65860599,
+                -1.73952616,  1.56624963,  0.89701176, -0.41773024,  0.72112853,
+                -0.61189293, -0.60896505, -0.30338729, -1.93442134,  0.95739893,
+                -1.24036132,  0.22147022,  0.12771388,  0.86091935, -0.8500661 ,
+                -0.94038195, -0.01688572, -1.08437562, -0.21536791,  0.11599908]),
+        2: np.array([ 0.71846659,  1.8740517 ,  0.35951685, -0.86465358, -1.66552242,
+                -0.35795787,  0.57275958, -1.52361509,  0.20287787, -0.59338942,
+                -0.5786443 ,  1.25096008,  1.05277835, -0.17913321, -0.74486859,
+                1.34397847, -0.34315036,  1.82467126,  0.65160718, -0.79019702,
+                -1.99937927,  0.59836304, -0.88860757,  0.29203755, -0.79372163,
+                -0.65428718,  1.38627477,  1.49653973, -0.60151835,  1.26646515,
+                1.62120186])
+    }
+
+    expected_3 = {
+        0: (-0.8032116858231456, -0.13623943835630237),
+        1: (-0.13623943835630237, 0.17856930169525217),
+        2: (0.17856930169525217, 0.8498028419581619)
+    }
+
+    for k in forecaster.in_sample_residuals_.keys():
+        np.testing.assert_array_almost_equal(
+            forecaster.in_sample_residuals_[k], expected_1[k]
+        )
+    for k in forecaster.in_sample_residuals_by_bin_.keys():
+        np.testing.assert_array_almost_equal(
+            forecaster.in_sample_residuals_by_bin_[k], expected_2[k]
+        )
+    for k in forecaster.binner_intervals_.keys():
+        assert forecaster.binner_intervals_[k][0] == approx(expected_3[k][0])
+        assert forecaster.binner_intervals_[k][1] == approx(expected_3[k][1])
 
 
 @pytest.mark.parametrize("n_jobs", [1, -1, 'auto'], 
@@ -199,15 +285,19 @@ def test_fit_in_sample_residuals_not_stored(n_jobs):
     series = pd.DataFrame({'l1': pd.Series(np.arange(5)), 
                            'l2': pd.Series(np.arange(5))})
 
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1', 
-                                               lags=3, steps=2, n_jobs=n_jobs)
+    forecaster = ForecasterDirectMultiVariate(
+        LinearRegression(), level='l1', lags=3, steps=2, n_jobs=n_jobs
+    )
     forecaster.fit(series=series, store_in_sample_residuals=False)
     expected = {1: None, 2: None}
     results = forecaster.in_sample_residuals_
 
     assert isinstance(results, dict)
     assert results.keys() == expected.keys()
-    assert np.all(results[k] == expected[k] for k in expected.keys())
+    for k in results.keys():
+        assert results[k] == expected[k]
+    assert forecaster.in_sample_residuals_by_bin_ is None
+    assert forecaster.binner_intervals_ is None
 
 
 @pytest.mark.parametrize("store_last_window", 
@@ -220,8 +310,9 @@ def test_fit_last_window_stored(store_last_window):
     series = pd.DataFrame({'l1': pd.Series(np.arange(10)), 
                            'l2': pd.Series(np.arange(50, 60))})
 
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), 
-                                               level='l1', lags=3, steps=2)
+    forecaster = ForecasterDirectMultiVariate(
+        LinearRegression(), level='l1', lags=3, steps=2
+    )
     forecaster.fit(series=series, store_last_window=store_last_window)
 
     expected = pd.DataFrame({
@@ -246,9 +337,9 @@ def test_fit_last_window_stored_when_different_lags():
     series = pd.DataFrame({'l1': pd.Series(np.arange(10)), 
                            'l2': pd.Series(np.arange(100, 110))})
 
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l2',
-                                               lags = {'l1': 3, 'l2': [1, 5]}, 
-                                               steps = 2)
+    forecaster = ForecasterDirectMultiVariate(
+        LinearRegression(), level='l2', steps = 2, lags = {'l1': 3, 'l2': [1, 5]}
+    )
     forecaster.fit(series=series)
 
     expected = pd.DataFrame({
@@ -273,9 +364,9 @@ def test_fit_last_window_stored_when_lags_dict_with_None(level):
     series = pd.DataFrame({'l1': pd.Series(np.arange(10)), 
                            'l2': pd.Series(np.arange(100, 110))})
 
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level=level,
-                                               lags = {'l1': 3, 'l2': None}, 
-                                               steps = 2)
+    forecaster = ForecasterDirectMultiVariate(
+        LinearRegression(), level=level, steps = 2, lags = {'l1': 3, 'l2': None}
+    )
     forecaster.fit(series=series)
 
     expected = pd.DataFrame({'l1': pd.Series(np.array([7, 8, 9]))})

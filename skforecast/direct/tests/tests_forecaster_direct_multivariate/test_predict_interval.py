@@ -1,5 +1,7 @@
 # Unit test predict_interval ForecasterDirectMultiVariate
 # ==============================================================================
+import re
+import pytest
 import numpy as np
 import pandas as pd
 from skforecast.direct import ForecasterDirectMultiVariate
@@ -19,6 +21,23 @@ transformer_exog = ColumnTransformer(
                        remainder = 'passthrough',
                        verbose_feature_names_out = False
                    )
+
+
+def test_check_interval_ValueError_when_method_is_not_valid_method():
+    """
+    Check ValueError is raised when `method` is not 'bootstrapping' or 'conformal'.
+    """
+    forecaster = ForecasterDirectMultiVariate(
+        LinearRegression(), level='l1', steps=2, lags=3
+    )
+    forecaster.fit(series=series)
+
+    method = 'not_valid_method'
+    err_msg = re.escape(
+        f"Invalid `method` '{method}'. Choose 'bootstrapping' or 'conformal'."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        forecaster.predict_interval(steps=1, method=method)
 
 
 def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_True_exog_and_transformer():
