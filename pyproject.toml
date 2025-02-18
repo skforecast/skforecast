@@ -43,7 +43,7 @@ dependencies = [
     "scikit-learn>=1.2",
     "optuna>=2.10",
     "joblib>=1.1",
-    "numba>=0.59"
+    "numba>=0.59",
     "rich>=13.9.4"
 ]
 requires-python = ">=3.9"
