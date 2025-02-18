@@ -1,58 +1,34 @@
-# Contributing to skforecast
-
-## How to Contribute
-
+Contributing to skforecast
+How to Contribute
 Skforecast is a community-driven open-source project that relies on contributions from people like you. Every contribution, no matter how big or small, can make a significant impact on the project. Even if you've never contributed to an open-source project before, don't worry! Skforecast is a great place to start. Your help will be appreciated and welcomed with gratitude.
 
-**Recent Enhancement Example**  
-*Custom Loss Function Support*  
-We recently enhanced model flexibility by enabling custom loss functions in our forecasting models. Contributors can now:
-- Pass custom loss functions directly to `create_and_compile()` in ForecasterRNN
-- Use either string identifiers for predefined losses or custom callables
-- Maintain compatibility with existing compilation arguments
-- Validate loss function signatures during model compilation
+Primarily, skforecast development consists of adding and creating new Forecasters, new validation strategies, or improving the performance of the current code. However, there are many other ways to contribute:
 
-Primarily, skforecast development consists of adding and creating new *Forecasters*, new validation strategies, or improving the performance of the current code. However, there are many other ways to contribute:
-
-- Submit a bug report or feature request on [GitHub Issues](https://github.com/skforecast/skforecast/issues).
-- Contribute a Jupyter notebook to our [examples](https://skforecast.org/latest/examples/examples_english.html).
-- Write [unit or integration tests](https://docs.pytest.org/en/latest/) for our project.
-- Answer questions on our issues, Stack Overflow, and elsewhere.
-- Translate our documentation into another language.
-- Write a blog post, tweet, or share our project with others.
-
+Submit a bug report or feature request on GitHub Issues.
+Contribute a Jupyter notebook to our examples.
+Write unit or integration tests for our project.
+Answer questions on our issues, Stack Overflow, and elsewhere.
+Translate our documentation into another language.
+Write a blog post, tweet, or share our project with others.
 As you can see, there are lots of ways to get involved and we would be very happy for you to join us! Before you start, please open an issue with a brief proposal description so we can align.
 
-Visit our [authors section](https://skforecast.org/latest/authors/authors.html) to meet all the contributors to skforecast.
+Visit our authors section to meet all the contributors to skforecast.
 
-
-## Testing
-
+Testing
 To run the test suite, first install the testing dependencies that are located in the main folder:
 
-```bash
 $ pip install -r requirements_test.txt
-```
-
 All unit tests can be run at once as follows from the root of the project:
 
-```bash
 $ pytest -vv
-```
-
 Tests take some time to run. Therefore, during normal development, it is recommended to run only the desired tests from the test file being written:
 
-```bash
 $ pytest new_module/tests/test_module.py
-```
-
 This will go a long way to ensure that the new code does not affect existing library functionality.
 
-## Documentation
-
+Documentation
 Docstring documentation must be included in every class and function. Skforecast uses MkDocs to build the documentation and follows the numpydoc format (as does scikit-learn). The location of the docstring should be just below the class definition, here are two examples:
 
-```python
 class ForecasterRecursive(ForecasterBase):
     """
     This class turns any regressor compatible with the scikit-learn API into a
@@ -247,9 +223,6 @@ class ForecasterRecursive(ForecasterBase):
         Name used as an identifier of the forecaster.
     
     """
-```
-
-```python
 def preprocess_y(
     y: pd.Series
 ) -> Tuple[np.ndarray, pd.Index]:
@@ -280,4 +253,3 @@ def preprocess_y(
         Index of `y` modified according to the rules.
     
     """
-```
