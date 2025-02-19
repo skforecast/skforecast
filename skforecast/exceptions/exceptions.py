@@ -144,7 +144,7 @@ class OneStepAheadValidationWarning(UserWarning):
 class ResidualsUsageWarning(UserWarning):
     """
     Warning used to notify that a residual are not correctly used in the
-    probabilitic forecasting process.
+    probabilistic forecasting process.
     """
     def __init__(self, message):
         self.message = message
