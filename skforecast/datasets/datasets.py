@@ -491,12 +491,12 @@ def fetch_dataset(
             'file_type': 'csv',
             'description': (
                 'Data from an electricity transformer station was collected between July '
-                '2016 and July 2018 (2 years × 365 days × 24 hours × 4 intervals per '
+                '2016 and July 2018 (2 years x 365 days x 24 hours x 4 intervals per '
                 'hour = 70,080 data points). Each data point consists of 8 features, '
                 'including the date of the point, the predictive value "Oil Temperature (OT)", '
                 'and 6 different types of external power load features: High UseFul Load (HUFL), '
                 'High UseLess Load (HULL), Middle UseFul Load (MUFL), Middle UseLess Load (MULL), '
-                'Low UseFul Load (LUFL), Low UseLess Load(LULL).'
+                'Low UseFul Load (LUFL), Low UseLess Load (LULL).'
             ),
             'source': (
                 'Zhou, Haoyi & Zhang, Shanghang & Peng, Jieqi & Zhang, Shuai & Li, '
@@ -523,7 +523,7 @@ def fetch_dataset(
                 'including the date of the point, the predictive value "Oil Temperature (OT)", '
                 'and 6 different types of external power load features: High UseFul Load (HUFL), '
                 'High UseLess Load (HULL), Middle UseFul Load (MUFL), Middle UseLess Load (MULL), '
-                'Low UseFul Load (LUFL), Low UseLess Load(LULL).'
+                'Low UseFul Load (LUFL), Low UseLess Load (LULL).'
             ),
             'source': (
                 'Zhou, Haoyi & Zhang, Shanghang & Peng, Jieqi & Zhang, Shuai & Li, '
@@ -550,7 +550,7 @@ def fetch_dataset(
                 'including the date of the point, the predictive value "Oil Temperature (OT)", '
                 'and 6 different types of external power load features: High UseFul Load (HUFL), '
                 'High UseLess Load (HULL), Middle UseFul Load (MUFL), Middle UseLess Load (MULL), '
-                'Low UseFul Load (LUFL), Low UseLess Load(LULL). Additional variables are '
+                'Low UseFul Load (LUFL), Low UseLess Load (LULL). Additional variables are '
                 'created based on calendar information (year, month, week, day of the week, '
                 'and hour). These variables have been encoded using the cyclical encoding '
                 'technique (sin and cos transformations) to preserve the cyclical nature '
