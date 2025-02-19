@@ -4,12 +4,12 @@ import re
 import pytest
 import numpy as np
 import pandas as pd
-from skforecast.direct import ForecasterDirect
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
+from skforecast.exceptions import ResidualsUsageWarning
+from skforecast.direct import ForecasterDirect
 
 # Fixtures
-from ....exceptions import ResidualsUsageWarning
 from .fixtures_forecaster_direct import y
 from .fixtures_forecaster_direct import exog
 from .fixtures_forecaster_direct import exog_predict
@@ -126,11 +126,10 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_5_
     using in sample binned residuals.
     """
     forecaster = ForecasterDirect(
-                     regressor        = LinearRegression(),
-                     steps            = 5,
-                     lags             = 3,
-                     transformer_y    = StandardScaler(),
-                     transformer_exog = StandardScaler(),
+                     regressor     = LinearRegression(),
+                     steps         = 5,
+                     lags          = 3,
+                     transformer_y = StandardScaler()
                  )
     forecaster.fit(y=y)
 
