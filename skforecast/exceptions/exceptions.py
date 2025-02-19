@@ -15,6 +15,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 
+
 class DataTypeWarning(UserWarning):
     """
     Warning used to notify there are dtypes in the exogenous data that are not
@@ -283,19 +284,23 @@ def rich_warning_handler(message, category, filename, lineno, file=None, line=No
     """
     if isinstance(message, tuple(warn_skforecast_categories)):
         console = Console()
-        panel = Panel(
-            Text(
-                f"{message.message}\n\n"
-                f"Category: {category.__name__}\n"
-                f"Location: {filename}:{lineno}\n"
-                f"Supress : {str(message)[-(42 + len(category.__name__)) :]}",
-                justify="left",
-            ),
-            title=category.__name__,
-            title_align="center",
-            border_style="color(214)",
-            width=88,
+
+        category_name = category.__name__
+        text = (
+            f"{message.message}\n\n"
+            f"Category : {category_name}\n"
+            f"Location : {filename}:{lineno}\n"
+            f"Suppress : warnings.simplefilter('ignore', category={category_name})"
         )
+
+        panel = Panel(
+            Text(text, justify="left"),
+            title        = category_name,
+            title_align  = "center",
+            border_style = "color(214)",
+            width        = 88,
+        )
+        
         console.print(panel)
     else:
         # Fallback to default Python warning formatting

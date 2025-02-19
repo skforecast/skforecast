@@ -61,8 +61,10 @@ class ForecasterBase(ABC):
 
         if isinstance(regressor, Pipeline):
             name_pipe_steps = tuple(name + "__" for name in regressor.named_steps.keys())
-            params = {key: value for key, value in regressor.get_params().items() 
-                      if key.startswith(name_pipe_steps)}
+            params = {
+                key: value for key, value in regressor.get_params().items() 
+                if key.startswith(name_pipe_steps)
+            }
         else:
             params = regressor.get_params()
         params = str(params)
