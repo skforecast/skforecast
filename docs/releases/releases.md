@@ -19,6 +19,8 @@ The main changes in this release are:
 
 **Added**
 
++ Added `rich>=13.9.4` library as hard dependence.
+
 + Conformal
 
 + <code>[ConformalIntervalCalibrator]</code>
