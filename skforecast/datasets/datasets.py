@@ -533,6 +533,37 @@ def fetch_dataset(
                 'https://github.com/zhouhaoyi/ETDataset'
             )
         },
+        'ett_m2_extended': {
+            'url': (
+                f'https://raw.githubusercontent.com/skforecast/'
+                f'skforecast-datasets/{version}/data/ETTm2_extended.csv'
+            ),
+            'sep': ',',
+            'index_col': 'date',
+            'date_format': '%Y-%m-%d %H:%M:%S',
+            'freq': '15min',
+            'file_type': 'csv',
+            'description': (
+                'Data from an electricity transformer station was collected between July '
+                '2016 and July 2018 (2 years x 365 days x 24 hours x 4 intervals per '
+                'hour = 70,080 data points). Each data point consists of 8 features, '
+                'including the date of the point, the predictive value "Oil Temperature (OT)", '
+                'and 6 different types of external power load features: High UseFul Load (HUFL), '
+                'High UseLess Load (HULL), Middle UseFul Load (MUFL), Middle UseLess Load (MULL), '
+                'Low UseFul Load (LUFL), Low UseLess Load(LULL). Additional variables are '
+                'created based on calendar information (year, month, week, day of the week, '
+                'and hour). These variables have been encoded using the cyclical encoding '
+                'technique (sin and cos transformations) to preserve the cyclical nature '
+                'of the data.'
+            ),
+            'source': (
+                'Zhou, Haoyi & Zhang, Shanghang & Peng, Jieqi & Zhang, Shuai & Li, '
+                'Jianxin & Xiong, Hui & Zhang, Wancai. (2020). Informer: Beyond Efficient '
+                'Transformer for Long Sequence Time-Series Forecasting. '
+                '[10.48550/arXiv.2012.07436](https://arxiv.org/abs/2012.07436). '
+                'https://github.com/zhouhaoyi/ETDataset'
+            )
+        },
         'expenditures_australia': {
             'url': (
                 f'https://raw.githubusercontent.com/skforecast/skforecast-datasets/refs/heads/'

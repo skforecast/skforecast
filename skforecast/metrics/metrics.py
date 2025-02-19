@@ -135,7 +135,7 @@ def mean_absolute_scaled_error(
     
     """
 
-    # NOTE: When using this metric in validation, `y_train`` doesn't include
+    # NOTE: When using this metric in validation, `y_train` doesn't include
     # the first window_size observartions used to create the predictors and/or
     # rolling features.
 
@@ -202,7 +202,7 @@ def root_mean_squared_scaled_error(
     
     """
 
-    # NOTE: When using this metric in validation, `y_train`` doesn't include
+    # NOTE: When using this metric in validation, `y_train` doesn't include
     # the first window_size observartions used to create the predictors and/or
     # rolling features.
 
@@ -336,7 +336,10 @@ def crps_from_quantiles(
 
     # Compute the integrand values and integrate using the trapezoidal rule
     integrand_values = crps_integrand(x_values)
-    crps = np.trapz(integrand_values, x_values)
+    if np.__version__ >= "2.0.0":
+        crps = np.trapezoid(integrand_values, x=x_values)
+    else:
+        crps = np.trapz(integrand_values, x_values)
 
     return crps
 

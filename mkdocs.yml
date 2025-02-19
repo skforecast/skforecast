@@ -51,7 +51,14 @@ nav:
       - Backtesting forecaster: user_guides/backtesting.ipynb
       - Hyperparameter tuning and lags selection: user_guides/hyperparameter-tuning-and-lags-selection.ipynb
       - Feature selection: user_guides/feature-selection.ipynb
-    - Probabilistic Forecasting: user_guides/probabilistic-forecasting.ipynb
+    - Probabilistic Forecasting: 
+      - Overview: user_guides/probabilistic-forecasting-overview.ipynb
+      - Bootstrapped residuals: user_guides/probabilistic-forecasting-bootstrapped-residuals.ipynb
+      - Conformal predictions: user_guides/probabilistic-forecasting-conformal-prediction.ipynb
+      - Quantile forecasting: user_guides/probabilistic-forecasting-quantile-regression.ipynb
+      - Calibrate intervals: user_guides/probabilistic-forecasting-calibrate-intervals.ipynb
+      - Metrics in probabilistic forecasting: user_guides/probabilistic-forecasting-metrics.ipynb
+      - Continuous Ranked Probability Score (CRPS): faq/probabilistic-forecasting-crps-score.ipynb
     - Model Explainability: user_guides/explainability.ipynb
     - Model deployment:
       - Save and load forecaster: user_guides/save-load-forecaster.ipynb

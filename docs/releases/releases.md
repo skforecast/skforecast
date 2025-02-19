@@ -19,7 +19,11 @@ The main changes in this release are:
 
 **Added**
 
++ Added `rich>=13.9.4` library as hard dependence.
+
 + Conformal
+
++ <code>[ConformalIntervalCalibrator]</code>
 
 + Binned in rest of Forecasters.
 
@@ -41,7 +45,7 @@ The main changes in this release are:
 
 + Added function `create_mean_pinball_loss` in the <code>[metrics]</code> module to create a function to calculate the mean pinball loss for a given quantile.
 
-+ Added `rich>=13.9.4` library as hard dependence.
++ Added function `check_one_step_ahead_input` to check the input data when using a <code>[OneStepAheadFold]</code> in the <code>[model_selection]</code> functions.
 
 
 **Changed**
@@ -1093,6 +1097,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [exog_long_to_dict]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.exog_long_to_dict
 [TimeSeriesDifferentiator]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.TimeSeriesDifferentiator
 [QuantileBinner]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.QuantileBinner
+[ConformalIntervalCalibrator]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.ConformalIntervalCalibrator
 
 <!-- metrics -->
 [metrics]: https://skforecast.org/latest/api/metrics

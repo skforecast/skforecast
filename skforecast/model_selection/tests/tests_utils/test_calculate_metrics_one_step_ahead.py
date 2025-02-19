@@ -39,7 +39,6 @@ def test_calculate_metrics_one_step_ahead_when_ForecasterRecursive():
     )
     results = _calculate_metrics_one_step_ahead(
         forecaster=forecaster,
-        y=y,
         metrics=metrics,
         X_train=X_train,
         y_train=y_train,
@@ -76,7 +75,6 @@ def test_calculate_metrics_one_step_ahead_when_ForecasterDirect():
     )
     results = _calculate_metrics_one_step_ahead(
         forecaster=forecaster,
-        y=y,
         metrics=metrics,
         X_train=X_train,
         y_train=y_train,
