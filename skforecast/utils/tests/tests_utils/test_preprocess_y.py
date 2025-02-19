@@ -18,13 +18,14 @@ def test_output_preprocess_y_when_y_index_is_DatetimeIndex_and_has_frequency():
             index = pd.date_range("1990-01-01", periods=3, freq='D')
         )
     results = preprocess_y(y)
-    expected = (np.arange(3),
-                pd.DatetimeIndex(['1990-01-01', '1990-01-02', '1990-01-03'],
-                                 dtype='datetime64[ns]', freq='D')
-               )
+    expected = (
+        np.arange(3),
+        pd.DatetimeIndex(['1990-01-01', '1990-01-02', '1990-01-03'],
+                            dtype='datetime64[ns]', freq='D')
+    )
     
-    assert (results[0] == expected[0]).all()
-    assert (results[1] == expected[1]).all()
+    np.testing.assert_array_almost_equal(results[0], expected[0])
+    pd.testing.assert_index_equal(results[1], expected[1])
 
 
 def test_output_preprocess_y_when_y_index_is_RangeIndex():
@@ -36,12 +37,13 @@ def test_output_preprocess_y_when_y_index_is_RangeIndex():
             index = pd.RangeIndex(start=0, stop=3, step=1)
         )
     results = preprocess_y(y)
-    expected = (np.arange(3),
-                pd.RangeIndex(start=0, stop=3, step=1)
-               )
+    expected = (
+        np.arange(3),
+        pd.RangeIndex(start=0, stop=3, step=1)
+    )
     
-    assert (results[0] == expected[0]).all()
-    assert (results[1] == expected[1]).all()
+    np.testing.assert_array_almost_equal(results[0], expected[0])
+    pd.testing.assert_index_equal(results[1], expected[1])
 
 
 def test_output_preprocess_y_when_y_index_is_DatetimeIndex_but_has_not_frequency():
@@ -62,12 +64,13 @@ def test_output_preprocess_y_when_y_index_is_DatetimeIndex_but_has_not_frequency
     with pytest.warns(IndexWarning, match=warn_msg):
         results = preprocess_y(y)
 
-    expected = (np.arange(3),
-                pd.RangeIndex(start=0, stop=3, step=1)
-               )
+    expected = (
+        np.arange(3),
+        pd.RangeIndex(start=0, stop=3, step=1)
+    )
     
-    assert (results[0] == expected[0]).all()
-    assert (results[1] == expected[1]).all()
+    np.testing.assert_array_almost_equal(results[0], expected[0])
+    pd.testing.assert_index_equal(results[1], expected[1])
     
     
 def test_output_preprocess_y_when_y_index_is_not_DatetimeIndex_or_RangeIndex():
@@ -84,9 +87,27 @@ def test_output_preprocess_y_when_y_index_is_not_DatetimeIndex_or_RangeIndex():
     with pytest.warns(IndexWarning, match=warn_msg):
         results = preprocess_y(y)
     
-    expected = (np.arange(3),
-                pd.RangeIndex(start=0, stop=3, step=1)
-               )
+    expected = (
+        np.arange(3),
+        pd.RangeIndex(start=0, stop=3, step=1)
+    )
     
-    assert (results[0] == expected[0]).all()
-    assert (results[1] == expected[1]).all()
+    np.testing.assert_array_almost_equal(results[0], expected[0])
+    pd.testing.assert_index_equal(results[1], expected[1])
+    
+    
+def test_output_preprocess_y_when_y_index_is_not_DatetimeIndex_or_RangeIndex_no_warnings():
+    """
+    Test values returned by when y is a pandas Series without DatetimeIndex or 
+    RangeIndex and suppress_warnings is True.
+    """
+    y = pd.Series(data=np.arange(3), index=['0', '1', '2'])
+    results = preprocess_y(y, suppress_warnings=True)
+    
+    expected = (
+        np.arange(3),
+        pd.RangeIndex(start=0, stop=3, step=1)
+    )
+    
+    np.testing.assert_array_almost_equal(results[0], expected[0])
+    pd.testing.assert_index_equal(results[1], expected[1])
