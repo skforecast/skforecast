@@ -917,6 +917,8 @@ def _backtesting_forecaster_multiseries(
     if interval is not None:
         if interval == 'bootstrapping':
             cols_backtest_predictions.extend([f'pred_boot_{i}' for i in range(n_boot)])
+        elif isinstance(interval, float):
+            cols_backtest_predictions.extend(['lower_bound', 'upper_bound'])
         elif isinstance(interval, (list, tuple)):
             if len(interval) == 2:
                 cols_backtest_predictions.extend(['lower_bound', 'upper_bound'])

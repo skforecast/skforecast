@@ -39,7 +39,7 @@ The main changes in this release are:
 
 + Added <code>[calculate_lag_autocorrelation]</code> function to the <code>[plot]</code> module to calculate the autocorrelation and partial autocorrelation of a time series.
 
-+ Added data set `public_transport_madrid` to the <code>[datasets]</code> module.
++ Added datasets `m5`, `ett_m1`, `ett_m2`, `ett_m2_extended` and `expenditures_australia` and `public_transport_madrid` to the <code>[datasets]</code> module.
 
 + Added function `create_mean_pinball_loss` in the <code>[metrics]</code> module to create a function to calculate the mean pinball loss for a given quantile.
 
