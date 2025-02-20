@@ -1628,6 +1628,12 @@ class ConformalIntervalCalibrator:
     """
 
     def __init__(self, nominal_coverage: float = 0.8):
+
+        if nominal_coverage < 0 or nominal_coverage > 1:
+            raise ValueError(
+                f"`nominal_coverage` must be a float between 0 and 1. Got {nominal_coverage}"
+            )
+
         self.nominal_coverage   = nominal_coverage
         self.correction_factor_ = {}
         self.fit_input_type_    = None
