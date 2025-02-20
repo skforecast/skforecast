@@ -2629,7 +2629,158 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         set_skforecast_warnings(suppress_warnings, action='default')
 
         return boot_predictions
+    
+    def _predict_interval_conformal(
+        self,
+        steps: int | str | pd.Timestamp,
+        levels: str | list[str] | None = None,
+        last_window: pd.Series | pd.DataFrame | None = None,
+        exog: pd.Series | pd.DataFrame | None = None,
+        nominal_coverage: float = 0.95,
+        use_in_sample_residuals: bool = True,
+        use_binned_residuals: bool = False
+    ) -> pd.DataFrame:
+        """
+        Generate prediction intervals using the conformal prediction 
+        split method [1]_.
 
+        Parameters
+        ----------
+        steps : int, str, pandas Timestamp
+            Number of steps to predict. 
+            
+            - If steps is int, number of steps to predict. 
+            - If str or pandas Datetime, the prediction will be up to that date.
+        levels : str, list, default None
+            Time series to be predicted. If `None` all levels whose last window
+            ends at the same datetime index will be predicted together.
+        last_window : pandas Series, pandas DataFrame, default None
+            Series values used to create the predictors (lags) needed in the 
+            first iteration of the prediction (t + 1).
+            If `last_window = None`, the values stored in` self.last_window_` are
+            used to calculate the initial predictors, and the predictions start
+            right after training data.
+        exog : pandas Series, pandas DataFrame, default None
+            Exogenous variable/s included as predictor/s.
+        nominal_coverage : float, default 0.95
+            Nominal coverage, also known as expected coverage, of the prediction
+            intervals. Must be between 0 and 1.
+        use_in_sample_residuals : bool, default True
+            If `True`, residuals from the training data are used as proxy of
+            prediction error to create predictions. 
+            If `False`, out of sample residuals (calibration) are used. 
+            Out-of-sample residuals must be precomputed using Forecaster's
+            `set_out_sample_residuals()` method.
+        use_binned_residuals : bool, default False
+            If `True`, residuals are selected based on the predicted values 
+            (binned selection).
+            If `False`, residuals are selected randomly.
+
+        Returns
+        -------
+        predictions : pandas DataFrame
+            Values predicted by the forecaster and their estimated interval.
+
+            - pred: predictions.
+            - lower_bound: lower bound of the interval.
+            - upper_bound: upper bound of the interval.
+
+        References
+        ----------
+        .. [1] MAPIE - Model Agnostic Prediction Interval Estimator.
+               https://mapie.readthedocs.io/en/stable/theoretical_description_regression.html#the-split-method
+
+        """
+        
+        (
+            last_window,
+            exog_values_dict,
+            levels,
+            prediction_index
+        ) = self._create_predict_inputs(
+                steps                   = steps,
+                levels                  = levels,
+                last_window             = last_window,
+                exog                    = exog,
+                predict_probabilistic   = True,
+                use_in_sample_residuals = use_in_sample_residuals,
+                use_binned_residuals    = use_binned_residuals
+            )
+
+        if use_in_sample_residuals:
+            residuals = self.in_sample_residuals_
+            residuals_by_bin = self.in_sample_residuals_by_bin_
+        else:
+            residuals = self.out_sample_residuals_
+            residuals_by_bin = self.out_sample_residuals_by_bin_
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", 
+                message="X does not have valid feature names", 
+                category=UserWarning
+            )
+            predictions = self._recursive_predict(
+                              steps            = steps,
+                              levels           = levels,
+                              last_window      = last_window,
+                              exog_values_dict = exog_values_dict
+                          )
+        
+        n_levels = len(levels)
+        correction_factor = np.full(
+            shape=(steps, n_levels), fill_value=np.nan, order='C', dtype=float
+        )
+        if use_binned_residuals:
+            for i, level in enumerate(levels):
+                correction_factor_by_bin = {
+                    k: np.quantile(np.abs(v), nominal_coverage)
+                    for k, v in residuals_by_bin[level].items()
+                }
+                replace_func = np.vectorize(lambda x: correction_factor_by_bin[x])
+                predictions_bin = self.binner[level].transform(predictions[:, i])
+                correction_factor[:, i] = replace_func(predictions_bin)
+        else:
+            for i, level in enumerate(levels):
+                correction_factor[:, i] = np.quantile(
+                    np.abs(residuals[level]), nominal_coverage
+                )
+
+        lower_bound = predictions - correction_factor
+        upper_bound = predictions + correction_factor
+
+        # NOTE: Create a 3D array with shape (n_levels, intervals, steps)
+        predictions = np.array([predictions, lower_bound, upper_bound]).swapaxes(0, 2)
+
+        for i, level in enumerate(levels):
+
+            if self.differentiation is not None and self.differentiator_[level] is not None:
+                predictions[i, :, :] = (
+                    self.differentiator_[level]
+                    .inverse_transform_next_window(predictions[i, :, :])
+                )
+            
+            transformer_level = self.transformer_series_.get(
+                                    level,
+                                    self.transformer_series_['_unknown_level']
+                                )
+            if transformer_level is not None:
+                predictions[i, :, :] = np.apply_along_axis(
+                    func1d            = transform_numpy,
+                    axis              = 0,
+                    arr               = predictions[i, :, :],
+                    transformer       = transformer_level,
+                    fit               = False,
+                    inverse_transform = True
+                )
+        
+        predictions = pd.DataFrame(
+                          data    = predictions.reshape(-1, 3),
+                          index   = prediction_index,
+                          columns = ["pred", "lower_bound", "upper_bound"]
+                      )
+
+        return predictions
 
     def predict_interval(
         self,
@@ -2724,37 +2875,65 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         set_skforecast_warnings(suppress_warnings, action='ignore')
 
-        check_interval(interval=interval)
+        if method == "bootstrapping":
+            
+            if isinstance(interval, (list, tuple)):
+                check_interval(interval=interval, ensure_symmetric_intervals=False)
+                interval = np.array(interval) / 100
+            else:
+                check_interval(alpha=interval, alpha_literal='interval')
+                interval = np.array([0.5 - interval / 2, 0.5 + interval / 2])
 
-        boot_predictions = self.predict_bootstrapping(
-                               steps                   = steps,
-                               levels                  = levels,
-                               last_window             = last_window,
-                               exog                    = exog,
-                               n_boot                  = n_boot,
-                               use_in_sample_residuals = use_in_sample_residuals,
-                               use_binned_residuals    = use_binned_residuals,
-                               random_state            = random_state,
-                               suppress_warnings       = suppress_warnings
-                           )
-        
-        predictions = self.predict(
-                          steps             = steps,
-                          levels            = levels,
-                          last_window       = last_window,
-                          exog              = exog,
-                          suppress_warnings = suppress_warnings,
-                          check_inputs      = False
-                      )
+            boot_predictions = self.predict_bootstrapping(
+                                   steps                   = steps,
+                                   levels                  = levels,
+                                   last_window             = last_window,
+                                   exog                    = exog,
+                                   n_boot                  = n_boot,
+                                   use_in_sample_residuals = use_in_sample_residuals,
+                                   use_binned_residuals    = use_binned_residuals,
+                                   random_state            = random_state,
+                                   suppress_warnings       = suppress_warnings
+                               )
+            
+            predictions = self.predict(
+                              steps             = steps,
+                              levels            = levels,
+                              last_window       = last_window,
+                              exog              = exog,
+                              suppress_warnings = suppress_warnings,
+                              check_inputs      = False
+                          )
+    
+            boot_predictions[['lower_bound', 'upper_bound']] = (
+                boot_predictions.iloc[:, 1:].quantile(q=interval, axis=1).transpose()
+            )
+            predictions = pd.concat([
+                predictions, boot_predictions[['lower_bound', 'upper_bound']]
+            ], axis=1)
 
-        interval = np.array(interval) / 100
-        boot_predictions[['lower_bound', 'upper_bound']] = (
-            boot_predictions.iloc[:, 1:].quantile(q=interval, axis=1).transpose()
-        )
+        elif method == 'conformal':
 
-        predictions = pd.concat([
-            predictions, boot_predictions[['lower_bound', 'upper_bound']]
-        ], axis=1)
+            if isinstance(interval, (list, tuple)):
+                check_interval(interval=interval, ensure_symmetric_intervals=True)
+                nominal_coverage = (interval[1] - interval[0]) / 100
+            else:
+                check_interval(alpha=interval, alpha_literal='interval')
+                nominal_coverage = interval
+            
+            predictions = self._predict_interval_conformal(
+                              steps                   = steps,
+                              levels                  = levels,
+                              last_window             = last_window,
+                              exog                    = exog,
+                              nominal_coverage        = nominal_coverage,
+                              use_in_sample_residuals = use_in_sample_residuals,
+                              use_binned_residuals    = use_binned_residuals
+                          )
+        else:
+            raise ValueError(
+                f"Invalid `method` '{method}'. Choose 'bootstrapping' or 'conformal'."
+            )
         
         set_skforecast_warnings(suppress_warnings, action='default')
 

@@ -2288,14 +2288,14 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             replace_func = np.vectorize(lambda x: correction_factor_by_bin[x])
             predictions_bin = self.binner.transform(predictions)
             correction_factor = replace_func(predictions_bin)
-            lower_bound = predictions - correction_factor
-            upper_bound = predictions + correction_factor
         else:
-            for step in steps:
-                correction_factor = np.quantile(np.abs(residuals[step]), nominal_coverage)
-                lower_bound = predictions - correction_factor
-                upper_bound = predictions + correction_factor
+            correction_factor = np.array([
+                np.quantile(np.abs(residuals[step]), nominal_coverage) 
+                for step in steps
+            ])
 
+        lower_bound = predictions - correction_factor
+        upper_bound = predictions + correction_factor
         predictions = np.column_stack([predictions, lower_bound, upper_bound])
 
         if self.differentiation is not None:
