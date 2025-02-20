@@ -1612,12 +1612,18 @@ class ConformalIntervalCalibrator:
     nominal_coverage : float, default 0.8
         Desired coverage. This is the desired probability that the true value 
         falls within the calibrated interval.
+    symetric_interval : bool, default True
+        If True, the calibration factor is the same for the lower and upper bounds.
+        If False, the calibration factor is different for the lower and upper bounds.
 
     Attributes
     ----------
     nominal_coverage : float
         Desired coverage. This is the desired probability that the true value 
         falls within the calibrated interval.
+    symetric_interval : bool, default True
+        If True, the calibration factor is the same for the lower and upper bounds.
+        If False, the calibration factor is different for the lower and upper bounds.
     correction_factor_ : dict
         Correction factor to achieve the desired coverage.
     fit_input_type_ : str
@@ -1627,7 +1633,11 @@ class ConformalIntervalCalibrator:
     
     """
 
-    def __init__(self, nominal_coverage: float = 0.8):
+    def __init__(
+            self,
+            nominal_coverage: float = 0.8,
+            symetric_interval: bool = True
+        ):
 
         if nominal_coverage < 0 or nominal_coverage > 1:
             raise ValueError(
@@ -1635,7 +1645,10 @@ class ConformalIntervalCalibrator:
             )
 
         self.nominal_coverage   = nominal_coverage
+        self.symetric_interval  = symetric_interval
         self.correction_factor_ = {}
+        self.correction_factor_lower_ = {}
+        self.correction_factor_upper_ = {}
         self.fit_input_type_    = None
         self.fit_series_names_  = None
         self.is_fitted          = False
@@ -1652,7 +1665,10 @@ class ConformalIntervalCalibrator:
             f"{type(self).__name__} \n"
             f"{'=' * len(type(self).__name__)} \n"
             f"Nominal coverage: {self.nominal_coverage} \n"
+            f"Symetric interval: {self.symetric_interval} \n"
             f"Correction factor: {self.correction_factor_} \n"
+            f"Correction factor lower: {self.correction_factor_lower_} \n"
+            f"Correction factor upper: {self.correction_factor_upper_} \n"
             f"Fitted series: {self.fit_series_names_} \n"
         )
 
@@ -1760,15 +1776,19 @@ class ConformalIntervalCalibrator:
             y_pred_interval_ = np.asarray(y_pred_interval_)
             lower_bound = y_pred_interval_[:, 0]
             upper_bound = y_pred_interval_[:, 1]
+            conformity_scores_lower = lower_bound - y_true_
+            conformity_scores_upper = y_true_ - upper_bound
             conformity_scores = np.max(
                 [
-                    lower_bound - y_true_,
-                    y_true_ - upper_bound,
+                    conformity_scores_lower,
+                    conformity_scores_upper,
                 ],
                 axis=0,
             )
 
             self.correction_factor_[k] = float(np.quantile(conformity_scores, self.nominal_coverage))
+            self.correction_factor_lower_[k] = float(np.quantile(conformity_scores_lower, 1 - self.nominal_coverage))
+            self.correction_factor_upper_[k] = float(np.quantile(conformity_scores_upper, self.nominal_coverage))
 
         self.fit_series_names_ = list(y_true.keys())
         self.is_fitted = True
@@ -1829,15 +1849,26 @@ class ConformalIntervalCalibrator:
                 )
             
             correction_factor = self.correction_factor_[k]   
+            correction_factor_lower = self.correction_factor_lower_[k]
+            correction_factor_upper = self.correction_factor_upper_[k]
             index = y_pred_interval_.index
             y_pred_interval_ = y_pred_interval_.to_numpy()
             y_pred_interval_conformal = y_pred_interval_.copy()
-            y_pred_interval_conformal[:, 0] = (
-                y_pred_interval_conformal[:, 0] - correction_factor
-            )
-            y_pred_interval_conformal[:, 1] = (
-                y_pred_interval_conformal[:, 1] + correction_factor
-            )
+
+            if self.symetric_interval:
+                y_pred_interval_conformal[:, 0] = (
+                    y_pred_interval_conformal[:, 0] - correction_factor
+                )
+                y_pred_interval_conformal[:, 1] = (
+                    y_pred_interval_conformal[:, 1] + correction_factor
+                )
+            else:
+                y_pred_interval_conformal[:, 0] = (
+                    y_pred_interval_conformal[:, 0] - correction_factor_lower
+                )
+                y_pred_interval_conformal[:, 1] = (
+                    y_pred_interval_conformal[:, 1] + correction_factor_upper
+                )
 
             # If upper bound is less than lower bound, swap them
             mask = (
