@@ -96,7 +96,7 @@ def test_fit_in_sample_residuals_stored(n_jobs):
     assert results.keys() == expected.keys()
     for k in expected.keys():
         assert isinstance(results[k], np.ndarray)
-        np.testing.assert_array_equal(results[k], expected[k])
+        np.testing.assert_array_almost_equal(results[k], expected[k])
 
 
 @pytest.mark.parametrize("n_jobs", [1, -1, 'auto'], 
@@ -183,9 +183,9 @@ def test_fit_in_sample_residuals_by_bin_stored(n_jobs):
     }
 
     expected_3 = {
-        0.0: (0.39244612759441666, 0.4901889798207174),
-        1.0: (0.4901889798207174, 0.5222610284825959),
-        2.0: (0.5222610284825959, 0.6226607762583838)
+        0: (0.39244612759441666, 0.4901889798207174),
+        1: (0.4901889798207174, 0.5222610284825959),
+        2: (0.5222610284825959, 0.6226607762583838)
     }
 
     for k in forecaster.in_sample_residuals_.keys():

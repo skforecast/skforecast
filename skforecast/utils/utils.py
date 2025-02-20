@@ -1343,7 +1343,8 @@ def check_residuals_input(
 
 def preprocess_y(
     y: pd.Series | pd.DataFrame,
-    return_values: bool = True
+    return_values: bool = True,
+    suppress_warnings: bool = False
 ) -> tuple[np.ndarray | None, pd.Index]:
     """
     Return values and index of series separately. Index is overwritten 
@@ -1363,6 +1364,8 @@ def preprocess_y(
     return_values : bool, default True
         If `True` return the values of `y` as numpy ndarray. This option is 
         intended to avoid copying data when it is not necessary.
+    suppress_warnings : bool, default False
+        If `True`, suppress warnings.
 
     Returns
     -------
@@ -1373,17 +1376,17 @@ def preprocess_y(
     
     """
     
+    warning_msg = None
     if isinstance(y.index, pd.DatetimeIndex) and y.index.freq is not None:
         y_index = y.index
     elif isinstance(y.index, pd.RangeIndex):
         y_index = y.index
     elif isinstance(y.index, pd.DatetimeIndex) and y.index.freq is None:
-        warnings.warn(
+        warning_msg = (
             "Series has a pandas DatetimeIndex without a frequency. The index "
             "will be replaced by a RangeIndex starting from 0 with a step of 1. "
             "To avoid this warning, set the frequency of the DatetimeIndex using "
-            "`y = y.asfreq('desired_frequency', fill_value=np.nan)`.",
-            IndexWarning
+            "`y = y.asfreq('desired_frequency', fill_value=np.nan)`."
         )
         y_index = pd.RangeIndex(
                       start = 0,
@@ -1391,18 +1394,20 @@ def preprocess_y(
                       step  = 1
                   )
     else:
-        warnings.warn(
+        warning_msg = (
             "Series has an unsupported index type (not pandas DatetimeIndex or "
             "RangeIndex). The index will be replaced by a RangeIndex starting "
             "from 0 with a step of 1. To avoid this warning, ensure that "
-            "`y.index` is a DatetimeIndex with a frequency or a RangeIndex.",
-            IndexWarning
+            "`y.index` is a DatetimeIndex with a frequency or a RangeIndex."
         )
         y_index = pd.RangeIndex(
                       start = 0,
                       stop  = len(y),
                       step  = 1
                   )
+        
+    if warning_msg and not suppress_warnings:
+        warnings.warn(warning_msg, IndexWarning)
 
     y_values = y.to_numpy(copy=True).ravel() if return_values else None
 

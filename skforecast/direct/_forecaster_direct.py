@@ -313,9 +313,6 @@ class ForecasterDirect(ForecasterBase):
         self.skforecast_version                 = skforecast.__version__
         self.python_version                     = sys.version.split(" ")[0]
         self.forecaster_id                      = forecaster_id
-        self.binner                             = None
-        self.binner_intervals_                  = None
-        self.binner_kwargs                      = None
 
         if not isinstance(steps, int):
             raise TypeError(
@@ -1237,7 +1234,9 @@ class ForecasterDirect(ForecasterBase):
 
         self.is_fitted = True
         self.fit_date = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
-        self.training_range_ = preprocess_y(y=y, return_values=False)[1][[0, -1]]
+        self.training_range_ = preprocess_y(
+            y=y, return_values=False, suppress_warnings=True
+        )[1][[0, -1]]
         self.index_type_ = type(X_train.index)
         if isinstance(X_train.index, pd.DatetimeIndex):
             self.index_freq_ = X_train.index.freqstr
@@ -1726,9 +1725,9 @@ class ForecasterDirect(ForecasterBase):
             residuals = self.out_sample_residuals_
             residuals_by_bin = self.out_sample_residuals_by_bin_
 
-        # NOTE: As residuals are {step/bin: residuals}, more n_boot iterations
-        # that the number of residual for the step/bin with more residuals, 
-        # doesn't add new information to the bootstrapping process.
+        # NOTE: Since residuals are {step/bin: residuals}, more n_boot iterations
+        # than the number of residuals for the step/bin with more residuals, 
+        # doesn't add any new information to the bootstrapping process.
         if use_binned_residuals:
             recommended_n_boot = np.max([v.size for v in residuals_by_bin.values()])
         else:

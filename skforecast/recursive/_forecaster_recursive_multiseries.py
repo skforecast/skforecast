@@ -1782,10 +1782,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             
             # NOTE: the _unknown_level is a random sample of 10_000 residuals of all levels.
             self._binning_in_sample_residuals(
-                    level = '_unknown_level',
-                    y_true = y_train,
-                    y_pred = y_pred
-                )
+                level  = '_unknown_level',
+                y_true = y_train,
+                y_pred = y_pred
+            )
         else:
             if self.encoding is not None:
                 for level in X_train_series_names_in_:

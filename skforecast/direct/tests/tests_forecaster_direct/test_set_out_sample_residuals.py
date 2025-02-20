@@ -262,7 +262,7 @@ def test_set_out_sample_residuals_when_residuals_length_is_greater_than_10000():
 
 def test_out_sample_residuals_by_bin_and_in_sample_reseiduals_by_bin_equivalence():
     """
-    Test out sample residuals by bin are quivalent to insample residuals by bin
+    Test out sample residuals by bin are quivalent to in-sample residuals by bin
     when training data and training predictions are passed.
     """
     forecaster = ForecasterDirect(
@@ -388,10 +388,10 @@ def test_forecaster_set_outsample_residuals_when_transformer_y_and_diferentiatio
     }
     forecaster = ForecasterDirect(
                      regressor       = LinearRegression(),
-                     lags            = 5,
                      steps           = 2, 
-                     differentiation = 1,
+                     lags            = 5,
                      transformer_y   = StandardScaler(),
+                     differentiation = 1,
                  )
     forecaster.fit(y=y_train)
     forecaster.set_out_sample_residuals(

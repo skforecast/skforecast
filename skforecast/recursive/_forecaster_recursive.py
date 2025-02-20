@@ -979,7 +979,9 @@ class ForecasterRecursive(ForecasterBase):
 
         self.is_fitted = True
         self.fit_date = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
-        self.training_range_ = preprocess_y(y=y, return_values=False)[1][[0, -1]]
+        self.training_range_ = preprocess_y(
+            y=y, return_values=False, suppress_warnings=True
+        )[1][[0, -1]]
         self.index_type_ = type(X_train.index)
         if isinstance(X_train.index, pd.DatetimeIndex):
             self.index_freq_ = X_train.index.freqstr

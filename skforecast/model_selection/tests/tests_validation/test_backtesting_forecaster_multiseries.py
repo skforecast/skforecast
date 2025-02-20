@@ -3020,3 +3020,74 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
+
+@pytest.mark.parametrize("interval", 
+                         [0.90, (5, 95)], 
+                         ids = lambda value: f'interval: {value}')
+def test_output_backtesting_forecaster_interval_conformal_and_binned_with_mocked_ForecasterDirectMultiVariate(interval):
+    """
+    Test output of backtesting_forecaster_multiseries in ForecasterDirectMultiVariate 
+    with no refit with mocked using exog and binned conformal intervals 
+    (mocked done in Skforecast v0.15.0).
+    """
+    forecaster = ForecasterDirectMultiVariate(
+                     regressor          = Ridge(random_state=123),
+                     level              = 'l1',
+                     lags               = 3,
+                     steps              = 5,
+                     transformer_series = None,
+                     binner_kwargs      = {'n_bins': 10}
+                 )
+    
+    cv = TimeSeriesFold(
+             initial_train_size = len(series) - 20,
+             steps              = 5,
+             refit              = False
+         )
+
+    metrics_levels, backtest_predictions = backtesting_forecaster_multiseries(
+                                               forecaster              = forecaster,
+                                               series                  = series,
+                                               cv                      = cv,
+                                               levels                  = 'l1',
+                                               metric                  = 'mean_absolute_error',
+                                               add_aggregated_metric   = False,
+                                               exog                    = series['l1'].rename('exog_1'),
+                                               interval                = interval,
+                                               interval_method         = 'conformal',
+                                               use_in_sample_residuals = True,
+                                               use_binned_residuals    = True,
+                                               random_state            = 123,
+                                               verbose                 = False
+                                           )
+    
+    expected_metric = pd.DataFrame({'levels': ['l1'], 
+                                    'mean_absolute_error': [0.11916192143057436]})
+    expected_predictions = pd.DataFrame(
+        data = np.array([[0.36268205, 0.20433986, 0.52102424],
+                         [0.51787041, 0.43620381, 0.599537  ],
+                         [0.52472422, 0.42645324, 0.6229952 ],
+                         [0.59903598, 0.46654146, 0.7315305 ],
+                         [0.50738853, 0.42572194, 0.58905513],
+                         [0.42622724, 0.3313424 , 0.52111209],
+                         [0.47163992, 0.38997332, 0.55330651],
+                         [0.70873165, 0.48281375, 0.93464954],
+                         [0.71565768, 0.48973979, 0.94157557],
+                         [0.49000773, 0.40834113, 0.57167433],
+                         [0.61296286, 0.48046834, 0.74545738],
+                         [0.4031027 , 0.30821786, 0.49798755],
+                         [0.39728743, 0.30240258, 0.49217227],
+                         [0.46010284, 0.37843624, 0.54176944],
+                         [0.63022554, 0.49773102, 0.76272006],
+                         [0.39528807, 0.30040323, 0.49017292],
+                         [0.47347775, 0.39181115, 0.55514435],
+                         [0.76236728, 0.53644939, 0.98828517],
+                         [0.53407054, 0.43579957, 0.63234152],
+                         [0.5014202 , 0.4197536 , 0.5830868 ]]),
+        columns = ['pred', 'lower_bound', 'upper_bound'],
+        index = pd.RangeIndex(start=30, stop=50, step=1)
+    )
+    expected_predictions.insert(0, 'level', np.tile(['l1'], len(expected_predictions)))
+                                   
+    pd.testing.assert_frame_equal(expected_metric, metrics_levels)
+    pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
