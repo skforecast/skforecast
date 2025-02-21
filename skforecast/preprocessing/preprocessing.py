@@ -14,6 +14,7 @@ import pandas as pd
 from sklearn.base import BaseEstimator
 from sklearn.base import TransformerMixin
 from sklearn.exceptions import NotFittedError
+from ..metrics import calculate_coverage
 from ..exceptions import MissingValuesWarning
 from numba import njit
 from copy import deepcopy
@@ -1612,7 +1613,7 @@ class ConformalIntervalCalibrator:
     nominal_coverage : float, default 0.8
         Desired coverage. This is the desired probability that the true value 
         falls within the calibrated interval.
-    symetric_interval : bool, default True
+    symmetric_calibration : bool, default True
         If True, the calibration factor is the same for the lower and upper bounds.
         If False, the calibration factor is different for the lower and upper bounds.
 
@@ -1621,11 +1622,21 @@ class ConformalIntervalCalibrator:
     nominal_coverage : float
         Desired coverage. This is the desired probability that the true value 
         falls within the calibrated interval.
-    symetric_interval : bool, default True
+    symmetric_calibration : bool, default True
         If True, the calibration factor is the same for the lower and upper bounds.
         If False, the calibration factor is different for the lower and upper bounds.
     correction_factor_ : dict
-        Correction factor to achieve the desired coverage.
+        Correction factor to achieve the desired coverage. This is the correction
+        factor used when `symmetric_calibration` is True.
+    correction_factor_lower_ : dict
+        Correction factor for the lower bound to achieve the desired coverage. It is
+        used when `symmetric_calibration` is False.
+    correction_factor_upper_ : dict
+        Correction factor for the upper bound to achieve the desired coverage. It is
+        used when `symmetric_calibration` is False.
+    fit_coverage_ : dict
+        Coverage observed in the data used to fit the transformer. This is the
+        empirical coverage from which the correction factor is learned.
     fit_input_type_ : str
         Type of input data used to fit the transformer. Can be 'single' or 'multi'.
     fit_series_names_ : list
@@ -1636,7 +1647,7 @@ class ConformalIntervalCalibrator:
     def __init__(
             self,
             nominal_coverage: float = 0.8,
-            symetric_interval: bool = True
+            symmetric_calibration: bool = True
         ):
 
         if nominal_coverage < 0 or nominal_coverage > 1:
@@ -1644,14 +1655,15 @@ class ConformalIntervalCalibrator:
                 f"`nominal_coverage` must be a float between 0 and 1. Got {nominal_coverage}"
             )
 
-        self.nominal_coverage   = nominal_coverage
-        self.symetric_interval  = symetric_interval
-        self.correction_factor_ = {}
+        self.nominal_coverage         = nominal_coverage
+        self.symmetric_calibration     = symmetric_calibration
+        self.correction_factor_       = {}
         self.correction_factor_lower_ = {}
         self.correction_factor_upper_ = {}
-        self.fit_input_type_    = None
-        self.fit_series_names_  = None
-        self.is_fitted          = False
+        self.fit_coverage_            = {}
+        self.fit_input_type_          = None
+        self.fit_series_names_        = None
+        self.is_fitted                = False
 
     def __repr__(
         self
@@ -1665,10 +1677,11 @@ class ConformalIntervalCalibrator:
             f"{type(self).__name__} \n"
             f"{'=' * len(type(self).__name__)} \n"
             f"Nominal coverage: {self.nominal_coverage} \n"
-            f"Symetric interval: {self.symetric_interval} \n"
-            f"Correction factor: {self.correction_factor_} \n"
-            f"Correction factor lower: {self.correction_factor_lower_} \n"
-            f"Correction factor upper: {self.correction_factor_upper_} \n"
+            f"Coverage in fit data: {self.fit_coverage_} \n"
+            f"Symmetric interval: {self.symmetric_calibration} \n"
+            f"Symmetric correction factor: {self.correction_factor_} \n"
+            f"Asymmetric correction factor lower: {self.correction_factor_lower_} \n"
+            f"Asymmetric correction factor upper: {self.correction_factor_upper_} \n"
             f"Fitted series: {self.fit_series_names_} \n"
         )
 
@@ -1759,8 +1772,8 @@ class ConformalIntervalCalibrator:
             )
         
         for k in y_true.keys():
-            y_true_ = deepcopy(y_true[k])
-            y_pred_interval_ = deepcopy(y_pred_interval[k])
+            y_true_ = y_true[k]
+            y_pred_interval_ = y_pred_interval[k]
 
             if not isinstance(y_true_, pd.Series):
                 raise ValueError(
@@ -1787,13 +1800,23 @@ class ConformalIntervalCalibrator:
             )
 
             self.correction_factor_[k] = float(np.quantile(conformity_scores, self.nominal_coverage))
-            self.correction_factor_lower_[k] = float(np.quantile(conformity_scores_lower, 1 - self.nominal_coverage))
-            self.correction_factor_upper_[k] = float(np.quantile(conformity_scores_upper, self.nominal_coverage))
+            self.correction_factor_lower_[k] = float(
+                -1*np.quantile(-1*conformity_scores_lower, (1 - self.nominal_coverage) / 2)
+            )
+            self.correction_factor_upper_[k] = float(
+                np.quantile(conformity_scores_upper,  1 - (1 - self.nominal_coverage) / 2)
+            )
+            coverage_fit_ = calculate_coverage(
+                                y_true      = y_true_,
+                                lower_bound = lower_bound,
+                                upper_bound = upper_bound,
+                            )
+            self.fit_coverage_[k] = float(coverage_fit_)
 
         self.fit_series_names_ = list(y_true.keys())
         self.is_fitted = True
 
-        return self
+        return
 
     def transform(
         self, 
@@ -1855,7 +1878,7 @@ class ConformalIntervalCalibrator:
             y_pred_interval_ = y_pred_interval_.to_numpy()
             y_pred_interval_conformal = y_pred_interval_.copy()
 
-            if self.symetric_interval:
+            if self.symmetric_calibration:
                 y_pred_interval_conformal[:, 0] = (
                     y_pred_interval_conformal[:, 0] - correction_factor
                 )
@@ -1875,6 +1898,7 @@ class ConformalIntervalCalibrator:
                 y_pred_interval_conformal[:, 1]
                 < y_pred_interval_conformal[:, 0]
             )
+
             (
                 y_pred_interval_conformal[mask, 0],
                 y_pred_interval_conformal[mask, 1],
