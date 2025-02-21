@@ -228,8 +228,8 @@ def test_predict_interval_conformal_output_when_regressor_is_LinearRegression_wi
 
     expected = pd.DataFrame(
                    data = np.array([
-                              [-0.07720596, -1.83615751,  1.68174558],
-                              [-0.54638907, -2.30534062,  1.21256247],
+                              [-0.07720596, -2.24497965,  2.09056772],
+                              [-0.54638907, -2.98792915,  1.895151  ],
                               [-0.08892596, -1.8478775 ,  1.67002558]]),
                    index = pd.RangeIndex(start=20, stop=23, step=1),
                    columns = ['pred', 'lower_bound', 'upper_bound']
