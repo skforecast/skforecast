@@ -1781,6 +1781,8 @@ class ConformalIntervalCalibrator:
                 )
             
             if not y_true_.index.equals(y_pred_interval_.index):
+                print(y_true_)
+                print(y_pred_interval_.index)
                 raise ValueError(
                     "Index of `y_true` and `y_pred_interval` must match."
                 )
@@ -1841,7 +1843,11 @@ class ConformalIntervalCalibrator:
             Prediction interval with the correction factor applied.
         
         """
-
+        if self.is_fitted is False:
+            raise NotFittedError(
+                "ConformalIntervalCalibrator not fitted yet. Call 'fit' with "
+                "training data first."
+            )
         if not isinstance(y_pred_interval, pd.DataFrame):
             raise ValueError(
                 "`y_pred_interval` must be a pandas DataFrame."
