@@ -1,15 +1,15 @@
-# Unit test _predict_interval_conformal ForecasterRecursive
+# Unit test _predict_interval_conformal ForecasterRecursiveMultiSeries
 # ==============================================================================
 import numpy as np
 import pandas as pd
-from skforecast.recursive import ForecasterRecursive
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.linear_model import LinearRegression
+from skforecast.recursive import ForecasterRecursiveMultiSeries
 
 # Fixtures
-from .fixtures_forecaster_recursive import y
+from .fixtures_forecaster_recursive_multiseries import series
 
 
 def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_steps_is_1_in_sample_residuals_is_True():
@@ -17,16 +17,27 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
     Test output when regressor is LinearRegression and one step ahead is predicted
     using in sample residuals.
     """
-    forecaster = ForecasterRecursive(LinearRegression(), lags=3)
-    forecaster.fit(y=pd.Series(np.arange(10)))
-    forecaster.in_sample_residuals_ = np.full_like(forecaster.in_sample_residuals_, fill_value=10)
+    series_2 = pd.DataFrame({
+        'l1': pd.Series(np.arange(10)),
+        'l2': pd.Series(np.arange(10))
+    })
+
+    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
+    forecaster.fit(series=series_2)
+    forecaster.in_sample_residuals_ = {
+        'l1': np.array([10] * 10),
+        'l2': np.array([20] * 10),
+        '_unknown_level': np.array([20] * 10)
+    }
     results = forecaster._predict_interval_conformal(steps=1, use_in_sample_residuals=True)
 
     expected = pd.DataFrame(
-                   data    = np.array([[10., 0., 20.]]),
+                   data    = np.array([[10., 0., 20.],
+                                       [10., -10., 30.]]),
                    columns = ['pred', 'lower_bound', 'upper_bound'],
-                   index   = pd.RangeIndex(start=10, stop=11, step=1)
+                   index   = pd.Index([10, 10])
                )
+    expected.insert(0, 'level', np.array(['l1', 'l2']))
     
     pd.testing.assert_frame_equal(results, expected)
 
