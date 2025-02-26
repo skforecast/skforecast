@@ -50,7 +50,8 @@ from ..utils import (
     transform_numpy,
     transform_series,
     transform_dataframe,
-    set_skforecast_warnings
+    set_skforecast_warnings,
+    get_style_repr_html
 )
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
 from ..model_selection._utils import _extract_data_folds_multiseries
@@ -647,7 +648,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 transformer_series = self.transformer_series,
             )
 
-        style, unique_id = self._get_style_repr_html(self.is_fitted)
+        style, unique_id = get_style_repr_html(self.is_fitted)
         
         content = f"""
         <div class="container-{unique_id}">
@@ -713,9 +714,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         </div>
         """
 
-        # Return the combined style and content
         return style + content
-
 
     def _create_lags(
         self,

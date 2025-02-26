@@ -4,15 +4,14 @@ import re
 import pytest
 import numpy as np
 import pandas as pd
+from sklearn.exceptions import NotFittedError
 from skforecast.preprocessing import ConformalIntervalCalibrator
 
 
-
-def test_validate_params():
+def test_init_validate_params():
     """
     ConformalIntervalCalibrator validate params.
     """
-
     err_msg = re.escape(
         "`nominal_coverage` must be a float between 0 and 1. Got 90"
     ) 
@@ -20,65 +19,139 @@ def test_validate_params():
         ConformalIntervalCalibrator(nominal_coverage=90)
 
 
-def test_fit_raise_error_invalid_y_true_type():
-
-    y_true = 'invalid_type'
-    y_pred_interval = pd.DataFrame({
-        'lower_bound': [0.5, 1.5, 2.5, 3.5, 4.5],
-        'upper_bound': [1.5, 2.5, 3.5, 4.5, 5.5]
-    })
-    calibrator = ConformalIntervalCalibrator(nominal_coverage=0.8)
-    msg = "`y_true` must be a pandas Series, pandas DataFrame, or a dictionary."
-    with pytest.raises(ValueError, match=msg):
-        calibrator.fit(y_true=y_true, y_pred_interval=y_pred_interval)
-
-def test_fit_raises_error_invalid_y_pred_interval_type():
-
+def test_fit_validate_params():
+    """
+    Test fit check params.
+    """
     y_true = pd.Series([1, 2, 3, 4, 5], name='y')
-    y_pred_interval = 'invalid_type'
-    calibrator = ConformalIntervalCalibrator(nominal_coverage=0.8)
-    msg="`y_pred_interval` must be a pandas DataFrame."
-    with pytest.raises(ValueError, match=msg):
-        calibrator.fit(y_true=y_true, y_pred_interval=y_pred_interval)
-
-def test_fit_missing_columns_in_y_pred_interval():
-
-    y_true = pd.Series([1, 2, 3, 4, 5], name='y')
-    y_pred_interval = pd.DataFrame({
-        'lower_bound': [0.5, 1.5, 2.5, 3.5, 4.5]
-    })
-    msg="`y_pred_interval` must have columns 'lower_bound' and 'upper_bound'."
-    calibrator = ConformalIntervalCalibrator(nominal_coverage=0.8)
-    with pytest.raises(ValueError, match=msg):
-        calibrator.fit(y_true=y_true, y_pred_interval=y_pred_interval)
-
-def test_fit_missing_level_in_y_pred_interval_when_y_true_is_dataframe_or_dict():
-
-    y_true = pd.DataFrame({
-        'y1': [1, 2, 3, 4, 5],
-        'y2': [1, 2, 3, 4, 5]
-    })
-    y_pred_interval = pd.DataFrame({
-        'lower_bound': [0.5, 1.5, 2.5, 3.5, 4.5],
-        'upper_bound': [1.5, 2.5, 3.5, 4.5, 5.5]
-    })
-    calibrator = ConformalIntervalCalibrator(nominal_coverage=0.8)
-    msg = (
-        "If `y_true` is a pandas DataFrame or a dictionary, `y_pred_interval` "
-        "must have an additional column 'level' to identify each series."
-    )
-    with pytest.raises(ValueError, match=msg):
-        calibrator.fit(y_true=y_true, y_pred_interval=y_pred_interval)
-
-    y_true = {
+    y_true_df = pd.DataFrame({'y1': [1, 2, 3, 4, 5], 'y2': [1, 2, 3, 4, 5]})
+    y_true_dict = {
         'y1': pd.Series([1, 2, 3, 4, 5], name='y1'),
         'y2': pd.Series([1, 2, 3, 4, 5], name='y2')
     }
-    with pytest.raises(ValueError, match=msg):
+    y_pred_interval = pd.DataFrame({
+        'lower_bound': [0.5, 1.5, 2.5, 3.5, 4.5],
+        'upper_bound': [1.5, 2.5, 3.5, 4.5, 5.5]
+    })
+    calibrator = ConformalIntervalCalibrator(nominal_coverage=0.8)
+
+    y_true_invalid = 'invalid_type'
+    err_msg = re.escape(
+        "`y_true` must be a pandas Series, pandas DataFrame, or a dictionary."
+    )
+    with pytest.raises(TypeError, match=err_msg):
+        calibrator.fit(y_true=y_true_invalid, y_pred_interval=y_pred_interval)
+
+    y_pred_invalid = 'invalid_type'
+    err_msg = re.escape(
+        "`y_pred_interval` must be a pandas DataFrame."
+    )
+    with pytest.raises(TypeError, match=err_msg):
+        calibrator.fit(y_true=y_true, y_pred_interval=y_pred_invalid)
+    
+    y_pred_invalid = pd.DataFrame({'lower_bound': [0.5, 1.5, 2.5, 3.5, 4.5]})
+    err_msg = re.escape(
+        "`y_pred_interval` must have columns 'lower_bound' and 'upper_bound'."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        calibrator.fit(y_true=y_true, y_pred_interval=y_pred_invalid)
+
+    y_pred_invalid = pd.DataFrame({
+        'lower_bound': [0.5, 1.5, 2.5, 3.5, 4.5],
+        'upper_bound': [1.5, 2.5, 3.5, 4.5, 5.5]
+    })
+    err_msg = re.escape(
+        "If `y_true` is a pandas DataFrame or a dictionary, `y_pred_interval` "
+        "must have an additional column 'level' to identify each series."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        calibrator.fit(y_true=y_true_df, y_pred_interval=y_pred_invalid)
+    with pytest.raises(ValueError, match=err_msg):
+        calibrator.fit(y_true=y_true_dict, y_pred_interval=y_pred_invalid)
+
+    y_pred_invalid = pd.DataFrame({
+        'lower_bound': [0.5, 1.5, 2.5, 3.5, 4.5],
+        'upper_bound': [1.5, 2.5, 3.5, 4.5, 5.5],
+        'level': ['y', 'y', 'y', 'y_2', 'y_2']
+    })
+    err_msg = re.escape(
+        "If `y_true` is a pandas Series, `y_pred_interval` must have "
+        "only one series. Found multiple values in column 'level'."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        calibrator.fit(y_true=y_true, y_pred_interval=y_pred_invalid)
+
+    y_pred_invalid = pd.DataFrame({
+        'lower_bound': [0.5, 1.5, 2.5, 3.5, 4.5],
+        'upper_bound': [1.5, 2.5, 3.5, 4.5, 5.5],
+        'level': ['not_y', 'not_y', 'not_y', 'not_y', 'not_y']
+    })
+    err_msg = re.escape(
+        "Series name in `y_true`, 'y', does not match the level "
+        "name in `y_pred_interval`, 'not_y'."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        calibrator.fit(y_true=y_true, y_pred_interval=y_pred_invalid)
+
+    y_true_invalid = {
+        'y1': pd.Series([1, 2, 3, 4, 5], name='y1').to_frame(),
+        'y2': pd.Series([1, 2, 3, 4, 5], name='y2')
+    }
+    y_pred_interval = pd.DataFrame({
+            'lower_bound': [0.5, 1.5, 2.5, 3.5, 4.5, 0.5, 1.5, 2.5, 3.5, 4.5],
+            'upper_bound': [1.5, 2.5, 3.5, 4.5, 5.5, 1.5, 2.5, 3.5, 4.5, 5.5],
+            'level': ['series_3'] * 5 + ['series_4'] * 5
+        }, 
+        index=[0, 1, 2, 3, 4, 0, 1, 2, 3, 4]
+    )
+    err_msg = re.escape(
+        f"When `y_true` is a dict, all its values must be pandas "
+        f"Series. Got {type(y_true_invalid['y1'])} for series 'y1'."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        calibrator.fit(y_true=y_true_invalid, y_pred_interval=y_pred_interval)
+    
+    y_true = pd.DataFrame({
+            'series_1': [1, 2, 3, 4, 5],
+            'series_2': [1, 2, 3, 4, 5]
+        }, 
+        index=[0, 1, 2, 3, 4]
+    )
+    y_pred_interval = pd.DataFrame({
+            'lower_bound': [0.5, 1.5, 2.5, 3.5, 4.5, 0.5, 1.5, 2.5, 3.5, 4.5],
+            'upper_bound': [1.5, 2.5, 3.5, 4.5, 5.5, 1.5, 2.5, 3.5, 4.5, 5.5],
+            'level': ['series_3'] * 5 + ['series_4'] * 5
+        }, 
+        index=[0, 1, 2, 3, 4, 0, 1, 2, 3, 4]
+    )
+    err_msg = re.escape(
+        "Series names in `y_true` and `y_pred_interval` do not match.\n"
+        "   `y_true` series names          : ['series_1', 'series_2']\n"
+        "   `y_pred_interval` series names : ['series_3', 'series_4']"
+    )
+    with pytest.raises(ValueError, match=err_msg):
         calibrator.fit(y_true=y_true, y_pred_interval=y_pred_interval)
 
-def test_fit_when_y_true_is_series_without_name():
+    y_true = pd.Series([1, 2, 3, 4, 5], name='series_1', index=[1, 2, 3, 4, 5])
+    y_pred_interval = pd.DataFrame({
+            'lower_bound': [0.5, 1.5, 2.5, 3.5, 4.5],
+            'upper_bound': [1.5, 2.5, 3.5, 4.5, 5.5],
+            'level': ['series_1', 'series_1', 'series_1', 'series_1', 'series_1']
+        }, 
+        index=[10, 20, 30, 40, 50]
+    )
+    err_msg = re.escape(
+        "Index of `y_true` and `y_pred_interval` must match. Different "
+        "indices found for series 'series_1'."
+    )
+    with pytest.raises(IndexError, match=err_msg):
+        calibrator.fit(y_true=y_true, y_pred_interval=y_pred_interval)
 
+
+def test_fit_when_y_true_is_series_without_name():
+    """
+    Test fit when y_true is a pandas Series without name.
+    """
     y_true = pd.Series([1, 2, 3, 4, 5])
     y_pred_interval = pd.DataFrame({
         'lower_bound': [0.5, 1.5, 2.5, 3.5, 4.5],
@@ -87,187 +160,102 @@ def test_fit_when_y_true_is_series_without_name():
     calibrator = ConformalIntervalCalibrator(nominal_coverage=0.8)
     calibrator.fit(y_true=y_true, y_pred_interval=y_pred_interval)
 
+    assert calibrator.is_fitted is True
     assert calibrator.fit_series_names_ == ['y']
     assert calibrator.fit_input_type_ == "single_series"
     assert calibrator.correction_factor_ == {'y': -0.5}
 
 
-def test_fit_raise_error_when_y_true_is_single_series_and_y_pred_interval_is_dataframe_with_multiple_levels():
-
-    y_true = pd.Series([1, 2, 3, 4, 5], name='series_1')
+@pytest.mark.parametrize("y_true", 
+    [pd.DataFrame({'series_1': [1, 2, 3, 4, 5], 'series_2': [10, 20, 30, 40, 50]}),
+     {'series_1': pd.Series([1, 2, 3, 4, 5]), 'series_2': pd.Series([10, 20, 30, 40, 50])}], 
+    ids = lambda y_true: f'y_true: {type(y_true)}')
+def test_fit_when_y_true_is_pandas_DataFrame_or_dict_with_two_series(y_true):
+    """
+    Test fit when y_true is a pandas DataFrame or dict with two series.
+    """
     y_pred_interval = pd.DataFrame({
-        'lower_bound': [0.5, 1.5, 2.5, 3.5, 4.5],
-        'upper_bound': [1.5, 2.5, 3.5, 4.5, 5.5],
-        'level': ['series_1', 'series_1', 'series_1', 'series_2', 'series_2']
-    })
-    calibrator = ConformalIntervalCalibrator(nominal_coverage=0.8)
-    msg = (
-        "If `y_true` is a pandas Series, `y_pred_interval` must have "
-        "only one series. Found multiple values in column 'level'."
+        'lower_bound': [0.5, 1.5, 2.5, 3.5, 4.5, 5, 15, 25, 35, 45],
+        'upper_bound': [1.5, 2.5, 3.5, 4.5, 5.5, 15, 25, 35, 45, 55],
+        'level': ['series_1'] * 5 + ['series_2'] * 5},
+        index = pd.Index([0, 1, 2, 3, 4, 0, 1, 2, 3, 4])
     )
-    with pytest.raises(ValueError, match=msg):
-        calibrator.fit(y_true=y_true, y_pred_interval=y_pred_interval)
-
-def test_fit_raise_error_when_y_true_is_not_in_y_true_interval():
-
-    y_true = pd.Series([1, 2, 3, 4, 5], name='series_1')
-    y_pred_interval = pd.DataFrame({
-        'lower_bound': [0.5, 1.5, 2.5, 3.5, 4.5],
-        'upper_bound': [1.5, 2.5, 3.5, 4.5, 5.5],
-        'level': ['series_2', 'series_2', 'series_2', 'series_2', 'series_2']
-    })
-    calibrator = ConformalIntervalCalibrator(nominal_coverage=0.8)
-    msg = re.escape(
-        f"Series name in `y_true` ({y_true.name}) does not match the level "
-        f"name in `y_pred_interval` ({y_pred_interval['level'].unique()[0]})."
-    )
-    with pytest.raises(ValueError, match=msg):
-        calibrator.fit(y_true=y_true, y_pred_interval=y_pred_interval)
-
-
-def test_fit_raise_error_when_series_names_not_match_in_y_true_and_y_pred_interval():
-
-    y_true = pd.DataFrame({
-        'series_1': [1, 2, 3, 4, 5],
-        'series_2': [1, 2, 3, 4, 5]
-    }, index=[0, 1, 2, 3, 4])
-    y_pred_interval = pd.DataFrame({
-        'lower_bound': [0.5, 1.5, 2.5, 3.5, 4.5, 0.5, 1.5, 2.5, 3.5, 4.5],
-        'upper_bound': [1.5, 2.5, 3.5, 4.5, 5.5, 1.5, 2.5, 3.5, 4.5, 5.5],
-        'level': ['series_3'] * 5 + ['series_4'] * 5
-    }, index=[0, 1, 2, 3, 4, 0, 1, 2, 3, 4])
-    calibrator = ConformalIntervalCalibrator(nominal_coverage=0.8)
-    msg = "Series names in `y_true` and `y_pred_interval` do not match."
-    
-    with pytest.raises(ValueError, match=msg):
-        calibrator.fit(y_true=y_true, y_pred_interval=y_pred_interval)
-
-
-def test_fit_raise_error_when_y_true_is_dict_with_invalid_types_as_values():
-
-    y_true = {
-        'series_1': [1, 2, 3, 4, 5],
-        'series_2': [1, 2, 3, 4, 5]
-    }
-    y_pred_interval = pd.DataFrame({
-        'lower_bound': [0.5, 1.5, 2.5, 3.5, 4.5],
-        'upper_bound': [1.5, 2.5, 3.5, 4.5, 5.5],
-        'level': ['series_1', 'series_1', 'series_2', 'series_2', 'series_2']
-    })
-    calibrator = ConformalIntervalCalibrator(nominal_coverage=0.8)
-    msg = "All values in `y_true` must be pandas Series. Got <class 'list'>."
-    
-    with pytest.raises(ValueError, match=msg):
-        calibrator.fit(y_true=y_true, y_pred_interval=y_pred_interval)
-
-def test_fit_raise_error_when_indexex_in_y_true_and_y_pred_interval_do_not_match():
-
-    y_true = pd.Series([1, 2, 3, 4, 5], name='series_1', index=[1, 2, 3, 4, 5])
-    y_pred_interval = pd.DataFrame({
-        'lower_bound': [0.5, 1.5, 2.5, 3.5, 4.5],
-        'upper_bound': [1.5, 2.5, 3.5, 4.5, 5.5],
-        'level': ['series_1', 'series_1', 'series_1', 'series_1', 'series_1']
-    }, index=[10, 20, 30, 40, 50])
-    calibrator = ConformalIntervalCalibrator(nominal_coverage=0.8)
-    msg = 'Index of `y_true` and `y_pred_interval` must match.'
-    
-    with pytest.raises(ValueError, match=msg):
-        calibrator.fit(y_true=y_true, y_pred_interval=y_pred_interval)
-
-
-def test_transform_raise_error_when_y_pred_interval_is_not_a_dataframe():
-
-    y_true = pd.Series([1, 2, 3, 4, 5], name='series_1')
-    y_pred_interval = pd.DataFrame({
-        'lower_bound': [0.5, 1.5, 2.5, 3.5, 4.5],
-        'upper_bound': [1.5, 2.5, 3.5, 4.5, 5.5],
-    })
     calibrator = ConformalIntervalCalibrator(nominal_coverage=0.8)
     calibrator.fit(y_true=y_true, y_pred_interval=y_pred_interval)
-    msg = "`y_pred_interval` must be a pandas DataFrame."
-    with pytest.raises(ValueError, match=msg):
-        calibrator.transform(y_pred_interval='invalid_type')
 
-def test_transform_raise_error_when_y_pred_interval_not_have_columns_lower_bound_and_upper_bound():
+    assert calibrator.is_fitted is True
+    assert calibrator.fit_series_names_ == ['series_1', 'series_2']
+    assert calibrator.fit_input_type_ == "multiple_series"
+    assert calibrator.correction_factor_ == {'series_1': -0.5, 'series_2': -5}
 
-    y_true = pd.Series([1, 2, 3, 4, 5], name='series_1')
+
+def test_transform_validate_params():
+    """
+    Test transform check params.
+    """
+    y_true = pd.Series([1, 2, 3, 4, 5], name='y')
+    y_true_df = pd.DataFrame({'series_1': [1, 2, 3, 4, 5], 'series_2': [1, 2, 3, 4, 5]})
     y_pred_interval = pd.DataFrame({
         'lower_bound': [0.5, 1.5, 2.5, 3.5, 4.5],
-        'upper_bound': [1.5, 2.5, 3.5, 4.5, 5.5],
+        'upper_bound': [1.5, 2.5, 3.5, 4.5, 5.5]
     })
-    calibrator = ConformalIntervalCalibrator(nominal_coverage=0.8)
-    calibrator.fit(y_true=y_true, y_pred_interval=y_pred_interval)
-    msg = "`y_pred_interval` must have columns 'lower_bound' and 'upper_bound'."
-    with pytest.raises(ValueError, match=msg):
-        y_pred_interval = pd.DataFrame({
-            'col_1': [0.5, 1.5, 2.5, 3.5, 4.5],
-            'col_2': [1.5, 2.5, 3.5, 4.5, 5.5],
-        })
-        calibrator.transform(y_pred_interval=y_pred_interval)
-
-def test_transform_raise_error_when_fited_with_multilpe_series_and_y_pred_interval_not_have_level_column():
-
-    y_true = pd.DataFrame({
-        'series_1': [1, 2, 3, 4, 5],
-        'series_2': [1, 2, 3, 4, 5]
-    }, index=[0, 1, 2, 3, 4])
-    y_pred_interval = pd.DataFrame({
+    y_pred_interval_multiple = pd.DataFrame({
         'lower_bound': [0.5, 1.5, 2.5, 3.5, 4.5, 0.5, 1.5, 2.5, 3.5, 4.5],
         'upper_bound': [1.5, 2.5, 3.5, 4.5, 5.5, 1.5, 2.5, 3.5, 4.5, 5.5],
         'level': ['series_1'] * 5 + ['series_2'] * 5
     }, index=[0, 1, 2, 3, 4, 0, 1, 2, 3, 4])
     calibrator = ConformalIntervalCalibrator(nominal_coverage=0.8)
-    calibrator.fit(y_true=y_true, y_pred_interval=y_pred_interval)
-    msg = (
-        "The transformer was fitted with multiple series. `y_pred_interval` "
-        "must contain an additional column 'level' to identify the series."
-    )
-    with pytest.raises(ValueError, match=msg):
-        y_pred_interval = pd.DataFrame({
-            'lower_bound': [0.5, 1.5, 2.5, 3.5, 4.5, 0.5, 1.5, 2.5, 3.5, 4.5],
-            'upper_bound': [1.5, 2.5, 3.5, 4.5, 5.5, 1.5, 2.5, 3.5, 4.5, 5.5],
-        }, index=[0, 1, 2, 3, 4, 0, 1, 2, 3, 4])
-        calibrator.transform(y_pred_interval=y_pred_interval)
 
-def test_transform_raise_error_series_name_not_seen_in_fit():
-
-    y_true = pd.DataFrame({
-        'series_1': [1, 2, 3, 4, 5],
-        'series_2': [1, 2, 3, 4, 5]
-    }, index=[0, 1, 2, 3, 4])
-    y_pred_interval = pd.DataFrame({
-        'lower_bound': [0.5, 1.5, 2.5, 3.5, 4.5, 0.5, 1.5, 2.5, 3.5, 4.5],
-        'upper_bound': [1.5, 2.5, 3.5, 4.5, 5.5, 1.5, 2.5, 3.5, 4.5, 5.5],
-        'level': ['series_1'] * 5 + ['series_2'] * 5
-    }, index=[0, 1, 2, 3, 4, 0, 1, 2, 3, 4])
-    calibrator = ConformalIntervalCalibrator(nominal_coverage=0.8)
-    calibrator.fit(y_true=y_true, y_pred_interval=y_pred_interval)
-    msg = re.escape(
-        "Series 'series_3' was not seen during fit. Available series are: "
-        "['series_1', 'series_2']."
-    )
-    with pytest.raises(ValueError, match=msg):
-        y_pred_interval = pd.DataFrame({
-            'lower_bound': [0.5, 1.5, 2.5, 3.5, 4.5,],
-            'upper_bound': [1.5, 2.5, 3.5, 4.5, 5.5],
-            'level': ['series_3'] * 5
-        })
-        calibrator.transform(y_pred_interval=y_pred_interval)
-
-
-def test_transform_raise_error_transformer_not_fitted():
-
-    calibrator = ConformalIntervalCalibrator(nominal_coverage=0.8)
-    msg = (
+    err_msg = re.escape(
         "ConformalIntervalCalibrator not fitted yet. Call 'fit' with "
         "training data first."
     )
-    with pytest.raises(ValueError, match=msg):
-        calibrator.transform(y_pred_interval="dummy")
+    with pytest.raises(NotFittedError, match=err_msg):
+        calibrator.transform(y_pred_interval=y_pred_interval)
+    
+    calibrator.fit(y_true=y_true, y_pred_interval=y_pred_interval)
+    
+    err_msg = re.escape("`y_pred_interval` must be a pandas DataFrame.")
+    with pytest.raises(TypeError, match=err_msg):
+        calibrator.transform(y_pred_interval='invalid_type')
+    
+    y_pred_invalid = pd.DataFrame({
+        'col_1': [0.5, 1.5, 2.5, 3.5, 4.5],
+        'col_2': [1.5, 2.5, 3.5, 4.5, 5.5],
+    })
+    err_msg = re.escape(
+        "`y_pred_interval` must have columns 'lower_bound' and 'upper_bound'."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        calibrator.transform(y_pred_interval=y_pred_invalid)
+    
+    calibrator.fit(y_true=y_true_df, y_pred_interval=y_pred_interval_multiple)
+    err_msg = re.escape(
+        "The transformer was fitted with multiple series. `y_pred_interval` "
+        "must be a long-format DataFrame with three columns: 'level', "
+        "'lower_bound', and 'upper_bound'. The 'level' column identifies "
+        "the series to which each interval belongs."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        calibrator.transform(y_pred_interval=y_pred_interval)
+
+    y_pred_interval = pd.DataFrame({
+        'lower_bound': [0.5, 1.5, 2.5, 3.5, 4.5,],
+        'upper_bound': [1.5, 2.5, 3.5, 4.5, 5.5],
+        'level': ['series_3'] * 5
+    })
+    err_msg = re.escape(
+        "Series 'series_3' was not seen during fit. Available series are: "
+        "['series_1', 'series_2']."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        calibrator.transform(y_pred_interval=y_pred_interval)
 
 
 def test_fit_and_transform_for_single_series_symmetric():
-
+    """
+    Test fit and transform for a single series with symmetric calibration.
+    """
     # Simulate intervals and y_true for a single series
     rng = np.random.default_rng(42)
     prediction_interval = pd.DataFrame({
@@ -280,6 +268,7 @@ def test_fit_and_transform_for_single_series_symmetric():
     y_true.name = "series_1"
     y_true.iloc[1::5] = prediction_interval.iloc[1::5, 0] - rng.normal(1, 1, 20)
     y_true.iloc[3::5] = prediction_interval.iloc[1::5, 1] + rng.normal(1, 1, 20)
+
     calibrator = ConformalIntervalCalibrator(nominal_coverage=0.8, symmetric_calibration=True)
     calibrator.fit(y_true=y_true, y_pred_interval=prediction_interval)
     results = calibrator.transform(prediction_interval)
@@ -341,8 +330,11 @@ def test_fit_and_transform_for_single_series_symmetric():
     assert calibrator.fit_series_names_ == ['series_1']
     pd.testing.assert_frame_equal(results, expected_results)
 
-def test_fit_and_transform_for_single_series_symmetric_False():
 
+def test_fit_and_transform_for_single_series_symmetric_False():
+    """
+    Test fit and transform for a single series with no symmetric calibration.
+    """
     # Simulate intervals and y_true for a single series
     rng = np.random.default_rng(42)
     prediction_interval = pd.DataFrame({
@@ -355,6 +347,7 @@ def test_fit_and_transform_for_single_series_symmetric_False():
     y_true.name = "series_1"
     y_true.iloc[1::5] = prediction_interval.iloc[1::5, 0] - rng.normal(1, 1, 20)
     y_true.iloc[3::5] = prediction_interval.iloc[1::5, 1] + rng.normal(1, 1, 20)
+
     calibrator = ConformalIntervalCalibrator(nominal_coverage=0.8, symmetric_calibration=False)
     calibrator.fit(y_true=y_true, y_pred_interval=prediction_interval)
     results = calibrator.transform(prediction_interval)
@@ -416,8 +409,11 @@ def test_fit_and_transform_for_single_series_symmetric_False():
     assert calibrator.fit_series_names_ == ['series_1']
     pd.testing.assert_frame_equal(results, expected_results)
 
-def test_fit_and_transform_for_multi_series_symmetric():
 
+def test_fit_and_transform_for_multi_series_symmetric():
+    """
+    Test fit and transform for multiple series with symmetric calibration.
+    """
     # Simulate intervals and y_true for a single series
     rng = np.random.default_rng(42)
     prediction_interval = pd.DataFrame({
@@ -436,7 +432,7 @@ def test_fit_and_transform_for_multi_series_symmetric():
                             'series_2': y_true,
                             'series_3': y_true
                         })
-    prediction_interval_multiseries = pd.concat([prediction_interval]*3, axis=0)
+    prediction_interval_multiseries = pd.concat([prediction_interval] * 3, axis=0)
     prediction_interval_multiseries['level'] = np.repeat(['series_1', 'series_2', 'series_3'], 100)
 
     calibrator = ConformalIntervalCalibrator(nominal_coverage=0.8, symmetric_calibration=True)
@@ -517,7 +513,9 @@ def test_fit_and_transform_for_multi_series_symmetric():
 
 
 def test_fit_and_transform_for_multi_series_symmetric_False():
-
+    """
+    Test fit and transform for multiple series with no symmetric calibration.
+    """
     # Simulate intervals and y_true for a single series
     rng = np.random.default_rng(42)
     prediction_interval = pd.DataFrame({
@@ -536,7 +534,7 @@ def test_fit_and_transform_for_multi_series_symmetric_False():
                             'series_2': y_true,
                             'series_3': y_true
                         })
-    prediction_interval_multiseries = pd.concat([prediction_interval]*3, axis=0)
+    prediction_interval_multiseries = pd.concat([prediction_interval] * 3, axis=0)
     prediction_interval_multiseries['level'] = np.repeat(['series_1', 'series_2', 'series_3'], 100)
 
     calibrator = ConformalIntervalCalibrator(nominal_coverage=0.8, symmetric_calibration=False)

@@ -17,13 +17,16 @@ from sklearn.exceptions import NotFittedError
 
 import skforecast
 from ..exceptions import IgnoredArgumentWarning
-from ..utils import check_y
-from ..utils import check_exog
-from ..utils import get_exog_dtypes
-from ..utils import check_predict_input
-from ..utils import expand_index
-from ..utils import transform_series
-from ..utils import transform_dataframe
+from ..utils import (
+    check_y,
+    check_exog,
+    check_predict_input,
+    expand_index,
+    get_exog_dtypes,
+    transform_series,
+    transform_dataframe,
+    get_style_repr_html
+)
 
 
 class ForecasterSarimax():
@@ -232,75 +235,7 @@ class ForecasterSarimax():
         """
 
         params, exog_names_in_ = self._preprocess_repr()
-        unique_id = str(uuid.uuid4()).replace('-', '')
-        background_color = "#f0f8ff" if self.is_fitted else "#f9f1e2"
-        section_color = "#b3dbfd" if self.is_fitted else "#fae3b3"
-        style = f"""
-        <style>
-            .container-{unique_id} {{
-                font-family: 'Arial', sans-serif;
-                font-size: 0.9em;
-                color: #333333;
-                border: 1px solid #ddd;
-                background-color: {background_color};
-                padding: 5px 15px;
-                border-radius: 8px;
-                max-width: 600px;
-                #margin: auto;
-            }}
-            .container-{unique_id} h2 {{
-                font-size: 1.5em;
-                color: #222222;
-                border-bottom: 2px solid #ddd;
-                padding-bottom: 5px;
-                margin-bottom: 15px;
-                margin-top: 5px;
-            }}
-            .container-{unique_id} details {{
-                margin: 10px 0;
-            }}
-            .container-{unique_id} summary {{
-                font-weight: bold;
-                font-size: 1.1em;
-                color: #000000;
-                cursor: pointer;
-                margin-bottom: 5px;
-                background-color: {section_color};
-                padding: 5px;
-                border-radius: 5px;
-            }}
-            .container-{unique_id} summary:hover {{
-                color: #000000;
-                background-color: #e0e0e0;
-            }}
-            .container-{unique_id} ul {{
-                font-family: 'Courier New', monospace;
-                list-style-type: none;
-                padding-left: 20px;
-                margin: 10px 0;
-                line-height: normal;
-            }}
-            .container-{unique_id} li {{
-                margin: 5px 0;
-                font-family: 'Courier New', monospace;
-            }}
-            .container-{unique_id} li strong {{
-                font-weight: bold;
-                color: #444444;
-            }}
-            .container-{unique_id} li::before {{
-                content: "- ";
-                color: #666666;
-            }}
-            .container-{unique_id} a {{
-                color: #001633;
-                text-decoration: none;
-            }}
-            .container-{unique_id} a:hover {{
-                color: #359ccb; 
-            }}
-        </style>
-        """
+        style, unique_id = get_style_repr_html(self.is_fitted)
 
         content = f"""
         <div class="container-{unique_id}">
@@ -362,7 +297,6 @@ class ForecasterSarimax():
         </div>
         """
 
-        # Return the combined style and content
         return style + content
 
     def fit(
