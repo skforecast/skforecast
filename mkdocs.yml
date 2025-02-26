@@ -55,8 +55,8 @@ nav:
       - Overview: user_guides/probabilistic-forecasting-overview.ipynb
       - Bootstrapped residuals: user_guides/probabilistic-forecasting-bootstrapped-residuals.ipynb
       - Conformal predictions: user_guides/probabilistic-forecasting-conformal-prediction.ipynb
+      - Conformal calibration: user_guides/probabilistic-forecasting-conformal-calibration.ipynb
       - Quantile forecasting: user_guides/probabilistic-forecasting-quantile-regression.ipynb
-      - Calibrate intervals: user_guides/probabilistic-forecasting-calibrate-intervals.ipynb
       - Metrics in probabilistic forecasting: user_guides/probabilistic-forecasting-metrics.ipynb
       - Continuous Ranked Probability Score (CRPS): faq/probabilistic-forecasting-crps-score.ipynb
     - Model Explainability: user_guides/explainability.ipynb
@@ -76,6 +76,8 @@ nav:
       - Forecasting time series with missing values: faq/forecasting-time-series-with-missing-values.ipynb
       - Forecasting with delayed historical data: faq/forecasting-with-delayed-historical-data.ipynb
       - Backtesting vs One-step-ahead: faq/parameters-search-backtesting-vs-one-step-ahead.ipynb
+      - Continuous Ranked Probability Score (CRPS): faq/probabilistic-forecasting-crps-score.ipynb
+      - Calibration of probabilistic forecasting intervals: faq/probabilistic-forecasting-calibrate-intervals.ipynb
       - Cyclical features in time series: faq/cyclical-features-time-series.ipynb
       - Time series aggregation: faq/time-series-aggregation.ipynb
       - Parallelization in skforecast: faq/parallelization-skforecast.ipynb
@@ -115,6 +117,7 @@ nav:
     - Cyclical features in time series: faq/cyclical-features-time-series.ipynb
     - Time series aggregation: faq/time-series-aggregation.ipynb
     - Continuous Ranked Probability Score (CRPS): faq/probabilistic-forecasting-crps-score.ipynb
+    - Calibration of probabilistic forecasting intervals: faq/probabilistic-forecasting-calibrate-intervals.ipynb
     - Parallelization in skforecast: faq/parallelization-skforecast.ipynb
     - Profiling skforecast: faq/profiling-skforecast.ipynb
 

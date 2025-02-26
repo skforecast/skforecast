@@ -13,10 +13,12 @@ import numpy as np
 import pandas as pd
 
 import skforecast
-from ..utils import check_predict_input
-from ..utils import preprocess_y
-from ..utils import preprocess_last_window
-from ..utils import expand_index
+from ..utils import (
+    check_predict_input,
+    preprocess_y,
+    preprocess_last_window,
+    expand_index    
+)
 
 
 class ForecasterEquivalentDate():
