@@ -269,6 +269,7 @@ class ForecasterRecursive(ForecasterBase):
         self.skforecast_version                 = skforecast.__version__
         self.python_version                     = sys.version.split(" ")[0]
         self.forecaster_id                      = forecaster_id
+        self._propabilistic_mode                = True # Todo: explicar que es privado
 
         self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
         self.window_features, self.window_features_names, self.max_size_window_features = (
@@ -995,11 +996,12 @@ class ForecasterRecursive(ForecasterBase):
             self.X_train_exog_names_out_ = X_train_exog_names_out_
 
         # This is done to save time during fit in functions such as backtesting()
-        if store_in_sample_residuals:
+        if self._propabilistic_mode:
             self._binning_in_sample_residuals(
-                y_true       = y_train.to_numpy(),
-                y_pred       = self.regressor.predict(X_train).ravel(),
-                random_state = random_state
+                y_true                    = y_train.to_numpy(),
+                y_pred                    = self.regressor.predict(X_train).ravel(),
+                store_in_sample_residuals = store_in_sample_residuals,
+                random_state              = random_state
             )
 
         # The last time window of training data is stored so that lags needed as
@@ -1016,6 +1018,7 @@ class ForecasterRecursive(ForecasterBase):
         self,
         y_true: np.ndarray,
         y_pred: np.ndarray,
+        store_in_sample_residuals: bool = True,
         random_state: int = 123
     ) -> None:
         """
@@ -1039,6 +1042,9 @@ class ForecasterRecursive(ForecasterBase):
             True values of the time series.
         y_pred : numpy ndarray
             Predicted values of the time series.
+        store_in_sample_residuals : bool, default True
+            If `True`, in-sample residuals will be stored in the forecaster object.
+            If `False`, only the binned intervals are stored.
         random_state : int, default 123
             Set a seed for the random generator so that the stored sample 
             residuals are always deterministic.
@@ -1048,31 +1054,32 @@ class ForecasterRecursive(ForecasterBase):
         None
         
         """
-
         residuals = y_true - y_pred
         data = pd.DataFrame({'prediction': y_pred, 'residuals': residuals})
 
-        data['bin'] = self.binner.fit_transform(y_pred).astype(int)
-        self.in_sample_residuals_by_bin_ = (
-            data.groupby('bin')['residuals'].apply(np.array).to_dict()
-        )
-
-        rng = np.random.default_rng(seed=random_state)
-        max_sample = 10_000 // self.binner.n_bins_
-        for k, v in self.in_sample_residuals_by_bin_.items():
-            if len(v) > max_sample:
-                sample = v[rng.integers(low=0, high=len(v), size=max_sample)]
-                self.in_sample_residuals_by_bin_[k] = sample
-
-        if len(residuals) > 10_000:
-            residuals = residuals[
-                rng.integers(low=0, high=len(residuals), size=10_000)
-            ]
-
-        self.in_sample_residuals_ = residuals
+        self.binner.fit(y_pred)
         self.binner_intervals_ = self.binner.intervals_
+    
+        if store_in_sample_residuals:
+            data['bin'] = self.binner.transform(y_pred).astype(int)
+            self.in_sample_residuals_by_bin_ = (
+                data.groupby('bin')['residuals'].apply(np.array).to_dict()
+            )
 
+            rng = np.random.default_rng(seed=random_state)
+            max_sample = 10_000 // self.binner.n_bins_
+            for k, v in self.in_sample_residuals_by_bin_.items():
+                if len(v) > max_sample:
+                    sample = v[rng.integers(low=0, high=len(v), size=max_sample)]
+                    self.in_sample_residuals_by_bin_[k] = sample
 
+            if len(residuals) > 10_000:
+                residuals = residuals[
+                    rng.integers(low=0, high=len(residuals), size=10_000)
+                ]
+
+            self.in_sample_residuals_ = residuals
+        
     def _create_predict_inputs(
         self,
         steps: int | str | pd.Timestamp, 
