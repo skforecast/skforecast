@@ -342,7 +342,7 @@ def test_predict_interval_output_when_regressor_is_LinearRegression_with_transfo
                      transformer_exog   = transformer_exog,
                  )
     forecaster.fit(series=series, exog=exog)
-    predictions = forecaster.predict_interval(steps=5, levels=['1', '2'], exog=exog_predict)
+    results = forecaster.predict_interval(steps=5, levels=['1', '2'], exog=exog_predict)
     
     expected = pd.DataFrame(
                    data = np.array([
@@ -357,7 +357,7 @@ def test_predict_interval_output_when_regressor_is_LinearRegression_with_transfo
                )
     expected = expected_df_to_long_format(expected, method='interval')
     
-    pd.testing.assert_frame_equal(predictions, expected)
+    pd.testing.assert_frame_equal(results, expected)
 
 
 def test_predict_interval_output_when_series_and_exog_dict():

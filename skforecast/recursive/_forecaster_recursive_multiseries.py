@@ -2775,7 +2775,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 )
         
         predictions = pd.DataFrame(
-                          data    = predictions.reshape(-1, 3),
+                          data    = predictions.swapaxes(0, 1).reshape(-1, 3),
                           index   = np.repeat(prediction_index, n_levels),
                           columns = ["pred", "lower_bound", "upper_bound"]
                       )
