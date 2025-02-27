@@ -40,6 +40,7 @@ from ..utils import (
     expand_index,
     transform_numpy,
     transform_dataframe,
+    get_style_repr_html
 )
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
 
@@ -373,7 +374,6 @@ class ForecasterRecursive(ForecasterBase):
 
         return info
 
-
     def _repr_html_(self):
         """
         HTML representation of the object.
@@ -391,7 +391,7 @@ class ForecasterRecursive(ForecasterBase):
                 exog_names_in_ = self.exog_names_in_
             )
 
-        style, unique_id = self._get_style_repr_html(self.is_fitted)
+        style, unique_id = get_style_repr_html(self.is_fitted)
         
         content = f"""
         <div class="container-{unique_id}">
@@ -454,7 +454,6 @@ class ForecasterRecursive(ForecasterBase):
         </div>
         """
 
-        # Return the combined style and content
         return style + content
 
 

@@ -47,7 +47,8 @@ from ..utils import (
     transform_series,
     transform_dataframe,
     select_n_jobs_fit_forecaster,
-    set_skforecast_warnings
+    set_skforecast_warnings,
+    get_style_repr_html
 )
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
 from ..model_selection._utils import _extract_data_folds_multiseries
@@ -545,7 +546,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 transformer_series = self.transformer_series,
             )
 
-        style, unique_id = self._get_style_repr_html(self.is_fitted)
+        style, unique_id = get_style_repr_html(self.is_fitted)
         
         content = f"""
         <div class="container-{unique_id}">
