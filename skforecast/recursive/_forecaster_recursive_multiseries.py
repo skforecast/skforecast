@@ -2178,7 +2178,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                         shape=n_levels, fill_value=np.nan, dtype=float
                     )
                     for j, level in enumerate(levels):
-                        predicted_bin = self.binner[level].transform(pred[j]).item()
+                        predicted_bin = (
+                            self.binner
+                            .get(level, self.binner['_unknown_level'])
+                            .transform(pred[j])
+                            .item()
+                        )
                         step_residual[j] = residuals[predicted_bin][i, j]
                 else:
                     step_residual = residuals[i, :]
@@ -2733,17 +2738,22 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         )
         if use_binned_residuals:
             for i, level in enumerate(levels):
+                residuals_level = residuals_by_bin.get(level, residuals_by_bin['_unknown_level'])
                 correction_factor_by_bin = {
                     k: np.quantile(np.abs(v), nominal_coverage)
-                    for k, v in residuals_by_bin[level].items()
+                    for k, v in residuals_level.items()
                 }
                 replace_func = np.vectorize(lambda x: correction_factor_by_bin[x])
-                predictions_bin = self.binner[level].transform(predictions[:, i])
+                predictions_bin = (
+                    self.binner
+                    .get(level, self.binner['_unknown_level'])
+                    .transform(predictions[:, i])
+                )
                 correction_factor[:, i] = replace_func(predictions_bin)
         else:
             for i, level in enumerate(levels):
                 correction_factor[:, i] = np.quantile(
-                    np.abs(residuals[level]), nominal_coverage
+                    np.abs(residuals.get(level, residuals['_unknown_level'])), nominal_coverage
                 )
 
         lower_bound = predictions - correction_factor

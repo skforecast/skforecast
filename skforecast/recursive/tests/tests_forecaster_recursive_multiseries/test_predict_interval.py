@@ -1,5 +1,6 @@
 # Unit test predict_interval ForecasterRecursiveMultiSeries
 # ==============================================================================
+import re
 import pytest
 import joblib
 import numpy as np
@@ -30,6 +31,21 @@ series_dict_test = {k: v.loc[end_train:,] for k, v in series_dict.items()}
 exog_dict_test = {k: v.loc[end_train:,] for k, v in exog_dict.items()}
 series_2 = pd.DataFrame({'1': pd.Series(np.arange(10)), 
                          '2': pd.Series(np.arange(10))})
+
+
+def test_check_interval_ValueError_when_method_is_not_valid_method():
+    """
+    Check ValueError is raised when `method` is not 'bootstrapping' or 'conformal'.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
+    forecaster.fit(series=series_2)
+
+    method = 'not_valid_method'
+    err_msg = re.escape(
+        f"Invalid `method` '{method}'. Choose 'bootstrapping' or 'conformal'."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        forecaster.predict_interval(steps=1, method=method)
 
 
 @pytest.fixture(params=[('1', np.array([[10., 20., 20.]])), 
@@ -497,6 +513,182 @@ def test_predict_interval_output_when_series_and_exog_dict_unknown_level():
     pd.testing.assert_frame_equal(predictions, expected)
 
 
+def test_predict_interval_output_when_series_and_exog_dict_unknown_level_binned_residuals():
+    """
+    Test output ForecasterRecursiveMultiSeries predict_interval method when series and 
+    exog are dictionaries, unknown_level and binned_residuals.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     regressor          = LGBMRegressor(
+                         n_estimators=30, random_state=123, verbose=-1, max_depth=4
+                     ),
+                     lags               = 14,
+                     encoding           = 'ordinal',
+                     dropna_from_series = False,
+                     transformer_series = StandardScaler(),
+                     transformer_exog   = StandardScaler()
+                 )
+    forecaster.fit(
+        series=series_dict_train, exog=exog_dict_train, suppress_warnings=True
+    )
+
+    levels = ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']
+    last_window = pd.DataFrame(
+        {k: v for k, v in forecaster.last_window_.items() if k in levels}
+    )
+    last_window['id_1005'] = last_window['id_1004'] * 0.9
+    exog_dict_test_2 = exog_dict_test.copy()
+    exog_dict_test_2['id_1005'] = exog_dict_test_2['id_1001']
+    results = forecaster.predict_interval(
+        steps=5, levels=levels, exog=exog_dict_test_2, last_window=last_window,
+        suppress_warnings=True, n_boot=10, interval=[5, 95], use_binned_residuals=True
+    )
+
+    expected = pd.DataFrame(
+        data={
+            "level": [
+                "id_1000",
+                "id_1001",
+                "id_1003",
+                "id_1004",
+                "id_1005",
+                "id_1000",
+                "id_1001",
+                "id_1003",
+                "id_1004",
+                "id_1005",
+                "id_1000",
+                "id_1001",
+                "id_1003",
+                "id_1004",
+                "id_1005",
+                "id_1000",
+                "id_1001",
+                "id_1003",
+                "id_1004",
+                "id_1005",
+                "id_1000",
+                "id_1001",
+                "id_1003",
+                "id_1004",
+                "id_1005",
+            ],
+            "pred": [
+                1330.5385359512072,
+                2655.9525305801844,
+                2645.090876890802,
+                7897.5193849420975,
+                4890.228408881278,
+                1401.6308515684586,
+                2503.7524796063676,
+                2407.1752505407007,
+                8577.098408560274,
+                4756.810200061664,
+                1387.265728819639,
+                2446.2803866452205,
+                2314.0860223813092,
+                8619.983117285357,
+                4947.440527174498,
+                1310.8227594194243,
+                2389.3764241040913,
+                2245.0514974677576,
+                8373.803343371283,
+                4972.509186937418,
+                1279.3727451240927,
+                2185.0610428355444,
+                2197.452881661525,
+                8536.318209938987,
+                5213.761246797846,
+            ],
+            "lower_bound": [
+                1280.691397121706,
+                2705.9255940079975,
+                2351.2169926457227,
+                7456.30218140561,
+                4518.09207378455,
+                1338.5256579919173,
+                2658.8038574432203,
+                2010.1128086433266,
+                8286.016756370773,
+                4695.361794129111,
+                1324.4177375758195,
+                2750.3765780123113,
+                1767.304578121676,
+                8039.73491219328,
+                3859.7437041937233,
+                1299.5531237560697,
+                2600.229892806877,
+                1771.885509411404,
+                8229.019039149467,
+                3258.6866240603604,
+                1210.2559241669333,
+                2312.550433131647,
+                1682.340227568467,
+                8194.857096861739,
+                4927.714549206342,
+            ],
+            "upper_bound": [
+                1439.4553800244555,
+                2738.156981275605,
+                3741.8972784855855,
+                8241.938477634612,
+                6843.515887200728,
+                1549.4628248207773,
+                2935.3967892197093,
+                3175.981247149604,
+                9460.836936220336,
+                8273.075290042703,
+                1480.350727438289,
+                2983.6422355070913,
+                2579.8385939039645,
+                9155.923184853164,
+                6261.057395164305,
+                1475.6791491359868,
+                2876.822824583366,
+                2408.3597533104735,
+                9434.945472173118,
+                8060.945697475116,
+                1438.0084071244983,
+                2896.1999567914872,
+                2368.450760903573,
+                9517.69363475937,
+                9349.46495485382,
+            ],
+        },
+        index=pd.DatetimeIndex(
+            [
+                "2016-08-01",
+                "2016-08-01",
+                "2016-08-01",
+                "2016-08-01",
+                "2016-08-01",
+                "2016-08-02",
+                "2016-08-02",
+                "2016-08-02",
+                "2016-08-02",
+                "2016-08-02",
+                "2016-08-03",
+                "2016-08-03",
+                "2016-08-03",
+                "2016-08-03",
+                "2016-08-03",
+                "2016-08-04",
+                "2016-08-04",
+                "2016-08-04",
+                "2016-08-04",
+                "2016-08-04",
+                "2016-08-05",
+                "2016-08-05",
+                "2016-08-05",
+                "2016-08-05",
+                "2016-08-05",
+            ]
+        ),
+    )
+
+    pd.testing.assert_frame_equal(results, expected)
+
+
 def test_predict_interval_output_when_series_and_exog_dict_encoding_None_unknown_level():
     """
     Test output ForecasterRecursiveMultiSeries predict_interval method when series and 
@@ -573,3 +765,325 @@ def test_predict_interval_output_when_series_and_exog_dict_encoding_None_unknown
     expected = expected_df_to_long_format(expected, method='interval')
 
     pd.testing.assert_frame_equal(predictions, expected)
+
+
+def test_predict_interval_output_when_series_and_exog_dict_encoding_None_unknown_level_binned_residuals():
+    """
+    Test output ForecasterRecursiveMultiSeries predict_interval method when series and 
+    exog are dictionaries, encoding is None, unknown_level and binned_residuals.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     regressor          = LGBMRegressor(
+                         n_estimators=30, random_state=123, verbose=-1, max_depth=4
+                     ),
+                     lags               = 14,
+                     encoding           = None,
+                     dropna_from_series = False,
+                     transformer_series = StandardScaler(),
+                     transformer_exog   = StandardScaler(),
+                     differentiation    = 1
+                 )
+    forecaster.fit(
+        series=series_dict_train, exog=exog_dict_train, suppress_warnings=True
+    )
+
+    levels = ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']
+    last_window = pd.DataFrame(
+        {k: v for k, v in forecaster.last_window_.items() if k in levels}
+    )
+    last_window['id_1005'] = last_window['id_1004'] * 0.9
+    exog_dict_test_2 = exog_dict_test.copy()
+    exog_dict_test_2['id_1005'] = exog_dict_test_2['id_1001']
+    results = forecaster.predict_interval(
+        steps=5, levels=levels, exog=exog_dict_test_2, last_window=last_window,
+        suppress_warnings=True, n_boot=10, interval=(5, 95), use_binned_residuals=True
+    )
+
+    expected = pd.DataFrame(
+        data={
+            "level": [
+                "id_1000",
+                "id_1001",
+                "id_1003",
+                "id_1004",
+                "id_1005",
+                "id_1000",
+                "id_1001",
+                "id_1003",
+                "id_1004",
+                "id_1005",
+                "id_1000",
+                "id_1001",
+                "id_1003",
+                "id_1004",
+                "id_1005",
+                "id_1000",
+                "id_1001",
+                "id_1003",
+                "id_1004",
+                "id_1005",
+                "id_1000",
+                "id_1001",
+                "id_1003",
+                "id_1004",
+                "id_1005",
+            ],
+            "pred": [
+                1261.9326553725798,
+                3109.3677474297733,
+                3565.438044069866,
+                7581.012455102697,
+                6929.605635844412,
+                1312.2074981587975,
+                3370.6327655712835,
+                3486.849749467782,
+                7877.71418945036,
+                7226.307370192074,
+                1269.6006117354937,
+                3451.582141864614,
+                3265.503087649355,
+                7903.889983876083,
+                7211.071456755368,
+                1216.7129613241045,
+                3420.9316258462322,
+                3279.9374855113547,
+                7895.699772623197,
+                7260.909824740005,
+                1199.8067190914946,
+                3410.881341378549,
+                3385.6645920219025,
+                7915.945340057939,
+                7281.155392174747,
+            ],
+            "lower_bound": [
+                819.9337017726947,
+                2852.086286493839,
+                2185.68371683204,
+                7067.312499958239,
+                6320.866291742634,
+                949.0080907131693,
+                2724.6933488070995,
+                2003.2928963661257,
+                7823.917981568088,
+                6941.5707091646045,
+                848.4003232265973,
+                2792.388424948016,
+                2693.226527319288,
+                7838.632252990579,
+                6802.268112262388,
+                927.6414047150448,
+                2762.397454966053,
+                2646.5312785810665,
+                7751.7006663018965,
+                6713.968070171806,
+                891.4148355515429,
+                2708.8445868510776,
+                2564.509291435976,
+                7752.98706209402,
+                6748.509077723544,
+            ],
+            "upper_bound": [
+                2455.8939978169306,
+                3562.781729860123,
+                4075.8215920217,
+                9974.785265402967,
+                8120.058251346585,
+                2443.379060932464,
+                4332.945765188091,
+                4497.779920141797,
+                11355.693731059055,
+                8154.384764301869,
+                2466.846650769211,
+                4621.470221829929,
+                4277.453581581279,
+                11248.104970351964,
+                8092.99775924399,
+                2261.1891131225707,
+                4601.085503786943,
+                4423.109145176862,
+                11186.082951284985,
+                8264.17998610828,
+                2138.779067144402,
+                4625.038744331387,
+                4725.130044655679,
+                11094.120630362502,
+                8244.660999361791,
+            ],
+        },
+        index=pd.DatetimeIndex(
+            [
+                "2016-08-01",
+                "2016-08-01",
+                "2016-08-01",
+                "2016-08-01",
+                "2016-08-01",
+                "2016-08-02",
+                "2016-08-02",
+                "2016-08-02",
+                "2016-08-02",
+                "2016-08-02",
+                "2016-08-03",
+                "2016-08-03",
+                "2016-08-03",
+                "2016-08-03",
+                "2016-08-03",
+                "2016-08-04",
+                "2016-08-04",
+                "2016-08-04",
+                "2016-08-04",
+                "2016-08-04",
+                "2016-08-05",
+                "2016-08-05",
+                "2016-08-05",
+                "2016-08-05",
+                "2016-08-05",
+            ]
+        ),
+    )
+
+    pd.testing.assert_frame_equal(results, expected)
+
+
+@pytest.mark.parametrize("interval", 
+                         [0.95, (2.5, 97.5)], 
+                         ids = lambda value: f'interval: {value}')
+def test_predict_interval_conformal_output_when_series_and_exog_dict(interval):
+    """
+    Test output ForecasterRecursiveMultiSeries predict_interval conformal method 
+    when series and exog are dictionaries.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+        regressor=LGBMRegressor(
+            n_estimators=2, random_state=123, verbose=-1, max_depth=2
+        ),
+        lags=14,
+        encoding='ordinal',
+        dropna_from_series=False,
+        transformer_series=StandardScaler(),
+        transformer_exog=StandardScaler(),
+    )
+    forecaster.fit(
+        series=series_dict_train, exog=exog_dict_train, suppress_warnings=True
+    )
+    results = forecaster.predict_interval(
+        steps=5, exog=exog_dict_test, interval=interval, method='conformal'
+    )
+
+    expected = pd.DataFrame(
+        data={
+            "level": [
+                "id_1000",
+                "id_1001",
+                "id_1003",
+                "id_1004",
+                "id_1000",
+                "id_1001",
+                "id_1003",
+                "id_1004",
+                "id_1000",
+                "id_1001",
+                "id_1003",
+                "id_1004",
+                "id_1000",
+                "id_1001",
+                "id_1003",
+                "id_1004",
+                "id_1000",
+                "id_1001",
+                "id_1003",
+                "id_1004",
+            ],
+            "pred": [
+                1438.141547171955,
+                2090.793526125921,
+                2166.9832932984505,
+                7285.527814283447,
+                1438.141547171955,
+                2089.110388842724,
+                2074.5599492877495,
+                7488.18398743828,
+                1438.141547171955,
+                2089.110388842724,
+                2035.994482471084,
+                7488.18398743828,
+                1403.9362565363836,
+                2089.110388842724,
+                2035.994482471084,
+                7488.18398743828,
+                1403.9362565363836,
+                2089.110388842724,
+                2035.994482471084,
+                7488.18398743828,
+            ],
+            "lower_bound": [
+                930.4222807518261,
+                957.6735882668283,
+                1500.578936864964,
+                4188.404660735961,
+                930.4222807518261,
+                955.990450983632,
+                1408.155592854263,
+                4391.060833890795,
+                930.4222807518261,
+                955.990450983632,
+                1369.5901260375977,
+                4391.060833890795,
+                896.2169901162547,
+                955.990450983632,
+                1369.5901260375977,
+                4391.060833890795,
+                896.2169901162547,
+                955.990450983632,
+                1369.5901260375977,
+                4391.060833890795,
+            ],
+            "upper_bound": [
+                1945.8608135920836,
+                3223.9134639850135,
+                2833.3876497319366,
+                10382.650967830932,
+                1945.8608135920836,
+                3222.230326701817,
+                2740.964305721236,
+                10585.307140985766,
+                1945.8608135920836,
+                3222.230326701817,
+                2702.3988389045703,
+                10585.307140985766,
+                1911.6555229565124,
+                3222.230326701817,
+                2702.3988389045703,
+                10585.307140985766,
+                1911.6555229565124,
+                3222.230326701817,
+                2702.3988389045703,
+                10585.307140985766,
+            ],
+        },
+        index=pd.DatetimeIndex(
+            [
+                "2016-08-01",
+                "2016-08-01",
+                "2016-08-01",
+                "2016-08-01",
+                "2016-08-02",
+                "2016-08-02",
+                "2016-08-02",
+                "2016-08-02",
+                "2016-08-03",
+                "2016-08-03",
+                "2016-08-03",
+                "2016-08-03",
+                "2016-08-04",
+                "2016-08-04",
+                "2016-08-04",
+                "2016-08-04",
+                "2016-08-05",
+                "2016-08-05",
+                "2016-08-05",
+                "2016-08-05",
+            ]
+        ),
+    )
+
+    pd.testing.assert_frame_equal(results, expected)
