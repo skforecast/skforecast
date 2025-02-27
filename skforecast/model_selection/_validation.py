@@ -193,7 +193,14 @@ def _backtesting_forecaster(
             for m in metric
         ]
 
-    forecaster._propabilistic_mode = False if interval is None else True
+    if interval is None:
+        forecaster._probabilistic_mode = False
+    elif use_binned_residuals:
+        forecaster._probabilistic_mode = 'binned'
+    else:
+        forecaster._probabilistic_mode = 'no_binned'
+
+    store_in_sample_residuals = True if use_in_sample_residuals else False
 
     folds = cv.split(X=y, as_pandas=False)
     initial_train_size = cv.initial_train_size
@@ -207,7 +214,7 @@ def _backtesting_forecaster(
         forecaster.fit(
             y                         = y.iloc[:initial_train_size, ],
             exog                      = exog_train,
-            store_in_sample_residuals = use_in_sample_residuals
+            store_in_sample_residuals = store_in_sample_residuals
         )
         # This is done to allow parallelization when `refit` is `False`. The initial 
         # Forecaster fit is outside the auxiliary function.
@@ -742,7 +749,13 @@ def _backtesting_forecaster_multiseries(
             for m in metric
         ]
 
-    store_in_sample_residuals = False if interval is None else True
+    if interval is None:
+        forecaster._probabilistic_mode = False
+    elif use_binned_residuals:
+        forecaster._probabilistic_mode = 'binned'
+    else:
+        forecaster._probabilistic_mode = 'no_binned'
+    store_in_sample_residuals = True if use_in_sample_residuals else False
 
     folds = cv.split(X=series, as_pandas=False)
     span_index = cv._extract_index(X=series)

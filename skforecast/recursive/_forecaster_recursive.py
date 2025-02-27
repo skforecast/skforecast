@@ -269,7 +269,7 @@ class ForecasterRecursive(ForecasterBase):
         self.skforecast_version                 = skforecast.__version__
         self.python_version                     = sys.version.split(" ")[0]
         self.forecaster_id                      = forecaster_id
-        self._propabilistic_mode                = True # Todo: explicar que es privado
+        self._probabilistic_mode                = "binned" # TODO: explicar que es privado
 
         self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
         self.window_features, self.window_features_names, self.max_size_window_features = (
@@ -996,7 +996,7 @@ class ForecasterRecursive(ForecasterBase):
             self.X_train_exog_names_out_ = X_train_exog_names_out_
 
         # This is done to save time during fit in functions such as backtesting()
-        if self._propabilistic_mode:
+        if self._probabilistic_mode is not False:
             self._binning_in_sample_residuals(
                 y_true                    = y_train.to_numpy(),
                 y_pred                    = self.regressor.predict(X_train).ravel(),
@@ -1055,24 +1055,26 @@ class ForecasterRecursive(ForecasterBase):
         
         """
         residuals = y_true - y_pred
-        data = pd.DataFrame({'prediction': y_pred, 'residuals': residuals})
 
-        self.binner.fit(y_pred)
-        self.binner_intervals_ = self.binner.intervals_
+        if self._probabilistic_mode == "binned":
+            data = pd.DataFrame({'prediction': y_pred, 'residuals': residuals})
+            self.binner.fit(y_pred)
+            self.binner_intervals_ = self.binner.intervals_
     
-        if store_in_sample_residuals:
-            data['bin'] = self.binner.transform(y_pred).astype(int)
-            self.in_sample_residuals_by_bin_ = (
-                data.groupby('bin')['residuals'].apply(np.array).to_dict()
-            )
+            if store_in_sample_residuals:
+                data['bin'] = self.binner.transform(y_pred).astype(int)
+                self.in_sample_residuals_by_bin_ = (
+                    data.groupby('bin')['residuals'].apply(np.array).to_dict()
+                )
 
-            rng = np.random.default_rng(seed=random_state)
-            max_sample = 10_000 // self.binner.n_bins_
-            for k, v in self.in_sample_residuals_by_bin_.items():
-                if len(v) > max_sample:
-                    sample = v[rng.integers(low=0, high=len(v), size=max_sample)]
-                    self.in_sample_residuals_by_bin_[k] = sample
+                rng = np.random.default_rng(seed=random_state)
+                max_sample = 10_000 // self.binner.n_bins_
+                for k, v in self.in_sample_residuals_by_bin_.items():
+                    if len(v) > max_sample:
+                        sample = v[rng.integers(low=0, high=len(v), size=max_sample)]
+                        self.in_sample_residuals_by_bin_[k] = sample
 
+        if store_in_sample_residuals:       
             if len(residuals) > 10_000:
                 residuals = residuals[
                     rng.integers(low=0, high=len(residuals), size=10_000)
