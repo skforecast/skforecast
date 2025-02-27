@@ -2096,6 +2096,154 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     pd.testing.assert_frame_equal(predictions.head(10), expected_predictions)
 
 
+@pytest.mark.parametrize("interval", 
+                         [0.90, (5, 95)], 
+                         ids = lambda value: f'interval: {value}')
+def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_series_and_exog_dict_interval_conformal(interval):
+    """
+    Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 
+    when series and exog are dictionaries, encoding='ordinal', and interval as 
+    conformal with binned residuals (mocked done in Skforecast v0.15.0).
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+        regressor=LGBMRegressor(
+            n_estimators=30, random_state=123, verbose=-1, max_depth=4
+        ),
+        lags=[1, 7, 14],
+        encoding='ordinal',
+        dropna_from_series=False,
+        transformer_series=None,
+        transformer_exog=StandardScaler(),
+    )
+
+    cv = TimeSeriesFold(
+             initial_train_size = len(series_dict_train['id_1000']),
+             steps              = 24,
+             refit              = False
+         )
+
+    metrics, predictions = backtesting_forecaster_multiseries(
+        forecaster           = forecaster,
+        series               = series_dict,
+        exog                 = exog_dict,
+        cv                   = cv,
+        metric               = ['mean_absolute_error', 'mean_absolute_scaled_error'],
+        interval             = interval,
+        interval_method      = "conformal",
+        use_binned_residuals = True,
+        n_jobs               = 'auto',
+        verbose              = False,
+        show_progress        = True,
+        suppress_warnings    = True
+    )
+
+    expected_metrics = pd.DataFrame(
+        {
+            "levels": {
+                0: "id_1000",
+                1: "id_1001",
+                2: "id_1002",
+                3: "id_1003",
+                4: "id_1004",
+                5: "average",
+                6: "weighted_average",
+                7: "pooling",
+            },
+            "mean_absolute_error": {
+                0: 177.94640447766702,
+                1: 1451.3480109896332,
+                2: np.nan,
+                3: 277.78113362955673,
+                4: 993.6769068120083,
+                5: 725.1881139772163,
+                6: 724.9604804988818,
+                7: 724.960480498882,
+            },
+            "mean_absolute_scaled_error": {
+                0: 0.8178593233613526,
+                1: 4.1364664709651064,
+                2: np.nan,
+                3: 1.1323827428361022,
+                4: 0.8271748048818786,
+                5: 1.72847083551111,
+                6: 2.0965105153721213,
+                7: 1.760615501057647,
+            },
+        }
+    )
+    expected_predictions = pd.DataFrame(
+        {
+            "level": [
+                "id_1000",
+                "id_1001",
+                "id_1003",
+                "id_1004",
+                "id_1000",
+                "id_1001",
+                "id_1003",
+                "id_1004",
+                "id_1000",
+                "id_1001",
+            ],
+            "pred": [
+                1559.6918278739745,
+                2934.363291873329,
+                3392.6095502790795,
+                7097.054479229451,
+                1572.8044765344362,
+                3503.7475024125847,
+                3118.0493908325134,
+                8301.53364484904,
+                1537.6749468304602,
+                3354.2752034001587,
+            ],
+            "lower_bound": [
+                1336.857463880777,
+                2569.1917715600575,
+                2556.6487812039504,
+                5093.465893848657,
+                1349.9701125412387,
+                3138.575982099313,
+                2282.0886217573843,
+                7895.559245312443,
+                1314.8405828372627,
+                2989.103683086887,
+            ],
+            "upper_bound": [
+                1782.526191867172,
+                3299.534812186601,
+                4228.570319354209,
+                9100.643064610245,
+                1795.6388405276336,
+                3868.9190227258564,
+                3954.0101599076424,
+                8707.508044385637,
+                1760.5093108236576,
+                3719.4467237134304,
+            ],
+        },
+        index=pd.DatetimeIndex(
+            [
+                "2016-08-01",
+                "2016-08-01",
+                "2016-08-01",
+                "2016-08-01",
+                "2016-08-02",
+                "2016-08-02",
+                "2016-08-02",
+                "2016-08-02",
+                "2016-08-03",
+                "2016-08-03",
+            ],
+            dtype="datetime64[ns]",
+            freq=None,
+        )
+    )
+
+    pd.testing.assert_frame_equal(metrics, expected_metrics)
+    pd.testing.assert_frame_equal(predictions.head(10), expected_predictions)
+
+
 # ======================================================================================================================
 # ======================================================================================================================
 # ForecasterDirectMultiVariate

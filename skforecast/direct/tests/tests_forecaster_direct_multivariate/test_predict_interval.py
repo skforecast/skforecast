@@ -221,7 +221,7 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_5_
 @pytest.mark.parametrize("interval", 
                          [0.95, (2.5, 97.5)], 
                          ids = lambda value: f'interval: {value}')
-def test_predict_interval_conformal_output_when_regressor_is_LinearRegression_with_transform_y(interval):
+def test_predict_interval_conformal_output_when_regressor_is_LinearRegression(interval):
     """
     Test predict output when using LinearRegression as regressor and StandardScaler
     and conformal prediction.
@@ -240,8 +240,8 @@ def test_predict_interval_conformal_output_when_regressor_is_LinearRegression_wi
 
     expected = pd.DataFrame(
                    data = np.array([
-                              [0.63114259,  0.23590963,  1.02637556],
-                              [0.3800417 , -0.01519127,  0.77527467],
+                              [0.63114259,  0.23482357,  1.02746162],
+                              [0.3800417 , -0.05044528,  0.81052868],
                               [0.33255977, -0.0626732 ,  0.72779273]]),
                    index = pd.RangeIndex(start=50, stop=53, step=1),
                    columns = ['pred', 'lower_bound', 'upper_bound']

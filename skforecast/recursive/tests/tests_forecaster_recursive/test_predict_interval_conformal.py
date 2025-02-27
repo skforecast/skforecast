@@ -217,3 +217,32 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
                 )
 
     pd.testing.assert_frame_equal(results, expected)
+
+
+def test_predict_interval_conformal_output_with_differentiation():
+    """
+    Test predict output when using differentiation.
+    """
+    forecaster = ForecasterRecursive(
+                     regressor       = LinearRegression(),
+                     lags            = 3,
+                     transformer_y   = StandardScaler(),
+                     differentiation = 1
+                 )
+    forecaster.fit(y=y)
+    results = forecaster._predict_interval_conformal(
+        steps=5, nominal_coverage=0.95, use_binned_residuals=False
+    )
+
+    expected = pd.DataFrame(
+                   data = np.array([
+                              [0.72212358,  0.22846486,  1.21578231],
+                              [0.69494075, -0.2923767 ,  1.6822582 ],
+                              [0.65581692, -0.82515925,  2.1367931 ],
+                              [0.68666775, -1.28796715,  2.66130264],
+                              [0.70351892, -1.7647747 ,  3.17181254]]),
+                   index = pd.RangeIndex(start=50, stop=55, step=1),
+                   columns = ['pred', 'lower_bound', 'upper_bound']
+               )
+    
+    pd.testing.assert_frame_equal(results, expected)
