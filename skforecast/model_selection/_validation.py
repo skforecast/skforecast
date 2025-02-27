@@ -336,7 +336,7 @@ def _backtesting_forecaster(
         "forecaster": forecaster,
         "y": y,
         "exog": exog,
-        "store_in_sample_residuals": use_in_sample_residuals,
+        "store_in_sample_residuals": store_in_sample_residuals,
         "gap": gap,
         "interval": interval,
         "interval_method": interval_method,

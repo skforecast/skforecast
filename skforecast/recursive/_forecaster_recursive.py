@@ -1043,8 +1043,10 @@ class ForecasterRecursive(ForecasterBase):
         y_pred : numpy ndarray
             Predicted values of the time series.
         store_in_sample_residuals : bool, default True
-            If `True`, in-sample residuals will be stored in the forecaster object.
-            If `False`, only the binned intervals are stored.
+            If `True`, in-sample residuals will be stored in the forecaster object
+            after fitting (`in_sample_residuals_` and `in_sample_residuals_by_bin_`
+            attributes).
+            If `False`, only the intervals of the bins are stored.
         random_state : int, default 123
             Set a seed for the random generator so that the stored sample 
             residuals are always deterministic.
