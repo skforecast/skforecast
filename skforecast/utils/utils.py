@@ -1264,8 +1264,8 @@ def check_residuals_input(
         ):
             raise ValueError(
                 f"`forecaster.{literal}` is either None or empty. Use "
-                f"`store_in_sample_residuals = True` when fitting the "
-                f"forecaster to store in-sample residuals."
+                f"`store_in_sample_residuals = True` when fitting the forecaster "
+                f"or use the `set_in_sample_residuals()` method before predicting."
             )
         
         # NOTE: If use_binned_residuals, residuals is {bin: residuals}

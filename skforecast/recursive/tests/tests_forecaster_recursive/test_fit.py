@@ -90,7 +90,7 @@ def test_fit_in_sample_residuals_stored():
     Test that values of in_sample_residuals_ are stored after fitting.
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
-    forecaster.fit(y=pd.Series(np.arange(5)))
+    forecaster.fit(y=pd.Series(np.arange(5)), store_in_sample_residuals=True)
     results = forecaster.in_sample_residuals_
     expected = np.array([0., 0.])
 
@@ -104,10 +104,10 @@ def test_fit_same_residuals_when_residuals_greater_than_10000():
     Testing with two different forecaster.
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
-    forecaster.fit(y=pd.Series(np.arange(12_000)))
+    forecaster.fit(y=pd.Series(np.arange(12_000)), store_in_sample_residuals=True)
     results_1 = forecaster.in_sample_residuals_
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
-    forecaster.fit(y=pd.Series(np.arange(12_000)))
+    forecaster.fit(y=pd.Series(np.arange(12_000)), store_in_sample_residuals=True)
     results_2 = forecaster.in_sample_residuals_
     
     assert isinstance(results_1, np.ndarray)
@@ -126,7 +126,7 @@ def test_fit_in_sample_residuals_by_bin_stored():
                      lags          = 5,
                      binner_kwargs = {'n_bins': 3}
                  )
-    forecaster.fit(y)
+    forecaster.fit(y, store_in_sample_residuals=True)
 
     X_train, y_train = forecaster.create_train_X_y(y)
     forecaster.regressor.fit(X_train, y_train)
@@ -152,9 +152,9 @@ def test_fit_in_sample_residuals_by_bin_stored():
     }
 
     expected_3 = {
-        0.0: (0.31791969404305154, 0.47312737276420375),
-        1.0: (0.47312737276420375, 0.5259220171775293),
-        2.0: (0.5259220171775293, 0.6492244994657664)
+        0: (0.31791969404305154, 0.47312737276420375),
+        1: (0.47312737276420375, 0.5259220171775293),
+        2: (0.5259220171775293, 0.6492244994657664)
     }
 
     np.testing.assert_array_almost_equal(
@@ -171,10 +171,36 @@ def test_fit_in_sample_residuals_by_bin_stored():
 def test_fit_in_sample_residuals_not_stored():
     """
     Test that values of in_sample_residuals_ are not stored after fitting
-    when `store_in_sample_residuals=False`.
+    when `store_in_sample_residuals=False`. Binner intervals are stored.
+    """
+    forecaster = ForecasterRecursive(
+                     regressor     = LinearRegression(),
+                     lags          = 5,
+                     binner_kwargs = {'n_bins': 3}
+                 )
+    forecaster.fit(y, store_in_sample_residuals=False)
+
+    expected_binner_intervals_ = {
+        0: (0.31791969404305154, 0.47312737276420375),
+        1: (0.47312737276420375, 0.5259220171775293),
+        2: (0.5259220171775293, 0.6492244994657664)
+    }
+
+    assert forecaster.in_sample_residuals_ is None
+    assert forecaster.in_sample_residuals_by_bin_ is None
+    for k in expected_binner_intervals_.keys():
+        assert forecaster.binner_intervals_[k][0] == approx(expected_binner_intervals_[k][0])
+        assert forecaster.binner_intervals_[k][1] == approx(expected_binner_intervals_[k][1])
+
+
+def test_fit_in_sample_residuals_not_stored_probabilistic_mode_False():
+    """
+    Test that values of in_sample_residuals_ are not stored after fitting
+    when `store_in_sample_residuals=False` and _probabilistic_mode=False.
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
-    forecaster.fit(y=pd.Series(np.arange(5)), store_in_sample_residuals=False)
+    forecaster._probabilistic_mode = False
+    forecaster.fit(y=pd.Series(np.arange(10), name='y'), store_in_sample_residuals=False)
 
     assert forecaster.in_sample_residuals_ is None
     assert forecaster.in_sample_residuals_by_bin_ is None

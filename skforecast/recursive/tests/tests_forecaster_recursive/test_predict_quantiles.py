@@ -25,7 +25,7 @@ def test_predict_quantiles_output_when_forecaster_is_LinearRegression_steps_is_2
                      transformer_exog = StandardScaler()
                  )
 
-    forecaster.fit(y=y, exog=exog)
+    forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True)
     results = forecaster.predict_quantiles(
                   steps                   = 2,
                   exog                    = exog_predict,
@@ -58,7 +58,7 @@ def test_predict_quantiles_output_when_forecaster_is_LinearRegression_steps_is_2
                      binner_kwargs    = {'n_bins': 15}
                  )
     
-    forecaster.fit(y=y, exog=exog)
+    forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True)
     forecaster.out_sample_residuals_ = forecaster.in_sample_residuals_
     results = forecaster.predict_quantiles(
                   steps                   = 2,

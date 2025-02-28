@@ -172,14 +172,15 @@ def test_out_sample_residuals_by_bin_and_in_sample_reseiduals_by_bin_equivalence
                      lags = 5,
                      binner_kwargs = {'n_bins': 3}
                  )
-    forecaster.fit(y)
+    forecaster.fit(y, store_in_sample_residuals=True)
+
     X_train, y_train = forecaster.create_train_X_y(y)
     forecaster.regressor.fit(X_train, y_train)
     predictions = forecaster.regressor.predict(X_train)
 
     forecaster.set_out_sample_residuals(
-        y_true=y_train,
-        y_pred=predictions
+        y_true = y_train,
+        y_pred = predictions
     )
 
     assert forecaster.in_sample_residuals_by_bin_.keys() == forecaster.out_sample_residuals_by_bin_.keys()
@@ -227,7 +228,7 @@ def test_set_out_sample_residuals_when_there_are_no_residuals_for_some_bins():
     forecaster = ForecasterRecursive(
         regressor=LinearRegression(), lags=5, binner_kwargs={"n_bins": 3}
     )
-    forecaster.fit(y)
+    forecaster.fit(y, store_in_sample_residuals=True)
     y_pred = y.loc[y > 10]
     y_true = y_pred + rng.normal(loc=0, scale=1, size=len(y_pred))
 

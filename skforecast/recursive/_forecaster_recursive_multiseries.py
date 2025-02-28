@@ -340,6 +340,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         Version of python used to create the forecaster.
     forecaster_id : str, int
         Name used as an identifier of the forecaster.
+    _probabilistic_mode: str, bool
+        Private attribute used to indicate whether the forecaster should perform 
+        some calculations during backtesting.
 
     Notes
     -----
@@ -416,7 +419,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self.skforecast_version                 = skforecast.__version__
         self.python_version                     = sys.version.split(" ")[0]
         self.forecaster_id                      = forecaster_id
-        self._probabilistic_mode                = "binned" # TODO: explicar que es privado
+        self._probabilistic_mode                = "binned"
 
         self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
         self.window_features, self.window_features_names, self.max_size_window_features = (
