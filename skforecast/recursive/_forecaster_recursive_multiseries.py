@@ -122,7 +122,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         - If `None`, all levels have the same weight.
     differentiation : int, dict, default None
         Order of differencing applied to the time series before training the forecaster.
-        The order of differentiation is the numberof times the differencing operation 
+        The order of differentiation is the number of times the differencing operation 
         is applied to a time series. Differencing involves computing the differences 
         between consecutive data points in the series. Before returning a prediction, 
         the differencing operation is reversed.
@@ -3177,7 +3177,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         params: dict[str, object]
     ) -> None:
         """
-        Set new values to the parameters of the scikit learn model stored in the
+        Set new values to the parameters of the scikit-learn model stored in the
         forecaster.
         
         Parameters
@@ -3446,7 +3446,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
             # NOTE: when encoding is None, all levels are combined in '_unknown_level'.
             if list(self.out_sample_residuals_.keys()) != ['_unknown_level']:
-                # To latelly refresh completly _unknown_level
+                # To update completely _unknown_level later
                 self.out_sample_residuals_.pop('_unknown_level', None)
             
             residuals_all_levels = np.concatenate(

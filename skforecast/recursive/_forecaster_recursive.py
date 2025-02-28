@@ -1007,9 +1007,6 @@ class ForecasterRecursive(ForecasterBase):
                 random_state              = random_state
             )
 
-        # The last time window of training data is stored so that lags needed as
-        # predictors in the first iteration of `predict()` can be calculated. It
-        # also includes the values need to calculate the diferenctiation.
         if store_last_window:
             self.last_window_ = (
                 y.iloc[-self.window_size:]
@@ -2078,7 +2075,7 @@ class ForecasterRecursive(ForecasterBase):
         params: dict[str, object]
     ) -> None:
         """
-        Set new values to the parameters of the scikit learn model stored in the
+        Set new values to the parameters of the scikit-learn model stored in the
         forecaster.
         
         Parameters

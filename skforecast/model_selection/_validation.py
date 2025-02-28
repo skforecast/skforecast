@@ -359,7 +359,7 @@ def _backtesting_forecaster(
         fit_fold = fold[-1]
         if i == 0 or fit_fold:
             # NOTE: When using a scaled metric, `y_train` doesn't include the
-            # first window_size observartions used to create the predictors and/or
+            # first window_size observations used to create the predictors and/or
             # rolling features.
             train_iloc_start = fold[0][0] + window_size
             train_iloc_end = fold[0][1]

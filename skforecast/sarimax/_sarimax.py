@@ -52,7 +52,7 @@ class Sarimax(BaseEstimator, RegressorMixin):
 
     This class wraps the statsmodels.tsa.statespace.sarimax.SARIMAX model [1]_ [2]_ 
     to follow the scikit-learn style. The following docstring is based on the 
-    statmodels documentation and it is highly recommended to visit their site 
+    statsmodels documentation and it is highly recommended to visit their site 
     for the best level of detail.
 
     Parameters
@@ -104,7 +104,7 @@ class Sarimax(BaseEstimator, RegressorMixin):
         discards the first `s*D + d` initial rows but results in a smaller 
         state-space formulation. 
         - If `False`, the full SARIMAX model is put in state-space form so 
-        that all datapoints can be used in estimation.
+        that all data points can be used in estimation.
     enforce_stationarity : bool, default True
         Whether or not to transform the AR parameters to enforce stationarity
         in the autoregressive component of the model.

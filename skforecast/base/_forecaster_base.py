@@ -228,7 +228,7 @@ class ForecasterBase(ABC):
     @abstractmethod
     def set_params(self, params: dict[str, object]) -> None:
         """
-        Set new values to the parameters of the scikit learn model stored in the
+        Set new values to the parameters of the scikit-learn model stored in the
         forecaster.
         
         Parameters

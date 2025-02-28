@@ -1694,7 +1694,7 @@ class ForecasterRnn(ForecasterBase):
 
     def set_params(self, params: dict) -> None:  # TODO testear
         """
-        Set new values to the parameters of the scikit learn model stored in the
+        Set new values to the parameters of the scikit-learn model stored in the
         forecaster. It is important to note that all models share the same
         configuration of parameters and hyperparameters.
 

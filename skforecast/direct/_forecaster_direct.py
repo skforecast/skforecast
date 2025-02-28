@@ -1743,7 +1743,7 @@ class ForecasterDirect(ForecasterBase):
                 ResidualsUsageWarning
             )
 
-        # NOTE: Predictors and Residuals are transformed and differenced.  
+        # NOTE: Predictors and residuals are transformed and differentiated
         regressors = [self.regressors_[step] for step in steps]
         with warnings.catch_warnings():
             warnings.filterwarnings(
@@ -1884,7 +1884,7 @@ class ForecasterDirect(ForecasterBase):
             residuals = self.out_sample_residuals_
             residuals_by_bin = self.out_sample_residuals_by_bin_
 
-        # NOTE: Predictors and Residuals are transformed and differenced.  
+        # NOTE: Predictors and residuals are transformed and differentiated  
         regressors = [self.regressors_[step] for step in steps]
         with warnings.catch_warnings():
             warnings.filterwarnings(
@@ -2264,7 +2264,7 @@ class ForecasterDirect(ForecasterBase):
         params: dict[str, object]
     ) -> None:
         """
-        Set new values to the parameters of the scikit learn model stored in the
+        Set new values to the parameters of the scikit-learn model stored in the
         forecaster. It is important to note that all models share the same 
         configuration of parameters and hyperparameters.
         
