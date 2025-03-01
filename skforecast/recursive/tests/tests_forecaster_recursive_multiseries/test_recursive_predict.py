@@ -387,7 +387,7 @@ def test_recursive_predict_output_with_residuals_binned():
                      transformer_series = None,
                      binner_kwargs      = {'n_bins': 2}
                  )
-    forecaster.fit(series=series_2)
+    forecaster.fit(series=series_2, store_in_sample_residuals=True)
 
     last_window, exog_values_dict, levels, _ = (
         forecaster._create_predict_inputs(steps=5)

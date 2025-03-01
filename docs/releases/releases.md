@@ -16,6 +16,8 @@ The main changes in this release are:
 
 + Probabilistic predictions in <code>[ForecasterRecursiveMultiSeries]</code> and <code>[ForecasterDirectMultiVariate]</code> are now returned as a long format DataFrame.
 
++ store_in_sample_residuals default False
+
 
 **Added**
 
@@ -50,6 +52,8 @@ The main changes in this release are:
 
 **Changed**
 
++ store_in_sample_residuals default False
++ 
 + Predictions from `predict_bootstrapping` in <code>[ForecasterRecursiveMultiSeries]</code> and <code>[ForecasterDirectMultiVariate]</code> are now returned as a long format DataFrame with the bootstrapping predictions. The columns are `level`, `pred_boot_0`, `pred_boot_1`, ..., `pred_boot_n_boot`.
 
 + Predictions from `predict_interval` in <code>[ForecasterRecursiveMultiSeries]</code> and <code>[ForecasterDirectMultiVariate]</code> are now returned as long format DataFrame with the predictions and the lower and upper bounds of the estimated interval. The columns are `level`, `pred`, `lower_bound`, `upper_bound`.

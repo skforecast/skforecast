@@ -471,7 +471,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             warnings.warn(
                 "When using a linear model, it is recommended to use a transformer_series "
                 "to ensure all series are in the same scale. You can use, for example, a "
-                "`StandardScaler` from sklearn.preprocessing."
+                "`StandardScaler` from sklearn.preprocessing.",
+                DataTransformationWarning
             )
 
         if isinstance(self.transformer_series, dict):
@@ -1634,7 +1635,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
         exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
         store_last_window: bool | list[str] = True,
-        store_in_sample_residuals: bool = True,
+        store_in_sample_residuals: bool = False,
         suppress_warnings: bool = False
     ) -> None:
         """
@@ -1656,7 +1657,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             - If `True`, last window is stored for all series. 
             - If `list`, last window is stored for the series present in the list.
             - If `False`, last window is not stored.
-        store_in_sample_residuals : bool, default True
+        store_in_sample_residuals : bool, default False
             If `True`, in-sample residuals will be stored in the forecaster object
             after fitting (`in_sample_residuals_` and `in_sample_residuals_by_bin_`
             attributes).
@@ -1787,10 +1788,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             # NOTE: the _unknown_level is a random sample of 10_000 residuals of all levels.
             self._binning_in_sample_residuals(
                 level                     = '_unknown_level',
-                y_true                    = y_train[mask],
-                y_pred                    = y_pred[mask],
+                y_true                    = y_train,
+                y_pred                    = y_pred,
                 store_in_sample_residuals = store_in_sample_residuals,
             )
+        
         if not store_in_sample_residuals:
             # NOTE: create empty dictionaries to avoid errors when calling predict()
             if self.encoding is not None:
@@ -1811,7 +1813,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         level: str,
         y_true: np.ndarray,
         y_pred: np.ndarray,
-        store_in_sample_residuals: bool = True,
+        store_in_sample_residuals: bool = False,
         random_state: int = 123
     ) -> None:
         """
@@ -1835,7 +1837,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             True values of the time series.
         y_pred : numpy ndarray
             Predicted values of the time series.
-        store_in_sample_residuals : bool, default True
+        store_in_sample_residuals : bool, default False
             If `True`, in-sample residuals will be stored in the forecaster object.
             If `False`, only the binned intervals are stored.
         random_state : int, default 123
@@ -1858,27 +1860,25 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             self.binner[level].fit(y_pred)
             self.binner_intervals_[level] = self.binner[level].intervals_
 
-            if store_in_sample_residuals:
+        if store_in_sample_residuals:
+            rng = np.random.default_rng(seed=random_state)
+            if self._probabilistic_mode == "binned":
                 data['bin'] = self.binner[level].transform(y_pred).astype(int)
                 self.in_sample_residuals_by_bin_[level] = (
                     data.groupby('bin')['residuals'].apply(np.array).to_dict()
                 )
 
-                rng = np.random.default_rng(seed=random_state)
                 max_sample = 10_000 // self.binner[level].n_bins_
                 for k, v in self.in_sample_residuals_by_bin_[level].items():
                     if len(v) > max_sample:
                         sample = v[rng.integers(low=0, high=len(v), size=max_sample)]
                         self.in_sample_residuals_by_bin_[level][k] = sample
 
-        if store_in_sample_residuals:
             if len(residuals) > 10_000:
                 residuals = residuals[
                     rng.integers(low=0, high=len(residuals), size=10_000)
                 ]
-            
-            self.in_sample_residuals_[level] = residuals
-        
+            self.in_sample_residuals_[level] = residuals        
 
     def _create_predict_inputs(
         self,

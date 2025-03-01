@@ -1056,6 +1056,7 @@ class ForecasterRecursive(ForecasterBase):
         None
         
         """
+
         residuals = y_true - y_pred
 
         if self._probabilistic_mode == "binned":
@@ -1063,20 +1064,20 @@ class ForecasterRecursive(ForecasterBase):
             self.binner.fit(y_pred)
             self.binner_intervals_ = self.binner.intervals_
     
-            if store_in_sample_residuals:
+        if store_in_sample_residuals:
+            rng = np.random.default_rng(seed=random_state)
+            if self._probabilistic_mode == "binned":
                 data['bin'] = self.binner.transform(y_pred).astype(int)
                 self.in_sample_residuals_by_bin_ = (
                     data.groupby('bin')['residuals'].apply(np.array).to_dict()
                 )
 
-                rng = np.random.default_rng(seed=random_state)
                 max_sample = 10_000 // self.binner.n_bins_
                 for k, v in self.in_sample_residuals_by_bin_.items():
                     if len(v) > max_sample:
                         sample = v[rng.integers(low=0, high=len(v), size=max_sample)]
                         self.in_sample_residuals_by_bin_[k] = sample
-
-        if store_in_sample_residuals:       
+   
             if len(residuals) > 10_000:
                 residuals = residuals[
                     rng.integers(low=0, high=len(residuals), size=10_000)

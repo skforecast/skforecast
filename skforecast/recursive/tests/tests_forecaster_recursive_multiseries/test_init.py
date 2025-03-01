@@ -5,6 +5,7 @@ import pytest
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
+from ....exceptions import DataTransformationWarning
 from ....preprocessing import RollingFeatures, TimeSeriesDifferentiator
 from ....recursive import ForecasterRecursiveMultiSeries
 
@@ -92,7 +93,7 @@ def test_ForecasterRecursiveMultiSeries_init_not_scaling_with_linear_model():
         "to ensure all series are in the same scale. You can use, for example, a "
         "`StandardScaler` from sklearn.preprocessing."
     )
-    with pytest.warns(UserWarning, match = warn_msg):
+    with pytest.warns(DataTransformationWarning, match = warn_msg):
         ForecasterRecursiveMultiSeries(
             regressor = LinearRegression(),
             lags      = [1, 2, 3]

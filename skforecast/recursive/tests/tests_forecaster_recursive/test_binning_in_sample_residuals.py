@@ -64,7 +64,7 @@ def test_binning_in_sample_residuals_stored():
 
 def test_binning_in_sample_residuals_store_in_sample_residuals_False():
     """
-    Test that _binning_in_sample_residuals stores binned residuals.
+    Test that _binning_in_sample_residuals store_in_sample_residuals False.
     """
 
     forecaster = ForecasterRecursive(
