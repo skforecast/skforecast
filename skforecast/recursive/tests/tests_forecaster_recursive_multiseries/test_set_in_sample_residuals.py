@@ -1,4 +1,4 @@
-# Unit test set_in_sample_residuals ForecasterRecursive
+# Unit test set_in_sample_residuals ForecasterRecursiveMultiSeries
 # ==============================================================================
 import re
 import pytest
@@ -6,50 +6,53 @@ import numpy as np
 import pandas as pd
 from sklearn.exceptions import NotFittedError
 from sklearn.linear_model import LinearRegression
-from skforecast.recursive import ForecasterRecursive
+from skforecast.recursive import ForecasterRecursiveMultiSeries
 
 # Fixtures
-from .fixtures_forecaster_recursive import y, exog
+from .fixtures_forecaster_recursive_multiseries import series, exog
 
 
 def test_set_in_sample_residuals_NotFittedError_when_forecaster_not_fitted():
     """
     Test NotFittedError is raised when forecaster is not fitted.
     """
-    forecaster = ForecasterRecursive(LinearRegression(), lags=3)
+    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
 
     err_msg = re.escape(
         "This forecaster is not fitted yet. Call `fit` with appropriate "
         "arguments before using `set_in_sample_residuals()`."
     )
     with pytest.raises(NotFittedError, match = err_msg):
-        forecaster.set_in_sample_residuals(y=y)
+        forecaster.set_in_sample_residuals(series=series)
 
 
 @pytest.mark.parametrize("diff_index", 
                          [pd.RangeIndex(start=50, stop=100), 
                           pd.date_range(start='1991-07-01', periods=50, freq='MS')], 
                          ids=lambda idx: f'diff_index: {idx[[0, -1]]}')
-def test_set_in_sample_residuals_IndexError_when_y_has_different_index_than_training(diff_index):
+def test_set_in_sample_residuals_IndexError_when_series_has_different_index_than_training(diff_index):
     """
-    Test IndexError is raised when y has different index than training.
+    Test IndexError is raised when series has different index than training.
     """
-    forecaster = ForecasterRecursive(LinearRegression(), lags=3)
-    forecaster.fit(y=y, exog=exog)
+    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
+    forecaster.fit(series=series, exog=exog['exog_1'])
 
-    y_diff_index = y.copy()
-    y_diff_index.index = diff_index
-    y_diff_index_range = y_diff_index.index[[0, -1]]
+    series_diff_index = series.copy()
+    series_diff_index.index = diff_index
+    series_diff_index_range = series_diff_index.index[[0, -1]]
+
+    exog_diff_index = exog.copy()
+    exog_diff_index.index = diff_index
 
     err_msg = re.escape(
-        f"The index range of `y` does not match the range "
+        f"The index range for series '1' does not match the range "
         f"used during training. Please ensure the index is aligned "
         f"with the training data.\n"
-        f"    Expected : {forecaster.training_range_}\n"
-        f"    Received : {y_diff_index_range}"
+        f"    Expected : {forecaster.training_range_['1']}\n"
+        f"    Received : {series_diff_index_range}"
     )
     with pytest.raises(IndexError, match = err_msg):
-        forecaster.set_in_sample_residuals(y=y_diff_index)
+        forecaster.set_in_sample_residuals(series=series_diff_index, exog=exog_diff_index['exog_1'])
 
 
 def test_set_in_sample_residuals_ValueError_when_X_train_features_names_out_not_the_same():

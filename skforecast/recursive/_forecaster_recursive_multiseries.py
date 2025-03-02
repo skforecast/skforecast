@@ -1636,6 +1636,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
         store_last_window: bool | list[str] = True,
         store_in_sample_residuals: bool = False,
+        random_state: int = 123,
         suppress_warnings: bool = False
     ) -> None:
         """
@@ -1661,6 +1662,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             If `True`, in-sample residuals will be stored in the forecaster object
             after fitting (`in_sample_residuals_` and `in_sample_residuals_by_bin_`
             attributes).
+        random_state : int, default 123
+            Set a seed for the random generator so that the stored sample 
+            residuals are always deterministic.
         suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the training 
             process. See skforecast.exceptions.warn_skforecast_categories for more
@@ -1783,6 +1787,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                         y_true                    = y_train[mask],
                         y_pred                    = y_pred[mask],
                         store_in_sample_residuals = store_in_sample_residuals,
+                        random_state              = random_state
                     )
             
             # NOTE: the _unknown_level is a random sample of 10_000 residuals of all levels.
@@ -1791,6 +1796,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 y_true                    = y_train,
                 y_pred                    = y_pred,
                 store_in_sample_residuals = store_in_sample_residuals,
+                random_state              = random_state
             )
         
         if not store_in_sample_residuals:
@@ -1807,7 +1813,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         
         set_skforecast_warnings(suppress_warnings, action='default')
 
-    
     def _binning_in_sample_residuals(
         self,
         level: str,
@@ -3310,6 +3315,121 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                         self.differentiator[series].set_params(window_size=self.window_size)
             else:
                 self.differentiator.set_params(window_size=self.window_size)
+
+    def set_in_sample_residuals(
+        self,
+        series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
+        exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
+        random_state: int = 123
+    ) -> None:
+        """
+        Set in-sample residuals in case they were not calculated during the
+        training process. 
+        
+        In-sample residuals are calculated as the difference between the true 
+        values and the predictions made by the forecaster using the training 
+        data. The following internal attributes are updated:
+
+        + `in_sample_residuals_`: residuals stored in a numpy ndarray.
+        + `binner_intervals_`: intervals used to bin the residuals are calculated
+        using the quantiles of the predicted values.
+        + `in_sample_residuals_by_bin_`: residuals are binned according to the
+        predicted value they are associated with and stored in a dictionary, where
+        the keys are the  intervals of the predicted values and the values are
+        the residuals associated with that range. 
+
+        A total of 10_000 residuals are stored in the attribute `in_sample_residuals_`.
+        If the number of residuals is greater than 10_000, a random sample of
+        10_000 residuals is stored. The number of residuals stored per bin is
+        limited to `10_000 // self.binner.n_bins_`.
+        
+        Parameters
+        ----------
+        series : pandas DataFrame, dict
+            Training time series.
+        exog : pandas Series, pandas DataFrame, dict, default None
+            Exogenous variable/s included as predictor/s.
+        random_state : int, default 123
+            Sets a seed to the random sampling for reproducible output.
+
+        Returns
+        -------
+        None
+
+        """
+
+        if not self.is_fitted:
+            raise NotFittedError(
+                "This forecaster is not fitted yet. Call `fit` with appropriate "
+                "arguments before using `set_in_sample_residuals()`."
+            )
+
+        (
+            X_train,
+            y_train,
+            series_indexes,
+            _,
+            X_train_series_names_in_,
+            *_
+        ) = self._create_train_X_y(
+                series=series, exog=exog, store_last_window=False
+            )
+        
+        # NOTE: Same series names as training is checked in _create_train_X_y.
+        series_index_range = {k: v[[0, -1]] for k, v in series_indexes.items()}
+        for level in self.training_range_.keys():
+            if not series_index_range[level].equals(self.training_range_[level]):
+                raise IndexError(
+                    f"The index range for series '{level}' does not match the range "
+                    f"used during training. Please ensure the index is aligned "
+                    f"with the training data.\n"
+                    f"    Expected : {self.training_range_[level]}\n"
+                    f"    Received : {series_index_range[level]}"
+                )
+        
+        X_train_regressor = (
+            X_train
+            if self.encoding is not None
+            else X_train.drop(columns="_level_skforecast")
+        )
+        X_train_features_names_out_ = X_train_regressor.columns.to_list()
+        if not X_train_features_names_out_ == self.X_train_features_names_out_:
+            raise ValueError(
+                f"Feature mismatch detected after matrix creation. The features "
+                f"generated from the provided data do not match those used during "
+                f"the training process. To correctly set in-sample residuals, "
+                f"ensure that the same data and preprocessing steps are applied.\n"
+                f"    Expected output : {self.X_train_features_names_out_}\n"
+                f"    Current output  : {X_train_features_names_out_}"
+            )
+        
+        self.in_sample_residuals_ = {}
+        self.in_sample_residuals_by_bin_ = {}
+        y_pred = self.regressor.predict(X_train_regressor)
+        if self.encoding is not None:
+            for level in X_train_series_names_in_:
+                if self.encoding == 'onehot':
+                    mask = X_train[level].to_numpy() == 1.
+                else:
+                    encoded_value = self.encoding_mapping_[level]
+                    mask = X_train['_level_skforecast'].to_numpy() == encoded_value
+
+                self._binning_in_sample_residuals(
+                    level                     = level,
+                    y_true                    = y_train[mask],
+                    y_pred                    = y_pred[mask],
+                    store_in_sample_residuals = True,
+                    random_state              = random_state
+                )
+        
+        # NOTE: the _unknown_level is a random sample of 10_000 residuals of all levels.
+        self._binning_in_sample_residuals(
+            level                     = '_unknown_level',
+            y_true                    = y_train,
+            y_pred                    = y_pred,
+            store_in_sample_residuals = True,
+            random_state              = random_state
+        )
 
     def set_out_sample_residuals(
         self, 

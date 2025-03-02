@@ -2254,11 +2254,13 @@ class ForecasterRecursive(ForecasterBase):
         )[1][[0, -1]]
         if not y_index_range.equals(self.training_range_):
             raise IndexError(
-                f"The time series `y` must be the same as the one used in the "
-                f"training process. The index of `y` must be aligned with the "
-                f"training data. Expected index range: {self.training_range_}. "
+                f"The index range of `y` does not match the range "
+                f"used during training. Please ensure the index is aligned "
+                f"with the training data.\n"
+                f"    Expected : {self.training_range_}\n"
+                f"    Received : {y_index_range}"
             )
-
+        
         (
             X_train,
             y_train,
@@ -2271,11 +2273,12 @@ class ForecasterRecursive(ForecasterBase):
             
         if not X_train_features_names_out_ == self.X_train_features_names_out_:
             raise ValueError(
-                f"After creating the matrices, features names are different from "
-                f"the ones used in the training process. To set in-sample residuals, "
-                f"the same data used in the training process must be used.\n"
-                f"    Expected : {self.X_train_features_names_out_}\n"
-                f"    Got      : {X_train_features_names_out_}"
+                f"Feature mismatch detected after matrix creation. The features "
+                f"generated from the provided data do not match those used during "
+                f"the training process. To correctly set in-sample residuals, "
+                f"ensure that the same data and preprocessing steps are applied.\n"
+                f"    Expected output : {self.X_train_features_names_out_}\n"
+                f"    Current output  : {X_train_features_names_out_}"
             )
 
         self._binning_in_sample_residuals(
