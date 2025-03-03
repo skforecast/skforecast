@@ -1077,7 +1077,7 @@ class ForecasterDirect(ForecasterBase):
         y: pd.Series,
         exog: pd.Series | pd.DataFrame | None = None,
         store_last_window: bool = True,
-        store_in_sample_residuals: bool = True,
+        store_in_sample_residuals: bool = False,
         random_state: int = 123
     ) -> None:
         """
@@ -1096,7 +1096,7 @@ class ForecasterDirect(ForecasterBase):
             that y[i] is regressed on exog[i].
         store_last_window : bool, default True
             Whether or not to store the last window (`last_window_`) of training data.
-        store_in_sample_residuals : bool, default True
+        store_in_sample_residuals : bool, default False
             If `True`, in-sample residuals will be stored in the forecaster object
             after fitting (`in_sample_residuals_` and `in_sample_residuals_by_bin_`
             attributes).
@@ -1188,21 +1188,20 @@ class ForecasterDirect(ForecasterBase):
                     **self.fit_kwargs
                 )
 
-            # This is done to save time during fit in functions such as backtesting()
-            if store_in_sample_residuals:
+            # NOTE: This is done to save time during fit in functions such as backtesting()
+            y_true_step = None
+            y_pred_step = None
+            residuals = None
+            if self._probabilistic_mode is not False:
                 y_true_step = y_train_step.to_numpy()
                 y_pred_step = regressor.predict(X_train_step)
-                residuals = y_true_step - y_pred_step
-
-                if len(residuals) > 10_000:
-                    rng = np.random.default_rng(seed=random_state)
-                    residuals = residuals[
-                        rng.integers(low=0, high=len(residuals), size=10_000)
-                    ]
-            else:
-                y_true_step = None
-                y_pred_step = None
-                residuals = None
+                if store_in_sample_residuals:
+                    residuals = y_true_step - y_pred_step
+                    if len(residuals) > 10_000:
+                        rng = np.random.default_rng(seed=random_state)
+                        residuals = residuals[
+                            rng.integers(low=0, high=len(residuals), size=10_000)
+                        ]
 
             return step, regressor, residuals, y_true_step, y_pred_step
 
@@ -1222,17 +1221,19 @@ class ForecasterDirect(ForecasterBase):
 
         self.regressors_ = {step: regressor for step, regressor, *_ in results_fit}
 
-        if store_in_sample_residuals:
-            self.in_sample_residuals_ = {
-                step: residuals 
-                for step, _, residuals, *_ in results_fit
-            }
+        if self._probabilistic_mode is not False:
+            if store_in_sample_residuals:
+                self.in_sample_residuals_ = {
+                    step: residuals 
+                    for step, _, residuals, *_ in results_fit
+                }
 
             y_true, y_pred = zip(*[(y_true, y_pred) for *_, y_true, y_pred in results_fit])
             self._binning_in_sample_residuals(
-                y_true       = np.concatenate(y_true),
-                y_pred       = np.concatenate(y_pred),
-                random_state = random_state
+                y_true                    = np.concatenate(y_true),
+                y_pred                    = np.concatenate(y_pred),
+                store_in_sample_residuals = store_in_sample_residuals,
+                random_state              = random_state
             )
         
         self.X_train_features_names_out_ = X_train_features_names_out_
@@ -1266,6 +1267,7 @@ class ForecasterDirect(ForecasterBase):
         self,
         y_true: np.ndarray,
         y_pred: np.ndarray,
+        store_in_sample_residuals: bool = False,
         random_state: int = 123
     ) -> None:
         """
@@ -1289,6 +1291,11 @@ class ForecasterDirect(ForecasterBase):
             True values of the time series.
         y_pred : numpy ndarray
             Predicted values of the time series.
+        store_in_sample_residuals : bool, default False
+            If `True`, in-sample residuals will be stored in the forecaster object
+            after fitting (`in_sample_residuals_` and `in_sample_residuals_by_bin_`
+            attributes).
+            If `False`, only the intervals of the bins are stored.
         random_state : int, default 123
             Set a seed for the random generator so that the stored sample 
             residuals are always deterministic.
@@ -1300,21 +1307,24 @@ class ForecasterDirect(ForecasterBase):
         """
 
         residuals = y_true - y_pred
-        data = pd.DataFrame({'prediction': y_pred, 'residuals': residuals})
 
-        data['bin'] = self.binner.fit_transform(y_pred).astype(int)
-        self.in_sample_residuals_by_bin_ = (
-            data.groupby('bin')['residuals'].apply(np.array).to_dict()
-        )
+        if self._probabilistic_mode == "binned":
+            data = pd.DataFrame({'prediction': y_pred, 'residuals': residuals})
+            self.binner.fit(y_pred)
+            self.binner_intervals_ = self.binner.intervals_
 
-        rng = np.random.default_rng(seed=random_state)
-        max_sample = 10_000 // self.binner.n_bins_
-        for k, v in self.in_sample_residuals_by_bin_.items():
-            if len(v) > max_sample:
-                sample = v[rng.integers(low=0, high=len(v), size=max_sample)]
-                self.in_sample_residuals_by_bin_[k] = sample
+            if store_in_sample_residuals:
+                data['bin'] = self.binner.transform(y_pred).astype(int)
+                self.in_sample_residuals_by_bin_ = (
+                    data.groupby('bin')['residuals'].apply(np.array).to_dict()
+                )
 
-        self.binner_intervals_ = self.binner.intervals_
+                rng = np.random.default_rng(seed=random_state)
+                max_sample = 10_000 // self.binner.n_bins_
+                for k, v in self.in_sample_residuals_by_bin_.items():
+                    if len(v) > max_sample:
+                        sample = v[rng.integers(low=0, high=len(v), size=max_sample)]
+                        self.in_sample_residuals_by_bin_[k] = sample
 
     def _create_predict_inputs(
         self,
@@ -2577,12 +2587,12 @@ class ForecasterDirect(ForecasterBase):
                 sample = rng.choice(a=v, size=max_samples, replace=False)
                 out_sample_residuals_by_bin[k] = sample
 
-        in_sample_residuals_by_bin = (
-            {}
-            if self.in_sample_residuals_by_bin_ is None
-            else self.in_sample_residuals_by_bin_
+        bin_keys = (
+            []
+            if self.binner_intervals_ is None
+            else self.binner_intervals_.keys()
         )
-        for k in in_sample_residuals_by_bin.keys():
+        for k in bin_keys:
             if k not in out_sample_residuals_by_bin:
                 out_sample_residuals_by_bin[k] = np.array([])
 

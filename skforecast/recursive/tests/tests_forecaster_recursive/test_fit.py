@@ -168,7 +168,7 @@ def test_fit_in_sample_residuals_by_bin_stored():
         assert forecaster.binner_intervals_[k][1] == approx(expected_3[k][1])
 
 
-def test_fit_in_sample_residuals_not_stored():
+def test_fit_in_sample_residuals_not_stored_probabilistic_mode_binned():
     """
     Test that values of in_sample_residuals_ are not stored after fitting
     when `store_in_sample_residuals=False`. Binner intervals are stored.
@@ -188,6 +188,7 @@ def test_fit_in_sample_residuals_not_stored():
 
     assert forecaster.in_sample_residuals_ is None
     assert forecaster.in_sample_residuals_by_bin_ is None
+    assert forecaster.binner_intervals_.keys() == expected_binner_intervals_.keys()
     for k in expected_binner_intervals_.keys():
         assert forecaster.binner_intervals_[k][0] == approx(expected_binner_intervals_[k][0])
         assert forecaster.binner_intervals_[k][1] == approx(expected_binner_intervals_[k][1])

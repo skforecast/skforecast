@@ -3698,7 +3698,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         data['bin'] = binner.transform(y_pred).astype(int)
         residuals_by_bin = data.groupby('bin')['residuals'].apply(np.array).to_dict()
         
-        in_sample_residuals_by_bin = self.in_sample_residuals_by_bin_.get(level, {})
         out_sample_residuals = self.out_sample_residuals_.get(level, np.array([]))
         out_sample_residuals_by_bin = deepcopy(self.out_sample_residuals_by_bin_.get(level, {}))
         
@@ -3732,12 +3731,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 sample = rng.choice(a=v, size=max_samples, replace=False)
                 out_sample_residuals_by_bin[k] = sample
 
-        in_sample_residuals_by_bin = (
-            {}
-            if in_sample_residuals_by_bin is None
-            else in_sample_residuals_by_bin
-        )
-        for k in in_sample_residuals_by_bin.keys():
+        for k in self.binner_intervals_.get(level, {}).keys():
             if k not in out_sample_residuals_by_bin:
                 out_sample_residuals_by_bin[k] = np.array([])
 

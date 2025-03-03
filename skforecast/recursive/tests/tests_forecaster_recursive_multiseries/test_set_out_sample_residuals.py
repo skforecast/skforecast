@@ -493,7 +493,7 @@ def test_set_out_sample_residuals_when_residuals_keys_partially_match():
 @pytest.mark.parametrize("differentiation", 
                          [1, {'l1': 1, 'l2': 1, '_unknown_level': 1}], 
                          ids=lambda diff: f'differentiation: {diff}')
-def test_forecaster_set_outsample_residuals_when_transformer_series_and_diferentiation(differentiation):
+def test_forecaster_set_out_sample_residuals_when_transformer_series_and_differentiation(differentiation):
     """
     Test set_out_sample_residuals when forecaster has transformer_series and differentiation.
     Stored should equivalent to residuals calculated manually if transformer_series and
@@ -554,7 +554,7 @@ def test_forecaster_set_outsample_residuals_when_transformer_series_and_diferent
         np.testing.assert_array_almost_equal(residuals[key], forecaster.out_sample_residuals_[key])
 
 
-def test_forecaster_set_outsample_residuals_when_transformer_series_and_diferentiation_as_dict_unknonw_level():
+def test_forecaster_set_out_sample_residuals_when_transformer_series_and_differentiation_as_dict_unknonw_level():
     """
     Test set_out_sample_residuals when forecaster has transformer_series, differentiation
     and unknown level.

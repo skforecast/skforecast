@@ -18,7 +18,7 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
     using in sample residuals.
     """
     forecaster = ForecasterDirect(LinearRegression(), steps=2, lags=3)
-    forecaster.fit(y=pd.Series(np.arange(10)))
+    forecaster.fit(y=pd.Series(np.arange(10)), store_in_sample_residuals=True)
     forecaster.in_sample_residuals_ = {
         1: np.full_like(forecaster.in_sample_residuals_[1], fill_value=10),
         2: np.full_like(forecaster.in_sample_residuals_[2], fill_value=20)
@@ -42,7 +42,7 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
     using in sample residuals.
     """
     forecaster = ForecasterDirect(LinearRegression(), steps=2, lags=3)
-    forecaster.fit(y=pd.Series(np.arange(10)))
+    forecaster.fit(y=pd.Series(np.arange(10)), store_in_sample_residuals=True)
     forecaster.in_sample_residuals_ = {
         1: np.full_like(forecaster.in_sample_residuals_[1], fill_value=10),
         2: np.full_like(forecaster.in_sample_residuals_[2], fill_value=20)
@@ -67,7 +67,7 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
     using out sample residuals.
     """
     forecaster = ForecasterDirect(LinearRegression(), steps=2, lags=3)
-    forecaster.fit(y=pd.Series(np.arange(10)))
+    forecaster.fit(y=pd.Series(np.arange(10)), store_in_sample_residuals=True)
     forecaster.out_sample_residuals_ = {
         1: np.full_like(forecaster.in_sample_residuals_[1], fill_value=10),
         2: np.full_like(forecaster.in_sample_residuals_[2], fill_value=20)
@@ -91,7 +91,7 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
     using out sample residuals.
     """
     forecaster = ForecasterDirect(LinearRegression(), steps=2, lags=3)
-    forecaster.fit(y=pd.Series(np.arange(10)))
+    forecaster.fit(y=pd.Series(np.arange(10)), store_in_sample_residuals=True)
     forecaster.out_sample_residuals_ = {
         1: np.full_like(forecaster.in_sample_residuals_[1], fill_value=10),
         2: np.full_like(forecaster.in_sample_residuals_[2], fill_value=20)
@@ -126,7 +126,7 @@ def test_predict_interval_conformal_output_when_regressor_is_LinearRegression_wi
                      transformer_y = StandardScaler(),
                      binner_kwargs = {'n_bins': 4}
                  )
-    forecaster.fit(y=y)
+    forecaster.fit(y=y, store_in_sample_residuals=True)
     results = forecaster._predict_interval_conformal(nominal_coverage=0.95)
 
     expected = pd.DataFrame(
@@ -174,7 +174,7 @@ def test_predict_interval_conformal_output_when_regressor_is_LinearRegression_wi
                      transformer_y    = StandardScaler(),
                      transformer_exog = transformer_exog
                  )
-    forecaster.fit(y=y, exog=exog)
+    forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True)
     results = forecaster._predict_interval_conformal(
         steps=None, nominal_coverage=0.95, exog=exog_predict
     )
@@ -199,7 +199,7 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
     using in sample residuals.
     """
     forecaster = ForecasterDirect(LinearRegression(), steps=5, lags=3)
-    forecaster.fit(y=y)
+    forecaster.fit(y=y, store_in_sample_residuals=True)
     results = forecaster._predict_interval_conformal(
         steps=5, nominal_coverage=0.95, use_in_sample_residuals=True, use_binned_residuals=True
     )
@@ -225,7 +225,7 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
     binned_residuals=True.
     """
     forecaster = ForecasterDirect(LinearRegression(), steps=5, lags=3)
-    forecaster.fit(y=y)
+    forecaster.fit(y=y, store_in_sample_residuals=True)
     forecaster.out_sample_residuals_by_bin_ = forecaster.in_sample_residuals_by_bin_
     results = forecaster._predict_interval_conformal(
         steps=5, nominal_coverage=0.95, use_in_sample_residuals=False, use_binned_residuals=True
@@ -253,7 +253,7 @@ def test_predict_interval_conformal_output_with_differentiation():
     forecaster = ForecasterDirect(
         LinearRegression(), steps=5, lags=3, differentiation=1
     )
-    forecaster.fit(y=y)
+    forecaster.fit(y=y, store_in_sample_residuals=True)
     results = forecaster._predict_interval_conformal(
         steps=5, nominal_coverage=0.95, use_in_sample_residuals=True
     )

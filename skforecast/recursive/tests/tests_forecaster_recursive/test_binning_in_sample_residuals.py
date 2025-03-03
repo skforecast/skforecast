@@ -12,9 +12,7 @@ def test_binning_in_sample_residuals_stored():
     """
 
     forecaster = ForecasterRecursive(
-        regressor=object(),
-        lags = 5,
-        binner_kwargs={'n_bins': 3}
+        regressor=object(), lags = 5, binner_kwargs={'n_bins': 3}
     )
 
     rng = np.random.default_rng(12345)
@@ -68,9 +66,7 @@ def test_binning_in_sample_residuals_store_in_sample_residuals_False():
     """
 
     forecaster = ForecasterRecursive(
-        regressor=object(),
-        lags = 5,
-        binner_kwargs={'n_bins': 3}
+        regressor=object(), lags = 5, binner_kwargs={'n_bins': 3}
     )
 
     rng = np.random.default_rng(12345)
@@ -101,9 +97,7 @@ def test_binning_in_sample_residuals_probabilistic_mode_no_binned():
     """
 
     forecaster = ForecasterRecursive(
-        regressor=object(),
-        lags = 5,
-        binner_kwargs={'n_bins': 3}
+        regressor=object(), lags = 5, binner_kwargs={'n_bins': 3}
     )
 
     rng = np.random.default_rng(12345)
@@ -141,10 +135,8 @@ def test_binning_in_sample_residuals_stores_maximum_10000_residuals():
             index = pd.date_range(start='01-01-2000', periods=n, freq='h')
         )
     forecaster = ForecasterRecursive(
-                     regressor=LinearRegression(),
-                     lags = 5,
-                     binner_kwargs={'n_bins': 2}
-                 )
+        regressor=LinearRegression(), lags = 5, binner_kwargs={'n_bins': 2}
+    )
     forecaster.fit(y, store_in_sample_residuals=True)
     max_residuals_per_bin = int(10_000 // forecaster.binner.n_bins_)
 

@@ -404,7 +404,7 @@ def test_fit_same_residuals_by_bin_when_residuals_greater_than_10_000(encoding):
 @pytest.mark.parametrize("encoding", 
                          ['ordinal', 'ordinal_category', 'onehot'], 
                          ids = lambda encoding: f'encoding: {encoding}')
-def test_fit_in_sample_residuals_not_stored(encoding):
+def test_fit_in_sample_residuals_not_stored_probabilistic_mode_binned(encoding):
     """
     Test that values of in_sample_residuals_ are not stored after fitting
     when `store_in_sample_residuals=False`. Binner intervals are stored.

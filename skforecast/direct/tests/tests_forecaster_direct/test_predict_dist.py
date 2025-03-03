@@ -25,7 +25,7 @@ def test_predict_dist_TypeError_when_distribution_object_is_not_valid():
                      steps     = 2,
                      lags      = 3
                  )
-    forecaster.fit(y=y, exog=exog)
+    forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True)
     
     class CustomObject:  # pragma: no cover
         pass
@@ -58,7 +58,7 @@ def test_predict_dist_output_when_forecaster_is_LinearRegression_steps_is_2_in_s
                      transformer_exog = StandardScaler(),
                  )
     
-    forecaster.fit(y=y, exog=exog)
+    forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True)
     results = forecaster.predict_dist(
                   steps                   = 2,
                   exog                    = exog_predict,
@@ -90,7 +90,7 @@ def test_predict_dist_output_when_forecaster_is_LinearRegression_steps_is_2_in_s
                      transformer_exog = StandardScaler(),
                  )
     
-    forecaster.fit(y=y, exog=exog)
+    forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True)
     forecaster.out_sample_residuals_ = forecaster.in_sample_residuals_
     results = forecaster.predict_dist(
                   steps                   = 2,

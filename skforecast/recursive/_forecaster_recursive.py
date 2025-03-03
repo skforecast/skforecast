@@ -998,7 +998,7 @@ class ForecasterRecursive(ForecasterBase):
             self.exog_dtypes_in_ = exog_dtypes_in_
             self.X_train_exog_names_out_ = X_train_exog_names_out_
 
-        # This is done to save time during fit in functions such as backtesting()
+        # NOTE: This is done to save time during fit in functions such as backtesting()
         if self._probabilistic_mode is not False:
             self._binning_in_sample_residuals(
                 y_true                    = y_train.to_numpy(),
@@ -2433,12 +2433,12 @@ class ForecasterRecursive(ForecasterBase):
                 sample = rng.choice(a=v, size=max_samples, replace=False)
                 out_sample_residuals_by_bin[k] = sample
 
-        in_sample_residuals_by_bin = (
-            {}
-            if self.in_sample_residuals_by_bin_ is None
-            else self.in_sample_residuals_by_bin_
+        bin_keys = (
+            []
+            if self.binner_intervals_ is None
+            else self.binner_intervals_.keys()
         )
-        for k in in_sample_residuals_by_bin.keys():
+        for k in bin_keys:
             if k not in out_sample_residuals_by_bin:
                 out_sample_residuals_by_bin[k] = np.array([])
 

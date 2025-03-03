@@ -557,7 +557,7 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_equival
     Test that the output of _predict_and_calculate_metrics_one_step_ahead_multiseries is
     equivalent to the output of backtesting_forecaster_multiseries when steps=1 and
     refit=False. Using series and exog as dictionaries.
-    Results are not equivalent if diferentiation is included.
+    Results are not equivalent if differentiation is included.
     ForecasterMultiVariate is not included because it is not possible to use dictionaries as input.
     """
 

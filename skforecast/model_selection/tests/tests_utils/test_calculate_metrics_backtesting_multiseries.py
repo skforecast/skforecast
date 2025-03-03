@@ -83,7 +83,7 @@ predictions = (
 )
 predictions_missing_level = predictions.query("level != 'item_3'").copy()
 
-predictions_different_lenght = pd.DataFrame(
+predictions_different_length = pd.DataFrame(
     data={
         "item_1": [
             25.849411, 24.507137, 23.885447, 23.597504, 23.464140, 23.402371,
@@ -108,8 +108,8 @@ predictions_different_lenght = pd.DataFrame(
     },
     index=pd.date_range(start="2012-01-26", periods=25)
 )
-predictions_different_lenght = (
-    predictions_different_lenght.melt(var_name="level", value_name="pred", ignore_index=False)
+predictions_different_length = (
+    predictions_different_length.melt(var_name="level", value_name="pred", ignore_index=False)
     .reset_index()
     .sort_values(by=["index", "level"])
     .set_index("index")
@@ -355,7 +355,7 @@ def test_calculate_metrics_backtesting_multiseries_output_when_aggregated_metric
     metrics = [add_y_train_argument(metric) for metric in metrics]
     results = _calculate_metrics_backtesting_multiseries(
         series=data,
-        predictions=predictions_different_lenght,
+        predictions=predictions_different_length,
         folds=folds,
         span_index=span_index,
         window_size=window_size,
