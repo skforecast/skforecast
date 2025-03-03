@@ -1162,7 +1162,7 @@ def _calculate_metrics_backtesting_multiseries(
         left_index  = True,
         right_index = True,
         how         = "inner",
-    ).dropna(axis=0, how="any")
+    ).dropna(axis=0, how="any") # TODO: este dropna creo que no es necesario por que en series no hay NaNa y es un inner
 
     train_indexes = []
     for i, fold in enumerate(folds):
