@@ -1140,13 +1140,15 @@ def _calculate_metrics_backtesting_multiseries(
 
     y_true_pred_levels = []
     y_train_levels = []
+    predictions_grouped = predictions.groupby('level', sort=False)['pred']
+    
     for level in levels:
         y_true_pred_level = None
         y_train = None
         if level in levels_in_predictions:
             y_true_pred_level = pd.merge(
                 series[level],
-                predictions.loc[predictions['level'] == level, 'pred'],
+                predictions_grouped.get_group(level),
                 left_index  = True,
                 right_index = True,
                 how         = "inner",
