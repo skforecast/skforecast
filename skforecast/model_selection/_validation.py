@@ -980,18 +980,18 @@ def _backtesting_forecaster_multiseries(
         .rename_axis(None, axis=0)
     )
 
-    returns = {
-        'series'                :series,
-        'predictions'           :backtest_predictions[['level', 'pred']],
-        'folds'                 :folds,
-        'span_index'            :span_index,
-        'window_size'           :forecaster.window_size,
-        'metrics'               :metrics,
-        'levels'                :levels,
-        'add_aggregated_metric' :add_aggregated_metric
-    }
+    # returns = {
+    #     'series'                :series,
+    #     'predictions'           :backtest_predictions[['level', 'pred']],
+    #     'folds'                 :folds,
+    #     'span_index'            :span_index,
+    #     'window_size'           :forecaster.window_size,
+    #     'metrics'               :metrics,
+    #     'levels'                :levels,
+    #     'add_aggregated_metric' :add_aggregated_metric
+    # }
 
-    return returns
+    # return returns
 
     metrics_levels = _calculate_metrics_backtesting_multiseries(
         series                = series,

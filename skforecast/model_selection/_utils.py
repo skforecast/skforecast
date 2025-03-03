@@ -1138,52 +1138,110 @@ def _calculate_metrics_backtesting_multiseries(
     metric_names = [(m if isinstance(m, str) else m.__name__) for m in metrics]
     levels_in_predictions = predictions['level'].unique()
 
-    y_true_pred_levels = []
-    y_train_levels = []
-    predictions_grouped = predictions.groupby('level', sort=False)['pred']
+    # -----------------------------------------------------------------------
+    if isinstance(series, pd.DataFrame):
+        series = series.melt(ignore_index=False, var_name='level', value_name='y_true')
+        series = series.rename_axis('idx', axis=0)
+        series = series.set_index('level', append=True)
+        series = series.swaplevel()
+    else:
+        series = pd.DataFrame(series)
+        series = series.melt(ignore_index=False, var_name='level', value_name='y_true').dropna()
+        series = series.rename_axis('idx', axis=0)
+        series = series.set_index('level', append=True)
+        series = series.swaplevel()
     
-    for level in levels:
-        y_true_pred_level = None
-        y_train = None
-        if level in levels_in_predictions:
-            # TODO: sacar este merge fuera: para hacerlo, si series hay que pasarlo a formato multi index: level, date
-            y_true_pred_level = pd.merge(
-                series[level],
-                predictions_grouped.get_group(level),
-                left_index  = True,
-                right_index = True,
-                how         = "inner",
-            ).dropna(axis=0, how="any")
-            y_true_pred_level.columns = ['y_true', 'y_pred']
+    predictions = predictions.rename_axis('idx', axis=0)
+    predictions = predictions.set_index('level', append=True)
+    predictions = predictions.swaplevel()
+    predictions.columns = ['y_pred']
 
-            train_indexes = []
-            for i, fold in enumerate(folds):
-                fit_fold = fold[-1]
-                if i == 0 or fit_fold:
-                    train_iloc_start = fold[0][0]
-                    train_iloc_end = fold[0][1]
-                    train_indexes.append(np.arange(train_iloc_start, train_iloc_end))
-            train_indexes = np.unique(np.concatenate(train_indexes))
-            train_indexes = span_index[train_indexes]
-            y_train = series[level].loc[series[level].index.intersection(train_indexes)]
+    y_true_pred_levels = pd.merge(
+        series,
+        predictions,
+        left_index  = True,
+        right_index = True,
+        how         = "inner",
+    ).dropna(axis=0, how="any")
 
-        y_true_pred_levels.append(y_true_pred_level)
-        y_train_levels.append(y_train)
-            
+    train_indexes = []
+    for i, fold in enumerate(folds):
+        fit_fold = fold[-1]
+        if i == 0 or fit_fold:
+            train_iloc_start = fold[0][0]
+            train_iloc_end = fold[0][1]
+            train_indexes.append(np.arange(train_iloc_start, train_iloc_end))
+    train_indexes = np.unique(np.concatenate(train_indexes))
+    train_indexes = span_index[train_indexes]
+    train_indexes = pd.MultiIndex.from_product([
+        y_true_pred_levels.index.get_level_values("level").unique(),
+        train_indexes,
+    ])
+    series = series.loc[series.index.isin(train_indexes)]
+
     metrics_levels = []
-    for i, level in enumerate(levels):
-        if y_true_pred_levels[i] is not None and not y_true_pred_levels[i].empty:
+    for level in levels:
+        if level in levels_in_predictions:
             metrics_level = [
                 m(
-                    y_true = y_true_pred_levels[i].iloc[:, 0],
-                    y_pred = y_true_pred_levels[i].iloc[:, 1],
-                    y_train = y_train_levels[i].iloc[window_size:]  # NOTE: Exclude observations used to create predictors
+                    y_true  = y_true_pred_levels.loc[level, 'y_true'],
+                    y_pred  = y_true_pred_levels.loc[level, 'y_pred'],
+                    y_train = series.loc[level].iloc[window_size:]  # NOTE: Exclude observations used to create predictors
                 )
                 for m in metrics
             ]
             metrics_levels.append(metrics_level)
         else:
             metrics_levels.append([None for _ in metrics])
+
+    # -----------------------------------------------------------------------
+
+    # y_true_pred_levels = []
+    # y_train_levels = []
+    # predictions_grouped = predictions.groupby('level', sort=False)['pred']
+    
+    # for level in levels:
+    #     y_true_pred_level = None
+    #     y_train = None
+    #     if level in levels_in_predictions:
+    #         # TODO: sacar este merge fuera: para hacerlo, si series hay que pasarlo a formato multi index: level, date
+    #         y_true_pred_level = pd.merge(
+    #             series[level],
+    #             predictions_grouped.get_group(level),
+    #             left_index  = True,
+    #             right_index = True,
+    #             how         = "inner",
+    #         ).dropna(axis=0, how="any")
+    #         y_true_pred_level.columns = ['y_true', 'y_pred']
+
+    #         train_indexes = []
+    #         for i, fold in enumerate(folds):
+    #             fit_fold = fold[-1]
+    #             if i == 0 or fit_fold:
+    #                 train_iloc_start = fold[0][0]
+    #                 train_iloc_end = fold[0][1]
+    #                 train_indexes.append(np.arange(train_iloc_start, train_iloc_end))
+    #         train_indexes = np.unique(np.concatenate(train_indexes))
+    #         train_indexes = span_index[train_indexes]
+    #         y_train = series[level].loc[series[level].index.intersection(train_indexes)]
+
+    #     y_true_pred_levels.append(y_true_pred_level)
+    #     y_train_levels.append(y_train)
+            
+    # metrics_levels = []
+    # for i, level in enumerate(levels):
+    #     if y_true_pred_levels[i] is not None and not y_true_pred_levels[i].empty:
+    #         metrics_level = [
+    #             m(
+    #                 y_true = y_true_pred_levels[i].iloc[:, 0],
+    #                 y_pred = y_true_pred_levels[i].iloc[:, 1],
+    #                 y_train = y_train_levels[i].iloc[window_size:]  # NOTE: Exclude observations used to create predictors
+    #             )
+    #             for m in metrics
+    #         ]
+    #         metrics_levels.append(metrics_level)
+    #     else:
+    #         metrics_levels.append([None for _ in metrics])
 
     metrics_levels = pd.DataFrame(
                          data    = metrics_levels,
