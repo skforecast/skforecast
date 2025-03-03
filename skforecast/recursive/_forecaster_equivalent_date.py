@@ -121,6 +121,9 @@ class ForecasterEquivalentDate():
         Not used, present here for API consistency by convention.
     differentiation_max : Ignored
         Not used, present here for API consistency by convention.
+    _probabilistic_mode: str, bool
+        Private attribute used to indicate whether the forecaster should perform 
+        some calculations during backtesting.
 
     """
     
@@ -148,6 +151,7 @@ class ForecasterEquivalentDate():
         self.regressor           = None
         self.differentiation     = None
         self.differentiation_max = None
+        self._probabilistic_mode = False
        
         if not isinstance(self.offset, (int, pd.tseries.offsets.DateOffset)):
             raise TypeError(

@@ -258,6 +258,9 @@ class ForecasterDirect(ForecasterBase):
         skforecast.utils.select_n_jobs_fit_forecaster.
     forecaster_id : str, int
         Name used as an identifier of the forecaster.
+    _probabilistic_mode: str, bool
+        Private attribute used to indicate whether the forecaster should perform 
+        some calculations during backtesting.
 
     Notes
     -----
@@ -314,6 +317,7 @@ class ForecasterDirect(ForecasterBase):
         self.skforecast_version                 = skforecast.__version__
         self.python_version                     = sys.version.split(" ")[0]
         self.forecaster_id                      = forecaster_id
+        self._probabilistic_mode                = "binned"
 
         if not isinstance(steps, int):
             raise TypeError(
