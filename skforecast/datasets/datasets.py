@@ -448,7 +448,7 @@ def fetch_dataset(
             'freq': 'D',
             'file_type': 'csv',
             'description': (
-                "Daily energy consumption data of three buildings sampled from the "
+                "Daily energy consumption data of two buildings sampled from the "
                 "The Building Data Genome Project 2. "
                 "https://github.com/buds-lab/building-data-genome-project-2"
             ),
@@ -486,7 +486,7 @@ def fetch_dataset(
             'freq': 'H',
             'file_type': 'csv',
             'description': (
-                "Daily energy consumption data of three buildings sampled from the "
+                "Daily energy consumption data of two buildings sampled from the "
                 "The Building Data Genome Project 2. "
                 "https://github.com/buds-lab/building-data-genome-project-2"
             ),
