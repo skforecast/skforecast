@@ -1249,8 +1249,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     f"`series`. No last window is stored for them.",
                     IgnoredArgumentWarning
                 )
-                series_to_store = [s for s in series_to_store 
-                                   if s not in series_not_in_series_dict]
+                series_to_store = [
+                    s for s in series_to_store 
+                    if s not in series_not_in_series_dict
+                ]
 
             if series_to_store:
                 last_window_ = {

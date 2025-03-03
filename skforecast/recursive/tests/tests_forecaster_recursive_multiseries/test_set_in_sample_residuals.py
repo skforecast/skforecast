@@ -2,9 +2,11 @@
 # ==============================================================================
 import re
 import pytest
+from pytest import approx
 import numpy as np
 import pandas as pd
 from sklearn.exceptions import NotFittedError
+from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
 from skforecast.recursive import ForecasterRecursiveMultiSeries
 
@@ -60,33 +62,90 @@ def test_set_in_sample_residuals_ValueError_when_X_train_features_names_out_not_
     Test ValueError is raised when X_train_features_names_out are different from 
     the ones used in training.
     """
-    forecaster = ForecasterRecursive(LinearRegression(), lags=3)
-    forecaster.fit(y=y, exog=exog)
+    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
+    forecaster.fit(series=series, exog=exog['exog_1'])
 
     err_msg = re.escape(
         "Feature mismatch detected after matrix creation. The features "
         "generated from the provided data do not match those used during "
         "the training process. To correctly set in-sample residuals, "
         "ensure that the same data and preprocessing steps are applied.\n"
-        "    Expected output : ['lag_1', 'lag_2', 'lag_3', 'exog']\n"
-        "    Current output  : ['lag_1', 'lag_2', 'lag_3']"
+        "    Expected output : ['lag_1', 'lag_2', 'lag_3', '_level_skforecast', 'exog_1']\n"
+        "    Current output  : ['lag_1', 'lag_2', 'lag_3', '_level_skforecast']"
     )
     with pytest.raises(ValueError, match = err_msg):
-        forecaster.set_in_sample_residuals(y=y)
+        forecaster.set_in_sample_residuals(series=series)
 
 
 def test_set_in_sample_residuals_store_same_residuals_as_fit():
     """
     Test that set_in_sample_residuals stores same residuals as fit.
     """
-    forecaster_1 = ForecasterRecursive(LinearRegression(), lags=3, binner_kwargs={'n_bins': 3})
-    forecaster_1.fit(y=y, exog=exog, store_in_sample_residuals=True)
+    forecaster_1 = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=3, transformer_series=StandardScaler(), 
+        differentiation=1, binner_kwargs={'n_bins': 3}
+    )
+    forecaster_1.fit(series=series, exog=exog['exog_1'], store_in_sample_residuals=True)
+    results_residuals_1 = forecaster_1.in_sample_residuals_
+    results_residuals_bin_1 = forecaster_1.in_sample_residuals_by_bin_
+    results_binner_intervals_1 = forecaster_1.binner_intervals_
 
-    forecaster_2 = ForecasterRecursive(LinearRegression(), lags=3, binner_kwargs={'n_bins': 3})
-    forecaster_2.fit(y=y, exog=exog, store_in_sample_residuals=False)
-    forecaster_2.set_in_sample_residuals(y=y, exog=exog)
+    forecaster_2 = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=3, transformer_series=StandardScaler(), 
+        differentiation=1, binner_kwargs={'n_bins': 3}
+    )
+    forecaster_2.fit(series=series, exog=exog['exog_1'], store_in_sample_residuals=False)
+    scaler_id_after_fit = {
+        level: id(scaler) for level, scaler in forecaster_2.transformer_series_.items()
+    }
+    differentiator_id_after_fit = {
+        level: id(differentiator) for level, differentiator in forecaster_2.differentiator_.items()
+    }
+    forecaster_2.set_in_sample_residuals(series=series, exog=exog['exog_1'])
+    scaler_id_after_set_in_sample_residuals = {
+        level: id(scaler) for level, scaler in forecaster_2.transformer_series_.items()
+    }
+    differentiator_id_after_set_in_sample_residuals = {
+        level: id(differentiator) for level, differentiator in forecaster_2.differentiator_.items()
+    }
+    results_residuals_2 = forecaster_2.in_sample_residuals_
+    results_residuals_bin_2 = forecaster_2.in_sample_residuals_by_bin_
+    results_binner_intervals_2 = forecaster_2.binner_intervals_
 
-    np.testing.assert_almost_equal(forecaster_1.in_sample_residuals_, forecaster_2.in_sample_residuals_)
-    for k in forecaster_1.in_sample_residuals_by_bin_.keys():
-        np.testing.assert_almost_equal(forecaster_1.in_sample_residuals_by_bin_[k], forecaster_2.in_sample_residuals_by_bin_[k])
-    assert forecaster_1.binner_intervals_ == forecaster_2.binner_intervals_
+    # Attributes
+    assert forecaster_1.series_names_in_ == forecaster_2.series_names_in_
+    assert forecaster_1.X_train_series_names_in_ == forecaster_2.X_train_series_names_in_
+    assert forecaster_1.X_train_window_features_names_out_ == forecaster_2.X_train_window_features_names_out_
+    assert forecaster_1.X_train_features_names_out_ == forecaster_2.X_train_features_names_out_
+
+    # Transformers
+    for level in scaler_id_after_fit.keys():
+        assert scaler_id_after_fit[level] == scaler_id_after_set_in_sample_residuals[level]
+
+    # Differentiators
+    for level in differentiator_id_after_fit.keys():
+        assert differentiator_id_after_fit[level] == differentiator_id_after_set_in_sample_residuals[level]
+
+    # In-sample residuals
+    assert results_residuals_1.keys() == results_residuals_2.keys()
+    for k in results_residuals_1.keys():
+        np.testing.assert_array_almost_equal(
+            np.sort(results_residuals_1[k]), np.sort(results_residuals_2[k])
+        )
+
+    # In-sample residuals by bin
+    assert results_residuals_bin_1.keys() == results_residuals_bin_2.keys()
+    for level in results_residuals_bin_1.keys():
+        assert results_residuals_bin_1[level].keys() == results_residuals_bin_2[level].keys()
+        for k in results_residuals_bin_1[level].keys():
+            np.testing.assert_array_almost_equal(
+                results_residuals_bin_1[level][k], results_residuals_bin_2[level][k]
+            )
+    
+    # Binner intervals
+    assert results_binner_intervals_1.keys() == results_binner_intervals_2.keys()
+    for level in results_binner_intervals_1.keys():
+        assert results_binner_intervals_1[level].keys() == results_binner_intervals_2[level].keys()
+        for k in results_binner_intervals_1[level].keys():
+            assert results_binner_intervals_1[level][k][0] == approx(results_binner_intervals_2[level][k][0])
+            assert results_binner_intervals_1[level][k][1] == approx(results_binner_intervals_2[level][k][1])

@@ -5,6 +5,7 @@ import pytest
 import numpy as np
 import pandas as pd
 from sklearn.exceptions import NotFittedError
+from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
 from skforecast.recursive import ForecasterRecursive
 
@@ -76,13 +77,34 @@ def test_set_in_sample_residuals_store_same_residuals_as_fit():
     """
     Test that set_in_sample_residuals stores same residuals as fit.
     """
-    forecaster_1 = ForecasterRecursive(LinearRegression(), lags=3, binner_kwargs={'n_bins': 3})
+    forecaster_1 = ForecasterRecursive(
+        LinearRegression(), lags=3, transformer_y=StandardScaler(), 
+        differentiation=1, binner_kwargs={'n_bins': 3}
+    )
     forecaster_1.fit(y=y, exog=exog, store_in_sample_residuals=True)
 
-    forecaster_2 = ForecasterRecursive(LinearRegression(), lags=3, binner_kwargs={'n_bins': 3})
+    forecaster_2 = ForecasterRecursive(
+        LinearRegression(), lags=3, transformer_y=StandardScaler(), 
+        differentiation=1, binner_kwargs={'n_bins': 3}
+    )
     forecaster_2.fit(y=y, exog=exog, store_in_sample_residuals=False)
+    scaler_id_after_fit = id(forecaster_2.transformer_y)
+    differentiator_id_after_fit = id(forecaster_2.differentiator)
     forecaster_2.set_in_sample_residuals(y=y, exog=exog)
+    scaler_id_after_set_in_sample_residuals = id(forecaster_2.transformer_y)
+    differentiator_id_after_set_in_sample_residuals = id(forecaster_2.differentiator)
 
+    # Attributes
+    assert forecaster_1.X_train_window_features_names_out_ == forecaster_2.X_train_window_features_names_out_
+    assert forecaster_1.X_train_features_names_out_ == forecaster_2.X_train_features_names_out_
+
+    # Transformer
+    assert scaler_id_after_fit == scaler_id_after_set_in_sample_residuals
+
+    # Differentiator
+    assert differentiator_id_after_fit == differentiator_id_after_set_in_sample_residuals
+
+    # Residuals
     np.testing.assert_almost_equal(forecaster_1.in_sample_residuals_, forecaster_2.in_sample_residuals_)
     for k in forecaster_1.in_sample_residuals_by_bin_.keys():
         np.testing.assert_almost_equal(forecaster_1.in_sample_residuals_by_bin_[k], forecaster_2.in_sample_residuals_by_bin_[k])
