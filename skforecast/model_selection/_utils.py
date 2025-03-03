@@ -1146,6 +1146,7 @@ def _calculate_metrics_backtesting_multiseries(
         y_true_pred_level = None
         y_train = None
         if level in levels_in_predictions:
+            # TODO: sacar este merge fuera: para hacerlo, si series hay que pasarlo a formato multi index: level, date
             y_true_pred_level = pd.merge(
                 series[level],
                 predictions_grouped.get_group(level),
