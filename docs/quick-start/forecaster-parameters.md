@@ -235,7 +235,7 @@ forecaster = ForecasterRecursive(
 
 When creating prediction intervals, skforecast uses a [`QuantileBinner`](../api/preprocessing.html#skforecast.preprocessing.preprocessing.QuantileBinner) class to bin data into quantile-based bins using `numpy.percentile`. This class is similar to [KBinsDiscretizer](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.KBinsDiscretizer.html) but faster for binning data into quantile-based bins. Bin intervals are defined following the convention: bins[i-1] <= x < bins[i].
 
-More information: [Intervals conditioned on predicted values (binned residuals)](../user_guides/probabilistic-forecasting.html#intervals-conditioned-on-predicted-values-binned-residuals).
+More information: [Intervals conditioned on predicted values (binned residuals)](../user_guides/probabilistic-forecasting-bootstrapped-residuals.html#intervals-conditioned-on-predicted-values-binned-residuals).
 
 ```python
 # Create a forecaster
