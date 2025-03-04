@@ -3437,7 +3437,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self, 
         y_true: dict[str, np.ndarray | pd.Series],
         y_pred: dict[str, np.ndarray | pd.Series],
-        append: bool = True,
+        append: bool = False,
         random_state: int = 123
     ) -> None:
         """
@@ -3621,7 +3621,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         level: str,
         y_true: np.ndarray,
         y_pred: np.ndarray,
-        append: bool,
+        append: bool = False,
         random_state: int = 123
     ) -> tuple[np.ndarray, dict[int, np.ndarray]]:
         """
@@ -3639,7 +3639,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             True values of the time series.
         y_pred : numpy ndarray
             Predicted values of the time series.
-        append : bool
+        append : bool, default False
             If `True`, new residuals are added to the once already stored in the
             attribute `out_sample_residuals_`. If after appending the new residuals,
             the limit of 10_000 samples is exceeded, a random sample of 10_000 is
@@ -3741,7 +3741,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         ]
         if empty_bins:
             warnings.warn(
-                f"The following bins of level {level} have no out of sample residuals: "
+                f"The following bins of level '{level}' have no out of sample residuals: "
                 f"{empty_bins}. No predicted values fall in the interval "
                 f"{[self.binner_intervals_[level][bin] for bin in empty_bins]}. "
                 f"Empty bins will be filled with a random sample of residuals.", 
