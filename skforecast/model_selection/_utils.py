@@ -1559,8 +1559,8 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
         )
         
         pooled = []
-        y_true = predictions_pooled['y_true'],
-        y_pred = predictions_pooled['y_pred'],
+        y_true = predictions_pooled['y_true']
+        y_pred = predictions_pooled['y_pred']
         for m, m_name in zip(metrics, metric_names):
             if m_name in scaled_metrics:
                 pooled.append(
