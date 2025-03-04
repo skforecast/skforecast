@@ -948,22 +948,6 @@ def _backtesting_forecaster_multiseries(
         .rename_axis('idx', axis=0)
         .set_index('level', append=True)
     )
-    # for level in backtest_levels:
-    #     valid_index = series[level].dropna().index
-    #     no_valid_index = backtest_predictions.index.get_level_values("idx").difference(
-    #         valid_index, sort=False
-    #     )
-    #     backtest_predictions.loc[
-    #         (backtest_predictions.index.get_level_values('level') == level) &
-    #         (backtest_predictions.index.get_level_values('idx').isin(no_valid_index)), 
-    #         'pred'
-    #     ] = np.nan
-
-    # backtest_predictions = (
-    #     backtest_predictions
-    #     .reset_index('level')
-    #     .rename_axis(None, axis=0)
-    # )
 
     backtest_predictions_grouped = backtest_predictions.groupby('level', sort=False)
 
@@ -979,19 +963,6 @@ def _backtesting_forecaster_multiseries(
         .reset_index('level')
         .rename_axis(None, axis=0)
     )
-
-    # returns = {
-    #     'series'                :series,
-    #     'predictions'           :backtest_predictions[['level', 'pred']],
-    #     'folds'                 :folds,
-    #     'span_index'            :span_index,
-    #     'window_size'           :forecaster.window_size,
-    #     'metrics'               :metrics,
-    #     'levels'                :levels,
-    #     'add_aggregated_metric' :add_aggregated_metric
-    # }
-
-    # return returns
 
     metrics_levels = _calculate_metrics_backtesting_multiseries(
         series                = series,
