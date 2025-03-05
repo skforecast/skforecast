@@ -285,7 +285,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         Version of python used to create the forecaster.
     n_jobs : int, 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
-        set to the number of cores. If 'auto', `n_jobs` is set using the fuction
+        set to the number of cores. If 'auto', `n_jobs` is set using the function
         skforecast.utils.select_n_jobs_fit_forecaster.
     forecaster_id : str, int
         Name used as an identifier of the forecaster.
@@ -659,16 +659,16 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 )
             self.lags_ = copy(self.lags)
         else:
-            self.lags_ = {serie: self.lags for serie in series_names_in_}
+            self.lags_ = {series: self.lags for series in series_names_in_}
             if self.lags is not None:
                 # Defined `lags_names` here to avoid overwriting when fit and then create_train_X_y
                 lags_names = [f'lag_{i}' for i in self.lags]
                 self.lags_names = {
-                    serie: [f'{serie}_{lag}' for lag in lags_names]
-                    for serie in series_names_in_
+                    series: [f'{series}_{lag}' for lag in lags_names]
+                    for series in series_names_in_
                 }
             else:
-                self.lags_names = {serie: None for serie in series_names_in_}
+                self.lags_names = {series: None for series in series_names_in_}
 
         X_train_series_names_in_ = series_names_in_
         if self.lags is None:
@@ -933,7 +933,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             if not len_exog == len_series and not len_exog == len_series_no_ws:
                 raise ValueError(
                     f"Length of `exog` must be equal to the length of `series` (if "
-                    f"index is fully aligned) or length of `seriesy` - `window_size` "
+                    f"index is fully aligned) or length of `series` - `window_size` "
                     f"(if `exog` starts after the first `window_size` values).\n"
                     f"    `exog`                   : ({exog.index[0]} -- {exog.index[-1]})  (n={len_exog})\n"
                     f"    `series`                 : ({series.index[0]} -- {series.index[-1]})  (n={len_series})\n"
@@ -1390,7 +1390,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         series: pd.DataFrame,
         exog: pd.Series | pd.DataFrame | None = None,
         store_last_window: bool = True,
-        store_in_sample_residuals: bool = True,
+        store_in_sample_residuals: bool = False,
         random_state: int = 123,
         suppress_warnings: bool = False
     ) -> None:
@@ -1410,10 +1410,11 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             that series[i] is regressed on exog[i].
         store_last_window : bool, default True
             Whether or not to store the last window (`last_window_`) of training data.
-        store_in_sample_residuals : bool, default True
+        store_in_sample_residuals : bool, default False
             If `True`, in-sample residuals will be stored in the forecaster object
             after fitting (`in_sample_residuals_` and `in_sample_residuals_by_bin_`
             attributes).
+            If `False`, only the intervals of the bins are stored.
         random_state : int, default 123
             Set a seed for the random generator so that the stored sample 
             residuals are always deterministic.
@@ -1481,6 +1482,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 If `True`, in-sample residuals will be stored in the forecaster object
                 after fitting (`in_sample_residuals_` and `in_sample_residuals_by_bin_`
                 attributes).
+                If `False`, only the intervals of the bins are stored.
             random_state : int, default 123
                 Set a seed for the random generator so that the stored sample 
                 residuals are always deterministic.
@@ -1513,21 +1515,20 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                     **self.fit_kwargs
                 )
 
-            # This is done to save time during fit in functions such as backtesting()
-            if store_in_sample_residuals:
+            # NOTE: This is done to save time during fit in functions such as backtesting()
+            y_true_step = None
+            y_pred_step = None
+            residuals = None
+            if self._probabilistic_mode is not False:
                 y_true_step = y_train_step.to_numpy()
                 y_pred_step = regressor.predict(X_train_step)
-                residuals = y_true_step - y_pred_step
-
-                if len(residuals) > 10_000:
-                    rng = np.random.default_rng(seed=random_state)
-                    residuals = residuals[
-                        rng.integers(low=0, high=len(residuals), size=10_000)
-                    ]
-            else:
-                y_true_step = None
-                y_pred_step = None
-                residuals = None
+                if store_in_sample_residuals:
+                    residuals = y_true_step - y_pred_step
+                    if len(residuals) > 10_000:
+                        rng = np.random.default_rng(seed=random_state)
+                        residuals = residuals[
+                            rng.integers(low=0, high=len(residuals), size=10_000)
+                        ]
 
             return step, regressor, residuals, y_true_step, y_pred_step
 
@@ -1547,17 +1548,19 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         self.regressors_ = {step: regressor for step, regressor, *_ in results_fit}
 
-        if store_in_sample_residuals:
-            self.in_sample_residuals_ = {
-                step: residuals 
-                for step, _, residuals, *_ in results_fit
-            }
+        if self._probabilistic_mode is not False:
+            if store_in_sample_residuals:
+                self.in_sample_residuals_ = {
+                    step: residuals 
+                    for step, _, residuals, *_ in results_fit
+                }
 
             y_true, y_pred = zip(*[(y_true, y_pred) for *_, y_true, y_pred in results_fit])
             self._binning_in_sample_residuals(
-                y_true       = np.concatenate(y_true),
-                y_pred       = np.concatenate(y_pred),
-                random_state = random_state
+                y_true                    = np.concatenate(y_true),
+                y_pred                    = np.concatenate(y_pred),
+                store_in_sample_residuals = store_in_sample_residuals,
+                random_state              = random_state
             )
         
         self.series_names_in_ = series_names_in_
@@ -1593,6 +1596,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         self,
         y_true: np.ndarray,
         y_pred: np.ndarray,
+        store_in_sample_residuals: bool = False,
         random_state: int = 123
     ) -> None:
         """
@@ -1616,6 +1620,11 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             True values of the time series.
         y_pred : numpy ndarray
             Predicted values of the time series.
+        store_in_sample_residuals : bool, default False
+            If `True`, in-sample residuals will be stored in the forecaster object
+            after fitting (`in_sample_residuals_` and `in_sample_residuals_by_bin_`
+            attributes).
+            If `False`, only the intervals of the bins are stored.
         random_state : int, default 123
             Set a seed for the random generator so that the stored sample 
             residuals are always deterministic.
@@ -1627,21 +1636,24 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         """
 
         residuals = y_true - y_pred
-        data = pd.DataFrame({'prediction': y_pred, 'residuals': residuals})
 
-        data['bin'] = self.binner.fit_transform(y_pred).astype(int)
-        self.in_sample_residuals_by_bin_ = (
-            data.groupby('bin')['residuals'].apply(np.array).to_dict()
-        )
+        if self._probabilistic_mode == "binned":
+            data = pd.DataFrame({'prediction': y_pred, 'residuals': residuals})
+            data['bin'] = self.binner.fit(y_pred)
+            self.binner_intervals_ = self.binner.intervals_
 
-        rng = np.random.default_rng(seed=random_state)
-        max_sample = 10_000 // self.binner.n_bins_
-        for k, v in self.in_sample_residuals_by_bin_.items():
-            if len(v) > max_sample:
-                sample = v[rng.integers(low=0, high=len(v), size=max_sample)]
-                self.in_sample_residuals_by_bin_[k] = sample
+            if store_in_sample_residuals:
+                data['bin'] = self.binner.transform(y_pred).astype(int)
+                self.in_sample_residuals_by_bin_ = (
+                    data.groupby('bin')['residuals'].apply(np.array).to_dict()
+                )
 
-        self.binner_intervals_ = self.binner.intervals_
+                rng = np.random.default_rng(seed=random_state)
+                max_sample = 10_000 // self.binner.n_bins_
+                for k, v in self.in_sample_residuals_by_bin_.items():
+                    if len(v) > max_sample:
+                        sample = v[rng.integers(low=0, high=len(v), size=max_sample)]
+                        self.in_sample_residuals_by_bin_[k] = sample
 
     def _create_predict_inputs(
         self,
@@ -1750,27 +1762,27 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         
         X_autoreg = []
         Xs_col_names = []
-        for serie in self.X_train_series_names_in_:
-            last_window_serie = transform_numpy(
-                                    array             = last_window[serie].to_numpy(),
-                                    transformer       = self.transformer_series_[serie],
-                                    fit               = False,
-                                    inverse_transform = False
-                                )
+        for series in self.X_train_series_names_in_:
+            last_window_series = transform_numpy(
+                                     array             = last_window[series].to_numpy(),
+                                     transformer       = self.transformer_series_[series],
+                                     fit               = False,
+                                     inverse_transform = False
+                                 )
             
             if self.differentiation is not None:
-                last_window_serie = self.differentiator_[serie].fit_transform(last_window_serie)
+                last_window_series = self.differentiator_[series].fit_transform(last_window_series)
 
             if self.lags is not None:
-                X_lags = last_window_serie[-self.lags_[serie]]
+                X_lags = last_window_series[-self.lags_[series]]
                 X_autoreg.append(X_lags)
-                Xs_col_names.extend(self.lags_names[serie])
+                Xs_col_names.extend(self.lags_names[series])
 
             if self.window_features is not None:
                 n_diff = 0 if self.differentiation is None else self.differentiation
                 X_window_features = np.concatenate(
                     [
-                        wf.transform(last_window_serie[n_diff:]) 
+                        wf.transform(last_window_series[n_diff:]) 
                         for wf in self.window_features
                     ]
                 )
@@ -1778,7 +1790,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 # HACK: This is not the best way to do it. Can have any problem
                 # if the window_features are not in the same order as the
                 # self.window_features_names.
-                Xs_col_names.extend([f"{serie}_{wf}" for wf in self.window_features_names])
+                Xs_col_names.extend([f"{series}_{wf}" for wf in self.window_features_names])
             
         X_autoreg = np.concatenate(X_autoreg).reshape(1, -1)
         _, last_window_index = preprocess_last_window(
@@ -2858,6 +2870,148 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             self.window_size += self.differentiation
             self.differentiator.set_params(window_size=self.window_size)
 
+    def set_in_sample_residuals(
+        self,
+        series: pd.DataFrame,
+        exog: pd.Series | pd.DataFrame | None = None,
+        random_state: int = 123,
+        suppress_warnings: bool = False
+    ) -> None:
+        """
+        Set in-sample residuals in case they were not calculated during the
+        training process. 
+        
+        In-sample residuals are calculated as the difference between the true 
+        values and the predictions made by the forecaster using the training 
+        data. The following internal attributes are updated:
+
+        + `in_sample_residuals_`: Dictionary containing a numpy ndarray with the
+        residuals for each step in the form `{step: residuals}`.
+        + `binner_intervals_`: intervals used to bin the residuals are calculated
+        using the quantiles of the predicted values.
+        + `in_sample_residuals_by_bin_`: residuals are binned according to the
+        predicted value they are associated with and stored in a dictionary, where
+        the keys are the intervals of the predicted values and the values are
+        the residuals associated with that range. 
+
+        A total of 10_000 residuals are stored in the attribute `in_sample_residuals_`.
+        If the number of residuals is greater than 10_000, a random sample of
+        10_000 residuals is stored. The number of residuals stored per bin is
+        limited to `10_000 // self.binner.n_bins_`.
+        
+        Parameters
+        ----------
+        series : pandas DataFrame
+            Training time series.
+        exog : pandas Series, pandas DataFrame, default None
+            Exogenous variable/s included as predictor/s. Must have the same
+            number of observations as `y` and their indexes must be aligned so
+            that y[i] is regressed on exog[i].
+        random_state : int, default 123
+            Sets a seed to the random sampling for reproducible output.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings will be suppressed during the sampling 
+            process. See skforecast.exceptions.warn_skforecast_categories for more
+            information.
+
+        Returns
+        -------
+        None
+
+        """
+
+        set_skforecast_warnings(suppress_warnings, action='ignore')
+
+        if not self.is_fitted:
+            raise NotFittedError(
+                "This forecaster is not fitted yet. Call `fit` with appropriate "
+                "arguments before using `set_in_sample_residuals()`."
+            )
+        
+        check_y(y=series[self.level])
+        y_index_range = preprocess_y(
+            y=series[self.level], return_values=False, suppress_warnings=True
+        )[1][[0, -1]]
+        if not y_index_range.equals(self.training_range_):
+            raise IndexError(
+                f"The index range of `series` does not match the range "
+                f"used during training. Please ensure the index is aligned "
+                f"with the training data.\n"
+                f"    Expected : {self.training_range_}\n"
+                f"    Received : {y_index_range}"
+            )
+        
+        # NOTE: This attributes are modified in _create_train_X_y, store original values
+        original_exog_in_ = self.exog_in_
+        original_X_train_window_features_names_out_ = self.X_train_window_features_names_out_
+        original_X_train_direct_exog_names_out_ = self.X_train_direct_exog_names_out_
+        
+        (
+            X_train,
+            y_train,
+            _,
+            _,
+            _,
+            _,
+            X_train_features_names_out_,
+            *_
+        ) = self._create_train_X_y(series=series, exog=exog)
+            
+        if not X_train_features_names_out_ == self.X_train_features_names_out_:
+
+            # NOTE: Reset attributes modified in _create_train_X_y to their original values
+            self.exog_in_ = original_exog_in_
+            self.X_train_window_features_names_out_ = original_X_train_window_features_names_out_
+            self.X_train_direct_exog_names_out_ = original_X_train_direct_exog_names_out_
+
+            raise ValueError(
+                f"Feature mismatch detected after matrix creation. The features "
+                f"generated from the provided data do not match those used during "
+                f"the training process. To correctly set in-sample residuals, "
+                f"ensure that the same data and preprocessing steps are applied.\n"
+                f"    Expected output : {self.X_train_features_names_out_}\n"
+                f"    Current output  : {X_train_features_names_out_}"
+            )
+        
+        y_true_steps = []
+        y_pred_steps = []
+        self.in_sample_residuals_ = {}
+        for step in range(1, self.steps + 1):
+
+            X_train_step, y_train_step = self.filter_train_X_y_for_step(
+                                             step          = step,
+                                             X_train       = X_train,
+                                             y_train       = y_train,
+                                             remove_suffix = True
+                                         )
+            
+            y_true_step = y_train_step.to_numpy()
+            y_pred_step = self.regressors_[step].predict(X_train_step)
+            residuals = y_true_step - y_pred_step
+            if len(residuals) > 10_000:
+                rng = np.random.default_rng(seed=random_state)
+                residuals = residuals[
+                    rng.integers(low=0, high=len(residuals), size=10_000)
+                ]
+
+            y_true_steps.append(y_true_step)
+            y_pred_steps.append(y_pred_step)
+            self.in_sample_residuals_[step] = residuals
+
+        self._binning_in_sample_residuals(
+            y_true                    = np.concatenate(y_true_steps),
+            y_pred                    = np.concatenate(y_pred_steps),
+            store_in_sample_residuals = True,
+            random_state              = random_state
+        )
+
+        # NOTE: Reset attributes modified in _create_train_X_y to their original values
+        self.exog_in_ = original_exog_in_
+        self.X_train_window_features_names_out_ = original_X_train_window_features_names_out_
+        self.X_train_direct_exog_names_out_ = original_X_train_direct_exog_names_out_
+
+        set_skforecast_warnings(suppress_warnings, action='default')
+
     def set_out_sample_residuals(
         self,
         y_true: dict[int, np.ndarray | pd.Series],
@@ -3045,12 +3199,12 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 sample = rng.choice(a=v, size=max_samples, replace=False)
                 out_sample_residuals_by_bin[k] = sample
 
-        in_sample_residuals_by_bin = (
-            {}
-            if self.in_sample_residuals_by_bin_ is None
-            else self.in_sample_residuals_by_bin_
+        bin_keys = (
+            []
+            if self.binner_intervals_ is None
+            else self.binner_intervals_.keys()
         )
-        for k in in_sample_residuals_by_bin.keys():
+        for k in bin_keys:
             if k not in out_sample_residuals_by_bin:
                 out_sample_residuals_by_bin[k] = np.array([])
 

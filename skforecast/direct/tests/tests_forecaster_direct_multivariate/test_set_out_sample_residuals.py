@@ -303,7 +303,7 @@ def test_out_sample_residuals_by_bin_and_in_sample_residuals_by_bin_equivalence(
                      transformer_series = None,
                      binner_kwargs      = {'n_bins': 3}
                  )
-    forecaster.fit(series=series)
+    forecaster.fit(series=series, store_in_sample_residuals=True)
     X_train, y_train = forecaster.create_train_X_y(series=series)
 
     y_true = {}

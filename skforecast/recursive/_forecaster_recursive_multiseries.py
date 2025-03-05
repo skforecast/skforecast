@@ -1664,6 +1664,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             If `True`, in-sample residuals will be stored in the forecaster object
             after fitting (`in_sample_residuals_` and `in_sample_residuals_by_bin_`
             attributes).
+            If `False`, only the intervals of the bins are stored.
         random_state : int, default 123
             Set a seed for the random generator so that the stored sample 
             residuals are always deterministic.
@@ -1845,8 +1846,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         y_pred : numpy ndarray
             Predicted values of the time series.
         store_in_sample_residuals : bool, default False
-            If `True`, in-sample residuals will be stored in the forecaster object.
-            If `False`, only the binned intervals are stored.
+            If `True`, in-sample residuals will be stored in the forecaster object
+            after fitting (`in_sample_residuals_` and `in_sample_residuals_by_bin_`
+            attributes).
+            If `False`, only the intervals of the bins are stored.
         random_state : int, default 123
             Set a seed for the random generator so that the stored sample 
             residuals are always deterministic.
@@ -3322,7 +3325,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self,
         series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
         exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
-        random_state: int = 123
+        random_state: int = 123,
+        suppress_warnings: bool = False
     ) -> None:
         """
         Set in-sample residuals in case they were not calculated during the
@@ -3332,13 +3336,14 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         values and the predictions made by the forecaster using the training 
         data. The following internal attributes are updated:
 
-        + `in_sample_residuals_`: residuals stored in a numpy ndarray.
+        + `in_sample_residuals_`: Dictionary containing a numpy ndarray with the
+        residuals for each series in the form `{series: residuals}`.
         + `binner_intervals_`: intervals used to bin the residuals are calculated
         using the quantiles of the predicted values.
         + `in_sample_residuals_by_bin_`: residuals are binned according to the
-        predicted value they are associated with and stored in a dictionary, where
-        the keys are the  intervals of the predicted values and the values are
-        the residuals associated with that range. 
+        predicted value they are associated with and stored in a dictionary per
+        series, where the keys are the intervals of the predicted values and the 
+        values are the residuals associated with that range. 
 
         A total of 10_000 residuals are stored in the attribute `in_sample_residuals_`.
         If the number of residuals is greater than 10_000, a random sample of
@@ -3353,12 +3358,18 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             Exogenous variable/s included as predictor/s.
         random_state : int, default 123
             Sets a seed to the random sampling for reproducible output.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings will be suppressed during the sampling 
+            process. See skforecast.exceptions.warn_skforecast_categories for more
+            information.
 
         Returns
         -------
         None
 
         """
+
+        set_skforecast_warnings(suppress_warnings, action='ignore')
 
         if not self.is_fitted:
             raise NotFittedError(
@@ -3432,6 +3443,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             store_in_sample_residuals = True,
             random_state              = random_state
         )
+
+        set_skforecast_warnings(suppress_warnings, action='default')
 
     def set_out_sample_residuals(
         self, 

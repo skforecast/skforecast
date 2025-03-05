@@ -41,9 +41,9 @@ def test_binning_in_sample_residuals_output():
            ])
     }
     expected_binner_intervals = {
-        0.0: (77.11104390221573, 95.19313158258132),
-        1.0: (95.19313158258132, 107.10836783689707),
-        2.0: (107.10836783689707, 122.98049619443195)
+        0: (77.11104390221573, 95.19313158258132),
+        1: (95.19313158258132, 107.10836783689707),
+        2: (107.10836783689707, 122.98049619443195)
     }
 
     for k in forecaster.in_sample_residuals_by_bin_.keys():
@@ -75,9 +75,9 @@ def test_binning_in_sample_residuals_store_in_sample_residuals_False():
     )
 
     expected_binner_intervals = {
-        0.0: (77.11104390221573, 95.19313158258132),
-        1.0: (95.19313158258132, 107.10836783689707),
-        2.0: (107.10836783689707, 122.98049619443195)
+        0: (77.11104390221573, 95.19313158258132),
+        1: (95.19313158258132, 107.10836783689707),
+        2: (107.10836783689707, 122.98049619443195)
     }
 
     assert forecaster.in_sample_residuals_by_bin_ is None
@@ -115,7 +115,6 @@ def test_binning_in_sample_residuals_stores_maximum_10000_residuals():
     """
     Test that maximum 10_000 residuals are stored.
     """
-
     n = 15000
     y = pd.Series(
             data = np.random.normal(loc=10, scale=1, size=n),

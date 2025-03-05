@@ -927,6 +927,7 @@ class ForecasterRecursive(ForecasterBase):
             If `True`, in-sample residuals will be stored in the forecaster object
             after fitting (`in_sample_residuals_` and `in_sample_residuals_by_bin_`
             attributes).
+            If `False`, only the intervals of the bins are stored.
         random_state : int, default 123
             Set a seed for the random generator so that the stored sample 
             residuals are always deterministic.
@@ -1046,6 +1047,7 @@ class ForecasterRecursive(ForecasterBase):
             If `True`, in-sample residuals will be stored in the forecaster object
             after fitting (`in_sample_residuals_` and `in_sample_residuals_by_bin_`
             attributes).
+            If `False`, only the intervals of the bins are stored.
             If `False`, only the intervals of the bins are stored.
         random_state : int, default 123
             Set a seed for the random generator so that the stored sample 
@@ -2217,7 +2219,7 @@ class ForecasterRecursive(ForecasterBase):
         using the quantiles of the predicted values.
         + `in_sample_residuals_by_bin_`: residuals are binned according to the
         predicted value they are associated with and stored in a dictionary, where
-        the keys are the  intervals of the predicted values and the values are
+        the keys are the intervals of the predicted values and the values are
         the residuals associated with that range. 
 
         A total of 10_000 residuals are stored in the attribute `in_sample_residuals_`.

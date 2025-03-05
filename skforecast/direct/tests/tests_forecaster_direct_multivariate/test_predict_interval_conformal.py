@@ -19,7 +19,7 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
     forecaster = ForecasterDirectMultiVariate(
         LinearRegression(), level='l1', steps=2, lags=3, transformer_series=None
     )
-    forecaster.fit(series=series_2)
+    forecaster.fit(series=series_2, store_in_sample_residuals=True)
     forecaster.in_sample_residuals_ = {
         1: np.full_like(forecaster.in_sample_residuals_[1], fill_value=10),
         2: np.full_like(forecaster.in_sample_residuals_[2], fill_value=20)
@@ -46,7 +46,7 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
     forecaster = ForecasterDirectMultiVariate(
         LinearRegression(), level='l1', steps=2, lags=3, transformer_series=None
     )
-    forecaster.fit(series=series_2)
+    forecaster.fit(series=series_2, store_in_sample_residuals=True)
     forecaster.in_sample_residuals_ = {
         1: np.full_like(forecaster.in_sample_residuals_[1], fill_value=10),
         2: np.full_like(forecaster.in_sample_residuals_[2], fill_value=20)
@@ -74,7 +74,7 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
     forecaster = ForecasterDirectMultiVariate(
         LinearRegression(), level='l1', steps=2, lags=3, transformer_series=None
     )
-    forecaster.fit(series=series_2)
+    forecaster.fit(series=series_2, store_in_sample_residuals=True)
     forecaster.out_sample_residuals_ = {
         1: np.full_like(forecaster.in_sample_residuals_[1], fill_value=10),
         2: np.full_like(forecaster.in_sample_residuals_[2], fill_value=20)
@@ -101,7 +101,7 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
     forecaster = ForecasterDirectMultiVariate(
         LinearRegression(), level='l1', steps=2, lags=3, transformer_series=None
     )
-    forecaster.fit(series=series_2)
+    forecaster.fit(series=series_2, store_in_sample_residuals=True)
     forecaster.out_sample_residuals_ = {
         1: np.full_like(forecaster.in_sample_residuals_[1], fill_value=10),
         2: np.full_like(forecaster.in_sample_residuals_[2], fill_value=20)
@@ -132,7 +132,7 @@ def test_predict_interval_conformal_output_when_regressor_is_LinearRegression():
                      lags               = 3,
                      transformer_series = StandardScaler()
                  )
-    forecaster.fit(series=series)
+    forecaster.fit(series=series, store_in_sample_residuals=True)
     results = forecaster._predict_interval_conformal(nominal_coverage=0.95)
 
     expected = pd.DataFrame(
@@ -159,7 +159,7 @@ def test_predict_interval_conformal_output():
                      lags               = 3,
                      transformer_series = StandardScaler()
                  )
-    forecaster.fit(series=series)
+    forecaster.fit(series=series, store_in_sample_residuals=True)
     results = forecaster._predict_interval_conformal(nominal_coverage=0.95)
 
     expected = pd.DataFrame(
@@ -187,7 +187,7 @@ def test_predict_interval_conformal_output_when_out_sample_residuals():
                      lags               = 3,
                      transformer_series = StandardScaler()
                  )
-    forecaster.fit(series=series)
+    forecaster.fit(series=series, store_in_sample_residuals=True)
     forecaster.out_sample_residuals_ = forecaster.in_sample_residuals_
     results = forecaster._predict_interval_conformal(
         nominal_coverage=0.95, use_in_sample_residuals=False
@@ -217,7 +217,7 @@ def test_predict_interval_conformal_output_binned_residuals():
                      lags               = 3,
                      transformer_series = StandardScaler()
                  )
-    forecaster.fit(series=series)
+    forecaster.fit(series=series, store_in_sample_residuals=True)
     results = forecaster._predict_interval_conformal(
         nominal_coverage=0.95, use_binned_residuals=True
     )
@@ -246,7 +246,7 @@ def test_predict_interval_conformal_output_binned__out_sample_residuals():
                      lags               = 3,
                      transformer_series = StandardScaler()
                  )
-    forecaster.fit(series=series)
+    forecaster.fit(series=series, store_in_sample_residuals=True)
     forecaster.out_sample_residuals_by_bin_ = forecaster.in_sample_residuals_by_bin_
     results = forecaster._predict_interval_conformal(
         nominal_coverage=0.95, use_in_sample_residuals=False, use_binned_residuals=True
@@ -277,7 +277,7 @@ def test_predict_interval_conformal_output_with_differentiation():
                      transformer_series = StandardScaler(),
                      differentiation    = 1
                  )
-    forecaster.fit(series=series)
+    forecaster.fit(series=series, store_in_sample_residuals=True)
     results = forecaster._predict_interval_conformal(
         nominal_coverage=0.95, use_binned_residuals=False
     )

@@ -172,7 +172,7 @@ def test_out_sample_residuals_by_bin_and_in_sample_residuals_by_bin_equivalence(
                      lags = 5,
                      binner_kwargs = {'n_bins': 3}
                  )
-    forecaster.fit(y)
+    forecaster.fit(y, store_in_sample_residuals=True)
 
     X_train, y_train = forecaster.create_train_X_y(y)
     forecaster.regressor.fit(X_train, y_train)

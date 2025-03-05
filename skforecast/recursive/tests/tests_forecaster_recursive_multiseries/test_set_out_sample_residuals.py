@@ -207,7 +207,7 @@ def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_and_n
     forecaster = ForecasterRecursiveMultiSeries(
         LinearRegression(), lags=3, encoding=encoding, binner_kwargs={"n_bins": 3}
     )
-    forecaster.fit(series=series)
+    forecaster.fit(series=series, store_in_sample_residuals=True)
     y_true = {"l1": rng.normal(10, 3, 20), "l2": rng.normal(10, 3, 20)}
     y_pred = {"l1": rng.normal(10, 3, 20), "l2": rng.normal(10, 3, 20)}
 
