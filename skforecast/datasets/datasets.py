@@ -1,6 +1,6 @@
 
 ################################################################################
-#                            skforecast.datsets                                #
+#                            skforecast.datasets                               #
 #                                                                              #
 # This work by skforecast team is licensed under the BSD 3-Clause License.     #
 ################################################################################
@@ -25,7 +25,7 @@ def fetch_dataset(
     name: str
         Name of the dataset to fetch.
     version: str, int, default `'latest'`
-        Version of the dataset to fetch. If 'latest', the lastest version will be 
+        Version of the dataset to fetch. If 'latest', the latest version will be 
         fetched (the one in the main branch). For a list of available versions, 
         see the repository branches.
     raw: bool, default `False`
@@ -375,7 +375,7 @@ def fetch_dataset(
                 "format using the code provided by the authors in "
                 "https://github.com/rakshitha123/TSForecasting/blob/master/utils/data_loader.py \n"
                 "The category of each time series has been included in the dataset. This "
-                "information has been obtainded from the Kaggle competition page: "
+                "information has been obtained from the Kaggle competition page: "
                 "https://www.kaggle.com/datasets/yogesh94/m4-forecasting-competition-dataset"
             )
         },
@@ -400,7 +400,7 @@ def fetch_dataset(
                 "format using the code provided by the authors in "
                 "https://github.com/rakshitha123/TSForecasting/blob/master/utils/data_loader.py \n"
                 "The category of each time series has been included in the dataset. This "
-                "information has been obtainded from the Kaggle competition page: "
+                "information has been obtained from the Kaggle competition page: "
                 "https://www.kaggle.com/datasets/yogesh94/m4-forecasting-competition-dataset"
             )
         },
@@ -717,7 +717,7 @@ def load_demo_dataset(version: str = 'latest') -> pd.Series:
     Parameters
     ----------
     version: str, default `'latest'`
-        Version of the dataset to fetch. If 'latest', the lastest version will be
+        Version of the dataset to fetch. If 'latest', the latest version will be
         fetched (the one in the main branch). For a list of available versions,
         see the repository branches.
 

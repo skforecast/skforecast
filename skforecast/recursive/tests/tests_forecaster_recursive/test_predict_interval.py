@@ -35,7 +35,7 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_1_
     using in sample residuals.
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
-    forecaster.fit(y=pd.Series(np.arange(10)))
+    forecaster.fit(y=pd.Series(np.arange(10)), store_in_sample_residuals=True)
     forecaster.in_sample_residuals_ = np.full_like(forecaster.in_sample_residuals_, fill_value=10)
     results = forecaster.predict_interval(steps=1, use_in_sample_residuals=True)
 
@@ -54,7 +54,7 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_2_
     using in sample residuals.
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
-    forecaster.fit(y=pd.Series(np.arange(10)))
+    forecaster.fit(y=pd.Series(np.arange(10)), store_in_sample_residuals=True)
     forecaster.in_sample_residuals_ = np.full_like(forecaster.in_sample_residuals_, fill_value=10)
     results = forecaster.predict_interval(steps=2, use_in_sample_residuals=True)
 
@@ -74,7 +74,7 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_1_
     using out sample residuals.
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
-    forecaster.fit(y=pd.Series(np.arange(10)))
+    forecaster.fit(y=pd.Series(np.arange(10)), store_in_sample_residuals=True)
     forecaster.out_sample_residuals_ = np.full_like(forecaster.in_sample_residuals_, fill_value=10)
     results = forecaster.predict_interval(steps=1, use_in_sample_residuals=False)
 
@@ -93,7 +93,7 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_2_
     using out sample residuals.
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
-    forecaster.fit(y=pd.Series(np.arange(10)))
+    forecaster.fit(y=pd.Series(np.arange(10)), store_in_sample_residuals=True)
     forecaster.out_sample_residuals_ = np.full_like(forecaster.in_sample_residuals_, fill_value=10)
     results = forecaster.predict_interval(steps=2, use_in_sample_residuals=False)
     
@@ -125,7 +125,7 @@ def test_predict_interval_output_when_regressor_is_LinearRegression_with_transfo
                      lags          = 5,
                      transformer_y = transformer_y
                  )
-    forecaster.fit(y=y)
+    forecaster.fit(y=y, store_in_sample_residuals=True)
     results = forecaster.predict_interval(steps=5, interval=interval)
 
     expected = pd.DataFrame(
@@ -170,7 +170,7 @@ def test_predict_interval_output_when_regressor_is_LinearRegression_with_transfo
                      transformer_exog = transformer_exog
                  )
     
-    forecaster.fit(y=y, exog=exog)
+    forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True)
     results = forecaster.predict_interval(steps=5, exog=exog_predict)
 
     expected = pd.DataFrame(
@@ -192,7 +192,7 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_5_
     using in sample binned residuals.
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=3, binner_kwargs={'n_bins': 15})
-    forecaster.fit(y=y)
+    forecaster.fit(y=y, store_in_sample_residuals=True)
     results = forecaster.predict_interval(
         steps=5, interval=(5, 95), use_in_sample_residuals=True, use_binned_residuals=True
     )
@@ -218,7 +218,7 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_5_
     binned_residuals=True.
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=3, binner_kwargs={'n_bins': 15})
-    forecaster.fit(y=y)
+    forecaster.fit(y=y, store_in_sample_residuals=True)
     forecaster.out_sample_residuals_by_bin_ = forecaster.in_sample_residuals_by_bin_
     results = forecaster.predict_interval(
         steps=5, interval=(5, 95), use_in_sample_residuals=False, use_binned_residuals=True
@@ -257,7 +257,7 @@ def test_predict_interval_conformal_output_when_regressor_is_LinearRegression_wi
                      lags          = 5,
                      transformer_y = StandardScaler()
                  )
-    forecaster.fit(y=y)
+    forecaster.fit(y=y, store_in_sample_residuals=True)
     results = forecaster.predict_interval(
         steps=5, method='conformal', interval=interval
     )
@@ -295,7 +295,7 @@ def test_predict_interval_conformal_output_when_binned_residuals(interval):
                      transformer_y = StandardScaler(),
                      binner_kwargs = {'n_bins': 3}
                  )
-    forecaster.fit(y=y)
+    forecaster.fit(y=y, store_in_sample_residuals=True)
     results = forecaster.predict_interval(
         steps=5, method='conformal', interval=interval, use_binned_residuals=True
     )

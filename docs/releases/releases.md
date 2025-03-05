@@ -16,6 +16,8 @@ The main changes in this release are:
 
 + Probabilistic predictions in <code>[ForecasterRecursiveMultiSeries]</code> and <code>[ForecasterDirectMultiVariate]</code> are now returned as a long format DataFrame.
 
++ store_in_sample_residuals default False
+
 
 **Added**
 
@@ -26,6 +28,8 @@ The main changes in this release are:
 + <code>[ConformalIntervalCalibrator]</code>
 
 + Binned in rest of Forecasters.
+
++ Set in sample residuals.
 
 + Functions `crps_from_predictions` and `crps_from_quantiles` in module `metrics` to calculate the Continuous Ranked Probability Score (CRPS).
 
@@ -49,6 +53,8 @@ The main changes in this release are:
 
 
 **Changed**
+
++ store_in_sample_residuals default False
 
 + Predictions from `predict_bootstrapping` in <code>[ForecasterRecursiveMultiSeries]</code> and <code>[ForecasterDirectMultiVariate]</code> are now returned as a long format DataFrame with the bootstrapping predictions. The columns are `level`, `pred_boot_0`, `pred_boot_1`, ..., `pred_boot_n_boot`.
 

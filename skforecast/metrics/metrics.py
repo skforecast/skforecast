@@ -136,7 +136,7 @@ def mean_absolute_scaled_error(
     """
 
     # NOTE: When using this metric in validation, `y_train` doesn't include
-    # the first window_size observartions used to create the predictors and/or
+    # the first window_size observations used to create the predictors and/or
     # rolling features.
 
     if not isinstance(y_true, (pd.Series, np.ndarray)):
@@ -203,7 +203,7 @@ def root_mean_squared_scaled_error(
     """
 
     # NOTE: When using this metric in validation, `y_train` doesn't include
-    # the first window_size observartions used to create the predictors and/or
+    # the first window_size observations used to create the predictors and/or
     # rolling features.
 
     if not isinstance(y_true, (pd.Series, np.ndarray)):

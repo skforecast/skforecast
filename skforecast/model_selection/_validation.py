@@ -193,14 +193,13 @@ def _backtesting_forecaster(
             for m in metric
         ]
 
+    store_in_sample_residuals = True if use_in_sample_residuals else False
     if interval is None:
         forecaster._probabilistic_mode = False
     elif use_binned_residuals:
         forecaster._probabilistic_mode = 'binned'
     else:
         forecaster._probabilistic_mode = 'no_binned'
-
-    store_in_sample_residuals = True if use_in_sample_residuals else False
 
     folds = cv.split(X=y, as_pandas=False)
     initial_train_size = cv.initial_train_size
@@ -359,7 +358,7 @@ def _backtesting_forecaster(
         fit_fold = fold[-1]
         if i == 0 or fit_fold:
             # NOTE: When using a scaled metric, `y_train` doesn't include the
-            # first window_size observartions used to create the predictors and/or
+            # first window_size observations used to create the predictors and/or
             # rolling features.
             train_iloc_start = fold[0][0] + window_size
             train_iloc_end = fold[0][1]
@@ -749,13 +748,13 @@ def _backtesting_forecaster_multiseries(
             for m in metric
         ]
 
+    store_in_sample_residuals = True if use_in_sample_residuals else False
     if interval is None:
         forecaster._probabilistic_mode = False
     elif use_binned_residuals:
         forecaster._probabilistic_mode = 'binned'
     else:
         forecaster._probabilistic_mode = 'no_binned'
-    store_in_sample_residuals = True if use_in_sample_residuals else False
 
     folds = cv.split(X=series, as_pandas=False)
     span_index = cv._extract_index(X=series)

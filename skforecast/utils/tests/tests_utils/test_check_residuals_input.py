@@ -26,8 +26,8 @@ def test_check_residuals_input_ValueError_when_not_in_sample_residuals(residuals
 
     err_msg = re.escape(
         f"`forecaster.{literal}` is either None or empty. Use "
-        f"`store_in_sample_residuals = True` when fitting the "
-        f"forecaster to store in-sample residuals."
+        f"`store_in_sample_residuals = True` when fitting the forecaster "
+        f"or use the `set_in_sample_residuals()` method before predicting."
     )
     with pytest.raises(ValueError, match = err_msg):
         check_residuals_input(

@@ -399,7 +399,9 @@ def test_create_predict_inputs_output_when_regressor_is_LinearRegression_with_ex
                      transformer_series = StandardScaler(),    
                      differentiation    = differentiation
                  )
-    forecaster.fit(series=series_dict_datetime, exog=exog_dict_datetime)
+    forecaster.fit(
+        series=series_dict_datetime, exog=exog_dict_datetime, store_in_sample_residuals=True
+    )
     results = forecaster._create_predict_inputs(
         steps=steps, exog=exog_pred, predict_probabilistic=True
     )

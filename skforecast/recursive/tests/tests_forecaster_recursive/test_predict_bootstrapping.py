@@ -66,7 +66,7 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_s
     1 step ahead is predicted with exog using in-sample residuals.
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
-    forecaster.fit(y=y, exog=exog)
+    forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True)
     results = forecaster.predict_bootstrapping(
         steps=1, n_boot=4, exog=exog_predict, use_in_sample_residuals=True
     )
@@ -86,7 +86,7 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_s
     2 steps ahead are predicted with exog using in-sample residuals.
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
-    forecaster.fit(y=y, exog=exog)
+    forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True)
     results = forecaster.predict_bootstrapping(
         steps=2, n_boot=4, exog=exog_predict, use_in_sample_residuals=True
     )
@@ -109,7 +109,7 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_s
     1 step ahead is predicted with exog using out-sample residuals.
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
-    forecaster.fit(y=y, exog=exog)
+    forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True)
     forecaster.out_sample_residuals_ = forecaster.in_sample_residuals_
     results = forecaster.predict_bootstrapping(
         steps=1, n_boot=4, exog=exog_predict, use_in_sample_residuals=False
@@ -130,7 +130,7 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_s
     2 steps ahead are predicted with exog using out-sample residuals.
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
-    forecaster.fit(y=y, exog=exog)
+    forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True)
     forecaster.out_sample_residuals_ = forecaster.in_sample_residuals_
     results = forecaster.predict_bootstrapping(
         steps=2, n_boot=4, exog=exog_predict, use_in_sample_residuals=False
@@ -160,7 +160,7 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_
                      transformer_y    = StandardScaler(),
                      transformer_exog = StandardScaler(),
                  )
-    forecaster.fit(y=y, exog=exog)
+    forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True)
     forecaster.in_sample_residuals_ = np.full_like(forecaster.in_sample_residuals_, fill_value=0)
     results = forecaster.predict_bootstrapping(
         steps=2, exog=exog_predict, n_boot=4, use_in_sample_residuals=True
@@ -188,7 +188,7 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_
                      transformer_y    = StandardScaler(),
                      transformer_exog = StandardScaler()
                  )
-    forecaster.fit(y=y, exog=exog)
+    forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True)
     results = forecaster.predict_bootstrapping(
         steps=2, exog=exog_predict, n_boot=4, use_in_sample_residuals=True
     )
@@ -225,7 +225,9 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_and_di
     steps = len(data.loc[end_train:])
 
     forecaster_1 = ForecasterRecursive(regressor=LinearRegression(), lags=15)
-    forecaster_1.fit(y=data_diff.loc[:end_train], exog=exog_diff.loc[:end_train])
+    forecaster_1.fit(
+        y=data_diff.loc[:end_train], exog=exog_diff.loc[:end_train], store_in_sample_residuals=True
+    )
     boot_predictions_diff = forecaster_1.predict_bootstrapping(
                                 steps=steps,
                                 exog=exog_diff.loc[end_train:],
@@ -239,7 +241,9 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_and_di
     boot_predictions_1 = boot_predictions_1.asfreq('MS')
 
     forecaster_2 = ForecasterRecursive(regressor=LinearRegression(), lags=15, differentiation=1)
-    forecaster_2.fit(y=data.loc[:end_train], exog=exog.loc[:end_train])
+    forecaster_2.fit(
+        y=data.loc[:end_train], exog=exog.loc[:end_train], store_in_sample_residuals=True
+    )
     boot_predictions_2 = forecaster_2.predict_bootstrapping(
                             steps  = steps,
                             exog   = exog_diff.loc[end_train:],
@@ -266,7 +270,7 @@ def test_predict_bootstrapping_output_when_window_features():
     forecaster = ForecasterRecursive(
         LGBMRegressor(verbose=-1, random_state=123), lags=3, window_features=rolling
     )
-    forecaster.fit(y=y_datetime, exog=exog_datetime)
+    forecaster.fit(y=y_datetime, exog=exog_datetime, store_in_sample_residuals=True)
     results = forecaster.predict_bootstrapping(
         steps=4, n_boot=10, exog=exog_predict_datetime, use_in_sample_residuals=True
     )

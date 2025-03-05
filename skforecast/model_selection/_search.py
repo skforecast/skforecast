@@ -1281,7 +1281,7 @@ def _evaluate_grid_hyperparameters_multiseries(
         - column params: parameters configuration for each iteration.
         - n columns with metrics: metric/s value/s estimated for each iteration.
         There is one column for each metric and aggregation method. The name of
-        the column flollows the pattern `metric__aggregation`.
+        the column follows the pattern `metric__aggregation`.
         - additional n columns with param = value.
     
     """
@@ -1749,7 +1749,7 @@ def _bayesian_search_optuna_multiseries(
         - column params: parameters configuration for each iteration.
         - n columns with metrics: metric/s value/s estimated for each iteration.
         There is one column for each metric and aggregation method. The name of
-        the column flollows the pattern `metric__aggregation`.
+        the column follows the pattern `metric__aggregation`.
         - additional n columns with param = value.
     best_trial : optuna object
         The best optimization result returned as an optuna FrozenTrial object.

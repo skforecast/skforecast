@@ -260,9 +260,9 @@ def test_set_out_sample_residuals_when_residuals_length_is_greater_than_10000():
         assert len(v) == 1_000
 
 
-def test_out_sample_residuals_by_bin_and_in_sample_reseiduals_by_bin_equivalence():
+def test_out_sample_residuals_by_bin_and_in_sample_residuals_by_bin_equivalence():
     """
-    Test out sample residuals by bin are quivalent to in-sample residuals by bin
+    Test out sample residuals by bin are equivalent to in-sample residuals by bin
     when training data and training predictions are passed.
     """
     forecaster = ForecasterDirect(
@@ -271,7 +271,7 @@ def test_out_sample_residuals_by_bin_and_in_sample_reseiduals_by_bin_equivalence
                      lags          = 5,
                      binner_kwargs = {'n_bins': 3}
                  )
-    forecaster.fit(y)
+    forecaster.fit(y, store_in_sample_residuals=True)
     X_train, y_train = forecaster.create_train_X_y(y)
 
     y_true = {}
@@ -370,7 +370,7 @@ def test_set_out_sample_residuals_when_residuals_keys_partially_match():
             assert results[key] is None
 
 
-def test_forecaster_set_outsample_residuals_when_transformer_y_and_diferentiation():
+def test_forecaster_set_out_sample_residuals_when_transformer_y_and_differentiation():
     """
     Test set_out_sample_residuals when forecaster has transformer_y and differentiation.
     Stored should equivalent to residuals calculated manually if transformer_y and

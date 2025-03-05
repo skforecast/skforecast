@@ -105,7 +105,7 @@ def test_predict_interval_conformal_output_when_regressor_is_LinearRegression_wi
                      transformer_y = StandardScaler(),
                      binner_kwargs = {'n_bins': 15}
                  )
-    forecaster.fit(y=y)
+    forecaster.fit(y=y, store_in_sample_residuals=True)
     results = forecaster._predict_interval_conformal(steps=5)
 
     expected = pd.DataFrame(
@@ -149,7 +149,7 @@ def test_predict_interval_conformal_output_when_regressor_is_LinearRegression_wi
                      transformer_y    = StandardScaler(),
                      transformer_exog = transformer_exog
                  )
-    forecaster.fit(y=y, exog=exog)
+    forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True)
     results = forecaster._predict_interval_conformal(steps=5, exog=exog_predict)
     
     expected = pd.DataFrame(
@@ -172,7 +172,7 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
     using in sample residuals.
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=3, binner_kwargs={'n_bins': 15})
-    forecaster.fit(y=y)
+    forecaster.fit(y=y, store_in_sample_residuals=True)
     results = forecaster._predict_interval_conformal(
         steps=5, nominal_coverage=0.95, use_in_sample_residuals=True, use_binned_residuals=True
     )
@@ -198,7 +198,7 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
     binned_residuals=True.
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=3, binner_kwargs={'n_bins': 15})
-    forecaster.fit(y=y)
+    forecaster.fit(y=y, store_in_sample_residuals=True)
     forecaster.out_sample_residuals_by_bin_ = forecaster.in_sample_residuals_by_bin_
     results = forecaster._predict_interval_conformal(
         steps=5, nominal_coverage=0.95, use_in_sample_residuals=False, use_binned_residuals=True
@@ -229,7 +229,7 @@ def test_predict_interval_conformal_output_with_differentiation():
                      transformer_y   = StandardScaler(),
                      differentiation = 1
                  )
-    forecaster.fit(y=y)
+    forecaster.fit(y=y, store_in_sample_residuals=True)
     results = forecaster._predict_interval_conformal(
         steps=5, nominal_coverage=0.95, use_binned_residuals=False
     )

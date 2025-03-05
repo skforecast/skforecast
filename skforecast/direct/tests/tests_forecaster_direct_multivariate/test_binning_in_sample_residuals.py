@@ -22,6 +22,7 @@ def test_binning_in_sample_residuals_output():
     forecaster._binning_in_sample_residuals(
         y_pred=y_pred,
         y_true=y_true,
+        store_in_sample_residuals=True
     )
 
     expected_residuals_binned = {
@@ -39,15 +40,45 @@ def test_binning_in_sample_residuals_output():
            ])
     }
     expected_binner_intervals = {
-        0.0: (77.11104390221573, 95.19313158258132),
-        1.0: (95.19313158258132, 107.10836783689707),
-        2.0: (107.10836783689707, 122.98049619443195)
+        0: (77.11104390221573, 95.19313158258132),
+        1: (95.19313158258132, 107.10836783689707),
+        2: (107.10836783689707, 122.98049619443195)
     }
 
     for k in forecaster.in_sample_residuals_by_bin_.keys():
         np.testing.assert_array_almost_equal(
             forecaster.in_sample_residuals_by_bin_[k], expected_residuals_binned[k]
         )
+    for k in forecaster.binner_intervals_.keys():
+        assert forecaster.binner_intervals_[k][0] == approx(expected_binner_intervals[k][0])
+        assert forecaster.binner_intervals_[k][1] == approx(expected_binner_intervals[k][1])
+
+
+def test_binning_in_sample_residuals_store_in_sample_residuals_False():
+    """
+    Test that _binning_in_sample_residuals store_in_sample_residuals False.
+    """
+    forecaster = ForecasterDirectMultiVariate(
+        LinearRegression(), level='l1', steps=2, lags=3, binner_kwargs={'n_bins': 3}
+    )
+
+    rng = np.random.default_rng(123)
+    y_pred = rng.normal(100, 15, 20)
+    y_true = rng.normal(100, 10, 20)
+
+    forecaster._binning_in_sample_residuals(
+        y_pred=y_pred,
+        y_true=y_true,
+        store_in_sample_residuals=False
+    )
+
+    expected_binner_intervals = {
+        0: (77.11104390221573, 95.19313158258132),
+        1: (95.19313158258132, 107.10836783689707),
+        2: (107.10836783689707, 122.98049619443195)
+    }
+
+    assert forecaster.in_sample_residuals_by_bin_ is None
     for k in forecaster.binner_intervals_.keys():
         assert forecaster.binner_intervals_[k][0] == approx(expected_binner_intervals[k][0])
         assert forecaster.binner_intervals_[k][1] == approx(expected_binner_intervals[k][1])
@@ -69,7 +100,7 @@ def test_binning_in_sample_residuals_stores_maximum_10000_residuals():
     forecaster = ForecasterDirectMultiVariate(
         LinearRegression(), level='l1', steps=2, lags=3, binner_kwargs={'n_bins': 3}
     )
-    forecaster.fit(series=series)
+    forecaster.fit(series=series, store_in_sample_residuals=True)
     max_residuals_per_bin = int(10_000 // forecaster.binner.n_bins_)
 
     for v in forecaster.in_sample_residuals_.values():
