@@ -1141,17 +1141,11 @@ def _calculate_metrics_backtesting_multiseries(
     # -----------------------------------------------------------------------
     if isinstance(series, pd.DataFrame) and not isinstance(series.index, pd.MultiIndex):
         series = series.melt(ignore_index=False, var_name='level', value_name='y_true')
-        series = series.dropna(axis=0, how="any")
         series = series.rename_axis('idx', axis=0)
         series = series.set_index('level', append=True)
         series = series.swaplevel()
     else:
-        series = pd.DataFrame(series)
-        series = series.melt(ignore_index=False, var_name='level', value_name='y_true')
-        series = series.dropna(axis=0, how="any")
-        series = series.rename_axis('idx', axis=0)
-        series = series.set_index('level', append=True)
-        series = series.swaplevel()
+        series = pd.concat(series, names = ['level', 'idx']).to_frame('y_true')
     
     predictions = predictions.rename_axis('idx', axis=0)
     predictions = predictions.set_index('level', append=True)
@@ -1188,9 +1182,8 @@ def _calculate_metrics_backtesting_multiseries(
         train_indexes,
     ])
     series_train = series.loc[series.index.isin(train_indexes)]
-    # NOTE: Exclude observations used to create predictors
+    # NOTE: Exclude first window_size observations used to create predictors
     series_train = series_train[series_train.groupby(level="level").cumcount() >= window_size]
-
     ignore_y_train = all(name in metrics_no_y_train for name in metric_names)
     metrics_levels = []
     y_true_y_pred_grouped = (
@@ -1208,6 +1201,7 @@ def _calculate_metrics_backtesting_multiseries(
             y_true  = y_true_y_pred_grouped.get_group(level)['y_true']
             y_pred  = y_true_y_pred_grouped.get_group(level)['y_pred']
             if not ignore_y_train:
+                # NOTE: y_train includes the intercepted NaNs
                 y_train = series_train_grouped.get_group(level)['y_true']
             else:
                 y_train = None
