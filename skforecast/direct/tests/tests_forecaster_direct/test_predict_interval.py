@@ -63,7 +63,8 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_2_
                       interval                = interval,
                       exog                    = exog_predict,
                       n_boot                  = n_boot,
-                      use_in_sample_residuals = True
+                      use_in_sample_residuals = True,
+                      use_binned_residuals    = False
                   )
     
     expected = pd.DataFrame(
@@ -107,7 +108,8 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_2_
                       interval                = (5, 95),
                       exog                    = exog_predict,
                       n_boot                  = n_boot,
-                      use_in_sample_residuals = False
+                      use_in_sample_residuals = False,
+                      use_binned_residuals    = False
                   )
     
     expected = pd.DataFrame(
@@ -221,9 +223,11 @@ def test_predict_interval_conformal_output_when_regressor_is_LinearRegression_wi
                      lags          = 3,
                      transformer_y = StandardScaler()
                  )
-    forecaster.fit(y=y, store_in_sample_residuals=True)
+    forecaster.fit(y=y, store_in_sample_residuals=False)
+    forecaster.set_in_sample_residuals(y=y)
     results = forecaster.predict_interval(
-        steps=3, method='conformal', interval=interval
+        steps=3, method='conformal', interval=interval, 
+        use_in_sample_residuals=True, use_binned_residuals=False
     )
 
     expected = pd.DataFrame(
@@ -259,7 +263,8 @@ def test_predict_interval_conformal_output_when_binned_residuals(interval):
                  )
     forecaster.fit(y=y, store_in_sample_residuals=True)
     results = forecaster.predict_interval(
-        steps=3, method='conformal', interval=interval, use_binned_residuals=True
+        steps=3, method='conformal', interval=interval, 
+        use_in_sample_residuals=True, use_binned_residuals=True
     )
 
     expected = pd.DataFrame(

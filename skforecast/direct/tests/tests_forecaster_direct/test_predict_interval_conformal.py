@@ -24,7 +24,7 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
         2: np.full_like(forecaster.in_sample_residuals_[2], fill_value=20)
     }
     results = forecaster._predict_interval_conformal(
-        steps=1, nominal_coverage=0.95, use_in_sample_residuals=True
+        steps=1, nominal_coverage=0.95, use_in_sample_residuals=True, use_binned_residuals=False
     )
 
     expected = pd.DataFrame(
@@ -48,7 +48,7 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
         2: np.full_like(forecaster.in_sample_residuals_[2], fill_value=20)
     }
     results = forecaster._predict_interval_conformal(
-        steps=2, nominal_coverage=0.95, use_in_sample_residuals=True
+        steps=2, nominal_coverage=0.95, use_in_sample_residuals=True, use_binned_residuals=False
     )
 
     expected = pd.DataFrame(
@@ -73,7 +73,7 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
         2: np.full_like(forecaster.in_sample_residuals_[2], fill_value=20)
     }
     results = forecaster._predict_interval_conformal(
-        steps=1, nominal_coverage=0.95, use_in_sample_residuals=False
+        steps=1, nominal_coverage=0.95, use_in_sample_residuals=False, use_binned_residuals=False
     )
 
     expected = pd.DataFrame(
@@ -97,7 +97,7 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
         2: np.full_like(forecaster.in_sample_residuals_[2], fill_value=20)
     }
     results = forecaster._predict_interval_conformal(
-        steps=2, nominal_coverage=0.95, use_in_sample_residuals=False
+        steps=2, nominal_coverage=0.95, use_in_sample_residuals=False, use_binned_residuals=False
     )
 
     expected = pd.DataFrame(
@@ -127,7 +127,9 @@ def test_predict_interval_conformal_output_when_regressor_is_LinearRegression_wi
                      binner_kwargs = {'n_bins': 4}
                  )
     forecaster.fit(y=y, store_in_sample_residuals=True)
-    results = forecaster._predict_interval_conformal(nominal_coverage=0.95)
+    results = forecaster._predict_interval_conformal(
+        nominal_coverage=0.95, use_in_sample_residuals=True, use_binned_residuals=False
+    )
 
     expected = pd.DataFrame(
                    data = np.array([
@@ -176,7 +178,8 @@ def test_predict_interval_conformal_output_when_regressor_is_LinearRegression_wi
                  )
     forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True)
     results = forecaster._predict_interval_conformal(
-        steps=None, nominal_coverage=0.95, exog=exog_predict
+        steps=None, nominal_coverage=0.95, exog=exog_predict,
+        use_in_sample_residuals=True, use_binned_residuals=False
     )
 
     expected = pd.DataFrame(
@@ -255,7 +258,7 @@ def test_predict_interval_conformal_output_with_differentiation():
     )
     forecaster.fit(y=y, store_in_sample_residuals=True)
     results = forecaster._predict_interval_conformal(
-        steps=5, nominal_coverage=0.95, use_in_sample_residuals=True
+        steps=5, nominal_coverage=0.95, use_in_sample_residuals=True, use_binned_residuals=False
     )
 
     expected = pd.DataFrame(

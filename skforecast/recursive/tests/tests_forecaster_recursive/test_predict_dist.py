@@ -36,7 +36,8 @@ def test_predict_dist_TypeError_when_distribution_object_is_not_valid():
             exog                    = exog_predict,
             distribution            = CustomObject(),
             n_boot                  = 4,
-            use_in_sample_residuals = True
+            use_in_sample_residuals = True,
+            use_binned_residuals    = False
         )
 
 
@@ -59,7 +60,8 @@ def test_predict_dist_output_when_forecaster_is_LinearRegression_steps_is_2_in_s
                   exog                    = exog_predict,
                   distribution            = norm,
                   n_boot                  = 4,
-                  use_in_sample_residuals = True
+                  use_in_sample_residuals = True,
+                  use_binned_residuals    = False
               )
     
     expected = pd.DataFrame(
@@ -93,7 +95,8 @@ def test_predict_dist_output_when_forecaster_is_LinearRegression_steps_is_2_in_s
                   exog                    = exog_predict,
                   distribution            = norm,
                   n_boot                  = 4,
-                  use_in_sample_residuals = False
+                  use_in_sample_residuals = False,
+                  use_binned_residuals    = False
               )
     
     expected = pd.DataFrame(

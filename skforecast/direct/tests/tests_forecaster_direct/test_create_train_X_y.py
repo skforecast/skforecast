@@ -1528,8 +1528,8 @@ def test_create_train_X_y_output_when_y_is_series_exog_is_series_and_differentia
     the matrix created with and without differentiating the series.
     """
     # Data differentiated
-    diferenciator = TimeSeriesDifferentiator(order=1)
-    data_diff = diferenciator.fit_transform(data.to_numpy())
+    differentiator = TimeSeriesDifferentiator(order=1)
+    data_diff = differentiator.fit_transform(data.to_numpy())
     data_diff = pd.Series(data_diff, index=data.index).dropna()
 
     # Simulated exogenous variable
@@ -1582,8 +1582,8 @@ def test_create_train_X_y_output_when_y_is_series_exog_is_series_and_differentia
     the matrix created with and without differentiating the series with steps=3.
     """
     # Data differentiated
-    diferenciator = TimeSeriesDifferentiator(order=1)
-    data_diff = diferenciator.fit_transform(data.to_numpy())
+    differentiator = TimeSeriesDifferentiator(order=1)
+    data_diff = differentiator.fit_transform(data.to_numpy())
     data_diff = pd.Series(data_diff, index=data.index).dropna()
 
     # Simulated exogenous variable
@@ -1634,8 +1634,8 @@ def test_create_train_X_y_output_when_y_is_series_exog_is_series_and_differentia
     """
 
     # Data differentiated
-    diferenciator = TimeSeriesDifferentiator(order=2)
-    data_diff_2 = diferenciator.fit_transform(data.to_numpy())
+    differentiator = TimeSeriesDifferentiator(order=2)
+    data_diff_2 = differentiator.fit_transform(data.to_numpy())
     data_diff_2 = pd.Series(data_diff_2, index=data.index).dropna()
 
     # Simulated exogenous variable

@@ -33,8 +33,9 @@ def test_predict_NotFittedError_when_fitted_is_False():
     """
     Test NotFittedError is raised when fitted is False.
     """
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1',
-                                               lags=3, steps=3)
+    forecaster = ForecasterDirectMultiVariate(
+        LinearRegression(), level='l1', lags=3, steps=3
+    )
 
     err_msg = re.escape(
         "This Forecaster instance is not fitted yet. Call `fit` with "
@@ -60,7 +61,9 @@ def test_predict_bootstrapping_ValueError_when_not_in_sample_residuals_for_some_
         f"{set([1, 2]) - set(forecaster.in_sample_residuals_.keys())}."
     )
     with pytest.raises(ValueError, match = err_msg):
-        forecaster.predict_bootstrapping(steps=None, use_in_sample_residuals=True)
+        forecaster.predict_bootstrapping(
+            steps=None, use_in_sample_residuals=True, use_binned_residuals=False
+        )
 
 
 @pytest.mark.parametrize("use_binned_residuals", [True, False], 
@@ -110,7 +113,9 @@ def test_predict_bootstrapping_ValueError_when_not_out_sample_residuals_for_all_
         f"Use method `set_out_sample_residuals()`."
     )
     with pytest.raises(ValueError, match = err_msg):
-        forecaster.predict_bootstrapping(steps=[1, 2], use_in_sample_residuals=False)
+        forecaster.predict_bootstrapping(
+            steps=[1, 2], use_in_sample_residuals=False, use_binned_residuals=False
+        )
 
 
 @pytest.mark.parametrize("transformer_series", 
@@ -135,7 +140,9 @@ def test_predict_bootstrapping_ValueError_when_step_out_sample_residuals_value_i
         "Residuals for step 3 are None. Check `forecaster.out_sample_residuals_`."
     )
     with pytest.raises(ValueError, match = err_msg):
-        forecaster.predict_bootstrapping(steps=3, use_in_sample_residuals=False)
+        forecaster.predict_bootstrapping(
+            steps=3, use_in_sample_residuals=False, use_binned_residuals=False
+        )
 
 
 @pytest.mark.parametrize("steps", [2, [1, 2], None], 
@@ -156,7 +163,8 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_
                  )
     forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
     results = forecaster.predict_bootstrapping(
-        steps=steps, exog=exog_predict, n_boot=4, use_in_sample_residuals=True
+        steps=steps, exog=exog_predict, n_boot=4, 
+        use_in_sample_residuals=True, use_binned_residuals=False
     )
     
     expected = pd.DataFrame(
@@ -187,7 +195,8 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_
     forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
     forecaster.out_sample_residuals_ = forecaster.in_sample_residuals_
     results = forecaster.predict_bootstrapping(
-        steps=2, exog=exog_predict, n_boot=4, use_in_sample_residuals=False
+        steps=2, exog=exog_predict, n_boot=4, 
+        use_in_sample_residuals=False, use_binned_residuals=False
     )
     
     expected = pd.DataFrame(
@@ -217,7 +226,8 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_
     forecaster.in_sample_residuals_ = {1: pd.Series([1, 1, 1, 1, 1, 1, 1]),
                                        2: pd.Series([5, 5, 5, 5, 5, 5, 5])}
     results = forecaster.predict_bootstrapping(
-        steps=2, exog=exog_predict['exog_1'], n_boot=4, use_in_sample_residuals=True
+        steps=2, exog=exog_predict['exog_1'], n_boot=4, 
+        use_in_sample_residuals=True, use_binned_residuals=False
     )
     
     expected = pd.DataFrame(
@@ -245,10 +255,10 @@ def test_predict_bootstrapping_output_when_regressor_is_LinearRegression_with_ex
     )
 
     # Data differentiated
-    diferenciator = TimeSeriesDifferentiator(order=1)
+    differentiator = TimeSeriesDifferentiator(order=1)
     series_diff = pd.DataFrame(
-        {'l1': diferenciator.fit_transform(arr),
-         'l2': diferenciator.fit_transform(arr * 1.6)},
+        {'l1': differentiator.fit_transform(arr),
+         'l2': differentiator.fit_transform(arr * 1.6)},
         index=data.index
     ).dropna()
 
@@ -267,7 +277,7 @@ def test_predict_bootstrapping_output_when_regressor_is_LinearRegression_with_ex
         series=series_diff.loc[:end_train], exog=exog_diff.loc[:end_train], store_in_sample_residuals=True
     )
     boot_predictions_diff = forecaster_1.predict_bootstrapping(
-        exog=exog_diff.loc[end_train:], n_boot=10
+        exog=exog_diff.loc[end_train:], n_boot=10, use_in_sample_residuals=True, use_binned_residuals=False
     )
 
     # Revert the differentiation
@@ -291,7 +301,7 @@ def test_predict_bootstrapping_output_when_regressor_is_LinearRegression_with_ex
         series=series_2.loc[:end_train], exog=exog.loc[:end_train], store_in_sample_residuals=True
     )
     boot_predictions_2 = forecaster_2.predict_bootstrapping(
-        exog=exog_diff.loc[end_train:], n_boot=10
+        exog=exog_diff.loc[end_train:], n_boot=10, use_in_sample_residuals=True, use_binned_residuals=False
     )
 
     pd.testing.assert_frame_equal(boot_predictions_1, boot_predictions_2)
@@ -311,10 +321,10 @@ def test_predict_bootstrapping_output_when_regressor_is_LinearRegression_with_ex
     )
 
     # Data differentiated
-    diferenciator = TimeSeriesDifferentiator(order=1)
+    differentiator = TimeSeriesDifferentiator(order=1)
     series_diff = pd.DataFrame(
-        {'l1': diferenciator.fit_transform(arr),
-         'l2': diferenciator.fit_transform(arr * 1.6)},
+        {'l1': differentiator.fit_transform(arr),
+         'l2': differentiator.fit_transform(arr * 1.6)},
         index=data.index
     ).dropna()
 
@@ -333,7 +343,7 @@ def test_predict_bootstrapping_output_when_regressor_is_LinearRegression_with_ex
         series=series_diff.loc[:end_train], exog=exog_diff.loc[:end_train], store_in_sample_residuals=True
     )
     boot_predictions_diff = forecaster_1.predict_bootstrapping(
-        exog=exog_diff.loc[end_train:], n_boot=10
+        exog=exog_diff.loc[end_train:], n_boot=10, use_in_sample_residuals=True, use_binned_residuals=False
     )
 
     # Revert the differentiation
@@ -357,7 +367,7 @@ def test_predict_bootstrapping_output_when_regressor_is_LinearRegression_with_ex
         series=series_2.loc[:end_train], exog=exog.loc[:end_train], store_in_sample_residuals=True
     )
     boot_predictions_2 = forecaster_2.predict_bootstrapping(
-        exog=exog_diff.loc[end_train:], n_boot=10
+        exog=exog_diff.loc[end_train:], n_boot=10, use_in_sample_residuals=True, use_binned_residuals=False
     )
 
     pd.testing.assert_frame_equal(boot_predictions_1, boot_predictions_2)
@@ -376,7 +386,7 @@ def test_predict_output_when_window_features_steps_1():
     )
     forecaster.fit(series=series, exog=exog['exog_1'], store_in_sample_residuals=True)
     predictions = forecaster.predict_bootstrapping(
-        n_boot=10, exog=exog_predict['exog_1'], use_in_sample_residuals=True
+        n_boot=10, exog=exog_predict['exog_1'], use_in_sample_residuals=True, use_binned_residuals=False
     )
 
     expected = pd.DataFrame(
@@ -405,7 +415,7 @@ def test_predict_output_when_window_features_steps_10():
     )
     forecaster.fit(series=series, exog=exog['exog_1'], store_in_sample_residuals=True)
     predictions = forecaster.predict_bootstrapping(
-        n_boot=10, exog=exog_predict['exog_1'], use_in_sample_residuals=True
+        n_boot=10, exog=exog_predict['exog_1'], use_in_sample_residuals=True, use_binned_residuals=False
     )
 
     expected = pd.DataFrame(
@@ -457,7 +467,7 @@ def test_predict_bootstrapping_output_when_recommended_n_boot():
         forecaster.in_sample_residuals_[k] = v[:recommended_n_boot]
         
     results = forecaster.predict_bootstrapping(
-        steps=5, n_boot=recommended_n_boot, use_in_sample_residuals=True
+        steps=5, n_boot=recommended_n_boot, use_in_sample_residuals=True, use_binned_residuals=False
     )
     
     expected = pd.DataFrame(

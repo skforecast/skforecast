@@ -236,7 +236,7 @@ def set_dark_theme(
 
 def plot_prediction_intervals(
     predictions: pd.DataFrame,
-    y_true: pd.DataFrame | pd.Series,
+    y_true: pd.Series | pd.DataFrame,
     target_variable: str,
     initial_x_zoom: list[str] | None = None,
     title: str | None = None,
@@ -254,7 +254,7 @@ def plot_prediction_intervals(
     predictions : pandas DataFrame
         Predicted values and intervals. Expected columns are 'pred', 'lower_bound'
         and 'upper_bound'.
-    y_true : pandas DataFrame, pandas Series
+    y_true : pandas Series, pandas DataFrame
         Real values of target variable.
     target_variable : str
         Name of target variable.
@@ -283,7 +283,7 @@ def plot_prediction_intervals(
         fig, ax = plt.subplots(**kwargs_subplots)
 
     if isinstance(y_true, pd.Series):
-        y_true = pd.DataFrame(y_true)
+        y_true = y_true.to_frame()
 
     y_true.loc[predictions.index, target_variable].plot(ax=ax, label='real value')
     predictions['pred'].plot(ax=ax, label='prediction')

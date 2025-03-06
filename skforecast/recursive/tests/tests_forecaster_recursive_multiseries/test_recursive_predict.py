@@ -282,11 +282,12 @@ def test_recursive_predict_output_with_residuals_zero():
     )
     residuals = np.array([[0, 0], [0, 0], [0, 0], [0, 0], [0, 0]])
     predictions = forecaster._recursive_predict(
-                      steps            = 5,
-                      levels           = levels,
-                      last_window      = last_window,
-                      exog_values_dict = exog_values_dict,
-                      residuals        = residuals
+                      steps                = 5,
+                      levels               = levels,
+                      last_window          = last_window,
+                      exog_values_dict     = exog_values_dict,
+                      residuals            = residuals,
+                      use_binned_residuals = False
                   )
     
     expected = np.array([
@@ -318,11 +319,12 @@ def test_recursive_predict_output_with_residuals_last_step():
     )
     residuals = np.array([[0, 0], [0, 0], [0, 0], [0, 0], [100, 200]])
     predictions = forecaster._recursive_predict(
-                      steps            = 5,
-                      levels           = levels,
-                      last_window      = last_window,
-                      exog_values_dict = exog_values_dict,
-                      residuals        = residuals
+                      steps                = 5,
+                      levels               = levels,
+                      last_window          = last_window,
+                      exog_values_dict     = exog_values_dict,
+                      residuals            = residuals,
+                      use_binned_residuals = False
                   )
     
     expected = np.array([
@@ -359,11 +361,12 @@ def test_recursive_predict_output_with_residuals():
     residuals[:, 0] = np.array([1, 2, 3, 4, 5])
     residuals[:, 1] = np.array([10, 20, 30, 40, 50])
     predictions = forecaster._recursive_predict(
-                      steps            = 5,
-                      levels           = levels,
-                      last_window      = last_window,
-                      exog_values_dict = exog_values_dict,
-                      residuals        = residuals
+                      steps                = 5,
+                      levels               = levels,
+                      last_window          = last_window,
+                      exog_values_dict     = exog_values_dict,
+                      residuals            = residuals,
+                      use_binned_residuals = False
                   )
     
     expected = np.array([

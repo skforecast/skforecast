@@ -69,7 +69,8 @@ def test_predict_bootstrapping_IgnoredArgumentWarning_when_not_available_self_la
                       levels                  = ['1', '2'],
                       n_boot                  = 4, 
                       exog                    = exog_predict['exog_1'], 
-                      use_in_sample_residuals = True
+                      use_in_sample_residuals = True,
+                      use_binned_residuals    = False
                   )
 
     expected = {
@@ -143,7 +144,8 @@ def test_predict_bootstrapping_IgnoredArgumentWarning_when_levels_is_list_and_di
                       levels                  = ['1', '2'],
                       n_boot                  = 4, 
                       exog                    = exog_2_pred, 
-                      use_in_sample_residuals = True
+                      use_in_sample_residuals = True,
+                      use_binned_residuals    = False
                   )
 
     expected = {
@@ -181,7 +183,8 @@ def test_predict_bootstrapping_UnknownLevelWarning_when_not_in_sample_residuals_
                       levels                  = ['1', '2', '3'],
                       last_window             = last_window,
                       n_boot                  = 4,
-                      use_in_sample_residuals = True
+                      use_in_sample_residuals = True,
+                      use_binned_residuals    = False
                   )
 
     warn_msg = re.escape(
@@ -196,7 +199,8 @@ def test_predict_bootstrapping_UnknownLevelWarning_when_not_in_sample_residuals_
                       levels                  = ['1', '2', '3'],
                       last_window             = last_window,
                       n_boot                  = 4,
-                      use_in_sample_residuals = True
+                      use_in_sample_residuals = True,
+                      use_binned_residuals    = False
                   )
 
     expected = {
@@ -238,7 +242,8 @@ def test_predict_bootstrapping_encoding_None_unknown_level():
                   levels                  = ['1', '2', '3'],
                   last_window             = last_window,
                   n_boot                  = 4,
-                  use_in_sample_residuals = True
+                  use_in_sample_residuals = True,
+                  use_binned_residuals    = False
               )
 
     expected = {
@@ -280,7 +285,8 @@ def test_predict_bootstrapping_encoding_None_unknown_level_differentiation():
                   levels                  = ['1', '2', '3'],
                   last_window             = last_window,
                   n_boot                  = 5,
-                  use_in_sample_residuals = True
+                  use_in_sample_residuals = True,
+                  use_binned_residuals    = False
               )
 
     expected = {
@@ -320,7 +326,7 @@ def test_predict_bootstrapping_ValueError_when_out_sample_residuals_is_None():
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster.predict_bootstrapping(
-            steps=1, levels='1', use_in_sample_residuals=False
+            steps=1, levels='1', use_in_sample_residuals=False, use_binned_residuals=False
         )
 
 
@@ -358,7 +364,8 @@ def test_predict_bootstrapping_UnknownLevelWarning_out_sample_residuals_with_enc
                   levels                  = ['1', '2', '3'],
                   last_window             = last_window,
                   n_boot                  = 4,
-                  use_in_sample_residuals = False
+                  use_in_sample_residuals = False,
+                  use_binned_residuals    = False
               )
 
     expected = {
@@ -405,7 +412,9 @@ def test_predict_bootstrapping_ValueError_when_not_level_in_out_sample_residuals
         "Residuals for level '2' are None. Check `forecaster.out_sample_residuals_`."
     )
     with pytest.raises(ValueError, match = err_msg):
-        forecaster.predict_bootstrapping(steps=3, use_in_sample_residuals=False)
+        forecaster.predict_bootstrapping(
+            steps=3, use_in_sample_residuals=False, use_binned_residuals=False
+        )
 
 
 @pytest.mark.parametrize("transformer_series", 
@@ -448,7 +457,8 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_s
                   steps                   = 1, 
                   n_boot                  = 4, 
                   exog                    = exog_predict['exog_1'], 
-                  use_in_sample_residuals = True
+                  use_in_sample_residuals = True,
+                  use_binned_residuals    = False
               )
 
     expected_1 = pd.DataFrame(
@@ -517,7 +527,8 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_s
                   steps                   = 2, 
                   n_boot                  = 4, 
                   exog                    = exog_predict['exog_1'], 
-                  use_in_sample_residuals = True
+                  use_in_sample_residuals = True,
+                  use_binned_residuals    = False
               )
 
     expected_1 = pd.DataFrame(
@@ -591,6 +602,7 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_s
                   n_boot                  = 4, 
                   exog                    = exog_predict['exog_1'], 
                   use_in_sample_residuals = False,
+                  use_binned_residuals    = False,
                   suppress_warnings       = True
               )
 
@@ -626,7 +638,8 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_s
                   steps                   = 2, 
                   n_boot                  = 4, 
                   exog                    = exog_predict['exog_1'], 
-                  use_in_sample_residuals = False
+                  use_in_sample_residuals = False,
+                  use_binned_residuals    = False
               )
     
     expected_1 = pd.DataFrame(
@@ -705,7 +718,8 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_
                   steps                   = 2, 
                   n_boot                  = 4, 
                   exog                    = exog_predict, 
-                  use_in_sample_residuals = True
+                  use_in_sample_residuals = True,
+                  use_binned_residuals    = False
               )
     
     expected_1 = pd.DataFrame(
@@ -744,7 +758,8 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_
                   steps                   = 2, 
                   n_boot                  = 4, 
                   exog                    = exog_predict, 
-                  use_in_sample_residuals = True
+                  use_in_sample_residuals = True,
+                  use_binned_residuals    = False
               )
     
     expected_1 = pd.DataFrame(
@@ -792,7 +807,8 @@ def test_predict_bootstrapping_output_when_window_features():
                   steps                   = 6, 
                   n_boot                  = 10, 
                   exog                    = exog_predict, 
-                  use_in_sample_residuals = True
+                  use_in_sample_residuals = True,
+                  use_binned_residuals    = False
               )
 
     expected_1 = pd.DataFrame(
@@ -834,6 +850,7 @@ def test_predict_bootstrapping_output_when_window_features():
     expected = expected_df_to_long_format(expected, method='bootstrapping')
 
     pd.testing.assert_frame_equal(results, expected)
+
 
 def test_predict_bootstrapping_output_when_window_features_in_sample_residuals_True_binned_True():
     """
@@ -999,7 +1016,8 @@ def test_predict_bootstrapping_output_when_differentiation(differentiation):
                   steps                   = 3, 
                   n_boot                  = 10, 
                   exog                    = exog_predict, 
-                  use_in_sample_residuals = True
+                  use_in_sample_residuals = True,
+                  use_binned_residuals    = False
               )
     
     expected_1 = pd.DataFrame(

@@ -73,9 +73,10 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_2_
                       steps                   = 2,
                       exog                    = exog_predict,
                       method                  = 'bootstrapping',
-                      interval                = [5, 95],
+                      interval                = interval,
                       n_boot                  = n_boot,
-                      use_in_sample_residuals = True
+                      use_in_sample_residuals = True,
+                      use_binned_residuals    = False
                   )
     
     expected = pd.DataFrame(
@@ -121,7 +122,8 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_2_
                       method                  = 'bootstrapping',
                       interval                = [5, 95],
                       n_boot                  = n_boot,
-                      use_in_sample_residuals = False
+                      use_in_sample_residuals = False,
+                      use_binned_residuals    = False
                   )
     
     expected = pd.DataFrame(
@@ -237,9 +239,11 @@ def test_predict_interval_conformal_output_when_regressor_is_LinearRegression(in
                      lags               = 3,
                      transformer_series = StandardScaler()
                  )
-    forecaster.fit(series=series, store_in_sample_residuals=True)
+    forecaster.fit(series=series, store_in_sample_residuals=False)
+    forecaster.set_in_sample_residuals(series=series)
     results = forecaster.predict_interval(
-        steps=3, method='conformal', interval=interval
+        steps=3, method='conformal', interval=interval, 
+        use_in_sample_residuals=True, use_binned_residuals=False
     )
 
     expected = pd.DataFrame(
@@ -272,7 +276,8 @@ def test_predict_interval_conformal_output_when_binned_residuals(interval):
                  )
     forecaster.fit(series=series, store_in_sample_residuals=True)
     results = forecaster.predict_interval(
-        steps=3, method='conformal', interval=interval, use_binned_residuals=True
+        steps=3, method='conformal', interval=interval, 
+        use_in_sample_residuals=True, use_binned_residuals=True
     )
 
     expected = pd.DataFrame(

@@ -99,16 +99,16 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
          )
 
     metrics_levels, backtest_predictions = backtesting_forecaster_multiseries(
-                                                forecaster            = forecaster,
-                                                series                = series,
-                                                cv                    = cv,
-                                                levels                = 'l1',
-                                                metric                = 'mean_absolute_error',
-                                                add_aggregated_metric = False,
-                                                exog                  = None,
-                                                verbose               = True,
-                                                n_jobs                = n_jobs
-                                            )
+                                               forecaster            = forecaster,
+                                               series                = series,
+                                               cv                    = cv,
+                                               levels                = 'l1',
+                                               metric                = 'mean_absolute_error',
+                                               add_aggregated_metric = False,
+                                               exog                  = None,
+                                               verbose               = True,
+                                               n_jobs                = n_jobs
+                                           )
     
     expected_metric = pd.DataFrame({'levels': ['l1'],
                                     'mean_absolute_error': [0.20754847190853098]})
@@ -448,6 +448,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                                                n_boot                  = 500,
                                                random_state            = 123,
                                                use_in_sample_residuals = True,
+                                               use_binned_residuals    = False,
                                                verbose                 = False
                                            )
     
@@ -505,6 +506,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                                                n_boot                  = 500,
                                                random_state            = 123,
                                                use_in_sample_residuals = True,
+                                               use_binned_residuals    = False,
                                                verbose                 = False
                                            )
     
@@ -563,6 +565,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                                                n_boot                  = 150,
                                                random_state            = 123,
                                                use_in_sample_residuals = True,
+                                               use_binned_residuals    = False,
                                                verbose                 = False
                                            )
     
@@ -627,6 +630,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                                                n_boot                  = 150,
                                                random_state            = 123,
                                                use_in_sample_residuals = True,
+                                               use_binned_residuals    = False,
                                                verbose                 = False
                                            )
     
@@ -691,6 +695,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                                                n_boot                  = 150,
                                                random_state            = 123,
                                                use_in_sample_residuals = True,
+                                               use_binned_residuals    = False,
                                                verbose                 = False
                                            )
     
@@ -752,6 +757,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                                                n_boot                  = 150,
                                                random_state            = 123,
                                                use_in_sample_residuals = True,
+                                               use_binned_residuals    = False,
                                                verbose                 = False
                                            )
     
@@ -815,6 +821,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                                                n_boot                  = 150,
                                                random_state            = 123,
                                                use_in_sample_residuals = True,
+                                               use_binned_residuals    = False,
                                                verbose                 = False
                                            )
     
@@ -879,6 +886,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                                                n_boot                  = 150,
                                                random_state            = 123,
                                                use_in_sample_residuals = True,
+                                               use_binned_residuals    = False,
                                                verbose                 = False
                                            )
     
@@ -941,6 +949,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                                                n_boot                  = 150,
                                                random_state            = 123,
                                                use_in_sample_residuals = True,
+                                               use_binned_residuals    = False,
                                                verbose                 = False
                                            )
     
@@ -1037,6 +1046,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                                                n_boot                  = 100,
                                                random_state            = 123,
                                                use_in_sample_residuals = True,
+                                               use_binned_residuals    = False,
                                                verbose                 = False
                                            )
     
@@ -1646,18 +1656,20 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
          )
     
     metrics, predictions = backtesting_forecaster_multiseries(
-        forecaster        = forecaster,
-        series            = series_dict,
-        exog              = exog_dict,
-        cv                = cv,
-        metric            = ['mean_absolute_error', 'mean_absolute_scaled_error'],
-        interval          = "bootstrapping",
-        interval_method   = "bootstrapping",
-        n_boot            = 5,
-        n_jobs            = 'auto',
-        verbose           = False,
-        show_progress     = True,
-        suppress_warnings = True
+        forecaster              = forecaster,
+        series                  = series_dict,
+        exog                    = exog_dict,
+        cv                      = cv,
+        metric                  = ['mean_absolute_error', 'mean_absolute_scaled_error'],
+        interval                = "bootstrapping",
+        interval_method         = "bootstrapping",
+        n_boot                  = 5,
+        use_in_sample_residuals = True,
+        use_binned_residuals    = False,
+        n_jobs                  = 'auto',
+        verbose                 = False,
+        show_progress           = True,
+        suppress_warnings       = True
     )
 
     expected_metrics = pd.DataFrame(
@@ -1829,18 +1841,20 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
          )
     
     metrics, predictions = backtesting_forecaster_multiseries(
-        forecaster        = forecaster,
-        series            = series_dict,
-        exog              = exog_dict,
-        cv                = cv,
-        metric            = ['mean_absolute_error', 'mean_absolute_scaled_error'],
-        interval          = [10, 50, 90],
-        interval_method   = "bootstrapping",
-        n_boot            = 25,
-        n_jobs            = 'auto',
-        verbose           = False,
-        show_progress     = True,
-        suppress_warnings = True
+        forecaster              = forecaster,
+        series                  = series_dict,
+        exog                    = exog_dict,
+        cv                      = cv,
+        metric                  = ['mean_absolute_error', 'mean_absolute_scaled_error'],
+        interval                = [10, 50, 90],
+        interval_method         = "bootstrapping",
+        n_boot                  = 25,
+        use_in_sample_residuals = True,
+        use_binned_residuals    = False,
+        n_jobs                  = 'auto',
+        verbose                 = False,
+        show_progress           = True,
+        suppress_warnings       = True
     )
 
     expected_metrics = pd.DataFrame(
@@ -1987,18 +2001,20 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
          )
     
     metrics, predictions = backtesting_forecaster_multiseries(
-        forecaster        = forecaster,
-        series            = series_dict,
-        exog              = exog_dict,
-        cv                = cv,
-        metric            = ['mean_absolute_error', 'mean_absolute_scaled_error'],
-        interval          = norm,
-        interval_method   = "bootstrapping",
-        n_boot            = 25,
-        n_jobs            = 'auto',
-        verbose           = False,
-        show_progress     = True,
-        suppress_warnings = True
+        forecaster              = forecaster,
+        series                  = series_dict,
+        exog                    = exog_dict,
+        cv                      = cv,
+        metric                  = ['mean_absolute_error', 'mean_absolute_scaled_error'],
+        interval                = norm,
+        interval_method         = "bootstrapping",
+        n_boot                  = 25,
+        use_in_sample_residuals = True,
+        use_binned_residuals    = False,
+        n_jobs                  = 'auto',
+        verbose                 = False,
+        show_progress           = True,
+        suppress_warnings       = True
     )
 
     expected_metrics = pd.DataFrame(
@@ -2136,18 +2152,19 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
          )
 
     metrics, predictions = backtesting_forecaster_multiseries(
-        forecaster           = forecaster,
-        series               = series_dict,
-        exog                 = exog_dict,
-        cv                   = cv,
-        metric               = ['mean_absolute_error', 'mean_absolute_scaled_error'],
-        interval             = interval,
-        interval_method      = "conformal",
-        use_binned_residuals = True,
-        n_jobs               = 'auto',
-        verbose              = False,
-        show_progress        = True,
-        suppress_warnings    = True
+        forecaster              = forecaster,
+        series                  = series_dict,
+        exog                    = exog_dict,
+        cv                      = cv,
+        metric                  = ['mean_absolute_error', 'mean_absolute_scaled_error'],
+        interval                = interval,
+        interval_method         = "conformal",
+        use_in_sample_residuals = True,
+        use_binned_residuals    = True,
+        n_jobs                  = 'auto',
+        verbose                 = False,
+        show_progress           = True,
+        suppress_warnings       = True
     )
 
     expected_metrics = pd.DataFrame(
@@ -2610,6 +2627,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
                                                n_boot                  = 500,
                                                random_state            = 123,
                                                use_in_sample_residuals = True,
+                                               use_binned_residuals    = False,
                                                verbose                 = False
                                            )
     
@@ -2671,6 +2689,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
                                                n_boot                  = 500,
                                                random_state            = 123,
                                                use_in_sample_residuals = True,
+                                               use_binned_residuals    = False,
                                                verbose                 = False
                                            )
     
@@ -2733,6 +2752,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
                                                n_boot                  = 150,
                                                random_state            = 123,
                                                use_in_sample_residuals = True,
+                                               use_binned_residuals    = False,
                                                verbose                 = False
                                            )
     
@@ -2800,6 +2820,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
                                                n_boot                  = 150,
                                                random_state            = 123,
                                                use_in_sample_residuals = True,
+                                               use_binned_residuals    = False,
                                                verbose                 = False
                                            )
     
@@ -2868,6 +2889,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
                                                n_boot                  = 150,
                                                random_state            = 123,
                                                use_in_sample_residuals = True,
+                                               use_binned_residuals    = False,
                                                verbose                 = False
                                            )
     
@@ -2939,6 +2961,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
                                                    n_boot                  = 100,
                                                    random_state            = 123,
                                                    use_in_sample_residuals = True,
+                                                   use_binned_residuals    = False,
                                                    verbose                 = False,
                                                    n_jobs                  = 2
                                                )
@@ -3017,6 +3040,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
                                                n_boot                  = 100,
                                                random_state            = 123,
                                                use_in_sample_residuals = True,
+                                               use_binned_residuals    = False,
                                                verbose                 = False
                                            )
     
@@ -3093,6 +3117,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
                                                n_boot                  = 150,
                                                random_state            = 123,
                                                use_in_sample_residuals = True,
+                                               use_binned_residuals    = False,
                                                verbose                 = False
                                            )
     
@@ -3159,6 +3184,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
                                                n_boot                  = 150,
                                                random_state            = 123,
                                                use_in_sample_residuals = True,
+                                               use_binned_residuals    = False,
                                                verbose                 = False
                                            )
     

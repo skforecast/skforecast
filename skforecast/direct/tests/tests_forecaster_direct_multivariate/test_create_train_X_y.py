@@ -2001,8 +2001,8 @@ def test_create_train_X_y_output_when_y_is_series_exog_is_series_and_differentia
     """
     # Data differentiated
     arr = data.to_numpy(copy=True)
-    diferenciator = TimeSeriesDifferentiator(order=1)
-    arr_diff = diferenciator.fit_transform(arr)
+    differentiator = TimeSeriesDifferentiator(order=1)
+    arr_diff = differentiator.fit_transform(arr)
 
     series = pd.DataFrame(
         {'l1': arr,
@@ -2071,8 +2071,8 @@ def test_create_train_X_y_output_when_y_is_series_exog_is_series_and_differentia
     """
     # Data differentiated
     arr = data.to_numpy(copy=True)
-    diferenciator = TimeSeriesDifferentiator(order=2)
-    data_diff_2 = diferenciator.fit_transform(arr)
+    differentiator = TimeSeriesDifferentiator(order=2)
+    data_diff_2 = differentiator.fit_transform(arr)
 
     series = pd.DataFrame(
         {'l1': arr,

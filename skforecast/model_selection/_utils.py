@@ -82,7 +82,7 @@ def check_backtesting_input(
     alpha: float | None = None,
     n_boot: int = 250,
     use_in_sample_residuals: bool = True,
-    use_binned_residuals: bool = False,
+    use_binned_residuals: bool = True,
     random_state: int = 123,
     n_jobs: int | str = 'auto',
     show_progress: bool = True,
@@ -140,10 +140,10 @@ def check_backtesting_input(
         If `True`, residuals from the training data are used as proxy of prediction 
         error to create prediction intervals.  If `False`, out_sample_residuals 
         are used if they are already stored inside the forecaster.
-    use_binned_residuals : bool, default False
-        If `True`, residuals used in each bootstrapping iteration are selected
-        conditioning on the predicted values. If `False`, residuals are selected
-        randomly without conditioning on the predicted values.
+    use_binned_residuals : bool, default True
+        If `True`, residuals are selected based on the predicted values 
+        (binned selection).
+        If `False`, residuals are selected randomly.
     random_state : int, default `123`
         Seed for the random number generator to ensure reproducibility.
     n_jobs : int, 'auto', default `'auto'`
