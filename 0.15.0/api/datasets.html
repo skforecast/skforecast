@@ -1528,11 +1528,11 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
-      <a href="../user_guides/probabilistic-forecasting-quantile-regression.html" class="md-nav__link">
+      <a href="../user_guides/probabilistic-forecasting-conformal-calibration.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Quantile forecasting
+    Conformal calibration
   </span>
   
 
@@ -1549,11 +1549,11 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
-      <a href="../user_guides/probabilistic-forecasting-calibrate-intervals.html" class="md-nav__link">
+      <a href="../user_guides/probabilistic-forecasting-quantile-regression.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Calibrate intervals
+    Quantile forecasting
   </span>
   
 
@@ -2028,6 +2028,48 @@ This is documentation for an unstable development version.
   
   <span class="md-ellipsis">
     Backtesting vs One-step-ahead
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/probabilistic-forecasting-crps-score.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Continuous Ranked Probability Score (CRPS)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/probabilistic-forecasting-calibrate-intervals.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Calibration of probabilistic forecasting intervals
   </span>
   
 
@@ -3002,6 +3044,27 @@ This is documentation for an unstable development version.
   
   <span class="md-ellipsis">
     Continuous Ranked Probability Score (CRPS)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/probabilistic-forecasting-calibrate-intervals.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Calibration of probabilistic forecasting intervals
   </span>
   
 
@@ -4394,12 +4457,12 @@ also set to the index.</p>
             <span class="s1">&#39;file_type&#39;</span><span class="p">:</span> <span class="s1">&#39;csv&#39;</span><span class="p">,</span>
             <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="p">(</span>
                 <span class="s1">&#39;Data from an electricity transformer station was collected between July &#39;</span>
-                <span class="s1">&#39;2016 and July 2018 (2 years × 365 days × 24 hours × 4 intervals per &#39;</span>
+                <span class="s1">&#39;2016 and July 2018 (2 years x 365 days x 24 hours x 4 intervals per &#39;</span>
                 <span class="s1">&#39;hour = 70,080 data points). Each data point consists of 8 features, &#39;</span>
                 <span class="s1">&#39;including the date of the point, the predictive value &quot;Oil Temperature (OT)&quot;, &#39;</span>
                 <span class="s1">&#39;and 6 different types of external power load features: High UseFul Load (HUFL), &#39;</span>
                 <span class="s1">&#39;High UseLess Load (HULL), Middle UseFul Load (MUFL), Middle UseLess Load (MULL), &#39;</span>
-                <span class="s1">&#39;Low UseFul Load (LUFL), Low UseLess Load(LULL).&#39;</span>
+                <span class="s1">&#39;Low UseFul Load (LUFL), Low UseLess Load (LULL).&#39;</span>
             <span class="p">),</span>
             <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="p">(</span>
                 <span class="s1">&#39;Zhou, Haoyi &amp; Zhang, Shanghang &amp; Peng, Jieqi &amp; Zhang, Shuai &amp; Li, &#39;</span>
@@ -4426,7 +4489,7 @@ also set to the index.</p>
                 <span class="s1">&#39;including the date of the point, the predictive value &quot;Oil Temperature (OT)&quot;, &#39;</span>
                 <span class="s1">&#39;and 6 different types of external power load features: High UseFul Load (HUFL), &#39;</span>
                 <span class="s1">&#39;High UseLess Load (HULL), Middle UseFul Load (MUFL), Middle UseLess Load (MULL), &#39;</span>
-                <span class="s1">&#39;Low UseFul Load (LUFL), Low UseLess Load(LULL).&#39;</span>
+                <span class="s1">&#39;Low UseFul Load (LUFL), Low UseLess Load (LULL).&#39;</span>
             <span class="p">),</span>
             <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="p">(</span>
                 <span class="s1">&#39;Zhou, Haoyi &amp; Zhang, Shanghang &amp; Peng, Jieqi &amp; Zhang, Shuai &amp; Li, &#39;</span>
@@ -4453,7 +4516,7 @@ also set to the index.</p>
                 <span class="s1">&#39;including the date of the point, the predictive value &quot;Oil Temperature (OT)&quot;, &#39;</span>
                 <span class="s1">&#39;and 6 different types of external power load features: High UseFul Load (HUFL), &#39;</span>
                 <span class="s1">&#39;High UseLess Load (HULL), Middle UseFul Load (MUFL), Middle UseLess Load (MULL), &#39;</span>
-                <span class="s1">&#39;Low UseFul Load (LUFL), Low UseLess Load(LULL). Additional variables are &#39;</span>
+                <span class="s1">&#39;Low UseFul Load (LUFL), Low UseLess Load (LULL). Additional variables are &#39;</span>
                 <span class="s1">&#39;created based on calendar information (year, month, week, day of the week, &#39;</span>
                 <span class="s1">&#39;and hour). These variables have been encoded using the cyclical encoding &#39;</span>
                 <span class="s1">&#39;technique (sin and cos transformations) to preserve the cyclical nature &#39;</span>

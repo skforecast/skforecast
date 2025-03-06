@@ -1528,11 +1528,11 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
-      <a href="../user_guides/probabilistic-forecasting-quantile-regression.html" class="md-nav__link">
+      <a href="../user_guides/probabilistic-forecasting-conformal-calibration.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Quantile forecasting
+    Conformal calibration
   </span>
   
 
@@ -1549,11 +1549,11 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
-      <a href="../user_guides/probabilistic-forecasting-calibrate-intervals.html" class="md-nav__link">
+      <a href="../user_guides/probabilistic-forecasting-quantile-regression.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Calibrate intervals
+    Quantile forecasting
   </span>
   
 
@@ -2028,6 +2028,48 @@ This is documentation for an unstable development version.
   
   <span class="md-ellipsis">
     Backtesting vs One-step-ahead
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/probabilistic-forecasting-crps-score.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Continuous Ranked Probability Score (CRPS)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/probabilistic-forecasting-calibrate-intervals.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Calibration of probabilistic forecasting intervals
   </span>
   
 
@@ -3044,6 +3086,27 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
+      <a href="../faq/probabilistic-forecasting-calibrate-intervals.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Calibration of probabilistic forecasting intervals
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../faq/parallelization-skforecast.html" class="md-nav__link">
         
   
@@ -3492,9 +3555,7 @@ the last equivalent date according the <code>offset</code> and <code>n_offsets</
 
                   <details class="quote">
                     <summary>Source code in <code>skforecast/recursive/_forecaster_equivalent_date.py</code></summary>
-                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">125</span>
-<span class="normal">126</span>
-<span class="normal">127</span>
+                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">127</span>
 <span class="normal">128</span>
 <span class="normal">129</span>
 <span class="normal">130</span>
@@ -3524,7 +3585,9 @@ the last equivalent date according the <code>offset</code> and <code>n_offsets</
 <span class="normal">154</span>
 <span class="normal">155</span>
 <span class="normal">156</span>
-<span class="normal">157</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">offset</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">tseries</span><span class="o">.</span><span class="n">offsets</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">,</span>
     <span class="n">n_offsets</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
@@ -3669,9 +3732,7 @@ the last equivalent date according the <code>offset</code> and <code>n_offsets</
 
             <details class="quote">
               <summary>Source code in <code>skforecast/recursive/_forecaster_equivalent_date.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">186</span>
-<span class="normal">187</span>
-<span class="normal">188</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">188</span>
 <span class="normal">189</span>
 <span class="normal">190</span>
 <span class="normal">191</span>
@@ -3757,7 +3818,9 @@ the last equivalent date according the <code>offset</code> and <code>n_offsets</
 <span class="normal">271</span>
 <span class="normal">272</span>
 <span class="normal">273</span>
-<span class="normal">274</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">y</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
     <span class="n">exog</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -3970,9 +4033,7 @@ for internal use and is not recommended to be changed.</p>
 
             <details class="quote">
               <summary>Source code in <code>skforecast/recursive/_forecaster_equivalent_date.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">276</span>
-<span class="normal">277</span>
-<span class="normal">278</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">278</span>
 <span class="normal">279</span>
 <span class="normal">280</span>
 <span class="normal">281</span>
@@ -4114,7 +4175,9 @@ for internal use and is not recommended to be changed.</p>
 <span class="normal">417</span>
 <span class="normal">418</span>
 <span class="normal">419</span>
-<span class="normal">420</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">predict</span><span class="p">(</span>
+<span class="normal">420</span>
+<span class="normal">421</span>
+<span class="normal">422</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">predict</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">last_window</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -4333,9 +4396,7 @@ for internal use and is not recommended to be changed.</p>
 
             <details class="quote">
               <summary>Source code in <code>skforecast/recursive/_forecaster_equivalent_date.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">422</span>
-<span class="normal">423</span>
-<span class="normal">424</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">424</span>
 <span class="normal">425</span>
 <span class="normal">426</span>
 <span class="normal">427</span>
@@ -4347,7 +4408,9 @@ for internal use and is not recommended to be changed.</p>
 <span class="normal">433</span>
 <span class="normal">434</span>
 <span class="normal">435</span>
-<span class="normal">436</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">436</span>
+<span class="normal">437</span>
+<span class="normal">438</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Show forecaster information.</span>
 

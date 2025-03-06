@@ -144,6 +144,18 @@ doi = {10.5281/zenodo.8382788}
 <ul>
 
 <li><p style="color:#808080; font-size:0.95em;">
+Chamara Hewage, H., Rostami-Tabar, B., Syntetos, A., Liberatore, F., and Milano, G., “A Novel Hybrid Approach to Contraceptive Demand Forecasting: Integrating Point Predictions with Probabilistic Distributions”, <i>arXiv e-prints</i>, Art. no. arXiv:2502.09685, 2025. doi:10.48550/arXiv.2502.09685.
+</p></li>
+
+<li><p style="color:#808080; font-size:0.95em;">
+Kuthe, S., Persson, C. and Glaser, B. (2025), Physics-Informed Data-Driven Prediction of Submerged Entry Nozzle Clogging with the Aid of Ab Initio Repository. steel research int. 2400800. https://doi.org/10.1002/srin.202400800
+</p></li>
+
+<li><p style="color:#808080; font-size:0.95em;">
+Chatzikonstantinidis, K., Afxentiou, N., Giama, E., Fokaides, P. A., & Papadopoulos, A. M. (2025). Energy management of smart buildings during crises and digital twins as an optimisation tool for sustainable urban environment. International Journal of Sustainable Energy, 44(1). https://doi.org/10.1080/14786451.2025.2455134
+</p></li>
+
+<li><p style="color:#808080; font-size:0.95em;">
 Sanan, O., Sperling, J., Greene, D., & Greer, R. (2024, April). Forecasting Weather and Energy Demand for Optimization of Renewable Energy and Energy Storage Systems for Water Desalination. In 2024 IEEE Conference on Technologies for Sustainability (SusTech) (pp. 175-182). IEEE. <a href="https://doi.org/10.1109/SusTech60925.2024.10553570">https://doi.org/10.1109/SusTech60925.2024.10553570</a>
 </p></li>
 

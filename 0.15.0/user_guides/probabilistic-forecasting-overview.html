@@ -1525,18 +1525,18 @@ This is documentation for an unstable development version.
 </li>
       
         <li class="md-nav__item">
-  <a href="#quantile-regression" class="md-nav__link">
+  <a href="#conformal-prediction" class="md-nav__link">
     <span class="md-ellipsis">
-      Quantile regression
+      Conformal prediction
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#conformal-prediction" class="md-nav__link">
+  <a href="#quantile-regression" class="md-nav__link">
     <span class="md-ellipsis">
-      Conformal prediction
+      Quantile regression
     </span>
   </a>
   
@@ -1609,11 +1609,11 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
-      <a href="probabilistic-forecasting-quantile-regression.html" class="md-nav__link">
+      <a href="probabilistic-forecasting-conformal-calibration.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Quantile forecasting
+    Conformal calibration
   </span>
   
 
@@ -1630,11 +1630,11 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
-      <a href="probabilistic-forecasting-calibrate-intervals.html" class="md-nav__link">
+      <a href="probabilistic-forecasting-quantile-regression.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Calibrate intervals
+    Quantile forecasting
   </span>
   
 
@@ -2109,6 +2109,48 @@ This is documentation for an unstable development version.
   
   <span class="md-ellipsis">
     Backtesting vs One-step-ahead
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/probabilistic-forecasting-crps-score.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Continuous Ranked Probability Score (CRPS)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/probabilistic-forecasting-calibrate-intervals.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Calibration of probabilistic forecasting intervals
   </span>
   
 
@@ -3036,6 +3078,27 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
+      <a href="../faq/probabilistic-forecasting-calibrate-intervals.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Calibration of probabilistic forecasting intervals
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../faq/parallelization-skforecast.html" class="md-nav__link">
         
   
@@ -3609,19 +3672,6 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=e920ab6b">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="quantile-regression">Quantile regression<a class="anchor-link" href="#quantile-regression">¶</a></h3><p>Quantile regression is a technique for estimating the conditional quantiles of a response variable. By combining the predictions of two quantile regressors, an interval can be constructed, with each model estimating one of the bounds of the interval. For example, models trained on $Q = 0.1$ and $Q = 0.9$ produce an 80% prediction interval ($90\% - 10\% = 80\%$).</p>
-<p>If a machine learning algorithm capable of modeling quantiles is used as the <code>regressor</code> in a forecaster, the <code>predict</code> method will return predictions for a specified quantile. By creating two forecasters, each configured with a different quantile, their predictions can be combined to generate a prediction interval.</p>
-<p>Discover how to use this method in <a href="./probabilistic-forecasting-quantile-regression.html">Probabilistic forecasting with quantile regression</a>.</p>
-</div>
-</div>
-</div>
-</div>
 <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=c0137385">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
@@ -3652,6 +3702,19 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div>
 </div>
 </div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=e920ab6b">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h3 id="quantile-regression">Quantile regression<a class="anchor-link" href="#quantile-regression">¶</a></h3><p>Quantile regression is a technique for estimating the conditional quantiles of a response variable. By combining the predictions of two quantile regressors, an interval can be constructed, with each model estimating one of the bounds of the interval. For example, models trained on $Q = 0.1$ and $Q = 0.9$ produce an 80% prediction interval ($90\% - 10\% = 80\%$).</p>
+<p>If a machine learning algorithm capable of modeling quantiles is used as the <code>regressor</code> in a forecaster, the <code>predict</code> method will return predictions for a specified quantile. By creating two forecasters, each configured with a different quantile, their predictions can be combined to generate a prediction interval.</p>
+<p>Discover how to use this method in <a href="./probabilistic-forecasting-quantile-regression.html">Probabilistic forecasting with quantile regression</a>.</p>
+</div>
+</div>
+</div>
+</div>
 <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=71f71dca">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
@@ -3662,13 +3725,37 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <ul>
 <li><p><strong>Bootstrapped residuals</strong>: This method achieves good results in most cases, especially when using residuals conditioned on the predicted value (<code>use_binned_residuals = True</code>). However, it is computationally expensive, especially when using a large number of bootstrapping iterations, and may not scale well to large datasets or multiple time series.</p>
 </li>
-<li><p><strong>Quantile regression</strong>: An appropriate choice when the regressor is capable of modeling quantiles. However, two Forecasters must be trained — one for each quantile — which can be computationally expensive.</p>
-</li>
 <li><p><strong>Conformal Prediction</strong>: Similar results to bootstrapping, but more computationally efficient (fast).</p>
+</li>
+<li><p><strong>Quantile regression</strong>: An appropriate choice when the regressor is capable of modeling quantiles. However, two Forecasters must be trained — one for each quantile — which can be computationally expensive.</p>
 </li>
 </ul>
 <p>None of these methods guarantee coverage probability for multi-step predictions. Therefore, it is strongly recommended to validate the empirical coverage obtained with the chosen method. If the coverage is not satisfactory, the prediction intervals can be calibrated using the <code>ConformalIntervalCalibrator</code> transformer.</p>
 <p>For bootstrapped and conformal methods, it is recommended to use out-sample residuals (known as calibration residuals in conformal literature) as they provide a more realistic estimate of the prediction uncertainty (<code>use_in_sample_residuals = False</code>). If in-sample residuals are used, the prediction intervals may be too narrow, resulting in low coverage.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=562eb504">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<div class="admonition note" name="html-admonition" style="background: rgba(255,145,0,.1); padding-top: 0px; padding-bottom: 6px; border-radius: 8px; border-left: 8px solid #ff9100; border-color: #ff9100; padding-left: 10px; padding-right: 10px">
+<p class="title">
+<i style="font-size: 18px; color:#ff9100; border-color: #ff1744;"></i>
+<b style="color: #ff9100;"> <span style="color: #ff9100;">⚠</span> Warning</b>
+</p>
+<p>As Rob J Hyndman explains in his <a href="https://robjhyndman.com/hyndsight/narrow-pi/">blog</a>, in real-world problems, almost all prediction intervals are too narrow. For example, nominal 95% intervals may only provide coverage between 71% and 87%. This is a well-known phenomenon and arises because they do not account for all sources of uncertainty. With forecasting models, there are at least four sources of uncertainty:</p>
+<ul>
+<li>The random error term</li>
+<li>The parameter estimates</li>
+<li>The choice of model for the historical data</li>
+<li>The continuation of the historical data generating process into the future</li>
+</ul>
+<p>When producing prediction intervals for time series models, generally only the first of these sources is taken into account. Therefore, it is advisable to use test data to validate the empirical coverage of the interval and not only rely on the expected one.</p>
+</div>
 </div>
 </div>
 </div>

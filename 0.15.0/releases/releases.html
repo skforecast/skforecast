@@ -1526,11 +1526,11 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
-      <a href="../user_guides/probabilistic-forecasting-quantile-regression.html" class="md-nav__link">
+      <a href="../user_guides/probabilistic-forecasting-conformal-calibration.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Quantile forecasting
+    Conformal calibration
   </span>
   
 
@@ -1547,11 +1547,11 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
-      <a href="../user_guides/probabilistic-forecasting-calibrate-intervals.html" class="md-nav__link">
+      <a href="../user_guides/probabilistic-forecasting-quantile-regression.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Calibrate intervals
+    Quantile forecasting
   </span>
   
 
@@ -2026,6 +2026,48 @@ This is documentation for an unstable development version.
   
   <span class="md-ellipsis">
     Backtesting vs One-step-ahead
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/probabilistic-forecasting-crps-score.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Continuous Ranked Probability Score (CRPS)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/probabilistic-forecasting-calibrate-intervals.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Calibration of probabilistic forecasting intervals
   </span>
   
 
@@ -2953,6 +2995,27 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
+      <a href="../faq/probabilistic-forecasting-calibrate-intervals.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Calibration of probabilistic forecasting intervals
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../faq/parallelization-skforecast.html" class="md-nav__link">
         
   
@@ -3381,6 +3444,9 @@ This is documentation for an unstable development version.
 <p><strong>Added</strong></p>
 <ul>
 <li>
+<p>Added <code>rich&gt;=13.9.4</code> library as hard dependence.</p>
+</li>
+<li>
 <p>Conformal</p>
 </li>
 <li>
@@ -3411,7 +3477,7 @@ This is documentation for an unstable development version.
 <p>Added <code><a href="https://skforecast.org/latest/api/plot#skforecast.plot.plot.calculate_lag_autocorrelation">calculate_lag_autocorrelation</a></code> function to the <code><a href="https://skforecast.org/latest/api/plot">plot</a></code> module to calculate the autocorrelation and partial autocorrelation of a time series.</p>
 </li>
 <li>
-<p>Added data set <code>public_transport_madrid</code> to the <code><a href="https://skforecast.org/latest/api/datasets">datasets</a></code> module.</p>
+<p>Added datasets <code>m5</code>, <code>ett_m1</code>, <code>ett_m2</code>, <code>ett_m2_extended</code> and <code>expenditures_australia</code> and <code>public_transport_madrid</code> to the <code><a href="https://skforecast.org/latest/api/datasets">datasets</a></code> module.</p>
 </li>
 <li>
 <p>Added function <code>create_mean_pinball_loss</code> in the <code><a href="https://skforecast.org/latest/api/metrics">metrics</a></code> module to create a function to calculate the mean pinball loss for a given quantile.</p>

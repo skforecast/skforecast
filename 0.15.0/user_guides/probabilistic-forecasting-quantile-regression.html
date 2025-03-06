@@ -15,10 +15,10 @@
         <link rel="canonical" href="https://skforecast.org/0.15.0/user_guides/probabilistic-forecasting-quantile-regression.html">
       
       
-        <link rel="prev" href="probabilistic-forecasting-conformal-prediction.html">
+        <link rel="prev" href="probabilistic-forecasting-conformal-calibration.html">
       
       
-        <link rel="next" href="probabilistic-forecasting-calibrate-intervals.html">
+        <link rel="next" href="probabilistic-forecasting-metrics.html">
       
       
       <link rel="icon" href="../img/favicon.png">
@@ -1530,6 +1530,27 @@ This is documentation for an unstable development version.
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="probabilistic-forecasting-conformal-calibration.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Conformal calibration
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -1591,27 +1612,6 @@ This is documentation for an unstable development version.
   
 </nav>
       
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="probabilistic-forecasting-calibrate-intervals.html" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Calibrate intervals
-  </span>
-  
-
-      </a>
     </li>
   
 
@@ -2082,6 +2082,48 @@ This is documentation for an unstable development version.
   
   <span class="md-ellipsis">
     Backtesting vs One-step-ahead
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/probabilistic-forecasting-crps-score.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Continuous Ranked Probability Score (CRPS)
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/probabilistic-forecasting-calibrate-intervals.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Calibration of probabilistic forecasting intervals
   </span>
   
 
@@ -3009,6 +3051,27 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
+      <a href="../faq/probabilistic-forecasting-calibrate-intervals.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Calibration of probabilistic forecasting intervals
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../faq/parallelization-skforecast.html" class="md-nav__link">
         
   
@@ -3647,7 +3710,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <i style="font-size: 18px; color:#ff9100; border-color: #ff1744;"></i>
 <b style="color: #ff9100;"> <span style="color: #ff9100;">⚠</span> Warning</b>
 </p>
-<p>Forecasters of type <code>ForecasterDirect</code> are slower than <code>ForecasterRecursive</code> because they require training one model per step. Although they can achieve better performance, their scalability is an important limitation when many steps need to be predicted. To limit the time required to run the following examples, the data is aggregated from hourly frequency to daily frequency and only 7 steps ahead (one week) are predicted.</p>
+<p>Forecasters of type <code>ForecasterDirect</code> are slower than <code>ForecasterRecursive</code> because they require training one model per step. Although they can achieve better performance, their scalability is an important limitation when many steps need to be predicted.</p>
 </div>
 </div>
 </div>
