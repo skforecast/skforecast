@@ -38,7 +38,7 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 
 - [Probabilistic forecasting](../user_guides/probabilistic-forecasting-overview.html)
 - [Bootstrapped residuals](../user_guides/probabilistic-forecasting-bootstrapped-residuals.html)
-- [Conformal predictions](../user_guides/probabilistic-forecasting-conformal-regression.html)
+- [Conformal predictions](../user_guides/probabilistic-forecasting-conformal-prediction.html)
 - [Conformal calibration](../user_guides/probabilistic-forecasting-conformal-calibration.html)
 - [Quantile forecasting](../user_guides/probabilistic-forecasting-quantile-regression.html)
 - [Metrics in probabilistic forecasting](../user_guides/probabilistic-forecasting-metrics.html)

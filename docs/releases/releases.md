@@ -14,22 +14,28 @@ All significant changes to this project are documented in this release file.
 
 The main changes in this release are:
 
-+ Probabilistic predictions in <code>[ForecasterRecursiveMultiSeries]</code> and <code>[ForecasterDirectMultiVariate]</code> are now returned as a long format DataFrame.
++ <span class="badge text-bg-feature">Feature</span> Added [conformal framework for probabilistic forecasting](../user_guides/probabilistic-forecasting-conformal-prediction.html). Generate prediction intervals using the [conformal prediction split method](https://mapie.readthedocs.io/en/stable/theoretical_description_regression.html#the-split-method).
 
-+ store_in_sample_residuals default False
++ <span class="badge text-bg-feature">Feature</span> [Binned residuals](..user_guides/probabilistic-forecasting-bootstrapped-residuals.html#intervals-conditioned-on-predicted-values-binned-residuals) are now available in the <code>[ForecasterRecursiveMultiSeries]</code>, <code>[ForecasterDirect]</code> and <code>[ForecasterDirectMultiVariate]</code> forecasters. 
+
++ <span class="badge text-bg-feature">Feature</span> New class <code>[ConformalIntervalCalibrator]</code> to perform [conformal calibration](../user_guides/probabilistic-forecasting-conformal-calibration.html). This class is used to calibrate the prediction intervals using the conformal prediction framework.
+
++ <span class="badge text-bg-api-change">API Change</span> Probabilistic predictions in <code>[ForecasterRecursiveMultiSeries]</code> and <code>[ForecasterDirectMultiVariate]</code> are now returned as a long format DataFrame.
+
++ <span class="badge text-bg-api-change">API Change</span> Fit argument `store_in_sample_residuals` has changed default value to `False`. This means in-sample residuals are not stored by default. To store them, call new method `set_in_sample_residuals` after fitting the forecaster using the same training data. 
 
 
 **Added**
 
 + Added `rich>=13.9.4` library as hard dependence.
 
-+ Conformal
++ New argument `method  = 'conformal'` in `predict_interval` method or `interval_method = 'conformal'` in backtesting functions to use the conformal prediction framework.
 
-+ <code>[ConformalIntervalCalibrator]</code>
++ New class <code>[ConformalIntervalCalibrator]</code> to perform conformal calibration. This class is used to calibrate the prediction intervals using the conformal prediction framework.
 
-+ Binned in rest of Forecasters.
++ Binned residuals are now available in the <code>[ForecasterRecursiveMultiSeries]</code>, <code>[ForecasterDirect]</code> and <code>[ForecasterDirectMultiVariate]</code> forecasters. 
 
-+ Set in sample residuals.
++ New method `set_in_sample_residuals` to store the in-sample residuals after fitting the forecaster using the same training data.
 
 + Functions `crps_from_predictions` and `crps_from_quantiles` in module `metrics` to calculate the Continuous Ranked Probability Score (CRPS).
 
@@ -54,7 +60,7 @@ The main changes in this release are:
 
 **Changed**
 
-+ store_in_sample_residuals default False
++ Fit argument `store_in_sample_residuals` has changed default value to `False`. This means in-sample residuals are not stored by default. To store them, call new method `set_in_sample_residuals` after fitting the forecaster using the same training data. 
 
 + Predictions from `predict_bootstrapping` in <code>[ForecasterRecursiveMultiSeries]</code> and <code>[ForecasterDirectMultiVariate]</code> are now returned as a long format DataFrame with the bootstrapping predictions. The columns are `level`, `pred_boot_0`, `pred_boot_1`, ..., `pred_boot_n_boot`.
 
