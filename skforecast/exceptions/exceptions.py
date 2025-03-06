@@ -226,7 +226,14 @@ warn_skforecast_categories = [
 ]
 
 
-def format_warning_handler(message, category, filename, lineno, file=None, line=None):
+def format_warning_handler(
+    message: str, 
+    category: str, 
+    filename: str, 
+    lineno: str, 
+    file: object = None, 
+    line: str = None
+) -> None:
     """
     Custom warning handler to format warnings in a box for skforecast custom
     warnings.
@@ -241,9 +248,9 @@ def format_warning_handler(message, category, filename, lineno, file=None, line=
         Filename where the warning was raised.
     lineno : int
         Line number where the warning was raised.
-    file : file
+    file : file, default None
         File where the warning was raised.
-    line : str
+    line : str, default None
         Line where the warning was raised.
 
     Returns
@@ -278,10 +285,38 @@ def format_warning_handler(message, category, filename, lineno, file=None, line=
         warnings._original_showwarning(message, category, filename, lineno, file, line)
 
 
-def rich_warning_handler(message, category, filename, lineno, file=None, line=None):
+def rich_warning_handler(
+    message: str, 
+    category: str, 
+    filename: str, 
+    lineno: str, 
+    file: object = None, 
+    line: str = None
+) -> None:
     """
     Custom handler for warnings that uses rich to display formatted panels.
+
+    Parameters
+    ----------
+    message : str
+        Warning message.
+    category : str
+        Warning category.
+    filename : str
+        Filename where the warning was raised.
+    lineno : int
+        Line number where the warning was raised.
+    file : file, default None
+        File where the warning was raised.
+    line : str, default None
+        Line where the warning was raised.
+
+    Returns
+    -------
+    None
+
     """
+    
     if isinstance(message, tuple(warn_skforecast_categories)):
         console = Console()
 
@@ -313,8 +348,8 @@ def set_warnings_style(style: str = 'skforecast') -> None:
 
     Parameters
     ----------
-    style : str
-        The style of the warning handler. Either 'skforecast' or 'rich'.
+    style : str, default='skforecast'
+        The style of the warning handler. Either 'skforecast' or 'default'.
     
     Returns
     -------
@@ -330,5 +365,3 @@ def set_warnings_style(style: str = 'skforecast') -> None:
 
 
 set_warnings_style(style='skforecast')
-
-
