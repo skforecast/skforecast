@@ -325,8 +325,8 @@ def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differe
     """
 
     # Data differentiated
-    diferenciator = TimeSeriesDifferentiator(order=1)
-    data_diff = diferenciator.fit_transform(data.to_numpy())
+    differentiator = TimeSeriesDifferentiator(order=1)
+    data_diff = differentiator.fit_transform(data.to_numpy())
     data_diff = pd.Series(data_diff, index=data.index).dropna()
     # Simulated exogenous variable
     rng = np.random.default_rng(9876)
@@ -396,11 +396,11 @@ def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differe
     """
 
     # Data differentiated
-    diferenciator_1 = TimeSeriesDifferentiator(order=1)
-    diferenciator_2 = TimeSeriesDifferentiator(order=2)
-    data_diff_1 = diferenciator_1.fit_transform(data.to_numpy())
+    differentiator_1 = TimeSeriesDifferentiator(order=1)
+    differentiator_2 = TimeSeriesDifferentiator(order=2)
+    data_diff_1 = differentiator_1.fit_transform(data.to_numpy())
     data_diff_1 = pd.Series(data_diff_1, index=data.index).dropna()
-    data_diff_2 = diferenciator_2.fit_transform(data.to_numpy())
+    data_diff_2 = differentiator_2.fit_transform(data.to_numpy())
     data_diff_2 = pd.Series(data_diff_2, index=data.index).dropna()
 
     # Simulated exogenous variable

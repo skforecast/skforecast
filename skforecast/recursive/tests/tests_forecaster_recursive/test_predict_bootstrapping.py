@@ -211,8 +211,8 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_and_di
     differentiation is 1.
     """
     # Data differentiated
-    diferenciator = TimeSeriesDifferentiator(order=1)
-    data_diff = diferenciator.fit_transform(data.to_numpy())
+    differentiator = TimeSeriesDifferentiator(order=1)
+    data_diff = differentiator.fit_transform(data.to_numpy())
     data_diff = pd.Series(data_diff, index=data.index).dropna()
 
     # Simulated exogenous variable

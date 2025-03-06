@@ -255,10 +255,10 @@ def test_predict_bootstrapping_output_when_regressor_is_LinearRegression_with_ex
     )
 
     # Data differentiated
-    diferenciator = TimeSeriesDifferentiator(order=1)
+    differentiator = TimeSeriesDifferentiator(order=1)
     series_diff = pd.DataFrame(
-        {'l1': diferenciator.fit_transform(arr),
-         'l2': diferenciator.fit_transform(arr * 1.6)},
+        {'l1': differentiator.fit_transform(arr),
+         'l2': differentiator.fit_transform(arr * 1.6)},
         index=data.index
     ).dropna()
 
@@ -321,10 +321,10 @@ def test_predict_bootstrapping_output_when_regressor_is_LinearRegression_with_ex
     )
 
     # Data differentiated
-    diferenciator = TimeSeriesDifferentiator(order=1)
+    differentiator = TimeSeriesDifferentiator(order=1)
     series_diff = pd.DataFrame(
-        {'l1': diferenciator.fit_transform(arr),
-         'l2': diferenciator.fit_transform(arr * 1.6)},
+        {'l1': differentiator.fit_transform(arr),
+         'l2': differentiator.fit_transform(arr * 1.6)},
         index=data.index
     ).dropna()
 
