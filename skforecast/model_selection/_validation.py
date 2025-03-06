@@ -950,7 +950,6 @@ def _backtesting_forecaster_multiseries(
     )
 
     backtest_predictions_grouped = backtest_predictions.groupby('level', sort=False)
-
     for level, indices in backtest_predictions_grouped.groups.items():
         if level in backtest_levels:
             valid_index = series[level].dropna().index
