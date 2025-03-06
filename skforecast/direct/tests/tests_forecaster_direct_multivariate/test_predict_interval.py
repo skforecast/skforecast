@@ -71,8 +71,9 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_2_
     with pytest.warns(ResidualsUsageWarning, match=warn_msg):
         results = forecaster.predict_interval(
                       steps                   = 2,
-                      interval                = [5, 95],
                       exog                    = exog_predict,
+                      method                  = 'bootstrapping',
+                      interval                = [5, 95],
                       n_boot                  = n_boot,
                       use_in_sample_residuals = True
                   )
@@ -116,8 +117,9 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_2_
     with pytest.warns(ResidualsUsageWarning, match=warn_msg):
         results = forecaster.predict_interval(
                       steps                   = 2,
-                      interval                = [5, 95],
                       exog                    = exog_predict,
+                      method                  = 'bootstrapping',
+                      interval                = [5, 95],
                       n_boot                  = n_boot,
                       use_in_sample_residuals = False
                   )
@@ -156,7 +158,8 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_5_
     )
     with pytest.warns(ResidualsUsageWarning, match=warn_msg):
         results = forecaster.predict_interval(
-            steps=5, interval=(5, 95), use_in_sample_residuals=True, use_binned_residuals=True
+            steps=5, method='bootstrapping', interval=(5, 95), 
+            use_in_sample_residuals=True, use_binned_residuals=True
         )
 
     expected = pd.DataFrame(
@@ -199,7 +202,8 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_5_
     )
     with pytest.warns(ResidualsUsageWarning, match=warn_msg):
         results = forecaster.predict_interval(
-            steps=5, interval=(5, 95), use_in_sample_residuals=False, use_binned_residuals=True
+            steps=5, method='bootstrapping', interval=(5, 95), 
+            use_in_sample_residuals=False, use_binned_residuals=True
         )
 
     expected = pd.DataFrame(

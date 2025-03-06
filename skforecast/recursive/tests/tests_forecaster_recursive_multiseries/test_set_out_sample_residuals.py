@@ -298,14 +298,17 @@ def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_and_n
         
     assert expected_out_sample.keys() == forecaster.out_sample_residuals_.keys()
     for k in expected_out_sample.keys():
-        np.testing.assert_array_almost_equal(expected_out_sample[k], forecaster.out_sample_residuals_[k])
+        np.testing.assert_array_almost_equal(
+            np.sort(expected_out_sample[k]), 
+            np.sort(forecaster.out_sample_residuals_[k])
+        )
 
     assert expected_out_sample_by_bin.keys() == forecaster.out_sample_residuals_by_bin_.keys()
     for k in expected_out_sample_by_bin.keys():
         for bin in expected_out_sample_by_bin[k].keys():
             np.testing.assert_array_almost_equal(
-                expected_out_sample_by_bin[k][bin],
-                forecaster.out_sample_residuals_by_bin_[k][bin]
+                np.sort(expected_out_sample_by_bin[k][bin]),
+                np.sort(forecaster.out_sample_residuals_by_bin_[k][bin])
             )
 
 
