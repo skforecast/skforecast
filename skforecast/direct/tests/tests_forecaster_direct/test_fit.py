@@ -84,7 +84,7 @@ def test_fit_in_sample_residuals_stored(n_jobs):
     Test that values of in_sample_residuals_ are stored after fitting.
     """
     forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=2, n_jobs=n_jobs)
-    forecaster.fit(y=pd.Series(np.arange(5)))
+    forecaster.fit(y=pd.Series(np.arange(5)), store_in_sample_residuals=True)
     results = forecaster.in_sample_residuals_
 
     expected = {
@@ -107,11 +107,11 @@ def test_fit_same_residuals_when_residuals_greater_than_10000(n_jobs):
     Testing with two different forecaster.
     """
     forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=2, n_jobs=n_jobs)
-    forecaster.fit(y=pd.Series(np.arange(12_000)))
+    forecaster.fit(y=pd.Series(np.arange(12_000)), store_in_sample_residuals=True)
     results_1 = forecaster.in_sample_residuals_
 
     forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=2, n_jobs=n_jobs)
-    forecaster.fit(y=pd.Series(np.arange(12_000)))
+    forecaster.fit(y=pd.Series(np.arange(12_000)), store_in_sample_residuals=True)
     results_2 = forecaster.in_sample_residuals_
 
     assert isinstance(results_1, dict)
@@ -134,7 +134,7 @@ def test_fit_in_sample_residuals_by_bin_stored(n_jobs):
     forecaster = ForecasterDirect(
         LinearRegression(), lags=3, steps=2, binner_kwargs={'n_bins': 3}, n_jobs=n_jobs
     )
-    forecaster.fit(y)
+    forecaster.fit(y, store_in_sample_residuals=True)
 
     expected_1 = {
         1: np.array([ 0.04393357,  0.18398148, -0.08688424,  0.51870003,  0.06216896,
@@ -203,20 +203,53 @@ def test_fit_in_sample_residuals_by_bin_stored(n_jobs):
 
 @pytest.mark.parametrize("n_jobs", [1, -1, 'auto'], 
                          ids=lambda n_jobs: f'n_jobs: {n_jobs}')
-def test_fit_in_sample_residuals_not_stored(n_jobs):
+def test_fit_in_sample_residuals_not_stored_probabilistic_mode_binned(n_jobs):
     """
     Test that values of in_sample_residuals_ are not stored after fitting
-    when `store_in_sample_residuals=False`.
+    when `store_in_sample_residuals=False`. Binner intervals are stored.
+    """
+    forecaster = ForecasterDirect(
+        LinearRegression(), lags=3, steps=2, binner_kwargs={'n_bins': 3}, n_jobs=n_jobs
+    )
+    forecaster.fit(y, store_in_sample_residuals=False)
+
+    expected = {1: None, 2: None}
+    expected_binner_intervals_ = {
+        0: (0.39244612759441666, 0.4901889798207174),
+        1: (0.4901889798207174, 0.5222610284825959),
+        2: (0.5222610284825959, 0.6226607762583838)
+    }
+
+    assert isinstance(forecaster.in_sample_residuals_, dict)
+    assert forecaster.in_sample_residuals_.keys() == expected.keys()
+    for k in forecaster.in_sample_residuals_.keys():
+        assert forecaster.in_sample_residuals_[k] == expected[k]
+    
+    assert forecaster.in_sample_residuals_by_bin_ is None
+
+    assert forecaster.binner_intervals_.keys() == expected_binner_intervals_.keys()
+    for k in forecaster.binner_intervals_.keys():
+        assert forecaster.binner_intervals_[k][0] == approx(expected_binner_intervals_[k][0])
+        assert forecaster.binner_intervals_[k][1] == approx(expected_binner_intervals_[k][1])
+
+
+@pytest.mark.parametrize("n_jobs", [1, -1, 'auto'], 
+                         ids=lambda n_jobs: f'n_jobs: {n_jobs}')
+def test_fit_in_sample_residuals_not_stored_probabilistic_mode_False(n_jobs):
+    """
+    Test that values of in_sample_residuals_ are not stored after fitting
+    when `store_in_sample_residuals=False` and _probabilistic_mode=False.
     """
     forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=2, n_jobs=n_jobs)
+    forecaster._probabilistic_mode = False
     forecaster.fit(y=pd.Series(np.arange(5)), store_in_sample_residuals=False)
-    expected = {1: None, 2: None}
-    results = forecaster.in_sample_residuals_
 
-    assert isinstance(results, dict)
-    assert results.keys() == expected.keys()
-    for k in results.keys():
-        assert results[k] == expected[k]
+    expected = {1: None, 2: None}
+
+    assert isinstance(forecaster.in_sample_residuals_, dict)
+    assert forecaster.in_sample_residuals_.keys() == expected.keys()
+    for k in forecaster.in_sample_residuals_.keys():
+        assert forecaster.in_sample_residuals_[k] == expected[k]
     assert forecaster.in_sample_residuals_by_bin_ is None
     assert forecaster.binner_intervals_ is None
 

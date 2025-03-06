@@ -223,6 +223,9 @@ class ForecasterRecursive(ForecasterBase):
         Version of python used to create the forecaster.
     forecaster_id : str, int
         Name used as an identifier of the forecaster.
+    _probabilistic_mode: str, bool
+        Private attribute used to indicate whether the forecaster should perform 
+        some calculations during backtesting.
     
     """
 
@@ -269,7 +272,7 @@ class ForecasterRecursive(ForecasterBase):
         self.skforecast_version                 = skforecast.__version__
         self.python_version                     = sys.version.split(" ")[0]
         self.forecaster_id                      = forecaster_id
-        self._probabilistic_mode                = "binned" # TODO: explicar que es privado
+        self._probabilistic_mode                = "binned"
 
         self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
         self.window_features, self.window_features_names, self.max_size_window_features = (
@@ -901,7 +904,7 @@ class ForecasterRecursive(ForecasterBase):
         y: pd.Series,
         exog: pd.Series | pd.DataFrame | None = None,
         store_last_window: bool = True,
-        store_in_sample_residuals: bool = True,
+        store_in_sample_residuals: bool = False,
         random_state: int = 123
     ) -> None:
         """
@@ -920,10 +923,11 @@ class ForecasterRecursive(ForecasterBase):
             that y[i] is regressed on exog[i].
         store_last_window : bool, default True
             Whether or not to store the last window (`last_window_`) of training data.
-        store_in_sample_residuals : bool, default True
+        store_in_sample_residuals : bool, default False
             If `True`, in-sample residuals will be stored in the forecaster object
             after fitting (`in_sample_residuals_` and `in_sample_residuals_by_bin_`
             attributes).
+            If `False`, only the intervals of the bins are stored.
         random_state : int, default 123
             Set a seed for the random generator so that the stored sample 
             residuals are always deterministic.
@@ -995,7 +999,7 @@ class ForecasterRecursive(ForecasterBase):
             self.exog_dtypes_in_ = exog_dtypes_in_
             self.X_train_exog_names_out_ = X_train_exog_names_out_
 
-        # This is done to save time during fit in functions such as backtesting()
+        # NOTE: This is done to save time during fit in functions such as backtesting()
         if self._probabilistic_mode is not False:
             self._binning_in_sample_residuals(
                 y_true                    = y_train.to_numpy(),
@@ -1004,9 +1008,6 @@ class ForecasterRecursive(ForecasterBase):
                 random_state              = random_state
             )
 
-        # The last time window of training data is stored so that lags needed as
-        # predictors in the first iteration of `predict()` can be calculated. It
-        # also includes the values need to calculate the diferenctiation.
         if store_last_window:
             self.last_window_ = (
                 y.iloc[-self.window_size:]
@@ -1018,7 +1019,7 @@ class ForecasterRecursive(ForecasterBase):
         self,
         y_true: np.ndarray,
         y_pred: np.ndarray,
-        store_in_sample_residuals: bool = True,
+        store_in_sample_residuals: bool = False,
         random_state: int = 123
     ) -> None:
         """
@@ -1042,10 +1043,11 @@ class ForecasterRecursive(ForecasterBase):
             True values of the time series.
         y_pred : numpy ndarray
             Predicted values of the time series.
-        store_in_sample_residuals : bool, default True
+        store_in_sample_residuals : bool, default False
             If `True`, in-sample residuals will be stored in the forecaster object
             after fitting (`in_sample_residuals_` and `in_sample_residuals_by_bin_`
             attributes).
+            If `False`, only the intervals of the bins are stored.
             If `False`, only the intervals of the bins are stored.
         random_state : int, default 123
             Set a seed for the random generator so that the stored sample 
@@ -1056,6 +1058,7 @@ class ForecasterRecursive(ForecasterBase):
         None
         
         """
+
         residuals = y_true - y_pred
 
         if self._probabilistic_mode == "binned":
@@ -1063,20 +1066,20 @@ class ForecasterRecursive(ForecasterBase):
             self.binner.fit(y_pred)
             self.binner_intervals_ = self.binner.intervals_
     
-            if store_in_sample_residuals:
+        if store_in_sample_residuals:
+            rng = np.random.default_rng(seed=random_state)
+            if self._probabilistic_mode == "binned":
                 data['bin'] = self.binner.transform(y_pred).astype(int)
                 self.in_sample_residuals_by_bin_ = (
                     data.groupby('bin')['residuals'].apply(np.array).to_dict()
                 )
 
-                rng = np.random.default_rng(seed=random_state)
                 max_sample = 10_000 // self.binner.n_bins_
                 for k, v in self.in_sample_residuals_by_bin_.items():
                     if len(v) > max_sample:
                         sample = v[rng.integers(low=0, high=len(v), size=max_sample)]
                         self.in_sample_residuals_by_bin_[k] = sample
-
-        if store_in_sample_residuals:       
+   
             if len(residuals) > 10_000:
                 residuals = residuals[
                     rng.integers(low=0, high=len(residuals), size=10_000)
@@ -2075,7 +2078,7 @@ class ForecasterRecursive(ForecasterBase):
         params: dict[str, object]
     ) -> None:
         """
-        Set new values to the parameters of the scikit learn model stored in the
+        Set new values to the parameters of the scikit-learn model stored in the
         forecaster.
         
         Parameters
@@ -2196,6 +2199,96 @@ class ForecasterRecursive(ForecasterBase):
         if self.differentiation is not None:
             self.window_size += self.differentiation
             self.differentiator.set_params(window_size=self.window_size)
+
+    def set_in_sample_residuals(
+        self,
+        y: pd.Series,
+        exog: pd.Series | pd.DataFrame | None = None,
+        random_state: int = 123
+    ) -> None:
+        """
+        Set in-sample residuals in case they were not calculated during the
+        training process. 
+        
+        In-sample residuals are calculated as the difference between the true 
+        values and the predictions made by the forecaster using the training 
+        data. The following internal attributes are updated:
+
+        + `in_sample_residuals_`: residuals stored in a numpy ndarray.
+        + `binner_intervals_`: intervals used to bin the residuals are calculated
+        using the quantiles of the predicted values.
+        + `in_sample_residuals_by_bin_`: residuals are binned according to the
+        predicted value they are associated with and stored in a dictionary, where
+        the keys are the intervals of the predicted values and the values are
+        the residuals associated with that range. 
+
+        A total of 10_000 residuals are stored in the attribute `in_sample_residuals_`.
+        If the number of residuals is greater than 10_000, a random sample of
+        10_000 residuals is stored. The number of residuals stored per bin is
+        limited to `10_000 // self.binner.n_bins_`.
+        
+        Parameters
+        ----------
+        y : pandas Series
+            Training time series.
+        exog : pandas Series, pandas DataFrame, default None
+            Exogenous variable/s included as predictor/s. Must have the same
+            number of observations as `y` and their indexes must be aligned so
+            that y[i] is regressed on exog[i].
+        random_state : int, default 123
+            Sets a seed to the random sampling for reproducible output.
+
+        Returns
+        -------
+        None
+
+        """
+
+        if not self.is_fitted:
+            raise NotFittedError(
+                "This forecaster is not fitted yet. Call `fit` with appropriate "
+                "arguments before using `set_in_sample_residuals()`."
+            )
+        
+        check_y(y=y)
+        y_index_range = preprocess_y(
+            y=y, return_values=False, suppress_warnings=True
+        )[1][[0, -1]]
+        if not y_index_range.equals(self.training_range_):
+            raise IndexError(
+                f"The index range of `y` does not match the range "
+                f"used during training. Please ensure the index is aligned "
+                f"with the training data.\n"
+                f"    Expected : {self.training_range_}\n"
+                f"    Received : {y_index_range}"
+            )
+        
+        (
+            X_train,
+            y_train,
+            _,
+            _,
+            _,
+            X_train_features_names_out_,
+            *_
+        ) = self._create_train_X_y(y=y, exog=exog)
+            
+        if not X_train_features_names_out_ == self.X_train_features_names_out_:
+            raise ValueError(
+                f"Feature mismatch detected after matrix creation. The features "
+                f"generated from the provided data do not match those used during "
+                f"the training process. To correctly set in-sample residuals, "
+                f"ensure that the same data and preprocessing steps are applied.\n"
+                f"    Expected output : {self.X_train_features_names_out_}\n"
+                f"    Current output  : {X_train_features_names_out_}"
+            )
+
+        self._binning_in_sample_residuals(
+            y_true                    = y_train.to_numpy(),
+            y_pred                    = self.regressor.predict(X_train).ravel(),
+            store_in_sample_residuals = True,
+            random_state              = random_state
+        )
 
     def set_out_sample_residuals(
         self,
@@ -2342,12 +2435,12 @@ class ForecasterRecursive(ForecasterBase):
                 sample = rng.choice(a=v, size=max_samples, replace=False)
                 out_sample_residuals_by_bin[k] = sample
 
-        in_sample_residuals_by_bin = (
-            {}
-            if self.in_sample_residuals_by_bin_ is None
-            else self.in_sample_residuals_by_bin_
+        bin_keys = (
+            []
+            if self.binner_intervals_ is None
+            else self.binner_intervals_.keys()
         )
-        for k in in_sample_residuals_by_bin.keys():
+        for k in bin_keys:
             if k not in out_sample_residuals_by_bin:
                 out_sample_residuals_by_bin[k] = np.array([])
 

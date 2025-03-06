@@ -69,7 +69,7 @@ def test_set_out_sample_residuals_TypeError_when_y_pred_is_not_numpy_array_or_pa
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
 
 
-def test_set_out_sample_residuals_ValueError_when_y_true_and_y_pred_have_different_lenght():
+def test_set_out_sample_residuals_ValueError_when_y_true_and_y_pred_have_different_length():
     """
     Test ValueError is raised when y_true and y_pred have different length.
     """
@@ -162,9 +162,9 @@ def test_set_out_sample_residuals_when_residuals_length_is_greater_than_10000():
         assert len(v) == 1_000
 
 
-def test_out_sample_residuals_by_bin_and_in_sample_reseiduals_by_bin_equivalence():
+def test_out_sample_residuals_by_bin_and_in_sample_residuals_by_bin_equivalence():
     """
-    Test out sample residuals by bin are quivalent to insample residuals by bin
+    Test out sample residuals by bin are equivalent to in-sample residuals by bin
     when training data and training predictions are passed.
     """
     forecaster = ForecasterRecursive(
@@ -172,14 +172,15 @@ def test_out_sample_residuals_by_bin_and_in_sample_reseiduals_by_bin_equivalence
                      lags = 5,
                      binner_kwargs = {'n_bins': 3}
                  )
-    forecaster.fit(y)
+    forecaster.fit(y, store_in_sample_residuals=True)
+
     X_train, y_train = forecaster.create_train_X_y(y)
     forecaster.regressor.fit(X_train, y_train)
     predictions = forecaster.regressor.predict(X_train)
 
     forecaster.set_out_sample_residuals(
-        y_true=y_train,
-        y_pred=predictions
+        y_true = y_train,
+        y_pred = predictions
     )
 
     assert forecaster.in_sample_residuals_by_bin_.keys() == forecaster.out_sample_residuals_by_bin_.keys()
@@ -243,7 +244,7 @@ def test_set_out_sample_residuals_when_there_are_no_residuals_for_some_bins():
     assert len(forecaster.out_sample_residuals_by_bin_[0]) == len(y_pred)
 
 
-def test_forecaster_set_outsample_residuals_when_transformer_y_and_diferentiation():
+def test_forecaster_set_out_sample_residuals_when_transformer_y_and_differentiation():
     """
     Test set_out_sample_residuals when forecaster has transformer_y and differentiation.
     Stored should equivalent to residuals calculated manually if transformer_y and

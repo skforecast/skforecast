@@ -275,7 +275,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterRecursive_with_window_fe
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_output_evaluate_grid_hyperparameters_ForecasterRecursive_with_diferentiation_mocked():
+def test_output_evaluate_grid_hyperparameters_ForecasterRecursive_with_differentiation_mocked():
     """
     Test output of _evaluate_grid_hyperparameters in ForecasterRecursive with mocked
     (mocked done in Skforecast v0.10.0) when differentiation is used.

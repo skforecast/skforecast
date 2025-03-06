@@ -31,7 +31,7 @@ def test_check_interval_ValueError_when_method_is_not_valid_method():
     forecaster = ForecasterDirectMultiVariate(
         LinearRegression(), level='l1', steps=2, lags=3
     )
-    forecaster.fit(series=series)
+    forecaster.fit(series=series, store_in_sample_residuals=True)
 
     method = 'not_valid_method'
     err_msg = re.escape(
@@ -58,7 +58,7 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_2_
                      transformer_series = StandardScaler(),
                      transformer_exog   = transformer_exog
                  )
-    forecaster.fit(series=series, exog=exog)
+    forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
     
     n_boot = 250
     recommended_n_boot = np.max([len(v) for v in forecaster.in_sample_residuals_.values()])
@@ -102,7 +102,7 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_2_
                      transformer_series = StandardScaler(),
                      transformer_exog   = transformer_exog
                  )
-    forecaster.fit(series=series, exog=exog)
+    forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
     forecaster.out_sample_residuals_ = forecaster.in_sample_residuals_
     
     n_boot = 250
@@ -145,7 +145,7 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_5_
                      lags               = 3,
                      transformer_series = StandardScaler()
                  )
-    forecaster.fit(series=series)
+    forecaster.fit(series=series, store_in_sample_residuals=True)
 
     recommended_n_boot = np.max([len(v) for v in forecaster.in_sample_residuals_by_bin_.values()])
     warn_msg = re.escape(
@@ -187,7 +187,7 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_5_
                      lags               = 3,
                      transformer_series = StandardScaler()
                  )
-    forecaster.fit(series=series)
+    forecaster.fit(series=series, store_in_sample_residuals=True)
     forecaster.out_sample_residuals_by_bin_ = forecaster.in_sample_residuals_by_bin_
 
     recommended_n_boot = np.max([len(v) for v in forecaster.out_sample_residuals_by_bin_.values()])
@@ -233,7 +233,7 @@ def test_predict_interval_conformal_output_when_regressor_is_LinearRegression(in
                      lags               = 3,
                      transformer_series = StandardScaler()
                  )
-    forecaster.fit(series=series)
+    forecaster.fit(series=series, store_in_sample_residuals=True)
     results = forecaster.predict_interval(
         steps=3, method='conformal', interval=interval
     )
@@ -266,7 +266,7 @@ def test_predict_interval_conformal_output_when_binned_residuals(interval):
                      lags               = 3,
                      transformer_series = StandardScaler()
                  )
-    forecaster.fit(series=series)
+    forecaster.fit(series=series, store_in_sample_residuals=True)
     results = forecaster.predict_interval(
         steps=3, method='conformal', interval=interval, use_binned_residuals=True
     )

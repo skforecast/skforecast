@@ -6,15 +6,13 @@ from sklearn.linear_model import LinearRegression
 from skforecast.recursive import ForecasterRecursive
 
 
-def test_binning_in_sample_residuals_output():
+def test_binning_in_sample_residuals_stored():
     """
-    Test that _binning_in_sample_residuals returns the expected output.
+    Test that _binning_in_sample_residuals stores residuals and binned residuals.
     """
 
     forecaster = ForecasterRecursive(
-        regressor=object(),
-        lags = 5,
-        binner_kwargs={'n_bins': 3}
+        regressor=object(), lags = 5, binner_kwargs={'n_bins': 3}
     )
 
     rng = np.random.default_rng(12345)
@@ -24,6 +22,7 @@ def test_binning_in_sample_residuals_output():
     forecaster._binning_in_sample_residuals(
         y_pred=y_pred,
         y_true=y_true,
+        store_in_sample_residuals=True
     )
 
     expected_residuals = np.array([
@@ -61,6 +60,70 @@ def test_binning_in_sample_residuals_output():
     assert forecaster.binner_intervals_ == expected_binner_intervals
 
 
+def test_binning_in_sample_residuals_store_in_sample_residuals_False():
+    """
+    Test that _binning_in_sample_residuals store_in_sample_residuals False.
+    """
+
+    forecaster = ForecasterRecursive(
+        regressor=object(), lags = 5, binner_kwargs={'n_bins': 3}
+    )
+
+    rng = np.random.default_rng(12345)
+    y_pred = rng.normal(100, 15, 20)
+    y_true = rng.normal(100, 10, 20)
+
+    forecaster._binning_in_sample_residuals(
+        y_pred=y_pred,
+        y_true=y_true,
+        store_in_sample_residuals=False
+    )
+    
+    expected_binner_intervals = {
+        0: (70.70705405481715, 90.25638761254116),
+        1: (90.25638761254116, 109.36821559391004),
+        2: (109.36821559391004, 135.2111448156828)
+    }
+
+    assert forecaster.in_sample_residuals_ is None
+    assert forecaster.in_sample_residuals_by_bin_ is None
+    assert forecaster.binner_intervals_ == expected_binner_intervals
+
+
+def test_binning_in_sample_residuals_probabilistic_mode_no_binned():
+    """
+    Test that _binning_in_sample_residuals stores when _probabilistic_mode is
+    no binned.
+    """
+
+    forecaster = ForecasterRecursive(
+        regressor=object(), lags = 5, binner_kwargs={'n_bins': 3}
+    )
+
+    rng = np.random.default_rng(12345)
+    y_pred = rng.normal(100, 15, 20)
+    y_true = rng.normal(100, 10, 20)
+
+    forecaster._probabilistic_mode = "no_binned"
+    forecaster._binning_in_sample_residuals(
+        y_pred=y_pred,
+        y_true=y_true,
+        store_in_sample_residuals=True
+    )
+    
+    expected_residuals = np.array([
+        34.58035615,  22.08911948,  15.6081091 ,   7.0808798 ,
+        55.47454021,   1.80092458,  12.2624188 , -12.32822882,
+        -0.451743  ,  11.83152763,  -7.11862253,   6.32581108,
+        -20.92461257, -21.95291202, -10.55026794, -27.43753138,
+        -6.24112163, -25.62685698,  -4.31327121, -18.40910724
+    ])
+
+    np.testing.assert_almost_equal(np.sort(forecaster.in_sample_residuals_), np.sort(expected_residuals))
+    assert forecaster.in_sample_residuals_by_bin_ is None
+    assert forecaster.binner_intervals_ is None
+
+
 def test_binning_in_sample_residuals_stores_maximum_10000_residuals():
     """
     Test that maximum 10_000 residuals are stored.
@@ -72,11 +135,9 @@ def test_binning_in_sample_residuals_stores_maximum_10000_residuals():
             index = pd.date_range(start='01-01-2000', periods=n, freq='h')
         )
     forecaster = ForecasterRecursive(
-                    regressor=LinearRegression(),
-                    lags = 5,
-                    binner_kwargs={'n_bins': 2}
-                )
-    forecaster.fit(y)
+        regressor=LinearRegression(), lags = 5, binner_kwargs={'n_bins': 2}
+    )
+    forecaster.fit(y, store_in_sample_residuals=True)
     max_residuals_per_bin = int(10_000 // forecaster.binner.n_bins_)
 
     assert len(forecaster.in_sample_residuals_) == 10_000

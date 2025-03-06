@@ -148,7 +148,7 @@ def check_backtesting_input(
         Seed for the random number generator to ensure reproducibility.
     n_jobs : int, 'auto', default `'auto'`
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
-        set to the number of cores. If 'auto', `n_jobs` is set using the fuction
+        set to the number of cores. If 'auto', `n_jobs` is set using the function
         skforecast.utils.select_n_jobs_fit_forecaster.
     show_progress : bool, default True
         Whether to show a progress bar.
@@ -834,7 +834,7 @@ def _calculate_metrics_one_step_ahead(
         y_train = forecaster.transformer_y.inverse_transform(y_train.reshape(-1, 1))
 
     # NOTE: When using this metric in validation, `y_train` doesn't include
-    # the first window_size observartions used to create the predictors and/or
+    # the first window_size observations used to create the predictors and/or
     # rolling features.
     y_true = y_true.ravel()
     y_pred = y_pred.ravel()
@@ -978,7 +978,7 @@ def _extract_data_folds_multiseries(
         test_iloc_end          = fold[2][1]
 
         if isinstance(series, dict) or isinstance(exog, dict):
-            # Substract 1 to the iloc indexes to get the loc indexes
+            # Subtract 1 to the iloc indexes to get the loc indexes
             train_loc_start       = span_index[train_iloc_start]
             train_loc_end         = span_index[train_iloc_end - 1]
             last_window_loc_start = span_index[last_window_iloc_start]
@@ -1224,7 +1224,7 @@ def _calculate_metrics_backtesting_multiseries(
     
     if add_aggregated_metric:
 
-        # aggragation: average
+        # aggregation: average
         average = metrics_levels.drop(columns='levels').mean(skipna=True)
         average = average.to_frame().transpose()
         average['levels'] = 'average'
@@ -1466,7 +1466,7 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
             )
 
     # NOTE: When using this metric in validation, `y_train` doesn't include
-    # the first window_size observartions used to create the predictors and/or
+    # the first window_size observations used to create the predictors and/or
     # rolling features.
     metrics_no_y_train = [
         "mean_absolute_error",
@@ -1503,7 +1503,7 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
 
     if add_aggregated_metric:
 
-        # aggragation: average
+        # aggregation: average
         average = metrics_levels.drop(columns='levels').mean(skipna=True)
         average = average.to_frame().transpose()
         average['levels'] = 'average'

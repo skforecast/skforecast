@@ -1,6 +1,6 @@
 
 ################################################################################
-#                            skforecast.datsets                                #
+#                            skforecast.datasets                               #
 #                                                                              #
 # This work by skforecast team is licensed under the BSD 3-Clause License.     #
 ################################################################################
@@ -25,7 +25,7 @@ def fetch_dataset(
     name: str
         Name of the dataset to fetch.
     version: str, int, default `'latest'`
-        Version of the dataset to fetch. If 'latest', the lastest version will be 
+        Version of the dataset to fetch. If 'latest', the latest version will be 
         fetched (the one in the main branch). For a list of available versions, 
         see the repository branches.
     raw: bool, default `False`
@@ -375,7 +375,7 @@ def fetch_dataset(
                 "format using the code provided by the authors in "
                 "https://github.com/rakshitha123/TSForecasting/blob/master/utils/data_loader.py \n"
                 "The category of each time series has been included in the dataset. This "
-                "information has been obtainded from the Kaggle competition page: "
+                "information has been obtained from the Kaggle competition page: "
                 "https://www.kaggle.com/datasets/yogesh94/m4-forecasting-competition-dataset"
             )
         },
@@ -400,7 +400,7 @@ def fetch_dataset(
                 "format using the code provided by the authors in "
                 "https://github.com/rakshitha123/TSForecasting/blob/master/utils/data_loader.py \n"
                 "The category of each time series has been included in the dataset. This "
-                "information has been obtainded from the Kaggle competition page: "
+                "information has been obtained from the Kaggle competition page: "
                 "https://www.kaggle.com/datasets/yogesh94/m4-forecasting-competition-dataset"
             )
         },
@@ -440,6 +440,25 @@ def fetch_dataset(
                 "https://doi.org/10.1038/s41597-020-00712-x"
             )
         },
+        'bdg2_daily_sample': {
+            'url': 'https://raw.githubusercontent.com/skforecast/skforecast-datasets/refs/heads/main/data/bdg2_daily_sample.csv',
+            'sep': ',',
+            'index_col': 'timestamp',
+            'date_format': '%Y-%m-%d',
+            'freq': 'D',
+            'file_type': 'csv',
+            'description': (
+                "Daily energy consumption data of two buildings sampled from the "
+                "The Building Data Genome Project 2. "
+                "https://github.com/buds-lab/building-data-genome-project-2"
+            ),
+            'source': (
+                "Miller, C., Kathirgamanathan, A., Picchetti, B. et al. The Building Data "
+                "Genome Project 2, energy meter data from the ASHRAE Great Energy "
+                "Predictor III competition. Sci Data 7, 368 (2020). "
+                "https://doi.org/10.1038/s41597-020-00712-x"
+            )
+        },
         'bdg2_hourly': {
             'url': 'https://drive.google.com/file/d/1I2i5mZJ82Cl_SHPTaWJmLoaXnntdCgh7/view?usp=sharing',
             'sep': None,
@@ -450,6 +469,25 @@ def fetch_dataset(
             'description': (
                 "Hourly energy consumption data from the The Building Data Genome Project 2 "
                 "with building metadata and weather data. "
+                "https://github.com/buds-lab/building-data-genome-project-2"
+            ),
+            'source': (
+                "Miller, C., Kathirgamanathan, A., Picchetti, B. et al. The Building Data "
+                "Genome Project 2, energy meter data from the ASHRAE Great Energy "
+                "Predictor III competition. Sci Data 7, 368 (2020). "
+                "https://doi.org/10.1038/s41597-020-00712-x"
+            )
+        },
+        'bdg2_hourly_sample': {
+            'url': 'https://raw.githubusercontent.com/skforecast/skforecast-datasets/refs/heads/main/data/bdg2_hourly_sample.csv',
+            'sep': ',',
+            'index_col': 'timestamp',
+            'date_format': '%Y-%m-%d %H:%M:%S',
+            'freq': 'H',
+            'file_type': 'csv',
+            'description': (
+                "Daily energy consumption data of two buildings sampled from the "
+                "The Building Data Genome Project 2. "
                 "https://github.com/buds-lab/building-data-genome-project-2"
             ),
             'source': (
@@ -679,7 +717,7 @@ def load_demo_dataset(version: str = 'latest') -> pd.Series:
     Parameters
     ----------
     version: str, default `'latest'`
-        Version of the dataset to fetch. If 'latest', the lastest version will be
+        Version of the dataset to fetch. If 'latest', the latest version will be
         fetched (the one in the main branch). For a list of available versions,
         see the repository branches.
 

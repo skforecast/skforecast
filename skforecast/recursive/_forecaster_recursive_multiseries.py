@@ -122,7 +122,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         - If `None`, all levels have the same weight.
     differentiation : int, dict, default None
         Order of differencing applied to the time series before training the forecaster.
-        The order of differentiation is the numberof times the differencing operation 
+        The order of differentiation is the number of times the differencing operation 
         is applied to a time series. Differencing involves computing the differences 
         between consecutive data points in the series. Before returning a prediction, 
         the differencing operation is reversed.
@@ -340,6 +340,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         Version of python used to create the forecaster.
     forecaster_id : str, int
         Name used as an identifier of the forecaster.
+    _probabilistic_mode: str, bool
+        Private attribute used to indicate whether the forecaster should perform 
+        some calculations during backtesting.
 
     Notes
     -----
@@ -416,7 +419,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self.skforecast_version                 = skforecast.__version__
         self.python_version                     = sys.version.split(" ")[0]
         self.forecaster_id                      = forecaster_id
-        self._probabilistic_mode                = "binned" # TODO: explicar que es privado
+        self._probabilistic_mode                = "binned"
 
         self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
         self.window_features, self.window_features_names, self.max_size_window_features = (
@@ -468,7 +471,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             warnings.warn(
                 "When using a linear model, it is recommended to use a transformer_series "
                 "to ensure all series are in the same scale. You can use, for example, a "
-                "`StandardScaler` from sklearn.preprocessing."
+                "`StandardScaler` from sklearn.preprocessing.",
+                DataTransformationWarning
             )
 
         if isinstance(self.transformer_series, dict):
@@ -1245,8 +1249,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     f"`series`. No last window is stored for them.",
                     IgnoredArgumentWarning
                 )
-                series_to_store = [s for s in series_to_store 
-                                   if s not in series_not_in_series_dict]
+                series_to_store = [
+                    s for s in series_to_store 
+                    if s not in series_not_in_series_dict
+                ]
 
             if series_to_store:
                 last_window_ = {
@@ -1631,7 +1637,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
         exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
         store_last_window: bool | list[str] = True,
-        store_in_sample_residuals: bool = True,
+        store_in_sample_residuals: bool = False,
+        random_state: int = 123,
         suppress_warnings: bool = False
     ) -> None:
         """
@@ -1653,10 +1660,14 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             - If `True`, last window is stored for all series. 
             - If `list`, last window is stored for the series present in the list.
             - If `False`, last window is not stored.
-        store_in_sample_residuals : bool, default True
+        store_in_sample_residuals : bool, default False
             If `True`, in-sample residuals will be stored in the forecaster object
             after fitting (`in_sample_residuals_` and `in_sample_residuals_by_bin_`
             attributes).
+            If `False`, only the intervals of the bins are stored.
+        random_state : int, default 123
+            Set a seed for the random generator so that the stored sample 
+            residuals are always deterministic.
         suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the training 
             process. See skforecast.exceptions.warn_skforecast_categories for more
@@ -1779,15 +1790,18 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                         y_true                    = y_train[mask],
                         y_pred                    = y_pred[mask],
                         store_in_sample_residuals = store_in_sample_residuals,
+                        random_state              = random_state
                     )
             
             # NOTE: the _unknown_level is a random sample of 10_000 residuals of all levels.
             self._binning_in_sample_residuals(
                 level                     = '_unknown_level',
-                y_true                    = y_train[mask],
-                y_pred                    = y_pred[mask],
+                y_true                    = y_train,
+                y_pred                    = y_pred,
                 store_in_sample_residuals = store_in_sample_residuals,
+                random_state              = random_state
             )
+        
         if not store_in_sample_residuals:
             # NOTE: create empty dictionaries to avoid errors when calling predict()
             if self.encoding is not None:
@@ -1802,13 +1816,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         
         set_skforecast_warnings(suppress_warnings, action='default')
 
-    
     def _binning_in_sample_residuals(
         self,
         level: str,
         y_true: np.ndarray,
         y_pred: np.ndarray,
-        store_in_sample_residuals: bool = True,
+        store_in_sample_residuals: bool = False,
         random_state: int = 123
     ) -> None:
         """
@@ -1832,9 +1845,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             True values of the time series.
         y_pred : numpy ndarray
             Predicted values of the time series.
-        store_in_sample_residuals : bool, default True
-            If `True`, in-sample residuals will be stored in the forecaster object.
-            If `False`, only the binned intervals are stored.
+        store_in_sample_residuals : bool, default False
+            If `True`, in-sample residuals will be stored in the forecaster object
+            after fitting (`in_sample_residuals_` and `in_sample_residuals_by_bin_`
+            attributes).
+            If `False`, only the intervals of the bins are stored.
         random_state : int, default 123
             Set a seed for the random generator so that the stored sample 
             residuals are always deterministic.
@@ -1855,27 +1870,25 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             self.binner[level].fit(y_pred)
             self.binner_intervals_[level] = self.binner[level].intervals_
 
-            if store_in_sample_residuals:
+        if store_in_sample_residuals:
+            rng = np.random.default_rng(seed=random_state)
+            if self._probabilistic_mode == "binned":
                 data['bin'] = self.binner[level].transform(y_pred).astype(int)
                 self.in_sample_residuals_by_bin_[level] = (
                     data.groupby('bin')['residuals'].apply(np.array).to_dict()
                 )
 
-                rng = np.random.default_rng(seed=random_state)
                 max_sample = 10_000 // self.binner[level].n_bins_
                 for k, v in self.in_sample_residuals_by_bin_[level].items():
                     if len(v) > max_sample:
                         sample = v[rng.integers(low=0, high=len(v), size=max_sample)]
                         self.in_sample_residuals_by_bin_[level][k] = sample
 
-        if store_in_sample_residuals:
             if len(residuals) > 10_000:
                 residuals = residuals[
                     rng.integers(low=0, high=len(residuals), size=10_000)
                 ]
-            
-            self.in_sample_residuals_[level] = residuals
-        
+            self.in_sample_residuals_[level] = residuals        
 
     def _create_predict_inputs(
         self,
@@ -3174,7 +3187,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         params: dict[str, object]
     ) -> None:
         """
-        Set new values to the parameters of the scikit learn model stored in the
+        Set new values to the parameters of the scikit-learn model stored in the
         forecaster.
         
         Parameters
@@ -3308,11 +3321,136 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             else:
                 self.differentiator.set_params(window_size=self.window_size)
 
+    def set_in_sample_residuals(
+        self,
+        series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
+        exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
+        random_state: int = 123,
+        suppress_warnings: bool = False
+    ) -> None:
+        """
+        Set in-sample residuals in case they were not calculated during the
+        training process. 
+        
+        In-sample residuals are calculated as the difference between the true 
+        values and the predictions made by the forecaster using the training 
+        data. The following internal attributes are updated:
+
+        + `in_sample_residuals_`: Dictionary containing a numpy ndarray with the
+        residuals for each series in the form `{series: residuals}`.
+        + `binner_intervals_`: intervals used to bin the residuals are calculated
+        using the quantiles of the predicted values.
+        + `in_sample_residuals_by_bin_`: residuals are binned according to the
+        predicted value they are associated with and stored in a dictionary per
+        series, where the keys are the intervals of the predicted values and the 
+        values are the residuals associated with that range. 
+
+        A total of 10_000 residuals are stored in the attribute `in_sample_residuals_`.
+        If the number of residuals is greater than 10_000, a random sample of
+        10_000 residuals is stored. The number of residuals stored per bin is
+        limited to `10_000 // self.binner.n_bins_`.
+        
+        Parameters
+        ----------
+        series : pandas DataFrame, dict
+            Training time series.
+        exog : pandas Series, pandas DataFrame, dict, default None
+            Exogenous variable/s included as predictor/s.
+        random_state : int, default 123
+            Sets a seed to the random sampling for reproducible output.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings will be suppressed during the sampling 
+            process. See skforecast.exceptions.warn_skforecast_categories for more
+            information.
+
+        Returns
+        -------
+        None
+
+        """
+
+        set_skforecast_warnings(suppress_warnings, action='ignore')
+
+        if not self.is_fitted:
+            raise NotFittedError(
+                "This forecaster is not fitted yet. Call `fit` with appropriate "
+                "arguments before using `set_in_sample_residuals()`."
+            )
+
+        (
+            X_train,
+            y_train,
+            series_indexes,
+            _,
+            X_train_series_names_in_,
+            *_
+        ) = self._create_train_X_y(
+                series=series, exog=exog, store_last_window=False
+            )
+        
+        # NOTE: Same series names as training is checked in _create_train_X_y.
+        series_index_range = {k: v[[0, -1]] for k, v in series_indexes.items()}
+        for level in self.training_range_.keys():
+            if not series_index_range[level].equals(self.training_range_[level]):
+                raise IndexError(
+                    f"The index range for series '{level}' does not match the range "
+                    f"used during training. Please ensure the index is aligned "
+                    f"with the training data.\n"
+                    f"    Expected : {self.training_range_[level]}\n"
+                    f"    Received : {series_index_range[level]}"
+                )
+        
+        X_train_regressor = (
+            X_train
+            if self.encoding is not None
+            else X_train.drop(columns="_level_skforecast")
+        )
+        X_train_features_names_out_ = X_train_regressor.columns.to_list()
+        if not X_train_features_names_out_ == self.X_train_features_names_out_:
+            raise ValueError(
+                f"Feature mismatch detected after matrix creation. The features "
+                f"generated from the provided data do not match those used during "
+                f"the training process. To correctly set in-sample residuals, "
+                f"ensure that the same data and preprocessing steps are applied.\n"
+                f"    Expected output : {self.X_train_features_names_out_}\n"
+                f"    Current output  : {X_train_features_names_out_}"
+            )
+        
+        self.in_sample_residuals_ = {}
+        self.in_sample_residuals_by_bin_ = {}
+        y_pred = self.regressor.predict(X_train_regressor)
+        if self.encoding is not None:
+            for level in X_train_series_names_in_:
+                if self.encoding == 'onehot':
+                    mask = X_train[level].to_numpy() == 1.
+                else:
+                    encoded_value = self.encoding_mapping_[level]
+                    mask = X_train['_level_skforecast'].to_numpy() == encoded_value
+
+                self._binning_in_sample_residuals(
+                    level                     = level,
+                    y_true                    = y_train[mask],
+                    y_pred                    = y_pred[mask],
+                    store_in_sample_residuals = True,
+                    random_state              = random_state
+                )
+        
+        # NOTE: the _unknown_level is a random sample of 10_000 residuals of all levels.
+        self._binning_in_sample_residuals(
+            level                     = '_unknown_level',
+            y_true                    = y_train,
+            y_pred                    = y_pred,
+            store_in_sample_residuals = True,
+            random_state              = random_state
+        )
+
+        set_skforecast_warnings(suppress_warnings, action='default')
+
     def set_out_sample_residuals(
         self, 
         y_true: dict[str, np.ndarray | pd.Series],
         y_pred: dict[str, np.ndarray | pd.Series],
-        append: bool = True,
+        append: bool = False,
         random_state: int = 123
     ) -> None:
         """
@@ -3443,7 +3581,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
             # NOTE: when encoding is None, all levels are combined in '_unknown_level'.
             if list(self.out_sample_residuals_.keys()) != ['_unknown_level']:
-                # To latelly refresh completly _unknown_level
+                # To update completely _unknown_level later
                 self.out_sample_residuals_.pop('_unknown_level', None)
             
             residuals_all_levels = np.concatenate(
@@ -3496,7 +3634,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         level: str,
         y_true: np.ndarray,
         y_pred: np.ndarray,
-        append: bool,
+        append: bool = False,
         random_state: int = 123
     ) -> tuple[np.ndarray, dict[int, np.ndarray]]:
         """
@@ -3514,7 +3652,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             True values of the time series.
         y_pred : numpy ndarray
             Predicted values of the time series.
-        append : bool
+        append : bool, default False
             If `True`, new residuals are added to the once already stored in the
             attribute `out_sample_residuals_`. If after appending the new residuals,
             the limit of 10_000 samples is exceeded, a random sample of 10_000 is
@@ -3573,7 +3711,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         data['bin'] = binner.transform(y_pred).astype(int)
         residuals_by_bin = data.groupby('bin')['residuals'].apply(np.array).to_dict()
         
-        in_sample_residuals_by_bin = self.in_sample_residuals_by_bin_.get(level, {})
         out_sample_residuals = self.out_sample_residuals_.get(level, np.array([]))
         out_sample_residuals_by_bin = deepcopy(self.out_sample_residuals_by_bin_.get(level, {}))
         
@@ -3607,12 +3744,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 sample = rng.choice(a=v, size=max_samples, replace=False)
                 out_sample_residuals_by_bin[k] = sample
 
-        in_sample_residuals_by_bin = (
-            {}
-            if in_sample_residuals_by_bin is None
-            else in_sample_residuals_by_bin
-        )
-        for k in in_sample_residuals_by_bin.keys():
+        for k in self.binner_intervals_.get(level, {}).keys():
             if k not in out_sample_residuals_by_bin:
                 out_sample_residuals_by_bin[k] = np.array([])
 
@@ -3622,7 +3754,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         ]
         if empty_bins:
             warnings.warn(
-                f"The following bins of level {level} have no out of sample residuals: "
+                f"The following bins of level '{level}' have no out of sample residuals: "
                 f"{empty_bins}. No predicted values fall in the interval "
                 f"{[self.binner_intervals_[level][bin] for bin in empty_bins]}. "
                 f"Empty bins will be filled with a random sample of residuals.", 

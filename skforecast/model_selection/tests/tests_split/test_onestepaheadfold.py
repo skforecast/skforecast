@@ -77,7 +77,7 @@ def test_OneStepAhead_split_initial_train_size_and_window_size(capfd, return_all
     assert folds == expected
 
 
-def test_OneStepAhead_split_initial_train_size_and_window_size_diferentiation_is_1(capfd):
+def test_OneStepAhead_split_initial_train_size_and_window_size_differentiation_is_1(capfd):
     """
     Test OneStepAhead splits when initial_train_size and window_size are provided, and
     differentiation is 1.

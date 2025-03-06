@@ -7,8 +7,8 @@
 
 import sys
 import warnings
-from copy import copy, deepcopy
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from copy import deepcopy
+from typing import Any, Callable, Optional, Tuple, Union
 import inspect
 import keras
 import matplotlib
@@ -163,6 +163,9 @@ class ForecasterRnn(ForecasterBase):
     history : dict
         Dictionary with the history of the training of each step. It is created
         internally to avoid overwriting.
+    _probabilistic_mode: str, bool
+        Private attribute used to indicate whether the forecaster should perform 
+        some calculations during backtesting.
     dropna_from_series : Ignored
         Not used, present here for API consistency by convention.
     encoding : Ignored
@@ -218,6 +221,7 @@ class ForecasterRnn(ForecasterBase):
         self.skforecast_version = skforecast.__version__
         self.python_version = sys.version.split(" ")[0]
         self.forecaster_id = forecaster_id
+        self._probabilistic_mode = "no_binned"
         self.history = None  # TODO: Change to history_ as come from fit method?
         self.dropna_from_series = False  # Ignored in this forecaster
         self.encoding = None   # Ignored in this forecaster
@@ -1694,7 +1698,7 @@ class ForecasterRnn(ForecasterBase):
 
     def set_params(self, params: dict) -> None:  # TODO testear
         """
-        Set new values to the parameters of the scikit learn model stored in the
+        Set new values to the parameters of the scikit-learn model stored in the
         forecaster. It is important to note that all models share the same
         configuration of parameters and hyperparameters.
 

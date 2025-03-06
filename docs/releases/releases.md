@@ -16,6 +16,8 @@ The main changes in this release are:
 
 + Probabilistic predictions in <code>[ForecasterRecursiveMultiSeries]</code> and <code>[ForecasterDirectMultiVariate]</code> are now returned as a long format DataFrame.
 
++ store_in_sample_residuals default False
+
 
 **Added**
 
@@ -26,6 +28,8 @@ The main changes in this release are:
 + <code>[ConformalIntervalCalibrator]</code>
 
 + Binned in rest of Forecasters.
+
++ Set in sample residuals.
 
 + Functions `crps_from_predictions` and `crps_from_quantiles` in module `metrics` to calculate the Continuous Ranked Probability Score (CRPS).
 
@@ -49,6 +53,8 @@ The main changes in this release are:
 
 
 **Changed**
+
++ store_in_sample_residuals default False
 
 + Predictions from `predict_bootstrapping` in <code>[ForecasterRecursiveMultiSeries]</code> and <code>[ForecasterDirectMultiVariate]</code> are now returned as a long format DataFrame with the bootstrapping predictions. The columns are `level`, `pred_boot_0`, `pred_boot_1`, ..., `pred_boot_n_boot`.
 
@@ -354,7 +360,7 @@ The main changes in this release are:
 
 + The `output_file` argument has been added to the hyperparameter search functions in the `model_selection`, `model_selection_multiseries` and `model_selection_sarimax` modules to save the results of the hyperparameter search in a tab-separated values (TSV) file.
 
-+ New argument `binned_residuals` in method `predict_interval` allows to condition the bootstraped residuals on range of the predicted values. 
++ New argument `binned_residuals` in method `predict_interval` allows to condition the bootstrapped residuals on range of the predicted values. 
 
 + Added `save_custom_functions` argument to the `save_forecaster` function in the `utils` module. If `True`, save custom functions used in the forecaster (`fun_predictors` and `weight_func`) as .py files. Custom functions must be available in the environment where the forecaster is loaded.
 
@@ -423,7 +429,7 @@ The main changes in this release are:
 
 **Fixed**
 
-+ Rename `self.skforcast_version` attribute to `self.skforecast_version` in all Forecasters.
++ Rename `self.skforecast_version` attribute to `self.skforecast_version` in all Forecasters.
 
 + Fixed a bug where the `create_train_X_y` method did not correctly align lags and exogenous variables when the index was not a Pandas index in all Forecasters.
 
@@ -875,7 +881,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 
 + Output of `predict` is a pandas Series with index according to the steps predicted.
 
-+ Scikitlearn pipelines are allowed as regressors.
++ Scikit-learn pipelines are allowed as regressors.
 
 + `backtesting_forecaster` and `backtesting_forecaster_intervals` have been combined in a single function.
 
@@ -953,7 +959,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 **Changed**
 
 
-+ New implementation of `ForecasterAutoregMultiOutput`. The training process in the new version creates a different X_train for each step. See [Direct multi-step forecasting](https://github.com/skforecast/skforecast#introduction) for more details. Old versión can be acces with `skforecast.deprecated.ForecasterAutoregMultiOutput`.
++ New implementation of `ForecasterAutoregMultiOutput`. The training process in the new version creates a different X_train for each step. See [Direct multi-step forecasting](https://github.com/skforecast/skforecast#introduction) for more details. Old version can be accessed with `skforecast.deprecated.ForecasterAutoregMultiOutput`.
 
 + Class `ForecasterCustom` has been renamed to `ForecasterAutoregCustom`. However, `ForecasterCustom` will still remain to keep backward compatibility.
 

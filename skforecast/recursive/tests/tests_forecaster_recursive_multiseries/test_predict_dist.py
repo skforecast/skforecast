@@ -2,7 +2,6 @@
 # ==============================================================================
 import re
 import pytest
-import numpy as np
 import pandas as pd
 from ....recursive import ForecasterRecursiveMultiSeries
 from scipy.stats import norm
@@ -35,7 +34,7 @@ def test_predict_dist_TypeError_when_distribution_object_is_not_valid():
                      transformer_series = StandardScaler(),
                      transformer_exog   = transformer_exog,
                  )
-    forecaster.fit(series=series, exog=exog)
+    forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
     
     class CustomObject:  # pragma: no cover
         pass
@@ -70,7 +69,7 @@ def test_predict_dist_output_when_forecaster_is_LinearRegression_steps_is_2_in_s
                      transformer_exog   = transformer_exog,
                  )
 
-    forecaster.fit(series=series, exog=exog)
+    forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
     results = forecaster.predict_dist(
                   steps                   = 2,
                   distribution            = norm,
@@ -109,7 +108,7 @@ def test_predict_dist_output_when_forecaster_is_LinearRegression_steps_is_2_in_s
                      transformer_exog   = transformer_exog,
                  )
 
-    forecaster.fit(series=series, exog=exog)
+    forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
     forecaster.out_sample_residuals_ = forecaster.in_sample_residuals_
     results = forecaster.predict_dist(
                   steps                   = 2,

@@ -40,7 +40,7 @@ def test_predict_bootstrapping_ValueError_when_not_in_sample_residuals_for_some_
     residuals for some step.
     """
     forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=2)
-    forecaster.fit(y=pd.Series(np.arange(10)))
+    forecaster.fit(y=pd.Series(np.arange(10)), store_in_sample_residuals=True)
     forecaster.in_sample_residuals_ = {2: np.array([1, 2, 3])}
 
     err_msg = re.escape(
@@ -59,7 +59,7 @@ def test_predict_bootstrapping_ValueError_when_out_sample_residuals_is_None(use_
     out sample residuals is None.
     """
     forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=2)
-    forecaster.fit(y=pd.Series(np.arange(10)))
+    forecaster.fit(y=pd.Series(np.arange(10)), store_in_sample_residuals=True)
 
     if use_binned_residuals:
         literal = "out_sample_residuals_by_bin_"
@@ -83,7 +83,7 @@ def test_predict_bootstrapping_ValueError_when_not_out_sample_residuals_for_all_
     forecaster.out_sample_residuals_ is not available for all steps predicted.
     """
     forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=3)
-    forecaster.fit(y=pd.Series(np.arange(15)))
+    forecaster.fit(y=pd.Series(np.arange(15)), store_in_sample_residuals=True)
     residuals = {
         2: np.array([1, 2, 3, 4, 5]), 
         3: np.array([1, 2, 3, 4, 5])
@@ -105,7 +105,7 @@ def test_predict_bootstrapping_ValueError_when_step_out_sample_residuals_value_i
     forecaster.out_sample_residuals_ has a step with a None.
     """
     forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=3)
-    forecaster.fit(y=pd.Series(np.arange(15)))
+    forecaster.fit(y=pd.Series(np.arange(15)), store_in_sample_residuals=True)
     forecaster.out_sample_residuals_ = {
         1: np.array([1, 2, 3, 4, 5]),
         2: np.array([1, 2, 3, 4, 5]),
@@ -133,7 +133,7 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_
                      transformer_y    = StandardScaler(),
                      transformer_exog = StandardScaler(),
                  )
-    forecaster.fit(y=y, exog=exog)
+    forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True)
     results = forecaster.predict_bootstrapping(
         steps=steps, exog=exog_predict, n_boot=4, use_in_sample_residuals=True
     )
@@ -163,7 +163,7 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_
                      transformer_y    = StandardScaler(),
                      transformer_exog = StandardScaler(),
                  )
-    forecaster.fit(y=y, exog=exog)
+    forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True)
     forecaster.out_sample_residuals_ = forecaster.in_sample_residuals_
     results = forecaster.predict_bootstrapping(
         steps=2, exog=exog_predict, n_boot=4, use_in_sample_residuals=False
@@ -191,7 +191,7 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_
                      steps     = 2,
                      lags      = 3
                  )
-    forecaster.fit(y=y, exog=exog)
+    forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True)
     forecaster.in_sample_residuals_ = {
         1: pd.Series([1, 1, 1, 1, 1, 1, 1]),
         2: pd.Series([5, 5, 5, 5, 5, 5, 5])
@@ -229,7 +229,9 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_and_di
     end_train = '2003-03-01 23:59:00'
 
     forecaster_1 = ForecasterDirect(regressor=LinearRegression(), steps=1, lags=15)
-    forecaster_1.fit(y=data_diff.loc[:end_train], exog=exog_diff.loc[:end_train])
+    forecaster_1.fit(
+        y=data_diff.loc[:end_train], exog=exog_diff.loc[:end_train], store_in_sample_residuals=True
+    )
     boot_predictions_diff = forecaster_1.predict_bootstrapping(
         exog=exog_diff.loc[end_train:], n_boot=10
     )
@@ -243,7 +245,9 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_and_di
     boot_predictions_1 = boot_predictions_1.asfreq('MS')
     
     forecaster_2 = ForecasterDirect(regressor=LinearRegression(), steps=1, lags=15, differentiation=1)
-    forecaster_2.fit(y=data.loc[:end_train], exog=exog.loc[:end_train])
+    forecaster_2.fit(
+        y=data.loc[:end_train], exog=exog.loc[:end_train], store_in_sample_residuals=True
+    )
     boot_predictions_2 = forecaster_2.predict_bootstrapping(
         exog=exog_diff.loc[end_train:], n_boot=10
     )
@@ -270,7 +274,9 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_and_di
     end_train = '2003-03-01 23:59:00'
 
     forecaster_1 = ForecasterDirect(regressor=LinearRegression(), steps=10, lags=15)
-    forecaster_1.fit(y=data_diff.loc[:end_train], exog=exog_diff.loc[:end_train])
+    forecaster_1.fit(
+        y=data_diff.loc[:end_train], exog=exog_diff.loc[:end_train], store_in_sample_residuals=True
+    )
     boot_predictions_diff = forecaster_1.predict_bootstrapping(
         exog=exog_diff.loc[end_train:], n_boot=10
     )
@@ -282,7 +288,9 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_and_di
     boot_predictions_1 = boot_predictions_1.asfreq('MS')
     
     forecaster_2 = ForecasterDirect(regressor=LinearRegression(), steps=10, lags=15, differentiation=1)
-    forecaster_2.fit(y=data.loc[:end_train], exog=exog.loc[:end_train])
+    forecaster_2.fit(
+        y=data.loc[:end_train], exog=exog.loc[:end_train], store_in_sample_residuals=True
+    )
     boot_predictions_2 = forecaster_2.predict_bootstrapping(
         exog=exog_diff.loc[end_train:], n_boot=10
     )
@@ -307,7 +315,7 @@ def test_predict_bootstrapping_output_when_window_features_steps_1():
     forecaster = ForecasterDirect(
         LGBMRegressor(verbose=-1, random_state=123), steps=1, lags=3, window_features=rolling
     )
-    forecaster.fit(y=y_datetime, exog=exog_datetime)
+    forecaster.fit(y=y_datetime, exog=exog_datetime, store_in_sample_residuals=True)
     results = forecaster.predict_bootstrapping(
         n_boot=10, exog=exog_predict_datetime, use_in_sample_residuals=True
     )
@@ -341,7 +349,7 @@ def test_predict_bootstrapping_output_when_window_features_steps_10():
     forecaster = ForecasterDirect(
         LGBMRegressor(verbose=-1, random_state=123), steps=10, lags=3, window_features=rolling
     )
-    forecaster.fit(y=y_datetime, exog=exog_datetime)
+    forecaster.fit(y=y_datetime, exog=exog_datetime, store_in_sample_residuals=True)
     results = forecaster.predict_bootstrapping(
         n_boot=10, exog=exog_predict_datetime, use_in_sample_residuals=True
     )
@@ -386,7 +394,7 @@ def test_predict_bootstrapping_output_when_recommended_n_boot():
                      steps     = 5,
                      lags      = 5
                  )
-    forecaster.fit(y=y)
+    forecaster.fit(y=y, store_in_sample_residuals=True)
 
     recommended_n_boot = 5
     for k, v in forecaster.in_sample_residuals_.items():
@@ -421,7 +429,7 @@ def test_predict_bootstrapping_output_when_recommended_n_boot_binned_residuals()
                      steps     = 5,
                      lags      = 5
                  )
-    forecaster.fit(y=y)
+    forecaster.fit(y=y, store_in_sample_residuals=True)
 
     recommended_n_boot = 5
     for k, v in forecaster.in_sample_residuals_by_bin_.items():

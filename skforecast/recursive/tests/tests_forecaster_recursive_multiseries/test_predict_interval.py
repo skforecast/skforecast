@@ -296,7 +296,7 @@ def test_predict_interval_output_when_regressor_is_LinearRegression_with_transfo
                      lags               = 5,
                      transformer_series = StandardScaler()
                  )
-    forecaster.fit(series=series)
+    forecaster.fit(series=series, store_in_sample_residuals=True)
     predictions = forecaster.predict_interval(steps=5, levels='1')
 
     expected = pd.DataFrame(
@@ -323,7 +323,7 @@ def test_predict_interval_output_when_regressor_is_LinearRegression_with_transfo
                      lags               = 5,
                      transformer_series = {'1': StandardScaler(), '2': MinMaxScaler(), '_unknown_level': StandardScaler()}
                  )
-    forecaster.fit(series=series)
+    forecaster.fit(series=series, store_in_sample_residuals=True)
     predictions = forecaster.predict_interval(steps=5, levels=['1'])
 
     expected = pd.DataFrame(
@@ -357,7 +357,7 @@ def test_predict_interval_output_when_regressor_is_LinearRegression_with_transfo
                      transformer_series = StandardScaler(),
                      transformer_exog   = transformer_exog,
                  )
-    forecaster.fit(series=series, exog=exog)
+    forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
     results = forecaster.predict_interval(steps=5, levels=['1', '2'], exog=exog_predict)
     
     expected = pd.DataFrame(
@@ -392,7 +392,8 @@ def test_predict_interval_output_when_series_and_exog_dict():
         transformer_exog=StandardScaler(),
     )
     forecaster.fit(
-        series=series_dict_train, exog=exog_dict_train, suppress_warnings=True
+        series=series_dict_train, exog=exog_dict_train, 
+        store_in_sample_residuals=True, suppress_warnings=True
     )
     predictions = forecaster.predict_interval(
         steps=5, exog=exog_dict_test, suppress_warnings=True, n_boot=10, interval=[5, 95]
@@ -452,7 +453,8 @@ def test_predict_interval_output_when_series_and_exog_dict_unknown_level():
                      transformer_exog   = StandardScaler()
                  )
     forecaster.fit(
-        series=series_dict_train, exog=exog_dict_train, suppress_warnings=True
+        series=series_dict_train, exog=exog_dict_train, 
+        store_in_sample_residuals=True, suppress_warnings=True
     )
 
     levels = ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']
@@ -529,7 +531,8 @@ def test_predict_interval_output_when_series_and_exog_dict_unknown_level_binned_
                      transformer_exog   = StandardScaler()
                  )
     forecaster.fit(
-        series=series_dict_train, exog=exog_dict_train, suppress_warnings=True
+        series=series_dict_train, exog=exog_dict_train, 
+        store_in_sample_residuals=True, suppress_warnings=True
     )
 
     levels = ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']
@@ -706,7 +709,8 @@ def test_predict_interval_output_when_series_and_exog_dict_encoding_None_unknown
                      differentiation    = 1
                  )
     forecaster.fit(
-        series=series_dict_train, exog=exog_dict_train, suppress_warnings=True
+        series=series_dict_train, exog=exog_dict_train, 
+        store_in_sample_residuals=True, suppress_warnings=True
     )
 
     levels = ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']
@@ -784,7 +788,8 @@ def test_predict_interval_output_when_series_and_exog_dict_encoding_None_unknown
                      differentiation    = 1
                  )
     forecaster.fit(
-        series=series_dict_train, exog=exog_dict_train, suppress_warnings=True
+        series=series_dict_train, exog=exog_dict_train, 
+        store_in_sample_residuals=True, suppress_warnings=True
     )
 
     levels = ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']
@@ -963,7 +968,8 @@ def test_predict_interval_conformal_output_when_series_and_exog_dict(interval):
         transformer_exog=StandardScaler(),
     )
     forecaster.fit(
-        series=series_dict_train, exog=exog_dict_train, suppress_warnings=True
+        series=series_dict_train, exog=exog_dict_train, 
+        store_in_sample_residuals=True, suppress_warnings=True
     )
     results = forecaster.predict_interval(
         steps=5, exog=exog_dict_test, interval=interval, method='conformal'

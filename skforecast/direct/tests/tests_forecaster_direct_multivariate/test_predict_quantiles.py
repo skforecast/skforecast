@@ -36,7 +36,7 @@ def test_predict_quantiles_output_when_forecaster_is_LinearRegression_steps_is_2
                      transformer_exog   = transformer_exog
                  )
     
-    forecaster.fit(series=series, exog=exog)
+    forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
     results = forecaster.predict_quantiles(
                   steps                   = 2,
                   exog                    = exog_predict,
@@ -71,7 +71,7 @@ def test_predict_quantiles_output_when_forecaster_is_LinearRegression_steps_is_2
                      transformer_exog   = transformer_exog
                  )
     
-    forecaster.fit(series=series, exog=exog)
+    forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
     forecaster.out_sample_residuals_ = forecaster.in_sample_residuals_
     results = forecaster.predict_quantiles(
                   steps                   = 2,

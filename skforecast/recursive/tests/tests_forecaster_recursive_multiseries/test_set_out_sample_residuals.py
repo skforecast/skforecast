@@ -195,7 +195,7 @@ def test_set_out_sample_residuals_UnknownLevelWarning_when_residuals_levels_but_
 
 
 @pytest.mark.parametrize("encoding", 
-                         ['ordinal', 'onehot', 'ordinal_category'], 
+                         ['ordinal', 'onehot', 'ordinal_category', None], 
                          ids=lambda encoding: f'encoding: {encoding}')
 def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_and_no_append(encoding):
     """
@@ -207,7 +207,7 @@ def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_and_n
     forecaster = ForecasterRecursiveMultiSeries(
         LinearRegression(), lags=3, encoding=encoding, binner_kwargs={"n_bins": 3}
     )
-    forecaster.fit(series=series)
+    forecaster.fit(series=series, store_in_sample_residuals=True)
     y_true = {"l1": rng.normal(10, 3, 20), "l2": rng.normal(10, 3, 20)}
     y_pred = {"l1": rng.normal(10, 3, 20), "l2": rng.normal(10, 3, 20)}
 
@@ -285,28 +285,27 @@ def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_and_n
         expected_out_sample_by_bin = {
             '_unknown_level': {
                 0: np.array([ 1.60962553,  1.71263736,  9.19708889,  1.51464604,  3.5987987 ,
-                        1.63221968, -2.19933831,  1.97853178, -2.56217282,  3.69683321,
-                        0.51984518,  7.40971902, -4.09573881,  2.98823132, -2.88085653,
-                        3.120254  ]),
-                1: np.array([-3.32699998, -0.77881843,  2.43787115,  0.31671219, -2.71056093]),
+                    1.97853178, -2.56217282,  3.69683321,  0.51984518,  7.40971902,
+                    -0.77881843, -4.09573881,  2.98823132,  2.43787115, -2.88085653,
+                    3.120254  ]),
+                1: np.array([-3.32699998,  1.63221968, -2.19933831,  0.31671219, -2.71056093]),
                 2: np.array([-2.73386424,  0.13608979, -2.06018676, -2.72988393, -0.57130461,
-                        -1.08106429, -1.45886519,  0.91789988, -4.86497532, -2.89834312,
-                        -5.81851232,  1.34536138, -8.26701406, -8.9861346 , -0.83725661,
-                        -4.37490671, -2.88874692,  0.50604084, -3.41273397])
+                    -1.08106429, -1.45886519,  0.91789988, -4.86497532, -2.89834312,
+                    -5.81851232,  1.34536138, -8.26701406, -8.9861346 , -0.83725661,
+                    -4.37490671, -2.88874692,  0.50604084, -3.41273397])
             }
         }
         
     assert expected_out_sample.keys() == forecaster.out_sample_residuals_.keys()
-    assert all(
-        np.allclose(expected_out_sample[k], forecaster.out_sample_residuals_[k])
-        for k in expected_out_sample.keys()
-    )
+    for k in expected_out_sample.keys():
+        np.testing.assert_array_almost_equal(expected_out_sample[k], forecaster.out_sample_residuals_[k])
 
+    assert expected_out_sample_by_bin.keys() == forecaster.out_sample_residuals_by_bin_.keys()
     for k in expected_out_sample_by_bin.keys():
         for bin in expected_out_sample_by_bin[k].keys():
-            assert np.allclose(
+            np.testing.assert_array_almost_equal(
                 expected_out_sample_by_bin[k][bin],
-                forecaster.out_sample_residuals_by_bin_[k][bin],
+                forecaster.out_sample_residuals_by_bin_[k][bin]
             )
 
 
@@ -410,38 +409,49 @@ def test_set_out_sample_residuals_when_residuals_length_is_greater_than_10000(en
     Test len residuals stored when its length is greater than 10000.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                    LinearRegression(),
-                    lags=3,
-                    encoding=encoding,
-                 )
+        LinearRegression(), lags=3, encoding=encoding, binner_kwargs={'n_bins': 2}
+    )
     forecaster.fit(series=series)
-    y_true = {'l1': np.arange(20_000), 'l2': np.arange(20_000)}
-    y_pred = {'l1': np.arange(20_000) + 1, 'l2': np.arange(20_000) + 2}
+    y_true = {'l1': np.ones(20_000), 'l2': np.ones(20_000)}
+    y_pred = {
+        'l1': np.concatenate([np.ones(10_000) + 1, np.ones(10_000) + 2]),
+        'l2': np.concatenate([np.ones(10_000) + 1, np.ones(10_000) + 2])
+    }
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
-    results = forecaster.out_sample_residuals_
+    results = forecaster.out_sample_residuals_, forecaster.out_sample_residuals_by_bin_
 
-    assert list(results.keys()) == ['l1', 'l2', '_unknown_level']
-    assert all(len(value) == 10_000 for value in results.values())
+    assert list(results[0].keys()) == ['l1', 'l2', '_unknown_level']
+    assert all(len(value) == 10_000 for value in results[0].values())
+    for k in results[1].keys():
+        for bin in results[1][k].keys():
+            if k == '_unknown_level':
+                assert len(results[1][k][bin]) == 10_000
+            else:
+                assert len(results[1][k][bin]) == 5_000
 
 
-def test_set_out_sample_residuals_when_residuals_length_is_greater_than_1000_encoding_None():
+def test_set_out_sample_residuals_when_residuals_length_is_greater_than_10000_encoding_None():
     """
-    Test len residuals stored when its length is greater than 1000
+    Test len residuals stored when its length is greater than 10_000
     and encoding is None.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                    LinearRegression(),
-                    lags=3,
-                    encoding=None,
-                 )
+        LinearRegression(), lags=3, encoding=None, binner_kwargs={'n_bins': 2}
+    )
     forecaster.fit(series=series)
-    y_true = {'l1': np.arange(20_000), 'l2': np.arange(20_000)}
-    y_pred = {'l1': np.arange(20_000) + 1, 'l2': np.arange(20_000) + 2}
+    y_true = {'l1': np.ones(20_000), 'l2': np.ones(20_000)}
+    y_pred = {
+        'l1': np.concatenate([np.ones(10_000) + 1, np.ones(10_000) + 2]),
+        'l2': np.concatenate([np.ones(10_000) + 1, np.ones(10_000) + 2])
+    }
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
-    results = forecaster.out_sample_residuals_
+    results = forecaster.out_sample_residuals_, forecaster.out_sample_residuals_by_bin_
 
-    assert list(results.keys()) == ['_unknown_level']
-    assert all(len(value) == 10_000 for value in results.values())
+    assert list(results[0].keys()) == ['_unknown_level']
+    assert all(len(value) == 10_000 for value in results[0].values())
+    for k in results[1].keys():
+        for bin in results[1][k].keys():
+            assert len(results[1][k][bin]) == 10_000
 
 
 def test_set_out_sample_residuals_when_residuals_length_is_greater_than_10000_and_append():
@@ -450,19 +460,32 @@ def test_set_out_sample_residuals_when_residuals_length_is_greater_than_10000_an
     append is True.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                    LinearRegression(),
-                    lags=3,
-                 )
+        LinearRegression(), lags=3, encoding='ordinal',  binner_kwargs={'n_bins': 2}
+    )
     forecaster.fit(series=series)
-    y_true = {'l1': np.random.normal(size=5_000), 'l2': np.random.normal(size=5_000)}
-    y_pred = {'l1': np.random.normal(size=5_000), 'l2': np.random.normal(size=5_000)}
+    y_true = {'l1': np.ones(5_000), 'l2': np.ones(5_000)}
+    y_pred = {
+        'l1': np.concatenate([np.ones(2_500) + 1, np.ones(2_500) + 2]), 
+        'l2': np.concatenate([np.ones(2_500) + 1, np.ones(2_500) + 2])
+    }
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
-    y_true = {'l1': np.random.normal(size=10_000), 'l2': np.random.normal(size=10_000)}
-    y_pred = {'l1': np.random.normal(size=10_000), 'l2': np.random.normal(size=10_000)}
-    forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred, append=True)
-    results = forecaster.out_sample_residuals_
 
-    assert all([len(v) == 10_000 for v in results.values()])
+    y_true = {'l1': np.ones(20_000), 'l2': np.ones(20_000)}
+    y_pred = {
+        'l1': np.concatenate([np.ones(10_000) + 1, np.ones(10_000) + 2]), 
+        'l2': np.concatenate([np.ones(10_000) + 1, np.ones(10_000) + 2])
+    }
+    forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred, append=True)
+    results = forecaster.out_sample_residuals_, forecaster.out_sample_residuals_by_bin_
+
+    assert list(results[0].keys()) == ['l1', 'l2', '_unknown_level']
+    assert all([len(v) == 10_000 for v in results[0].values()])
+    for k in results[1].keys():
+        for bin in results[1][k].keys():
+            if k == '_unknown_level':
+                assert len(results[1][k][bin]) == 10_000
+            else:
+                assert len(results[1][k][bin]) == 5_000
 
 
 def test_set_out_sample_residuals_when_residuals_keys_partially_match():
@@ -493,7 +516,7 @@ def test_set_out_sample_residuals_when_residuals_keys_partially_match():
 @pytest.mark.parametrize("differentiation", 
                          [1, {'l1': 1, 'l2': 1, '_unknown_level': 1}], 
                          ids=lambda diff: f'differentiation: {diff}')
-def test_forecaster_set_outsample_residuals_when_transformer_series_and_diferentiation(differentiation):
+def test_forecaster_set_out_sample_residuals_when_transformer_series_and_differentiation(differentiation):
     """
     Test set_out_sample_residuals when forecaster has transformer_series and differentiation.
     Stored should equivalent to residuals calculated manually if transformer_series and
@@ -554,7 +577,7 @@ def test_forecaster_set_outsample_residuals_when_transformer_series_and_diferent
         np.testing.assert_array_almost_equal(residuals[key], forecaster.out_sample_residuals_[key])
 
 
-def test_forecaster_set_outsample_residuals_when_transformer_series_and_diferentiation_as_dict_unknonw_level():
+def test_forecaster_set_out_sample_residuals_when_transformer_series_and_differentiation_as_dict_unknonw_level():
     """
     Test set_out_sample_residuals when forecaster has transformer_series, differentiation
     and unknown level.

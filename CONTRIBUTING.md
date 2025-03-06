@@ -99,7 +99,7 @@ class ForecasterRecursive(ForecasterBase):
         the residuals into k bins according to the predicted values associated 
         with each residual. Available arguments are: `n_bins`, `method`, `subsample`,
         `random_state` and `dtype`. Argument `method` is passed internally to the
-        fucntion `numpy.percentile`.
+        function `numpy.percentile`.
         **New in version 0.14.0**
     forecaster_id : str, int, default None
         Name used as an identifier of the forecaster.
@@ -163,7 +163,7 @@ class ForecasterRecursive(ForecasterBase):
         the residuals into k bins according to the predicted values associated 
         with each residual. Available arguments are: `n_bins`, `method`, `subsample`,
         `random_state` and `dtype`. Argument `method` is passed internally to the
-        fucntion `numpy.percentile`.
+        function `numpy.percentile`.
         **New in version 0.14.0**
     source_code_weight_func : str
         Source code of the custom function used to create weights.
