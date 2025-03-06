@@ -947,16 +947,14 @@ def _backtesting_forecaster_multiseries(
         .rename_axis('idx', axis=0)
         .set_index('level', append=True)
     )
-    for level in backtest_levels:
-        valid_index = series[level].dropna().index
-        no_valid_index = backtest_predictions.index.get_level_values("idx").difference(
-            valid_index, sort=False
-        )
-        backtest_predictions.loc[
-            (backtest_predictions.index.get_level_values('level') == level) &
-            (backtest_predictions.index.get_level_values('idx').isin(no_valid_index)), 
-            'pred'
-        ] = np.nan
+
+    backtest_predictions_grouped = backtest_predictions.groupby('level', sort=False)
+    for level, indices in backtest_predictions_grouped.groups.items():
+        if level in backtest_levels:
+            valid_index = series[level].dropna().index
+            valid_index = pd.MultiIndex.from_product([valid_index, [level]], names=['idx', 'level'])
+            no_valid_index = indices.difference(valid_index, sort=False)
+            backtest_predictions.loc[no_valid_index, 'pred'] = np.nan
 
     backtest_predictions = (
         backtest_predictions
