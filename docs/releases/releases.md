@@ -60,6 +60,10 @@ The main changes in this release are:
 
 **Changed**
 
++ <code>[ForecasterRecursiveMultiSeries]</code> and <code>[ForecasterDirectMultiVariate]</code> forecasters use conformal prediction framework as default for probabilistic forecasting, `method = 'conformal'` in `predict_interval` method.
+
++ <code>[backtesting_forecaster_multiseries]</code> uses conformal prediction framework as default for probabilistic forecasting, `interval_method = 'conformal'`.
+
 + Fit argument `store_in_sample_residuals` has changed default value to `False`. This means in-sample residuals are not stored by default. To store them, call new method `set_in_sample_residuals` after fitting the forecaster using the same training data. 
 
 + Predictions from `predict_bootstrapping` in <code>[ForecasterRecursiveMultiSeries]</code> and <code>[ForecasterDirectMultiVariate]</code> are now returned as a long format DataFrame with the bootstrapping predictions. The columns are `level`, `pred_boot_0`, `pred_boot_1`, ..., `pred_boot_n_boot`.

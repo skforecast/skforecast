@@ -565,7 +565,7 @@ def _backtesting_forecaster_multiseries(
     add_aggregated_metric: bool = True,
     exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
     interval: float | list[float] | tuple[float] | str | object | None = None,
-    interval_method: str = 'bootstrapping',
+    interval_method: str = 'conformal',
     n_boot: int = 250,
     use_in_sample_residuals: bool = True,
     use_binned_residuals: bool = False,
@@ -631,7 +631,7 @@ def _backtesting_forecaster_multiseries(
         - If scipy.stats distribution object, the distribution parameters will
         be estimated for each prediction.
         - If None, no probabilistic predictions are estimated.
-    interval_method : str, default 'bootstrapping'
+    interval_method : str, default 'conformal'
         Technique used to estimate prediction intervals. Available options:
 
         - 'bootstrapping': Bootstrapping is used to generate prediction 
@@ -987,7 +987,7 @@ def backtesting_forecaster_multiseries(
     add_aggregated_metric: bool = True,
     exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
     interval: float | list[float] | tuple[float] | str | object | None = None,
-    interval_method: str = 'bootstrapping',
+    interval_method: str = 'conformal',
     n_boot: int = 250,
     use_in_sample_residuals: bool = True,
     use_binned_residuals: bool = False,
@@ -1054,7 +1054,7 @@ def backtesting_forecaster_multiseries(
         - If scipy.stats distribution object, the distribution parameters will
         be estimated for each prediction.
         - If None, no probabilistic predictions are estimated.
-    interval_method : str, default 'bootstrapping'
+    interval_method : str, default 'conformal'
         Technique used to estimate prediction intervals. Available options:
 
         - 'bootstrapping': Bootstrapping is used to generate prediction 

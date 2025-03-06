@@ -2825,7 +2825,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         levels: str | list[str] | None = None,
         last_window: pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
-        method: str = 'bootstrapping',
+        method: str = 'conformal',
         interval: float | list[float] | tuple[float] = [5, 95],
         n_boot: int = 250,
         use_in_sample_residuals: bool = True,
@@ -2834,9 +2834,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         suppress_warnings: bool = False
     ) -> pd.DataFrame:
         """
-        Iterative process in which, each prediction, is used as a predictor
-        for the next step and bootstrapping is used to estimate prediction
-        intervals. Both predictions and intervals are returned.
+        Predict n steps ahead and estimate prediction intervals using either 
+        bootstrapping or conformal prediction methods. Refer to the References 
+        section for additional details on these methods.
         
         Parameters
         ----------
@@ -2853,7 +2853,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             right after training data.
         exog : pandas Series, pandas DataFrame, dict, default None
             Exogenous variable/s included as predictor/s.
-        method : str, default 'bootstrapping'
+        method : str, default 'conformal'
             Technique used to estimate prediction intervals. Available options:
 
             - 'bootstrapping': Bootstrapping is used to generate prediction 

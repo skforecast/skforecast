@@ -2345,7 +2345,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         steps: int | list[int] | None = None,
         last_window: pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | None = None,
-        method: str = 'bootstrapping',
+        method: str = 'conformal',
         interval: float | list[float] | tuple[float] = [5, 95],
         n_boot: int = 250,
         use_in_sample_residuals: bool = True,
@@ -2378,7 +2378,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             right after training data.
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
-        method : str, default 'bootstrapping'
+        method : str, default 'conformal'
             Technique used to estimate prediction intervals. Available options:
 
             - 'bootstrapping': Bootstrapping is used to generate prediction 
