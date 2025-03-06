@@ -1898,7 +1898,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
         predict_probabilistic: bool = False,
         use_in_sample_residuals: bool = True,
-        use_binned_residuals: bool = False,
+        use_binned_residuals: bool = True,
         check_inputs: bool = True
     ) -> tuple[pd.DataFrame, dict[str, np.ndarray] | None, list[str], pd.Index]:
         """
@@ -1930,7 +1930,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             If `False`, out of sample residuals (calibration) are used. 
             Out-of-sample residuals must be precomputed using Forecaster's
             `set_out_sample_residuals()` method.
-        use_binned_residuals : bool, default False
+        use_binned_residuals : bool, default True
             If `True`, residuals are selected based on the predicted values 
             (binned selection).
             If `False`, residuals are selected randomly.
@@ -2104,7 +2104,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         last_window: pd.DataFrame,
         exog_values_dict: dict[str, np.ndarray] | None = None,
         residuals: np.ndarray | None = None,
-        use_binned_residuals: bool = False
+        use_binned_residuals: bool = True
     ) -> np.ndarray:
         """
         Predict n steps for one or multiple levels. It is an iterative process
@@ -2126,7 +2126,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         residuals : numpy ndarray, default None
             Residuals used to generate bootstrapping predictions in the form
             (steps, levels).
-        use_binned_residuals : bool, default False
+        use_binned_residuals : bool, default True
             If `True`, residuals are selected based on the predicted values 
             (binned selection).
             If `False`, residuals are selected randomly.
@@ -2481,7 +2481,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
         n_boot: int = 250,
         use_in_sample_residuals: bool = True,
-        use_binned_residuals: bool = False,
+        use_binned_residuals: bool = True,
         random_state: int = 123,
         suppress_warnings: bool = False
     ) -> pd.DataFrame:
@@ -2516,7 +2516,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             If `False`, out of sample residuals (calibration) are used. 
             Out-of-sample residuals must be precomputed using Forecaster's
             `set_out_sample_residuals()` method.
-        use_binned_residuals : bool, default False
+        use_binned_residuals : bool, default True
             If `True`, residuals are selected based on the predicted values 
             (binned selection).
             If `False`, residuals are selected randomly.
@@ -2669,7 +2669,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         exog: pd.Series | pd.DataFrame | None = None,
         nominal_coverage: float = 0.95,
         use_in_sample_residuals: bool = True,
-        use_binned_residuals: bool = False
+        use_binned_residuals: bool = True
     ) -> pd.DataFrame:
         """
         Generate prediction intervals using the conformal prediction 
@@ -2702,7 +2702,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             If `False`, out of sample residuals (calibration) are used. 
             Out-of-sample residuals must be precomputed using Forecaster's
             `set_out_sample_residuals()` method.
-        use_binned_residuals : bool, default False
+        use_binned_residuals : bool, default True
             If `True`, residuals are selected based on the predicted values 
             (binned selection).
             If `False`, residuals are selected randomly.
@@ -2829,7 +2829,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         interval: float | list[float] | tuple[float] = [5, 95],
         n_boot: int = 250,
         use_in_sample_residuals: bool = True,
-        use_binned_residuals: bool = False,
+        use_binned_residuals: bool = True,
         random_state: int = 123,
         suppress_warnings: bool = False
     ) -> pd.DataFrame:
@@ -2881,7 +2881,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             If `False`, out of sample residuals (calibration) are used. 
             Out-of-sample residuals must be precomputed using Forecaster's
             `set_out_sample_residuals()` method.
-        use_binned_residuals : bool, default False
+        use_binned_residuals : bool, default True
             If `True`, residuals are selected based on the predicted values 
             (binned selection).
             If `False`, residuals are selected randomly.
@@ -2986,7 +2986,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         quantiles: list[float] | tuple[float] = [0.05, 0.5, 0.95],
         n_boot: int = 250,
         use_in_sample_residuals: bool = True,
-        use_binned_residuals: bool = False,
+        use_binned_residuals: bool = True,
         random_state: int = 123,
         suppress_warnings: bool = False
     ) -> pd.DataFrame:
@@ -3022,7 +3022,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             If `False`, out of sample residuals (calibration) are used. 
             Out-of-sample residuals must be precomputed using Forecaster's
             `set_out_sample_residuals()` method.
-        use_binned_residuals : bool, default False
+        use_binned_residuals : bool, default True
             If `True`, residuals are selected based on the predicted values 
             (binned selection).
             If `False`, residuals are selected randomly.
@@ -3084,7 +3084,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
         n_boot: int = 250,
         use_in_sample_residuals: bool = True,
-        use_binned_residuals: bool = False,
+        use_binned_residuals: bool = True,
         random_state: int = 123,
         suppress_warnings: bool = False
     ) -> pd.DataFrame:
@@ -3120,7 +3120,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             If `False`, out of sample residuals (calibration) are used. 
             Out-of-sample residuals must be precomputed using Forecaster's
             `set_out_sample_residuals()` method.
-        use_binned_residuals : bool, default False
+        use_binned_residuals : bool, default True
             If `True`, residuals are selected based on the predicted values 
             (binned selection).
             If `False`, residuals are selected randomly.

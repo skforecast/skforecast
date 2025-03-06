@@ -94,7 +94,7 @@ def test_predict_output_when_regressor_is_LinearRegression_steps_is_1_in_sample_
 
     predictions = forecaster.predict_interval(
         steps=1, levels=expected_pandas_dataframe[0], method='bootstrapping',
-        use_in_sample_residuals=True, suppress_warnings=True
+        use_in_sample_residuals=True, use_binned_residuals=False, suppress_warnings=True
     )
     
     expected = expected_pandas_dataframe[1]
@@ -118,7 +118,8 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_1_
                     index = pd.RangeIndex(start=10, stop=11, step=1)
                  )
     results_1 = forecaster.predict_interval(
-        steps=1, levels='1', method='bootstrapping', use_in_sample_residuals=True
+        steps=1, levels='1', method='bootstrapping', 
+        use_in_sample_residuals=True, use_binned_residuals=False
     )
 
     forecaster.in_sample_residuals_['2'] = np.full_like(forecaster.in_sample_residuals_['2'], fill_value=20)
@@ -128,7 +129,8 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_1_
                     index = pd.RangeIndex(start=10, stop=11, step=1)
                  )
     results_2 = forecaster.predict_interval(
-        steps=1, levels=['2'], method='bootstrapping', use_in_sample_residuals=True
+        steps=1, levels=['2'], method='bootstrapping', 
+        use_in_sample_residuals=True, use_binned_residuals=False
     )
 
     expected_3 = pd.DataFrame(
@@ -137,7 +139,8 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_1_
                     index = pd.RangeIndex(start=10, stop=11, step=1)
                  )
     results_3 = forecaster.predict_interval(
-        steps=1, levels=None, method='bootstrapping', use_in_sample_residuals=True
+        steps=1, levels=None, method='bootstrapping', 
+        use_in_sample_residuals=True, use_binned_residuals=False
     )
 
     expected = [expected_1, expected_2, expected_3]
@@ -197,7 +200,8 @@ def test_predict_output_when_regressor_is_LinearRegression_steps_is_2_in_sample_
     forecaster.in_sample_residuals_['2'] = np.full_like(forecaster.in_sample_residuals_['2'], fill_value=20)
 
     predictions = forecaster.predict_interval(
-        steps=2, levels=expected_pandas_dataframe_2[0], method='bootstrapping', use_in_sample_residuals=True
+        steps=2, levels=expected_pandas_dataframe_2[0], method='bootstrapping', 
+        use_in_sample_residuals=True, use_binned_residuals=False
     )
 
     expected = expected_pandas_dataframe_2[1]
@@ -223,7 +227,8 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_2_
                     index = pd.RangeIndex(start=10, stop=12, step=1)
                  )
     results_1 = forecaster.predict_interval(
-        steps=2, levels='1', method='bootstrapping', use_in_sample_residuals=True
+        steps=2, levels='1', method='bootstrapping', 
+        use_in_sample_residuals=True, use_binned_residuals=False
     )
 
     forecaster.in_sample_residuals_['2'] = np.full_like(forecaster.in_sample_residuals_['2'], fill_value=20)
@@ -235,7 +240,8 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_2_
                     index = pd.RangeIndex(start=10, stop=12, step=1)
                  )
     results_2 = forecaster.predict_interval(
-        steps=2, levels='2', method='bootstrapping', use_in_sample_residuals=True
+        steps=2, levels='2', method='bootstrapping', 
+        use_in_sample_residuals=True, use_binned_residuals=False
     )
 
     expected_3 = pd.DataFrame(
@@ -245,7 +251,8 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_2_
                     index = pd.RangeIndex(start=10, stop=12, step=1)
                  )
     results_3 = forecaster.predict_interval(
-        steps=2, levels=['1', '2'], method='bootstrapping', use_in_sample_residuals=True
+        steps=2, levels=['1', '2'], method='bootstrapping', 
+        use_in_sample_residuals=True, use_binned_residuals=False
     )
 
     expected = [expected_1, expected_2, expected_3]
@@ -272,7 +279,8 @@ def test_predict_output_when_regressor_is_LinearRegression_steps_is_1_in_sample_
     }
 
     predictions = forecaster.predict_interval(
-        steps=1, levels=expected_pandas_dataframe[0], method='bootstrapping', use_in_sample_residuals=False
+        steps=1, levels=expected_pandas_dataframe[0], method='bootstrapping', 
+        use_in_sample_residuals=False, use_binned_residuals=False
     )
     
     expected = expected_pandas_dataframe[1]
@@ -294,7 +302,8 @@ def test_predict_output_when_regressor_is_LinearRegression_steps_is_2_in_sample_
         '_unknown_level': np.full(shape=20, fill_value=10)
     }
     predictions = forecaster.predict_interval(
-        steps=2, levels=expected_pandas_dataframe_2[0], method='bootstrapping', use_in_sample_residuals=False
+        steps=2, levels=expected_pandas_dataframe_2[0], method='bootstrapping', 
+        use_in_sample_residuals=False, use_binned_residuals=False
     )
     expected = expected_pandas_dataframe_2[1]
 
@@ -310,9 +319,11 @@ def test_predict_interval_output_when_regressor_is_LinearRegression_with_transfo
                      lags               = 5,
                      transformer_series = StandardScaler()
                  )
-    forecaster.fit(series=series, store_in_sample_residuals=True)
+    forecaster.fit(series=series, store_in_sample_residuals=False)
+    forecaster.set_in_sample_residuals(series=series)
     predictions = forecaster.predict_interval(
-        steps=5, levels='1', method='bootstrapping'
+        steps=5, levels='1', method='bootstrapping', 
+        use_in_sample_residuals=True, use_binned_residuals=False
     )
 
     expected = pd.DataFrame(
@@ -341,7 +352,8 @@ def test_predict_interval_output_when_regressor_is_LinearRegression_with_transfo
                  )
     forecaster.fit(series=series, store_in_sample_residuals=True)
     predictions = forecaster.predict_interval(
-        steps=5, levels=['1'], method='bootstrapping'
+        steps=5, levels=['1'], method='bootstrapping', 
+        use_in_sample_residuals=True, use_binned_residuals=False
     )
 
     expected = pd.DataFrame(
@@ -377,7 +389,8 @@ def test_predict_interval_output_when_regressor_is_LinearRegression_with_transfo
                  )
     forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
     results = forecaster.predict_interval(
-        steps=5, levels=['1', '2'], exog=exog_predict, method='bootstrapping'
+        steps=5, levels=['1', '2'], exog=exog_predict, method='bootstrapping', 
+        use_in_sample_residuals=True, use_binned_residuals=False
     )
     
     expected = pd.DataFrame(
@@ -413,11 +426,13 @@ def test_predict_interval_output_when_series_and_exog_dict():
     )
     forecaster.fit(
         series=series_dict_train, exog=exog_dict_train, 
-        store_in_sample_residuals=True, suppress_warnings=True
+        store_in_sample_residuals=False, suppress_warnings=True
     )
+    forecaster.set_in_sample_residuals(series=series_dict_train, exog=exog_dict_train)
     predictions = forecaster.predict_interval(
         steps=5, exog=exog_dict_test, method='bootstrapping', 
-        interval=[5, 95], n_boot=10, suppress_warnings=True
+        interval=[5, 95], n_boot=10,  use_in_sample_residuals=True, 
+        use_binned_residuals=False, suppress_warnings=True
     )
 
     expected = pd.DataFrame(
@@ -487,7 +502,8 @@ def test_predict_interval_output_when_series_and_exog_dict_unknown_level():
     exog_dict_test_2['id_1005'] = exog_dict_test_2['id_1001']
     results = forecaster.predict_interval(
         steps=5, levels=levels, last_window=last_window, exog=exog_dict_test_2,
-        method='bootstrapping', interval=[5, 95], n_boot=10, suppress_warnings=True
+        method='bootstrapping', interval=[5, 95], n_boot=10, 
+        use_in_sample_residuals=True, use_binned_residuals=False, suppress_warnings=True
     )
 
     expected = pd.DataFrame(
@@ -565,8 +581,8 @@ def test_predict_interval_output_when_series_and_exog_dict_unknown_level_binned_
     exog_dict_test_2['id_1005'] = exog_dict_test_2['id_1001']
     results = forecaster.predict_interval(
         steps=5, levels=levels, last_window=last_window, exog=exog_dict_test_2,
-        method='bootstrapping', interval=[5, 95], n_boot=10, use_binned_residuals=True, 
-        suppress_warnings=True
+        method='bootstrapping', interval=[5, 95], n_boot=10, 
+        use_in_sample_residuals=True, use_binned_residuals=True, suppress_warnings=True
     )
 
     expected = pd.DataFrame(
@@ -744,7 +760,8 @@ def test_predict_interval_output_when_series_and_exog_dict_encoding_None_unknown
     exog_dict_test_2['id_1005'] = exog_dict_test_2['id_1001']
     results = forecaster.predict_interval(
         steps=5, levels=levels, last_window=last_window, exog=exog_dict_test_2,
-        method='bootstrapping', interval=(5, 95), n_boot=10, suppress_warnings=True
+        method='bootstrapping', interval=(5, 95), n_boot=10, 
+        use_in_sample_residuals=True, use_binned_residuals=False, suppress_warnings=True
     )
     
     expected = pd.DataFrame(
@@ -823,8 +840,8 @@ def test_predict_interval_output_when_series_and_exog_dict_encoding_None_unknown
     exog_dict_test_2['id_1005'] = exog_dict_test_2['id_1001']
     results = forecaster.predict_interval(
         steps=5, levels=levels, last_window=last_window, exog=exog_dict_test_2,
-        method='bootstrapping', interval=(5, 95), n_boot=10, use_binned_residuals=True, 
-        suppress_warnings=True
+        method='bootstrapping', interval=(5, 95), n_boot=10, 
+        use_in_sample_residuals=True, use_binned_residuals=True, suppress_warnings=True
     )
 
     expected = pd.DataFrame(
@@ -995,7 +1012,8 @@ def test_predict_interval_conformal_output_when_series_and_exog_dict(interval):
         store_in_sample_residuals=True, suppress_warnings=True
     )
     results = forecaster.predict_interval(
-        steps=5, exog=exog_dict_test, interval=interval, method='conformal'
+        steps=5, exog=exog_dict_test, interval=interval, method='conformal',
+        use_in_sample_residuals=True, use_binned_residuals=False
     )
 
     expected = pd.DataFrame(

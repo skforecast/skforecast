@@ -42,7 +42,8 @@ def test_predict_quantiles_output_when_forecaster_is_LinearRegression_steps_is_2
                   exog                    = exog_predict,
                   quantiles               = [0.05, 0.55, 0.95],
                   n_boot                  = 4,
-                  use_in_sample_residuals = True
+                  use_in_sample_residuals = True, 
+                  use_binned_residuals    = False
               )
     
     expected = pd.DataFrame(
@@ -78,7 +79,8 @@ def test_predict_quantiles_output_when_forecaster_is_LinearRegression_steps_is_2
                   exog                    = exog_predict,
                   quantiles               = (0.05, 0.55, 0.95),
                   n_boot                  = 4,
-                  use_in_sample_residuals = False
+                  use_in_sample_residuals = False, 
+                  use_binned_residuals    = False
               )
     
     expected = pd.DataFrame(

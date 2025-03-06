@@ -25,7 +25,7 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
         2: np.full_like(forecaster.in_sample_residuals_[2], fill_value=20)
     }
     results = forecaster._predict_interval_conformal(
-        steps=1, nominal_coverage=0.95, use_in_sample_residuals=True
+        steps=1, nominal_coverage=0.95, use_in_sample_residuals=True, use_binned_residuals=False
     )
 
     expected = pd.DataFrame(
@@ -52,7 +52,7 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
         2: np.full_like(forecaster.in_sample_residuals_[2], fill_value=20)
     }
     results = forecaster._predict_interval_conformal(
-        steps=2, nominal_coverage=0.95, use_in_sample_residuals=True
+        steps=2, nominal_coverage=0.95, use_in_sample_residuals=True, use_binned_residuals=False
     )
 
     expected = pd.DataFrame(
@@ -80,7 +80,7 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
         2: np.full_like(forecaster.in_sample_residuals_[2], fill_value=20)
     }
     results = forecaster._predict_interval_conformal(
-        steps=1, nominal_coverage=0.95, use_in_sample_residuals=False
+        steps=1, nominal_coverage=0.95, use_in_sample_residuals=False, use_binned_residuals=False
     )
 
     expected = pd.DataFrame(
@@ -107,7 +107,7 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
         2: np.full_like(forecaster.in_sample_residuals_[2], fill_value=20)
     }
     results = forecaster._predict_interval_conformal(
-        steps=2, nominal_coverage=0.95, use_in_sample_residuals=False
+        steps=2, nominal_coverage=0.95, use_in_sample_residuals=False, use_binned_residuals=False
     )
 
     expected = pd.DataFrame(
@@ -133,7 +133,9 @@ def test_predict_interval_conformal_output_when_regressor_is_LinearRegression():
                      transformer_series = StandardScaler()
                  )
     forecaster.fit(series=series, store_in_sample_residuals=True)
-    results = forecaster._predict_interval_conformal(nominal_coverage=0.95)
+    results = forecaster._predict_interval_conformal(
+        nominal_coverage=0.95, use_in_sample_residuals=True, use_binned_residuals=False
+    )
 
     expected = pd.DataFrame(
                    data = np.array([
@@ -160,7 +162,9 @@ def test_predict_interval_conformal_output():
                      transformer_series = StandardScaler()
                  )
     forecaster.fit(series=series, store_in_sample_residuals=True)
-    results = forecaster._predict_interval_conformal(nominal_coverage=0.95)
+    results = forecaster._predict_interval_conformal(
+        nominal_coverage=0.95, use_in_sample_residuals=True, use_binned_residuals=False
+    )
 
     expected = pd.DataFrame(
                    data = np.array([
@@ -190,7 +194,7 @@ def test_predict_interval_conformal_output_when_out_sample_residuals():
     forecaster.fit(series=series, store_in_sample_residuals=True)
     forecaster.out_sample_residuals_ = forecaster.in_sample_residuals_
     results = forecaster._predict_interval_conformal(
-        nominal_coverage=0.95, use_in_sample_residuals=False
+        nominal_coverage=0.95, use_in_sample_residuals=False, use_binned_residuals=False
     )
 
     expected = pd.DataFrame(
@@ -219,7 +223,7 @@ def test_predict_interval_conformal_output_binned_residuals():
                  )
     forecaster.fit(series=series, store_in_sample_residuals=True)
     results = forecaster._predict_interval_conformal(
-        nominal_coverage=0.95, use_binned_residuals=True
+        nominal_coverage=0.95, use_in_sample_residuals=True, use_binned_residuals=True
     )
 
     expected = pd.DataFrame(
@@ -279,7 +283,7 @@ def test_predict_interval_conformal_output_with_differentiation():
                  )
     forecaster.fit(series=series, store_in_sample_residuals=True)
     results = forecaster._predict_interval_conformal(
-        nominal_coverage=0.95, use_binned_residuals=False
+        nominal_coverage=0.95, use_in_sample_residuals=True, use_binned_residuals=False
     )
 
     expected = pd.DataFrame(

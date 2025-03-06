@@ -40,7 +40,9 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
         'l2': np.array([20] * 10),
         '_unknown_level': np.array([20] * 10)
     }
-    results = forecaster._predict_interval_conformal(steps=1, use_in_sample_residuals=True)
+    results = forecaster._predict_interval_conformal(
+        steps=1, nominal_coverage=0.95, use_in_sample_residuals=True, use_binned_residuals=False
+    )
 
     expected = pd.DataFrame(
                    data    = np.array([[10., 0., 20.],
@@ -65,7 +67,9 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
         'l2': np.array([20] * 10),
         '_unknown_level': np.array([20] * 10)
     }
-    results = forecaster._predict_interval_conformal(steps=2, use_in_sample_residuals=True)
+    results = forecaster._predict_interval_conformal(
+        steps=2, nominal_coverage=0.95, use_in_sample_residuals=True, use_binned_residuals=False
+    )
 
     expected = pd.DataFrame(
                    data    = np.array([[10., 0., 20.],
@@ -92,7 +96,9 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
         'l2': np.array([20] * 10),
         '_unknown_level': np.array([20] * 10)
     }
-    results = forecaster._predict_interval_conformal(steps=2, use_in_sample_residuals=False)
+    results = forecaster._predict_interval_conformal(
+        steps=2, nominal_coverage=0.95, use_in_sample_residuals=False, use_binned_residuals=False
+    )
 
     expected = pd.DataFrame(
                    data    = np.array([[10., 0., 20.],
@@ -117,7 +123,9 @@ def test_predict_interval_conformal_output_when_regressor_is_LinearRegression_wi
                      transformer_series = StandardScaler()
                  )
     forecaster.fit(series=series, store_in_sample_residuals=True)
-    results = forecaster._predict_interval_conformal(steps=5)
+    results = forecaster._predict_interval_conformal(
+        steps=5, nominal_coverage=0.95, use_in_sample_residuals=True, use_binned_residuals=False
+    )
 
     expected = pd.DataFrame(
                    data = np.array([
@@ -157,7 +165,10 @@ def test_predict_interval_conformal_output_when_regressor_is_LinearRegression_wi
                      transformer_exog   = transformer_exog,
                  )
     forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
-    results = forecaster._predict_interval_conformal(steps=5, levels=['1', '2'], exog=exog_predict)
+    results = forecaster._predict_interval_conformal(
+        steps=5, levels=['1', '2'], exog=exog_predict, nominal_coverage=0.95,
+        use_in_sample_residuals=True, use_binned_residuals=False
+    )
     
     expected = pd.DataFrame(
                    data = np.array([
@@ -200,7 +211,8 @@ def test_predict_interval_conformal_output_when_series_and_exog_dict():
         store_in_sample_residuals=True, suppress_warnings=True
     )
     results = forecaster._predict_interval_conformal(
-        steps=5, exog=exog_dict_test
+        steps=5, exog=exog_dict_test, nominal_coverage=0.95, 
+        use_in_sample_residuals=True, use_binned_residuals=False
     )
 
     expected = pd.DataFrame(
@@ -351,7 +363,8 @@ def test_predict_interval_conformal_output_when_series_and_exog_dict_unknown_lev
     exog_dict_test_2 = exog_dict_test.copy()
     exog_dict_test_2['id_1005'] = exog_dict_test_2['id_1001']
     results = forecaster._predict_interval_conformal(
-        steps=5, levels=levels, exog=exog_dict_test_2, last_window=last_window
+        steps=5, levels=levels, last_window=last_window, exog=exog_dict_test_2,
+        nominal_coverage=0.95, use_in_sample_residuals=True, use_binned_residuals=False
     )
 
     expected = pd.DataFrame(
@@ -527,8 +540,8 @@ def test_predict_interval_conformal_output_when_series_and_exog_dict_unknown_lev
     exog_dict_test_2 = exog_dict_test.copy()
     exog_dict_test_2['id_1005'] = exog_dict_test_2['id_1001']
     results = forecaster._predict_interval_conformal(
-        steps=5, levels=levels, exog=exog_dict_test_2, last_window=last_window,
-        use_binned_residuals=True
+        steps=5, levels=levels, last_window=last_window, exog=exog_dict_test_2,
+        nominal_coverage=0.95, use_in_sample_residuals=True, use_binned_residuals=True
     )
 
     expected = pd.DataFrame(
@@ -705,7 +718,8 @@ def test_predict_interval_conformal_output_when_series_and_exog_dict_encoding_No
     exog_dict_test_2 = exog_dict_test.copy()
     exog_dict_test_2['id_1005'] = exog_dict_test_2['id_1001']
     results = forecaster._predict_interval_conformal(
-        steps=5, levels=levels, exog=exog_dict_test_2, last_window=last_window
+        steps=5, levels=levels, last_window=last_window, exog=exog_dict_test_2,
+        nominal_coverage=0.95, use_in_sample_residuals=True, use_binned_residuals=False
     )
 
     expected = pd.DataFrame(
@@ -882,8 +896,8 @@ def test_predict_interval_conformal_output_when_series_and_exog_dict_encoding_No
     exog_dict_test_2 = exog_dict_test.copy()
     exog_dict_test_2['id_1005'] = exog_dict_test_2['id_1001']
     results = forecaster._predict_interval_conformal(
-        steps=5, levels=levels, exog=exog_dict_test_2, last_window=last_window,
-        use_binned_residuals=True
+        steps=5, levels=levels, last_window=last_window, exog=exog_dict_test_2,
+        nominal_coverage=0.95, use_in_sample_residuals=True, use_binned_residuals=True
     )
 
     expected = pd.DataFrame(

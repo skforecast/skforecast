@@ -38,7 +38,7 @@ def _backtesting_forecaster(
     interval_method: str = 'bootstrapping',
     n_boot: int = 250,
     use_in_sample_residuals: bool = True,
-    use_binned_residuals: bool = False,
+    use_binned_residuals: bool = True,
     random_state: int = 123,
     n_jobs: int | str = 'auto',
     verbose: bool = False,
@@ -109,7 +109,7 @@ def _backtesting_forecaster(
         If `False`, out of sample residuals (calibration) are used. 
         Out-of-sample residuals must be precomputed using Forecaster's
         `set_out_sample_residuals()` method.
-    use_binned_residuals : bool, default False
+    use_binned_residuals : bool, default True
         If `True`, residuals are selected based on the predicted values 
         (binned selection).
         If `False`, residuals are selected randomly.
@@ -394,7 +394,7 @@ def backtesting_forecaster(
     interval_method: str = 'bootstrapping',
     n_boot: int = 250,
     use_in_sample_residuals: bool = True,
-    use_binned_residuals: bool = False,
+    use_binned_residuals: bool = True,
     random_state: int = 123,
     n_jobs: int | str = 'auto',
     verbose: bool = False,
@@ -465,7 +465,7 @@ def backtesting_forecaster(
         If `False`, out of sample residuals (calibration) are used. 
         Out-of-sample residuals must be precomputed using Forecaster's
         `set_out_sample_residuals()` method.
-    use_binned_residuals : bool, default False
+    use_binned_residuals : bool, default True
         If `True`, residuals are selected based on the predicted values 
         (binned selection).
         If `False`, residuals are selected randomly.
@@ -568,7 +568,7 @@ def _backtesting_forecaster_multiseries(
     interval_method: str = 'conformal',
     n_boot: int = 250,
     use_in_sample_residuals: bool = True,
-    use_binned_residuals: bool = False,
+    use_binned_residuals: bool = True,
     random_state: int = 123,
     n_jobs: int | str = 'auto',
     verbose: bool = False,
@@ -647,7 +647,7 @@ def _backtesting_forecaster_multiseries(
         If `False`, out of sample residuals (calibration) are used. 
         Out-of-sample residuals must be precomputed using Forecaster's
         `set_out_sample_residuals()` method.
-    use_binned_residuals : bool, default False
+    use_binned_residuals : bool, default True
         If `True`, residuals are selected based on the predicted values 
         (binned selection).
         If `False`, residuals are selected randomly.
@@ -990,7 +990,7 @@ def backtesting_forecaster_multiseries(
     interval_method: str = 'conformal',
     n_boot: int = 250,
     use_in_sample_residuals: bool = True,
-    use_binned_residuals: bool = False,
+    use_binned_residuals: bool = True,
     random_state: int = 123,
     n_jobs: int | str = 'auto',
     verbose: bool = False,
@@ -1070,7 +1070,7 @@ def backtesting_forecaster_multiseries(
         If `False`, out of sample residuals (calibration) are used. 
         Out-of-sample residuals must be precomputed using Forecaster's
         `set_out_sample_residuals()` method.
-    use_binned_residuals : bool, default False
+    use_binned_residuals : bool, default True
         If `True`, residuals are selected based on the predicted values 
         (binned selection).
         If `False`, residuals are selected randomly.

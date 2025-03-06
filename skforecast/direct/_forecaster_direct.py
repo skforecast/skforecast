@@ -1335,7 +1335,7 @@ class ForecasterDirect(ForecasterBase):
         exog: pd.Series | pd.DataFrame | None = None,
         predict_probabilistic: bool = False,
         use_in_sample_residuals: bool = True,
-        use_binned_residuals: bool = False,
+        use_binned_residuals: bool = True,
         check_inputs: bool = True
     ) -> tuple[list[np.ndarray], list[str], list[int], pd.Index]:
         """
@@ -1369,7 +1369,7 @@ class ForecasterDirect(ForecasterBase):
             If `False`, out of sample residuals (calibration) are used. 
             Out-of-sample residuals must be precomputed using Forecaster's
             `set_out_sample_residuals()` method.
-        use_binned_residuals : bool, default False
+        use_binned_residuals : bool, default True
             If `True`, residuals are selected based on the predicted values 
             (binned selection).
             If `False`, residuals are selected randomly.
@@ -1664,7 +1664,7 @@ class ForecasterDirect(ForecasterBase):
         exog: pd.Series | pd.DataFrame | None = None,
         n_boot: int = 250,
         use_in_sample_residuals: bool = True,
-        use_binned_residuals: bool = False,
+        use_binned_residuals: bool = True,
         random_state: int = 123
     ) -> pd.DataFrame:
         """
@@ -1701,7 +1701,7 @@ class ForecasterDirect(ForecasterBase):
             If `False`, out of sample residuals (calibration) are used. 
             Out-of-sample residuals must be precomputed using Forecaster's
             `set_out_sample_residuals()` method.
-        use_binned_residuals : bool, default False
+        use_binned_residuals : bool, default True
             If `True`, residuals are selected based on the predicted values 
             (binned selection).
             If `False`, residuals are selected randomly.
@@ -1824,7 +1824,7 @@ class ForecasterDirect(ForecasterBase):
         exog: pd.Series | pd.DataFrame | None = None,
         nominal_coverage: float = 0.95,
         use_in_sample_residuals: bool = True,
-        use_binned_residuals: bool = False
+        use_binned_residuals: bool = True
     ) -> pd.DataFrame:
         """
         Generate prediction intervals using the conformal prediction 
@@ -1858,7 +1858,7 @@ class ForecasterDirect(ForecasterBase):
             If `False`, out of sample residuals (calibration) are used. 
             Out-of-sample residuals must be precomputed using Forecaster's
             `set_out_sample_residuals()` method.
-        use_binned_residuals : bool, default False
+        use_binned_residuals : bool, default True
             If `True`, residuals are selected based on the predicted values 
             (binned selection).
             If `False`, residuals are selected randomly.
@@ -1963,7 +1963,7 @@ class ForecasterDirect(ForecasterBase):
         interval: float | list[float] | tuple[float] = [5, 95],
         n_boot: int = 250,
         use_in_sample_residuals: bool = True,
-        use_binned_residuals: bool = False,
+        use_binned_residuals: bool = True,
         random_state: int = 123
     ) -> pd.DataFrame:
         """
@@ -2018,7 +2018,7 @@ class ForecasterDirect(ForecasterBase):
             If `False`, out of sample residuals (calibration) are used. 
             Out-of-sample residuals must be precomputed using Forecaster's
             `set_out_sample_residuals()` method.
-        use_binned_residuals : bool, default False
+        use_binned_residuals : bool, default True
             If `True`, residuals are selected based on the predicted values 
             (binned selection).
             If `False`, residuals are selected randomly.
@@ -2106,7 +2106,7 @@ class ForecasterDirect(ForecasterBase):
         quantiles: list[float] | tuple[float] = [0.05, 0.5, 0.95],
         n_boot: int = 250,
         use_in_sample_residuals: bool = True,
-        use_binned_residuals: bool = False,
+        use_binned_residuals: bool = True,
         random_state: int = 123
     ) -> pd.DataFrame:
         """
@@ -2143,7 +2143,7 @@ class ForecasterDirect(ForecasterBase):
             If `False`, out of sample residuals (calibration) are used. 
             Out-of-sample residuals must be precomputed using Forecaster's
             `set_out_sample_residuals()` method.
-        use_binned_residuals : bool, default False
+        use_binned_residuals : bool, default True
             If `True`, residuals are selected based on the predicted values 
             (binned selection).
             If `False`, residuals are selected randomly.
@@ -2187,7 +2187,7 @@ class ForecasterDirect(ForecasterBase):
         exog: pd.Series | pd.DataFrame | None = None,
         n_boot: int = 250,
         use_in_sample_residuals: bool = True,
-        use_binned_residuals: bool = False,
+        use_binned_residuals: bool = True,
         random_state: int = 123
     ) -> pd.DataFrame:
         """
@@ -2226,7 +2226,7 @@ class ForecasterDirect(ForecasterBase):
             If `False`, out of sample residuals (calibration) are used. 
             Out-of-sample residuals must be precomputed using Forecaster's
             `set_out_sample_residuals()` method.
-        use_binned_residuals : bool, default False
+        use_binned_residuals : bool, default True
             If `True`, residuals are selected based on the predicted values 
             (binned selection).
             If `False`, residuals are selected randomly.
