@@ -49,7 +49,7 @@ def grid_search_forecaster(
     ) = None,
     return_best: bool = True,
     n_jobs: int | str = 'auto',
-    verbose: bool = True,
+    verbose: bool = False,
     show_progress: bool = True,
     output_file: str | None = None
 ) -> pd.DataFrame:
@@ -93,7 +93,7 @@ def grid_search_forecaster(
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
         skforecast.utils.select_n_jobs_backtesting.
-    verbose : bool, default True
+    verbose : bool, default False
         Print number of folds used for cv or backtesting.
     show_progress : bool, default True
         Whether to show a progress bar.
@@ -152,7 +152,7 @@ def random_search_forecaster(
     random_state: int = 123,
     return_best: bool = True,
     n_jobs: int | str = 'auto',
-    verbose: bool = True,
+    verbose: bool = False,
     show_progress: bool = True,
     output_file: str | None = None
 ) -> pd.DataFrame:
@@ -201,7 +201,7 @@ def random_search_forecaster(
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
         skforecast.utils.select_n_jobs_backtesting.
-    verbose : bool, default True
+    verbose : bool, default False
         Print number of folds used for cv or backtesting.
     show_progress : bool, default True
         Whether to show a progress bar.
@@ -258,7 +258,7 @@ def _evaluate_grid_hyperparameters(
     ) = None,
     return_best: bool = True,
     n_jobs: int | str = 'auto',
-    verbose: bool = True,
+    verbose: bool = False,
     show_progress: bool = True,
     output_file: str | None = None
 ) -> pd.DataFrame:
@@ -301,7 +301,7 @@ def _evaluate_grid_hyperparameters(
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
         skforecast.utils.select_n_jobs_backtesting.
-    verbose : bool, default True
+    verbose : bool, default False
         Print number of folds used for cv or backtesting.
     show_progress : bool, default True
         Whether to show a progress bar.
@@ -510,7 +510,7 @@ def bayesian_search_forecaster(
     random_state: int = 123,
     return_best: bool = True,
     n_jobs: int | str = 'auto',
-    verbose: bool = True,
+    verbose: bool = False,
     show_progress: bool = True,
     output_file: str | None = None,
     kwargs_create_study: dict = {},
@@ -558,7 +558,7 @@ def bayesian_search_forecaster(
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
         skforecast.utils.select_n_jobs_backtesting.
-    verbose : bool, default True
+    verbose : bool, default False
         Print number of folds used for cv or backtesting.
     show_progress : bool, default True
         Whether to show a progress bar.
@@ -626,7 +626,7 @@ def _bayesian_search_optuna(
     random_state: int = 123,
     return_best: bool = True,
     n_jobs: int | str = 'auto',
-    verbose: bool = True,
+    verbose: bool = False,
     show_progress: bool = True,
     output_file: str | None = None,
     kwargs_create_study: dict = {},
@@ -674,7 +674,7 @@ def _bayesian_search_optuna(
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
         skforecast.utils.select_n_jobs_backtesting.
-    verbose : bool, default True
+    verbose : bool, default False
         Print number of folds used for cv or backtesting.
     show_progress : bool, default True
         Whether to show a progress bar.
@@ -947,7 +947,7 @@ def grid_search_forecaster_multiseries(
     ) = None,
     return_best: bool = True,
     n_jobs: int | str = 'auto',
-    verbose: bool = True,
+    verbose: bool = False,
     show_progress: bool = True,
     suppress_warnings: bool = False,
     output_file: str | None = None
@@ -1003,7 +1003,7 @@ def grid_search_forecaster_multiseries(
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
         skforecast.utils.select_n_jobs_backtesting.
-    verbose : bool, default True
+    verbose : bool, default False
         Print number of folds used for cv or backtesting.
     show_progress : bool, default True
         Whether to show a progress bar.
@@ -1073,7 +1073,7 @@ def random_search_forecaster_multiseries(
     random_state: int = 123,
     return_best: bool = True,
     n_jobs: int | str = 'auto',
-    verbose: bool = True,
+    verbose: bool = False,
     show_progress: bool = True,
     suppress_warnings: bool = False,
     output_file: str | None = None
@@ -1133,7 +1133,7 @@ def random_search_forecaster_multiseries(
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
         skforecast.utils.select_n_jobs_backtesting.
-    verbose : bool, default True
+    verbose : bool, default False
         Print number of folds used for cv or backtesting.
     show_progress : bool, default True
         Whether to show a progress bar.
@@ -1202,7 +1202,7 @@ def _evaluate_grid_hyperparameters_multiseries(
     ) = None,
     return_best: bool = True,
     n_jobs: int | str = 'auto',
-    verbose: bool = True,
+    verbose: bool = False,
     show_progress: bool = True,
     suppress_warnings: bool = False,
     output_file: str | None = None
@@ -1256,7 +1256,7 @@ def _evaluate_grid_hyperparameters_multiseries(
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
         skforecast.utils.select_n_jobs_backtesting. 
-    verbose : bool, default True
+    verbose : bool, default False
         Print number of folds used for cv or backtesting.
     show_progress : bool, default True
         Whether to show a progress bar.
@@ -1528,7 +1528,7 @@ def bayesian_search_forecaster_multiseries(
     random_state: int = 123,
     return_best: bool = True,
     n_jobs: int | str = 'auto',
-    verbose: bool = True,
+    verbose: bool = False,
     show_progress: bool = True,
     suppress_warnings: bool = False,
     output_file: str | None = None,
@@ -1582,7 +1582,7 @@ def bayesian_search_forecaster_multiseries(
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
         skforecast.utils.select_n_jobs_backtesting.
-    verbose : bool, default True
+    verbose : bool, default False
         Print number of folds used for cv or backtesting.
     show_progress : bool, default True
         Whether to show a progress bar.
@@ -1661,7 +1661,7 @@ def _bayesian_search_optuna_multiseries(
     random_state: int = 123,
     return_best: bool = True,
     n_jobs: int | str = 'auto',
-    verbose: bool = True,
+    verbose: bool = False,
     show_progress: bool = True,
     suppress_warnings: bool = False,
     output_file: str | None = None,
@@ -1718,7 +1718,7 @@ def _bayesian_search_optuna_multiseries(
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
         skforecast.utils.select_n_jobs_backtesting.
-    verbose : bool, default True
+    verbose : bool, default False
         Print number of folds used for cv or backtesting.
     show_progress : bool, default True
         Whether to show a progress bar.
@@ -2077,7 +2077,7 @@ def grid_search_sarimax(
     exog: pd.Series | pd.DataFrame | None = None,
     return_best: bool = True,
     n_jobs: int | str = 'auto',
-    verbose: bool = True,
+    verbose: bool = False,
     suppress_warnings_fit: bool = False,
     show_progress: bool = True,
     output_file: str | None = None
@@ -2117,7 +2117,7 @@ def grid_search_sarimax(
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
         skforecast.utils.select_n_jobs_backtesting.
-    verbose : bool, default True
+    verbose : bool, default False
         Print number of folds used for cv or backtesting.
     suppress_warnings_fit : bool, default False
         If `True`, warnings generated during fitting will be ignored.
@@ -2171,7 +2171,7 @@ def random_search_sarimax(
     random_state: int = 123,
     return_best: bool = True,
     n_jobs: int | str = 'auto',
-    verbose: bool = True,
+    verbose: bool = False,
     suppress_warnings_fit: bool = False,
     show_progress: bool = True,
     output_file: str | None = None
@@ -2216,7 +2216,7 @@ def random_search_sarimax(
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
         skforecast.utils.select_n_jobs_backtesting.
-    verbose : bool, default True
+    verbose : bool, default False
         Print number of folds used for cv or backtesting.
     suppress_warnings_fit : bool, default False
         If `True`, warnings generated during fitting will be ignored.
@@ -2268,7 +2268,7 @@ def _evaluate_grid_hyperparameters_sarimax(
     exog: pd.Series | pd.DataFrame | None = None,
     return_best: bool = True,
     n_jobs: int | str = 'auto',
-    verbose: bool = True,
+    verbose: bool = False,
     suppress_warnings_fit: bool = False,
     show_progress: bool = True,
     output_file: str | None = None
@@ -2307,7 +2307,7 @@ def _evaluate_grid_hyperparameters_sarimax(
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
         skforecast.utils.select_n_jobs_backtesting.
-    verbose : bool, default True
+    verbose : bool, default False
         Print number of folds used for cv or backtesting.
     suppress_warnings_fit : bool, default False
         If `True`, warnings generated during fitting will be ignored.
