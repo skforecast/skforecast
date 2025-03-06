@@ -1,5 +1,6 @@
 # `exceptions`
 
+::: skforecast.exceptions.exceptions.set_warning_style
 ::: skforecast.exceptions.exceptions.DataTypeWarning
 ::: skforecast.exceptions.exceptions.DataTransformationWarning
 ::: skforecast.exceptions.exceptions.IgnoredArgumentWarning

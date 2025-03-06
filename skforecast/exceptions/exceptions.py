@@ -307,7 +307,28 @@ def rich_warning_handler(message, category, filename, lineno, file=None, line=No
         warnings._original_showwarning(message, category, filename, lineno, file, line)
 
 
-if not hasattr(warnings, "_original_showwarning"):
-    warnings._original_showwarning = warnings.showwarning
+def set_warnings_style(style: str = 'skforecast') -> None:
+    """
+    Set the warning handler based on the provided style.
 
-warnings.showwarning = rich_warning_handler
+    Parameters
+    ----------
+    style : str
+        The style of the warning handler. Either 'skforecast' or 'rich'.
+    
+    Returns
+    -------
+    None
+
+    """
+    if style == "skforecast":
+        if not hasattr(warnings, "_original_showwarning"):
+            warnings._original_showwarning = warnings.showwarning
+        warnings.showwarning = rich_warning_handler
+    else:
+        warnings.showwarning = warnings._original_showwarning
+
+
+set_warnings_style(style='skforecast')
+
+
