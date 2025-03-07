@@ -489,12 +489,12 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_s
         series=series, exog=exog['exog_1'], store_in_sample_residuals=True
     )
     results = forecaster.predict_bootstrapping(
-                    steps                   = 1, 
-                    n_boot                  = 4, 
-                    exog                    = exog_predict['exog_1'], 
-                    use_in_sample_residuals = True,
-                    use_binned_residuals    = True
-                )
+                  steps                   = 1, 
+                  n_boot                  = 4, 
+                  exog                    = exog_predict['exog_1'], 
+                  use_in_sample_residuals = True,
+                  use_binned_residuals    = True
+              )
 
     expected_1 = pd.DataFrame(
                         data    = np.array([[0.38187547242082853, 0.4143065346074915, 0.4289575462130275, 0.38187547242082853]]),

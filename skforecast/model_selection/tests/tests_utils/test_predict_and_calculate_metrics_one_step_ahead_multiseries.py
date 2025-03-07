@@ -618,3 +618,88 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_equival
 
     pd.testing.assert_frame_equal(metrics_one_step_ahead, metrics_backtesting)
     pd.testing.assert_frame_equal(pred_one_step_ahead, pred_backtesting)
+
+
+@pytest.mark.parametrize(
+    "forecaster",
+    [
+        ForecasterRecursiveMultiSeries(
+            regressor          = LGBMRegressor(random_state=123, verbose=-1),
+            lags               = 24,
+            encoding           = 'ordinal',
+            transformer_series = StandardScaler(),
+            transformer_exog   = StandardScaler(),
+            weight_func        = None,
+            series_weights     = None,
+            differentiation    = None,
+            dropna_from_series = False,
+            forecaster_id      = 'multiseries_lgbm'
+        )
+    ],
+ids=lambda forecaster: f'forecaster: {forecaster.forecaster_id}')
+def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_equivalence_to_backtesting_when_series_is_dict_no_scaled(forecaster):
+    """
+    Test that the output of _predict_and_calculate_metrics_one_step_ahead_multiseries is
+    equivalent to the output of backtesting_forecaster_multiseries when steps=1 and
+    refit=False. Using series and exog as dictionaries.
+    Results are not equivalent if differentiation is included.
+    ForecasterMultiVariate is not included because it is not possible to use dictionaries as input.
+    """
+
+    initial_train_size = 213
+    metrics = ['mean_absolute_error', mean_absolute_percentage_error]
+    levels = ['id_1000', 'id_1001', 'id_1002', 'id_1003', 'id_1004']
+
+    cv = TimeSeriesFold(
+            initial_train_size = initial_train_size,
+            steps              = 1,
+            refit              = False,
+        )
+
+    metrics_backtesting, pred_backtesting = backtesting_forecaster_multiseries(
+        series=series_dict,
+        exog=exog_dict,
+        forecaster=forecaster,
+        cv=cv,
+        metric=metrics,
+        levels=levels,
+        add_aggregated_metric=True,
+        show_progress=False
+    )
+    pred_backtesting = (
+        pred_backtesting
+        .pivot(columns='level', values='pred')
+        .rename_axis(None, axis=0)
+        .rename_axis(None, axis=1)
+        .asfreq('D')
+    )
+
+    (
+        X_train,
+        y_train,
+        X_test,
+        y_test,
+        X_train_encoding,
+        X_test_encoding
+    ) = forecaster._train_test_split_one_step_ahead(
+            series             = series_dict,
+            exog               = exog_dict,
+            initial_train_size = initial_train_size,
+        )
+    
+    metrics_one_step_ahead, pred_one_step_ahead = _predict_and_calculate_metrics_one_step_ahead_multiseries(
+        forecaster=forecaster,
+        series=series_dict,
+        X_train = X_train,
+        y_train= y_train,
+        X_test = X_test,
+        y_test = y_test,
+        X_train_encoding = X_train_encoding,
+        X_test_encoding = X_test_encoding,
+        levels = levels,
+        metrics = metrics,
+        add_aggregated_metric = True
+    )
+
+    pd.testing.assert_frame_equal(metrics_one_step_ahead, metrics_backtesting)
+    pd.testing.assert_frame_equal(pred_one_step_ahead, pred_backtesting)

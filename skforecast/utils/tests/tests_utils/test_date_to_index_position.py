@@ -6,6 +6,17 @@ import pandas as pd
 from skforecast.utils import date_to_index_position
 
 
+def test_ValueError_date_to_index_position_when_method_not_valid():
+    """
+    Test ValueError is raised when `method` is not 'prediction' or 'validation'.
+    """
+    index = pd.date_range(start='1990-01-01', periods=3, freq='D')
+    
+    err_msg = re.escape("`method` must be 'prediction' or 'validation'.")
+    with pytest.raises(ValueError, match=err_msg):
+        date_to_index_position(index, date_input='1990-01-10', method='not_valid')
+
+
 def test_TypeError_date_to_index_position_when_index_is_not_DatetimeIndex():
     """
     Test TypeError is raised when `date_input` is a date but the index is not 

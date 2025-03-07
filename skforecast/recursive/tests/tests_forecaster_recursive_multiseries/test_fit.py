@@ -402,7 +402,7 @@ def test_fit_same_residuals_by_bin_when_residuals_greater_than_10_000(encoding):
 
 
 @pytest.mark.parametrize("encoding", 
-                         ['ordinal', 'ordinal_category', 'onehot'], 
+                         ['ordinal', 'ordinal_category', 'onehot', None], 
                          ids = lambda encoding: f'encoding: {encoding}')
 def test_fit_in_sample_residuals_not_stored_probabilistic_mode_binned(encoding):
     """
@@ -473,7 +473,7 @@ def test_fit_in_sample_residuals_not_stored_probabilistic_mode_binned(encoding):
 
 
 @pytest.mark.parametrize("encoding", 
-                         ['ordinal', 'ordinal_category', 'onehot'], 
+                         ['ordinal', 'ordinal_category', 'onehot', None], 
                          ids = lambda encoding: f'encoding: {encoding}')
 def test_fit_in_sample_residuals_not_stored_probabilistic_mode_False(encoding):
     """
