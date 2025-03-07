@@ -2,7 +2,7 @@
 
 This guide will help you install `skforecast`, a powerful library for time series forecasting in Python. The default installation of `skforecast` includes only the essential dependencies required for basic functionality. Additional optional dependencies can be installed for extended features.
 
-![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue) [![PyPI](https://img.shields.io/pypi/v/skforecast)](https://pypi.org/project/skforecast/)
+![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue) [![PyPI](https://img.shields.io/pypi/v/skforecast)](https://pypi.org/project/skforecast/)
 
 
 ## **Basic installation**
@@ -61,7 +61,7 @@ pip install skforecast[sarimax]
 pip install skforecast[plotting]
 ```
 
-+ matplotlib>=3.3, <3.10
++ matplotlib>=3.3, <3.11
 + seaborn>=0.11, <0.14
 + statsmodels>=0.12, <0.15
 
@@ -72,5 +72,5 @@ pip install skforecast[plotting]
 pip install skforecast[deeplearning]
 ```
 
-+ matplotlib>=3.3, <3.10
++ matplotlib>=3.3, <3.11
 + keras>=2.6, <4.0
