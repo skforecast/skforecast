@@ -39,11 +39,11 @@ optional_dependencies = {
         'statsmodels>=0.12, <0.15'
     ],
     'deeplearning': [
-        'matplotlib>=3.3, <3.10',
+        'matplotlib>=3.3, <3.11',
         'keras>=2.6, <4.0',
     ],
     'plotting': [
-        'matplotlib>=3.3, <3.10', 
+        'matplotlib>=3.3, <3.11', 
         'seaborn>=0.11, <0.14', 
         'statsmodels>=0.12, <0.15'
     ]
