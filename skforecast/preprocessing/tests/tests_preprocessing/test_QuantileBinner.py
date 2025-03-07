@@ -193,10 +193,8 @@ def test_QuantileBinner_is_equivalent_to_KBinsDiscretizer():
         )
 
         binner_1.fit(X.reshape(-1, 1))
-        binner_2.fit(X)
-
         transformed_1 = binner_1.transform(X.reshape(-1, 1)).flatten()
-        transformed_2 = binner_2.transform(X)
+        transformed_2 = binner_2.fit_transform(X)
 
         np.testing.assert_array_almost_equal(binner_1.bin_edges_[0], binner_2.bin_edges_)
         np.testing.assert_array_almost_equal(transformed_1, transformed_2)
