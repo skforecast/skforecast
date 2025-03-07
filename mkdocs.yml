@@ -14,8 +14,6 @@ nav:
     - Welcome to skforecast: README.md
   
   - Intro to Forecasting: introduction-forecasting/introduction-forecasting.md
-
-  - Skforecast 0.14: user_guides/migration-guide.ipynb
   
   - Quick start:
     - Quick start: quick-start/quick-start-skforecast.ipynb
