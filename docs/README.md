@@ -117,12 +117,12 @@ If you use skforecast for a scientific publication, we would appreciate citation
 **Zenodo**
 
 ```
-Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2024). skforecast (v0.14.0). Zenodo. https://doi.org/10.5281/zenodo.8382788
+Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2025). skforecast (v0.15.0). Zenodo. https://doi.org/10.5281/zenodo.8382788
 ```
 
 **APA**:
 ```
-Amat Rodrigo, J., & Escobar Ortiz, J. (2024). skforecast (Version 0.14.0) [Computer software]. https://doi.org/10.5281/zenodo.8382788
+Amat Rodrigo, J., & Escobar Ortiz, J. (2025). skforecast (Version 0.15.0) [Computer software]. https://doi.org/10.5281/zenodo.8382788
 ```
 
 **BibTeX**:
@@ -130,9 +130,9 @@ Amat Rodrigo, J., & Escobar Ortiz, J. (2024). skforecast (Version 0.14.0) [Compu
 @software{skforecast,
 author = {Amat Rodrigo, Joaquin and Escobar Ortiz, Javier},
 title = {skforecast},
-version = {0.14.0},
-month = {11},
-year = {2024},
+version = {0.15.0},
+month = {3},
+year = {2025},
 license = {BSD-3-Clause},
 url = {https://skforecast.org/},
 doi = {10.5281/zenodo.8382788}
@@ -222,15 +222,17 @@ Marcillo Vera, F., Rosado, R., Zambrano, P., Velastegui, J., Morales, G., Lagla,
 
 If you found skforecast useful, you can support us with a donation. Your contribution will help to continue developing and improving this project. Many thanks! :hugging_face: :heart_eyes:
 
-<a href="https://www.buymeacoffee.com/skforecast"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=skforecast&button_colour=f79939&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00" /></a>
-
-
-<a href="https://github.com/sponsors/JoaquinAmatRodrigo" target="_blank" title="Become a GitHub Sponsor">
-<img style="margin-bottom: 1em; max-width: 280px;" src="./img/github_sponsor_button.png" alt="Become a GitHub Sponsor">
-</a>  <a href="https://github.com/sponsors/JavierEscobarOrtiz" target="_blank" title="Become a GitHub Sponsor">
-<img style="margin-bottom: 1em; ; max-width: 280px;" src="./img/github_sponsor_button.png" alt="Become a GitHub Sponsor">
+<a href="https://www.buymeacoffee.com/skforecast" target="_blank" title="Buy me a coffee skforecast">
+    <img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=skforecast&button_colour=f79939&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00" />
 </a>
-
+<br>
+<a href="https://github.com/sponsors/JoaquinAmatRodrigo" target="_blank" title="Become a GitHub Sponsor">
+    <img style="margin-bottom: 1em; max-width: 200px;" src="./images/github_sponsor_button.png" alt="Become a GitHub Sponsor">
+</a>
+<a href="https://github.com/sponsors/JavierEscobarOrtiz" target="_blank" title="Become a GitHub Sponsor">
+    <img style="margin-bottom: 1em; ; max-width: 200px;" src="./images/github_sponsor_button.png" alt="Become a GitHub Sponsor">
+</a>
+<br>
 [![paypal](https://www.paypalobjects.com/en_US/ES/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/donate/?hosted_button_id=D2JZSWRLTZDL6)
 
 
