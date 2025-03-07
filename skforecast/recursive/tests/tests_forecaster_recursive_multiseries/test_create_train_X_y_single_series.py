@@ -58,6 +58,7 @@ def test_create_train_X_y_single_series_output_when_series_and_exog_is_None(igno
     
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
     forecaster.transformer_series_ = {'l1': StandardScaler()}
+    forecaster.differentiator_ = {'l1': None}
     results = forecaster._create_train_X_y_single_series(
                   y           = y,
                   ignore_exog = ignore_exog,
@@ -105,8 +106,9 @@ def test_create_train_X_y_single_series_output_when_series_and_exog():
     exog = pd.DataFrame(np.arange(100, 110, dtype=float), columns=['exog'])
     
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=5,
-                                              transformer_series=None)
+                                                transformer_series=None)
     forecaster.transformer_series_ = {'l1': None}
+    forecaster.differentiator_ = {'l1': None}
     results = forecaster._create_train_X_y_single_series(
                   y           = y,
                   ignore_exog = False,
@@ -154,8 +156,9 @@ def test_create_train_X_y_single_series_output_when_series_10_and_exog_is_datafr
                          'exog_2': pd.Categorical(range(100, 110))})
 
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=5,
-                                              transformer_series=None)
+                                                transformer_series=None)
     forecaster.transformer_series_ = {'l1': None}
+    forecaster.differentiator_ = {'l1': None}
     results = forecaster._create_train_X_y_single_series(
                   y           = y,
                   ignore_exog = False,
@@ -207,8 +210,9 @@ def test_create_train_X_y_single_series_output_when_series_and_exog_is_DataFrame
            )
 
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3,
-                                              transformer_series=None)
+                                                transformer_series=None)
     forecaster.transformer_series_ = {'l1': None}
+    forecaster.differentiator_ = {'l1': None}
     results = forecaster._create_train_X_y_single_series(
                   y           = y,
                   ignore_exog = False,
@@ -260,8 +264,9 @@ def test_create_train_X_y_single_series_output_when_series_and_exog_is_DataFrame
     exog.iloc[2:7, 0] = np.nan
 
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=5,
-                                              transformer_series=None)
+                                                transformer_series=None)
     forecaster.transformer_series_ = {'l1': None}
+    forecaster.differentiator_ = {'l1': None}
     results = forecaster._create_train_X_y_single_series(
                   y           = y,
                   ignore_exog = False,
@@ -314,8 +319,9 @@ def test_create_train_X_y_single_series_output_when_transformer_and_fitted():
     transformer.fit(y.values.reshape(-1, 1))
 
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3,
-                                              transformer_series=None)
+                                                transformer_series=MinMaxScaler())
     forecaster.transformer_series_ = {'l1': transformer}
+    forecaster.differentiator_ = {'l1': None}
     forecaster.is_fitted = True
 
     new_y = pd.Series(np.arange(10, 19, dtype=float), name='l1')
@@ -360,8 +366,8 @@ def test_create_train_X_y_single_series_output_when_series_and_exog_and_differen
     exog = pd.DataFrame(np.arange(100, 110, dtype=float), columns=['exog'])
     
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=5,
-                                              transformer_series = None,
-                                              differentiation    = 1)
+                                                transformer_series = None,
+                                                differentiation    = 1)
     forecaster.transformer_series_ = {'l1': None}
     forecaster.differentiator_ = {'l1': clone(forecaster.differentiator)}
     forecaster.is_fitted = is_fitted
@@ -414,8 +420,8 @@ def test_create_train_X_y_single_series_output_when_series_and_exog_and_differen
     exog = pd.DataFrame(np.arange(100, 110, dtype=float), columns=['exog'])
     
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=5,
-                                              transformer_series = None,
-                                              differentiation    = 2)
+                                                transformer_series = None,
+                                                differentiation    = 2)
     forecaster.transformer_series_ = {'l1': None}
     forecaster.differentiator_ = {'l1': clone(forecaster.differentiator)}
     forecaster.is_fitted = is_fitted
@@ -477,6 +483,7 @@ def test_create_train_X_y_single_series_output_when_window_features_and_exog():
         LinearRegression(), lags=5, window_features=rolling
     )
     forecaster.transformer_series_ = {'l1': None}
+    forecaster.differentiator_ = {'l1': None}
     results = forecaster._create_train_X_y_single_series(
                   y           = y_datetime,
                   ignore_exog = False,
@@ -544,6 +551,7 @@ def test_create_train_X_y_single_series_output_when_two_window_features_and_exog
         LinearRegression(), lags=5, window_features=[rolling, rolling_2]
     )
     forecaster.transformer_series_ = {'l1': None}
+    forecaster.differentiator_ = {'l1': None}
     results = forecaster._create_train_X_y_single_series(
                   y           = y_datetime,
                   ignore_exog = False,
@@ -612,6 +620,7 @@ def test__create_train_X_y_single_series_output_when_window_features_lags_None_a
         LinearRegression(), lags=None, window_features=rolling
     )
     forecaster.transformer_series_ = {'l1': None}
+    forecaster.differentiator_ = {'l1': None}
     results = forecaster._create_train_X_y_single_series(
                   y           = y_datetime,
                   ignore_exog = False,

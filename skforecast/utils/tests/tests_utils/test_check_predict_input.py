@@ -423,16 +423,22 @@ def test_check_predict_input_TypeError_when_last_window_is_not_pandas_DataFrame(
                          [('1'       , pd.DataFrame({'3': [1, 2, 3], '4': [1, 2, 3]})), 
                           (['1']     , pd.DataFrame({'3': [1, 2, 3], '4': [1, 2, 3]})), 
                           (['1', '2'], pd.DataFrame({'3': [1, 2, 3], '4': [1, 2, 3]}))], 
-                         ids = lambda values : f'levels: {values}'
-                        )
+                         ids = lambda values: f'levels: {values}')
 def test_check_predict_input_ValueError_when_levels_not_in_last_window_ForecasterRecursiveMultiSeries(levels, last_window):
     """
     Check ValueError is raised when levels are no the same as last_window column names.
     """
+    last_window_cols = last_window.columns.to_list()
+    missing_levels = set(levels) - set(last_window_cols)
     err_msg = re.escape(
-        (f"`last_window` must contain a column(s) named as the level(s) to be predicted.\n"
-         f"    `levels` : {levels}\n"
-         f"    `last_window` columns : {list(last_window.columns)}")
+        f"`last_window` must contain a column(s) named as the level(s) to be predicted. "
+        f"The following `levels` are missing in `last_window`: {missing_levels}\n"
+        f"Ensure that `last_window` contains all the necessary columns "
+        f"corresponding to the `levels` being predicted.\n"
+        f"    Argument `levels`     : {levels}\n"
+        f"    `last_window` columns : {last_window_cols}\n"
+        f"Example: If `levels = ['series_1', 'series_2']`, make sure "
+        f"`last_window` includes columns named 'series_1' and 'series_2'."
     )
     with pytest.raises(ValueError, match = err_msg):
         check_predict_input(

@@ -1,9 +1,51 @@
 # Unit test _train_test_split_one_step_ahead ForecasterRecursiveMultiSeries
 # ==============================================================================
+import re
+import pytest
 import numpy as np
 import pandas as pd
 from ....recursive import ForecasterRecursiveMultiSeries
 from sklearn.linear_model import LinearRegression
+
+
+def test_train_test_split_one_step_ahead_raise_error_when_series_is_dict_without_frequency():
+    """
+    Test _train_test_split_one_step_ahead method raises error when series is dict
+    and has no frequencies.
+    """
+    series = {
+        "series_1": pd.Series(np.arange(15, dtype=float), 
+                              index=pd.date_range("2020-01-01", periods=15)),
+        "series_2": pd.Series(np.arange(50, 65, dtype=float), 
+                              index=pd.date_range("2020-01-01", periods=15))
+    }
+    series['series_1'].index.freq = None
+    series['series_2'].index.freq = None
+
+    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=5)
+
+    err_msg = re.escape("At least one series must have a frequency.")
+    with pytest.raises(ValueError, match = err_msg):
+        _ = forecaster._train_test_split_one_step_ahead(series=series, initial_train_size=10)
+
+
+def test_train_test_split_one_step_ahead_raise_error_when_series_is_dict_with_different_freq():
+    """
+    Test _train_test_split_one_step_ahead method raises error when series is dict
+    and has different frequencies.
+    """
+    series = {
+        "series_1": pd.Series(np.arange(15, dtype=float), 
+                              index=pd.date_range("2020-01-01", periods=15, freq="D")),
+        "series_2": pd.Series(np.arange(50, 65, dtype=float), 
+                              index=pd.date_range("2020-01-01", periods=15, freq="h"))
+    }
+
+    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=5)
+
+    err_msg = re.escape("All series with frequency must have the same frequency.")
+    with pytest.raises(ValueError, match = err_msg):
+        _ = forecaster._train_test_split_one_step_ahead(series=series, initial_train_size=10)
 
 
 def test_train_test_split_one_step_ahead_when_y_is_series_and_exog_are_dataframe_encoding_ordinal():
@@ -47,18 +89,7 @@ def test_train_test_split_one_step_ahead_when_y_is_series_and_exog_are_dataframe
             "lag_4": [1.0, 2.0, 3.0, 4.0, 5.0, 51.0, 52.0, 53.0, 54.0, 55.0],
             "lag_5": [0.0, 1.0, 2.0, 3.0, 4.0, 50.0, 51.0, 52.0, 53.0, 54.0],
             "_level_skforecast": [0, 0, 0, 0, 0, 1, 1, 1, 1, 1],
-            "exog_1": [
-                105.0,
-                106.0,
-                107.0,
-                108.0,
-                109.0,
-                105.0,
-                106.0,
-                107.0,
-                108.0,
-                109.0,
-            ],
+            "exog_1": [105., 106., 107., 108., 109., 105., 106., 107., 108., 109.],
             "exog_2": [1005, 1006, 1007, 1008, 1009, 1005, 1006, 1007, 1008, 1009],
         },
         index=pd.DatetimeIndex(
@@ -651,25 +682,29 @@ def test_train_test_split_one_step_ahead_when_y_is_series_and_exog_are_dict():
     dictionaries.
     """
     series = {
-            "series_1": pd.Series(np.arange(15, dtype=float), index=pd.date_range("2020-01-01", periods=15)),
-            "series_2": pd.Series(np.arange(50, 65, dtype=float), index=pd.date_range("2020-01-01", periods=15))
-        }
+        "series_1": pd.Series(np.arange(15, dtype=float), 
+                              index=pd.date_range("2020-01-01", periods=15)),
+        "series_2": pd.Series(np.arange(50, 65, dtype=float), 
+                              index=pd.date_range("2020-01-01", periods=15)),
+        "series_3": pd.Series(np.array([]), 
+                              index=pd.date_range("2020-01-01", periods=0))
+    }
     exog = {
-            "series_1": pd.DataFrame(
-                {
-                    "exog_1": np.arange(100, 115, dtype=float),
-                    "exog_2": np.arange(1000, 1015, dtype=int),
-                },
-                index=pd.date_range("2020-01-01", periods=15),
-            ),
-            "series_2": pd.DataFrame(
-                {
-                    "exog_1": np.arange(100, 115, dtype=float),
-                    "exog_2": np.arange(1000, 1015, dtype=int),
-                },
-                index=pd.date_range("2020-01-01", periods=15),
-            ),
-        }
+        "series_1": pd.DataFrame(
+            {
+                "exog_1": np.arange(100, 115, dtype=float),
+                "exog_2": np.arange(1000, 1015, dtype=int),
+            },
+            index=pd.date_range("2020-01-01", periods=15),
+        ),
+        "series_2": pd.DataFrame(
+            {
+                "exog_1": np.arange(100, 115, dtype=float),
+                "exog_2": np.arange(1000, 1015, dtype=int),
+            },
+            index=pd.date_range("2020-01-01", periods=15),
+        ),
+    }
 
     forecaster = ForecasterRecursiveMultiSeries(
         LinearRegression(),
@@ -860,43 +895,3 @@ def test_train_test_split_one_step_ahead_when_y_is_series_and_exog_are_dict():
     pd.testing.assert_series_equal(y_test, expected_y_test)
     pd.testing.assert_series_equal(X_train_encoding, expected_X_train_encoding)
     pd.testing.assert_series_equal(X_test_encoding, expected_X_test_encoding)
-
-
-def test_train_test_split_one_step_ahead_raise_error_when_series_is_dict_with_different_freq():
-    """
-    Test _train_test_split_one_step_ahead method raises error when series is dict
-    and has different frequencies.
-    """
-    series = {
-            "series_1": pd.Series(np.arange(15, dtype=float), index=pd.date_range("2020-01-01", periods=15, freq="D")),
-            "series_2": pd.Series(np.arange(50, 65, dtype=float), index=pd.date_range("2020-01-01", periods=15, freq="H"))
-        }
-
-    forecaster = ForecasterRecursiveMultiSeries(
-        LinearRegression(),
-        lags=5,
-    )
-
-    with np.testing.assert_raises(ValueError):
-        _ = forecaster._train_test_split_one_step_ahead(series=series, initial_train_size=10)
-
-
-def test_train_test_split_one_step_ahead_raise_error_when_series_is_dict_without_frequency():
-    """
-    Test _train_test_split_one_step_ahead method raises error when series is dict
-    and has no frequencies.
-    """
-    series = {
-            "series_1": pd.Series(np.arange(15, dtype=float), index=pd.date_range("2020-01-01", periods=15)),
-            "series_2": pd.Series(np.arange(50, 65, dtype=float), index=pd.date_range("2020-01-01", periods=15))
-        }
-    series['series_1'].index.freq = None
-    series['series_2'].index.freq = None
-
-    forecaster = ForecasterRecursiveMultiSeries(
-        LinearRegression(),
-        lags=5,
-    )
-
-    with np.testing.assert_raises(ValueError):
-        _ = forecaster._train_test_split_one_step_ahead(series=series, initial_train_size=10)

@@ -3,6 +3,7 @@
 import pytest
 import numpy as np
 import pandas as pd
+import platform
 from ...preprocessing import exog_long_to_dict
 from ....exceptions import MissingValuesWarning
 
@@ -52,7 +53,8 @@ def test_check_output_series_long_to_dict_dropna_False():
         series_id="series_id",
         index="datetime",
         freq="D",
-        dropna=False,
+        drop_all_nan_cols=False,
+        consolidate_dtypes=True,
     )
 
     for k in expected.keys():
@@ -78,7 +80,8 @@ def test_check_output_series_long_to_dict_dropna_True():
         series_id="series_id",
         index="datetime",
         freq="D",
-        dropna=True,
+        drop_all_nan_cols=True,
+        consolidate_dtypes=True,
     )
 
     for k in expected.keys():
@@ -96,6 +99,8 @@ def test_TypeError_when_data_is_not_dataframe():
             series_id="series_id",
             index="datetime",
             freq="D",
+            drop_all_nan_cols=True,
+            consolidate_dtypes=True,
         )
 
 
@@ -111,6 +116,8 @@ def test_ValueError_when_series_id_not_in_data():
             series_id=series_id,
             index="datetime",
             freq="D",
+            drop_all_nan_cols=True,
+            consolidate_dtypes=True,
         )
 
 
@@ -126,6 +133,8 @@ def test_ValueError_when_index_not_in_data():
             series_id="series_id",
             index=index,
             freq="D",
+            drop_all_nan_cols=True,
+            consolidate_dtypes=True,
         )
 
 
@@ -146,5 +155,87 @@ def test_warning_when_exog_are_incomplete_and_dropna_False():
             series_id='series_id',
             index='datetime',
             freq='D',
-            dropna=False,
+            drop_all_nan_cols=False,
+            consolidate_dtypes=True,
         )
+
+
+def test_series_long_to_dict_output_when_npnan_are_added_in_interger_columns_and_consolidate_true():
+    """
+    Test the output of the function series_long_to_dict when np.nan are added in integer columns
+    these columns should be converted to float
+    """
+    exog_series_1 = pd.DataFrame({
+        'exog_1': np.random.normal(0, 1, 10),
+        'exog_2': np.random.choice(["A", "B", "C"], 10),
+        'exog_3': np.random.randint(0, 10, 10),
+        'series': 'series_1',
+    }, index = pd.date_range(start='1-1-2000', periods=10, freq='D'))
+    exog_series_2 = pd.DataFrame({
+        'exog_1': np.random.normal(0, 1, 10),
+        'exog_2': np.random.choice(["A", "B"], 10),
+        'exog_3': np.random.randint(0, 10, 10),
+        'series': 'series_2',
+    }, index = pd.date_range(start='1-1-2000', periods=10, freq='D'))
+    exog_long = (
+        pd.concat([exog_series_1, exog_series_2], axis=0)
+        .reset_index()
+        .rename(columns={"index": "datetime"})
+    )
+    exog_long = exog_long.loc[
+        [0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19], :
+    ].copy()
+    exog_long["exog_2"] = exog_long["exog_2"].astype("category")
+    exog_long["series"] = exog_long["series"].astype("category")
+    exog_dict = exog_long_to_dict(
+        data=exog_long,
+        series_id="series",
+        index="datetime",
+        freq="D",
+        consolidate_dtypes=True,
+        suppress_warnings=True,
+    )
+    pd.testing.assert_series_equal(exog_dict['series_1'].dtypes, exog_dict['series_2'].dtypes)
+
+
+def test_series_long_to_dict_output_when_npnan_are_added_in_interger_columns_and_consolidate_false():
+    """
+    Test the output of the function series_long_to_dict when np.nan are added in integer columns
+    these columns should be converted to float
+    """
+    exog_series_1 = pd.DataFrame({
+        'exog_1': np.random.normal(0, 1, 10),
+        'exog_2': np.random.choice(["A", "B", "C"], 10),
+        'exog_3': np.random.randint(0, 10, 10),
+        'series': 'series_1',
+    }, index = pd.date_range(start='1-1-2000', periods=10, freq='D'))
+    exog_series_2 = pd.DataFrame({
+        'exog_1': np.random.normal(0, 1, 10),
+        'exog_2': np.random.choice(["A", "B"], 10),
+        'exog_3': np.random.randint(0, 10, 10),
+        'series': 'series_2',
+    }, index = pd.date_range(start='1-1-2000', periods=10, freq='D'))
+    exog_long = (
+        pd.concat([exog_series_1, exog_series_2], axis=0)
+        .reset_index()
+        .rename(columns={"index": "datetime"})
+    )
+    exog_long = exog_long.loc[
+        [0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19], :
+    ].copy()
+    exog_long["exog_2"] = exog_long["exog_2"].astype("category")
+    exog_long["series"] = exog_long["series"].astype("category")
+    exog_dict = exog_long_to_dict(
+        data=exog_long,
+        series_id="series",
+        index="datetime",
+        freq="D",
+        consolidate_dtypes=False,
+        suppress_warnings=True,
+    )
+    assert exog_dict['series_1'].dtypes.astype(str).to_list() == ['float64', 'category', 'float64']
+
+    if platform.system() == 'Windows':
+        assert exog_dict['series_2'].dtypes.astype(str).to_list() == ['float64', 'category', 'int32']
+    else:
+        assert exog_dict['series_2'].dtypes.astype(str).to_list() == ['float64', 'category', 'int64']

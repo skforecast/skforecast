@@ -13,8 +13,10 @@ def test_TimeSeriesFold_split_TypeError_when_X_is_not_series_dataframe_or_dict()
     """
     X = np.arange(100)
     cv = TimeSeriesFold(steps=10, initial_train_size=70)
-    msg = (f"X must be a pandas Series, DataFrame, Index or a dictionary. Got {type(X)}.")
-    with pytest.raises(TypeError, match=msg):
+    err_msg = re.escape(
+        f"X must be a pandas Series, DataFrame, Index or a dictionary. Got {type(X)}."
+    )
+    with pytest.raises(TypeError, match=err_msg):
         cv.split(X=X)
 
 
@@ -24,14 +26,14 @@ def test_TimeSeriesFold_split_ValueError_when_initial_train_size_and_window_size
     """
     X = pd.Series(np.arange(100))
     cv = TimeSeriesFold(steps=10, initial_train_size=None, window_size=None)
-    msg = re.escape(
+    err_msg = re.escape(
         "To use split method when `initial_train_size` is None, "
         "`window_size` must be an integer greater than 0. "
         "Although no initial training is done and all data is used to "
         "evaluate the model, the first `window_size` observations are "
         "needed to create the initial predictors. Got `window_size` = None."
     )
-    with pytest.raises(ValueError, match=msg):
+    with pytest.raises(ValueError, match=err_msg):
         cv.split(X=X)
 
 
@@ -43,11 +45,11 @@ def test_TimeSeriesFold_split_ValueError_when_initial_train_size_None_and_refit(
     cv = TimeSeriesFold(
         steps=10, initial_train_size=None, window_size=5, refit=True
     )
-    msg = re.escape(
+    err_msg = re.escape(
         "`refit` is only allowed when `initial_train_size` is not `None`. "
         "Set `refit` to `False` if you want to use `initial_train_size = None`."
     )
-    with pytest.raises(ValueError, match=msg):
+    with pytest.raises(ValueError, match=err_msg):
         cv.split(X=X)
 
 
@@ -59,9 +61,35 @@ def test_TimeSeriesFold_split_warning_when_window_size_is_None():
     cv = TimeSeriesFold(
         steps=10, initial_train_size=10, window_size=None
     )
-    warn_msg = re.escape("Last window cannot be calculated because `window_size` is None.")
+    warn_msg = re.escape(
+        "Last window cannot be calculated because `window_size` is None."
+    )
     with pytest.warns(UserWarning, match=warn_msg):
         cv.split(X=X)
+
+
+@pytest.mark.parametrize("initial_train_size", [
+    "2021-12-31",  # Before the first date in the index
+    "2022-04-11",  # After the last date in the index
+])
+def test_TimeSeriesFold_split_invalid_initial_train_size_date(initial_train_size):
+    """
+    Test that ValueError is raised when initial_train_size date is outside the index range.
+    """
+    y = pd.Series(np.arange(100))
+    y.index = pd.date_range(start="2022-01-01", periods=100, freq="D")
+    cv = TimeSeriesFold(
+        steps                 = 7,
+        initial_train_size    = initial_train_size,
+        window_size           = 10,
+    )
+    
+    err_msg = re.escape(
+        "If `initial_train_size` is a date, it must be greater than "
+        "the first date in the index and less than the last date."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        cv.split(X=y)
 
 
 def test_TimeSeriesFold_split_ValueError_when_time_series_not_enough_data():
@@ -1212,3 +1240,70 @@ def test_TimeSeriesFold_split_as_pandas_return_all_indexes_False(window_size):
         expected['last_window_end'] = [None, None, None]
     
     pd.testing.assert_frame_equal(folds, expected)
+
+
+@pytest.mark.parametrize("initial_train_size, expected",
+                         [(70, 
+                           [[[0, 70], [60, 70], [70, 82], [75, 82], True],
+                            [[0, 70], [67, 77], [77, 89], [82, 89], False],
+                            [[0, 70], [74, 84], [84, 96], [89, 96], False],
+                            [[0, 70], [81, 91], [91, 100], [96, 100], False]]),
+                            ("2022-03-11", 
+                           [[[0, 70], [60, 70], [70, 82], [75, 82], True],
+                            [[0, 70], [67, 77], [77, 89], [82, 89], False],
+                            [[0, 70], [74, 84], [84, 96], [89, 96], False],
+                            [[0, 70], [81, 91], [91, 100], [96, 100], False]]),
+                            ("2022-03-11 00:00:00",
+                           [[[0, 70], [60, 70], [70, 82], [75, 82], True],
+                            [[0, 70], [67, 77], [77, 89], [82, 89], False],
+                            [[0, 70], [74, 84], [84, 96], [89, 96], False],
+                            [[0, 70], [81, 91], [91, 100], [96, 100], False]]),
+                            (pd.to_datetime("2022-03-11"),
+                           [[[0, 70], [60, 70], [70, 82], [75, 82], True],
+                            [[0, 70], [67, 77], [77, 89], [82, 89], False],
+                            [[0, 70], [74, 84], [84, 96], [89, 96], False],
+                            [[0, 70], [81, 91], [91, 100], [96, 100], False]]),], 
+                         ids = lambda argument: f'{argument}')
+def test_TimeSeriesFold_split_int_and_date_initial_train_size(capfd, initial_train_size, expected):
+    """
+    Test TimeSeriesFold split method output when initial_train_size is 
+    an integer or a date in string and pandas datetime format.
+    """
+    y = pd.Series(np.arange(100))
+    y.index = pd.date_range(start='2022-01-01', periods=100, freq='D')
+    cv = TimeSeriesFold(
+            steps                 = 7,
+            initial_train_size    = initial_train_size,
+            window_size           = 10,
+            gap                   = 5,
+        )
+    folds = cv.split(X=y)
+                    
+    out, _ = capfd.readouterr()
+    print(out)
+    expected_out = (
+        "Information of folds\n"
+        "--------------------\n"
+        "Number of observations used for initial training: 70\n"
+        "Number of observations used for backtesting: 30\n"
+        "    Number of folds: 4\n"
+        "    Number skipped folds: 0 \n"
+        "    Number of steps per fold: 7\n"
+        "    Number of steps to exclude between last observed data (last window) and predictions (gap): 5\n"
+        "    Last fold only includes 4 observations.\n\n"
+        "Fold: 0\n"
+        "    Training:   2022-01-01 00:00:00 -- 2022-03-11 00:00:00  (n=70)\n"
+        "    Validation: 2022-03-17 00:00:00 -- 2022-03-23 00:00:00  (n=7)\n"
+        "Fold: 1\n"
+        "    Training:   No training in this fold\n"
+        "    Validation: 2022-03-24 00:00:00 -- 2022-03-30 00:00:00  (n=7)\n"
+        "Fold: 2\n"
+        "    Training:   No training in this fold\n"
+        "    Validation: 2022-03-31 00:00:00 -- 2022-04-06 00:00:00  (n=7)\n"
+        "Fold: 3\n"
+        "    Training:   No training in this fold\n"
+        "    Validation: 2022-04-07 00:00:00 -- 2022-04-10 00:00:00  (n=4)\n\n"
+    )
+
+    assert out == expected_out
+    assert folds == expected

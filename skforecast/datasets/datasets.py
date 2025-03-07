@@ -1,6 +1,6 @@
 
 ################################################################################
-#                            skforecast.datsets                                #
+#                            skforecast.datasets                               #
 #                                                                              #
 # This work by skforecast team is licensed under the BSD 3-Clause License.     #
 ################################################################################
@@ -25,7 +25,7 @@ def fetch_dataset(
     name: str
         Name of the dataset to fetch.
     version: str, int, default `'latest'`
-        Version of the dataset to fetch. If 'latest', the lastest version will be 
+        Version of the dataset to fetch. If 'latest', the latest version will be 
         fetched (the one in the main branch). For a list of available versions, 
         see the repository branches.
     raw: bool, default `False`
@@ -57,6 +57,7 @@ def fetch_dataset(
             'index_col': 'fecha',
             'date_format': '%Y-%m-%d',
             'freq': 'MS',
+            'file_type': 'csv',
             'description': (
                 'Monthly expenditure ($AUD) on corticosteroid drugs that the '
                 'Australian health system had between 1991 and 2008. '
@@ -76,6 +77,7 @@ def fetch_dataset(
             'index_col': 'fecha',
             'date_format': '%Y-%m-%d',
             'freq': 'MS',
+            'file_type': 'csv',
             'description': (
                 'Monthly expenditure ($AUD) on corticosteroid drugs that the '
                 'Australian health system had between 1991 and 2008. Two additional '
@@ -96,6 +98,7 @@ def fetch_dataset(
             'index_col': 'Fecha',
             'date_format': '%Y-%m-%d',
             'freq': 'MS',
+            'file_type': 'csv',
             'description': (
                 'Monthly fuel consumption in Spain from 1969-01-01 to 2022-08-01.'
             ),
@@ -115,6 +118,7 @@ def fetch_dataset(
             'index_col': 'date',
             'date_format': '%Y-%m-%d',
             'freq': 'D',
+            'file_type': 'csv',
             'description': 'Simulated time series for the sales of 3 different items.',
             'source': 'Simulated data.'
         },
@@ -127,6 +131,7 @@ def fetch_dataset(
             'index_col': 'datetime',
             'date_format': '%Y-%m-%d %H:%M:%S',
             'freq': 'H',
+            'file_type': 'csv',
             'description': (
                 'Hourly measures of several air chemical pollutant at Valencia city '
                 '(Avd. Francia) from 2019-01-01 to 20213-12-31. Including the following '
@@ -149,6 +154,7 @@ def fetch_dataset(
             'index_col': 'datetime',
             'date_format': '%Y-%m-%d %H:%M:%S',
             'freq': 'H',
+            'file_type': 'csv',
             'description': (
                 'Hourly measures of several air chemical pollutant at Valencia city '
                 '(Avd. Francia) from 2019-01-01 to 20213-12-31. Including the following '
@@ -171,6 +177,7 @@ def fetch_dataset(
             'index_col': 'date',
             'date_format': '%Y-%m-%d',
             'freq': '1D',
+            'file_type': 'csv',
             'description': (
                 'Daily visits to the cienciadedatos.net website registered with the '
                 'google analytics service.'
@@ -189,6 +196,7 @@ def fetch_dataset(
             'index_col': 'date_time',
             'date_format': '%Y-%m-%d %H:%M:%S',
             'freq': 'H',
+            'file_type': 'csv',
             'description': (
                 'Hourly usage of the bike share system in the city of Washington D.C. '
                 'during the years 2011 and 2012. In addition to the number of users per '
@@ -208,6 +216,7 @@ def fetch_dataset(
             'index_col': 'date_time',
             'date_format': '%Y-%m-%d %H:%M:%S',
             'freq': 'H',
+            'file_type': 'csv',
             'description': (
                 'Hourly usage of the bike share system in the city of Washington D.C. '
                 'during the years 2011 and 2012. In addition to the number of users per '
@@ -232,6 +241,7 @@ def fetch_dataset(
             'index_col': 'date_time',
             'date_format': '%Y-%m-%d',
             'freq': 'Q',
+            'file_type': 'csv',
             'description': (
                 "Quarterly overnight trips (in thousands) from 1998 Q1 to 2016 Q4 "
                 "across Australia. The tourism regions are formed through the "
@@ -255,6 +265,7 @@ def fetch_dataset(
             'index_col': 'Date',
             'date_format': '%d/%m/%Y',
             'freq': 'D',
+            'file_type': 'csv',
             'description': 'Daily number of flights in UK from 02/01/2019 to 23/01/2022.',
             'source': (
                 'Experimental statistics published as part of the Economic activity and '
@@ -275,6 +286,7 @@ def fetch_dataset(
             'index_col': 'date',
             'date_format': '%Y-%m-%d',
             'freq': 'D',
+            'file_type': 'csv',
             'description': (
                 'Log daily page views for the Wikipedia page for Peyton Manning. '
                 'Scraped data using the Wikipediatrend package in R.'
@@ -293,6 +305,7 @@ def fetch_dataset(
             'index_col': 'Time',
             'date_format': '%Y-%m-%dT%H:%M:%SZ',
             'freq': '30min',
+            'file_type': 'csv',
             'description': 'Half-hourly electricity demand for Victoria, Australia',
             'source': (
                 "O'Hara-Wild M, Hyndman R, Wang E, Godahewa R (2022).tsibbledata: Diverse "
@@ -310,6 +323,7 @@ def fetch_dataset(
             'index_col': 'date',
             'date_format': '%Y-%m-%d',
             'freq': 'D',
+            'file_type': 'csv',
             'description': (
                 'This dataset contains 913,000 sales transactions from 2013-01-01 to '
                 '2017-12-31 for 50 products (SKU) in 10 stores.'
@@ -329,6 +343,7 @@ def fetch_dataset(
             'index_col': 'date',
             'date_format': '%Y-%m-%d',
             'freq': 'D',
+            'file_type': 'csv',
             'description': (
                 'This dataset contains the daily users of the bicycle rental '
                 'service (BiciMad) in the city of Madrid (Spain) from 2014-06-23 '
@@ -348,6 +363,7 @@ def fetch_dataset(
             'index_col': 'timestamp',
             'date_format': '%Y-%m-%d %H:%M:%S',
             'freq': 'D',
+            'file_type': 'parquet',
             'description': "Time series with daily frequency from the M4 competition.",
             'source': (
                 "Monash Time Series Forecasting Repository  "
@@ -359,7 +375,7 @@ def fetch_dataset(
                 "format using the code provided by the authors in "
                 "https://github.com/rakshitha123/TSForecasting/blob/master/utils/data_loader.py \n"
                 "The category of each time series has been included in the dataset. This "
-                "information has been obtainded from the Kaggle competition page: "
+                "information has been obtained from the Kaggle competition page: "
                 "https://www.kaggle.com/datasets/yogesh94/m4-forecasting-competition-dataset"
             )
         },
@@ -372,6 +388,7 @@ def fetch_dataset(
             'index_col': 'timestamp',
             'date_format': '%Y-%m-%d %H:%M:%S',
             'freq': 'H',
+            'file_type': 'parquet',
             'description': "Time series with hourly frequency from the M4 competition.",
             'source': (
                 "Monash Time Series Forecasting Repository  "
@@ -383,7 +400,7 @@ def fetch_dataset(
                 "format using the code provided by the authors in "
                 "https://github.com/rakshitha123/TSForecasting/blob/master/utils/data_loader.py \n"
                 "The category of each time series has been included in the dataset. This "
-                "information has been obtainded from the Kaggle competition page: "
+                "information has been obtained from the Kaggle competition page: "
                 "https://www.kaggle.com/datasets/yogesh94/m4-forecasting-competition-dataset"
             )
         },
@@ -393,6 +410,7 @@ def fetch_dataset(
             'index_col': 'timestamp',
             'date_format': '%Y-%m-%d',
             'freq': 'D',
+            'file_type': 'parquet',
             'description': (
                 "Daily energy consumption data from the ASHRAE competition with "
                 "building metadata and weather data."
@@ -409,9 +427,29 @@ def fetch_dataset(
             'index_col': 'timestamp',
             'date_format': '%Y-%m-%d',
             'freq': 'D',
+            'file_type': 'parquet',
             'description': (
                 "Daily energy consumption data from the The Building Data Genome Project 2 "
                 "with building metadata and weather data. "
+                "https://github.com/buds-lab/building-data-genome-project-2"
+            ),
+            'source': (
+                "Miller, C., Kathirgamanathan, A., Picchetti, B. et al. The Building Data "
+                "Genome Project 2, energy meter data from the ASHRAE Great Energy "
+                "Predictor III competition. Sci Data 7, 368 (2020). "
+                "https://doi.org/10.1038/s41597-020-00712-x"
+            )
+        },
+        'bdg2_daily_sample': {
+            'url': 'https://raw.githubusercontent.com/skforecast/skforecast-datasets/refs/heads/main/data/bdg2_daily_sample.csv',
+            'sep': ',',
+            'index_col': 'timestamp',
+            'date_format': '%Y-%m-%d',
+            'freq': 'D',
+            'file_type': 'csv',
+            'description': (
+                "Daily energy consumption data of two buildings sampled from the "
+                "The Building Data Genome Project 2. "
                 "https://github.com/buds-lab/building-data-genome-project-2"
             ),
             'source': (
@@ -427,6 +465,7 @@ def fetch_dataset(
             'index_col': 'timestamp',
             'date_format': '%Y-%m-%d %H:%M:%S',
             'freq': 'H',
+            'file_type': 'parquet',
             'description': (
                 "Hourly energy consumption data from the The Building Data Genome Project 2 "
                 "with building metadata and weather data. "
@@ -438,7 +477,169 @@ def fetch_dataset(
                 "Predictor III competition. Sci Data 7, 368 (2020). "
                 "https://doi.org/10.1038/s41597-020-00712-x"
             )
-        }
+        },
+        'bdg2_hourly_sample': {
+            'url': 'https://raw.githubusercontent.com/skforecast/skforecast-datasets/refs/heads/main/data/bdg2_hourly_sample.csv',
+            'sep': ',',
+            'index_col': 'timestamp',
+            'date_format': '%Y-%m-%d %H:%M:%S',
+            'freq': 'H',
+            'file_type': 'csv',
+            'description': (
+                "Daily energy consumption data of two buildings sampled from the "
+                "The Building Data Genome Project 2. "
+                "https://github.com/buds-lab/building-data-genome-project-2"
+            ),
+            'source': (
+                "Miller, C., Kathirgamanathan, A., Picchetti, B. et al. The Building Data "
+                "Genome Project 2, energy meter data from the ASHRAE Great Energy "
+                "Predictor III competition. Sci Data 7, 368 (2020). "
+                "https://doi.org/10.1038/s41597-020-00712-x"
+            )
+        },
+        'm5': {
+            'url': [
+                'https://drive.google.com/file/d/1JOqBsSHegly6iSJFgmkugAko734c6ZW5/view?usp=sharing',
+                'https://drive.google.com/file/d/1BhO1BUvs-d7ipXrm7caC3Wd_d0C_6PZ8/view?usp=sharing',
+                'https://drive.google.com/file/d/1oHwkQ_QycJVTZMb6bH8C2klQB971gXXA/view?usp=sharing',
+                'https://drive.google.com/file/d/1OvYzFlDG04YgTvju2k02vHEOj0nIuwei/view?usp=sharing'
+            ],
+            'sep': None,
+            'index_col': 'timestamp',
+            'date_format': '%Y-%m-%d',
+            'freq': 'D',
+            'file_type': 'parquet',
+            'description': (
+                "Daily sales data from the M5 competition with product metadata and calendar data."
+            ),
+            'source': (
+                "Addison Howard, inversion, Spyros Makridakis, and vangelis. "
+                "M5 Forecasting - Accuracy. https://kaggle.com/competitions/m5-forecasting-accuracy, 2020. Kaggle."
+            )
+        },
+        'ett_m1': {
+            'url': (
+                f'https://raw.githubusercontent.com/skforecast/'
+                f'skforecast-datasets/refs/heads/{version}/data/ETTm1.csv'
+            ),
+            'sep': ',',
+            'index_col': 'date',
+            'date_format': '%Y-%m-%d %H:%M:%S',
+            'freq': '15min',
+            'file_type': 'csv',
+            'description': (
+                'Data from an electricity transformer station was collected between July '
+                '2016 and July 2018 (2 years x 365 days x 24 hours x 4 intervals per '
+                'hour = 70,080 data points). Each data point consists of 8 features, '
+                'including the date of the point, the predictive value "Oil Temperature (OT)", '
+                'and 6 different types of external power load features: High UseFul Load (HUFL), '
+                'High UseLess Load (HULL), Middle UseFul Load (MUFL), Middle UseLess Load (MULL), '
+                'Low UseFul Load (LUFL), Low UseLess Load (LULL).'
+            ),
+            'source': (
+                'Zhou, Haoyi & Zhang, Shanghang & Peng, Jieqi & Zhang, Shuai & Li, '
+                'Jianxin & Xiong, Hui & Zhang, Wancai. (2020). Informer: Beyond Efficient '
+                'Transformer for Long Sequence Time-Series Forecasting. '
+                '[10.48550/arXiv.2012.07436](https://arxiv.org/abs/2012.07436). '
+                'https://github.com/zhouhaoyi/ETDataset'
+            )
+        },
+        'ett_m2': {
+            'url': (
+                f'https://raw.githubusercontent.com/skforecast/'
+                f'skforecast-datasets/{version}/data/ETTm2.csv'
+            ),
+            'sep': ',',
+            'index_col': 'date',
+            'date_format': '%Y-%m-%d %H:%M:%S',
+            'freq': '15min',
+            'file_type': 'csv',
+            'description': (
+                'Data from an electricity transformer station was collected between July '
+                '2016 and July 2018 (2 years x 365 days x 24 hours x 4 intervals per '
+                'hour = 70,080 data points). Each data point consists of 8 features, '
+                'including the date of the point, the predictive value "Oil Temperature (OT)", '
+                'and 6 different types of external power load features: High UseFul Load (HUFL), '
+                'High UseLess Load (HULL), Middle UseFul Load (MUFL), Middle UseLess Load (MULL), '
+                'Low UseFul Load (LUFL), Low UseLess Load (LULL).'
+            ),
+            'source': (
+                'Zhou, Haoyi & Zhang, Shanghang & Peng, Jieqi & Zhang, Shuai & Li, '
+                'Jianxin & Xiong, Hui & Zhang, Wancai. (2020). Informer: Beyond Efficient '
+                'Transformer for Long Sequence Time-Series Forecasting. '
+                '[10.48550/arXiv.2012.07436](https://arxiv.org/abs/2012.07436). '
+                'https://github.com/zhouhaoyi/ETDataset'
+            )
+        },
+        'ett_m2_extended': {
+            'url': (
+                f'https://raw.githubusercontent.com/skforecast/'
+                f'skforecast-datasets/{version}/data/ETTm2_extended.csv'
+            ),
+            'sep': ',',
+            'index_col': 'date',
+            'date_format': '%Y-%m-%d %H:%M:%S',
+            'freq': '15min',
+            'file_type': 'csv',
+            'description': (
+                'Data from an electricity transformer station was collected between July '
+                '2016 and July 2018 (2 years x 365 days x 24 hours x 4 intervals per '
+                'hour = 70,080 data points). Each data point consists of 8 features, '
+                'including the date of the point, the predictive value "Oil Temperature (OT)", '
+                'and 6 different types of external power load features: High UseFul Load (HUFL), '
+                'High UseLess Load (HULL), Middle UseFul Load (MUFL), Middle UseLess Load (MULL), '
+                'Low UseFul Load (LUFL), Low UseLess Load (LULL). Additional variables are '
+                'created based on calendar information (year, month, week, day of the week, '
+                'and hour). These variables have been encoded using the cyclical encoding '
+                'technique (sin and cos transformations) to preserve the cyclical nature '
+                'of the data.'
+            ),
+            'source': (
+                'Zhou, Haoyi & Zhang, Shanghang & Peng, Jieqi & Zhang, Shuai & Li, '
+                'Jianxin & Xiong, Hui & Zhang, Wancai. (2020). Informer: Beyond Efficient '
+                'Transformer for Long Sequence Time-Series Forecasting. '
+                '[10.48550/arXiv.2012.07436](https://arxiv.org/abs/2012.07436). '
+                'https://github.com/zhouhaoyi/ETDataset'
+            )
+        },
+        'expenditures_australia': {
+            'url': (
+                f'https://raw.githubusercontent.com/skforecast/skforecast-datasets/refs/heads/'
+                f'{version}/data/expenditures_australia.csv'
+            ),
+            'sep': ',',
+            'index_col': 'date',
+            'date_format': '%Y-%m-%d',
+            'freq': 'MS',
+            'file_type': 'csv',
+            'description': (
+                'Monthly expenditure on cafes, restaurants and takeaway food services '
+                'in Victoria (Australia) from April 1982 up to April 2024.'
+            ),
+            'source': (
+                'Australian Bureau of Statistics. Catalogue No. 8501.0 '
+                'https://www.abs.gov.au/statistics/industry/retail-and-wholesale-trade/'
+                'retail-trade-australia/apr-2024/8501011.xlsx'
+            )
+        },
+        'public_transport_madrid': {
+            'url': (
+                f'https://raw.githubusercontent.com/skforecast/skforecast-datasets/refs/heads/'
+                f'{version}/data/public-transport-madrid.csv'
+            ),
+            'sep': ',',
+            'index_col': 'date',
+            'date_format': '%Y-%m-%d',
+            'freq': 'D',
+            'file_type': 'csv',
+            'description': (
+                'Daily users of public transport in Madrid (Spain) from 2023-01-01 to 2024-12-15.'
+            ),
+            'source': (
+                'Consorcio Regional de Transportes de Madrid CRTM, CRTM Evolucion demanda diaria '
+                'https://datos.crtm.es/documents/a7210254c4514a19a51b1617cfd61f75/about'
+            )
+        },
     }
     
     if name not in datasets.keys():
@@ -447,29 +648,39 @@ def fetch_dataset(
         )
     
     url = datasets[name]['url']
+    file_type = datasets[name]['file_type']
 
-    if url.endswith('.csv'):
-        try:
-            sep = datasets[name]['sep']
-            df = pd.read_csv(url, sep=sep, **kwargs_read_csv)
+    if not isinstance(url, list):
+        if url.startswith('https://drive.google.com'):
+            file_id = url.split('/')[-2]
+            url = 'https://drive.google.com/uc?id=' + file_id
+        if file_type == 'csv':
+            try:
+                sep = datasets[name]['sep']
+                df = pd.read_csv(url, sep=sep, **kwargs_read_csv)
+            except:
+                raise ValueError(
+                    f"Error reading dataset '{name}' from {url}. Try to version = 'latest'"
+                )
+        if file_type == 'parquet':
+            try:
+                df = pd.read_parquet(url)
+            except:
+                raise ValueError(
+                    f"Error reading dataset '{name}' from {url}. Try to version = 'latest'"
+                )
+    else:
+        try: 
+            df = []
+            for url_partition in url:
+                path = 'https://drive.google.com/uc?export=download&id=' + url_partition.split('/')[-2]
+                df.append(pd.read_parquet(path))
         except:
             raise ValueError(
                 f"Error reading dataset '{name}' from {url}. Try to version = 'latest'"
             )
+        df = pd.concat(df, axis=0).reset_index(drop=True)
 
-    if url.endswith('.parquet'):
-        try:
-            df = pd.read_parquet(url)
-        except:
-            raise ValueError(
-                f"Error reading dataset '{name}' from {url}. Try to version = 'latest'"
-            )
-        
-    if url.startswith('https://drive.google.com'):
-        file_id = url.split('/')[-2]
-        url = 'https://drive.google.com/uc?id=' + file_id
-        df = pd.read_parquet(url)
-        
     if not raw:
         try:
             index_col = datasets[name]['index_col']
@@ -506,7 +717,7 @@ def load_demo_dataset(version: str = 'latest') -> pd.Series:
     Parameters
     ----------
     version: str, default `'latest'`
-        Version of the dataset to fetch. If 'latest', the lastest version will be
+        Version of the dataset to fetch. If 'latest', the latest version will be
         fetched (the one in the main branch). For a list of available versions,
         see the repository branches.
 

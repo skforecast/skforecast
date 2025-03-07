@@ -190,3 +190,25 @@ def test_transform_numpy_when_transformer_is_ColumnTransformer():
     ])
     
     np.testing.assert_array_almost_equal(results, expected)
+
+
+def test_transform_numpy_when_transformer_set_output_is_pandas():
+    """
+    Test the output of transform_numpy when transformer is StandardScaler and
+    set_output is pandas.
+    """
+    input_array = np.array([1.16, -0.28, 0.07, 2.4, 0.25, -0.56, -1.42, 1.26, 1.78, -1.49])
+    transformer = StandardScaler().set_output(transform='pandas')
+    results = transform_numpy(
+                  array             = input_array,
+                  transformer       = transformer,
+                  fit               = True,
+                  inverse_transform = False
+              )
+    
+    expected = np.array([
+        0.67596768, -0.47871021, -0.19805933,  1.67027365, -0.0537246,
+        -0.70323091, -1.39283021,  0.75615365,  1.17312067, -1.44896038]
+    )
+    
+    np.testing.assert_array_almost_equal(results, expected)

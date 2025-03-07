@@ -47,7 +47,7 @@ We value your input! Here are a few ways you can participate:
 - **Contribute** to the project by [submitting code](https://github.com/skforecast/skforecast/blob/master/CONTRIBUTING.md), adding new features, or improving the documentation.
 - **Share your feedback** on LinkedIn to help spread the word about skforecast!
 
-Together, we can make time series forecasting accessible to everyone.
+Together, we can make time series forecasting accessible to everyone. Discover more in our contribution [contribution guide](https://github.com/skforecast/skforecast/blob/master/CONTRIBUTING.md)
 
 
 ## Installation & Dependencies
@@ -144,6 +144,18 @@ doi = {10.5281/zenodo.8382788}
 <ul>
 
 <li><p style="color:#808080; font-size:0.95em;">
+Chamara Hewage, H., Rostami-Tabar, B., Syntetos, A., Liberatore, F., and Milano, G., “A Novel Hybrid Approach to Contraceptive Demand Forecasting: Integrating Point Predictions with Probabilistic Distributions”, <i>arXiv e-prints</i>, Art. no. arXiv:2502.09685, 2025. doi:10.48550/arXiv.2502.09685.
+</p></li>
+
+<li><p style="color:#808080; font-size:0.95em;">
+Kuthe, S., Persson, C. and Glaser, B. (2025), Physics-Informed Data-Driven Prediction of Submerged Entry Nozzle Clogging with the Aid of Ab Initio Repository. steel research int. 2400800. https://doi.org/10.1002/srin.202400800
+</p></li>
+
+<li><p style="color:#808080; font-size:0.95em;">
+Chatzikonstantinidis, K., Afxentiou, N., Giama, E., Fokaides, P. A., & Papadopoulos, A. M. (2025). Energy management of smart buildings during crises and digital twins as an optimisation tool for sustainable urban environment. International Journal of Sustainable Energy, 44(1). https://doi.org/10.1080/14786451.2025.2455134
+</p></li>
+
+<li><p style="color:#808080; font-size:0.95em;">
 Sanan, O., Sperling, J., Greene, D., & Greer, R. (2024, April). Forecasting Weather and Energy Demand for Optimization of Renewable Energy and Energy Storage Systems for Water Desalination. In 2024 IEEE Conference on Technologies for Sustainability (SusTech) (pp. 175-182). IEEE. <a href="https://doi.org/10.1109/SusTech60925.2024.10553570">https://doi.org/10.1109/SusTech60925.2024.10553570</a>
 </p></li>
 
@@ -211,11 +223,19 @@ Marcillo Vera, F., Rosado, R., Zambrano, P., Velastegui, J., Morales, G., Lagla,
 If you found skforecast useful, you can support us with a donation. Your contribution will help to continue developing and improving this project. Many thanks! :hugging_face: :heart_eyes:
 
 <a href="https://www.buymeacoffee.com/skforecast"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=skforecast&button_colour=f79939&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00" /></a>
-<br>
+
+
+<a href="https://github.com/sponsors/JoaquinAmatRodrigo" target="_blank" title="Become a GitHub Sponsor">
+<img style="margin-bottom: 1em; max-width: 280px;" src="./img/github_sponsor_button.png" alt="Become a GitHub Sponsor">
+</a>  <a href="https://github.com/sponsors/JavierEscobarOrtiz" target="_blank" title="Become a GitHub Sponsor">
+<img style="margin-bottom: 1em; ; max-width: 280px;" src="./img/github_sponsor_button.png" alt="Become a GitHub Sponsor">
+</a>
 
 [![paypal](https://www.paypalobjects.com/en_US/ES/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/donate/?hosted_button_id=D2JZSWRLTZDL6)
 
 
 ## License
 
-[BSD-3-Clause License](https://github.com/skforecast/skforecast/blob/master/LICENSE)
+**Skforecast software**: [BSD-3-Clause License](https://github.com/skforecast/skforecast/blob/master/LICENSE)
+
+**Skforecast documentation**: [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)

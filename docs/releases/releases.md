@@ -10,6 +10,88 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
 
+## 0.15.0 <small>In development</small> { id="0.15.0" }
+
+The main changes in this release are:
+
++ <span class="badge text-bg-feature">Feature</span> Added [conformal framework for probabilistic forecasting](../user_guides/probabilistic-forecasting-conformal-prediction.html). Generate prediction intervals using the [conformal prediction split method](https://mapie.readthedocs.io/en/stable/theoretical_description_regression.html#the-split-method).
+
++ <span class="badge text-bg-feature">Feature</span> [Binned residuals](..user_guides/probabilistic-forecasting-bootstrapped-residuals.html#intervals-conditioned-on-predicted-values-binned-residuals) are now available in the <code>[ForecasterRecursiveMultiSeries]</code>, <code>[ForecasterDirect]</code> and <code>[ForecasterDirectMultiVariate]</code> forecasters. 
+
++ <span class="badge text-bg-feature">Feature</span> New class <code>[ConformalIntervalCalibrator]</code> to perform [conformal calibration](../user_guides/probabilistic-forecasting-conformal-calibration.html). This class is used to calibrate the prediction intervals using the conformal prediction framework.
+
++ <span class="badge text-bg-api-change">API Change</span> Probabilistic predictions in <code>[ForecasterRecursiveMultiSeries]</code> and <code>[ForecasterDirectMultiVariate]</code> are now returned as a long format DataFrame.
+
++ <span class="badge text-bg-api-change">API Change</span> Fit argument `store_in_sample_residuals` has changed default value to `False`. This means in-sample residuals are not stored by default. To store them, call new method `set_in_sample_residuals` after fitting the forecaster using the same training data. 
+
+
+**Added**
+
++ Added `rich>=13.9.4` library as hard dependence.
+
++ New argument `method  = 'conformal'` in `predict_interval` method or `interval_method = 'conformal'` in backtesting functions to use the conformal prediction framework.
+
++ New class <code>[ConformalIntervalCalibrator]</code> to perform conformal calibration. This class is used to calibrate the prediction intervals using the conformal prediction framework.
+
++ Binned residuals are now available in the <code>[ForecasterRecursiveMultiSeries]</code>, <code>[ForecasterDirect]</code> and <code>[ForecasterDirectMultiVariate]</code> forecasters. 
+
++ New method `set_in_sample_residuals` to store the in-sample residuals after fitting the forecaster using the same training data.
+
++ Functions `crps_from_predictions` and `crps_from_quantiles` in module `metrics` to calculate the Continuous Ranked Probability Score (CRPS).
+
++ Function `calculate_coverage` in module `metrics` to calculate the coverage of the predicted intervals.
+
++ The `differentiation` argument in <code>[ForecasterRecursiveMultiSeries]</code> can now be a dict to [differentiate each series independently](../user_guides/independent-multi-time-series-forecasting.html#differentiation). This is useful if the user wants to differentiate each series with a different order or not differentiate some of them.
+
++ Added statistic `ewm` (exponential weighted mean) in <code>[RollingFeatures]</code>. Alpha can be specified using the new argument `kwargs_stats`, default `{'ewm': {'alpha': 0.3}}`.
+
++ Added method `_repr_html_` to <code>[ForecasterSarimax]</code>, <code>[TimeSeriesFold]</code> and <code>[OneStepAheadFold]</code> to display the object in HTML format.
+
++ Added argument `consolidate_dtypes` in <code>[exog_long_to_dict]</code> function to ensure that the data types of the exogenous variables are consistent across all series when `np.nan` values are added and integer columns are converted to float.
+
++ Added <code>[calculate_lag_autocorrelation]</code> function to the <code>[plot]</code> module to calculate the autocorrelation and partial autocorrelation of a time series.
+
++ Added datasets `m5`, `ett_m1`, `ett_m2`, `ett_m2_extended` and `expenditures_australia` and `public_transport_madrid` to the <code>[datasets]</code> module.
+
++ Added function `create_mean_pinball_loss` in the <code>[metrics]</code> module to create a function to calculate the mean pinball loss for a given quantile.
+
++ Added function `check_one_step_ahead_input` to check the input data when using a <code>[OneStepAheadFold]</code> in the <code>[model_selection]</code> functions.
+
+
+**Changed**
+
++ <code>[ForecasterRecursiveMultiSeries]</code> and <code>[ForecasterDirectMultiVariate]</code> forecasters use conformal prediction framework as default for probabilistic forecasting, `method = 'conformal'` in `predict_interval` method.
+
++ <code>[backtesting_forecaster_multiseries]</code> uses conformal prediction framework as default for probabilistic forecasting, `interval_method = 'conformal'`.
+
++ <code>[backtesting_forecaster]</code> and <code>[backtesting_forecaster_multiseries]</code> use binned residuals as default for probabilistic forecasting, `use_binned_residuals = True`.
+
++ Fit argument `store_in_sample_residuals` has changed default value to `False`. This means in-sample residuals are not stored by default. To store them, call new method `set_in_sample_residuals` after fitting the forecaster using the same training data. 
+
++ Predictions from `predict_bootstrapping` in <code>[ForecasterRecursiveMultiSeries]</code> and <code>[ForecasterDirectMultiVariate]</code> are now returned as a long format DataFrame with the bootstrapping predictions. The columns are `level`, `pred_boot_0`, `pred_boot_1`, ..., `pred_boot_n_boot`.
+
++ Predictions from `predict_interval` in <code>[ForecasterRecursiveMultiSeries]</code> and <code>[ForecasterDirectMultiVariate]</code> are now returned as long format DataFrame with the predictions and the lower and upper bounds of the estimated interval. The columns are `level`, `pred`, `lower_bound`, `upper_bound`.
+
++ Predictions from `predict_quantiles` in <code>[ForecasterRecursiveMultiSeries]</code> and <code>[ForecasterDirectMultiVariate]</code> are now returned as long format DataFrame with the quantiles predicted by the forecaster. For example, if `quantiles = [0.05, 0.5, 0.95]`, the columns are `level`, `q_0.05`, `q_0.5`, `q_0.95`.
+
++ Predictions from `predict_dist` in <code>[ForecasterRecursiveMultiSeries]</code> and <code>[ForecasterDirectMultiVariate]</code> are now returned as long format DataFrame with the parameters of the fitted distribution for each step. The columns are `level`, `param_0`, `param_1`, ..., `param_n`, where `param_i` are the parameters of the distribution.
+
++ <code>[ForecasterAutoregCustom]</code> and <code>[ForecasterAutoregMultiSeriesCustom]</code> has been deleted (deprecated since skforecast 0.14.0). Window features can be added using the `window_features` argument in the <code>[ForecasterRecursive]</code>, <code>[ForecasterDirect]</code>, <code>[ForecasterDirectMultiVariate]</code> and <code>[ForecasterRecursiveMultiSeries]</code>.
+
++ Argument `dropna` in <code>[exog_long_to_dict]</code> function has been renamed to `drop_all_nan_cols`.
+
++ Argument `initial_train_size` can be a `str` or a `pandas datetime` in <code>[TimeSeriesFold]</code> and <code>[OneStepAheadFold]</code>. If so, the cv object will use the specified date to split the data. (contribution by [@g-rubio](https://github.com/g-rubio) [#898](https://github.com/skforecast/skforecast/pull/898)).
+
++ `set_dark_theme` background color changed to `#001633` to improve readability.
+
+
+**Fixed**
+
++ Now <code>[ForecasterRecursiveMultiSeries]</code> can be saved correctly when `weight_func` is a `dict` with `None` for any series. It now use the method `_weight_func_all_1` to create the weight function for these series.
+
++ Fix `transform_numpy` function in the <code>[utils]</code> module to work when transformers output in `scikit-learn` is `set_output(transform='pandas')`.
+
+
 ## 0.14.0 <small>Nov 11, 2024</small> { id="0.14.0" }
 
 The main changes in this release are:
@@ -66,7 +148,7 @@ This release has undergone a major refactoring to improve the performance of the
 
 **Changed**
 
-+ <code>[ForecasterAutoregCustom]</code> has been deprecated. Window features can be added using the `window_features` argument in the <code>[ForecasterRecursive]</code>.
++ <code>[ForecasterAutoregCustom]</code> and <code>[ForecasterAutoregMultiSeriesCustom]</code> has been deprecated. Window features can be added using the `window_features` argument in the <code>[ForecasterRecursive]</code> and <code>[ForecasterRecursiveMultiSeries]</code>.
 
 + Refactor `recursive_predict` in <code>[ForecasterRecursiveMultiSeries]</code> to predict all series at once and include option of adding residuals. This improves performance when predicting multiple series.
 
@@ -290,7 +372,7 @@ The main changes in this release are:
 
 + The `output_file` argument has been added to the hyperparameter search functions in the `model_selection`, `model_selection_multiseries` and `model_selection_sarimax` modules to save the results of the hyperparameter search in a tab-separated values (TSV) file.
 
-+ New argument `binned_residuals` in method `predict_interval` allows to condition the bootstraped residuals on range of the predicted values. 
++ New argument `binned_residuals` in method `predict_interval` allows to condition the bootstrapped residuals on range of the predicted values. 
 
 + Added `save_custom_functions` argument to the `save_forecaster` function in the `utils` module. If `True`, save custom functions used in the forecaster (`fun_predictors` and `weight_func`) as .py files. Custom functions must be available in the environment where the forecaster is loaded.
 
@@ -359,7 +441,7 @@ The main changes in this release are:
 
 **Fixed**
 
-+ Rename `self.skforcast_version` attribute to `self.skforecast_version` in all Forecasters.
++ Rename `self.skforecast_version` attribute to `self.skforecast_version` in all Forecasters.
 
 + Fixed a bug where the `create_train_X_y` method did not correctly align lags and exogenous variables when the index was not a Pandas index in all Forecasters.
 
@@ -811,7 +893,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 
 + Output of `predict` is a pandas Series with index according to the steps predicted.
 
-+ Scikitlearn pipelines are allowed as regressors.
++ Scikit-learn pipelines are allowed as regressors.
 
 + `backtesting_forecaster` and `backtesting_forecaster_intervals` have been combined in a single function.
 
@@ -889,7 +971,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 **Changed**
 
 
-+ New implementation of `ForecasterAutoregMultiOutput`. The training process in the new version creates a different X_train for each step. See [Direct multi-step forecasting](https://github.com/skforecast/skforecast#introduction) for more details. Old versión can be acces with `skforecast.deprecated.ForecasterAutoregMultiOutput`.
++ New implementation of `ForecasterAutoregMultiOutput`. The training process in the new version creates a different X_train for each step. See [Direct multi-step forecasting](https://github.com/skforecast/skforecast#introduction) for more details. Old version can be accessed with `skforecast.deprecated.ForecasterAutoregMultiOutput`.
 
 + Class `ForecasterCustom` has been renamed to `ForecasterAutoregCustom`. However, `ForecasterCustom` will still remain to keep backward compatibility.
 
@@ -1033,6 +1115,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [exog_long_to_dict]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.exog_long_to_dict
 [TimeSeriesDifferentiator]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.TimeSeriesDifferentiator
 [QuantileBinner]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.QuantileBinner
+[ConformalIntervalCalibrator]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.ConformalIntervalCalibrator
 
 <!-- metrics -->
 [metrics]: https://skforecast.org/latest/api/metrics
@@ -1045,6 +1128,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [set_dark_theme]: https://skforecast.org/latest/api/plot#skforecast.plot.plot.set_dark_theme
 [plot_residuals]: https://skforecast.org/latest/api/plot#skforecast.plot.plot.plot_residuals
 [plot_multivariate_time_series_corr]: https://skforecast.org/latest/api/plot#skforecast.plot.plot.plot_multivariate_time_series_corr
+[calculate_lag_autocorrelation]: https://skforecast.org/latest/api/plot#skforecast.plot.plot.calculate_lag_autocorrelation
 [plot_prediction_distribution]: https://skforecast.org/latest/api/plot#skforecast.plot.plot.plot_prediction_distribution
 [plot_prediction_intervals]: https://skforecast.org/latest/api/plot#skforecast.plot.plot.plot_prediction_intervals
 

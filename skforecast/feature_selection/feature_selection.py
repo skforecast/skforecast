@@ -5,10 +5,10 @@
 ################################################################################
 # coding=utf-8
 
+from __future__ import annotations
 import re
 from copy import deepcopy
 from itertools import chain
-from typing import Union, Optional
 import warnings
 import numpy as np
 import pandas as pd
@@ -17,14 +17,14 @@ import pandas as pd
 def select_features(
     forecaster: object,
     selector: object,
-    y: Union[pd.Series, pd.DataFrame],
-    exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
-    select_only: Optional[str] = None,
-    force_inclusion: Optional[Union[list, str]] = None,
-    subsample: Union[int, float] = 0.5,
+    y: pd.Series | pd.DataFrame,
+    exog: pd.Series | pd.DataFrame | None = None,
+    select_only: str | None = None,
+    force_inclusion: list[str] | str | None = None,
+    subsample: int | float = 0.5,
     random_state: int = 123,
     verbose: bool = True
-) -> Union[list, list, list]:
+) -> tuple[list[int], list[str], list[str]]:
     """
     Feature selection using any of the sklearn.feature_selection module selectors 
     (such as `RFECV`, `SelectFromModel`, etc.). Two groups of features are
@@ -46,11 +46,11 @@ def select_features(
         A feature selector from sklearn.feature_selection.
     y : pandas Series, pandas DataFrame
         Target time series to which the feature selection will be applied.
-    exog : pandas Series, pandas DataFrame, default `None`
+    exog : pandas Series, pandas DataFrame, default None
         Exogenous variable/s included as predictor/s. Must have the same
         number of observations as `y` and should be aligned so that y[i] is
         regressed on exog[i].
-    select_only : str, default `None`
+    select_only : str, default None
         Decide what type of features to include in the selection process. 
         
         - If `'autoreg'`, only autoregressive features (lags and window features)
@@ -60,19 +60,19 @@ def select_features(
         of autoregressive features. All autoregressive features are included 
         in the outputs `selected_lags` and `selected_window_features`.
         - If `None`, all features are evaluated by the selector.
-    force_inclusion : list, str, default `None`
+    force_inclusion : list, str, default None
         Features to force include in the final list of selected features.
         
         - If `list`, list of feature names to force include.
         - If `str`, regular expression to identify features to force include. 
         For example, if `force_inclusion="^sun_"`, all features that begin 
         with "sun_" will be included in the final list of selected features.
-    subsample : int, float, default `0.5`
+    subsample : int, float, default 0.5
         Proportion of records to use for feature selection.
-    random_state : int, default `123`
+    random_state : int, default 123
         Sets a seed for the random subsample so that the subsampling process 
         is always deterministic.
-    verbose : bool, default `True`
+    verbose : bool, default True
         Print information about feature selection process.
 
     Returns
@@ -217,14 +217,14 @@ def select_features(
 def select_features_multiseries(
     forecaster: object,
     selector: object,
-    series: Union[pd.DataFrame, dict],
-    exog: Optional[Union[pd.Series, pd.DataFrame, dict]] = None,
-    select_only: Optional[str] = None,
-    force_inclusion: Optional[Union[list, str]] = None,
-    subsample: Union[int, float] = 0.5,
+    series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
+    exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
+    select_only: str | None = None,
+    force_inclusion: list[str] | str | None = None,
+    subsample: int | float = 0.5,
     random_state: int = 123,
     verbose: bool = True,
-) -> Union[Union[list, dict], list, list]:
+) -> tuple[list[int] | dict[str, int], list[str], list[str]]:
     """
     Feature selection using any of the sklearn.feature_selection module selectors 
     (such as `RFECV`, `SelectFromModel`, etc.). Two groups of features are
@@ -244,11 +244,11 @@ def select_features_multiseries(
         selector will only be applied to the features of the first step.
     selector : object
         A feature selector from sklearn.feature_selection.
-    series : pandas DataFrame
+    series : pandas DataFrame, dict
         Target time series to which the feature selection will be applied.
-    exog : pandas Series, pandas DataFrame, dict, default `None`
+    exog : pandas Series, pandas DataFrame, dict, default None
         Exogenous variables.
-    select_only : str, default `None`
+    select_only : str, default None
         Decide what type of features to include in the selection process. 
         
         - If `'autoreg'`, only autoregressive features (lags and window features) 
@@ -258,19 +258,19 @@ def select_features_multiseries(
         of autoregressive features. All autoregressive features are included 
         in the outputs `selected_lags` and `selected_window_features`.
         - If `None`, all features are evaluated by the selector.
-    force_inclusion : list, str, default `None`
+    force_inclusion : list, str, default None
         Features to force include in the final list of selected features.
         
         - If `list`, list of feature names to force include.
         - If `str`, regular expression to identify features to force include. 
         For example, if `force_inclusion="^sun_"`, all features that begin 
         with "sun_" will be included in the final list of selected features.
-    subsample : int, float, default `0.5`
+    subsample : int, float, default 0.5
         Proportion of records to use for feature selection.
-    random_state : int, default `123`
+    random_state : int, default 123
         Sets a seed for the random subsample so that the subsampling process 
         is always deterministic.
-    verbose : bool, default `True`
+    verbose : bool, default True
         Print information about feature selection process.
 
     Returns

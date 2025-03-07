@@ -1,16 +1,16 @@
 [project]
 name = "skforecast"
-version = "0.14.0"
+version = "0.15.0"
 description = "Skforecast is a Python library for time series forecasting using machine learning models. It works with any regressor compatible with the scikit-learn API, including popular options like LightGBM, XGBoost, CatBoost, Keras, and many others."
 readme = "README.md"
 authors = [
-    { name = "Joaquin Amat Rodrigo", email = "j.amatrodrigo@gmail.com" },
-    { name = "Javier Escobar Ortiz", email = "javier.escobar.ortiz@gmail.com" },
+    {name = "Joaquin Amat Rodrigo", email = "j.amatrodrigo@gmail.com"},
+    {name = "Javier Escobar Ortiz", email = "javier.escobar.ortiz@gmail.com"},
 ]
 
 maintainers = [
-    { name = "Joaquin Amat Rodrigo", email = "j.amatrodrigo@gmail.com" },
-    { name = "Javier Escobar Ortiz", email = "javier.escobar.ortiz@gmail.com" },
+    {name = "Joaquin Amat Rodrigo", email = "j.amatrodrigo@gmail.com"},
+    {name = "Javier Escobar Ortiz", email = "javier.escobar.ortiz@gmail.com"},
 ]
 
 classifiers = [
@@ -37,13 +37,14 @@ keywords = [
     "time-series-regression",
 ]
 dependencies = [
-    "numpy>=1.22",
+    "numpy>=1.24",
     "pandas>=1.5",
     "tqdm>=4.57",
     "scikit-learn>=1.2",
     "optuna>=2.10",
     "joblib>=1.1",
-    "numba>=0.59"
+    "numba>=0.59",
+    "rich>=13.9.4"
 ]
 requires-python = ">=3.9"
 

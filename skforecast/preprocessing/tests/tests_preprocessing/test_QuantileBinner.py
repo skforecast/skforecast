@@ -152,16 +152,16 @@ def test_QuantileBinner_fit_with_subsample():
     )
     expected_n_bins_ = 10
     expected_intervals_ = {
-        0.0: (21.0, 159.6),
-        1.0: (159.6, 283.8),
-        2.0: (283.8, 388.7),
-        3.0: (388.7, 429.8),
-        4.0: (429.8, 578.0),
-        5.0: (578.0, 725.0),
-        6.0: (725.0, 731.6),
-        7.0: (731.6, 734.2),
-        8.0: (734.2, 739.4),
-        9.0: (739.4, 743.0)
+        0: (21.0, 159.6),
+        1: (159.6, 283.8),
+        2: (283.8, 388.7),
+        3: (388.7, 429.8),
+        4: (429.8, 578.0),
+        5: (578.0, 725.0),
+        6: (725.0, 731.6),
+        7: (731.6, 734.2),
+        8: (734.2, 739.4),
+        9: (739.4, 743.0)
     }
 
     np.testing.assert_array_almost_equal(binner.bin_edges_, expected_bin_edges_)
@@ -193,10 +193,8 @@ def test_QuantileBinner_is_equivalent_to_KBinsDiscretizer():
         )
 
         binner_1.fit(X.reshape(-1, 1))
-        binner_2.fit(X)
-
         transformed_1 = binner_1.transform(X.reshape(-1, 1)).flatten()
-        transformed_2 = binner_2.transform(X)
+        transformed_2 = binner_2.fit_transform(X)
 
         np.testing.assert_array_almost_equal(binner_1.bin_edges_[0], binner_2.bin_edges_)
         np.testing.assert_array_almost_equal(transformed_1, transformed_2)

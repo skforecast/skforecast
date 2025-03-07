@@ -10,6 +10,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
+from lightgbm import LGBMRegressor
 from skforecast.preprocessing import RollingFeatures
 from ....recursive import ForecasterRecursiveMultiSeries
 
@@ -24,10 +25,10 @@ def test_create_train_X_y_TypeError_when_exog_is_categorical_of_no_int():
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
 
     err_msg = re.escape(
-        ("Categorical dtypes in exog must contain only integer values. "
-         "See skforecast docs for more info about how to include "
-         "categorical features https://skforecast.org/"
-         "latest/user_guides/categorical-features.html")
+        "Categorical dtypes in exog must contain only integer values. "
+        "See skforecast docs for more info about how to include "
+        "categorical features https://skforecast.org/"
+        "latest/user_guides/categorical-features.html"
     )
     with pytest.raises(TypeError, match = err_msg):
         forecaster._create_train_X_y(series=series, exog=exog)
@@ -48,10 +49,10 @@ def test_create_train_X_y_ValueError_when_Forecaster_fitted_and_different_column
     })
 
     err_msg = re.escape(
-        ("Once the Forecaster has been trained, `series` must contain "
-         "the same series names as those used during training:\n"
-         " Got      : ['l1', 'l4']\n"
-         " Expected : ['l1', 'l2']")
+        "Once the Forecaster has been trained, `series` must contain "
+        "the same series names as those used during training:\n"
+        " Got      : ['l1', 'l4']\n"
+        " Expected : ['l1', 'l2']"
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster._create_train_X_y(series=new_series)
@@ -74,8 +75,8 @@ def test_create_train_X_y_ValueError_when_Forecaster_fitted_without_exog_and_exo
     exog = pd.Series(np.arange(10), name='exog')
 
     err_msg = re.escape(
-        ("Once the Forecaster has been trained, `exog` must be `None` "
-         "because no exogenous variables were added during training.")
+        "Once the Forecaster has been trained, `exog` must be `None` "
+        "because no exogenous variables were added during training."
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster._create_train_X_y(series=series, exog=exog)
@@ -98,10 +99,10 @@ def test_create_train_X_y_ValueError_when_Forecaster_fitted_and_different_exog_c
     new_exog = pd.Series(np.arange(10), name='exog2')
 
     err_msg = re.escape(
-        ("Once the Forecaster has been trained, `exog` must contain "
-         "the same exogenous variables as those used during training:\n" 
-         " Got      : ['exog2']\n"
-         " Expected : ['exog']")
+        "Once the Forecaster has been trained, `exog` must contain "
+        "the same exogenous variables as those used during training:\n" 
+        " Got      : ['exog2']\n"
+        " Expected : ['exog']"
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster._create_train_X_y(series=series, exog=new_exog)
@@ -305,7 +306,7 @@ def test_create_train_X_y_output_when_series_and_exog_no_pandas_index():
         ['exog'],
         None,
         ['exog'],
-        {'exog': exog.dtypes},
+        {'exog': np.dtype('float')},
         {'l1': pd.Series(
                    data  = np.array([5., 6., 7., 8., 9.]),
                    index = pd.RangeIndex(start=5, stop=10, step=1),
@@ -360,7 +361,7 @@ def test_create_train_X_y_output_when_series_and_exog_no_pandas_index_ordinal_en
                  )
     
     warn_msg = re.escape(
-        ("Series {'l3'} are not present in `series`. No last window is stored for them.")
+        "Series {'l3'} are not present in `series`. No last window is stored for them."
     )
     with pytest.warns(IgnoredArgumentWarning, match = warn_msg): 
         results = forecaster._create_train_X_y(series=series, exog=exog,
@@ -395,7 +396,7 @@ def test_create_train_X_y_output_when_series_and_exog_no_pandas_index_ordinal_en
         ['exog'],
         None,
         ['exog'],
-        {'exog': exog.dtypes},
+        {'exog': np.dtype('float')},
         {'l1': pd.Series(
                    data  = np.array([5., 6., 7., 8., 9.]),
                    index = pd.RangeIndex(start=5, stop=10, step=1),
@@ -473,7 +474,7 @@ def test_create_train_X_y_output_when_series_10_and_exog_is_series_of_float_int(
         ['exog'],
         None,
         ['exog'],
-        {'exog': exog.dtypes},
+        {'exog': np.dtype(dtype)},
         {'1': pd.Series(
                   data  = np.array([5., 6., 7., 8., 9.]),
                   index = pd.RangeIndex(start=5, stop=10, step=1),
@@ -516,7 +517,7 @@ def test_create_train_X_y_output_when_series_10_and_exog_is_dataframe_of_float_i
                                               transformer_series=None)
     
     warn_msg = re.escape(
-        ("Series {'3'} are not present in `series`. No last window is stored for them.")
+        "Series {'3'} are not present in `series`. No last window is stored for them."
     )
     with pytest.warns(IgnoredArgumentWarning, match = warn_msg):
         results = forecaster._create_train_X_y(series=series, exog=exog,
@@ -556,7 +557,7 @@ def test_create_train_X_y_output_when_series_10_and_exog_is_dataframe_of_float_i
         ['exog_1', 'exog_2'],
         None,
         ['exog_1', 'exog_2'],
-        {'exog_1': exog['exog_1'].dtypes, 'exog_2': exog['exog_2'].dtypes},
+        {'exog_1': np.dtype(dtype), 'exog_2': np.dtype(dtype)},
         None
     )
 
@@ -587,9 +588,9 @@ def test_create_train_X_y_output_when_series_10_and_exog_is_series_of_bool_str(e
                            'l2': pd.Series(np.arange(10, dtype=float))})
     exog = pd.Series(exog_values * 10, name='exog', dtype=dtype)
 
-    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=5,
-                                              encoding='onehot',
-                                              transformer_series=None)
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=5, encoding='onehot', transformer_series=None
+    )
     results = forecaster._create_train_X_y(series=series, exog=exog,
                                            store_last_window=False)
 
@@ -627,7 +628,7 @@ def test_create_train_X_y_output_when_series_10_and_exog_is_series_of_bool_str(e
         ['exog'],
         None,
         ['exog'],
-        {'exog': exog.dtypes},
+        {'exog': np.dtype(dtype)} if dtype is bool else {'exog': np.dtype('O')},
         None
     )
 
@@ -701,7 +702,9 @@ def test_create_train_X_y_output_when_series_10_and_exog_is_dataframe_of_bool_st
         ['exog_1', 'exog_2'],
         None,
         ['exog_1', 'exog_2'],
-        {'exog_1': exog['exog_1'].dtypes, 'exog_2': exog['exog_2'].dtypes},
+        ({'exog_1': np.dtype(dtype), 'exog_2': np.dtype(dtype)} 
+         if dtype is bool 
+         else {'exog_1': np.dtype('O'), 'exog_2': np.dtype('O')}),
         None
     )
 
@@ -749,9 +752,9 @@ def test_create_train_X_y_output_when_series_10_and_exog_is_series_of_category()
             index   = pd.Index([5, 6, 7, 8, 9, 5, 6, 7, 8, 9]),
             columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5']
         ).assign(
-            l1   = [1.]*5 + [0.]*5, 
-            l2   = [0.]*5 + [1.]*5,
-            exog = pd.Categorical([5, 6, 7, 8, 9]*2, categories=range(10))
+            l1   = [1.] * 5 + [0.] * 5, 
+            l2   = [0.] * 5 + [1.] * 5,
+            exog = pd.Categorical([5, 6, 7, 8, 9] * 2, categories=range(10))
         ).astype({'l1': int, 'l2': int}
         ),
         pd.Series(
@@ -767,7 +770,7 @@ def test_create_train_X_y_output_when_series_10_and_exog_is_series_of_category()
         ['exog'],
         None,
         ['exog'],
-        {'exog': exog.dtypes},
+        {'exog': pd.CategoricalDtype(categories=range(10))},
         None
     )
 
@@ -835,7 +838,8 @@ def test_create_train_X_y_output_when_series_10_and_exog_is_dataframe_of_categor
         ['exog_1', 'exog_2'],
         None,
         ['exog_1', 'exog_2'],
-        {'exog_1': exog['exog_1'].dtypes, 'exog_2': exog['exog_2'].dtypes},
+        {'exog_1': pd.CategoricalDtype(categories=range(10)), 
+         'exog_2': pd.CategoricalDtype(categories=range(100, 110))},
         None
     )
 
@@ -905,10 +909,11 @@ def test_create_train_X_y_output_when_series_10_and_exog_is_dataframe_of_float_i
         ['exog_1', 'exog_2', 'exog_3'],
         None,
         ['exog_1', 'exog_2', 'exog_3'],
-        {'exog_1': exog['exog_1'].dtypes, 
-         'exog_2': exog['exog_2'].dtypes,
-         'exog_3': exog['exog_3'].dtypes},
-         None
+        {'exog_1': np.dtype('float'), 
+         'exog_2': np.dtype('int'), 
+         'exog_3': pd.CategoricalDtype(categories=range(100, 110))
+        },
+        None
     )
 
     pd.testing.assert_frame_equal(results[0], expected[0])
@@ -987,8 +992,7 @@ def test_create_train_X_y_output_when_series_and_exog_is_dataframe_datetime_inde
         ['exog_1', 'exog_2'],
         None,
         ['exog_1', 'exog_2'],
-        {'exog_1': exog['exog_1'].dtypes, 
-         'exog_2': exog['exog_2'].dtypes},
+        {'exog_1': np.dtype('float'), 'exog_2': np.dtype('float')},
         {'1': pd.Series(
                   data  = np.array([4., 5., 6.]),
                   index = pd.date_range("1990-01-05", periods=3, freq='D'),
@@ -1238,8 +1242,7 @@ def test_create_train_X_y_output_when_transformer_series_and_transformer_exog(tr
         ['exog_1', 'exog_2'],
         None,
         ['exog_1', 'exog_2_a', 'exog_2_b'],
-        {'exog_1': exog['exog_1'].dtypes, 
-         'exog_2': exog['exog_2'].dtypes},
+        {'exog_1': np.dtype('float'), 'exog_2': np.dtype('O')},
         {'1': pd.Series(
                   data  = np.array([7., 8., 9.]),
                   index = pd.date_range("1990-01-08", periods=3, freq='D'),
@@ -1286,7 +1289,7 @@ def test_create_train_X_y_output_when_series_different_length_and_exog_is_datafr
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=5,
                                               encoding='onehot',
                                               transformer_series=None)
-    results = forecaster._create_train_X_y(series=series, exog=exog)   
+    results = forecaster._create_train_X_y(series=series, exog=exog)
 
     expected = (
         pd.DataFrame(
@@ -1331,9 +1334,10 @@ def test_create_train_X_y_output_when_series_different_length_and_exog_is_datafr
         ['exog_1', 'exog_2', 'exog_3'],
         None,
         ['exog_1', 'exog_2', 'exog_3'],
-        {'exog_1': exog['exog_1'].dtypes, 
-         'exog_2': exog['exog_2'].dtypes,
-         'exog_3': exog['exog_3'].dtypes},
+        {'exog_1': np.dtype('float'), 
+         'exog_2': np.dtype('int'), 
+         'exog_3': pd.CategoricalDtype(categories=range(100, 110))
+        },
         {'l1': pd.Series(
                    data  = np.array([5., 6., 7., 8., 9.]),
                    index = pd.date_range("1990-01-06", periods=5, freq='D'),
@@ -1451,8 +1455,7 @@ def test_create_train_X_y_output_when_transformer_series_and_transformer_exog_wi
         ['exog_1', 'exog_2'],
         None,
         ['exog_1', 'exog_2_a', 'exog_2_b'],
-        {'exog_1': exog['exog_1'].dtypes, 
-         'exog_2': exog['exog_2'].dtypes},
+        {'exog_1': np.dtype('float'), 'exog_2': np.dtype('O')},
          None
     )
 
@@ -1523,7 +1526,7 @@ def test_create_train_X_y_output_series_DataFrame_and_NaNs_in_y_train():
         ['exog'],
         None,
         ['exog'],
-        {'exog': exog.dtypes},
+        {'exog': np.dtype('float')},
         {'l1': pd.Series(
                    data  = np.array([np.nan, 6., 7., 8., 9.]),
                    index = pd.RangeIndex(start=5, stop=10, step=1),
@@ -1619,7 +1622,7 @@ def test_create_train_X_y_output_series_DataFrame_and_NaNs_in_y_train_datetime()
         ['exog'],
         None,
         ['exog'],
-        {'exog': exog.dtypes},
+        {'exog': np.dtype('float')},
         {'l1': pd.Series(
                    data  = np.array([np.nan, 6., 7., 8., 9.]),
                    index = pd.date_range("1990-01-06", periods=5, freq='D'),
@@ -1700,7 +1703,7 @@ def test_create_train_X_y_output_series_DataFrame_and_NaNs_in_X_train_drop_nan_T
         ['exog'],
         None,
         ['exog'],
-        {'exog': exog.dtypes},
+        {'exog': np.dtype('float')},
         {'l1': pd.Series(
                    data  = np.array([5, 6., 7., 8., 9.]),
                    index = pd.RangeIndex(start=5, stop=10, step=1),
@@ -1794,7 +1797,7 @@ def test_create_train_X_y_output_series_DataFrame_and_NaNs_in_X_train_drop_nan_T
         ['exog'],
         None,
         ['exog'],
-        {'exog': exog.dtypes},
+        {'exog': np.dtype('float')},
         {'l1': pd.Series(
                    data  = np.array([5., 6., 7., 8., 9.]),
                    index = pd.date_range("1990-01-06", periods=5, freq='D'),
@@ -1878,7 +1881,7 @@ def test_create_train_X_y_output_series_DataFrame_and_NaNs_in_X_train_drop_nan_F
         ['exog'],
         None,
         ['exog'],
-        {'exog': exog.dtypes},
+        {'exog': np.dtype('float')},
         {'l1': pd.Series(
                    data  = np.array([5., 6., 7., 8., 9.]),
                    index = pd.RangeIndex(start=5, stop=10, step=1),
@@ -2029,8 +2032,8 @@ def test_ValueError_create_train_X_series_DataFrame_exog_dict_and_empty_X_train_
                                               dropna_from_series=True)
     
     error_msg = re.escape(
-        ("All samples have been removed due to NaNs. Set "
-         "`forecaster.dropna_from_series = False` or review `exog` values.")
+        "All samples have been removed due to NaNs. Set "
+        "`forecaster.dropna_from_series = False` or review `exog` values."
     )
     with pytest.raises(ValueError, match = error_msg):
         forecaster._create_train_X_y(series=series, exog=exog_dict)
@@ -2115,8 +2118,7 @@ def test_create_train_X_y_output_series_dict_and_exog_dict():
         ['exog_1', 'exog_2'],
         None,
         ['exog_1', 'exog_2'],
-        {'exog_1': exog['l1'].dtypes,
-         'exog_2': exog['l3'].dtypes},
+        {'exog_1': np.dtype('float'), 'exog_2': np.dtype('O')},
         {'l1': pd.Series(
                    data  = np.array([7., 8., 9.]),
                    index = pd.date_range("1990-01-08", periods=3, freq='D'),
@@ -2277,7 +2279,7 @@ def test_create_train_X_y_output_series_dict_and_exog_dict_ordinal_encoding(
         ["exog_1", "exog_2"],
         None,
         ['exog_1', 'exog_2'],
-        {"exog_1": exog["l1"].dtypes, "exog_2": exog["l3"].dtypes},
+        {'exog_1': np.dtype('float'), 'exog_2': np.dtype('O')},
         {
             "l1": pd.Series(
                 data=np.array([7.0, 8.0, 9.0]),
@@ -2341,7 +2343,10 @@ def test_create_train_X_y_encoding_mapping(encoding, encoding_mapping_):
 @pytest.mark.parametrize("fit_forecaster", 
                          [True, False], 
                          ids = lambda is_fitted: f'fit_forecaster: {is_fitted}')
-def test_create_train_X_y_output_when_series_and_exog_and_differentitation_1_and_already_trained(fit_forecaster):
+@pytest.mark.parametrize("differentiation", 
+                         [1, {'l1': 1, 'l2': 1, 'l3': 1, '_unknown_level': 1}], 
+                         ids = lambda diff: f'differentiation: {diff}')
+def test_create_train_X_y_output_when_series_and_differentiation_1_and_already_trained(fit_forecaster, differentiation):
     """
     Test the output of _create_train_X_y when differentiation=1 and already 
     trained forecaster.
@@ -2355,10 +2360,10 @@ def test_create_train_X_y_output_when_series_and_exog_and_differentitation_1_and
     series["l2"].index = pd.date_range("1990-01-05", periods=5, freq="D")
     series["l3"].index = pd.date_range("1990-01-03", periods=5, freq="D")
     
-    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3,
-                                              encoding           = 'ordinal',
-                                              transformer_series = StandardScaler(),
-                                              differentiation    = 1)
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=3, encoding='ordinal',
+        transformer_series=StandardScaler(), differentiation=differentiation
+    )
     
     if fit_forecaster:
         forecaster.fit(series=series)
@@ -2447,7 +2452,7 @@ def test_create_train_X_y_output_when_series_and_exog_and_differentitation_1_and
 @pytest.mark.parametrize("fit_forecaster", 
                          [True, False], 
                          ids = lambda is_fitted: f'fit_forecaster: {is_fitted}')
-def test_create_train_X_y_output_when_series_and_exog_and_already_trained_encoding_None(fit_forecaster):
+def test_create_train_X_y_output_when_series_and_already_trained_encoding_None(fit_forecaster):
     """
     Test the output of _create_train_X_y when encoding None and already 
     trained forecaster.
@@ -2557,7 +2562,7 @@ def test_create_train_X_y_output_when_series_and_exog_and_already_trained_encodi
 @pytest.mark.parametrize("fit_forecaster", 
                          [True, False], 
                          ids = lambda is_fitted: f'fit_forecaster: {is_fitted}')
-def test_create_train_X_y_output_when_series_and_exog_and_differentitation_1_and_already_trained_encoding_None(fit_forecaster):
+def test_create_train_X_y_output_when_series_and_differentiation_1_and_already_trained_encoding_None(fit_forecaster):
     """
     Test the output of _create_train_X_y when differentiation=1,
     encoding None and already trained forecaster.
@@ -2571,10 +2576,10 @@ def test_create_train_X_y_output_when_series_and_exog_and_differentitation_1_and
     series["l2"].index = pd.date_range("1990-01-05", periods=5, freq="D")
     series["l3"].index = pd.date_range("1990-01-03", periods=5, freq="D")
     
-    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3,
-                                              encoding           = None,
-                                              transformer_series = StandardScaler(),
-                                              differentiation    = 1)
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=3, encoding=None,
+        transformer_series=StandardScaler(), differentiation=1
+    )
     
     if fit_forecaster:
         forecaster.fit(series=series)
@@ -2742,8 +2747,7 @@ def test_create_train_X_y_output_series_dict_and_exog_dict_window_features():
         ['exog_1', 'exog_2'],
         ['roll_mean_3', 'roll_median_3', 'roll_sum_4'],
         ['exog_1', 'exog_2'],
-        {'exog_1': exog['l1'].dtypes,
-         'exog_2': exog['l3'].dtypes},
+        {'exog_1': np.dtype('float'), 'exog_2': np.dtype('O')},
         {'l1': pd.Series(
                    data  = np.array([6., 7., 8., 9.]),
                    index = pd.date_range("1990-01-07", periods=4, freq='D'),
@@ -2839,7 +2843,7 @@ def test_create_train_X_y_output_when_series_and_exog_with_window_features_no_la
         ['exog'],
         ['roll_mean_3', 'roll_median_5', 'roll_sum_4'],
         ['exog'],
-        {'exog': exog.dtypes},
+        {'exog': np.dtype('float')},
         {'l1': pd.Series(
                    data  = np.array([5., 6., 7., 8., 9.]),
                    index = pd.date_range("1990-01-06", periods=5, freq='D'),
@@ -2850,6 +2854,125 @@ def test_create_train_X_y_output_when_series_and_exog_with_window_features_no_la
                    data  = np.array([15., 16., 17., 18., 19.]),
                    index = pd.date_range("1990-01-06", periods=5, freq='D'),
                    name  = 'l2',
+                   dtype = float
+               )
+        }
+    )
+
+    pd.testing.assert_frame_equal(results[0], expected[0])
+    pd.testing.assert_series_equal(results[1], expected[1])
+    for k in results[2].keys():
+        pd.testing.assert_index_equal(results[2][k], expected[2][k])
+    assert results[3] == expected[3]
+    assert results[4] == expected[4]
+    assert results[5] == expected[5]
+    assert results[6] == expected[6]
+    assert results[7] == expected[7]
+    for k in results[8].keys():
+        assert results[8][k] == expected[8][k]
+    for k in results[9].keys():
+        pd.testing.assert_series_equal(results[9][k], expected[9][k])
+
+
+@pytest.mark.parametrize("fit_forecaster", 
+                         [True, False], 
+                         ids = lambda is_fitted: f'fit_forecaster: {is_fitted}')
+@pytest.mark.parametrize("differentiation", 
+                         [{'l1': 1, 'l2': 2, 'l3': None, '_unknown_level': 1}, 
+                          {'l1': 1, 'l2': 2, '_unknown_level': 1}], 
+                         ids = lambda diff: f'differentiation: {diff}')
+def test_create_train_X_y_output_when_series_and_exog_and_differentiation_dict_and_already_trained(fit_forecaster, differentiation):
+    """
+    Test the output of _create_train_X_y when differentiation=1,
+    encoding 'ordinal' and already trained forecaster.
+    """
+    series = {
+        "l1": pd.Series(np.array([14,  2, 85, 92, 77, 91, 63, 96, 11, 53], dtype=float)),
+        "l2": pd.Series(np.array([16, 23, 98, 76, 75,  9, 23], dtype=float)),
+        "l3": pd.Series(np.array([92,  2, 76, 94, 88, 10, 63], dtype=float)),
+    }
+    series["l1"].index = pd.date_range("1990-01-01", periods=10, freq="D")
+    series["l2"].index = pd.date_range("1990-01-05", periods=7, freq="D")
+    series["l3"].index = pd.date_range("1990-01-03", periods=7, freq="D")
+    
+    exog = {
+        "l1": pd.Series(np.arange(100, 110), name="exog_1", dtype=float),
+        "l3": pd.DataFrame(
+            {"exog_1": np.arange(203, 210, dtype=float), 
+             "exog_2": np.arange(303, 310, dtype=float)}
+        ),
+    }
+    exog["l1"].index = pd.date_range("1990-01-01", periods=10, freq="D")
+    exog["l3"].index = pd.date_range("1990-01-03", periods=7, freq="D")
+
+    window_features = RollingFeatures(stats='mean', window_sizes=4)
+    forecaster = ForecasterRecursiveMultiSeries(
+        LGBMRegressor(verbose=-1, random_state=123), lags=3, 
+        encoding='ordinal', window_features=window_features,
+        transformer_series=None, differentiation=differentiation
+    )
+    
+    if fit_forecaster:
+        forecaster.fit(series=series, exog=exog)
+
+    results = forecaster._create_train_X_y(series=series, exog=exog)
+
+    expected = (
+        pd.DataFrame(
+            data = np.array([[ 14., -15.,   7.,  22.25, 0., 106.  , np.nan],
+                             [-28.,  14., -15.,  -5.5 , 0., 107.  , np.nan],
+                             [ 33., -28.,  14.,   1.  , 0., 108.  , np.nan],
+                             [-85.,  33., -28., -16.5 , 0., 109.  , np.nan],
+                             [-65.,  21., -97., -18.25, 1., np.nan, np.nan],
+                             [ 10.,  88.,  94.,  67.  , 2., 209.  , 309.  ]]),
+            index   = pd.Index(
+                          pd.DatetimeIndex(
+                              ['1990-01-07', '1990-01-08', '1990-01-09', '1990-01-10',
+                               '1990-01-11', 
+                               '1990-01-09']
+                          )
+                      ),
+            columns = ['lag_1', 'lag_2', 'lag_3', 'roll_mean_4', 
+                       '_level_skforecast', 'exog_1', 'exog_2']
+        ).astype({'_level_skforecast': int}
+        ),
+        pd.Series(
+            data  = np.array([-28., 33., -85., 42., 80., 63.]),
+            index = pd.Index(
+                        pd.DatetimeIndex(
+                            ['1990-01-07', '1990-01-08', '1990-01-09', '1990-01-10',
+                             '1990-01-11', 
+                             '1990-01-09']
+                        )
+                    ),
+            name  = 'y',
+            dtype = float
+        ),
+        {'l1': pd.date_range("1990-01-01", periods=10, freq='D'),
+         'l2': pd.date_range("1990-01-05", periods=7, freq='D'),
+         'l3': pd.date_range("1990-01-03", periods=7, freq='D')},
+        ['l1', 'l2', 'l3'],
+        ['l1', 'l2', 'l3'],
+        ['exog_1', 'exog_2'],
+        ['roll_mean_4'],
+        ['exog_1', 'exog_2'],
+        {'exog_1': np.dtype('float'), 'exog_2': np.dtype('float')},
+        {'l1': pd.Series(
+                   data  = np.array([77, 91, 63, 96, 11, 53]),
+                   index = pd.date_range("1990-01-05", periods=6, freq='D'),
+                   name  = 'l1',
+                   dtype = float
+               ),
+         'l2': pd.Series(
+                   data  = np.array([23, 98, 76, 75,  9, 23]),
+                   index = pd.date_range("1990-01-06", periods=6, freq='D'),
+                   name  = 'l2',
+                   dtype = float
+               ),
+         'l3': pd.Series(
+                   data  = np.array([2, 76, 94, 88, 10, 63]),
+                   index = pd.date_range("1990-01-04", periods=6, freq='D'),
+                   name  = 'l3',
                    dtype = float
                )
         }

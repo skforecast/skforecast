@@ -20,6 +20,7 @@ from ....recursive import ForecasterRecursiveMultiSeries
 from .fixtures_forecaster_recursive_multiseries import series
 from .fixtures_forecaster_recursive_multiseries import exog
 from .fixtures_forecaster_recursive_multiseries import exog_predict
+from .fixtures_forecaster_recursive_multiseries import expected_df_to_long_format
 
 transformer_exog = ColumnTransformer(
                        [('scale', StandardScaler(), ['exog_1']),
@@ -36,8 +37,8 @@ def test_predict_bootstrapping_NotFittedError_when_fitted_is_False():
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=5)
 
     err_msg = re.escape(
-        ("This Forecaster instance is not fitted yet. Call `fit` with "
-         "appropriate arguments before using predict.")
+        "This Forecaster instance is not fitted yet. Call `fit` with "
+        "appropriate arguments before using predict."
     )
     with pytest.raises(NotFittedError, match = err_msg):
         forecaster.predict_bootstrapping(steps=1, levels=None)
@@ -48,15 +49,19 @@ def test_predict_bootstrapping_IgnoredArgumentWarning_when_not_available_self_la
     Test IgnoredArgumentWarning is raised when last_window is not available for 
     levels because it was not stored during fit.
     """
-    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3,
-                                              transformer_series=None)
-    forecaster.fit(series=series, exog=exog['exog_1'], store_last_window=['1'])
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=3, transformer_series=None
+    )
+    forecaster.fit(
+        series=series, exog=exog['exog_1'], 
+        store_last_window=['1'], store_in_sample_residuals=True
+    )
 
     warn_msg = re.escape(
-        ("Levels {'2'} are excluded from prediction "
-         "since they were not stored in `last_window_` attribute "
-         "during training. If you don't want to retrain the "
-         "Forecaster, provide `last_window` as argument.")
+        "Levels {'2'} are excluded from prediction "
+        "since they were not stored in `last_window_` attribute "
+        "during training. If you don't want to retrain the "
+        "Forecaster, provide `last_window` as argument."
     )
     with pytest.warns(IgnoredArgumentWarning, match = warn_msg):
         results = forecaster.predict_bootstrapping(
@@ -64,18 +69,20 @@ def test_predict_bootstrapping_IgnoredArgumentWarning_when_not_available_self_la
                       levels                  = ['1', '2'],
                       n_boot                  = 4, 
                       exog                    = exog_predict['exog_1'], 
-                      use_in_sample_residuals = True
+                      use_in_sample_residuals = True,
+                      use_binned_residuals    = False
                   )
 
-    expected_1 = pd.DataFrame(
-                     data    = np.array([[0.48128438, 0.20172898, 0.07381993, 0.38819631]]),
-                     columns = [f"pred_boot_{i}" for i in range(4)],
-                     index   = pd.RangeIndex(start=50, stop=51)
-                 )
+    expected = {
+        '1': pd.DataFrame(
+                 data    = np.array([[0.48128438, 0.20172898, 0.07381993, 0.38819631]]),
+                 columns = [f"pred_boot_{i}" for i in range(4)],
+                 index   = pd.RangeIndex(start=50, stop=51)
+             )
+    }
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
 
-    expected = {'1': expected_1}
-
-    pd.testing.assert_frame_equal(results['1'], expected['1'])
+    pd.testing.assert_frame_equal(results, expected)
 
 
 @pytest.mark.parametrize("store_last_window",
@@ -90,9 +97,9 @@ def test_predict_bootstrapping_ValueError_when_not_available_self_last_window_fo
     forecaster.fit(series=series, store_last_window=store_last_window)
 
     err_msg = re.escape(
-        ("No series to predict. None of the series {'2'} are present in "
-         "`last_window_` attribute. Provide `last_window` as argument "
-         "in predict method.")
+        "No series to predict. None of the series {'2'} are present in "
+        "`last_window_` attribute. Provide `last_window` as argument "
+        "in predict method."
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster.predict_bootstrapping(steps=5, levels=['2'], last_window=None)
@@ -120,15 +127,16 @@ def test_predict_bootstrapping_IgnoredArgumentWarning_when_levels_is_list_and_di
     }
     exog_2_pred['1'].index = pd.date_range(start='2020-02-20', periods=50)
 
-    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3,
-                                              transformer_series=None)
-    forecaster.fit(series=series_2, exog=exog_2)
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=3, transformer_series=None
+    )
+    forecaster.fit(series=series_2, exog=exog_2, store_in_sample_residuals=True)
 
     warn_msg = re.escape(
-        ("Only series whose last window ends at the same index "
-         "can be predicted together. Series that do not reach the "
-         "maximum index, '2020-02-19 00:00:00', are excluded "
-         "from prediction: {'2'}.")
+        "Only series whose last window ends at the same index "
+        "can be predicted together. Series that do not reach the "
+        "maximum index, '2020-02-19 00:00:00', are excluded "
+        "from prediction: {'2'}."
     )
     with pytest.warns(IgnoredArgumentWarning, match = warn_msg):
         results = forecaster.predict_bootstrapping(
@@ -136,19 +144,20 @@ def test_predict_bootstrapping_IgnoredArgumentWarning_when_levels_is_list_and_di
                       levels                  = ['1', '2'],
                       n_boot                  = 4, 
                       exog                    = exog_2_pred, 
-                      use_in_sample_residuals = True
+                      use_in_sample_residuals = True,
+                      use_binned_residuals    = False
                   )
 
     expected = {
         '1': pd.DataFrame(
                  data    = np.array([[0.47931483, 0.21880114, 0.10692630, 0.42510201]]),
                  columns = [f"pred_boot_{i}" for i in range(4)],
-                 index   = pd.date_range(start='2020-02-20', periods=1)
+                 index   = pd.date_range(start='2020-02-20', periods=1, freq=None)
              )
     }
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
 
-    for k in results.keys():
-        pd.testing.assert_frame_equal(results[k], expected[k])
+    pd.testing.assert_frame_equal(results, expected)
 
 
 def test_predict_bootstrapping_UnknownLevelWarning_when_not_in_sample_residuals_for_level():
@@ -159,14 +168,14 @@ def test_predict_bootstrapping_UnknownLevelWarning_when_not_in_sample_residuals_
     forecaster = ForecasterRecursiveMultiSeries(
         LGBMRegressor(verbose=-1), lags=3, encoding='ordinal'
     )
-    forecaster.fit(series=series)
+    forecaster.fit(series=series, store_in_sample_residuals=True)
     last_window = pd.DataFrame(forecaster.last_window_)
     last_window['3'] = last_window['1']
 
     warn_msg = re.escape(
-        ("`levels` {'3'} were not included in training. "
-         "Unknown levels are encoded as NaN, which may cause the "
-         "prediction to fail if the regressor does not accept NaN values.")
+        "`levels` {'3'} were not included in training. "
+        "Unknown levels are encoded as NaN, which may cause the "
+        "prediction to fail if the regressor does not accept NaN values."
     )
     with pytest.warns(UnknownLevelWarning, match = warn_msg):
         results = forecaster.predict_bootstrapping(
@@ -174,14 +183,15 @@ def test_predict_bootstrapping_UnknownLevelWarning_when_not_in_sample_residuals_
                       levels                  = ['1', '2', '3'],
                       last_window             = last_window,
                       n_boot                  = 4,
-                      use_in_sample_residuals = True
+                      use_in_sample_residuals = True,
+                      use_binned_residuals    = False
                   )
 
     warn_msg = re.escape(
-        ("`levels` {'3'} are not present in `forecaster.in_sample_residuals_`, "
-         "most likely because they were not present in the training data. "
-         "A random sample of the residuals from other levels will be used. "
-         "This can lead to inaccurate intervals for the unknown levels.")
+        "`levels` {'3'} are not present in `forecaster.in_sample_residuals_`, "
+        "most likely because they were not present in the training data. "
+        "A random sample of the residuals from other levels will be used. "
+        "This can lead to inaccurate intervals for the unknown levels."
     )
     with pytest.warns(UnknownLevelWarning, match = warn_msg):
         results = forecaster.predict_bootstrapping(
@@ -189,7 +199,8 @@ def test_predict_bootstrapping_UnknownLevelWarning_when_not_in_sample_residuals_
                       levels                  = ['1', '2', '3'],
                       last_window             = last_window,
                       n_boot                  = 4,
-                      use_in_sample_residuals = True
+                      use_in_sample_residuals = True,
+                      use_binned_residuals    = False
                   )
 
     expected = {
@@ -209,9 +220,9 @@ def test_predict_bootstrapping_UnknownLevelWarning_when_not_in_sample_residuals_
                  index   = pd.RangeIndex(50, 51)
              )
     }
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
 
-    for key in results.keys():
-        pd.testing.assert_frame_equal(results[key], expected[key])
+    pd.testing.assert_frame_equal(results, expected)
 
 
 def test_predict_bootstrapping_encoding_None_unknown_level():
@@ -222,7 +233,7 @@ def test_predict_bootstrapping_encoding_None_unknown_level():
     forecaster = ForecasterRecursiveMultiSeries(
         LGBMRegressor(verbose=-1), lags=3, encoding=None
     )
-    forecaster.fit(series=series)
+    forecaster.fit(series=series, store_in_sample_residuals=True)
     last_window = pd.DataFrame(forecaster.last_window_)
     last_window['3'] = last_window['1']
 
@@ -231,7 +242,8 @@ def test_predict_bootstrapping_encoding_None_unknown_level():
                   levels                  = ['1', '2', '3'],
                   last_window             = last_window,
                   n_boot                  = 4,
-                  use_in_sample_residuals = True
+                  use_in_sample_residuals = True,
+                  use_binned_residuals    = False
               )
 
     expected = {
@@ -251,9 +263,9 @@ def test_predict_bootstrapping_encoding_None_unknown_level():
                  index   = pd.RangeIndex(50, 51)
              )
     }
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
 
-    for key in results.keys():
-        pd.testing.assert_frame_equal(results[key], expected[key])
+    pd.testing.assert_frame_equal(results, expected)
 
 
 def test_predict_bootstrapping_encoding_None_unknown_level_differentiation():
@@ -264,7 +276,7 @@ def test_predict_bootstrapping_encoding_None_unknown_level_differentiation():
     forecaster = ForecasterRecursiveMultiSeries(
         LGBMRegressor(verbose=-1), lags=3, encoding=None, differentiation=1
     )
-    forecaster.fit(series=series)
+    forecaster.fit(series=series, store_in_sample_residuals=True)
     last_window = pd.DataFrame(forecaster.last_window_)
     last_window['3'] = last_window['1'] * 0.9
 
@@ -273,7 +285,8 @@ def test_predict_bootstrapping_encoding_None_unknown_level_differentiation():
                   levels                  = ['1', '2', '3'],
                   last_window             = last_window,
                   n_boot                  = 5,
-                  use_in_sample_residuals = True
+                  use_in_sample_residuals = True,
+                  use_binned_residuals    = False
               )
 
     expected = {
@@ -293,9 +306,9 @@ def test_predict_bootstrapping_encoding_None_unknown_level_differentiation():
                  index   = pd.RangeIndex(50, 51)
              )
     }
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
 
-    for key in results.keys():
-        pd.testing.assert_frame_equal(results[key], expected[key])
+    pd.testing.assert_frame_equal(results, expected)
 
 
 def test_predict_bootstrapping_ValueError_when_out_sample_residuals_is_None():
@@ -304,16 +317,16 @@ def test_predict_bootstrapping_ValueError_when_out_sample_residuals_is_None():
     forecaster.out_sample_residuals_ is None.
     """
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
-    forecaster.fit(series=series)
+    forecaster.fit(series=series, store_in_sample_residuals=True)
 
     err_msg = re.escape(
-        ("`forecaster.out_sample_residuals_` is `None`. Use "
-         "`use_in_sample_residuals=True` or the "
-         "`set_out_sample_residuals()` method before predicting.")
+        "`forecaster.out_sample_residuals_` is either None or empty. Use "
+        "`use_in_sample_residuals = True` or the "
+        "`set_out_sample_residuals()` method before predicting."
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster.predict_bootstrapping(
-            steps=1, levels='1', use_in_sample_residuals=False
+            steps=1, levels='1', use_in_sample_residuals=False, use_binned_residuals=False
         )
 
 
@@ -327,7 +340,7 @@ def test_predict_bootstrapping_UnknownLevelWarning_out_sample_residuals_with_enc
         lags=3, 
         encoding=None
     )
-    forecaster.fit(series=series)
+    forecaster.fit(series=series, store_in_sample_residuals=True)
 
     y_true = {
         '1': np.array([1, 2, 3, 4, 5]), 
@@ -338,8 +351,8 @@ def test_predict_bootstrapping_UnknownLevelWarning_out_sample_residuals_with_enc
         '2': np.array([0, 0, 0, 0, 0])
     }
     warn_msg = re.escape(
-        ("As `encoding` is set to `None`, no distinction between levels "
-         "is made. All residuals are stored in the '_unknown_level' key.")
+        "As `encoding` is set to `None`, no distinction between levels "
+        "is made. All residuals are stored in the '_unknown_level' key."
     )
     with pytest.warns(UnknownLevelWarning, match = warn_msg):
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
@@ -351,7 +364,8 @@ def test_predict_bootstrapping_UnknownLevelWarning_out_sample_residuals_with_enc
                   levels                  = ['1', '2', '3'],
                   last_window             = last_window,
                   n_boot                  = 4,
-                  use_in_sample_residuals = False
+                  use_in_sample_residuals = False,
+                  use_binned_residuals    = False
               )
 
     expected = {
@@ -371,9 +385,9 @@ def test_predict_bootstrapping_UnknownLevelWarning_out_sample_residuals_with_enc
               index   = pd.RangeIndex(50, 51)
           )
     }
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
 
-    for key in results.keys():
-        pd.testing.assert_frame_equal(results[key], expected[key])
+    pd.testing.assert_frame_equal(results, expected)
 
 
 @pytest.mark.parametrize("transformer_series", 
@@ -389,43 +403,44 @@ def test_predict_bootstrapping_ValueError_when_not_level_in_out_sample_residuals
         lags=3,
         transformer_series=transformer_series
     )
-    forecaster.fit(series=series)
+    forecaster.fit(series=series, store_in_sample_residuals=True)
     y_true = {'1': np.array([1, 2, 3, 4, 5])}
     y_pred = {'1': np.array([0, 0, 0, 0, 0])}
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
 
     err_msg = re.escape(
-        "Not available residuals for level '2'. Check `forecaster.out_sample_residuals_`."
+        "Residuals for level '2' are None. Check `forecaster.out_sample_residuals_`."
     )
     with pytest.raises(ValueError, match = err_msg):
-        forecaster.predict_bootstrapping(steps=3, use_in_sample_residuals=False)
+        forecaster.predict_bootstrapping(
+            steps=3, use_in_sample_residuals=False, use_binned_residuals=False
+        )
 
 
 @pytest.mark.parametrize("transformer_series", 
                          [None, StandardScaler()],
                          ids = lambda tr: f'transformer_series type: {type(tr)}')
-def test_predict_bootstrapping_ValueError_when_level_out_sample_residuals_value_contains_None_or_NaNs(transformer_series):
+def test_predict_bootstrapping_ValueError_when_not_level_in_out_sample_residuals_binned_true(transformer_series):
     """
     Test ValueError is raised when use_in_sample_residuals=False and
-    forecaster.out_sample_residuals_ has a level with a None or NaN value.
+    forecaster.out_sample_residuals_ is missing a level.
     """
     forecaster = ForecasterRecursiveMultiSeries(
         LinearRegression(),
         lags=3,
         transformer_series=transformer_series
     )
-    forecaster.fit(series=series)
-    forecaster.out_sample_residuals_ = {
-        '1': np.array([1, 2, 3, 4, 5]),
-        '2': np.array([1, 2, 3, 4, None])
-    }
+    forecaster.fit(series=series, store_in_sample_residuals=True)
+    y_true = {'1': np.array([1, 2, 3, 4, 5])}
+    y_pred = {'1': np.array([0, 0, 0, 0, 0])}
+    forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
 
     err_msg = re.escape(
-        ("forecaster residuals for level '2' contains `None` "
-         "or `NaNs` values. Check `forecaster.out_sample_residuals_`.")
+        "Residuals for level '2' are None. Check `forecaster.out_sample_residuals_by_bin_`."
     )
+
     with pytest.raises(ValueError, match = err_msg):
-        forecaster.predict_bootstrapping(steps=3, use_in_sample_residuals=False)
+        forecaster.predict_bootstrapping(steps=3, use_in_sample_residuals=False, use_binned_residuals=True)
 
 
 def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_steps_is_1_in_sample_residuals_is_True():
@@ -435,12 +450,15 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_s
     """
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3,
                                               transformer_series=None)
-    forecaster.fit(series=series, exog=exog['exog_1'])
+    forecaster.fit(
+        series=series, exog=exog['exog_1'], store_in_sample_residuals=True
+    )
     results = forecaster.predict_bootstrapping(
                   steps                   = 1, 
                   n_boot                  = 4, 
                   exog                    = exog_predict['exog_1'], 
-                  use_in_sample_residuals = True
+                  use_in_sample_residuals = True,
+                  use_binned_residuals    = False
               )
 
     expected_1 = pd.DataFrame(
@@ -455,9 +473,44 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_s
                  )
 
     expected = {'1': expected_1, '2': expected_2}
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
 
-    for key in results.keys():
-        pd.testing.assert_frame_equal(results[key], expected[key])
+    pd.testing.assert_frame_equal(results, expected)
+
+
+def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_steps_is_1_in_sample_residuals_is_True_binned_True():
+    """
+    Test output of predict_bootstrapping when regressor is LinearRegression and
+    1 step ahead is predicted with exog using in-sample residuals.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3,
+                                                transformer_series=None)
+    forecaster.fit(
+        series=series, exog=exog['exog_1'], store_in_sample_residuals=True
+    )
+    results = forecaster.predict_bootstrapping(
+                  steps                   = 1, 
+                  n_boot                  = 4, 
+                  exog                    = exog_predict['exog_1'], 
+                  use_in_sample_residuals = True,
+                  use_binned_residuals    = True
+              )
+
+    expected_1 = pd.DataFrame(
+                        data    = np.array([[0.38187547242082853, 0.4143065346074915, 0.4289575462130275, 0.38187547242082853]]),
+                        columns = [f"pred_boot_{i}" for i in range(4)],
+                        index   = pd.RangeIndex(start=50, stop=51)
+                    )
+    expected_2 = pd.DataFrame(
+                        data    = np.array([[0.6804435739774055, 0.07849209244403665, 0.6804435739774055, 0.07849209244403665]]),
+                        columns = [f"pred_boot_{i}" for i in range(4)],
+                        index   = pd.RangeIndex(start=50, stop=51)
+                    )
+
+    expected = {'1': expected_1, '2': expected_2}
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
+
+    pd.testing.assert_frame_equal(results, expected)
     
     
 def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_steps_is_2_in_sample_residuals_is_True():
@@ -467,12 +520,15 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_s
     """
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3,
                                               transformer_series=None)
-    forecaster.fit(series=series, exog=exog['exog_1'])
+    forecaster.fit(
+        series=series, exog=exog['exog_1'], store_in_sample_residuals=True
+    )
     results = forecaster.predict_bootstrapping(
                   steps                   = 2, 
                   n_boot                  = 4, 
                   exog                    = exog_predict['exog_1'], 
-                  use_in_sample_residuals = True
+                  use_in_sample_residuals = True,
+                  use_binned_residuals    = False
               )
 
     expected_1 = pd.DataFrame(
@@ -489,9 +545,45 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_s
                  )    
 
     expected = {'1': expected_1, '2': expected_2}
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
 
-    for key in results.keys():
-        pd.testing.assert_frame_equal(results[key], expected[key])
+    pd.testing.assert_frame_equal(results, expected)
+
+
+def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_steps_is_2_in_sample_residuals_is_True_binned_True():
+    """
+    Test output of predict_bootstrapping when regressor is LinearRegression and
+    2 steps ahead are predicted with exog using in-sample residuals.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3,
+                                            transformer_series=None)
+    forecaster.fit(
+        series=series, exog=exog['exog_1'], store_in_sample_residuals=True
+    )
+    results = forecaster.predict_bootstrapping(
+                    steps                   = 2, 
+                    n_boot                  = 4, 
+                    exog                    = exog_predict['exog_1'], 
+                    use_in_sample_residuals = True,
+                    use_binned_residuals    = True
+                )
+
+    expected_1 = pd.DataFrame(
+                        data    = np.array([[0.1638659133321268, 0.37782728733797316, 0.38187547242082853, 0.37782728733797316],
+                                            [0.06020908790902979, 0.4944130549880117, 0.4925928380713404, 0.22243700400180003]]),
+                        columns = [f"pred_boot_{i}" for i in range(4)],
+                        index   = pd.RangeIndex(start=50, stop=52)
+                    )
+    expected_2 = pd.DataFrame(
+                        data    = np.array([[0.3180664981712658, 0.6804435739774055, 0.6966346511864026, 0.5723740055300023],
+                                            [0.5805477599371661, 0.68446723113257, 0.7017221250999669, 0.3992856989330053]]),
+                        columns = [f"pred_boot_{i}" for i in range(4)],
+                        index   = pd.RangeIndex(start=50, stop=52)
+                    )    
+
+    expected = {'1': expected_1, '2': expected_2}
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
+    pd.testing.assert_frame_equal(results, expected)
     
     
 def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_steps_is_1_in_sample_residuals_is_False():
@@ -501,13 +593,16 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_s
     """
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3,
                                               transformer_series=None)
-    forecaster.fit(series=series, exog=exog['exog_1'])
+    forecaster.fit(
+        series=series, exog=exog['exog_1'], store_in_sample_residuals=True
+    )
     forecaster.out_sample_residuals_ = forecaster.in_sample_residuals_
     results = forecaster.predict_bootstrapping(
                   steps                   = 1, 
                   n_boot                  = 4, 
                   exog                    = exog_predict['exog_1'], 
                   use_in_sample_residuals = False,
+                  use_binned_residuals    = False,
                   suppress_warnings       = True
               )
 
@@ -523,9 +618,9 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_s
                  )
 
     expected = {'1': expected_1, '2': expected_2}
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
 
-    for key in results.keys():
-        pd.testing.assert_frame_equal(results[key], expected[key])
+    pd.testing.assert_frame_equal(results, expected)
     
     
 def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_steps_is_2_in_sample_residuals_is_False():
@@ -535,13 +630,16 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_s
     """
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3,
                                               transformer_series=None)
-    forecaster.fit(series=series, exog=exog['exog_1'])
+    forecaster.fit(
+        series=series, exog=exog['exog_1'], store_in_sample_residuals=True
+    )
     forecaster.out_sample_residuals_ = forecaster.in_sample_residuals_
     results = forecaster.predict_bootstrapping(
                   steps                   = 2, 
                   n_boot                  = 4, 
                   exog                    = exog_predict['exog_1'], 
-                  use_in_sample_residuals = False
+                  use_in_sample_residuals = False,
+                  use_binned_residuals    = False
               )
     
     expected_1 = pd.DataFrame(
@@ -558,9 +656,46 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_s
                  )    
 
     expected = {'1': expected_1, '2': expected_2}
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
 
-    for key in results.keys():
-        pd.testing.assert_frame_equal(results[key], expected[key])
+    pd.testing.assert_frame_equal(results, expected)
+
+
+def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_steps_is_2_in_sample_residuals_is_False_binned_True():
+    """
+    Test output of predict_bootstrapping when regressor is LinearRegression and
+    2 steps ahead are predicted with exog using out-sample residuals.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3, transformer_series=None)
+    forecaster.fit(
+        series=series, exog=exog['exog_1'], store_in_sample_residuals=True
+    )
+    forecaster.out_sample_residuals_by_bin_ = forecaster.in_sample_residuals_by_bin_
+    results = forecaster.predict_bootstrapping(
+                    steps                   = 2, 
+                    n_boot                  = 4, 
+                    exog                    = exog_predict['exog_1'], 
+                    use_in_sample_residuals = False,
+                    use_binned_residuals    = True,
+                )
+
+    expected_1 = pd.DataFrame(
+                        data    = np.array([[0.1638659133321268, 0.37782728733797316, 0.38187547242082853, 0.37782728733797316],
+                                            [0.06020908790902979, 0.4944130549880117, 0.4925928380713404, 0.22243700400180003]]),
+                        columns = [f"pred_boot_{i}" for i in range(4)],
+                        index   = pd.RangeIndex(start=50, stop=52)
+                    )
+    expected_2 = pd.DataFrame(
+                        data    = np.array([[0.3180664981712658, 0.6804435739774055, 0.6966346511864026, 0.5723740055300023],
+                                            [0.5805477599371661, 0.68446723113257, 0.7017221250999669, 0.3992856989330053]]),
+                        columns = [f"pred_boot_{i}" for i in range(4)],
+                        index   = pd.RangeIndex(start=50, stop=52)
+                    )    
+
+    expected = {'1': expected_1, '2': expected_2}
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
+
+    pd.testing.assert_frame_equal(results, expected)
 
 
 def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_True_exog_and_transformer_fixed_to_zero():
@@ -575,7 +710,7 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_
                      transformer_series = StandardScaler(),
                      transformer_exog   = transformer_exog,
                  )
-    forecaster.fit(series=series, exog=exog)
+    forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
 
     forecaster.in_sample_residuals_['1'] = np.full_like(forecaster.in_sample_residuals_['1'], fill_value=0)
     forecaster.in_sample_residuals_['2'] = np.full_like(forecaster.in_sample_residuals_['2'], fill_value=0)
@@ -583,7 +718,8 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_
                   steps                   = 2, 
                   n_boot                  = 4, 
                   exog                    = exog_predict, 
-                  use_in_sample_residuals = True
+                  use_in_sample_residuals = True,
+                  use_binned_residuals    = False
               )
     
     expected_1 = pd.DataFrame(
@@ -600,9 +736,9 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_
                  )
 
     expected = {'1': expected_1, '2': expected_2}
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
 
-    for key in results.keys():
-        pd.testing.assert_frame_equal(results[key], expected[key])
+    pd.testing.assert_frame_equal(results, expected)
 
 
 def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_True_exog_and_transformer():
@@ -617,12 +753,13 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_
                      transformer_series = StandardScaler(),
                      transformer_exog   = transformer_exog,
                  )
-    forecaster.fit(series=series, exog=exog)
+    forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
     results = forecaster.predict_bootstrapping(
                   steps                   = 2, 
                   n_boot                  = 4, 
                   exog                    = exog_predict, 
-                  use_in_sample_residuals = True
+                  use_in_sample_residuals = True,
+                  use_binned_residuals    = False
               )
     
     expected_1 = pd.DataFrame(
@@ -639,9 +776,9 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_
                  )
 
     expected = {'1': expected_1, '2': expected_2}
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
 
-    for key in results.keys():
-        pd.testing.assert_frame_equal(results[key], expected[key])
+    pd.testing.assert_frame_equal(results, expected)
 
 
 def test_predict_bootstrapping_output_when_window_features():
@@ -665,12 +802,13 @@ def test_predict_bootstrapping_output_when_window_features():
                      transformer_series = StandardScaler(),
                      transformer_exog   = transformer_exog
                  )
-    forecaster.fit(series=series, exog=exog)
+    forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
     results = forecaster.predict_bootstrapping(
                   steps                   = 6, 
                   n_boot                  = 10, 
                   exog                    = exog_predict, 
-                  use_in_sample_residuals = True
+                  use_in_sample_residuals = True,
+                  use_binned_residuals    = False
               )
 
     expected_1 = pd.DataFrame(
@@ -709,12 +847,158 @@ def test_predict_bootstrapping_output_when_window_features():
                  )
 
     expected = {'1': expected_1, '2': expected_2}
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
 
-    for key in results.keys():
-        pd.testing.assert_frame_equal(results[key], expected[key])
+    pd.testing.assert_frame_equal(results, expected)
 
 
-def test_predict_bootstrapping_output_when_differentiation():
+def test_predict_bootstrapping_output_when_window_features_in_sample_residuals_True_binned_True():
+    """
+    Test output of predict_bootstrapping when regressor is LGBMRegressor 
+    and window features.
+    """
+
+    rolling = RollingFeatures(stats=['mean', 'median'], window_sizes=4)
+    transformer_exog = ColumnTransformer(
+                           [('scale', StandardScaler(), ['exog_1']),
+                            ('onehot', OneHotEncoder(), ['exog_2'])],
+                           remainder = 'passthrough',
+                           verbose_feature_names_out = False
+                       )
+    
+    forecaster = ForecasterRecursiveMultiSeries(
+                     regressor          = LGBMRegressor(verbose=-1),
+                     lags               = 5,
+                     window_features    = rolling,
+                     transformer_series = StandardScaler(),
+                     transformer_exog   = transformer_exog
+                 )
+    forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
+    results = forecaster.predict_bootstrapping(
+                  steps                   = 6, 
+                  n_boot                  = 10, 
+                  exog                    = exog_predict, 
+                  use_in_sample_residuals = True,
+                  use_binned_residuals    = True
+              )
+
+    expected_1 = pd.DataFrame(
+                     data = np.array([
+                                [0.61785158, 0.92107198, 0.33846487, 0.61785158, 0.61785158,
+                                0.61785158, 0.33846487, 0.71098463, 0.33846487, 0.61785158],
+                                [0.40203929, 0.51815394, 0.34438401, 0.39861071, 0.39861071,
+                                0.40203929, 0.51861896, 0.51815394, 0.35853838, 0.39861071],
+                                [0.60985531, 0.6193728 , 0.73992069, 0.69381973, 0.69381973,
+                                0.42961981, 0.37331125, 0.69849163, 0.75557212, 0.69381973],
+                                [0.91012366, 0.45240191, 0.91650657, 0.89227671, 0.97437054,
+                                0.96084168, 0.8955076 , 0.5144838 , 0.84243625, 0.86350256],
+                                [0.40947858, 0.53993477, 0.39449316, 0.41415048, 0.4107219 ,
+                                0.31623829, 0.62420462, 0.42565511, 0.49978962, 0.41415048],
+                                [0.39102081, 0.41718334, 0.5183308 , 0.48717554, 0.41773124,
+                                0.33614795, 0.70731688, 0.33183784, 0.73521587, 0.16788473]]),
+                     index   = pd.RangeIndex(start=50, stop=56, step=1),
+                     columns = [f"pred_boot_{i}" for i in range(10)]
+                 )
+    expected_2 = pd.DataFrame(
+                     data = np.array([
+                                [0.96793066,  0.85237552,  0.84549833,  0.85237552,  0.84549833,
+                                0.85237552,  0.84549833,  0.72041578,  0.72041578,  0.84549833],
+                                [0.03862877,  0.22038531, -0.00210693,  0.16960244, -0.00210693,
+                                0.17440366,  0.17440366,  0.22038531, -0.00210693, -0.00210693],
+                                [0.91961227,  0.91961227,  0.91961227,  0.70366831,  0.72180936,
+                                0.54177164,  0.59375641,  0.59375641,  0.72180936,  0.72180936],
+                                [0.66983588,  0.50793921,  0.88577984,  1.00028073,  0.55995266,
+                                0.98041187,  0.66322437,  0.83652287,  0.87764896,  0.88580852],
+                                [0.53785703,  0.66320532,  0.62033826,  0.56929985,  0.86432032,
+                                0.88789079,  0.70306078,  0.55964353,  0.64136831,  0.62033826],
+                                [0.69776045,  0.43383701,  0.30191143,  0.30191143,  0.00903454,
+                                0.68260119,  0.10580831,  0.37015406,  0.67620055,  0.24612479]]),
+                     index   = pd.RangeIndex(start=50, stop=56, step=1),
+                     columns = [f"pred_boot_{i}" for i in range(10)]
+                 )
+
+    expected = {'1': expected_1, '2': expected_2}
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
+
+    pd.testing.assert_frame_equal(results, expected)
+
+
+def test_predict_bootstrapping_output_when_window_features_in_sample_residuals_False_binned_True():
+    """
+    Test output of predict_bootstrapping when regressor is LGBMRegressor 
+    and window features.
+    """
+
+    rolling = RollingFeatures(stats=['mean', 'median'], window_sizes=4)
+    transformer_exog = ColumnTransformer(
+                           [('scale', StandardScaler(), ['exog_1']),
+                            ('onehot', OneHotEncoder(), ['exog_2'])],
+                           remainder = 'passthrough',
+                           verbose_feature_names_out = False
+                       )
+    
+    forecaster = ForecasterRecursiveMultiSeries(
+                     regressor          = LGBMRegressor(verbose=-1),
+                     lags               = 5,
+                     window_features    = rolling,
+                     transformer_series = StandardScaler(),
+                     transformer_exog   = transformer_exog
+                 )
+    forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
+    forecaster.out_sample_residuals_by_bin_ = forecaster.in_sample_residuals_by_bin_
+    results = forecaster.predict_bootstrapping(
+                  steps                   = 6, 
+                  n_boot                  = 10, 
+                  exog                    = exog_predict, 
+                  use_in_sample_residuals = False,
+                  use_binned_residuals    = True
+              )
+
+    expected_1 = pd.DataFrame(
+                     data = np.array([
+                                [0.61785158, 0.92107198, 0.33846487, 0.61785158, 0.61785158,
+                                0.61785158, 0.33846487, 0.71098463, 0.33846487, 0.61785158],
+                                [0.40203929, 0.51815394, 0.34438401, 0.39861071, 0.39861071,
+                                0.40203929, 0.51861896, 0.51815394, 0.35853838, 0.39861071],
+                                [0.60985531, 0.6193728 , 0.73992069, 0.69381973, 0.69381973,
+                                0.42961981, 0.37331125, 0.69849163, 0.75557212, 0.69381973],
+                                [0.91012366, 0.45240191, 0.91650657, 0.89227671, 0.97437054,
+                                0.96084168, 0.8955076 , 0.5144838 , 0.84243625, 0.86350256],
+                                [0.40947858, 0.53993477, 0.39449316, 0.41415048, 0.4107219 ,
+                                0.31623829, 0.62420462, 0.42565511, 0.49978962, 0.41415048],
+                                [0.39102081, 0.41718334, 0.5183308 , 0.48717554, 0.41773124,
+                                0.33614795, 0.70731688, 0.33183784, 0.73521587, 0.16788473]]),
+                     index   = pd.RangeIndex(start=50, stop=56, step=1),
+                     columns = [f"pred_boot_{i}" for i in range(10)]
+                 )
+    expected_2 = pd.DataFrame(
+                     data = np.array([
+                                [0.96793066,  0.85237552,  0.84549833,  0.85237552,  0.84549833,
+                                0.85237552,  0.84549833,  0.72041578,  0.72041578,  0.84549833],
+                                [0.03862877,  0.22038531, -0.00210693,  0.16960244, -0.00210693,
+                                0.17440366,  0.17440366,  0.22038531, -0.00210693, -0.00210693],
+                                [0.91961227,  0.91961227,  0.91961227,  0.70366831,  0.72180936,
+                                0.54177164,  0.59375641,  0.59375641,  0.72180936,  0.72180936],
+                                [0.66983588,  0.50793921,  0.88577984,  1.00028073,  0.55995266,
+                                0.98041187,  0.66322437,  0.83652287,  0.87764896,  0.88580852],
+                                [0.53785703,  0.66320532,  0.62033826,  0.56929985,  0.86432032,
+                                0.88789079,  0.70306078,  0.55964353,  0.64136831,  0.62033826],
+                                [0.69776045,  0.43383701,  0.30191143,  0.30191143,  0.00903454,
+                                0.68260119,  0.10580831,  0.37015406,  0.67620055,  0.24612479]]),
+                     index   = pd.RangeIndex(start=50, stop=56, step=1),
+                     columns = [f"pred_boot_{i}" for i in range(10)]
+                 )
+
+    expected = {'1': expected_1, '2': expected_2}
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
+
+    pd.testing.assert_frame_equal(results, expected)
+
+
+@pytest.mark.parametrize("differentiation", 
+                         [1, {'1': 1, '2': 1, '_unknown_level': 1}], 
+                         ids = lambda diff: f'differentiation: {diff}')
+def test_predict_bootstrapping_output_when_differentiation(differentiation):
     """
     Test output of predict_bootstrapping when regressor is LinearRegression,
     2 steps are predicted, using in-sample residuals, exog is included and both
@@ -725,14 +1009,15 @@ def test_predict_bootstrapping_output_when_differentiation():
                      lags               = 3,
                      transformer_series = StandardScaler(),
                      transformer_exog   = transformer_exog,
-                     differentiation    = 1
+                     differentiation    = differentiation
                  )
-    forecaster.fit(series=series, exog=exog)
+    forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
     results = forecaster.predict_bootstrapping(
                   steps                   = 3, 
                   n_boot                  = 10, 
                   exog                    = exog_predict, 
-                  use_in_sample_residuals = True
+                  use_in_sample_residuals = True,
+                  use_binned_residuals    = False
               )
     
     expected_1 = pd.DataFrame(
@@ -759,6 +1044,60 @@ def test_predict_bootstrapping_output_when_differentiation():
                  )
 
     expected = {'1': expected_1, '2': expected_2}
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
 
-    for key in results.keys():
-        pd.testing.assert_frame_equal(results[key], expected[key])
+    pd.testing.assert_frame_equal(results, expected)
+
+
+@pytest.mark.parametrize("differentiation", 
+                         [1, {'1': 1, '2': 1, '_unknown_level': 1}], 
+                         ids = lambda diff: f'differentiation: {diff}')
+def test_predict_bootstrapping_output_when_differentiation_binned_residuals(differentiation):
+    """
+    Test output of predict_bootstrapping when regressor is LinearRegression,
+    2 steps are predicted, using in-sample residuals, exog is included and both
+    inputs are transformed and differentiation.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     regressor          = LinearRegression(),
+                     lags               = 3,
+                     transformer_series = StandardScaler(),
+                     transformer_exog   = transformer_exog,
+                     differentiation    = differentiation
+                 )
+    forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
+    results = forecaster.predict_bootstrapping(
+                  steps                   = 3, 
+                  n_boot                  = 10, 
+                  exog                    = exog_predict, 
+                  use_in_sample_residuals = True,
+                  use_binned_residuals    = True
+              )
+    
+    expected_1 = pd.DataFrame(
+                     data    = np.array([
+                                    [0.98730031, 1.19824354, 0.98730031, 0.98730031, 1.19824354,
+                                     0.73904951, 1.19824354, 0.98730031, 0.98730031, 0.73904951],
+                                    [0.50637545, 0.72305662, 1.0938956 , 0.59840128, 1.22730591,
+                                     0.85164832, 0.66507416, 1.0938956 , 0.50637545, 0.92247986],
+                                    [0.56426017, 0.62326123, 1.12633254, 0.64332246, 1.04217626,
+                                     0.94487752, 0.91890536, 0.94378655, 0.61066816, 0.66577299]]),
+                     columns = [f"pred_boot_{i}" for i in range(10)],
+                     index   = pd.RangeIndex(start=50, stop=53)
+                 )
+    expected_2 = pd.DataFrame(
+                     data    = np.array([
+                                    [0.43881105,  0.62428333,  0.43881105,  0.57646753,  0.57646753,
+                                     0.18699591,  0.43881105,  0.57646753,  0.43881105,  0.43881105],
+                                    [0.23981471,  0.26830929,  0.37001167,  0.10457883,  0.10457883,
+                                     0.12916674,  0.37001167,  0.10457883,  0.02459525,  0.37001167],
+                                    [0.40779716,  0.23619536,  0.45399604,  0.93833504, -0.22103177,
+                                     0.2059947 ,  0.3523978 ,  0.5755924 , -0.28272742,  0.72638951]]),
+                     columns = [f"pred_boot_{i}" for i in range(10)],
+                     index   = pd.RangeIndex(start=50, stop=53)
+                 )
+
+    expected = {'1': expected_1, '2': expected_2}
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
+
+    pd.testing.assert_frame_equal(results, expected)

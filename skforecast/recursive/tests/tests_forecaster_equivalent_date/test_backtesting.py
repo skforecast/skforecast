@@ -1,5 +1,6 @@
 # Unit test backtesting ForecasterEquivalentDate
 # ==============================================================================
+import pytest
 import numpy as np
 import pandas as pd
 from skforecast.recursive import ForecasterEquivalentDate
@@ -10,7 +11,10 @@ from skforecast.model_selection._split import TimeSeriesFold
 from .fixtures_forecaster_equivalent_date import y
 
 
-def test_backtesting_with_ForecasterEquivalentDate():
+@pytest.mark.parametrize("initial_train_size", 
+                         [len(y) - 20, "2000-01-30 00:00:00"],
+                         ids=lambda init: f'initial_train_size: {init}')
+def test_backtesting_with_ForecasterEquivalentDate(initial_train_size):
     """
     Test backtesting with ForecasterEquivalentDate.
     """
@@ -19,10 +23,10 @@ def test_backtesting_with_ForecasterEquivalentDate():
                      n_offsets = 2 
                  )
     cv = TimeSeriesFold(
-        initial_train_size = 30,
-        steps              = 5,
-        refit              = True,
-    )
+             initial_train_size = initial_train_size,
+             steps              = 5,
+             refit              = True,
+         )
 
     metric, predictions = backtesting_forecaster(
         forecaster = forecaster,

@@ -18,7 +18,7 @@
 - :information_source: [About The Project](#about-the-project)
 - :books: [Documentation](#documentation)
 - :computer: [Installation & Dependencies](#installation--dependencies)
-- :sparkles: [What is new in skforecast 0.14?](#what-is-new-in-skforecast-014)
+- :sparkles: [What is new in skforecast 0.15?](#what-is-new-in-skforecast-015)
 - :crystal_ball: [Forecasters](#forecasters)
 - :mortar_board: [Examples and tutorials](#examples-and-tutorials)
 - :handshake: [How to contribute](#how-to-contribute)
@@ -89,7 +89,7 @@ pip install skforecast
 For more installation options, including dependencies and additional features, check out our [Installation Guide](https://skforecast.org/latest/quick-start/how-to-install.html).
 
 
-# What is new in skforecast 0.14?
+# What is new in skforecast 0.15?
 
 All significant changes to this project are documented in the release file.
 
@@ -179,12 +179,19 @@ View the [citation file](https://github.com/skforecast/skforecast/blob/master/CI
 If you found skforecast useful, you can support us with a donation. Your contribution will help to continue developing and improving this project. Many thanks!
 
 <a href="https://www.buymeacoffee.com/skforecast"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=skforecast&button_colour=f79939&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00" /></a>
-<br>
 
+
+<a href="https://github.com/sponsors/JoaquinAmatRodrigo" target="_blank" title="Become a GitHub Sponsor">
+<img style="margin-bottom: 1em; max-width: 250px;" src="./images/github_sponsor_button.png" alt="Become a GitHub Sponsor">
+</a>  <a href="https://github.com/sponsors/JavierEscobarOrtiz" target="_blank" title="Become a GitHub Sponsor">
+<img style="margin-bottom: 1em; ; max-width: 250px;" src="./images/github_sponsor_button.png" alt="Become a GitHub Sponsor">
+</a>
 
 [![paypal](https://www.paypalobjects.com/en_US/ES/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/donate/?hosted_button_id=D2JZSWRLTZDL6)
 
 
 # License
 
-[BSD-3-Clause License](https://github.com/skforecast/skforecast/blob/master/LICENSE)
+**Skforecast software**: [BSD-3-Clause License](https://github.com/skforecast/skforecast/blob/master/LICENSE)
+
+**Skforecast documentation**: [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)

@@ -55,7 +55,7 @@ def test_predict_3_steps_ahead():
     predictions = forecaster.predict(steps=3)
 
     # Check the shape and values of the predictions
-    assert predictions.shape == (3, 2)
+    assert predictions.shape == (6, 2)
 
 
 # Test case for predicting 2 steps ahead with specific levels
@@ -71,4 +71,4 @@ def test_predict_2_steps_ahead_specific_levels():
     predictions = forecaster.predict(steps=3, levels="1")
 
     # Check the shape and values of the predictions
-    assert predictions.shape == (3, 1)
+    assert predictions.shape == (3, 2)

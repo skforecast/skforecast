@@ -69,38 +69,6 @@ def test_TypeError_evaluate_grid_hyperparameters_multiseries_when_cv_not_valid()
         )
 
 
-def test_TypeError_evaluate_grid_hyperparameters_multiseries_when_forecaster_not_OneStepAhead():
-    """
-    Test TypeError is raised in _evaluate_grid_hyperparameters_multiseries when 
-    forecaster is not allowed to use OneStepAheadFold.
-    """
-    cv_one_step_ahead = OneStepAheadFold(
-            initial_train_size    = 100,
-            return_all_indexes    = False,
-        )
-    
-    class DummyForecaster:
-        pass
-    forecaster = DummyForecaster()
-
-    err_msg = re.escape(
-        f"Only forecasters of type ['ForecasterRecursiveMultiSeries', 'ForecasterDirectMultiVariate'] are allowed "
-        f"when using `cv` of type `OneStepAheadFold`. Got {type(forecaster).__name__}."
-    )
-    with pytest.raises(TypeError, match = err_msg):
-        _evaluate_grid_hyperparameters_multiseries(
-            forecaster         = forecaster,
-            series             = series,
-            cv                 = cv_one_step_ahead,
-            param_grid         = [{'alpha': 0.01}, {'alpha': 0.1}, {'alpha': 1}],
-            metric             = 'mean_absolute_error',
-            levels             = None,
-            lags_grid          = [2, 4],
-            return_best        = True,
-            verbose            = False
-        )
-
-
 def test_ValueError_evaluate_grid_hyperparameters_multiseries_when_return_best_and_len_series_exog_different():
     """
     Test ValueError is raised in _evaluate_grid_hyperparameters_multiseries when 
@@ -1525,7 +1493,7 @@ def test_evaluate_grid_hyperparameters_equivalent_outputs_backtesting_and_one_st
     """
     Test that the output of _evaluate_grid_hyperparameters for backtesting and one-step-ahead
     is equivalent when steps=1 and refit=False.
-    Results are not equivalent if diferentiation is included.
+    Results are not equivalent if differentiation is included.
     """
     series_datetime = series.copy()
     series_datetime.index = pd.date_range(start='2024-01-01', periods=len(series), freq='D')
@@ -1608,7 +1576,7 @@ def test_evaluate_grid_hyperparameters_equivalent_outputs_backtesting_and_one_st
     """
     Test that the output of evaluate_grid_hyperparameters for backtesting and one-step-ahead
     is equivalent when steps=1 and refit=False. Using series and exog as dictionaries.
-    Results are not equivalent if diferentiation is included.
+    Results are not equivalent if differentiation is included.
     ForecasterMultiVariate is not included because it is not possible to use dictionaries
     as input.
     """

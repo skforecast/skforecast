@@ -3,7 +3,7 @@
 import numpy as np
 import pandas as pd
 
-# Fixtures 
+# Fixtures
 # np.random.seed(123)
 # series_1 = np.random.rand(50)
 # series_2 = np.random.rand(50)
@@ -73,3 +73,50 @@ exog_as_dict_datetime['l2'].index = pd.date_range(start='2000-01-01', periods=le
 
 exog_predict = exog.copy()
 exog_predict.index = pd.RangeIndex(start=50, stop=100)
+
+
+def expected_df_to_long_format(
+    df: pd.DataFrame, method: str = "predict"
+) -> pd.DataFrame:
+    """
+    Convert DataFrame with predictions (one column per level) to long format.
+    """
+
+    if method == "predict":
+        df = (
+            df.melt(var_name="level", value_name="pred", ignore_index=False)
+            .reset_index()
+            .sort_values(by=["index", "level"])
+            .set_index("index")
+            .rename_axis(None, axis=0)
+        )
+    elif method == "bootstrapping":
+        df = (
+            pd.concat([value.assign(level=key) for key, value in df.items()])
+            .reset_index()
+            .sort_values(by=["index", "level"])
+            .set_index("index")
+            .rename_axis(None, axis=0)
+        )
+        df = df[
+            ["level"] + [col for col in df.columns if col not in ["level", "index"]]
+        ]
+        if isinstance(df.index, pd.DatetimeIndex) and df.index.freq is not None:
+            df.index.freq = None
+    elif method == "interval":
+        df = df.melt(var_name="level", value_name="pred", ignore_index=False).reset_index()
+        df['level_aux'] = df['level'].str.replace(r'_lower_bound|_upper_bound', '', regex=True)
+        df['bound_type'] = df['level'].str.extract(r'(lower_bound|upper_bound)$', expand=False).fillna('pred')
+
+        df = (
+            df.pivot_table(index=["index", "level_aux"], columns="bound_type", values="pred")
+            .reset_index()
+            .sort_values(by=["index", "level_aux"])
+            .set_index("index")
+            .rename_axis(None, axis=0)
+            .rename_axis(None, axis=1)
+            .rename(columns={"level_aux": "level"})
+            [['level', 'pred', 'lower_bound', 'upper_bound']]
+        )
+
+    return df

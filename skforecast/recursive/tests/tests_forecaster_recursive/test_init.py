@@ -3,7 +3,6 @@
 import re
 import pytest
 import numpy as np
-import pandas as pd
 from sklearn.linear_model import LinearRegression
 from skforecast.preprocessing import RollingFeatures
 from skforecast.recursive import ForecasterRecursive
@@ -96,6 +95,8 @@ def test_init_window_size_is_increased_when_differentiation(dif):
                      differentiation = dif
                  )
     
+    assert forecaster.differentiation == dif
+    assert forecaster.differentiation_max == dif
     assert forecaster.window_size == len(forecaster.lags) + dif
 
 

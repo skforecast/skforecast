@@ -7,7 +7,7 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 - [Recursive multi-step forecasting](../user_guides/autoregresive-forecaster.html)
 - [Direct multi-step forecasting](../user_guides/direct-multi-step-forecasting.html)
 - [ARIMA and SARIMAX forecasting](../user_guides/forecasting-sarimax-arima.html)
-- [Foreasting baseline](../user_guides/forecasting-baseline.html)
+- [Forecasting baseline](../user_guides/forecasting-baseline.html)
 
 <span style="font-size: 1.3em;">Global Forecasters (multiple series)</span>
 
@@ -25,6 +25,7 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 - [Data transformations](../user_guides/sklearn-transformers-and-pipeline.html)
 - [Differentiation](../user_guides/time-series-differentiation.html)
 - [Feature selection](../user_guides/feature-selection.html)
+- [Sktime pipelines](../user_guides/sktime-pipelines.html)
 
 <span style="font-size: 1.3em;">Model Evaluation and Tuning</span>
 
@@ -35,7 +36,13 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 
 <span style="font-size: 1.3em;">Probabilistic Forecasting</span>
 
-- [Probabilistic forecasting](../user_guides/probabilistic-forecasting.html)
+- [Probabilistic forecasting](../user_guides/probabilistic-forecasting-overview.html)
+- [Bootstrapped residuals](../user_guides/probabilistic-forecasting-bootstrapped-residuals.html)
+- [Conformal predictions](../user_guides/probabilistic-forecasting-conformal-prediction.html)
+- [Conformal calibration](../user_guides/probabilistic-forecasting-conformal-calibration.html)
+- [Quantile forecasting](../user_guides/probabilistic-forecasting-quantile-regression.html)
+- [Metrics in probabilistic forecasting](../user_guides/probabilistic-forecasting-metrics.html)
+- [Continuous Ranked Probability Score (CRPS)](../faq/probabilistic-forecasting-crps-score.html)
 
 <span style="font-size: 1.3em;">Model Explainability</span>
 

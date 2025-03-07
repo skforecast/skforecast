@@ -197,23 +197,23 @@ def test_recursive_predict_output_with_binned_residuals():
     rng = np.random.default_rng(12345)
     steps = 10
     forecaster = ForecasterRecursive(LGBMRegressor(verbose=-1), lags=3)
-    forecaster.fit(y=y, exog=exog)
+    forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True)
     last_window_values, exog_values, _, _ = (
         forecaster._create_predict_inputs(steps=steps, exog=exog_predict)
     )
 
     sampled_residuals = {
-                    k: v[rng.integers(low=0, high=len(v), size=steps)]
-                    for k, v in forecaster.in_sample_residuals_by_bin_.items()
-                }
+        k: v[rng.integers(low=0, high=len(v), size=steps)]
+        for k, v in forecaster.in_sample_residuals_by_bin_.items()
+    }
 
     predictions = forecaster._recursive_predict(
-                        steps                = steps,
-                        last_window_values   = last_window_values,
-                        exog_values          = exog_values,
-                        residuals            = sampled_residuals,
-                        use_binned_residuals = True,
-                    )
+                      steps                = steps,
+                      last_window_values   = last_window_values,
+                      exog_values          = exog_values,
+                      residuals            = sampled_residuals,
+                      use_binned_residuals = True,
+                  )
 
     expected = np.array(
         [

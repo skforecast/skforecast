@@ -198,7 +198,7 @@ def test_create_train_X_y_ValueError_when_series_and_exog_have_different_length(
     len_series_no_ws = len(series_index_no_ws)
     err_msg = re.escape(
         f"Length of `exog` must be equal to the length of `series` (if "
-        f"index is fully aligned) or length of `seriesy` - `window_size` "
+        f"index is fully aligned) or length of `series` - `window_size` "
         f"(if `exog` starts after the first `window_size` values).\n"
         f"    `exog`                   : ({exog.index[0]} -- {exog.index[-1]})  (n={len_exog})\n"
         f"    `series`                 : ({series.index[0]} -- {series.index[-1]})  (n={len_series})\n"
@@ -2001,8 +2001,8 @@ def test_create_train_X_y_output_when_y_is_series_exog_is_series_and_differentia
     """
     # Data differentiated
     arr = data.to_numpy(copy=True)
-    diferenciator = TimeSeriesDifferentiator(order=1)
-    arr_diff = diferenciator.fit_transform(arr)
+    differentiator = TimeSeriesDifferentiator(order=1)
+    arr_diff = differentiator.fit_transform(arr)
 
     series = pd.DataFrame(
         {'l1': arr,
@@ -2071,8 +2071,8 @@ def test_create_train_X_y_output_when_y_is_series_exog_is_series_and_differentia
     """
     # Data differentiated
     arr = data.to_numpy(copy=True)
-    diferenciator = TimeSeriesDifferentiator(order=2)
-    data_diff_2 = diferenciator.fit_transform(arr)
+    differentiator = TimeSeriesDifferentiator(order=2)
+    data_diff_2 = differentiator.fit_transform(arr)
 
     series = pd.DataFrame(
         {'l1': arr,

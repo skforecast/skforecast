@@ -2,7 +2,7 @@
 # ==============================================================================
 import re
 import pytest
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, Ridge
 from sklearn.feature_selection import RFE
 from sklearn.preprocessing import StandardScaler
 from skforecast.preprocessing import RollingFeatures
@@ -211,7 +211,7 @@ def test_select_features_multiseries_when_selector_is_RFE_and_select_only_is_aut
                         window_sizes=[3, 5],
                     )
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor       = LinearRegression(),
+                     regressor       = Ridge(alpha=0.1, random_state=123),
                      lags            = 5,
                      window_features = roll_features,
                      encoding        = 'ordinal'
@@ -224,11 +224,12 @@ def test_select_features_multiseries_when_selector_is_RFE_and_select_only_is_aut
         series      = series,
         exog        = exog,
         select_only = 'autoreg',
+        subsample   = 0.9,
         verbose     = False,
     )
 
-    assert selected_lags == [1, 2, 3]
-    assert selected_window_features == ['roll_mean_3']
+    assert selected_lags == [3, 4, 5]
+    assert selected_window_features == ['roll_std_5']
     assert selected_exog == ['exog1', 'exog2', 'exog3', 'exog4']
 
 

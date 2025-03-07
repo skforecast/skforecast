@@ -9,9 +9,11 @@ datasets_keys = [
     'h2o', 'h2o_exog', 'fuel_consumption', 'items_sales', 
     'air_quality_valencia', 'air_quality_valencia_no_missing', 
     'website_visits', 'bike_sharing', 'bike_sharing_extended_features', 
-    'australia_tourism', 'uk_daily_flights', 'wikipedia_visits', 
-    'vic_electricity', 'store_sales', 'bicimad', 'm4_daily', 'm4_hourly', 
-    'ashrae_daily', 'bdg2_daily', 'bdg2_hourly'
+    'australia_tourism', 'uk_daily_flights', 'wikipedia_visits', 'vic_electricity', 
+    'store_sales', 'bicimad', 'm4_daily', 'm4_hourly', 'ashrae_daily', 
+    'bdg2_daily', 'bdg2_daily_sample', 'bdg2_hourly', 'bdg2_hourly_sample', 
+    'm5', 'ett_m1', 'ett_m2', 'ett_m2_extended', 'expenditures_australia', 
+    'public_transport_madrid'
 ]
 
 
@@ -39,8 +41,8 @@ def test_fetch_dataset():
     # Test fetching a non-existent dataset
 
     err_msg = re.escape(
-        (f"Dataset 'non_existent_dataset' not found. "
-         f"Available datasets are: {datasets_keys}")
+        f"Dataset 'non_existent_dataset' not found. "
+        f"Available datasets are: {datasets_keys}"
     )
     with pytest.raises(ValueError, match = err_msg):
         fetch_dataset('non_existent_dataset', version='latest', raw=False, verbose=False)

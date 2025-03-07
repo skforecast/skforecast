@@ -122,6 +122,8 @@ def test_init_window_size_is_increased_when_differentiation(dif):
                      differentiation = dif
                  )
     
+    assert forecaster.differentiation == dif
+    assert forecaster.differentiation_max == dif
     assert forecaster.window_size == 5 + dif
 
 

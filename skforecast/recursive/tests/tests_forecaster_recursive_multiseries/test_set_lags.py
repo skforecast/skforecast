@@ -41,9 +41,10 @@ def test_set_lags_with_different_inputs(lags):
     assert forecaster.window_size == 3
 
 
-def test_set_lags_when_differentiation_is_not_None():
+def test_set_lags_when_differentiation_is_integer():
     """
-    Test how `window_size` is also updated when the forecaster includes differentiation.
+    Test how `window_size` is also updated when the forecaster includes 
+    differentiation as integer.
     """
     forecaster = ForecasterRecursiveMultiSeries(
                      regressor       = LinearRegression(),
@@ -55,6 +56,7 @@ def test_set_lags_when_differentiation_is_not_None():
     assert forecaster.lags_names == ['lag_1', 'lag_2', 'lag_3']
     assert forecaster.max_lag == 3
     assert forecaster.window_size == 3 + 1
+    assert forecaster.differentiation_max == 1
     assert forecaster.differentiator.window_size == 3 + 1
     
     forecaster.set_lags(lags=5)
@@ -63,7 +65,42 @@ def test_set_lags_when_differentiation_is_not_None():
     assert forecaster.lags_names == ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5']
     assert forecaster.max_lag == 5
     assert forecaster.window_size == 5 + 1
+    assert forecaster.differentiation_max == 1
     assert forecaster.differentiator.window_size == 5 + 1
+
+
+def test_set_lags_when_differentiation_is_dict():
+    """
+    Test how `window_size` is also updated when the forecaster includes 
+    differentiation as dict.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     regressor       = LinearRegression(),
+                     lags            = 3,
+                     differentiation = {'l1': 1, 'l2': 2, 'l3': None, '_unknown_level': 1}
+                 )
+    
+    np.testing.assert_array_almost_equal(forecaster.lags, np.array([1, 2, 3]))
+    assert forecaster.lags_names == ['lag_1', 'lag_2', 'lag_3']
+    assert forecaster.max_lag == 3
+    assert forecaster.window_size == 3 + 2
+    assert forecaster.differentiation_max == 2
+    assert forecaster.differentiator['l1'].window_size == 3 + 2
+    assert forecaster.differentiator['l2'].window_size == 3 + 2
+    assert forecaster.differentiator['l3'] is None
+    assert forecaster.differentiator['_unknown_level'].window_size == 3 + 2
+    
+    forecaster.set_lags(lags=5)
+
+    np.testing.assert_array_almost_equal(forecaster.lags, np.array([1, 2, 3, 4, 5]))
+    assert forecaster.lags_names == ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5']
+    assert forecaster.max_lag == 5
+    assert forecaster.window_size == 5 + 2
+    assert forecaster.differentiation_max == 2
+    assert forecaster.differentiator['l1'].window_size == 5 + 2
+    assert forecaster.differentiator['l2'].window_size == 5 + 2
+    assert forecaster.differentiator['l3'] is None
+    assert forecaster.differentiator['_unknown_level'].window_size == 5 + 2
 
 
 @pytest.mark.parametrize("lags", 

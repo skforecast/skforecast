@@ -39,7 +39,7 @@ def test_recursive_predict_output_when_regressor_is_LinearRegression(encoding):
                  )
     forecaster.fit(series=series_2)
 
-    last_window, exog_values_dict, levels, _, _ = (
+    last_window, exog_values_dict, levels, _ = (
         forecaster._create_predict_inputs(steps=5)
     )
     predictions = forecaster._recursive_predict(
@@ -77,7 +77,7 @@ def test_recursive_predict_output_when_regressor_is_Ridge_StandardScaler(encodin
                  )
     forecaster.fit(series=series_2)
 
-    last_window, exog_values_dict, levels, _, _ = (
+    last_window, exog_values_dict, levels, _ = (
         forecaster._create_predict_inputs(steps=5)
     )
     predictions = forecaster._recursive_predict(
@@ -112,7 +112,7 @@ def test_recursive_predict_output_when_regressor_is_Ridge_StandardScaler_encodin
                  )
     forecaster.fit(series=series_2)
 
-    last_window, exog_values_dict, levels, _, _ = (
+    last_window, exog_values_dict, levels, _ = (
         forecaster._create_predict_inputs(steps=5)
     )
     predictions = forecaster._recursive_predict(
@@ -160,7 +160,7 @@ def test_recursive_predict_output_when_regressor_is_LinearRegression_with_transf
                  )
     forecaster.fit(series=new_series, exog=exog)
 
-    last_window, exog_values_dict, levels, _, _ = (
+    last_window, exog_values_dict, levels, _ = (
         forecaster._create_predict_inputs(steps=5, exog=exog_predict)
     )
     predictions = forecaster._recursive_predict(
@@ -202,7 +202,7 @@ def test_recursive_predict_output_with_window_features():
                  )
     forecaster.fit(series=series, exog=exog)
 
-    last_window, exog_values_dict, levels, _, _ = (
+    last_window, exog_values_dict, levels, _ = (
         forecaster._create_predict_inputs(steps=5, exog=exog_predict)
     )
     predictions = forecaster._recursive_predict(
@@ -244,7 +244,7 @@ def test_recursive_predict_output_with_two_window_features():
                  )
     forecaster.fit(series=series, exog=exog)
 
-    last_window, exog_values_dict, levels, _, _ = (
+    last_window, exog_values_dict, levels, _ = (
         forecaster._create_predict_inputs(steps=5, exog=exog_predict)
     )
     predictions = forecaster._recursive_predict(
@@ -277,16 +277,17 @@ def test_recursive_predict_output_with_residuals_zero():
                  )
     forecaster.fit(series=series_2)
 
-    last_window, exog_values_dict, levels, _, _ = (
+    last_window, exog_values_dict, levels, _ = (
         forecaster._create_predict_inputs(steps=5)
     )
     residuals = np.array([[0, 0], [0, 0], [0, 0], [0, 0], [0, 0]])
     predictions = forecaster._recursive_predict(
-                      steps            = 5,
-                      levels           = levels,
-                      last_window      = last_window,
-                      exog_values_dict = exog_values_dict,
-                      residuals        = residuals
+                      steps                = 5,
+                      levels               = levels,
+                      last_window          = last_window,
+                      exog_values_dict     = exog_values_dict,
+                      residuals            = residuals,
+                      use_binned_residuals = False
                   )
     
     expected = np.array([
@@ -313,16 +314,17 @@ def test_recursive_predict_output_with_residuals_last_step():
                  )
     forecaster.fit(series=series_2)
 
-    last_window, exog_values_dict, levels, _, _ = (
+    last_window, exog_values_dict, levels, _ = (
         forecaster._create_predict_inputs(steps=5)
     )
     residuals = np.array([[0, 0], [0, 0], [0, 0], [0, 0], [100, 200]])
     predictions = forecaster._recursive_predict(
-                      steps            = 5,
-                      levels           = levels,
-                      last_window      = last_window,
-                      exog_values_dict = exog_values_dict,
-                      residuals        = residuals
+                      steps                = 5,
+                      levels               = levels,
+                      last_window          = last_window,
+                      exog_values_dict     = exog_values_dict,
+                      residuals            = residuals,
+                      use_binned_residuals = False
                   )
     
     expected = np.array([
@@ -348,7 +350,7 @@ def test_recursive_predict_output_with_residuals():
                  )
     forecaster.fit(series=series_2)
 
-    last_window, exog_values_dict, levels, _, _ = (
+    last_window, exog_values_dict, levels, _ = (
         forecaster._create_predict_inputs(steps=5)
     )
     residuals = np.full(
@@ -359,11 +361,12 @@ def test_recursive_predict_output_with_residuals():
     residuals[:, 0] = np.array([1, 2, 3, 4, 5])
     residuals[:, 1] = np.array([10, 20, 30, 40, 50])
     predictions = forecaster._recursive_predict(
-                      steps            = 5,
-                      levels           = levels,
-                      last_window      = last_window,
-                      exog_values_dict = exog_values_dict,
-                      residuals        = residuals
+                      steps                = 5,
+                      levels               = levels,
+                      last_window          = last_window,
+                      exog_values_dict     = exog_values_dict,
+                      residuals            = residuals,
+                      use_binned_residuals = False
                   )
     
     expected = np.array([
@@ -373,5 +376,56 @@ def test_recursive_predict_output_with_residuals():
                    [58.368 , 156.68 ],
                    [61.4416, 178.416]]
                )
+
+    np.testing.assert_array_almost_equal(predictions, expected)
+
+
+def test_recursive_predict_output_with_residuals_binned():
+    """
+    Test _recursive_predict output with residuals when residuals are binned.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     regressor          = LinearRegression(),
+                     lags               = 5,
+                     transformer_series = None,
+                     binner_kwargs      = {'n_bins': 2}
+                 )
+    forecaster.fit(series=series_2, store_in_sample_residuals=True)
+
+    last_window, exog_values_dict, levels, _ = (
+        forecaster._create_predict_inputs(steps=5)
+    )
+    residuals = {
+        0: np.array([
+               [1, 300], 
+               [1, 300],
+               [1, 300],
+               [1, 300],
+               [1, 300]
+           ]),
+        1: np.array([
+               [20, 4000], 
+               [20, 4000], 
+               [20, 4000], 
+               [20, 4000], 
+               [20, 4000]
+           ])
+    }
+    predictions = forecaster._recursive_predict(
+                      steps                = 5,
+                      levels               = levels,
+                      last_window          = last_window,
+                      exog_values_dict     = exog_values_dict,
+                      residuals            = residuals,
+                      use_binned_residuals = True
+                  )
+    
+    expected = np.array([
+                   [70., 4100.],
+                   [75., 4901.],
+                   [80.8, 5862.],
+                   [87.56, 7015.],
+                   [95.472, 8398.4]
+               ])
 
     np.testing.assert_array_almost_equal(predictions, expected)

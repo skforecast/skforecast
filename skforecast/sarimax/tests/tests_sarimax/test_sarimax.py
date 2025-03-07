@@ -162,7 +162,7 @@ def test_Sarimax_consolidate_kwargs_init_kwargs(kwargs, _init_kwargs):
                             'sm_fit_kwargs': {'test': 'fake_param'}}, 
                            {'maxiter': 200, 
                             'test': 'fake_param'})], 
-                         ids = lambda values : f'kwargs, _fit_kwargs: {values}')
+                         ids = lambda values: f'kwargs, _fit_kwargs: {values}')
 def test_Sarimax_consolidate_kwargs_fit_kwargs(kwargs, _fit_kwargs):
     """
     Test if `sarimax._fit_kwargs` are correctly consolidate.
@@ -746,7 +746,7 @@ def test_Sarimax_set_params():
     assert results == expected
     assert sarimax.output_type is None
     assert sarimax.sarimax_res is None
-    assert sarimax.fitted == False
+    assert sarimax.fitted is False
     assert sarimax.training_index is None
 
 
@@ -807,7 +807,7 @@ def test_Sarimax_params_pandas(y, exog):
                           (y_datetime, exog_datetime),
                           (y.to_frame(), exog.to_frame()),
                           (y_datetime.to_frame(), exog_datetime.to_frame())], 
-                         ids = lambda values : f'y, exog: {type(values)}')
+                         ids = lambda values: f'y, exog: {type(values)}')
 def test_Sarimax_summary(y, exog):
     """
     Test Sarimax params after fit with pandas `y` and `exog`.
@@ -839,8 +839,8 @@ def test_Sarimax_get_info_criteria_ValueError_criteria_invalid_value():
     criteria = 'not_valid'
 
     err_msg = re.escape(
-        ("Invalid value for `criteria`. Valid options are 'aic', 'bic', "
-         "and 'hqic'.")
+        "Invalid value for `criteria`. Valid options are 'aic', 'bic', "
+        "and 'hqic'."
     )
     with pytest.raises(ValueError, match = err_msg): 
         sarimax.get_info_criteria(criteria=criteria)
@@ -857,8 +857,8 @@ def test_Sarimax_get_info_criteria_ValueError_method_invalid_value():
     method = 'not_valid'
 
     err_msg = re.escape(
-        ("Invalid value for `method`. Valid options are 'standard' and "
-         "'lutkepohl'.")
+        "Invalid value for `method`. Valid options are 'standard' and "
+        "'lutkepohl'."
     )
     with pytest.raises(ValueError, match = err_msg): 
         sarimax.get_info_criteria(method=method)

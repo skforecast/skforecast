@@ -101,11 +101,11 @@ def test_save_and_load_forecaster_SkforecastVersionWarning():
     save_forecaster(forecaster=forecaster, file_name='forecaster.joblib', verbose=False)
 
     warn_msg = re.escape(
-        (f"The skforecast version installed in the environment differs "
-         f"from the version used to create the forecaster.\n"
-         f"    Installed Version  : {skforecast.__version__}\n"
-         f"    Forecaster Version : 0.0.0\n"
-         f"This may create incompatibilities when using the library.")
+        f"The skforecast version installed in the environment differs "
+        f"from the version used to create the forecaster.\n"
+        f"    Installed Version  : {skforecast.__version__}\n"
+        f"    Forecaster Version : 0.0.0\n"
+        f"This may create incompatibilities when using the library."
     )
     with pytest.warns(SkforecastVersionWarning, match = warn_msg):
         load_forecaster(file_name='forecaster.joblib', verbose=False)
@@ -115,19 +115,28 @@ def test_save_and_load_forecaster_SkforecastVersionWarning():
 @pytest.mark.parametrize("weight_func", 
                          [custom_weights, 
                           {'serie_1': custom_weights, 
-                           'serie_2': custom_weights2}], 
+                           'serie_2': custom_weights2}, 
+                          {'serie_1': custom_weights}], 
                          ids = lambda func: f'type: {type(func)}')
 def test_save_forecaster_save_custom_functions(weight_func):
     """ 
     Test if custom functions are saved correctly.
     """
+    series = pd.DataFrame(
+        {'serie_1': np.random.normal(size=20),
+         'serie_2': np.random.normal(size=20)}
+    )
+    
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor      = LinearRegression(),
-                     lags           = 5,
-                     weight_func    = weight_func
+                     regressor          = LinearRegression(),
+                     lags               = 5,
+                     weight_func        = weight_func,
+                     transformer_series = StandardScaler()
                  )
+    forecaster.fit(series=series)
     save_forecaster(forecaster=forecaster, file_name='forecaster.joblib', 
                     save_custom_functions=True)
+    load_forecaster(file_name='forecaster.joblib', verbose=True)
     os.remove('forecaster.joblib')
     
     weight_functions = weight_func.values() if isinstance(weight_func, dict) else [weight_func]
@@ -149,9 +158,9 @@ def test_save_forecaster_warning_dont_save_custom_functions(weight_func):
     Test SaveLoadSkforecastWarning when custom functions are not saved.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor      = LinearRegression(),
-                     lags           = 5,
-                     weight_func    = weight_func
+                     regressor   = LinearRegression(),
+                     lags        = 5,
+                     weight_func = weight_func
                  )
 
     warn_msg = re.escape(
