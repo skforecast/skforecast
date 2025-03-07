@@ -77,12 +77,15 @@ def test_set_in_sample_residuals_ValueError_when_X_train_features_names_out_not_
         forecaster.set_in_sample_residuals(series=series)
 
 
-def test_set_in_sample_residuals_store_same_residuals_as_fit():
+@pytest.mark.parametrize("encoding", 
+                         ["ordinal", "ordinal_category", "onehot", None],
+                         ids = lambda value: f'encoding: {value}')
+def test_set_in_sample_residuals_store_same_residuals_as_fit(encoding):
     """
     Test that set_in_sample_residuals stores same residuals as fit.
     """
     forecaster_1 = ForecasterRecursiveMultiSeries(
-        LinearRegression(), lags=3, transformer_series=StandardScaler(), 
+        LinearRegression(), lags=3, encoding=encoding, transformer_series=StandardScaler(), 
         differentiation=1, binner_kwargs={'n_bins': 3}
     )
     forecaster_1.fit(series=series, exog=exog['exog_1'], store_in_sample_residuals=True)
@@ -91,7 +94,7 @@ def test_set_in_sample_residuals_store_same_residuals_as_fit():
     results_binner_intervals_1 = forecaster_1.binner_intervals_
 
     forecaster_2 = ForecasterRecursiveMultiSeries(
-        LinearRegression(), lags=3, transformer_series=StandardScaler(), 
+        LinearRegression(), lags=3, encoding=encoding, transformer_series=StandardScaler(), 
         differentiation=1, binner_kwargs={'n_bins': 3}
     )
     forecaster_2.fit(series=series, exog=exog['exog_1'], store_in_sample_residuals=False)

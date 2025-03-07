@@ -310,7 +310,10 @@ def test_predict_output_when_regressor_is_LinearRegression_steps_is_2_in_sample_
     pd.testing.assert_frame_equal(predictions, expected)
 
 
-def test_predict_interval_output_when_regressor_is_LinearRegression_with_transform_series():
+@pytest.mark.parametrize("interval", 
+                         [0.90, [5, 95], (5, 95)], 
+                         ids = lambda value: f'interval: {value}')
+def test_predict_interval_output_when_regressor_is_LinearRegression_with_transform_series(interval):
     """
     Test predict_interval output when using LinearRegression as regressor and StandardScaler.
     """
@@ -322,7 +325,7 @@ def test_predict_interval_output_when_regressor_is_LinearRegression_with_transfo
     forecaster.fit(series=series, store_in_sample_residuals=False)
     forecaster.set_in_sample_residuals(series=series)
     predictions = forecaster.predict_interval(
-        steps=5, levels='1', method='bootstrapping', 
+        steps=5, levels='1', method='bootstrapping', interval=interval,
         use_in_sample_residuals=True, use_binned_residuals=False
     )
 
