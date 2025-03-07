@@ -5,8 +5,9 @@
 ################################################################################
 # coding=utf-8
 
+from __future__ import annotations
+from typing import Union, Optional
 import warnings
-from typing import Union, Any, Optional
 import pandas as pd 
 from ..utils import check_optional_dependency
 
@@ -25,14 +26,14 @@ def create_and_compile_model(
     series: pd.DataFrame,
     lags: Union[int, list],
     steps: Union[int, list],
-    levels: Optional[Union[str, int, list]]=None,
-    recurrent_layer: str="LSTM",
-    recurrent_units: Union[int, list]=100,
-    dense_units: Union[int, list]=64,
-    activation: Union[str, dict]="relu",
-    optimizer: object=Adam(learning_rate=0.01),
-    loss: object=MeanSquaredError(),
-    compile_kwargs: dict={},
+    levels: Optional[Union[str, int, list]] = None,
+    recurrent_layer: str = "LSTM",
+    recurrent_units: Union[int, list] = 100,
+    dense_units: Union[int, list] = 64,
+    activation: Union[str, dict] = "relu",
+    optimizer: object = Adam(learning_rate=0.01),
+    loss: object = MeanSquaredError(),
+    compile_kwargs: dict = {},
 ) -> keras.models.Model:
     """
     Creates a neural network model for time series prediction with flexible recurrent layers.
@@ -83,7 +84,7 @@ def create_and_compile_model(
         corresponding parameters.
     
     """
-    
+
     if keras.__version__ > "3":
         print(f"keras version: {keras.__version__}")
         print(f"Using backend: {keras.backend.backend()}")
@@ -98,7 +99,7 @@ def create_and_compile_model(
             print(f"jax version: {jax.__version__}")
         else:
             print("Backend not recognized")
-            
+
     err_msg = f"`series` must be a pandas DataFrame. Got {type(series)}."
 
     if not isinstance(series, pd.DataFrame):
@@ -152,12 +153,12 @@ def create_and_compile_model(
     if isinstance(activation, str):
         if dense_units is not None:
             activation = {
-                "recurrent_units": [activation]*len(recurrent_units), 
-                "dense_units": [activation]*len(dense_units)  
+                "recurrent_units": [activation] * len(recurrent_units),
+                "dense_units": [activation] * len(dense_units),
             }
         else:
             activation = {
-                "recurrent_units": [activation]*len(recurrent_units)
+                "recurrent_units": [activation] * len(recurrent_units)
             }
     elif isinstance(activation, dict):
         # Check if the dictionary has the required keys
@@ -219,8 +220,8 @@ def create_and_compile_model(
 
     # Compile the model if optimizer, loss or compile_kwargs are passed
     if optimizer is not None or loss is not None or compile_kwargs:
-        # give more priority to the parameters passed in the function check if the 
-        # parameters passes in compile_kwargs include optimizer and loss if so, 
+        # give more priority to the parameters passed in the function check if the
+        # parameters passes in compile_kwargs include optimizer and loss if so,
         # delete them from compile_kwargs and raise a warning
         if "optimizer" in compile_kwargs.keys():
             compile_kwargs.pop("optimizer")
