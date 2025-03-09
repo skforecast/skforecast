@@ -123,6 +123,16 @@ nav:
 
   - Authors: authors/authors.md
 
+  - About:
+    - About skforecast: about/about-skforecast.md
+    - Consulting & Collaboration | Consulting & Professional services: about/consulting-services.md
+    - Why choose skforecast?: about/why-choose-skforecast.md
+    - Releases and roadmap | Releases & Updates: about/releases.md
+    - Meet the team: about/authors.md
+    - How to contribute: about/contributing.md
+    - Community and Code of Conduct: about/code-of-conduct.md
+    - Citing skforecast: about/citation.md
+
 plugins:
   - mkdocstrings:
       handlers:
