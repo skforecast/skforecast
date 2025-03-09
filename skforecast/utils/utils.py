@@ -39,8 +39,8 @@ optional_dependencies = {
         'statsmodels>=0.12, <0.15'
     ],
     'deeplearning': [
-        'matplotlib>=3.3, <3.11',
-        'keras>=2.6, <4.0',
+        'matplotlib>=3.3, <3.11; python_version < "3.13"',
+        'keras>=2.6, <4.0; python_version < "3.13"',
     ],
     'plotting': [
         'matplotlib>=3.3, <3.11', 

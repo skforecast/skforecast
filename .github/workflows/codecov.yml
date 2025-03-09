@@ -9,19 +9,29 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install tomli
           python extract_dependences.py
           python -m pip install -r requirements.txt
+
       - name: Run tests and collect coverage
-        run: pytest --cov
+        run: pytest --cov --junitxml=junit.xml -o junit_family=legacy
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with: 
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
           token: ${{ secrets.CODECOV_TOKEN }}

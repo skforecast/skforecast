@@ -204,7 +204,7 @@ def test_results_output_bayesian_search_optuna_multiseries_with_mocked_when_lags
     when `lags_grid` is a dict with mocked (mocked done in skforecast v0.12.0).
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor = RandomForestRegressor(random_state=123),
+                     regressor = RandomForestRegressor(random_state=123, n_jobs=1),
                      lags      = 2,
                      encoding  = 'onehot',
                      transformer_series = StandardScaler()
@@ -781,7 +781,7 @@ def test_results_output_bayesian_search_optuna_multiseries_with_kwargs_study_opt
     when `kwargs_study_optimize` with mocked (mocked done in skforecast v0.12.0).
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor = RandomForestRegressor(random_state=123),
+                     regressor = RandomForestRegressor(random_state=123, n_jobs=1),
                      lags      = 2,
                      encoding  = 'onehot',
                      transformer_series = StandardScaler()
