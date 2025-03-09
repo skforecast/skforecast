@@ -16,26 +16,25 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
     - uses: actions/checkout@v4
+    
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
+
     - name: Install libomp on macOS
       if: matrix.platform == 'macos-13'
       run: |
         brew install libomp
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         python -m pip install tomli
         python extract_dependences.py
         python -m pip install -r requirements.txt
-    - name: Test with pytest
-      run: |
-        pytest -vv
 
     - name: Run tests with pytest
-      if: matrix.python-version != '3.13'
       run: |
         if [ "${{ matrix.python-version }}" == "3.13" ]; then
           pytest -vv --ignore=skforecast/deep_learning
