@@ -61,8 +61,8 @@ plotting = [
 ]
 
 deeplearning = [
-    "matplotlib>=3.3, <3.11", 
-    "keras>=2.6, <4.0"
+    'matplotlib>=3.3, <3.11; python_version < "3.13"', 
+    'keras>=2.6, <4.0; python_version < "3.13"'
 ]
 
 all = [
@@ -98,8 +98,8 @@ test = [
     "pytest-cov>=4.1",
     "pytest-xdist>=3.3",
     "lightgbm>=4.0, <4.7",
-    "tensorflow>=2.13, <2.19",
-    "torch>=2.2, <2.7",
+    'tensorflow>=2.13, <2.19; python_version < "3.13"',
+    'torch>=2.2, <2.7; python_version < "3.13"',
     "tomli>=2.0",
     "pandas[parquet]>=1.5"
 ]
