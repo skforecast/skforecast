@@ -34,12 +34,11 @@ jobs:
       run: |
         pytest -vv
 
-    - name: Run tests with pytest (All versions except 3.13)
+    - name: Run tests with pytest
       if: matrix.python-version != '3.13'
       run: |
-        pytest -vv
-
-    - name: Run tests with pytest (Exclude deep learning in Python 3.13)
-      if: matrix.python-version == '3.13'
-      run: |
-        pytest -vv --ignore=skforecast/deep_learning
+        if [ "${{ matrix.python-version }}" == "3.13" ]; then
+          pytest -vv --ignore=skforecast/deep_learning
+        else
+          pytest -vv
+        fi
