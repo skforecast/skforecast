@@ -27,6 +27,8 @@ The main changes in this release are:
 
 **Added**
 
++ Support for `Python 3.13`.
+
 + Added `rich>=13.9.4` library as hard dependence.
 
 + New argument `method  = 'conformal'` in `predict_interval` method or `interval_method = 'conformal'` in backtesting functions to use the conformal prediction framework.
@@ -278,7 +280,7 @@ The main changes in this release are:
 
 **Added**
 
-+ Support for `python 3.12`.
++ Support for `Python 3.12`.
 
 + `keras` has been added as an optional dependency, tag deeplearning, to use the <code>[ForecasterRnn]</code>.
 
