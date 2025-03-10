@@ -10,13 +10,13 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
 
-## 0.15.0 <small>In development</small> { id="0.15.0" }
+## 0.15.0 <small>Mar 10, 2025</small> { id="0.15.0" }
 
 The main changes in this release are:
 
 + <span class="badge text-bg-feature">Feature</span> Added [conformal framework for probabilistic forecasting](../user_guides/probabilistic-forecasting-conformal-prediction.html). Generate prediction intervals using the [conformal prediction split method](https://mapie.readthedocs.io/en/stable/theoretical_description_regression.html#the-split-method).
 
-+ <span class="badge text-bg-feature">Feature</span> [Binned residuals](..user_guides/probabilistic-forecasting-bootstrapped-residuals.html#intervals-conditioned-on-predicted-values-binned-residuals) are now available in the <code>[ForecasterRecursiveMultiSeries]</code>, <code>[ForecasterDirect]</code> and <code>[ForecasterDirectMultiVariate]</code> forecasters. 
++ <span class="badge text-bg-feature">Feature</span> [Binned residuals](../user_guides/probabilistic-forecasting-bootstrapped-residuals.html#intervals-conditioned-on-predicted-values-binned-residuals) are now available in the <code>[ForecasterRecursiveMultiSeries]</code>, <code>[ForecasterDirect]</code> and <code>[ForecasterDirectMultiVariate]</code> forecasters. 
 
 + <span class="badge text-bg-feature">Feature</span> New class <code>[ConformalIntervalCalibrator]</code> to perform [conformal calibration](../user_guides/probabilistic-forecasting-conformal-calibration.html). This class is used to calibrate the prediction intervals using the conformal prediction framework.
 
@@ -26,6 +26,8 @@ The main changes in this release are:
 
 
 **Added**
+
++ Support for `Python 3.13`.
 
 + Added `rich>=13.9.4` library as hard dependence.
 
@@ -56,6 +58,8 @@ The main changes in this release are:
 + Added function `create_mean_pinball_loss` in the <code>[metrics]</code> module to create a function to calculate the mean pinball loss for a given quantile.
 
 + Added function `check_one_step_ahead_input` to check the input data when using a <code>[OneStepAheadFold]</code> in the <code>[model_selection]</code> functions.
+
++ Function `set_warnings_style` in the <code>[exceptions]</code> module to set the style of the skforecast warnings issued by the library.
 
 
 **Changed**
@@ -278,7 +282,7 @@ The main changes in this release are:
 
 **Added**
 
-+ Support for `python 3.12`.
++ Support for `Python 3.12`.
 
 + `keras` has been added as an optional dependency, tag deeplearning, to use the <code>[ForecasterRnn]</code>.
 
@@ -1141,8 +1145,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [load_demo_dataset]: https://skforecast.org/latest/api/datasets#skforecast.datasets.load_demo_dataset
 
 <!-- exceptions -->
-[utils]: https://skforecast.org/latest/api/exceptions
-
+[exceptions]: https://skforecast.org/latest/api/exceptions
 
 <!-- OLD -->
 [ForecasterAutoreg]: https://skforecast.org/0.13.0/api/forecasterautoreg

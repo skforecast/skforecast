@@ -574,8 +574,7 @@ class ForecasterRnn(ForecasterBase):
             information.
         store_last_window : Ignored
             Not used, present here for API consistency by convention.
-        device : str, default `auto`
-            Torch device. if auto `device = torch.device("cuda" if torch.cuda.is_available() else "cpu")`
+        
         Returns
         -------
         None
@@ -665,6 +664,7 @@ class ForecasterRnn(ForecasterBase):
         last_window: Optional[pd.DataFrame] = None,
         exog: Any = None,
         suppress_warnings: bool = False,
+        check_inputs: Any = None
     ) -> pd.DataFrame:
         """
         Predict n steps ahead
@@ -696,6 +696,8 @@ class ForecasterRnn(ForecasterBase):
             If `True`, skforecast warnings will be suppressed during the fitting
             process. See skforecast.exceptions.warn_skforecast_categories for more
             information.
+        check_inputs : Ignored
+            Not used, present here for API consistency by convention.
 
         Returns
         -------

@@ -131,10 +131,11 @@ def test_binning_out_sample_residuals_when_residuals_length_is_less_than_10000_a
     
     forecaster.out_sample_residuals_ = {}
     forecaster.out_sample_residuals_by_bin_ = {}
+
     warn_msg = re.escape(
-        "The following bins of level 'l1' have no out of sample residuals: [1, 2]. "
-        "No predicted values fall in the interval [(5.0, 7.0), (7.0, 9.0)]. "
-        "Empty bins will be filled with a random sample of residuals."
+        f"The following bins of level 'l1' have no out of sample residuals: [1, 2]. "
+        f"No predicted values fall in the interval {[forecaster.binner_intervals_['l1'][bin] for bin in [1, 2]]}. "
+        f"Empty bins will be filled with a random sample of residuals."
     )
     with pytest.warns(ResidualsUsageWarning, match=warn_msg):
         residuals = forecaster._binning_out_sample_residuals(

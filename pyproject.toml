@@ -24,6 +24,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "License :: OSI Approved :: BSD License",
 ]
 keywords = [
@@ -44,7 +45,7 @@ dependencies = [
     "optuna>=2.10",
     "joblib>=1.1",
     "numba>=0.59",
-    "rich>=13.9.4"
+    "rich>=13.9"
 ]
 requires-python = ">=3.9"
 
@@ -54,25 +55,25 @@ sarimax = [
 ]
 
 plotting = [
-    "matplotlib>=3.3, <3.10",
+    "matplotlib>=3.3, <3.11",
     "seaborn>=0.11, <0.14",
     "statsmodels>=0.12, <0.15"
 ]
 
 deeplearning = [
-    "matplotlib>=3.3, <3.10", 
+    "matplotlib>=3.3, <3.11",
     "keras>=2.6, <4.0"
 ]
 
 all = [
-    "matplotlib>=3.3, <3.10",
+    "matplotlib>=3.3, <3.11",
     "seaborn>=0.11, <0.14",
     "statsmodels>=0.12, <0.15",
     "keras>=2.6, <4.0"
 ]
 
 full = [
-    "matplotlib>=3.3, <3.10",
+    "matplotlib>=3.3, <3.11",
     "seaborn>=0.11, <0.14",
     "statsmodels>=0.12, <0.15",
     "keras>=2.6, <4.0",
@@ -96,9 +97,9 @@ test = [
     "pytest>=7.3",
     "pytest-cov>=4.1",
     "pytest-xdist>=3.3",
-    "lightgbm>=4.0, <4.6",
-    "tensorflow>=2.13, <2.19",
-    "torch>=2.2, <2.6",
+    "lightgbm>=4.0, <4.7",
+    'tensorflow>=2.13, <2.19; python_version < "3.13"',
+    'torch>=2.2, <2.7; python_version < "3.13"',
     "tomli>=2.0",
     "pandas[parquet]>=1.5"
 ]

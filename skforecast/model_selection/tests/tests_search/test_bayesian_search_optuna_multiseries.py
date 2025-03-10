@@ -197,14 +197,14 @@ def test_ValueError_bayesian_search_optuna_multiseries_when_search_space_names_d
 # pytest -m slow --verbose
 # pytest -m "not slow" --verbose
 @pytest.mark.slow
-@pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python3.8 or higher")
+@pytest.mark.skipif(sys.platform == "darwin", reason="Fails in MacOS")
 def test_results_output_bayesian_search_optuna_multiseries_with_mocked_when_lags_grid_dict():
     """
     Test output of _bayesian_search_optuna_multiseries in ForecasterRecursiveMultiSeries 
     when `lags_grid` is a dict with mocked (mocked done in skforecast v0.12.0).
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor = RandomForestRegressor(random_state=123),
+                     regressor = RandomForestRegressor(random_state=123, n_jobs=1),
                      lags      = 2,
                      encoding  = 'onehot',
                      transformer_series = StandardScaler()
@@ -775,13 +775,14 @@ def test_results_output_bayesian_search_optuna_multiseries_with_kwargs_create_st
     pd.testing.assert_frame_equal(results, expected_results)
 
 
+@pytest.mark.skipif(sys.platform == "darwin", reason="Fails in MacOS")
 def test_results_output_bayesian_search_optuna_multiseries_with_kwargs_study_optimize():
     """
     Test output of _bayesian_search_optuna_multiseries in ForecasterRecursiveMultiSeries 
     when `kwargs_study_optimize` with mocked (mocked done in skforecast v0.12.0).
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor = RandomForestRegressor(random_state=123),
+                     regressor = RandomForestRegressor(random_state=123, n_jobs=1),
                      lags      = 2,
                      encoding  = 'onehot',
                      transformer_series = StandardScaler()

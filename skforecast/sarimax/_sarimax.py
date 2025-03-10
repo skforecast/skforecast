@@ -306,8 +306,10 @@ class Sarimax(BaseEstimator, RegressorMixin):
 
         # Params that can be set with the `set_params` method
         _, _, _, _sarimax_params = inspect.getargvalues(inspect.currentframe())
-        _sarimax_params.pop("self")
-        self._sarimax_params = _sarimax_params
+        self._sarimax_params = {
+            k: v for k, v in _sarimax_params.items() 
+            if k not in ['self', '_', '_sarimax_params']
+        }
 
         self._consolidate_kwargs()
 
