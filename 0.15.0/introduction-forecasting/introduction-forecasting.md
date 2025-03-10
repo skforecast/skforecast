@@ -28,7 +28,7 @@ This type of transformation also allows to include additional variables.
 Once data have been rearranged into the new shape, any regression model can be trained to predict the next value (step) of the series. During model training, every row is considered a separate data instance, where values at lags 1, 2, ... *p* are considered predictors for the target quantity of the time series at time step *p+1*. 
 
 <p style="text-align: center">
-    <img src="../img/diagram-trainig-forecaster.png" style="width: 600px;">
+    <img src="../img/diagram-training-forecaster.png" style="width: 600px;">
     <br>
     <font size="2.5"> <i>Diagram of training a machine learning model with time series data</i></font>
 </p>
