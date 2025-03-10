@@ -10,7 +10,10 @@ def main():
     with open("./pyproject.toml", mode='rb') as fp:
         pyproject = tomli.load(fp)
 
-    dependencies_optional = [v for k, v in pyproject['project']['optional-dependencies'].items() if k != 'docs']
+    dependencies_optional = [
+        v for k, v in pyproject['project']['optional-dependencies'].items() 
+        if k != 'docs'
+    ]
     dependencies_optional = chain(*dependencies_optional)
     dependencies_optional = list(set(dependencies_optional))
     dependences = pyproject['project']['dependencies']
