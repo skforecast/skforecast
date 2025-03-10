@@ -175,7 +175,6 @@ def test_ValueError_bayesian_search_optuna_when_search_space_names_do_not_match(
 # pytest -m slow --verbose
 # pytest -m "not slow" --verbose
 @pytest.mark.slow
-@pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python3.8 or higher")
 def test_results_output_bayesian_search_optuna_ForecasterRecursive():
     """
     Test output of _bayesian_search_optuna in ForecasterRecursive with mocked

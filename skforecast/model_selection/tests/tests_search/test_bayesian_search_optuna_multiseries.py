@@ -197,7 +197,6 @@ def test_ValueError_bayesian_search_optuna_multiseries_when_search_space_names_d
 # pytest -m slow --verbose
 # pytest -m "not slow" --verbose
 @pytest.mark.slow
-@pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python3.8 or higher")
 @pytest.mark.skipif(sys.platform == "darwin", reason="Fails in MacOS")
 def test_results_output_bayesian_search_optuna_multiseries_with_mocked_when_lags_grid_dict():
     """
