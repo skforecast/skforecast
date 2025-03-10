@@ -6,7 +6,7 @@ A detailed overview on how to contribute can be found in the [contributing guide
 
 ## Core Development Team
 
-+ Joaquín Amat Rodrigo (j.amatrodrigo@gmail.com)
++ Joaquín Amat Rodrigo (j.amatrodrigo@gmail.com) 
 
 + Javier Escobar Ortiz (javier.escobar.ortiz@gmail.com)
 
