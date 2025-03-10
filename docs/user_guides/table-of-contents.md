@@ -41,6 +41,7 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 - [Conformal predictions](../user_guides/probabilistic-forecasting-conformal-prediction.html)
 - [Conformal calibration](../user_guides/probabilistic-forecasting-conformal-calibration.html)
 - [Quantile forecasting](../user_guides/probabilistic-forecasting-quantile-regression.html)
+- [Probabilistic global models](../user_guides/probabilistic-forecasting-global-models.html)
 - [Metrics in probabilistic forecasting](../user_guides/probabilistic-forecasting-metrics.html)
 - [Continuous Ranked Probability Score (CRPS)](../faq/probabilistic-forecasting-crps-score.html)
 

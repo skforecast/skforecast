@@ -55,6 +55,7 @@ nav:
       - Conformal predictions: user_guides/probabilistic-forecasting-conformal-prediction.ipynb
       - Conformal calibration: user_guides/probabilistic-forecasting-conformal-calibration.ipynb
       - Quantile forecasting: user_guides/probabilistic-forecasting-quantile-regression.ipynb
+      - Probabilistic global models: user_guides/probabilistic-forecasting-global-models.ipynb
       - Metrics in probabilistic forecasting: user_guides/probabilistic-forecasting-metrics.ipynb
       - Continuous Ranked Probability Score (CRPS): faq/probabilistic-forecasting-crps-score.ipynb
     - Model Explainability: user_guides/explainability.ipynb
