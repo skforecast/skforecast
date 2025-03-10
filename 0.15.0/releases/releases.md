@@ -16,7 +16,7 @@ The main changes in this release are:
 
 + <span class="badge text-bg-feature">Feature</span> Added [conformal framework for probabilistic forecasting](../user_guides/probabilistic-forecasting-conformal-prediction.html). Generate prediction intervals using the [conformal prediction split method](https://mapie.readthedocs.io/en/stable/theoretical_description_regression.html#the-split-method).
 
-+ <span class="badge text-bg-feature">Feature</span> [Binned residuals](..user_guides/probabilistic-forecasting-bootstrapped-residuals.html#intervals-conditioned-on-predicted-values-binned-residuals) are now available in the <code>[ForecasterRecursiveMultiSeries]</code>, <code>[ForecasterDirect]</code> and <code>[ForecasterDirectMultiVariate]</code> forecasters. 
++ <span class="badge text-bg-feature">Feature</span> [Binned residuals](../user_guides/probabilistic-forecasting-bootstrapped-residuals.html#intervals-conditioned-on-predicted-values-binned-residuals) are now available in the <code>[ForecasterRecursiveMultiSeries]</code>, <code>[ForecasterDirect]</code> and <code>[ForecasterDirectMultiVariate]</code> forecasters. 
 
 + <span class="badge text-bg-feature">Feature</span> New class <code>[ConformalIntervalCalibrator]</code> to perform [conformal calibration](../user_guides/probabilistic-forecasting-conformal-calibration.html). This class is used to calibrate the prediction intervals using the conformal prediction framework.
 
