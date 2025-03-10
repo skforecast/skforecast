@@ -1531,6 +1531,27 @@ This is documentation for an unstable development version.
   
   
     <li class="md-nav__item">
+      <a href="../user_guides/probabilistic-forecasting-global-models.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Probabilistic global models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../user_guides/probabilistic-forecasting-metrics.html" class="md-nav__link">
         
   
@@ -3591,7 +3612,7 @@ This is documentation for an unstable development version.
 <p>Exogenous variables can be added to the training matrix if they do not contain the first window size observations. This is useful when exogenous variables are not available in early historical data.</p>
 </li>
 <li>
-<p>Added support for different activation functions in the <code><a href="https://skforecast.org/latest/api/forecasterrnn#skforecast.deep_learning.utils.create_and_compile_model">create_and_compile_model</a></code> function. (contribution by <a href="https://github.com/pablorodriper">@pablorodriper</a> <a href="https://github.com/skforecast/skforecast/pull/824">#824</a>).</p>
+<p>Added support for different activation functions in the <code><a href="https://skforecast.org/latest/api/forecasterrnn.html#skforecast.deep_learning.utils.create_and_compile_model">create_and_compile_model</a></code> function. (contribution by <a href="https://github.com/pablorodriper">@pablorodriper</a> <a href="https://github.com/skforecast/skforecast/pull/824">#824</a>).</p>
 </li>
 </ul>
 <p><strong>Changed</strong></p>
@@ -3888,7 +3909,7 @@ This is documentation for an unstable development version.
 <p><span class="badge text-bg-feature">Feature</span> Added new forecaster <a href="https://skforecast.org/latest/api/forecasterrnn"><code>ForecasterRnn</code></a> to create forecasting models based on <a href="https://skforecast.org/latest/user_guides/forecasting-with-deep-learning-rnn-lstm">deep learning</a> (RNN and LSTM).</p>
 </li>
 <li>
-<p><span class="badge text-bg-feature">Feature</span> New method to <a href="https://skforecast.org/latest/user_guides/probabilistic-forecasting#intervals-conditioned-on-predicted-values-binned-residuals">predict intervals conditioned on the range of the predicted values</a>. This is can help to improve the interval coverage when the residuals are not homoscedastic (<a href="https://skforecast.org/0.12.0/api/forecasterautoreg"><code>ForecasterAutoreg</code></a>).</p>
+<p><span class="badge text-bg-feature">Feature</span> New method to <a href="https://skforecast.org/0.12.0/user_guides/probabilistic-forecasting#intervals-conditioned-on-predicted-values-binned-residuals">predict intervals conditioned on the range of the predicted values</a>. This is can help to improve the interval coverage when the residuals are not homoscedastic (<a href="https://skforecast.org/0.12.0/api/forecasterautoreg"><code>ForecasterAutoreg</code></a>).</p>
 </li>
 <li>
 <p><span class="badge text-bg-enhancement">Enhancement</span> <a href="https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting#hyperparameter-tuning-and-lags-selection-multi-series">Bayesian hyperparameter search</a> is now available for all multiseries forecasters using <code>optuna</code> as the search engine.</p>

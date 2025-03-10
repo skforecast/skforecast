@@ -360,7 +360,7 @@ The main changes in this release are:
 
 + <span class="badge text-bg-feature">Feature</span> Added new forecaster [`ForecasterRnn`](https://skforecast.org/latest/api/forecasterrnn) to create forecasting models based on [deep learning](https://skforecast.org/latest/user_guides/forecasting-with-deep-learning-rnn-lstm) (RNN and LSTM).
 
-+ <span class="badge text-bg-feature">Feature</span> New method to [predict intervals conditioned on the range of the predicted values](https://skforecast.org/latest/user_guides/probabilistic-forecasting#intervals-conditioned-on-predicted-values-binned-residuals). This is can help to improve the interval coverage when the residuals are not homoscedastic ([`ForecasterAutoreg`](https://skforecast.org/0.12.0/api/forecasterautoreg)).
++ <span class="badge text-bg-feature">Feature</span> New method to [predict intervals conditioned on the range of the predicted values](https://skforecast.org/0.12.0/user_guides/probabilistic-forecasting#intervals-conditioned-on-predicted-values-binned-residuals). This is can help to improve the interval coverage when the residuals are not homoscedastic ([`ForecasterAutoreg`](https://skforecast.org/0.12.0/api/forecasterautoreg)).
 
 + <span class="badge text-bg-enhancement">Enhancement</span> [Bayesian hyperparameter search](https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting#hyperparameter-tuning-and-lags-selection-multi-series) is now available for all multiseries forecasters using `optuna` as the search engine.
 
@@ -1081,7 +1081,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [ForecasterRecursiveMultiSeries]: https://skforecast.org/latest/api/forecasterrecursivemultiseries
 [ForecasterDirectMultiVariate]: https://skforecast.org/latest/api/forecasterdirectmultivariate
 [ForecasterRNN]: https://skforecast.org/latest/api/forecasterrnn
-[create_and_compile_model]: https://skforecast.org/latest/api/forecasterrnn#skforecast.deep_learning.utils.create_and_compile_model
+[create_and_compile_model]: https://skforecast.org/latest/api/forecasterrnn.html#skforecast.deep_learning.utils.create_and_compile_model
 [ForecasterSarimax]: https://skforecast.org/latest/api/forecastersarimax
 [Sarimax]: https://skforecast.org/latest/api/sarimax
 [ForecasterEquivalentDate]: https://skforecast.org/latest/api/forecasterequivalentdate
