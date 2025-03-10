@@ -574,8 +574,7 @@ class ForecasterRnn(ForecasterBase):
             information.
         store_last_window : Ignored
             Not used, present here for API consistency by convention.
-        device : str, default `auto`
-            Torch device. if auto `device = torch.device("cuda" if torch.cuda.is_available() else "cpu")`
+        
         Returns
         -------
         None

@@ -59,6 +59,8 @@ The main changes in this release are:
 
 + Added function `check_one_step_ahead_input` to check the input data when using a <code>[OneStepAheadFold]</code> in the <code>[model_selection]</code> functions.
 
++ Function `set_warnings_style` in the <code>[exceptions]</code> module to set the style of the skforecast warnings issued by the library.
+
 
 **Changed**
 
@@ -1143,8 +1145,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [load_demo_dataset]: https://skforecast.org/latest/api/datasets#skforecast.datasets.load_demo_dataset
 
 <!-- exceptions -->
-[utils]: https://skforecast.org/latest/api/exceptions
-
+[exceptions]: https://skforecast.org/latest/api/exceptions
 
 <!-- OLD -->
 [ForecasterAutoreg]: https://skforecast.org/0.13.0/api/forecasterautoreg
