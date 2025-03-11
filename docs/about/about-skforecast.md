@@ -1,28 +1,18 @@
-# About skforecast
- - ## History
- - ## Governance
+# More
+
+## About skforecast (Como SOLE)
+ - ### History: Quienes somos, cómo surgio...
+ - ### Governance: roadmap, decision making
+ - ### Contributors
+ - ### 📖 Citing skforecast
+ - ### Artwork (en el futuro)
 
 
 ## 📢 Consulting & Professional services
-- ### What we offer
-- ### Problems we solve
+https://www.pymc.io/projects/docs/en/stable/learn/consulting.html
+https://pola.rs/our-services/
 - ### How we collaborate
-- ### Previous collaborations (optional)
 - ### Contact us
 
-
-## 🛠️ Releases and roadmap
-- ### Version history and change logs
-- ### Request a new feature
-
-
-## 🌱 Community and Code of Conduct
-- ### Our community values
-- ### Expected behavior
-- ### Unacceptable behavior
-- ### Reporting and enforcement
-
-## 📖 Citing skforecast
-- ### Recommended citation format
-- ### BibTeX entry
-- ### DOI & official publication (if available)
+## Sponsor us
+- ### Sponsor for companies (contáctanos)
