@@ -138,17 +138,18 @@ plugins:
             docstring_section_style: table
             docstring_options:
               ignore_init_summary: true
-              show_if_no_docstring: true
             filters: ["!__"] # exclude all members starting with __
             members_order: source
             merge_init_into_class: true
-            render_references: true
             separate_signature: true
+            show_if_no_docstring: true
             show_root_full_path: true
             show_root_heading: true
             show_signature_annotations: false
             show_symbol_type_heading: false
             summary: true
+            extra:
+              render_references: true
   - mkdocs-jupyter:
       allow_errors: False
       execute: False
