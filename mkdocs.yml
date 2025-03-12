@@ -23,7 +23,7 @@ nav:
 
   - User Guides:
     - Table of contents: user_guides/table-of-contents.md
-    - Skforecast 0.14 Migration guide: ./user_guides/migration-guide.html
+    - Skforecast 0.14 Migration guide: user_guides/migration-guide.ipynb
     - Input data: user_guides/input-data.ipynb
     - Single series Forecasters:
       - Recursive multi-step forecasting: user_guides/autoregresive-forecaster.ipynb
@@ -121,19 +121,12 @@ nav:
 
   - Releases: releases/releases.md
 
-  - Authors: authors/authors.md
-
-  - About:
-    - About skforecast: about/about-skforecast.md
-    - Consulting & Collaboration | Consulting & Professional services: about/consulting-services.md
-    - Why choose skforecast?: about/why-choose-skforecast.md
-    - Releases and roadmap | Releases & Updates: about/releases.md
-    - Meet the team: about/authors.md
-    - How to contribute: about/contributing.md
-    - Community and Code of Conduct: about/code-of-conduct.md
-    - Citing skforecast: about/citation.md
+  - More: 
+    - About skforecast: more/about-skforecast.md
 
 plugins:
+  # - git-revision-date-localized:
+  #     enable_creation_date: true
   - mkdocstrings:
       handlers:
         python:
@@ -147,17 +140,18 @@ plugins:
             docstring_section_style: table
             docstring_options:
               ignore_init_summary: true
-              show_if_no_docstring: true
             filters: ["!__"] # exclude all members starting with __
             members_order: source
             merge_init_into_class: true
-            render_references: true
             separate_signature: true
+            show_if_no_docstring: true
             show_root_full_path: true
             show_root_heading: true
             show_signature_annotations: false
             show_symbol_type_heading: false
             summary: true
+            extra:
+              render_references: true
   - mkdocs-jupyter:
       allow_errors: False
       execute: False

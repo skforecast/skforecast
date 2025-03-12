@@ -14,5 +14,5 @@ https://pola.rs/our-services/
 - ### How we collaborate
 - ### Contact us
 
-## Sponsor us
+## Funding
 - ### Sponsor for companies (contáctanos)
