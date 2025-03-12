@@ -14,117 +14,6 @@
 
 Meet the core developers behind [skforecast](https://www.linkedin.com/company/skforecast/).
 
-<table align="center">
-  <thead>
-    <tr>
-      <th align="center">Avatar</th>
-      <th align="center">Name</th>
-      <th align="center">GitHub</th>
-      <th align="center">LinkedIn</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td align="center"><img src="https://github.com/JoaquinAmatRodrigo.png" width="100"></td>
-      <td align="center">Joaquín Amat Rodrigo</td>
-      <td align="center"><a href="https://github.com/JoaquinAmatRodrigo">@JoaquinAmatRodrigo</a></td>
-      <td align="center"><a href="https://www.linkedin.com/in/joaquin-amat-rodrigo">LinkedIn</a></td>
-    </tr>
-    <tr>
-      <td align="center"><img src="https://github.com/JavierEscobarOrtiz.png" width="100"></td>
-      <td align="center">Javier Escobar Ortiz</td>
-      <td align="center"><a href="https://github.com/JavierEscobarOrtiz">@JavierEscobarOrtiz</a></td>
-      <td align="center"><a href="https://www.linkedin.com/in/javier-escobar-ortiz">LinkedIn</a></td>
-    </tr>
-  </tbody>
-</table>
-
-
-
-<div align="center">
-
-  <span style="display: inline-block; margin: 0 20px; text-align:center;">
-    <a href="https://github.com/JoaquinAmatRodrigo">
-      <img src="https://github.com/JoaquinAmatRodrigo.png"
-           width="140"
-           style="border: 3px solid white; border-radius: 10px;"/><br>
-      Joaquín Amat Rodrigo
-    </a><br>
-    <a href="https://www.linkedin.com/in/joaquin-amat-rodrigo" style="color: #3499cd;">LinkedIn</a>
-  </span>
-
-  <span style="display: inline-block; margin: 0 20px; text-align:center;">
-    <a href="https://github.com/JavierEscobarOrtiz">
-      <img src="https://github.com/JavierEscobarOrtiz.png"
-           width="140"
-           style="border: 3px solid white; border-radius: 10px;"/><br>
-      Javier Escobar Ortiz
-    </a><br>
-    <a href="https://www.linkedin.com/in/javier-escobar-ortiz" style="color: #3499cd;">LinkedIn</a>
-  </span>
-
-</div>
-
-
-<table border="1" style="border-collapse: collapse; width: 100%;">
-    <tr>
-        <th>Avatar</th>
-        <th>Info</th>
-    </tr>
-    <tr>
-        <td style="text-align: center;">
-            <img src="https://github.com/JoaquinAmatRodrigo.png" alt="Joaquín Amat Rodrigo" width="80">
-        </td>
-        <td>
-            <strong>Joaquín Amat Rodrigo</strong><br>
-            <a href="https://github.com/JoaquinAmatRodrigo">@JoaquinAmatRodrigo</a><br>
-            <a href="https://www.linkedin.com/in/joaquin-amat-rodrigo" style="color: #3499cd;">LinkedIn</a>
-        </td>
-    </tr>
-    <tr>
-        <td style="text-align: center;">
-            <img src="https://github.com/JavierEscobarOrtiz.png" alt="Javier Escobar Ortiz" width="80">
-        </td>
-        <td>
-            <strong>Javier Escobar Ortiz</strong><br>
-            <a href="https://github.com/JavierEscobarOrtiz">@JavierEscobarOrtiz</a><br>
-            <a href="https://www.linkedin.com/in/javier-escobar-ortiz" style="color: #3499cd;">LinkedIn</a>
-        </td>
-    </tr>
-</table>
-
-
-<div style="display: flex; gap: 20px;">
-    <!-- Tabla de Joaquín Amat Rodrigo -->
-    <table border="1" style="border-collapse: collapse; width: 350px;">
-        <tr>
-            <td style="text-align: center; width: 100px;">
-                <img src="https://github.com/JoaquinAmatRodrigo.png" alt="Joaquín Amat Rodrigo" width="100">
-            </td>
-            <td>
-                <strong>Joaquín Amat Rodrigo</strong><br>
-                <a href="https://github.com/JoaquinAmatRodrigo">@JoaquinAmatRodrigo</a><br>
-                <a href="https://www.linkedin.com/in/joaquin-amatrodrigo" style="color: #3499cd;">LinkedIn</a>
-            </td>
-        </tr>
-    </table>
-
-    <!-- Tabla de Javier Escobar Ortiz -->
-    <table border="1" style="border-collapse: collapse; width: 350x;">
-        <tr>
-            <td style="text-align: center; width: 100px;">
-                <img src="https://github.com/JavierEscobarOrtiz.png" alt="Javier Escobar Ortiz" width="100">
-            </td>
-            <td>
-                <strong>Javier Escobar Ortiz</strong><br>
-                <a href="https://github.com/JavierEscobarOrtiz">@JavierEscobarOrtiz</a><br>
-                <a href="https://www.linkedin.com/in/javier-escobar-ortiz" style="color: #3499cd;">LinkedIn</a>
-            </td>
-        </tr>
-    </table>
-</div>
-
-
 <style>
     .profile-container {
         display: flex;
@@ -136,7 +25,7 @@ Meet the core developers behind [skforecast](https://www.linkedin.com/company/sk
         border: 1px solid #ddd;
         border-radius: 10px;
         overflow: hidden;
-        width: 350px;
+        width: 380px;
         box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
         transition: transform 0.2s ease-in-out, box-shadow 0.2s;
     }
@@ -152,7 +41,7 @@ Meet the core developers behind [skforecast](https://www.linkedin.com/company/sk
         background: #f8f8f8;
     }
     .profile-avatar img {
-        width: 90px;
+        width: 100px;
         height: auto;
         border-radius: 50%;
     }
@@ -163,18 +52,37 @@ Meet the core developers behind [skforecast](https://www.linkedin.com/company/sk
         justify-content: center;
     }
     .profile-info strong {
-        font-size: 18px;
+        font-size: 19px;
         color: #333;
     }
     .profile-info a {
         text-decoration: none;
-        font-size: 16px;
+        font-size: 17px;
     }
     .github-link {
-        color: #f79939;
+        color: #333;
+        font-weight: bold;
+    }
+    .github-link:hover {
+        color: #f79939 !important; 
+        font-weight: bold;
+    }
+    .github-link:visited {
+        color: #333; 
+        font-weight: bold;
     }
     .linkedin-link {
         color: #0e76a8 !important;
+        font-weight: bold;
+    }
+    .linkedin-link:hover {
+        color: #084461 !important; 
+        font-weight: bold;
+        text-decoration: underline; 
+    }
+    .linkedin-link:visited {
+        color: #0e76a8 !important; 
+        font-weight: bold;
     }
 </style>
 
@@ -202,109 +110,6 @@ Meet the core developers behind [skforecast](https://www.linkedin.com/company/sk
     </div>
   </div>
 </div>
-
-<br><br><br>
-
-<style>
-    .profile-container {
-        display: flex;
-        gap: 20px; /* Espacio entre las tarjetas */
-        justify-content: center; /* Centrar en la página */
-    }
-    .profile-card {
-        display: flex;
-        border: 1px solid #ddd;
-        border-radius: 10px;
-        overflow: hidden;
-        width: 350px;
-        box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
-        transition: transform 0.2s ease-in-out, box-shadow 0.2s;
-    }
-    .profile-card:hover {
-        transform: scale(1.03);
-        box-shadow: 3px 3px 12px rgba(0, 0, 0, 0.15);
-    }
-    .profile-avatar {
-        padding: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #f8f8f8;
-    }
-    .profile-avatar img {
-        width: 90px;
-        height: auto;
-        border-radius: 50%;
-    }
-    .profile-info {
-        padding: 15px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-    }
-    .profile-info a {
-        text-decoration: none;
-        font-size: 16px;
-        transition: color 0.2s ease-in-out, text-decoration 0.2s;
-    }
-    /* Enlace del nombre (GitHub) */
-    .profile-info .github-link {
-        color: #333;
-        font-weight: bold;
-    }
-    .profile-info .github-link:hover {
-        color: #f79939 !important; 
-        font-weight: bold;
-    }
-    .profile-info .github-link:visited {
-        color: #333; 
-        font-weight: bold;
-    }
-    /* Enlace de LinkedIn */
-    .profile-info .linkedin-link {
-        color: #0e76a8 !important;
-    }
-    .profile-info .linkedin-link:hover {
-        color: #084461 !important; /* Color más oscuro al pasar el mouse */
-        text-decoration: underline; /* Se subraya al pasar el mouse */
-    }
-    .profile-info .linkedin-link:visited {
-        color: #0e76a8 !important; /* Mantiene el color original después de visitar */
-    }
-</style>
-
-<div class="profile-container">
-    <!-- Tarjeta de Joaquín -->
-    <div class="profile-card">
-        <div class="profile-avatar">
-            <img src="https://github.com/JoaquinAmatRodrigo.png" alt="Joaquín Amat Rodrigo">
-        </div>
-        <div class="profile-info">
-            <a href="https://github.com/JoaquinAmatRodrigo" class="github-link" target="_blank" rel="noopener noreferrer">
-                Joaquín Amat Rodrigo
-            </a>
-            <a href="https://www.linkedin.com/in/joaquin-amat-rodrigo" class="linkedin-link" target="_blank" rel="noopener noreferrer">
-                LinkedIn
-            </a>
-        </div>
-    </div>
-
-    <!-- Tarjeta de Javier -->
-    <div class="profile-card">
-        <div class="profile-avatar">
-            <img src="https://github.com/JavierEscobarOrtiz.png" alt="Javier Escobar Ortiz">
-        </div>
-        <div class="profile-info">
-            <a href="https://github.com/JavierEscobarOrtiz" class="github-link" target="_blank" rel="noopener noreferrer">
-                Javier Escobar Ortiz
-            </a>
-            <a href="https://www.linkedin.com/in/javier-escobar-ortiz" class="linkedin-link" target="_blank" rel="noopener noreferrer">
-                LinkedIn
-            </a>
-        </div>
-    </div>
-</div>
-
 
 
 ## Main Contributors
