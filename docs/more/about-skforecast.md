@@ -153,7 +153,7 @@ Special mention to the main contributors who have significantly impacted the lib
 | g-rubio                     | [@g-rubio](https://github.com/g-rubio)     |
 
 <br>
-Thank you for helping us make skforecast better! 🎉
+Thank you for helping us make **skforecast** better! 🎉
 
 
 ## Citing skforecast
