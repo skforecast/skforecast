@@ -26,7 +26,7 @@ Interested in working with us? We'd love to hear from you! Let’s build somethi
         width: 380px;
         box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
         transition: transform 0.2s ease-in-out, box-shadow 0.2s;
-        background: #f8f8f8;
+        background-color: #ffffff;
     }
     .profile-card:hover {
         transform: scale(1.03);
