@@ -122,9 +122,14 @@ nav:
 
   - Releases: releases/releases.md
 
-  - Authors: authors/authors.md
+  - More: 
+    - About skforecast: more/about-skforecast.md
+    - Consulting & Professional services: more/consulting.md
+    - Funding: more/funding.md
 
 plugins:
+  # - git-revision-date-localized: Incluir última fecha de modificación al final de las páginas
+  #     enable_creation_date: true
   - mkdocstrings:
       handlers:
         python:

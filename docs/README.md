@@ -107,7 +107,7 @@ Primarily, skforecast development consists of adding and creating new *Forecaste
 
 For more information on how to contribute to skforecast, see our [Contribution Guide](https://github.com/skforecast/skforecast/blob/master/CONTRIBUTING.md).
 
-Visit our [authors section](./authors/authors.html) to meet all the contributors to skforecast.
+Visit our [About section](./more/about-skforecast.html) to meet the people behind **skforecast**.
 
 
 ## Citation
@@ -220,7 +220,7 @@ Marcillo Vera, F., Rosado, R., Zambrano, P., Velastegui, J., Morales, G., Lagla,
 
 ## Donating
 
-If you found skforecast useful, you can support us with a donation. Your contribution will help to continue developing and improving this project. Many thanks! :hugging_face: :heart_eyes:
+If you found **skforecast** useful, you can support us with a donation. Your contribution will help us **continue developing, maintaining, and improving** this project. Every contribution, no matter the size, makes a difference. **Thank you for your support!**
 
 <a href="https://www.buymeacoffee.com/skforecast" target="_blank" title="Buy me a coffee skforecast">
     <img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=skforecast&button_colour=f79939&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00" />
