@@ -23,7 +23,7 @@ nav:
 
   - User Guides:
     - Table of contents: user_guides/table-of-contents.md
-    - Skforecast 0.14 Migration guide: ./user_guides/migration-guide.html
+    - Skforecast 0.14 Migration guide: user_guides/migration-guide.ipynb
     - Input data: user_guides/input-data.ipynb
     - Single series Forecasters:
       - Recursive multi-step forecasting: user_guides/autoregresive-forecaster.ipynb
@@ -55,6 +55,7 @@ nav:
       - Conformal predictions: user_guides/probabilistic-forecasting-conformal-prediction.ipynb
       - Conformal calibration: user_guides/probabilistic-forecasting-conformal-calibration.ipynb
       - Quantile forecasting: user_guides/probabilistic-forecasting-quantile-regression.ipynb
+      - Probabilistic global models: user_guides/probabilistic-forecasting-global-models.ipynb
       - Metrics in probabilistic forecasting: user_guides/probabilistic-forecasting-metrics.ipynb
       - Continuous Ranked Probability Score (CRPS): faq/probabilistic-forecasting-crps-score.ipynb
     - Model Explainability: user_guides/explainability.ipynb
@@ -121,9 +122,14 @@ nav:
 
   - Releases: releases/releases.md
 
-  - Authors: authors/authors.md
+  - More: 
+    - About skforecast: more/about-skforecast.md
+    - Consulting & Professional services: more/consulting.md
+    - Funding: more/funding.md
 
 plugins:
+  # - git-revision-date-localized: Incluir última fecha de modificación al final de las páginas
+  #     enable_creation_date: true
   - mkdocstrings:
       handlers:
         python:
@@ -137,17 +143,18 @@ plugins:
             docstring_section_style: table
             docstring_options:
               ignore_init_summary: true
-              show_if_no_docstring: true
             filters: ["!__"] # exclude all members starting with __
             members_order: source
             merge_init_into_class: true
-            render_references: true
             separate_signature: true
+            show_if_no_docstring: true
             show_root_full_path: true
             show_root_heading: true
             show_signature_annotations: false
             show_symbol_type_heading: false
             summary: true
+            extra:
+              render_references: true
   - mkdocs-jupyter:
       allow_errors: False
       execute: False
