@@ -12,7 +12,9 @@
 
 ## Core Development Team
 
-Meet the core developers behind [skforecast](https://www.linkedin.com/company/skforecast/).
+[![!slack](https://img.shields.io/static/v1?logo=linkedin&label=LinkedIn&message=news&color=lightblue)](https://www.linkedin.com/company/skforecast/)
+
+Meet the core developers behind [skforecast](https://github.com/skforecast/skforecast).
 
 <style>
     .profile-container {
@@ -185,6 +187,13 @@ doi = {10.5281/zenodo.8382788}
 ```
 
 View the [citation file](https://github.com/skforecast/skforecast/blob/master/CITATION.cff).
+
+
+## License
+
+**Skforecast software**: [BSD-3-Clause License](https://github.com/skforecast/skforecast/blob/master/LICENSE)
+
+**Skforecast documentation**: [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 
 
 ## Artwork 
