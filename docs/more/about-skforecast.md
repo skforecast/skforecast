@@ -157,7 +157,7 @@ Thank you for helping us make skforecast better! 🎉
 
 ## Citing skforecast
 
-[![License](https://img.shields.io/github/license/skforecast/skforecast)](https://github.com/skforecast/skforecast/blob/master/LICENSE) [![DOI](https://zenodo.org/badge/337705968.svg)](https://zenodo.org/doi/10.5281/zenodo.8382787)
+[![DOI](https://zenodo.org/badge/337705968.svg)](https://zenodo.org/doi/10.5281/zenodo.8382787)
 
 If you use skforecast for a scientific publication, we would appreciate citations to the published software.
 
@@ -190,6 +190,8 @@ View the [citation file](https://github.com/skforecast/skforecast/blob/master/CI
 
 
 ## License
+
+[![License](https://img.shields.io/github/license/skforecast/skforecast)](https://github.com/skforecast/skforecast/blob/master/LICENSE)
 
 **Skforecast software**: [BSD-3-Clause License](https://github.com/skforecast/skforecast/blob/master/LICENSE)
 
