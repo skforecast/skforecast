@@ -201,3 +201,5 @@ If you found **skforecast** useful, you can support us with a donation. Your con
 **Skforecast software**: [BSD-3-Clause License](https://github.com/skforecast/skforecast/blob/master/LICENSE)
 
 **Skforecast documentation**: [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+
+**Trademark**: The trademark skforecast is registered with the European Union Intellectual Property Office (EUIPO) under the application number 019109684. Unauthorized use of this trademark, its logo, or any associated visual identity elements is strictly prohibited without the express consent of the owner.

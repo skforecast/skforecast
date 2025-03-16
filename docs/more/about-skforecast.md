@@ -198,13 +198,15 @@ View the [citation file](https://github.com/skforecast/skforecast/blob/master/CI
 
 **Skforecast documentation**: [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 
+**Trademark**: The trademark skforecast is registered with the European Union Intellectual Property Office (EUIPO) under the application number 019109684. Unauthorized use of this trademark, its logo, or any associated visual identity elements is strictly prohibited without the express consent of the owner.
+
 
 ## Artwork 
 
-Feel free to use the official **skforecast** logo for presentations, blog posts, or any material mentioning or promoting skforecast:
+Official **skforecast** logo for presentations, blog posts, or any material mentioning or promoting skforecast. Created by Thelma Alfonso Arias.
 
 <p style="text-align: center">
   <img src="https://raw.githubusercontent.com/skforecast/skforecast/refs/heads/master/images/logo-skforecast.png" alt="skforecast Logo" width="250"/>
 </p>
 
-*Please do not alter, distort, or modify the original logo without permission.*
+*The trademark skforecast is registered with the European Union Intellectual Property Office (EUIPO) under the application number 019109684. Unauthorized use of this trademark, its logo, or any associated visual identity elements is strictly prohibited without the express consent of the owner.*
