@@ -55,9 +55,9 @@ Together, we can make time series forecasting accessible to everyone.
 
 # Documentation
 
-For detailed information on how to use and leverage the full potential of **skforecast** please refer to the comprehensive documentation available at:
+Explore the full capabilities of **skforecast** with our comprehensive documentation:
 
-**https://skforecast.org** :books:
+:books: **https://skforecast.org**
 
 | Documentation                           |     |
 |:----------------------------------------|:----|
@@ -67,7 +67,8 @@ For detailed information on how to use and leverage the full potential of **skfo
 | :mortar_board: [Examples and tutorials] | Learn through practical examples and tutorials to master skforecast |
 | :question: [FAQ and tips]               | Find answers and tips about forecasting |
 | :books: [API Reference]                 | Comprehensive reference for skforecast functions and classes |
-| :black_nib: [Authors]                   | Meet the authors and contributors of skforecast |
+| :memo: [Releases]                       | Keep track of major updates and changes |
+| :mag: [More]                            | Discover more about skforecast and its creators |
 
 [Introduction to forecasting]: https://skforecast.org/latest/introduction-forecasting/introduction-forecasting.html
 [Quick start]: https://skforecast.org/latest/quick-start/quick-start-skforecast.html
@@ -75,7 +76,8 @@ For detailed information on how to use and leverage the full potential of **skfo
 [Examples and tutorials]: https://skforecast.org/latest/examples/examples_english.html
 [FAQ and tips]: https://skforecast.org/latest/faq/table-of-contents.html
 [API Reference]: https://skforecast.org/latest/api/forecasterrecursive.html
-[Authors]: https://skforecast.org/latest/authors/authors.html
+[Releases]: https://skforecast.org/latest/releases/releases.html
+[More]: https://skforecast.org/latest/more/about-skforecast.html
 
 
 # Installation & Dependencies
@@ -139,7 +141,7 @@ Primarily, skforecast development consists of adding and creating new *Forecaste
 
 For more information on how to contribute to skforecast, see our [Contribution Guide](https://github.com/skforecast/skforecast/blob/master/CONTRIBUTING.md).
 
-Visit our [authors section](https://skforecast.org/latest/authors/authors) to meet all the contributors to skforecast.
+Visit our [About section](https://skforecast.org/latest/more/about-skforecast.html) to meet the people behind **skforecast**.
 
 
 # Citation
@@ -176,7 +178,7 @@ View the [citation file](https://github.com/skforecast/skforecast/blob/master/CI
 
 # Donating
 
-If you found skforecast useful, you can support us with a donation. Your contribution will help to continue developing and improving this project. Many thanks!
+If you found **skforecast** useful, you can support us with a donation. Your contribution will help us **continue developing, maintaining, and improving** this project. Every contribution, no matter the size, makes a difference. **Thank you for your support!**
 
 <a href="https://www.buymeacoffee.com/skforecast" target="_blank" title="Buy me a coffee skforecast">
     <img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=skforecast&button_colour=f79939&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00" />

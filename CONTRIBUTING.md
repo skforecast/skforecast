@@ -21,7 +21,7 @@ To make sure we are aligned, please **open an issue** with a brief description o
 
 We are excited to have you involved in this project!
 
-Visit our [authors section](https://skforecast.org/latest/authors/authors.html) to meet all the contributors to **Skforecast**.
+Visit our [About section](https://skforecast.org/latest/more/about-skforecast.html) to meet the people behind **skforecast**.
 
 
 ## Testing
@@ -53,8 +53,7 @@ Docstring documentation must be included in every class and function. Skforecast
 ```python
 class ForecasterRecursive(ForecasterBase):
     """
-    This class turns any regressor compatible with the scikit-learn API into a
-    recursive autoregressive (multi-step) forecaster.
+    This class turns any regressor compatible with the scikit-learn API into a recursive autoregressive (multi-step) forecaster.
     
     Parameters
     ----------
@@ -64,26 +63,16 @@ class ForecasterRecursive(ForecasterBase):
         Lags used as predictors. Index starts at 1, so lag 1 is equal to t-1.
     
         - `int`: include lags from 1 to `lags` (included).
-        - `list`, `1d numpy ndarray` or `range`: include only lags present in 
-        `lags`, all elements must be int.
+        - `list`, `1d numpy ndarray` or `range`: include only lags present in `lags`, all elements must be int.
         - `None`: no lags are included as predictors. 
     window_features : object, list, default None
-        Instance or list of instances used to create window features. Window features
-        are created from the original time series and are included as predictors.
+        Instance or list of instances used to create window features. Window features are created from the original time series and are included as predictors.
     transformer_y : object transformer (preprocessor), default None
-        An instance of a transformer (preprocessor) compatible with the scikit-learn
-        preprocessing API with methods: fit, transform, fit_transform and inverse_transform.
-        ColumnTransformers are not allowed since they do not have inverse_transform method.
-        The transformation is applied to `y` before training the forecaster. 
+        An instance of a transformer (preprocessor) compatible with the scikit-learn preprocessing API with methods: fit, transform, fit_transform and inverse_transform. ColumnTransformers are not allowed since they do not have inverse_transform method. The transformation is applied to `y` before training the forecaster. 
     transformer_exog : object transformer (preprocessor), default None
-        An instance of a transformer (preprocessor) compatible with the scikit-learn
-        preprocessing API. The transformation is applied to `exog` before training the
-        forecaster. `inverse_transform` is not available when using ColumnTransformers.
+        An instance of a transformer (preprocessor) compatible with the scikit-learn preprocessing API. The transformation is applied to `exog` before training the forecaster. `inverse_transform` is not available when using ColumnTransformers.
     weight_func : Callable, default None
-        Function that defines the individual weights for each sample based on the
-        index. For example, a function that assigns a lower weight to certain dates.
-        Ignored if `regressor` does not have the argument `sample_weight` in its `fit`
-        method. The resulting `sample_weight` cannot have negative values.
+        Function that defines the individual weights for each sample based on the index. For example, a function that assigns a lower weight to certain dates. Ignored if `regressor` does not have the argument `sample_weight` in its `fit` method. The resulting `sample_weight` cannot have negative values.
     differentiation : int, default None
         Order of differencing applied to the time series before training the forecaster.
         If `None`, no differencing is applied. The order of differentiation is the number
