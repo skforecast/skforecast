@@ -1,0 +1,210 @@
+# About skforecast
+
+## History
+
+**skforecast** was born from the need to make forecasting easy, accessible, and effective for everyone. Since its inception in 2021, our aim has been to bridge the gap between machine learning and practical time series forecasting. Thanks to our amazing community, the library continues to grow, evolve, and help people worldwide forecast better.
+
+
+## Governance
+
+**skforecast** is an open-source project maintained by its core development team, with guidance and valuable contributions from the community. We strongly believe in openness, transparency, and collaboration. Everyone is encouraged to participate through issues, discussions, and pull requests on [GitHub](https://github.com/skforecast/skforecast).
+
+
+## Core Development Team
+
+[![!slack](https://img.shields.io/static/v1?logo=linkedin&label=LinkedIn&message=news&color=lightblue)](https://www.linkedin.com/company/skforecast/)
+
+Meet the core developers behind [skforecast](https://github.com/skforecast/skforecast).
+
+<style>
+    .profile-container {
+        display: flex;
+        gap: 20px; /* Espacio entre las tarjetas */
+        justify-content: center; /* Centrar en la página */
+    }
+    .profile-card {
+        display: flex;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        overflow: hidden;
+        width: 380px;
+        box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s;
+        background-color: #ffffff;
+    }
+    .profile-card:hover {
+        transform: scale(1.03);
+        box-shadow: 3px 3px 12px rgba(0, 0, 0, 0.15);
+    }
+    .profile-avatar {
+        padding: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f8f8f8;
+    }
+    .profile-avatar img {
+        width: 100px;
+        height: auto;
+        border-radius: 50%;
+    }
+    .profile-info {
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    .profile-info strong {
+        font-size: 19px;
+        color: #333;
+    }
+    .profile-info a {
+        text-decoration: none;
+        font-size: 17px;
+    }
+    .github-link {
+        color: #333;
+        font-weight: bold;
+    }
+    .github-link:hover {
+        color: #f79939 !important; 
+        font-weight: bold;
+    }
+    .github-link:visited {
+        color: #333; 
+        font-weight: bold;
+    }
+    .linkedin-link {
+        color: #0e76a8 !important;
+        font-weight: bold;
+    }
+    .linkedin-link:hover {
+        color: #084461 !important; 
+        font-weight: bold;
+        text-decoration: underline; 
+    }
+    .linkedin-link:visited {
+        color: #0e76a8 !important; 
+        font-weight: bold;
+    }
+</style>
+
+<div class="profile-container">
+
+  <div class="profile-card">
+    <div class="profile-avatar">
+      <img src="https://github.com/JoaquinAmatRodrigo.png" alt="Joaquín Amat Rodrigo">
+    </div>
+    <div class="profile-info">
+      <strong>Joaquín Amat Rodrigo</strong>
+      <a href="https://github.com/JoaquinAmatRodrigo" class="github-link" target="_blank" rel="noopener noreferrer">@JoaquinAmatRodrigo</a>
+      <a href="https://www.linkedin.com/in/joaquin-amat-rodrigo" class="linkedin-link" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+    </div>
+  </div>
+
+  <div class="profile-card">
+    <div class="profile-avatar">
+      <img src="https://github.com/JavierEscobarOrtiz.png" alt="Javier Escobar Ortiz">
+    </div>
+    <div class="profile-info">
+      <strong>Javier Escobar Ortiz</strong>
+      <a href="https://github.com/JavierEscobarOrtiz" class="github-link" target="_blank" rel="noopener noreferrer">@JavierEscobarOrtiz</a>
+      <a href="https://www.linkedin.com/in/javier-escobar-ortiz" class="linkedin-link" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+    </div>
+  </div>
+</div>
+
+
+## Main Contributors
+
+Special mention to the main contributors who have significantly impacted the library development:
+
+| Name                 | GitHub                                                       |
+|:--------------------:|:------------------------------------------------------------:|
+| Fernando Carazo Melo | [@FernandoCarazoMelo](https://github.com/FernandoCarazoMelo) |
+
+
+## Contributors
+
+![GitHub contributors](https://img.shields.io/github/contributors-anon/skforecast/skforecast)
+
+???+ note "Get Involved"
+
+    We value your input! Here are a few ways you can participate:
+
+    - **Report bugs** and suggest new features on our [GitHub Issues page](https://github.com/skforecast/skforecast/issues).
+    - **Contribute** to the project by [submitting code](https://github.com/skforecast/skforecast/blob/master/CONTRIBUTING.md), adding new features, or improving the documentation.
+    - **Share your feedback** on LinkedIn to help spread the word about skforecast!
+
+    Together, we can make time series forecasting accessible to everyone.
+
+| Name                        | GitHub                                     |
+|:---------------------------:|:------------------------------------------:|
+| Josh Wong                   | [@josh-wong](https://github.com/josh-wong) |
+| Edgar Bahilo Rodríguez      | [@edgBR](https://github.com/edgBR)         |
+| Mwainwright                 | [@syndct](https://github.com/syndct)       |
+| Kishan Manani               | [@KishManani](https://github.com/KishManani) |
+| Sergio Quijano              | [@Sergio-Quijano-Stratesys](https://github.com/Sergio-Quijano-Stratesys) |
+| Fernando da Silva           | [@schoulten](https://github.com/schoulten) |
+| Lillian Jensen, MPH         | [@tyg3rr](https://github.com/tyg3rr)       |
+| Ivan Liu                    | [@IvanLiuTW](https://github.com/IvanLiuTW) |
+| Ignacio Moya                | [@imMoya](https://github.com/imMoya)       |
+| Pablo Rodríguez Pérez       | [@pablorodriper](https://github.com/pablorodriper) |
+| g-rubio                     | [@g-rubio](https://github.com/g-rubio)     |
+
+<br>
+Thank you for helping us make **skforecast** better! 🎉
+
+
+## Citing skforecast
+
+[![DOI](https://zenodo.org/badge/337705968.svg)](https://zenodo.org/doi/10.5281/zenodo.8382787)
+
+If you use skforecast for a scientific publication, we would appreciate citations to the published software.
+
+**Zenodo**
+
+```
+Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2025). skforecast (v0.15.0). Zenodo. https://doi.org/10.5281/zenodo.8382788
+```
+
+**APA**:
+```
+Amat Rodrigo, J., & Escobar Ortiz, J. (2025). skforecast (Version 0.15.0) [Computer software]. https://doi.org/10.5281/zenodo.8382788
+```
+
+**BibTeX**:
+```
+@software{skforecast,
+author = {Amat Rodrigo, Joaquin and Escobar Ortiz, Javier},
+title = {skforecast},
+version = {0.15.0},
+month = {3},
+year = {2025},
+license = {BSD-3-Clause},
+url = {https://skforecast.org/},
+doi = {10.5281/zenodo.8382788}
+}
+```
+
+View the [citation file](https://github.com/skforecast/skforecast/blob/master/CITATION.cff).
+
+
+## License
+
+[![License](https://img.shields.io/github/license/skforecast/skforecast)](https://github.com/skforecast/skforecast/blob/master/LICENSE)
+
+**Skforecast software**: [BSD-3-Clause License](https://github.com/skforecast/skforecast/blob/master/LICENSE)
+
+**Skforecast documentation**: [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+
+
+## Artwork 
+
+Feel free to use the official **skforecast** logo for presentations, blog posts, or any material mentioning or promoting skforecast:
+
+<p style="text-align: center">
+  <img src="https://raw.githubusercontent.com/skforecast/skforecast/refs/heads/master/images/logo-skforecast.png" alt="skforecast Logo" width="250"/>
+</p>
+
+*Please do not alter, distort, or modify the original logo without permission.*
