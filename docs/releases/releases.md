@@ -10,6 +10,19 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
 
+## 0.15.1 <small>Mar 18, 2025</small> { id="0.15.1" }
+
+Minor release to fix a bug when importing module `skforecast.sarimax`.
+
+**Added**
+
+**Changed**
+
+**Fixed**
+
++ <span class="badge text-bg-danger">Fix</span>  Fixed import error when importing module `skforecast.sarimax`.
+
+
 ## 0.15.0 <small>Mar 10, 2025</small> { id="0.15.0" }
 
 The main changes in this release are:
