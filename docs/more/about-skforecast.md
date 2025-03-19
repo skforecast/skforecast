@@ -165,12 +165,12 @@ If you use skforecast for a scientific publication, we would appreciate citation
 **Zenodo**
 
 ```
-Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2025). skforecast (v0.15.0). Zenodo. https://doi.org/10.5281/zenodo.8382788
+Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2025). skforecast (v0.15.1). Zenodo. https://doi.org/10.5281/zenodo.8382788
 ```
 
 **APA**:
 ```
-Amat Rodrigo, J., & Escobar Ortiz, J. (2025). skforecast (Version 0.15.0) [Computer software]. https://doi.org/10.5281/zenodo.8382788
+Amat Rodrigo, J., & Escobar Ortiz, J. (2025). skforecast (Version 0.15.1) [Computer software]. https://doi.org/10.5281/zenodo.8382788
 ```
 
 **BibTeX**:
@@ -178,7 +178,7 @@ Amat Rodrigo, J., & Escobar Ortiz, J. (2025). skforecast (Version 0.15.0) [Compu
 @software{skforecast,
 author = {Amat Rodrigo, Joaquin and Escobar Ortiz, Javier},
 title = {skforecast},
-version = {0.15.0},
+version = {0.15.1},
 month = {3},
 year = {2025},
 license = {BSD-3-Clause},
@@ -198,13 +198,15 @@ View the [citation file](https://github.com/skforecast/skforecast/blob/master/CI
 
 **Skforecast documentation**: [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 
+**Trademark**: The trademark skforecast is registered with the European Union Intellectual Property Office (EUIPO) under the application number 019109684. Unauthorized use of this trademark, its logo, or any associated visual identity elements is strictly prohibited without the express consent of the owner.
+
 
 ## Artwork 
 
-Feel free to use the official **skforecast** logo for presentations, blog posts, or any material mentioning or promoting skforecast:
+Official **skforecast** logo for presentations, blog posts, or any material mentioning or promoting skforecast. Created by Thelma Alfonso Arias.
 
 <p style="text-align: center">
   <img src="https://raw.githubusercontent.com/skforecast/skforecast/refs/heads/master/images/logo-skforecast.png" alt="skforecast Logo" width="250"/>
 </p>
 
-*Please do not alter, distort, or modify the original logo without permission.*
+*The trademark skforecast is registered with the European Union Intellectual Property Office (EUIPO) under the application number 019109684. Unauthorized use of this trademark, its logo, or any associated visual identity elements is strictly prohibited without the express consent of the owner.*
