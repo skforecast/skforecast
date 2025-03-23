@@ -96,14 +96,19 @@ def initialize_lags(
             if np.any(lags < 1):
                 raise ValueError("Minimum value of lags allowed is 1.")
         else:
-            if forecaster_name != 'ForecasterDirectMultiVariate':
+            if forecaster_name == 'ForecasterDirectMultiVariate':
+                raise TypeError(
+                    f"`lags` argument must be a dict, int, 1d numpy ndarray, range, "
+                    f"tuple or list. Got {type(lags)}."
+                )
+            elif forecaster_name == 'ForecasterRnn':
                 raise TypeError(
                     f"`lags` argument must be an int, 1d numpy ndarray, range, "
-                    f"tuple or list. Got {type(lags)}."
+                    f"tuple, list or 'auto'. Got {type(lags)}."
                 )
             else:
                 raise TypeError(
-                    f"`lags` argument must be a dict, int, 1d numpy ndarray, range, "
+                    f"`lags` argument must be an int, 1d numpy ndarray, range, "
                     f"tuple or list. Got {type(lags)}."
                 )
         
