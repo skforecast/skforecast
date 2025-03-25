@@ -36,14 +36,17 @@ from ..utils import (
     initialize_lags,
     check_interval,
     check_predict_input,
+    check_residuals_input,
     check_select_fit_kwargs,
     check_y,
     check_exog,
     check_exog_dtypes,
     input_to_frame,
     expand_index,
-    preprocess_last_window,
     preprocess_y,
+    preprocess_last_window,
+    prepare_levels_multiseries,
+    prepare_steps_direct,
     set_skforecast_warnings,
     transform_numpy,
     transform_series,
@@ -181,6 +184,9 @@ class ForecasterRnn(ForecasterBase):
         Version of python used to create the forecaster.
     forecaster_id : str, int
         Name used as an identifier of the forecaster.
+    _probabilistic_mode: str, bool
+        Private attribute used to indicate whether the forecaster should perform 
+        some calculations during backtesting.
     dropna_from_series : Ignored
         Not used, present here for API consistency by convention.
     encoding : Ignored
@@ -235,6 +241,7 @@ class ForecasterRnn(ForecasterBase):
         self.skforecast_version = skforecast.__version__
         self.python_version = sys.version.split(" ")[0]
         self.forecaster_id = forecaster_id
+        self._probabilistic_mode = "no_binned"
         self.weight_func = None  # Ignored in this forecaster
         self.source_code_weight_func = None  # Ignored in this forecaster
         self.dropna_from_series = False  # Ignored in this forecaster
@@ -247,6 +254,7 @@ class ForecasterRnn(ForecasterBase):
         # Infer parameters from the model
         self.regressor = deepcopy(regressor)
         layer_init = self.regressor.layers[0]
+        layer_end = self.regressor.layers[-1]
 
         if lags == "auto":
             if keras.__version__ < "3.0":
@@ -256,8 +264,6 @@ class ForecasterRnn(ForecasterBase):
         
         self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
         self.window_size = self.max_lag
-
-        layer_end = self.regressor.layers[-1]
         if steps == "auto":
             if keras.__version__ < "3.0":
                 self.steps = np.arange(layer_end.output_shape[1]) + 1
@@ -273,8 +279,9 @@ class ForecasterRnn(ForecasterBase):
             raise TypeError(
                 f"`steps` argument must be an int, list or 'auto'. Got {type(steps)}."
             )
-
+        
         self.max_step = np.max(self.steps)
+
         if keras.__version__ < "3.0":
             self.outputs = layer_end.output_shape[-1]
         else:
@@ -302,7 +309,9 @@ class ForecasterRnn(ForecasterBase):
             fit_kwargs.pop("exog_val")
 
         self.in_sample_residuals_ = {step: None for step in self.steps}
+        self.in_sample_residuals_by_bin_ = None
         self.out_sample_residuals_ = None
+        self.out_sample_residuals_by_bin_ = None
 
         self.fit_kwargs = check_select_fit_kwargs(
             regressor=self.regressor, fit_kwargs=fit_kwargs
@@ -703,8 +712,159 @@ class ForecasterRnn(ForecasterBase):
         if store_in_sample_residuals:
             residuals = y_train - self.regressor.predict(x=X_train, verbose=0)
             self.in_sample_residuals_ = {
-                step: residuals[:, i, :] for i, step in enumerate(self.steps)
+                int(step): residuals[:, i, :] for i, step in enumerate(self.steps)
             }
+    
+    # TODO: Review docstring
+    def _create_predict_inputs(
+        self,
+        steps: int | list[int] | None = None,
+        levels: str | list[str] | None = None,
+        last_window: pd.Series | pd.DataFrame | None = None,
+        exog: pd.Series | pd.DataFrame | None = None,
+        predict_probabilistic: bool = False,
+        use_in_sample_residuals: bool = True,
+        check_inputs: bool = True
+    ) -> tuple[list[np.ndarray], list[str], list[int], pd.Index]:
+        """
+        Create the inputs needed for the prediction process.
+        
+        Parameters
+        ----------
+        steps : int, list, None, default None
+            Predict n steps. The value of `steps` must be less than or equal to the 
+            value of steps defined when initializing the forecaster. Starts at 1.
+        
+            - If `int`: Only steps within the range of 1 to int are predicted.
+            - If `list`: List of ints. Only the steps contained in the list 
+            are predicted.
+            - If `None`: As many steps are predicted as were defined at 
+            initialization.
+        levels : str, list, default `None`
+            Name of one or more time series to be predicted. It must be included
+            in `levels` defined when initializing the forecaster. If `None`, all
+            all series used during training will be available for prediction.
+        last_window : pandas Series, pandas DataFrame, default None
+            Series values used to create the predictors (lags) needed to 
+            predict `steps`.
+            If `last_window = None`, the values stored in `self.last_window_` are
+            used to calculate the initial predictors, and the predictions start
+            right after training data.
+        exog : pandas Series, pandas DataFrame, default None
+            Exogenous variable/s included as predictor/s.
+        predict_probabilistic : bool, default False
+            If `True`, the necessary checks for probabilistic predictions will be 
+            performed.
+        use_in_sample_residuals : bool, default True
+            If `True`, residuals from the training data are used as proxy of
+            prediction error to create predictions. 
+            If `False`, out of sample residuals (calibration) are used. 
+            Out-of-sample residuals must be precomputed using Forecaster's
+            `set_out_sample_residuals()` method.
+        check_inputs : bool, default True
+            If `True`, the input is checked for possible warnings and errors 
+            with the `check_predict_input` function. This argument is created 
+            for internal use and is not recommended to be changed.
+
+        Returns
+        -------
+        Xs : list
+            List of numpy arrays with the predictors for each step.
+        Xs_col_names : list
+            Names of the columns of the matrix created internally for prediction.
+        steps : list
+            Steps to predict.
+        prediction_index : pandas Index
+            Index of the predictions.
+        
+        """
+
+        levels, _ = prepare_levels_multiseries(
+            X_train_series_names_in_=self.levels, levels=levels
+        )
+
+        steps = prepare_steps_direct(
+                    max_step = self.steps,
+                    steps    = steps
+                )
+
+        if last_window is None:
+            last_window = self.last_window_
+
+        if check_inputs:
+            check_predict_input(
+                forecaster_name=type(self).__name__,
+                steps=steps,
+                is_fitted=self.is_fitted,
+                exog_in_=self.exog_in_,
+                index_type_=self.index_type_,
+                index_freq_=self.index_freq_,
+                window_size=self.window_size,
+                last_window=last_window,
+                exog=exog,
+                exog_type_in_=None,
+                exog_names_in_=None,
+                interval=None,
+                max_steps=self.max_step,
+                levels=levels,
+                levels_forecaster=self.levels,
+                series_names_in_=self.series_names_in_,
+            )
+
+            if predict_probabilistic:
+                # TODO: Check for this forecaster
+                check_residuals_input(
+                    forecaster_name              = type(self).__name__,
+                    use_in_sample_residuals      = use_in_sample_residuals,
+                    in_sample_residuals_         = self.in_sample_residuals_,
+                    out_sample_residuals_        = self.out_sample_residuals_,
+                    use_binned_residuals         = False,
+                    in_sample_residuals_by_bin_  = None,
+                    out_sample_residuals_by_bin_ = None,
+                    levels                       = self.levels,
+                    encoding                     = self.encoding
+                )
+
+        last_window = last_window.iloc[
+            -self.window_size :, last_window.columns.get_indexer(self.series_names_in_)
+        ].copy()
+        _, last_window_index = preprocess_last_window(
+                                   last_window   = last_window,
+                                   return_values = False
+                               )
+        prediction_index = expand_index(
+                               index = last_window_index,
+                               steps = max(steps)
+                           )[np.array(steps) - 1]
+        
+        for serie_name in self.series_names_in_:
+            last_window_serie = last_window[serie_name].to_numpy()
+            last_window_serie = transform_numpy(
+                array=last_window_serie,
+                transformer=self.transformer_series_[serie_name],
+                fit=False,
+                inverse_transform=False,
+            )
+            last_window.loc[:, serie_name] = last_window_serie
+
+        X = np.reshape(last_window.to_numpy(), (1, self.max_lag, last_window.shape[1]))
+        X_col_names = []
+
+        if exog is not None:
+            exog = input_to_frame(data=exog, input_name='exog')
+            exog = exog.loc[:, self.exog_names_in_]
+            exog = transform_dataframe(
+                       df                = exog,
+                       transformer       = self.transformer_exog,
+                       fit               = False,
+                       inverse_transform = False
+                   )
+            check_exog_dtypes(exog=exog)
+
+            X = [X, exog.to_numpy()[:steps]]
+            X_col_names = X_col_names + exog.columns.to_list()
+
+        return X, X_col_names, steps, levels, prediction_index
 
     def predict(
         self,
@@ -713,6 +873,7 @@ class ForecasterRnn(ForecasterBase):
         last_window: Optional[pd.DataFrame] = None,
         exog: pd.Series | pd.DataFrame | None = None,
         suppress_warnings: bool = False,
+        check_inputs: bool = True
     ) -> pd.DataFrame:
         """
         Predict n steps ahead
@@ -744,6 +905,10 @@ class ForecasterRnn(ForecasterBase):
             If `True`, skforecast warnings will be suppressed during the fitting
             process. See skforecast.exceptions.warn_skforecast_categories for more
             information.
+        check_inputs : bool, default True
+            If `True`, the input is checked for possible warnings and errors 
+            with the `check_predict_input` function. This argument is created 
+            for internal use and is not recommended to be changed.
 
         Returns
         -------
@@ -754,400 +919,227 @@ class ForecasterRnn(ForecasterBase):
 
         set_skforecast_warnings(suppress_warnings, action="ignore")
 
-        if levels is None:
-            levels = self.levels
-        elif isinstance(levels, str):
-            levels = [levels]
-        if isinstance(steps, int):
-            steps = list(np.arange(steps) + 1)
-        elif steps is None:
-            if isinstance(self.steps, int):
-                steps = list(np.arange(self.steps) + 1)
-            elif isinstance(self.steps, (list, np.ndarray)):
-                steps = list(np.array(self.steps))
-        elif isinstance(steps, list):
-            steps = list(np.array(steps))
-
-        for step in steps:
-            if not isinstance(step, (int, np.int64, np.int32)):
-                raise TypeError(
-                    (
-                        f"`steps` argument must be an int, a list of ints or `None`. "
-                        f"Got {type(steps)}."
-                    )
-                )
-
-        if last_window is None:
-            last_window = self.last_window_
-
-        check_predict_input(
-            forecaster_name=type(self).__name__,
-            steps=steps,
-            is_fitted=self.is_fitted,
-            exog_in_=self.exog_in_,
-            index_type_=self.index_type_,
-            index_freq_=self.index_freq_,
-            window_size=self.window_size,
-            last_window=last_window,
-            exog=exog,
-            exog_type_in_=None,
-            exog_names_in_=None,
-            interval=None,
-            max_steps=self.max_step,
-            levels=levels,
-            levels_forecaster=self.levels,
-            series_names_in_=self.series_names_in_,
-        )
-
-        last_window = last_window.iloc[-self.window_size :,].copy()
-
-        for serie_name in self.series_names_in_:
-            last_window_serie = transform_series(
-                series=last_window[serie_name],
-                transformer=self.transformer_series_[serie_name],
-                fit=False,
-                inverse_transform=False,
-            )
-            last_window_values, last_window_index = preprocess_last_window(
-                last_window=last_window_serie
-            )
-            last_window.loc[:, serie_name] = last_window_values
-
-        X = np.reshape(last_window.to_numpy(), (1, self.max_lag, last_window.shape[1]))
-        if not exog:
-            predictions = self.regressor.predict(X, verbose=0)
-        else:
-            if isinstance(exog, pd.Series):
-                exog = exog.to_frame()
-            
-            exog = exog.loc[:, self.exog_names_in_]
-            exog = transform_dataframe(
-                        df                = exog,
-                        transformer       = self.transformer_exog,
-                        fit               = False,
-                        inverse_transform = False
-                    )
-            check_exog_dtypes(exog=exog)
-            exog_values = exog.to_numpy()[:steps]
-            predictions = self.regressor.predict([X, exog_values], verbose=0)
-        
-        predictions_reshaped = np.reshape(
-                predictions, (predictions.shape[1], predictions.shape[2])
+        (
+            X,
+            _,
+            steps,
+            levels,
+            prediction_index
+        ) = self._create_predict_inputs(
+                steps        = steps,
+                levels       = levels,
+                last_window  = last_window,
+                exog         = exog,
+                check_inputs = check_inputs
             )
 
+        predictions = self.regressor.predict(X, verbose=0)
+        predictions = np.reshape(
+            predictions, (predictions.shape[1], predictions.shape[2])
+        )[np.array(steps) - 1]
 
-        # if len(self.levels) == 1:
-        #     predictions_reshaped = np.reshape(predictions, (predictions.shape[1], 1))
-        # else:
-        #     predictions_reshaped = np.reshape(
-        #         predictions, (predictions.shape[1], predictions.shape[2])
-        #     )
-        idx = expand_index(index=last_window_index, steps=max(steps))
+        for i, level in enumerate(levels):
 
+            predictions[:, i] = transform_numpy(
+                array             = predictions[:, i],
+                transformer       = self.transformer_series_[level],
+                fit               = False,
+                inverse_transform = True
+            )
+
+        n_steps, n_levels = predictions.shape
         predictions = pd.DataFrame(
-            data=predictions_reshaped[np.array(steps) - 1],
-            columns=self.levels,
-            index=idx[np.array(steps) - 1],
+            {"level": np.tile(self.levels, n_steps), "pred": predictions.ravel()},
+            index = np.repeat(prediction_index, n_levels),
         )
-        predictions = predictions[levels]
-
-        for serie in levels:
-            x = predictions[serie]
-            check_y(y=x)
-            x = transform_series(
-                series=x,
-                transformer=self.transformer_series_[serie],
-                fit=False,
-                inverse_transform=True,
-            )
-            predictions.loc[:, serie] = x
-
-        # Temporal standardization. Pending full refactoring
-        predictions = (
-            predictions.melt(var_name="level", value_name="pred", ignore_index=False)
-            .reset_index()
-            .sort_values(by=["index", "level"])
-            .set_index("index")
-            .rename_axis(None, axis=0)
-        )
+        predictions = predictions[predictions['level'].isin(levels)]
 
         set_skforecast_warnings(suppress_warnings, action="default")
 
         return predictions
-
-    def predict_bootstrapping(
+    
+    # TODO: Check binned residuals
+    def _predict_interval_conformal(
         self,
-        steps: Optional[Union[int, list]] = None,
-        last_window: Optional[pd.DataFrame] = None,
-        exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
-        n_boot: int = 250,
-        random_state: int = 123,
-        use_in_sample_residuals: bool = True,
-        suppress_warnings: bool = False,
-        levels: Any = None,
-    ) -> dict:
+        steps: int | str | pd.Timestamp,
+        levels: str | list[str] | None = None,
+        last_window: pd.Series | pd.DataFrame | None = None,
+        exog: pd.Series | pd.DataFrame | None = None,
+        nominal_coverage: float = 0.95,
+        use_in_sample_residuals: bool = True
+    ) -> pd.DataFrame:
         """
-        Generate multiple forecasting predictions using a bootstrapping process.
-        By sampling from a collection of past observed errors (the residuals),
-        each iteration of bootstrapping generates a different set of predictions.
-        Only levels whose last window ends at the same datetime index can be
-        predicted together. See the Notes section for more information.
+        Generate prediction intervals using the conformal prediction 
+        split method [1]_.
 
         Parameters
         ----------
-        steps : int
-            Number of future steps predicted.
+        steps : int, str, pandas Timestamp
+            Number of steps to predict. 
+            
+            - If steps is int, number of steps to predict. 
+            - If str or pandas Datetime, the prediction will be up to that date.
         levels : str, list, default None
             Time series to be predicted. If `None` all levels whose last window
             ends at the same datetime index will be predicted together.
-        last_window : pandas DataFrame, default None
-            Series values used to create the predictors (lags) needed in the
+        last_window : pandas Series, pandas DataFrame, default None
+            Series values used to create the predictors (lags) needed in the 
             first iteration of the prediction (t + 1).
-            If `last_window = None`, the values stored in `self.last_window_` are
+            If `last_window = None`, the values stored in` self.last_window_` are
             used to calculate the initial predictors, and the predictions start
             right after training data.
-        exog : pandas Series, pandas DataFrame, dict, default None
+        exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
-        n_boot : int, default 250
-            Number of bootstrapping iterations used to estimate predictions.
-        random_state : int, default 123
-            Sets a seed to the random generator, so that boot predictions are always
-            deterministic.
+        nominal_coverage : float, default 0.95
+            Nominal coverage, also known as expected coverage, of the prediction
+            intervals. Must be between 0 and 1.
         use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
-            prediction error to create predictions. If `False`, out of sample
-            residuals are used. In the latter case, the user should have
-            calculated and stored the residuals within the forecaster (see
-            `set_out_sample_residuals()`).
-        suppress_warnings : bool, default False
-            If `True`, skforecast warnings will be suppressed during the prediction
-            process. See skforecast.exceptions.warn_skforecast_categories for more
-            information.
+            prediction error to create predictions. 
+            If `False`, out of sample residuals (calibration) are used. 
+            Out-of-sample residuals must be precomputed using Forecaster's
+            `set_out_sample_residuals()` method.
 
         Returns
         -------
-        boot_predictions : dict
-            Predictions generated by bootstrapping for each level.
-            {level: pandas DataFrame, shape (steps, n_boot)}
+        predictions : pandas DataFrame
+            Values predicted by the forecaster and their estimated interval.
 
-        Notes
-        -----
-        More information about prediction intervals in forecasting:
-        https://otexts.com/fpp3/prediction-intervals.html#prediction-intervals-from-bootstrapped-residuals
-        Forecasting: Principles and Practice (3nd ed) Rob J Hyndman and George Athanasopoulos.
+            - pred: predictions.
+            - lower_bound: lower bound of the interval.
+            - upper_bound: upper bound of the interval.
+
+        References
+        ----------
+        .. [1] MAPIE - Model Agnostic Prediction Interval Estimator.
+               https://mapie.readthedocs.io/en/stable/theoretical_description_regression.html#the-split-method
 
         """
-
-        set_skforecast_warnings(suppress_warnings, action="ignore")
-
-        if levels is None:
-            levels = self.levels
-        elif isinstance(levels, str):
-            levels = [levels]
-
-        if isinstance(steps, int):
-            steps = list(np.arange(steps) + 1)
-        elif steps is None:
-            if isinstance(self.steps, int):
-                steps = list(np.arange(self.steps) + 1)
-            elif isinstance(self.steps, (list, np.ndarray)):
-                steps = list(np.array(self.steps))
-        elif isinstance(steps, list):
-            steps = list(np.array(steps))
+        
+        (
+            X,
+            _,
+            steps,
+            levels,
+            prediction_index
+        ) = self._create_predict_inputs(
+                steps                   = steps,
+                levels                  = levels,
+                last_window             = last_window,
+                exog                    = exog,
+                predict_probabilistic   = True,
+                use_in_sample_residuals = use_in_sample_residuals
+            )
 
         if use_in_sample_residuals:
-            if not set(steps).issubset(set(self.in_sample_residuals_.keys())):
-                raise ValueError(
-                    f"Not `forecaster.in_sample_residuals_` for steps: "
-                    f"{set(steps) - set(self.in_sample_residuals_.keys())}."
-                )
             residuals = self.in_sample_residuals_
         else:
-            if self.out_sample_residuals_ is None:
-                raise ValueError(
-                    "`forecaster.out_sample_residuals_` is `None`. Use "
-                    "`use_in_sample_residuals=True` or the "
-                    "`set_out_sample_residuals()` method before predicting."
-                )
-            else:
-                if not set(steps).issubset(set(self.out_sample_residuals_.keys())):
-                    raise ValueError(
-                        f"Not `forecaster.out_sample_residuals_` for steps: "
-                        f"{set(steps) - set(self.out_sample_residuals_.keys())}. "
-                        f"Use method `set_out_sample_residuals()`."
-                    )
             residuals = self.out_sample_residuals_
 
-        check_residuals = (
-            "forecaster.in_sample_residuals_"
-            if use_in_sample_residuals
-            else "forecaster.out_sample_residuals_"
-        )
-        for step in steps:
-            if residuals[step] is None:
-                raise ValueError(
-                    f"forecaster residuals for step {step} are `None`. "
-                    f"Check {check_residuals}."
-                )
-            elif any(element is None for element in residuals[step]) or np.any(
-                np.isnan(residuals[step])
-            ):
-                raise ValueError(
-                    f"forecaster residuals for step {step} contains `None` "
-                    f"or `NaNs` values. Check {check_residuals}."
-                )
-
-        if last_window is None:
-            last_window = self.last_window_
-
-        check_predict_input(
-            forecaster_name=type(self).__name__,
-            steps=steps,
-            is_fitted=self.is_fitted,
-            exog_in_=self.exog_in_,
-            index_type_=self.index_type_,
-            index_freq_=self.index_freq_,
-            window_size=self.window_size,
-            last_window=last_window,
-            exog=None,
-            exog_type_in_=None,
-            exog_names_in_=None,
-            interval=None,
-            max_steps=self.max_step,
-            levels=levels,
-            levels_forecaster=self.levels,
-            series_names_in_=self.series_names_in_,
-        )
-
-        last_window = last_window.iloc[-self.window_size :,].copy()
-
-        for serie_name in self.series_names_in_:
-            last_window_serie = transform_series(
-                series=last_window[serie_name],
-                transformer=self.transformer_series_[serie_name],
-                fit=False,
-                inverse_transform=False,
-            )
-            last_window_values, last_window_index = preprocess_last_window(
-                last_window=last_window_serie
-            )
-            last_window.loc[:, serie_name] = last_window_values
-
-        X = np.reshape(last_window.to_numpy(), (1, self.max_lag, last_window.shape[1]))
-        prediction_index = expand_index(index=last_window_index, steps=max(steps))
-
         predictions = self.regressor.predict(X, verbose=0)
-        predictions = np.squeeze(predictions, axis=0)
+        predictions = np.reshape(
+            predictions, (predictions.shape[1], predictions.shape[2])
+        )[np.array(steps) - 1]
+        
+        n_steps = len(steps)
+        n_levels = len(levels)
+        correction_factor = np.full(
+            shape=(n_steps, n_levels), fill_value=np.nan, order='C', dtype=float
+        )
 
-        boot_predictions = {}
-        boot_columns = [f"pred_boot_{i}" for i in range(n_boot)]
-        rng = np.random.default_rng(seed=random_state)
-
-        for j, level in enumerate(levels):
-            boot_level = np.tile(predictions[:, j], (n_boot, 1)).T
-
-            for i, step in enumerate(steps):
-                sampled_residuals = residuals[step][
-                    rng.integers(low=0, high=len(residuals[step]), size=n_boot), j
-                ]
-                boot_level[i, :] += sampled_residuals
-
-            if self.transformer_series_[level]:
-                boot_level = np.apply_along_axis(
-                    func1d=transform_numpy,
-                    axis=0,
-                    arr=boot_level,
-                    transformer=self.transformer_series_[level],
-                    fit=False,
-                    inverse_transform=True,
+        for i, step in enumerate(steps):
+            for j, level in enumerate(levels):
+                correction_factor[i, j] = np.quantile(
+                    np.abs(residuals[step][:, j]), nominal_coverage
                 )
 
-            boot_level = pd.DataFrame(
-                data=boot_level[np.array(steps) - 1],
-                index=prediction_index,
-                columns=boot_columns,
-            )
+        print(correction_factor)
 
-            boot_predictions[level] = boot_level
+        lower_bound = predictions - correction_factor
+        upper_bound = predictions + correction_factor
 
-        # Temporal standardization. Pending full code refactoring:
-        boot_predictions = (
-            pd.concat(
-                [value.assign(level=key) for key, value in boot_predictions.items()]
-            )
-            .reset_index()
-            .sort_values(by=["index", "level"])
-            .set_index("index")
-            .rename_axis(None, axis=0)
-        )
-        boot_predictions = boot_predictions[
-            ["level"]
-            + [col for col in boot_predictions.columns if col not in ["level", "index"]]
-        ]
-        if (
-            isinstance(boot_predictions.index, pd.DatetimeIndex)
-            and boot_predictions.index.freq is not None
-        ):
-            boot_predictions.index.freq = None
+        # NOTE: Create a 3D array with shape (n_levels, intervals, steps)
+        predictions = np.array([predictions, lower_bound, upper_bound]).swapaxes(0, 2)
 
-        set_skforecast_warnings(suppress_warnings, action="default")
+        for i, level in enumerate(levels):
+            transformer_level = self.transformer_series_[level]
+            if transformer_level is not None:
+                predictions[i, :, :] = np.apply_along_axis(
+                    func1d            = transform_numpy,
+                    axis              = 0,
+                    arr               = predictions[i, :, :],
+                    transformer       = transformer_level,
+                    fit               = False,
+                    inverse_transform = True
+                )
+        
+        predictions = pd.DataFrame(
+                          data    = predictions.swapaxes(0, 1).reshape(-1, 3),
+                          index   = np.repeat(prediction_index, len(self.levels)),
+                          columns = ["pred", "lower_bound", "upper_bound"]
+                      )
+        predictions.insert(0, 'level', np.tile(self.levels, n_steps))
+        predictions = predictions[predictions['level'].isin(levels)]
 
-        return boot_predictions
+        return predictions
 
     def predict_interval(
         self,
         steps: int,
         levels: str | list[str] | None = None,
         last_window: pd.DataFrame | None = None,
-        exog: (
-            pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None
-        ) = None,
-        interval: list[float] | tuple[float] = [5, 95],
-        n_boot: int = 250,
-        random_state: int = 123,
+        exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
+        method: str = 'conformal',
+        interval: float | list[float] | tuple[float] = [5, 95],
         use_in_sample_residuals: bool = True,
         suppress_warnings: bool = False,
+        use_binned_residuals: Any = True
     ) -> pd.DataFrame:
         """
-        Iterative process in which, each prediction, is used as a predictor
-        for the next step and bootstrapping is used to estimate prediction
-        intervals. Both predictions and intervals are returned.
-
+        Predict n steps ahead and estimate prediction intervals using conformal 
+        prediction method. Refer to the References section for additional details.
+        
         Parameters
         ----------
         steps : int
-            Number of future steps predicted.
+            Number of steps to predict. 
         levels : str, list, default None
             Time series to be predicted. If `None` all levels whose last window
             ends at the same datetime index will be predicted together.
         last_window : pandas DataFrame, default None
-            Series values used to create the predictors (lags) needed in the
+            Series values used to create the predictors (lags) needed in the 
             first iteration of the prediction (t + 1).
             If `last_window = None`, the values stored in `self.last_window_` are
             used to calculate the initial predictors, and the predictions start
             right after training data.
         exog : pandas Series, pandas DataFrame, dict, default None
             Exogenous variable/s included as predictor/s.
-        interval : list, tuple, default `[5, 95]`
-            Confidence of the prediction interval estimated. Sequence of
-            percentiles to compute, which must be between 0 and 100 inclusive.
-            For example, interval of 95% should be as `interval = [2.5, 97.5]`.
-        n_boot : int, default 250
-            Number of bootstrapping iterations used to estimate prediction
-            intervals.
-        random_state : int, default 123
-            Sets a seed to the random generator, so that boot predictions are always
-            deterministic.
+        method : str, default 'conformal'
+            Employs the conformal prediction split method for interval estimation [1]_.
+        interval : float, list, tuple, default [5, 95]
+            Confidence level of the prediction interval. Interpretation depends 
+            on the method used:
+            
+            - If `float`, represents the nominal (expected) coverage (between 0 
+            and 1). For instance, `interval=0.95` corresponds to `[2.5, 97.5]` 
+            percentiles.
+            - If `list` or `tuple`, defines the exact percentiles to compute, which 
+            must be between 0 and 100 inclusive. For example, interval 
+            of 95% should be as `interval = [2.5, 97.5]`.
+            - When using `method='conformal'`, the interval must be a float or 
+            a list/tuple defining a symmetric interval.
         use_in_sample_residuals : bool, default True
             If `True`, residuals from the training data are used as proxy of
-            prediction error to create predictions. If `False`, out of sample
-            residuals are used. In the latter case, the user should have
-            calculated and stored the residuals within the forecaster (see
-            `set_out_sample_residuals()`).
+            prediction error to create predictions. 
+            If `False`, out of sample residuals (calibration) are used. 
+            Out-of-sample residuals must be precomputed using Forecaster's
+            `set_out_sample_residuals()` method.
         suppress_warnings : bool, default False
-            If `True`, skforecast warnings will be suppressed during the prediction
+            If `True`, skforecast warnings will be suppressed during the prediction 
             process. See skforecast.exceptions.warn_skforecast_categories for more
             information.
+        use_binned_residuals : Ignored
+            Not used, present here for API consistency by convention.
 
         Returns
         -------
@@ -1156,240 +1148,38 @@ class ForecasterRnn(ForecasterBase):
             bounds of the estimated interval. The columns are `level`, `pred`,
             `lower_bound`, `upper_bound`.
 
-        Notes
-        -----
-        More information about prediction intervals in forecasting:
-        https://otexts.com/fpp2/prediction-intervals.html
-        Forecasting: Principles and Practice (2nd ed) Rob J Hyndman and
-        George Athanasopoulos.
-
+        References
+        ----------        
+        .. [1] MAPIE - Model Agnostic Prediction Interval Estimator.
+               https://mapie.readthedocs.io/en/stable/theoretical_description_regression.html#the-split-method
+    
         """
 
-        set_skforecast_warnings(suppress_warnings, action="ignore")
+        set_skforecast_warnings(suppress_warnings, action='ignore')
 
-        check_interval(interval=interval)
+        if method == "conformal":
 
-        boot_predictions = self.predict_bootstrapping(
-            steps=steps,
-            levels=levels,
-            last_window=last_window,
-            exog=exog,
-            n_boot=n_boot,
-            random_state=random_state,
-            use_in_sample_residuals=use_in_sample_residuals,
-            suppress_warnings=suppress_warnings,
-        )
-
-        predictions = self.predict(
-            steps=steps,
-            levels=levels,
-            last_window=last_window,
-            exog=exog,
-            suppress_warnings=suppress_warnings,
-            # check_inputs=False
-        )
-
-        interval = np.array(interval) / 100
-        boot_predictions[["lower_bound", "upper_bound"]] = (
-            boot_predictions.iloc[:, 1:].quantile(q=interval, axis=1).transpose()
-        )
-
-        predictions = pd.concat(
-            [predictions, boot_predictions[["lower_bound", "upper_bound"]]], axis=1
-        )
-
-        set_skforecast_warnings(suppress_warnings, action="default")
-
-        return predictions
-
-    def predict_quantiles(
-        self,
-        steps: int,
-        levels: str | list[str] | None = None,
-        last_window: pd.DataFrame | None = None,
-        exog: (
-            pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None
-        ) = None,
-        quantiles: list[float] | tuple[float] = [0.05, 0.5, 0.95],
-        n_boot: int = 250,
-        random_state: int = 123,
-        use_in_sample_residuals: bool = True,
-        suppress_warnings: bool = False,
-    ) -> pd.DataFrame:
-        """
-        Calculate the specified quantiles for each step. After generating
-        multiple forecasting predictions through a bootstrapping process, each
-        quantile is calculated for each step.
-
-        Parameters
-        ----------
-        steps : int
-            Number of future steps predicted.
-        levels : str, list, default None
-            Time series to be predicted. If `None` all levels whose last window
-            ends at the same datetime index will be predicted together.
-        last_window : pandas DataFrame, default None
-            Series values used to create the predictors (lags) needed in the
-            first iteration of the prediction (t + 1).
-            If `last_window = None`, the values stored in `self.last_window_` are
-            used to calculate the initial predictors, and the predictions start
-            right after training data.
-        exog : pandas Series, pandas DataFrame, dict, default None
-            Exogenous variable/s included as predictor/s.
-        quantiles : list, tuple, default [0.05, 0.5, 0.95]
-            Sequence of quantiles to compute, which must be between 0 and 1
-            inclusive. For example, quantiles of 0.05, 0.5 and 0.95 should be as
-            `quantiles = [0.05, 0.5, 0.95]`.
-        n_boot : int, default 250
-            Number of bootstrapping iterations used to estimate quantiles.
-        random_state : int, default 123
-            Sets a seed to the random generator, so that boot quantiles are always
-            deterministic.
-        use_in_sample_residuals : bool, default True
-            If `True`, residuals from the training data are used as proxy of
-            prediction error to create quantiles. If `False`, out of sample
-            residuals are used. In the latter case, the user should have
-            calculated and stored the residuals within the forecaster (see
-            `set_out_sample_residuals()`).
-        suppress_warnings : bool, default False
-            If `True`, skforecast warnings will be suppressed during the prediction
-            process. See skforecast.exceptions.warn_skforecast_categories for more
-            information.
-
-        Returns
-        -------
-        predictions : pandas DataFrame
-            Long-format DataFrame with the quantiles predicted by the forecaster.
-            For example, if `quantiles = [0.05, 0.5, 0.95]`, the columns are
-            `level`, `q_0.05`, `q_0.5`, `q_0.95`.
-
-        Notes
-        -----
-        More information about prediction intervals in forecasting:
-        https://otexts.com/fpp2/prediction-intervals.html
-        Forecasting: Principles and Practice (2nd ed) Rob J Hyndman and
-        George Athanasopoulos.
-
-        """
-
-        set_skforecast_warnings(suppress_warnings, action="ignore")
-
-        check_interval(quantiles=quantiles)
-
-        predictions = self.predict_bootstrapping(
-            steps=steps,
-            levels=levels,
-            last_window=last_window,
-            exog=exog,
-            n_boot=n_boot,
-            random_state=random_state,
-            use_in_sample_residuals=use_in_sample_residuals,
-            suppress_warnings=suppress_warnings,
-        )
-
-        quantiles_cols = [f"q_{q}" for q in quantiles]
-        predictions[quantiles_cols] = (
-            predictions.iloc[:, 1:].quantile(q=quantiles, axis=1).transpose()
-        )
-        predictions = predictions[["level"] + quantiles_cols]
-
-        set_skforecast_warnings(suppress_warnings, action="default")
-
-        return predictions
-
-    def predict_dist(
-        self,
-        steps: int,
-        distribution: object,
-        levels: str | list[str] | None = None,
-        last_window: pd.DataFrame | None = None,
-        exog: (
-            pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None
-        ) = None,
-        n_boot: int = 250,
-        random_state: int = 123,
-        use_in_sample_residuals: bool = True,
-        suppress_warnings: bool = False,
-    ) -> pd.DataFrame:
-        """
-        Fit a given probability distribution for each step. After generating
-        multiple forecasting predictions through a bootstrapping process, each
-        step is fitted to the given distribution.
-
-        Parameters
-        ----------
-        steps : int
-            Number of future steps predicted.
-        distribution : object
-            A distribution object from scipy.stats with methods `_pdf` and `fit`.
-            For example scipy.stats.norm.
-        levels : str, list, default None
-            Time series to be predicted. If `None` all levels whose last window
-            ends at the same datetime index will be predicted together.
-        last_window : pandas DataFrame, default None
-            Series values used to create the predictors (lags) needed in the
-            first iteration of the prediction (t + 1).
-            If `last_window = None`, the values stored in `self.last_window_` are
-            used to calculate the initial predictors, and the predictions start
-            right after training data.
-        exog : pandas Series, pandas DataFrame, dict, default None
-            Exogenous variable/s included as predictor/s.
-        n_boot : int, default 250
-            Number of bootstrapping iterations used to estimate predictions.
-        random_state : int, default 123
-            Sets a seed to the random generator, so that boot predictions are always
-            deterministic.
-        use_in_sample_residuals : bool, default True
-            If `True`, residuals from the training data are used as proxy of
-            prediction error to create predictions. If `False`, out of sample
-            residuals are used. In the latter case, the user should have
-            calculated and stored the residuals within the forecaster (see
-            `set_out_sample_residuals()`).
-        suppress_warnings : bool, default False
-            If `True`, skforecast warnings will be suppressed during the prediction
-            process. See skforecast.exceptions.warn_skforecast_categories for more
-            information.
-
-        Returns
-        -------
-        predictions : pandas DataFrame
-            Long-format DataFrame with the parameters of the fitted distribution
-            for each step. The columns are `level`, `param_0`, `param_1`, ...,
-            `param_n`, where `param_i` are the parameters of the distribution.
-
-        """
-
-        if not hasattr(distribution, "_pdf") or not callable(
-            getattr(distribution, "fit", None)
-        ):
-            raise TypeError(
-                "`distribution` must be a valid probability distribution object "
-                "from scipy.stats, with methods `_pdf` and `fit`."
+            if isinstance(interval, (list, tuple)):
+                check_interval(interval=interval, ensure_symmetric_intervals=True)
+                nominal_coverage = (interval[1] - interval[0]) / 100
+            else:
+                check_interval(alpha=interval, alpha_literal='interval')
+                nominal_coverage = interval
+            
+            predictions = self._predict_interval_conformal(
+                              steps                   = steps,
+                              levels                  = levels,
+                              last_window             = last_window,
+                              exog                    = exog,
+                              nominal_coverage        = nominal_coverage,
+                              use_in_sample_residuals = use_in_sample_residuals
+                          )
+        else:
+            raise ValueError(
+                f"Invalid `method` '{method}'. Only 'conformal' is available."
             )
-
-        set_skforecast_warnings(suppress_warnings, action="ignore")
-
-        predictions = self.predict_bootstrapping(
-            steps=steps,
-            levels=levels,
-            last_window=last_window,
-            exog=exog,
-            n_boot=n_boot,
-            random_state=random_state,
-            use_in_sample_residuals=use_in_sample_residuals,
-            suppress_warnings=suppress_warnings,
-        )
-
-        param_names = [
-            p for p in inspect.signature(distribution._pdf).parameters if not p == "x"
-        ] + ["loc", "scale"]
-
-        predictions[param_names] = predictions.iloc[:, 1:].apply(
-            lambda x: distribution.fit(x), axis=1, result_type="expand"
-        )
-        predictions = predictions[["level"] + param_names]
-
-        set_skforecast_warnings(suppress_warnings, action="default")
+        
+        set_skforecast_warnings(suppress_warnings, action='default')
 
         return predictions
 
@@ -1469,327 +1259,6 @@ class ForecasterRnn(ForecasterBase):
         ax.set_xticks(epoch_range)
 
         return fig
-
-    # def predict_bootstrapping(
-    #     self,
-    #     steps: Optional[Union[int, list]] = None,
-    #     last_window: Optional[pd.DataFrame] = None,
-    #     exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
-    #     n_boot: int = 250,
-    #     random_state: int = 123,
-    #     use_in_sample_residuals: bool = True,
-    #     levels: Any = None,
-    # ) -> pd.DataFrame:
-    #     """
-    #     Generate multiple forecasting predictions using a bootstrapping process.
-    #     By sampling from a collection of past observed errors (the residuals),
-    #     each iteration of bootstrapping generates a different set of predictions.
-    #     See the Notes section for more information.
-
-    #     Parameters
-    #     ----------
-    #     steps : int, list, None, default `None`
-    #         Predict n steps. The value of `steps` must be less than or equal to the
-    #         value of steps defined when initializing the forecaster. Starts at 1.
-
-    #             - If `int`: Only steps within the range of 1 to int are predicted.
-    #             - If `list`: List of ints. Only the steps contained in the list
-    #             are predicted.
-    #             - If `None`: As many steps are predicted as were defined at
-    #             initialization.
-    #     last_window : pandas DataFrame, default `None`
-    #         Series values used to create the predictors (lags) needed in the
-    #         first iteration of the prediction (t + 1).
-    #         If `last_window = None`, the values stored in` self.last_window` are
-    #         used to calculate the initial predictors, and the predictions start
-    #         right after training data.
-    #     exog : pandas Series, pandas DataFrame, default `None`
-    #         Exogenous variable/s included as predictor/s.
-    #     n_boot : int, default `250`
-    #         Number of bootstrapping iterations used to estimate prediction
-    #         intervals.
-    #     random_state : int, default `123`
-    #         Sets a seed to the random generator, so that boot intervals are always
-    #         deterministic.
-    #     use_in_sample_residuals : bool, default `True`
-    #         If `True`, residuals from the training data are used as proxy of
-    #         prediction error to create prediction intervals. If `False`, out of
-    #         sample residuals are used. In the latter case, the user should have
-    #         calculated and stored the residuals within the forecaster (see
-    #         `set_out_sample_residuals()`).
-    #     levelss : Ignored
-    #         Not used, present here for API consistency by convention.
-
-    #     Returns
-    #     -------
-    #     boot_predictions : pandas DataFrame
-    #         Predictions generated by bootstrapping.
-    #         Shape: (steps, n_boot)
-
-    #     Notes
-    #     -----
-    #     More information about prediction intervals in forecasting:
-    #     https://otexts.com/fpp3/prediction-intervals.html#prediction-intervals-from-bootstrapped-residuals
-    #     Forecasting: Principles and Practice (3nd ed) Rob J Hyndman and George Athanasopoulos.
-
-    #     """
-
-    #     if isinstance(steps, int):
-    #         steps = list(np.arange(steps) + 1)
-    #     elif steps is None:
-    #         steps = list(np.arange(self.steps) + 1)
-    #     elif isinstance(steps, list):
-    #         steps = list(np.array(steps))
-
-    #     if use_in_sample_residuals:
-    #         if not set(steps).issubset(set(self.in_sample_residuals.keys())):
-    #             raise ValueError(
-    #                 (
-    #                     f"Not `forecaster.in_sample_residuals` for steps: "
-    #                     f"{set(steps) - set(self.in_sample_residuals.keys())}."
-    #                 )
-    #             )
-    #         residuals = self.in_sample_residuals
-    #     else:
-    #         if self.out_sample_residuals is None:
-    #             raise ValueError(
-    #                 (
-    #                     "`forecaster.out_sample_residuals` is `None`. Use "
-    #                     "`in_sample_residuals=True` or method `set_out_sample_residuals()` "
-    #                     "before `predict_interval()`, `predict_bootstrapping()` or "
-    #                     "`predict_dist()`."
-    #                 )
-    #             )
-    #         else:
-    #             if not set(steps).issubset(set(self.out_sample_residuals.keys())):
-    #                 raise ValueError(
-    #                     (
-    #                         f"Not `forecaster.out_sample_residuals` for steps: "
-    #                         f"{set(steps) - set(self.out_sample_residuals.keys())}. "
-    #                         f"Use method `set_out_sample_residuals()`."
-    #                     )
-    #                 )
-    #         residuals = self.out_sample_residuals
-
-    #     check_residuals = (
-    #         "forecaster.in_sample_residuals"
-    #         if in_sample_residuals
-    #         else "forecaster.out_sample_residuals"
-    #     )
-    #     for step in steps:
-    #         if residuals[step] is None:
-    #             raise ValueError(
-    #                 (
-    #                     f"forecaster residuals for step {step} are `None`. "
-    #                     f"Check {check_residuals}."
-    #                 )
-    #             )
-    #         elif (residuals[step] == None).any():
-    #             raise ValueError(
-    #                 (
-    #                     f"forecaster residuals for step {step} contains `None` values. "
-    #                     f"Check {check_residuals}."
-    #                 )
-    #             )
-
-    #     predictions = self.predict(steps=steps, last_window=last_window, exog=exog)
-
-    #     # Predictions must be in the transformed scale before adding residuals
-    #     predictions = transform_dataframe(
-    #         df=predictions,
-    #         transformer=self.transformer_series_[self.levels],
-    #         fit=False,
-    #         inverse_transform=False,
-    #     )
-    #     boot_predictions = pd.concat([predictions] * n_boot, axis=1)
-    #     boot_predictions.columns = [f"pred_boot_{i}" for i in range(n_boot)]
-
-    #     for i, step in enumerate(steps):
-    #         rng = np.random.default_rng(seed=random_state)
-    #         sample_residuals = rng.choice(a=residuals[step], size=n_boot, replace=True)
-    #         boot_predictions.iloc[i, :] = boot_predictions.iloc[i, :] + sample_residuals
-
-    #     if self.transformer_series_[self.levels]:
-    #         for col in boot_predictions.columns:
-    #             boot_predictions[col] = transform_series(
-    #                 series=boot_predictions[col],
-    #                 transformer=self.transformer_series_[self.levels],
-    #                 fit=False,
-    #                 inverse_transform=True,
-    #             )
-
-    #     return boot_predictions
-
-    # def predict_interval(
-    #     self,
-    #     steps: Optional[Union[int, list]] = None,
-    #     last_window: Optional[pd.DataFrame] = None,
-    #     exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
-    #     interval: list = [5, 95],
-    #     n_boot: int = 250,
-    #     random_state: int = 123,
-    #     in_sample_residuals: bool = True,
-    #     levelss: Any = None,
-    # ) -> pd.DataFrame:
-    #     """
-    #     Bootstrapping based prediction intervals.
-    #     Both predictions and intervals are returned.
-
-    #     Parameters
-    #     ----------
-    #     steps : int, list, None, default `None`
-    #         Predict n steps. The value of `steps` must be less than or equal to the
-    #         value of steps defined when initializing the forecaster. Starts at 1.
-
-    #             - If `int`: Only steps within the range of 1 to int are predicted.
-    #             - If `list`: List of ints. Only the steps contained in the list
-    #             are predicted.
-    #             - If `None`: As many steps are predicted as were defined at
-    #             initialization.
-    #     last_window : pandas DataFrame, default `None`
-    #         Series values used to create the predictors (lags) needed in the
-    #         first iteration of the prediction (t + 1).
-    #         If `last_window = None`, the values stored in` self.last_window` are
-    #         used to calculate the initial predictors, and the predictions start
-    #         right after training data.
-    #     exog : pandas Series, pandas DataFrame, default `None`
-    #         Exogenous variable/s included as predictor/s.
-    #     interval : list, tuple, default `[5, 95]`
-    #         Confidence of the prediction interval estimated. Sequence of
-    #         percentiles to compute, which must be between 0 and 100 inclusive.
-    #         For example, interval of 95% should be as `interval = [2.5, 97.5]`.
-    #     n_boot : int, default `250`
-    #         Number of bootstrapping iterations used to estimate prediction
-    #         intervals.
-    #     random_state : int, default `123`
-    #         Sets a seed to the random generator, so that boot intervals are always
-    #         deterministic.
-    #     in_sample_residuals : bool, default `True`
-    #         If `True`, residuals from the training data are used as proxy of
-    #         prediction error to create prediction intervals. If `False`, out of
-    #         sample residuals are used. In the latter case, the user should have
-    #         calculated and stored the residuals within the forecaster (see
-    #         `set_out_sample_residuals()`).
-    #     levelss : Ignored
-    #         Not used, present here for API consistency by convention.
-
-    #     Returns
-    #     -------
-    #     predictions : pandas DataFrame
-    #         Values predicted by the forecaster and their estimated interval.
-
-    #             - pred: predictions.
-    #             - lower_bound: lower bound of the interval.
-    #             - upper_bound: upper bound of the interval.
-
-    #     Notes
-    #     -----
-    #     More information about prediction intervals in forecasting:
-    #     https://otexts.com/fpp2/prediction-intervals.html
-    #     Forecasting: Principles and Practice (2nd ed) Rob J Hyndman and
-    #     George Athanasopoulos.
-
-    #     """
-
-    #     check_interval(interval=interval)
-
-    #     predictions = self.predict(steps=steps, last_window=last_window, exog=exog)
-
-    #     boot_predictions = self.predict_bootstrapping(
-    #         steps=steps,
-    #         last_window=last_window,
-    #         exog=exog,
-    #         n_boot=n_boot,
-    #         random_state=random_state,
-    #         in_sample_residuals=in_sample_residuals,
-    #     )
-
-    #     interval = np.array(interval) / 100
-    #     predictions_interval = boot_predictions.quantile(q=interval, axis=1).transpose()
-    #     predictions_interval.columns = ["lower_bound", "upper_bound"]
-    #     predictions = pd.concat((predictions, predictions_interval), axis=1)
-
-    #     return predictions
-
-    # def predict_dist(
-    #     self,
-    #     distribution: object,
-    #     steps: Optional[Union[int, list]] = None,
-    #     last_window: Optional[pd.DataFrame] = None,
-    #     exog: Optional[Union[pd.Series, pd.DataFrame]] = None,
-    #     n_boot: int = 250,
-    #     random_state: int = 123,
-    #     in_sample_residuals: bool = True,
-    #     levelss: Any = None,
-    # ) -> pd.DataFrame:
-    #     """
-    #     Fit a given probability distribution for each step. After generating
-    #     multiple forecasting predictions through a bootstrapping process, each
-    #     step is fitted to the given distribution.
-
-    #     Parameters
-    #     ----------
-    #     distribution : Object
-    #         A distribution object from scipy.stats.
-    #     steps : int, list, None, default `None`
-    #         Predict n steps. The value of `steps` must be less than or equal to the
-    #         value of steps defined when initializing the forecaster. Starts at 1.
-
-    #             - If `int`: Only steps within the range of 1 to int are predicted.
-    #             - If `list`: List of ints. Only the steps contained in the list
-    #             are predicted.
-    #             - If `None`: As many steps are predicted as were defined at
-    #             initialization.
-    #     last_window : pandas DataFrame, default `None`
-    #         Series values used to create the predictors (lags) needed in the
-    #         first iteration of the prediction (t + 1).
-    #         If `last_window = None`, the values stored in` self.last_window` are
-    #         used to calculate the initial predictors, and the predictions start
-    #         right after training data.
-    #     exog : pandas Series, pandas DataFrame, default `None`
-    #         Exogenous variable/s included as predictor/s.
-    #     n_boot : int, default `250`
-    #         Number of bootstrapping iterations used to estimate prediction
-    #         intervals.
-    #     random_state : int, default `123`
-    #         Sets a seed to the random generator, so that boot intervals are always
-    #         deterministic.
-    #     in_sample_residuals : bool, default `True`
-    #         If `True`, residuals from the training data are used as proxy of
-    #         prediction error to create prediction intervals. If `False`, out of
-    #         sample residuals are used. In the latter case, the user should have
-    #         calculated and stored the residuals within the forecaster (see
-    #         `set_out_sample_residuals()`).
-    #     levelss : Ignored
-    #         Not used, present here for API consistency by convention.
-
-    #     Returns
-    #     -------
-    #     predictions : pandas DataFrame
-    #         Distribution parameters estimated for each step.
-
-    #     """
-
-    #     boot_samples = self.predict_bootstrapping(
-    #         steps=steps,
-    #         last_window=last_window,
-    #         exog=exog,
-    #         n_boot=n_boot,
-    #         random_state=random_state,
-    #         in_sample_residuals=in_sample_residuals,
-    #     )
-
-    #     param_names = [
-    #         p for p in inspect.signature(distribution._pdf).parameters if not p == "x"
-    #     ] + ["loc", "scale"]
-    #     param_values = np.apply_along_axis(
-    #         lambda x: distribution.fit(x), axis=1, arr=boot_samples
-    #     )
-    #     predictions = pd.DataFrame(
-    #         data=param_values, columns=param_names, index=boot_samples.index
-    #     )
-
-    #     return predictions
 
     def set_params(self, params: dict) -> None:  # TODO testear
         """
