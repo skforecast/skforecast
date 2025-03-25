@@ -151,6 +151,7 @@ Special mention to the main contributors who have significantly impacted the lib
 | Ignacio Moya                | [@imMoya](https://github.com/imMoya)       |
 | Pablo Rodríguez Pérez       | [@pablorodriper](https://github.com/pablorodriper) |
 | g-rubio                     | [@g-rubio](https://github.com/g-rubio)     |
+| Ginés Meca                  | [@GinesMeca](https://github.com/GinesMeca)     |
 
 <br>
 Thank you for helping us make **skforecast** better! 🎉
