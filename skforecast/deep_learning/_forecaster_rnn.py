@@ -6,11 +6,10 @@
 # coding=utf-8
 
 from __future__ import annotations
-import inspect
 import sys
 import warnings
 from copy import copy, deepcopy
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Optional, Tuple, Union
 
 import keras
 import matplotlib
@@ -18,12 +17,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn.base import clone
-from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import MinMaxScaler
 
 import skforecast
-from skforecast.utils.utils import transform_dataframe
-
 from ..base import ForecasterBase
 from ..exceptions import (
     DataTransformationWarning,
@@ -50,6 +46,8 @@ from ..utils import (
     set_skforecast_warnings,
     transform_numpy,
     transform_series,
+    transform_dataframe,
+    get_style_repr_html
 )
 
 
@@ -211,12 +209,12 @@ class ForecasterRnn(ForecasterBase):
         transformer_series: object | dict[str, object] | None = MinMaxScaler(
             feature_range=(0, 1)
         ),
-        transformer_exog: object | None = MinMaxScaler(
-            feature_range=(0, 1)
-        ),
+        transformer_exog: object | None = MinMaxScaler(feature_range=(0, 1)),
         fit_kwargs: dict[str, object] | None = {},
         forecaster_id: str | int | None = None
     ) -> None:
+        
+        self.regressor = deepcopy(regressor)
         self.levels = None
         self.transformer_series = transformer_series
         self.transformer_series_ = None
@@ -252,7 +250,6 @@ class ForecasterRnn(ForecasterBase):
         self.differentiator_ = None  # Ignored in this forecaster
 
         # Infer parameters from the model
-        self.regressor = deepcopy(regressor)
         layer_init = self.regressor.layers[0]
         layer_end = self.regressor.layers[-1]
 
@@ -261,6 +258,7 @@ class ForecasterRnn(ForecasterBase):
                 self.lags = np.arange(layer_init.input_shape[0][1]) + 1
             else:
                 self.lags = np.arange(layer_init.output.shape[1]) + 1
+            lags = self.lags
         
         self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
         self.window_size = self.max_lag
@@ -299,7 +297,6 @@ class ForecasterRnn(ForecasterBase):
         self.series_val = None
         self.exog_val = None
 
-        # TODO check that series_val & exog_val should be both available if exog is not None
         if "series_val" in fit_kwargs:
             self.series_val = fit_kwargs["series_val"]
             fit_kwargs.pop("series_val")
@@ -307,6 +304,12 @@ class ForecasterRnn(ForecasterBase):
         if "exog_val" in fit_kwargs:
             self.exog_val = fit_kwargs["exog_val"]
             fit_kwargs.pop("exog_val")
+            
+        # TODO check that series_val & exog_val should be both available if exog is not None
+        if self.series_val is not None and self.exog_val is None:
+            raise ValueError(
+                "If `series_val` is provided, `exog_val` must also be provided."
+            )
 
         self.in_sample_residuals_ = {step: None for step in self.steps}
         self.in_sample_residuals_by_bin_ = None
@@ -322,37 +325,43 @@ class ForecasterRnn(ForecasterBase):
         Information displayed when a ForecasterRnn object is printed.
         """
 
-        if isinstance(self.regressor, Pipeline):
-            name_pipe_steps = tuple(
-                name + "__" for name in self.regressor.named_steps.keys()
+        params = str(self.regressor.get_config())
+        compile_config = str(self.regressor.get_compile_config())
+        
+        (
+            _,
+            _,
+            series_names_in_,
+            exog_names_in_,
+            transformer_series,
+        ) = [
+            self._format_text_repr(value) 
+            for value in self._preprocess_repr(
+                regressor          = None,
+                series_names_in_   = self.series_names_in_,
+                exog_names_in_     = self.exog_names_in_,
+                transformer_series = self.transformer_series,
             )
-            params = {
-                key: value
-                for key, value in self.regressor.get_params().items()
-                if key.startswith(name_pipe_steps)
-            }
-        else:
-            params = self.regressor.get_config()
-            compile_config = self.regressor.get_compile_config()
+        ]
 
         info = (
             f"{'=' * len(type(self).__name__)} \n"
             f"{type(self).__name__} \n"
             f"{'=' * len(type(self).__name__)} \n"
             f"Regressor: {self.regressor} \n"
-            f"Target series, levels: {self.levels} \n"
-            f"Maximum steps predicted: {self.steps} \n"
+            f"Target series (levels): {self.levels} \n"
             f"Lags: {self.lags} \n"
             f"Window size: {self.window_size} \n"
-            f"Multivariate series: {self.series_names_in_} \n"
+            f"Maximum steps to predict: {self.steps} \n"
+            f"Multivariate series: {series_names_in_} \n"
             f"Exogenous included: {self.exog_in_} \n"
-            f"Exogenous names: {self.exog_names_in_} \n"
-            f"Transformer for series: {self.transformer_series} \n"
+            f"Exogenous names: {exog_names_in_} \n"
+            f"Transformer for series: {transformer_series} \n"
             f"Transformer for exog: {self.transformer_exog} \n"
             f"Training range: {self.training_range_.to_list() if self.is_fitted else None} \n"
             f"Training index type: {str(self.index_type_).split('.')[-1][:-2] if self.is_fitted else None} \n"
             f"Training index frequency: {self.index_freq_ if self.is_fitted else None} \n"
-            f"Model parameters: {params} \n"
+            f"Regressor parameters: {params} \n"
             f"Compile parameters: {compile_config} \n"
             f"fit_kwargs: {self.fit_kwargs} \n"
             f"Creation date: {self.creation_date} \n"
@@ -364,7 +373,105 @@ class ForecasterRnn(ForecasterBase):
 
         return info
 
-    def _create_lags(self, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def _repr_html_(self):
+        """
+        HTML representation of the object.
+        The "General Information" section is expanded by default.
+        """
+
+        params = str(self.regressor.get_config())
+        compile_config = str(self.regressor.get_compile_config())
+
+        (
+            _,
+            _,
+            series_names_in_,
+            exog_names_in_,
+            transformer_series,
+        ) = self._preprocess_repr(
+                regressor          = None,
+                series_names_in_   = self.series_names_in_,
+                exog_names_in_     = self.exog_names_in_,
+                transformer_series = self.transformer_series,
+            )
+
+        style, unique_id = get_style_repr_html(self.is_fitted)
+        
+        content = f"""
+        <div class="container-{unique_id}">
+            <h2>{type(self).__name__}</h2>
+            <details open>
+                <summary>General Information</summary>
+                <ul>
+                    <li><strong>Regressor:</strong> {type(self.regressor).__name__}</li>
+                    <li><strong>Target series (levels):</strong> {self.levels}</li>
+                    <li><strong>Lags:</strong> {self.lags}</li>
+                    <li><strong>Window size:</strong> {self.window_size}</li>
+                    <li><strong>Maximum steps to predict:</strong> {self.steps}</li>
+                    <li><strong>Exogenous included:</strong> {self.exog_in_}</li>
+                    <li><strong>Creation date:</strong> {self.creation_date}</li>
+                    <li><strong>Last fit date:</strong> {self.fit_date}</li>
+                    <li><strong>Skforecast version:</strong> {self.skforecast_version}</li>
+                    <li><strong>Python version:</strong> {self.python_version}</li>
+                    <li><strong>Forecaster id:</strong> {self.forecaster_id}</li>
+                </ul>
+            </details>
+            <details>
+                <summary>Exogenous Variables</summary>
+                <ul>
+                    {exog_names_in_}
+                </ul>
+            </details>
+            <details>
+                <summary>Data Transformations</summary>
+                <ul>
+                    <li><strong>Transformer for series:</strong> {transformer_series}</li>
+                    <li><strong>Transformer for exog:</strong> {self.transformer_exog}</li>
+                </ul>
+            </details>
+            <details>
+                <summary>Training Information</summary>
+                <ul>
+                    <li><strong>Target series (levels):</strong> {self.levels}</li>
+                    <li><strong>Multivariate series:</strong> {series_names_in_}</li>
+                    <li><strong>Training range:</strong> {self.training_range_.to_list() if self.is_fitted else 'Not fitted'}</li>
+                    <li><strong>Training index type:</strong> {str(self.index_type_).split('.')[-1][:-2] if self.is_fitted else 'Not fitted'}</li>
+                    <li><strong>Training index frequency:</strong> {self.index_freq_ if self.is_fitted else 'Not fitted'}</li>
+                </ul>
+            </details>
+            <details>
+                <summary>Regressor Parameters</summary>
+                <ul>
+                    {params}
+                </ul>
+            </details>
+            <details>
+                <summary>Compile Parameters</summary>
+                <ul>
+                    {compile_config}
+                </ul>
+            </details>
+            <details>
+                <summary>Fit Kwargs</summary>
+                <ul>
+                    {self.fit_kwargs}
+                </ul>
+            </details>
+            <p>
+                <a href="https://skforecast.org/{skforecast.__version__}/api/forecasterrnn.html">&#128712 <strong>API Reference</strong></a>
+                &nbsp;&nbsp;
+                <a href="https://skforecast.org/{skforecast.__version__}/user_guides/forecasting-with-deep-learning-rnn-lstm.html">&#128462 <strong>User Guide</strong></a>
+            </p>
+        </div>
+        """
+
+        # Return the combined style and content
+        return style + content
+
+    def _create_lags(
+        self, 
+        y: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Transforms a 1d array into a 3d array (X) and a 3d array (y). Each row
         in X is associated with a value of y and it represents the lags that
@@ -448,8 +555,7 @@ class ForecasterRnn(ForecasterBase):
             Labels for the multi-dimensional arrays created internally for training
 
         """
-        # TODO: 
-        # check that number of series match self.n_series
+        # TODO: Check that number of series match self.n_series
 
         if not isinstance(series, pd.DataFrame):
             raise TypeError(f"`series` must be a pandas DataFrame. Got {type(series)}.")
@@ -490,12 +596,10 @@ class ForecasterRnn(ForecasterBase):
             )
             if series_not_in_transformer_series:
                 warnings.warn(
-                    (
-                        f"{series_not_in_transformer_series} not present in "
-                        f"`transformer_series`. No transformation is applied to "
-                        f"these series."
-                    ),
-                    IgnoredArgumentWarning,
+                    f"{series_not_in_transformer_series} not present in "
+                    f"`transformer_series`. No transformation is applied to "
+                    f"these series.",
+                    IgnoredArgumentWarning
                 )
 
         # Step 1: Create lags for all columns
@@ -602,8 +706,7 @@ class ForecasterRnn(ForecasterBase):
             information.
         store_last_window : Ignored
             Not used, present here for API consistency by convention.
-        device : str, default `auto`
-            Torch device. if auto `device = torch.device("cuda" if torch.cuda.is_available() else "cpu")`
+        
         Returns
         -------
         None
@@ -1182,6 +1285,8 @@ class ForecasterRnn(ForecasterBase):
         set_skforecast_warnings(suppress_warnings, action='default')
 
         return predictions
+    
+# TODO: set_out_sample method
 
     def plot_history(
         self,
