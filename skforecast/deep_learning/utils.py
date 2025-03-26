@@ -5,11 +5,9 @@
 ################################################################################
 # coding=utf-8
 
+from __future__ import annotations
 import warnings
-from typing import Any, Optional, Union
-
 import pandas as pd
-
 from ..utils import check_optional_dependency
 
 try:
@@ -33,16 +31,16 @@ except Exception as e:
 
 def create_and_compile_model(
     series: pd.DataFrame,
-    lags: Union[int, list],
-    steps: Union[int, list],
-    levels: Optional[Union[str, int, list]] = None,
+    lags: int | list[int],
+    steps: int | list[int],
+    levels: str | list[str] | None = None,
     recurrent_layer: str = "LSTM",
-    recurrent_units: Union[int, list] = 100,
-    dense_units: Union[int, list] = 64,
-    activation: Union[str, dict] = "relu",
+    recurrent_units: int | list[int] = 100,
+    dense_units: int | list[int] = 64,
+    activation: str | dict[str, str | list[str]] = "relu",
     optimizer: object = Adam(learning_rate=0.01),
     loss: object = MeanSquaredError(),
-    compile_kwargs: dict = {},
+    compile_kwargs: dict[str, object] = {},
 ) -> keras.models.Model:
     """
     Creates a neural network model for time series prediction with flexible recurrent layers.
@@ -57,25 +55,25 @@ def create_and_compile_model(
     steps : int, list
         Number of steps to predict into the future, or a list of specific step
         indices.
-    levels : str, int, list, default `None`
+    levels : str, int, list, default None
         Number of output levels (features) to predict, or a list of specific
         level indices. If None, defaults to the number of input series.
-    recurrent_layer : str, default `'LSTM'`
+    recurrent_layer : str, default 'LSTM'
         Type of recurrent layer to be used ('LSTM' or 'RNN').
-    recurrent_units : int, list, default `100`
+    recurrent_units : int, list, default 100
         Number of units in the recurrent layer(s). Can be an integer or a
         list of integers for multiple layers.
-    dense_units : int, list, default `64`
+    dense_units : int, list, default 64
         List of integers representing the number of units in each dense layer.
-    activation : str, dict, default `'relu'`
+    activation : str, dict, default 'relu'
         Activation function for the recurrent and dense layers. Can be a single
         string for all layers or a dictionary specifying different activations
         for 'recurrent_units' and 'dense_units'.
-    optimizer : object, default `Adam(learning_rate=0.01)`
+    optimizer : object, default Adam(learning_rate=0.01)
         Optimization algorithm and learning rate.
-    loss : object, default `MeanSquaredError()`
+    loss : object, default MeanSquaredError()
         Loss function for model training.
-    compile_kwargs : dict, default `{}`
+    compile_kwargs : dict, default {}
         Additional arguments for model compilation.
 
     Returns
@@ -279,17 +277,17 @@ def create_and_compile_model(
 
 def create_and_compile_model_exog(
     series: pd.DataFrame,
-    lags: Union[int, list],
-    steps: Union[int, list],
-    exog: Optional[pd.DataFrame] = None,
-    levels: Optional[Union[str, int, list]] = None,
+    lags: int | list[int],
+    steps: int | list[int],
+    levels: str | list[str] | None = None,
+    exog: pd.DataFrame | None = None,
     recurrent_layer: str = "LSTM",
-    recurrent_units: Union[int, list] = 100,
-    dense_units: Union[int, list] = 64,
-    activation: Union[str, dict] = "relu",
+    recurrent_units: int | list[int] = 100,
+    dense_units: int | list[int] = 64,
+    activation: str | dict[str, str | list[str]] = "relu",
     optimizer: object = Adam(learning_rate=0.01),
     loss: object = MeanSquaredError(),
-    compile_kwargs: dict = {},
+    compile_kwargs: dict[str, object] = {},
 ) -> keras.models.Model:
     """
     Creates a neural network model for time series prediction with flexible recurrent layers and optional exogenous variables.
@@ -298,29 +296,29 @@ def create_and_compile_model_exog(
     ----------
     series : pandas DataFrame
         Input time series.
-    exog : pandas DataFrame, optional
-        Exogenous variables to be included as input, should have the same number of rows as `series`.
     lags : int, list
         Number of lagged time steps to consider in the input, or a list of specific lag indices.
     steps : int, list
         Number of steps to predict into the future, or a list of specific step indices.
-    levels : str, int, list, default `None`
+    levels : str, int, list, default None
         Number of output levels (features) to predict, or a list of specific level indices. If None, defaults to the number of input series.
-    recurrent_layer : str, default `'LSTM'`
+    exog : pandas DataFrame, default None
+        Exogenous variables to be included as input, should have the same number of rows as `series`.
+    recurrent_layer : str, default 'LSTM'
         Type of recurrent layer to be used ('LSTM' or 'RNN').
-    recurrent_units : int, list, default `100`
+    recurrent_units : int, list, default 100
         Number of units in the recurrent layer(s). Can be an integer or a list of integers for multiple layers.
-    dense_units : int, list, default `64`
+    dense_units : int, list, default 64
         List of integers representing the number of units in each dense layer.
-    activation : str, dict, default `'relu'`
+    activation : str, dict, default 'relu'
         Activation function for the recurrent and dense layers. Can be a single
         string for all layers or a dictionary specifying different activations
         for 'recurrent_units' and 'dense_units'.
-    optimizer : object, default `Adam(learning_rate=0.01)`
+    optimizer : object, default Adam(learning_rate=0.01)
         Optimization algorithm and learning rate.
-    loss : object, default `MeanSquaredError()`
+    loss : object, default MeanSquaredError()
         Loss function for model training.
-    compile_kwargs : dict, default `{}`
+    compile_kwargs : dict, default {}
         Additional arguments for model compilation.
 
     Returns
