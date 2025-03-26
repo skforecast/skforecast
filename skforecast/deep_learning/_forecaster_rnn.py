@@ -306,10 +306,6 @@ class ForecasterRnn(ForecasterBase):
             fit_kwargs.pop("exog_val")
             
         # TODO check that series_val & exog_val should be both available if exog is not None
-        if self.series_val is not None and self.exog_val is None:
-            raise ValueError(
-                "If `series_val` is provided, `exog_val` must also be provided."
-            )
 
         self.in_sample_residuals_ = {step: None for step in self.steps}
         self.in_sample_residuals_by_bin_ = None

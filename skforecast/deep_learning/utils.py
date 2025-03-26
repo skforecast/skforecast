@@ -325,6 +325,7 @@ def create_and_compile_model_exog(
     -------
     model : keras.models.Model
         Compiled neural network model.
+    
     """
 
     # Validate inputs
