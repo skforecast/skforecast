@@ -260,7 +260,9 @@ class ForecasterRnn(ForecasterBase):
                 self.lags = np.arange(layer_init.output.shape[1]) + 1
             lags = self.lags
         
-        self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
+        self.lags, self.lags_names, self.max_lag = initialize_lags(
+            type(self).__name__, lags
+        )
         self.window_size = self.max_lag
         if steps == "auto":
             if keras.__version__ < "3.0":
@@ -806,13 +808,13 @@ class ForecasterRnn(ForecasterBase):
 
         self.last_window_ = series.iloc[-self.max_lag :, :].copy()
 
-        set_skforecast_warnings(suppress_warnings, action="default")
-
         if store_in_sample_residuals:
             residuals = y_train - self.regressor.predict(x=X_train, verbose=0)
             self.in_sample_residuals_ = {
                 int(step): residuals[:, i, :] for i, step in enumerate(self.steps)
             }
+
+        set_skforecast_warnings(suppress_warnings, action="default")
     
     # TODO: Review docstring
     def _create_predict_inputs(
@@ -947,6 +949,8 @@ class ForecasterRnn(ForecasterBase):
             last_window.loc[:, serie_name] = last_window_serie
 
         X = np.reshape(last_window.to_numpy(), (1, self.max_lag, last_window.shape[1]))
+
+        # TODO: Fill X_col_names
         X_col_names = []
 
         if exog is not None:
@@ -1151,8 +1155,6 @@ class ForecasterRnn(ForecasterBase):
                 correction_factor[i, j] = np.quantile(
                     np.abs(residuals[step][:, j]), nominal_coverage
                 )
-
-        print(correction_factor)
 
         lower_bound = predictions - correction_factor
         upper_bound = predictions + correction_factor
