@@ -52,8 +52,8 @@ def test_predict_NotFittedError_when_fitted_is_False():
     forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=5)
 
     err_msg = re.escape(
-        ("This Forecaster instance is not fitted yet. Call `fit` with "
-         "appropriate arguments before using predict.")
+        "This Forecaster instance is not fitted yet. Call `fit` with "
+        "appropriate arguments before using predict."
     )
     with pytest.raises(NotFittedError, match = err_msg):
         forecaster.predict(steps=5)
@@ -66,8 +66,9 @@ def test_predict_output_when_regressor_is_LinearRegression(steps):
     Test predict output when using LinearRegression as regressor.
     """
     forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=3)
-    forecaster.fit(y=pd.Series(np.arange(50), 
-                   index=pd.date_range(start='2020-01-01', periods=50, freq='D')))
+    forecaster.fit(
+        y=pd.Series(np.arange(50), index=pd.date_range(start='2020-01-01', periods=50, freq='D'))
+    )
     results = forecaster.predict(steps=steps)
 
     expected = pd.Series(
