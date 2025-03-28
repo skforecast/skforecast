@@ -47,7 +47,8 @@ from ..utils import (
     transform_numpy,
     transform_series,
     transform_dataframe,
-    get_style_repr_html
+    get_style_repr_html,
+    get_exog_dtypes
 )
 
 
@@ -717,7 +718,7 @@ class ForecasterRnn(ForecasterBase):
         self.index_type_ = None
         self.index_freq_ = None
         self.last_window_ = None
-        self.exog_in_ = None
+        self.exog_in_ = False
         self.exog_type_in_ = None
         self.exog_dtypes_in_ = None
         self.exog_names_in_ = None
@@ -782,18 +783,11 @@ class ForecasterRnn(ForecasterBase):
                 )
 
         else:
-            if exog_train is not None:
-                history = self.regressor.fit(
-                    x=[X_train, exog_train],
-                    y=y_train,
-                    **self.fit_kwargs,
-                )
-            else:
-                history = self.regressor.fit(
-                    x=X_train,
-                    y=y_train,
-                    **self.fit_kwargs,
-                )
+            history = self.regressor.fit(
+                x=X_train if exog_train is None else [X_train, exog_train],
+                y=y_train,
+                **self.fit_kwargs,
+            )
 
         self.history_ = history.history
         self.is_fitted = True
@@ -806,13 +800,23 @@ class ForecasterRnn(ForecasterBase):
         else:
             self.index_freq_ = y_index.step
 
-        self.last_window_ = series.iloc[-self.max_lag :, :].copy()
+        # TODO: Make this variables output of the create_train_X_y method
+        if exog is not None:
+            self.exog_in_ = True
+            self.exog_names_in_ = exog.columns.to_list()
+            self.exog_type_in_ = type(exog)
+            self.exog_dtypes_in_ = get_exog_dtypes(exog=exog)
+            # self.X_train_exog_names_out_ = X_train_exog_names_out_
 
         if store_in_sample_residuals:
-            residuals = y_train - self.regressor.predict(x=X_train, verbose=0)
+            residuals = y_train - self.regressor.predict(
+                x=X_train if exog_train is None else [X_train, exog_train], verbose=0
+            )
             self.in_sample_residuals_ = {
                 int(step): residuals[:, i, :] for i, step in enumerate(self.steps)
             }
+
+        self.last_window_ = series.iloc[-self.max_lag :, :].copy()
 
         set_skforecast_warnings(suppress_warnings, action="default")
     
@@ -904,7 +908,7 @@ class ForecasterRnn(ForecasterBase):
                 last_window=last_window,
                 exog=exog,
                 exog_type_in_=None,
-                exog_names_in_=None,
+                exog_names_in_=self.exog_names_in_,
                 interval=None,
                 max_steps=self.max_step,
                 levels=levels,
