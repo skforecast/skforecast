@@ -357,9 +357,9 @@ def create_and_compile_model_exog(
 
     # Recurrent layers for the main time series input
     x = series_input
-    for i, units in enumerate(
-        recurrent_units if isinstance(recurrent_units, list) else [recurrent_units]
-    ):
+    if not isinstance(recurrent_units, list):
+        recurrent_units = [recurrent_units]
+    for i, units in enumerate(recurrent_units):
         return_sequences = i < len(recurrent_units) - 1
         if recurrent_layer == "LSTM":
             x = LSTM(
