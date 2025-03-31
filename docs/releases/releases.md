@@ -1101,7 +1101,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [ForecasterEquivalentDate]: ../api/forecasterequivalentdate.html
 
 <!-- model_selection -->
-[model_selection]: ../api/model_selection
+[model_selection]: ../api/model_selection.html
 
 [backtesting_forecaster]: ../api/model_selection.html#skforecast.model_selection._validation.backtesting_forecaster
 [grid_search_forecaster]: ../api/model_selection.html#skforecast.model_selection._search.grid_search_forecaster
