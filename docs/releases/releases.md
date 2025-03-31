@@ -1090,76 +1090,76 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 
 <!-- Links to API Reference -->
 <!-- Forecasters -->
-[ForecasterRecursive]: https://skforecast.org/latest/api/forecasterrecursive
-[ForecasterDirect]: https://skforecast.org/latest/api/forecasterdirect
-[ForecasterRecursiveMultiSeries]: https://skforecast.org/latest/api/forecasterrecursivemultiseries
-[ForecasterDirectMultiVariate]: https://skforecast.org/latest/api/forecasterdirectmultivariate
-[ForecasterRNN]: https://skforecast.org/latest/api/forecasterrnn
-[create_and_compile_model]: https://skforecast.org/latest/api/forecasterrnn.html#skforecast.deep_learning.utils.create_and_compile_model
-[ForecasterSarimax]: https://skforecast.org/latest/api/forecastersarimax
-[Sarimax]: https://skforecast.org/latest/api/sarimax
-[ForecasterEquivalentDate]: https://skforecast.org/latest/api/forecasterequivalentdate
+[ForecasterRecursive]: ../api/forecasterrecursive.html
+[ForecasterDirect]: ../api/forecasterdirect.html
+[ForecasterRecursiveMultiSeries]: ../api/forecasterrecursivemultiseries.html
+[ForecasterDirectMultiVariate]: ../api/forecasterdirectmultivariate.html
+[ForecasterRNN]: ../api/forecasterrnn.html
+[create_and_compile_model]: ../api/forecasterrnn.html#skforecast.deep_learning.utils.create_and_compile_model
+[ForecasterSarimax]: ../api/forecastersarimax.html
+[Sarimax]: ../api/sarimax.html
+[ForecasterEquivalentDate]: ../api/forecasterequivalentdate.html
 
 <!-- model_selection -->
-[model_selection]: https://skforecast.org/latest/api/model_selection
+[model_selection]: ../api/model_selection
 
-[backtesting_forecaster]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._validation.backtesting_forecaster
-[grid_search_forecaster]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._search.grid_search_forecaster
-[random_search_forecaster]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._search.random_search_forecaster
-[bayesian_search_forecaster]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._search.bayesian_search_forecaster
+[backtesting_forecaster]: ../api/model_selection.html#skforecast.model_selection._validation.backtesting_forecaster
+[grid_search_forecaster]: ../api/model_selection.html#skforecast.model_selection._search.grid_search_forecaster
+[random_search_forecaster]: ../api/model_selection.html#skforecast.model_selection._search.random_search_forecaster
+[bayesian_search_forecaster]: ../api/model_selection.html#skforecast.model_selection._search.bayesian_search_forecaster
 
-[backtesting_forecaster_multiseries]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._validation.backtesting_forecaster_multiseries
-[grid_search_forecaster_multiseries]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._search.grid_search_forecaster_multiseries
-[random_search_forecaster_multiseries]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._search.random_search_forecaster_multiseries
-[bayesian_search_forecaster_multiseries]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._search.bayesian_search_forecaster_multiseries
+[backtesting_forecaster_multiseries]: ../api/model_selection.html#skforecast.model_selection._validation.backtesting_forecaster_multiseries
+[grid_search_forecaster_multiseries]: ../api/model_selection.html#skforecast.model_selection._search.grid_search_forecaster_multiseries
+[random_search_forecaster_multiseries]: ../api/model_selection.html#skforecast.model_selection._search.random_search_forecaster_multiseries
+[bayesian_search_forecaster_multiseries]: ../api/model_selection.html#skforecast.model_selection._search.bayesian_search_forecaster_multiseries
 
-[backtesting_sarimax]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._validation.backtesting_sarimax
-[grid_search_sarimax]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._search.grid_search_sarimax
-[random_search_sarimax]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._search.random_search_sarimax
+[backtesting_sarimax]: ../api/model_selection.html#skforecast.model_selection._validation.backtesting_sarimax
+[grid_search_sarimax]: ../api/model_selection.html#skforecast.model_selection._search.grid_search_sarimax
+[random_search_sarimax]: ../api/model_selection.html#skforecast.model_selection._search.random_search_sarimax
 
-[BaseFold]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._split.BaseFold
-[TimeSeriesFold]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._split.TimeSeriesFold
-[OneStepAheadFold]: https://skforecast.org/latest/api/model_selection#skforecast.model_selection._split.OneStepAheadFold
+[BaseFold]: ../api/model_selection.html#skforecast.model_selection._split.BaseFold
+[TimeSeriesFold]: ../api/model_selection.html#skforecast.model_selection._split.TimeSeriesFold
+[OneStepAheadFold]: ../api/model_selection.html#skforecast.model_selection._split.OneStepAheadFold
 
 <!-- feature_selection -->
-[feature_selection]: https://skforecast.org/latest/api/feature_selection
-[select_features]: https://skforecast.org/latest/api/feature_selection#skforecast.feature_selection.feature_selection.select_features
-[select_features_multiseries]: https://skforecast.org/latest/api/feature_selection#skforecast.feature_selection.feature_selection.select_features_multiseries
+[feature_selection]: ../api/feature_selection.html
+[select_features]: ../api/feature_selection.html#skforecast.feature_selection.feature_selection.select_features
+[select_features_multiseries]: ../api/feature_selection.html#skforecast.feature_selection.feature_selection.select_features_multiseries
 
 <!-- preprocessing -->
-[preprocessing]: https://skforecast.org/latest/api/preprocessing
-[RollingFeatures]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.RollingFeatures
-[series_long_to_dict]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.series_long_to_dict
-[exog_long_to_dict]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.exog_long_to_dict
-[TimeSeriesDifferentiator]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.TimeSeriesDifferentiator
-[QuantileBinner]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.QuantileBinner
-[ConformalIntervalCalibrator]: https://skforecast.org/latest/api/preprocessing#skforecast.preprocessing.preprocessing.ConformalIntervalCalibrator
+[preprocessing]: ../api/preprocessing.html
+[RollingFeatures]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.RollingFeatures
+[series_long_to_dict]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.series_long_to_dict
+[exog_long_to_dict]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.exog_long_to_dict
+[TimeSeriesDifferentiator]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.TimeSeriesDifferentiator
+[QuantileBinner]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.QuantileBinner
+[ConformalIntervalCalibrator]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.ConformalIntervalCalibrator
 
 <!-- metrics -->
-[metrics]: https://skforecast.org/latest/api/metrics
-[mean_absolute_scaled_error]: https://skforecast.org/latest/api/metrics#skforecast.metrics.metrics.mean_absolute_scaled_error
-[root_mean_squared_scaled_error]: https://skforecast.org/latest/api/metrics#skforecast.metrics.metrics.root_mean_squared_scaled_error
-[add_y_train_argument]: https://skforecast.org/latest/api/metrics#skforecast.metrics.metrics.add_y_train_argument
+[metrics]: ../api/metrics.html
+[mean_absolute_scaled_error]: ../api/metrics.html#skforecast.metrics.metrics.mean_absolute_scaled_error
+[root_mean_squared_scaled_error]: ../api/metrics.html#skforecast.metrics.metrics.root_mean_squared_scaled_error
+[add_y_train_argument]: ../api/metrics.html#skforecast.metrics.metrics.add_y_train_argument
 
 <!-- plot -->
-[plot]: https://skforecast.org/latest/api/plot
-[set_dark_theme]: https://skforecast.org/latest/api/plot#skforecast.plot.plot.set_dark_theme
-[plot_residuals]: https://skforecast.org/latest/api/plot#skforecast.plot.plot.plot_residuals
-[plot_multivariate_time_series_corr]: https://skforecast.org/latest/api/plot#skforecast.plot.plot.plot_multivariate_time_series_corr
-[calculate_lag_autocorrelation]: https://skforecast.org/latest/api/plot#skforecast.plot.plot.calculate_lag_autocorrelation
-[plot_prediction_distribution]: https://skforecast.org/latest/api/plot#skforecast.plot.plot.plot_prediction_distribution
-[plot_prediction_intervals]: https://skforecast.org/latest/api/plot#skforecast.plot.plot.plot_prediction_intervals
+[plot]: ../api/plot.html
+[set_dark_theme]: ../api/plot.html#skforecast.plot.plot.set_dark_theme
+[plot_residuals]: ../api/plot.html#skforecast.plot.plot.plot_residuals
+[plot_multivariate_time_series_corr]: ../api/plot.html#skforecast.plot.plot.plot_multivariate_time_series_corr
+[calculate_lag_autocorrelation]: ../api/plot.html#skforecast.plot.plot.calculate_lag_autocorrelation
+[plot_prediction_distribution]: ../api/plot.html#skforecast.plot.plot.plot_prediction_distribution
+[plot_prediction_intervals]: ../api/plot.html#skforecast.plot.plot.plot_prediction_intervals
 
 <!-- utils -->
-[utils]: https://skforecast.org/latest/api/utils
+[utils]: ../api/utils.html
 
 <!-- datasets -->
-[datasets]: https://skforecast.org/latest/api/datasets
-[fetch_dataset]: https://skforecast.org/latest/api/datasets#skforecast.datasets.fetch_dataset
-[load_demo_dataset]: https://skforecast.org/latest/api/datasets#skforecast.datasets.load_demo_dataset
+[datasets]: ../api/datasets.html
+[fetch_dataset]: ../api/datasets.html#skforecast.datasets.fetch_dataset
+[load_demo_dataset]: ../api/datasets.html#skforecast.datasets.load_demo_dataset
 
 <!-- exceptions -->
-[exceptions]: https://skforecast.org/latest/api/exceptions
+[exceptions]: ../api/exceptions.html
 
 <!-- OLD -->
 [ForecasterAutoreg]: https://skforecast.org/0.13.0/api/forecasterautoreg
