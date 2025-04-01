@@ -54,7 +54,7 @@ def test_fetch_dataset():
     )
     
     err_msg = re.escape(
-        f"Error reading dataset 'h2o' from {bad_url}. Try to version = 'latest'"
+        f"Error reading dataset 'h2o' from {bad_url}: HTTP Error 404: Not Found."
     )
     with pytest.raises(ValueError, match = err_msg):
         fetch_dataset('h2o', version='non_existent_version', raw=False, verbose=False)

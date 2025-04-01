@@ -658,16 +658,16 @@ def fetch_dataset(
             try:
                 sep = datasets[name]['sep']
                 df = pd.read_csv(url, sep=sep, **kwargs_read_csv)
-            except:
+            except Exception as e:
                 raise ValueError(
-                    f"Error reading dataset '{name}' from {url}. Try to version = 'latest'"
+                    f"Error reading dataset '{name}' from {url}: {str(e)}."
                 )
         if file_type == 'parquet':
             try:
                 df = pd.read_parquet(url)
-            except:
+            except Exception as e:
                 raise ValueError(
-                    f"Error reading dataset '{name}' from {url}. Try to version = 'latest'"
+                    f"Error reading dataset '{name}' from {url}: {str(e)}."
                 )
     else:
         try: 
@@ -675,9 +675,9 @@ def fetch_dataset(
             for url_partition in url:
                 path = 'https://drive.google.com/uc?export=download&id=' + url_partition.split('/')[-2]
                 df.append(pd.read_parquet(path))
-        except:
+        except Exception as e:
             raise ValueError(
-                f"Error reading dataset '{name}' from {url}. Try to version = 'latest'"
+                f"Error reading dataset '{name}' from {url}: {str(e)}."
             )
         df = pd.concat(df, axis=0).reset_index(drop=True)
 
