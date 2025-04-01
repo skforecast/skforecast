@@ -1247,7 +1247,13 @@ def check_residuals_input(
     
     """
 
-    forecaster_direct = ['ForecasterDirect', 'ForecasterDirectMultiVariate']
+    # TODO: Review when MultiVariate as MultiSeries
+    # TODO: Review when Rnn as MultiSeries
+    forecasters_multiseries = [
+        'ForecasterRecursiveMultiSeries',
+        'ForecasterDirectMultiVariate',
+        'ForecasterRnn'
+    ]
 
     if use_in_sample_residuals:
         if use_binned_residuals:
@@ -1267,16 +1273,8 @@ def check_residuals_input(
                 f"`store_in_sample_residuals = True` when fitting the forecaster "
                 f"or use the `set_in_sample_residuals()` method before predicting."
             )
-        
-        # NOTE: If use_binned_residuals, residuals is {bin: residuals}
-        if forecaster_name in forecaster_direct and not use_binned_residuals:
-            if not set(steps).issubset(set(residuals.keys())):
-                raise ValueError(
-                    f"`forecaster.{literal}` doesn't contain residuals for steps: "
-                    f"{set(steps) - set(residuals.keys())}."
-                )
             
-        if forecaster_name == 'ForecasterRecursiveMultiSeries':
+        if forecaster_name in forecasters_multiseries:
             unknown_levels = set(levels) - set(residuals.keys())
             if unknown_levels and encoding is not None:
                 warnings.warn(
@@ -1304,17 +1302,8 @@ def check_residuals_input(
                 f"`use_in_sample_residuals = True` or the "
                 f"`set_out_sample_residuals()` method before predicting."
             )
-
-        # NOTE: If use_binned_residuals, residuals is {bin: residuals}
-        if forecaster_name in forecaster_direct and not use_binned_residuals:
-            if not set(steps).issubset(set(residuals.keys())):
-                raise ValueError(
-                    f"`forecaster.{literal}` doesn't contain residuals for steps: "
-                    f"{set(steps) - set(residuals.keys())}. "
-                    f"Use method `set_out_sample_residuals()`."
-                )
             
-        if forecaster_name == 'ForecasterRecursiveMultiSeries':
+        if forecaster_name in forecasters_multiseries:
             unknown_levels = set(levels) - set(residuals.keys())
             if unknown_levels and encoding is not None:
                 warnings.warn(
@@ -1326,15 +1315,7 @@ def check_residuals_input(
                     UnknownLevelWarning
                 )
 
-    # NOTE: If use_binned_residuals, residuals is {bin: residuals}
-    if forecaster_name in forecaster_direct and not use_binned_residuals:
-        for step in steps:
-            if residuals[step] is None or len(residuals[step]) == 0:
-                raise ValueError(
-                    f"Residuals for step {step} are None. Check `forecaster.{literal}`."
-                )
-
-    if forecaster_name == 'ForecasterRecursiveMultiSeries':
+    if forecaster_name in forecasters_multiseries:
         for level in residuals.keys():
             if residuals[level] is None or len(residuals[level]) == 0:
                 raise ValueError(
