@@ -1740,7 +1740,7 @@ class ForecasterDirect(ForecasterBase):
         if use_binned_residuals:
             recommended_n_boot = np.max([v.size for v in residuals_by_bin.values()])
         else:
-            recommended_n_boot = np.max([v.size for v in residuals.values()])
+            recommended_n_boot = residuals.size
         
         if n_boot > recommended_n_boot:
             warnings.warn(
@@ -1768,13 +1768,16 @@ class ForecasterDirect(ForecasterBase):
         boot_columns = [f"pred_boot_{i}" for i in range(n_boot)]
         
         rng = np.random.default_rng(seed=random_state)
+
+        #TODO: creo que este loop no es necesario, se puede hacer todo de una vez
+        # al haber eliminado los residuos por step
         for i, step in enumerate(steps):
 
             if use_binned_residuals:
                 predicted_bin = self.binner.transform(predictions[i]).item()
                 step_residuals = residuals_by_bin[predicted_bin]
             else:
-                step_residuals = residuals[step]
+                step_residuals = residuals
             len_step_residuals = len(step_residuals)
 
             # NOTE: If n_boot != len_step_residuals, upsample or downsample the 

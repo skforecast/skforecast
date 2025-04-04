@@ -127,7 +127,6 @@ def test_binning_in_sample_residuals_stores_maximum_10000_residuals():
     forecaster.fit(y, store_in_sample_residuals=True)
     max_residuals_per_bin = int(10_000 // forecaster.binner.n_bins_)
 
-    for v in forecaster.in_sample_residuals_.values():
-        assert len(v) == 10_000
+    assert len(forecaster.in_sample_residuals_) == 10_000
     for v in forecaster.in_sample_residuals_by_bin_.values():
         assert len(v) == max_residuals_per_bin
