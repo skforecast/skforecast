@@ -48,7 +48,7 @@ from ..utils import (
 )
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
 
-# TODO: Review docstring residuals, same a Recursive
+
 class ForecasterDirect(ForecasterBase):
     """
     This class turns any regressor compatible with the scikit-learn API into a
@@ -203,11 +203,10 @@ class ForecasterDirect(ForecasterBase):
         Names of columns of the matrix created internally for training.
     fit_kwargs : dict
         Additional arguments to be passed to the `fit` method of the regressor.
-    in_sample_residuals_ : dict
-        Residuals of the model when predicting training data. Only stored up 
-        to 10_000 values per step in the form `{step: residuals}`. If 
-        `transformer_y` is not `None`, residuals are stored in the 
-        transformed scale. If `differentiation` is not `None`, residuals are 
+    in_sample_residuals_ : numpy ndarray
+        Residuals of the model when predicting training data. Only stored up to
+        10_000 values. If `transformer_y` is not `None`, residuals are stored in
+        the transformed scale. If `differentiation` is not `None`, residuals are
         stored after differentiation.
     in_sample_residuals_by_bin_ : dict
         In sample residuals binned according to the predicted value each residual
@@ -217,12 +216,12 @@ class ForecasterDirect(ForecasterBase):
         scale. If `differentiation` is not `None`, residuals are stored after 
         differentiation. 
         **New in version 0.15.0**
-    out_sample_residuals_ : dict
-        Residuals of the model when predicting non-training data. Only stored up 
-        to 10_000 values per step in the form `{step: residuals}`. Use 
-        `set_out_sample_residuals()` method to set values. If `transformer_y` 
-        is not `None`, residuals are stored in the transformed scale. If 
-        `differentiation` is not `None`, residuals are stored after differentiation. 
+    out_sample_residuals_ : numpy ndarray
+        Residuals of the model when predicting non-training data. Only stored up to
+        10_000 values. Use `set_out_sample_residuals()` method to set values. If 
+        `transformer_y` is not `None`, residuals are stored in the transformed 
+        scale. If `differentiation` is not `None`, residuals are stored after 
+        differentiation.
     out_sample_residuals_by_bin_ : dict
         Out of sample residuals binned according to the predicted value each residual
         is associated with. The number of residuals stored per bin is limited to 
@@ -1416,8 +1415,7 @@ class ForecasterDirect(ForecasterBase):
                     out_sample_residuals_        = self.out_sample_residuals_,
                     use_binned_residuals         = use_binned_residuals,
                     in_sample_residuals_by_bin_  = self.in_sample_residuals_by_bin_,
-                    out_sample_residuals_by_bin_ = self.out_sample_residuals_by_bin_,
-                    steps                        = steps
+                    out_sample_residuals_by_bin_ = self.out_sample_residuals_by_bin_
                 )
 
         last_window = last_window.iloc[-self.window_size:].copy()
@@ -1734,23 +1732,6 @@ class ForecasterDirect(ForecasterBase):
             residuals = self.out_sample_residuals_
             residuals_by_bin = self.out_sample_residuals_by_bin_
 
-        # NOTE: Since residuals are {step/bin: residuals}, more n_boot iterations
-        # than the number of residuals for the step/bin with more residuals, 
-        # doesn't add any new information to the bootstrapping process.
-        if use_binned_residuals:
-            recommended_n_boot = np.max([v.size for v in residuals_by_bin.values()])
-        else:
-            recommended_n_boot = residuals.size
-        
-        if n_boot > recommended_n_boot:
-            warnings.warn(
-                f"`n_boot`, {n_boot}, is greater than the number of available "
-                f"residuals. More than {recommended_n_boot} iterations don't "
-                f"add new information to the bootstrapping process, but increase "
-                f"the computational cost.",
-                ResidualsUsageWarning
-            )
-
         # NOTE: Predictors and residuals are transformed and differentiated
         regressors = [self.regressors_[step] for step in steps]
         with warnings.catch_warnings():
@@ -1763,31 +1744,28 @@ class ForecasterDirect(ForecasterBase):
                 regressor.predict(X).ravel()[0] 
                 for regressor, X in zip(regressors, Xs)
             ])
-
-        boot_predictions = np.tile(predictions, (n_boot, 1)).T
-        boot_columns = [f"pred_boot_{i}" for i in range(n_boot)]
         
         rng = np.random.default_rng(seed=random_state)
-
-        #TODO: creo que este loop no es necesario, se puede hacer todo de una vez
-        # al haber eliminado los residuos por step
-        for i, step in enumerate(steps):
-
-            if use_binned_residuals:
-                predicted_bin = self.binner.transform(predictions[i]).item()
-                step_residuals = residuals_by_bin[predicted_bin]
-            else:
-                step_residuals = residuals
-            len_step_residuals = len(step_residuals)
-
-            # NOTE: If n_boot != len_step_residuals, upsample or downsample the 
-            # residuals from the step/bin to match n_boot.
-            if len_step_residuals != n_boot:
-                step_residuals = step_residuals[
-                    rng.integers(low=0, high=len_step_residuals, size=n_boot)
+        if not use_binned_residuals:
+            sampled_residuals = residuals[
+                rng.integers(low=0, high=residuals.size, size=(len(steps), n_boot))
+            ]
+        else:
+            predicted_bins = self.binner.transform(predictions)
+            sampled_residuals = np.full(
+                                    shape      = (predicted_bins.size, n_boot),
+                                    fill_value = np.nan,
+                                    order      = 'C',
+                                    dtype      = float
+                                )
+            for i, bin in enumerate(predicted_bins):
+                sampled_residuals[i, :] = residuals_by_bin[bin][
+                    rng.integers(low=0, high=residuals_by_bin[bin].size, size=n_boot)
                 ]
-            
-            boot_predictions[i, :] = boot_predictions[i, :] + step_residuals
+        
+        boot_predictions = np.tile(predictions, (n_boot, 1)).T
+        boot_columns = [f"pred_boot_{i}" for i in range(n_boot)]
+        boot_predictions = boot_predictions + sampled_residuals
 
         if self.differentiation is not None:
             boot_predictions = (
@@ -1917,10 +1895,7 @@ class ForecasterDirect(ForecasterBase):
             predictions_bin = self.binner.transform(predictions)
             correction_factor = replace_func(predictions_bin)
         else:
-            correction_factor = np.array([
-                np.quantile(np.abs(residuals[step]), nominal_coverage) 
-                for step in steps
-            ])
+            correction_factor = np.quantile(np.abs(residuals), nominal_coverage)
 
         lower_bound = predictions - correction_factor
         upper_bound = predictions + correction_factor
@@ -2416,8 +2391,7 @@ class ForecasterDirect(ForecasterBase):
         values and the predictions made by the forecaster using the training 
         data. The following internal attributes are updated:
 
-        + `in_sample_residuals_`: Dictionary containing a numpy ndarray with the
-        residuals for each step in the form `{step: residuals}`.
+        + `in_sample_residuals_`: residuals stored in a numpy ndarray.
         + `binner_intervals_`: intervals used to bin the residuals are calculated
         using the quantiles of the predicted values.
         + `in_sample_residuals_by_bin_`: residuals are binned according to the
@@ -2774,8 +2748,10 @@ class ForecasterDirect(ForecasterBase):
             idx_columns = np.concatenate((idx_columns_autoreg, idx_columns_exog))
         
         idx_columns = [int(x) for x in idx_columns]  # Required since numpy 2.0
-        feature_names = [self.X_train_features_names_out_[i].replace(f"_step_{step}", "") 
-                         for i in idx_columns]
+        feature_names = [
+            self.X_train_features_names_out_[i].replace(f"_step_{step}", "") 
+            for i in idx_columns
+        ]
 
         if hasattr(estimator, 'feature_importances_'):
             feature_importances = estimator.feature_importances_

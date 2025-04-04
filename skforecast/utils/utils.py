@@ -1204,12 +1204,11 @@ def check_predict_input(
 def check_residuals_input(
     forecaster_name: str,
     use_in_sample_residuals: bool,
-    in_sample_residuals_: np.ndarray | dict[str | int, np.ndarray] | None,
-    out_sample_residuals_: np.ndarray | dict[str | int, np.ndarray] | None,
+    in_sample_residuals_: np.ndarray | dict[str, np.ndarray] | None,
+    out_sample_residuals_: np.ndarray | dict[str, np.ndarray] | None,
     use_binned_residuals: bool,
     in_sample_residuals_by_bin_: dict[str | int, np.ndarray | dict[int, np.ndarray]] | None,
     out_sample_residuals_by_bin_: dict[str | int, np.ndarray | dict[int, np.ndarray]] | None,
-    steps: list[int] | None = None,
     levels: list[str] | None = None,
     encoding: str | None = None
 ) -> None:
@@ -1222,9 +1221,9 @@ def check_residuals_input(
         Forecaster name.
     use_in_sample_residuals : bool
         Indicates if in sample or out sample residuals are used.
-    in_sample_residuals_ : numpy ndarray
+    in_sample_residuals_ : numpy ndarray, dict
         Residuals of the model when predicting training data.
-    out_sample_residuals_ : numpy ndarray
+    out_sample_residuals_ : numpy ndarray, dict
         Residuals of the model when predicting non training data.
     use_binned_residuals : bool
         Indicates if residuals are binned.
@@ -1234,8 +1233,6 @@ def check_residuals_input(
     out_sample_residuals_by_bin_ : dict
         Out of sample residuals binned according to the predicted value each residual
         is associated with.
-    steps : list, default None
-        Steps to be predicted (Direct forecasters)
     levels : list, default None
         Names of the series (levels) to be predicted (ForecasterRecursiveMultiSeries).
     encoding : str, default None

@@ -80,6 +80,7 @@ def test_binning_in_sample_residuals_store_in_sample_residuals_False():
         2: (107.10836783689707, 122.98049619443195)
     }
 
+    assert forecaster.in_sample_residuals_ is None
     assert forecaster.in_sample_residuals_by_bin_ is None
     for k in forecaster.binner_intervals_.keys():
         assert forecaster.binner_intervals_[k][0] == approx(expected_binner_intervals[k][0])

@@ -93,24 +93,14 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_2_
                  )
     forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True)
     forecaster.out_sample_residuals_ = forecaster.in_sample_residuals_
-    
-    n_boot = 250
-    recommended_n_boot = np.max([len(v) for v in forecaster.in_sample_residuals_.values()])
-    warn_msg = re.escape(
-        f"`n_boot`, {n_boot}, is greater than the number of available "
-        f"residuals. More than {recommended_n_boot} iterations don't "
-        f"add new information to the bootstrapping process, but increase "
-        f"the computational cost."
-    )
-    with pytest.warns(ResidualsUsageWarning, match=warn_msg):
-        results = forecaster.predict_interval(
-                      steps                   = 2,
-                      interval                = (5, 95),
-                      exog                    = exog_predict,
-                      n_boot                  = n_boot,
-                      use_in_sample_residuals = False,
-                      use_binned_residuals    = False
-                  )
+    results = forecaster.predict_interval(
+                  steps                   = 2,
+                  interval                = (5, 95),
+                  exog                    = exog_predict,
+                  n_boot                  = 250,
+                  use_in_sample_residuals = False,
+                  use_binned_residuals    = False
+              )
     
     expected = pd.DataFrame(
                    data    = np.array([[6.75235879e-01, 3.09660082e-01, 1.07596889e+00],
@@ -134,18 +124,9 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_5_
                      transformer_y = StandardScaler()
                  )
     forecaster.fit(y=y, store_in_sample_residuals=True)
-
-    recommended_n_boot = np.max([len(v) for v in forecaster.in_sample_residuals_by_bin_.values()])
-    warn_msg = re.escape(
-        f"`n_boot`, 250, is greater than the number of available "
-        f"residuals. More than {recommended_n_boot} iterations don't "
-        f"add new information to the bootstrapping process, but increase "
-        f"the computational cost."
+    results = forecaster.predict_interval(
+        steps=5, interval=(5, 95), use_in_sample_residuals=True, use_binned_residuals=True
     )
-    with pytest.warns(ResidualsUsageWarning, match=warn_msg):
-        results = forecaster.predict_interval(
-            steps=5, interval=(5, 95), use_in_sample_residuals=True, use_binned_residuals=True
-        )
 
     expected = pd.DataFrame(
                     data    = np.array(
@@ -176,18 +157,9 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_5_
                  )
     forecaster.fit(y=y, store_in_sample_residuals=True)
     forecaster.out_sample_residuals_by_bin_ = forecaster.in_sample_residuals_by_bin_
-
-    recommended_n_boot = np.max([len(v) for v in forecaster.out_sample_residuals_by_bin_.values()])
-    warn_msg = re.escape(
-        f"`n_boot`, 250, is greater than the number of available "
-        f"residuals. More than {recommended_n_boot} iterations don't "
-        f"add new information to the bootstrapping process, but increase "
-        f"the computational cost."
+    results = forecaster.predict_interval(
+        steps=5, interval=(5, 95), use_in_sample_residuals=False, use_binned_residuals=True
     )
-    with pytest.warns(ResidualsUsageWarning, match=warn_msg):
-        results = forecaster.predict_interval(
-            steps=5, interval=(5, 95), use_in_sample_residuals=False, use_binned_residuals=True
-        )
 
     expected = pd.DataFrame(
                     data    = np.array(
