@@ -1753,7 +1753,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                     use_binned_residuals         = use_binned_residuals,
                     in_sample_residuals_by_bin_  = self.in_sample_residuals_by_bin_,
                     out_sample_residuals_by_bin_ = self.out_sample_residuals_by_bin_,
-                    steps                        = steps
                 )
 
         last_window = last_window.iloc[
