@@ -1136,7 +1136,7 @@ class ForecasterDirect(ForecasterBase):
             exog_dtypes_in_
         ) = self._create_train_X_y(y=y, exog=exog)
 
-        def fit_forecaster(regressor, X_train, y_train, step, store_in_sample_residuals, random_state):
+        def fit_forecaster(regressor, X_train, y_train, step):
             """
             Auxiliary function to fit each of the forecaster's regressors in parallel.
 
@@ -1150,14 +1150,6 @@ class ForecasterDirect(ForecasterBase):
                 Dict created with the `create_train_X_y` method, second return.
             step : int
                 Step of the forecaster to be fitted.
-            store_in_sample_residuals : bool
-                If `True`, in-sample residuals will be stored in the forecaster object
-                after fitting (`in_sample_residuals_` and `in_sample_residuals_by_bin_`
-                attributes).
-                If `False`, only the intervals of the bins are stored.
-            random_state : int, default 123
-                Set a seed for the random generator so that the stored sample 
-                residuals are always deterministic.
             
             Returns
             -------
@@ -1200,12 +1192,10 @@ class ForecasterDirect(ForecasterBase):
             Parallel(n_jobs=self.n_jobs)
             (delayed(fit_forecaster)
             (
-                regressor                 = copy(self.regressor),
-                X_train                   = X_train,
-                y_train                   = y_train,
-                step                      = step,
-                store_in_sample_residuals = store_in_sample_residuals,
-                random_state              = random_state
+                regressor = copy(self.regressor),
+                X_train   = X_train,
+                y_train   = y_train,
+                step      = step
             )
             for step in range(1, self.steps + 1))
         )
@@ -2579,10 +2569,6 @@ class ForecasterDirect(ForecasterBase):
         
         y_true = deepcopy(y_true)
         y_pred = deepcopy(y_pred)
-        if self.differentiation is not None:
-            differentiator = copy(self.differentiator)
-            differentiator.set_params(window_size=None)
-        
         if not isinstance(y_pred, np.ndarray):
             y_pred = y_pred.to_numpy()
         if not isinstance(y_true, np.ndarray):

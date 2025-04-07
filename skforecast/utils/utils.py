@@ -1234,7 +1234,7 @@ def check_residuals_input(
         Out of sample residuals binned according to the predicted value each residual
         is associated with.
     levels : list, default None
-        Names of the series (levels) to be predicted (ForecasterRecursiveMultiSeries).
+        Names of the series (levels) to be predicted (Forecasters multiseries).
     encoding : str, default None
         Encoding used to identify the different series (ForecasterRecursiveMultiSeries).
 
@@ -1244,7 +1244,6 @@ def check_residuals_input(
     
     """
 
-    # TODO: Review when MultiVariate as MultiSeries
     # TODO: Review when Rnn as MultiSeries
     forecasters_multiseries = [
         'ForecasterRecursiveMultiSeries',
