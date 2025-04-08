@@ -3054,23 +3054,23 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             if not isinstance(y_true[k], (np.ndarray, pd.Series)):
                 raise TypeError(
                     f"Values of `y_true` must be numpy ndarrays or pandas Series. "
-                    f"Got {type(y_true[k])} for step {k}."
+                    f"Got {type(y_true[k])} for series {k}."
                 )
             if not isinstance(y_pred[k], (np.ndarray, pd.Series)):
                 raise TypeError(
                     f"Values of `y_pred` must be numpy ndarrays or pandas Series. "
-                    f"Got {type(y_pred[k])} for step {k}."
+                    f"Got {type(y_pred[k])} for series {k}."
                 )
             if len(y_true[k]) != len(y_pred[k]):
                 raise ValueError(
                     f"`y_true` and `y_pred` must have the same length. "
-                    f"Got {len(y_true[k])} and {len(y_pred[k])} for step {k}."
+                    f"Got {len(y_true[k])} and {len(y_pred[k])} for series {k}."
                 )
             if isinstance(y_true[k], pd.Series) and isinstance(y_pred[k], pd.Series):
                 if not y_true[k].index.equals(y_pred[k].index):
                     raise ValueError(
                         f"When containing pandas Series, elements in `y_true` and "
-                        f"`y_pred` must have the same index. Error in step {k}."
+                        f"`y_pred` must have the same index. Error in series {k}."
                     )
         
         if not set(y_pred.keys()) == {self.level}:
@@ -3078,10 +3078,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 f"`y_pred` and `y_true` must have only the key '{self.level}'. " 
                 f"Got {set(y_pred.keys())}."
             )
-        
-        if self.out_sample_residuals_ is None:
-            self.out_sample_residuals_ = {self.level: None}
-            self.out_sample_residuals_by_bin_ = {self.level: None}
         
         y_true = deepcopy(y_true[self.level])
         y_pred = deepcopy(y_pred[self.level])        
@@ -3118,16 +3114,20 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         data['bin'] = self.binner[self.level].transform(y_pred).astype(int)
         residuals_by_bin = data.groupby('bin')['residuals'].apply(np.array).to_dict()
+
+        if self.out_sample_residuals_ is None:
+            self.out_sample_residuals_ = {self.level: None}
+            self.out_sample_residuals_by_bin_ = {self.level: None}
         
         out_sample_residuals = (
             np.array([]) 
-            if self.out_sample_residuals_ is None
-            else self.out_sample_residuals_
+            if self.out_sample_residuals_[self.level] is None
+            else self.out_sample_residuals_[self.level]
         )
         out_sample_residuals_by_bin = (
             {} 
-            if self.out_sample_residuals_by_bin_ is None
-            else self.out_sample_residuals_by_bin_
+            if self.out_sample_residuals_by_bin_[self.level] is None
+            else self.out_sample_residuals_by_bin_[self.level]
         )
         if append:
             out_sample_residuals = np.concatenate([out_sample_residuals, residuals])
@@ -3142,7 +3142,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             out_sample_residuals = residuals
             out_sample_residuals_by_bin = residuals_by_bin
 
-        max_samples = 10_000 // self.binner.n_bins_
+        max_samples = 10_000 // self.binner[self.level].n_bins_
         rng = np.random.default_rng(seed=random_state)
         for k, v in out_sample_residuals_by_bin.items():
             if len(v) > max_samples:
