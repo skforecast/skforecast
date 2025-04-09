@@ -428,8 +428,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             self.window_features_class_names = [
                 type(wf).__name__ for wf in self.window_features
             ]
-
-        self.in_sample_residuals_ = {step: None for step in range(1, steps + 1)}
         
         self.weight_func, self.source_code_weight_func, _ = initialize_weights(
             forecaster_name = type(self).__name__, 
@@ -1650,6 +1648,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                     if len(v) > max_sample:
                         sample = v[rng.integers(low=0, high=len(v), size=max_sample)]
                         self.in_sample_residuals_by_bin_[level][k] = sample
+            else:
+                self.in_sample_residuals_by_bin_[level] = None
 
             if len(residuals) > 10_000:
                 residuals = residuals[

@@ -1271,15 +1271,16 @@ def check_residuals_input(
             )
             
         if forecaster_name in forecasters_multiseries:
-            unknown_levels = set(levels) - set(residuals.keys())
-            if unknown_levels and encoding is not None:
-                warnings.warn(
-                    f"`levels` {unknown_levels} are not present in `forecaster.{literal}`, "
-                    f"most likely because they were not present in the training data. "
-                    f"A random sample of the residuals from other levels will be used. "
-                    f"This can lead to inaccurate intervals for the unknown levels.",
-                    UnknownLevelWarning
-                )
+            if encoding is not None:
+                unknown_levels = set(levels) - set(residuals.keys())
+                if unknown_levels:
+                    warnings.warn(
+                        f"`levels` {unknown_levels} are not present in `forecaster.{literal}`, "
+                        f"most likely because they were not present in the training data. "
+                        f"A random sample of the residuals from other levels will be used. "
+                        f"This can lead to inaccurate intervals for the unknown levels.",
+                        UnknownLevelWarning
+                    )
     else:
         if use_binned_residuals:
             residuals = out_sample_residuals_by_bin_
@@ -1300,16 +1301,17 @@ def check_residuals_input(
             )
             
         if forecaster_name in forecasters_multiseries:
-            unknown_levels = set(levels) - set(residuals.keys())
-            if unknown_levels and encoding is not None:
-                warnings.warn(
-                    f"`levels` {unknown_levels} are not present in `forecaster.{literal}`. "
-                    f"A random sample of the residuals from other levels will be used. "
-                    f"This can lead to inaccurate intervals for the unknown levels. "
-                    f"Otherwise, Use the `set_out_sample_residuals()` method before "
-                    f"predicting to set the residuals for these levels.",
-                    UnknownLevelWarning
-                )
+            if encoding is not None:
+                unknown_levels = set(levels) - set(residuals.keys())
+                if unknown_levels:
+                    warnings.warn(
+                        f"`levels` {unknown_levels} are not present in `forecaster.{literal}`. "
+                        f"A random sample of the residuals from other levels will be used. "
+                        f"This can lead to inaccurate intervals for the unknown levels. "
+                        f"Otherwise, Use the `set_out_sample_residuals()` method before "
+                        f"predicting to set the residuals for these levels.",
+                        UnknownLevelWarning
+                    )
 
     if forecaster_name in forecasters_multiseries:
         for level in residuals.keys():
@@ -2639,8 +2641,8 @@ def check_preprocess_exog_multiseries(
         exog_dtypes_buffer = pd.concat(exog_dtypes_buffer, axis=1)
         exog_dtypes_nunique = exog_dtypes_buffer.nunique(axis=1).eq(1)
         if not exog_dtypes_nunique.all():
-            non_unique_dtyeps_exogs = exog_dtypes_nunique[exog_dtypes_nunique != 1].index.to_list()
-            raise TypeError(f"Exog/s: {non_unique_dtyeps_exogs} have different dtypes in different series.")
+            non_unique_dtypes_exogs = exog_dtypes_nunique[exog_dtypes_nunique != 1].index.to_list()
+            raise TypeError(f"Exog/s: {non_unique_dtypes_exogs} have different dtypes in different series.")
 
     exog_names_in_ = list(
         set(

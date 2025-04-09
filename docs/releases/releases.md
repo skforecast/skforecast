@@ -10,6 +10,24 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
 
+## 0.16.0 <small>In Development</small> { id="0.16.0" }
+
+The main changes in this release are:
+
++ <span class="badge text-bg-danger">Fix</span> Minor release to fix a bug when importing module `skforecast.sarimax`.
+
+
+**Added**
+
+
+**Changed**
+
++ In-sample residuals in direct forecasters has been simplified.
+
+
+**Fixed**
+
+
 ## 0.15.1 <small>Mar 18, 2025</small> { id="0.15.1" }
 
 + <span class="badge text-bg-danger">Fix</span> Minor release to fix a bug when importing module `skforecast.sarimax`.
@@ -17,7 +35,9 @@ All significant changes to this project are documented in this release file.
 
 **Added**
 
+
 **Changed**
+
 
 **Fixed**
 
@@ -298,7 +318,7 @@ The main changes in this release are:
 
 + Support for `Python 3.12`.
 
-+ `keras` has been added as an optional dependency, tag deeplearning, to use the <code>[ForecasterRnn]</code>.
++ `keras` has been added as an optional dependency, tag `deeplearning`, to use the <code>[ForecasterRnn]</code>.
 
 + `PyTorch` backend for the <code>[ForecasterRnn]</code>.
 
@@ -892,12 +912,12 @@ The main changes in this release are:
 
 **Fixed**
 
-+ `fit` and `predict` transform pandas series and dataframes to numpy arrays if regressor is XGBoost.
++ `fit` and `predict` transform pandas Series and DataFrames to numpy arrays if regressor is XGBoost.
 
 
 ## 0.4.0 <small>Dec 10, 2021</small> { id="0.4.0" }
 
-Version 0.4 has undergone a huge code refactoring. Main changes are related to input-output formats (only pandas series and dataframes are allowed although internally numpy arrays are used for performance) and model validation methods (unified into backtesting with and without refit).
+Version 0.4 has undergone a huge code refactoring. Main changes are related to input-output formats (only pandas Series and DataFrames are allowed although internally numpy arrays are used for performance) and model validation methods (unified into backtesting with and without refit).
 
 **Added**
 
@@ -971,7 +991,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 
 **Changed**
 
-+ New implementation of `ForecasterAutoregMultiOutput`. The training process in the new version creates a different X_train for each step. See [Direct multi-step forecasting](https://github.com/skforecast/skforecast#introduction) for more details. Old versión can be acces with `skforecast.deprecated.ForecasterAutoregMultiOutput`.
++ New implementation of `ForecasterAutoregMultiOutput`. The training process in the new version creates a different X_train for each step. See [Direct multi-step forecasting](https://github.com/skforecast/skforecast#introduction) for more details. Old version can be access with `skforecast.deprecated.ForecasterAutoregMultiOutput`.
 
 **Fixed**
 
@@ -1020,7 +1040,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 
 **Fixed**
 
-+ Warning of inclompleted folds when using `backtesting_forecast` with a  `ForecasterAutoregMultiOutput`.
++ Warning of incomplete folds when using `backtesting_forecast` with a  `ForecasterAutoregMultiOutput`.
 
 + `ForecasterAutoregMultiOutput.predict` allow exog data longer than needed (steps).
 

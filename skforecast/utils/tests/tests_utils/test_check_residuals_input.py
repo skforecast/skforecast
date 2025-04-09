@@ -75,72 +75,6 @@ def test_check_residuals_input_ValueError_when_not_out_sample_residuals(residual
         )
 
 
-@pytest.mark.parametrize("use_in_sample_residuals", 
-                         [True, False],
-                         ids = lambda in_sample: f'use_in_sample_residuals: {in_sample}')
-def test_check_residuals_input_ValueError_when_not_in_sample_residuals_for_some_step(use_in_sample_residuals):
-    """
-    Test ValueError is raised when there is no in_sample_residuals_ or 
-    in_sample_residuals_by_bin_ for some step in a Direct forecaster.
-    """
-
-    if use_in_sample_residuals:
-        literal = "in_sample_residuals_"
-    else:
-        literal = "out_sample_residuals_"
-    residuals = {2: np.array([1, 2, 3])}
-
-    err_msg = re.escape(
-        f"`forecaster.{literal}` doesn't contain residuals for steps: "
-        f"{set([1, 2]) - set(residuals.keys())}."
-    )
-    with pytest.raises(ValueError, match = err_msg):
-        check_residuals_input(
-            forecaster_name              = 'ForecasterDirect',
-            steps                        = [1, 2],
-            use_in_sample_residuals      = use_in_sample_residuals,
-            in_sample_residuals_         = residuals,
-            out_sample_residuals_        = residuals,
-            use_binned_residuals         = False,
-            in_sample_residuals_by_bin_  = None,
-            out_sample_residuals_by_bin_ = None
-        )
-
-
-@pytest.mark.parametrize("use_in_sample_residuals", 
-                         [True, False],
-                         ids = lambda in_sample: f'use_in_sample_residuals: {in_sample}')
-def test_check_residuals_input_ValueError_when_residuals_for_some_step_is_None(use_in_sample_residuals):
-    """
-    Test ValueError is raised when residuals for some step is None or empty in 
-    a Direct forecaster.
-    """
-    if use_in_sample_residuals:
-        literal = "in_sample_residuals_"
-    else:
-        literal = "out_sample_residuals_"
-    residuals = {
-        1: {1: np.array([1, 2, 3, 4, 5])},
-        2: {2: np.array([1, 2, 3, 4, 5])},
-        3: None
-    }
-
-    err_msg = re.escape(
-        f"Residuals for step 3 are None. Check `forecaster.{literal}`."
-    )
-    with pytest.raises(ValueError, match = err_msg):
-        check_residuals_input(
-            forecaster_name              = 'ForecasterDirectMultiVariate',
-            steps                        = [1, 2, 3],
-            use_in_sample_residuals      = use_in_sample_residuals,
-            in_sample_residuals_         = residuals,
-            out_sample_residuals_        = residuals,
-            use_binned_residuals         = False,
-            in_sample_residuals_by_bin_  = None,
-            out_sample_residuals_by_bin_ = None
-        )
-
-
 @pytest.mark.parametrize("use_binned_residuals", 
                          [True, False],
                          ids = lambda binned: f'use_binned_residuals: {binned}')
@@ -230,10 +164,13 @@ def test_check_residuals_input_multiseries_ValueError_when_not_out_sample_residu
         )
 
 
+@pytest.mark.parametrize("forecaster_name", 
+                         ['ForecasterRecursiveMultiSeries', 'ForecasterDirectMultiVariate', 'ForecasterRnn'],
+                         ids = lambda fn: f'forecaster_name: {fn}')
 @pytest.mark.parametrize("use_binned_residuals", 
                          [True, False],
                          ids = lambda binned: f'use_binned_residuals: {binned}')
-def test_check_residuals_input_ValueError_when_residuals_for_some_level_is_None(use_binned_residuals):
+def test_check_residuals_input_ValueError_when_residuals_for_some_level_is_None(forecaster_name, use_binned_residuals):
     """
     Test ValueError is raised when residuals for some level is None or empty
     in 'ForecasterRecursiveMultiSeries'.
@@ -264,7 +201,7 @@ def test_check_residuals_input_ValueError_when_residuals_for_some_level_is_None(
     )
     with pytest.raises(ValueError, match = err_msg):
         check_residuals_input(
-            forecaster_name              = 'ForecasterRecursiveMultiSeries',
+            forecaster_name              = forecaster_name,
             levels                       = levels,
             encoding                     ='ordinal',
             use_in_sample_residuals      = use_in_sample_residuals,
