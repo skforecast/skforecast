@@ -22,8 +22,8 @@ def test_set_out_sample_residuals_NotFittedError_when_forecaster_not_fitted():
     forecaster = ForecasterDirectMultiVariate(
         regressor=LinearRegression(), level='l1', steps=2, lags=3
     )
-    y_true = {1: np.array([1, 2, 3, 4, 5]), 2: np.array([1, 2, 3, 4, 5])}
-    y_pred = {1: np.array([1, 2, 3, 4, 5]), 2: np.array([1, 2, 3, 4, 5])}
+    y_true = {'l1': np.array([1, 2, 3, 4, 5]), 2: np.array([1, 2, 3, 4, 5])}
+    y_pred = {'l1': np.array([1, 2, 3, 4, 5]), 2: np.array([1, 2, 3, 4, 5])}
 
     err_msg = re.escape(
         "This forecaster is not fitted yet. Call `fit` with appropriate "
@@ -42,7 +42,7 @@ def test_set_out_sample_residuals_TypeError_when_y_true_is_not_dict():
     )
     forecaster.is_fitted = True
     y_true = 'not_dict'
-    y_pred = {1: np.array([1, 2, 3, 4, 5]), 2: np.array([1, 2, 3, 4, 5])}
+    y_pred = {'l1': np.array([1, 2, 3, 4, 5]), 2: np.array([1, 2, 3, 4, 5])}
 
     err_msg = re.escape(
         f"`y_true` must be a dictionary of numpy ndarrays or pandas Series. "
@@ -60,7 +60,7 @@ def test_set_out_sample_residuals_TypeError_when_y_pred_is_not_dict():
         regressor=LinearRegression(), level='l1', steps=2, lags=3
     )
     forecaster.is_fitted = True
-    y_true = {1: np.array([1, 2, 3, 4, 5]), 2: np.array([1, 2, 3, 4, 5])}
+    y_true = {'l1': np.array([1, 2, 3, 4, 5]), 2: np.array([1, 2, 3, 4, 5])}
     y_pred = 'not_dict'
 
     err_msg = re.escape(
@@ -79,7 +79,7 @@ def test_set_out_sample_residuals_ValueError_when_y_pred_and_y_true_keys_do_not_
         regressor=LinearRegression(), level='l1', steps=2, lags=3
     )
     forecaster.is_fitted = True
-    y_true = {1: np.array([1, 2, 3, 4, 5]), 2: np.array([1, 2, 3, 4, 5])}
+    y_true = {'l1': np.array([1, 2, 3, 4, 5]), 2: np.array([1, 2, 3, 4, 5])}
     y_pred = {3: np.array([1, 2, 3, 4, 5]), 4: np.array([1, 2, 3, 4, 5])}
 
     err_msg = re.escape(
@@ -98,12 +98,12 @@ def test_set_out_sample_residuals_TypeError_when_y_true_contains_no_numpy_ndarra
         regressor=LinearRegression(), level='l1', steps=2, lags=3
     )
     forecaster.is_fitted = True
-    y_true = {1: 'not_ndarray'}
-    y_pred = {1: np.array([1, 2, 3, 4, 5])}
+    y_true = {'l1': 'not_ndarray'}
+    y_pred = {'l1': np.array([1, 2, 3, 4, 5])}
 
     err_msg = re.escape(
         f"Values of `y_true` must be numpy ndarrays or pandas Series. "
-        f"Got {type(y_true[1])} for step 1."
+        f"Got {type(y_true['l1'])} for series l1."
     )
     with pytest.raises(TypeError, match = err_msg):
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
@@ -117,12 +117,12 @@ def test_set_out_sample_residuals_TypeError_when_y_pred_contains_no_numpy_ndarra
         regressor=LinearRegression(), level='l1', steps=2, lags=3
     )
     forecaster.is_fitted = True
-    y_true = {1: np.array([1, 2, 3, 4, 5])}
-    y_pred = {1: 'not_ndarray'}
+    y_true = {'l1': np.array([1, 2, 3, 4, 5])}
+    y_pred = {'l1': 'not_ndarray'}
 
     err_msg = re.escape(
         f"Values of `y_pred` must be numpy ndarrays or pandas Series. "
-        f"Got {type(y_pred[1])} for step 1."
+        f"Got {type(y_pred['l1'])} for series l1."
     )
     with pytest.raises(TypeError, match = err_msg):
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
@@ -136,12 +136,11 @@ def test_set_out_sample_residuals_ValueError_when_y_true_and_y_pred_have_element
         regressor=LinearRegression(), level='l1', steps=2, lags=3
     )
     forecaster.is_fitted = True
-    y_true = {1: np.array([1, 2, 3, 4, 5]), 2: np.array([1, 2, 3, 4, 5])}
-    y_pred = {1: np.array([1, 2, 3, 4, 5]), 2: np.array([1, 2])}
+    y_true = {'l1': np.array([1, 2, 3, 4, 5]), 'l2': np.array([1, 2, 3, 4, 5])}
+    y_pred = {'l1': np.array([1, 2, 3, 4, 5]), 'l2': np.array([1, 2])}
 
     err_msg = re.escape(
-        f"`y_true` and `y_pred` must have the same length. "
-        f"Got {len(y_true[2])} and {len(y_pred[2])} for step 2."
+        '`y_true` and `y_pred` must have the same length. Got 5 and 2 for series l2.'
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
@@ -155,18 +154,18 @@ def test_set_out_sample_residuals_ValueError_when_y_true_and_y_pred_have_series_
         regressor=LinearRegression(), level='l1', steps=2, lags=3
     )
     forecaster.is_fitted = True
-    y_true = {1: pd.Series([1, 2, 3, 4, 5], index=[1, 2, 3, 4, 5])}
-    y_pred = {1: pd.Series([1, 2, 3, 4, 5])}
+    y_true = {'l1': pd.Series([1, 2, 3, 4, 5], index=[1, 2, 3, 4, 5])}
+    y_pred = {'l1': pd.Series([1, 2, 3, 4, 5])}
 
     err_msg = re.escape(
         "When containing pandas Series, elements in `y_true` and "
-        "`y_pred` must have the same index. Error in step 1."
+        "`y_pred` must have the same index."
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
 
 
-def test_set_out_sample_residuals_ValueError_when_inputs_does_not_match_any_step():
+def test_set_out_sample_residuals_ValueError_when_inputs_does_not_match_the_target_level():
     """
     Test ValueError is raised when inputs does not contain keys that match any step.
     """
@@ -174,12 +173,11 @@ def test_set_out_sample_residuals_ValueError_when_inputs_does_not_match_any_step
         regressor=LinearRegression(), level='l1', steps=2, lags=3
     )
     forecaster.fit(series=series)
-    y_true = {5: np.array([1, 2, 3])}
-    y_pred = {5: np.array([1, 2, 3])}
+    y_true = {'l3': np.array([1, 2, 3])}
+    y_pred = {'l3': np.array([1, 2, 3])}
 
     err_msg = re.escape(
-        "Provided keys in `y_pred` and `y_true` do not match any step. "
-        "Residuals cannot be updated."
+        "`y_pred` and `y_true` must have only the key 'l1'. Got {'l3'}."
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
@@ -192,11 +190,10 @@ def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_and_n
     """
     rng = np.random.default_rng(123)
     y_true = {
-        1: pd.Series(rng.normal(loc=10, scale=10, size=1000)), 
-        2: pd.Series(rng.normal(loc=10, scale=10, size=1000))}
+        'l1':pd.Series(rng.normal(loc=10, scale=10, size=1000)), 
+    }
     y_pred = {
-        1: pd.Series(rng.normal(loc=10, scale=10, size=1000)), 
-        2: pd.Series(rng.normal(loc=10, scale=10, size=1000))
+        'l1':pd.Series(rng.normal(loc=10, scale=10, size=1000)), 
     }
 
     forecaster = ForecasterDirectMultiVariate(
@@ -206,13 +203,11 @@ def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_and_n
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred, append=False)
     results = {
-        1: np.sort(forecaster.out_sample_residuals_[1]),
-        2: np.sort(forecaster.out_sample_residuals_[2])
+        'l1':np.sort(forecaster.out_sample_residuals_['l1']),
     }
 
     expected = {
-        1: np.sort(y_true[1] - y_pred[1]),
-        2: np.sort(y_true[2] - y_pred[2])
+        'l1':np.sort(y_true['l1'] - y_pred['l1']),
     }
 
     assert forecaster.out_sample_residuals_.keys() == expected.keys()
@@ -227,11 +222,10 @@ def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_and_a
     """
     rng = np.random.default_rng(123)
     y_true = {
-        1: pd.Series(rng.normal(loc=10, scale=10, size=1000)), 
-        2: pd.Series(rng.normal(loc=10, scale=10, size=1000))}
+        'l1':pd.Series(rng.normal(loc=10, scale=10, size=1000))
+    }
     y_pred = {
-        1: pd.Series(rng.normal(loc=10, scale=10, size=1000)), 
-        2: pd.Series(rng.normal(loc=10, scale=10, size=1000))
+        'l1':pd.Series(rng.normal(loc=10, scale=10, size=1000))
     }
 
     forecaster = ForecasterDirectMultiVariate(
@@ -241,15 +235,12 @@ def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_and_a
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred, append=True)
     results = {
-        1: np.sort(forecaster.out_sample_residuals_[1]),
-        2: np.sort(forecaster.out_sample_residuals_[2])
+        'l1':np.sort(forecaster.out_sample_residuals_['l1'])
     }
 
-    residuals_1 = (y_true[1] - y_pred[1])
-    residuals_2 = (y_true[2] - y_pred[2])
+    residuals_1 = (y_true['l1'] - y_pred['l1'])
     expected = {
-        1: np.sort(np.concatenate((residuals_1, residuals_1))),
-        2: np.sort(np.concatenate((residuals_2, residuals_2)))
+        'l1':np.sort(np.concatenate((residuals_1, residuals_1))),
     }
 
     assert forecaster.out_sample_residuals_.keys() == expected.keys()
@@ -279,14 +270,13 @@ def test_set_out_sample_residuals_when_residuals_length_is_greater_than_10000():
         step=1, X_train=X_train, y_train=y_train
     )
 
-    y_true = {1: y_train_step_1}
-    y_pred = {1: forecaster.regressors_[1].predict(X_train_step_1)}
+    y_true = {'l1': y_train_step_1}
+    y_pred = {'l1': forecaster.regressors_[1].predict(X_train_step_1)}
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
 
-    assert list(forecaster.out_sample_residuals_.keys()) == [1]
-    for v in forecaster.out_sample_residuals_.values():
-        assert len(v) == 10_000
-    for v in forecaster.out_sample_residuals_by_bin_.values():
+    assert list(forecaster.out_sample_residuals_.keys()) == ['l1']
+    assert len(forecaster.out_sample_residuals_['l1']) == 10_000
+    for v in forecaster.out_sample_residuals_by_bin_['l1'].values():
         assert len(v) == 1_000
 
 
@@ -306,22 +296,26 @@ def test_out_sample_residuals_by_bin_and_in_sample_residuals_by_bin_equivalence(
     forecaster.fit(series=series, store_in_sample_residuals=True)
     X_train, y_train = forecaster.create_train_X_y(series=series)
 
-    y_true = {}
-    y_pred = {}
+    y_true = []
+    y_pred = []
     for step in range(1, forecaster.steps + 1):
         X_train_step, y_train_step = forecaster.filter_train_X_y_for_step(
             step=step, X_train=X_train, y_train=y_train
         )
-        y_true[step] = y_train_step
-        y_pred[step] = forecaster.regressors_[step].predict(X_train_step)
+        y_true.append(y_train_step.to_numpy())
+        y_pred.append(forecaster.regressors_[step].predict(X_train_step))
+
+    y_true = {'l1': np.concatenate(y_true)}
+    y_pred = {'l1': np.concatenate(y_pred)}
 
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
 
     assert forecaster.in_sample_residuals_by_bin_.keys() == forecaster.out_sample_residuals_by_bin_.keys()
-    for k in forecaster.out_sample_residuals_by_bin_.keys():
+    assert forecaster.in_sample_residuals_by_bin_['l1'].keys() == forecaster.out_sample_residuals_by_bin_['l1'].keys()
+    for k in forecaster.out_sample_residuals_by_bin_['l1'].keys():
         np.testing.assert_array_almost_equal(
-            forecaster.in_sample_residuals_by_bin_[k],
-            forecaster.out_sample_residuals_by_bin_[k]
+            forecaster.in_sample_residuals_by_bin_['l1'][k],
+            forecaster.out_sample_residuals_by_bin_['l1'][k]
         )
 
 
@@ -353,11 +347,11 @@ def test_set_out_sample_residuals_append_new_residuals_per_bin():
         step=1, X_train=X_train, y_train=y_train
     )
 
-    y_true = {1: y_train_step_1}
-    y_pred = {1: forecaster.regressors_[1].predict(X_train_step_1)}
+    y_true = {'l1': y_train_step_1}
+    y_pred = {'l1': forecaster.regressors_[1].predict(X_train_step_1)}
     for i in range(1, 20):
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred, append=True)
-        for v in forecaster.out_sample_residuals_by_bin_.values():
+        for v in forecaster.out_sample_residuals_by_bin_['l1'].values():
             assert len(v) == min(5_000, 500 * i)
 
 
@@ -384,41 +378,19 @@ def test_set_out_sample_residuals_when_there_are_no_residuals_for_some_bins():
                  )
     forecaster.fit(series=series_fit)
     y = series_fit['l1'].copy()
-    y_pred = {1: y.loc[y > 10]}
-    y_true = {1: y_pred[1] + rng.normal(loc=0, scale=1, size=len(y_pred[1]))}
+    y_pred = {'l1': y.loc[y > 10]}
+    y_true = {'l1': y_pred['l1'] + rng.normal(loc=0, scale=1, size=len(y_pred['l1']))}
 
     warn_msg = re.escape(
-        f"The following bins have no out of sample residuals: [0]. "
+        f"The following bins of level 'l1' have no out of sample residuals: [0]. "
         f"No predicted values fall in the interval "
-        f"[{forecaster.binner_intervals_[0]}]. "
+        f"[{forecaster.binner_intervals_['l1'][0]}]. "
         f"Empty bins will be filled with a random sample of residuals."
     )
     with pytest.warns(ResidualsUsageWarning, match=warn_msg):
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred, append=True)
 
-    assert len(forecaster.out_sample_residuals_by_bin_[0]) == len(y_pred[1])
-
-
-def test_set_out_sample_residuals_when_residuals_keys_partially_match():
-    """
-    Test residuals are stored only for matching keys.
-    """
-    forecaster = ForecasterDirectMultiVariate(
-        regressor=LinearRegression(), level='l1', steps=2, lags=3, transformer_series=None
-    )
-    forecaster.fit(series=series)
-    y_pred = {1: np.repeat(1, 5), 4: np.arange(10)}
-    y_true = {1: np.arange(5), 4: np.arange(10)}
-    forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
-    results = forecaster.out_sample_residuals_
-
-    expected = {1: np.array([-1,  0,  1,  2,  3]), 2: None}
-
-    for key in results.keys():
-        if results[key] is not None:
-            np.testing.assert_array_almost_equal(results[key], expected[key])
-        else:
-            assert results[key] is None
+    assert len(forecaster.out_sample_residuals_by_bin_['l1'][0]) == len(y_pred['l1'])
 
 
 def test_forecaster_set_out_sample_residuals_when_transformer_y_and_differentiation():
@@ -439,15 +411,13 @@ def test_forecaster_set_out_sample_residuals_when_transformer_y_and_differentiat
         )
     })
     y_true  = {
-        1: rng.normal(loc=0, scale=1, size=5),
-        2: rng.normal(loc=0, scale=1, size=5)
+        'l1':rng.normal(loc=0, scale=1, size=5)
     }
     y_pred = {
-        1: rng.normal(loc=0, scale=1, size=5),
-        2: rng.normal(loc=0, scale=1, size=5)
+        'l1':rng.normal(loc=0, scale=1, size=5)
     }
     forecaster = ForecasterDirectMultiVariate(
-                     regressor=LinearRegression(),
+                     regressor          = LinearRegression(),
                      level              = 'l1',
                      steps              = 2,
                      lags               = 3,
@@ -460,17 +430,11 @@ def test_forecaster_set_out_sample_residuals_when_transformer_y_and_differentiat
         y_pred = y_pred
     )
 
-    y_true[1] = forecaster.transformer_series_['l1'].transform(y_true[1].reshape(-1, 1)).flatten()
-    y_true[2] = forecaster.transformer_series_['l1'].transform(y_true[2].reshape(-1, 1)).flatten()
-    y_pred[1] = forecaster.transformer_series_['l1'].transform(y_pred[1].reshape(-1, 1)).flatten()
-    y_pred[2] = forecaster.transformer_series_['l1'].transform(y_pred[2].reshape(-1, 1)).flatten()
-    y_true[1] = forecaster.differentiator_['l1'].transform(y_true[1])[forecaster.differentiation:]
-    y_true[2] = forecaster.differentiator_['l1'].transform(y_true[2])[forecaster.differentiation:]
-    y_pred[1] = forecaster.differentiator_['l1'].transform(y_pred[1])[forecaster.differentiation:]
-    y_pred[2] = forecaster.differentiator_['l1'].transform(y_pred[2])[forecaster.differentiation:]
-    residuals = {}
-    residuals[1] = y_true[1] - y_pred[1]
-    residuals[2] = y_true[2] - y_pred[2]
+    y_true['l1'] = forecaster.transformer_series_['l1'].transform(y_true['l1'].reshape(-1, 1)).flatten()
+    y_pred['l1'] = forecaster.transformer_series_['l1'].transform(y_pred['l1'].reshape(-1, 1)).flatten()
+    y_true['l1'] = forecaster.differentiator_['l1'].transform(y_true['l1'])[forecaster.differentiation:]
+    y_pred['l1'] = forecaster.differentiator_['l1'].transform(y_pred['l1'])[forecaster.differentiation:]
+    residuals = {'l1' : y_true['l1'] - y_pred['l1']}
 
     assert forecaster.out_sample_residuals_.keys() == residuals.keys()
     for key in residuals.keys():

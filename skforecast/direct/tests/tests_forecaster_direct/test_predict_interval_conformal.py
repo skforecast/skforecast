@@ -19,19 +19,16 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
     """
     forecaster = ForecasterDirect(LinearRegression(), steps=2, lags=3)
     forecaster.fit(y=pd.Series(np.arange(10)), store_in_sample_residuals=True)
-    forecaster.in_sample_residuals_ = {
-        1: np.full_like(forecaster.in_sample_residuals_[1], fill_value=10),
-        2: np.full_like(forecaster.in_sample_residuals_[2], fill_value=20)
-    }
+    forecaster.in_sample_residuals_ = np.array([10, 20])
     results = forecaster._predict_interval_conformal(
         steps=1, nominal_coverage=0.95, use_in_sample_residuals=True, use_binned_residuals=False
     )
 
     expected = pd.DataFrame(
-                   data    = np.array([[10., 0., 20.]]),
-                   columns = ['pred', 'lower_bound', 'upper_bound'],
-                   index   = pd.RangeIndex(start=10, stop=11, step=1)
-               )
+                    data    = np.array([[10. , -9.5, 29.5]]),
+                    columns = ['pred', 'lower_bound', 'upper_bound'],
+                    index   = pd.RangeIndex(start=10, stop=11, step=1)
+                )
 
     pd.testing.assert_frame_equal(results, expected)
 
@@ -43,17 +40,14 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
     """
     forecaster = ForecasterDirect(LinearRegression(), steps=2, lags=3)
     forecaster.fit(y=pd.Series(np.arange(10)), store_in_sample_residuals=True)
-    forecaster.in_sample_residuals_ = {
-        1: np.full_like(forecaster.in_sample_residuals_[1], fill_value=10),
-        2: np.full_like(forecaster.in_sample_residuals_[2], fill_value=20)
-    }
+    forecaster.in_sample_residuals_ = np.array([10, 20])
     results = forecaster._predict_interval_conformal(
         steps=2, nominal_coverage=0.95, use_in_sample_residuals=True, use_binned_residuals=False
     )
 
     expected = pd.DataFrame(
-                   data    = np.array([[10., 0., 20.],
-                                       [11., -9., 31.]]),
+                   data    = np.array([[10. , -9.5, 29.5],
+                                       [11. , -8.5, 30.5]]),
                    columns = ['pred', 'lower_bound', 'upper_bound'],
                    index   = pd.RangeIndex(start=10, stop=12, step=1)
                )
@@ -68,16 +62,13 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
     """
     forecaster = ForecasterDirect(LinearRegression(), steps=2, lags=3)
     forecaster.fit(y=pd.Series(np.arange(10)), store_in_sample_residuals=True)
-    forecaster.out_sample_residuals_ = {
-        1: np.full_like(forecaster.in_sample_residuals_[1], fill_value=10),
-        2: np.full_like(forecaster.in_sample_residuals_[2], fill_value=20)
-    }
+    forecaster.out_sample_residuals_ = np.array([10, 20])
     results = forecaster._predict_interval_conformal(
         steps=1, nominal_coverage=0.95, use_in_sample_residuals=False, use_binned_residuals=False
     )
 
     expected = pd.DataFrame(
-                   data    = np.array([[10., 0., 20.]]),
+                   data    = np.array([[10., -9.5, 29.5]]),
                    columns = ['pred', 'lower_bound', 'upper_bound'],
                    index   = pd.RangeIndex(start=10, stop=11, step=1)
                )
@@ -92,17 +83,14 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
     """
     forecaster = ForecasterDirect(LinearRegression(), steps=2, lags=3)
     forecaster.fit(y=pd.Series(np.arange(10)), store_in_sample_residuals=True)
-    forecaster.out_sample_residuals_ = {
-        1: np.full_like(forecaster.in_sample_residuals_[1], fill_value=10),
-        2: np.full_like(forecaster.in_sample_residuals_[2], fill_value=20)
-    }
+    forecaster.out_sample_residuals_ = np.array([10, 20])
     results = forecaster._predict_interval_conformal(
         steps=2, nominal_coverage=0.95, use_in_sample_residuals=False, use_binned_residuals=False
     )
 
     expected = pd.DataFrame(
-                   data    = np.array([[10., 0., 20.],
-                                       [11., -9., 31.]]),
+                   data    = np.array([[10. , -9.5, 29.5],
+                                       [11. , -8.5, 30.5]]),
                    columns = ['pred', 'lower_bound', 'upper_bound'],
                    index   = pd.RangeIndex(start=10, stop=12, step=1)
                )
@@ -132,13 +120,13 @@ def test_predict_interval_conformal_output_when_regressor_is_LinearRegression_wi
     )
 
     expected = pd.DataFrame(
-                   data = np.array([
-                              [-0.07720596, -2.24497965,  2.09056772],
-                              [-0.54638907, -2.98792915,  1.895151  ],
-                              [-0.08892596, -1.8478775 ,  1.67002558]]),
-                   index = pd.RangeIndex(start=20, stop=23, step=1),
-                   columns = ['pred', 'lower_bound', 'upper_bound']
-               )
+                    data = np.array([
+                            [-0.07720596, -2.17165565,  2.01724372],
+                            [-0.54638907, -2.64083876,  1.54806061],
+                            [-0.08892596, -2.18337565,  2.00552372]]),
+                    index = pd.RangeIndex(start=20, stop=23, step=1),
+                    columns = ['pred', 'lower_bound', 'upper_bound']
+                )
     
     pd.testing.assert_frame_equal(results, expected)
 
@@ -184,11 +172,11 @@ def test_predict_interval_conformal_output_when_regressor_is_LinearRegression_wi
 
     expected = pd.DataFrame(
                    data = np.array([
-                              [ 1.33676517, -0.95182882,  3.62535915],
-                              [-1.05138096, -3.25578143,  1.15301951],
-                              [ 0.55115225, -1.269978  ,  2.37228251],
-                              [ 0.86985865, -0.78370515,  2.52342245],
-                              [ 0.44787213, -1.15612139,  2.05186566]]),
+                            [ 1.33676517, -0.63374319,  3.30727352],
+                            [-1.05138096, -3.02188932,  0.91912739],
+                            [ 0.55115225, -1.4193561 ,  2.52166061],
+                            [ 0.86985865, -1.10064971,  2.84036701],
+                            [ 0.44787213, -1.52263622,  2.41838049]]),
                    index = pd.RangeIndex(start=20, stop=25, step=1),
                    columns = ['pred', 'lower_bound', 'upper_bound']
                )
@@ -263,11 +251,11 @@ def test_predict_interval_conformal_output_with_differentiation():
 
     expected = pd.DataFrame(
                     data    = np.array(
-                                [[0.65659084,  0.17710854,  1.13607314],
-                                 [0.6496844 , -0.40541691,  1.7047857 ],
-                                 [0.61632235, -0.98830203,  2.22094673],
-                                 [0.59545137, -1.53828123,  2.72918398],
-                                 [0.64917089, -2.01927988,  3.31762167]]
+                                [[ 0.65659084,  0.11145843,  1.20172325],
+                                    [ 0.6496844 , -0.44058042,  1.73994922],
+                                    [ 0.61632235, -1.01907488,  2.25171958],
+                                    [ 0.59545137, -1.58507827,  2.77598101],
+                                    [ 0.64917089, -2.07649116,  3.37483294]]
                             ),
                     columns = ['pred', 'lower_bound', 'upper_bound'],
                     index   = pd.RangeIndex(start=50, stop=55, step=1)

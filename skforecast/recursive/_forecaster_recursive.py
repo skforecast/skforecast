@@ -12,7 +12,7 @@ import sys
 import numpy as np
 import pandas as pd
 import inspect
-from copy import copy
+from copy import copy, deepcopy
 from sklearn.exceptions import NotFittedError
 from sklearn.pipeline import Pipeline
 from sklearn.base import clone
@@ -2370,7 +2370,9 @@ class ForecasterRecursive(ForecasterBase):
                 raise ValueError(
                     "`y_true` and `y_pred` must have the same index."
                 )
-
+        
+        y_true = deepcopy(y_true)
+        y_pred = deepcopy(y_pred)
         if not isinstance(y_pred, np.ndarray):
             y_pred = y_pred.to_numpy()
         if not isinstance(y_true, np.ndarray):

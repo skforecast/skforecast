@@ -1841,6 +1841,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         Parameters
         ----------
+        level : str
+            Name of the series (level) to store the residuals.
         y_true : numpy ndarray
             True values of the time series.
         y_pred : numpy ndarray
@@ -3542,7 +3544,14 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         # NOTE: Out-of-sample residuals can only be stored for series seen during 
         # fit. To save residuals for unseen levels use the key '_unknown_level'. 
-        series_names_in_ = self.series_names_in_ + ['_unknown_level']        
+        series_names_in_ = self.series_names_in_ + ['_unknown_level']
+        series_to_update = set(y_pred.keys()).intersection(set(series_names_in_))
+        if not series_to_update:
+            raise ValueError(
+                "Provided keys in `y_pred` and `y_true` do not match any series "
+                "seen during `fit`. Residuals cannot be updated."
+            )
+        
         if self.out_sample_residuals_ is None:
             if self.encoding is not None:
                 self.out_sample_residuals_ = {level: None for level in series_names_in_}
@@ -3550,13 +3559,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             else:
                 self.out_sample_residuals_ = {'_unknown_level': None}
                 self.out_sample_residuals_by_bin_ = {'_unknown_level': {}}
-    
-        series_to_update = set(y_pred.keys()).intersection(set(series_names_in_))
-        if not series_to_update:
-            raise ValueError(
-                "Provided keys in `y_pred` and `y_true` do not match any series "
-                "seen during `fit`. Residuals cannot be updated."
-            )
         
         for level in series_to_update:
             residuals_level, residuals_by_bin_level = (
@@ -3800,8 +3802,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         if not self.is_fitted:
             raise NotFittedError(
-                ("This forecaster is not fitted yet. Call `fit` with appropriate "
-                 "arguments before using `get_feature_importances()`.")
+                "This forecaster is not fitted yet. Call `fit` with appropriate "
+                "arguments before using `get_feature_importances()`."
             )
 
         if isinstance(self.regressor, Pipeline):
