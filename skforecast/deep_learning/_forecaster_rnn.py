@@ -54,6 +54,9 @@ from ..utils import (
 
 # TODO. Test Interval
 # TODO. Test Grid search
+# TODO. Include window features
+# TODO. Include diferentiation
+# TODO. Include binner residuals
 class ForecasterRnn(ForecasterBase):
     """
     This class turns any regressor compatible with the Keras API into a
@@ -967,8 +970,7 @@ class ForecasterRnn(ForecasterBase):
                        inverse_transform = False
                    )
             check_exog_dtypes(exog=exog)
-
-            X = [X, exog.to_numpy()[:steps]]
+            X = [X, exog.to_numpy()[steps]]
             X_col_names = X_col_names + exog.columns.to_list()
 
         return X, X_col_names, steps, levels, prediction_index
@@ -1040,7 +1042,9 @@ class ForecasterRnn(ForecasterBase):
                 check_inputs = check_inputs
             )
 
+        print(X)
         predictions = self.regressor.predict(X, verbose=0)
+        print(predictions)
         predictions = np.reshape(
             predictions, (predictions.shape[1], predictions.shape[2])
         )[np.array(steps) - 1]
