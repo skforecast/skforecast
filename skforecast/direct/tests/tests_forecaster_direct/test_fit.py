@@ -223,7 +223,7 @@ def test_fit_in_sample_residuals_not_stored_probabilistic_mode_False(n_jobs):
     forecaster._probabilistic_mode = False
     forecaster.fit(y=pd.Series(np.arange(5)), store_in_sample_residuals=False)
 
-    forecaster.in_sample_residuals_ is None
+    assert forecaster.in_sample_residuals_ is None
     assert forecaster.in_sample_residuals_by_bin_ is None
     assert forecaster.binner_intervals_ is None
 
