@@ -40,6 +40,7 @@ def _backtesting_forecaster(
     use_in_sample_residuals: bool = True,
     use_binned_residuals: bool = True,
     random_state: int = 123,
+    return_predictors: bool = False,
     n_jobs: int | str = 'auto',
     verbose: bool = False,
     show_progress: bool = True
@@ -241,7 +242,7 @@ def _backtesting_forecaster(
     def _fit_predict_forecaster(
         fold, forecaster, y, exog, store_in_sample_residuals, gap, interval, 
         interval_method, n_boot, use_in_sample_residuals, use_binned_residuals, 
-        random_state
+        random_state, return_predictors
     ) -> pd.DataFrame:
         """
         Fit the forecaster and predict `steps` ahead. This is an auxiliary 
@@ -287,44 +288,54 @@ def _backtesting_forecaster(
                 + 1
             )
 
-        if interval is not None:
-            kwargs_interval = {
-                'steps': steps,
-                'last_window': last_window_y,
-                'exog': next_window_exog,
-                'n_boot': n_boot,
-                'use_in_sample_residuals': use_in_sample_residuals,
-                'use_binned_residuals': use_binned_residuals,
-                'random_state': random_state
-            }
-            if interval_method == 'bootstrapping':
-                if interval == 'bootstrapping':
-                    pred_interval = forecaster.predict_bootstrapping(**kwargs_interval)
-                elif isinstance(interval, (list, tuple)):
-                    quantiles = [q / 100 for q in interval]
-                    pred_interval = forecaster.predict_quantiles(quantiles=quantiles, **kwargs_interval)
-                    if len(interval) == 2:
-                        pred_interval.columns = ['lower_bound', 'upper_bound']
-                    else:
-                        pred_interval.columns = [f'p_{p}' for p in interval]
-                else:
-                    pred_interval = forecaster.predict_dist(distribution=interval, **kwargs_interval)
-            else:
-                pred = forecaster.predict_interval(
-                    method='conformal', interval=interval, **kwargs_interval
-                )
-
-        # NOTE: This is done after probabilistic predictions to avoid repeating the same checks.
-        if interval is None or interval_method != 'conformal':
-            pred = forecaster.predict(
-                       steps        = steps,
-                       last_window  = last_window_y,
-                       exog         = next_window_exog,
-                       check_inputs = True if interval is None else False
+        if return_predictors:
+            pred = forecaster.create_predict_X(
+                       steps       = steps,
+                       last_window = last_window_y,
+                       exog        = next_window_exog
                    )
+        else:
+            if interval is not None:
+                kwargs_interval = {
+                    'steps': steps,
+                    'last_window': last_window_y,
+                    'exog': next_window_exog,
+                    'n_boot': n_boot,
+                    'use_in_sample_residuals': use_in_sample_residuals,
+                    'use_binned_residuals': use_binned_residuals,
+                    'random_state': random_state
+                }
+                if interval_method == 'bootstrapping':
+                    if interval == 'bootstrapping':
+                        pred_interval = forecaster.predict_bootstrapping(**kwargs_interval)
+                    elif isinstance(interval, (list, tuple)):
+                        quantiles = [q / 100 for q in interval]
+                        pred_interval = forecaster.predict_quantiles(quantiles=quantiles, **kwargs_interval)
+                        if len(interval) == 2:
+                            pred_interval.columns = ['lower_bound', 'upper_bound']
+                        else:
+                            pred_interval.columns = [f'p_{p}' for p in interval]
+                    else:
+                        pred_interval = forecaster.predict_dist(distribution=interval, **kwargs_interval)
+                else:
+                    pred = forecaster.predict_interval(
+                        method='conformal', interval=interval, **kwargs_interval
+                    )
 
-        if interval is not None and interval_method != 'conformal':
-            pred = pd.concat((pred, pred_interval), axis=1)
+            # TODO: return also predictions when return_predictors is True?¿
+
+            # NOTE: This is done after probabilistic predictions to avoid repeating 
+            # the same checks.
+            if interval is None or interval_method != 'conformal':
+                pred = forecaster.predict(
+                        steps        = steps,
+                        last_window  = last_window_y,
+                        exog         = next_window_exog,
+                        check_inputs = True if interval is None else False
+                    )
+
+            if interval is not None and interval_method != 'conformal':
+                pred = pd.concat((pred, pred_interval), axis=1)
 
         if type(forecaster).__name__ != 'ForecasterDirect' and gap > 0:
             pred = pred.iloc[gap:, ]
@@ -343,6 +354,7 @@ def _backtesting_forecaster(
         "use_in_sample_residuals": use_in_sample_residuals,
         "use_binned_residuals": use_binned_residuals,
         "random_state": random_state,
+        "return_predictors": return_predictors
     }
     backtest_predictions = Parallel(n_jobs=n_jobs)(
         delayed(_fit_predict_forecaster)(fold=fold, **kwargs_fit_predict_forecaster)
