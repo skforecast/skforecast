@@ -40,7 +40,8 @@ from ..utils import (
     expand_index,
     transform_numpy,
     transform_dataframe,
-    get_style_repr_html
+    get_style_repr_html,
+    set_cpu_gpu_device
 )
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
 
@@ -1440,6 +1441,8 @@ class ForecasterRecursive(ForecasterBase):
         
         """
 
+        original_device = set_cpu_gpu_device(regressor=self.regressor, device='cpu')
+
         (
             last_window_values,
             exog_values,
@@ -1479,6 +1482,8 @@ class ForecasterRecursive(ForecasterBase):
                           index = prediction_index,
                           name  = 'pred'
                       )
+        
+        _ = set_cpu_gpu_device(regressor=self.regressor, device=original_device)
 
         return predictions
 
