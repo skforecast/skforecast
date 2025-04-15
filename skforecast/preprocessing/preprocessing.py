@@ -1604,6 +1604,118 @@ class QuantileBinner:
             setattr(self, param, value)
 
 
+class FastOrdinalEncoder:
+    """
+    Encode categorical features as an integer array. The input to this transformer should
+    be an array-like of integers or strings, denoting the values taken on by categorical
+    (discrete) features. The features are converted to ordinal integers. This results in
+    a single column of integers (0 to n_categories - 1) per feature.
+
+    Parameters
+    ----------
+
+    Attributes
+    ----------
+    categories_ : np.ndarray
+        Unique categories in the data.
+    category_map_ : dict
+        Mapping of categories to integers.
+    inverse_category_map_ : dict
+        Mapping of integers to categories.
+    unknown_value : int | float, default=-1
+        Value to use for unknown categories.
+    
+    """
+
+
+    def __init__(self, unknown_value: int | float = -1):
+
+        self.unknown_value = unknown_value
+        self.categories_ = None
+        self.category_map_ = None
+        self.inverse_category_map_ = None
+        
+    def fit(self, X: np.ndarray | pd.Series) -> None:
+        """
+        Fit the encoder to the unique categories in the data.
+
+        Parameters
+        ----------
+        X : np.ndarray | pd.Series
+            Input data to fit the encoder.
+        """
+
+        self.categories_ = np.unique(X)
+        self.category_map_ = {category: idx for idx, category in enumerate(self.categories_)}
+        self.inverse_category_map_ = {idx: category for idx, category in enumerate(self.categories_)}
+    
+    def transform(self, X: np.ndarray | pd.Series) -> np.ndarray:
+        """
+        Transform the data to ordinal values using direct indexing.
+
+        Parameters
+        ----------
+        X : np.ndarray | pd.Series
+            Input data to transform.
+
+        Returns
+        -------
+        np.ndarray
+            Transformed data with ordinal values.
+
+        """
+
+        if self.categories_ is None:
+            raise ValueError("The encoder has not been fitted yet. Call 'fit' before 'transform'.")
+        if not isinstance(X, (np.ndarray, pd.Series)):
+            raise ValueError("Input data must be a numpy array or pandas Series.")
+        
+        encoded_data = pd.Series(X).map(self.category_map_).fillna(self.unknown_value).to_numpy()
+
+        return encoded_data
+
+    def fit_transform(self, X: np.ndarray | pd.Series) -> np.ndarray:
+        """
+        Fit encoder and transform the data.
+        
+        Parameters
+        ----------
+        X : np.ndarray | pd.Series
+            Input data to fit and transform.
+
+        Returns
+        -------
+        np.ndarray
+            Transformed data with ordinal values.
+        """
+
+        self.fit(X)
+        
+        return self.transform(X)
+    
+    def inverse_transform(self, X: np.ndarray | pd.Series) -> np.ndarray:
+        """
+        Inverse transform the encoded data back to original categories.
+
+        Parameters
+        ----------
+        X : np.ndarray | pd.Series
+            Encoded data to inverse transform.
+
+        Returns
+        -------
+        np.ndarray
+            Inverse transformed data with original categories.
+        """
+        if self.categories_ is None:
+            raise ValueError("The encoder has not been fitted yet. Call 'fit' before 'inverse_transform'.")
+        if not isinstance(X, (np.ndarray, pd.Series)):
+            raise ValueError("Input data must be a numpy array or pandas Series.")
+        
+        inverse_encoded_data = pd.Series(X).map(self.inverse_category_map_).fillna(self.unknown_value).to_numpy()
+
+        return inverse_encoded_data
+
 class ConformalIntervalCalibrator:
     """
     Transformer that calibrates the prediction interval to achieve the desired 
