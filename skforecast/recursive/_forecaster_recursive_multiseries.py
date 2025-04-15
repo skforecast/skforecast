@@ -1141,9 +1141,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         if self.encoding == 'onehot': 
             X_train = pd.concat([
-                        X_train.drop(columns='_level_skforecast'),
-                        encoded_values
-                    ], axis=1)
+                          X_train.drop(columns='_level_skforecast'),
+                          encoded_values
+                      ], axis=1)
             X_train.columns = X_train.columns.str.replace('_level_skforecast_', '')
         else:
             X_train['_level_skforecast'] = encoded_values
