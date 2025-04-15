@@ -1483,7 +1483,7 @@ class ForecasterRecursive(ForecasterBase):
                           name  = 'pred'
                       )
         
-        _ = set_cpu_gpu_device(regressor=self.regressor, device=original_device)
+        set_cpu_gpu_device(regressor=self.regressor, device=original_device)
 
         return predictions
 
