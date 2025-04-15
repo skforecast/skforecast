@@ -37,9 +37,11 @@ def test_output_backtesting_forecaster_no_exog_no_remainder_ForecasterRecursive_
                          0.36988237, 0.57912951, 0.48686057, 0.45709952])}, 
         index=pd.RangeIndex(start=38, stop=50, step=1)
     )
+
     forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
     n_backtest = 12
     y_train = y[:-n_backtest]
+
     cv = TimeSeriesFold(
             steps                 = 4,
             initial_train_size    = len(y_train),
@@ -52,6 +54,7 @@ def test_output_backtesting_forecaster_no_exog_no_remainder_ForecasterRecursive_
             allow_incomplete_fold = True,
             return_all_indexes    = False,
         )
+    
     metric, backtest_predictions = _backtesting_forecaster(
                                        forecaster = forecaster,
                                        y          = y,
@@ -150,10 +153,10 @@ def test_output_backtesting_forecaster_no_exog_no_initial_train_size_with_mocked
     )
     forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
     forecaster.fit(y=y)
-    initial_train_size = None
+    
     cv = TimeSeriesFold(
             steps                 = 1,
-            initial_train_size    = initial_train_size,
+            initial_train_size    = None,
             window_size           = None,
             differentiation       = None,
             refit                 = False,
@@ -163,6 +166,7 @@ def test_output_backtesting_forecaster_no_exog_no_initial_train_size_with_mocked
             allow_incomplete_fold = True,
             return_all_indexes    = False,
         )
+    
     metric, backtest_predictions = _backtesting_forecaster(
                                         forecaster = forecaster,
                                         y          = y,
@@ -170,7 +174,8 @@ def test_output_backtesting_forecaster_no_exog_no_initial_train_size_with_mocked
                                         exog       = None,                                      
                                         metric     = 'mean_squared_error',
                                         verbose    = False
-                                   )                
+                                   )
+                 
     pd.testing.assert_frame_equal(expected_metric, metric)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 

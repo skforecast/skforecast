@@ -116,6 +116,8 @@ def _backtesting_forecaster(
         If `False`, residuals are selected randomly.
     random_state : int, default 123
         Seed for the random number generator to ensure reproducibility.
+    return_predictors : bool, default False
+        If `True`, the predictors used to make the predictions are also returned.
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
@@ -142,6 +144,7 @@ def _backtesting_forecaster(
         bootstrapping predictions.
         - If `interval` is a distribution object, columns are the parameters of the
         distribution.
+        - If `return_predictors` is `True`, one column per predictor is created.
 
     References
     ----------
@@ -288,54 +291,64 @@ def _backtesting_forecaster(
                 + 1
             )
 
-        if return_predictors:
-            pred = forecaster.create_predict_X(
-                       steps       = steps,
-                       last_window = last_window_y,
-                       exog        = next_window_exog
-                   )
-        else:
-            if interval is not None:
-                kwargs_interval = {
-                    'steps': steps,
-                    'last_window': last_window_y,
-                    'exog': next_window_exog,
-                    'n_boot': n_boot,
-                    'use_in_sample_residuals': use_in_sample_residuals,
-                    'use_binned_residuals': use_binned_residuals,
-                    'random_state': random_state
-                }
-                if interval_method == 'bootstrapping':
-                    if interval == 'bootstrapping':
-                        pred_interval = forecaster.predict_bootstrapping(**kwargs_interval)
-                    elif isinstance(interval, (list, tuple)):
-                        quantiles = [q / 100 for q in interval]
-                        pred_interval = forecaster.predict_quantiles(quantiles=quantiles, **kwargs_interval)
-                        if len(interval) == 2:
-                            pred_interval.columns = ['lower_bound', 'upper_bound']
-                        else:
-                            pred_interval.columns = [f'p_{p}' for p in interval]
+        preds = []
+        
+        if interval is not None:
+            kwargs_interval = {
+                'steps': steps,
+                'last_window': last_window_y,
+                'exog': next_window_exog,
+                'n_boot': n_boot,
+                'use_in_sample_residuals': use_in_sample_residuals,
+                'use_binned_residuals': use_binned_residuals,
+                'random_state': random_state
+            }
+            if interval_method == 'bootstrapping':
+                if interval == 'bootstrapping':
+                    pred = forecaster.predict_bootstrapping(**kwargs_interval)
+                elif isinstance(interval, (list, tuple)):
+                    quantiles = [q / 100 for q in interval]
+                    pred = forecaster.predict_quantiles(quantiles=quantiles, **kwargs_interval)
+                    if len(interval) == 2:
+                        pred.columns = ['lower_bound', 'upper_bound']
                     else:
-                        pred_interval = forecaster.predict_dist(distribution=interval, **kwargs_interval)
+                        pred.columns = [f'p_{p}' for p in interval]
                 else:
-                    pred = forecaster.predict_interval(
-                        method='conformal', interval=interval, **kwargs_interval
-                    )
+                    pred = forecaster.predict_dist(distribution=interval, **kwargs_interval)
+                 
+                preds.append(pred)
+            else:
+                pred = forecaster.predict_interval(
+                    method='conformal', interval=interval, **kwargs_interval
+                )
+                preds.append(pred)
 
-            # TODO: return also predictions when return_predictors is True?¿
+        # NOTE: This is done after probabilistic predictions to avoid repeating 
+        # the same checks.
+        if interval is None or interval_method != 'conformal':
+            pred = forecaster.predict(
+                       steps        = steps,
+                       last_window  = last_window_y,
+                       exog         = next_window_exog,
+                       check_inputs = True if interval is None else False
+                   )
+            preds.insert(0, pred)
 
-            # NOTE: This is done after probabilistic predictions to avoid repeating 
-            # the same checks.
-            if interval is None or interval_method != 'conformal':
-                pred = forecaster.predict(
-                        steps        = steps,
-                        last_window  = last_window_y,
-                        exog         = next_window_exog,
-                        check_inputs = True if interval is None else False
-                    )
+        if return_predictors:
+            # TODO: Need to add the fold number column
+            # TODO: Check what happens when initial_train_size is None
+            pred = forecaster.create_predict_X(
+                       steps        = steps,
+                       last_window  = last_window_y,
+                       exog         = next_window_exog,
+                       check_inputs = False
+                   )
+            preds.append(pred)
 
-            if interval is not None and interval_method != 'conformal':
-                pred = pd.concat((pred, pred_interval), axis=1)
+        if len(preds) == 1:
+            pred = preds[0]
+        else:
+            pred = pd.concat(preds, axis=1)
 
         if type(forecaster).__name__ != 'ForecasterDirect' and gap > 0:
             pred = pred.iloc[gap:, ]
@@ -408,6 +421,7 @@ def backtesting_forecaster(
     use_in_sample_residuals: bool = True,
     use_binned_residuals: bool = True,
     random_state: int = 123,
+    return_predictors: bool = False,
     n_jobs: int | str = 'auto',
     verbose: bool = False,
     show_progress: bool = True
@@ -483,6 +497,8 @@ def backtesting_forecaster(
         If `False`, residuals are selected randomly.
     random_state : int, default 123
         Seed for the random number generator to ensure reproducibility.
+    return_predictors : bool, default False
+        If `True`, the predictors used to make the predictions are also returned.
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
@@ -509,6 +525,7 @@ def backtesting_forecaster(
         bootstrapping predictions.
         - If `interval` is a distribution object, columns are the parameters of the
         distribution.
+        - If `return_predictors` is `True`, one column per predictor is created.
 
     References
     ----------
@@ -544,6 +561,7 @@ def backtesting_forecaster(
         use_in_sample_residuals = use_in_sample_residuals,
         use_binned_residuals    = use_binned_residuals,
         random_state            = random_state,
+        return_predictors       = return_predictors,
         n_jobs                  = n_jobs,
         show_progress           = show_progress
     )
@@ -560,6 +578,7 @@ def backtesting_forecaster(
         use_in_sample_residuals = use_in_sample_residuals,
         use_binned_residuals    = use_binned_residuals,
         random_state            = random_state,
+        return_predictors       = return_predictors,
         n_jobs                  = n_jobs,
         verbose                 = verbose,
         show_progress           = show_progress

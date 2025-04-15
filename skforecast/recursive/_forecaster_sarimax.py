@@ -8,7 +8,6 @@
 from __future__ import annotations
 import warnings
 import sys
-import uuid
 import pandas as pd
 from copy import copy
 import textwrap

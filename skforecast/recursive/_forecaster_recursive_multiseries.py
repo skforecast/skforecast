@@ -2226,14 +2226,14 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         return predictions
 
-
     def create_predict_X(
         self,
         steps: int,
         levels: str | list[str] | None = None,
         last_window: pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
-        suppress_warnings: bool = False
+        suppress_warnings: bool = False,
+        check_inputs: bool = True
     ) -> dict:
         """
         Create the predictors needed to predict `steps` ahead. As it is a recursive
@@ -2259,6 +2259,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             If `True`, skforecast warnings will be suppressed during the prediction 
             process. See skforecast.exceptions.warn_skforecast_categories for more
             information.
+        check_inputs : bool, default True
+            If `True`, the input is checked for possible warnings and errors 
+            with the `check_predict_input` function. This argument is created 
+            for internal use and is not recommended to be changed.
 
         Returns
         -------
@@ -2279,7 +2283,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 steps        = steps,
                 levels       = levels,
                 last_window  = last_window,
-                exog         = exog
+                exog         = exog,
+                check_inputs = check_inputs
             )
   
         with warnings.catch_warnings():

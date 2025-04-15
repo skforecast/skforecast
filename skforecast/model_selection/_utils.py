@@ -84,6 +84,7 @@ def check_backtesting_input(
     use_in_sample_residuals: bool = True,
     use_binned_residuals: bool = True,
     random_state: int = 123,
+    return_predictors: bool = False,
     n_jobs: int | str = 'auto',
     show_progress: bool = True,
     suppress_warnings: bool = False,
@@ -146,6 +147,8 @@ def check_backtesting_input(
         If `False`, residuals are selected randomly.
     random_state : int, default `123`
         Seed for the random number generator to ensure reproducibility.
+    return_predictors : bool, default False
+        If `True`, the predictors used to make the predictions are also returned.
     n_jobs : int, 'auto', default `'auto'`
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
@@ -205,6 +208,13 @@ def check_backtesting_input(
     forecasters_not_interval = [
         "ForecasterEquivalentDate",
         "ForecasterRnn"
+    ]
+    forecasters_return_predictors = [
+        "ForecasterRecursive",
+        "ForecasterDirect",
+        "ForecasterRecursiveMultiSeries",
+        "ForecasterDirectMultiVariate",
+        "ForecasterRNN",
     ]
 
     if forecaster_name in forecasters_uni:
@@ -383,6 +393,8 @@ def check_backtesting_input(
         raise TypeError("`use_binned_residuals` must be a boolean: `True`, `False`.")
     if not isinstance(random_state, (int, np.integer)) or random_state < 0:
         raise TypeError(f"`random_state` must be an integer greater than 0. Got {random_state}.")
+    if not isinstance(return_predictors, bool):
+        raise TypeError("`return_predictors` must be a boolean: `True`, `False`.")
     if not isinstance(n_jobs, int) and n_jobs != 'auto':
         raise TypeError(f"`n_jobs` must be an integer or `'auto'`. Got {n_jobs}.")
     if not isinstance(show_progress, bool):
@@ -448,6 +460,12 @@ def check_backtesting_input(
                 )
         else:
             check_interval(interval=interval, alpha=alpha)
+
+    if return_predictors and forecaster_name not in forecasters_return_predictors:
+        raise ValueError(
+            f"`return_predictors` is only allowed for forecasters of type "
+            f"{forecasters_return_predictors}. Got {forecaster_name}."
+        )
 
     if (
         not allow_incomplete_fold

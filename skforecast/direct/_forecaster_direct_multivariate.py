@@ -1844,13 +1844,13 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         # HACK: Why no use self.X_train_features_names_out_ as Xs_col_names?
         return Xs, Xs_col_names, steps, prediction_index
 
-
     def create_predict_X(
         self,
         steps: int | list[int] | None = None,
         last_window: pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | None = None,
-        suppress_warnings: bool = False
+        suppress_warnings: bool = False,
+        check_inputs: bool = True
     ) -> pd.DataFrame:
         """
         Create the predictors needed to predict `steps` ahead.
@@ -1878,6 +1878,10 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             If `True`, skforecast warnings will be suppressed during the prediction 
             process. See skforecast.exceptions.warn_skforecast_categories for more
             information.
+        check_inputs : bool, default True
+            If `True`, the input is checked for possible warnings and errors 
+            with the `check_predict_input` function. This argument is created 
+            for internal use and is not recommended to be changed.
 
         Returns
         -------
@@ -1897,7 +1901,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         ) = self._create_predict_inputs(
                 steps        = steps,
                 last_window  = last_window,
-                exog         = exog
+                exog         = exog,
+                check_inputs = check_inputs
             )
 
         X_predict = pd.DataFrame(
