@@ -53,7 +53,7 @@ from ..utils import (
     set_skforecast_warnings,
     get_style_repr_html
 )
-from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
+from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner, FastOrdinalEncoder
 from ..model_selection._utils import _extract_data_folds_multiseries
 
 
@@ -456,10 +456,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                dtype         = int
                            ).set_output(transform='pandas')
         else:
-            self.encoder = OrdinalEncoder(
-                               categories = 'auto',
-                               dtype      = int
-                           ).set_output(transform='pandas')
+            # self.encoder = OrdinalEncoder(
+            #                    categories = 'auto',
+            #                    dtype      = int
+            #                ).set_output(transform='pandas')            
+            self.encoder = FastOrdinalEncoder()
 
         scaling_regressors = tuple(
             member[1]
@@ -1133,12 +1134,16 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         y_train = pd.concat(y_train_buffer, axis=0)
 
         if self.is_fitted:
-            encoded_values = self.encoder.transform(X_train[['_level_skforecast']])
+            encoded_values = self.encoder.transform(X_train['_level_skforecast'])
         else:
-            encoded_values = self.encoder.fit_transform(X_train[['_level_skforecast']])
-            for i, code in enumerate(self.encoder.categories_[0]):
-                self.encoding_mapping_[code] = i
-
+            if self.encoding == 'onehot':
+                encoded_values = self.encoder.fit_transform(X_train[['_level_skforecast']])
+                for i, code in enumerate(self.encoder.categories_[0]):
+                    self.encoding_mapping_[code] = i
+            else:
+                self.encoder.fit(series_names_in_)
+                encoded_values = self.encoder.transform(X_train['_level_skforecast'])
+                self.encoding_mapping_ = self.encoder.category_map_
         if self.encoding == 'onehot': 
             X_train = pd.concat([
                           X_train.drop(columns='_level_skforecast'),
@@ -1453,10 +1458,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         if self.encoding in ["ordinal", "ordinal_category"]:
             X_train_encoding = self.encoder.inverse_transform(
                 X_train[["_level_skforecast"]]
-            ).ravel()
+            ).to_numpy()
             X_test_encoding = self.encoder.inverse_transform(
                 X_test[["_level_skforecast"]]
-            ).ravel()
+            ).to_numpy()
         elif self.encoding == 'onehot':
             X_train_encoding = self.encoder.inverse_transform(
                 X_train.loc[:, self.encoding_mapping_.keys()]
