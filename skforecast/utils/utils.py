@@ -2432,6 +2432,10 @@ def set_cpu_gpu_device(
         return None
     
     original_device = regressor.get_params()[device_names[regressor_name]].lower()
+
+    if device is None:
+        return original_device
+    
     param_name = device_names[regressor_name]
     new_device = device_values[regressor_name][device]
 
