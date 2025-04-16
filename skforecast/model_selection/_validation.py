@@ -243,7 +243,7 @@ def _backtesting_forecaster(
         folds = tqdm(folds)
 
     def _fit_predict_forecaster(
-        fold, forecaster, y, exog, store_in_sample_residuals, gap, interval, 
+        fold_number, fold, forecaster, y, exog, store_in_sample_residuals, gap, interval, 
         interval_method, n_boot, use_in_sample_residuals, use_binned_residuals, 
         random_state, return_predictors
     ) -> pd.DataFrame:
@@ -335,14 +335,13 @@ def _backtesting_forecaster(
             preds.insert(0, pred)
 
         if return_predictors:
-            # TODO: Need to add the fold number column
-            # TODO: Check what happens when initial_train_size is None
             pred = forecaster.create_predict_X(
                        steps        = steps,
                        last_window  = last_window_y,
                        exog         = next_window_exog,
                        check_inputs = False
                    )
+            pred.insert(0, 'fold', fold_number)
             preds.append(pred)
 
         if len(preds) == 1:
@@ -370,8 +369,8 @@ def _backtesting_forecaster(
         "return_predictors": return_predictors
     }
     backtest_predictions = Parallel(n_jobs=n_jobs)(
-        delayed(_fit_predict_forecaster)(fold=fold, **kwargs_fit_predict_forecaster)
-        for fold in folds
+        delayed(_fit_predict_forecaster)(fold_number=fold_number, fold=fold, **kwargs_fit_predict_forecaster)
+        for fold_number, fold in enumerate(folds)
     )
 
     backtest_predictions = pd.concat(backtest_predictions)
