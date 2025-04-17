@@ -1712,6 +1712,7 @@ class FastOrdinalEncoder:
 
         return inverse_encoded_data
 
+
 class ConformalIntervalCalibrator:
     """
     Transformer that calibrates the prediction interval to achieve the desired 
