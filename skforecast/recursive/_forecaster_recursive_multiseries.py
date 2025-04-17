@@ -51,7 +51,8 @@ from ..utils import (
     transform_series,
     transform_dataframe,
     set_skforecast_warnings,
-    get_style_repr_html
+    get_style_repr_html,
+    set_cpu_gpu_device
 )
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
 from ..model_selection._utils import _extract_data_folds_multiseries
@@ -2141,6 +2142,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         """
 
+        original_device = set_cpu_gpu_device(regressor=self.regressor, device='cpu')
+
         n_levels = len(levels)
         n_lags = len(self.lags) if self.lags is not None else 0
         n_window_features = (
@@ -2223,6 +2226,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             # Update `last_window` values. The first position is discarded and 
             # the new prediction is added at the end.
             last_window[-(steps - i), :] = pred
+
+        set_cpu_gpu_device(regressor=self.regressor, device=original_device)
 
         return predictions
 

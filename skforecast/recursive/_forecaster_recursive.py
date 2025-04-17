@@ -40,7 +40,8 @@ from ..utils import (
     expand_index,
     transform_numpy,
     transform_dataframe,
-    get_style_repr_html
+    get_style_repr_html,
+    set_cpu_gpu_device
 )
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
 
@@ -1258,6 +1259,8 @@ class ForecasterRecursive(ForecasterBase):
         
         """
 
+        original_device = set_cpu_gpu_device(regressor=self.regressor, device='cpu')
+
         n_lags = len(self.lags) if self.lags is not None else 0
         n_window_features = (
             len(self.X_train_window_features_names_out_)
@@ -1302,6 +1305,8 @@ class ForecasterRecursive(ForecasterBase):
             # Update `last_window` values. The first position is discarded and 
             # the new prediction is added at the end.
             last_window[-(steps - i)] = pred[0]
+
+        set_cpu_gpu_device(regressor=self.regressor, device=original_device)
 
         return predictions
 

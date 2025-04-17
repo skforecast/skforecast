@@ -19,6 +19,8 @@ The main changes in this release are:
 
 **Added**
 
++ Function `set_cpu_gpu_device()` in the <code>[utils]</code> module to set the device of the regressor to 'cpu' or 'gpu'. It is used to ensure that the recursive prediction is done in cpu even if the regressor is set to 'gpu'. This allows to avoid the bottleneck of the recursive prediction when using a gpu. Only applied to recursive forecasters when the regressor is a `XGBoost`, `LightGBM` or `CatBoost` model.
+
 
 **Changed**
 
