@@ -133,18 +133,25 @@ def _backtesting_forecaster(
     metric_values : pandas DataFrame
         Value(s) of the metric(s).
     backtest_predictions : pandas DataFrame
-        Value of predictions and their estimated probabilistic predictions if 
-        `interval` is not `None`.
+        Value of predictions. The  DataFrame includes the following columns:
 
-        - column pred: predictions.
-        - If `interval` is a float, columns 'lower_bound' and 'upper_bound' are created.
-        - If `interval` is a list or tuple, columns are the percentiles. If `interval`
-        has two elements, they are renamed to 'lower_bound' and 'upper_bound'.
-        - If `interval` is 'bootstrapping', `n_boot` columns are created with the
-        bootstrapping predictions.
-        - If `interval` is a distribution object, columns are the parameters of the
-        distribution.
-        - If `return_predictors` is `True`, one column per predictor is created.
+        - pred: Predicted values for the corresponding series and time steps.
+
+        If `interval` is not `None`, additional columns are included depending on the method:
+        
+        - For `float`: Columns `lower_bound` and `upper_bound`.
+        - For `list` or `tuple` of 2 elements: Columns `lower_bound` and `upper_bound`.
+        - For `list` or `tuple` with multiple percentiles: One column per percentile 
+        (e.g., `p_10`, `p_50`, `p_90`).
+        - For `'bootstrapping'`: One column per bootstrapping iteration 
+        (e.g., `pred_boot_0`, `pred_boot_1`, ..., `pred_boot_n`).
+        - For `scipy.stats` distribution objects: One column for each estimated 
+        parameter of the distribution (e.g., `loc`, `scale`).
+
+        If `return_predictors` is `True`:
+
+        - fold: Indicates the fold number where the prediction was made.
+        - One column per predictor is created.
 
     References
     ----------
@@ -292,7 +299,6 @@ def _backtesting_forecaster(
             )
 
         preds = []
-        
         if interval is not None:
             kwargs_interval = {
                 'steps': steps,
@@ -369,7 +375,9 @@ def _backtesting_forecaster(
         "return_predictors": return_predictors
     }
     backtest_predictions = Parallel(n_jobs=n_jobs)(
-        delayed(_fit_predict_forecaster)(fold_number=fold_number, fold=fold, **kwargs_fit_predict_forecaster)
+        delayed(_fit_predict_forecaster)(
+            fold_number=fold_number, fold=fold, **kwargs_fit_predict_forecaster
+        )
         for fold_number, fold in enumerate(folds)
     )
 
@@ -513,18 +521,25 @@ def backtesting_forecaster(
     metric_values : pandas DataFrame
         Value(s) of the metric(s).
     backtest_predictions : pandas DataFrame
-        Value of predictions and their estimated probabilistic predictions if 
-        `interval` is not `None`.
+        Value of predictions. The  DataFrame includes the following columns:
 
-        - column pred: predictions.
-        - If `interval` is a float, columns 'lower_bound' and 'upper_bound' are created.
-        - If `interval` is a list or tuple, columns are the percentiles. If `interval`
-        has two elements, they are renamed to 'lower_bound' and 'upper_bound'.
-        - If `interval` is 'bootstrapping', `n_boot` columns are created with the
-        bootstrapping predictions.
-        - If `interval` is a distribution object, columns are the parameters of the
-        distribution.
-        - If `return_predictors` is `True`, one column per predictor is created.
+        - pred: Predicted values for the corresponding series and time steps.
+
+        If `interval` is not `None`, additional columns are included depending on the method:
+        
+        - For `float`: Columns `lower_bound` and `upper_bound`.
+        - For `list` or `tuple` of 2 elements: Columns `lower_bound` and `upper_bound`.
+        - For `list` or `tuple` with multiple percentiles: One column per percentile 
+        (e.g., `p_10`, `p_50`, `p_90`).
+        - For `'bootstrapping'`: One column per bootstrapping iteration 
+        (e.g., `pred_boot_0`, `pred_boot_1`, ..., `pred_boot_n`).
+        - For `scipy.stats` distribution objects: One column for each estimated 
+        parameter of the distribution (e.g., `loc`, `scale`).
+
+        If `return_predictors` is `True`:
+
+        - fold: Indicates the fold number where the prediction was made.
+        - One column per predictor is created.
 
     References
     ----------
@@ -600,6 +615,7 @@ def _backtesting_forecaster_multiseries(
     use_in_sample_residuals: bool = True,
     use_binned_residuals: bool = True,
     random_state: int = 123,
+    return_predictors: bool = False,
     n_jobs: int | str = 'auto',
     verbose: bool = False,
     show_progress: bool = True,
@@ -683,6 +699,8 @@ def _backtesting_forecaster_multiseries(
         If `False`, residuals are selected randomly.
     random_state : int, default 123
         Seed for the random number generator to ensure reproducibility.
+    return_predictors : bool, default False
+        If `True`, the predictors used to make the predictions are also returned.
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
@@ -718,6 +736,11 @@ def _backtesting_forecaster_multiseries(
         (e.g., `pred_boot_0`, `pred_boot_1`, ..., `pred_boot_n`).
         - For `scipy.stats` distribution objects: One column for each estimated 
         parameter of the distribution (e.g., `loc`, `scale`).
+
+        If `return_predictors` is `True`:
+
+        - fold: Indicates the fold number where the prediction was made.
+        - One column per predictor is created.
 
     References
     ----------
@@ -846,9 +869,9 @@ def _backtesting_forecaster_multiseries(
                  )
 
     def _fit_predict_forecaster(
-        data_fold, forecaster, store_in_sample_residuals, levels, gap, 
+        fold_number, data_fold, forecaster, store_in_sample_residuals, levels, gap, 
         interval, interval_method, n_boot, use_in_sample_residuals, 
-        use_binned_residuals, random_state, suppress_warnings
+        use_binned_residuals, random_state, return_predictors, suppress_warnings
     ) -> pd.DataFrame:
         """
         Fit the forecaster and predict `steps` ahead. This is an auxiliary 
@@ -883,6 +906,7 @@ def _backtesting_forecaster_multiseries(
             test_iloc_end   = fold[3][1]
             steps = list(np.arange(len(range(test_iloc_start, test_iloc_end))) + gap + 1)
 
+        preds = []
         levels_predict = [level for level in levels if level in last_window_levels]
         if interval is not None:
             kwargs_interval = {
@@ -898,23 +922,27 @@ def _backtesting_forecaster_multiseries(
             }
             if interval_method == 'bootstrapping':
                 if interval == 'bootstrapping':
-                    pred_interval = forecaster.predict_bootstrapping(**kwargs_interval)
+                    pred = forecaster.predict_bootstrapping(**kwargs_interval)
                 elif isinstance(interval, (list, tuple)):
                     quantiles = [q / 100 for q in interval]
-                    pred_interval = forecaster.predict_quantiles(quantiles=quantiles, **kwargs_interval)
+                    pred = forecaster.predict_quantiles(quantiles=quantiles, **kwargs_interval)
                     if len(interval) == 2:
                         cols_names = ['level', 'lower_bound', 'upper_bound']
                     else:
                         cols_names = ['level'] + [f'p_{p}' for p in interval]  
-                    pred_interval.columns = cols_names
+                    pred.columns = cols_names
                 else:
-                    pred_interval = forecaster.predict_dist(distribution=interval, **kwargs_interval)
+                    pred = forecaster.predict_dist(distribution=interval, **kwargs_interval)
+                 
+                preds.append(pred)
             else:
                 pred = forecaster.predict_interval(
                     method='conformal', interval=interval, **kwargs_interval
                 )
+                preds.append(pred)
 
-        # NOTE: This is done after probabilistic predictions to avoid repeating the same checks.
+        # NOTE: This is done after probabilistic predictions to avoid repeating 
+        # the same checks.
         if interval is None or interval_method != 'conformal':
             pred = forecaster.predict(
                        steps             = steps, 
@@ -924,11 +952,26 @@ def _backtesting_forecaster_multiseries(
                        suppress_warnings = suppress_warnings,
                        check_inputs      = True if interval is None else False
                    )
+            preds.insert(0, pred)
 
-        if interval is not None and interval_method != 'conformal':
-            pred = pd.concat([pred, pred_interval.iloc[:, 1:]], axis=1)
+        if return_predictors:
+            pred = forecaster.create_predict_X(
+                       steps             = steps,
+                       levels            = levels_predict, 
+                       last_window       = last_window_series,
+                       exog              = next_window_exog,
+                       suppress_warnings = suppress_warnings,
+                       check_inputs      = False
+                   )
+            pred.insert(0, 'fold', fold_number)
+            preds.append(pred.drop(columns='level'))
 
-        # TODO: CHeck when long format with multiple levels in multivariate
+        if len(preds) == 1:
+            pred = preds[0]
+        else:
+            pred = pd.concat(preds, axis=1)
+
+        # TODO: Check when long format with multiple levels in multivariate
         if type(forecaster).__name__ != 'ForecasterDirectMultiVariate' and gap > 0:
             pred = pred.iloc[gap:, ]
 
@@ -945,11 +988,14 @@ def _backtesting_forecaster_multiseries(
         "use_in_sample_residuals": use_in_sample_residuals,
         "use_binned_residuals": use_binned_residuals,
         "random_state": random_state,
+        "return_predictors": return_predictors,
         "suppress_warnings": suppress_warnings
     }
     results = Parallel(n_jobs=n_jobs)(
-        delayed(_fit_predict_forecaster)(data_fold=data_fold, **kwargs_fit_predict_forecaster)
-        for data_fold in data_folds
+        delayed(_fit_predict_forecaster)(
+            fold_number=fold_number, data_fold=data_fold, **kwargs_fit_predict_forecaster
+        )
+        for fold_number, data_fold in enumerate(data_folds)
     )
 
     backtest_predictions = pd.concat([result[0] for result in results], axis=0)
@@ -1022,6 +1068,7 @@ def backtesting_forecaster_multiseries(
     use_in_sample_residuals: bool = True,
     use_binned_residuals: bool = True,
     random_state: int = 123,
+    return_predictors: bool = False,
     n_jobs: int | str = 'auto',
     verbose: bool = False,
     show_progress: bool = True,
@@ -1106,6 +1153,8 @@ def backtesting_forecaster_multiseries(
         If `False`, residuals are selected randomly.
     random_state : int, default 123
         Seed for the random number generator to ensure reproducibility.
+    return_predictors : bool, default False
+        If `True`, the predictors used to make the predictions are also returned.
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
@@ -1141,6 +1190,11 @@ def backtesting_forecaster_multiseries(
         (e.g., `pred_boot_0`, `pred_boot_1`, ..., `pred_boot_n`).
         - For `scipy.stats` distribution objects: One column for each estimated 
         parameter of the distribution (e.g., `loc`, `scale`).
+
+        If `return_predictors` is `True`:
+
+        - fold: Indicates the fold number where the prediction was made.
+        - One column per predictor is created.
 
     References
     ----------
@@ -1180,6 +1234,7 @@ def backtesting_forecaster_multiseries(
         use_in_sample_residuals = use_in_sample_residuals,
         use_binned_residuals    = use_binned_residuals,
         random_state            = random_state,
+        return_predictors       = return_predictors,
         n_jobs                  = n_jobs,
         show_progress           = show_progress,
         suppress_warnings       = suppress_warnings
@@ -1199,6 +1254,7 @@ def backtesting_forecaster_multiseries(
         use_in_sample_residuals = use_in_sample_residuals,
         use_binned_residuals    = use_binned_residuals,
         random_state            = random_state,
+        return_predictors       = return_predictors,
         n_jobs                  = n_jobs,
         verbose                 = verbose,
         show_progress           = show_progress,

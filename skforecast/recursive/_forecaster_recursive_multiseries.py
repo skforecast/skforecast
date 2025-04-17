@@ -2226,7 +2226,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         return predictions
 
-    def create_predict_X(
+    def create_predict_X_old(
         self,
         steps: int,
         levels: str | list[str] | None = None,
@@ -2379,6 +2379,162 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         return X_predict_dict
 
+    def create_predict_X(
+        self,
+        steps: int,
+        levels: str | list[str] | None = None,
+        last_window: pd.DataFrame | None = None,
+        exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
+        suppress_warnings: bool = False,
+        check_inputs: bool = True
+    ) -> dict:
+        """
+        Create the predictors needed to predict `steps` ahead. As it is a recursive
+        process, the predictors are created at each iteration of the prediction 
+        process.
+        
+        Parameters
+        ----------
+        steps : int
+            Number of steps to predict. 
+        levels : str, list, default None
+            Time series to be predicted. If `None` all levels whose last window
+            ends at the same datetime index will be predicted together.
+        last_window : pandas DataFrame, default None
+            Series values used to create the predictors (lags) needed in the 
+            first iteration of the prediction (t + 1).
+            If `last_window = None`, the values stored in `self.last_window_` are
+            used to calculate the initial predictors, and the predictions start
+            right after training data.
+        exog : pandas Series, pandas DataFrame, default None
+            Exogenous variable/s included as predictor/s.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings will be suppressed during the prediction 
+            process. See skforecast.exceptions.warn_skforecast_categories for more
+            information.
+        check_inputs : bool, default True
+            If `True`, the input is checked for possible warnings and errors 
+            with the `check_predict_input` function. This argument is created 
+            for internal use and is not recommended to be changed.
+
+        Returns
+        -------
+        X_predict : pandas DataFrame
+            Long-format DataFrame with the predictors. The columns are `level`, 
+            one column for each predictor. The index is the same as the prediction 
+            index.
+        
+        """
+
+        set_skforecast_warnings(suppress_warnings, action='ignore')
+
+        (
+            last_window,
+            exog_values_dict,
+            levels,
+            prediction_index
+        ) = self._create_predict_inputs(
+                steps        = steps,
+                levels       = levels,
+                last_window  = last_window,
+                exog         = exog,
+                check_inputs = check_inputs
+            )
+  
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", 
+                message="X does not have valid feature names", 
+                category=UserWarning
+            )
+            predictions = self._recursive_predict(
+                              steps            = steps,
+                              levels           = levels,
+                              last_window      = last_window,
+                              exog_values_dict = exog_values_dict
+                          )
+        
+        if self.lags is not None:
+            idx_lags = np.arange(-steps, 0)[:, None] - self.lags
+        len_X_train_series_names_in_ = len(self.X_train_series_names_in_)
+        exog_shape = len(self.X_train_exog_names_out_) if exog is not None else 0
+        
+        X_predict = []
+        for i, level in enumerate(levels):
+            
+            X_predict_level = []
+            full_predictors_level = np.concatenate(
+                (last_window[level].to_numpy(), predictions[:, i])
+            )
+
+            if self.lags is not None:
+                X_predict_level.append(
+                    full_predictors_level[idx_lags + len(full_predictors_level)]
+                )
+
+            if self.window_features is not None:
+                X_window_features = np.full(
+                    shape      = (steps, len(self.X_train_window_features_names_out_)), 
+                    fill_value = np.nan, 
+                    order      = 'C',
+                    dtype      = float
+                )
+                for j in range(steps):
+                    X_window_features[j, :] = np.concatenate(
+                        [
+                            wf.transform(full_predictors_level[j:-(steps - j)]) 
+                            for wf in self.window_features
+                        ]
+                    )
+                X_predict_level.append(X_window_features)
+
+            if self.encoding is not None:
+                if self.encoding == 'onehot':
+                    level_encoded = np.zeros(
+                                        shape = (1, len_X_train_series_names_in_),
+                                        dtype = float
+                                    )
+                    level_encoded[0][self.X_train_series_names_in_.index(level)] = 1.
+                else:
+                    level_encoded = np.array(
+                                        [self.encoding_mapping_.get(level, None)],
+                                        dtype = 'float64'
+                                    )
+
+                level_encoded = np.tile(level_encoded, (steps, 1))
+                X_predict_level.append(level_encoded)
+            
+            if exog is not None:
+                exog_cols = np.full(
+                    shape=(steps, exog_shape), fill_value=np.nan, order='C', dtype=float
+                )
+                for j in range(steps):
+                    exog_cols[j, :] = exog_values_dict[j + 1][i, :]
+                X_predict_level.append(exog_cols)
+
+            X_predict.append(np.concatenate(X_predict_level, axis=1))
+
+        X_predict = pd.DataFrame(
+                        data    = np.concatenate(X_predict),
+                        index   = np.repeat(prediction_index, len(levels)),
+                        columns = self.X_train_features_names_out_
+                    )
+        X_predict.insert(0, 'level', np.tile(levels, steps))
+        
+        if self.transformer_series is not None or self.differentiation is not None:
+            warnings.warn(
+                "The output matrix is in the transformed scale due to the "
+                "inclusion of transformations or differentiation in the Forecaster. "
+                "As a result, any predictions generated using this matrix will also "
+                "be in the transformed scale. Please refer to the documentation "
+                "for more details: "
+                "https://skforecast.org/latest/user_guides/training-and-prediction-matrices.html",
+                DataTransformationWarning
+            )
+        
+        set_skforecast_warnings(suppress_warnings, action='default')
+
+        return X_predict
 
     def predict(
         self,
