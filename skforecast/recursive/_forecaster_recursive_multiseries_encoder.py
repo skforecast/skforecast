@@ -455,11 +455,7 @@ class ForecasterRecursiveMultiSeriesEncoder(ForecasterBase):
                                drop          = None,
                                dtype         = int
                            ).set_output(transform='pandas')
-        else:
-            # self.encoder = OrdinalEncoder(
-            #                    categories = 'auto',
-            #                    dtype      = int
-            #                ).set_output(transform='pandas')            
+        else:          
             self.encoder = FastOrdinalEncoder()
 
         scaling_regressors = tuple(
@@ -1134,7 +1130,10 @@ class ForecasterRecursiveMultiSeriesEncoder(ForecasterBase):
         y_train = pd.concat(y_train_buffer, axis=0)
 
         if self.is_fitted:
-            encoded_values = self.encoder.transform(X_train['_level_skforecast'])
+            if self.encoding == 'onehot':
+                encoded_values = self.encoder.transform(X_train[['_level_skforecast']])
+            else:
+                encoded_values = self.encoder.transform(X_train['_level_skforecast'])
         else:
             if self.encoding == 'onehot':
                 encoded_values = self.encoder.fit_transform(X_train[['_level_skforecast']])
