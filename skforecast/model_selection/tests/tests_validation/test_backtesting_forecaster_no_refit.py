@@ -1373,3 +1373,45 @@ def test_output_backtesting_forecaster_interval_yes_exog_not_allow_remainder_gap
 
     pd.testing.assert_frame_equal(expected_metric, metric)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+
+
+# ******************************************************************************
+# * Return predictors                                                          *
+# ******************************************************************************
+
+
+def test_output_backtesting_forecaster_return_predictors_same_predictions_as_predict():
+    """
+    Test predictions from _backtesting_forecaster predictors are the same as
+    predictions from predict method.
+    """
+    expected_metric = pd.DataFrame({"mean_squared_error": [0.05585411566592716]})
+    
+    forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
+    n_backtest = 12
+    y_train = y[:-n_backtest]
+    cv = TimeSeriesFold(
+            steps              = 4,
+            initial_train_size = len(y_train),
+            refit              = False,
+        )
+    metric, backtest_predictions = _backtesting_forecaster(
+                                        forecaster        = forecaster,
+                                        y                 = y,
+                                        exog              = exog,
+                                        cv                = cv,
+                                        metric            = 'mean_squared_error',
+                                        return_predictors = True,
+                                        verbose           = False
+                                   )
+    
+    forecaster.fit(y=y_train, exog=exog[:len(y_train)])
+    expected_predictions = forecaster.regressor.predict(
+        backtest_predictions[forecaster.X_train_features_names_out_]
+    )
+
+    pd.testing.assert_frame_equal(expected_metric, metric)
+    np.testing.assert_array_almost_equal(
+        expected_predictions, 
+        backtest_predictions['pred'].to_numpy()
+    )

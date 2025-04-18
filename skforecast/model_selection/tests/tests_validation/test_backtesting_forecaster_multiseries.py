@@ -2274,6 +2274,92 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     pd.testing.assert_frame_equal(predictions.head(10), expected_predictions)
 
 
+def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_return_predictors_same_predictions_as_predict():
+    """
+    Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 
+    when series and exog are dictionaries, predictions from 
+    _backtesting_forecaster predictors are the same as predictions from 
+    predict method.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+        regressor=LGBMRegressor(
+            n_estimators=30, random_state=123, verbose=-1, max_depth=4
+        ),
+        lags=[1, 7, 14],
+        encoding='ordinal',
+        dropna_from_series=False,
+        transformer_series=None,
+        transformer_exog=StandardScaler(),
+    )
+
+    cv = TimeSeriesFold(
+             initial_train_size = len(series_dict_train['id_1000']),
+             steps              = 24,
+             refit              = False
+         )
+
+    metrics, predictions = backtesting_forecaster_multiseries(
+        forecaster        = forecaster,
+        series            = series_dict,
+        exog              = exog_dict,
+        cv                = cv,
+        metric            = ['mean_absolute_error', 'mean_absolute_scaled_error'],
+        return_predictors = True,
+        n_jobs            = 'auto',
+        verbose           = False,
+        show_progress     = True,
+        suppress_warnings = True
+    )
+
+    expected_metrics = pd.DataFrame(
+        {
+            "levels": {
+                0: "id_1000",
+                1: "id_1001",
+                2: "id_1002",
+                3: "id_1003",
+                4: "id_1004",
+                5: "average",
+                6: "weighted_average",
+                7: "pooling",
+            },
+            "mean_absolute_error": {
+                0: 177.94640447766702,
+                1: 1451.3480109896332,
+                2: np.nan,
+                3: 277.78113362955673,
+                4: 993.6769068120083,
+                5: 725.1881139772163,
+                6: 724.9604804988818,
+                7: 724.960480498882,
+            },
+            "mean_absolute_scaled_error": {
+                0: 0.8178593233613526,
+                1: 4.1364664709651064,
+                2: np.nan,
+                3: 1.1323827428361022,
+                4: 0.8271748048818786,
+                5: 1.72847083551111,
+                6: 2.0965105153721213,
+                7: 1.760615501057647,
+            },
+        }
+    )
+
+    forecaster.fit(series=series_dict_train, exog=exog_dict_train)
+    expected_predictions = forecaster.regressor.predict(
+        predictions[forecaster.X_train_features_names_out_]
+    )
+    nan_predictions_index = predictions['pred'].isna()
+    expected_predictions[nan_predictions_index] = np.nan
+
+    pd.testing.assert_frame_equal(metrics, expected_metrics)
+    np.testing.assert_array_almost_equal(
+        expected_predictions, 
+        predictions['pred'].to_numpy()
+    )
+
+
 # ======================================================================================================================
 # ======================================================================================================================
 # ForecasterDirectMultiVariate
@@ -3287,3 +3373,56 @@ def test_output_backtesting_forecaster_interval_conformal_and_binned_with_mocked
                                    
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+
+
+def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_return_predictors_same_predictions_as_predict():
+    """
+    Test output of backtesting_forecaster_multiseries in ForecasterDirectMultiVariate 
+    when series and exog are dictionaries, predictions from 
+    _backtesting_forecaster predictors are the same as predictions from 
+    predict method.
+    """
+    forecaster = ForecasterDirectMultiVariate(
+                     regressor          = Ridge(random_state=123),
+                     level              = 'l1',
+                     lags               = 2,
+                     steps              = 3,
+                     transformer_series = None
+                 )
+    cv = TimeSeriesFold(
+             initial_train_size = len(series) - 12,
+             steps              = 3,
+             refit              = False,
+             fixed_train_size   = False,
+         )
+
+    metrics_levels, backtest_predictions = backtesting_forecaster_multiseries(
+                                               forecaster         = forecaster,
+                                               series             = series,
+                                               exog               = series['l1'].rename('exog_1'),
+                                               cv                 = cv,
+                                               levels             = 'l1',
+                                               metric             = 'mean_absolute_error',
+                                               return_predictors  = True,
+                                               verbose            = True
+                                           )
+    
+    expected_metric = pd.DataFrame({'levels': ['l1'],
+                                    'mean_absolute_error': [0.080981301131163]})
+    
+    forecaster.fit(
+        series = series.iloc[:len(series) - 12],
+        exog   = series.iloc[:len(series) - 12]['l1'].rename('exog_1')
+    )
+    regressors = [1, 2, 3] * 4
+    len_predictions = len(backtest_predictions)
+    results = np.full(shape=len_predictions, fill_value=np.nan, dtype=float)
+    for i, step in enumerate(regressors):
+        results[i] = forecaster.regressors_[step].predict(
+            backtest_predictions.iloc[[i]][
+                ['l1_lag_1', 'l1_lag_2', 'l2_lag_1', 'l2_lag_2', 'exog_1']
+            ]
+        )
+                                   
+    pd.testing.assert_frame_equal(expected_metric, metrics_levels)
+    np.testing.assert_array_almost_equal(results, backtest_predictions['pred'].to_numpy())

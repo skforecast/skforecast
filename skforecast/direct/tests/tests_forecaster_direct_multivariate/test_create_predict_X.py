@@ -72,8 +72,9 @@ def test_create_predict_X_output(steps):
     """
     Test create_predict_X output.
     """
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1',
-                                               lags=3, steps=3, transformer_series=None)
+    forecaster = ForecasterDirectMultiVariate(
+        LinearRegression(), level='l1', lags=3, steps=3, transformer_series=None
+    )
     forecaster.fit(series=series)
     results = forecaster.create_predict_X(steps=steps)
 
@@ -88,6 +89,7 @@ def test_create_predict_X_output(steps):
         },
         index = pd.RangeIndex(start=50, stop=53, step=1)
     )
+    expected.insert(0, 'level', np.tile([forecaster.level], 3))
     
     pd.testing.assert_frame_equal(results, expected)
 
@@ -97,8 +99,9 @@ def test_create_predict_X_output_when_list_interspersed():
     Test create_predict_X output when steps is
     a list with interspersed steps.
     """
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l2',
-                                               lags=3, steps=5, transformer_series=None)
+    forecaster = ForecasterDirectMultiVariate(
+        LinearRegression(), level='l2', lags=3, steps=5, transformer_series=None
+    )
     forecaster.fit(series=series)
     results = forecaster.create_predict_X(steps=[1, 4])
 
@@ -114,6 +117,7 @@ def test_create_predict_X_output_when_list_interspersed():
         index = pd.Index([50, 53], dtype=int)
     )
     expected.index = expected.index.astype(results.index.dtype)
+    expected.insert(0, 'level', np.tile([forecaster.level], 2))
     
     pd.testing.assert_frame_equal(results, expected)
 
@@ -123,9 +127,10 @@ def test_create_predict_X_output_when_different_lags():
     Test create_predict_X output when different
     lags configuration for each series.
     """
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l2',
-                                               lags={'l1': 5, 'l2': [1, 7]}, 
-                                               steps=3, transformer_series=None)
+    forecaster = ForecasterDirectMultiVariate(
+        LinearRegression(), level='l2', lags={'l1': 5, 'l2': [1, 7]}, 
+        steps=3, transformer_series=None
+    )
     forecaster.fit(series=series)
     results = forecaster.create_predict_X(steps=3)
 
@@ -141,6 +146,7 @@ def test_create_predict_X_output_when_different_lags():
         },
         index = pd.RangeIndex(start=50, stop=53, step=1)
     )
+    expected.insert(0, 'level', np.tile([forecaster.level], 3))
     
     pd.testing.assert_frame_equal(results, expected)
 
@@ -150,9 +156,10 @@ def test_create_predict_X_output_when_lags_dict_with_None_in_level_lags():
     Test create_predict_X output when lags is a 
     dict and level has None lags configuration.
     """
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l2',
-                                               lags={'l1': 5, 'l2': None}, steps=3,
-                                               transformer_series=None)
+    forecaster = ForecasterDirectMultiVariate(
+        LinearRegression(), level='l2', lags={'l1': 5, 'l2': None}, 
+        steps=3, transformer_series=None
+    )
     forecaster.fit(series=series)
     results = forecaster.create_predict_X(steps=3)
 
@@ -166,6 +173,7 @@ def test_create_predict_X_output_when_lags_dict_with_None_in_level_lags():
         },
         index = pd.RangeIndex(start=50, stop=53, step=1)
     )
+    expected.insert(0, 'level', np.tile([forecaster.level], 3))
     
     pd.testing.assert_frame_equal(results, expected)
 
@@ -175,9 +183,10 @@ def test_create_predict_X_output_when_lags_dict_with_None_but_no_in_level():
     Test create_predict_X output when lags is a 
     dict with None values.
     """
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1',
-                                               lags={'l1': 5, 'l2': None}, steps=3,
-                                               transformer_series=None)
+    forecaster = ForecasterDirectMultiVariate(
+        LinearRegression(), level='l1', lags={'l1': 5, 'l2': None}, 
+        steps=3, transformer_series=None
+    )
     forecaster.fit(series=series)
     results = forecaster.create_predict_X(steps=3)
 
@@ -191,6 +200,7 @@ def test_create_predict_X_output_when_lags_dict_with_None_but_no_in_level():
         },
         index = pd.RangeIndex(start=50, stop=53, step=1)
     )
+    expected.insert(0, 'level', np.tile([forecaster.level], 3))
     
     pd.testing.assert_frame_equal(results, expected)
 
@@ -199,9 +209,9 @@ def test_create_predict_X_output_when_last_window():
     """
     Test create_predict_X output when external last_window.
     """
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1',
-                                               lags=3, steps=3,
-                                               transformer_series=None)
+    forecaster = ForecasterDirectMultiVariate(
+        LinearRegression(), level='l1', lags=3, steps=3, transformer_series=None
+    )
     forecaster.fit(series=series)
     last_window = pd.DataFrame(
         data    = np.array([[0.98555979, 0.39887629],
@@ -223,6 +233,7 @@ def test_create_predict_X_output_when_last_window():
         },
         index = pd.RangeIndex(start=50, stop=52, step=1)
     )
+    expected.insert(0, 'level', np.tile([forecaster.level], 2))
     
     pd.testing.assert_frame_equal(results, expected)
 
@@ -231,9 +242,9 @@ def test_create_predict_X_output_when_exog():
     """
     Test create_predict_X output when exog.
     """
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1',
-                                               lags=3, steps=3,
-                                               transformer_series=None)
+    forecaster = ForecasterDirectMultiVariate(
+        LinearRegression(), level='l1', lags=3, steps=3, transformer_series=None
+    )
     forecaster.fit(series=series.iloc[:40,], exog=exog.iloc[:40, 0])
     results = forecaster.create_predict_X(steps=None, exog=exog.iloc[40:43, 0])
 
@@ -262,6 +273,7 @@ def test_create_predict_X_output_when_exog():
         },
         index = pd.RangeIndex(start=40, stop=43, step=1)
     )
+    expected.insert(0, 'level', np.tile([forecaster.level], 3))
     
     pd.testing.assert_frame_equal(results, expected)
 
@@ -295,6 +307,7 @@ def test_create_predict_X_output_with_transform_series():
         },
         index = pd.RangeIndex(start=50, stop=55, step=1)
     )
+    expected.insert(0, 'level', np.tile([forecaster.level], 5))
     
     pd.testing.assert_frame_equal(results, expected)
 
@@ -329,6 +342,7 @@ def test_create_predict_X_output_with_transform_series_as_dict():
         },
         index = pd.RangeIndex(start=50, stop=55, step=1)
     )
+    expected.insert(0, 'level', np.tile([forecaster.level], 5))
     
     pd.testing.assert_frame_equal(results, expected)
 
@@ -370,6 +384,7 @@ def test_create_predict_X_output_with_transform_series_and_transform_exog(n_jobs
         },
         index = pd.RangeIndex(start=50, stop=55, step=1)
     )
+    expected.insert(0, 'level', np.tile([forecaster.level], 5))
     
     pd.testing.assert_frame_equal(results, expected)
 
@@ -381,8 +396,8 @@ def test_create_predict_X_output_when_categorical_features_native_implementation
     """
     df_exog = pd.DataFrame({
         'exog_1': exog['exog_1'],
-        'exog_2': ['a', 'b', 'c', 'd', 'e']*10,
-        'exog_3': pd.Categorical(['F', 'G', 'H', 'I', 'J']*10)}
+        'exog_2': ['a', 'b', 'c', 'd', 'e'] * 10,
+        'exog_3': pd.Categorical(['F', 'G', 'H', 'I', 'J'] * 10)}
     )
     
     exog_predict = df_exog.copy()
@@ -446,6 +461,7 @@ def test_create_predict_X_output_when_categorical_features_native_implementation
         },
         index = pd.RangeIndex(start=50, stop=60, step=1)
     )
+    expected.insert(0, 'level', np.tile([forecaster.level], 10))
     
     pd.testing.assert_frame_equal(results, expected)
 
@@ -483,11 +499,14 @@ def test_create_predict_X_same_predictions_as_predict():
                      differentiation    = None
                  )
     forecaster.fit(series=series.loc[:end_train], exog=exog.loc[:end_train])
-    X_predict = forecaster.create_predict_X(exog=exog.loc[end_train:])
+    X_predict = forecaster.create_predict_X(exog=exog.loc[end_train:]).drop(columns=['level'])
 
     for i, step in enumerate(range(1, forecaster.steps + 1)):
         results = forecaster.regressors_[step].predict(X_predict.iloc[[i]])
-        expected = forecaster.predict(steps=[step], exog=exog.loc[end_train:])[['pred']].to_numpy().item()
+        expected = forecaster.predict(
+            steps=[step], exog=exog.loc[end_train:]
+        )[['pred']].to_numpy().item()
+
         np.testing.assert_array_almost_equal(results, expected, decimal=7)
 
 
@@ -534,7 +553,7 @@ def test_create_predict_X_same_predictions_as_predict_transformers():
         "https://skforecast.org/latest/user_guides/training-and-prediction-matrices.html"
     )
     with pytest.warns(DataTransformationWarning, match = warn_msg):
-        X_predict = forecaster.create_predict_X(exog=exog.loc[end_train:])
+        X_predict = forecaster.create_predict_X(exog=exog.loc[end_train:]).drop(columns=['level'])
 
     for i, step in enumerate(range(1, forecaster.steps + 1)):
         results = forecaster.regressors_[step].predict(X_predict.iloc[[i]])
@@ -591,7 +610,7 @@ def test_create_predict_X_same_predictions_as_predict_transformers_diff():
         "https://skforecast.org/latest/user_guides/training-and-prediction-matrices.html"
     )
     with pytest.warns(DataTransformationWarning, match = warn_msg):
-        X_predict = forecaster.create_predict_X(exog=exog.loc[end_train:])
+        X_predict = forecaster.create_predict_X(exog=exog.loc[end_train:]).drop(columns=['level'])
 
     for i, step in enumerate(range(1, forecaster.steps + 1)):
         results = forecaster.regressors_[step].predict(X_predict.iloc[[i]])

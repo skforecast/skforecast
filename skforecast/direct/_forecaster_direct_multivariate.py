@@ -1850,7 +1850,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         last_window: pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | None = None,
         suppress_warnings: bool = False,
-        check_inputs: bool = True
+        check_inputs: bool = True,
+        levels: Any = None
     ) -> pd.DataFrame:
         """
         Create the predictors needed to predict `steps` ahead.
@@ -1882,6 +1883,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             If `True`, the input is checked for possible warnings and errors 
             with the `check_predict_input` function. This argument is created 
             for internal use and is not recommended to be changed.
+        levels : Ignored
+            Not used, present here for API consistency by convention.
 
         Returns
         -------
@@ -1910,6 +1913,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                         columns = Xs_col_names, 
                         index   = prediction_index
                     )
+        X_predict.insert(0, 'level', np.tile([self.level], len(steps)))
         
         if self.transformer_series is not None or self.differentiation is not None:
             warnings.warn(
