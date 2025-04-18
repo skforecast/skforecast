@@ -2369,7 +2369,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         X_predict.insert(0, 'level', np.repeat(levels, steps))
 
         # NOTE: Order needed to have the same structure as the output of predict methods.
-        order_dict = {valor: i for i, valor in enumerate(levels)}
+        order_dict = {level: i for i, level in enumerate(levels)}
         X_predict['order'] = X_predict['level'].map(order_dict)
         X_predict = (
             X_predict
