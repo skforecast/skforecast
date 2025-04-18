@@ -934,7 +934,8 @@ def _backtesting_forecaster_multiseries(
                 else:
                     pred = forecaster.predict_dist(distribution=interval, **kwargs_interval)
                  
-                preds.append(pred)
+                # NOTE: Remove column 'level' as it already exists from predict()
+                preds.append(pred.iloc[:, 1:])
             else:
                 pred = forecaster.predict_interval(
                     method='conformal', interval=interval, **kwargs_interval
@@ -956,6 +957,7 @@ def _backtesting_forecaster_multiseries(
 
         if return_predictors:
             # TODO: Check if this works in the ForecasterRNN
+            # NOTE: Remove column 'level' as it already exists from predict()
             pred = forecaster.create_predict_X(
                        steps             = steps,
                        levels            = levels_predict, 
@@ -963,9 +965,9 @@ def _backtesting_forecaster_multiseries(
                        exog              = next_window_exog,
                        suppress_warnings = suppress_warnings,
                        check_inputs      = False
-                   )
+                   ).iloc[:, 1:]
             pred.insert(0, 'fold', fold_number)
-            preds.append(pred.drop(columns='level'))
+            preds.append(pred)
 
         if len(preds) == 1:
             pred = preds[0]

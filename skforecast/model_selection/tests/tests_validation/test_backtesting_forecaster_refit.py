@@ -866,7 +866,7 @@ def test_output_backtesting_forecaster_interval_conformal_and_binned_with_mocked
         columns=['pred', 'lower_bound', 'upper_bound', 'fold', 
                  'lag_1', 'lag_2', 'lag_3', 'exog'],
         index=pd.RangeIndex(start=38, stop=50, step=1)
-    )
+    ).astype({'fold': int})
     
     forecaster = ForecasterRecursive(
         regressor=LinearRegression(), lags=3, binner_kwargs={'n_bins': 10}
@@ -1440,7 +1440,7 @@ def test_output_backtesting_forecaster_interval_yes_exog_yes_remainder_gap_with_
         columns = ['pred', 'lower_bound', 'upper_bound', 'fold', 
                    'lag_1', 'lag_2', 'lag_3', 'exog'],
         index = pd.RangeIndex(start=33, stop=50, step=1)
-    )
+    ).astype({'fold': int})
 
     forecaster = ForecasterDirect(
                      regressor = LinearRegression(), 
