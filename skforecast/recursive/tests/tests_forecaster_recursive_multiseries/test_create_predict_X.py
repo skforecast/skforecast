@@ -36,8 +36,10 @@ exog_dict_train = {k: v.loc[:end_train,] for k, v in exog_dict.items()}
 series_dict_test = {k: v.loc[end_train:,] for k, v in series_dict.items()}
 exog_dict_test = {k: v.loc[end_train:,] for k, v in exog_dict.items()}
 
-series_2 = pd.DataFrame({'1': pd.Series(np.arange(start=0, stop=50, dtype=float)), 
-                         '2': pd.Series(np.arange(start=50, stop=100, dtype=float))})
+series_2 = pd.DataFrame({
+    '1': pd.Series(np.arange(start=0, stop=50, dtype=float)), 
+    '2': pd.Series(np.arange(start=50, stop=100, dtype=float))
+})
 
 
 def test_create_predict_X_NotFittedError_when_fitted_is_False():
@@ -58,8 +60,9 @@ def test_output_create_predict_X_when_regressor_is_LinearRegression():
     """
     Test output create_predict_X when using LinearRegression as regressor.
     """
-    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=5,
-                                              transformer_series=None)
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=5, transformer_series=None
+    )
     forecaster.fit(series=series_2)
     results = forecaster.create_predict_X(steps=5)
 
@@ -87,9 +90,9 @@ def test_output_create_predict_X_when_regressor_is_LinearRegression():
                  index = pd.RangeIndex(start=50, stop=55, step=1)
              )
     }
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
 
-    for k in expected.keys():
-        pd.testing.assert_frame_equal(results[k], expected[k])
+    pd.testing.assert_frame_equal(results, expected)
 
 
 def test_create_predict_X_when_regressor_is_LinearRegression_and_StandardScaler():
@@ -118,9 +121,9 @@ def test_create_predict_X_when_regressor_is_LinearRegression_and_StandardScaler(
                  index = pd.RangeIndex(start=50, stop=55, step=1)
              )
     }
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
 
-    for k in expected.keys():
-        pd.testing.assert_frame_equal(results[k], expected[k])
+    pd.testing.assert_frame_equal(results, expected)
 
 
 def test_create_predict_X_output_when_regressor_is_LinearRegression_with_transform_series():
@@ -154,9 +157,9 @@ def test_create_predict_X_output_when_regressor_is_LinearRegression_with_transfo
                  index = pd.RangeIndex(start=50, stop=55, step=1)
              )
     }
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
 
-    for k in expected.keys():
-        pd.testing.assert_frame_equal(results[k], expected[k])
+    pd.testing.assert_frame_equal(results, expected)
 
 
 @pytest.mark.parametrize("transformer_series", 
@@ -202,9 +205,9 @@ def test_create_predict_X_output_when_regressor_is_LinearRegression_with_transfo
                  index = pd.RangeIndex(start=50, stop=55, step=1)
              )
     }
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
 
-    for k in expected.keys():
-        pd.testing.assert_frame_equal(results[k], expected[k])
+    pd.testing.assert_frame_equal(results, expected)
 
 
 @pytest.mark.parametrize("transformer_series", 
@@ -274,9 +277,9 @@ def test_create_predict_X_output_when_regressor_is_LinearRegression_with_transfo
                  index = pd.RangeIndex(start=50, stop=55, step=1)
              )
     }
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
 
-    for k in expected.keys():
-        pd.testing.assert_frame_equal(results[k], expected[k])
+    pd.testing.assert_frame_equal(results, expected)
 
 
 def test_create_predict_X_output_when_categorical_features_native_implementation_HistGradientBoostingRegressor():
@@ -373,9 +376,9 @@ def test_create_predict_X_output_when_categorical_features_native_implementation
                  index = pd.RangeIndex(start=50, stop=60, step=1)
              )
     }
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
 
-    for k in results.keys():
-        pd.testing.assert_frame_equal(results[k], expected[k])
+    pd.testing.assert_frame_equal(results, expected)
 
 
 def test_create_predict_X_output_when_series_and_exog_dict():
@@ -470,9 +473,9 @@ def test_create_predict_X_output_when_series_and_exog_dict():
                        index = pd.date_range(start='2016-08-01', periods=5, freq='D')
                    )
     }
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
 
-    for k in expected.keys():
-        pd.testing.assert_frame_equal(results[k], expected[k])
+    pd.testing.assert_frame_equal(results, expected)
 
 
 @pytest.mark.parametrize("differentiation", 
@@ -571,9 +574,9 @@ def test_create_predict_X_output_when_regressor_is_LinearRegression_with_exog_di
                  index = pd.date_range(start='2003-01-31', periods=steps, freq='D')
              )
     }
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
 
-    for k in expected.keys():
-        pd.testing.assert_frame_equal(results[k], expected[k])
+    pd.testing.assert_frame_equal(results, expected)
 
 
 def test_create_predict_X_output_when_series_and_exog_dict_encoding_None():
@@ -664,9 +667,9 @@ def test_create_predict_X_output_when_series_and_exog_dict_encoding_None():
                        index = pd.date_range(start='2016-08-01', periods=5, freq='D')
                    )
     }
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
 
-    for k in expected.keys():
-        pd.testing.assert_frame_equal(results[k], expected[k])
+    pd.testing.assert_frame_equal(results, expected)
 
 
 def test_create_predict_X_output_when_series_and_exog_dict_unknown_level():
@@ -783,9 +786,9 @@ def test_create_predict_X_output_when_series_and_exog_dict_unknown_level():
                        index = pd.date_range(start='2016-08-01', periods=5, freq='D')
                    )
     }
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
 
-    for k in expected.keys():
-        pd.testing.assert_frame_equal(results[k], expected[k])
+    pd.testing.assert_frame_equal(results, expected)
 
 
 def test_create_predict_X_output_when_series_and_exog_dict_encoding_None_unknown_level():
@@ -899,9 +902,9 @@ def test_create_predict_X_output_when_series_and_exog_dict_encoding_None_unknown
                        index = pd.date_range(start='2016-08-01', periods=5, freq='D')
                    )
     }
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
 
-    for k in expected.keys():
-        pd.testing.assert_frame_equal(results[k], expected[k])
+    pd.testing.assert_frame_equal(results, expected)
 
 
 def test_create_predict_X_same_predictions_as_predict():
@@ -937,16 +940,13 @@ def test_create_predict_X_same_predictions_as_predict():
     X_predict = forecaster.create_predict_X(
         steps=steps, levels=levels, last_window=last_window, exog=exog_dict_test
     )
-    results = np.full(
-        shape=(steps, len(levels)), fill_value=np.nan, order='F', dtype=float
-    )
-    for i, level in enumerate(levels):
-        results[:, i] = forecaster.regressor.predict(X_predict[level])
 
+    results = forecaster.regressor.predict(
+        X_predict[forecaster.X_train_features_names_out_]
+    )
     expected = forecaster.predict(
         steps=steps, levels=levels, last_window=last_window, exog=exog_dict_test
-    )
-    expected = expected.pivot(columns='level', values='pred').to_numpy()
+    )['pred'].to_numpy()
     
     np.testing.assert_array_almost_equal(results, expected, decimal=7)
 
@@ -999,8 +999,11 @@ def test_create_predict_X_same_predictions_as_predict_transformers():
         shape=(steps, len(levels)), fill_value=np.nan, order='F', dtype=float
     )
     for i, level in enumerate(levels):
+        preds = forecaster.regressor.predict(
+            X_predict.loc[X_predict['level'] == level, forecaster.X_train_features_names_out_]
+        )
         results[:, i] = transform_numpy(
-            array             = forecaster.regressor.predict(X_predict[level]),
+            array             = preds,
             transformer       = forecaster.transformer_series_.get(level, forecaster.transformer_series_['_unknown_level']),
             fit               = False,
             inverse_transform = True
@@ -1066,7 +1069,9 @@ def test_create_predict_X_same_predictions_as_predict_transformers_diff(differen
         shape=(steps, len(levels)), fill_value=np.nan, order='F', dtype=float
     )
     for i, level in enumerate(levels):
-        results[:, i] = forecaster.regressor.predict(X_predict[level])
+        results[:, i] = forecaster.regressor.predict(
+            X_predict.loc[X_predict['level'] == level, forecaster.X_train_features_names_out_]
+        )
         results[:, i] = (
             forecaster
             .differentiator_[level]

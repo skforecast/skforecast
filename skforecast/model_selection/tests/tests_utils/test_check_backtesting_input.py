@@ -897,7 +897,7 @@ def test_check_backtesting_input_ValueError_when_skip_folds_in_ForecasterSarimax
 
 @pytest.mark.parametrize("boolean_argument", 
                          ['add_aggregated_metric', 'use_in_sample_residuals', 
-                          'use_binned_residuals', 'show_progress', 
+                          'use_binned_residuals', 'return_predictors', 'show_progress', 
                           'suppress_warnings', 'suppress_warnings_fit'], 
                          ids = lambda argument: f'{argument}')
 def test_check_backtesting_input_TypeError_when_boolean_arguments_not_bool(boolean_argument):
@@ -923,6 +923,7 @@ def test_check_backtesting_input_TypeError_when_boolean_arguments_not_bool(boole
         'add_aggregated_metric': False,
         'use_in_sample_residuals': False,
         'use_binned_residuals': False,
+        'return_predictors': False,
         'show_progress': False,
         'suppress_warnings': False,
         'suppress_warnings_fit': False
@@ -1153,6 +1154,46 @@ def test_check_backtesting_input_raises_when_interval_not_None_and_interval_meth
     )
     with pytest.raises(ValueError, match = err_msg):
         check_backtesting_input(**kwargs)
+
+
+def test_check_backtesting_input_ValueError_when_return_predictors_and_forecaster_not_return_predictors():
+    """
+    Test ValueError is raised in check_backtesting_input when `return_predictors` is True
+    and the forecaster is not an allowed type.
+    """
+    forecaster = ForecasterSarimax(
+        regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
+    )
+    
+    cv = TimeSeriesFold(
+             steps              = 3,
+             initial_train_size = len(y) - 12,
+         )
+    
+    forecaster_name = type(forecaster).__name__
+    forecasters_return_predictors = [
+        "ForecasterRecursive",
+        "ForecasterDirect",
+        "ForecasterRecursiveMultiSeries",
+        "ForecasterDirectMultiVariate",
+        "ForecasterRNN",
+    ]
+    
+    err_msg = re.escape(
+        f"`return_predictors` is only allowed for forecasters of type "
+        f"{forecasters_return_predictors}. Got {forecaster_name}."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        check_backtesting_input(
+            forecaster        = forecaster,
+            cv                = cv,
+            metric            = 'mean_absolute_error',
+            y                 = y,
+            series            = series,
+            return_predictors = True,
+            show_progress     = False,
+            suppress_warnings = False
+        )
 
 
 @pytest.mark.parametrize("forecaster", 
