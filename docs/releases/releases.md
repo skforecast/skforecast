@@ -24,6 +24,8 @@ The main changes in this release are:
 
 + In-sample residuals in direct forecasters has been simplified.
 
++ The method `create_predict_X` in the <code>[ForecasterRecursiveMultiSeries]</code> now returns a long-format DataFrame with the predictors. The columns are `level` and one column for each predictor. The index is the same as the prediction index.
+
 
 **Fixed**
 

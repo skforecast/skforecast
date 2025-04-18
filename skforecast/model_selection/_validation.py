@@ -955,6 +955,7 @@ def _backtesting_forecaster_multiseries(
             preds.insert(0, pred)
 
         if return_predictors:
+            # TODO: Check if this works in the ForecasterRNN
             pred = forecaster.create_predict_X(
                        steps             = steps,
                        levels            = levels_predict, 
