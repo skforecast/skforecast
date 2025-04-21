@@ -51,7 +51,8 @@ from ..utils import (
     transform_series,
     transform_dataframe,
     set_skforecast_warnings,
-    get_style_repr_html
+    get_style_repr_html,
+    set_cpu_gpu_device
 )
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
 from ..model_selection._utils import _extract_data_folds_multiseries
@@ -2358,6 +2359,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         """
 
+        original_device = set_cpu_gpu_device(regressor=self.regressor, device='cpu')
+
         n_levels = len(levels)
         n_lags = len(self.lags) if self.lags is not None else 0
         n_window_features = (
@@ -2441,8 +2444,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             # the new prediction is added at the end.
             last_window[-(steps - i), :] = pred
 
-        return predictions
+        set_cpu_gpu_device(regressor=self.regressor, device=original_device)
 
+        return predictions
 
     def create_predict_X(
         self,
@@ -2450,8 +2454,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         levels: str | list[str] | None = None,
         last_window: pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
-        suppress_warnings: bool = False
-    ) -> dict:
+        suppress_warnings: bool = False,
+        check_inputs: bool = True
+    ) -> pd.DataFrame:
         """
         Create the predictors needed to predict `steps` ahead. As it is a recursive
         process, the predictors are created at each iteration of the prediction 
@@ -2476,12 +2481,17 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             If `True`, skforecast warnings will be suppressed during the prediction 
             process. See skforecast.exceptions.warn_skforecast_categories for more
             information.
+        check_inputs : bool, default True
+            If `True`, the input is checked for possible warnings and errors 
+            with the `check_predict_input` function. This argument is created 
+            for internal use and is not recommended to be changed.
 
         Returns
         -------
-        X_predict_dict : dict
-            Dict in the form `{level: X_predict}` with the predictors for each 
-            step and series. The index is the same as the prediction index.
+        X_predict : pandas DataFrame
+            Long-format DataFrame with the predictors. The columns are `level` and 
+            one column for each predictor. The index is the same as the prediction 
+            index.
         
         """
 
@@ -2496,7 +2506,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 steps        = steps,
                 levels       = levels,
                 last_window  = last_window,
-                exog         = exog
+                exog         = exog,
+                check_inputs = check_inputs
             )
   
         with warnings.catch_warnings():
@@ -2512,12 +2523,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                               exog_values_dict = exog_values_dict
                           )
         
-        X_predict_dict = {}
         if self.lags is not None:
             idx_lags = np.arange(-steps, 0)[:, None] - self.lags
         len_X_train_series_names_in_ = len(self.X_train_series_names_in_)
         exog_shape = len(self.X_train_exog_names_out_) if exog is not None else 0
-
+        
+        X_predict = []
         for i, level in enumerate(levels):
             
             X_predict_level = []
@@ -2570,11 +2581,26 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     exog_cols[j, :] = exog_values_dict[j + 1][i, :]
                 X_predict_level.append(exog_cols)
 
-            X_predict_dict[level] = pd.DataFrame(
-                                        data    = np.concatenate(X_predict_level, axis=1),
-                                        columns = self.X_train_features_names_out_,
-                                        index   = prediction_index
-                                    )
+            X_predict.append(np.concatenate(X_predict_level, axis=1))
+
+        X_predict = pd.DataFrame(
+                        data    = np.concatenate(X_predict),
+                        index   = np.tile(prediction_index, len(levels)),
+                        columns = self.X_train_features_names_out_
+                    )
+        X_predict.insert(0, 'level', np.repeat(levels, steps))
+
+        # NOTE: Order needed to have the same structure as the output of predict methods.
+        order_dict = {level: i for i, level in enumerate(levels)}
+        X_predict['order'] = X_predict['level'].map(order_dict)
+        X_predict = (
+            X_predict
+            .reset_index()
+            .sort_values(by=['index', 'order'])
+            .set_index('index')
+            .rename_axis(index=None)
+            .drop(columns='order')
+        )
         
         if self.transformer_series is not None or self.differentiation is not None:
             warnings.warn(
@@ -2589,8 +2615,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         
         set_skforecast_warnings(suppress_warnings, action='default')
 
-        return X_predict_dict
-    
+        return X_predict
 
     def predict(
         self,

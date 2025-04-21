@@ -2388,6 +2388,64 @@ def select_n_jobs_fit_forecaster(
     return n_jobs
 
 
+def set_cpu_gpu_device(
+    regressor: object, 
+    device: str | None = 'cpu'
+) -> str:
+    """
+    Set the device for the regressor to either 'cpu', 'gpu', 'cuda', or None.
+    
+    Parameters
+    ----------
+    regressor : object
+        An estimator object from XGBoost, LightGBM, or CatBoost.
+    device : str, default 'cpu'
+        The device to set. Can be 'cpu', 'gpu', or None. If None, it will
+        use the current device of the regressor.
+        
+    Returns
+    -------
+    original_device : str
+        The original device of the regressor before setting it to the new device.
+
+    """
+
+    device_names = {
+        'XGBRegressor': 'device',
+        'LGBMRegressor': 'device',
+        'CatBoostRegressor': 'task_type',
+    }
+
+    device_values = {
+        'XGBRegressor': {'gpu': 'cuda', 'cpu': 'cpu', 'cuda': 'cuda'},
+        'LGBMRegressor': {'gpu': 'gpu', 'cpu': 'cpu', 'cuda': 'gpu'},
+        'CatBoostRegressor': {'gpu': 'GPU', 'cpu': 'CPU', 'cuda': 'GPU'},
+    }
+
+    if device not in ['gpu', 'cpu', 'cuda', None]:
+        raise ValueError("`device` must be 'gpu', 'cpu', 'cuda', or None.")
+
+    regressor_name = type(regressor).__name__
+    if regressor_name not in device_names:
+        return None
+    
+    original_device = regressor.get_params()[device_names[regressor_name]].lower()
+
+    if device is None:
+        return original_device
+    
+    param_name = device_names[regressor_name]
+    new_device = device_values[regressor_name][device]
+
+    if original_device != new_device:
+        try:
+            regressor.set_params(**{param_name: new_device})
+        except Exception:
+            pass
+
+    return original_device
+
+
 def check_preprocess_series(
     series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
 ) -> tuple[dict[str, pd.Series], dict[str, pd.Index]]:

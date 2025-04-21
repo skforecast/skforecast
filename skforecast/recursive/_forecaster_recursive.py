@@ -40,7 +40,8 @@ from ..utils import (
     expand_index,
     transform_numpy,
     transform_dataframe,
-    get_style_repr_html
+    get_style_repr_html,
+    set_cpu_gpu_device
 )
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
 
@@ -1258,6 +1259,8 @@ class ForecasterRecursive(ForecasterBase):
         
         """
 
+        original_device = set_cpu_gpu_device(regressor=self.regressor, device='cpu')
+
         n_lags = len(self.lags) if self.lags is not None else 0
         n_window_features = (
             len(self.X_train_window_features_names_out_)
@@ -1303,14 +1306,16 @@ class ForecasterRecursive(ForecasterBase):
             # the new prediction is added at the end.
             last_window[-(steps - i)] = pred[0]
 
-        return predictions
+        set_cpu_gpu_device(regressor=self.regressor, device=original_device)
 
+        return predictions
 
     def create_predict_X(
         self,
         steps: int,
         last_window: pd.Series | pd.DataFrame | None = None,
-        exog: pd.Series | pd.DataFrame | None = None
+        exog: pd.Series | pd.DataFrame | None = None,
+        check_inputs: bool = True
     ) -> pd.DataFrame:
         """
         Create the predictors needed to predict `steps` ahead. As it is a recursive
@@ -1332,6 +1337,10 @@ class ForecasterRecursive(ForecasterBase):
             right after training data.
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
+        check_inputs : bool, default True
+            If `True`, the input is checked for possible warnings and errors 
+            with the `check_predict_input` function. This argument is created 
+            for internal use and is not recommended to be changed.
 
         Returns
         -------
@@ -1341,9 +1350,17 @@ class ForecasterRecursive(ForecasterBase):
         
         """
 
-        last_window_values, exog_values, prediction_index, steps = (
-            self._create_predict_inputs(steps=steps, last_window=last_window, exog=exog)
-        )
+        (
+            last_window_values,
+            exog_values,
+            prediction_index,
+            steps
+        ) = self._create_predict_inputs(
+                steps        = steps,
+                last_window  = last_window,
+                exog         = exog,
+                check_inputs = check_inputs,
+            )
         
         with warnings.catch_warnings():
             warnings.filterwarnings(
@@ -1449,7 +1466,7 @@ class ForecasterRecursive(ForecasterBase):
                 steps        = steps,
                 last_window  = last_window,
                 exog         = exog,
-                check_inputs = check_inputs,
+                check_inputs = check_inputs
             )
 
         with warnings.catch_warnings():

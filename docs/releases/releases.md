@@ -19,11 +19,16 @@ The main changes in this release are:
 
 **Added**
 
++ Function `set_cpu_gpu_device()` in the <code>[utils]</code> module to set the device of the regressor to 'cpu' or 'gpu'. It is used to ensure that the recursive prediction is done in cpu even if the regressor is set to 'gpu'. This allows to avoid the bottleneck of the recursive prediction when using a gpu. Only applied to recursive forecasters when the regressor is a `XGBoost`, `LightGBM` or `CatBoost` model.
+
 
 **Changed**
 
 + In-sample residuals in direct forecasters has been simplified.
 
++ The method `create_predict_X` in the <code>[ForecasterRecursiveMultiSeries]</code> now returns a long-format DataFrame with the predictors. The columns are `level` and one column for each predictor. The index is the same as the prediction index.
+
++ The method `create_predict_X` in the <code>[ForecasterDirectMultiVariate]</code> now includes the `level` column in the returned DataFrame. The columns are `level` and one column for each predictor. The index is the same as the prediction index.
 
 **Fixed**
 
