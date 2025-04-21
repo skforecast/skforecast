@@ -1380,7 +1380,7 @@ def test_output_backtesting_forecaster_interval_yes_exog_not_allow_remainder_gap
 # ******************************************************************************
 
 
-def test_output_backtesting_forecaster_return_predictors_same_predictions_as_predict():
+def test_output_backtesting_forecaster_return_predictors_same_predictions_as_predict_ForecasterRecursive():
     """
     Test predictions from _backtesting_forecaster predictors are the same as
     predictions from predict method.
@@ -1415,3 +1415,43 @@ def test_output_backtesting_forecaster_return_predictors_same_predictions_as_pre
         expected_predictions, 
         backtest_predictions['pred'].to_numpy()
     )
+
+
+def test_output_backtesting_forecaster_return_predictors_same_predictions_as_predict_ForecasterDirect():
+    """
+    Test predictions from _backtesting_forecaster predictors are the same as
+    predictions from predict method.
+    """
+    expected_metric = pd.DataFrame({"mean_squared_error": [0.061964730085838]})
+    
+    forecaster = ForecasterDirect(regressor=LinearRegression(), steps=5, lags=3)
+    n_backtest = 12
+    y_train = y[:-n_backtest]
+
+    cv = TimeSeriesFold(
+             steps              = 5,
+             initial_train_size = len(y_train)
+         )
+    metric, backtest_predictions = _backtesting_forecaster(
+                                        forecaster        = forecaster,
+                                        y                 = y,
+                                        exog              = exog,
+                                        cv                = cv,
+                                        metric            = 'mean_squared_error',
+                                        return_predictors = True,
+                                        verbose           = False
+                                   )
+    
+    forecaster.fit(y=y_train, exog=exog[:len(y_train)])
+    regressors = [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2]
+    len_predictions = len(backtest_predictions)
+    results = np.full(shape=len_predictions, fill_value=np.nan, dtype=float)
+    for i, step in enumerate(regressors):
+        results[i] = forecaster.regressors_[step].predict(
+            backtest_predictions.iloc[[i]][
+                ['lag_1', 'lag_2', 'lag_3', 'exog']
+            ]
+        )
+    
+    pd.testing.assert_frame_equal(expected_metric, metric)
+    np.testing.assert_array_almost_equal(results, backtest_predictions['pred'].to_numpy())
