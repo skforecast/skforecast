@@ -2310,9 +2310,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             # TODO: since all levels are been check at once. There is no way to known whixh series is failing.
             # instead a mesaje like "at least one of the series is has non valid dtypes at exog ....
             check_exog_dtypes(
-                        exog      = exog_values_all_levels,
-                        series_id = f"`exog` for series '{level}'"
-                    )
+                exog      = exog_values_all_levels,
+                series_id = f"`exog` for series '{level}'"
+            )
             exog_values_all_levels = exog_values_all_levels.to_numpy()
             exog_values_dict = {}
             for i in range(steps):
@@ -2527,12 +2527,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                         fit               = False,
                                         inverse_transform = False
                                     )
-            # TODO: since all levels are been check at once. There is no way to known whixh series is failing.
-            # instead a mesaje like "at least one of the series is has non valid dtypes at exog ....
-            check_exog_dtypes(
-                        exog      = exog_values_all_levels,
-                        series_id = f"`exog` for series '{level}'"
-                    )
+            
+            check_exog_dtypes(exog=exog_values_all_levels)
             exog_values_all_levels = exog_values_all_levels.to_numpy()
             exog_values_dict = {}
             for i in range(steps):

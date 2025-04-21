@@ -560,7 +560,7 @@ def check_exog(
         raise ValueError(f"When {series_id} is a pandas Series, it must have a name.")
 
     if not allow_nan:
-        if exog.isnull().any().any():
+        if exog.isna().to_numpy().any():
             warnings.warn(
                 f"{series_id} has missing values. Most machine learning models "
                 f"do not allow missing values. Fitting the forecaster may fail.", 
@@ -1475,6 +1475,8 @@ def check_predict_input_new(
         else:
             exogs_to_check = [('`exog`', exog)]
 
+        last_step = max(steps) if isinstance(steps, list) else steps
+        expected_index = expand_index(last_window.index, 1)[0]
         for exog_name, exog_to_check in exogs_to_check:
 
             if not isinstance(exog_to_check, (pd.Series, pd.DataFrame)):
@@ -1490,7 +1492,6 @@ def check_predict_input_new(
                 )
 
             # Check exog has many values as distance to max step predicted
-            last_step = max(steps) if isinstance(steps, list) else steps
             if len(exog_to_check) < last_step:
                 if forecaster_name in ['ForecasterRecursiveMultiSeries']:
                     warnings.warn(
@@ -1542,10 +1543,7 @@ def check_predict_input_new(
                         )
 
             # Check index dtype and freq
-            _, exog_index = preprocess_exog(
-                                exog          = exog_to_check.iloc[:0, ],
-                                return_values = False
-                            )
+            exog_index = exog_to_check.index
             if not isinstance(exog_index, index_type_):
                 raise TypeError(
                     f"Expected index of type {index_type_} for {exog_name}. "
@@ -1560,15 +1558,14 @@ def check_predict_input_new(
                         )
 
             # Check exog starts one step ahead of last_window end.
-            expected_index = expand_index(last_window.index, 1)[0]
-            if expected_index != exog_to_check.index[0]:
+            if expected_index != exog_index[0]:
                 if forecaster_name in ['ForecasterRecursiveMultiSeries']:
                     warnings.warn(
                         f"To make predictions {exog_name} must start one step "
                         f"ahead of `last_window`. Missing values are filled "
                         f"with NaN.\n"
                         f"    `last_window` ends at : {last_window.index[-1]}.\n"
-                        f"    {exog_name} starts at : {exog_to_check.index[0]}.\n"
+                        f"    {exog_name} starts at : {exog_index[0]}.\n"
                         f"     Expected index       : {expected_index}.",
                         MissingValuesWarning
                     )  
@@ -1577,7 +1574,7 @@ def check_predict_input_new(
                         f"To make predictions {exog_name} must start one step "
                         f"ahead of `last_window`.\n"
                         f"    `last_window` ends at : {last_window.index[-1]}.\n"
-                        f"    {exog_name} starts at : {exog_to_check.index[0]}.\n"
+                        f"    {exog_name} starts at : {exog_index[0]}.\n"
                         f"     Expected index : {expected_index}."
                     )
 
