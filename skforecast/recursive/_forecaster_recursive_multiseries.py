@@ -887,14 +887,13 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             fit_transformer = False if self.is_fitted else True
             transformer_series = self.transformer_series_[series_name]
 
-        y = transform_series(
-                series            = y,
+        y_values = transform_numpy(
+                array             = y.to_numpy(),
                 transformer       = transformer_series,
                 fit               = fit_transformer,
                 inverse_transform = False
             )
 
-        y_values = y.to_numpy()
         y_index = y.index
 
         if self.differentiator_[series_name] is not None:
@@ -2813,7 +2812,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         set_skforecast_warnings(suppress_warnings, action='default')
 
         return X_predict_dict
-
+    
 
     def predict(
         self,
