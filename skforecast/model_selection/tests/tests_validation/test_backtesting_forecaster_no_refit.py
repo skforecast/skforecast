@@ -37,9 +37,11 @@ def test_output_backtesting_forecaster_no_exog_no_remainder_ForecasterRecursive_
                          0.36988237, 0.57912951, 0.48686057, 0.45709952])}, 
         index=pd.RangeIndex(start=38, stop=50, step=1)
     )
+
     forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
     n_backtest = 12
     y_train = y[:-n_backtest]
+
     cv = TimeSeriesFold(
             steps                 = 4,
             initial_train_size    = len(y_train),
@@ -52,6 +54,7 @@ def test_output_backtesting_forecaster_no_exog_no_remainder_ForecasterRecursive_
             allow_incomplete_fold = True,
             return_all_indexes    = False,
         )
+    
     metric, backtest_predictions = _backtesting_forecaster(
                                        forecaster = forecaster,
                                        y          = y,
@@ -150,10 +153,10 @@ def test_output_backtesting_forecaster_no_exog_no_initial_train_size_with_mocked
     )
     forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
     forecaster.fit(y=y)
-    initial_train_size = None
+    
     cv = TimeSeriesFold(
             steps                 = 1,
-            initial_train_size    = initial_train_size,
+            initial_train_size    = None,
             window_size           = None,
             differentiation       = None,
             refit                 = False,
@@ -163,6 +166,7 @@ def test_output_backtesting_forecaster_no_exog_no_initial_train_size_with_mocked
             allow_incomplete_fold = True,
             return_all_indexes    = False,
         )
+    
     metric, backtest_predictions = _backtesting_forecaster(
                                         forecaster = forecaster,
                                         y          = y,
@@ -170,7 +174,8 @@ def test_output_backtesting_forecaster_no_exog_no_initial_train_size_with_mocked
                                         exog       = None,                                      
                                         metric     = 'mean_squared_error',
                                         verbose    = False
-                                   )                
+                                   )
+                 
     pd.testing.assert_frame_equal(expected_metric, metric)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
@@ -349,22 +354,59 @@ def test_output_backtesting_forecaster_yes_exog_yes_remainder_skip_folds_with_mo
     expected_metric = pd.DataFrame({"mean_squared_error": [0.044538146622722964]})
     expected_predictions = pd.DataFrame(
         {
-            "pred": np.array(
-                [
-                    0.59059622,
-                    0.47257504,
-                    0.53024098,
-                    0.46163343,
-                    0.50035119,
-                    0.60207937,
-                    0.48227974,
-                ]
-            )
+            "pred": [
+                0.590596217638621,
+                0.47257503863519656,
+                0.5302409766813725,
+                0.46163343193846784,
+                0.5003511853456513,
+                0.6020793655316975,
+                0.4822797443738659,
+            ],
+            "fold": [0, 0, 0, 0, 0, 1, 1],
+            "lag_1": [
+                0.89338916,
+                0.590596217638621,
+                0.47257503863519656,
+                0.5302409766813725,
+                0.46163343193846784,
+                0.98555979,
+                0.6020793655316975,
+            ],
+            "lag_2": [
+                0.42635131,
+                0.89338916,
+                0.590596217638621,
+                0.47257503863519656,
+                0.5302409766813725,
+                0.48303426,
+                0.98555979,
+            ],
+            "lag_3": [
+                0.31226122,
+                0.42635131,
+                0.89338916,
+                0.590596217638621,
+                0.47257503863519656,
+                0.25045537,
+                0.48303426,
+            ],
+            "exog": [
+                0.30476807,
+                0.39818568,
+                0.70495883,
+                0.99535848,
+                0.35591487,
+                0.2408559,
+                0.34345601,
+            ],
         },
         index=pd.Index([38, 39, 40, 41, 42, 48, 49], dtype="int64"),
     )
+
     forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
     n_backtest = 12
+
     y_train = y[:-n_backtest]
     cv = TimeSeriesFold(
             steps                 = 5,
@@ -379,13 +421,15 @@ def test_output_backtesting_forecaster_yes_exog_yes_remainder_skip_folds_with_mo
             return_all_indexes    = False,
         )
     metric, backtest_predictions = _backtesting_forecaster(
-        forecaster = forecaster,
-        y                  = y,
-        exog               = exog,
-        cv                 = cv,
-        metric             = "mean_squared_error",
-        verbose            = True,
+        forecaster        = forecaster,
+        y                 = y,
+        exog              = exog,
+        cv                = cv,
+        metric            = "mean_squared_error",
+        return_predictors = True,
+        verbose           = True,
     )
+
     pd.testing.assert_frame_equal(expected_metric, metric)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
@@ -1329,3 +1373,85 @@ def test_output_backtesting_forecaster_interval_yes_exog_not_allow_remainder_gap
 
     pd.testing.assert_frame_equal(expected_metric, metric)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+
+
+# ******************************************************************************
+# * Return predictors                                                          *
+# ******************************************************************************
+
+
+def test_output_backtesting_forecaster_return_predictors_same_predictions_as_predict_ForecasterRecursive():
+    """
+    Test predictions from _backtesting_forecaster predictors are the same as
+    predictions from predict method.
+    """
+    expected_metric = pd.DataFrame({"mean_squared_error": [0.05585411566592716]})
+    
+    forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
+    n_backtest = 12
+    y_train = y[:-n_backtest]
+    cv = TimeSeriesFold(
+            steps              = 4,
+            initial_train_size = len(y_train),
+            refit              = False,
+        )
+    metric, backtest_predictions = _backtesting_forecaster(
+                                        forecaster        = forecaster,
+                                        y                 = y,
+                                        exog              = exog,
+                                        cv                = cv,
+                                        metric            = 'mean_squared_error',
+                                        return_predictors = True,
+                                        verbose           = False
+                                   )
+    
+    forecaster.fit(y=y_train, exog=exog[:len(y_train)])
+    expected_predictions = forecaster.regressor.predict(
+        backtest_predictions[forecaster.X_train_features_names_out_]
+    )
+
+    pd.testing.assert_frame_equal(expected_metric, metric)
+    np.testing.assert_array_almost_equal(
+        expected_predictions, 
+        backtest_predictions['pred'].to_numpy()
+    )
+
+
+def test_output_backtesting_forecaster_return_predictors_same_predictions_as_predict_ForecasterDirect():
+    """
+    Test predictions from _backtesting_forecaster predictors are the same as
+    predictions from predict method.
+    """
+    expected_metric = pd.DataFrame({"mean_squared_error": [0.061964730085838]})
+    
+    forecaster = ForecasterDirect(regressor=LinearRegression(), steps=5, lags=3)
+    n_backtest = 12
+    y_train = y[:-n_backtest]
+
+    cv = TimeSeriesFold(
+             steps              = 5,
+             initial_train_size = len(y_train)
+         )
+    metric, backtest_predictions = _backtesting_forecaster(
+                                        forecaster        = forecaster,
+                                        y                 = y,
+                                        exog              = exog,
+                                        cv                = cv,
+                                        metric            = 'mean_squared_error',
+                                        return_predictors = True,
+                                        verbose           = False
+                                   )
+    
+    forecaster.fit(y=y_train, exog=exog[:len(y_train)])
+    regressors = [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2]
+    len_predictions = len(backtest_predictions)
+    results = np.full(shape=len_predictions, fill_value=np.nan, dtype=float)
+    for i, step in enumerate(regressors):
+        results[i] = forecaster.regressors_[step].predict(
+            backtest_predictions.iloc[[i]][
+                ['lag_1', 'lag_2', 'lag_3', 'exog']
+            ]
+        )
+    
+    pd.testing.assert_frame_equal(expected_metric, metric)
+    np.testing.assert_array_almost_equal(results, backtest_predictions['pred'].to_numpy())
