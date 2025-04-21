@@ -267,7 +267,6 @@ class ForecasterDirect(ForecasterBase):
     note that all models share the same parameter and hyperparameter configuration.
      
     """
-    # TODO: REview docstring residuals and binner, adapt to n steps
 
     def __init__(
         self,
