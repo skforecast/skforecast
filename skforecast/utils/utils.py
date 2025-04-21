@@ -3029,7 +3029,7 @@ def check_preprocess_exog_multiseries(
         # Only elements already present in exog_dict are updated
         exog_dict.update(
             {
-                k: v.copy()
+                k: v.copy() # TODO: Why is this copy needed?
                 for k, v in exog.items()
                 if k in exog_dict and v is not None
             }
