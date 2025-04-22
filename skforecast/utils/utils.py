@@ -1100,7 +1100,10 @@ def check_predict_input(
                         )
 
             # Check index dtype and freq
-            exog_index = exog_to_check.index
+            _, exog_index = preprocess_exog(
+                                exog          = exog_to_check,
+                                return_values = False
+                            )
             if not isinstance(exog_index, index_type_):
                 raise TypeError(
                     f"Expected index of type {index_type_} for {exog_name}. "
