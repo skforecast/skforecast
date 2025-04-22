@@ -25,8 +25,11 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
-    "License :: OSI Approved :: BSD License",
 ]
+
+license = "BSD-3-Clause"
+license-files = ["LICENSE", "CITATION.cff"]
+
 keywords = [
     "data-science",
     "machine-learning",
@@ -105,16 +108,11 @@ test = [
     "pandas[parquet]>=1.5"
 ]
 
-
 [project.urls]
 Homepage = "https://www.skforecast.org"
 Repository = "https://github.com/skforecast/skforecast"
 Documentation = "https://www.skforecast.org"
 "Release Notes" = "https://skforecast.org/latest/releases/releases"
-
-
-[project.license]
-file = "LICENSE"
 
 [build-system]
 requires = ["setuptools>=61", "toml", "build"]
