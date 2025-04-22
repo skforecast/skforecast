@@ -21,7 +21,7 @@ def test_set_cpu_gpu_device_changes_device(regressor, initial_device, new_device
     regressor.set_params(**{'device': initial_device})
     original = set_cpu_gpu_device(regressor, new_device)
 
-    assert original.lower() == initial_device.lower()
+    assert original == initial_device
     assert regressor.get_params()['device'] == expected_new_device
 
 
@@ -44,6 +44,23 @@ def test_set_cpu_gpu_device_invalid_device():
     msg = re.escape("`device` must be 'gpu', 'cpu', 'cuda', or None.")
     with pytest.raises(ValueError, match=msg):
         set_cpu_gpu_device(regressor, "tpu")
+
+
+@pytest.mark.parametrize("regressor, new_device, expected_original_device, expected_new_device", 
+    [(XGBRegressor(), "gpu", None, "cuda"),
+     (XGBRegressor(), "cpu", None, "cpu"),
+     (LGBMRegressor(), "gpu", None, "gpu"),
+     (LGBMRegressor(), "cpu", None, "cpu")],
+)
+def test_set_cpu_gpu_device_when_device_not_in_init(regressor, new_device, expected_original_device, expected_new_device):
+    """
+    Test what happens when the device is not in the init of the regressor.
+    """
+
+    original_device = set_cpu_gpu_device(regressor, new_device)
+
+    assert original_device == expected_original_device
+    assert regressor.get_params()['device'] == expected_new_device
 
 
 def test_set_cpu_gpu_device_unsupported_model_returns_none():

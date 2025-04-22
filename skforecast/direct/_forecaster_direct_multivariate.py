@@ -920,7 +920,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         exog_names_in_ = None
         exog_dtypes_in_ = None
-        categorical_features = False
+        X_as_pandas = False
         if exog is not None:
             check_exog(exog=exog, allow_nan=True)
             exog = input_to_frame(data=exog, input_name='exog')
@@ -960,8 +960,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                    )
                 
             check_exog_dtypes(exog, call_check_exog=True)
-            categorical_features = (
-                exog.select_dtypes(include=np.number).shape[1] != exog.shape[1]
+            X_as_pandas = any(
+                not pd.api.types.is_numeric_dtype(dtype) or pd.api.types.is_bool_dtype(dtype) 
+                for dtype in set(exog.dtypes)
             )
 
             # Use .index as series.index is not yet preprocessed with preprocess_y
@@ -1043,7 +1044,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         X_train = []
         len_train_index = len(train_index)
-        if categorical_features:
+        if X_as_pandas:
             if len(X_train_autoreg) == 1:
                 X_train_autoreg = X_train_autoreg[0]
             else:
@@ -1063,7 +1064,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         X_train_exog_names_out_ = None
         if exog is not None:
             X_train_exog_names_out_ = exog.columns.to_list()
-            if categorical_features:
+            if X_as_pandas:
                 exog_direct, X_train_direct_exog_names_out_ = exog_to_direct(
                     exog=exog, steps=self.steps
                 )
@@ -1082,12 +1083,12 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         if len(X_train) == 1:
             X_train = X_train[0]
         else:
-            if categorical_features:
+            if X_as_pandas:
                 X_train = pd.concat(X_train, axis=1)
             else:
                 X_train = np.concatenate(X_train, axis=1)
                 
-        if categorical_features:
+        if X_as_pandas:
             X_train.index = train_index
         else:
             X_train = pd.DataFrame(

@@ -1140,14 +1140,16 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             for i, code in enumerate(self.encoder.categories_[0]):
                 self.encoding_mapping_[code] = i
 
-        X_train = pd.concat([
-                      X_train.drop(columns='_level_skforecast'),
-                      encoded_values
-                  ], axis=1)
-
-        if self.encoding == 'onehot':
+        if self.encoding == 'onehot': 
+            X_train = pd.concat([
+                          X_train.drop(columns='_level_skforecast'),
+                          encoded_values
+                      ], axis=1)
             X_train.columns = X_train.columns.str.replace('_level_skforecast_', '')
-        elif self.encoding == 'ordinal_category':
+        else:
+            X_train['_level_skforecast'] = encoded_values
+
+        if self.encoding == 'ordinal_category':
             X_train['_level_skforecast'] = (
                 X_train['_level_skforecast'].astype('category')
             )
@@ -1184,7 +1186,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             X_train_exog_names_out_ = X_train_exog.columns.to_list()
             X_train = pd.concat([X_train, X_train_exog], axis=1)
 
-        if y_train.isnull().any():
+        if y_train.isna().to_numpy().any():
             mask = y_train.notna().to_numpy()
             y_train = y_train.iloc[mask]
             X_train = X_train.iloc[mask,]
@@ -1891,7 +1893,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 residuals = residuals[
                     rng.integers(low=0, high=len(residuals), size=10_000)
                 ]
-            self.in_sample_residuals_[level] = residuals        
+            self.in_sample_residuals_[level] = residuals
 
     def _create_predict_inputs(
         self,
@@ -2005,7 +2007,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     levels                       = levels,
                     encoding                     = self.encoding
                 )
-
+        
         last_window = last_window.iloc[
             -self.window_size :, last_window.columns.get_indexer(levels)
         ].copy()
@@ -2017,6 +2019,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                index = last_window_index,
                                steps = steps
                            )
+        last_window = last_window.to_numpy()
 
         if exog is not None:
             if isinstance(exog, dict):
@@ -2037,13 +2040,17 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                            inverse_transform = False
                        )
                 check_exog_dtypes(exog=exog)
-                exog_values = exog.to_numpy()[:steps]
+                exog_values = exog.iloc[:steps, :]
         else:
             exog_values = None
         
+        # NOTE: This needs to be done to ensure that the last window dtype is float.
+        last_window_values = np.full(
+            shape=last_window.shape, fill_value=np.nan, order='F', dtype=float
+        )
         exog_values_all_levels = []
-        for level in levels:
-            last_window_level = last_window[level].to_numpy()
+        for idx_level, level in enumerate(levels):
+            last_window_level = last_window[:, idx_level]
             last_window_level = transform_numpy(
                 array             = last_window_level,
                 transformer       = self.transformer_series_.get(level, self.transformer_series_['_unknown_level']),
@@ -2058,8 +2065,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     last_window_level = (
                         self.differentiator_[level].fit_transform(last_window_level)
                     )
-            
-            last_window[level] = last_window_level
+
+            last_window_values[:, idx_level] = last_window_level
 
             if isinstance(exog, dict):
                 # Fill the empty dataframe with the exog values of each level
@@ -2069,31 +2076,36 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     if isinstance(exog_values, pd.Series):
                         exog_values = exog_values.to_frame()
 
-                    exog_values = empty_exog.fillna(exog_values)
-                    exog_values = transform_dataframe(
-                                      df                = exog_values,
-                                      transformer       = self.transformer_exog,
-                                      fit               = False,
-                                      inverse_transform = False
-                                  )
-                    
-                    check_exog_dtypes(
-                        exog      = exog_values,
-                        series_id = f"`exog` for series '{level}'"
-                    )
-                    exog_values = exog_values.to_numpy()
+                    exog_values = exog_values.reindex_like(empty_exog)
                 else:
-                    exog_values = empty_exog.to_numpy(copy=True)
+                    exog_values = empty_exog.copy()
             
             exog_values_all_levels.append(exog_values)
+
+        last_window = pd.DataFrame(
+                          data    = last_window_values,
+                          columns = levels,
+                          index   = last_window_index
+                      )
 
         if exog is not None:
             # Exog is transformed into a dict where each key is a step and each value
             # is a numpy array where each column is an exog and each row a series
-            exog_values_all_levels = np.concatenate(exog_values_all_levels)
-            exog_values_dict = {}
-            for i in range(steps):
-                exog_values_dict[i + 1] = exog_values_all_levels[i::steps, :]
+            exog_values_all_levels = pd.concat(exog_values_all_levels)
+            if isinstance(exog, dict):
+                exog_values_all_levels = transform_dataframe(
+                                             df                = exog_values_all_levels,
+                                             transformer       = self.transformer_exog,
+                                             fit               = False,
+                                             inverse_transform = False
+                                         )
+                
+                check_exog_dtypes(exog=exog_values_all_levels)
+            exog_values_all_levels = exog_values_all_levels.to_numpy()
+            exog_values_dict = {
+                i + 1: exog_values_all_levels[i::steps, :] 
+                for i in range(steps)
+            }
         else:
             exog_values_dict = None
 
@@ -2454,12 +2466,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             levels,
             prediction_index
         ) = self._create_predict_inputs(
-            steps        = steps,
-            levels       = levels,
-            last_window  = last_window,
-            exog         = exog,
-            check_inputs = check_inputs
-        )
+                steps        = steps,
+                levels       = levels,
+                last_window  = last_window,
+                exog         = exog,
+                check_inputs = check_inputs
+            )
 
         with warnings.catch_warnings():
             warnings.filterwarnings(
@@ -2498,7 +2510,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         set_skforecast_warnings(suppress_warnings, action='default')
 
         return predictions
-
 
     def predict_bootstrapping(
         self,
