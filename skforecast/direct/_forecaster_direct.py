@@ -722,7 +722,7 @@ class ForecasterDirect(ForecasterBase):
 
         exog_names_in_ = None
         exog_dtypes_in_ = None
-        categorical_features = False
+        X_as_pandas = False
         if exog is not None:
             check_exog(exog=exog, allow_nan=True)
             exog = input_to_frame(data=exog, input_name='exog')
@@ -754,8 +754,9 @@ class ForecasterDirect(ForecasterBase):
                    )
 
             check_exog_dtypes(exog, call_check_exog=True)
-            categorical_features = (
-                exog.select_dtypes(include=np.number).shape[1] != exog.shape[1]
+            X_as_pandas = any(
+                not pd.api.types.is_numeric_dtype(dtype) or pd.api.types.is_bool_dtype(dtype) 
+                for dtype in set(exog.dtypes)
             )
 
             _, exog_index = preprocess_exog(exog=exog, return_values=False)
@@ -782,7 +783,6 @@ class ForecasterDirect(ForecasterBase):
         X_train_features_names_out_ = []
         train_index = y_index[self.window_size + (self.steps - 1):]
         len_train_index = len(train_index)
-        X_as_pandas = True if categorical_features else False
 
         X_train_lags, y_train = self._create_lags(
             y=y_values, X_as_pandas=X_as_pandas, train_index=train_index

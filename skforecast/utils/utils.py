@@ -519,7 +519,7 @@ def check_y(
     if not isinstance(y, pd.Series):
         raise TypeError(f"{series_id} must be a pandas Series.")
         
-    if y.isnull().any():
+    if y.isna().to_numpy().any():
         raise ValueError(f"{series_id} has missing values.")
     
     return
@@ -626,41 +626,49 @@ def check_exog_dtypes(
     if call_check_exog:
         check_exog(exog=exog, allow_nan=False, series_id=series_id)
 
+    valid_dtypes = ("int", "Int", "float", "Float", "uint")
+
     if isinstance(exog, pd.DataFrame):
-        if not exog.select_dtypes(exclude=[np.number, 'category']).columns.empty:
-            warnings.warn(
-                f"{series_id} may contain only `int`, `float` or `category` dtypes. "
-                f"Most machine learning models do not allow other types of values. "
-                f"Fitting the forecaster may fail.", 
-                DataTypeWarning
-            )
-        for col in exog.select_dtypes(include='category'):
-            if exog[col].cat.categories.dtype not in [int, np.int32, np.int64]:
-                raise TypeError(
-                    "Categorical dtypes in exog must contain only integer values. "
-                    "See skforecast docs for more info about how to include "
-                    "categorical features https://skforecast.org/"
-                    "latest/user_guides/categorical-features.html"
+
+        for dtype_name in set(exog.dtypes.astype(str)):
+            if not (dtype_name.startswith(valid_dtypes) or dtype_name == "category"):
+                warnings.warn(
+                    f"{series_id} may contain only `int`, `float` or `category` dtypes. "
+                    f"Most machine learning models do not allow other types of values. "
+                    f"Fitting the forecaster may fail.", 
+                    DataTypeWarning
                 )
+                break
+
+        for col in exog.columns:
+            if isinstance(exog[col].dtype, pd.CategoricalDtype):
+                if not np.issubdtype(exog[col].cat.categories.dtype, np.integer):
+                    raise TypeError(
+                        "Categorical dtypes in exog must contain only integer values. "
+                        "See skforecast docs for more info about how to include "
+                        "categorical features https://skforecast.org/"
+                        "latest/user_guides/categorical-features.html"
+                    )
+    
     else:
-        if exog.dtype.name not in ['int', 'int8', 'int16', 'int32', 'int64', 'float', 
-        'float16', 'float32', 'float64', 'uint8', 'uint16', 'uint32', 'uint64', 'category']:
+        
+        dtype_name = str(exog.dtypes)
+        if not (dtype_name.startswith(valid_dtypes) or dtype_name == "category"):
             warnings.warn(
                 f"{series_id} may contain only `int`, `float` or `category` dtypes. Most "
                 f"machine learning models do not allow other types of values. "
                 f"Fitting the forecaster may fail.", 
                 DataTypeWarning
             )
-        if exog.dtype.name == 'category' and exog.cat.categories.dtype not in [int,
-        np.int32, np.int64]:
-            raise TypeError(
-                "Categorical dtypes in exog must contain only integer values. "
-                "See skforecast docs for more info about how to include "
-                "categorical features https://skforecast.org/"
-                "latest/user_guides/categorical-features.html"
-            )
-         
-    return
+
+        if isinstance(exog.dtype, pd.CategoricalDtype):
+            if not np.issubdtype(exog.cat.categories.dtype, np.integer):
+                raise TypeError(
+                    "Categorical dtypes in exog must contain only integer values. "
+                    "See skforecast docs for more info about how to include "
+                    "categorical features https://skforecast.org/"
+                    "latest/user_guides/categorical-features.html"
+                )
 
 
 def check_interval(
@@ -974,14 +982,14 @@ def check_predict_input(
             f"`last_window` must have as many values as needed to "
             f"generate the predictors. For this forecaster it is {window_size}."
         )
-    if last_window.isnull().any().all():
+    if last_window.isna().to_numpy().any():
         warnings.warn(
             "`last_window` has missing values. Most of machine learning models do "
             "not allow missing values. Prediction method may fail.", 
             MissingValuesWarning
         )
     _, last_window_index = preprocess_last_window(
-                               last_window   = last_window.iloc[:0],
+                               last_window   = last_window,
                                return_values = False
                            ) 
     if not isinstance(last_window_index, index_type_):
@@ -1165,7 +1173,7 @@ def check_predict_input(
                     MissingValuesWarning
             )
             _, last_window_exog_index = preprocess_last_window(
-                                            last_window   = last_window_exog.iloc[:0],
+                                            last_window   = last_window_exog,
                                             return_values = False
                                         ) 
             if not isinstance(last_window_exog_index, index_type_):
@@ -2432,7 +2440,11 @@ def set_cpu_gpu_device(
     if regressor_name not in device_names:
         return None
     
-    original_device = regressor.get_params()[device_names[regressor_name]].lower()
+    # NOTE: If the regressor does not have the device parameter, it is set to 'cpu'.
+    # This is the case for `LGBMRegressor` or `CatBoostRegressor` when device
+    # is not specified in the init.
+    original_device = regressor.get_params().get(device_names[regressor_name], None)
+    original_device = original_device.lower() if original_device is not None else None
 
     if device is None:
         return original_device
@@ -2644,21 +2656,11 @@ def check_preprocess_exog_multiseries(
         # Only elements already present in exog_dict are updated
         exog_dict.update(
             {
-                k: v.copy() # TODO: Why is this copy needed?
+                k: v.copy()
                 for k, v in exog.items()
                 if k in exog_dict and v is not None
             }
         )
-
-        # TODO: See if this option is better
-        # exog_dict.update(
-        #     {
-        #         k: v
-        #         for k, v in exog.items()
-        #         if k in exog_dict and v is not None
-        #     }
-        # )
-        # exog_dict = deepcopy(exog_dict)
 
         series_not_in_exog = set(series_names_in_) - set(exog.keys())
         if series_not_in_exog:
