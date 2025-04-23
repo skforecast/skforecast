@@ -2659,10 +2659,11 @@ class ForecasterDirect(ForecasterBase):
                 f"Empty bins will be filled with a random sample of residuals.",
                 ResidualsUsageWarning
             )
+            empty_bin_size = min(max_samples, len(out_sample_residuals))
             for k in empty_bins:
                 out_sample_residuals_by_bin[k] = rng.choice(
                     a       = out_sample_residuals,
-                    size    = min(max_samples, len(out_sample_residuals)),
+                    size    = empty_bin_size,
                     replace = False
                 )
 

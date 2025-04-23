@@ -351,8 +351,10 @@ def initialize_transformer_series(
     if transformer_series is None:
         transformer_series_ = {serie: None for serie in series_names_in_}
     elif not isinstance(transformer_series, dict):
-        transformer_series_ = {serie: clone(transformer_series) 
-                               for serie in series_names_in_}
+        transformer_series_ = {
+            serie: clone(transformer_series) 
+            for serie in series_names_in_
+        }
     else:
         transformer_series_ = {serie: None for serie in series_names_in_}
         # Only elements already present in transformer_series_ are updated
@@ -467,10 +469,13 @@ def check_select_fit_kwargs(
             raise TypeError(
                 f"Argument `fit_kwargs` must be a dict. Got {type(fit_kwargs)}."
             )
+        
+        fit_params = inspect.signature(regressor.fit).parameters
 
         # Non used keys
-        non_used_keys = [k for k in fit_kwargs.keys()
-                         if k not in inspect.signature(regressor.fit).parameters]
+        non_used_keys = [
+            k for k in fit_kwargs.keys() if k not in fit_params
+        ]
         if non_used_keys:
             warnings.warn(
                 f"Argument/s {non_used_keys} ignored since they are not used by the "
@@ -489,8 +494,7 @@ def check_select_fit_kwargs(
 
         # Select only the keyword arguments allowed by the regressor's `fit` method.
         fit_kwargs = {
-            k: v for k, v in fit_kwargs.items()
-            if k in inspect.signature(regressor.fit).parameters
+            k: v for k, v in fit_kwargs.items() if k in fit_params
         }
 
     return fit_kwargs
@@ -2385,8 +2389,7 @@ def select_n_jobs_fit_forecaster(
         if not regressor_name.startswith('_')
     ]
 
-    if forecaster_name in ['ForecasterDirect', 
-                           'ForecasterDirectMultiVariate']:
+    if forecaster_name in ['ForecasterDirect', 'ForecasterDirectMultiVariate']:
         if regressor_name in linear_regressors:
             n_jobs = 1
         elif regressor_name == 'LGBMRegressor':
@@ -2713,7 +2716,9 @@ def check_preprocess_exog_multiseries(
         exog_dtypes_nunique = exog_dtypes_buffer.nunique(axis=1).eq(1)
         if not exog_dtypes_nunique.all():
             non_unique_dtypes_exogs = exog_dtypes_nunique[exog_dtypes_nunique != 1].index.to_list()
-            raise TypeError(f"Exog/s: {non_unique_dtypes_exogs} have different dtypes in different series.")
+            raise TypeError(
+                f"Exog/s: {non_unique_dtypes_exogs} have different dtypes in different series."
+            )
 
     exog_names_in_ = list(
         set(
@@ -2870,8 +2875,10 @@ def preprocess_levels_self_last_window_multiseries(
     available_last_windows = set() if last_window_ is None else set(last_window_.keys())
     not_available_last_window = set(levels) - available_last_windows
     if not_available_last_window:
-        levels = [level for level in levels 
-                  if level not in not_available_last_window]
+        levels = [
+            level for level in levels 
+            if level not in not_available_last_window
+        ]
         if not levels:
             raise ValueError(
                 f"No series to predict. None of the series {not_available_last_window} "

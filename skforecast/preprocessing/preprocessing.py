@@ -1000,8 +1000,8 @@ class RollingFeatures():
         """
         Information displayed when printed.
         """
-            
-        return (
+
+        info = (
             f"RollingFeatures(\n"
             f"    stats           = {self.stats},\n"
             f"    window_sizes    = {self.window_sizes},\n"
@@ -1012,6 +1012,40 @@ class RollingFeatures():
             f"    kwargs_stats    = {self.kwargs_stats},\n"
             f")"
         )
+
+        return info
+    
+    def _repr_html_(self) -> str:
+        """
+        HTML representation of the object.
+        The "General Information" section is expanded by default.
+        """
+
+        style, unique_id = get_style_repr_html()
+        content = f"""
+        <div class="container-{unique_id}">
+            <h2>{type(self).__name__}</h2>
+            <details open>
+                <summary>General Information</summary>
+                <ul>
+                    <li><strong>Stats:</strong> {self.stats}</li>
+                    <li><strong>Window size:</strong> {self.window_sizes}</li>
+                    <li><strong>Maximum window size:</strong> {self.max_window_size}</li>
+                    <li><strong>Minimum periods:</strong> {self.min_periods}</li>
+                    <li><strong>Features names:</strong> {self.features_names}</li>
+                    <li><strong>Fill na strategy:</strong> {self.fillna}</li>
+                    <li><strong>Kwargs stats:</strong> {self.kwargs_stats}</li>
+                </ul>
+            </details>
+            <p>
+                <a href="https://skforecast.org/{skforecast.__version__}/api/preprocessing.html#skforecast.preprocessing.preprocessing.RollingFeatures">&#128712 <strong>API Reference</strong></a>
+                &nbsp;&nbsp;
+                <a href="https://skforecast.org/{skforecast.__version__}/user_guides/window-features-and-custom-features.html">&#128462 <strong>User Guide</strong></a>
+            </p>
+        </div>
+        """
+        
+        return style + content
 
     def _validate_params(
         self, 
@@ -1340,7 +1374,6 @@ class RollingFeatures():
         rolling_features = np.full(
             shape=(X.shape[1], self.n_stats), fill_value=np.nan, dtype=float
         )
-
         for i in range(X.shape[1]):
             for j, stat in enumerate(self.stats):
                 X_window = X[-self.window_sizes[j]:, i]
