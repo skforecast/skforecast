@@ -834,7 +834,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         return X_train_window_features, X_train_window_features_names_out_
 
 
-    def _create_train_X_y_single_series(
+    def _create_train_X_y_single_series_old(
         self,
         y: pd.Series,
         ignore_exog: bool,
@@ -896,6 +896,131 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         y_values = y.to_numpy()
         y_index = y.index
+
+        if self.differentiator_[series_name] is not None:
+            if not self.is_fitted:
+                y_values = self.differentiator_[series_name].fit_transform(y_values)
+            else:
+                differentiator = copy(self.differentiator_[series_name])
+                y_values = differentiator.fit_transform(y_values)
+
+        X_train_autoreg = []
+        train_index = y_index[self.window_size:]
+
+        X_train_lags, y_train = self._create_lags(
+            y=y_values, X_as_pandas=True, train_index=train_index
+        )
+        if X_train_lags is not None:
+            X_train_autoreg.append(X_train_lags)
+        
+        X_train_window_features_names_out_ = None
+        if self.window_features is not None:
+            # NOTE: The first `self.differentiation_max` positions of `y_values`
+            # must be removed to match the length of `y_train` after creating
+            # the window features. This is because `y_train` is created using the 
+            # global window size of the Forecaster, which includes the maximum 
+            # differentiation (self.differentiation_max).
+            n_diff = 0 if self.differentiation is None else self.differentiation_max
+            y_window_features = pd.Series(y_values[n_diff:], index=y_index[n_diff:])
+            X_train_window_features, X_train_window_features_names_out_ = (
+                self._create_window_features(
+                    y=y_window_features, X_as_pandas=True, train_index=train_index
+                )
+            )
+            X_train_autoreg.extend(X_train_window_features)
+
+        if len(X_train_autoreg) == 1:
+            X_train_autoreg = X_train_autoreg[0]
+        else:
+            X_train_autoreg = pd.concat(X_train_autoreg, axis=1)
+        
+        X_train_autoreg['_level_skforecast'] = series_name
+
+        if ignore_exog:
+            X_train_exog = None
+        else:
+            if exog is not None:
+                # The first `self.window_size` positions have to be removed from exog
+                # since they are not in X_train_autoreg.
+                X_train_exog = exog.iloc[self.window_size:, ]
+            else:
+                X_train_exog = pd.DataFrame(
+                                   data    = np.nan,
+                                   columns = ['_dummy_exog_col_to_keep_shape'],
+                                   index   = train_index
+                               )
+
+        y_train = pd.Series(
+                      data  = y_train,
+                      index = train_index,
+                      name  = 'y'
+                  )
+
+        return X_train_autoreg, X_train_window_features_names_out_, X_train_exog, y_train
+
+
+    def _create_train_X_y_single_series(
+        self,
+        y: pd.Series,
+        ignore_exog: bool,
+        exog: pd.DataFrame | None = None
+    ) -> tuple[pd.DataFrame, list[str], pd.DataFrame, pd.Series]:
+        """
+        Create training matrices from univariate time series and exogenous
+        variables. This method does not transform the exog variables.
+        
+        Parameters
+        ----------
+        y : pandas Series
+            Training time series.
+        ignore_exog : bool
+            If `True`, `exog` is ignored.
+        exog : pandas DataFrame, default None
+            Exogenous variable/s included as predictor/s.
+
+        Returns
+        -------
+        X_train_lags : pandas DataFrame
+            Training values of lags.
+            Shape: (len(y) - self.max_lag, len(self.lags))
+        X_train_window_features_names_out_ : list
+            Names of the window features.
+        X_train_exog : pandas DataFrame
+            Training values of exogenous variables.
+            Shape: (len(y) - self.max_lag, len(exog.columns))
+        y_train : pandas Series
+            Values (target) of the time series related to each row of `X_train`.
+            Shape: (len(y) - self.max_lag, )
+        
+        """
+
+        series_name = y.name
+        if len(y) <= self.window_size:
+            raise ValueError(
+                f"Length of '{series_name}' must be greater than the maximum window size "
+                f"needed by the forecaster.\n"
+                f"    Length '{series_name}': {len(y)}.\n"
+                f"    Max window size: {self.window_size}.\n"
+                f"    Lags window size: {self.max_lag}.\n"
+                f"    Window features window size: {self.max_size_window_features}."
+            )
+
+        if self.encoding is None:
+            fit_transformer = False
+            transformer_series = self.transformer_series_['_unknown_level']
+        else:
+            fit_transformer = False if self.is_fitted else True
+            transformer_series = self.transformer_series_[series_name]
+
+        y_values = y.to_numpy()
+        y_index = y.index
+
+        y_values = transform_numpy(
+                       array             = y_values,
+                       transformer       = transformer_series,
+                       fit               = fit_transformer,
+                       inverse_transform = False
+                   )
 
         if self.differentiator_[series_name] is not None:
             if not self.is_fitted:
@@ -1779,6 +1904,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self.in_sample_residuals_ = {}
         self.in_sample_residuals_by_bin_ = {}
         if self._probabilistic_mode is not False:
+            y_train = y_train.to_numpy()
             y_pred = self.regressor.predict(X_train_regressor)
             if self.encoding is not None:
                 for level in X_train_series_names_in_:

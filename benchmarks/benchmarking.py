@@ -114,7 +114,7 @@ class BenchmarkRunner:
             return df_new
 
 
-def plot_benchmark_results(df, function_name):
+def plot_benchmark_results(df, function_name, add_median=True, add_mean=True):
     """
     Plot benchmark results with jittered strip points and per-point standard deviation error bars,
     with error bars matching point colors.
@@ -170,18 +170,32 @@ def plot_benchmark_results(df, function_name):
                 showlegend=True
             )
         )
-    medians = df.groupby('skforecast_version', observed=True)['run_time_avg'].median().reset_index()
-    medians['x_center'] = medians['skforecast_version'].map(version_to_num)
-    fig.add_trace(
-        go.Scatter(
-            x=medians['x_center'],
-            y=medians['run_time_avg'],
-            mode='lines+markers',
-            line=dict(color='black', width=2),
-            marker=dict(size=8, color='black'),
-            name='Median (per version)'
+    if add_median:
+        medians = df.groupby('skforecast_version', observed=True)['run_time_avg'].median().reset_index()
+        medians['x_center'] = medians['skforecast_version'].map(version_to_num)
+        fig.add_trace(
+            go.Scatter(
+                x=medians['x_center'],
+                y=medians['run_time_avg'],
+                mode='lines+markers',
+                line=dict(color='black', width=2),
+                marker=dict(size=8, color='black'),
+                name='Median (per version)'
+            )
         )
-    )
+    if add_mean:
+        means = df.groupby('skforecast_version', observed=True)['run_time_avg'].mean().reset_index()
+        means['x_center'] = means['skforecast_version'].map(version_to_num)
+        fig.add_trace(
+            go.Scatter(
+                x=means['x_center'],
+                y=means['run_time_avg'],
+                mode='lines+markers',
+                line=dict(color='black', width=2, dash='dash'),
+                marker=dict(size=8, color='black'),
+                name='Mean (per version)'
+            )
+        )
     fig.update_layout(
         title=f"Execution time of {function_name}",
         xaxis=dict(
