@@ -1,5 +1,5 @@
 ################################################################################
-#                                Becnchmarking                                 #
+#                                 Benchmarking                                 #
 #                                                                              #
 # This work by skforecast team is licensed under the BSD 3-Clause License      #
 ################################################################################
@@ -22,6 +22,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from packaging.version import parse as parse_version
 from plotly.express.colors import qualitative
+
 
 class BenchmarkRunner:
     def __init__(self, output_dir="./", repeat=10):
@@ -63,14 +64,17 @@ class BenchmarkRunner:
             return {'avg_time': np.nan, 'std_dev': np.nan}
 
     def benchmark(self, func, forecaster=None, allow_repeated_execution=True, *args, **kwargs):
+        """
+        Benchmark a function by measuring its execution time and saving the results to a file.
+        """
         forecaster_name = type(forecaster).__name__ if forecaster else np.nan
         regressor_name = type(forecaster.regressor).__name__ if forecaster else np.nan
         func_name = func.__name__
-        print(f"Benchmarking function: {func_name} with skforecast version {skforecast.__version__}")
         hash_code = self.hash_function_code(func)
-        result_file = os.path.join(self.output_dir, "benchmark.joblib")
-        system_info = self.get_system_info()
         timing = self.time_function(func, *args, **kwargs)
+        system_info = self.get_system_info()
+
+        print(f"Benchmarking function: {func_name} with skforecast version {skforecast.__version__}")
         entry = {
             'forecaster_name': forecaster_name,
             'regressor_name': regressor_name,
@@ -80,24 +84,33 @@ class BenchmarkRunner:
             'run_time_std_dev': timing['std_dev'],
             **system_info
         }
+
+        result_file = os.path.join(self.output_dir, "benchmark.joblib")
         df_new = pd.DataFrame([entry])
         if os.path.exists(result_file):
             df_existing = joblib.load(result_file)
             if not allow_repeated_execution:
                 cols_to_ignore = ['run_time_avg', 'run_time_std_dev', 'datetime']
                 mask = (
-                    df_existing.drop(columns = cols_to_ignore)
+                    df_existing
+                    .drop(columns = cols_to_ignore)
                     .eq(df_new.drop(columns = cols_to_ignore).loc[0, :])
                     .all(axis=1)
                 )
                 if mask.any():
-                    warnings.warn("This benchmark already exists with the same hash and system info. Skipping save.")
+                    warnings.warn(
+                        "This benchmark already exists with the same hash and system info. Skipping save."
+                    )
                     return df_existing
+            
             df_combined = pd.concat([df_existing, df_new], ignore_index=True)
             joblib.dump(df_combined, result_file)
+
             return df_combined
+        
         else:
             joblib.dump(df_new, result_file)
+
             return df_new
 
 
@@ -113,7 +126,10 @@ def plot_benchmark_results(df, function_name):
     df = df.sort_values("skforecast_version")
     version_to_num = {v: i for i, v in enumerate(sorted_versions)}
     df['x_jittered'] = df['skforecast_version'].map(version_to_num).astype(float) + np.random.uniform(-0.05, 0.05, size=len(df))
-    version_colors = {v: qualitative.Plotly[i % len(qualitative.Plotly)] for i, v in enumerate(sorted_versions)}
+    version_colors = {
+        v: qualitative.Plotly[i % len(qualitative.Plotly)] 
+        for i, v in enumerate(sorted_versions)
+    }
 
     fig = go.Figure()
     for version in sorted_versions:
