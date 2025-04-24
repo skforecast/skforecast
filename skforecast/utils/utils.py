@@ -2555,7 +2555,7 @@ def check_preprocess_series(
         )
 
     for k, v in series_dict.items():
-        if np.isnan(v).all():
+        if v.isna().to_numpy().all():
             raise ValueError(f"All values of series '{k}' are NaN.")
 
     series_indexes = {
@@ -2787,7 +2787,7 @@ def align_series_and_exog_multiseries(
             if input_series_is_dict:
                 if not series_dict[k].index.equals(exog_dict[k].index):
                     exog_dict[k] = exog_dict[k].loc[first_valid_index:last_valid_index]
-                    if len(exog_dict[k]) == 0:
+                    if exog_dict[k].empty:
                         warnings.warn(
                             f"Series '{k}' and its `exog` do not have the same index. "
                             f"All exog values will be NaN for the period of the series.",
