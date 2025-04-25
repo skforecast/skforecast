@@ -159,6 +159,8 @@ class ForecasterRecursive(ForecasterBase):
         Frequency of Index of the input used in training.
     training_range_ : pandas Index
         First and last values of index of the data used during training.
+    series_name_in_ : str
+        Names of the series provided by the user during training.
     exog_in_ : bool
         If the forecaster has been trained using exogenous variable/s.
     exog_names_in_ : list
@@ -256,6 +258,7 @@ class ForecasterRecursive(ForecasterBase):
         self.index_type_                        = None
         self.index_freq_                        = None
         self.training_range_                    = None
+        self.series_name_in_                    = None
         self.exog_in_                           = False
         self.exog_names_in_                     = None
         self.exog_type_in_                      = None
@@ -359,6 +362,7 @@ class ForecasterRecursive(ForecasterBase):
             f"Lags: {self.lags} \n"
             f"Window features: {self.window_features_names} \n"
             f"Window size: {self.window_size} \n"
+            f"Series name: {self.series_name_in_} \n"
             f"Exogenous included: {self.exog_in_} \n"
             f"Exogenous names: {exog_names_in_} \n"
             f"Transformer for y: {self.transformer_y} \n"
@@ -408,6 +412,7 @@ class ForecasterRecursive(ForecasterBase):
                     <li><strong>Lags:</strong> {self.lags}</li>
                     <li><strong>Window features:</strong> {self.window_features_names}</li>
                     <li><strong>Window size:</strong> {self.window_size}</li>
+                    <li><strong>Series name:</strong> {self.series_name_in_}</li>
                     <li><strong>Exogenous included:</strong> {self.exog_in_}</li>
                     <li><strong>Weight function included:</strong> {self.weight_func is not None}</li>
                     <li><strong>Differentiation order:</strong> {self.differentiation}</li>
@@ -945,6 +950,7 @@ class ForecasterRecursive(ForecasterBase):
         self.index_type_                        = None
         self.index_freq_                        = None
         self.training_range_                    = None
+        self.series_name_in_                    = None
         self.exog_in_                           = False
         self.exog_names_in_                     = None
         self.exog_type_in_                      = None
@@ -983,6 +989,7 @@ class ForecasterRecursive(ForecasterBase):
         self.X_train_features_names_out_ = X_train_features_names_out_
 
         self.is_fitted = True
+        self.series_name_in_ = y.name if y.name is not None else 'y'
         self.fit_date = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
         self.training_range_ = preprocess_y(
             y=y, return_values=False, suppress_warnings=True
