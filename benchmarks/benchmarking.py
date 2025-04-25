@@ -130,46 +130,60 @@ def plot_benchmark_results(df, function_name, add_median=True, add_mean=True):
         v: qualitative.Plotly[i % len(qualitative.Plotly)] 
         for i, v in enumerate(sorted_versions)
     }
+    platform_symbols = {
+        platform: symbol for platform, symbol in zip(df['platform'].unique(), [
+            'circle', 'square', 'diamond', 'cross', 'x', 'triangle-up', 'star'
+        ])
+    }
 
     fig = go.Figure()
     for version in sorted_versions:
-        sub_df = df[df['skforecast_version'] == version]
-        fig.add_trace(
-            go.Scatter(
-                x=sub_df['x_jittered'],
-                y=sub_df['run_time_avg'],
-                mode='markers',
-                marker=dict(size=10, color=version_colors[version], opacity=0.7),
-                error_y=dict(
-                    type='data',
-                    array=sub_df['run_time_std_dev'],
-                    visible=True,
-                    color=version_colors[version],  # color matches marker
-                    thickness=1.5,
-                    width=5
-                ),
-                name=f'Run time - {version}',
-                text=sub_df.apply(lambda row: (
-                    f"Forecaster: {row['forecaster_name']}<br>"
-                    f"Regressor: {row['regressor_name']}<br>"
-                    f"Function: {row['function_name']}<br>"
-                    f"Function_hash: {row['function_hash']}<br>"
-                    f"Datetime: {row['datetime']}<br>"
-                    f"Python version: {row['python_version']}<br>"
-                    f"skforecast version: {row['skforecast_version']}<br>"
-                    f"numpy version: {row['numpy_version']}<br>"
-                    f"pandas version: {row['pandas_version']}<br>"
-                    f"sklearn version: {row['sklearn_version']}<br>"
-                    f"lightgbm version: {row['lightgbm_version']}<br>"
-                    f"Platform: {row['platform']}<br>"
-                    f"Processor: {row['processor']}<br>"
-                    f"CPU count: {row['cpu_count']}<br>"
-                    f"Memory (GB): {row['memory_gb']:.2f}<br>"
-                ), axis=1),
-                hovertemplate='%{text}<extra></extra>',
-                showlegend=True
+        for platform, symbol in platform_symbols.items():
+            sub_df = df[(df['skforecast_version'] == version) & (df['platform'] == platform)]
+            if sub_df.empty:
+                continue
+            fig.add_trace(
+                go.Scatter(
+                    x=sub_df['x_jittered'],
+                    y=sub_df['run_time_avg'],
+                    mode='markers',
+                    marker=dict(
+                        size=10,
+                        color=version_colors[version],
+                        symbol=symbol,
+                        opacity=0.7
+                    ),
+                    error_y=dict(
+                        type='data',
+                        array=sub_df['run_time_std_dev'],
+                        visible=True,
+                        color=version_colors[version],
+                        thickness=1.5,
+                        width=5
+                    ),
+                    name=f'{version} - {platform}',
+                    text=sub_df.apply(lambda row: (
+                        f"Forecaster: {row['forecaster_name']}<br>"
+                        f"Regressor: {row['regressor_name']}<br>"
+                        f"Function: {row['function_name']}<br>"
+                        f"Function_hash: {row['function_hash']}<br>"
+                        f"Datetime: {row['datetime']}<br>"
+                        f"Python version: {row['python_version']}<br>"
+                        f"skforecast version: {row['skforecast_version']}<br>"
+                        f"numpy version: {row['numpy_version']}<br>"
+                        f"pandas version: {row['pandas_version']}<br>"
+                        f"sklearn version: {row['sklearn_version']}<br>"
+                        f"lightgbm version: {row['lightgbm_version']}<br>"
+                        f"Platform: {row['platform']}<br>"
+                        f"Processor: {row['processor']}<br>"
+                        f"CPU count: {row['cpu_count']}<br>"
+                        f"Memory (GB): {row['memory_gb']:.2f}<br>"
+                    ), axis=1),
+                    hovertemplate='%{text}<extra></extra>',
+                    showlegend=True
+                )
             )
-        )
+
     if add_median:
         medians = df.groupby('skforecast_version', observed=True)['run_time_avg'].median().reset_index()
         medians['x_center'] = medians['skforecast_version'].map(version_to_num)
@@ -183,6 +197,7 @@ def plot_benchmark_results(df, function_name, add_median=True, add_mean=True):
                 name='Median (per version)'
             )
         )
+
     if add_mean:
         means = df.groupby('skforecast_version', observed=True)['run_time_avg'].mean().reset_index()
         means['x_center'] = means['skforecast_version'].map(version_to_num)
@@ -196,6 +211,7 @@ def plot_benchmark_results(df, function_name, add_median=True, add_mean=True):
                 name='Mean (per version)'
             )
         )
+
     fig.update_layout(
         title=f"Execution time of {function_name}",
         xaxis=dict(
