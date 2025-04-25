@@ -2400,8 +2400,8 @@ def select_n_jobs_fit_forecaster(
 
     return n_jobs
 
-
-def set_cpu_gpu_device(
+# TODO: remove old version
+def set_cpu_gpu_device_old(
     regressor: object, 
     device: str | None = 'cpu'
 ) -> str:
@@ -2452,6 +2452,50 @@ def set_cpu_gpu_device(
         return original_device
     
     param_name = device_names[regressor_name]
+    new_device = device_values[regressor_name][device]
+
+    if original_device != new_device:
+        try:
+            regressor.set_params(**{param_name: new_device})
+        except Exception:
+            pass
+
+    return original_device
+
+
+def set_cpu_gpu_device(
+    regressor: object, 
+    device: str | None = 'cpu'
+) -> str | None:
+    """
+    Set the device for the regressor to either 'cpu', 'gpu', 'cuda', or None.
+    """
+
+    if device not in {'gpu', 'cpu', 'cuda', 'GPU', 'CPU', None}:
+        raise ValueError("`device` must be 'gpu', 'cpu', 'cuda', or None.")
+    
+    regressor_name = type(regressor).__name__
+
+    if regressor_name not in ['XGBRegressor', 'LGBMRegressor', 'CatBoostRegressor']:
+        return None
+    
+    device_names = {
+        'XGBRegressor': 'device',
+        'LGBMRegressor': 'device',
+        'CatBoostRegressor': 'task_type',
+    }
+    device_values = {
+        'XGBRegressor': {'gpu': 'cuda', 'cpu': 'cpu', 'cuda': 'cuda'},
+        'LGBMRegressor': {'gpu': 'gpu', 'cpu': 'cpu', 'cuda': 'gpu'},
+        'CatBoostRegressor': {'gpu': 'GPU', 'cpu': 'CPU', 'cuda': 'GPU', 'GPU': 'GPU', 'CPU': 'CPU'},
+    }
+
+    param_name = device_names[regressor_name]
+    original_device = getattr(regressor, param_name, None)
+
+    if device is None:
+        return original_device
+
     new_device = device_values[regressor_name][device]
 
     if original_device != new_device:
