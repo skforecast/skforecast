@@ -339,7 +339,6 @@ def initialize_transformer_series(
 
     multiseries_forecasters = [
         'ForecasterRecursiveMultiSeries',
-        'ForecasterRecursiveMultiSeriesEncoder',
     ]
 
     if forecaster_name in multiseries_forecasters:
