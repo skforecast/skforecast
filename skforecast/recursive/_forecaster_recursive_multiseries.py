@@ -833,7 +833,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         return X_train_window_features, X_train_window_features_names_out_
 
-
     def _create_train_X_y_single_series(
         self,
         y: pd.Series,
@@ -887,15 +886,15 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             fit_transformer = False if self.is_fitted else True
             transformer_series = self.transformer_series_[series_name]
 
-        y = transform_series(
-                series            = y,
-                transformer       = transformer_series,
-                fit               = fit_transformer,
-                inverse_transform = False
-            )
-
         y_values = y.to_numpy()
         y_index = y.index
+
+        y_values = transform_numpy(
+                       array             = y_values,
+                       transformer       = transformer_series,
+                       fit               = fit_transformer,
+                       inverse_transform = False
+                   )
 
         if self.differentiator_[series_name] is not None:
             if not self.is_fitted:
@@ -1779,6 +1778,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self.in_sample_residuals_ = {}
         self.in_sample_residuals_by_bin_ = {}
         if self._probabilistic_mode is not False:
+            y_train = y_train.to_numpy()
             y_pred = self.regressor.predict(X_train_regressor)
             if self.encoding is not None:
                 for level in X_train_series_names_in_:
@@ -3798,10 +3798,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 f"Empty bins will be filled with a random sample of residuals.", 
                 ResidualsUsageWarning
             )
+            empty_bin_size = min(max_samples, len(out_sample_residuals))
             for k in empty_bins:
                 out_sample_residuals_by_bin[k] = rng.choice(
                     a       = out_sample_residuals,
-                    size    = min(max_samples, len(out_sample_residuals)),
+                    size    = empty_bin_size,
                     replace = False
                 )
         

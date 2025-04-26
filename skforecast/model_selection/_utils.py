@@ -987,6 +987,9 @@ def _extract_data_folds_multiseries(
 
     """
 
+    is_series_dict = isinstance(series, dict)
+    is_exog_dict = isinstance(exog, dict)
+
     for fold in folds:
         train_iloc_start       = fold[0][0]
         train_iloc_end         = fold[0][1]
@@ -995,7 +998,7 @@ def _extract_data_folds_multiseries(
         test_iloc_start        = fold[2][0]
         test_iloc_end          = fold[2][1]
 
-        if isinstance(series, dict) or isinstance(exog, dict):
+        if is_series_dict or is_exog_dict:
             # Subtract 1 to the iloc indexes to get the loc indexes
             train_loc_start       = span_index[train_iloc_start]
             train_loc_end         = span_index[train_iloc_end - 1]
@@ -1004,7 +1007,7 @@ def _extract_data_folds_multiseries(
             test_loc_start        = span_index[test_iloc_start]
             test_loc_end          = span_index[test_iloc_end - 1]
 
-        if isinstance(series, pd.DataFrame):
+        if not is_series_dict:
             series_train = series.iloc[train_iloc_start:train_iloc_end, ]
 
             series_to_drop = []
@@ -1055,7 +1058,7 @@ def _extract_data_folds_multiseries(
         levels_last_window = list(series_last_window.columns)
 
         if exog is not None:
-            if isinstance(exog, (pd.Series, pd.DataFrame)):
+            if not is_exog_dict:
                 exog_train = exog.iloc[train_iloc_start:train_iloc_end, ]
                 exog_test = exog.iloc[test_iloc_start:test_iloc_end, ]
             else:
@@ -1193,6 +1196,7 @@ def _calculate_metrics_backtesting_multiseries(
             train_iloc_start = fold[0][0]
             train_iloc_end = fold[0][1]
             train_indexes.append(np.arange(train_iloc_start, train_iloc_end))
+    
     train_indexes = np.unique(np.concatenate(train_indexes))
     train_indexes = span_index[train_indexes]
     train_indexes = pd.MultiIndex.from_product([
@@ -1249,7 +1253,8 @@ def _calculate_metrics_backtesting_multiseries(
 
         # aggregation: weighted_average
         n_predictions_levels = (
-            predictions.groupby(level="level", sort=False)["y_pred"]
+            predictions
+            .groupby(level="level", sort=False)["y_pred"]
             .apply(lambda x: x.notna().sum())
             .reset_index(name="n_predictions")
             .rename(columns={"level": "levels"})

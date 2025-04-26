@@ -26,6 +26,7 @@ def test_forecaster_y_exog_features_stored():
     )
     forecaster.fit(y=y, exog=exog)
 
+    series_name_in_ = 'y'
     exog_in_ = True
     exog_type_in_ = type(exog)
     exog_names_in_ = ['exog']
@@ -38,6 +39,7 @@ def test_forecaster_y_exog_features_stored():
         'roll_ratio_min_max_4', 'roll_median_4', 'exog_step_1', 'exog_step_2'
     ]
     
+    assert forecaster.series_name_in_ == series_name_in_
     assert forecaster.exog_in_ == exog_in_
     assert forecaster.exog_type_in_ == exog_type_in_
     assert forecaster.exog_names_in_ == exog_names_in_

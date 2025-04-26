@@ -339,7 +339,6 @@ def initialize_transformer_series(
 
     multiseries_forecasters = [
         'ForecasterRecursiveMultiSeries',
-        'ForecasterRecursiveMultiSeriesEncoder',
     ]
 
     if forecaster_name in multiseries_forecasters:
@@ -351,8 +350,10 @@ def initialize_transformer_series(
     if transformer_series is None:
         transformer_series_ = {serie: None for serie in series_names_in_}
     elif not isinstance(transformer_series, dict):
-        transformer_series_ = {serie: clone(transformer_series) 
-                               for serie in series_names_in_}
+        transformer_series_ = {
+            serie: clone(transformer_series) 
+            for serie in series_names_in_
+        }
     else:
         transformer_series_ = {serie: None for serie in series_names_in_}
         # Only elements already present in transformer_series_ are updated
@@ -467,10 +468,13 @@ def check_select_fit_kwargs(
             raise TypeError(
                 f"Argument `fit_kwargs` must be a dict. Got {type(fit_kwargs)}."
             )
+        
+        fit_params = inspect.signature(regressor.fit).parameters
 
         # Non used keys
-        non_used_keys = [k for k in fit_kwargs.keys()
-                         if k not in inspect.signature(regressor.fit).parameters]
+        non_used_keys = [
+            k for k in fit_kwargs.keys() if k not in fit_params
+        ]
         if non_used_keys:
             warnings.warn(
                 f"Argument/s {non_used_keys} ignored since they are not used by the "
@@ -489,8 +493,7 @@ def check_select_fit_kwargs(
 
         # Select only the keyword arguments allowed by the regressor's `fit` method.
         fit_kwargs = {
-            k: v for k, v in fit_kwargs.items()
-            if k in inspect.signature(regressor.fit).parameters
+            k: v for k, v in fit_kwargs.items() if k in fit_params
         }
 
     return fit_kwargs
@@ -2385,8 +2388,7 @@ def select_n_jobs_fit_forecaster(
         if not regressor_name.startswith('_')
     ]
 
-    if forecaster_name in ['ForecasterDirect', 
-                           'ForecasterDirectMultiVariate']:
+    if forecaster_name in ['ForecasterDirect', 'ForecasterDirectMultiVariate']:
         if regressor_name in linear_regressors:
             n_jobs = 1
         elif regressor_name == 'LGBMRegressor':
@@ -2402,54 +2404,36 @@ def select_n_jobs_fit_forecaster(
 def set_cpu_gpu_device(
     regressor: object, 
     device: str | None = 'cpu'
-) -> str:
+) -> str | None:
     """
     Set the device for the regressor to either 'cpu', 'gpu', 'cuda', or None.
-    
-    Parameters
-    ----------
-    regressor : object
-        An estimator object from XGBoost, LightGBM, or CatBoost.
-    device : str, default 'cpu'
-        The device to set. Can be 'cpu', 'gpu', or None. If None, it will
-        use the current device of the regressor.
-        
-    Returns
-    -------
-    original_device : str
-        The original device of the regressor before setting it to the new device.
-
     """
 
+    if device not in {'gpu', 'cpu', 'cuda', 'GPU', 'CPU', None}:
+        raise ValueError("`device` must be 'gpu', 'cpu', 'cuda', or None.")
+    
+    regressor_name = type(regressor).__name__
+
+    if regressor_name not in ['XGBRegressor', 'LGBMRegressor', 'CatBoostRegressor']:
+        return None
+    
     device_names = {
         'XGBRegressor': 'device',
         'LGBMRegressor': 'device',
         'CatBoostRegressor': 'task_type',
     }
-
     device_values = {
         'XGBRegressor': {'gpu': 'cuda', 'cpu': 'cpu', 'cuda': 'cuda'},
         'LGBMRegressor': {'gpu': 'gpu', 'cpu': 'cpu', 'cuda': 'gpu'},
-        'CatBoostRegressor': {'gpu': 'GPU', 'cpu': 'CPU', 'cuda': 'GPU'},
+        'CatBoostRegressor': {'gpu': 'GPU', 'cpu': 'CPU', 'cuda': 'GPU', 'GPU': 'GPU', 'CPU': 'CPU'},
     }
 
-    if device not in ['gpu', 'cpu', 'cuda', None]:
-        raise ValueError("`device` must be 'gpu', 'cpu', 'cuda', or None.")
-
-    regressor_name = type(regressor).__name__
-    if regressor_name not in device_names:
-        return None
-    
-    # NOTE: If the regressor does not have the device parameter, it is set to 'cpu'.
-    # This is the case for `LGBMRegressor` or `CatBoostRegressor` when device
-    # is not specified in the init.
-    original_device = regressor.get_params().get(device_names[regressor_name], None)
-    original_device = original_device.lower() if original_device is not None else None
+    param_name = device_names[regressor_name]
+    original_device = getattr(regressor, param_name, None)
 
     if device is None:
         return original_device
-    
-    param_name = device_names[regressor_name]
+
     new_device = device_values[regressor_name][device]
 
     if original_device != new_device:
@@ -2552,7 +2536,7 @@ def check_preprocess_series(
         )
 
     for k, v in series_dict.items():
-        if np.isnan(v).all():
+        if v.isna().to_numpy().all():
             raise ValueError(f"All values of series '{k}' are NaN.")
 
     series_indexes = {
@@ -2713,7 +2697,9 @@ def check_preprocess_exog_multiseries(
         exog_dtypes_nunique = exog_dtypes_buffer.nunique(axis=1).eq(1)
         if not exog_dtypes_nunique.all():
             non_unique_dtypes_exogs = exog_dtypes_nunique[exog_dtypes_nunique != 1].index.to_list()
-            raise TypeError(f"Exog/s: {non_unique_dtypes_exogs} have different dtypes in different series.")
+            raise TypeError(
+                f"Exog/s: {non_unique_dtypes_exogs} have different dtypes in different series."
+            )
 
     exog_names_in_ = list(
         set(
@@ -2770,7 +2756,7 @@ def align_series_and_exog_multiseries(
     """
 
     for k in series_dict.keys():
-        if np.isnan(series_dict[k].iloc[0]) or np.isnan(series_dict[k].iloc[-1]):
+        if np.isnan(series_dict[k].iat[0]) or np.isnan(series_dict[k].iat[-1]):
             first_valid_index = series_dict[k].first_valid_index()
             last_valid_index = series_dict[k].last_valid_index()
             series_dict[k] = series_dict[k].loc[first_valid_index : last_valid_index]
@@ -2782,7 +2768,7 @@ def align_series_and_exog_multiseries(
             if input_series_is_dict:
                 if not series_dict[k].index.equals(exog_dict[k].index):
                     exog_dict[k] = exog_dict[k].loc[first_valid_index:last_valid_index]
-                    if len(exog_dict[k]) == 0:
+                    if exog_dict[k].empty:
                         warnings.warn(
                             f"Series '{k}' and its `exog` do not have the same index. "
                             f"All exog values will be NaN for the period of the series.",
@@ -2870,8 +2856,10 @@ def preprocess_levels_self_last_window_multiseries(
     available_last_windows = set() if last_window_ is None else set(last_window_.keys())
     not_available_last_window = set(levels) - available_last_windows
     if not_available_last_window:
-        levels = [level for level in levels 
-                  if level not in not_available_last_window]
+        levels = [
+            level for level in levels 
+            if level not in not_available_last_window
+        ]
         if not levels:
             raise ValueError(
                 f"No series to predict. None of the series {not_available_last_window} "

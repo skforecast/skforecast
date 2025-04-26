@@ -991,13 +991,14 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         for col in series_to_create_autoreg_features_and_y:
             y = series[col]
             check_y(y=y, series_id=f"Column '{col}'")
-            y = transform_series(
-                    series            = y,
-                    transformer       = self.transformer_series_[col],
-                    fit               = fit_transformer,
-                    inverse_transform = False
-                )
             y_values, y_index = preprocess_y(y=y)
+
+            y_values = transform_numpy(
+                           array             = y_values,
+                           transformer       = self.transformer_series_[col],
+                           fit               = fit_transformer,
+                           inverse_transform = False
+                       )
 
             if self.differentiation is not None:
                 if not self.is_fitted:
@@ -3175,10 +3176,11 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 f"Empty bins will be filled with a random sample of residuals.", 
                 ResidualsUsageWarning
             )
+            empty_bin_size = min(max_samples, len(out_sample_residuals))
             for k in empty_bins:
                 out_sample_residuals_by_bin[k] = rng.choice(
                     a       = out_sample_residuals,
-                    size    = min(max_samples, len(out_sample_residuals)),
+                    size    = empty_bin_size,
                     replace = False
                 )
 

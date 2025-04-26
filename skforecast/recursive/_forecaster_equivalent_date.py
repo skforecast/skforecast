@@ -103,6 +103,8 @@ class ForecasterEquivalentDate():
         Frequency of Index of the input used in training.
     training_range_ : pandas Index
         First and last values of index of the data used during training.
+    series_name_in_ : str
+        Names of the series provided by the user during training.
     creation_date : str
         Date of creation.
     is_fitted : bool
@@ -142,6 +144,7 @@ class ForecasterEquivalentDate():
         self.index_type_         = None
         self.index_freq_         = None
         self.training_range_     = None
+        self.series_name_in_     = None
         self.creation_date       = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
         self.is_fitted           = False
         self.fit_date            = None
@@ -177,6 +180,7 @@ class ForecasterEquivalentDate():
             f"Number of offsets: {self.n_offsets} \n"
             f"Aggregation function: {self.agg_func.__name__} \n"
             f"Window size: {self.window_size} \n"
+            f"Series name: {self.series_name_in_} \n"
             f"Training range: {self.training_range_.to_list() if self.is_fitted else None} \n"
             f"Training index type: {str(self.index_type_).split('.')[-1][:-2] if self.is_fitted else None} \n"
             f"Training index frequency: {self.index_freq_ if self.is_fitted else None} \n"
@@ -230,6 +234,7 @@ class ForecasterEquivalentDate():
         self.index_type_     = None
         self.index_freq_     = None
         self.training_range_ = None
+        self.series_name_in_ = None
         self.is_fitted       = False
 
         _, y_index = preprocess_y(y=y, return_values=False)
@@ -266,6 +271,7 @@ class ForecasterEquivalentDate():
                 )
         
         self.is_fitted = True
+        self.series_name_in_ = y.name if y.name is not None else 'y'
         self.fit_date = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
         self.training_range_ = y_index[[0, -1]]
         self.index_type_ = type(y_index)
