@@ -21,7 +21,7 @@ class ForecasterBase(ABC):
 
     def _preprocess_repr(
         self,
-        regressor: object,
+        regressor: object | None = None,
         training_range_: dict[str, str] | None = None,
         series_names_in_: list[str] | None = None,
         exog_names_in_: list[str] | None = None,
@@ -32,7 +32,7 @@ class ForecasterBase(ABC):
 
         Parameters
         ----------
-        regressor : object
+        regressor : object, default None
             Regressor object.
         training_range_ : dict, default None
             Training range. Only used for `ForecasterRecursiveMultiSeries`.
@@ -45,28 +45,31 @@ class ForecasterBase(ABC):
 
         Returns
         -------
-        params : str
+        params : str, None
             Parameters of the regressor.
         training_range_ : str, None
             Training range. Only used for `ForecasterRecursiveMultiSeries`.
         series_names_in_ : str, None
-            Names of the series used in the forecaster. Only used for `ForecasterRecursiveMultiSeries`.
+            Names of the series used in the forecaster. Only used for multi-series forecasters.
         exog_names_in_ : str, None
             Names of the exogenous variables used in the forecaster.
         transformer_series : str, None
-            Transformer used in the series. Only used for `ForecasterRecursiveMultiSeries`.
+            Transformer used in the series. Only used for multi-series forecasters.
         
         """
 
-        if isinstance(regressor, Pipeline):
-            name_pipe_steps = tuple(name + "__" for name in regressor.named_steps.keys())
-            params = {
-                key: value for key, value in regressor.get_params().items() 
-                if key.startswith(name_pipe_steps)
-            }
+        if regressor is not None:
+            if isinstance(regressor, Pipeline):
+                name_pipe_steps = tuple(name + "__" for name in regressor.named_steps.keys())
+                params = {
+                    key: value for key, value in regressor.get_params().items() 
+                    if key.startswith(name_pipe_steps)
+                }
+            else:
+                params = regressor.get_params()
+            params = str(params)
         else:
-            params = regressor.get_params()
-        params = str(params)
+            params = None
 
         if training_range_ is not None:
             training_range_ = [

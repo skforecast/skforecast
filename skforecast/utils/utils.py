@@ -2400,68 +2400,6 @@ def select_n_jobs_fit_forecaster(
 
     return n_jobs
 
-# TODO: remove old version
-def set_cpu_gpu_device_old(
-    regressor: object, 
-    device: str | None = 'cpu'
-) -> str:
-    """
-    Set the device for the regressor to either 'cpu', 'gpu', 'cuda', or None.
-    
-    Parameters
-    ----------
-    regressor : object
-        An estimator object from XGBoost, LightGBM, or CatBoost.
-    device : str, default 'cpu'
-        The device to set. Can be 'cpu', 'gpu', or None. If None, it will
-        use the current device of the regressor.
-        
-    Returns
-    -------
-    original_device : str
-        The original device of the regressor before setting it to the new device.
-
-    """
-
-    device_names = {
-        'XGBRegressor': 'device',
-        'LGBMRegressor': 'device',
-        'CatBoostRegressor': 'task_type',
-    }
-
-    device_values = {
-        'XGBRegressor': {'gpu': 'cuda', 'cpu': 'cpu', 'cuda': 'cuda'},
-        'LGBMRegressor': {'gpu': 'gpu', 'cpu': 'cpu', 'cuda': 'gpu'},
-        'CatBoostRegressor': {'gpu': 'GPU', 'cpu': 'CPU', 'cuda': 'GPU'},
-    }
-
-    if device not in ['gpu', 'cpu', 'cuda', None]:
-        raise ValueError("`device` must be 'gpu', 'cpu', 'cuda', or None.")
-
-    regressor_name = type(regressor).__name__
-    if regressor_name not in device_names:
-        return None
-    
-    # NOTE: If the regressor does not have the device parameter, it is set to 'cpu'.
-    # This is the case for `LGBMRegressor` or `CatBoostRegressor` when device
-    # is not specified in the init.
-    original_device = regressor.get_params().get(device_names[regressor_name], None)
-    original_device = original_device.lower() if original_device is not None else None
-
-    if device is None:
-        return original_device
-    
-    param_name = device_names[regressor_name]
-    new_device = device_values[regressor_name][device]
-
-    if original_device != new_device:
-        try:
-            regressor.set_params(**{param_name: new_device})
-        except Exception:
-            pass
-
-    return original_device
-
 
 def set_cpu_gpu_device(
     regressor: object, 

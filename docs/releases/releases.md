@@ -14,15 +14,21 @@ All significant changes to this project are documented in this release file.
 
 The main changes in this release are:
 
-+ <span class="badge text-bg-danger">Fix</span> Minor release to fix a bug when importing module `skforecast.sarimax`.
++ <span class="badge text-bg-danger">Fix</span> 
 
 
 **Added**
 
 + Function `set_cpu_gpu_device()` in the <code>[utils]</code> module to set the device of the regressor to 'cpu' or 'gpu'. It is used to ensure that the recursive prediction is done in cpu even if the regressor is set to 'gpu'. This allows to avoid the bottleneck of the recursive prediction when using a gpu. Only applied to recursive forecasters when the regressor is a `XGBoost`, `LightGBM` or `CatBoost` model.
 
++ Added `series_name_in_` attribute in single series forecasters to store the name of the series used to fit the forecaster.
+
++ Added argument `return_predictors` to <code>[backtesting_forecaster]</code> and <code>[backtesting_forecaster_multiseries]</code> to return the predictors generated during the backtesting process along with the predictions.
+
 
 **Changed**
+
++ Refactor.......... 
 
 + In-sample residuals in direct forecasters has been simplified.
 

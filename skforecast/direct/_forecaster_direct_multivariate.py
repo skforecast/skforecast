@@ -991,13 +991,14 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         for col in series_to_create_autoreg_features_and_y:
             y = series[col]
             check_y(y=y, series_id=f"Column '{col}'")
-            y = transform_series(
-                    series            = y,
-                    transformer       = self.transformer_series_[col],
-                    fit               = fit_transformer,
-                    inverse_transform = False
-                )
             y_values, y_index = preprocess_y(y=y)
+
+            y_values = transform_numpy(
+                           array             = y_values,
+                           transformer       = self.transformer_series_[col],
+                           fit               = fit_transformer,
+                           inverse_transform = False
+                       )
 
             if self.differentiation is not None:
                 if not self.is_fitted:
