@@ -479,7 +479,7 @@ def run_benchmark_ForecasterRecursiveMultiSeries(
             series=series_dataframe
         )
 
-    forecaster.fit(series=series_dict, exog=exog_dict)
+    forecaster.fit(series=series_dict, exog=exog_dict, store_in_sample_residuals = True)
     runner = BenchmarkRunner(repeat=10, output_dir="./")
     _ = runner.benchmark(
             ForecasterRecursiveMultiSeries_predict_exog_is_dict,
@@ -830,7 +830,7 @@ def run_benchmark_ForecasterDirectMultiVariate(
     _ = runner.benchmark(ForecasterDirectMultiVariate_fit, forecaster=forecaster, series=series, exog=exog)
     _ = runner.benchmark(ForecasterDirectMultiVariate_fit_series_no_exog, forecaster=forecaster, series=series)
 
-    forecaster.fit(series=series, exog=exog)
+    forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
     runner = BenchmarkRunner(repeat=10, output_dir="./")
     _ = runner.benchmark(ForecasterDirectMultiVariate_predict, forecaster=forecaster, exog=exog_prediction)
     _ = runner.benchmark(ForecasterDirectMultiVariate_predict_interval_conformal, forecaster=forecaster, exog=exog_prediction)
