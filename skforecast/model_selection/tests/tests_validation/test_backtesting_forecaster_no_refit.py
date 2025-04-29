@@ -37,9 +37,11 @@ def test_output_backtesting_forecaster_no_exog_no_remainder_ForecasterRecursive_
                          0.36988237, 0.57912951, 0.48686057, 0.45709952])}, 
         index=pd.RangeIndex(start=38, stop=50, step=1)
     )
+
     forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
     n_backtest = 12
     y_train = y[:-n_backtest]
+
     cv = TimeSeriesFold(
             steps                 = 4,
             initial_train_size    = len(y_train),
@@ -52,6 +54,7 @@ def test_output_backtesting_forecaster_no_exog_no_remainder_ForecasterRecursive_
             allow_incomplete_fold = True,
             return_all_indexes    = False,
         )
+    
     metric, backtest_predictions = _backtesting_forecaster(
                                        forecaster = forecaster,
                                        y          = y,
@@ -150,10 +153,10 @@ def test_output_backtesting_forecaster_no_exog_no_initial_train_size_with_mocked
     )
     forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
     forecaster.fit(y=y)
-    initial_train_size = None
+    
     cv = TimeSeriesFold(
             steps                 = 1,
-            initial_train_size    = initial_train_size,
+            initial_train_size    = None,
             window_size           = None,
             differentiation       = None,
             refit                 = False,
@@ -163,6 +166,7 @@ def test_output_backtesting_forecaster_no_exog_no_initial_train_size_with_mocked
             allow_incomplete_fold = True,
             return_all_indexes    = False,
         )
+    
     metric, backtest_predictions = _backtesting_forecaster(
                                         forecaster = forecaster,
                                         y          = y,
@@ -170,7 +174,8 @@ def test_output_backtesting_forecaster_no_exog_no_initial_train_size_with_mocked
                                         exog       = None,                                      
                                         metric     = 'mean_squared_error',
                                         verbose    = False
-                                   )                
+                                   )
+                 
     pd.testing.assert_frame_equal(expected_metric, metric)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
@@ -349,22 +354,59 @@ def test_output_backtesting_forecaster_yes_exog_yes_remainder_skip_folds_with_mo
     expected_metric = pd.DataFrame({"mean_squared_error": [0.044538146622722964]})
     expected_predictions = pd.DataFrame(
         {
-            "pred": np.array(
-                [
-                    0.59059622,
-                    0.47257504,
-                    0.53024098,
-                    0.46163343,
-                    0.50035119,
-                    0.60207937,
-                    0.48227974,
-                ]
-            )
+            "pred": [
+                0.590596217638621,
+                0.47257503863519656,
+                0.5302409766813725,
+                0.46163343193846784,
+                0.5003511853456513,
+                0.6020793655316975,
+                0.4822797443738659,
+            ],
+            "fold": [0, 0, 0, 0, 0, 1, 1],
+            "lag_1": [
+                0.89338916,
+                0.590596217638621,
+                0.47257503863519656,
+                0.5302409766813725,
+                0.46163343193846784,
+                0.98555979,
+                0.6020793655316975,
+            ],
+            "lag_2": [
+                0.42635131,
+                0.89338916,
+                0.590596217638621,
+                0.47257503863519656,
+                0.5302409766813725,
+                0.48303426,
+                0.98555979,
+            ],
+            "lag_3": [
+                0.31226122,
+                0.42635131,
+                0.89338916,
+                0.590596217638621,
+                0.47257503863519656,
+                0.25045537,
+                0.48303426,
+            ],
+            "exog": [
+                0.30476807,
+                0.39818568,
+                0.70495883,
+                0.99535848,
+                0.35591487,
+                0.2408559,
+                0.34345601,
+            ],
         },
         index=pd.Index([38, 39, 40, 41, 42, 48, 49], dtype="int64"),
     )
+
     forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
     n_backtest = 12
+
     y_train = y[:-n_backtest]
     cv = TimeSeriesFold(
             steps                 = 5,
@@ -379,13 +421,15 @@ def test_output_backtesting_forecaster_yes_exog_yes_remainder_skip_folds_with_mo
             return_all_indexes    = False,
         )
     metric, backtest_predictions = _backtesting_forecaster(
-        forecaster = forecaster,
-        y                  = y,
-        exog               = exog,
-        cv                 = cv,
-        metric             = "mean_squared_error",
-        verbose            = True,
+        forecaster        = forecaster,
+        y                 = y,
+        exog              = exog,
+        cv                = cv,
+        metric            = "mean_squared_error",
+        return_predictors = True,
+        verbose           = True,
     )
+
     pd.testing.assert_frame_equal(expected_metric, metric)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
@@ -1201,24 +1245,24 @@ def test_output_backtesting_forecaster_interval_yes_exog_yes_remainder_gap_with_
         }
     )
     expected_predictions = pd.DataFrame(
-        data = np.array([
-            [0.65022999,  0.27183154, 1.06503914],
-            [0.52364637,  0.19453326, 0.88265459],
-            [0.46809256,  0.12440678, 0.75395058],
-            [0.48759732,  0.24079549, 0.86300276],
-            [0.47172445,  0.14533367, 0.80742469],
-            [0.57585845,  0.19746   , 0.99066759],
-            [0.53592933,  0.20681622, 0.89493754],
-            [0.48995122,  0.14626544, 0.77580924],
-            [0.45271317,  0.20591135, 0.82811861],
-            [0.49519413,  0.16880335, 0.83089437],
-            [0.27167824, -0.10672021, 0.68648739],
-            [0.27813822, -0.05097489, 0.63714644],
-            [0.31569424, -0.02799154, 0.60155226],
-            [0.3983224 ,  0.15152057, 0.77372784],
-            [0.34822681,  0.02183603, 0.68392705],
-            [0.62098686,  0.24258841, 1.035796  ],
-            [0.47190757,  0.14279445, 0.83091578]]),
+        data = np.array(
+            [[ 0.65022999,  0.32111688,  1.0092382 ],
+            [ 0.52364637,  0.17891138,  0.88265459],
+            [ 0.46809256,  0.14156566,  0.82710077],
+            [ 0.48759732,  0.16107043,  0.84202181],
+            [ 0.47172445,  0.1418827 ,  0.82145924],
+            [ 0.57585845,  0.24674534,  0.93486666],
+            [ 0.53592933,  0.19119434,  0.89493754],
+            [ 0.48995122,  0.16342433,  0.84895943],
+            [ 0.45271317,  0.12618628,  0.80713767],
+            [ 0.49519413,  0.16535238,  0.84492892],
+            [ 0.27167824, -0.05743487,  0.63068646],
+            [ 0.27813822, -0.06659677,  0.63714644],
+            [ 0.31569424, -0.01083265,  0.67470245],
+            [ 0.3983224 ,  0.07179551,  0.75274689],
+            [ 0.34822681,  0.01838506,  0.69796159],
+            [ 0.62098686,  0.29187374,  0.97999507],
+            [ 0.47190757,  0.12717257,  0.83091578]]),
         columns=['pred', 'lower_bound', 'upper_bound'],
         index=pd.RangeIndex(start=33, stop=50, step=1)
     )
@@ -1275,21 +1319,21 @@ def test_output_backtesting_forecaster_interval_yes_exog_not_allow_remainder_gap
 
     expected_metric = pd.DataFrame({"mean_squared_error": [0.08826806818628832]})
     expected_predictions = pd.DataFrame(
-        data = np.array([[0.65022999,  0.27183154, 1.06503914],
-                         [0.52364637,  0.19453326, 0.88265459],
-                         [0.46809256,  0.12440678, 0.75395058],
-                         [0.48759732,  0.24079549, 0.86300276],
-                         [0.47172445,  0.14533367, 0.80742469],
-                         [0.57585845,  0.19746   , 0.99066759],
-                         [0.53592933,  0.20681622, 0.89493754],
-                         [0.48995122,  0.14626544, 0.77580924],
-                         [0.45271317,  0.20591135, 0.82811861],
-                         [0.49519413,  0.16880335, 0.83089437],
-                         [0.27167824, -0.10672021, 0.68648739],
-                         [0.27813822, -0.05097489, 0.63714644],
-                         [0.31569424, -0.02799154, 0.60155226],
-                         [0.3983224 ,  0.15152057, 0.77372784],
-                         [0.34822681,  0.02183603, 0.68392705]]),
+        data = np.array([[ 0.65022999,  0.32111688,  1.0092382 ],
+                        [ 0.52364637,  0.17891138,  0.88265459],
+                        [ 0.46809256,  0.14156566,  0.82710077],
+                        [ 0.48759732,  0.16107043,  0.84202181],
+                        [ 0.47172445,  0.1418827 ,  0.82145924],
+                        [ 0.57585845,  0.24674534,  0.93486666],
+                        [ 0.53592933,  0.19119434,  0.89493754],
+                        [ 0.48995122,  0.16342433,  0.84895943],
+                        [ 0.45271317,  0.12618628,  0.80713767],
+                        [ 0.49519413,  0.16535238,  0.84492892],
+                        [ 0.27167824, -0.05743487,  0.63068646],
+                        [ 0.27813822, -0.06659677,  0.63714644],
+                        [ 0.31569424, -0.01083265,  0.67470245],
+                        [ 0.3983224 ,  0.07179551,  0.75274689],
+                        [ 0.34822681,  0.01838506,  0.69796159]]),
         columns = ['pred', 'lower_bound', 'upper_bound'],
         index = pd.date_range(start='2022-02-03', periods=15, freq='D')
     )
@@ -1329,3 +1373,85 @@ def test_output_backtesting_forecaster_interval_yes_exog_not_allow_remainder_gap
 
     pd.testing.assert_frame_equal(expected_metric, metric)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+
+
+# ******************************************************************************
+# * Return predictors                                                          *
+# ******************************************************************************
+
+
+def test_output_backtesting_forecaster_return_predictors_same_predictions_as_predict_ForecasterRecursive():
+    """
+    Test predictions from _backtesting_forecaster predictors are the same as
+    predictions from predict method.
+    """
+    expected_metric = pd.DataFrame({"mean_squared_error": [0.05585411566592716]})
+    
+    forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
+    n_backtest = 12
+    y_train = y[:-n_backtest]
+    cv = TimeSeriesFold(
+            steps              = 4,
+            initial_train_size = len(y_train),
+            refit              = False,
+        )
+    metric, backtest_predictions = _backtesting_forecaster(
+                                        forecaster        = forecaster,
+                                        y                 = y,
+                                        exog              = exog,
+                                        cv                = cv,
+                                        metric            = 'mean_squared_error',
+                                        return_predictors = True,
+                                        verbose           = False
+                                   )
+    
+    forecaster.fit(y=y_train, exog=exog[:len(y_train)])
+    expected_predictions = forecaster.regressor.predict(
+        backtest_predictions[forecaster.X_train_features_names_out_]
+    )
+
+    pd.testing.assert_frame_equal(expected_metric, metric)
+    np.testing.assert_array_almost_equal(
+        expected_predictions, 
+        backtest_predictions['pred'].to_numpy()
+    )
+
+
+def test_output_backtesting_forecaster_return_predictors_same_predictions_as_predict_ForecasterDirect():
+    """
+    Test predictions from _backtesting_forecaster predictors are the same as
+    predictions from predict method.
+    """
+    expected_metric = pd.DataFrame({"mean_squared_error": [0.061964730085838]})
+    
+    forecaster = ForecasterDirect(regressor=LinearRegression(), steps=5, lags=3)
+    n_backtest = 12
+    y_train = y[:-n_backtest]
+
+    cv = TimeSeriesFold(
+             steps              = 5,
+             initial_train_size = len(y_train)
+         )
+    metric, backtest_predictions = _backtesting_forecaster(
+                                        forecaster        = forecaster,
+                                        y                 = y,
+                                        exog              = exog,
+                                        cv                = cv,
+                                        metric            = 'mean_squared_error',
+                                        return_predictors = True,
+                                        verbose           = False
+                                   )
+    
+    forecaster.fit(y=y_train, exog=exog[:len(y_train)])
+    regressors = [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2]
+    len_predictions = len(backtest_predictions)
+    results = np.full(shape=len_predictions, fill_value=np.nan, dtype=float)
+    for i, step in enumerate(regressors):
+        results[i] = forecaster.regressors_[step].predict(
+            backtest_predictions.iloc[[i]][
+                ['lag_1', 'lag_2', 'lag_3', 'exog']
+            ]
+        )
+    
+    pd.testing.assert_frame_equal(expected_metric, metric)
+    np.testing.assert_array_almost_equal(results, backtest_predictions['pred'].to_numpy())

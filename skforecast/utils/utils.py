@@ -338,7 +338,7 @@ def initialize_transformer_series(
     """
 
     multiseries_forecasters = [
-        'ForecasterRecursiveMultiSeries'
+        'ForecasterRecursiveMultiSeries',
     ]
 
     if forecaster_name in multiseries_forecasters:
@@ -350,8 +350,10 @@ def initialize_transformer_series(
     if transformer_series is None:
         transformer_series_ = {serie: None for serie in series_names_in_}
     elif not isinstance(transformer_series, dict):
-        transformer_series_ = {serie: clone(transformer_series) 
-                               for serie in series_names_in_}
+        transformer_series_ = {
+            serie: clone(transformer_series) 
+            for serie in series_names_in_
+        }
     else:
         transformer_series_ = {serie: None for serie in series_names_in_}
         # Only elements already present in transformer_series_ are updated
@@ -466,10 +468,13 @@ def check_select_fit_kwargs(
             raise TypeError(
                 f"Argument `fit_kwargs` must be a dict. Got {type(fit_kwargs)}."
             )
+        
+        fit_params = inspect.signature(regressor.fit).parameters
 
         # Non used keys
-        non_used_keys = [k for k in fit_kwargs.keys()
-                         if k not in inspect.signature(regressor.fit).parameters]
+        non_used_keys = [
+            k for k in fit_kwargs.keys() if k not in fit_params
+        ]
         if non_used_keys:
             warnings.warn(
                 f"Argument/s {non_used_keys} ignored since they are not used by the "
@@ -488,8 +493,7 @@ def check_select_fit_kwargs(
 
         # Select only the keyword arguments allowed by the regressor's `fit` method.
         fit_kwargs = {
-            k: v for k, v in fit_kwargs.items()
-            if k in inspect.signature(regressor.fit).parameters
+            k: v for k, v in fit_kwargs.items() if k in fit_params
         }
 
     return fit_kwargs
@@ -518,7 +522,7 @@ def check_y(
     if not isinstance(y, pd.Series):
         raise TypeError(f"{series_id} must be a pandas Series.")
         
-    if y.isnull().any():
+    if y.isna().to_numpy().any():
         raise ValueError(f"{series_id} has missing values.")
     
     return
@@ -559,7 +563,7 @@ def check_exog(
         raise ValueError(f"When {series_id} is a pandas Series, it must have a name.")
 
     if not allow_nan:
-        if exog.isnull().any().any():
+        if exog.isna().to_numpy().any():
             warnings.warn(
                 f"{series_id} has missing values. Most machine learning models "
                 f"do not allow missing values. Fitting the forecaster may fail.", 
@@ -625,41 +629,49 @@ def check_exog_dtypes(
     if call_check_exog:
         check_exog(exog=exog, allow_nan=False, series_id=series_id)
 
+    valid_dtypes = ("int", "Int", "float", "Float", "uint")
+
     if isinstance(exog, pd.DataFrame):
-        if not exog.select_dtypes(exclude=[np.number, 'category']).columns.empty:
-            warnings.warn(
-                f"{series_id} may contain only `int`, `float` or `category` dtypes. "
-                f"Most machine learning models do not allow other types of values. "
-                f"Fitting the forecaster may fail.", 
-                DataTypeWarning
-            )
-        for col in exog.select_dtypes(include='category'):
-            if exog[col].cat.categories.dtype not in [int, np.int32, np.int64]:
-                raise TypeError(
-                    "Categorical dtypes in exog must contain only integer values. "
-                    "See skforecast docs for more info about how to include "
-                    "categorical features https://skforecast.org/"
-                    "latest/user_guides/categorical-features.html"
+
+        for dtype_name in set(exog.dtypes.astype(str)):
+            if not (dtype_name.startswith(valid_dtypes) or dtype_name == "category"):
+                warnings.warn(
+                    f"{series_id} may contain only `int`, `float` or `category` dtypes. "
+                    f"Most machine learning models do not allow other types of values. "
+                    f"Fitting the forecaster may fail.", 
+                    DataTypeWarning
                 )
+                break
+
+        for col in exog.columns:
+            if isinstance(exog[col].dtype, pd.CategoricalDtype):
+                if not np.issubdtype(exog[col].cat.categories.dtype, np.integer):
+                    raise TypeError(
+                        "Categorical dtypes in exog must contain only integer values. "
+                        "See skforecast docs for more info about how to include "
+                        "categorical features https://skforecast.org/"
+                        "latest/user_guides/categorical-features.html"
+                    )
+    
     else:
-        if exog.dtype.name not in ['int', 'int8', 'int16', 'int32', 'int64', 'float', 
-        'float16', 'float32', 'float64', 'uint8', 'uint16', 'uint32', 'uint64', 'category']:
+        
+        dtype_name = str(exog.dtypes)
+        if not (dtype_name.startswith(valid_dtypes) or dtype_name == "category"):
             warnings.warn(
                 f"{series_id} may contain only `int`, `float` or `category` dtypes. Most "
                 f"machine learning models do not allow other types of values. "
                 f"Fitting the forecaster may fail.", 
                 DataTypeWarning
             )
-        if exog.dtype.name == 'category' and exog.cat.categories.dtype not in [int,
-        np.int32, np.int64]:
-            raise TypeError(
-                "Categorical dtypes in exog must contain only integer values. "
-                "See skforecast docs for more info about how to include "
-                "categorical features https://skforecast.org/"
-                "latest/user_guides/categorical-features.html"
-            )
-         
-    return
+
+        if isinstance(exog.dtype, pd.CategoricalDtype):
+            if not np.issubdtype(exog.cat.categories.dtype, np.integer):
+                raise TypeError(
+                    "Categorical dtypes in exog must contain only integer values. "
+                    "See skforecast docs for more info about how to include "
+                    "categorical features https://skforecast.org/"
+                    "latest/user_guides/categorical-features.html"
+                )
 
 
 def check_interval(
@@ -973,14 +985,14 @@ def check_predict_input(
             f"`last_window` must have as many values as needed to "
             f"generate the predictors. For this forecaster it is {window_size}."
         )
-    if last_window.isnull().any().all():
+    if last_window.isna().to_numpy().any():
         warnings.warn(
             "`last_window` has missing values. Most of machine learning models do "
             "not allow missing values. Prediction method may fail.", 
             MissingValuesWarning
         )
     _, last_window_index = preprocess_last_window(
-                               last_window   = last_window.iloc[:0],
+                               last_window   = last_window,
                                return_values = False
                            ) 
     if not isinstance(last_window_index, index_type_):
@@ -1031,6 +1043,8 @@ def check_predict_input(
         else:
             exogs_to_check = [('`exog`', exog)]
 
+        last_step = max(steps) if isinstance(steps, list) else steps
+        expected_index = expand_index(last_window.index, 1)[0]
         for exog_name, exog_to_check in exogs_to_check:
 
             if not isinstance(exog_to_check, (pd.Series, pd.DataFrame)):
@@ -1038,7 +1052,7 @@ def check_predict_input(
                     f"{exog_name} must be a pandas Series or DataFrame. Got {type(exog_to_check)}"
                 )
 
-            if exog_to_check.isnull().any().any():
+            if exog_to_check.isna().to_numpy().any():
                 warnings.warn(
                     f"{exog_name} has missing values. Most of machine learning models "
                     f"do not allow missing values. Prediction method may fail.", 
@@ -1046,7 +1060,6 @@ def check_predict_input(
                 )
 
             # Check exog has many values as distance to max step predicted
-            last_step = max(steps) if isinstance(steps, list) else steps
             if len(exog_to_check) < last_step:
                 if forecaster_name in ['ForecasterRecursiveMultiSeries']:
                     warnings.warn(
@@ -1099,7 +1112,7 @@ def check_predict_input(
 
             # Check index dtype and freq
             _, exog_index = preprocess_exog(
-                                exog          = exog_to_check.iloc[:0, ],
+                                exog          = exog_to_check,
                                 return_values = False
                             )
             if not isinstance(exog_index, index_type_):
@@ -1116,15 +1129,14 @@ def check_predict_input(
                         )
 
             # Check exog starts one step ahead of last_window end.
-            expected_index = expand_index(last_window.index, 1)[0]
-            if expected_index != exog_to_check.index[0]:
+            if expected_index != exog_index[0]:
                 if forecaster_name in ['ForecasterRecursiveMultiSeries']:
                     warnings.warn(
                         f"To make predictions {exog_name} must start one step "
                         f"ahead of `last_window`. Missing values are filled "
                         f"with NaN.\n"
                         f"    `last_window` ends at : {last_window.index[-1]}.\n"
-                        f"    {exog_name} starts at : {exog_to_check.index[0]}.\n"
+                        f"    {exog_name} starts at : {exog_index[0]}.\n"
                         f"     Expected index       : {expected_index}.",
                         MissingValuesWarning
                     )  
@@ -1133,7 +1145,7 @@ def check_predict_input(
                         f"To make predictions {exog_name} must start one step "
                         f"ahead of `last_window`.\n"
                         f"    `last_window` ends at : {last_window.index[-1]}.\n"
-                        f"    {exog_name} starts at : {exog_to_check.index[0]}.\n"
+                        f"    {exog_name} starts at : {exog_index[0]}.\n"
                         f"     Expected index : {expected_index}."
                     )
 
@@ -1157,14 +1169,14 @@ def check_predict_input(
                     f"`last_window_exog` must have as many values as needed to "
                     f"generate the predictors. For this forecaster it is {window_size}."
                 )
-            if last_window_exog.isnull().any().all():
+            if last_window_exog.isna().to_numpy().any():
                 warnings.warn(
                     "`last_window_exog` has missing values. Most of machine learning "
                     "models do not allow missing values. Prediction method may fail.",
                     MissingValuesWarning
             )
             _, last_window_exog_index = preprocess_last_window(
-                                            last_window   = last_window_exog.iloc[:0],
+                                            last_window   = last_window_exog,
                                             return_values = False
                                         ) 
             if not isinstance(last_window_exog_index, index_type_):
@@ -1204,12 +1216,11 @@ def check_predict_input(
 def check_residuals_input(
     forecaster_name: str,
     use_in_sample_residuals: bool,
-    in_sample_residuals_: np.ndarray | dict[str | int, np.ndarray] | None,
-    out_sample_residuals_: np.ndarray | dict[str | int, np.ndarray] | None,
+    in_sample_residuals_: np.ndarray | dict[str, np.ndarray] | None,
+    out_sample_residuals_: np.ndarray | dict[str, np.ndarray] | None,
     use_binned_residuals: bool,
     in_sample_residuals_by_bin_: dict[str | int, np.ndarray | dict[int, np.ndarray]] | None,
     out_sample_residuals_by_bin_: dict[str | int, np.ndarray | dict[int, np.ndarray]] | None,
-    steps: list[int] | None = None,
     levels: list[str] | None = None,
     encoding: str | None = None
 ) -> None:
@@ -1222,9 +1233,9 @@ def check_residuals_input(
         Forecaster name.
     use_in_sample_residuals : bool
         Indicates if in sample or out sample residuals are used.
-    in_sample_residuals_ : numpy ndarray
+    in_sample_residuals_ : numpy ndarray, dict
         Residuals of the model when predicting training data.
-    out_sample_residuals_ : numpy ndarray
+    out_sample_residuals_ : numpy ndarray, dict
         Residuals of the model when predicting non training data.
     use_binned_residuals : bool
         Indicates if residuals are binned.
@@ -1234,10 +1245,8 @@ def check_residuals_input(
     out_sample_residuals_by_bin_ : dict
         Out of sample residuals binned according to the predicted value each residual
         is associated with.
-    steps : list, default None
-        Steps to be predicted (Direct forecasters)
     levels : list, default None
-        Names of the series (levels) to be predicted (ForecasterRecursiveMultiSeries).
+        Names of the series (levels) to be predicted (Forecasters multiseries).
     encoding : str, default None
         Encoding used to identify the different series (ForecasterRecursiveMultiSeries).
 
@@ -1247,7 +1256,12 @@ def check_residuals_input(
     
     """
 
-    forecaster_direct = ['ForecasterDirect', 'ForecasterDirectMultiVariate']
+    # TODO: Review when Rnn as MultiSeries
+    forecasters_multiseries = [
+        'ForecasterRecursiveMultiSeries',
+        'ForecasterDirectMultiVariate',
+        'ForecasterRnn'
+    ]
 
     if use_in_sample_residuals:
         if use_binned_residuals:
@@ -1267,25 +1281,18 @@ def check_residuals_input(
                 f"`store_in_sample_residuals = True` when fitting the forecaster "
                 f"or use the `set_in_sample_residuals()` method before predicting."
             )
-        
-        # NOTE: If use_binned_residuals, residuals is {bin: residuals}
-        if forecaster_name in forecaster_direct and not use_binned_residuals:
-            if not set(steps).issubset(set(residuals.keys())):
-                raise ValueError(
-                    f"`forecaster.{literal}` doesn't contain residuals for steps: "
-                    f"{set(steps) - set(residuals.keys())}."
-                )
             
-        if forecaster_name == 'ForecasterRecursiveMultiSeries':
-            unknown_levels = set(levels) - set(residuals.keys())
-            if unknown_levels and encoding is not None:
-                warnings.warn(
-                    f"`levels` {unknown_levels} are not present in `forecaster.{literal}`, "
-                    f"most likely because they were not present in the training data. "
-                    f"A random sample of the residuals from other levels will be used. "
-                    f"This can lead to inaccurate intervals for the unknown levels.",
-                    UnknownLevelWarning
-                )
+        if forecaster_name in forecasters_multiseries:
+            if encoding is not None:
+                unknown_levels = set(levels) - set(residuals.keys())
+                if unknown_levels:
+                    warnings.warn(
+                        f"`levels` {unknown_levels} are not present in `forecaster.{literal}`, "
+                        f"most likely because they were not present in the training data. "
+                        f"A random sample of the residuals from other levels will be used. "
+                        f"This can lead to inaccurate intervals for the unknown levels.",
+                        UnknownLevelWarning
+                    )
     else:
         if use_binned_residuals:
             residuals = out_sample_residuals_by_bin_
@@ -1304,37 +1311,21 @@ def check_residuals_input(
                 f"`use_in_sample_residuals = True` or the "
                 f"`set_out_sample_residuals()` method before predicting."
             )
-
-        # NOTE: If use_binned_residuals, residuals is {bin: residuals}
-        if forecaster_name in forecaster_direct and not use_binned_residuals:
-            if not set(steps).issubset(set(residuals.keys())):
-                raise ValueError(
-                    f"`forecaster.{literal}` doesn't contain residuals for steps: "
-                    f"{set(steps) - set(residuals.keys())}. "
-                    f"Use method `set_out_sample_residuals()`."
-                )
             
-        if forecaster_name == 'ForecasterRecursiveMultiSeries':
-            unknown_levels = set(levels) - set(residuals.keys())
-            if unknown_levels and encoding is not None:
-                warnings.warn(
-                    f"`levels` {unknown_levels} are not present in `forecaster.{literal}`. "
-                    f"A random sample of the residuals from other levels will be used. "
-                    f"This can lead to inaccurate intervals for the unknown levels. "
-                    f"Otherwise, Use the `set_out_sample_residuals()` method before "
-                    f"predicting to set the residuals for these levels.",
-                    UnknownLevelWarning
-                )
+        if forecaster_name in forecasters_multiseries:
+            if encoding is not None:
+                unknown_levels = set(levels) - set(residuals.keys())
+                if unknown_levels:
+                    warnings.warn(
+                        f"`levels` {unknown_levels} are not present in `forecaster.{literal}`. "
+                        f"A random sample of the residuals from other levels will be used. "
+                        f"This can lead to inaccurate intervals for the unknown levels. "
+                        f"Otherwise, Use the `set_out_sample_residuals()` method before "
+                        f"predicting to set the residuals for these levels.",
+                        UnknownLevelWarning
+                    )
 
-    # NOTE: If use_binned_residuals, residuals is {bin: residuals}
-    if forecaster_name in forecaster_direct and not use_binned_residuals:
-        for step in steps:
-            if residuals[step] is None or len(residuals[step]) == 0:
-                raise ValueError(
-                    f"Residuals for step {step} are None. Check `forecaster.{literal}`."
-                )
-
-    if forecaster_name == 'ForecasterRecursiveMultiSeries':
+    if forecaster_name in forecasters_multiseries:
         for level in residuals.keys():
             if residuals[level] is None or len(residuals[level]) == 0:
                 raise ValueError(
@@ -2397,8 +2388,7 @@ def select_n_jobs_fit_forecaster(
         if not regressor_name.startswith('_')
     ]
 
-    if forecaster_name in ['ForecasterDirect', 
-                           'ForecasterDirectMultiVariate']:
+    if forecaster_name in ['ForecasterDirect', 'ForecasterDirectMultiVariate']:
         if regressor_name in linear_regressors:
             n_jobs = 1
         elif regressor_name == 'LGBMRegressor':
@@ -2409,6 +2399,50 @@ def select_n_jobs_fit_forecaster(
         n_jobs = 1
 
     return n_jobs
+
+
+def set_cpu_gpu_device(
+    regressor: object, 
+    device: str | None = 'cpu'
+) -> str | None:
+    """
+    Set the device for the regressor to either 'cpu', 'gpu', 'cuda', or None.
+    """
+
+    if device not in {'gpu', 'cpu', 'cuda', 'GPU', 'CPU', None}:
+        raise ValueError("`device` must be 'gpu', 'cpu', 'cuda', or None.")
+    
+    regressor_name = type(regressor).__name__
+
+    if regressor_name not in ['XGBRegressor', 'LGBMRegressor', 'CatBoostRegressor']:
+        return None
+    
+    device_names = {
+        'XGBRegressor': 'device',
+        'LGBMRegressor': 'device',
+        'CatBoostRegressor': 'task_type',
+    }
+    device_values = {
+        'XGBRegressor': {'gpu': 'cuda', 'cpu': 'cpu', 'cuda': 'cuda'},
+        'LGBMRegressor': {'gpu': 'gpu', 'cpu': 'cpu', 'cuda': 'gpu'},
+        'CatBoostRegressor': {'gpu': 'GPU', 'cpu': 'CPU', 'cuda': 'GPU', 'GPU': 'GPU', 'CPU': 'CPU'},
+    }
+
+    param_name = device_names[regressor_name]
+    original_device = getattr(regressor, param_name, None)
+
+    if device is None:
+        return original_device
+
+    new_device = device_values[regressor_name][device]
+
+    if original_device != new_device:
+        try:
+            regressor.set_params(**{param_name: new_device})
+        except Exception:
+            pass
+
+    return original_device
 
 
 def check_preprocess_series(
@@ -2502,7 +2536,7 @@ def check_preprocess_series(
         )
 
     for k, v in series_dict.items():
-        if np.isnan(v).all():
+        if v.isna().to_numpy().all():
             raise ValueError(f"All values of series '{k}' are NaN.")
 
     series_indexes = {
@@ -2662,8 +2696,10 @@ def check_preprocess_exog_multiseries(
         exog_dtypes_buffer = pd.concat(exog_dtypes_buffer, axis=1)
         exog_dtypes_nunique = exog_dtypes_buffer.nunique(axis=1).eq(1)
         if not exog_dtypes_nunique.all():
-            non_unique_dtyeps_exogs = exog_dtypes_nunique[exog_dtypes_nunique != 1].index.to_list()
-            raise TypeError(f"Exog/s: {non_unique_dtyeps_exogs} have different dtypes in different series.")
+            non_unique_dtypes_exogs = exog_dtypes_nunique[exog_dtypes_nunique != 1].index.to_list()
+            raise TypeError(
+                f"Exog/s: {non_unique_dtypes_exogs} have different dtypes in different series."
+            )
 
     exog_names_in_ = list(
         set(
@@ -2720,7 +2756,7 @@ def align_series_and_exog_multiseries(
     """
 
     for k in series_dict.keys():
-        if np.isnan(series_dict[k].iloc[0]) or np.isnan(series_dict[k].iloc[-1]):
+        if np.isnan(series_dict[k].iat[0]) or np.isnan(series_dict[k].iat[-1]):
             first_valid_index = series_dict[k].first_valid_index()
             last_valid_index = series_dict[k].last_valid_index()
             series_dict[k] = series_dict[k].loc[first_valid_index : last_valid_index]
@@ -2732,7 +2768,7 @@ def align_series_and_exog_multiseries(
             if input_series_is_dict:
                 if not series_dict[k].index.equals(exog_dict[k].index):
                     exog_dict[k] = exog_dict[k].loc[first_valid_index:last_valid_index]
-                    if len(exog_dict[k]) == 0:
+                    if exog_dict[k].empty:
                         warnings.warn(
                             f"Series '{k}' and its `exog` do not have the same index. "
                             f"All exog values will be NaN for the period of the series.",
@@ -2820,8 +2856,10 @@ def preprocess_levels_self_last_window_multiseries(
     available_last_windows = set() if last_window_ is None else set(last_window_.keys())
     not_available_last_window = set(levels) - available_last_windows
     if not_available_last_window:
-        levels = [level for level in levels 
-                  if level not in not_available_last_window]
+        levels = [
+            level for level in levels 
+            if level not in not_available_last_window
+        ]
         if not levels:
             raise ValueError(
                 f"No series to predict. None of the series {not_available_last_window} "

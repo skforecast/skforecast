@@ -180,6 +180,8 @@ class ForecasterDirect(ForecasterBase):
         Frequency of Index of the input used in training.
     training_range_ : pandas Index
         First and last values of index of the data used during training.
+    series_name_in_ : str
+        Names of the series provided by the user during training.
     exog_in_ : bool
         If the forecaster has been trained using exogenous variable/s.
     exog_names_in_ : list
@@ -203,11 +205,10 @@ class ForecasterDirect(ForecasterBase):
         Names of columns of the matrix created internally for training.
     fit_kwargs : dict
         Additional arguments to be passed to the `fit` method of the regressor.
-    in_sample_residuals_ : dict
-        Residuals of the model when predicting training data. Only stored up 
-        to 10_000 values per step in the form `{step: residuals}`. If 
-        `transformer_y` is not `None`, residuals are stored in the 
-        transformed scale. If `differentiation` is not `None`, residuals are 
+    in_sample_residuals_ : numpy ndarray
+        Residuals of the model when predicting training data. Only stored up to
+        10_000 values. If `transformer_y` is not `None`, residuals are stored in
+        the transformed scale. If `differentiation` is not `None`, residuals are
         stored after differentiation.
     in_sample_residuals_by_bin_ : dict
         In sample residuals binned according to the predicted value each residual
@@ -217,12 +218,12 @@ class ForecasterDirect(ForecasterBase):
         scale. If `differentiation` is not `None`, residuals are stored after 
         differentiation. 
         **New in version 0.15.0**
-    out_sample_residuals_ : dict
-        Residuals of the model when predicting non-training data. Only stored up 
-        to 10_000 values per step in the form `{step: residuals}`. Use 
-        `set_out_sample_residuals()` method to set values. If `transformer_y` 
-        is not `None`, residuals are stored in the transformed scale. If 
-        `differentiation` is not `None`, residuals are stored after differentiation. 
+    out_sample_residuals_ : numpy ndarray
+        Residuals of the model when predicting non-training data. Only stored up to
+        10_000 values. Use `set_out_sample_residuals()` method to set values. If 
+        `transformer_y` is not `None`, residuals are stored in the transformed 
+        scale. If `differentiation` is not `None`, residuals are stored after 
+        differentiation.
     out_sample_residuals_by_bin_ : dict
         Out of sample residuals binned according to the predicted value each residual
         is associated with. The number of residuals stored per bin is limited to 
@@ -268,7 +269,6 @@ class ForecasterDirect(ForecasterBase):
     note that all models share the same parameter and hyperparameter configuration.
      
     """
-    # TODO: REview docstring residuals and binner, adapt to n steps
 
     def __init__(
         self,
@@ -299,6 +299,7 @@ class ForecasterDirect(ForecasterBase):
         self.index_type_                        = None
         self.index_freq_                        = None
         self.training_range_                    = None
+        self.series_name_in_                    = None
         self.exog_in_                           = False
         self.exog_names_in_                     = None
         self.exog_type_in_                      = None
@@ -351,8 +352,6 @@ class ForecasterDirect(ForecasterBase):
             self.window_features_class_names = [
                 type(wf).__name__ for wf in self.window_features
             ]
-
-        self.in_sample_residuals_ = {step: None for step in range(1, steps + 1)}
 
         self.weight_func, self.source_code_weight_func, _ = initialize_weights(
             forecaster_name = type(self).__name__, 
@@ -430,6 +429,7 @@ class ForecasterDirect(ForecasterBase):
             f"Window features: {self.window_features_names} \n"
             f"Window size: {self.window_size} \n"
             f"Maximum steps to predict: {self.steps} \n"
+            f"Series name: {self.series_name_in_} \n"
             f"Exogenous included: {self.exog_in_} \n"
             f"Exogenous names: {exog_names_in_} \n"
             f"Transformer for y: {self.transformer_y} \n"
@@ -480,6 +480,7 @@ class ForecasterDirect(ForecasterBase):
                     <li><strong>Window features:</strong> {self.window_features_names}</li>
                     <li><strong>Window size:</strong> {self.window_size}</li>
                     <li><strong>Maximum steps to predict:</strong> {self.steps}</li>
+                    <li><strong>Series name:</strong> {self.series_name_in_}</li>
                     <li><strong>Exogenous included:</strong> {self.exog_in_}</li>
                     <li><strong>Weight function included:</strong> {self.weight_func is not None}</li>
                     <li><strong>Differentiation order:</strong> {self.differentiation}</li>
@@ -726,7 +727,7 @@ class ForecasterDirect(ForecasterBase):
 
         exog_names_in_ = None
         exog_dtypes_in_ = None
-        categorical_features = False
+        X_as_pandas = False
         if exog is not None:
             check_exog(exog=exog, allow_nan=True)
             exog = input_to_frame(data=exog, input_name='exog')
@@ -758,8 +759,9 @@ class ForecasterDirect(ForecasterBase):
                    )
 
             check_exog_dtypes(exog, call_check_exog=True)
-            categorical_features = (
-                exog.select_dtypes(include=np.number).shape[1] != exog.shape[1]
+            X_as_pandas = any(
+                not pd.api.types.is_numeric_dtype(dtype) or pd.api.types.is_bool_dtype(dtype) 
+                for dtype in set(exog.dtypes)
             )
 
             _, exog_index = preprocess_exog(exog=exog, return_values=False)
@@ -786,7 +788,6 @@ class ForecasterDirect(ForecasterBase):
         X_train_features_names_out_ = []
         train_index = y_index[self.window_size + (self.steps - 1):]
         len_train_index = len(train_index)
-        X_as_pandas = True if categorical_features else False
 
         X_train_lags, y_train = self._create_lags(
             y=y_values, X_as_pandas=X_as_pandas, train_index=train_index
@@ -1116,6 +1117,7 @@ class ForecasterDirect(ForecasterBase):
         self.index_type_                        = None
         self.index_freq_                        = None
         self.training_range_                    = None
+        self.series_name_in_                    = None
         self.exog_in_                           = False
         self.exog_names_in_                     = None
         self.exog_type_in_                      = None
@@ -1124,7 +1126,7 @@ class ForecasterDirect(ForecasterBase):
         self.X_train_exog_names_out_            = None
         self.X_train_direct_exog_names_out_     = None
         self.X_train_features_names_out_        = None
-        self.in_sample_residuals_               = {step: None for step in range(1, self.steps + 1)}
+        self.in_sample_residuals_               = None
         self.in_sample_residuals_by_bin_        = None
         self.binner_intervals_                  = None
         self.is_fitted                          = False
@@ -1139,7 +1141,7 @@ class ForecasterDirect(ForecasterBase):
             exog_dtypes_in_
         ) = self._create_train_X_y(y=y, exog=exog)
 
-        def fit_forecaster(regressor, X_train, y_train, step, store_in_sample_residuals, random_state):
+        def fit_forecaster(regressor, X_train, y_train, step):
             """
             Auxiliary function to fit each of the forecaster's regressors in parallel.
 
@@ -1153,19 +1155,11 @@ class ForecasterDirect(ForecasterBase):
                 Dict created with the `create_train_X_y` method, second return.
             step : int
                 Step of the forecaster to be fitted.
-            store_in_sample_residuals : bool
-                If `True`, in-sample residuals will be stored in the forecaster object
-                after fitting (`in_sample_residuals_` and `in_sample_residuals_by_bin_`
-                attributes).
-                If `False`, only the intervals of the bins are stored.
-            random_state : int, default 123
-                Set a seed for the random generator so that the stored sample 
-                residuals are always deterministic.
             
             Returns
             -------
-            Tuple with the step, fitted regressor, in-sample residuals, true values
-            and predicted values for the step.
+            Tuple with the step, fitted regressor, true values and predicted 
+            values for the step.
 
             """
 
@@ -1193,30 +1187,20 @@ class ForecasterDirect(ForecasterBase):
             # NOTE: This is done to save time during fit in functions such as backtesting()
             y_true_step = None
             y_pred_step = None
-            residuals = None
             if self._probabilistic_mode is not False:
                 y_true_step = y_train_step.to_numpy()
                 y_pred_step = regressor.predict(X_train_step)
-                if store_in_sample_residuals:
-                    residuals = y_true_step - y_pred_step
-                    if len(residuals) > 10_000:
-                        rng = np.random.default_rng(seed=random_state)
-                        residuals = residuals[
-                            rng.integers(low=0, high=len(residuals), size=10_000)
-                        ]
 
-            return step, regressor, residuals, y_true_step, y_pred_step
+            return step, regressor, y_true_step, y_pred_step
 
         results_fit = (
             Parallel(n_jobs=self.n_jobs)
             (delayed(fit_forecaster)
             (
-                regressor                 = copy(self.regressor),
-                X_train                   = X_train,
-                y_train                   = y_train,
-                step                      = step,
-                store_in_sample_residuals = store_in_sample_residuals,
-                random_state              = random_state
+                regressor = copy(self.regressor),
+                X_train   = X_train,
+                y_train   = y_train,
+                step      = step
             )
             for step in range(1, self.steps + 1))
         )
@@ -1224,12 +1208,6 @@ class ForecasterDirect(ForecasterBase):
         self.regressors_ = {step: regressor for step, regressor, *_ in results_fit}
 
         if self._probabilistic_mode is not False:
-            if store_in_sample_residuals:
-                self.in_sample_residuals_ = {
-                    step: residuals 
-                    for step, _, residuals, *_ in results_fit
-                }
-
             y_true, y_pred = zip(*[(y_true, y_pred) for *_, y_true, y_pred in results_fit])
             self._binning_in_sample_residuals(
                 y_true                    = np.concatenate(y_true),
@@ -1241,6 +1219,7 @@ class ForecasterDirect(ForecasterBase):
         self.X_train_features_names_out_ = X_train_features_names_out_
 
         self.is_fitted = True
+        self.series_name_in_ = y.name if y.name is not None else 'y'
         self.fit_date = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
         self.training_range_ = preprocess_y(
             y=y, return_values=False, suppress_warnings=True
@@ -1315,18 +1294,26 @@ class ForecasterDirect(ForecasterBase):
             self.binner.fit(y_pred)
             self.binner_intervals_ = self.binner.intervals_
 
-            if store_in_sample_residuals:
+        if store_in_sample_residuals:
+            rng = np.random.default_rng(seed=random_state)
+            if self._probabilistic_mode == "binned":
                 data['bin'] = self.binner.transform(y_pred).astype(int)
                 self.in_sample_residuals_by_bin_ = (
                     data.groupby('bin')['residuals'].apply(np.array).to_dict()
                 )
 
-                rng = np.random.default_rng(seed=random_state)
                 max_sample = 10_000 // self.binner.n_bins_
                 for k, v in self.in_sample_residuals_by_bin_.items():
                     if len(v) > max_sample:
                         sample = v[rng.integers(low=0, high=len(v), size=max_sample)]
                         self.in_sample_residuals_by_bin_[k] = sample
+        
+            if len(residuals) > 10_000:
+                residuals = residuals[
+                    rng.integers(low=0, high=len(residuals), size=10_000)
+                ]
+
+            self.in_sample_residuals_ = residuals
 
     def _create_predict_inputs(
         self,
@@ -1424,8 +1411,7 @@ class ForecasterDirect(ForecasterBase):
                     out_sample_residuals_        = self.out_sample_residuals_,
                     use_binned_residuals         = use_binned_residuals,
                     in_sample_residuals_by_bin_  = self.in_sample_residuals_by_bin_,
-                    out_sample_residuals_by_bin_ = self.out_sample_residuals_by_bin_,
-                    steps                        = steps
+                    out_sample_residuals_by_bin_ = self.out_sample_residuals_by_bin_
                 )
 
         last_window = last_window.iloc[-self.window_size:].copy()
@@ -1511,7 +1497,8 @@ class ForecasterDirect(ForecasterBase):
         self,
         steps: int | list[int] | None = None,
         last_window: pd.Series | pd.DataFrame | None = None,
-        exog: pd.Series | pd.DataFrame | None = None
+        exog: pd.Series | pd.DataFrame | None = None,
+        check_inputs: bool = True
     ) -> pd.DataFrame:
         """
         Create the predictors needed to predict `steps` ahead.
@@ -1535,6 +1522,10 @@ class ForecasterDirect(ForecasterBase):
             right after training data.
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
+        check_inputs : bool, default True
+            If `True`, the input is checked for possible warnings and errors 
+            with the `check_predict_input` function. This argument is created 
+            for internal use and is not recommended to be changed.
 
         Returns
         -------
@@ -1552,7 +1543,8 @@ class ForecasterDirect(ForecasterBase):
         ) = self._create_predict_inputs(
                 steps        = steps,
                 last_window  = last_window,
-                exog         = exog
+                exog         = exog,
+                check_inputs = check_inputs
             )
 
         X_predict = pd.DataFrame(
@@ -1742,23 +1734,6 @@ class ForecasterDirect(ForecasterBase):
             residuals = self.out_sample_residuals_
             residuals_by_bin = self.out_sample_residuals_by_bin_
 
-        # NOTE: Since residuals are {step/bin: residuals}, more n_boot iterations
-        # than the number of residuals for the step/bin with more residuals, 
-        # doesn't add any new information to the bootstrapping process.
-        if use_binned_residuals:
-            recommended_n_boot = np.max([v.size for v in residuals_by_bin.values()])
-        else:
-            recommended_n_boot = np.max([v.size for v in residuals.values()])
-        
-        if n_boot > recommended_n_boot:
-            warnings.warn(
-                f"`n_boot`, {n_boot}, is greater than the number of available "
-                f"residuals. More than {recommended_n_boot} iterations don't "
-                f"add new information to the bootstrapping process, but increase "
-                f"the computational cost.",
-                ResidualsUsageWarning
-            )
-
         # NOTE: Predictors and residuals are transformed and differentiated
         regressors = [self.regressors_[step] for step in steps]
         with warnings.catch_warnings():
@@ -1771,28 +1746,28 @@ class ForecasterDirect(ForecasterBase):
                 regressor.predict(X).ravel()[0] 
                 for regressor, X in zip(regressors, Xs)
             ])
-
-        boot_predictions = np.tile(predictions, (n_boot, 1)).T
-        boot_columns = [f"pred_boot_{i}" for i in range(n_boot)]
         
         rng = np.random.default_rng(seed=random_state)
-        for i, step in enumerate(steps):
-
-            if use_binned_residuals:
-                predicted_bin = self.binner.transform(predictions[i]).item()
-                step_residuals = residuals_by_bin[predicted_bin]
-            else:
-                step_residuals = residuals[step]
-            len_step_residuals = len(step_residuals)
-
-            # NOTE: If n_boot != len_step_residuals, upsample or downsample the 
-            # residuals from the step/bin to match n_boot.
-            if len_step_residuals != n_boot:
-                step_residuals = step_residuals[
-                    rng.integers(low=0, high=len_step_residuals, size=n_boot)
+        if not use_binned_residuals:
+            sampled_residuals = residuals[
+                rng.integers(low=0, high=residuals.size, size=(len(steps), n_boot))
+            ]
+        else:
+            predicted_bins = self.binner.transform(predictions)
+            sampled_residuals = np.full(
+                                    shape      = (predicted_bins.size, n_boot),
+                                    fill_value = np.nan,
+                                    order      = 'C',
+                                    dtype      = float
+                                )
+            for i, bin in enumerate(predicted_bins):
+                sampled_residuals[i, :] = residuals_by_bin[bin][
+                    rng.integers(low=0, high=residuals_by_bin[bin].size, size=n_boot)
                 ]
-            
-            boot_predictions[i, :] = boot_predictions[i, :] + step_residuals
+        
+        boot_predictions = np.tile(predictions, (n_boot, 1)).T
+        boot_columns = [f"pred_boot_{i}" for i in range(n_boot)]
+        boot_predictions = boot_predictions + sampled_residuals
 
         if self.differentiation is not None:
             boot_predictions = (
@@ -1922,10 +1897,7 @@ class ForecasterDirect(ForecasterBase):
             predictions_bin = self.binner.transform(predictions)
             correction_factor = replace_func(predictions_bin)
         else:
-            correction_factor = np.array([
-                np.quantile(np.abs(residuals[step]), nominal_coverage) 
-                for step in steps
-            ])
+            correction_factor = np.quantile(np.abs(residuals), nominal_coverage)
 
         lower_bound = predictions - correction_factor
         upper_bound = predictions + correction_factor
@@ -2421,8 +2393,7 @@ class ForecasterDirect(ForecasterBase):
         values and the predictions made by the forecaster using the training 
         data. The following internal attributes are updated:
 
-        + `in_sample_residuals_`: Dictionary containing a numpy ndarray with the
-        residuals for each step in the form `{step: residuals}`.
+        + `in_sample_residuals_`: residuals stored in a numpy ndarray.
         + `binner_intervals_`: intervals used to bin the residuals are calculated
         using the quantiles of the predicted values.
         + `in_sample_residuals_by_bin_`: residuals are binned according to the
@@ -2505,7 +2476,6 @@ class ForecasterDirect(ForecasterBase):
         y_pred_steps = []
         self.in_sample_residuals_ = {}
         for step in range(1, self.steps + 1):
-
             X_train_step, y_train_step = self.filter_train_X_y_for_step(
                                              step          = step,
                                              X_train       = X_train,
@@ -2513,18 +2483,8 @@ class ForecasterDirect(ForecasterBase):
                                              remove_suffix = True
                                          )
             
-            y_true_step = y_train_step.to_numpy()
-            y_pred_step = self.regressors_[step].predict(X_train_step)
-            residuals = y_true_step - y_pred_step
-            if len(residuals) > 10_000:
-                rng = np.random.default_rng(seed=random_state)
-                residuals = residuals[
-                    rng.integers(low=0, high=len(residuals), size=10_000)
-                ]
-
-            y_true_steps.append(y_true_step)
-            y_pred_steps.append(y_pred_step)
-            self.in_sample_residuals_[step] = residuals
+            y_true_steps.append(y_train_step.to_numpy())
+            y_pred_steps.append(self.regressors_[step].predict(X_train_step))
 
         self._binning_in_sample_residuals(
             y_true                    = np.concatenate(y_true_steps),
@@ -2540,10 +2500,10 @@ class ForecasterDirect(ForecasterBase):
 
     def set_out_sample_residuals(
         self,
-        y_true: dict[int, np.ndarray | pd.Series],
-        y_pred: dict[int, np.ndarray | pd.Series],
+        y_true: np.ndarray | pd.Series,
+        y_pred: np.ndarray | pd.Series,
         append: bool = False,
-        random_state: int = 36987
+        random_state: int = 123
     ) -> None:
         """
         Set new values to the attribute `out_sample_residuals_`. Out of sample
@@ -2552,26 +2512,35 @@ class ForecasterDirect(ForecasterBase):
         to be in the original scale of the time series. Residuals are calculated
         as `y_true` - `y_pred`, after applying the necessary transformations and
         differentiations if the forecaster includes them (`self.transformer_y`
-        and `self.differentiation`).
+        and `self.differentiation`). Two internal attributes are updated:
+
+        + `out_sample_residuals_`: residuals stored in a numpy ndarray.
+        + `out_sample_residuals_by_bin_`: residuals are binned according to the
+        predicted value they are associated with and stored in a dictionary, where
+        the keys are the  intervals of the predicted values and the values are
+        the residuals associated with that range. If a bin binning is empty, it
+        is filled with a random sample of residuals from other bins. This is done
+        to ensure that all bins have at least one residual and can be used in the
+        prediction process.
 
         A total of 10_000 residuals are stored in the attribute `out_sample_residuals_`.
         If the number of residuals is greater than 10_000, a random sample of
-        10_000 residuals is stored.
+        10_000 residuals is stored. The number of residuals stored per bin is
+        limited to `10_000 // self.binner.n_bins_`.
         
         Parameters
         ----------
-        y_true : dict
-            Dictionary of numpy ndarrays or pandas Series with the true values of
-            the time series for each model in the form {step: y_true}.
-        y_pred : dict
-            Dictionary of numpy ndarrays or pandas Series with the predicted values
-            of the time series for each model in the form {step: y_pred}.
+        y_true : numpy ndarray, pandas Series
+            True values of the time series from which the residuals have been
+            calculated.
+        y_pred : numpy ndarray, pandas Series
+            Predicted values of the time series.
         append : bool, default False
             If `True`, new residuals are added to the once already stored in the
-            attribute `out_sample_residuals_`. If after appending the new residuals,
-            the limit of 10_000 samples is exceeded, a random sample of 10_000 is
-            kept.
-        random_state : int, default 36987
+            forecaster. If after appending the new residuals, the limit of
+            `10_000 // self.binner.n_bins_` values per bin is reached, a random
+            sample of residuals is stored.
+        random_state : int, default 123
             Sets a seed to the random sampling for reproducible output.
 
         Returns
@@ -2586,124 +2555,78 @@ class ForecasterDirect(ForecasterBase):
                 "arguments before using `set_out_sample_residuals()`."
             )
 
-        if not isinstance(y_true, dict):
+        if not isinstance(y_true, (np.ndarray, pd.Series)):
             raise TypeError(
-                f"`y_true` must be a dictionary of numpy ndarrays or pandas Series. "
+                f"`y_true` argument must be `numpy ndarray` or `pandas Series`. "
                 f"Got {type(y_true)}."
             )
-
-        if not isinstance(y_pred, dict):
+        
+        if not isinstance(y_pred, (np.ndarray, pd.Series)):
             raise TypeError(
-                f"`y_pred` must be a dictionary of numpy ndarrays or pandas Series. "
+                f"`y_pred` argument must be `numpy ndarray` or `pandas Series`. "
                 f"Got {type(y_pred)}."
             )
         
-        if not set(y_true.keys()) == set(y_pred.keys()):
+        if len(y_true) != len(y_pred):
             raise ValueError(
-                f"`y_true` and `y_pred` must have the same keys. "
-                f"Got {set(y_true.keys())} and {set(y_pred.keys())}."
+                f"`y_true` and `y_pred` must have the same length. "
+                f"Got {len(y_true)} and {len(y_pred)}."
             )
         
-        for k in y_true.keys():
-            if not isinstance(y_true[k], (np.ndarray, pd.Series)):
-                raise TypeError(
-                    f"Values of `y_true` must be numpy ndarrays or pandas Series. "
-                    f"Got {type(y_true[k])} for step {k}."
-                )
-            if not isinstance(y_pred[k], (np.ndarray, pd.Series)):
-                raise TypeError(
-                    f"Values of `y_pred` must be numpy ndarrays or pandas Series. "
-                    f"Got {type(y_pred[k])} for step {k}."
-                )
-            if len(y_true[k]) != len(y_pred[k]):
+        if isinstance(y_true, pd.Series) and isinstance(y_pred, pd.Series):
+            if not y_true.index.equals(y_pred.index):
                 raise ValueError(
-                    f"`y_true` and `y_pred` must have the same length. "
-                    f"Got {len(y_true[k])} and {len(y_pred[k])} for step {k}."
+                    "`y_true` and `y_pred` must have the same index."
                 )
-            if isinstance(y_true[k], pd.Series) and isinstance(y_pred[k], pd.Series):
-                if not y_true[k].index.equals(y_pred[k].index):
-                    raise ValueError(
-                        f"When containing pandas Series, elements in `y_true` and "
-                        f"`y_pred` must have the same index. Error in step {k}."
-                    )
-        
-        steps_to_update = set(range(1, self.steps + 1)).intersection(set(y_pred.keys()))
-        if not steps_to_update:
-            raise ValueError(
-                "Provided keys in `y_pred` and `y_true` do not match any step. "
-                "Residuals cannot be updated."
-            )
         
         y_true = deepcopy(y_true)
         y_pred = deepcopy(y_pred)
+        if not isinstance(y_pred, np.ndarray):
+            y_pred = y_pred.to_numpy()
+        if not isinstance(y_true, np.ndarray):
+            y_true = y_true.to_numpy()
+
+        if self.transformer_y:
+            y_true = transform_numpy(
+                         array             = y_true,
+                         transformer       = self.transformer_y,
+                         fit               = False,
+                         inverse_transform = False
+                     )
+            y_pred = transform_numpy(
+                         array             = y_pred,
+                         transformer       = self.transformer_y,
+                         fit               = False,
+                         inverse_transform = False
+                     )
+        
         if self.differentiation is not None:
             differentiator = copy(self.differentiator)
             differentiator.set_params(window_size=None)
-        
-        residuals = {}
-        for step in steps_to_update:
-            if isinstance(y_true[step], pd.Series):
-                y_true[step] = y_true[step].to_numpy()
-            if isinstance(y_pred[step], pd.Series):
-                y_pred[step] = y_pred[step].to_numpy()
-            if self.transformer_y:
-                y_true[step] = transform_numpy(
-                                   array             = y_true[step],
-                                   transformer       = self.transformer_y,
-                                   fit               = False,
-                                   inverse_transform = False
-                               )
-                y_pred[step] = transform_numpy(
-                                   array             = y_pred[step],
-                                   transformer       = self.transformer_y,
-                                   fit               = False,
-                                   inverse_transform = False
-                               )
-            if self.differentiation is not None:
-                y_true[step] = differentiator.fit_transform(y_true[step])[self.differentiation:]
-                y_pred[step] = differentiator.fit_transform(y_pred[step])[self.differentiation:]
+            y_true = differentiator.fit_transform(y_true)[self.differentiation:]
+            y_pred = differentiator.fit_transform(y_pred)[self.differentiation:]
 
-            residuals[step] = y_true[step] - y_pred[step]
-
-        y_true = np.concatenate(list(y_true.values()))
-        y_pred = np.concatenate(list(y_pred.values()))
         data = pd.DataFrame(
             {'prediction': y_pred, 'residuals': y_true - y_pred}
         ).dropna()
         y_pred = data['prediction'].to_numpy()
-        residuals_all_steps = data['residuals'].to_numpy()
+        residuals = data['residuals'].to_numpy()
 
         data['bin'] = self.binner.transform(y_pred).astype(int)
         residuals_by_bin = data.groupby('bin')['residuals'].apply(np.array).to_dict()
         
         out_sample_residuals = (
-            {step: None for step in range(1, self.steps + 1)}
+            np.array([]) 
             if self.out_sample_residuals_ is None
             else self.out_sample_residuals_
         )
-
-        rng = np.random.default_rng(seed=random_state)
-        for step, residuals_step in residuals.items():
-            if append and out_sample_residuals[step] is not None:
-                out_sample_residuals_step = np.concatenate(
-                    [out_sample_residuals[step], residuals_step]
-                )
-            else:
-                out_sample_residuals_step = residuals_step
-            
-            if len(out_sample_residuals_step) > 10_000:
-                out_sample_residuals_step = rng.choice(
-                    out_sample_residuals_step, size=10_000, replace=False
-                )
-            
-            out_sample_residuals[step] = out_sample_residuals_step
-
         out_sample_residuals_by_bin = (
             {} 
             if self.out_sample_residuals_by_bin_ is None
             else self.out_sample_residuals_by_bin_
         )
         if append:
+            out_sample_residuals = np.concatenate([out_sample_residuals, residuals])
             for k, v in residuals_by_bin.items():
                 if k in out_sample_residuals_by_bin:
                     out_sample_residuals_by_bin[k] = np.concatenate(
@@ -2712,9 +2635,11 @@ class ForecasterDirect(ForecasterBase):
                 else:
                     out_sample_residuals_by_bin[k] = v
         else:
+            out_sample_residuals = residuals
             out_sample_residuals_by_bin = residuals_by_bin
 
         max_samples = 10_000 // self.binner.n_bins_
+        rng = np.random.default_rng(seed=random_state)
         for k, v in out_sample_residuals_by_bin.items():
             if len(v) > max_samples:
                 sample = rng.choice(a=v, size=max_samples, replace=False)
@@ -2741,12 +2666,20 @@ class ForecasterDirect(ForecasterBase):
                 f"Empty bins will be filled with a random sample of residuals.",
                 ResidualsUsageWarning
             )
+            empty_bin_size = min(max_samples, len(out_sample_residuals))
             for k in empty_bins:
                 out_sample_residuals_by_bin[k] = rng.choice(
-                    a       = residuals_all_steps,
-                    size    = min(max_samples, len(residuals_all_steps)),
+                    a       = out_sample_residuals,
+                    size    = empty_bin_size,
                     replace = False
                 )
+
+        if len(out_sample_residuals) > 10_000:
+            out_sample_residuals = rng.choice(
+                a       = out_sample_residuals, 
+                size    = 10_000, 
+                replace = False
+            )
 
         self.out_sample_residuals_ = out_sample_residuals
         self.out_sample_residuals_by_bin_ = out_sample_residuals_by_bin
@@ -2814,8 +2747,10 @@ class ForecasterDirect(ForecasterBase):
             idx_columns = np.concatenate((idx_columns_autoreg, idx_columns_exog))
         
         idx_columns = [int(x) for x in idx_columns]  # Required since numpy 2.0
-        feature_names = [self.X_train_features_names_out_[i].replace(f"_step_{step}", "") 
-                         for i in idx_columns]
+        feature_names = [
+            self.X_train_features_names_out_[i].replace(f"_step_{step}", "") 
+            for i in idx_columns
+        ]
 
         if hasattr(estimator, 'feature_importances_'):
             feature_importances = estimator.feature_importances_

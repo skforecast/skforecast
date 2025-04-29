@@ -26,6 +26,7 @@ def test_forecaster_y_exog_features_stored():
     )
     forecaster.fit(y=y, exog=exog)
 
+    series_name_in_ = 'y'
     exog_in_ = True
     exog_type_in_ = type(exog)
     exog_names_in_ = ['exog']
@@ -38,6 +39,7 @@ def test_forecaster_y_exog_features_stored():
         'roll_ratio_min_max_4', 'roll_median_4', 'exog_step_1', 'exog_step_2'
     ]
     
+    assert forecaster.series_name_in_ == series_name_in_
     assert forecaster.exog_in_ == exog_in_
     assert forecaster.exog_type_in_ == exog_type_in_
     assert forecaster.exog_names_in_ == exog_names_in_
@@ -86,17 +88,11 @@ def test_fit_in_sample_residuals_stored(n_jobs):
     forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=2, n_jobs=n_jobs)
     forecaster.fit(y=pd.Series(np.arange(5)), store_in_sample_residuals=True)
     results = forecaster.in_sample_residuals_
+    expected = np.array([0., 0.])
 
-    expected = {
-        1: np.array([0.]),
-        2: np.array([0.])
-    }
-
-    assert isinstance(results, dict)
-    assert results.keys() == expected.keys()
-    for k in expected.keys():
-        assert isinstance(results[k], np.ndarray)
-        np.testing.assert_array_almost_equal(results[k], expected[k])
+    assert isinstance(results, np.ndarray)
+    np.testing.assert_array_almost_equal(results, expected)
+        
 
 
 @pytest.mark.parametrize("n_jobs", [1, -1, 'auto'], 
@@ -114,15 +110,11 @@ def test_fit_same_residuals_when_residuals_greater_than_10000(n_jobs):
     forecaster.fit(y=pd.Series(np.arange(12_000)), store_in_sample_residuals=True)
     results_2 = forecaster.in_sample_residuals_
 
-    assert isinstance(results_1, dict)
-    assert isinstance(results_2, dict)
-    assert results_1.keys() == results_2.keys()
-    for k in results_1.keys():
-        assert isinstance(results_1[k], np.ndarray)
-        assert isinstance(results_2[k], np.ndarray)
-        assert len(results_1[k] == 10_000)
-        assert len(results_2[k] == 10_000)
-        np.testing.assert_array_equal(results_1[k], results_2[k])
+    assert isinstance(results_1, np.ndarray)
+    assert isinstance(results_2, np.ndarray)
+    assert len(results_1) == 10_000
+    assert len(results_2) == 10_000
+    np.testing.assert_array_equal(results_1, results_2)
 
 
 @pytest.mark.parametrize("n_jobs", [1, -1, 'auto'], 
@@ -136,8 +128,8 @@ def test_fit_in_sample_residuals_by_bin_stored(n_jobs):
     )
     forecaster.fit(y, store_in_sample_residuals=True)
 
-    expected_1 = {
-        1: np.array([ 0.04393357,  0.18398148, -0.08688424,  0.51870003,  0.06216896,
+    expected_1 = np.array([
+            0.04393357,  0.18398148, -0.08688424,  0.51870003,  0.06216896,
             0.02452184, -0.12608551, -0.16259998,  0.23758614, -0.12067947,
             -0.38402291, -0.05926222,  0.18972306, -0.3385514 , -0.22649077,
             0.01348154,  0.00174659,  0.1596128 ,  0.32282691,  0.17531481,
@@ -146,8 +138,7 @@ def test_fit_in_sample_residuals_by_bin_stored(n_jobs):
             0.02970289, -0.08200536, -0.17358741, -0.05563861,  0.38006595,
             0.37597605, -0.0144369 ,  0.15009597, -0.45267465, -0.10006534,
             -0.12798406,  0.38508591, -0.31515422,  0.08711746,  0.41108872,
-            -0.05056158]),
-        2: np.array([ 0.21973412, -0.07827408,  0.46573298,  0.15786283,  0.04787789,
+            -0.05056158, 0.21973412, -0.07827408,  0.46573298,  0.15786283,  0.04787789,
             -0.14081875, -0.13513316,  0.22976323, -0.07790008, -0.42298643,
             -0.14762595,  0.21302143, -0.30705996, -0.34168009, -0.03513684,
             0.03880089,  0.12527145,  0.31242716,  0.23101186,  0.13115123,
@@ -157,7 +148,6 @@ def test_fit_in_sample_residuals_by_bin_stored(n_jobs):
             0.02167369,  0.12380491, -0.38864242, -0.13622859, -0.14006171,
             0.38181952, -0.28740547,  0.00152984,  0.41738958,  0.06388605,
             0.13177162])
-    }
 
     expected_2 = {
         0: np.array([ 0.51870003,  0.02452184, -0.38402291, -0.05926222, -0.22649077,
@@ -188,10 +178,7 @@ def test_fit_in_sample_residuals_by_bin_stored(n_jobs):
         2: (0.5222610284825959, 0.6226607762583838)
     }
 
-    for k in forecaster.in_sample_residuals_.keys():
-        np.testing.assert_array_almost_equal(
-            forecaster.in_sample_residuals_[k], expected_1[k]
-        )
+    np.testing.assert_array_almost_equal(forecaster.in_sample_residuals_, expected_1)
     for k in forecaster.in_sample_residuals_by_bin_.keys():
         np.testing.assert_array_almost_equal(
             forecaster.in_sample_residuals_by_bin_[k], expected_2[k]
@@ -213,20 +200,14 @@ def test_fit_in_sample_residuals_not_stored_probabilistic_mode_binned(n_jobs):
     )
     forecaster.fit(y, store_in_sample_residuals=False)
 
-    expected = {1: None, 2: None}
     expected_binner_intervals_ = {
         0: (0.39244612759441666, 0.4901889798207174),
         1: (0.4901889798207174, 0.5222610284825959),
         2: (0.5222610284825959, 0.6226607762583838)
     }
 
-    assert isinstance(forecaster.in_sample_residuals_, dict)
-    assert forecaster.in_sample_residuals_.keys() == expected.keys()
-    for k in forecaster.in_sample_residuals_.keys():
-        assert forecaster.in_sample_residuals_[k] == expected[k]
-    
+    assert forecaster.in_sample_residuals_ is None
     assert forecaster.in_sample_residuals_by_bin_ is None
-
     assert forecaster.binner_intervals_.keys() == expected_binner_intervals_.keys()
     for k in forecaster.binner_intervals_.keys():
         assert forecaster.binner_intervals_[k][0] == approx(expected_binner_intervals_[k][0])
@@ -244,12 +225,7 @@ def test_fit_in_sample_residuals_not_stored_probabilistic_mode_False(n_jobs):
     forecaster._probabilistic_mode = False
     forecaster.fit(y=pd.Series(np.arange(5)), store_in_sample_residuals=False)
 
-    expected = {1: None, 2: None}
-
-    assert isinstance(forecaster.in_sample_residuals_, dict)
-    assert forecaster.in_sample_residuals_.keys() == expected.keys()
-    for k in forecaster.in_sample_residuals_.keys():
-        assert forecaster.in_sample_residuals_[k] == expected[k]
+    assert forecaster.in_sample_residuals_ is None
     assert forecaster.in_sample_residuals_by_bin_ is None
     assert forecaster.binner_intervals_ is None
 

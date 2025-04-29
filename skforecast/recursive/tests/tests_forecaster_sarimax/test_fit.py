@@ -21,11 +21,36 @@ def test_fit_ValueError_when_len_exog_is_not_the_same_as_len_y():
     forecaster = ForecasterSarimax(regressor=Sarimax(order=(1, 1, 1)))
 
     err_msg = re.escape(
-                  (f"`exog` must have same number of samples as `y`. "
-                   f"length `exog`: ({len(exog)}), length `y`: ({len(y)})")
-              )
+        f"`exog` must have same number of samples as `y`. "
+        f"length `exog`: ({len(exog)}), length `y`: ({len(y)})"
+    )
     with pytest.raises(ValueError, match = err_msg):
         forecaster.fit(y=y, exog=exog)
+
+
+def test_forecaster_y_exog_features_stored():
+    """
+    Test forecaster stores y and exog features after fitting.
+    """
+    
+    y = pd.Series(data=np.arange(10), name='y_sarimax')
+    exog = pd.Series(data=np.arange(10), name='exog')
+    forecaster = ForecasterSarimax(regressor=Sarimax(order=(1, 1, 1)))
+    forecaster.fit(y=y, exog=exog)
+
+    series_name_in_ = 'y_sarimax'
+    exog_in_ = True
+    exog_type_in_ = type(exog)
+    exog_names_in_ = ['exog']
+    exog_dtypes_in_ = {'exog': exog.dtype}
+    X_train_exog_names_out_ = ['exog']
+    
+    assert forecaster.series_name_in_ == series_name_in_
+    assert forecaster.exog_in_ == exog_in_
+    assert forecaster.exog_type_in_ == exog_type_in_
+    assert forecaster.exog_names_in_ == exog_names_in_
+    assert forecaster.exog_dtypes_in_ == exog_dtypes_in_
+    assert forecaster.X_train_exog_names_out_ == X_train_exog_names_out_
 
 
 def test_forecaster_DatetimeIndex_index_freq_stored():

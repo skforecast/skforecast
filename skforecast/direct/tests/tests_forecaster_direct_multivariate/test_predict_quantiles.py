@@ -47,8 +47,8 @@ def test_predict_quantiles_output_when_forecaster_is_LinearRegression_steps_is_2
               )
     
     expected = pd.DataFrame(
-                   data    = np.array([[0.39855187, 0.56310088, 0.67329092],
-                                       [0.20291844, 0.24536171, 0.56528096]]),
+                   data    = np.array([[0.49293687, 0.69241978, 0.78565834],
+                                        [0.09125144, 0.3137743 , 0.56737647]]),
                    columns = ['q_0.05', 'q_0.55', 'q_0.95'],
                    index   = pd.RangeIndex(start=50, stop=52)
                )
@@ -74,6 +74,7 @@ def test_predict_quantiles_output_when_forecaster_is_LinearRegression_steps_is_2
     
     forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
     forecaster.out_sample_residuals_ = forecaster.in_sample_residuals_
+    forecaster.out_sample_residuals_by_bin_ = forecaster.in_sample_residuals_by_bin_
     results = forecaster.predict_quantiles(
                   steps                   = 2,
                   exog                    = exog_predict,
@@ -84,8 +85,8 @@ def test_predict_quantiles_output_when_forecaster_is_LinearRegression_steps_is_2
               )
     
     expected = pd.DataFrame(
-                   data    = np.array([[0.39855187, 0.56310088, 0.67329092],
-                                       [0.20291844, 0.24536171, 0.56528096]]),
+                   data    = np.array([[0.49293687, 0.69241978, 0.78565834],
+                                        [0.09125144, 0.3137743 , 0.56737647]]),
                    columns = ['q_0.05', 'q_0.55', 'q_0.95'],
                    index   = pd.RangeIndex(start=50, stop=52)
                )

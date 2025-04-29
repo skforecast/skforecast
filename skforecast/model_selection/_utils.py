@@ -84,6 +84,7 @@ def check_backtesting_input(
     use_in_sample_residuals: bool = True,
     use_binned_residuals: bool = True,
     random_state: int = 123,
+    return_predictors: bool = False,
     n_jobs: int | str = 'auto',
     show_progress: bool = True,
     suppress_warnings: bool = False,
@@ -146,6 +147,8 @@ def check_backtesting_input(
         If `False`, residuals are selected randomly.
     random_state : int, default `123`
         Seed for the random number generator to ensure reproducibility.
+    return_predictors : bool, default False
+        If `True`, the predictors used to make the predictions are also returned.
     n_jobs : int, 'auto', default `'auto'`
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
@@ -205,6 +208,13 @@ def check_backtesting_input(
     forecasters_not_interval = [
         "ForecasterEquivalentDate",
         "ForecasterRnn"
+    ]
+    forecasters_return_predictors = [
+        "ForecasterRecursive",
+        "ForecasterDirect",
+        "ForecasterRecursiveMultiSeries",
+        "ForecasterDirectMultiVariate",
+        "ForecasterRNN",
     ]
 
     if forecaster_name in forecasters_uni:
@@ -383,6 +393,8 @@ def check_backtesting_input(
         raise TypeError("`use_binned_residuals` must be a boolean: `True`, `False`.")
     if not isinstance(random_state, (int, np.integer)) or random_state < 0:
         raise TypeError(f"`random_state` must be an integer greater than 0. Got {random_state}.")
+    if not isinstance(return_predictors, bool):
+        raise TypeError("`return_predictors` must be a boolean: `True`, `False`.")
     if not isinstance(n_jobs, int) and n_jobs != 'auto':
         raise TypeError(f"`n_jobs` must be an integer or `'auto'`. Got {n_jobs}.")
     if not isinstance(show_progress, bool):
@@ -448,6 +460,12 @@ def check_backtesting_input(
                 )
         else:
             check_interval(interval=interval, alpha=alpha)
+
+    if return_predictors and forecaster_name not in forecasters_return_predictors:
+        raise ValueError(
+            f"`return_predictors` is only allowed for forecasters of type "
+            f"{forecasters_return_predictors}. Got {forecaster_name}."
+        )
 
     if (
         not allow_incomplete_fold
@@ -969,6 +987,9 @@ def _extract_data_folds_multiseries(
 
     """
 
+    is_series_dict = isinstance(series, dict)
+    is_exog_dict = isinstance(exog, dict)
+
     for fold in folds:
         train_iloc_start       = fold[0][0]
         train_iloc_end         = fold[0][1]
@@ -977,7 +998,7 @@ def _extract_data_folds_multiseries(
         test_iloc_start        = fold[2][0]
         test_iloc_end          = fold[2][1]
 
-        if isinstance(series, dict) or isinstance(exog, dict):
+        if is_series_dict or is_exog_dict:
             # Subtract 1 to the iloc indexes to get the loc indexes
             train_loc_start       = span_index[train_iloc_start]
             train_loc_end         = span_index[train_iloc_end - 1]
@@ -986,7 +1007,7 @@ def _extract_data_folds_multiseries(
             test_loc_start        = span_index[test_iloc_start]
             test_loc_end          = span_index[test_iloc_end - 1]
 
-        if isinstance(series, pd.DataFrame):
+        if not is_series_dict:
             series_train = series.iloc[train_iloc_start:train_iloc_end, ]
 
             series_to_drop = []
@@ -1037,7 +1058,7 @@ def _extract_data_folds_multiseries(
         levels_last_window = list(series_last_window.columns)
 
         if exog is not None:
-            if isinstance(exog, (pd.Series, pd.DataFrame)):
+            if not is_exog_dict:
                 exog_train = exog.iloc[train_iloc_start:train_iloc_end, ]
                 exog_test = exog.iloc[test_iloc_start:test_iloc_end, ]
             else:
@@ -1175,6 +1196,7 @@ def _calculate_metrics_backtesting_multiseries(
             train_iloc_start = fold[0][0]
             train_iloc_end = fold[0][1]
             train_indexes.append(np.arange(train_iloc_start, train_iloc_end))
+    
     train_indexes = np.unique(np.concatenate(train_indexes))
     train_indexes = span_index[train_indexes]
     train_indexes = pd.MultiIndex.from_product([
@@ -1231,7 +1253,8 @@ def _calculate_metrics_backtesting_multiseries(
 
         # aggregation: weighted_average
         n_predictions_levels = (
-            predictions.groupby(level="level", sort=False)["y_pred"]
+            predictions
+            .groupby(level="level", sort=False)["y_pred"]
             .apply(lambda x: x.notna().sum())
             .reset_index(name="n_predictions")
             .rename(columns={"level": "levels"})

@@ -10,6 +10,36 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
 
+## 0.16.0 <small>Apr 29, 2025</small> { id="0.16.0" }
+
+The main changes in this release are:
+
++ <span class="badge text-bg-enhancement">Enhancement</span> Refactored the internal codebase of all forecasters to enhance performance, primarily by replacing pandas DataFrames with more efficient NumPy arrays.
+
+
+**Added**
+
++ Function `set_cpu_gpu_device()` in the <code>[utils]</code> module to set the device of the regressor to 'cpu' or 'gpu'. It is used to ensure that the recursive prediction is done in cpu even if the regressor is set to 'gpu'. This allows to avoid the bottleneck of the recursive prediction when using a gpu. Only applied to recursive forecasters when the regressor is a `XGBoost`, `LightGBM` or `CatBoost` model.
+
++ Added `series_name_in_` attribute in single series forecasters to store the name of the series used to fit the forecaster.
+
++ Added argument `return_predictors` to <code>[backtesting_forecaster]</code> and <code>[backtesting_forecaster_multiseries]</code> to return the predictors generated during the backtesting process along with the predictions.
+
+
+**Changed**
+
++ Refactored the internal codebase of all forecasters to enhance performance, primarily by replacing pandas DataFrames with more efficient NumPy arrays.
+
++ In-sample residuals in direct forecasters has been simplified.
+
++ The method `create_predict_X` in the <code>[ForecasterRecursiveMultiSeries]</code> now returns a long-format DataFrame with the predictors. The columns are `level` and one column for each predictor. The index is the same as the prediction index.
+
++ The method `create_predict_X` in the <code>[ForecasterDirectMultiVariate]</code> now includes the `level` column in the returned DataFrame. The columns are `level` and one column for each predictor. The index is the same as the prediction index.
+
+
+**Fixed**
+
+
 ## 0.15.1 <small>Mar 18, 2025</small> { id="0.15.1" }
 
 + <span class="badge text-bg-danger">Fix</span> Minor release to fix a bug when importing module `skforecast.sarimax`.
@@ -17,7 +47,9 @@ All significant changes to this project are documented in this release file.
 
 **Added**
 
+
 **Changed**
+
 
 **Fixed**
 
@@ -298,7 +330,7 @@ The main changes in this release are:
 
 + Support for `Python 3.12`.
 
-+ `keras` has been added as an optional dependency, tag deeplearning, to use the <code>[ForecasterRnn]</code>.
++ `keras` has been added as an optional dependency, tag `deeplearning`, to use the <code>[ForecasterRnn]</code>.
 
 + `PyTorch` backend for the <code>[ForecasterRnn]</code>.
 
@@ -892,12 +924,12 @@ The main changes in this release are:
 
 **Fixed**
 
-+ `fit` and `predict` transform pandas series and dataframes to numpy arrays if regressor is XGBoost.
++ `fit` and `predict` transform pandas Series and DataFrames to numpy arrays if regressor is XGBoost.
 
 
 ## 0.4.0 <small>Dec 10, 2021</small> { id="0.4.0" }
 
-Version 0.4 has undergone a huge code refactoring. Main changes are related to input-output formats (only pandas series and dataframes are allowed although internally numpy arrays are used for performance) and model validation methods (unified into backtesting with and without refit).
+Version 0.4 has undergone a huge code refactoring. Main changes are related to input-output formats (only pandas Series and DataFrames are allowed although internally numpy arrays are used for performance) and model validation methods (unified into backtesting with and without refit).
 
 **Added**
 
@@ -971,7 +1003,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 
 **Changed**
 
-+ New implementation of `ForecasterAutoregMultiOutput`. The training process in the new version creates a different X_train for each step. See [Direct multi-step forecasting](https://github.com/skforecast/skforecast#introduction) for more details. Old versión can be acces with `skforecast.deprecated.ForecasterAutoregMultiOutput`.
++ New implementation of `ForecasterAutoregMultiOutput`. The training process in the new version creates a different X_train for each step. See [Direct multi-step forecasting](https://github.com/skforecast/skforecast#introduction) for more details. Old version can be access with `skforecast.deprecated.ForecasterAutoregMultiOutput`.
 
 **Fixed**
 
@@ -1020,7 +1052,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 
 **Fixed**
 
-+ Warning of inclompleted folds when using `backtesting_forecast` with a  `ForecasterAutoregMultiOutput`.
++ Warning of incomplete folds when using `backtesting_forecast` with a  `ForecasterAutoregMultiOutput`.
 
 + `ForecasterAutoregMultiOutput.predict` allow exog data longer than needed (steps).
 

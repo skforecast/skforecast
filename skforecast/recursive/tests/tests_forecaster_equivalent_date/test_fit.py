@@ -25,8 +25,8 @@ def test_fit_TypeError_offset_DateOffset_y_index_not_DatetimeIndex(y):
         y.index.freq = None
 
     err_msg = re.escape(
-        ("If `offset` is a pandas DateOffset, the index of `y` must be a "
-         "pandas DatetimeIndex with frequency.")
+        "If `offset` is a pandas DateOffset, the index of `y` must be a "
+        "pandas DatetimeIndex with frequency."
     )
     with pytest.raises(TypeError, match=err_msg):
         forecaster.fit(y=y)
@@ -45,19 +45,19 @@ def test_fit_ValueError_length_y_less_than_window_size_offset_int():
     y = pd.Series(np.arange(10))
 
     err_msg = re.escape(
-        (f"The length of `y` (10), must be greater than or equal "
-         f"to the window size (12). This is because  "
-         f"the offset (6) is larger than the available "
-         f"data. Try to decrease the size of the offset (6), "
-         f"the number of n_offsets (2) or increase the "
-         f"size of `y`.")
+        "The length of `y` (10), must be greater than or equal "
+        "to the window size (12). This is because  "
+        "the offset (6) is larger than the available "
+        "data. Try to decrease the size of the offset (6), "
+        "the number of n_offsets (2) or increase the "
+        "size of `y`."
     )
     with pytest.raises(ValueError, match=err_msg):
         forecaster.fit(y=y)
 
 
 @pytest.mark.parametrize("offset, y", 
-                         [({'days': 6}  , 
+                         [({'days': 6}, 
                            pd.Series(np.arange(10),
                                      index=pd.date_range(start='01/01/2021', periods=10, freq='D'))), 
                           ({'months': 6}, 
@@ -76,12 +76,12 @@ def test_fit_ValueError_length_y_less_than_window_size_offset_DateOffset(offset,
                  )
 
     err_msg = re.escape(
-        (f"The length of `y` (10), must be greater than or equal "
-         f"to the window size ({forecaster.window_size}). This is because  "
-         f"the offset ({forecaster.offset}) is larger than the available "
-         f"data. Try to decrease the size of the offset ({forecaster.offset}), "
-         f"the number of n_offsets (2) or increase the "
-         f"size of `y`.")
+        f"The length of `y` (10), must be greater than or equal "
+        f"to the window size ({forecaster.window_size}). This is because  "
+        f"the offset ({forecaster.offset}) is larger than the available "
+        f"data. Try to decrease the size of the offset ({forecaster.offset}), "
+        f"the number of n_offsets (2) or increase the "
+        f"size of `y`."
     )
     with pytest.raises(ValueError, match=err_msg):
         forecaster.fit(y=y)

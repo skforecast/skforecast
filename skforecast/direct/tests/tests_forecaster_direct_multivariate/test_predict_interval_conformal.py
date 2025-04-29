@@ -21,8 +21,7 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
     )
     forecaster.fit(series=series_2, store_in_sample_residuals=True)
     forecaster.in_sample_residuals_ = {
-        1: np.full_like(forecaster.in_sample_residuals_[1], fill_value=10),
-        2: np.full_like(forecaster.in_sample_residuals_[2], fill_value=20)
+        'l1': np.full_like(forecaster.in_sample_residuals_['l1'], fill_value=10)
     }
     results = forecaster._predict_interval_conformal(
         steps=1, nominal_coverage=0.95, use_in_sample_residuals=True, use_binned_residuals=False
@@ -48,8 +47,7 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
     )
     forecaster.fit(series=series_2, store_in_sample_residuals=True)
     forecaster.in_sample_residuals_ = {
-        1: np.full_like(forecaster.in_sample_residuals_[1], fill_value=10),
-        2: np.full_like(forecaster.in_sample_residuals_[2], fill_value=20)
+        'l1': np.full_like(forecaster.in_sample_residuals_['l1'], fill_value=10)
     }
     results = forecaster._predict_interval_conformal(
         steps=2, nominal_coverage=0.95, use_in_sample_residuals=True, use_binned_residuals=False
@@ -57,7 +55,7 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
 
     expected = pd.DataFrame(
                    data    = np.array([[10., 0., 20.],
-                                       [11., -9., 31.]]),
+                                       [11., 0.99999999, 21.]]),
                    columns = ['pred', 'lower_bound', 'upper_bound'],
                    index   = pd.RangeIndex(start=10, stop=12, step=1)
                )
@@ -76,9 +74,9 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
     )
     forecaster.fit(series=series_2, store_in_sample_residuals=True)
     forecaster.out_sample_residuals_ = {
-        1: np.full_like(forecaster.in_sample_residuals_[1], fill_value=10),
-        2: np.full_like(forecaster.in_sample_residuals_[2], fill_value=20)
+        'l1': np.full_like(forecaster.in_sample_residuals_['l1'], fill_value=10)
     }
+    forecaster.out_sample_residuals_by_bin_ = forecaster.in_sample_residuals_by_bin_
     results = forecaster._predict_interval_conformal(
         steps=1, nominal_coverage=0.95, use_in_sample_residuals=False, use_binned_residuals=False
     )
@@ -103,16 +101,16 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
     )
     forecaster.fit(series=series_2, store_in_sample_residuals=True)
     forecaster.out_sample_residuals_ = {
-        1: np.full_like(forecaster.in_sample_residuals_[1], fill_value=10),
-        2: np.full_like(forecaster.in_sample_residuals_[2], fill_value=20)
+        'l1': np.full_like(forecaster.in_sample_residuals_['l1'], fill_value=10)
     }
+    forecaster.out_sample_residuals_by_bin_ = forecaster.in_sample_residuals_by_bin_
     results = forecaster._predict_interval_conformal(
         steps=2, nominal_coverage=0.95, use_in_sample_residuals=False, use_binned_residuals=False
     )
 
     expected = pd.DataFrame(
                    data    = np.array([[10., 0., 20.],
-                                       [11., -9., 31.]]),
+                                       [11., 0.9999999, 21.]]),
                    columns = ['pred', 'lower_bound', 'upper_bound'],
                    index   = pd.RangeIndex(start=10, stop=12, step=1)
                )
@@ -138,10 +136,9 @@ def test_predict_interval_conformal_output_when_regressor_is_LinearRegression():
     )
 
     expected = pd.DataFrame(
-                   data = np.array([
-                              [0.63114259,  0.23482357,  1.02746162],
-                              [0.3800417 , -0.05044528,  0.81052868],
-                              [0.33255977, -0.0626732 ,  0.72779273]]),
+                   data = np.array([[ 0.63114259,  0.22697524,  1.03530995],
+                                    [ 0.3800417 , -0.02412565,  0.78420905],
+                                    [ 0.33255977, -0.07160758,  0.73672712]]),
                    index = pd.RangeIndex(start=50, stop=53, step=1),
                    columns = ['pred', 'lower_bound', 'upper_bound']
                )
@@ -167,10 +164,9 @@ def test_predict_interval_conformal_output():
     )
 
     expected = pd.DataFrame(
-                   data = np.array([
-                              [0.63114259,  0.23482357,  1.02746162],
-                              [0.3800417 , -0.05044528,  0.81052868],
-                              [0.33255977, -0.0626732 ,  0.72779273]]),
+                   data = np.array([[ 0.63114259,  0.22697524,  1.03530995],
+                                    [ 0.3800417 , -0.02412565,  0.78420905],
+                                    [ 0.33255977, -0.07160758,  0.73672712]]),
                    index = pd.RangeIndex(start=50, stop=53, step=1),
                    columns = ['pred', 'lower_bound', 'upper_bound']
                )
@@ -193,15 +189,15 @@ def test_predict_interval_conformal_output_when_out_sample_residuals():
                  )
     forecaster.fit(series=series, store_in_sample_residuals=True)
     forecaster.out_sample_residuals_ = forecaster.in_sample_residuals_
+    forecaster.out_sample_residuals_by_bin_ = forecaster.in_sample_residuals_by_bin_
     results = forecaster._predict_interval_conformal(
         nominal_coverage=0.95, use_in_sample_residuals=False, use_binned_residuals=False
     )
 
     expected = pd.DataFrame(
-                   data = np.array([
-                              [0.63114259,  0.23482357,  1.02746162],
-                              [0.3800417 , -0.05044528,  0.81052868],
-                              [0.33255977, -0.0626732 ,  0.72779273]]),
+                   data = np.array([[ 0.63114259,  0.22697524,  1.03530995],
+                                    [ 0.3800417 , -0.02412565,  0.78420905],
+                                    [ 0.33255977, -0.07160758,  0.73672712]]),
                    index = pd.RangeIndex(start=50, stop=53, step=1),
                    columns = ['pred', 'lower_bound', 'upper_bound']
                )
@@ -251,6 +247,7 @@ def test_predict_interval_conformal_output_binned__out_sample_residuals():
                      transformer_series = StandardScaler()
                  )
     forecaster.fit(series=series, store_in_sample_residuals=True)
+    forecaster.out_sample_residuals_ = forecaster.in_sample_residuals_
     forecaster.out_sample_residuals_by_bin_ = forecaster.in_sample_residuals_by_bin_
     results = forecaster._predict_interval_conformal(
         nominal_coverage=0.95, use_in_sample_residuals=False, use_binned_residuals=True
@@ -288,9 +285,9 @@ def test_predict_interval_conformal_output_with_differentiation():
 
     expected = pd.DataFrame(
                    data = np.array([
-                              [0.75141456,  0.31429586,  1.18853326],
-                              [0.64535259, -0.28024294,  1.57094811],
-                              [0.63651233, -0.77584002,  2.04886467]]),
+                            [ 0.75141456,  0.26049601,  1.24233311],
+                            [ 0.64535259, -0.33648452,  1.62718969],
+                            [ 0.63651233, -0.83624333,  2.10926798]]),
                    index = pd.RangeIndex(start=50, stop=53, step=1),
                    columns = ['pred', 'lower_bound', 'upper_bound']
                )

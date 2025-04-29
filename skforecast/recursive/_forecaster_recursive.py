@@ -12,7 +12,7 @@ import sys
 import numpy as np
 import pandas as pd
 import inspect
-from copy import copy
+from copy import copy, deepcopy
 from sklearn.exceptions import NotFittedError
 from sklearn.pipeline import Pipeline
 from sklearn.base import clone
@@ -40,7 +40,8 @@ from ..utils import (
     expand_index,
     transform_numpy,
     transform_dataframe,
-    get_style_repr_html
+    get_style_repr_html,
+    set_cpu_gpu_device
 )
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
 
@@ -158,6 +159,8 @@ class ForecasterRecursive(ForecasterBase):
         Frequency of Index of the input used in training.
     training_range_ : pandas Index
         First and last values of index of the data used during training.
+    series_name_in_ : str
+        Names of the series provided by the user during training.
     exog_in_ : bool
         If the forecaster has been trained using exogenous variable/s.
     exog_names_in_ : list
@@ -255,6 +258,7 @@ class ForecasterRecursive(ForecasterBase):
         self.index_type_                        = None
         self.index_freq_                        = None
         self.training_range_                    = None
+        self.series_name_in_                    = None
         self.exog_in_                           = False
         self.exog_names_in_                     = None
         self.exog_type_in_                      = None
@@ -358,6 +362,7 @@ class ForecasterRecursive(ForecasterBase):
             f"Lags: {self.lags} \n"
             f"Window features: {self.window_features_names} \n"
             f"Window size: {self.window_size} \n"
+            f"Series name: {self.series_name_in_} \n"
             f"Exogenous included: {self.exog_in_} \n"
             f"Exogenous names: {exog_names_in_} \n"
             f"Transformer for y: {self.transformer_y} \n"
@@ -407,6 +412,7 @@ class ForecasterRecursive(ForecasterBase):
                     <li><strong>Lags:</strong> {self.lags}</li>
                     <li><strong>Window features:</strong> {self.window_features_names}</li>
                     <li><strong>Window size:</strong> {self.window_size}</li>
+                    <li><strong>Series name:</strong> {self.series_name_in_}</li>
                     <li><strong>Exogenous included:</strong> {self.exog_in_}</li>
                     <li><strong>Weight function included:</strong> {self.weight_func is not None}</li>
                     <li><strong>Differentiation order:</strong> {self.differentiation}</li>
@@ -653,7 +659,7 @@ class ForecasterRecursive(ForecasterBase):
 
         exog_names_in_ = None
         exog_dtypes_in_ = None
-        categorical_features = False
+        X_as_pandas = False
         if exog is not None:
             check_exog(exog=exog, allow_nan=True)
             exog = input_to_frame(data=exog, input_name='exog')
@@ -680,10 +686,11 @@ class ForecasterRecursive(ForecasterBase):
                        fit               = fit_transformer,
                        inverse_transform = False
                    )
-
+            
             check_exog_dtypes(exog, call_check_exog=True)
-            categorical_features = (
-                exog.select_dtypes(include=np.number).shape[1] != exog.shape[1]
+            X_as_pandas = any(
+                not pd.api.types.is_numeric_dtype(dtype) or pd.api.types.is_bool_dtype(dtype) 
+                for dtype in set(exog.dtypes)
             )
 
             _, exog_index = preprocess_exog(exog=exog, return_values=False)
@@ -708,7 +715,6 @@ class ForecasterRecursive(ForecasterBase):
             
         X_train = []
         X_train_features_names_out_ = []
-        X_as_pandas = True if categorical_features else False
 
         X_train_lags, y_train = self._create_lags(
             y=y_values, X_as_pandas=X_as_pandas, train_index=train_index
@@ -769,7 +775,7 @@ class ForecasterRecursive(ForecasterBase):
             X_train_features_names_out_,
             exog_dtypes_in_
         )
-
+    
     def create_train_X_y(
         self,
         y: pd.Series,
@@ -944,6 +950,7 @@ class ForecasterRecursive(ForecasterBase):
         self.index_type_                        = None
         self.index_freq_                        = None
         self.training_range_                    = None
+        self.series_name_in_                    = None
         self.exog_in_                           = False
         self.exog_names_in_                     = None
         self.exog_type_in_                      = None
@@ -982,6 +989,7 @@ class ForecasterRecursive(ForecasterBase):
         self.X_train_features_names_out_ = X_train_features_names_out_
 
         self.is_fitted = True
+        self.series_name_in_ = y.name if y.name is not None else 'y'
         self.fit_date = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
         self.training_range_ = preprocess_y(
             y=y, return_values=False, suppress_warnings=True
@@ -1258,6 +1266,8 @@ class ForecasterRecursive(ForecasterBase):
         
         """
 
+        original_device = set_cpu_gpu_device(regressor=self.regressor, device='cpu')
+
         n_lags = len(self.lags) if self.lags is not None else 0
         n_window_features = (
             len(self.X_train_window_features_names_out_)
@@ -1303,14 +1313,16 @@ class ForecasterRecursive(ForecasterBase):
             # the new prediction is added at the end.
             last_window[-(steps - i)] = pred[0]
 
-        return predictions
+        set_cpu_gpu_device(regressor=self.regressor, device=original_device)
 
+        return predictions
 
     def create_predict_X(
         self,
         steps: int,
         last_window: pd.Series | pd.DataFrame | None = None,
-        exog: pd.Series | pd.DataFrame | None = None
+        exog: pd.Series | pd.DataFrame | None = None,
+        check_inputs: bool = True
     ) -> pd.DataFrame:
         """
         Create the predictors needed to predict `steps` ahead. As it is a recursive
@@ -1332,6 +1344,10 @@ class ForecasterRecursive(ForecasterBase):
             right after training data.
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
+        check_inputs : bool, default True
+            If `True`, the input is checked for possible warnings and errors 
+            with the `check_predict_input` function. This argument is created 
+            for internal use and is not recommended to be changed.
 
         Returns
         -------
@@ -1341,9 +1357,17 @@ class ForecasterRecursive(ForecasterBase):
         
         """
 
-        last_window_values, exog_values, prediction_index, steps = (
-            self._create_predict_inputs(steps=steps, last_window=last_window, exog=exog)
-        )
+        (
+            last_window_values,
+            exog_values,
+            prediction_index,
+            steps
+        ) = self._create_predict_inputs(
+                steps        = steps,
+                last_window  = last_window,
+                exog         = exog,
+                check_inputs = check_inputs,
+            )
         
         with warnings.catch_warnings():
             warnings.filterwarnings(
@@ -1449,7 +1473,7 @@ class ForecasterRecursive(ForecasterBase):
                 steps        = steps,
                 last_window  = last_window,
                 exog         = exog,
-                check_inputs = check_inputs,
+                check_inputs = check_inputs
             )
 
         with warnings.catch_warnings():
@@ -2370,7 +2394,9 @@ class ForecasterRecursive(ForecasterBase):
                 raise ValueError(
                     "`y_true` and `y_pred` must have the same index."
                 )
-
+        
+        y_true = deepcopy(y_true)
+        y_pred = deepcopy(y_pred)
         if not isinstance(y_pred, np.ndarray):
             y_pred = y_pred.to_numpy()
         if not isinstance(y_true, np.ndarray):
@@ -2456,10 +2482,11 @@ class ForecasterRecursive(ForecasterBase):
                 f"Empty bins will be filled with a random sample of residuals.",
                 ResidualsUsageWarning
             )
+            empty_bin_size = min(max_samples, len(out_sample_residuals))
             for k in empty_bins:
                 out_sample_residuals_by_bin[k] = rng.choice(
                     a       = out_sample_residuals,
-                    size    = min(max_samples, len(out_sample_residuals)),
+                    size    = empty_bin_size,
                     replace = False
                 )
 

@@ -83,8 +83,8 @@ def test_predict_dist_output_when_forecaster_is_LinearRegression_steps_is_2_in_s
               )
     
     expected = pd.DataFrame(
-                   data    = np.array([[0.53808076, 0.11721631],
-                                       [0.32552242, 0.1713172]]),
+                   data    = np.array([[0.660682735154552, 0.12508282336891102],
+                                       [0.31287341060796053, 0.1978925056815672]]),
                    columns = ['loc', 'scale'],
                    index   = pd.RangeIndex(start=50, stop=52)
                )
@@ -110,6 +110,8 @@ def test_predict_dist_output_when_forecaster_is_LinearRegression_steps_is_2_in_s
     
     forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
     forecaster.out_sample_residuals_ = forecaster.in_sample_residuals_
+    forecaster.out_sample_residuals_by_bin_ = forecaster.in_sample_residuals_by_bin_
+
     results = forecaster.predict_dist(
                   steps                   = 2,
                   exog                    = exog_predict,
@@ -120,8 +122,8 @@ def test_predict_dist_output_when_forecaster_is_LinearRegression_steps_is_2_in_s
               )
     
     expected = pd.DataFrame(
-                   data    = np.array([[0.53808076, 0.11721631],
-                                       [0.32552242, 0.1713172]]),
+                   data    = np.array([[0.660682735154552, 0.12508282336891102],
+                                       [0.31287341060796053, 0.1978925056815672]]),
                    columns = ['loc', 'scale'],
                    index   = pd.RangeIndex(start=50, stop=52)
                )

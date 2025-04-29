@@ -1488,7 +1488,6 @@ def _evaluate_grid_hyperparameters_multiseries(
         forecaster.set_lags(best_lags)
         forecaster.set_params(best_params)
 
-        # TODO: Check if including suppress_warnings here fix warnings when return_best
         forecaster.fit(
             series                    = series, 
             exog                      = exog, 
@@ -2041,7 +2040,6 @@ def _bayesian_search_optuna_multiseries(
         forecaster.set_lags(best_lags)
         forecaster.set_params(best_params)
 
-        # TODO: Check if including suppress_warnings here fix warnings when return_best
         forecaster.fit(
             series                    = series, 
             exog                      = exog, 

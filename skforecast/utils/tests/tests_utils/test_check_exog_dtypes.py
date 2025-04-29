@@ -11,16 +11,16 @@ from skforecast.exceptions import DataTypeWarning
 @pytest.mark.parametrize("exog", 
                          [pd.Series(['A', 'B', 'C']),
                           pd.Series(['A', 'B', 'C']).to_frame()], 
-                         ids = lambda exog : f'exog type: {type(exog)}')
+                         ids = lambda exog: f'exog type: {type(exog)}')
 def test_check_exog_dtypes_DataTypeWarning_when_exog_has_str_values(exog):
     """
     Check DataTypeWarning is issued when exog is pandas Series or DataFrame 
     with missing values.
     """
     warn_msg = re.escape(
-        ("`exog` may contain only `int`, `float` or `category` dtypes. Most "
-         "machine learning models do not allow other types of values. "
-         "Fitting the forecaster may fail.")
+        "`exog` may contain only `int`, `float` or `category` dtypes. Most "
+        "machine learning models do not allow other types of values. "
+        "Fitting the forecaster may fail."
     )
     with pytest.warns(DataTypeWarning, match = warn_msg):
         check_exog_dtypes(exog, call_check_exog=False)
@@ -29,16 +29,16 @@ def test_check_exog_dtypes_DataTypeWarning_when_exog_has_str_values(exog):
 @pytest.mark.parametrize("exog", 
                          [pd.Series([True, True, True], name='exog'),
                           pd.Series([True, True, True], name='exog').to_frame()], 
-                         ids = lambda exog : f'exog type: {type(exog)}')
+                         ids = lambda exog: f'exog type: {type(exog)}')
 def test_check_exog_dtypes_DataTypeWarning_when_exog_has_bool_values(exog):
     """
     Check DataTypeWarning is issued when exog is pandas Series or DataFrame 
     with missing values.
     """
     warn_msg = re.escape(
-        ("`exog` may contain only `int`, `float` or `category` dtypes. Most "
-         "machine learning models do not allow other types of values. "
-         "Fitting the forecaster may fail.")
+        "`exog` may contain only `int`, `float` or `category` dtypes. Most "
+        "machine learning models do not allow other types of values. "
+        "Fitting the forecaster may fail."
     )
     with pytest.warns(DataTypeWarning, match = warn_msg):
         check_exog_dtypes(exog)
@@ -75,10 +75,10 @@ def test_check_exog_dtypes_TypeError_when_exog_is_DataFrame_with_no_int_categori
 
 
 @pytest.mark.parametrize("dtype", 
-                         ['int8','int16','int32','int64',
-                          'float16','float32', 'float64',
+                         ['int8', 'int16', 'int32', 'int64',
+                          'float16', 'float32', 'float64',
                           'category'], 
-                         ids = lambda exog : f'exog type: {type(exog)}')
+                         ids = lambda exog: f'exog type: {type(exog)}')
 def test_check_exog_dtypes_pandas_Series(dtype):
     """
     Test check_exog_dtypes accepts all dtypes in a pandas Series.

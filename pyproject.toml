@@ -1,6 +1,6 @@
 [project]
 name = "skforecast"
-version = "0.15.1"
+version = "0.16.0"
 description = "Skforecast is a Python library for time series forecasting using machine learning models. It works with any regressor compatible with the scikit-learn API, including popular options like LightGBM, XGBoost, CatBoost, Keras, and many others."
 readme = "README.md"
 authors = [
@@ -25,8 +25,11 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
-    "License :: OSI Approved :: BSD License",
 ]
+
+license = "BSD-3-Clause"
+license-files = ["LICENSE", "CITATION.cff"]
+
 keywords = [
     "data-science",
     "machine-learning",
@@ -98,22 +101,18 @@ test = [
     "pytest-cov>=4.1",
     "pytest-xdist>=3.3",
     "lightgbm>=4.0, <4.7",
-    'tensorflow>=2.13, <2.19; python_version < "3.13"',
-    'torch>=2.2, <2.7; python_version < "3.13"',
+    "xgboost>=2.1, <4.0",
+    'tensorflow>=2.13, <2.20; python_version < "3.13"',
+    "torch>=2.2, <2.8",
     "tomli>=2.0",
     "pandas[parquet]>=1.5"
 ]
-
 
 [project.urls]
 Homepage = "https://www.skforecast.org"
 Repository = "https://github.com/skforecast/skforecast"
 Documentation = "https://www.skforecast.org"
 "Release Notes" = "https://skforecast.org/latest/releases/releases"
-
-
-[project.license]
-file = "LICENSE"
 
 [build-system]
 requires = ["setuptools>=61", "toml", "build"]

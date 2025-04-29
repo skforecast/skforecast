@@ -34,25 +34,6 @@ def test_predict_NotFittedError_when_fitted_is_False():
         forecaster.predict_bootstrapping(steps=5)
 
 
-def test_predict_bootstrapping_ValueError_when_not_in_sample_residuals_for_some_step():
-    """
-    Test ValueError is raised when use_in_sample_residuals=True but there is no
-    residuals for some step.
-    """
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=2)
-    forecaster.fit(y=pd.Series(np.arange(10)), store_in_sample_residuals=True)
-    forecaster.in_sample_residuals_ = {2: np.array([1, 2, 3])}
-
-    err_msg = re.escape(
-        f"`forecaster.in_sample_residuals_` doesn't contain residuals for steps: "
-        f"{set([1, 2]) - set(forecaster.in_sample_residuals_.keys())}."
-    )
-    with pytest.raises(ValueError, match = err_msg):
-        forecaster.predict_bootstrapping(
-            steps=None, use_in_sample_residuals=True, use_binned_residuals=False
-        )
-
-
 @pytest.mark.parametrize("use_binned_residuals", [True, False], 
                          ids=lambda binned: f'use_binned_residuals: {binned}')
 def test_predict_bootstrapping_ValueError_when_out_sample_residuals_is_None(use_binned_residuals):
@@ -79,51 +60,6 @@ def test_predict_bootstrapping_ValueError_when_out_sample_residuals_is_None(use_
         )
 
 
-def test_predict_bootstrapping_ValueError_when_not_out_sample_residuals_for_all_steps_predicted():
-    """
-    Test ValueError is raised when use_in_sample_residuals=False and
-    forecaster.out_sample_residuals_ is not available for all steps predicted.
-    """
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=3)
-    forecaster.fit(y=pd.Series(np.arange(15)), store_in_sample_residuals=True)
-    residuals = {
-        2: np.array([1, 2, 3, 4, 5]), 
-        3: np.array([1, 2, 3, 4, 5])
-    }
-    forecaster.out_sample_residuals_ = residuals
-
-    err_msg = re.escape(
-        f"`forecaster.out_sample_residuals_` doesn't contain residuals for steps: "
-        f"{set([1, 2]) - set(forecaster.out_sample_residuals_.keys())}. "
-        f"Use method `set_out_sample_residuals()`."
-    )
-    with pytest.raises(ValueError, match = err_msg):
-        forecaster.predict_bootstrapping(
-            steps=[1, 2], use_in_sample_residuals=False, use_binned_residuals=False
-        )
-
-
-def test_predict_bootstrapping_ValueError_when_step_out_sample_residuals_value_is_None():
-    """
-    Test ValueError is raised when use_in_sample_residuals=False and
-    forecaster.out_sample_residuals_ has a step with a None.
-    """
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=3)
-    forecaster.fit(y=pd.Series(np.arange(15)), store_in_sample_residuals=True)
-    forecaster.out_sample_residuals_ = {
-        1: np.array([1, 2, 3, 4, 5]),
-        2: np.array([1, 2, 3, 4, 5]),
-        3: None
-    }
-    err_msg = re.escape(
-        "Residuals for step 3 are None. Check `forecaster.out_sample_residuals_`."
-    )
-    with pytest.raises(ValueError, match = err_msg):
-        forecaster.predict_bootstrapping(
-            steps=3, use_in_sample_residuals=False, use_binned_residuals=False
-        )
-
-
 @pytest.mark.parametrize("steps", [2, [1, 2], None], 
                          ids=lambda steps: f'steps: {steps}')
 def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_True_exog_and_transformer(steps):
@@ -146,10 +82,8 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_
     )
 
     expected = pd.DataFrame(
-                   data = np.array([
-                              [0.7319542342426019, 0.6896870991312363, 0.2024868918354829, 0.5468555312708429],
-                              [0.13621073709672699, 0.29541488852202646, 0.5160668468937661, 0.33416280223011985]
-                          ]),
+                   data = np.array([[0.83491717, 0.72256471, 0.6291488 , 0.75497624],
+                                    [0.0844494 , 0.51730407, 0.30032917, 0.41397707]]),
                    columns = [f"pred_boot_{i}" for i in range(4)],
                    index   = pd.RangeIndex(start=50, stop=52)
                )
@@ -178,10 +112,8 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_
     )
     
     expected = pd.DataFrame(
-                   data = np.array([
-                              [0.7319542342426019, 0.6896870991312363, 0.2024868918354829, 0.5468555312708429],
-                              [0.13621073709672699, 0.29541488852202646, 0.5160668468937661, 0.33416280223011985]
-                          ]),
+                   data = np.array([[0.83491717, 0.72256471, 0.6291488 , 0.75497624],
+                                    [0.0844494 , 0.51730407, 0.30032917, 0.41397707]]),
                    columns = [f"pred_boot_{i}" for i in range(4)],
                    index   = pd.RangeIndex(start=50, stop=52)
                )
@@ -200,18 +132,17 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_
                      lags      = 3
                  )
     forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True)
-    forecaster.in_sample_residuals_ = {
-        1: pd.Series([1, 1, 1, 1, 1, 1, 1]),
-        2: pd.Series([5, 5, 5, 5, 5, 5, 5])
-    }
+    forecaster.in_sample_residuals_ = np.array(
+        [1, 1, 1, 1, 1, 1, 1, 5, 5, 5, 5, 5, 5, 5]
+    )
     results = forecaster.predict_bootstrapping(
         steps=2, exog=exog_predict, n_boot=4, 
         use_in_sample_residuals=True, use_binned_residuals=False
     )
     
     expected = pd.DataFrame(
-                   data = np.array([[1.67523588, 1.67523588, 1.67523588, 1.67523588],
-                                    [5.38024988, 5.38024988, 5.38024988, 5.38024988]]),
+                   data = np.array([[1.67523588, 5.67523588, 5.67523588, 1.67523588],
+                                    [5.38024988, 1.38024988, 1.38024988, 1.38024988]]),
                    columns = [f"pred_boot_{i}" for i in range(4)],
                    index   = pd.RangeIndex(start=50, stop=52)
                )
@@ -367,101 +298,29 @@ def test_predict_bootstrapping_output_when_window_features_steps_10():
 
     expected = pd.DataFrame(
                    data    = np.array(
-                                 [[0.42310646, 0.63097612, 0.36178866, 0.9807642 , 0.89338916,
-                                   0.43857224, 0.39804426, 0.72904971, 0.17545176, 0.72904971],
-                                  [0.53155137, 0.31226122, 0.72445532, 0.50183668, 0.72445532,
-                                   0.73799541, 0.42583029, 0.31226122, 0.89338916, 0.94416002],
-                                  [0.68482974, 0.32295891, 0.18249173, 0.73799541, 0.73799541,
-                                   0.42635131, 0.31226122, 0.39804426, 0.84943179, 0.4936851 ],
-                                  [0.0596779 , 0.09210494, 0.61102351, 0.1156184 , 0.42583029,
-                                   0.18249173, 0.94416002, 0.42635131, 0.73799541, 0.36178866],
-                                  [0.89338916, 0.17545176, 0.17545176, 0.39804426, 0.39211752,
-                                   0.36178866, 0.39211752, 0.63097612, 0.61102351, 0.73799541],
-                                  [0.61102351, 0.34317802, 0.73799541, 0.36178866, 0.43857224,
-                                   0.42635131, 0.53182759, 0.41482621, 0.18249173, 0.43086276],
-                                  [0.63097612, 0.86630916, 0.4936851 , 0.31728548, 0.22826323,
-                                   0.53155137, 0.17545176, 0.31728548, 0.53155137, 0.89338916],
-                                  [0.09210494, 0.72445532, 0.36178866, 0.62395295, 0.29371405,
-                                   0.41482621, 0.48303426, 0.72445532, 0.09210494, 0.09210494],
-                                  [0.43086276, 0.73799541, 0.36178866, 0.4936851 , 0.48303426,
-                                   0.84943179, 0.42635131, 0.62395295, 0.48303426, 0.53182759],
-                                  [0.94416002, 0.32295891, 0.63097612, 0.39804426, 0.62395295,
-                                   0.73799541, 0.22826323, 0.43370117, 0.94416002, 0.09210494]]
+                                 [[0.34317802, 0.64776959, 0.44252774, 0.72244338, 0.17452841,
+                                    0.42501556, 0.38875996, 0.43489265, 0.66887236, 0.50222644],
+                                [0.34888897, 0.1813542 , 0.24348837, 0.71499063, 0.3770138 ,
+                                    0.44426025, 0.42297623, 0.6403034 , 0.31816366, 0.25635781],
+                                [0.37107296, 0.39877449, 0.43370117, 0.61102351, 0.84943179,
+                                    0.83690427, 0.24017543, 0.72904971, 0.43536741, 0.35150872],
+                                [0.58509345, 0.83877703, 0.7137504 , 0.57562876, 0.34400862,
+                                    0.52405127, 0.30293129, 0.96777975, 0.72154961, 0.17572187],
+                                [0.24338025, 0.5347562 , 0.61422834, 0.61575098, 0.66106327,
+                                    0.86630916, 0.31941155, 0.50577174, 0.39804426, 0.41112617],
+                                [0.0988748 , 0.31547649, 0.83027159, 0.42189523, 0.40316123,
+                                    0.71344515, 0.227533  , 0.60577608, 0.41454097, 0.63051607],
+                                [0.7418803 , 0.60966097, 0.17545176, 0.41697845, 0.4308126 ,
+                                    0.06283256, 0.92888472, 0.41697845, 0.48408656, 0.60389823],
+                                [0.54283776, 0.32254116, 0.44564736, 0.48303426, 0.30078917,
+                                    0.42410373, 0.07449023, 0.32756542, 0.54283776, 0.54283776],
+                                [0.33621667, 0.07766116, 0.51371272, 0.51509444, 0.61903383,
+                                    0.64692848, 0.37116152, 0.3145088 , 0.70908819, 0.42496032],
+                                [0.91812915, 0.47396699, 0.63571333, 0.34410137, 0.65201567,
+                                    0.18341508, 0.46122504, 0.43951603, 0.33700121, 0.51837492]]
                              ),
                    columns = [f"pred_boot_{i}" for i in range(10)],
                    index   = pd.date_range(start='2001-02-20', periods=10, freq='D')
                )
 
-    pd.testing.assert_frame_equal(expected, results)
-
-
-def test_predict_bootstrapping_output_when_recommended_n_boot():
-    """
-    Test output of predict_bootstrapping when regressor is LinearRegression,
-    5 steps are predicted, using recommended n_boot.
-    """
-    forecaster = ForecasterDirect(
-                     regressor = LinearRegression(),
-                     steps     = 5,
-                     lags      = 5
-                 )
-    forecaster.fit(y=y, store_in_sample_residuals=True)
-
-    recommended_n_boot = 5
-    for k, v in forecaster.in_sample_residuals_.items():
-        forecaster.in_sample_residuals_[k] = v[:recommended_n_boot]
-        
-    results = forecaster.predict_bootstrapping(
-        steps=5, n_boot=recommended_n_boot, 
-        use_in_sample_residuals=True, use_binned_residuals=False
-    )
-    
-    expected = pd.DataFrame(
-                   data = np.array([
-                              [0.48721565, 1.02484437, 0.61905973, 0.56793914, 0.5081311 ],
-                              [0.9590885 , 0.61539607, 0.49375752, 0.43661094, 0.37422496],
-                              [0.58708183, 0.38215125, 0.35461588, 0.3501964 , 0.77520526],
-                              [0.38407239, 0.29983844, 0.29727213, 0.73461524, 0.51531151],
-                              [0.29604462, 0.28561801, 0.73504556, 0.52313719, 0.05451923]
-                          ]),
-                   columns = [f"pred_boot_{i}" for i in range(5)],
-                   index   = pd.RangeIndex(start=50, stop=55)
-               )
-    
-    pd.testing.assert_frame_equal(expected, results)
-
-
-def test_predict_bootstrapping_output_when_recommended_n_boot_binned_residuals():
-    """
-    Test output of predict_bootstrapping when regressor is LinearRegression,
-    5 steps are predicted, using recommended n_boot and binned residuals.
-    """
-    forecaster = ForecasterDirect(
-                     regressor = LinearRegression(),
-                     steps     = 5,
-                     lags      = 5
-                 )
-    forecaster.fit(y=y, store_in_sample_residuals=True)
-
-    recommended_n_boot = 5
-    for k, v in forecaster.in_sample_residuals_by_bin_.items():
-        forecaster.in_sample_residuals_by_bin_[k] = v[:recommended_n_boot]
-        
-    results = forecaster.predict_bootstrapping(
-        steps=5, n_boot=recommended_n_boot, 
-        use_in_sample_residuals=True, use_binned_residuals=True
-    )
-    
-    expected = pd.DataFrame(
-                   data = np.array([
-                              [0.0871959 , 0.42151611, 0.31312881, 0.93930242, 0.50375378],
-                              [0.41707327, 0.42057899, 0.17540809, 0.60089178, 0.87562183],
-                              [0.40475029, 0.4001072 , 0.17872038, 0.24435799, 0.31957347],
-                              [0.42421302, 0.73008654, 0.43387046, 0.38206866, 0.22417746],
-                              [0.43065853, 0.73653206, 0.44031597, 0.38851417, 0.23062297]
-                          ]),
-                   columns = [f"pred_boot_{i}" for i in range(5)],
-                   index   = pd.RangeIndex(start=50, stop=55)
-               )
-    
     pd.testing.assert_frame_equal(expected, results)

@@ -8,7 +8,6 @@
 from __future__ import annotations
 import warnings
 import sys
-import uuid
 import pandas as pd
 from copy import copy
 import textwrap
@@ -88,6 +87,8 @@ class ForecasterSarimax():
         Frequency of Index of the input used in training.
     training_range_ : pandas Index
         First and last values of index of the data used during training.
+    series_name_in_ : str
+        Names of the series provided by the user during training.
     exog_in_ : bool
         If the forecaster has been trained using exogenous variable/s.
     exog_names_in_ : list
@@ -136,6 +137,7 @@ class ForecasterSarimax():
         self.index_type_             = None
         self.index_freq_             = None
         self.training_range_         = None
+        self.series_name_in_         = None
         self.exog_in_                = False
         self.exog_names_in_          = None
         self.exog_type_in_           = None
@@ -207,6 +209,7 @@ class ForecasterSarimax():
             f"{type(self).__name__} \n"
             f"{'=' * len(type(self).__name__)} \n"
             f"Regressor: {self.regressor} \n"
+            f"Series name: {self.series_name_in_} \n"
             f"Exogenous included: {self.exog_in_} \n"
             f"Exogenous names: {exog_names_in_} \n"
             f"Transformer for y: {self.transformer_y} \n"
@@ -248,6 +251,7 @@ class ForecasterSarimax():
                     <li><strong>Seasonal order:</strong> {self.regressor.seasonal_order}</li>
                     <li><strong>Trend:</strong> {self.regressor.trend}</li>
                     <li><strong>Window size:</strong> {self.window_size}</li>
+                    <li><strong>Series name:</strong> {self.series_name_in_}</li>
                     <li><strong>Exogenous included:</strong> {self.exog_in_}</li>
                     <li><strong>Creation date:</strong> {self.creation_date}</li>
                     <li><strong>Last fit date:</strong> {self.fit_date}</li>
@@ -346,6 +350,7 @@ class ForecasterSarimax():
         self.index_type_             = None
         self.index_freq_             = None
         self.training_range_         = None
+        self.series_name_in_         = None
         self.exog_in_                = False
         self.exog_names_in_          = None
         self.exog_type_in_           = None
@@ -360,7 +365,7 @@ class ForecasterSarimax():
             self.exog_type_in_ = type(exog)
             self.exog_dtypes_in_ = get_exog_dtypes(exog=exog)
             self.exog_names_in_ = \
-                 exog.columns.to_list() if isinstance(exog, pd.DataFrame) else exog.name
+                 exog.columns.to_list() if isinstance(exog, pd.DataFrame) else [exog.name]
 
         y = transform_series(
                 series            = y,
@@ -390,6 +395,7 @@ class ForecasterSarimax():
             warnings.filterwarnings("default")
 
         self.is_fitted = True
+        self.series_name_in_ = y.name if y.name is not None else 'y'
         self.fit_date = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
         self.training_range_ = y.index[[0, -1]]
         self.index_type_ = type(y.index)
@@ -474,16 +480,16 @@ class ForecasterSarimax():
         # When last_window_exog is provided but no last_window
         if last_window is None and last_window_exog is not None:
             raise ValueError(
-                ("To make predictions unrelated to the original data, both "
-                 "`last_window` and `last_window_exog` must be provided.")
+                "To make predictions unrelated to the original data, both "
+                "`last_window` and `last_window_exog` must be provided."
             )
 
         # Check if forecaster needs exog
         if last_window is not None and last_window_exog is None and self.exog_in_:
             raise ValueError(
-                ("Forecaster trained with exogenous variable/s. To make predictions "
-                 "unrelated to the original data, same variable/s must be provided "
-                 "using `last_window_exog`.")
+                "Forecaster trained with exogenous variable/s. To make predictions "
+                "unrelated to the original data, same variable/s must be provided "
+                "using `last_window_exog`."
             )
 
         if last_window is not None:

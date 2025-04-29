@@ -123,8 +123,7 @@ def test_set_in_sample_residuals_store_same_residuals_as_fit():
     assert differentiator_id_after_fit == differentiator_id_after_set_in_sample_residuals
 
     # Residuals
-    for k in forecaster_1.in_sample_residuals_.keys():
-        np.testing.assert_almost_equal(forecaster_1.in_sample_residuals_[k], forecaster_2.in_sample_residuals_[k])
+    np.testing.assert_almost_equal(forecaster_1.in_sample_residuals_, forecaster_2.in_sample_residuals_)
     for k in forecaster_1.in_sample_residuals_by_bin_.keys():
         np.testing.assert_almost_equal(forecaster_1.in_sample_residuals_by_bin_[k], forecaster_2.in_sample_residuals_by_bin_[k])
     assert forecaster_1.binner_intervals_ == forecaster_2.binner_intervals_
