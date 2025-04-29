@@ -102,8 +102,8 @@ test = [
     "pytest-xdist>=3.3",
     "lightgbm>=4.0, <4.7",
     "xgboost>=3.0, <4.0",
-    'tensorflow>=2.13, <2.19; python_version < "3.13"',
-    'torch>=2.2, <2.7; python_version < "3.13"',
+    'tensorflow>=2.13, <2.20; python_version < "3.13"',
+    "torch>=2.2, <2.8",
     "tomli>=2.0",
     "pandas[parquet]>=1.5"
 ]

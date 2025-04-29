@@ -433,7 +433,7 @@ def series_long_to_dict(
 
     return series_dict
 
-# TODO: See if we can replace the select_dtypes with a more efficient method.
+
 def exog_long_to_dict(
     data: pd.DataFrame,
     series_id: str,
@@ -484,12 +484,10 @@ def exog_long_to_dict(
         if col not in data.columns:
             raise ValueError(f"Column '{col}' not found in `data`.")
 
-    cols_float_dtype = set(data.select_dtypes(include=float).columns)
-    # TODO: Check if this is the best way to get the float columns.
-    # cols_float_dtype = {
-    #     col for col in data.columns 
-    #     if pd.api.types.is_float_dtype(data[col])
-    # }
+    cols_float_dtype = {
+        col for col in data.columns 
+        if pd.api.types.is_float_dtype(data[col])
+    }
     original_sizes = data.groupby(series_id, observed=True).size()
     exog_dict = dict(tuple(data.groupby(series_id, observed=True)))
     exog_dict = {
@@ -512,7 +510,12 @@ def exog_long_to_dict(
                         MissingValuesWarning
                     )
                 if consolidate_dtypes:
-                    cols_float_dtype.update(v.select_dtypes(include=float).columns)
+                    cols_float_dtype.update(
+                        {
+                            col for col in v.columns 
+                            if pd.api.types.is_float_dtype(v[col])
+                        }
+                    )
 
     if consolidate_dtypes and nans_introduced:
         new_dtypes = {k: float for k in cols_float_dtype}

@@ -10,11 +10,11 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
 
-## 0.16.0 <small>In Development</small> { id="0.16.0" }
+## 0.16.0 <small>Apr 29, 2025</small> { id="0.16.0" }
 
 The main changes in this release are:
 
-+ <span class="badge text-bg-danger">Fix</span> 
++ <span class="badge text-bg-enhancement">Enhancement</span> Refactored the internal codebase of all forecasters to enhance performance, primarily by replacing pandas DataFrames with more efficient NumPy arrays.
 
 
 **Added**
@@ -28,13 +28,14 @@ The main changes in this release are:
 
 **Changed**
 
-+ Refactor.......... 
++ Refactored the internal codebase of all forecasters to enhance performance, primarily by replacing pandas DataFrames with more efficient NumPy arrays.
 
 + In-sample residuals in direct forecasters has been simplified.
 
 + The method `create_predict_X` in the <code>[ForecasterRecursiveMultiSeries]</code> now returns a long-format DataFrame with the predictors. The columns are `level` and one column for each predictor. The index is the same as the prediction index.
 
 + The method `create_predict_X` in the <code>[ForecasterDirectMultiVariate]</code> now includes the `level` column in the returned DataFrame. The columns are `level` and one column for each predictor. The index is the same as the prediction index.
+
 
 **Fixed**
 
