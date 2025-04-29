@@ -989,7 +989,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         X_train_features_names_out_ = []
         for col in series_to_create_autoreg_features_and_y:
             
-            # TODO: add tests of this error
             y_values, y_index = preprocess_y(y=series[col])
             if np.isnan(y_values).any():
                 raise ValueError(f"Column '{col}' has missing values.")

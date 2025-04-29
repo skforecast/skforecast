@@ -94,6 +94,20 @@ def test_create_train_X_y_ValueError_when_level_not_in_series():
         forecaster._create_train_X_y(series=series)
 
 
+def test_create_train_X_y_ValueError_when_series_have_missing_values():
+    """
+    Test ValueError is raised when series has missing values.
+    """
+    series = pd.DataFrame({'l1': pd.Series(np.arange(5)),  
+                           'l2': pd.Series(np.arange(5))})
+    series.iloc[2, 0] = np.nan
+    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1', lags=3, steps=2)
+
+    err_msg = "Column 'l1' has missing values."
+    with pytest.raises(ValueError, match = err_msg):
+        forecaster._create_train_X_y(series=series)
+
+
 def test_create_train_X_y_IgnoredArgumentWarning_when_levels_of_transformer_series_not_equal_to_series_col_names():
     """
     Test IgnoredArgumentWarning is raised when `transformer_series` is a dict and its keys 

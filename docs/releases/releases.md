@@ -9,13 +9,12 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-api-change">API Change</span>   | Changes in the API                    |
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
-TODO: UPDATE 0.16.0
 
-## 0.16.0 <small>In Development</small> { id="0.16.0" }
+## 0.16.0 <small>Apr 29, 2025</small> { id="0.16.0" }
 
 The main changes in this release are:
 
-+ <span class="badge text-bg-danger">Fix</span> 
++ <span class="badge text-bg-enhancement">Enhancement</span> Refactored the internal codebase of all forecasters to enhance performance, primarily by replacing pandas DataFrames with more efficient NumPy arrays.
 
 
 **Added**
@@ -29,7 +28,7 @@ The main changes in this release are:
 
 **Changed**
 
-+ Refactor.......... 
++ Refactored the internal codebase of all forecasters to enhance performance, primarily by replacing pandas DataFrames with more efficient NumPy arrays.
 
 + In-sample residuals in direct forecasters has been simplified.
 
