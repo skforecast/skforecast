@@ -144,15 +144,15 @@ def plot_benchmark_results(df, function_name, add_median=True, add_mean=True):
         for i, v in enumerate(sorted_versions)
     }
     platform_symbols = {
-        plat_form: symbol for plat_form, symbol in zip(df['platform'].unique(), [
+        platform: symbol for platform, symbol in zip(df['platform'].unique(), [
             'circle', 'square', 'diamond', 'cross', 'x', 'triangle-up', 'star'
         ])
     }
 
     fig = go.Figure()
     for version in sorted_versions:
-        for plat_form, symbol in platform_symbols.items():
-            sub_df = df[(df['skforecast_version'] == version) & (df['platform'] == plat_form)]
+        for platform, symbol in platform_symbols.items():
+            sub_df = df[(df['skforecast_version'] == version) & (df['platform'] == platform)]
             if sub_df.empty:
                 continue
             fig.add_trace(
@@ -174,7 +174,7 @@ def plot_benchmark_results(df, function_name, add_median=True, add_mean=True):
                         thickness=1.5,
                         width=5
                     ),
-                    name=f'{version} - {plat_form}',
+                    name=f'{version} - {platform}',
                     text=sub_df.apply(lambda row: (
                         f"Forecaster: {row['forecaster_name']}<br>"
                         f"Regressor: {row['regressor_name']}<br>"
