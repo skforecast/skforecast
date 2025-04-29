@@ -36,6 +36,7 @@ else:
     from skforecast.ForecasterAutoregMultiVariate import ForecasterAutoregMultiVariate
     from skforecast.model_selection import backtesting_forecaster, backtesting_forecaster_multiseries
 
+
 class BenchmarkRunner:
     def __init__(self, output_dir="./", repeat=10):
         self.output_dir = output_dir
@@ -143,15 +144,15 @@ def plot_benchmark_results(df, function_name, add_median=True, add_mean=True):
         for i, v in enumerate(sorted_versions)
     }
     platform_symbols = {
-        platform: symbol for platform, symbol in zip(df['platform'].unique(), [
+        plat_form: symbol for plat_form, symbol in zip(df['platform'].unique(), [
             'circle', 'square', 'diamond', 'cross', 'x', 'triangle-up', 'star'
         ])
     }
 
     fig = go.Figure()
     for version in sorted_versions:
-        for platform, symbol in platform_symbols.items():
-            sub_df = df[(df['skforecast_version'] == version) & (df['platform'] == platform)]
+        for plat_form, symbol in platform_symbols.items():
+            sub_df = df[(df['skforecast_version'] == version) & (df['platform'] == plat_form)]
             if sub_df.empty:
                 continue
             fig.add_trace(
@@ -173,7 +174,7 @@ def plot_benchmark_results(df, function_name, add_median=True, add_mean=True):
                         thickness=1.5,
                         width=5
                     ),
-                    name=f'{version} - {platform}',
+                    name=f'{version} - {plat_form}',
                     text=sub_df.apply(lambda row: (
                         f"Forecaster: {row['forecaster_name']}<br>"
                         f"Regressor: {row['regressor_name']}<br>"
@@ -240,10 +241,10 @@ def plot_benchmark_results(df, function_name, add_median=True, add_mean=True):
 
 
 def run_benchmark_ForecasterRecursiveMultiSeries(
-        series_dict,
-        series_dataframe,
-        exog_dict,
-        exog_dict_prediction
+    series_dict,
+    series_dataframe,
+    exog_dict,
+    exog_dict_prediction
 ):
     """
     Run all benchmarks for the ForecasterRecursiveMultiSeries class and save the results.
@@ -440,7 +441,6 @@ def run_benchmark_ForecasterRecursiveMultiSeries(
                     show_progress=False
                 )
 
-
     runner = BenchmarkRunner(repeat=10, output_dir="./")
     _ = runner.benchmark(
             ForecasterRecursiveMultiSeries__create_train_X_y_series_is_dict_exog_is_dict,
@@ -529,9 +529,9 @@ def run_benchmark_ForecasterRecursiveMultiSeries(
     
 
 def run_benchmark_ForecasterRecursive(
-        y,
-        exog,
-        exog_prediction
+    y,
+    exog,
+    exog_prediction
 ):
     """
     Run all benchmarks for the ForecasterRecursive class and save the results.
@@ -562,7 +562,6 @@ def run_benchmark_ForecasterRecursive(
         else:
             forecaster.create_train_X_y(y=y, exog=exog)
 
-
     def ForecasterRecursive_predict(forecaster, exog):
         forecaster.predict(steps=100, exog=exog)
 
@@ -573,7 +572,6 @@ def run_benchmark_ForecasterRecursive(
             interval=[5, 95],
             method='conformal'
         )
-
 
     def ForecasterRecursive__create_predict_inputs(forecaster, exog):
         _ = forecaster._create_predict_inputs(
@@ -641,7 +639,6 @@ def run_benchmark_ForecasterRecursive(
                     show_progress=False
                 )
 
-
     runner = BenchmarkRunner(repeat=30, output_dir="./")
     _ = runner.benchmark(ForecasterRecursive__create_train_X_y, forecaster=forecaster, y=y, exog=exog)
 
@@ -660,9 +657,9 @@ def run_benchmark_ForecasterRecursive(
 
 
 def run_benchmark_ForecasterDirectMultiVariate(
-        series,
-        exog,
-        exog_prediction
+    series,
+    exog,
+    exog_prediction
 ):
     """
     Run all benchmarks for the ForecasterDirectMultiVariate class and save the results.
@@ -821,7 +818,6 @@ def run_benchmark_ForecasterDirectMultiVariate(
                     show_progress=False
                 )
 
-
     runner = BenchmarkRunner(repeat=10, output_dir="./")
     _ = runner.benchmark(ForecasterDirectMultiVariate__create_train_X_y, forecaster=forecaster, series=series, exog=exog)
     _ = runner.benchmark(ForecasterDirectMultiVariate__create_train_X_y_no_exog, forecaster=forecaster, series=series)
@@ -844,9 +840,9 @@ def run_benchmark_ForecasterDirectMultiVariate(
 
 
 def run_benchmark_ForecasterDirect(
-        y,
-        exog,
-        exog_prediction
+    y,
+    exog,
+    exog_prediction
 ):
     """
     Run all benchmarks for the ForecasterDirect class and save the results.
@@ -879,7 +875,6 @@ def run_benchmark_ForecasterDirect(
         else:
             forecaster.create_train_X_y(y=y, exog=exog)
 
-
     def ForecasterDirect_predict(forecaster, exog):
         forecaster.predict(steps=5, exog=exog)
 
@@ -890,7 +885,6 @@ def run_benchmark_ForecasterDirect(
             interval=[5, 95],
             method='conformal'
         )
-
 
     def ForecasterDirect__create_predict_inputs(forecaster, exog):
         _ = forecaster._create_predict_inputs(
@@ -957,7 +951,6 @@ def run_benchmark_ForecasterDirect(
                     metric='mean_squared_error',
                     show_progress=False
                 )
-
 
     runner = BenchmarkRunner(repeat=30, output_dir="./")
     _ = runner.benchmark(ForecasterDirect__create_train_X_y, forecaster=forecaster, y=y, exog=exog)

@@ -44,7 +44,6 @@ from ..utils import (
     exog_to_direct_numpy,
     expand_index,
     transform_numpy,
-    transform_series,
     transform_dataframe,
     select_n_jobs_fit_forecaster,
     set_skforecast_warnings,
@@ -989,9 +988,10 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         X_train_window_features_names_out_ = [] if self.window_features is not None else None
         X_train_features_names_out_ = []
         for col in series_to_create_autoreg_features_and_y:
-            y = series[col]
-            check_y(y=y, series_id=f"Column '{col}'")
-            y_values, y_index = preprocess_y(y=y)
+            
+            y_values, y_index = preprocess_y(y=series[col])
+            if np.isnan(y_values).any():
+                raise ValueError(f"Column '{col}' has missing values.")
 
             y_values = transform_numpy(
                            array             = y_values,

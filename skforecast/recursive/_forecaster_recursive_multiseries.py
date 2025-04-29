@@ -48,7 +48,6 @@ from ..utils import (
     preprocess_last_window,
     expand_index,
     transform_numpy,
-    transform_series,
     transform_dataframe,
     set_skforecast_warnings,
     get_style_repr_html,
