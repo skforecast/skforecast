@@ -45,7 +45,7 @@ def test_check_output_series_long_to_dict_dropna_False():
 
     for k in expected.keys():
         expected[k]['exog_1'] = expected[k]['exog_1'].astype(int)
-        expected[k]['exog_2'] = expected[k]['exog_2'].astype(str)
+        expected[k]['exog_2'] = expected[k]['exog_2'].astype(object)
         expected[k]['exog_3'] = expected[k]['exog_3'].astype(float)
 
     results = exog_long_to_dict(
