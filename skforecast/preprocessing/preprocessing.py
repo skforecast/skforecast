@@ -1645,7 +1645,7 @@ class QuantileBinner:
             setattr(self, param, value)
 
 
-class FastOrdinalEncoder:
+class FastOrdinalEncoder: # pragma: no cover
     """
     Encode categorical values as an integer array, with integer values
     from 0 to n_categories - 1.
