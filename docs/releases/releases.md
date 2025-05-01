@@ -10,7 +10,7 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
 
-## 0.16.0 <small>Apr 29, 2025</small> { id="0.16.0" }
+## 0.16.0 <small>May 01, 2025</small> { id="0.16.0" }
 
 The main changes in this release are:
 
