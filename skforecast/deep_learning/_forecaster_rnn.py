@@ -742,7 +742,7 @@ class ForecasterRnn(ForecasterBase):
             X_train = torch.tensor(X_train).to(torch_device)
             y_train = torch.tensor(y_train).to(torch_device)
             if exog_train is not None:
-                exog_train = torch.tensor(exog_train.to_numpy()).to(torch_device)
+                exog_train = torch.tensor(exog_train).to(torch_device)
 
         if self.series_val is not None:
             series_val = self.series_val[self.series_names_in_]
