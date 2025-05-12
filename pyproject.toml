@@ -64,8 +64,12 @@ plotting = [
 ]
 
 deeplearning = [
+    'tensorflow>=2.13, <2.19; python_version < "3.13"',
+    'torch>=2.2, <2.7; python_version < "3.13"',
     "matplotlib>=3.3, <3.11",
-    "keras>=2.6, <4.0"
+    "keras>=3.0, <4.0",
+    "numpy>=1.24, <2.0",
+
 ]
 
 all = [
