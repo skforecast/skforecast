@@ -12,15 +12,9 @@ from ..utils import check_optional_dependency
 
 try:
     import keras
-    from keras.layers import (
-        LSTM,
-        Concatenate,
-        Dense,
-        Flatten,
-        Input,
-        Reshape,
-        SimpleRNN,
-    )
+    from keras.layers import (LSTM, Concatenate, Dense, Flatten, Input,
+                              RepeatVector, Reshape, SimpleRNN,
+                              TimeDistributed)
     from keras.losses import MeanSquaredError
     from keras.models import Model
     from keras.optimizers import Adam
