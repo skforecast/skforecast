@@ -760,7 +760,7 @@ class ForecasterRnn(ForecasterBase):
                 if exog_val:
                     exog_val = torch.tensor(exog_val).to(torch_device)
 
-            if exog_val:
+            if self.exog_val is not None:
                 history = self.regressor.fit(
                     x=[X_train, exog_train],
                     y=y_train,
