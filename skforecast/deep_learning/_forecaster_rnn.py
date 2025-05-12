@@ -723,6 +723,12 @@ class ForecasterRnn(ForecasterBase):
         self.is_fitted = False
         self.training_range_ = None
 
+        # TODO fix this check
+        # if self.regressor.exog and exog is None:
+        #     raise ValueError(
+        #         "Neural network architecture exects exog variables during fit."
+        #     )
+            
         X_train, exog_train, y_train, dimension_names = self.create_train_X_y(
             series=series, exog=exog
         )
