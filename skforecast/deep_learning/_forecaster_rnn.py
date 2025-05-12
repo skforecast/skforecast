@@ -950,18 +950,25 @@ class ForecasterRnn(ForecasterBase):
         # TODO: Fill X_col_names
         X_col_names = []
 
+
         if exog is not None:
+            check_exog(exog=exog, allow_nan=False)
             exog = input_to_frame(data=exog, input_name='exog')
-            exog = exog.loc[:, self.exog_names_in_]
             exog = transform_dataframe(
-                       df                = exog,
-                       transformer       = self.transformer_exog,
-                       fit               = False,
-                       inverse_transform = False
-                   )
-            check_exog_dtypes(exog=exog)
-            X = [X, exog.to_numpy()[steps]]
-            X_col_names = X_col_names + exog.columns.to_list()
+                df=exog,
+                transformer=self.transformer_exog,
+                fit=True,
+                inverse_transform=False,
+            )
+            # exog_pred = []
+            # for _, exog_name in enumerate(exog.columns):
+            #     _, exog_step = self._create_lags(exog[exog_name])
+            #     exog_pred.append(exog_step)
+                
+            # exog_pred = np.stack(exog_pred, axis=2)
+            exog_pred = exog.to_numpy()
+            exog_pred = np.expand_dims(exog_pred[:self.max_step], axis=0)
+            X = [X, exog_pred]
 
         return X, X_col_names, steps, levels, prediction_index
 
