@@ -6,15 +6,26 @@
 # coding=utf-8
 
 from __future__ import annotations
+
 import warnings
+
 import pandas as pd
+
 from ..utils import check_optional_dependency
 
 try:
     import keras
-    from keras.layers import (LSTM, Concatenate, Dense, Flatten, Input,
-                              RepeatVector, Reshape, SimpleRNN,
-                              TimeDistributed)
+    from keras.layers import (
+        LSTM,
+        Concatenate,
+        Dense,
+        Flatten,
+        Input,
+        RepeatVector,
+        Reshape,
+        SimpleRNN,
+        TimeDistributed,
+    )
     from keras.losses import MeanSquaredError
     from keras.models import Model
     from keras.optimizers import Adam
@@ -514,16 +525,6 @@ def create_and_compile_model_exog_2(
             activation if isinstance(activation, str)
             else activation.get("dense_units", "relu")
         )
-        x = TimeDistributed(Dense(units, activation=dense_activation))(x)
-
-    output = TimeDistributed(Dense(levels, activation="linear"))(x)
-
-    model = Model(inputs=inputs, outputs=output)
-    model.compile(optimizer=optimizer, loss=loss, **compile_kwargs)
-    
-    model.exog = True if exog is not None else False
-
-    return model
         x = TimeDistributed(Dense(units, activation=dense_activation))(x)
 
     output = TimeDistributed(Dense(levels, activation="linear"))(x)
