@@ -6,6 +6,7 @@
 # coding=utf-8
 
 from __future__ import annotations
+
 import sys
 import warnings
 from copy import copy, deepcopy
@@ -20,36 +21,19 @@ from sklearn.base import clone
 from sklearn.preprocessing import MinMaxScaler
 
 import skforecast
+
 from ..base import ForecasterBase
-from ..exceptions import (
-    DataTransformationWarning,
-    IgnoredArgumentWarning,
-    MissingValuesWarning,
-    ResidualsUsageWarning,
-    UnknownLevelWarning
-)
-from ..utils import (
-    initialize_lags,
-    check_interval,
-    check_predict_input,
-    check_residuals_input,
-    check_select_fit_kwargs,
-    check_y,
-    check_exog,
-    check_exog_dtypes,
-    input_to_frame,
-    expand_index,
-    preprocess_y,
-    preprocess_last_window,
-    prepare_levels_multiseries,
-    prepare_steps_direct,
-    set_skforecast_warnings,
-    transform_numpy,
-    transform_series,
-    transform_dataframe,
-    get_style_repr_html,
-    get_exog_dtypes
-)
+from ..exceptions import (DataTransformationWarning, IgnoredArgumentWarning,
+                          MissingValuesWarning, ResidualsUsageWarning,
+                          UnknownLevelWarning)
+from ..utils import (check_exog, check_exog_dtypes, check_interval,
+                     check_predict_input, check_residuals_input,
+                     check_select_fit_kwargs, check_y, expand_index,
+                     get_exog_dtypes, get_style_repr_html, initialize_lags,
+                     input_to_frame, prepare_levels_multiseries,
+                     prepare_steps_direct, preprocess_last_window,
+                     preprocess_y, set_skforecast_warnings,
+                     transform_dataframe, transform_numpy, transform_series)
 
 
 # TODO. Test Interval
@@ -217,7 +201,6 @@ class ForecasterRnn(ForecasterBase):
         fit_kwargs: dict[str, object] | None = {},
         forecaster_id: str | int | None = None
     ) -> None:
-        
         self.regressor = deepcopy(regressor)
         self.levels = None
         self.transformer_series = transformer_series
@@ -470,6 +453,7 @@ class ForecasterRnn(ForecasterBase):
         # Return the combined style and content
         return style + content
 
+    # @TODO CREATE_LAGS_AND_STEPS
     def _create_lags(
         self, 
         y: np.ndarray
@@ -620,12 +604,12 @@ class ForecasterRnn(ForecasterBase):
             X, _ = self._create_lags(x)
             X_train.append(X)
 
-        for i, serie in enumerate(self.levels):
-            y = series[serie]
+        for i, level in enumerate(self.levels):
+            y = series[level]
             check_y(y=y)
             y = transform_series(
                 series=y,
-                transformer=self.transformer_series_[serie],
+                transformer=self.transformer_series_[level],
                 fit=True,
                 inverse_transform=False,
             )
@@ -655,26 +639,32 @@ class ForecasterRnn(ForecasterBase):
         if exog is not None:
             check_exog(exog=exog, allow_nan=False)
             exog = input_to_frame(data=exog, input_name='exog')
-            # TODO: mejorar el mensaje de error si exog no tiene alguno de los
-            # indices en train_index
-            exog_train = exog.loc[train_index, :]
-            
-            exog_train = transform_dataframe(
-                df=exog_train,
+            exog = transform_dataframe(
+                df=exog,
                 transformer=self.transformer_exog,
                 fit=True,
                 inverse_transform=False,
             )
+            exog_train = []
+            for _, exog_name in enumerate(exog.columns):
+                _, exog_step = self._create_lags(exog[exog_name])
+                exog_train.append(exog_step)
+                
+            exog_train = np.stack(exog_train, axis=2)
+            # TODO: mejorar el mensaje de error si exog no tiene alguno de los
+            # indices en train_index 
 
             dimension_names["exog_train"] = {
                 0: train_index,
-                1: exog_train.columns.to_list(),
+                1: ["step_" + str(lag) for lag in self.steps],
+                2: exog.columns.to_list(),
             }
         else:
             exog_train = None
             dimension_names["exog_train"] = {
                 0: None,
                 1: None,
+                2: None
             }
 
         return X_train, exog_train, y_train, dimension_names
