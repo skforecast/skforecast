@@ -10,6 +10,24 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
 
+## 0.17.0 <small>In progress</small> { id="0.17.0" }
+
+The main changes in this release are:
+
++ <span class="badge text-bg-danger">Fix</span> Fixed a bug that prevented using `initial_train_size` as date with the <code>[OneStepAheadFold]</code> during the hyperparameter search.
+
+
+**Added**
+
+
+**Changed**
+
+
+**Fixed**
+
++ Fixed a bug that prevented using `initial_train_size` as date with the <code>[OneStepAheadFold]</code> during the hyperparameter search.
+
+
 ## 0.16.0 <small>May 01, 2025</small> { id="0.16.0" }
 
 The main changes in this release are:

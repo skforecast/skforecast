@@ -847,6 +847,9 @@ def test_output_evaluate_grid_hyperparameters_ForecasterDirect_with_window_featu
     pd.testing.assert_frame_equal(results, expected_results)
 
 
+@pytest.mark.parametrize("initial_train_size", 
+                         [100, '2020-01-05 03:00:00', pd.to_datetime('2020-01-05 03:00:00')], 
+                         ids=lambda initial_train_size: f'initial_train_size: {initial_train_size}')
 @pytest.mark.parametrize(
         "forecaster",
         [
@@ -881,7 +884,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterDirect_with_window_featu
         ],
 ids=lambda forecaster: f'forecaster: {forecaster.forecaster_id}')
 def test_evaluate_grid_hyperparameters_equivalent_outputs_backtesting_one_step_ahead(
-    forecaster,
+    forecaster, initial_train_size
 ):
     """
     Test that the outputs of _evaluate_grid_hyperparameters are equivalent when
@@ -901,7 +904,7 @@ def test_evaluate_grid_hyperparameters_equivalent_outputs_backtesting_one_step_a
     param_grid = list(ParameterGrid(param_grid))
     cv_backtesnting = TimeSeriesFold(
             steps                 = 1,
-            initial_train_size    = 100,
+            initial_train_size    = initial_train_size,
             window_size           = None,
             differentiation       = None,
             refit                 = False,
@@ -912,7 +915,7 @@ def test_evaluate_grid_hyperparameters_equivalent_outputs_backtesting_one_step_a
             return_all_indexes    = False,
         )
     cv_one_step_ahead = OneStepAheadFold(
-            initial_train_size    = 100,
+            initial_train_size    = initial_train_size,
             return_all_indexes    = False,
         )
     

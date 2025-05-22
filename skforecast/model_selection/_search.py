@@ -32,7 +32,7 @@ from ..model_selection._utils import (
     _calculate_metrics_one_step_ahead,
     _predict_and_calculate_metrics_one_step_ahead_multiseries
 )
-from ..utils import initialize_lags, set_skforecast_warnings
+from ..utils import initialize_lags, date_to_index_position, set_skforecast_warnings
 
 
 def grid_search_forecaster(
@@ -332,6 +332,7 @@ def _evaluate_grid_hyperparameters(
         )
     
     if cv_name == 'OneStepAheadFold':
+
         check_one_step_ahead_input(
             forecaster        = forecaster,
             cv                = cv,
@@ -341,8 +342,16 @@ def _evaluate_grid_hyperparameters(
             show_progress     = show_progress,
             suppress_warnings = False
         )
+
         cv = deepcopy(cv)
+        initial_train_size = date_to_index_position(
+                                 index        = cv._extract_index(y), 
+                                 date_input   = cv.initial_train_size, 
+                                 method       = 'validation',
+                                 date_literal = 'initial_train_size'
+                             )
         cv.set_params({
+            'initial_train_size': initial_train_size,
             'window_size': forecaster.window_size,
             'differentiation': forecaster.differentiation_max,
             'verbose': verbose
@@ -714,6 +723,7 @@ def _bayesian_search_optuna(
         )
     
     if cv_name == 'OneStepAheadFold':
+
         check_one_step_ahead_input(
             forecaster        = forecaster,
             cv                = cv,
@@ -723,8 +733,16 @@ def _bayesian_search_optuna(
             show_progress     = show_progress,
             suppress_warnings = False
         )
+
         cv = deepcopy(cv)
+        initial_train_size = date_to_index_position(
+                                 index        = cv._extract_index(y), 
+                                 date_input   = cv.initial_train_size, 
+                                 method       = 'validation',
+                                 date_literal = 'initial_train_size'
+                             )
         cv.set_params({
+            'initial_train_size': initial_train_size,
             'window_size': forecaster.window_size,
             'differentiation': forecaster.differentiation_max,
             'verbose': verbose
@@ -1296,6 +1314,7 @@ def _evaluate_grid_hyperparameters_multiseries(
         )
     
     if cv_name == 'OneStepAheadFold':
+
         check_one_step_ahead_input(
             forecaster        = forecaster,
             cv                = cv,
@@ -1305,8 +1324,16 @@ def _evaluate_grid_hyperparameters_multiseries(
             show_progress     = show_progress,
             suppress_warnings = suppress_warnings
         )
+
         cv = deepcopy(cv)
+        initial_train_size = date_to_index_position(
+                                 index        = cv._extract_index(series), 
+                                 date_input   = cv.initial_train_size, 
+                                 method       = 'validation',
+                                 date_literal = 'initial_train_size'
+                             )
         cv.set_params({
+            'initial_train_size': initial_train_size,
             'window_size': forecaster.window_size,
             'differentiation': forecaster.differentiation_max,
             'verbose': verbose
@@ -1767,6 +1794,7 @@ def _bayesian_search_optuna_multiseries(
         )
     
     if cv_name == 'OneStepAheadFold':
+
         check_one_step_ahead_input(
             forecaster        = forecaster,
             cv                = cv,
@@ -1776,8 +1804,16 @@ def _bayesian_search_optuna_multiseries(
             show_progress     = show_progress,
             suppress_warnings = suppress_warnings
         )
+
         cv = deepcopy(cv)
+        initial_train_size = date_to_index_position(
+                                 index        = cv._extract_index(series), 
+                                 date_input   = cv.initial_train_size, 
+                                 method       = 'validation',
+                                 date_literal = 'initial_train_size'
+                             )
         cv.set_params({
+            'initial_train_size': initial_train_size,
             'window_size': forecaster.window_size,
             'differentiation': forecaster.differentiation_max,
             'verbose': verbose
@@ -1788,8 +1824,8 @@ def _bayesian_search_optuna_multiseries(
     allowed_aggregate_metrics = ['average', 'weighted_average', 'pooling']
     if not set(aggregate_metric).issubset(allowed_aggregate_metrics):
         raise ValueError(
-            (f"Allowed `aggregate_metric` are: {allowed_aggregate_metrics}. "
-             f"Got: {aggregate_metric}.")
+            f"Allowed `aggregate_metric` are: {allowed_aggregate_metrics}. "
+            f"Got: {aggregate_metric}."
         )
 
     if not isinstance(metric, list):
@@ -2330,8 +2366,8 @@ def _evaluate_grid_hyperparameters_sarimax(
 
     if return_best and exog is not None and (len(exog) != len(y)):
         raise ValueError(
-            (f"`exog` must have same number of samples as `y`. "
-             f"length `exog`: ({len(exog)}), length `y`: ({len(y)})")
+            f"`exog` must have same number of samples as `y`. "
+            f"length `exog`: ({len(exog)}), length `y`: ({len(y)})"
         )
 
     if not isinstance(metric, list):
