@@ -1777,7 +1777,17 @@ def _bayesian_search_optuna_multiseries(
             suppress_warnings = suppress_warnings
         )
         cv = deepcopy(cv)
+
+        # TODO: Problema, esto se hace dentro de check_one_step_ahead_input
+        from ..utils import date_to_index_position
+        initial_train_size = date_to_index_position(
+                                 index        = cv._extract_index(series), 
+                                 date_input   = cv.initial_train_size, 
+                                 method       = 'validation',
+                                 date_literal = 'initial_train_size'
+                             )
         cv.set_params({
+            'initial_train_size': initial_train_size,
             'window_size': forecaster.window_size,
             'differentiation': forecaster.differentiation_max,
             'verbose': verbose
