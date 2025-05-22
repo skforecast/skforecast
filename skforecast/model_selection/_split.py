@@ -506,7 +506,7 @@ class OneStepAheadFold(BaseFold):
                                   )
 
         fold = [
-            [0, self.initial_train_size],
+            [0, self.initial_train_size - 1],
             [self.initial_train_size, len(X)],
             True
         ]
@@ -514,10 +514,17 @@ class OneStepAheadFold(BaseFold):
         if self.verbose:
             self._print_info(index=index, fold=fold)
 
+        # NOTE: +1 to prevent iloc pandas from deleting the last observation
         if self.return_all_indexes:
             fold = [
-                [range(fold[0][0], fold[0][1])],
+                [range(fold[0][0], fold[0][1] + 1)],
                 [range(fold[1][0], fold[1][1])],
+                fold[2]
+            ]
+        else:
+            fold = [
+                [fold[0][0], fold[0][1] + 1],
+                [fold[1][0], fold[1][1]],
                 fold[2]
             ]
 
@@ -991,7 +998,7 @@ class TimeSeriesFold(BaseFold):
 
         folds = [fold for i, fold in enumerate(folds) if i not in index_to_skip]
         if not self.return_all_indexes:
-            # +1 to prevent iloc pandas from deleting the last observation
+            # NOTE: +1 to prevent iloc pandas from deleting the last observation
             folds = [
                 [[fold[0][0], fold[0][-1] + 1], 
                  [fold[1][0], fold[1][-1] + 1] if self.window_size is not None else [],

@@ -18,7 +18,7 @@
 - :information_source: [About The Project](#about-the-project)
 - :books: [Documentation](#documentation)
 - :computer: [Installation & Dependencies](#installation--dependencies)
-- :sparkles: [What is new in skforecast 0.16?](#what-is-new-in-skforecast-015)
+- :sparkles: [What is new in skforecast 0.17?](#what-is-new-in-skforecast-017)
 - :crystal_ball: [Forecasters](#forecasters)
 - :mortar_board: [Examples and tutorials](#examples-and-tutorials)
 - :handshake: [How to contribute](#how-to-contribute)
@@ -91,7 +91,7 @@ pip install skforecast
 For more installation options, including dependencies and additional features, check out our [Installation Guide](https://skforecast.org/latest/quick-start/how-to-install.html).
 
 
-# What is new in skforecast 0.16?
+# What is new in skforecast 0.17?
 
 All significant changes to this project are documented in the release file.
 

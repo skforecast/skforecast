@@ -69,7 +69,7 @@ def test_OneStepAhead_split_initial_train_size_and_window_size(capfd, return_all
         "--------------------\n"
         "Number of observations in train: 70\n"
         "Number of observations in test: 30\n"
-        "Training : 2022-01-01 00:00:00 -- 2022-03-12 00:00:00 (n=70)\n"
+        "Training : 2022-01-01 00:00:00 -- 2022-03-11 00:00:00 (n=70)\n"
         "Test     : 2022-03-12 00:00:00 -- 2022-04-10 00:00:00 (n=30)\n\n"
     )
 
@@ -99,7 +99,7 @@ def test_OneStepAhead_split_initial_train_size_and_window_size_differentiation_i
         "Number of observations in train: 69\n"
         "    First 1 observation/s in training set are used for differentiation\n"
         "Number of observations in test: 30\n"
-        "Training : 2022-01-02 00:00:00 -- 2022-03-12 00:00:00 (n=69)\n"
+        "Training : 2022-01-02 00:00:00 -- 2022-03-11 00:00:00 (n=69)\n"
         "Test     : 2022-03-12 00:00:00 -- 2022-04-10 00:00:00 (n=30)\n\n"
     )
 
@@ -135,7 +135,7 @@ def test_OneStepAhead_split_initial_train_size_window_size_return_all_indexes_tr
         "--------------------\n"
         "Number of observations in train: 70\n"
         "Number of observations in test: 30\n"
-        "Training : 2022-01-01 00:00:00 -- 2022-03-12 00:00:00 (n=70)\n"
+        "Training : 2022-01-01 00:00:00 -- 2022-03-11 00:00:00 (n=70)\n"
         "Test     : 2022-03-12 00:00:00 -- 2022-04-10 00:00:00 (n=30)\n\n"
     )
 
@@ -173,7 +173,7 @@ def test_OneStepAhead_split_initial_train_size_window_size_return_all_indexes_fa
         "--------------------\n"
         "Number of observations in train: 70\n"
         "Number of observations in test: 30\n"
-        "Training : 2022-01-01 00:00:00 -- 2022-03-12 00:00:00 (n=70)\n"
+        "Training : 2022-01-01 00:00:00 -- 2022-03-11 00:00:00 (n=70)\n"
         "Test     : 2022-03-12 00:00:00 -- 2022-04-10 00:00:00 (n=30)\n\n"
     )
 
@@ -209,7 +209,7 @@ def test_OneStepAhead_split_int_and_date_initial_train_size(capfd, initial_train
         "--------------------\n"
         "Number of observations in train: 70\n"
         "Number of observations in test: 30\n"
-        "Training : 2022-01-01 00:00:00 -- 2022-03-12 00:00:00 (n=70)\n"
+        "Training : 2022-01-01 00:00:00 -- 2022-03-11 00:00:00 (n=70)\n"
         "Test     : 2022-03-12 00:00:00 -- 2022-04-10 00:00:00 (n=30)\n\n"
     )
 
