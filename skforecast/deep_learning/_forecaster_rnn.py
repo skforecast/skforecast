@@ -23,17 +23,35 @@ from sklearn.preprocessing import MinMaxScaler
 import skforecast
 
 from ..base import ForecasterBase
-from ..exceptions import (DataTransformationWarning, IgnoredArgumentWarning,
-                          MissingValuesWarning, ResidualsUsageWarning,
-                          UnknownLevelWarning)
-from ..utils import (check_exog, check_exog_dtypes, check_interval,
-                     check_predict_input, check_residuals_input,
-                     check_select_fit_kwargs, check_y, expand_index,
-                     get_exog_dtypes, get_style_repr_html, initialize_lags,
-                     input_to_frame, prepare_levels_multiseries,
-                     prepare_steps_direct, preprocess_last_window,
-                     preprocess_y, set_skforecast_warnings,
-                     transform_dataframe, transform_numpy, transform_series)
+from ..exceptions import (
+    DataTransformationWarning,
+    IgnoredArgumentWarning,
+    MissingValuesWarning,
+    ResidualsUsageWarning,
+    UnknownLevelWarning,
+)
+from ..utils import (
+    check_exog,
+    check_exog_dtypes,
+    check_interval,
+    check_predict_input,
+    check_residuals_input,
+    check_select_fit_kwargs,
+    check_y,
+    expand_index,
+    get_exog_dtypes,
+    get_style_repr_html,
+    initialize_lags,
+    input_to_frame,
+    prepare_levels_multiseries,
+    prepare_steps_direct,
+    preprocess_last_window,
+    preprocess_y,
+    set_skforecast_warnings,
+    transform_dataframe,
+    transform_numpy,
+    transform_series,
+)
 
 
 # TODO. Test Interval
