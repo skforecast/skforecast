@@ -826,7 +826,7 @@ class ForecasterRnn(ForecasterBase):
             # self.X_train_exog_names_out_ = X_train_exog_names_out_
 
         if store_in_sample_residuals:
-            residuals = y_train - self.regressor.predict(
+            residuals = y_train.cpu() - self.regressor.predict(
                 x=X_train if exog_train is None else [X_train, exog_train], verbose=0
             )
             self.in_sample_residuals_ = {
