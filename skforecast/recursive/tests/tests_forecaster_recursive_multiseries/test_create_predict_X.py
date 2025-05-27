@@ -138,7 +138,7 @@ def test_create_predict_X_output_when_regressor_is_LinearRegression_with_transfo
                      transformer_series = StandardScaler()
                  )
     forecaster.fit(series=series)
-    results = forecaster.create_predict_X(steps=5, levels='1')
+    results = forecaster.create_predict_X(steps=5, levels='1') 
 
     expected = {
         '1': pd.DataFrame(

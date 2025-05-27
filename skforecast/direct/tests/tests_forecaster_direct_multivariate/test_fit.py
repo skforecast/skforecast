@@ -46,6 +46,8 @@ def test_forecaster_y_exog_features_stored():
     exog_type_in_ = type(exog)
     exog_names_in_ = ['exog_1', 'exog_2']
     exog_dtypes_in_ = {'exog_1': exog['exog_1'].dtype, 'exog_2': exog['exog_2'].dtype}
+    # All floats
+    exog_dtypes_out_ = {'exog_1': exog['exog_1'].dtype, 'exog_2_a': exog['exog_1'].dtype, 'exog_2_b': exog['exog_1'].dtype}
     X_train_window_features_names_out_ = [
         'l1_roll_ratio_min_max_4', 'l1_roll_median_4',
         'l2_roll_ratio_min_max_4', 'l2_roll_median_4'
@@ -68,6 +70,7 @@ def test_forecaster_y_exog_features_stored():
     assert forecaster.exog_type_in_ == exog_type_in_
     assert forecaster.exog_names_in_ == exog_names_in_
     assert forecaster.exog_dtypes_in_ == exog_dtypes_in_
+    assert forecaster.exog_dtypes_out_ == exog_dtypes_out_
     assert forecaster.X_train_window_features_names_out_ == X_train_window_features_names_out_
     assert forecaster.X_train_exog_names_out_ == X_train_exog_names_out_
     assert forecaster.X_train_direct_exog_names_out_ == X_train_direct_exog_names_out_
