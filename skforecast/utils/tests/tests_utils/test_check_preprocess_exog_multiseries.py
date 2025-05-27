@@ -25,8 +25,8 @@ def test_TypeError_check_preprocess_exog_multiseries_when_exog_is_not_valid_type
     not_valid_exog = 'not_valid_exog'
 
     err_msg = re.escape(
-        ("`exog` must be a pandas Series, DataFrame, dictionary of pandas "
-         "Series/DataFrames or None. Got <class 'str'>.")
+        "`exog` must be a pandas Series, DataFrame, dictionary of pandas "
+        "Series/DataFrames or None. Got <class 'str'>."
     )
     with pytest.raises(TypeError, match = err_msg):
         check_preprocess_exog_multiseries(
@@ -50,8 +50,8 @@ def test_TypeError_check_preprocess_exog_multiseries_when_exog_is_not_dict_and_s
     _, series_indexes = check_preprocess_series(series=series_as_dict)
 
     err_msg = re.escape(
-        (f"`exog` must be a dict of DataFrames or Series if "
-         f"`series` is a dict. Got {type(not_valid_exog)}.")
+        f"`exog` must be a dict of DataFrames or Series if "
+        f"`series` is a dict. Got {type(not_valid_exog)}."
     )
     with pytest.raises(TypeError, match = err_msg):
         check_preprocess_exog_multiseries(
@@ -75,8 +75,8 @@ def test_ValueError_check_preprocess_exog_multiseries_when_exog_pandas_with_diff
     _, series_indexes = check_preprocess_series(series=series)
 
     err_msg = re.escape(
-        (f"`exog` must have same number of samples as `series`. "
-         f"length `exog`: ({len(not_valid_exog)}), length `series`: ({len(series)})")
+        f"`exog` must have same number of samples as `series`. "
+        f"length `exog`: ({len(not_valid_exog)}), length `series`: ({len(series)})"
     )
     with pytest.raises(ValueError, match = err_msg):
         check_preprocess_exog_multiseries(
@@ -96,8 +96,8 @@ def test_ValueError_check_preprocess_exog_multiseries_when_exog_pandas_with_diff
     _, series_indexes = check_preprocess_series(series=series)
 
     err_msg = re.escape(
-        ("Different index for `series` and `exog`. They must be equal "
-         "to ensure the correct alignment of values.")
+        "Different index for `series` and `exog`. They must be equal "
+        "to ensure the correct alignment of values."
     )
     with pytest.raises(ValueError, match = err_msg):
         check_preprocess_exog_multiseries(
@@ -144,11 +144,11 @@ def test_check_preprocess_exog_multiseries_when_series_is_pandas_DataFrame_with_
     a RangeIndex that doesn't start at 0.
     """
     series_range = series.copy()
-    series_range.index = pd.RangeIndex(start=3, stop=3+len(series), step=1)
+    series_range.index = pd.RangeIndex(start=3, stop=3 + len(series), step=1)
     _, series_indexes = check_preprocess_series(series=series_range)
     
     exog_range = exog.copy()
-    exog_range.index = pd.RangeIndex(start=3, stop=3+len(exog_range), step=1)
+    exog_range.index = pd.RangeIndex(start=3, stop=3 + len(exog_range), step=1)
 
     exog_dict, exog_names_in_ = check_preprocess_exog_multiseries(
                                     input_series_is_dict = False,
@@ -224,8 +224,8 @@ def test_TypeError_check_preprocess_exog_multiseries_when_exog_is_dict_with_no_p
     }
 
     err_msg = re.escape(
-        ("If `exog` is a dictionary, all exog must be a named pandas "
-         "Series, a pandas DataFrame or None. Review exog: ['l2']")
+        "If `exog` is a dictionary, all exog must be a named pandas "
+        "Series, a pandas DataFrame or None. Review exog: ['l2']"
     )
     with pytest.raises(TypeError, match = err_msg):
         check_preprocess_exog_multiseries(
@@ -251,8 +251,8 @@ def test_MissingValuesWarning_check_preprocess_exog_multiseries_when_exog_is_dic
     incomplete_exog.pop('l1')
 
     warn_msg = re.escape(
-        ("{'l1'} not present in `exog`. All values "
-         "of the exogenous variables for these series will be NaN.")
+        "{'l1'} not present in `exog`. All values "
+        "of the exogenous variables for these series will be NaN."
     )
     with pytest.warns(MissingExogWarning, match = warn_msg):
         check_preprocess_exog_multiseries(
@@ -278,8 +278,8 @@ def test_ValueError_check_preprocess_exog_multiseries_when_exog_dict_with_differ
     not_valid_exog['l2'] = not_valid_exog['l2'].iloc[:30]
 
     err_msg = re.escape(
-        ("`exog` for series 'l2' must have same number of samples as `series`. "
-         "length `exog`: (30), length `series`: (50)")
+        "`exog` for series 'l2' must have same number of samples as `series`. "
+        "length `exog`: (30), length `series`: (50)"
     )
     with pytest.raises(ValueError, match = err_msg):
         check_preprocess_exog_multiseries(
@@ -304,9 +304,9 @@ def test_ValueError_check_preprocess_exog_multiseries_when_exog_dict_with_differ
     }
 
     err_msg = re.escape(
-        ("Different index for series '2' and its exog. "
-         "When `series` is a pandas DataFrame, they must "
-         "be equal to ensure the correct alignment of values.")
+        "Different index for series '2' and its exog. "
+        "When `series` is a pandas DataFrame, they must "
+        "be equal to ensure the correct alignment of values."
     )
     with pytest.raises(ValueError, match = err_msg):
         check_preprocess_exog_multiseries(
@@ -326,8 +326,8 @@ def test_TypeError_check_preprocess_exog_multiseries_when_exog_dict_with_differe
     _, series_indexes = check_preprocess_series(series=series_as_dict)
 
     err_msg = re.escape(
-        ("All exog must have a Pandas DatetimeIndex as index with the "
-         "same frequency. Check exog for series: ['l1', 'l2']")
+        "All exog must have a Pandas DatetimeIndex as index with the "
+        "same frequency. Check exog for series: ['l1', 'l2']"
     )
     with pytest.raises(TypeError, match = err_msg):
         check_preprocess_exog_multiseries(
@@ -351,7 +351,14 @@ def test_TypeError_check_preprocess_exog_multiseries_when_exog_dict_with_differe
         '2': exog['exog_1'].astype(str).copy()
     }
 
-    err_msg = re.escape("Exog/s: ['exog_1'] have different dtypes in different series.")
+    err_msg = re.escape(
+        "Exog/s: ['exog_1'] have different dtypes in different "
+        "series. If any of these variables are categorical, note that this "
+        "error can also occur when their internal categories "
+        "(`series.cat.categories`) differ between series. Please ensure "
+        "that all series have the same categories (and category order) "
+        "for each categorical variable."
+    )
     with pytest.raises(TypeError, match = err_msg):
         check_preprocess_exog_multiseries(
             input_series_is_dict = False,
@@ -376,9 +383,9 @@ def test_ValueError_check_preprocess_exog_multiseries_when_exog_has_columns_name
     }
 
     err_msg = re.escape(
-        ("`exog` cannot contain a column named the same as one of the series.\n"
-         "    `series` columns : ['1', '2'].\n"
-         "    `exog`   columns : ['1'].")
+        "`exog` cannot contain a column named the same as one of the series.\n"
+        "    `series` columns : ['1', '2'].\n"
+        "    `exog`   columns : ['1']."
     )
     with pytest.raises(ValueError, match = err_msg):
         check_preprocess_exog_multiseries(
