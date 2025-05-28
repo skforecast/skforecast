@@ -1063,9 +1063,9 @@ class ForecasterRnn(ForecasterBase):
                 check_inputs = check_inputs
             )
 
-        print(X)
+
         predictions = self.regressor.predict(X, verbose=0)
-        print(predictions)
+
         predictions = np.reshape(
             predictions, (predictions.shape[1], predictions.shape[2])
         )[np.array(steps) - 1]
