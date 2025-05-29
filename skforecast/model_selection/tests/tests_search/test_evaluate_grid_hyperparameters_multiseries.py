@@ -1532,9 +1532,7 @@ def test_evaluate_grid_hyperparameters_equivalent_outputs_backtesting_and_one_st
         verbose            = False,
         show_progress      = False
     )
-    cv_one_step_ahead = OneStepAheadFold(
-            initial_train_size = 20,
-         )
+    cv_one_step_ahead = OneStepAheadFold(initial_train_size = 20)
     results_one_step_ahead = _evaluate_grid_hyperparameters_multiseries(
         forecaster         = forecaster,
         series             = series_datetime,
@@ -1552,6 +1550,9 @@ def test_evaluate_grid_hyperparameters_equivalent_outputs_backtesting_and_one_st
     pd.testing.assert_frame_equal(results_backtesting, results_one_step_ahead)
 
 
+@pytest.mark.parametrize("initial_train_size", 
+                         [213, '2016-07-31 00:00:00', pd.to_datetime('2016-07-31 00:00:00')], 
+                         ids=lambda initial_train_size: f'initial_train_size: {initial_train_size}')
 @pytest.mark.parametrize(
         "forecaster",
         [
@@ -1571,7 +1572,7 @@ def test_evaluate_grid_hyperparameters_equivalent_outputs_backtesting_and_one_st
         ],
 ids=lambda forecaster: f'forecaster: {forecaster.forecaster_id}')
 def test_evaluate_grid_hyperparameters_equivalent_outputs_backtesting_and_one_step_ahead_when_series_is_dict(
-    forecaster,
+    initial_train_size, forecaster,
 ):
     """
     Test that the output of evaluate_grid_hyperparameters for backtesting and one-step-ahead
@@ -1596,14 +1597,12 @@ def test_evaluate_grid_hyperparameters_equivalent_outputs_backtesting_and_one_st
     param_grid = list(ParameterGrid(param_grid))
 
     cv_backtesting = TimeSeriesFold(
-        initial_train_size = 213,
+        initial_train_size = initial_train_size,
         steps              = 1,
         refit              = False,
         fixed_train_size   = False,
     )
-    cv_one_step_ahead = OneStepAheadFold(
-        initial_train_size = 213,
-    )
+    cv_one_step_ahead = OneStepAheadFold(initial_train_size = initial_train_size)
     
     results_backtesting = _evaluate_grid_hyperparameters_multiseries(
         forecaster         = forecaster,

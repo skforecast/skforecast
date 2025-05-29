@@ -10,6 +10,30 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
 
+## 0.17.0 <small>In progress</small> { id="0.17.0" }
+
+The main changes in this release are:
+
++ <span class="badge text-bg-danger">Fix</span> A bug that prevented the use of `initial_train_size` as a date with the <code>[OneStepAheadFold]</code> during the hyperparameter search has been fixed.
+
++ <span class="badge text-bg-danger">Fix</span> A bug that caused the data types to be set incorrectly when creating the predicting matrix with the `create_predict_X` method or when `return_predictors=True` in the <code>[backtesting_forecaster]</code> and <code>[backtesting_forecaster_multiseries]</code> functions has been fixed. The dtypes of the predictors are now set to match those of the training data.
+
+
+**Added**
+
++ Added attribute `exog_dtypes_out_` in all forecasters to store the data types of the exogenous variables used in training after the transformation applied by `transformer_exog`. If `transformer_exog` is not used, it is equal to `exog_dtypes_in_`.
+
+
+**Changed**
+
+
+**Fixed**
+
++ A bug that prevented the use of `initial_train_size` as a date with the <code>[OneStepAheadFold]</code> during the hyperparameter search has been fixed.
+
++ A bug that caused the data types to be set incorrectly when creating the predicting matrix with the `create_predict_X` method or when `return_predictors=True` in the <code>[backtesting_forecaster]</code> and <code>[backtesting_forecaster_multiseries]</code> functions has been fixed. The dtypes of the predictors are now set to match those of the training data.
+
+
 ## 0.16.0 <small>May 01, 2025</small> { id="0.16.0" }
 
 The main changes in this release are:

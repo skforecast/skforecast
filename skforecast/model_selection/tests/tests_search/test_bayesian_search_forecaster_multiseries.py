@@ -807,7 +807,10 @@ def test_results_output_bayesian_search_forecaster_multivariate_ForecasterDirect
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_output_bayesian_search_forecaster_multiseries_ForecasterDirectMultiVariate_one_step_ahead():
+@pytest.mark.parametrize("initial_train_size", 
+                         [1000, '2014-09-26 00:00:00', pd.to_datetime('2014-09-26 00:00:00')], 
+                         ids=lambda initial_train_size: f'initial_train_size: {initial_train_size}')
+def test_output_bayesian_search_forecaster_multiseries_ForecasterDirectMultiVariate_one_step_ahead(initial_train_size):
     """
     Test output of bayesian_search_forecaster_multiseries when forecaster is ForecasterRecursiveMultiSeries
     and method is one_step_ahead.
@@ -821,9 +824,7 @@ def test_output_bayesian_search_forecaster_multiseries_ForecasterDirectMultiVari
                     transformer_series = StandardScaler(),
                     transformer_exog   = StandardScaler(),
                 )
-    cv = OneStepAheadFold(
-            initial_train_size = 1000,
-    )
+    cv = OneStepAheadFold(initial_train_size = initial_train_size)
 
     def search_space(trial):
         search_space  = {
@@ -906,7 +907,10 @@ def test_output_bayesian_search_forecaster_multiseries_ForecasterDirectMultiVari
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_output_bayesian_search_forecaster_multiseries_ForecasterRecursiveMultiSeries_one_step_ahead():
+@pytest.mark.parametrize("initial_train_size", 
+                         [1000, '2014-09-26 00:00:00', pd.to_datetime('2014-09-26 00:00:00')], 
+                         ids=lambda initial_train_size: f'initial_train_size: {initial_train_size}')
+def test_output_bayesian_search_forecaster_multiseries_ForecasterRecursiveMultiSeries_one_step_ahead(initial_train_size):
     """
     Test output of bayesian_search_forecaster_multiseries when forecaster is ForecasterRecursiveMultiSeries
     and method is one_step_ahead.
@@ -924,9 +928,7 @@ def test_output_bayesian_search_forecaster_multiseries_ForecasterRecursiveMultiS
             dropna_from_series = False,
         )
 
-    cv = OneStepAheadFold(
-            initial_train_size = 1000,
-    )
+    cv = OneStepAheadFold(initial_train_size = initial_train_size)
     levels = ["item_1", "item_2", "item_3"]
 
     def search_space(trial):

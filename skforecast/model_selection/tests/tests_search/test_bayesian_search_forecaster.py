@@ -43,8 +43,8 @@ def test_ValueError_bayesian_search_forecaster_when_return_best_and_len_y_exog_d
         return search_space
 
     err_msg = re.escape(
-        (f"`exog` must have same number of samples as `y`. "
-         f"length `exog`: ({len(exog)}), length `y`: ({len(y)})")
+        f"`exog` must have same number of samples as `y`. "
+        f"length `exog`: ({len(exog)}), length `y`: ({len(y)})"
     )
     with pytest.raises(ValueError, match = err_msg):
         bayesian_search_forecaster(

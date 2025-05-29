@@ -265,6 +265,8 @@ extra:
       link: https://www.linkedin.com/company/skforecast/
     - icon: fontawesome/brands/github
       link: https://github.com/skforecast/skforecast
+    - icon: fontawesome/brands/discord
+      link: https://discord.gg/Bqqb6eJ9
     - icon: fontawesome/brands/creative-commons
       link: https://creativecommons.org/licenses/by-nc-sa/4.0/
   seo:

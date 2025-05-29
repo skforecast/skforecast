@@ -3,7 +3,6 @@
 import re
 import pytest
 import os
-import sys
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
@@ -1090,6 +1089,9 @@ def test_bayesian_search_optuna_output_file():
     os.remove(output_file)
 
 
+@pytest.mark.parametrize("initial_train_size", 
+                         [100, '2020-01-05 03:00:00', pd.to_datetime('2020-01-05 03:00:00')], 
+                         ids=lambda initial_train_size: f'initial_train_size: {initial_train_size}')
 @pytest.mark.parametrize(
         "forecaster",
         [
@@ -1124,7 +1126,7 @@ def test_bayesian_search_optuna_output_file():
         ],
 ids=lambda forecaster: f'forecaster: {forecaster.forecaster_id}')
 def test_bayesian_search_optuna_outputs_backtesting_one_step_ahead(
-    forecaster,
+    forecaster, initial_train_size
 ):
     """
     Test that the outputs of _bayesian_search_optuna are equivalent when
@@ -1148,7 +1150,7 @@ def test_bayesian_search_optuna_outputs_backtesting_one_step_ahead(
     
     cv_backtesnting = TimeSeriesFold(
             steps                 = 1,
-            initial_train_size    = 100,
+            initial_train_size    = initial_train_size,
             window_size           = None,
             differentiation       = None,
             refit                 = False,
@@ -1159,9 +1161,9 @@ def test_bayesian_search_optuna_outputs_backtesting_one_step_ahead(
             return_all_indexes    = False,
         )
     cv_one_step_ahead = OneStepAheadFold(
-            initial_train_size    = 100,
-            return_all_indexes    = False,
-        )
+        initial_train_size    = initial_train_size,
+        return_all_indexes    = False,
+    )
     
     results_backtesting = _bayesian_search_optuna(
         forecaster   = forecaster,
