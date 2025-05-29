@@ -25,9 +25,14 @@ These tutorials focus on global models and multi-series forecasting, where you c
 
 <i class="fa-duotone fa-water fa" style="font-size: 25px; color: teal;"></i> [Global Forecasting Models I: Multi-series forecasting](https://www.cienciadedatos.net/documentos/py44-multi-series-forecasting-skforecast.html)
 
-<i class="fa-solid fa-stairs" style="font-size: 25px; color: #B197FC;"></i> [Global Forecasting Models II: Modeling thousand time series with a single global model](https://www.cienciadedatos.net/documentos/py59-scalable-forecasting-models.html)
 
-<i class="fa-solid fa-globe" style="font-size: 25px; color: #6b8e23;"></i> [Global Forecasting Models III: Comparative Analysis of Single and Multi-Series Forecasting Modeling](https://www.cienciadedatos.net/documentos/py53-global-forecasting-models.html)
+<i class="fa-solid fa-globe" style="font-size: 25px; color: #6b8e23;"></i> [Global Forecasting Models II: Comparative Analysis of Single and Multi-Series Forecasting Modeling](https://www.cienciadedatos.net/documentos/py53-global-forecasting-models.html)
+
+<i class="fa-solid fa-stairs" style="font-size: 25px; color: #B197FC;"></i> [Global Forecasting Models III: Modeling thousand time series with a single global model](https://www.cienciadedatos.net/documentos/py59-scalable-forecasting-models.html)
+
+<i class="fa-brabs fa-kaggle" style="font-size: 25px; color:rgb(230, 12, 12);"></i> [Global Forecasting Models IV: A step by step guide to global time series forecasting using Kaggle sticker sales data](https://cienciadedatos.net/documentos/py66-forecasting-sticker-sales-kaggle.html)
+
+<i class="fa-solid fa-basket-shopping" style="font-size: 25px; color: #74C0FC;"></i> [Global Forecasting Models V: The M5 Accuracy competition: the success of global forecasting models](https://www.cienciadedatos.net/documentos/py61-m5-forecasting-competition.html)
 
 <i class="fa-solid fa-layer-group" style="font-size: 25px; color: #001633;"></i> [Forecasting with Deep Learning](https://cienciadedatos.net/documentos/py54-forecasting-with-deep-learning)
 
@@ -59,8 +64,6 @@ For experienced users looking to deepen their forecasting skills, this section p
 This section includes real-world applications of time series forecasting to tackle specific challenges, such as forecasting energy demand, web traffic, and even cryptocurrency prices. Learn how to apply forecasting techniques to practical use cases.
 
 <i class="fa-duotone fa-lightbulb fa" style="font-size: 25px; color: #fcea2b;"></i> [Forecasting energy demand with machine learning](https://www.cienciadedatos.net/documentos/py29-forecasting-electricity-power-demand-python.html)
-
-<i class="fa-solid fa-basket-shopping" style="font-size: 25px; color: #74C0FC;"></i> [The M5 Accuracy competition: the success of global forecasting models](https://www.cienciadedatos.net/documentos/py61-m5-forecasting-competition.html)
 
 <i class="fa-duotone fa-rss fa" style="font-size: 25px; color: #666666;"></i> [Forecasting web traffic with machine learning and Python](https://www.cienciadedatos.net/documentos/py37-forecasting-web-traffic-machine-learning.html)
 
