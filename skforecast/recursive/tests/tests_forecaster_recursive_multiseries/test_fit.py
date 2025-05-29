@@ -4,10 +4,62 @@ import pytest
 from pytest import approx
 import numpy as np
 import pandas as pd
+from sklearn.compose import ColumnTransformer
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import OneHotEncoder
 from skforecast.preprocessing import RollingFeatures
 from ....recursive import ForecasterRecursiveMultiSeries
+
+# Fixtures
+from .fixtures_forecaster_recursive_multiseries import series
+from .fixtures_forecaster_recursive_multiseries import exog
+
+transformer_exog = ColumnTransformer(
+                       [('scale', StandardScaler(), ['exog_1']),
+                        ('onehot', OneHotEncoder(), ['exog_2'])],
+                       remainder = 'passthrough',
+                       verbose_feature_names_out = False
+                   )
+
+
+def test_forecaster_series_exog_features_stored():
+    """
+    Test forecaster stores series and exog features after fitting.
+    """
+    rolling = RollingFeatures(
+        stats=['ratio_min_max', 'median'], window_sizes=4
+    )
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=3, window_features=rolling, transformer_exog=transformer_exog
+    )
+    forecaster.fit(series=series, exog=exog)
+
+    series_names_in_ = ['1', '2']
+    exog_in_ = True
+    exog_type_in_ = type(exog)
+    exog_names_in_ = ['exog_1', 'exog_2']
+    exog_dtypes_in_ = {'exog_1': exog['exog_1'].dtype, 'exog_2': exog['exog_2'].dtype}
+    # All floats
+    exog_dtypes_out_ = {'exog_1': exog['exog_1'].dtype, 'exog_2_a': exog['exog_1'].dtype, 'exog_2_b': exog['exog_1'].dtype}
+    X_train_series_names_in_ = ['1', '2']
+    X_train_window_features_names_out_ = ['roll_ratio_min_max_4', 'roll_median_4']
+    X_train_exog_names_out_ = ['exog_1', 'exog_2_a', 'exog_2_b']
+    X_train_features_names_out_ = [
+        'lag_1', 'lag_2', 'lag_3', 'roll_ratio_min_max_4', 'roll_median_4', 
+        '_level_skforecast', 'exog_1', 'exog_2_a', 'exog_2_b'
+    ]
+    
+    assert forecaster.series_names_in_ == series_names_in_
+    assert forecaster.exog_in_ == exog_in_
+    assert forecaster.exog_type_in_ == exog_type_in_
+    assert forecaster.exog_names_in_ == exog_names_in_
+    assert forecaster.exog_dtypes_in_ == exog_dtypes_in_
+    assert forecaster.exog_dtypes_out_ == exog_dtypes_out_
+    assert forecaster.X_train_series_names_in_ == X_train_series_names_in_
+    assert forecaster.X_train_window_features_names_out_ == X_train_window_features_names_out_
+    assert forecaster.X_train_exog_names_out_ == X_train_exog_names_out_
+    assert forecaster.X_train_features_names_out_ == X_train_features_names_out_
 
 
 def test_fit_correct_dict_create_series_weights_weight_func_transformer_series():

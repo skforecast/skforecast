@@ -43,6 +43,7 @@ def test_forecaster_y_exog_features_stored():
     exog_type_in_ = type(exog)
     exog_names_in_ = ['exog']
     exog_dtypes_in_ = {'exog': exog.dtype}
+    exog_dtypes_out_ = {'exog': exog.dtype}
     X_train_exog_names_out_ = ['exog']
     
     assert forecaster.series_name_in_ == series_name_in_
@@ -50,6 +51,7 @@ def test_forecaster_y_exog_features_stored():
     assert forecaster.exog_type_in_ == exog_type_in_
     assert forecaster.exog_names_in_ == exog_names_in_
     assert forecaster.exog_dtypes_in_ == exog_dtypes_in_
+    assert forecaster.exog_dtypes_out_ == exog_dtypes_out_
     assert forecaster.X_train_exog_names_out_ == X_train_exog_names_out_
 
 

@@ -270,8 +270,13 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
     exog_type_in_ : type
         Type of exogenous data (pandas Series, DataFrame or dict) used in training.
     exog_dtypes_in_ : dict
-        Type of each exogenous variable/s used in training. If `transformer_exog` 
-        is used, the dtypes are calculated before the transformation.
+        Type of each exogenous variable/s used in training before the transformation
+        applied by `transformer_exog`. If `transformer_exog` is not used, it
+        is equal to `exog_dtypes_out_`.
+    exog_dtypes_out_ : dict
+        Type of each exogenous variable/s used in training after the transformation 
+        applied by `transformer_exog`. If `transformer_exog` is not used, it 
+        is equal to `exog_dtypes_in_`.
     X_train_series_names_in_ : list
         Names of the series (levels) included in the matrix `X_train` created
         internally for training. It can be different from `series_names_in_` if
@@ -404,7 +409,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self.exog_in_                           = False
         self.exog_names_in_                     = None
         self.exog_type_in_                      = None
-        self.exog_dtypes_in_                    = None 
+        self.exog_dtypes_in_                    = None
+        self.exog_dtypes_out_                   = None 
         self.X_train_series_names_in_           = None
         self.X_train_window_features_names_out_ = None
         self.X_train_exog_names_out_            = None
@@ -972,6 +978,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         list[str],
         list[str],
         dict[str, type],
+        dict[str, type],
         dict[str, pd.Series],
     ]:
         """
@@ -1017,8 +1024,13 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             internally for training. It can be different from `exog_names_in_` if
             some exogenous variables are transformed during the training process.
         exog_dtypes_in_ : dict
-            Type of each exogenous variable/s used in training. If `transformer_exog` 
-            is used, the dtypes are calculated before the transformation.
+            Type of each exogenous variable/s used in training before the transformation
+            applied by `transformer_exog`. If `transformer_exog` is not used, it
+            is equal to `exog_dtypes_out_`.
+        exog_dtypes_out_ : dict
+            Type of each exogenous variable/s used in training after the transformation 
+            applied by `transformer_exog`. If `transformer_exog` is not used, it 
+            is equal to `exog_dtypes_in_`.
         last_window_ : dict
             Last window of training data for each series. It stores the values 
             needed to predict the next `step` immediately after the training data.
@@ -1155,6 +1167,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         del encoded_values
 
         exog_dtypes_in_ = None
+        exog_dtypes_out_ = None
         if exog is not None:
 
             X_train_exog = pd.concat(X_train_exog_buffer, axis=0)
@@ -1174,13 +1187,14 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                inverse_transform = False
                            )
 
-            check_exog_dtypes(X_train_exog, call_check_exog=False)
             if not (X_train_exog.index == X_train.index).all():
                 raise ValueError(
                     "Different index for `series` and `exog` after transformation. "
                     "They must be equal to ensure the correct alignment of values."
                 )
 
+            check_exog_dtypes(X_train_exog, call_check_exog=False)
+            exog_dtypes_out_ = get_exog_dtypes(exog=X_train_exog)
             X_train_exog_names_out_ = X_train_exog.columns.to_list()
             X_train = pd.concat([X_train, X_train_exog], axis=1)
 
@@ -1272,6 +1286,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             X_train_window_features_names_out_,
             X_train_exog_names_out_,
             exog_dtypes_in_,
+            exog_dtypes_out_,
             last_window_
         )
 
@@ -1707,6 +1722,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self.exog_names_in_                     = None
         self.exog_type_in_                      = None
         self.exog_dtypes_in_                    = None
+        self.exog_dtypes_out_                   = None
         self.X_train_series_names_in_           = None
         self.X_train_window_features_names_out_ = None
         self.X_train_exog_names_out_            = None
@@ -1728,6 +1744,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             X_train_window_features_names_out_,
             X_train_exog_names_out_,
             exog_dtypes_in_,
+            exog_dtypes_out_,
             last_window_
         ) = self._create_train_X_y(
                 series=series, exog=exog, store_last_window=store_last_window
@@ -1772,6 +1789,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             self.exog_names_in_ = exog_names_in_
             self.exog_type_in_ = type(exog)
             self.exog_dtypes_in_ = exog_dtypes_in_
+            self.exog_dtypes_out_ = exog_dtypes_out_
             self.X_train_exog_names_out_ = X_train_exog_names_out_
 
         self.in_sample_residuals_ = {}
@@ -2395,6 +2413,14 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             .rename_axis(index=None)
             .drop(columns='order')
         )
+        
+        if self.exog_in_:
+            categorical_features = any(
+                not pd.api.types.is_numeric_dtype(dtype) or pd.api.types.is_bool_dtype(dtype) 
+                for dtype in set(self.exog_dtypes_out_)
+            )
+            if categorical_features:
+                X_predict = X_predict.astype(self.exog_dtypes_out_)
         
         if self.transformer_series is not None or self.differentiation is not None:
             warnings.warn(
