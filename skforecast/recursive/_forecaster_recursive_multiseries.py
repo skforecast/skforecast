@@ -959,8 +959,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
     def _create_train_X_y(
         self,
-        series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
-        exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
+        series: pd.DataFrame,
+        exog: pd.Series | pd.DataFrame | None = None,
         store_last_window: bool | list[str] = True,
     ) -> tuple[
         pd.DataFrame,
@@ -976,15 +976,30 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
     ]:
         """
         Create training matrices from multiple time series and exogenous
-        variables. See Notes section for more details depending on the type of
-        `series` and `exog`.
+        variables.
         
         Parameters
         ----------
-        series : pandas DataFrame, dict
-            Training time series.
-        exog : pandas Series, pandas DataFrame, dict, default None
-            Exogenous variable/s included as predictor/s.
+        series : pandas DataFrame
+            Pandas DataFrame with the time series to be used for training. Two 
+            formats are accepted:
+
+            - Wide format: pandas DataFrame where each column is a time series
+            (level). The same index is shared by all series and it must be a
+            pandas DatetimeIndex with a frequency. 
+            - Long format: pandas DataFrame with two level multi-index. The first
+            level is the series name and the second level is the datetime index.
+            The datetime index must be a pandas DatetimeIndex with a frequency. And
+            all series must have the same frequency.
+        exog : pandas Series, pandas DataFrame default None
+            Exogenous variable/s included as predictor/s. Two formats are accepted:
+
+            - Same exog for all series: pandas Series or DataFrame with a single
+            DatetimeIndex. Same exog values are used for all series.
+            - Different exog for each series: a pandas DataFrame with a
+            multi-index where the first level is the series name and the second
+            level is the datetime index. The datetime index must be a pandas
+            DatetimeIndex.
         store_last_window : bool, list, default True
             Whether or not to store the last window (`last_window_`) of training data.
 
@@ -1022,26 +1037,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         last_window_ : dict
             Last window of training data for each series. It stores the values 
             needed to predict the next `step` immediately after the training data.
-
-        Notes
-        -----
-        - If `series` is a pandas DataFrame and `exog` is a pandas Series or 
-        DataFrame, each exog is duplicated for each series. Exog must have the
-        same index as `series` (type, length and frequency).
-        - If `series` is a pandas DataFrame and `exog` is a dict of pandas Series 
-        or DataFrames. Each key in `exog` must be a column in `series` and the 
-        values are the exog for each series. Exog must have the same index as 
-        `series` (type, length and frequency).
-        - If `series` is a dict of pandas Series, `exog` must be a dict of pandas
-        Series or DataFrames. The keys in `series` and `exog` must be the same.
-        All series and exog must have a pandas DatetimeIndex with the same 
-        frequency.
         
         """
 
-        series_dict, series_indexes = check_preprocess_series(series=series)
-        input_series_is_dict = isinstance(series, dict)
-        series_names_in_ = list(series_dict.keys())
+        series = check_preprocess_series(series=series)
+        series_names_in_ = series.index.get_level_values(0).unique().to_list()
 
         if self.is_fitted and not set(series_names_in_).issubset(set(self.series_names_in_)):
             raise ValueError(
@@ -1051,17 +1051,14 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 f" Expected : {self.series_names_in_}"
             )
 
-        exog_dict = {serie: None for serie in series_names_in_}
         exog_names_in_ = None
         X_train_exog_names_out_ = None
         if exog is not None:
-            exog_dict, exog_names_in_ = check_preprocess_exog_multiseries(
-                                            input_series_is_dict = input_series_is_dict,
-                                            series_indexes       = series_indexes,
-                                            series_names_in_     = series_names_in_,
-                                            exog                 = exog,
-                                            exog_dict            = exog_dict
-                                        )
+            exog, exog_names_in_ = check_preprocess_exog_multiseries(
+                                        series_indexes       = series.index,
+                                        series_names_in_     = series_names_in_,
+                                        exog                 = exog,
+                                    )
 
             if self.is_fitted:
                 if self.exog_names_in_ is None:
@@ -1077,6 +1074,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                             f" Got      : {exog_names_in_}\n"
                             f" Expected : {self.exog_names_in_}"
                         )
+            series = pd.merge(series, exog, left_index=True, right_index=True, how='left')
 
         if not self.is_fitted:
             self.transformer_series_ = initialize_transformer_series(
@@ -1091,45 +1089,31 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                        differentiator   = self.differentiator
                                    )
 
-        series_dict, exog_dict = align_series_and_exog_multiseries(
-                                     series_dict          = series_dict,
-                                     input_series_is_dict = input_series_is_dict,
-                                     exog_dict            = exog_dict
-                                 )
+        
+        
         
         if not self.is_fitted and self.transformer_series_['_unknown_level'] is not None:
-            self.transformer_series_['_unknown_level'].fit(
-                np.concatenate(list(series_dict.values())).reshape(-1, 1)
-            )
+            self.transformer_series_['_unknown_level'].fit(series.iloc[:, [0]])
 
         ignore_exog = True if exog is None else False
-        input_matrices = [
-            [series_dict[k], exog_dict[k], ignore_exog]
-             for k in series_dict.keys()
-        ]
-
         X_train_autoreg_buffer = []
         X_train_exog_buffer = []
         y_train_buffer = []
-        for matrices in input_matrices:
 
-            (
-                X_train_autoreg,
-                X_train_window_features_names_out_,
-                X_train_exog,
-                y_train
-            ) = self._create_train_X_y_single_series(
-                y           = matrices[0],
-                exog        = matrices[1],
-                ignore_exog = matrices[2],
+        series_grouped = series.groupby(level=0, sort=False)
+        train_matrices = []
+        for series_id, group in series_grouped:
+            group = group.droplevel(0)
+            train_matrices.append(
+                self._create_train_X_y_single_series(
+                    y           =    group.iloc[:, 0].rename(series_id),
+                    ignore_exog = ignore_exog,
+                    exog        = group.iloc[:, 1:],
+                )
             )
 
-            X_train_autoreg_buffer.append(X_train_autoreg)
-            X_train_exog_buffer.append(X_train_exog)
-            y_train_buffer.append(y_train)
-
-        X_train = pd.concat(X_train_autoreg_buffer, axis=0)
-        y_train = pd.concat(y_train_buffer, axis=0)
+        X_train = pd.concat([train_matrix[0] for train_matrix in train_matrices])
+        y_train = pd.concat([train_matrix[3] for train_matrix in train_matrices])
 
         if self.is_fitted:
             encoded_values = self.encoder.transform(X_train[['_level_skforecast']])
@@ -1157,12 +1141,13 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         exog_dtypes_in_ = None
         if exog is not None:
 
-            X_train_exog = pd.concat(X_train_exog_buffer, axis=0)
+            X_train_exog = pd.concat([train_matrix[2] for train_matrix in train_matrices])
+            # TODO: check if this is needed
             if '_dummy_exog_col_to_keep_shape' in X_train_exog.columns:
                 X_train_exog = (
                     X_train_exog.drop(columns=['_dummy_exog_col_to_keep_shape'])
                 )
-
+            # !!!!!!!!!!!!!Continue from here!!!!
             exog_names_in_ = X_train_exog.columns.to_list()
             exog_dtypes_in_ = get_exog_dtypes(exog=X_train_exog)
 
