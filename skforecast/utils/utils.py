@@ -2510,7 +2510,7 @@ def check_preprocess_series(
         
         # TODO: improve messaje to explain it is about the second level of the MultiIndex
         if not isinstance(series.index.get_level_values(1), pd.DatetimeIndex):
-            warnings.war(
+            warnings.warn(
                 "Series does not have a pandas DatetimeIndex. The index will be "
                 "replaced by a RangeIndex starting from 0 with a step of 1. To "
                 "avoid this warning, ensure that `series.index` is a DatetimeIndex "
@@ -2540,7 +2540,7 @@ def check_preprocess_series(
                 )
             if indexes_freq == [None]:
                 # TODO: improve messaje to explain it is about the second level of the MultiIndex
-                warnings.war(
+                warnings.warn(
                     "Series have a pandas DatetimeIndex without frequancy. The "
                     "index will be replaced by a RangeIndex starting from 0 with "
                     "a step of 1. To avoid this warning, ensure that `series.index` "
@@ -2613,7 +2613,7 @@ def check_preprocess_exog_multiseries(
         
         # TODO: improve messaje to explain it is about the second level of the MultiIndex
         if not isinstance(exog.index.get_level_values(1), pd.DatetimeIndex):
-            warnings.war(
+            warnings.warn(
                 "`exog` does not have a pandas DatetimeIndex. The index will be "
                 "replaced by a RangeIndex starting from 0 with a step of 1. To "
                 "avoid this warning, ensure that `exog.index` is a DatetimeIndex "
