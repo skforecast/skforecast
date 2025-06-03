@@ -2495,7 +2495,7 @@ def check_preprocess_series(
         )
         series = (
             series
-            .groupby('series_id')
+            .groupby('series_id', sort=False)
             .apply(lambda x: x.set_index('datetime').asfreq(freq), include_groups=False)
         )
 
@@ -2507,9 +2507,10 @@ def check_preprocess_series(
                 f"the first level is the seris ID and the second level the temporal "
                 f"index. Found {series.index.names} levels."
             )
-        
+    
+
         # TODO: improve messaje to explain it is about the second level of the MultiIndex
-        if not isinstance(series.index.get_level_values(1), pd.DatetimeIndex):
+        if not isinstance(series.index.levels[1], (pd.DatetimeIndex, pd.RangeIndex)):
             warnings.warn(
                 "Series does not have a pandas DatetimeIndex. The index will be "
                 "replaced by a RangeIndex starting from 0 with a step of 1. To "
@@ -2517,7 +2518,7 @@ def check_preprocess_series(
                 "with a frequency."
             )
         
-            series = series.groupby(level=0, group_keys=False).apply(
+            series = series.groupby(level=0, group_keys=False, sort=False).apply(
                 lambda g: g.set_index(
                     pd.MultiIndex.from_arrays(
                         [g.index.get_level_values(0), pd.RangeIndex(len(g))],
@@ -2526,13 +2527,17 @@ def check_preprocess_series(
                 )
             )
 
-        if isinstance(series.index.get_level_values(1), pd.DatetimeIndex):
+        if isinstance(series.index.levels[1], pd.DatetimeIndex):
+            series_grouped = series.groupby(level=0, group_keys=False, sort=False)
+            unique_ids = series.index.levels[0]
             indexes_freq = [
-                series.loc[series_id].index.freq
-                for series_id
-                in series.index.get_level_values(0).unique()
+                series.loc[series_id].index.freq for series_id in unique_ids
             ]
-            indexes_freq = sorted(set(indexes_freq))
+            indexes_freq = set(indexes_freq)
+            # indexes_freq = series_grouped.apply(
+            #     lambda g: g.index.get_level_values(1).freq
+            # )
+            # indexes_freq = np.unique(indexes_freq)
             if not len(indexes_freq) == 1:
                 raise ValueError(
                     f"When using a DatetimeIndex, all series must have the same ",
@@ -2547,7 +2552,7 @@ def check_preprocess_series(
                     "is a DatetimeIndex  with a frequency."
                 )
             
-                series = series.groupby(level=0, group_keys=False).apply(
+                series = series_grouped.apply(
                     lambda g: g.set_index(
                         pd.MultiIndex.from_arrays(
                             [g.index.get_level_values(0), pd.RangeIndex(len(g))],
@@ -2556,7 +2561,7 @@ def check_preprocess_series(
                     )
                 )
 
-    for k, g in series.groupby(level=0, sort=False):
+    for k, g in series_grouped:
             if g.isna().to_numpy().all():
                 raise ValueError(f"All values of series '{k}' are NaN.")
             
