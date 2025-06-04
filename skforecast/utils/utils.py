@@ -2634,7 +2634,7 @@ def check_preprocess_exog_multiseries(
                 )
             )
 
-        series_not_in_exog = set(series_names_in_) - set(exog.index.get_level_values(0))
+        series_not_in_exog = set(series_names_in_) - set(exog.index.levels[0])
         if series_not_in_exog:
             warnings.warn(
                 f"{series_not_in_exog} not present in `exog`. All values "
@@ -2642,17 +2642,13 @@ def check_preprocess_exog_multiseries(
                 MissingExogWarning
             )
 
-    type_index_series = (
-        type(series_indexes.get_level_values(1))
-        if isinstance(series_indexes, pd.MultiIndex)
-        else type(series_indexes)
-    )
+    type_index_series = series_indexes.dtypes
     type_index_exog = (
-        type(exog.index.get_level_values(1))
-        if isinstance(exog.index, pd.MultiIndex)
-        else type(exog.index)
-    )
-    if type_index_series != type_index_exog:
+            exog.index.dtypes
+            if isinstance(exog.index, pd.MultiIndex)
+            else exog.index.dtype
+        )
+    if not type_index_series.equals(type_index_exog):
         raise TypeError(
             f"`exog` index must be the same type as the series index. "
             f"Found {type_index_exog} for `exog` and {type_index_series} for `series`."

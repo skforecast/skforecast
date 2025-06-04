@@ -1041,12 +1041,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         """
 
         series = check_preprocess_series(series=series)
-        series_names_in_ = series.index.get_level_values(0).unique().to_list()
-        # TODO: review if series indexes is needed to be returned
-        series_indexes = {
-            k: g.index.get_level_values(1)
-            for k, g in series.groupby(level=0, sort=False)
-        }
+        series_names_in_ = series.index.levels[0].to_list()
 
         if self.is_fitted and not set(series_names_in_).issubset(set(self.series_names_in_)):
             raise ValueError(
@@ -1082,6 +1077,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             
             # TODO: para que esto funcione el indice debe llamarse igual, por ejemplo, "datetime"
             series = pd.merge(series, exog, left_index=True, right_index=True, how='left')
+            series_grouped = series.groupby(level=0, sort=False)
+             # TODO: review if series indexes is needed to be returned
+            series_indexes = {
+                k: g.index.get_level_values(1)
+                for k, g in series_grouped
+            }
 
         if not self.is_fitted:
             self.transformer_series_ = initialize_transformer_series(
@@ -1103,7 +1104,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             self.transformer_series_['_unknown_level'].fit(series.iloc[:, [0]])
 
         ignore_exog = True if exog is None else False
-        series_grouped = series.groupby(level=0, sort=False)
         train_matrices = []
         for series_id, group in series_grouped:
             group = group.droplevel(0)
@@ -1246,11 +1246,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
             if series_to_store:
                 last_window_ = (
-                    series
-                    .iloc[:, [0]]
-                    .groupby(level=0)
+                    series_grouped
                     .tail(self.window_size)
-                    .copy()
                     .reset_index()
                 )
                 last_window_ = last_window_.pivot(
