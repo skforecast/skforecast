@@ -2692,13 +2692,19 @@ def check_preprocess_exog_multiseries(
                 )
             
         # Check that all exog have the same dtypes for common columns
-        exog_dtypes_buffer = [df.dtypes for df in exog_dict.values() if df is not None]
-        exog_dtypes_buffer = pd.concat(exog_dtypes_buffer, axis=1)
-        exog_dtypes_nunique = exog_dtypes_buffer.nunique(axis=1).eq(1)
-        if not exog_dtypes_nunique.all():
+        exog_dtypes_buffer = pd.DataFrame(
+            {k: df.dtypes for k, df in exog_dict.items() if df is not None}
+        )
+        exog_dtypes_nunique = exog_dtypes_buffer.nunique(axis=1)
+        if not (exog_dtypes_nunique == 1).all():
             non_unique_dtypes_exogs = exog_dtypes_nunique[exog_dtypes_nunique != 1].index.to_list()
             raise TypeError(
-                f"Exog/s: {non_unique_dtypes_exogs} have different dtypes in different series."
+                f"Exog/s: {non_unique_dtypes_exogs} have different dtypes in different "
+                f"series. If any of these variables are categorical, note that this "
+                f"error can also occur when their internal categories "
+                f"(`series.cat.categories`) differ between series. Please ensure "
+                f"that all series have the same categories (and category order) "
+                f"for each categorical variable."
             )
 
     exog_names_in_ = list(

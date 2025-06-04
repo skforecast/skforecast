@@ -11,7 +11,9 @@ from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import OrdinalEncoder
-from sklearn.compose import make_column_transformer
+from sklearn.preprocessing import FunctionTransformer
+from sklearn.compose import make_column_transformer, make_column_selector
+from sklearn.pipeline import make_pipeline
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import HistGradientBoostingRegressor
 from lightgbm import LGBMRegressor
@@ -138,7 +140,7 @@ def test_create_predict_X_output_when_regressor_is_LinearRegression_with_transfo
                      transformer_series = StandardScaler()
                  )
     forecaster.fit(series=series)
-    results = forecaster.create_predict_X(steps=5, levels='1')
+    results = forecaster.create_predict_X(steps=5, levels='1') 
 
     expected = {
         '1': pd.DataFrame(
@@ -348,7 +350,7 @@ def test_create_predict_X_output_when_categorical_features_native_implementation
                  columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
                             '_level_skforecast', 'exog_2', 'exog_3', 'exog_1'],
                  index = pd.RangeIndex(start=50, stop=60, step=1)
-             ),
+             ).astype({'exog_2': int, 'exog_3': int}),
         '2': pd.DataFrame(
                  data = np.array([
                      [0.34345601, 0.2408559 , 0.39887629, 0.15112745, 0.6917018 ,
@@ -374,7 +376,112 @@ def test_create_predict_X_output_when_categorical_features_native_implementation
                  columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
                             '_level_skforecast', 'exog_2', 'exog_3', 'exog_1'],
                  index = pd.RangeIndex(start=50, stop=60, step=1)
-             )
+             ).astype({'exog_2': int, 'exog_3': int})
+    }
+    expected = expected_df_to_long_format(expected, method='bootstrapping')
+
+    pd.testing.assert_frame_equal(results, expected)
+
+
+def test_create_predict_X_when_categorical_features_auto_detect_LGBMRegressor():
+    """
+    Test create_predict_X when using LGBMRegressor and categorical variables.
+    """
+    df_exog = pd.DataFrame(
+        {'exog_1': exog['exog_1'],
+         'exog_2': ['a', 'b'] * 25,
+         'exog_3': pd.Categorical(['F', 'G', 'H', 'I', 'J'] * 10)}
+    )
+    
+    exog_predict = df_exog.copy()
+    exog_predict.index = pd.RangeIndex(start=50, stop=100)
+
+    pipeline_categorical = make_pipeline(
+                               OrdinalEncoder(
+                                   dtype=int,
+                                   handle_unknown="use_encoded_value",
+                                   unknown_value=-1,
+                                   encoded_missing_value=-1
+                               ),
+                               FunctionTransformer(
+                                   func=lambda x: x.astype('category'),
+                                   feature_names_out= 'one-to-one'
+                               )
+                           )
+
+    transformer_exog = make_column_transformer(
+                           (
+                               pipeline_categorical,
+                               make_column_selector(dtype_exclude=np.number)
+                           ),
+                           remainder="passthrough",
+                           verbose_feature_names_out=False,
+                       ).set_output(transform="pandas")
+    
+    forecaster = ForecasterRecursiveMultiSeries(
+                     regressor          = LGBMRegressor(verbose=-1, random_state=123),
+                     lags               = 5,
+                     transformer_series = None,
+                     transformer_exog   = transformer_exog
+                 )
+    forecaster.fit(series=series, exog=df_exog)
+    results = forecaster.create_predict_X(steps=10, exog=exog_predict)
+
+    expected = {
+        '1': pd.DataFrame(
+                 data = np.array([
+                     [0.61289453, 0.51948512, 0.98555979, 0.48303426, 0.25045537,
+                      0.        , 0.        , 0.        , 0.51312815],
+                     [0.61992904, 0.61289453, 0.51948512, 0.98555979, 0.48303426,
+                      0.        , 1.        , 1.        , 0.66662455],
+                     [0.42803575, 0.61992904, 0.61289453, 0.51948512, 0.98555979,
+                      0.        , 0.        , 2.        , 0.10590849],
+                     [0.49400865, 0.42803575, 0.61992904, 0.61289453, 0.51948512,
+                      0.        , 1.        , 3.        , 0.13089495],
+                     [0.72653464, 0.49400865, 0.42803575, 0.61992904, 0.61289453,
+                      0.        , 0.        , 4.        , 0.32198061],
+                     [0.54633118, 0.72653464, 0.49400865, 0.42803575, 0.61992904,
+                      0.        , 1.        , 0.        , 0.66156434],
+                     [0.38705754, 0.54633118, 0.72653464, 0.49400865, 0.42803575,
+                      0.        , 0.        , 1.        , 0.84650623],
+                     [0.46345651, 0.38705754, 0.54633118, 0.72653464, 0.49400865,
+                      0.        , 1.        , 2.        , 0.55325734],
+                     [0.68030713, 0.46345651, 0.38705754, 0.54633118, 0.72653464,
+                      0.        , 0.        , 3.        , 0.85445249],
+                     [0.42146472, 0.68030713, 0.46345651, 0.38705754, 0.54633118,
+                      0.        , 1.        , 4.        , 0.38483781]]),
+                 columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
+                            '_level_skforecast', 'exog_2', 'exog_3', 'exog_1'],
+                 index = pd.RangeIndex(start=50, stop=60, step=1)
+             ).astype({'exog_2': int, 'exog_3': int}
+             ).astype({'exog_2': 'category', 'exog_3': 'category'}),
+        '2': pd.DataFrame(
+                 data = np.array([
+                     [0.34345601, 0.2408559 , 0.39887629, 0.15112745, 0.6917018 ,
+                      1.        , 0.        , 0.        , 0.51312815],
+                     [0.71057667, 0.34345601, 0.2408559 , 0.39887629, 0.15112745,
+                      1.        , 1.        , 1.        , 0.66662455],
+                     [0.48205396, 0.71057667, 0.34345601, 0.2408559 , 0.39887629,
+                      1.        , 0.        , 2.        , 0.10590849],
+                     [0.65655329, 0.48205396, 0.71057667, 0.34345601, 0.2408559 ,
+                      1.        , 1.        , 3.        , 0.13089495],
+                     [0.58249412, 0.65655329, 0.48205396, 0.71057667, 0.34345601,
+                      1.        , 0.        , 4.        , 0.32198061],
+                     [0.59331406, 0.58249412, 0.65655329, 0.48205396, 0.71057667,
+                      1.        , 1.        , 0.        , 0.66156434],
+                     [0.40887602, 0.59331406, 0.58249412, 0.65655329, 0.48205396,
+                      1.        , 0.        , 1.        , 0.84650623],
+                     [0.51731538, 0.40887602, 0.59331406, 0.58249412, 0.65655329,
+                      1.        , 1.        , 2.        , 0.55325734],
+                     [0.43490408, 0.51731538, 0.40887602, 0.59331406, 0.58249412,
+                      1.        , 0.        , 3.        , 0.85445249],
+                     [0.45634256, 0.43490408, 0.51731538, 0.40887602, 0.59331406,
+                      1.        , 1.        , 4.        , 0.38483781]]),
+                 columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
+                            '_level_skforecast', 'exog_2', 'exog_3', 'exog_1'],
+                 index = pd.RangeIndex(start=50, stop=60, step=1)
+             ).astype({'exog_2': int, 'exog_3': int}
+             ).astype({'exog_2': 'category', 'exog_3': 'category'})
     }
     expected = expected_df_to_long_format(expected, method='bootstrapping')
 
