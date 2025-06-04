@@ -113,7 +113,7 @@ fig_main = create_main_figure(data_test, predictions)
 # Dash App
 app = dash.Dash(__name__)
 app.layout = html.Div([
-    html.H1("Forecast Explainability with SHAP"),
+    html.H1("Forecasting Explainability with SHAP"),
     dcc.Graph(id='main-plot', figure=fig_main, clear_on_unhover=True),
     html.Div(id='shap-output', style={'marginTop': '15px', 'fontWeight': 'bold'}, children="Click on a prediction point to view SHAP values"),
     html.Div([

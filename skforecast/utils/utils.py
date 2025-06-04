@@ -2508,63 +2508,48 @@ def check_preprocess_series(
                 f"index. Found {series.index.names} levels."
             )
     
-
-        # TODO: improve messaje to explain it is about the second level of the MultiIndex
+        # NOTE: if it is not a DatetimeIndex,or a RangeIndex, raise error instead of warning
         if not isinstance(series.index.levels[1], (pd.DatetimeIndex, pd.RangeIndex)):
-            warnings.warn(
-                "Series does not have a pandas DatetimeIndex. The index will be "
-                "replaced by a RangeIndex starting from 0 with a step of 1. To "
-                "avoid this warning, ensure that `series.index` is a DatetimeIndex "
-                "with a frequency."
+            raise TypeError(
+                "The second level of the MultiIndex in `series` must be a "
+                "pandas DatetimeIndex or RangeIndex. "
+                f"Found {type(series.index.levels[1])}."
             )
-        
-            series = series.groupby(level=0, group_keys=False, sort=False).apply(
-                lambda g: g.set_index(
-                    pd.MultiIndex.from_arrays(
-                        [g.index.get_level_values(0), pd.RangeIndex(len(g))],
-                        names=g.index.names
-                    )
-                )
-            )
+  
 
         if isinstance(series.index.levels[1], pd.DatetimeIndex):
-            series_grouped = series.groupby(level=0, group_keys=False, sort=False)
+            indexes_freq = set()
             unique_ids = series.index.levels[0]
-            indexes_freq = [
-                series.loc[series_id].index.freq for series_id in unique_ids
-            ]
-            indexes_freq = set(indexes_freq)
-            # indexes_freq = series_grouped.apply(
-            #     lambda g: g.index.get_level_values(1).freq
-            # )
-            # indexes_freq = np.unique(indexes_freq)
+            for series_id in unique_ids:
+                series_i = series.loc[series_id]
+                indexes_freq.add(series_i.index.freq)
+                if series_i.isna().to_numpy().all():
+                    raise ValueError(f"All values of series '{series_id}' are NaN.")
+
             if not len(indexes_freq) == 1:
                 raise ValueError(
                     f"When using a DatetimeIndex, all series must have the same ",
                     f"frequency. Found frequencies: {indexes_freq}"
                 )
             if indexes_freq == [None]:
-                # TODO: improve messaje to explain it is about the second level of the MultiIndex
-                warnings.warn(
-                    "Series have a pandas DatetimeIndex without frequancy. The "
-                    "index will be replaced by a RangeIndex starting from 0 with "
-                    "a step of 1. To avoid this warning, ensure that `series.index` "
-                    "is a DatetimeIndex  with a frequency."
+                raise TypeError(
+                    "Series have a pandas DatetimeIndex without frequancy. When "
+                    "using a DatetimeIndex, all series must have the same frequency. "
+                    "To avoid this error, set the frequency of the index using: "
+                    "series.groupby('series_id').apply(lambda x: x.set_index('datetime').asfreq('D'),"
+                    "include_groups=False)"
                 )
             
-                series = series_grouped.apply(
-                    lambda g: g.set_index(
-                        pd.MultiIndex.from_arrays(
-                            [g.index.get_level_values(0), pd.RangeIndex(len(g))],
-                            names=g.index.names
-                        )
-                    )
-                )
-
-    for k, g in series_grouped:
-            if g.isna().to_numpy().all():
-                raise ValueError(f"All values of series '{k}' are NaN.")
-            
+                #TODO: remove if agree with the raise error above
+                # series_grouped = series.groupby(level=0, group_keys=False, sort=False)
+                # series = series_grouped.apply(
+                #     lambda g: g.set_index(
+                #         pd.MultiIndex.from_arrays(
+                #             [g.index.get_level_values(0), pd.RangeIndex(len(g))],
+                #             names=g.index.names
+                #         )
+                #     )
+                # )            
 
     return series
 

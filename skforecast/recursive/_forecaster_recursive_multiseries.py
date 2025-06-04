@@ -1269,7 +1269,314 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             last_window_
         )
 
+    def _create_train_X_y_v2(
+        self,
+        series: pd.DataFrame,
+        exog: pd.Series | pd.DataFrame | None = None,
+        store_last_window: bool | list[str] = True,
+    ) -> tuple[
+        pd.DataFrame,
+        pd.Series,
+        dict[str, pd.Index],
+        list[str],
+        list[str],
+        list[str],
+        list[str],
+        list[str],
+        dict[str, type],
+        dict[str, pd.Series],
+    ]:
+        """
+        Create training matrices from multiple time series and exogenous
+        variables.
+        
+        Parameters
+        ----------
+        series : pandas DataFrame
+            Pandas DataFrame with the time series to be used for training. Two 
+            formats are accepted:
 
+            - Wide format: pandas DataFrame where each column is a time series
+            (level). The same index is shared by all series and it must be a
+            pandas DatetimeIndex with a frequency. 
+            - Long format: pandas DataFrame with two level multi-index. The first
+            level is the series name and the second level is the datetime index.
+            The datetime index must be a pandas DatetimeIndex with a frequency. And
+            all series must have the same frequency.
+        exog : pandas Series, pandas DataFrame default None
+            Exogenous variable/s included as predictor/s. Two formats are accepted:
+
+            - Same exog for all series: pandas Series or DataFrame with a single
+            DatetimeIndex. Same exog values are used for all series.
+            - Different exog for each series: a pandas DataFrame with a
+            multi-index where the first level is the series name and the second
+            level is the datetime index. The datetime index must be a pandas
+            DatetimeIndex.
+        store_last_window : bool, list, default True
+            Whether or not to store the last window (`last_window_`) of training data.
+
+            - If `True`, last window is stored for all series. 
+            - If `list`, last window is stored for the series present in the list.
+            - If `False`, last window is not stored.
+
+        Returns
+        -------
+        X_train : pandas DataFrame
+            Training values (predictors).
+        y_train : pandas Series
+            Values of the time series related to each row of `X_train`.
+        series_indexes : dict
+            Dictionary with the index of each series.
+        series_names_in_ : list
+            Names of the series (levels) provided by the user during training.
+        X_train_series_names_in_ : list
+            Names of the series (levels) included in the matrix `X_train` created
+            internally for training. It can be different from `series_names_in_` if
+            some series are dropped during the training process because of NaNs or
+            because they are not present in the training period.
+        exog_names_in_ : list
+            Names of the exogenous variables used during training.
+        X_train_window_features_names_out_ : list
+            Names of the window features included in the matrix `X_train` created
+            internally for training.
+        X_train_exog_names_out_ : list
+            Names of the exogenous variables included in the matrix `X_train` created
+            internally for training. It can be different from `exog_names_in_` if
+            some exogenous variables are transformed during the training process.
+        exog_dtypes_in_ : dict
+            Type of each exogenous variable/s used in training. If `transformer_exog` 
+            is used, the dtypes are calculated before the transformation.
+        last_window_ : dict
+            Last window of training data for each series. It stores the values 
+            needed to predict the next `step` immediately after the training data.
+        
+        """
+
+        series = check_preprocess_series(series=series)
+        series_names_in_ = series.index.levels[0].to_list()
+
+        if self.is_fitted and not set(series_names_in_).issubset(set(self.series_names_in_)):
+            raise ValueError(
+                f"Once the Forecaster has been trained, `series` must contain "
+                f"the same series names as those used during training:\n"
+                f" Got      : {series_names_in_}\n"
+                f" Expected : {self.series_names_in_}"
+            )
+
+        exog_names_in_ = None
+        X_train_exog_names_out_ = None
+        if exog is not None:
+            exog, exog_names_in_ = check_preprocess_exog_multiseries(
+                                        series_indexes       = series.index,
+                                        series_names_in_     = series_names_in_,
+                                        exog                 = exog,
+                                    )
+
+            if self.is_fitted:
+                if self.exog_names_in_ is None:
+                    raise ValueError(
+                        "Once the Forecaster has been trained, `exog` must be `None` "
+                        "because no exogenous variables were added during training."
+                    )
+                else:
+                    if not set(exog_names_in_) == set(self.exog_names_in_):
+                        raise ValueError(
+                            f"Once the Forecaster has been trained, `exog` must contain "
+                            f"the same exogenous variables as those used during training:\n"
+                            f" Got      : {exog_names_in_}\n"
+                            f" Expected : {self.exog_names_in_}"
+                        )
+            
+            # TODO: para que esto funcione el indice debe llamarse igual, por ejemplo, "datetime"
+            series = pd.merge(series, exog, left_index=True, right_index=True, how='left')
+            idx_by_group = series.groupby(level=0, sort=False).indices
+             # TODO: review if series indexes is needed to be returned
+            datetime_index = series.index.get_level_values(1)
+            series_indexes = {k: datetime_index[v] for k, v in idx_by_group.items()}
+
+        if not self.is_fitted:
+            self.transformer_series_ = initialize_transformer_series(
+                                           forecaster_name    = type(self).__name__,
+                                           series_names_in_   = series_names_in_,
+                                           encoding           = self.encoding,
+                                           transformer_series = self.transformer_series
+                                       )
+            
+            self.differentiator_ = initialize_differentiator_multiseries(
+                                       series_names_in_ = series_names_in_,
+                                       differentiator   = self.differentiator
+                                   )
+
+        
+        
+        
+        if not self.is_fitted and self.transformer_series_['_unknown_level'] is not None:
+            self.transformer_series_['_unknown_level'].fit(series.iloc[:, [0]])
+
+        ignore_exog = True if exog is None else False
+        train_matrices = []
+        exog = series.iloc[:, 1:].droplevel(level=0) if exog is not None else None
+        series = series.iloc[:, 0].droplevel(level=0)
+        
+        for series_id, idx in idx_by_group.items():
+            series_i = series.iloc[idx].rename(series_id)
+            exog_i = exog.iloc[idx, :] if exog is not None else None
+            train_matrices.append(
+                self._create_train_X_y_single_series(
+                    y           = series_i,
+                    ignore_exog = ignore_exog,
+                    exog        = exog_i
+                )
+            )
+
+        X_train = pd.concat([train_matrix[0] for train_matrix in train_matrices])
+        y_train = pd.concat([train_matrix[3] for train_matrix in train_matrices])
+        X_train_window_features_names_out_ = train_matrices[1]
+
+        if self.is_fitted:
+            encoded_values = self.encoder.transform(X_train[['_level_skforecast']])
+        else:
+            encoded_values = self.encoder.fit_transform(X_train[['_level_skforecast']])
+            for i, code in enumerate(self.encoder.categories_[0]):
+                self.encoding_mapping_[code] = i
+
+        if self.encoding == 'onehot': 
+            X_train = pd.concat([
+                          X_train.drop(columns='_level_skforecast'),
+                          encoded_values
+                      ], axis=1)
+            X_train.columns = X_train.columns.str.replace('_level_skforecast_', '')
+        else:
+            X_train['_level_skforecast'] = encoded_values
+
+        if self.encoding == 'ordinal_category':
+            X_train['_level_skforecast'] = (
+                X_train['_level_skforecast'].astype('category')
+            )
+
+        del encoded_values
+
+        exog_dtypes_in_ = None
+        if exog is not None:
+
+            X_train_exog = pd.concat([train_matrix[2] for train_matrix in train_matrices])
+            # TODO: check if this is needed
+            if '_dummy_exog_col_to_keep_shape' in X_train_exog.columns:
+                X_train_exog = (
+                    X_train_exog.drop(columns=['_dummy_exog_col_to_keep_shape'])
+                )
+
+            exog_names_in_ = X_train_exog.columns.to_list()
+            exog_dtypes_in_ = get_exog_dtypes(exog=X_train_exog)
+
+            fit_transformer = False if self.is_fitted else True
+            X_train_exog = transform_dataframe(
+                               df                = X_train_exog,
+                               transformer       = self.transformer_exog,
+                               fit               = fit_transformer,
+                               inverse_transform = False
+                           )
+
+            check_exog_dtypes(X_train_exog, call_check_exog=False)
+            if not (X_train_exog.index == X_train.index).all():
+                raise ValueError(
+                    "Different index for `series` and `exog` after transformation. "
+                    "They must be equal to ensure the correct alignment of values."
+                )
+
+            X_train_exog_names_out_ = X_train_exog.columns.to_list()
+            X_train = pd.concat([X_train, X_train_exog], axis=1)
+
+        if y_train.isna().to_numpy().any():
+            mask = y_train.notna().to_numpy()
+            y_train = y_train.iloc[mask]
+            X_train = X_train.iloc[mask,]
+            warnings.warn(
+                "NaNs detected in `y_train`. They have been dropped because the "
+                "target variable cannot have NaN values. Same rows have been "
+                "dropped from `X_train` to maintain alignment. This is caused by "
+                "series with interspersed NaNs.",
+                MissingValuesWarning
+            )
+
+        if self.dropna_from_series:
+            if np.any(X_train.isnull().to_numpy()):
+                mask = X_train.notna().all(axis=1).to_numpy()
+                X_train = X_train.iloc[mask, ]
+                y_train = y_train.iloc[mask]
+                warnings.warn(
+                    "NaNs detected in `X_train`. They have been dropped. If "
+                    "you want to keep them, set `forecaster.dropna_from_series = False`. "
+                    "Same rows have been removed from `y_train` to maintain alignment. "
+                    "This caused by series with interspersed NaNs.",
+                    MissingValuesWarning
+                )
+        else:
+            if np.any(X_train.isnull().to_numpy()):
+                warnings.warn(
+                    "NaNs detected in `X_train`. Some regressors do not allow "
+                    "NaN values during training. If you want to drop them, "
+                    "set `forecaster.dropna_from_series = True`.",
+                    MissingValuesWarning
+                )
+
+        if X_train.empty:
+            raise ValueError(
+                "All samples have been removed due to NaNs. Set "
+                "`forecaster.dropna_from_series = False` or review `exog` values."
+            )
+        
+        if self.encoding == 'onehot':
+            X_train_series_names_in_ = [
+                col for col in series_names_in_ if X_train[col].sum() > 0
+            ]
+        else:
+            unique_levels = X_train['_level_skforecast'].unique()
+            X_train_series_names_in_ = [
+                k for k, v in self.encoding_mapping_.items()
+                if v in unique_levels
+            ]
+
+        # The last time window of training data is stored so that lags needed as
+        # predictors in the first iteration of `predict()` can be calculated.
+        last_window_ = None
+        if store_last_window:
+
+            series_to_store = (
+                X_train_series_names_in_ if store_last_window is True else store_last_window
+            )
+
+            series_not_in_series_dict = set(series_to_store) - set(X_train_series_names_in_)
+            if series_not_in_series_dict:
+                warnings.warn(
+                    f"Series {series_not_in_series_dict} are not present in "
+                    f"`series`. No last window is stored for them.",
+                    IgnoredArgumentWarning
+                )
+                series_to_store = [
+                    s for s in series_to_store 
+                    if s not in series_not_in_series_dict
+                ]
+
+            if series_to_store:
+                last_window_ = {
+                    series_id: series.iloc[idx[-self.window_size:]]
+                    for series_id, idx in idx_by_group.items()
+                }
+
+        return (
+            X_train,
+            y_train,
+            series_indexes,
+            series_names_in_,
+            X_train_series_names_in_,
+            exog_names_in_,
+            X_train_window_features_names_out_,
+            X_train_exog_names_out_,
+            exog_dtypes_in_,
+            last_window_
+        )
+    
     def create_train_X_y(
         self,
         series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
