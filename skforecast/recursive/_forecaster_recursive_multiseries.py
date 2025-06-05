@@ -1353,6 +1353,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         """
 
         series = check_preprocess_series(series=series)
+        # TODO: do we care about the order?
         series_names_in_ = series.index.levels[0].to_list()
 
         if self.is_fitted and not set(series_names_in_).issubset(set(self.series_names_in_)):
@@ -1389,10 +1390,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             
             # TODO: para que esto funcione el indice debe llamarse igual, por ejemplo, "datetime"
             series = pd.merge(series, exog, left_index=True, right_index=True, how='left')
-            idx_by_group = series.groupby(level=0, sort=False).indices
-             # TODO: review if series indexes is needed to be returned
-            datetime_index = series.index.get_level_values(1)
-            series_indexes = {k: datetime_index[v] for k, v in idx_by_group.items()}
+        idx_by_group = series.groupby(level=0, sort=False).indices
+        # TODO: review if series indexes is needed to be returned
+        datetime_index = series.index.get_level_values(1)
+        series_indexes = {k: datetime_index[v] for k, v in idx_by_group.items()}
 
         if not self.is_fitted:
             self.transformer_series_ = initialize_transformer_series(
@@ -1414,24 +1415,31 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             self.transformer_series_['_unknown_level'].fit(series.iloc[:, [0]])
 
         ignore_exog = True if exog is None else False
-        train_matrices = []
         exog = series.iloc[:, 1:].droplevel(level=0) if exog is not None else None
         series = series.iloc[:, 0].droplevel(level=0)
-        
+        X_train_autoreg_buffer = []
+        X_train_exog_buffer = []
+        y_train_buffer = []
+        # TODO: trabajar con numpy en lugar de pandas
         for series_id, idx in idx_by_group.items():
             series_i = series.iloc[idx].rename(series_id)
             exog_i = exog.iloc[idx, :] if exog is not None else None
-            train_matrices.append(
-                self._create_train_X_y_single_series(
+            (
+                X_train_autoreg,
+                X_train_window_features_names_out_,
+                X_train_exog,
+                y_train
+            ) = self._create_train_X_y_single_series(
                     y           = series_i,
                     ignore_exog = ignore_exog,
                     exog        = exog_i
                 )
-            )
+            X_train_autoreg_buffer.append(X_train_autoreg)
+            X_train_exog_buffer.append(X_train_exog)
+            y_train_buffer.append(y_train)
 
-        X_train = pd.concat([train_matrix[0] for train_matrix in train_matrices])
-        y_train = pd.concat([train_matrix[3] for train_matrix in train_matrices])
-        X_train_window_features_names_out_ = train_matrices[1]
+        X_train = pd.concat(X_train_autoreg_buffer, axis=0)
+        y_train = pd.concat(y_train_buffer, axis=0)
 
         if self.is_fitted:
             encoded_values = self.encoder.transform(X_train[['_level_skforecast']])
@@ -1459,7 +1467,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         exog_dtypes_in_ = None
         if exog is not None:
 
-            X_train_exog = pd.concat([train_matrix[2] for train_matrix in train_matrices])
+            X_train_exog = pd.concat(X_train_exog_buffer, axis=0)
             # TODO: check if this is needed
             if '_dummy_exog_col_to_keep_shape' in X_train_exog.columns:
                 X_train_exog = (
@@ -1526,6 +1534,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 "`forecaster.dropna_from_series = False` or review `exog` values."
             )
         
+        # TODO: do we care about the order?
         if self.encoding == 'onehot':
             X_train_series_names_in_ = [
                 col for col in series_names_in_ if X_train[col].sum() > 0

@@ -2511,9 +2511,8 @@ def check_preprocess_series(
         # NOTE: if it is not a DatetimeIndex,or a RangeIndex, raise error instead of warning
         if not isinstance(series.index.levels[1], (pd.DatetimeIndex, pd.RangeIndex)):
             raise TypeError(
-                "The second level of the MultiIndex in `series` must be a "
-                "pandas DatetimeIndex or RangeIndex. "
-                f"Found {type(series.index.levels[1])}."
+                f"The second level of the MultiIndex in `series` must be a "
+                f"pandas DatetimeIndex or RangeIndex. Found {type(series.index.levels[1])}."
             )
   
 
@@ -2522,9 +2521,13 @@ def check_preprocess_series(
             unique_ids = series.index.levels[0]
             for series_id in unique_ids:
                 series_i = series.loc[series_id]
+                # TODO: hacer esto solo si es datetime
                 indexes_freq.add(series_i.index.freq)
                 if series_i.isna().to_numpy().all():
-                    raise ValueError(f"All values of series '{series_id}' are NaN.")
+                    raise ValueError(
+                        f"All values of series '{series_id}' are NaN. Please, ",
+                        f"remove series with all NaN values before training the forecaster."
+                    )
 
             if not len(indexes_freq) == 1:
                 raise ValueError(
