@@ -272,6 +272,11 @@ class BaseFold():
         
         """
 
+        #TODO: dado que ahora todas las series tienen que tener frequencia, se puede
+        # seleccionar la frequancia únicamente de la primera. Si no la hay, error.
+        # Si por algún casual hubiese más de una, el durante el fit inicial aparecería un error
+        # gracias al create_train_X_y
+
         if isinstance(X, (pd.Series, pd.DataFrame)):
             idx = X.index
         elif isinstance(X, dict):
