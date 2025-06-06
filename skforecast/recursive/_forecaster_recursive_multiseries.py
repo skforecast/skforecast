@@ -1368,10 +1368,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         X_train_exog_names_out_ = None
         if exog is not None:
             exog, exog_names_in_ = check_preprocess_exog_multiseries(
-                                        series_indexes       = series.index,
-                                        series_names_in_     = series_names_in_,
-                                        exog                 = exog,
-                                    )
+                                       series_indexes       = series.index,
+                                       series_names_in_     = series_names_in_,
+                                       exog                 = exog,
+                                   )
 
             if self.is_fitted:
                 if self.exog_names_in_ is None:
@@ -1390,10 +1390,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             
             # TODO: para que esto funcione el indice debe llamarse igual, por ejemplo, "datetime"
             series = pd.merge(series, exog, left_index=True, right_index=True, how='left')
-        idx_by_group = series.groupby(level=0, sort=False).indices
-        # TODO: review if series indexes is needed to be returned
-        datetime_index = series.index.get_level_values(1)
-        series_indexes = {k: datetime_index[v] for k, v in idx_by_group.items()}
 
         if not self.is_fitted:
             self.transformer_series_ = initialize_transformer_series(
@@ -1408,22 +1404,55 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                        differentiator   = self.differentiator
                                    )
 
-        
-        
-        
-        if not self.is_fitted and self.transformer_series_['_unknown_level'] is not None:
-            self.transformer_series_['_unknown_level'].fit(series.iloc[:, [0]])
-
+        # TODO: ignore_exog is not needed anymore
         ignore_exog = True if exog is None else False
-        exog = series.iloc[:, 1:].droplevel(level=0) if exog is not None else None
-        series = series.iloc[:, 0].droplevel(level=0)
+
+        # idx_by_group = series.groupby(level=0, sort=False).indices
+        # exog = series.iloc[:, 1:].droplevel(level=0) if exog is not None else None
+        # series = series.iloc[:, 0].droplevel(level=0)
+        
+        exog = series.iloc[:, 1:] if exog is not None else None
+        series = series.iloc[:, 0]
+
+        if not self.is_fitted and self.transformer_series_['_unknown_level'] is not None:
+            self.transformer_series_['_unknown_level'].fit(series)
+        
+        is_datetime_index = True if isinstance(series.index.levels[1], pd.DatetimeIndex) else False
+        series_indexes = {}
+        indexes_freq = set()
+
         X_train_autoreg_buffer = []
         X_train_exog_buffer = []
         y_train_buffer = []
         # TODO: trabajar con numpy en lugar de pandas
-        for series_id, idx in idx_by_group.items():
-            series_i = series.iloc[idx].rename(series_id)
-            exog_i = exog.iloc[idx, :] if exog is not None else None
+        # for series_id, idx in idx_by_group.items():
+            
+        #     series_i = series.iloc[idx].rename(series_id)
+        #     exog_i = exog.iloc[idx, :] if exog is not None else None
+            
+        #     series_indexes[series_id] = series_i.index
+        #     if is_datetime_index:
+        #         indexes_freq.add(series_i.index.freqstr)
+        #     else:
+        #         indexes_freq.add(series_i.index.step)
+
+        for series_id in series_names_in_:
+            
+            series_i = series.loc[series_id].rename(series_id)
+            exog_i = exog.loc[series_id, :] if exog is not None else None
+            
+            series_indexes[series_id] = series_i.index
+            if is_datetime_index:
+                indexes_freq.add(series_i.index.freqstr)
+            else:
+                indexes_freq.add(series_i.index.step)
+
+            if series_i.isna().to_numpy().all():
+                raise ValueError(
+                    f"All values of series '{series_id}' are NaN. Please, "
+                    f"remove series with all NaN values before training the forecaster."
+                )
+
             (
                 X_train_autoreg,
                 X_train_window_features_names_out_,
@@ -1434,9 +1463,15 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     ignore_exog = ignore_exog,
                     exog        = exog_i
                 )
+            
             X_train_autoreg_buffer.append(X_train_autoreg)
             X_train_exog_buffer.append(X_train_exog)
             y_train_buffer.append(y_train)
+
+        if not len(indexes_freq) == 1:
+            pass
+        if indexes_freq == [None]:
+            pass
 
         X_train = pd.concat(X_train_autoreg_buffer, axis=0)
         y_train = pd.concat(y_train_buffer, axis=0)
@@ -1569,8 +1604,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
             if series_to_store:
                 last_window_ = {
-                    series_id: series.iloc[idx[-self.window_size:]]
-                    for series_id, idx in idx_by_group.items()
+                    series_id: series.loc[series_id].iloc[-self.window_size:]
+                    for series_id in series_to_store
                 }
 
         return (

@@ -2514,34 +2514,33 @@ def check_preprocess_series(
                 f"The second level of the MultiIndex in `series` must be a "
                 f"pandas DatetimeIndex or RangeIndex. Found {type(series.index.levels[1])}."
             )
-  
 
-        if isinstance(series.index.levels[1], pd.DatetimeIndex):
-            indexes_freq = set()
-            unique_ids = series.index.levels[0]
-            for series_id in unique_ids:
-                series_i = series.loc[series_id]
-                # TODO: hacer esto solo si es datetime
-                indexes_freq.add(series_i.index.freq)
-                if series_i.isna().to_numpy().all():
-                    raise ValueError(
-                        f"All values of series '{series_id}' are NaN. Please, ",
-                        f"remove series with all NaN values before training the forecaster."
-                    )
+        # if isinstance(series.index.levels[1], pd.DatetimeIndex):
+            # indexes_freq = set()
+            # unique_ids = series.index.levels[0]
+            # for series_id in unique_ids:
+            #     series_i = series.loc[series_id]
+            #     # TODO: hacer esto solo si es datetime
+            #     indexes_freq.add(series_i.index.freqstr)
+            #     if series_i.isna().to_numpy().all():
+            #         raise ValueError(
+            #             f"All values of series '{series_id}' are NaN. Please, "
+            #             f"remove series with all NaN values before training the forecaster."
+            #         )
 
-            if not len(indexes_freq) == 1:
-                raise ValueError(
-                    f"When using a DatetimeIndex, all series must have the same ",
-                    f"frequency. Found frequencies: {indexes_freq}"
-                )
-            if indexes_freq == [None]:
-                raise TypeError(
-                    "Series have a pandas DatetimeIndex without frequancy. When "
-                    "using a DatetimeIndex, all series must have the same frequency. "
-                    "To avoid this error, set the frequency of the index using: "
-                    "series.groupby('series_id').apply(lambda x: x.set_index('datetime').asfreq('D'),"
-                    "include_groups=False)"
-                )
+            # if not len(indexes_freq) == 1:
+            #     raise ValueError(
+            #         f"When using a DatetimeIndex, all series must have the same "
+            #         f"frequency. Found frequencies: {indexes_freq}"
+            #     )
+            # if indexes_freq == [None]:
+            #     raise TypeError(
+            #         "Series have a pandas DatetimeIndex without frequancy. When "
+            #         "using a DatetimeIndex, all series must have the same frequency. "
+            #         "To avoid this error, set the frequency of the index using: "
+            #         "series.groupby('series_id').apply(lambda x: x.set_index('datetime').asfreq('D'),"
+            #         "include_groups=False)"
+            #     )
             
                 #TODO: remove if agree with the raise error above
                 # series_grouped = series.groupby(level=0, group_keys=False, sort=False)
