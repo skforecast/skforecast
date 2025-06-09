@@ -2471,9 +2471,8 @@ def check_preprocess_series(
     if not isinstance(series, pd.DataFrame):
         raise TypeError(
             f"`series` must be a pandas DataFrame with a single DatetimeIndex or "
-            f"a pandas DataFrame with a MultiIndex where the first level is the "
-            f"series ID and the second level is temporal index. "
-            f"Got {type(series)}."
+            f"with a MultiIndex where the first level is the series ID and the "
+            f"second level is temporal index. Got {type(series)}."
         )
 
     # TODO: deprecate in next release
@@ -2499,59 +2498,18 @@ def check_preprocess_series(
             .apply(lambda x: x.set_index('datetime').asfreq(freq), include_groups=False)
         )
 
-    if isinstance(series.index, pd.MultiIndex):
+    if not series.index.names == ['series_id', 'datetime']:
+        raise ValueError(
+            f"`series` must be a pandas DataFrame with a MultiIndex with the names "
+            f"['series_id', 'datetime']. The first level is the series IDs and the second "
+            f"level the temporal index. Found {series.index.names} levels."
+        )
 
-        if not series.index.nlevels == 2:
-            raise ValueError(
-                f"`series` must be a pandas DataFrame with a MultiIndex, where "
-                f"the first level is the seris ID and the second level the temporal "
-                f"index. Found {series.index.names} levels."
-            )
-    
-        # NOTE: if it is not a DatetimeIndex,or a RangeIndex, raise error instead of warning
-        if not isinstance(series.index.levels[1], (pd.DatetimeIndex, pd.RangeIndex)):
-            raise TypeError(
-                f"The second level of the MultiIndex in `series` must be a "
-                f"pandas DatetimeIndex or RangeIndex. Found {type(series.index.levels[1])}."
-            )
-
-        # if isinstance(series.index.levels[1], pd.DatetimeIndex):
-            # indexes_freq = set()
-            # unique_ids = series.index.levels[0]
-            # for series_id in unique_ids:
-            #     series_i = series.loc[series_id]
-            #     # TODO: hacer esto solo si es datetime
-            #     indexes_freq.add(series_i.index.freqstr)
-            #     if series_i.isna().to_numpy().all():
-            #         raise ValueError(
-            #             f"All values of series '{series_id}' are NaN. Please, "
-            #             f"remove series with all NaN values before training the forecaster."
-            #         )
-
-            # if not len(indexes_freq) == 1:
-            #     raise ValueError(
-            #         f"When using a DatetimeIndex, all series must have the same "
-            #         f"frequency. Found frequencies: {indexes_freq}"
-            #     )
-            # if indexes_freq == [None]:
-            #     raise TypeError(
-            #         "Series have a pandas DatetimeIndex without frequancy. When "
-            #         "using a DatetimeIndex, all series must have the same frequency. "
-            #         "To avoid this error, set the frequency of the index using: "
-            #         "series.groupby('series_id').apply(lambda x: x.set_index('datetime').asfreq('D'),"
-            #         "include_groups=False)"
-            #     )
-            
-                #TODO: remove if agree with the raise error above
-                # series_grouped = series.groupby(level=0, group_keys=False, sort=False)
-                # series = series_grouped.apply(
-                #     lambda g: g.set_index(
-                #         pd.MultiIndex.from_arrays(
-                #             [g.index.get_level_values(0), pd.RangeIndex(len(g))],
-                #             names=g.index.names
-                #         )
-                #     )
-                # )            
+    if not isinstance(series.index.levels[1], (pd.DatetimeIndex, pd.RangeIndex)):
+        raise TypeError(
+            f"The second level of the MultiIndex in `series` must be a "
+            f"pandas DatetimeIndex or RangeIndex. Found {type(series.index.levels[1])}."
+        )
 
     return series
 
@@ -2582,43 +2540,33 @@ def check_preprocess_exog_multiseries(
         Names of the exogenous variables used during training.
     
     """
-
+    
+    # NOTE: If `exog` is not a MultiIndex, it will be replicated for each series
+    # automatically during the merge
     if not isinstance(exog, (pd.Series, pd.DataFrame)):
         raise TypeError(
-            f"`exog` must be a pandas Series, DataFrame or None. Got {type(exog)}."
+            f"`exog` must be a pandas Series or DataFrame with a single "
+            f"DatetimeIndex or with a MultiIndex where the first level is the "
+            f"series ID and the second level is temporal index. "
+            f"Got {type(exog)}."
         )
     
     if isinstance(exog, pd.Series):
         exog = exog.to_frame()
 
-    if not isinstance(exog.index, pd.MultiIndex) and not isinstance(exog.index, pd.DatetimeIndex):
-        exog.index = pd.RangeIndex(len(exog))
-
     if isinstance(exog.index, pd.MultiIndex):
 
-        if not exog.index.nlevels == 2:
+        if not exog.index.names == ['series_id', 'datetime']:
             raise ValueError(
-                f"`exog` must be a pandas DataFrame with a MultiIndex, where "
-                f"the first level is the seris ID and the second level the temporal "
-                f"index. Found {exog.index.names} levels."
+                f"`exog` must be a pandas DataFrame with a MultiIndex with the names "
+                f"['series_id', 'datetime']. The first level is the series IDs and the second "
+                f"level the temporal index. Found {exog.index.names} levels."
             )
-        
-        # TODO: improve messaje to explain it is about the second level of the MultiIndex
-        if not isinstance(exog.index.get_level_values(1), pd.DatetimeIndex):
-            warnings.warn(
-                "`exog` does not have a pandas DatetimeIndex. The index will be "
-                "replaced by a RangeIndex starting from 0 with a step of 1. To "
-                "avoid this warning, ensure that `exog.index` is a DatetimeIndex "
-                "with a frequency."
-            )
-        
-            exog = exog.groupby(level=0, group_keys=False).apply(
-                lambda g: g.set_index(
-                    pd.MultiIndex.from_arrays(
-                        [g.index.get_level_values(0), pd.RangeIndex(len(g))],
-                        names=g.index.names
-                    )
-                )
+
+        if not isinstance(exog.index.levels[1], (pd.DatetimeIndex, pd.RangeIndex)):
+            raise TypeError(
+                f"The second level of the MultiIndex in `exog` must be a "
+                f"pandas DatetimeIndex or RangeIndex. Found {type(exog.index.levels[1])}."
             )
 
         series_not_in_exog = set(series_names_in_) - set(exog.index.levels[0])
@@ -2629,17 +2577,37 @@ def check_preprocess_exog_multiseries(
                 MissingExogWarning
             )
 
-    type_index_series = series_indexes.dtypes
-    type_index_exog = (
-            exog.index.dtypes
-            if isinstance(exog.index, pd.MultiIndex)
-            else exog.index.dtype
-        )
-    if not type_index_series.equals(type_index_exog):
-        raise TypeError(
-            f"`exog` index must be the same type as the series index. "
-            f"Found {type_index_exog} for `exog` and {type_index_series} for `series`."
-        )   
+    else:
+        if not isinstance(exog.index, (pd.DatetimeIndex, pd.RangeIndex)):
+            raise TypeError(
+                f"`exog` index must be a pandas DatetimeIndex or RangeIndex. "
+                f"Found {type(exog.index)}."
+            )
+        
+        if not exog.index.name == 'datetime':
+            raise ValueError(
+                f"When `exog` is a pandas DataFrame with a single index, "
+                f"the index must be named 'datetime'. Found {exog.index.name}."
+            )
+
+    if isinstance(exog.index, pd.MultiIndex):
+        type_index_series = series_indexes.dtypes
+        type_index_exog = exog.index.dtypes
+
+        if not type_index_series.equals(type_index_exog):
+            raise TypeError(
+                f"`exog` index must be the same type as the series index. "
+                f"Found {type_index_exog} for `exog` and {type_index_series} for `series`."
+            )
+    else:
+        type_index_series = series_indexes.levels[1].dtype
+        type_index_exog = exog.index.dtype
+
+        if not isinstance(type_index_series, type_index_exog):
+            raise TypeError(
+                f"`exog` index must be the same type as the series index. "
+                f"Found {type_index_exog} for `exog` and {type_index_series} for `series`."
+            )
 
     exog_names_in_ = exog.columns.tolist()
     if len(set(exog_names_in_) - set(series_names_in_)) != len(exog_names_in_):
