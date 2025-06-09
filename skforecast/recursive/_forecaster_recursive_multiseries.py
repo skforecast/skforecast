@@ -1392,6 +1392,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         """
 
         if isinstance(series, dict):
+            # TODO: Optimizar esto para un solo ciclo for
             freqs = [s.index.freq for s in series.values() if s.index.freq is not None]
             if not freqs:
                 raise ValueError("At least one series must have a frequency.")
