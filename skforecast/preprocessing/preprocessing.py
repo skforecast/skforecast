@@ -418,10 +418,11 @@ def series_long_to_dict(
     for col in [series_id, index, values]:
         if col not in data.columns:
             raise ValueError(f"Column '{col}' not found in `data`.")
-        
-    original_sizes = data.groupby(series_id, observed=True).size()
+    
+    data_grouped = data.groupby(series_id, observed=True)
+    original_sizes = data_grouped.size()
     series_dict = {}
-    for k, v in data.groupby(series_id, observed=True):
+    for k, v in data_grouped:
         series_dict[k] = v.set_index(index)[values].asfreq(freq, fill_value=np.nan).rename(k)
         series_dict[k].index.name = None
         if not suppress_warnings and len(series_dict[k]) != original_sizes[k]:
