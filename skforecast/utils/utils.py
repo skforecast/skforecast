@@ -2445,6 +2445,7 @@ def set_cpu_gpu_device(
     return original_device
 
 
+# TODO: Review docstring to include long format and detele short format
 def check_preprocess_series(
     series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
 ) -> tuple[dict[str, pd.Series], dict[str, pd.Index]]:
@@ -2471,14 +2472,41 @@ def check_preprocess_series(
     
     """
 
+    if not isinstance(series, (pd.DataFrame, dict)):
+        raise TypeError(
+            f"`series` must be a pandas DataFrame or a dict of DataFrames or Series. "
+            f"Got {type(series)}."
+        )
+
     if isinstance(series, pd.DataFrame):
 
-        _, series_index = preprocess_y(y=series, return_values=False)
-        series = series.copy()
-        series.index = series_index
-        series_dict = series.to_dict("series")
+        if not isinstance(series.index, pd.MultiIndex):
+            raise TypeError(
+                f"`series` must be a pandas DataFrame with a MultiIndex. The "
+                f"first level is the series IDs and the second level a pandas "
+                f"DatetimeIndex with frequency. Found {type(series.index)}."
+            )
 
-    elif isinstance(series, dict):
+        if not isinstance(series.index.levels[1], pd.DatetimeIndex):
+            raise TypeError(
+                f"The second level of the MultiIndex in `series` must be a "
+                f"pandas DatetimeIndex with frequency. Found {type(series.index.levels[1])}."
+            )
+        
+        first_col = series.columns[0]
+        if len(series.columns) != 1:
+            warnings.warn(
+                "`series` DataFrame has more than one column. Only the first "
+                "column will be used.",
+                UserWarning
+            )
+
+        series = {
+            series_id: series.loc[series_id][first_col].rename(series_id) 
+            for series_id in series.index.levels[0]
+        }
+
+    else:
 
         not_valid_series = [
             k 
@@ -2497,59 +2525,50 @@ def check_preprocess_series(
             for k, v in series.items()
         }
 
-        for k, v in series_dict.items():
-            if isinstance(v, pd.DataFrame):
-                if v.shape[1] != 1:
-                    raise ValueError(
-                        f"If `series` is a dictionary, all series must be a named "
-                        f"pandas Series or a pandas DataFrame with a single column. "
-                        f"Review series: '{k}'"
-                    )
-                series_dict[k] = v.iloc[:, 0]
-
-            series_dict[k].name = k
-
-        not_valid_index = [
-            k 
-            for k, v in series_dict.items()
-            if not isinstance(v.index, pd.DatetimeIndex)
-        ]
-        if not_valid_index:
-            raise TypeError(
-                f"If `series` is a dictionary, all series must have a Pandas "
-                f"DatetimeIndex as index with the same frequency. "
-                f"Review series: {not_valid_index}"
-            )
-
-        indexes_freq = [f"{v.index.freq}" for v in series_dict.values()]
-        indexes_freq = sorted(set(indexes_freq))
-        if not len(indexes_freq) == 1:
-            raise ValueError(
-                f"If `series` is a dictionary, all series must have a Pandas "
-                f"DatetimeIndex as index with the same frequency. "
-                f"Found frequencies: {indexes_freq}"
-            )
-    else:
-        raise TypeError(
-            f"`series` must be a pandas DataFrame or a dict of DataFrames or Series. "
-            f"Got {type(series)}."
-        )
-
+    not_valid_index = []
+    indexes_freq = set()
+    series_indexes = {}
     for k, v in series_dict.items():
+        if isinstance(v, pd.DataFrame):
+            if v.shape[1] != 1:
+                raise ValueError(
+                    f"If `series` is a dictionary, all series must be a named "
+                    f"pandas Series or a pandas DataFrame with a single column. "
+                    f"Review series: '{k}'"
+                )
+            series_dict[k] = v.iloc[:, 0]
+
+        series_dict[k].name = k
+
+        if not isinstance(v.index, pd.DatetimeIndex):
+            not_valid_index.append(k)
+        else:
+            indexes_freq.add(v.index.freqstr)
+
         if v.isna().to_numpy().all():
             raise ValueError(f"All values of series '{k}' are NaN.")
 
-    series_indexes = {
-        k: v.index
-        for k, v in series_dict.items()
-    }
+        series_indexes[k] = v.index
+
+    if not_valid_index:
+        raise TypeError(
+            f"If `series` is a dictionary, all series must have a Pandas "
+            f"DatetimeIndex as index with the same frequency. "
+            f"Review series: {not_valid_index}"
+        )
+
+    if not len(indexes_freq) == 1 or indexes_freq == {None}:
+        indexes_freq = sorted(indexes_freq)
+        raise ValueError(
+            f"If `series` is a dictionary, all series must have a Pandas "
+            f"DatetimeIndex as index with the same frequency. "
+            f"Found frequencies: {indexes_freq}"
+        )
 
     return series_dict, series_indexes
 
-
+# TODO: Review docstring and delete input_series_is_dict and series_indexes arguments.
 def check_preprocess_exog_multiseries(
-    input_series_is_dict: bool,
-    series_indexes: dict[str, pd.Index],
     series_names_in_: list[str],
     exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame | None],
     exog_dict: dict[str, pd.Series | pd.DataFrame | None],
@@ -2593,36 +2612,28 @@ def check_preprocess_exog_multiseries(
             f"Series/DataFrames or None. Got {type(exog)}."
         )
 
-    if not input_series_is_dict:
-        # If input series is a pandas DataFrame, all index are the same.
-        # Select the first index to check exog
-        series_index = series_indexes[series_names_in_[0]]
-
     if isinstance(exog, (pd.Series, pd.DataFrame)): 
-
-        if input_series_is_dict:
-            raise TypeError(
-                f"`exog` must be a dict of DataFrames or Series if "
-                f"`series` is a dict. Got {type(exog)}."
-            )
-
-        _, exog_index = preprocess_exog(exog=exog, return_values=False)
+        
         exog = exog.copy().to_frame() if isinstance(exog, pd.Series) else exog.copy()
-        exog.index = exog_index
-
-        if len(exog) != len(series_index):
-            raise ValueError(
-                f"`exog` must have same number of samples as `series`. "
-                f"length `exog`: ({len(exog)}), length `series`: ({len(series_index)})"
+        if isinstance(exog.index, pd.MultiIndex):
+            if not isinstance(exog.index.levels[1], pd.DatetimeIndex):
+                raise TypeError(
+                    f"The second level of the MultiIndex in `exog` must be a "
+                    f"pandas DatetimeIndex. Found {type(exog.index.levels[1])}."
+                )
+            exog_dict.update(
+                {
+                    series_id: exog.loc[series_id] 
+                    for series_id in exog.index.levels[0]
+                    if series_id in series_names_in_
+                }
             )
-
-        if not (exog_index == series_index).all():
-            raise ValueError(
-                "Different index for `series` and `exog`. They must be equal "
-                "to ensure the correct alignment of values."
-            )
-
-        exog_dict = {serie: exog for serie in series_names_in_}
+        else:
+            if not isinstance(exog.index, pd.DatetimeIndex):
+                raise TypeError(
+                    f"`exog` must have a Pandas DatetimeIndex. Found {type(exog.index)}."
+                )
+            exog_dict = {series_id: exog for series_id in series_names_in_}
 
     else:
 
@@ -2637,61 +2648,44 @@ def check_preprocess_exog_multiseries(
                 f"Series, a pandas DataFrame or None. Review exog: {not_valid_exog}"
             )
 
-        # Only elements already present in exog_dict are updated
+        # NOTE: Only elements already present in exog_dict are updated. Copy is
+        # needed to avoid modifying the original exog_dict.
         exog_dict.update(
             {
                 k: v.copy()
                 for k, v in exog.items()
-                if k in exog_dict and v is not None
+                if k in series_names_in_ and v is not None
             }
         )
 
-        series_not_in_exog = set(series_names_in_) - set(exog.keys())
-        if series_not_in_exog:
-            warnings.warn(
-                f"{series_not_in_exog} not present in `exog`. All values "
-                f"of the exogenous variables for these series will be NaN.",
-                MissingExogWarning
-            )
+    series_not_in_exog = set(series_names_in_) - set(exog.keys())
+    if series_not_in_exog:
+        warnings.warn(
+            f"{series_not_in_exog} not present in `exog`. All values "
+            f"of the exogenous variables for these series will be NaN.",
+            MissingExogWarning
+        )
 
-        for k, v in exog_dict.items():
-            if v is not None:
-                check_exog(exog=v, allow_nan=True)
-                if isinstance(v, pd.Series):
-                    v = v.to_frame()
-                exog_dict[k] = v
+    for k, v in exog_dict.items():
+        if v is not None:
+            check_exog(exog=v, allow_nan=True)
+            if isinstance(v, pd.Series):
+                v = v.to_frame()
+            exog_dict[k] = v
 
-        if not input_series_is_dict:
-            for k, v in exog_dict.items():
-                if v is not None:
-                    if len(v) != len(series_index):
-                        raise ValueError(
-                            f"`exog` for series '{k}' must have same number of "
-                            f"samples as `series`. length `exog`: ({len(v)}), "
-                            f"length `series`: ({len(series_index)})"
-                        )
-
-                    _, v_index = preprocess_exog(exog=v, return_values=False)
-                    exog_dict[k].index = v_index
-                    if not (exog_dict[k].index == series_index).all():
-                        raise ValueError(
-                            f"Different index for series '{k}' and its exog. "
-                            f"When `series` is a pandas DataFrame, they must be "
-                            f"equal to ensure the correct alignment of values."
-                        )
-        else:
-            not_valid_index = [
-                k
-                for k, v in exog_dict.items()
-                if v is not None and not isinstance(v.index, pd.DatetimeIndex)
-            ]
-            if not_valid_index:
-                raise TypeError(
-                    f"All exog must have a Pandas DatetimeIndex as index with the "
-                    f"same frequency. Check exog for series: {not_valid_index}"
-                )
-            
-        # Check that all exog have the same dtypes for common columns
+    not_valid_index = [
+        k
+        for k, v in exog_dict.items()
+        if v is not None and not isinstance(v.index, pd.DatetimeIndex)
+    ]
+    if not_valid_index:
+        raise TypeError(
+            f"All exog must have a Pandas DatetimeIndex. Check exog for "
+            f"series: {not_valid_index}"
+        )
+    
+    if isinstance(exog, dict):
+        # NOTE: Check that all exog have the same dtypes for common columns
         exog_dtypes_buffer = pd.DataFrame(
             {k: df.dtypes for k, df in exog_dict.items() if df is not None}
         )
@@ -2707,14 +2701,16 @@ def check_preprocess_exog_multiseries(
                 f"for each categorical variable."
             )
 
-    exog_names_in_ = list(
-        set(
-            column
-            for df in exog_dict.values()
-            if df is not None
-            for column in df.columns.to_list()
+        exog_names_in_ = list(
+            set(
+                column
+                for df in exog_dict.values()
+                if df is not None
+                for column in df.columns.to_list()
+            )
         )
-    )
+    else:
+        exog_names_in_ = list(exog.columns) if isinstance(exog, pd.DataFrame) else [exog.name]
 
     if len(set(exog_names_in_) - set(series_names_in_)) != len(exog_names_in_):
         raise ValueError(
@@ -2771,27 +2767,26 @@ def align_series_and_exog_multiseries(
             last_valid_index = series_dict[k].index[-1]
 
         if exog_dict[k] is not None:
-            if input_series_is_dict:
-                if not series_dict[k].index.equals(exog_dict[k].index):
-                    exog_dict[k] = exog_dict[k].loc[first_valid_index:last_valid_index]
-                    if exog_dict[k].empty:
-                        warnings.warn(
-                            f"Series '{k}' and its `exog` do not have the same index. "
-                            f"All exog values will be NaN for the period of the series.",
-                            MissingValuesWarning
-                        )
-                    elif len(exog_dict[k]) != len(series_dict[k]):
-                        warnings.warn(
-                            f"Series '{k}' and its `exog` do not have the same length. "
-                            f"Exog values will be NaN for the not matched period of the series.",
-                            MissingValuesWarning
-                        )  
+            if not series_dict[k].index.equals(exog_dict[k].index):
+                exog_dict[k] = exog_dict[k].loc[first_valid_index:last_valid_index]
+                if exog_dict[k].empty:
+                    warnings.warn(
+                        f"`exog` for series '{k}' is empty after aligning "
+                        f"with the series index. Exog values will be NaN.",
+                        MissingValuesWarning
+                    )
+                    exog_dict[k] = None
+                elif len(exog_dict[k]) != len(series_dict[k]):
+                    warnings.warn(
+                        f"`exog` for series '{k}' doesn't have values for "
+                        f"all the dates in the series. Missing values will be "
+                        f"filled with NaN.",
+                        MissingValuesWarning
+                    )
                     exog_dict[k] = exog_dict[k].reindex(
                                        series_dict[k].index, 
                                        fill_value = np.nan
                                    )
-            if not input_series_is_dict and not series_dict[k].index.equals(exog_dict[k].index):
-                exog_dict[k] = exog_dict[k].loc[first_valid_index:last_valid_index]
 
     return series_dict, exog_dict
 

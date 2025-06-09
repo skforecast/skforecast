@@ -1068,11 +1068,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         X_train_exog_names_out_ = None
         if exog is not None:
             exog_dict, exog_names_in_ = check_preprocess_exog_multiseries(
-                                            input_series_is_dict = input_series_is_dict,
-                                            series_indexes       = series_indexes,
-                                            series_names_in_     = series_names_in_,
-                                            exog                 = exog,
-                                            exog_dict            = exog_dict
+                                            series_names_in_ = series_names_in_,
+                                            exog             = exog,
+                                            exog_dict        = exog_dict
                                         )
 
             if self.is_fitted:
@@ -1109,6 +1107,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                      exog_dict            = exog_dict
                                  )
         
+        # NOTE: Continue from here!!!!!!!!!!!!!!!
+
         if not self.is_fitted and self.transformer_series_['_unknown_level'] is not None:
             self.transformer_series_['_unknown_level'].fit(
                 np.concatenate(list(series_dict.values())).reshape(-1, 1)
