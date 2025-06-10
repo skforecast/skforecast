@@ -275,16 +275,26 @@ class BaseFold():
         if isinstance(X, (pd.Series, pd.DataFrame)):
             idx = X.index
         elif isinstance(X, dict):
-            freqs = [s.index.freq for s in X.values() if s.index.freq is not None]
-            if not freqs:
-                raise ValueError("At least one series must have a frequency.")
-            if not all(f == freqs[0] for f in freqs):
+            indexes_freq = set()
+            min_index = []
+            max_index = []
+            for v in X.values():
+                if v.empty:
+                    continue
+                idx = v.index
+                indexes_freq.add(idx.freqstr)
+                min_index.append(idx[0])
+                max_index.append(idx[-1])
+
+            if not len(indexes_freq) == 1 or indexes_freq == {None}:
                 raise ValueError(
-                    "All series with frequency must have the same frequency."
+                    f"If `series` is a dictionary, all series must have a Pandas "
+                    f"DatetimeIndex as index with the same frequency. "
+                    f"Found frequencies: {sorted(indexes_freq)}"
                 )
-            min_idx = min([v.index[0] for v in X.values() if not v.empty])
-            max_idx = max([v.index[-1] for v in X.values() if not v.empty])
-            idx = pd.date_range(start=min_idx, end=max_idx, freq=freqs[0])
+            idx = pd.date_range(
+                start=min(min_index), end=max(max_index), freq=indexes_freq.pop()
+            )
         else:
             idx = X
             

@@ -8,10 +8,18 @@ from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
 from skforecast.exceptions import ResidualsUsageWarning
 from ....recursive import ForecasterRecursiveMultiSeries
+from ....preprocessing import series_wide_to_long
 
 # Fixtures
 series = pd.DataFrame({'l1': pd.Series(np.arange(10)), 
                        'l2': pd.Series(np.arange(10))})
+series.index = pd.date_range(start='1-1-2018', periods=len(series), freq='D')
+series = series_wide_to_long(series)
+
+rng = np.random.default_rng(12345)
+series_rnd = pd.DataFrame({"l1": rng.normal(10, 3, 20), "l2": rng.normal(10, 3, 20)})
+series_rnd.index = pd.date_range(start='01-01-2000', periods=len(series), freq='D')
+series_rnd = series_wide_to_long(series_rnd)
 
 
 @pytest.mark.parametrize("encoding", 
@@ -22,12 +30,10 @@ def test_binning_out_sample_residuals_when_residuals_length_is_less_than_10000_a
     Test residuals stored when new residuals length is less than 10000 and append
     is False.
     """
-    rng = np.random.default_rng(12345)
-    series = pd.DataFrame({"l1": rng.normal(10, 3, 20), "l2": rng.normal(10, 3, 20)})
     forecaster = ForecasterRecursiveMultiSeries(
         LinearRegression(), lags=3, encoding=encoding, binner_kwargs={"n_bins": 3}
     )
-    forecaster.fit(series=series)
+    forecaster.fit(series=series_rnd)
     y_true = {"l1": rng.normal(10, 3, 20), "l2": rng.normal(10, 3, 20)}
     y_pred = {"l1": rng.normal(10, 3, 20), "l2": rng.normal(10, 3, 20)}
 
@@ -71,12 +77,10 @@ def test_binning_out_sample_residuals_when_residuals_length_is_less_than_10000_a
     Test residuals stored when new residuals length is less than 10000 and append
     is False and encoding is None.
     """
-    rng = np.random.default_rng(12345)
-    series = pd.DataFrame({"l1": rng.normal(10, 3, 20), "l2": rng.normal(10, 3, 20)})
     forecaster = ForecasterRecursiveMultiSeries(
         LinearRegression(), lags=3, encoding=None, binner_kwargs={"n_bins": 3}
     )
-    forecaster.fit(series=series)
+    forecaster.fit(series=series_rnd)
     y_true = {"_unknown_level": pd.Series(rng.normal(10, 3, 20))}
     y_pred = {"_unknown_level": pd.Series(rng.normal(10, 3, 20))}
 

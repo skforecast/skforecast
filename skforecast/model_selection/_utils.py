@@ -229,6 +229,7 @@ def check_backtesting_input(
         data_name = 'series'
         data_length = len(series)
     
+    # TODO: Review checks for long-format and redundant
     elif forecaster_name in forecasters_multi_dict:
         if not isinstance(series, (pd.DataFrame, dict)):
             raise TypeError(
@@ -261,13 +262,12 @@ def check_backtesting_input(
                     f"Review series: {not_valid_index}"
                 )
 
-            indexes_freq = [f'{v.index.freq}' for v in series.values()]
-            indexes_freq = sorted(set(indexes_freq))
-            if not len(indexes_freq) == 1:
+            indexes_freq = set([f'{v.index.freqstr}' for v in series.values()])
+            if not len(indexes_freq) == 1 or indexes_freq == {None}:
                 raise ValueError(
                     f"If `series` is a dictionary, all series must have a Pandas "
                     f"DatetimeIndex as index with the same frequency. "
-                    f"Found frequencies: {indexes_freq}"
+                    f"Found frequencies: {sorted(indexes_freq)}"
                 )
             data_length = max([len(series[serie]) for serie in series])
         else:
@@ -571,6 +571,7 @@ def check_one_step_ahead_input(
         data_name = 'series'
         data_length = len(series)
     
+    # TODO: Review checks for long-format and redundant
     elif forecaster_name in forecasters_multi_dict:
         if not isinstance(series, (pd.DataFrame, dict)):
             raise TypeError(
@@ -603,13 +604,12 @@ def check_one_step_ahead_input(
                     f"Review series: {not_valid_index}"
                 )
 
-            indexes_freq = [f'{v.index.freq}' for v in series.values()]
-            indexes_freq = sorted(set(indexes_freq))
-            if not len(indexes_freq) == 1:
+            indexes_freq = set([f'{v.index.freqstr}' for v in series.values()])
+            if not len(indexes_freq) == 1 or indexes_freq == {None}:
                 raise ValueError(
                     f"If `series` is a dictionary, all series must have a Pandas "
                     f"DatetimeIndex as index with the same frequency. "
-                    f"Found frequencies: {indexes_freq}"
+                    f"Found frequencies: {sorted(indexes_freq)}"
                 )
             data_length = max([len(series[serie]) for serie in series])
         else:
@@ -1012,7 +1012,7 @@ def _extract_data_folds_multiseries(
 
             series_to_drop = []
             for col in series_train.columns:
-                if series_train[col].isna().all():
+                if series_train[col].isna().to_numpy().all():
                     series_to_drop.append(col)
                 else:
                     first_valid_index = series_train[col].first_valid_index()
@@ -1032,21 +1032,20 @@ def _extract_data_folds_multiseries(
                 series_last_window = series_last_window.drop(columns=series_to_drop)
         else:
             series_train = {}
-            for k in series.keys():
-                v = series[k].loc[train_loc_start:train_loc_end]
-                if not v.isna().all():
-                    first_valid_index = v.first_valid_index()
-                    last_valid_index  = v.last_valid_index()
-                    if first_valid_index is not None and last_valid_index is not None:
-                        v = v.loc[first_valid_index : last_valid_index]
-                        if len(v) >= window_size:
-                            series_train[k] = v
-
             series_last_window = {}
             for k, v in series.items():
-                v = series[k].loc[last_window_loc_start:last_window_loc_end]
-                if ((externally_fitted or k in series_train) and len(v) >= window_size):
-                    series_last_window[k] = v
+                v_train = v.loc[train_loc_start:train_loc_end]
+                if not v_train.isna().to_numpy().all():
+                    first_valid_index = v_train.first_valid_index()
+                    last_valid_index  = v_train.last_valid_index()
+                    if first_valid_index is not None and last_valid_index is not None:
+                        v_train = v_train.loc[first_valid_index : last_valid_index]
+                        if len(v_train) >= window_size:
+                            series_train[k] = v_train
+                
+                v_last_window = v.loc[last_window_loc_start:last_window_loc_end]
+                if ((externally_fitted or k in series_train) and len(v_last_window) >= window_size):
+                    series_last_window[k] = v_last_window
 
             series_last_window = pd.DataFrame(series_last_window)
 
@@ -1062,19 +1061,16 @@ def _extract_data_folds_multiseries(
                 exog_train = exog.iloc[train_iloc_start:train_iloc_end, ]
                 exog_test = exog.iloc[test_iloc_start:test_iloc_end, ]
             else:
-                exog_train = {
-                    k: v.loc[train_loc_start:train_loc_end] 
-                    for k, v in exog.items()
-                }
-                exog_train = {k: v for k, v in exog_train.items() if len(v) > 0}
-
-                exog_test = {
-                    k: v.loc[test_loc_start:test_loc_end]
-                    for k, v in exog.items()
-                    if externally_fitted or k in exog_train
-                }
-
-                exog_test = {k: v for k, v in exog_test.items() if len(v) > 0}
+                exog_train = {}
+                exog_test = {}
+                for k, v in exog.items():
+                    v_train = v.loc[train_loc_start:train_loc_end]
+                    if len(v_train) > 0:
+                        exog_train[k] = v_train
+                    if externally_fitted or k in exog_train:
+                        v_test = v.loc[test_loc_start:test_loc_end]
+                        if not v_test.empty:
+                            exog_test[k] = v_test
         else:
             exog_train = None
             exog_test = None

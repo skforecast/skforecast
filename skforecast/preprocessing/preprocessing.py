@@ -374,6 +374,56 @@ class TimeSeriesDifferentiator(BaseEstimator, TransformerMixin):
             setattr(self, param, value)
 
 
+# TODO: Create tests for this function.
+# TODO: Argument 
+def series_wide_to_long(
+    data: pd.DataFrame,
+    return_multiindex: bool = True
+) -> pd.DataFrame:
+    """
+    Convert wide format series to long format with a MultiIndex the first 
+    level contains the series IDs, and the second level contains a pandas 
+    DatetimeIndex with the same frequency for each series.
+
+    Parameters
+    ----------
+    data: pandas DataFrame
+        Wide format series. The index must be a pandas DatetimeIndex with a 
+        defined frequency and each column must represent a different time series.
+    return_multiindex: bool, default True
+        If True, the returned DataFrame will have a MultiIndex with the series IDs
+        as the first level and a pandas DatetimeIndex as the second level. If False,
+        the returned DataFrame will have a regular index.
+
+    Returns
+    -------
+    data: pandas DataFrame
+        Long format series with a MultiIndex. The first level contains the series IDs,
+        and the second level contains a pandas DatetimeIndex with the same frequency
+        for each series.
+
+    """
+
+    if not isinstance(data, pd.DataFrame):
+        raise TypeError("`data` must be a pandas DataFrame.")
+    
+    if not isinstance(data.index, pd.DatetimeIndex):
+        raise TypeError("`data` index must be a pandas DatetimeIndex.")
+    
+    freq = data.index.freqstr
+    data.index.name = "datetime"
+    data = data.reset_index()
+    data = pd.melt(data, id_vars="datetime", var_name="series_id", value_name="value")
+    data = data.groupby("series_id", sort=False).apply(
+        lambda x: x.set_index("datetime").asfreq(freq), include_groups=False
+    )
+
+    if not return_multiindex:
+        data = data.reset_index()
+
+    return data
+
+
 def series_long_to_dict(
     data: pd.DataFrame,
     series_id: str,

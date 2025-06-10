@@ -948,10 +948,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 # since they are not in X_train_autoreg.
                 X_train_exog = exog.iloc[self.window_size:, ]
             else:
-                X_train_exog = pd.DataFrame(
-                                   data    = np.nan,
-                                   columns = ['_dummy_exog_col_to_keep_shape'],
-                                   index   = train_index
+                # NOTE: This is faster than creating a pandas Series without values.
+                X_train_exog = pd.Series(
+                                   data  = np.nan,
+                                   index = train_index,
+                                   name  = '_dummy_exog_col_to_keep_shape'
                                )
 
         y_train = pd.Series(
@@ -1037,22 +1038,25 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         Notes
         -----
-        - If `series` is a pandas DataFrame and `exog` is a pandas Series or 
-        DataFrame, each exog is duplicated for each series. Exog must have the
-        same index as `series` (type, length and frequency).
-        - If `series` is a pandas DataFrame and `exog` is a dict of pandas Series 
-        or DataFrames. Each key in `exog` must be a column in `series` and the 
-        values are the exog for each series. Exog must have the same index as 
-        `series` (type, length and frequency).
-        - If `series` is a dict of pandas Series, `exog` must be a dict of pandas
-        Series or DataFrames. The keys in `series` and `exog` must be the same.
-        All series and exog must have a pandas DatetimeIndex with the same 
-        frequency.
+        - If `series` is a long-format pandas DataFrame with a MultiIndex, the first 
+        level contains the series IDs, and the second level contains a pandas 
+        DatetimeIndex with the same frequency for each series.
+        - If `series` is a dictionary, each key must be the series ID and each 
+        value must be a named pandas Series. All series must have a pandas 
+        DatetimeIndex with the same frequency.
+        - If `exog` is a long-format pandas Series or DataFrame with a MultiIndex, 
+        the first level contains the series IDs to which it belongs, and the 
+        second level contains a pandas DatetimeIndex. One column must be created
+        for each exogenous variable.
+        - If `exog` is a dictionary, each key must be the series ID to which it 
+        belongs, and each value must be a named pandas Series, DataFrame with
+        a pandas DatetimeIndex or None. While it is not necessary for all values 
+        to include all the exogenous variables, the dtypes must be consistent 
+        for the same exogenous variable across all series.
         
         """
 
         series_dict, series_indexes = check_preprocess_series(series=series)
-        input_series_is_dict = isinstance(series, dict)
         series_names_in_ = list(series_dict.keys())
 
         if self.is_fitted and not set(series_names_in_).issubset(set(self.series_names_in_)):
@@ -1102,12 +1106,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                    )
 
         series_dict, exog_dict = align_series_and_exog_multiseries(
-                                     series_dict          = series_dict,
-                                     input_series_is_dict = input_series_is_dict,
-                                     exog_dict            = exog_dict
+                                     series_dict = series_dict,
+                                     exog_dict   = exog_dict
                                  )
-        
-        # NOTE: Continue from here!!!!!!!!!!!!!!!
 
         if not self.is_fitted and self.transformer_series_['_unknown_level'] is not None:
             self.transformer_series_['_unknown_level'].fit(
@@ -1140,8 +1141,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             X_train_exog_buffer.append(X_train_exog)
             y_train_buffer.append(y_train)
 
-        X_train = pd.concat(X_train_autoreg_buffer, axis=0)
-        y_train = pd.concat(y_train_buffer, axis=0)
+        X_train = pd.concat(X_train_autoreg_buffer, axis=0, copy=False)
+        y_train = pd.concat(y_train_buffer, axis=0, copy=False)
 
         if self.is_fitted:
             encoded_values = self.encoder.transform(X_train[['_level_skforecast']])
@@ -1151,11 +1152,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 self.encoding_mapping_[code] = i
 
         if self.encoding == 'onehot': 
+            encoded_values.columns = encoded_values.columns.str.replace('_level_skforecast_', '')
             X_train = pd.concat([
-                          X_train.drop(columns='_level_skforecast'),
-                          encoded_values
-                      ], axis=1)
-            X_train.columns = X_train.columns.str.replace('_level_skforecast_', '')
+                X_train.drop(columns='_level_skforecast'), encoded_values
+            ], axis=1, copy=False)
         else:
             X_train['_level_skforecast'] = encoded_values
 
@@ -1170,7 +1170,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         exog_dtypes_out_ = None
         if exog is not None:
 
-            X_train_exog = pd.concat(X_train_exog_buffer, axis=0)
+            X_train_exog = pd.concat(X_train_exog_buffer, axis=0, copy=False)
             if '_dummy_exog_col_to_keep_shape' in X_train_exog.columns:
                 X_train_exog = (
                     X_train_exog.drop(columns=['_dummy_exog_col_to_keep_shape'])
@@ -1196,7 +1196,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             check_exog_dtypes(X_train_exog, call_check_exog=False)
             exog_dtypes_out_ = get_exog_dtypes(exog=X_train_exog)
             X_train_exog_names_out_ = X_train_exog.columns.to_list()
-            X_train = pd.concat([X_train, X_train_exog], axis=1)
+            X_train = pd.concat([X_train, X_train_exog], axis=1, copy=False)
 
         if y_train.isna().to_numpy().any():
             mask = y_train.notna().to_numpy()
@@ -1322,17 +1322,21 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         Notes
         -----
-        - If `series` is a pandas DataFrame and `exog` is a pandas Series or 
-        DataFrame, each exog is duplicated for each series. Exog must have the
-        same index as `series` (type, length and frequency).
-        - If `series` is a pandas DataFrame and `exog` is a dict of pandas Series 
-        or DataFrames. Each key in `exog` must be a column in `series` and the 
-        values are the exog for each series. Exog must have the same index as 
-        `series` (type, length and frequency).
-        - If `series` is a dict of pandas Series, `exog` must be a dict of pandas
-        Series or DataFrames. The keys in `series` and `exog` must be the same.
-        All series and exog must have a pandas DatetimeIndex with the same 
-        frequency.
+        - If `series` is a long-format pandas DataFrame with a MultiIndex, the first 
+        level contains the series IDs, and the second level contains a pandas 
+        DatetimeIndex with the same frequency for each series.
+        - If `series` is a dictionary, each key must be the series ID and each 
+        value must be a named pandas Series. All series must have a pandas 
+        DatetimeIndex with the same frequency.
+        - If `exog` is a long-format pandas Series or DataFrame with a MultiIndex, 
+        the first level contains the series IDs to which it belongs, and the 
+        second level contains a pandas DatetimeIndex. One column must be created
+        for each exogenous variable.
+        - If `exog` is a dictionary, each key must be the series ID to which it 
+        belongs, and each value must be a named pandas Series, DataFrame with
+        a pandas DatetimeIndex or None. While it is not necessary for all values 
+        to include all the exogenous variables, the dtypes must be consistent 
+        for the same exogenous variable across all series.
         
         """
 
@@ -1392,18 +1396,26 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         """
 
         if isinstance(series, dict):
-            # TODO: Optimizar esto para un solo ciclo for
-            freqs = [s.index.freq for s in series.values() if s.index.freq is not None]
-            if not freqs:
-                raise ValueError("At least one series must have a frequency.")
-            if not all(f == freqs[0] for f in freqs):
+            min_index = []
+            max_index = []
+            indexes_freq = set()
+            for v in series.values():
+                if v.empty:
+                    continue
+                idx = v.index
+                min_index.append(idx[0])
+                max_index.append(idx[-1])
+                indexes_freq.add(idx.freqstr)
+
+            if not len(indexes_freq) == 1 or indexes_freq == {None}:
                 raise ValueError(
-                    "All series with frequency must have the same frequency."
+                    f"If `series` is a dictionary, all series must have a Pandas "
+                    f"DatetimeIndex as index with the same frequency. "
+                    f"Found frequencies: {sorted(indexes_freq)}"
                 )
-            
-            min_index = min([v.index[0] for v in series.values() if not v.empty])
-            max_index = max([v.index[-1] for v in series.values() if not v.empty])
-            span_index = pd.date_range(start=min_index, end=max_index, freq=freqs[0])
+            span_index = pd.date_range(
+                start=min(min_index), end=max(max_index), freq=indexes_freq.pop()
+            )
         else:
             span_index = series.index
 
@@ -1427,20 +1439,18 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         start_test_idx = initial_train_size - self.window_size
         if isinstance(series, pd.DataFrame):
-            series_test = series.iloc[start_test_idx:, :]
-            series_test = series_test.loc[:, levels_last_window]
-            series_test = series_test.dropna(axis=1, how='all')
-        elif isinstance(series, dict):
+            series_test = series.iloc[
+                start_test_idx :, exog.columns.get_indexer(levels_last_window)
+            ].dropna(axis=1, how='all')
+        else:
             start_test_date = span_index[start_test_idx]
             series_test = {
                 k: v.loc[v.index >= start_test_date]
                 for k, v in series.items()
-                if k in levels_last_window and not v.empty and not v.isna().all()
+                if k in levels_last_window and not v.empty and not v.isna().to_numpy().all()
             }
        
-        _is_fitted = self.is_fitted
-        _series_names_in_ = self.series_names_in_
-        _exog_names_in_ = self.exog_names_in_
+        forecaster_state = (self.is_fitted, self.series_names_in_, self.exog_names_in_)
 
         self.is_fitted = False
         X_train, y_train, _, series_names_in_, _, exog_names_in_, *_ = (
@@ -1461,9 +1471,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                  exog              = exog_test,
                                  store_last_window = False
                              )
-        self.is_fitted = _is_fitted
-        self.series_names_in_ = _series_names_in_
-        self.exog_names_in_ = _exog_names_in_
+        
+        self.is_fitted, self.series_names_in_, self.exog_names_in_ = forecaster_state
 
         if self.encoding in ["ordinal", "ordinal_category"]:
             X_train_encoding = self.encoder.inverse_transform(
@@ -1473,11 +1482,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 X_test[["_level_skforecast"]]
             ).ravel()
         elif self.encoding == 'onehot':
+            encoding_keys = self.encoding_mapping_.keys()
             X_train_encoding = self.encoder.inverse_transform(
-                X_train.loc[:, self.encoding_mapping_.keys()]
+                X_train.loc[:, encoding_keys]
             ).ravel()
             X_test_encoding = self.encoder.inverse_transform(
-                X_test.loc[:, self.encoding_mapping_.keys()]
+                X_test.loc[:, encoding_keys]
             ).ravel()
         else:
             X_train_encoding = self.encoder.inverse_transform(
@@ -1588,8 +1598,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         if self.weight_func is not None:
             if isinstance(self.weight_func, Callable):
-                self.weight_func_ = {col: copy(self.weight_func)
-                                     for col in series_names_in_}
+                self.weight_func_ = {
+                    col: copy(self.weight_func) for col in series_names_in_
+                }
             else:
                 # Series not present in weight_func have a weight of 1 in all their samples
                 series_not_in_weight_func = (
@@ -1696,17 +1707,21 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         Notes
         -----
-        - If `series` is a pandas DataFrame and `exog` is a pandas Series or 
-        DataFrame, each exog is duplicated for each series. Exog must have the
-        same index as `series` (type, length and frequency).
-        - If `series` is a pandas DataFrame and `exog` is a dict of pandas Series 
-        or DataFrames. Each key in `exog` must be a column in `series` and the 
-        values are the exog for each series. Exog must have the same index as 
-        `series` (type, length and frequency).
-        - If `series` is a dict of pandas Series, `exog`must be a dict of pandas
-        Series or DataFrames. The keys in `series` and `exog` must be the same.
-        All series and exog must have a pandas DatetimeIndex with the same 
-        frequency.
+        - If `series` is a long-format pandas DataFrame with a MultiIndex, the first 
+        level contains the series IDs, and the second level contains a pandas 
+        DatetimeIndex with the same frequency for each series.
+        - If `series` is a dictionary, each key must be the series ID and each 
+        value must be a named pandas Series. All series must have a pandas 
+        DatetimeIndex with the same frequency.
+        - If `exog` is a long-format pandas Series or DataFrame with a MultiIndex, 
+        the first level contains the series IDs to which it belongs, and the 
+        second level contains a pandas DatetimeIndex. One column must be created
+        for each exogenous variable.
+        - If `exog` is a dictionary, each key must be the series ID to which it 
+        belongs, and each value must be a named pandas Series, DataFrame with
+        a pandas DatetimeIndex or None. While it is not necessary for all values 
+        to include all the exogenous variables, the dtypes must be consistent 
+        for the same exogenous variable across all series.
         
         """
 

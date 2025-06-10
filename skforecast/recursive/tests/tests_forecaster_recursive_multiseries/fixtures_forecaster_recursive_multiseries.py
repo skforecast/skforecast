@@ -2,6 +2,7 @@
 # ==============================================================================
 import numpy as np
 import pandas as pd
+from skforecast.preprocessing import series_wide_to_long
 
 # Fixtures
 # np.random.seed(123)
@@ -35,12 +36,14 @@ series = pd.DataFrame(
                    )
              }
          )
+series.index = pd.date_range(start='2000-01-01', periods=len(series), freq='D')
 
 series_2 = series.copy()
 series_2.columns = ['l1', 'l2']
-series_2.index = pd.date_range(start='2000-01-01', periods=len(series_2), freq='D')
 
 series_as_dict = series_2.copy().to_dict(orient='series')
+series = series_wide_to_long(series)
+series_2 = series_wide_to_long(series_2)
 
 
 exog = pd.DataFrame(
@@ -56,8 +59,9 @@ exog = pd.DataFrame(
                            0.09332671, 0.29686078, 0.92758424, 0.56900373, 0.457412  ,
                            0.75352599, 0.74186215, 0.04857903, 0.7086974 , 0.83924335])
                       ),
-            'exog_2': ['a']*25 + ['b']*25}
+            'exog_2': ['a'] * 25 + ['b'] * 25}
        )
+exog.index = pd.date_range(start='2000-01-01', periods=len(exog), freq='D')
 
 exog_as_dict = {
     'l1': exog.copy(),
@@ -73,6 +77,7 @@ exog_as_dict_datetime['l2'].index = pd.date_range(start='2000-01-01', periods=le
 
 exog_predict = exog.copy()
 exog_predict.index = pd.RangeIndex(start=50, stop=100)
+exog_predict.index = pd.date_range(start='2000-02-20', periods=len(exog_predict), freq='D')
 
 
 def expected_df_to_long_format(
