@@ -781,6 +781,7 @@ def _backtesting_forecaster_multiseries(
     else:
         n_jobs = n_jobs if n_jobs > 0 else cpu_count()
 
+    # TODO: Add a check when levels is not present in series.keys()
     levels = _initialize_levels_model_selection_multiseries(
                  forecaster = forecaster,
                  series     = series,
@@ -1223,6 +1224,8 @@ def backtesting_forecaster_multiseries(
             f"for all other types of forecasters use the functions available in "
             f"the `model_selection` module. Got {forecaster_name}"
         )
+    
+    # TODO: Include a function to transform MultiIndex to dict if MultiSeries (series, exog)
     
     check_backtesting_input(
         forecaster              = forecaster,

@@ -255,7 +255,8 @@ class BaseFold():
 
     def _extract_index(
         self,
-        X: pd.Series | pd.DataFrame | pd.Index | dict[str, pd.Series | pd.DataFrame]
+        X: pd.Series | pd.DataFrame | pd.Index | dict[str, pd.Series | pd.DataFrame],
+        check_freq: bool = True
     ) -> pd.Index:
         """
         Extracts and returns the index from the input data X.
@@ -276,25 +277,46 @@ class BaseFold():
             idx = X.index
         elif isinstance(X, dict):
             indexes_freq = set()
+            not_valid_index = []
             min_index = []
             max_index = []
-            for v in X.values():
-                if v.empty:
+            for k, v in X.items():
+                if v is None:
                     continue
+
                 idx = v.index
-                indexes_freq.add(idx.freqstr)
+                if isinstance(v.index, pd.DatetimeIndex):
+                    indexes_freq.add(v.index.freqstr)
+                elif isinstance(v.index, pd.RangeIndex):
+                    indexes_freq.add(v.index.step)
+                else:
+                    not_valid_index.append(k)
+
                 min_index.append(idx[0])
                 max_index.append(idx[-1])
+
+            if not_valid_index:
+                raise TypeError(
+                    f"If `series` is a dictionary, all series must have a Pandas "
+                    f"RangeIndex or DatetimeIndex with the same step/frequency. "
+                    f"Review series: {not_valid_index}"
+                )
 
             if not len(indexes_freq) == 1 or indexes_freq == {None}:
                 raise ValueError(
                     f"If `series` is a dictionary, all series must have a Pandas "
-                    f"DatetimeIndex as index with the same frequency. "
+                    f"RangeIndex or DatetimeIndex with the same step/frequency. "
                     f"Found frequencies: {sorted(indexes_freq)}"
                 )
-            idx = pd.date_range(
-                start=min(min_index), end=max(max_index), freq=indexes_freq.pop()
-            )
+            
+            if isinstance(v.index, pd.DatetimeIndex):
+                idx = pd.date_range(
+                    start=min(min_index), end=max(max_index), freq=indexes_freq.pop()
+                )
+            else:
+                idx = pd.RangeIndex(
+                    start=min(min_index), stop=max(max_index) + 1, step= indexes_freq.pop()
+                )
         else:
             idx = X
             
@@ -910,7 +932,8 @@ class TimeSeriesFold(BaseFold):
         else:
             if self.window_size is None:
                 warnings.warn(
-                    "Last window cannot be calculated because `window_size` is None."
+                    "Last window cannot be calculated because `window_size` is None.",
+                    IgnoredArgumentWarning
                 )
             externally_fitted = False
 

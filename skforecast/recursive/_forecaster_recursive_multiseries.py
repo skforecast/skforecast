@@ -24,6 +24,7 @@ from ..base import ForecasterBase
 from ..exceptions import (
     DataTransformationWarning,
     IgnoredArgumentWarning,
+    MissingExogWarning,
     MissingValuesWarning,
     ResidualsUsageWarning,
     UnknownLevelWarning
@@ -1072,9 +1073,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         X_train_exog_names_out_ = None
         if exog is not None:
             exog_dict, exog_names_in_ = check_preprocess_exog_multiseries(
-                                            series_names_in_ = series_names_in_,
-                                            exog             = exog,
-                                            exog_dict        = exog_dict
+                                            series_names_in_  = series_names_in_,
+                                            series_index_type = type(series_indexes[series_names_in_[0]]),
+                                            exog              = exog,
+                                            exog_dict         = exog_dict
                                         )
 
             if self.is_fitted:
@@ -1171,6 +1173,16 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         if exog is not None:
 
             X_train_exog = pd.concat(X_train_exog_buffer, axis=0, copy=False)
+
+            if isinstance(X_train_exog, pd.Series):
+                warnings.warn(
+                    "No exogenous variables were found in `exog` that match the "
+                    "IDs provided in `series`. No exogenous variables are included "
+                    "in the training matrices. Review the series ID in `exog`.",
+                    MissingExogWarning
+                )
+                X_train_exog = X_train_exog.to_frame()
+            
             if '_dummy_exog_col_to_keep_shape' in X_train_exog.columns:
                 X_train_exog = (
                     X_train_exog.drop(columns=['_dummy_exog_col_to_keep_shape'])
@@ -1395,6 +1407,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         
         """
 
+        # TODO: Review duplicate checks with check_one_step_ahead_input
         if isinstance(series, dict):
             min_index = []
             max_index = []

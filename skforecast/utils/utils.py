@@ -2445,7 +2445,7 @@ def set_cpu_gpu_device(
     return original_device
 
 
-# TODO: Review docstring to include long format and detele short format
+# TODO: Review docstring to include long format and delete short format
 def check_preprocess_series(
     series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
 ) -> tuple[dict[str, pd.Series], dict[str, pd.Index]]:
@@ -2503,8 +2503,9 @@ def check_preprocess_series(
                 IgnoredArgumentWarning
             )
 
+        series.index = series.index.set_names([series.index.names[0], None])
         series_dict = {
-            series_id: series.loc[series_id][first_col].rename(series_id) 
+            series_id: series.loc[series_id][first_col].rename(series_id)
             for series_id in series.index.levels[0]
         }
 
@@ -2542,11 +2543,6 @@ def check_preprocess_series(
 
         series_dict[k].name = k
 
-        # if not isinstance(v.index, pd.DatetimeIndex):
-        #     not_valid_index.append(k)
-        # else:
-        #     indexes_freq.add(v.index.freqstr)
-
         if isinstance(v.index, pd.DatetimeIndex):
             indexes_freq.add(v.index.freqstr)
         elif isinstance(v.index, pd.RangeIndex):
@@ -2562,14 +2558,14 @@ def check_preprocess_series(
     if not_valid_index:
         raise TypeError(
             f"If `series` is a dictionary, all series must have a Pandas "
-            f"DatetimeIndex as index with the same frequency. "
+            f"RangeIndex or DatetimeIndex with the same step/frequency. "
             f"Review series: {not_valid_index}"
         )
 
     if not len(indexes_freq) == 1 or indexes_freq == {None}:
         raise ValueError(
             f"If `series` is a dictionary, all series must have a Pandas "
-            f"DatetimeIndex as index with the same frequency. "
+            f"RangeIndex or DatetimeIndex with the same step/frequency. "
             f"Found frequencies: {sorted(indexes_freq)}"
         )
 
@@ -2578,6 +2574,7 @@ def check_preprocess_series(
 # TODO: Review docstring and delete input_series_is_dict and series_indexes arguments.
 def check_preprocess_exog_multiseries(
     series_names_in_: list[str],
+    series_index_type: type,
     exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame | None],
     exog_dict: dict[str, pd.Series | pd.DataFrame | None],
 ) -> tuple[dict[str, pd.DataFrame | None], list[str]]:
@@ -2596,6 +2593,8 @@ def check_preprocess_exog_multiseries(
     ----------
     series_names_in_ : list
         Names of the series (levels) used during training.
+    series_index_type : type
+        Index type of the series used during training.
     exog : pandas Series, pandas DataFrame, dict
         Exogenous variable/s used during training.
     exog_dict : dict
@@ -2633,9 +2632,10 @@ def check_preprocess_exog_multiseries(
                 }
             )
         else:
-            if not isinstance(exog.index, pd.DatetimeIndex):
+            if not isinstance(exog.index, series_index_type):
                 raise TypeError(
-                    f"`exog` must have a Pandas DatetimeIndex. Found {type(exog.index)}."
+                    f"`exog` must have the same index type as `series`, pandas "
+                    f"RangeIndex or pandas DatetimeIndex. Found {type(exog.index)}."
                 )
             exog_dict = {series_id: exog for series_id in series_names_in_}
 
@@ -2680,16 +2680,14 @@ def check_preprocess_exog_multiseries(
     not_valid_index = [
         k
         for k, v in exog_dict.items()
-        if v is not None and not isinstance(v.index, (pd.DatetimeIndex, pd.RangeIndex))
+        if v is not None and not isinstance(v.index, series_index_type)
     ]
     if not_valid_index:
         raise TypeError(
-            f"All exog must have a Pandas DatetimeIndex. Check exog for "
-            f"series: {not_valid_index}"
+            f"All exog must have the same index type as `series`, "
+            f"pandas RangeIndex or pandas DatetimeIndex. "
+            f"Review exog: {not_valid_index}."
         )
-    
-    # TODO: check that all exog have the same index type.
-    # TODO: Check exog index is the same as series index.
     
     if isinstance(exog, dict):
         # NOTE: Check that all exog have the same dtypes for common columns

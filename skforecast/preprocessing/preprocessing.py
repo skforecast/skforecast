@@ -374,11 +374,9 @@ class TimeSeriesDifferentiator(BaseEstimator, TransformerMixin):
             setattr(self, param, value)
 
 
-# TODO: Create tests for this function.
-# TODO: Argument 
 def series_wide_to_long(
     data: pd.DataFrame,
-    return_multiindex: bool = True
+    return_multi_index: bool = True
 ) -> pd.DataFrame:
     """
     Convert wide format series to long format with a MultiIndex the first 
@@ -390,7 +388,7 @@ def series_wide_to_long(
     data: pandas DataFrame
         Wide format series. The index must be a pandas DatetimeIndex with a 
         defined frequency and each column must represent a different time series.
-    return_multiindex: bool, default True
+    return_multi_index: bool, default True
         If True, the returned DataFrame will have a MultiIndex with the series IDs
         as the first level and a pandas DatetimeIndex as the second level. If False,
         the returned DataFrame will have a regular index.
@@ -418,7 +416,7 @@ def series_wide_to_long(
         lambda x: x.set_index("datetime").asfreq(freq), include_groups=False
     )
 
-    if not return_multiindex:
+    if not return_multi_index:
         data = data.reset_index()
 
     return data
@@ -1022,8 +1020,8 @@ class RollingFeatures():
                 if stat not in kwargs_stats:
                     features_names.append(f"roll_{stat}_{window_size}")
                 else:
-                    kwargs_sufix = "_".join([f"{k}_{v}" for k, v in kwargs_stats[stat].items()])
-                    features_names.append(f"roll_{stat}_{window_size}_{kwargs_sufix}")
+                    kwargs_suffix = "_".join([f"{k}_{v}" for k, v in kwargs_stats[stat].items()])
+                    features_names.append(f"roll_{stat}_{window_size}_{kwargs_suffix}")
         self.features_names = features_names
 
         self.fillna = fillna

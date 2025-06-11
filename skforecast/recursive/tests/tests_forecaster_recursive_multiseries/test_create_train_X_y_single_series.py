@@ -75,10 +75,10 @@ def test_create_train_X_y_single_series_output_when_series_and_exog_is_None(igno
             columns = ['lag_1', 'lag_2', 'lag_3', '_level_skforecast']
         ).astype({'lag_1': float, 'lag_2': float, 'lag_3': float}),
         None,
-        pd.DataFrame(
-            data    = np.nan,
-            columns = ['_dummy_exog_col_to_keep_shape'],
-            index   = pd.RangeIndex(start=3, stop=7, step=1)
+        pd.Series(
+            data  = np.nan,
+            name  = '_dummy_exog_col_to_keep_shape',
+            index = pd.RangeIndex(start=3, stop=7, step=1)
         ),
         pd.Series(
             data  = np.array([0., 0.5, 1., 1.5]),
@@ -93,7 +93,7 @@ def test_create_train_X_y_single_series_output_when_series_and_exog_is_None(igno
     if ignore_exog:
         assert isinstance(results[2], type(None))
     else:
-        pd.testing.assert_frame_equal(results[2], expected[2])
+        pd.testing.assert_series_equal(results[2], expected[2])
     pd.testing.assert_series_equal(results[3], expected[3])
 
 

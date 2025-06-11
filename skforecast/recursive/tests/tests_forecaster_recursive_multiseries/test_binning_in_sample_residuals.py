@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 from skforecast.recursive import ForecasterRecursiveMultiSeries
+from skforecast.preprocessing import series_wide_to_long
 
 
 def test_binning_in_sample_residuals_output():
@@ -23,22 +24,9 @@ def test_binning_in_sample_residuals_output():
             "l3": pd.Series(np.arange(10)),
         }
     )
-    series.index = pd.DatetimeIndex(
-        [
-            "2022-01-04",
-            "2022-01-05",
-            "2022-01-06",
-            "2022-01-07",
-            "2022-01-08",
-            "2022-01-09",
-            "2022-01-10",
-            "2022-01-11",
-            "2022-01-12",
-            "2022-01-13",
-        ],
-        dtype="datetime64[ns]",
-        freq="D",
-    )
+    series.index = pd.date_range(start="2022-01-04", periods=10, freq="D")
+    series = series_wide_to_long(series)
+
     forecaster.fit(series=series)
     forecaster.in_sample_residuals_ = {}
     forecaster.in_sample_residuals_by_bin_ = {}
@@ -157,22 +145,9 @@ def test_binning_in_sample_residuals_store_in_sample_residuals_False():
             "l3": pd.Series(np.arange(10)),
         }
     )
-    series.index = pd.DatetimeIndex(
-        [
-            "2022-01-04",
-            "2022-01-05",
-            "2022-01-06",
-            "2022-01-07",
-            "2022-01-08",
-            "2022-01-09",
-            "2022-01-10",
-            "2022-01-11",
-            "2022-01-12",
-            "2022-01-13",
-        ],
-        dtype="datetime64[ns]",
-        freq="D",
-    )
+    series.index = pd.date_range(start="2022-01-04", periods=10, freq="D")
+    series = series_wide_to_long(series)
+
     forecaster.fit(series=series, store_in_sample_residuals=False)
     forecaster.in_sample_residuals_ = None
     forecaster.in_sample_residuals_by_bin_ = None
@@ -234,22 +209,9 @@ def test_binning_in_sample_residuals_probabilistic_mode_no_binned():
             "l3": pd.Series(np.arange(10)),
         }
     )
-    series.index = pd.DatetimeIndex(
-        [
-            "2022-01-04",
-            "2022-01-05",
-            "2022-01-06",
-            "2022-01-07",
-            "2022-01-08",
-            "2022-01-09",
-            "2022-01-10",
-            "2022-01-11",
-            "2022-01-12",
-            "2022-01-13",
-        ],
-        dtype="datetime64[ns]",
-        freq="D",
-    )
+    series.index = pd.date_range(start="2022-01-04", periods=10, freq="D")
+    series = series_wide_to_long(series)
+
     forecaster.fit(series=series)
     forecaster.in_sample_residuals_ = {}
     forecaster.in_sample_residuals_by_bin_ = {}
@@ -322,6 +284,8 @@ def test_binning_in_sample_residuals_stores_maximum_10000_residuals_per_level():
         },
         index=pd.date_range(start="1990-01-01", periods=15_000, freq="h"),
     )
+    series = series_wide_to_long(series)
+    
     forecaster.fit(series=series)
     forecaster.in_sample_residuals_ = {}
     forecaster.in_sample_residuals_by_bin_ = {}
