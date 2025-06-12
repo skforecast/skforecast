@@ -253,7 +253,6 @@ def check_backtesting_input(
                     f"pandas Series or a pandas DataFrame with a single column. "
                     f"Review series: {not_valid_series}"
                 )
-            
 
             not_valid_index = []
             indexes_freq = set()
@@ -597,6 +596,10 @@ def check_one_step_ahead_input(
         
         data_name = 'series'
         if isinstance(series, dict):
+
+            # TODO: Review checks for long-format and redundant. This checks can be moved
+            # before check_backtesting_input and trasform multiseries to dict
+            # ------------------------------------------------------------------
             not_valid_series = [
                 k 
                 for k, v in series.items()
@@ -608,25 +611,32 @@ def check_one_step_ahead_input(
                     f"pandas Series or a pandas DataFrame with a single column. "
                     f"Review series: {not_valid_series}"
                 )
-            not_valid_index = [
-                k 
-                for k, v in series.items()
-                if not isinstance(v.index, pd.DatetimeIndex)
-            ]
+
+            not_valid_index = []
+            indexes_freq = set()
+            for k, v in series.items():
+                if isinstance(v.index, pd.DatetimeIndex):
+                    indexes_freq.add(v.index.freqstr)
+                elif isinstance(v.index, pd.RangeIndex):
+                    indexes_freq.add(v.index.step)
+                else:
+                    not_valid_index.append(k)
+
             if not_valid_index:
-                raise ValueError(
+                raise TypeError(
                     f"If `series` is a dictionary, all series must have a Pandas "
-                    f"DatetimeIndex as index with the same frequency. "
+                    f"RangeIndex or DatetimeIndex with the same step/frequency. "
                     f"Review series: {not_valid_index}"
                 )
 
-            indexes_freq = set([f'{v.index.freqstr}' for v in series.values()])
             if not len(indexes_freq) == 1 or indexes_freq == {None}:
                 raise ValueError(
                     f"If `series` is a dictionary, all series must have a Pandas "
-                    f"DatetimeIndex as index with the same frequency. "
+                    f"RangeIndex or DatetimeIndex with the same step/frequency. "
                     f"Found frequencies: {sorted(indexes_freq)}"
                 )
+            # ------------------------------------------------------------------
+
             data_length = max([len(series[serie]) for serie in series])
         else:
             data_length = len(series)
@@ -639,6 +649,10 @@ def check_one_step_ahead_input(
                     f"Series/DataFrames or None. Got {type(exog)}."
                 )
             if isinstance(exog, dict):
+
+                # TODO: Review checks for long-format and redundant. This checks can be moved
+                # before check_backtesting_input and trasform multiseries to dict
+                # ------------------------------------------------------------------
                 not_valid_exog = [
                     k 
                     for k, v in exog.items()
@@ -649,6 +663,7 @@ def check_one_step_ahead_input(
                         f"If `exog` is a dictionary, All exog must be a named pandas "
                         f"Series, a pandas DataFrame or None. Review exog: {not_valid_exog}"
                     )
+                # ------------------------------------------------------------------
         else:
             if not isinstance(exog, (pd.Series, pd.DataFrame)):
                 raise TypeError(

@@ -1371,9 +1371,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
     def _train_test_split_one_step_ahead(
         self,
-        series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
+        series: dict[str, pd.Series],
         initial_train_size: int,
-        exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None
+        exog: dict[str, pd.DataFrame | None] | None = None
     ) -> tuple[pd.DataFrame, pd.Series, pd.DataFrame, pd.Series, pd.Series, pd.Series]:
         """
         Create matrices needed to train and test the forecaster for one-step-ahead
@@ -1381,13 +1381,14 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         Parameters
         ----------
-        series : pandas DataFrame, dict
-            Training time series.
+        series : dict
+            Training time series (already checked and preprocessed as a dict).
         initial_train_size : int
             Initial size of the training set. It is the number of observations used
             to train the forecaster before making the first prediction.
-        exog : pandas Series, pandas DataFrame, dict, default None
-            Exogenous variable/s included as predictor/s.
+        exog : dict, default None
+            Exogenous variable/s included as predictor/s (already checked and 
+            preprocessed as a dict).
         
         Returns
         -------
@@ -1406,31 +1407,23 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         
         """
 
-        # TODO: Review duplicate checks with check_one_step_ahead_input
-        # TODO: Review if we allow dataframe in this method 
-        if isinstance(series, dict):
-            min_index = []
-            max_index = []
-            indexes_freq = set()
-            for v in series.values():
-                if v.empty:
-                    continue
-                idx = v.index
-                min_index.append(idx[0])
-                max_index.append(idx[-1])
-                indexes_freq.add(idx.freqstr)
-
-            if not len(indexes_freq) == 1 or indexes_freq == {None}:
-                raise ValueError(
-                    f"If `series` is a dictionary, all series must have a Pandas "
-                    f"DatetimeIndex as index with the same frequency. "
-                    f"Found frequencies: {sorted(indexes_freq)}"
-                )
+        # NOTE: `series` and `exog` are assumed to be an already checked dict as
+        # they have gone through the `check_one_step_ahead_input` function.
+        min_index = []
+        max_index = []
+        for v in series.values():
+            idx = v.index
+            min_index.append(idx[0])
+            max_index.append(idx[-1])
+        
+        if isinstance(idx, pd.DatetimeIndex):
             span_index = pd.date_range(
-                start=min(min_index), end=max(max_index), freq=indexes_freq.pop()
+                start=min(min_index), end=max(max_index), freq=idx.freqstr
             )
         else:
-            span_index = series.index
+            span_index = pd.RangeIndex(
+                start=min(min_index), stop=max(max_index) + 1, step=idx.step
+            )
 
         fold = [
             [0, initial_train_size],
@@ -1450,18 +1443,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     )
         series_train, _, levels_last_window, exog_train, exog_test, _ = next(data_fold)
 
-        start_test_idx = initial_train_size - self.window_size
-        if isinstance(series, pd.DataFrame):
-            series_test = series.iloc[
-                start_test_idx :, exog.columns.get_indexer(levels_last_window)
-            ].dropna(axis=1, how='all')
-        else:
-            start_test_date = span_index[start_test_idx]
-            series_test = {
-                k: v.loc[v.index >= start_test_date]
-                for k, v in series.items()
-                if k in levels_last_window and not v.empty and not v.isna().to_numpy().all()
-            }
+        start_test_date = span_index[initial_train_size - self.window_size]
+        series_test = {
+            k: v.loc[start_test_date:]
+            for k, v in series.items()
+            if k in levels_last_window and not v.empty and not v.isna().to_numpy().all()
+        }
        
         forecaster_state = (self.is_fitted, self.series_names_in_, self.exog_names_in_)
 
@@ -2021,6 +2008,24 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             else:
                 if input_levels_is_None and isinstance(last_window, pd.DataFrame):
                     levels = last_window.columns.to_list()
+
+        if isinstance(exog, (pd.Series, pd.DataFrame)) and isinstance(exog.index, pd.MultiIndex):
+            exog_dict = {serie: None for serie in levels}
+            exog = exog.copy().to_frame() if isinstance(exog, pd.Series) else exog.copy()
+            if not isinstance(exog.index.levels[1], pd.DatetimeIndex):
+                raise TypeError(
+                    f"When `exog` is a pandas MultiIndex DataFrame, its index "
+                    f"must be pandas DatetimeIndex. If you want to use a pandas "
+                    f"RangeIndex, use a dictionary instead. Found `exog` index "
+                    f"type: {type(exog.index.levels[1])}."
+                )
+            exog_dict.update(
+                {
+                    series_id: exog.loc[series_id] 
+                    for series_id in exog.index.levels[0]
+                    if series_id in levels
+                }
+            )
 
         if check_inputs:
             check_predict_input(

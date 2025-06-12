@@ -780,7 +780,7 @@ def check_predict_input(
     window_size: int,
     last_window: pd.Series | pd.DataFrame | None,
     last_window_exog: pd.Series | pd.DataFrame | None = None,
-    exog: pd.Series | pd.DataFrame | None = None,
+    exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
     exog_type_in_: type | None = None,
     exog_names_in_: list[str] | None = None,
     interval: list[float] | None = None,
@@ -819,7 +819,7 @@ def check_predict_input(
     last_window_exog : pandas Series, pandas DataFrame, default None
         Values of the exogenous variables aligned with `last_window` in 
         ForecasterSarimax predictions.
-    exog : pandas Series, pandas DataFrame, default None
+    exog : pandas Series, pandas DataFrame, dict, default None
         Exogenous variable/s included as predictor/s.
     exog_type_in_ : type, default None
         Type of exogenous variable/s used in training.
@@ -1137,7 +1137,7 @@ def check_predict_input(
                         f"with NaN.\n"
                         f"    `last_window` ends at : {last_window.index[-1]}.\n"
                         f"    {exog_name} starts at : {exog_index[0]}.\n"
-                        f"     Expected index       : {expected_index}.",
+                        f"    Expected index : {expected_index}.",
                         MissingValuesWarning
                     )  
                 else:
@@ -1146,7 +1146,7 @@ def check_predict_input(
                         f"ahead of `last_window`.\n"
                         f"    `last_window` ends at : {last_window.index[-1]}.\n"
                         f"    {exog_name} starts at : {exog_index[0]}.\n"
-                        f"     Expected index : {expected_index}."
+                        f"    Expected index : {expected_index}."
                     )
 
     # Checks ForecasterSarimax
@@ -2622,8 +2622,10 @@ def check_preprocess_exog_multiseries(
         if isinstance(exog.index, pd.MultiIndex):
             if not isinstance(exog.index.levels[1], pd.DatetimeIndex):
                 raise TypeError(
-                    f"The second level of the MultiIndex in `exog` must be a "
-                    f"pandas DatetimeIndex. Found {type(exog.index.levels[1])}."
+                    f"When input data are pandas MultiIndex DataFrame, "
+                    f"`series` and `exog` second level index must be a "
+                    f"pandas DatetimeIndex. Found `exog` index type: "
+                    f"{type(exog.index.levels[1])}."
                 )
             exog_dict.update(
                 {

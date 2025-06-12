@@ -1836,7 +1836,9 @@ def test_create_train_X_y_output_series_DataFrame_and_NaNs_in_X_train_drop_nan_T
         ], 
         names=["series_id", "datetime"]
     )
-    exog = pd.Series(np.tile(exog.to_numpy(), len(series.keys())), index=multi_index, name="exog")
+    exog = pd.Series(
+        np.tile(exog.to_numpy(), len(series.keys())), index=multi_index, name="exog"
+    )
     
     forecaster = ForecasterRecursiveMultiSeries(
         LinearRegression(), lags=5, encoding='onehot',

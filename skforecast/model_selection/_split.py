@@ -309,13 +309,13 @@ class BaseFold():
                     f"Found frequencies: {sorted(indexes_freq)}"
                 )
             
-            if isinstance(v.index, pd.DatetimeIndex):
+            if isinstance(idx, pd.DatetimeIndex):
                 idx = pd.date_range(
                     start=min(min_index), end=max(max_index), freq=indexes_freq.pop()
                 )
             else:
                 idx = pd.RangeIndex(
-                    start=min(min_index), stop=max(max_index) + 1, step= indexes_freq.pop()
+                    start=min(min_index), stop=max(max_index) + 1, step=indexes_freq.pop()
                 )
         else:
             idx = X

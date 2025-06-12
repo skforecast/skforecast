@@ -1,74 +1,37 @@
 # Unit test _train_test_split_one_step_ahead ForecasterRecursiveMultiSeries
 # ==============================================================================
-import re
-import pytest
 import numpy as np
 import pandas as pd
 from ....recursive import ForecasterRecursiveMultiSeries
 from sklearn.linear_model import LinearRegression
 
-
-def test_train_test_split_one_step_ahead_raise_error_when_series_is_dict_without_frequency():
-    """
-    Test _train_test_split_one_step_ahead method raises error when series is dict
-    and has no frequencies.
-    """
-    series = {
-        "series_1": pd.Series(np.arange(15, dtype=float), 
-                              index=pd.date_range("2020-01-01", periods=15)),
-        "series_2": pd.Series(np.arange(50, 65, dtype=float), 
-                              index=pd.date_range("2020-01-01", periods=15))
-    }
-    series['series_1'].index.freq = None
-    series['series_2'].index.freq = None
-
-    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=5)
-
-    err_msg = re.escape("At least one series must have a frequency.")
-    with pytest.raises(ValueError, match = err_msg):
-        _ = forecaster._train_test_split_one_step_ahead(series=series, initial_train_size=10)
-
-
-def test_train_test_split_one_step_ahead_raise_error_when_series_is_dict_with_different_freq():
-    """
-    Test _train_test_split_one_step_ahead method raises error when series is dict
-    and has different frequencies.
-    """
-    series = {
-        "series_1": pd.Series(np.arange(15, dtype=float), 
-                              index=pd.date_range("2020-01-01", periods=15, freq="D")),
-        "series_2": pd.Series(np.arange(50, 65, dtype=float), 
-                              index=pd.date_range("2020-01-01", periods=15, freq="h"))
-    }
-
-    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=5)
-
-    err_msg = re.escape("All series with frequency must have the same frequency.")
-    with pytest.raises(ValueError, match = err_msg):
-        _ = forecaster._train_test_split_one_step_ahead(series=series, initial_train_size=10)
+# Fixtures
+series = pd.DataFrame(
+    {
+        "series_1": np.arange(15),
+        "series_2": np.arange(50, 65),
+    },
+    index=pd.date_range("2020-01-01", periods=15),
+    dtype=float,
+).to_dict(orient='series')
+exog = pd.DataFrame(
+    {
+        "exog_1": np.arange(100, 115, dtype=float),
+        "exog_2": np.arange(1000, 1015, dtype=int),
+    },
+    index=pd.date_range("2020-01-01", periods=15),
+)
+exog = {
+    "series_1": exog,
+    "series_2": exog
+}
 
 
 def test_train_test_split_one_step_ahead_when_y_is_series_and_exog_are_dataframe_encoding_ordinal():
     """
-    Test the output of _train_test_split_one_step_ahead when series and exog are
-    pandas dataframes, and encoding is 'ordinal'.
+    Test the output of _train_test_split_one_step_ahead when series is dict and exog is
+    pandas dataframe, and encoding is 'ordinal'.
     """
-    series = pd.DataFrame(
-        {
-            "series_1": np.arange(15),
-            "series_2": np.arange(50, 65),
-        },
-        index=pd.date_range("2020-01-01", periods=15),
-        dtype=float,
-    ).to_dict(orient='series')
-    exog = pd.DataFrame(
-        {
-            "exog_1": np.arange(100, 115, dtype=float),
-            "exog_2": np.arange(1000, 1015, dtype=int),
-        },
-        index=pd.date_range("2020-01-01", periods=15),
-    )
-
     forecaster = ForecasterRecursiveMultiSeries(
         LinearRegression(), lags=5, encoding='ordinal'
     )
@@ -250,25 +213,9 @@ def test_train_test_split_one_step_ahead_when_y_is_series_and_exog_are_dataframe
 
 def test_train_test_split_one_step_ahead_when_y_is_series_and_exog_are_dataframe_encoding_onehot():
     """
-    Test the output of _train_test_split_one_step_ahead when series and exog are
-    pandas dataframes, and encoding is 'onehot'.
+    Test the output of _train_test_split_one_step_ahead when series is dict, exog is
+    pandas dataframe, and encoding is 'onehot'.
     """
-    series = pd.DataFrame(
-        {
-            "series_1": np.arange(15),
-            "series_2": np.arange(50, 65),
-        },
-        index=pd.date_range("2020-01-01", periods=15),
-        dtype=float,
-    ).to_dict(orient='series')
-    exog = pd.DataFrame(
-        {
-            "exog_1": np.arange(100, 115, dtype=float),
-            "exog_2": np.arange(1000, 1015, dtype=int),
-        },
-        index=pd.date_range("2020-01-01", periods=15),
-    )
-
     forecaster = ForecasterRecursiveMultiSeries(
         LinearRegression(), lags=5, encoding='onehot',
     )
@@ -463,29 +410,11 @@ def test_train_test_split_one_step_ahead_when_y_is_series_and_exog_are_dataframe
 
 def test_train_test_split_one_step_ahead_when_y_is_series_and_exog_are_dataframe_encoding_none():
     """
-    Test the output of _train_test_split_one_step_ahead when series and exog are
-    pandas dataframes, and encoding is None.
+    Test the output of _train_test_split_one_step_ahead when series is dict, exog is
+    pandas dataframe, and encoding is None.
     """
-    series = pd.DataFrame(
-        {
-            "series_1": np.arange(15),
-            "series_2": np.arange(50, 65),
-        },
-        index=pd.date_range("2020-01-01", periods=15),
-        dtype=float,
-    )
-    exog = pd.DataFrame(
-        {
-            "exog_1": np.arange(100, 115, dtype=float),
-            "exog_2": np.arange(1000, 1015, dtype=int),
-        },
-        index=pd.date_range("2020-01-01", periods=15),
-    )
-
     forecaster = ForecasterRecursiveMultiSeries(
-        LinearRegression(),
-        lags=5,
-        encoding=None,
+        LinearRegression(), lags=5, encoding=None,
     )
 
     X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding = (
@@ -672,44 +601,27 @@ def test_train_test_split_one_step_ahead_when_y_is_series_and_exog_are_dataframe
     pd.testing.assert_series_equal(X_test_encoding, expected_X_test_encoding)
 
     
-def test_train_test_split_one_step_ahead_when_y_is_series_and_exog_are_dict():
+def test_train_test_split_one_step_ahead_when_series_and_exog_are_dict_RangeIndex():
     """
     Test the output of _train_test_split_one_step_ahead when series and exog are
-    dictionaries.
+    dictionaries with RangeIndex.
     """
-    series = {
-        "series_1": pd.Series(np.arange(15, dtype=float), 
-                              index=pd.date_range("2020-01-01", periods=15)),
-        "series_2": pd.Series(np.arange(50, 65, dtype=float), 
-                              index=pd.date_range("2020-01-01", periods=15)),
-        "series_3": pd.Series(np.array([]), 
-                              index=pd.date_range("2020-01-01", periods=0))
+    series_2 = {
+        "series_1": pd.Series(np.arange(15, dtype=float)),
+        "series_2": pd.Series(np.arange(50, 65, dtype=float)),
     }
-    exog = {
-        "series_1": pd.DataFrame(
-            {
-                "exog_1": np.arange(100, 115, dtype=float),
-                "exog_2": np.arange(1000, 1015, dtype=int),
-            },
-            index=pd.date_range("2020-01-01", periods=15),
-        ),
-        "series_2": pd.DataFrame(
-            {
-                "exog_1": np.arange(100, 115, dtype=float),
-                "exog_2": np.arange(1000, 1015, dtype=int),
-            },
-            index=pd.date_range("2020-01-01", periods=15),
-        ),
-    }
-
-    forecaster = ForecasterRecursiveMultiSeries(
-        LinearRegression(),
-        lags=5,
+    exog_2 = pd.DataFrame(
+        {
+            "exog_1": np.arange(100, 115, dtype=float),
+            "exog_2": np.arange(1000, 1015, dtype=int),
+        },
     )
+    exog_2 = {"series_1": exog_2, "series_2": exog_2}
 
+    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=5)
     X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding = (
         forecaster._train_test_split_one_step_ahead(
-            series=series, exog=exog, initial_train_size=10
+            series=series_2, exog=exog_2, initial_train_size=10
         )
     )
 
@@ -735,38 +647,12 @@ def test_train_test_split_one_step_ahead_when_y_is_series_and_exog_are_dict():
             ],
             "exog_2": [1005, 1006, 1007, 1008, 1009, 1005, 1006, 1007, 1008, 1009],
         },
-        index=pd.DatetimeIndex(
-            [
-                "2020-01-06",
-                "2020-01-07",
-                "2020-01-08",
-                "2020-01-09",
-                "2020-01-10",
-                "2020-01-06",
-                "2020-01-07",
-                "2020-01-08",
-                "2020-01-09",
-                "2020-01-10",
-            ]
-        ),
+        index=pd.Index([5, 6, 7, 8, 9, 5, 6, 7, 8, 9]),
     ).astype({"_level_skforecast": int, "exog_2": int})
 
     expected_y_train = pd.Series(
         [5.0, 6.0, 7.0, 8.0, 9.0, 55.0, 56.0, 57.0, 58.0, 59.0],
-        index=pd.DatetimeIndex(
-            [
-                "2020-01-06",
-                "2020-01-07",
-                "2020-01-08",
-                "2020-01-09",
-                "2020-01-10",
-                "2020-01-06",
-                "2020-01-07",
-                "2020-01-08",
-                "2020-01-09",
-                "2020-01-10",
-            ]
-        ),
+        pd.Index([5, 6, 7, 8, 9, 5, 6, 7, 8, 9]),
         name="y",
     )
 
@@ -792,38 +678,12 @@ def test_train_test_split_one_step_ahead_when_y_is_series_and_exog_are_dict():
             ],
             "exog_2": [1010, 1011, 1012, 1013, 1014, 1010, 1011, 1012, 1013, 1014],
         },
-        index=pd.DatetimeIndex(
-            [
-                "2020-01-11",
-                "2020-01-12",
-                "2020-01-13",
-                "2020-01-14",
-                "2020-01-15",
-                "2020-01-11",
-                "2020-01-12",
-                "2020-01-13",
-                "2020-01-14",
-                "2020-01-15",
-            ]
-        ),
+        index=pd.Index([10, 11, 12, 13, 14, 10, 11, 12, 13, 14]),
     ).astype({"_level_skforecast": int, "exog_2": int})
 
     expected_y_test = pd.Series(
         [10.0, 11.0, 12.0, 13.0, 14.0, 60.0, 61.0, 62.0, 63.0, 64.0],
-        index=pd.DatetimeIndex(
-            [
-                "2020-01-11",
-                "2020-01-12",
-                "2020-01-13",
-                "2020-01-14",
-                "2020-01-15",
-                "2020-01-11",
-                "2020-01-12",
-                "2020-01-13",
-                "2020-01-14",
-                "2020-01-15",
-            ]
-        ),
+        index=pd.Index([10, 11, 12, 13, 14, 10, 11, 12, 13, 14]),
         name="y",
     )
 
@@ -840,20 +700,7 @@ def test_train_test_split_one_step_ahead_when_y_is_series_and_exog_are_dict():
             "series_2",
             "series_2",
         ],
-        index=pd.DatetimeIndex(
-            [
-                "2020-01-06",
-                "2020-01-07",
-                "2020-01-08",
-                "2020-01-09",
-                "2020-01-10",
-                "2020-01-06",
-                "2020-01-07",
-                "2020-01-08",
-                "2020-01-09",
-                "2020-01-10",
-            ]
-        ),
+        index=pd.Index([5, 6, 7, 8, 9, 5, 6, 7, 8, 9]),
     )
 
     expected_X_test_encoding = pd.Series(
@@ -869,20 +716,7 @@ def test_train_test_split_one_step_ahead_when_y_is_series_and_exog_are_dict():
             "series_2",
             "series_2",
         ],
-        index=pd.DatetimeIndex(
-            [
-                "2020-01-11",
-                "2020-01-12",
-                "2020-01-13",
-                "2020-01-14",
-                "2020-01-15",
-                "2020-01-11",
-                "2020-01-12",
-                "2020-01-13",
-                "2020-01-14",
-                "2020-01-15",
-            ]
-        ),
+        index=pd.Index([10, 11, 12, 13, 14, 10, 11, 12, 13, 14]),
     )
 
     pd.testing.assert_frame_equal(X_train, expected_X_train)
