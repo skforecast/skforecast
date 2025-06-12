@@ -1181,34 +1181,33 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     "in the training matrices. Review the series ID in `exog`.",
                     MissingExogWarning
                 )
-                X_train_exog = X_train_exog.to_frame()
-            
-            if '_dummy_exog_col_to_keep_shape' in X_train_exog.columns:
-                X_train_exog = (
-                    X_train_exog.drop(columns=['_dummy_exog_col_to_keep_shape'])
-                )
+            else:
+                if '_dummy_exog_col_to_keep_shape' in X_train_exog.columns:
+                    X_train_exog = (
+                        X_train_exog.drop(columns=['_dummy_exog_col_to_keep_shape'])
+                    )
 
-            exog_names_in_ = X_train_exog.columns.to_list()
-            exog_dtypes_in_ = get_exog_dtypes(exog=X_train_exog)
+                exog_names_in_ = X_train_exog.columns.to_list()
+                exog_dtypes_in_ = get_exog_dtypes(exog=X_train_exog)
 
-            fit_transformer = False if self.is_fitted else True
-            X_train_exog = transform_dataframe(
-                               df                = X_train_exog,
-                               transformer       = self.transformer_exog,
-                               fit               = fit_transformer,
-                               inverse_transform = False
-                           )
+                fit_transformer = False if self.is_fitted else True
+                X_train_exog = transform_dataframe(
+                                   df                = X_train_exog,
+                                   transformer       = self.transformer_exog,
+                                   fit               = fit_transformer,
+                                   inverse_transform = False
+                               )
 
-            if not (X_train_exog.index == X_train.index).all():
-                raise ValueError(
-                    "Different index for `series` and `exog` after transformation. "
-                    "They must be equal to ensure the correct alignment of values."
-                )
+                if not (X_train_exog.index == X_train.index).all():
+                    raise ValueError(
+                        "Different index for `series` and `exog` after transformation. "
+                        "They must be equal to ensure the correct alignment of values."
+                    )
 
-            check_exog_dtypes(X_train_exog, call_check_exog=False)
-            exog_dtypes_out_ = get_exog_dtypes(exog=X_train_exog)
-            X_train_exog_names_out_ = X_train_exog.columns.to_list()
-            X_train = pd.concat([X_train, X_train_exog], axis=1, copy=False)
+                check_exog_dtypes(X_train_exog, call_check_exog=False)
+                exog_dtypes_out_ = get_exog_dtypes(exog=X_train_exog)
+                X_train_exog_names_out_ = X_train_exog.columns.to_list()
+                X_train = pd.concat([X_train, X_train_exog], axis=1, copy=False)
 
         if y_train.isna().to_numpy().any():
             mask = y_train.notna().to_numpy()
@@ -1408,6 +1407,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         """
 
         # TODO: Review duplicate checks with check_one_step_ahead_input
+        # TODO: Review if we allow dataframe in this method 
         if isinstance(series, dict):
             min_index = []
             max_index = []
@@ -3869,7 +3869,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         return out_sample_residuals, out_sample_residuals_by_bin
     
-
     def get_feature_importances(
         self,
         sort_importance: bool = True
@@ -3922,7 +3921,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                   })
             if sort_importance:
                 feature_importances = feature_importances.sort_values(
-                                          by='importance', ascending=False
-                                      )
+                    by='importance', ascending=False
+                )
 
         return feature_importances

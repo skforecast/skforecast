@@ -60,7 +60,7 @@ def test_train_test_split_one_step_ahead_when_y_is_series_and_exog_are_dataframe
         },
         index=pd.date_range("2020-01-01", periods=15),
         dtype=float,
-    )
+    ).to_dict(orient='series')
     exog = pd.DataFrame(
         {
             "exog_1": np.arange(100, 115, dtype=float),
@@ -70,9 +70,7 @@ def test_train_test_split_one_step_ahead_when_y_is_series_and_exog_are_dataframe
     )
 
     forecaster = ForecasterRecursiveMultiSeries(
-        LinearRegression(),
-        lags=5,
-        encoding='ordinal'
+        LinearRegression(), lags=5, encoding='ordinal'
     )
 
     X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding = (
@@ -262,7 +260,7 @@ def test_train_test_split_one_step_ahead_when_y_is_series_and_exog_are_dataframe
         },
         index=pd.date_range("2020-01-01", periods=15),
         dtype=float,
-    )
+    ).to_dict(orient='series')
     exog = pd.DataFrame(
         {
             "exog_1": np.arange(100, 115, dtype=float),
@@ -272,9 +270,7 @@ def test_train_test_split_one_step_ahead_when_y_is_series_and_exog_are_dataframe
     )
 
     forecaster = ForecasterRecursiveMultiSeries(
-        LinearRegression(),
-        lags=5,
-        encoding='onehot',
+        LinearRegression(), lags=5, encoding='onehot',
     )
 
     X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding = (

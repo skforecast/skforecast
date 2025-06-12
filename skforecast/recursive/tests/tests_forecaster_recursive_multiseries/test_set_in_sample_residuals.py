@@ -39,9 +39,13 @@ def test_set_in_sample_residuals_IndexError_when_series_has_different_index_than
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
     forecaster.fit(series=series, exog=exog['exog_1'])
 
-    series_diff_index = series.copy()
-    series_diff_index.index = diff_index
-    series_diff_index_range = series_diff_index.index[[0, -1]]
+    series_diff_index = {
+        '1': pd.Series(np.arange(50), name='1'),
+        '2': pd.Series(np.arange(50), name='2'),
+    }
+    series_diff_index['1'].index = diff_index
+    series_diff_index['2'].index = diff_index
+    series_diff_index_range = series_diff_index['1'].index[[0, -1]]
 
     exog_diff_index = exog.copy()
     exog_diff_index.index = diff_index

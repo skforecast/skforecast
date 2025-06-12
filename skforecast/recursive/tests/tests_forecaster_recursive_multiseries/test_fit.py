@@ -70,13 +70,13 @@ def test_fit_correct_dict_create_series_weights_weight_func_transformer_series()
     series = pd.DataFrame({'l1': pd.Series(np.arange(10)), 
                            'l2': pd.Series(np.arange(10)), 
                            'l3': pd.Series(np.arange(10))})
-                    
     series.index = pd.DatetimeIndex(
                        ['2022-01-04', '2022-01-05', '2022-01-06', 
                         '2022-01-07', '2022-01-08', '2022-01-09', 
                         '2022-01-10', '2022-01-11', '2022-01-12', 
                         '2022-01-13'], dtype='datetime64[ns]', freq='D' 
                    )
+    series = series.to_dict(orient='series')
 
     def custom_weights(index):  # pragma: no cover
         """
@@ -128,7 +128,10 @@ def test_fit_correct_dict_create_series_weights_weight_func_transformer_series()
         assert forecaster.weight_func_[key].__code__.co_code == expected_weight_func_[key].__code__.co_code
     assert forecaster.series_weights_ == expected_series_weights_
 
-    forecaster.fit(series=series[['l1', 'l2']], store_in_sample_residuals=False)
+    forecaster.fit(
+        series = {k: v for k, v in series.items() if k in ['l1', 'l2']}, 
+        store_in_sample_residuals = False
+    )
 
     expected_transformer_series_ = {
         'l1': forecaster.transformer_series_['l1'], 
@@ -154,16 +157,18 @@ def test_forecaster_DatetimeIndex_index_freq_stored():
     """
     Test serie_with_DatetimeIndex.index.freqstr is stored in forecaster.index_freq_.
     """
-    series = pd.DataFrame({'1': pd.Series(np.arange(5)), 
-                           '2': pd.Series(np.arange(5))})
-
-    series.index = pd.date_range(start='2022-01-01', periods=5, freq='1D')
+    series = {
+        '1': pd.Series(np.arange(5)), 
+        '2': pd.Series(np.arange(5))
+    }
+    series['1'].index = pd.date_range(start='2022-01-01', periods=5, freq='D')
+    series['2'].index = pd.date_range(start='2022-01-01', periods=5, freq='D')
 
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
     forecaster.fit(series=series)
     results = forecaster.index_freq_
 
-    expected = series.index.freqstr
+    expected = series['1'].index.freqstr
 
     assert results == expected
 
@@ -172,14 +177,16 @@ def test_forecaster_index_step_stored():
     """
     Test serie without DatetimeIndex, step is stored in forecaster.index_freq_.
     """
-    series = pd.DataFrame({'1': pd.Series(np.arange(5)), 
-                           '2': pd.Series(np.arange(5))})
+    series = {
+        '1': pd.Series(np.arange(5)), 
+        '2': pd.Series(np.arange(5))
+    }
     
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
     forecaster.fit(series=series)
     results = forecaster.index_freq_
 
-    expected = series.index.step
+    expected = series['1'].index.step
 
     assert results == expected
 
@@ -192,8 +199,10 @@ def test_fit_in_sample_residuals_stored(encoding):
     Test that values of in_sample_residuals_ are stored after fitting
     when `store_in_sample_residuals=True`.
     """
-    series = pd.DataFrame({'1': pd.Series(np.arange(5)), 
-                           '2': pd.Series(np.arange(5))})
+    series = {
+        '1': pd.Series(np.arange(5)), 
+        '2': pd.Series(np.arange(5))
+    }
 
     rolling = RollingFeatures(
         stats=['ratio_min_max', 'median'], window_sizes=4
@@ -204,9 +213,11 @@ def test_fit_in_sample_residuals_stored(encoding):
     forecaster.fit(series=series, store_in_sample_residuals=True)
     results = forecaster.in_sample_residuals_
 
-    expected = {'1': np.array([-4.4408921e-16, 0.0000000e+00]),
-                '2': np.array([0., 0.]),
-                '_unknown_level': np.array([-4.4408921e-16, 0.0000000e+00, 0., 0.])}
+    expected = {
+        '1': np.array([-4.4408921e-16, 0.0000000e+00]),
+        '2': np.array([0., 0.]),
+        '_unknown_level': np.array([-4.4408921e-16, 0.0000000e+00, 0., 0.])
+    }
     
     X_train_window_features_names_out_ = ['roll_ratio_min_max_4', 'roll_median_4']
     X_train_features_names_out_ = (
@@ -234,7 +245,10 @@ def test_fit_in_sample_residuals_by_bin_stored(encoding):
     when `store_in_sample_residuals=True`.
     """
     rng = np.random.default_rng(1894)
-    series = pd.DataFrame({"1": rng.normal(10, 5, 20), "2": rng.normal(10, 5, 20)})
+    series = {
+        "1": pd.Series(rng.normal(10, 5, 20)), 
+        "2": pd.Series(rng.normal(10, 5, 20))
+    }
 
     rolling = RollingFeatures(stats=["ratio_min_max", "median"], window_sizes=4)
     forecaster = ForecasterRecursiveMultiSeries(
@@ -393,7 +407,7 @@ def test_fit_same_residuals_when_residuals_greater_than_10_000(encoding):
     series = pd.DataFrame(
         {"1": rng.normal(10, 1, 15_000), "2": rng.normal(10, 1, 15_000)},
         index=pd.date_range(start="2000-01-01", periods=15_000, freq="h"),
-    )
+    ).to_dict(orient='series')
 
     forecaster = ForecasterRecursiveMultiSeries(
         LinearRegression(), lags=3, encoding=encoding
@@ -426,7 +440,7 @@ def test_fit_same_residuals_by_bin_when_residuals_greater_than_10_000(encoding):
     series = pd.DataFrame(
         {"1": rng.normal(10, 1, 15_000), "2": rng.normal(10, 1, 15_000)},
         index=pd.date_range(start="2000-01-01", periods=15_000, freq="h"),
-    )
+    ).to_dict(orient='series')
 
     forecaster_1 = ForecasterRecursiveMultiSeries(
         LinearRegression(), lags=3, encoding=encoding, binner_kwargs={"n_bins": 3}
@@ -462,7 +476,10 @@ def test_fit_in_sample_residuals_not_stored_probabilistic_mode_binned(encoding):
     when `store_in_sample_residuals=False`. Binner intervals are stored.
     """
     rng = np.random.default_rng(1894)
-    series = pd.DataFrame({"1": rng.normal(10, 5, 20), "2": rng.normal(10, 5, 20)})
+    series = {
+        "1": pd.Series(rng.normal(10, 5, 20)), 
+        "2": pd.Series(rng.normal(10, 5, 20))
+    }
 
     rolling = RollingFeatures(stats=["ratio_min_max", "median"], window_sizes=4)
     forecaster = ForecasterRecursiveMultiSeries(
@@ -533,7 +550,10 @@ def test_fit_in_sample_residuals_not_stored_probabilistic_mode_False(encoding):
     when `store_in_sample_residuals=False` and _probabilistic_mode=False.
     """
     rng = np.random.default_rng(1894)
-    series = pd.DataFrame({"1": rng.normal(10, 5, 20), "2": rng.normal(10, 5, 20)})
+    series = {
+        "1": pd.Series(rng.normal(10, 5, 20)), 
+        "2": pd.Series(rng.normal(10, 5, 20))
+    }
 
     forecaster = ForecasterRecursiveMultiSeries(
         LinearRegression(), lags=3, encoding=encoding
@@ -572,8 +592,10 @@ def test_fit_last_window_stored():
     """
     Test that values of last window are stored after fitting.
     """
-    series = pd.DataFrame({'1': pd.Series(np.arange(5, dtype=float)), 
-                           '2': pd.Series(np.arange(5, dtype=float))})
+    series = {
+        '1': pd.Series(np.arange(5, dtype=float)), 
+        '2': pd.Series(np.arange(5, dtype=float))
+    }
 
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
     forecaster.fit(series=series)
@@ -607,8 +629,10 @@ def test_fit_encoding_mapping(encoding, encoding_mapping_):
     """
     Test the encoding mapping of _create_train_X_y.
     """
-    series = pd.DataFrame({'1': pd.Series(np.arange(7, dtype=float)), 
-                           '2': pd.Series(np.arange(7, dtype=float))})
+    series = {
+        '1': pd.Series(np.arange(7, dtype=float)), 
+        '2': pd.Series(np.arange(7, dtype=float))
+    }
     
     forecaster = ForecasterRecursiveMultiSeries(
                      LinearRegression(),

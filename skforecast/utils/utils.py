@@ -2498,8 +2498,9 @@ def check_preprocess_series(
         first_col = series.columns[0]
         if len(series.columns) != 1:
             warnings.warn(
-                "`series` DataFrame has more than one column. Only the first "
-                "column will be used.",
+                f"`series` DataFrame has multiple columns. Only the values of "
+                f"first column, '{first_col}', will be used as series values. "
+                f"All other columns will be ignored.",
                 IgnoredArgumentWarning
             )
 
@@ -2571,7 +2572,7 @@ def check_preprocess_series(
 
     return series_dict, series_indexes
 
-# TODO: Review docstring and delete input_series_is_dict and series_indexes arguments.
+# TODO: Review docstring.
 def check_preprocess_exog_multiseries(
     series_names_in_: list[str],
     series_index_type: type,
@@ -2631,6 +2632,7 @@ def check_preprocess_exog_multiseries(
                     if series_id in series_names_in_
                 }
             )
+            series_ids_in_exog = exog.index.levels[0]
         else:
             if not isinstance(exog.index, series_index_type):
                 raise TypeError(
@@ -2638,6 +2640,7 @@ def check_preprocess_exog_multiseries(
                     f"RangeIndex or pandas DatetimeIndex. Found {type(exog.index)}."
                 )
             exog_dict = {series_id: exog for series_id in series_names_in_}
+            series_ids_in_exog = series_names_in_
 
     else:
 
@@ -2653,7 +2656,7 @@ def check_preprocess_exog_multiseries(
             )
 
         # NOTE: Only elements already present in exog_dict are updated. Copy is
-        # needed to avoid modifying the original exog_dict.
+        # needed to avoid modifying the original exog.
         exog_dict.update(
             {
                 k: v.copy()
@@ -2661,11 +2664,12 @@ def check_preprocess_exog_multiseries(
                 if k in series_names_in_ and v is not None
             }
         )
+        series_ids_in_exog = exog.keys()
 
-    series_not_in_exog = set(series_names_in_) - set(exog.keys())
+    series_not_in_exog = set(series_names_in_) - set(series_ids_in_exog)
     if series_not_in_exog:
         warnings.warn(
-            f"{series_not_in_exog} not present in `exog`. All values "
+            f"No `exog` for series {series_not_in_exog}. All values "
             f"of the exogenous variables for these series will be NaN.",
             MissingExogWarning
         )
@@ -2684,9 +2688,10 @@ def check_preprocess_exog_multiseries(
     ]
     if not_valid_index:
         raise TypeError(
-            f"All exog must have the same index type as `series`, "
-            f"pandas RangeIndex or pandas DatetimeIndex. "
-            f"Review exog: {not_valid_index}."
+            f"All exog must have the same index type as `series`, which can be "
+            f"either a pandas RangeIndex or a pandas DatetimeIndex. If either "
+            f"`series` or `exog` is a pandas DataFrame with a MultiIndex, then "
+            f"both must be pandas DatetimeIndex. Review exog: {not_valid_index}."
         )
     
     if isinstance(exog, dict):
