@@ -12,8 +12,11 @@ from skforecast.preprocessing import RollingFeatures
 from ....recursive import ForecasterRecursiveMultiSeries
 
 # Fixtures
-from .fixtures_forecaster_recursive_multiseries import series
-from .fixtures_forecaster_recursive_multiseries import exog
+from .fixtures_forecaster_recursive_multiseries import (
+    series_dict_range,
+    exog_wide_range,
+    exog_dict_range
+)
 
 transformer_exog = ColumnTransformer(
                        [('scale', StandardScaler(), ['exog_1']),
@@ -33,16 +36,23 @@ def test_forecaster_series_exog_features_stored():
     forecaster = ForecasterRecursiveMultiSeries(
         LinearRegression(), lags=3, window_features=rolling, transformer_exog=transformer_exog
     )
-    forecaster.fit(series=series, exog=exog)
+    forecaster.fit(series=series_dict_range, exog=exog_wide_range)
 
-    series_names_in_ = ['1', '2']
+    series_names_in_ = ['l1', 'l2']
     exog_in_ = True
-    exog_type_in_ = type(exog)
+    exog_type_in_ = type(exog_wide_range)
     exog_names_in_ = ['exog_1', 'exog_2']
-    exog_dtypes_in_ = {'exog_1': exog['exog_1'].dtype, 'exog_2': exog['exog_2'].dtype}
+    exog_dtypes_in_ = {
+        'exog_1': np.dtype(float), 
+        'exog_2': np.dtype(object)
+    }
     # All floats
-    exog_dtypes_out_ = {'exog_1': exog['exog_1'].dtype, 'exog_2_a': exog['exog_1'].dtype, 'exog_2_b': exog['exog_1'].dtype}
-    X_train_series_names_in_ = ['1', '2']
+    exog_dtypes_out_ = {
+        'exog_1': np.dtype(float), 
+        'exog_2_a': np.dtype(float), 
+        'exog_2_b': np.dtype(float)
+    }
+    X_train_series_names_in_ = ['l1', 'l2']
     X_train_window_features_names_out_ = ['roll_ratio_min_max_4', 'roll_median_4']
     X_train_exog_names_out_ = ['exog_1', 'exog_2_a', 'exog_2_b']
     X_train_features_names_out_ = [
@@ -62,21 +72,57 @@ def test_forecaster_series_exog_features_stored():
     assert forecaster.X_train_features_names_out_ == X_train_features_names_out_
 
 
+def test_forecaster_series_not_matching_exog_features_stored():
+    """
+    Test forecaster stores series and exog features after fitting when exog keys
+    do not match series keys.
+    """
+    exog_dict_no_match = {
+        '1': exog_dict_range['l1'].copy(),
+        '2': exog_dict_range['l2'].copy(),
+    }
+    rolling = RollingFeatures(
+        stats=['ratio_min_max', 'median'], window_sizes=4
+    )
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=3, window_features=rolling, transformer_exog=transformer_exog
+    )
+    forecaster.fit(series=series_dict_range, exog=exog_dict_no_match)
+
+    series_names_in_ = ['l1', 'l2']
+    exog_in_ = False
+    exog_type_in_ = None
+    exog_names_in_ = None
+    exog_dtypes_in_ = None
+    exog_dtypes_out_ = None
+    X_train_series_names_in_ = ['l1', 'l2']
+    X_train_window_features_names_out_ = ['roll_ratio_min_max_4', 'roll_median_4']
+    X_train_exog_names_out_ = None
+    X_train_features_names_out_ = [
+        'lag_1', 'lag_2', 'lag_3', 'roll_ratio_min_max_4', 'roll_median_4', '_level_skforecast'
+    ]
+    
+    assert forecaster.series_names_in_ == series_names_in_
+    assert forecaster.exog_in_ == exog_in_
+    assert forecaster.exog_type_in_ == exog_type_in_
+    assert forecaster.exog_names_in_ == exog_names_in_
+    assert forecaster.exog_dtypes_in_ == exog_dtypes_in_
+    assert forecaster.exog_dtypes_out_ == exog_dtypes_out_
+    assert forecaster.X_train_series_names_in_ == X_train_series_names_in_
+    assert forecaster.X_train_window_features_names_out_ == X_train_window_features_names_out_
+    assert forecaster.X_train_exog_names_out_ == X_train_exog_names_out_
+    assert forecaster.X_train_features_names_out_ == X_train_features_names_out_
+
+
 def test_fit_correct_dict_create_series_weights_weight_func_transformer_series():
     """
     Test fit method creates correctly all the auxiliary dicts, series_weights_,
     weight_func_, transformer_series_.
     """
-    series = pd.DataFrame({'l1': pd.Series(np.arange(10)), 
-                           'l2': pd.Series(np.arange(10)), 
-                           'l3': pd.Series(np.arange(10))})
-    series.index = pd.DatetimeIndex(
-                       ['2022-01-04', '2022-01-05', '2022-01-06', 
-                        '2022-01-07', '2022-01-08', '2022-01-09', 
-                        '2022-01-10', '2022-01-11', '2022-01-12', 
-                        '2022-01-13'], dtype='datetime64[ns]', freq='D' 
-                   )
-    series = series.to_dict(orient='series')
+    series = pd.DataFrame(
+        {'l1': np.arange(10), 'l2': np.arange(10), 'l3': np.arange(10)},
+        index = pd.date_range('2022-01-04', periods=10, freq='D')
+    ).to_dict(orient='series')
 
     def custom_weights(index):  # pragma: no cover
         """

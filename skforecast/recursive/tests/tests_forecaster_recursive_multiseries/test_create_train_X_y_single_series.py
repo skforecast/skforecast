@@ -35,12 +35,12 @@ def test_create_train_X_y_single_series_ValueError_when_len_y_less_than_window_s
     rolling = RollingFeatures(stats=['mean', 'median'], window_sizes=6)
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=2, window_features=rolling)
     err_msg = re.escape(
-        ("Length of 'l1' must be greater than the maximum window size "
-         "needed by the forecaster.\n"
-         "    Length 'l1': 5.\n"
-         "    Max window size: 6.\n"
-         "    Lags window size: 2.\n"
-         "    Window features window size: 6.")
+        "Length of 'l1' must be greater than the maximum window size "
+        "needed by the forecaster.\n"
+        "    Length 'l1': 5.\n"
+        "    Max window size: 6.\n"
+        "    Lags window size: 2.\n"
+        "    Window features window size: 6."
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster._create_train_X_y_single_series(y=y, ignore_exog=True)

@@ -11,14 +11,17 @@ from ....recursive import ForecasterRecursiveMultiSeries
 from ....preprocessing import series_wide_to_long
 
 # Fixtures
-series = pd.DataFrame({'l1': pd.Series(np.arange(10)), 
-                       'l2': pd.Series(np.arange(10))})
-series.index = pd.date_range(start='1-1-2018', periods=len(series), freq='D')
+series = pd.DataFrame(
+    {'l1': np.arange(10), 'l2': np.arange(10)},
+    index = pd.date_range(start='1-1-2018', periods=10, freq='D')
+)
 series = series_wide_to_long(series)
 
 rng = np.random.default_rng(12345)
-series_rnd = pd.DataFrame({"l1": rng.normal(10, 3, 20), "l2": rng.normal(10, 3, 20)})
-series_rnd.index = pd.date_range(start='01-01-2000', periods=len(series), freq='D')
+series_rnd = pd.DataFrame(
+    {"l1": rng.normal(10, 3, 20), "l2": rng.normal(10, 3, 20)},
+    index = pd.date_range(start='01-01-2000', periods=20, freq='D')
+)
 series_rnd = series_wide_to_long(series_rnd)
 
 

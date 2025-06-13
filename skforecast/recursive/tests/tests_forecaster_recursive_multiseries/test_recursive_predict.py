@@ -13,14 +13,16 @@ from skforecast.preprocessing import RollingFeatures
 from ....recursive import ForecasterRecursiveMultiSeries
 
 # Fixtures
-from .fixtures_forecaster_recursive_multiseries import series
-from .fixtures_forecaster_recursive_multiseries import exog
-from .fixtures_forecaster_recursive_multiseries import exog_predict
+from .fixtures_forecaster_recursive_multiseries import (
+    series_dict_range,
+    exog_wide_range,
+    exog_pred_wide_range
+)
 
 series_2 = pd.DataFrame(
-               {'1': pd.Series(np.arange(start=0, stop=50)), 
-                '2': pd.Series(np.arange(start=50, stop=100))}
-           )
+    {'1': pd.Series(np.arange(start=0, stop=50)), 
+     '2': pd.Series(np.arange(start=50, stop=100))}
+).to_dict(orient='series')
 
 
 @pytest.mark.parametrize("encoding",
@@ -135,7 +137,7 @@ def test_recursive_predict_output_when_regressor_is_Ridge_StandardScaler_encodin
 
 @pytest.mark.parametrize("transformer_series", 
                          [StandardScaler(),
-                          {'1': StandardScaler(), '2': StandardScaler(), '_unknown_level': StandardScaler()}], 
+                          {'l1': StandardScaler(), 'l2': StandardScaler(), '_unknown_level': StandardScaler()}], 
                          ids = lambda tr: f'transformer_series type: {type(tr)}')
 def test_recursive_predict_output_when_regressor_is_LinearRegression_with_transform_series_and_transform_exog_different_length_series(transformer_series):
     """
@@ -143,8 +145,11 @@ def test_recursive_predict_output_when_regressor_is_LinearRegression_with_transf
     as transformer_series and transformer_exog as transformer_exog with series 
     of different lengths.
     """
-    new_series = series.copy()
-    new_series.iloc[:10, 1] = np.nan
+    series_dict_range_nan = {
+        'l1': series_dict_range['l1'].copy(),
+        'l2': series_dict_range['l2'].copy()
+    }
+    series_dict_range_nan['l2'].iloc[:10] = np.nan
 
     transformer_exog = ColumnTransformer(
                            [('scale', StandardScaler(), ['exog_1']),
@@ -158,10 +163,10 @@ def test_recursive_predict_output_when_regressor_is_LinearRegression_with_transf
                      transformer_series = transformer_series,
                      transformer_exog   = transformer_exog,
                  )
-    forecaster.fit(series=new_series, exog=exog)
+    forecaster.fit(series=series_dict_range_nan, exog=exog_wide_range)
 
     last_window, exog_values_dict, levels, _ = (
-        forecaster._create_predict_inputs(steps=5, exog=exog_predict)
+        forecaster._create_predict_inputs(steps=5, exog=exog_pred_wide_range)
     )
     predictions = forecaster._recursive_predict(
                       steps            = 5,
@@ -200,10 +205,10 @@ def test_recursive_predict_output_with_window_features():
                      transformer_series = StandardScaler(),
                      transformer_exog   = transformer_exog,
                  )
-    forecaster.fit(series=series, exog=exog)
+    forecaster.fit(series=series_dict_range, exog=exog_wide_range)
 
     last_window, exog_values_dict, levels, _ = (
-        forecaster._create_predict_inputs(steps=5, exog=exog_predict)
+        forecaster._create_predict_inputs(steps=5, exog=exog_pred_wide_range)
     )
     predictions = forecaster._recursive_predict(
                       steps            = 5,
@@ -242,10 +247,10 @@ def test_recursive_predict_output_with_two_window_features():
                      transformer_series = StandardScaler(),
                      transformer_exog   = transformer_exog,
                  )
-    forecaster.fit(series=series, exog=exog)
+    forecaster.fit(series=series_dict_range, exog=exog_wide_range)
 
     last_window, exog_values_dict, levels, _ = (
-        forecaster._create_predict_inputs(steps=5, exog=exog_predict)
+        forecaster._create_predict_inputs(steps=5, exog=exog_pred_wide_range)
     )
     predictions = forecaster._recursive_predict(
                       steps            = 5,

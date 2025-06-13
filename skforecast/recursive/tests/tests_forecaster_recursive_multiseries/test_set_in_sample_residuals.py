@@ -11,7 +11,10 @@ from sklearn.linear_model import LinearRegression
 from skforecast.recursive import ForecasterRecursiveMultiSeries
 
 # Fixtures
-from .fixtures_forecaster_recursive_multiseries import series, exog
+from .fixtures_forecaster_recursive_multiseries import (
+    series_dict_range, 
+    exog_wide_range
+)
 
 
 def test_set_in_sample_residuals_NotFittedError_when_forecaster_not_fitted():
@@ -25,7 +28,7 @@ def test_set_in_sample_residuals_NotFittedError_when_forecaster_not_fitted():
         "arguments before using `set_in_sample_residuals()`."
     )
     with pytest.raises(NotFittedError, match = err_msg):
-        forecaster.set_in_sample_residuals(series=series)
+        forecaster.set_in_sample_residuals(series=series_dict_range)
 
 
 @pytest.mark.parametrize("diff_index", 
@@ -37,28 +40,30 @@ def test_set_in_sample_residuals_IndexError_when_series_has_different_index_than
     Test IndexError is raised when series has different index than training.
     """
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
-    forecaster.fit(series=series, exog=exog['exog_1'])
+    forecaster.fit(series=series_dict_range, exog=exog_wide_range['exog_1'])
 
     series_diff_index = {
-        '1': pd.Series(np.arange(50), name='1'),
-        '2': pd.Series(np.arange(50), name='2'),
+        'l1': pd.Series(np.arange(50), name='l1'),
+        'l2': pd.Series(np.arange(50), name='l2'),
     }
-    series_diff_index['1'].index = diff_index
-    series_diff_index['2'].index = diff_index
-    series_diff_index_range = series_diff_index['1'].index[[0, -1]]
+    series_diff_index['l1'].index = diff_index
+    series_diff_index['l2'].index = diff_index
+    series_diff_index_range = series_diff_index['l1'].index[[0, -1]]
 
-    exog_diff_index = exog.copy()
+    exog_diff_index = exog_wide_range.copy()
     exog_diff_index.index = diff_index
 
     err_msg = re.escape(
-        f"The index range for series '1' does not match the range "
+        f"The index range for series 'l1' does not match the range "
         f"used during training. Please ensure the index is aligned "
         f"with the training data.\n"
-        f"    Expected : {forecaster.training_range_['1']}\n"
+        f"    Expected : {forecaster.training_range_['l1']}\n"
         f"    Received : {series_diff_index_range}"
     )
     with pytest.raises(IndexError, match = err_msg):
-        forecaster.set_in_sample_residuals(series=series_diff_index, exog=exog_diff_index['exog_1'])
+        forecaster.set_in_sample_residuals(
+            series=series_diff_index, exog=exog_diff_index['exog_1']
+        )
 
 
 def test_set_in_sample_residuals_ValueError_when_X_train_features_names_out_not_the_same():
@@ -67,7 +72,7 @@ def test_set_in_sample_residuals_ValueError_when_X_train_features_names_out_not_
     the ones used in training.
     """
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
-    forecaster.fit(series=series, exog=exog['exog_1'])
+    forecaster.fit(series=series_dict_range, exog=exog_wide_range['exog_1'])
 
     err_msg = re.escape(
         "Feature mismatch detected after matrix creation. The features "
@@ -78,7 +83,7 @@ def test_set_in_sample_residuals_ValueError_when_X_train_features_names_out_not_
         "    Current output  : ['lag_1', 'lag_2', 'lag_3', '_level_skforecast']"
     )
     with pytest.raises(ValueError, match = err_msg):
-        forecaster.set_in_sample_residuals(series=series)
+        forecaster.set_in_sample_residuals(series=series_dict_range)
 
 
 @pytest.mark.parametrize("encoding", 
@@ -92,7 +97,9 @@ def test_set_in_sample_residuals_store_same_residuals_as_fit(encoding):
         LinearRegression(), lags=3, encoding=encoding, transformer_series=StandardScaler(), 
         differentiation=1, binner_kwargs={'n_bins': 3}
     )
-    forecaster_1.fit(series=series, exog=exog['exog_1'], store_in_sample_residuals=True)
+    forecaster_1.fit(
+        series=series_dict_range, exog=exog_wide_range['exog_1'], store_in_sample_residuals=True
+    )
     results_residuals_1 = forecaster_1.in_sample_residuals_
     results_residuals_bin_1 = forecaster_1.in_sample_residuals_by_bin_
     results_binner_intervals_1 = forecaster_1.binner_intervals_
@@ -101,14 +108,18 @@ def test_set_in_sample_residuals_store_same_residuals_as_fit(encoding):
         LinearRegression(), lags=3, encoding=encoding, transformer_series=StandardScaler(), 
         differentiation=1, binner_kwargs={'n_bins': 3}
     )
-    forecaster_2.fit(series=series, exog=exog['exog_1'], store_in_sample_residuals=False)
+    forecaster_2.fit(
+        series=series_dict_range, exog=exog_wide_range['exog_1'], store_in_sample_residuals=False
+    )
     scaler_id_after_fit = {
         level: id(scaler) for level, scaler in forecaster_2.transformer_series_.items()
     }
     differentiator_id_after_fit = {
         level: id(differentiator) for level, differentiator in forecaster_2.differentiator_.items()
     }
-    forecaster_2.set_in_sample_residuals(series=series, exog=exog['exog_1'])
+    forecaster_2.set_in_sample_residuals(
+        series=series_dict_range, exog=exog_wide_range['exog_1']
+    )
     scaler_id_after_set_in_sample_residuals = {
         level: id(scaler) for level, scaler in forecaster_2.transformer_series_.items()
     }

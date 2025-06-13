@@ -2,10 +2,8 @@
 # ==============================================================================
 import re
 import pytest
-import joblib
 import numpy as np
 import pandas as pd
-from pathlib import Path
 from sklearn.exceptions import NotFittedError
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
@@ -18,12 +16,14 @@ from skforecast.preprocessing import RollingFeatures, series_wide_to_long
 from ....recursive import ForecasterRecursiveMultiSeries
 
 # Fixtures
-THIS_DIR = Path(__file__).parent
-series_dict = joblib.load(THIS_DIR/'fixture_sample_multi_series.joblib')
-exog_dict = joblib.load(THIS_DIR/'fixture_sample_multi_series_exog.joblib')
-series = pd.DataFrame({'1': pd.Series(np.arange(10)), 
-                       '2': pd.Series(np.arange(10))})
-series.index = pd.date_range(start='2000-01-01', periods=len(series), freq='D')
+from .fixtures_forecaster_recursive_multiseries import (
+    series_dict_nans,
+    exog_dict_nans
+)
+series = pd.DataFrame(
+    {'1': np.arange(10), '2': np.arange(10)},
+    index = pd.date_range(start='2000-01-01', periods=10, freq='D')
+)
 series = series_wide_to_long(series)
 exog = pd.Series(np.arange(10, 20), name='exog')
 exog.index = pd.date_range(start='2000-01-01', periods=len(exog), freq='D')
@@ -289,7 +289,7 @@ def test_output_get_feature_importances_when_window_features():
     forecaster = ForecasterRecursiveMultiSeries(
         LGBMRegressor(verbose=-1, random_state=123), lags=3, window_features=rolling
     )
-    forecaster.fit(series=series_dict, exog=exog_dict)
+    forecaster.fit(series=series_dict_nans, exog=exog_dict_nans)
 
     results = forecaster.get_feature_importances(sort_importance=False)
     results = results.astype({'importance': float})

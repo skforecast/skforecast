@@ -450,7 +450,7 @@ def test_create_train_X_y_output_when_series_10_and_exog_is_dataframe_of_float_i
     assert results[10] == expected[10]
 
 
-def test_create_train_X_y_output_when_MissingExogWarning_exog_not_for_any_level(dtype):
+def test_create_train_X_y_output_when_MissingExogWarning_exog_not_for_any_level():
     """
     Test the output of _create_train_X_y when series has exog but it does not contain
     any series ID.
@@ -459,8 +459,8 @@ def test_create_train_X_y_output_when_MissingExogWarning_exog_not_for_any_level(
                            '2': pd.Series(np.arange(10, dtype=float))})
     series.index = pd.date_range(start='2000-01-01', periods=len(series), freq='D')
     series = series_wide_to_long(series)
-    exog = pd.DataFrame({'exog_1': np.arange(100, 110, dtype=dtype),
-                         'exog_2': np.arange(1000, 1010, dtype=dtype)})
+    exog = pd.DataFrame({'exog_1': np.arange(100, 110, dtype=float),
+                         'exog_2': np.arange(1000, 1010, dtype=float)})
     exog.index = pd.date_range(start='2000-01-01', periods=len(exog), freq='D')
     exog.index.name = "datetime"
     # NOTE: Here series_id is different from series keys in `series` "series_{i}" != '1'
@@ -474,8 +474,11 @@ def test_create_train_X_y_output_when_MissingExogWarning_exog_not_for_any_level(
     
     warn_msg = re.escape(
         "No exogenous variables were found in `exog` that match the "
-        "IDs provided in `series`. No exogenous variables are included "
-        "in the training matrices. Review the series ID in `exog`."
+        "series IDs provided in `series`. As a result, no exogenous "
+        "variables are included in the training matrices. Please "
+        "review the series IDs in `exog` and ensure they match the "
+        "following IDs: ['1', '2']. The forecaster will be "
+        "considered trained without exogenous variables."
     )
     with pytest.warns(MissingExogWarning, match = warn_msg):
         results = forecaster._create_train_X_y(
@@ -517,7 +520,7 @@ def test_create_train_X_y_output_when_MissingExogWarning_exog_not_for_any_level(
          '2': pd.date_range(start='2000-01-01', periods=10, freq='D')},
         ['1', '2'],
         ['1', '2'],
-        None,
+        ['exog_1', 'exog_2'],
         None,
         None,
         None,
@@ -534,10 +537,8 @@ def test_create_train_X_y_output_when_MissingExogWarning_exog_not_for_any_level(
     assert results[5] == expected[5]
     assert results[6] == expected[6]
     assert results[7] == expected[7]
-    for k in results[8].keys():
-        assert results[8][k] == expected[8][k]
-    for k in results[9].keys():
-        assert results[9][k] == expected[9][k]
+    assert results[8] == expected[8]
+    assert results[9] == expected[9]
     assert results[10] == expected[10]
 
 

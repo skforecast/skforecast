@@ -1070,7 +1070,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         exog_dict = {serie: None for serie in series_names_in_}
         exog_names_in_ = None
-        X_train_exog_names_out_ = None
         if exog is not None:
             exog_dict, exog_names_in_ = check_preprocess_exog_multiseries(
                                             series_names_in_  = series_names_in_,
@@ -1170,15 +1169,19 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         exog_dtypes_in_ = None
         exog_dtypes_out_ = None
+        X_train_exog_names_out_ = None
         if exog is not None:
 
             X_train_exog = pd.concat(X_train_exog_buffer, axis=0, copy=False)
 
             if isinstance(X_train_exog, pd.Series):
                 warnings.warn(
-                    "No exogenous variables were found in `exog` that match the "
-                    "IDs provided in `series`. No exogenous variables are included "
-                    "in the training matrices. Review the series ID in `exog`.",
+                    f"No exogenous variables were found in `exog` that match the "
+                    f"series IDs provided in `series`. As a result, no exogenous "
+                    f"variables are included in the training matrices. Please "
+                    f"review the series IDs in `exog` and ensure they match the "
+                    f"following IDs: {series_names_in_}. The forecaster will be "
+                    f"considered trained without exogenous variables.",
                     MissingExogWarning
                 )
             else:
@@ -1800,7 +1803,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         else:
             self.index_freq_ = series_indexes[series_names_in_[0]].step
 
-        if exog is not None:
+        # NOTE: When `exog` doesn't match series IDs, exogs are not included in the
+        # training matrices, X_train_exog_names_out_ is None and the forecaster 
+        # will be considered trained without exogenous variables.
+        if exog is not None and X_train_exog_names_out_ is not None:
             self.exog_in_ = True
             self.exog_names_in_ = exog_names_in_
             self.exog_type_in_ = type(exog)
@@ -2010,8 +2016,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     levels = last_window.columns.to_list()
 
         if isinstance(exog, (pd.Series, pd.DataFrame)) and isinstance(exog.index, pd.MultiIndex):
-            exog_dict = {serie: None for serie in levels}
-            exog = exog.copy().to_frame() if isinstance(exog, pd.Series) else exog.copy()
             if not isinstance(exog.index.levels[1], pd.DatetimeIndex):
                 raise TypeError(
                     f"When `exog` is a pandas MultiIndex DataFrame, its index "
@@ -2019,13 +2023,13 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     f"RangeIndex, use a dictionary instead. Found `exog` index "
                     f"type: {type(exog.index.levels[1])}."
                 )
-            exog_dict.update(
-                {
-                    series_id: exog.loc[series_id] 
-                    for series_id in exog.index.levels[0]
-                    if series_id in levels
-                }
-            )
+            
+            exog = exog.copy().to_frame() if isinstance(exog, pd.Series) else exog.copy()
+            exog = {
+                series_id: exog.loc[series_id] 
+                for series_id in exog.index.levels[0]
+                if series_id in levels
+            }
 
         if check_inputs:
             check_predict_input(
@@ -2076,10 +2080,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             if isinstance(exog, dict):
                 # Empty dataframe to be filled with the exog values of each level
                 empty_exog = pd.DataFrame(
-                                 data  = {col: pd.Series(dtype=dtype)
-                                          for col, dtype in self.exog_dtypes_in_.items()},
-                                 index = prediction_index
-                             )
+                    data={
+                        col: pd.Series(dtype=dtype)
+                        for col, dtype in self.exog_dtypes_in_.items()
+                    },
+                    index=prediction_index,
+                )
             else:
                 if isinstance(exog, pd.Series):
                     exog = exog.to_frame()

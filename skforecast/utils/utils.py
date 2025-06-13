@@ -1111,16 +1111,25 @@ def check_predict_input(
                         )
 
             # Check index dtype and freq
-            _, exog_index = preprocess_exog(
-                                exog          = exog_to_check,
-                                return_values = False
-                            )
-            if not isinstance(exog_index, index_type_):
-                raise TypeError(
-                    f"Expected index of type {index_type_} for {exog_name}. "
-                    f"Got {type(exog_index)}."
-                )
-            if forecaster_name not in ['ForecasterRecursiveMultiSeries']:
+            if forecaster_name == 'ForecasterRecursiveMultiSeries':
+                # NOTE: Since exog can have no frequency, preprocess_exog will reset 
+                # the index causing an error.
+                exog_index = exog_to_check.index
+                if not isinstance(exog_index, index_type_):
+                    raise TypeError(
+                        f"Expected index of type {index_type_} for {exog_name}. "
+                        f"Got {type(exog_index)}."
+                    )
+            else:
+                _, exog_index = preprocess_exog(
+                                    exog          = exog_to_check,
+                                    return_values = False
+                                )
+                if not isinstance(exog_index, index_type_):
+                    raise TypeError(
+                        f"Expected index of type {index_type_} for {exog_name}. "
+                        f"Got {type(exog_index)}."
+                    )
                 if isinstance(exog_index, pd.DatetimeIndex):
                     if not exog_index.freqstr == index_freq_:
                         raise TypeError(
