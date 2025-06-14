@@ -2461,12 +2461,14 @@ def check_preprocess_series(
     """
     Check and preprocess `series` argument in `ForecasterRecursiveMultiSeries` class.
 
-    - If `series` is a pandas DataFrame, it is converted to a dict of pandas 
-    Series and index is overwritten according to the rules of preprocess_y.
-    - If `series` is a dict, all values are converted to pandas Series. Checks
-    if all index are pandas DatetimeIndex and, at least, one Series has a non-null
-    frequency. No multiple frequency is allowed.
-
+    - If `series` is a pandas DataFrame, it must have a pandas MultiIndex where
+    the first level is the series ID and the second level is the temporal index.
+    It is converted to a dictionary of pandas Series, where the keys are the series IDs
+    and the values are the Series with the same index as the original DataFrame.
+    - If `series` is a dictionary, all values must be pandas Series or DataFrames
+    with a single column. Indexes must be either a pandas DatetimeIndex or a 
+    RangeIndex with the same step/frequency for all series.
+    
     Parameters
     ----------
     series : pandas DataFrame, dict
