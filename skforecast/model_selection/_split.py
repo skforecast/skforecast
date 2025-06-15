@@ -296,13 +296,19 @@ class BaseFold():
                 max_index.append(idx[-1])
 
             if not_valid_index:
-                raise TypeError(
+                raise ValueError(
                     f"If `series` is a dictionary, all series must have a Pandas "
                     f"RangeIndex or DatetimeIndex with the same step/frequency. "
                     f"Review series: {not_valid_index}"
                 )
 
-            if not len(indexes_freq) == 1 or indexes_freq == {None}:
+            if None in indexes_freq:
+                raise ValueError(
+                    f"If `series` is a dictionary, all series must have a Pandas "
+                    f"RangeIndex or DatetimeIndex with the same step/frequency. "
+                    f"Found series with no frequency or step."
+                )
+            if not len(indexes_freq) == 1:
                 raise ValueError(
                     f"If `series` is a dictionary, all series must have a Pandas "
                     f"RangeIndex or DatetimeIndex with the same step/frequency. "
