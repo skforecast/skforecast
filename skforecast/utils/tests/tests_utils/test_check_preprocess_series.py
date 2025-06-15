@@ -166,6 +166,30 @@ def test_ValueError_check_preprocess_series_when_series_is_dataframe_multiindex_
     with pytest.raises(ValueError, match = err_msg):
         check_preprocess_series(series=series)
 
+
+def test_ValueError_check_preprocess_series_when_series_is_dataframe_multiindex_with_any_series_without_freq():
+    """
+    Test ValueError is raised when series is a pandas DataFrame with a MultiIndex
+    containing at least one series without frequency.
+    """
+    series = pd.DataFrame({
+            'series_id': ['1', '1', '1', '1', '2', '2', '2', '2'],
+            'datetime': pd.date_range(start='2000-01-01', periods=8, freq='D'),
+            'value': np.random.rand(8)
+        }
+        )
+    series = series.groupby("series_id", sort=False).apply(
+        lambda x: x.set_index("datetime").asfreq("D"), include_groups=False
+    )
+    series = series.drop(index=('1', '2000-01-03'))
+
+    err_msg = re.escape(
+        "If `series` is a dictionary, all series must have a Pandas RangeIndex "
+        "or DatetimeIndex with the same step/frequency. Found series with no frequency or step."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        check_preprocess_series(series=series)
+
 def test_ValueError_check_preprocess_series_when_all_series_values_are_missing_dict():
     """
     Test ValueError is raised when all series values are missing when series
@@ -181,31 +205,25 @@ def test_ValueError_check_preprocess_series_when_all_series_values_are_missing_d
         check_preprocess_series(series=series_nan)
 
 
-def test_check_preprocess_series_when_series_is_dict():
+def test_check_preprocess_series_when_series_is_dict_with_a_pandas_Series_and_a_DataFrame():
     """
-    Test check_preprocess_series when `series` is a pandas DataFrame with 
-    a DatetimeIndex.
+    Test check_preprocess_series when `series` is a dict containing a pandas Series
+    and a pandas DataFrame with a single column.
     """
-    series_dict = {
-        'l1': series_as_dict['l1'].copy(),
-        'l2': series_as_dict['l2'].copy()
-    }
-
-    series_dict['l1'].index = pd.date_range(start='2000-01-01', periods=len(series_dict['l1']), freq='D')
+    series_dict = series_dict_dt.copy()
     series_dict['l2'] = series_dict['l2'].to_frame()
-    series_dict['l2'].index = pd.date_range(start='2000-01-01', periods=len(series_dict['l2']), freq='D')
 
     series_dict, series_indexes = check_preprocess_series(series=series_dict)
 
     expected_series_dict = {
         'l1': pd.Series(
                   data  = series_dict['l1'].to_numpy(),
-                  index = pd.date_range(start='2000-01-01', periods=len(series['1']), freq='D'),
+                  index = pd.date_range(start='2000-01-01', periods=len(series_dict['l1']), freq='D'),
                   name  ='l1'
               ),
         'l2': pd.Series(
                   data  = series_dict['l2'].to_numpy(),
-                  index = pd.date_range(start='2000-01-01', periods=len(series['2']), freq='D'),
+                  index = pd.date_range(start='2000-01-01', periods=len(series_dict['l2']), freq='D'),
                   name  ='l2'
               ),
     }
