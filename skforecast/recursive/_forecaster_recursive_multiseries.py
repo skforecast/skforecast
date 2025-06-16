@@ -1043,17 +1043,17 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         level contains the series IDs, and the second level contains a pandas 
         DatetimeIndex with the same frequency for each series.
         - If `series` is a dictionary, each key must be the series ID and each 
-        value must be a named pandas Series. All series must have a pandas 
-        DatetimeIndex with the same frequency.
+        value must be a named pandas Series. Indexes must be either a pandas 
+        DatetimeIndex or a RangeIndex with the same step/frequency for all series.
         - If `exog` is a long-format pandas Series or DataFrame with a MultiIndex, 
         the first level contains the series IDs to which it belongs, and the 
         second level contains a pandas DatetimeIndex. One column must be created
         for each exogenous variable.
         - If `exog` is a dictionary, each key must be the series ID to which it 
-        belongs, and each value must be a named pandas Series, DataFrame with
-        a pandas DatetimeIndex or None. While it is not necessary for all values 
-        to include all the exogenous variables, the dtypes must be consistent 
-        for the same exogenous variable across all series.
+        belongs, and each value must be a named pandas Series/DataFrame with
+        the same index type as `series` or None. While it is not necessary for 
+        all values to include all the exogenous variables, the dtypes must be 
+        consistent for the same exogenous variable across all series.
         
         """
 
@@ -1340,17 +1340,17 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         level contains the series IDs, and the second level contains a pandas 
         DatetimeIndex with the same frequency for each series.
         - If `series` is a dictionary, each key must be the series ID and each 
-        value must be a named pandas Series. All series must have a pandas 
-        DatetimeIndex with the same frequency.
+        value must be a named pandas Series. Indexes must be either a pandas 
+        DatetimeIndex or a RangeIndex with the same step/frequency for all series.
         - If `exog` is a long-format pandas Series or DataFrame with a MultiIndex, 
         the first level contains the series IDs to which it belongs, and the 
         second level contains a pandas DatetimeIndex. One column must be created
         for each exogenous variable.
         - If `exog` is a dictionary, each key must be the series ID to which it 
-        belongs, and each value must be a named pandas Series, DataFrame with
-        a pandas DatetimeIndex or None. While it is not necessary for all values 
-        to include all the exogenous variables, the dtypes must be consistent 
-        for the same exogenous variable across all series.
+        belongs, and each value must be a named pandas Series/DataFrame with
+        the same index type as `series` or None. While it is not necessary for 
+        all values to include all the exogenous variables, the dtypes must be 
+        consistent for the same exogenous variable across all series.
         
         """
 
@@ -1714,17 +1714,17 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         level contains the series IDs, and the second level contains a pandas 
         DatetimeIndex with the same frequency for each series.
         - If `series` is a dictionary, each key must be the series ID and each 
-        value must be a named pandas Series. All series must have a pandas 
-        DatetimeIndex with the same frequency.
+        value must be a named pandas Series. Indexes must be either a pandas 
+        DatetimeIndex or a RangeIndex with the same step/frequency for all series.
         - If `exog` is a long-format pandas Series or DataFrame with a MultiIndex, 
         the first level contains the series IDs to which it belongs, and the 
         second level contains a pandas DatetimeIndex. One column must be created
         for each exogenous variable.
         - If `exog` is a dictionary, each key must be the series ID to which it 
-        belongs, and each value must be a named pandas Series, DataFrame with
-        a pandas DatetimeIndex or None. While it is not necessary for all values 
-        to include all the exogenous variables, the dtypes must be consistent 
-        for the same exogenous variable across all series.
+        belongs, and each value must be a named pandas Series/DataFrame with
+        the same index type as `series` or None. While it is not necessary for 
+        all values to include all the exogenous variables, the dtypes must be 
+        consistent for the same exogenous variable across all series.
         
         """
 
@@ -2019,7 +2019,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             if not isinstance(exog.index.levels[1], pd.DatetimeIndex):
                 raise TypeError(
                     f"When `exog` is a pandas MultiIndex DataFrame, its index "
-                    f"must be pandas DatetimeIndex. If you want to use a pandas "
+                    f"must be a pandas DatetimeIndex. If you want to use a pandas "
                     f"RangeIndex, use a dictionary instead. Found `exog` index "
                     f"type: {type(exog.index.levels[1])}."
                 )

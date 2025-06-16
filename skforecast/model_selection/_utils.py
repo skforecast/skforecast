@@ -1119,13 +1119,17 @@ def _extract_data_folds_multiseries(
                 exog_train = {}
                 exog_test = {}
                 for k, v in exog.items():
-                    v_train = v.loc[train_loc_start:train_loc_end]
-                    if len(v_train) > 0:
-                        exog_train[k] = v_train
-                    if externally_fitted or k in exog_train:
-                        v_test = v.loc[test_loc_start:test_loc_end]
-                        if not v_test.empty:
-                            exog_test[k] = v_test
+                    if v is None:
+                        exog_train[k] = None
+                        exog_test[k] = None
+                    else:
+                        v_train = v.loc[train_loc_start:train_loc_end]
+                        if len(v_train) > 0:
+                            exog_train[k] = v_train
+                        if externally_fitted or k in exog_train:
+                            v_test = v.loc[test_loc_start:test_loc_end]
+                            if not v_test.empty:
+                                exog_test[k] = v_test
         else:
             exog_train = None
             exog_test = None

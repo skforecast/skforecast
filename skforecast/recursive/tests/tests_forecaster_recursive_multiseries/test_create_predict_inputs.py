@@ -46,6 +46,30 @@ def test_create_predict_inputs_NotFittedError_when_fitted_is_False():
         forecaster._create_predict_inputs(steps=5)
 
 
+def test_create_predict_inputs_TypeError_when_exog_MultiIndex_no_DatetimeIndex():
+    """
+    Test NotFittedError is raised when fitted is False.
+    """
+    exog_long_no_index = exog_long_dt.copy()
+    exog_long_no_index = exog_long_no_index.reset_index(level=1, drop=True)
+    exog_long_no_index['idx'] = pd.RangeIndex(
+        start=0, stop=len(exog_long_no_index), step=1
+    )
+    exog_long_no_index = exog_long_no_index.set_index("idx", append=True)
+
+    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=5)
+    forecaster.fit(series=series_long_dt, exog=exog_long_dt)
+
+    err_msg = re.escape(
+        f"When `exog` is a pandas MultiIndex DataFrame, its index "
+        f"must be a pandas DatetimeIndex. If you want to use a pandas "
+        f"RangeIndex, use a dictionary instead. Found `exog` index "
+        f"type: {type(exog_long_no_index.index.levels[1])}."
+    )
+    with pytest.raises(TypeError, match = err_msg):
+        forecaster._create_predict_inputs(steps=5, exog=exog_long_no_index)
+
+
 def test_output_create_predict_inputs_when_regressor_is_LinearRegression():
     """
     Test output _create_predict_inputs when using LinearRegression as regressor.

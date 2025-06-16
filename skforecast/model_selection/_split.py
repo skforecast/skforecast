@@ -255,8 +255,7 @@ class BaseFold():
 
     def _extract_index(
         self,
-        X: pd.Series | pd.DataFrame | pd.Index | dict[str, pd.Series | pd.DataFrame],
-        check_freq: bool = True
+        X: pd.Series | pd.DataFrame | pd.Index | dict[str, pd.Series | pd.DataFrame]
     ) -> pd.Index:
         """
         Extracts and returns the index from the input data X.
@@ -297,20 +296,20 @@ class BaseFold():
 
             if not_valid_index:
                 raise ValueError(
-                    f"If `series` is a dictionary, all series must have a Pandas "
+                    f"If `X` is a dictionary, all series must have a Pandas "
                     f"RangeIndex or DatetimeIndex with the same step/frequency. "
                     f"Review series: {not_valid_index}"
                 )
 
             if None in indexes_freq:
                 raise ValueError(
-                    f"If `series` is a dictionary, all series must have a Pandas "
-                    f"RangeIndex or DatetimeIndex with the same step/frequency. "
-                    f"Found series with no frequency or step."
+                    "If `X` is a dictionary, all series must have a Pandas "
+                    "RangeIndex or DatetimeIndex with the same step/frequency. "
+                    "Found series with no frequency or step."
                 )
             if not len(indexes_freq) == 1:
                 raise ValueError(
-                    f"If `series` is a dictionary, all series must have a Pandas "
+                    f"If `X` is a dictionary, all series must have a Pandas "
                     f"RangeIndex or DatetimeIndex with the same step/frequency. "
                     f"Found frequencies: {sorted(indexes_freq)}"
                 )
