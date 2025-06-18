@@ -9,7 +9,10 @@ from skforecast.model_selection import random_search_forecaster_multiseries
 from skforecast.model_selection._split import TimeSeriesFold
 
 # Fixtures
-from ..fixtures_model_selection_multiseries import series
+from ..fixtures_model_selection_multiseries import (
+    series_wide_range,
+    series_dict_dt
+)
 
 from tqdm import tqdm
 from functools import partialmethod
@@ -28,7 +31,7 @@ def test_output_random_search_forecaster_multiseries_ForecasterRecursiveMultiSer
                      transformer_series = None
                  )
     cv = TimeSeriesFold(
-            initial_train_size = len(series.iloc[:-12]),
+            initial_train_size = len(series_dict_dt['l1']) - 12,
             steps              = 3,
             refit              = False,
             fixed_train_size   = False
@@ -39,7 +42,7 @@ def test_output_random_search_forecaster_multiseries_ForecasterRecursiveMultiSer
 
     results = random_search_forecaster_multiseries(
                   forecaster          = forecaster,
-                  series              = series,
+                  series              = series_dict_dt,
                   param_distributions = param_distributions,
                   cv                  = cv,
                   metric              = 'mean_absolute_error',
@@ -120,7 +123,7 @@ def test_output_random_search_forecaster_multiseries_ForecasterDirectMultiVariat
                  )
 
     cv = TimeSeriesFold(
-            initial_train_size = len(series.iloc[:-12]),
+            initial_train_size = len(series_wide_range) - 12,
             steps              = 3,
             refit              = False,
             fixed_train_size   = False
@@ -131,7 +134,7 @@ def test_output_random_search_forecaster_multiseries_ForecasterDirectMultiVariat
 
     results = random_search_forecaster_multiseries(
                   forecaster          = forecaster,
-                  series              = series,
+                  series              = series_wide_range,
                   param_distributions = param_distributions,
                   cv                  = cv,
                   metric              = 'mean_absolute_error',
