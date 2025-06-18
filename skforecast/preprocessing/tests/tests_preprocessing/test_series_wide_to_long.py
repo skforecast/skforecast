@@ -1,9 +1,9 @@
-# Unit test series_wide_to_long
+# Unit test reshape_series_wide_to_multiindex
 # ==============================================================================
 import pytest
 import numpy as np
 import pandas as pd
-from ...preprocessing import series_wide_to_long
+from ...preprocessing import reshape_series_wide_to_multiindex
 
 
 def test_TypeError_when_data_is_not_dataframe():
@@ -12,15 +12,15 @@ def test_TypeError_when_data_is_not_dataframe():
     """
     err_msg = "`data` must be a pandas DataFrame."
     with pytest.raises(TypeError, match=err_msg):
-        series_wide_to_long(data='not_a_dataframe')
+        reshape_series_wide_to_multiindex(data='not_a_dataframe')
 
 
 @pytest.mark.parametrize("return_multi_index", 
                          [True, False], 
                          ids = lambda dt: f'return_multi_index: {dt}')
-def test_check_output_series_wide_to_long(return_multi_index):
+def test_check_output_reshape_series_wide_to_multiindex(return_multi_index):
     """
-    Check output of series_wide_to_long.
+    Check output of reshape_series_wide_to_multiindex.
     """
     data = pd.DataFrame({
         'series_1': np.arange(10),
@@ -28,7 +28,7 @@ def test_check_output_series_wide_to_long(return_multi_index):
     })
     data.index = pd.date_range(start='2020-01-01', periods=10, freq='D')
 
-    results = series_wide_to_long(data=data, return_multi_index=return_multi_index)
+    results = reshape_series_wide_to_multiindex(data=data, return_multi_index=return_multi_index)
 
     expected = pd.DataFrame({
         'series_id': ['series_1'] * 10 + ['series_2'] * 10,

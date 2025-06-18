@@ -1,10 +1,10 @@
-# Unit test exog_long_to_dict
+# Unit test reshape_exog_long_to_dict
 # ==============================================================================
 import pytest
 import numpy as np
 import pandas as pd
 import platform
-from ...preprocessing import exog_long_to_dict
+from ...preprocessing import reshape_exog_long_to_dict
 from ....exceptions import MissingValuesWarning
 
 # Fixtures
@@ -12,9 +12,9 @@ from .fixtures_preprocessing import exog_A, exog_B, exog_C, n_exog_A, n_exog_B, 
 from .fixtures_preprocessing import exog_long
 
 
-def test_check_output_series_long_to_dict_dropna_False():
+def test_check_output_reshape_series_long_to_dict_dropna_False():
     """
-    Check output of exog_long_to_dict with dropna=False.
+    Check output of reshape_exog_long_to_dict with dropna=False.
     """
     expected = {
         'A': pd.DataFrame(
@@ -48,7 +48,7 @@ def test_check_output_series_long_to_dict_dropna_False():
         expected[k]['exog_2'] = expected[k]['exog_2'].astype(object)
         expected[k]['exog_3'] = expected[k]['exog_3'].astype(float)
 
-    results = exog_long_to_dict(
+    results = reshape_exog_long_to_dict(
         data=exog_long,
         series_id="series_id",
         index="datetime",
@@ -61,9 +61,9 @@ def test_check_output_series_long_to_dict_dropna_False():
         pd.testing.assert_frame_equal(results[k], expected[k])
 
 
-def test_check_output_series_long_to_dict_dropna_True():
+def test_check_output_reshape_series_long_to_dict_dropna_True():
     """
-    Check output of series_long_to_dict with dropna=True.
+    Check output of reshape_series_long_to_dict with dropna=True.
     """
 
     expected = {
@@ -75,7 +75,7 @@ def test_check_output_series_long_to_dict_dropna_True():
     for k in expected.keys():
         expected[k].index.name = None
 
-    results = exog_long_to_dict(
+    results = reshape_exog_long_to_dict(
         data=exog_long,
         series_id="series_id",
         index="datetime",
@@ -94,7 +94,7 @@ def test_TypeError_when_data_is_not_dataframe():
     """
     err_msg = "`data` must be a pandas DataFrame."
     with pytest.raises(TypeError, match=err_msg):
-        exog_long_to_dict(
+        reshape_exog_long_to_dict(
             data="not_a_dataframe",
             series_id="series_id",
             index="datetime",
@@ -111,7 +111,7 @@ def test_ValueError_when_series_id_not_in_data():
     series_id = "series_id_not_in_data"
     err_msg = f"Column '{series_id}' not found in `data`."
     with pytest.raises(ValueError, match=err_msg):
-        exog_long_to_dict(
+        reshape_exog_long_to_dict(
             data=exog_long,
             series_id=series_id,
             index="datetime",
@@ -128,7 +128,7 @@ def test_ValueError_when_index_not_in_data():
     index = "series_id_not_in_data"
     err_msg = f"Column '{index}' not found in `data`."
     with pytest.raises(ValueError, match=err_msg):
-        exog_long_to_dict(
+        reshape_exog_long_to_dict(
             data=exog_long,
             series_id="series_id",
             index=index,
@@ -150,7 +150,7 @@ def test_warning_when_exog_are_incomplete_and_dropna_False():
         "after setting the frequency."
     )
     with pytest.warns(MissingValuesWarning, match=msg):
-        exog_long_to_dict(
+        reshape_exog_long_to_dict(
             data=data,
             series_id='series_id',
             index='datetime',
@@ -160,9 +160,9 @@ def test_warning_when_exog_are_incomplete_and_dropna_False():
         )
 
 
-def test_series_long_to_dict_output_when_npnan_are_added_in_interger_columns_and_consolidate_true():
+def test_reshape_series_long_to_dict_output_when_npnan_are_added_in_interger_columns_and_consolidate_true():
     """
-    Test the output of the function series_long_to_dict when np.nan are added in integer columns
+    Test the output of the function reshape_series_long_to_dict when np.nan are added in integer columns
     these columns should be converted to float
     """
     exog_series_1 = pd.DataFrame({
@@ -187,7 +187,7 @@ def test_series_long_to_dict_output_when_npnan_are_added_in_interger_columns_and
     ].copy()
     exog_long["exog_2"] = exog_long["exog_2"].astype("category")
     exog_long["series"] = exog_long["series"].astype("category")
-    exog_dict = exog_long_to_dict(
+    exog_dict = reshape_exog_long_to_dict(
         data=exog_long,
         series_id="series",
         index="datetime",
@@ -198,9 +198,9 @@ def test_series_long_to_dict_output_when_npnan_are_added_in_interger_columns_and
     pd.testing.assert_series_equal(exog_dict['series_1'].dtypes, exog_dict['series_2'].dtypes)
 
 
-def test_series_long_to_dict_output_when_npnan_are_added_in_interger_columns_and_consolidate_false():
+def test_reshape_series_long_to_dict_output_when_npnan_are_added_in_interger_columns_and_consolidate_false():
     """
-    Test the output of the function series_long_to_dict when np.nan are added in integer columns
+    Test the output of the function reshape_series_long_to_dict when np.nan are added in integer columns
     these columns should be converted to float
     """
     exog_series_1 = pd.DataFrame({
@@ -225,7 +225,7 @@ def test_series_long_to_dict_output_when_npnan_are_added_in_interger_columns_and
     ].copy()
     exog_long["exog_2"] = exog_long["exog_2"].astype("category")
     exog_long["series"] = exog_long["series"].astype("category")
-    exog_dict = exog_long_to_dict(
+    exog_dict = reshape_exog_long_to_dict(
         data=exog_long,
         series_id="series",
         index="datetime",

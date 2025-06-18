@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_absolute_error
-from skforecast.preprocessing import series_wide_to_long
+from skforecast.preprocessing import reshape_series_wide_to_multiindex
 
 # Fixtures
 # series_1 = np.random.rand(50)
@@ -47,11 +47,11 @@ series_wide_dt = series_wide_range.copy()
 series_wide_dt.index = pd.date_range(
     start='2020-01-01', periods=len(series_wide_dt), freq='D'
 )
-series_long_dt = series_wide_to_long(series_wide_dt)
+series_long_dt = reshape_series_wide_to_multiindex(series_wide_dt)
 
 series_wide_dt_nans = series_wide_dt.copy()
 series_wide_dt_nans.iloc[:10, series_wide_dt_nans.columns.get_loc('l2')] = np.nan
-series_long_dt_nans = series_wide_to_long(series_wide_dt_nans)
+series_long_dt_nans = reshape_series_wide_to_multiindex(series_wide_dt_nans)
 
 series_dict_range = series_wide_range.copy().to_dict(orient='series')
 series_dict_dt = series_wide_dt.copy().to_dict(orient='series')
@@ -124,7 +124,7 @@ exog_dict_nans_test = {k: v.loc[end_train:,] for k, v in exog_dict_nans.items()}
 
 series_wide_dt_item_sales = pd.read_parquet(THIS_DIR/'fixture_multi_series_items_sales.parquet')
 series_wide_dt_item_sales = series_wide_dt_item_sales.asfreq('D')
-series_long_dt_item_sales = series_wide_to_long(series_wide_dt_item_sales)
+series_long_dt_item_sales = reshape_series_wide_to_multiindex(series_wide_dt_item_sales)
 series_dict_dt_item_sales = series_wide_dt_item_sales.copy().to_dict(orient='series')
 exog_wide_dt_item_sales = pd.DataFrame(
     {'day_of_week': series_wide_dt_item_sales.index.dayofweek}, index = series_wide_dt_item_sales.index

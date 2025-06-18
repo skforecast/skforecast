@@ -8,21 +8,21 @@ from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
 from skforecast.exceptions import ResidualsUsageWarning
 from ....recursive import ForecasterRecursiveMultiSeries
-from ....preprocessing import series_wide_to_long
+from ....preprocessing import reshape_series_wide_to_multiindex
 
 # Fixtures
 series = pd.DataFrame(
     {'l1': np.arange(10), 'l2': np.arange(10)},
     index = pd.date_range(start='1-1-2018', periods=10, freq='D')
 )
-series = series_wide_to_long(series)
+series = reshape_series_wide_to_multiindex(series)
 
 rng = np.random.default_rng(12345)
 series_rnd = pd.DataFrame(
     {"l1": rng.normal(10, 3, 20), "l2": rng.normal(10, 3, 20)},
     index = pd.date_range(start='01-01-2000', periods=20, freq='D')
 )
-series_rnd = series_wide_to_long(series_rnd)
+series_rnd = reshape_series_wide_to_multiindex(series_rnd)
 
 
 @pytest.mark.parametrize("encoding", 
@@ -36,7 +36,7 @@ def test_binning_out_sample_residuals_when_residuals_length_is_less_than_10000_a
     rng = np.random.default_rng(12345)
     series_rnd = pd.DataFrame({"l1": rng.normal(10, 3, 20), "l2": rng.normal(10, 3, 20)})
     series_rnd.index = pd.date_range(start='01-01-2000', periods=len(series), freq='D')
-    series_rnd = series_wide_to_long(series_rnd)
+    series_rnd = reshape_series_wide_to_multiindex(series_rnd)
 
     forecaster = ForecasterRecursiveMultiSeries(
         LinearRegression(), lags=3, encoding=encoding, binner_kwargs={"n_bins": 3}
@@ -89,7 +89,7 @@ def test_binning_out_sample_residuals_when_residuals_length_is_less_than_10000_a
     rng = np.random.default_rng(12345)
     series_rnd = pd.DataFrame({"l1": rng.normal(10, 3, 20), "l2": rng.normal(10, 3, 20)})
     series_rnd.index = pd.date_range(start='01-01-2000', periods=len(series), freq='D')
-    series_rnd = series_wide_to_long(series_rnd)
+    series_rnd = reshape_series_wide_to_multiindex(series_rnd)
     
     forecaster = ForecasterRecursiveMultiSeries(
         LinearRegression(), lags=3, encoding=None, binner_kwargs={"n_bins": 3}

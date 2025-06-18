@@ -5,7 +5,7 @@ import pytest
 import numpy as np
 import pandas as pd
 from skforecast.exceptions import IgnoredArgumentWarning
-from skforecast.preprocessing import series_wide_to_long
+from skforecast.preprocessing import reshape_series_wide_to_multiindex
 from skforecast.utils import check_preprocess_series
 from skforecast.recursive.tests.tests_forecaster_recursive_multiseries.fixtures_forecaster_recursive_multiseries import (
     series_wide_dt,
@@ -221,7 +221,7 @@ def test_ValueError_check_preprocess_series_when_all_series_values_are_missing_D
          'l2': pd.Series([np.nan] * 7)}
     )
     series_nan.index = pd.date_range(start='2022-01-01', periods=7, freq='D')
-    series_long_nan = series_wide_to_long(series_nan)
+    series_long_nan = reshape_series_wide_to_multiindex(series_nan)
 
     err_msg = re.escape("All values of series 'l2' are NaN.")
     with pytest.raises(ValueError, match = err_msg):

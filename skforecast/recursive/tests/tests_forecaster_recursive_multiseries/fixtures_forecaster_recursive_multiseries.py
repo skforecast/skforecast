@@ -4,7 +4,7 @@ import joblib
 from pathlib import Path
 import numpy as np
 import pandas as pd
-from skforecast.preprocessing import series_wide_to_long
+from skforecast.preprocessing import reshape_series_wide_to_multiindex
 
 # Fixtures Description:
 # series_wide_dt: DataFrame with two time series in wide format and datetime index.
@@ -70,7 +70,7 @@ series_dict_dt = (
     .rename(columns={'1': 'l1', '2': 'l2'})
     .to_dict(orient='series')
 )
-series_long_dt = series_wide_to_long(series_wide_dt)
+series_long_dt = reshape_series_wide_to_multiindex(series_wide_dt)
 series_dict_range = {
     k: v.copy().reset_index(drop=True)
     for k, v in series_dict_dt.items()
