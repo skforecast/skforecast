@@ -7,7 +7,7 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
 from ....recursive import ForecasterRecursiveMultiSeries
-from ....preprocessing import reshape_series_wide_to_multiindex
+from ....preprocessing import reshape_series_wide_to_long
 
 
 def custom_weights(index):  # pragma: no cover
@@ -64,7 +64,7 @@ series = pd.DataFrame(
     columns=["series_1", "series_2"],
     index=pd.date_range(start="2022-01-04", periods=10, freq="D")
 )
-series = reshape_series_wide_to_multiindex(series)
+series = reshape_series_wide_to_long(series)
 
 X_train_onehot = pd.DataFrame(
     data=np.array(

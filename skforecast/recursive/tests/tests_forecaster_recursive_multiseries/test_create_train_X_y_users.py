@@ -5,7 +5,7 @@ import pandas as pd
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
 from ....recursive import ForecasterRecursiveMultiSeries
-from ....preprocessing import reshape_series_wide_to_multiindex
+from ....preprocessing import reshape_series_wide_to_long
 
 
 def test_create_train_X_y_output_when_series_and_exog_is_None():
@@ -16,7 +16,7 @@ def test_create_train_X_y_output_when_series_and_exog_is_None():
     series = pd.DataFrame({'1': pd.Series(np.arange(7, dtype=float)), 
                            '2': pd.Series(np.arange(7, dtype=float))})
     series.index = pd.date_range(start='2000-01-01', periods=len(series), freq='D')
-    series = reshape_series_wide_to_multiindex(series)
+    series = reshape_series_wide_to_long(series)
 
     forecaster = ForecasterRecursiveMultiSeries(
         regressor = LinearRegression(),
