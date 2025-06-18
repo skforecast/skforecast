@@ -1,9 +1,9 @@
 # Fixtures _forecaster_recursive_multiseries
 # ==============================================================================
 import joblib
+from pathlib import Path
 import numpy as np
 import pandas as pd
-from pathlib import Path
 from skforecast.preprocessing import series_wide_to_long
 
 # Fixtures Description:

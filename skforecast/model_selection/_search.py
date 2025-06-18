@@ -1180,8 +1180,9 @@ def random_search_forecaster_multiseries(
     
     """
   
-    param_grid = list(ParameterSampler(param_distributions, n_iter=n_iter, 
-                                       random_state=random_state))
+    param_grid = list(
+        ParameterSampler(param_distributions, n_iter=n_iter, random_state=random_state)
+    )
 
     results = _evaluate_grid_hyperparameters_multiseries(
                   forecaster        = forecaster,
@@ -1339,10 +1340,11 @@ def _evaluate_grid_hyperparameters_multiseries(
             'verbose': verbose
         })
 
-    if return_best and exog is not None and (len(exog) != len(series)):
+    len_series = len(series) if isinstance(series, pd.DataFrame) else len(next(iter(series.values())))
+    if return_best and exog is not None and (len(exog) != len_series):
         raise ValueError(
             f"`exog` must have same number of samples as `series`. "
-            f"length `exog`: ({len(exog)}), length `series`: ({len(series)})"
+            f"length `exog`: ({len(exog)}), length `series`: ({len_series})"
         )
     
     if isinstance(aggregate_metric, str):
@@ -1644,10 +1646,11 @@ def bayesian_search_forecaster_multiseries(
     
     """
 
-    if return_best and exog is not None and (len(exog) != len(series)):
+    len_series = len(series) if isinstance(series, pd.DataFrame) else len(next(iter(series.values())))
+    if return_best and exog is not None and (len(exog) != len_series):
         raise ValueError(
             f"`exog` must have same number of samples as `series`. "
-            f"length `exog`: ({len(exog)}), length `series`: ({len(series)})"
+            f"length `exog`: ({len(exog)}), length `series`: ({len_series})"
         )
    
     results, best_trial = _bayesian_search_optuna_multiseries(
