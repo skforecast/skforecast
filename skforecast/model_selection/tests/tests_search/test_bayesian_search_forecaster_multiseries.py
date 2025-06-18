@@ -38,18 +38,20 @@ def test_ValueError_bayesian_search_forecaster_multiseries_when_return_best_and_
     Test ValueError is raised in bayesian_search_forecaster_multiseries when 
     return_best and length of `series` and `exog` do not match.
     """
-    forecaster = ForecasterRecursiveMultiSeries(
+    forecaster = ForecasterDirectMultiVariate(
                      regressor = Ridge(random_state=123),
-                     lags      = 2,
-                     encoding  = 'onehot'
+                     level     = 'l1',
+                     steps     = 3,
+                     lags      = 2
                  )
+    
     cv = TimeSeriesFold(
-            initial_train_size = len(series_dict_range['l1']) - 12,
+            initial_train_size = len(series_wide_range) - 12,
             steps              = 3,
             refit              = True,
             fixed_train_size   = True
-    )
-    exog = series_dict_range['l1'].iloc[:30].copy()
+        )
+    exog = series_wide_range.iloc[:30].copy()
 
     def search_space(trial):  # pragma: no cover
         search_space  = {'alpha': trial.suggest_float('alpha', 1e-2, 1.0)}
@@ -58,12 +60,12 @@ def test_ValueError_bayesian_search_forecaster_multiseries_when_return_best_and_
 
     err_msg = re.escape(
         f"`exog` must have same number of samples as `series`. "
-        f"length `exog`: ({len(exog)}), length `series`: ({len(series_dict_range['l1'])})"
+        f"length `exog`: ({len(exog)}), length `series`: ({len(series_wide_range)})"
     )
     with pytest.raises(ValueError, match = err_msg):
         bayesian_search_forecaster_multiseries(
             forecaster         = forecaster,
-            series             = series_dict_range,
+            series             = series_wide_range,
             exog               = exog,
             cv                 = cv,
             search_space       = search_space,

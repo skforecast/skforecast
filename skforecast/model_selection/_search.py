@@ -32,7 +32,13 @@ from ..model_selection._utils import (
     _calculate_metrics_one_step_ahead,
     _predict_and_calculate_metrics_one_step_ahead_multiseries
 )
-from ..utils import initialize_lags, date_to_index_position, set_skforecast_warnings
+from ..utils import (
+    initialize_lags, 
+    date_to_index_position, 
+    check_preprocess_series,
+    check_preprocess_exog_multiseries,
+    set_skforecast_warnings
+)
 
 
 def grid_search_forecaster(
@@ -1307,6 +1313,25 @@ def _evaluate_grid_hyperparameters_multiseries(
 
     set_skforecast_warnings(suppress_warnings, action='ignore')
 
+    if type(forecaster).__name__ == 'ForecasterRecursiveMultiSeries':
+        series, series_indexes = check_preprocess_series(series)
+        if exog is not None:
+            series_names_in_ = list(series.keys())
+            exog_dict = {serie: None for serie in series_names_in_}
+            exog, _ = check_preprocess_exog_multiseries(
+                          series_names_in_  = series_names_in_,
+                          series_index_type = type(series_indexes[series_names_in_[0]]),
+                          exog              = exog,
+                          exog_dict         = exog_dict
+                      )
+    else:
+        # TODO: This only applies to wide DataFrames. Delete when input is always dict.
+        if return_best and exog is not None and (len(exog) != len(series)):
+            raise ValueError(
+                f"`exog` must have same number of samples as `series`. "
+                f"length `exog`: ({len(exog)}), length `series`: ({len(series)})"
+            )
+
     cv_name = type(cv).__name__
     if cv_name not in ['TimeSeriesFold', 'OneStepAheadFold']:
         raise TypeError(
@@ -1339,13 +1364,6 @@ def _evaluate_grid_hyperparameters_multiseries(
             'differentiation': forecaster.differentiation_max,
             'verbose': verbose
         })
-
-    len_series = len(series) if isinstance(series, pd.DataFrame) else len(next(iter(series.values())))
-    if return_best and exog is not None and (len(exog) != len_series):
-        raise ValueError(
-            f"`exog` must have same number of samples as `series`. "
-            f"length `exog`: ({len(exog)}), length `series`: ({len_series})"
-        )
     
     if isinstance(aggregate_metric, str):
         aggregate_metric = [aggregate_metric]
@@ -1645,13 +1663,6 @@ def bayesian_search_forecaster_multiseries(
         The best optimization result returned as a FrozenTrial optuna object.
     
     """
-
-    len_series = len(series) if isinstance(series, pd.DataFrame) else len(next(iter(series.values())))
-    if return_best and exog is not None and (len(exog) != len_series):
-        raise ValueError(
-            f"`exog` must have same number of samples as `series`. "
-            f"length `exog`: ({len(exog)}), length `series`: ({len_series})"
-        )
    
     results, best_trial = _bayesian_search_optuna_multiseries(
                               forecaster            = forecaster,
@@ -1789,6 +1800,25 @@ def _bayesian_search_optuna_multiseries(
 
     forecaster_name = type(forecaster).__name__
     cv_name = type(cv).__name__
+
+    if forecaster_name == 'ForecasterRecursiveMultiSeries':
+        series, series_indexes = check_preprocess_series(series)
+        if exog is not None:
+            series_names_in_ = list(series.keys())
+            exog_dict = {serie: None for serie in series_names_in_}
+            exog, _ = check_preprocess_exog_multiseries(
+                          series_names_in_  = series_names_in_,
+                          series_index_type = type(series_indexes[series_names_in_[0]]),
+                          exog              = exog,
+                          exog_dict         = exog_dict
+                      )
+    else:
+        # TODO: This only applies to wide DataFrames. Delete when input is always dict.
+        if return_best and exog is not None and (len(exog) != len(series)):
+            raise ValueError(
+                f"`exog` must have same number of samples as `series`. "
+                f"length `exog`: ({len(exog)}), length `series`: ({len(series)})"
+            )
 
     if cv_name not in ['TimeSeriesFold', 'OneStepAheadFold']:
         raise TypeError(

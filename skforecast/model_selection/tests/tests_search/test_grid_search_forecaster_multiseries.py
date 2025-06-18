@@ -2,8 +2,6 @@
 # ==============================================================================
 import numpy as np
 import pandas as pd
-import joblib
-from pathlib import Path
 from sklearn.linear_model import Ridge
 from lightgbm import LGBMRegressor
 from skforecast.recursive import ForecasterRecursiveMultiSeries
@@ -15,18 +13,21 @@ from sklearn.metrics import mean_absolute_percentage_error
 from skforecast.metrics import mean_absolute_scaled_error
 
 # Fixtures
-from ..fixtures_model_selection_multiseries import series
+from ..fixtures_model_selection_multiseries import (
+    series_wide_range,
+    series_long_dt_item_sales,
+    series_dict_range,
+    series_dict_dt,
+    series_dict_nans,
+    series_wide_dt_item_sales,
+    exog_wide_dt_item_sales,
+    exog_long_dt_item_sales,
+    exog_dict_nans
+)
 
 from tqdm import tqdm
 from functools import partialmethod
 tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)  # hide progress bar
-
-THIS_DIR = Path(__file__).parent.parent
-series_item_sales = pd.read_parquet(THIS_DIR/'fixture_multi_series_items_sales.parquet')
-series_item_sales = series_item_sales.asfreq('D')
-exog_item_sales = pd.DataFrame({'day_of_week': series_item_sales.index.dayofweek}, index = series_item_sales.index)
-series_dict = joblib.load(THIS_DIR/'fixture_sample_multi_series.joblib')
-exog_dict = joblib.load(THIS_DIR/'fixture_sample_multi_series_exog.joblib')
 
 
 def test_output_grid_search_forecaster_multiseries_ForecasterRecursiveMultiSeries_with_mocked():
@@ -41,7 +42,7 @@ def test_output_grid_search_forecaster_multiseries_ForecasterRecursiveMultiSerie
                      transformer_series = None
                  )
     cv = TimeSeriesFold(
-            initial_train_size = len(series) - 12,
+            initial_train_size = len(series_dict_dt['l1']) - 12,
             steps              = 3,
             refit              = False,
             fixed_train_size   = False,
@@ -51,7 +52,7 @@ def test_output_grid_search_forecaster_multiseries_ForecasterRecursiveMultiSerie
 
     results = grid_search_forecaster_multiseries(
                   forecaster          = forecaster,
-                  series              = series,
+                  series              = series_dict_dt,
                   param_grid          = param_grid,
                   cv                  = cv,
                   metric              = 'mean_absolute_error',
@@ -92,7 +93,7 @@ def test_output_grid_search_forecaster_multiseries_ForecasterRecursiveMultiSerie
                      transformer_series = None
                  )
     cv = TimeSeriesFold(
-            initial_train_size = len(series) - 12,
+            initial_train_size = len(series_dict_range['l1']) - 12,
             steps              = 3,
             refit              = False,
             fixed_train_size   = False,
@@ -102,7 +103,7 @@ def test_output_grid_search_forecaster_multiseries_ForecasterRecursiveMultiSerie
 
     results = grid_search_forecaster_multiseries(
                   forecaster          = forecaster,
-                  series              = series,
+                  series              = series_dict_range,
                   param_grid          = param_grid,
                   cv                  = cv,
                   metric              = ['mean_absolute_error', 'mean_absolute_scaled_error'],
@@ -195,7 +196,7 @@ def test_output_grid_search_forecaster_multiseries_ForecasterDirectMultiVariate_
                      transformer_series = None
                  )
     cv = TimeSeriesFold(
-            initial_train_size = len(series) - 12,
+            initial_train_size = len(series_wide_range) - 12,
             steps              = 3,
             refit              = False,
             fixed_train_size   = False
@@ -206,7 +207,7 @@ def test_output_grid_search_forecaster_multiseries_ForecasterDirectMultiVariate_
 
     results = grid_search_forecaster_multiseries(
                   forecaster          = forecaster,
-                  series              = series,
+                  series              = series_wide_range,
                   param_grid          = param_grid,
                   cv                  = cv,
                   metric              = 'mean_absolute_error',
@@ -262,8 +263,8 @@ def test_output_grid_search_forecaster_multiseries_ForecasterRecursiveMultiSerie
 
     results = grid_search_forecaster_multiseries(
         forecaster         = forecaster,
-        series             = series_item_sales,
-        exog               = exog_item_sales,
+        series             = series_long_dt_item_sales,
+        exog               = exog_long_dt_item_sales,
         param_grid         = param_grid,
         lags_grid          = lags_grid,
         cv                 = cv,
@@ -415,8 +416,8 @@ def test_output_grid_search_forecaster_multiseries_ForecasterDirectMultiVariate_
 
     results = grid_search_forecaster_multiseries(
         forecaster         = forecaster,
-        series             = series_item_sales,
-        exog               = exog_item_sales,
+        series             = series_wide_dt_item_sales,
+        exog               = exog_wide_dt_item_sales,
         cv                 = cv,
         param_grid         = param_grid,
         lags_grid          = lags_grid,
@@ -523,8 +524,8 @@ def test_output_grid_search_forecaster_multiseries_ForecasterRecursiveMultiSerie
 
     results = grid_search_forecaster_multiseries(
         forecaster         = forecaster,
-        series             = series_dict,
-        exog               = exog_dict,
+        series             = series_dict_nans,
+        exog               = exog_dict_nans,
         cv                 = cv,
         param_grid         = param_grid,
         lags_grid          = lags_grid,
