@@ -12,7 +12,7 @@ from sklearn.neural_network import MLPRegressor
 from sklearn.ensemble import RandomForestRegressor
 from lightgbm import LGBMRegressor
 
-from skforecast.preprocessing import RollingFeatures, series_wide_to_long
+from skforecast.preprocessing import RollingFeatures, reshape_series_wide_to_long
 from ....recursive import ForecasterRecursiveMultiSeries
 
 # Fixtures
@@ -24,7 +24,7 @@ series = pd.DataFrame(
     {'1': np.arange(10), '2': np.arange(10)},
     index = pd.date_range(start='2000-01-01', periods=10, freq='D')
 )
-series = series_wide_to_long(series)
+series = reshape_series_wide_to_long(series)
 exog = pd.Series(np.arange(10, 20), name='exog')
 exog.index = pd.date_range(start='2000-01-01', periods=len(exog), freq='D')
 

@@ -374,14 +374,19 @@ class TimeSeriesDifferentiator(BaseEstimator, TransformerMixin):
             setattr(self, param, value)
 
 
-def series_wide_to_long(
+def reshape_series_wide_to_long(
     data: pd.DataFrame,
     return_multi_index: bool = True
 ) -> pd.DataFrame:
     """
-    Convert wide format series to long format with a MultiIndex the first 
-    level contains the series IDs, and the second level contains a pandas 
-    DatetimeIndex with the same frequency for each series.
+    Convert a pandas DataFrame where each column represents a different time series
+    into a long format DataFrame with a MultiIndex. The index of the input DataFrame
+    must be a pandas DatetimeIndex with a defined frequency. The function reshapes the
+    DataFrame from wide format to long format, where each row corresponds to a
+    specific time point and series ID. The resulting DataFrame will have a MultiIndex
+    with the series IDs as the first level and a pandas DatetimeIndex as the second
+    level. If `return_multi_index` is set to False, the returned DataFrame have three
+    columns: 'series_id', 'datetime' and 'value', with a regular index.
 
     Parameters
     ----------
@@ -421,8 +426,7 @@ def series_wide_to_long(
 
     return data
 
-
-def series_long_to_dict(
+def reshape_series_long_to_dict(
     data: pd.DataFrame,
     series_id: str,
     index: str,
@@ -483,7 +487,7 @@ def series_long_to_dict(
     return series_dict
 
 
-def exog_long_to_dict(
+def reshape_exog_long_to_dict(
     data: pd.DataFrame,
     series_id: str,
     index: str,

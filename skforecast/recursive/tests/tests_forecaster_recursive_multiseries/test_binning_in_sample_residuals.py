@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 from skforecast.recursive import ForecasterRecursiveMultiSeries
-from skforecast.preprocessing import series_wide_to_long
+from skforecast.preprocessing import reshape_series_wide_to_long
 
 
 def test_binning_in_sample_residuals_output():
@@ -25,7 +25,7 @@ def test_binning_in_sample_residuals_output():
         }
     )
     series.index = pd.date_range(start="2022-01-04", periods=10, freq="D")
-    series = series_wide_to_long(series)
+    series = reshape_series_wide_to_long(series)
 
     forecaster.fit(series=series)
     forecaster.in_sample_residuals_ = {}
@@ -146,7 +146,7 @@ def test_binning_in_sample_residuals_store_in_sample_residuals_False():
         }
     )
     series.index = pd.date_range(start="2022-01-04", periods=10, freq="D")
-    series = series_wide_to_long(series)
+    series = reshape_series_wide_to_long(series)
 
     forecaster.fit(series=series, store_in_sample_residuals=False)
     forecaster.in_sample_residuals_ = None
@@ -210,7 +210,7 @@ def test_binning_in_sample_residuals_probabilistic_mode_no_binned():
         }
     )
     series.index = pd.date_range(start="2022-01-04", periods=10, freq="D")
-    series = series_wide_to_long(series)
+    series = reshape_series_wide_to_long(series)
 
     forecaster.fit(series=series)
     forecaster.in_sample_residuals_ = {}
@@ -284,7 +284,7 @@ def test_binning_in_sample_residuals_stores_maximum_10000_residuals_per_level():
         },
         index=pd.date_range(start="1990-01-01", periods=15_000, freq="h"),
     )
-    series = series_wide_to_long(series)
+    series = reshape_series_wide_to_long(series)
     
     forecaster.fit(series=series)
     forecaster.in_sample_residuals_ = {}

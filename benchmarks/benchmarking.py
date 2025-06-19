@@ -242,9 +242,13 @@ def plot_benchmark_results(df, function_name, add_median=True, add_mean=True):
 
 def run_benchmark_ForecasterRecursiveMultiSeries(
     series_dict,
-    series_dataframe,
+    series_dataframe_long,
     exog_dict,
-    exog_dict_prediction
+    exog_dataframe_long,
+    exog_dataframe_wide,
+    exog_dict_prediction,
+    exog_dataframe_long_prediction
+    exog_dataframe_wide_prediction
 ):
     """
     Run all benchmarks for the ForecasterRecursiveMultiSeries class and save the results.
@@ -271,29 +275,56 @@ def run_benchmark_ForecasterRecursiveMultiSeries(
             encoding="ordinal"
         )
 
+    # Fit
+    # --------------------------------------------------------------------------
+    def ForecasterRecursiveMultiSeries_fit_series_is_dict_no_exog(forecaster, series):
+        forecaster.fit(series=series, exog=None)
+
     def ForecasterRecursiveMultiSeries_fit_series_is_dict_exog_is_dict(forecaster, series, exog):
         forecaster.fit(series=series, exog=exog)
-        
-    def ForecasterRecursiveMultiSeries__create_train_X_y_series_is_dict_exog_is_dict(forecaster, series, exog):
-        forecaster._create_train_X_y(series=series, exog=exog)
 
     def ForecasterRecursiveMultiSeries_fit_series_is_dataframe_no_exog(forecaster, series):
         forecaster.fit(series=series, exog=None)
 
-    def ForecasterRecursiveMultiSeries__create_train_X_y_series_is_dataframe_no_exog(forecaster, series):
+    def ForecasterRecursiveMultiSeries_fit_series_is_dataframe_exog_is_dataframe(forecaster, series, exog):
+        forecaster.fit(series=series, exog=exog)
+
+    def ForecasterRecursiveMultiSeries_fit_series_is_dataframe_exog_is_dict(forecaster, series, exog):
+        forecaster.fit(series=series, exog=exog)
+
+    # _create_train_X_y and create_train_X_y_single_series
+    # --------------------------------------------------------------------------
+    def ForecasterRecursiveMultiSeries__create_train_X_y_series_is_dict_no_exog(forecaster, series):
         forecaster._create_train_X_y(series=series, exog=None)
 
-    def ForecasterRecursiveMultiSeries__create_train_X_y_series_is_dataframe_exog_dict(forecaster, series, exog):
+    def ForecasterRecursiveMultiSeries__create_train_X_y_series_is_dict_exog_is_dict(forecaster, series, exog):
+        forecaster._create_train_X_y(series=series, exog=exog)
+
+    def ForecasterRecursiveMultiSeries__create_train_X_y_series_is_dict_exog_is_df_wide(forecaster, series, exog):
+        forecaster._create_train_X_y(series=series, exog=exog)
+
+    def ForecasterRecursiveMultiSeries__create_train_X_y_series_is_df_long_no_exog(forecaster, series):
+        forecaster._create_train_X_y(series=series, exog=None)
+
+    def ForecasterRecursiveMultiSeries__create_train_X_y_series_is_df_long_exog_is_df_long(forecaster, series, exog):
+        forecaster._create_train_X_y(series=series, exog=exog)
+
+    def ForecasterRecursiveMultiSeries__create_train_X_y_series_is_df_long_exog_is_df_wide(forecaster, series, exog):
         forecaster._create_train_X_y(series=series, exog=exog)
 
     def ForecasterRecursiveMultiSeries__create_train_X_y_single_series(forecaster, y, exog):
         _ = forecaster._create_train_X_y_single_series(
-                y = y,
-                exog = exog,
+                y           = y,
+                exog        = exog,
                 ignore_exog = False,
             )
 
+    # Predict
+    # --------------------------------------------------------------------------
     def ForecasterRecursiveMultiSeries_predict_exog_is_dict(forecaster, exog):
+        forecaster.predict(steps=100, exog=exog, suppress_warnings=True)
+
+    def ForecasterRecursiveMultiSeries_predict_exog_is_df_long(forecaster, exog):
         forecaster.predict(steps=100, exog=exog, suppress_warnings=True)
 
     def ForecasterRecursiveMultiSeries_predict_interval_exog_is_dict_conformal(forecaster, exog):
@@ -306,6 +337,20 @@ def run_benchmark_ForecasterRecursiveMultiSeries(
         )
 
     def ForecasterRecursiveMultiSeries__create_predict_inputs_exog_is_dict(forecaster, exog):
+        _ = forecaster._create_predict_inputs(
+                steps        = 100,
+                exog         = exog,
+                check_inputs = True
+            )
+
+    def ForecasterRecursiveMultiSeries__create_predict_inputs_exog_is_df_long(forecaster, exog):
+        _ = forecaster._create_predict_inputs(
+                steps        = 100,
+                exog         = exog,
+                check_inputs = True
+            )
+        
+    def ForecasterRecursiveMultiSeries__create_predict_inputs_exog_is_df_wide(forecaster, exog):
         _ = forecaster._create_predict_inputs(
                 steps        = 100,
                 exog         = exog,
@@ -331,6 +376,35 @@ def run_benchmark_ForecasterRecursiveMultiSeries(
             encoding         = forecaster.encoding
         )
 
+    # Backtesting
+    # --------------------------------------------------------------------------
+    def ForecasterRecursiveMultiSeries_backtesting_series_is_dict_no_exog(forecaster, series):
+        if skforecast.__version__ >= '0.14.0':
+            cv = TimeSeriesFold(
+                    initial_train_size=1200,
+                    fixed_train_size=True,
+                    steps=50,
+                )
+            _ = backtesting_forecaster_multiseries(
+                    forecaster=forecaster,
+                    series=series,
+                    exog=None,
+                    cv=cv,
+                    metric='mean_squared_error',
+                    show_progress=False
+                )
+        else:
+            _ = backtesting_forecaster_multiseries(
+                    forecaster=forecaster,
+                    series=series,
+                    exog=None,
+                    initial_train_size=1200,
+                    fixed_train_size=True,
+                    steps=50,
+                    metric='mean_squared_error',
+                    show_progress=False
+                )
+            
     def ForecasterRecursiveMultiSeries_backtesting_series_is_dict_exog_is_dict(forecaster, series, exog):
         if skforecast.__version__ >= '0.14.0':
             cv = TimeSeriesFold(
@@ -357,8 +431,8 @@ def run_benchmark_ForecasterRecursiveMultiSeries(
                     metric='mean_squared_error',
                     show_progress=False
                 )
-            
-    def ForecasterRecursiveMultiSeries_backtesting_series_is_dataframe_no_exog(forecaster, series):
+
+    def ForecasterRecursiveMultiSeries_backtesting_series_is_dict_no_exog_conformal(forecaster, series):
         if skforecast.__version__ >= '0.14.0':
             cv = TimeSeriesFold(
                     initial_train_size=1200,
@@ -368,7 +442,10 @@ def run_benchmark_ForecasterRecursiveMultiSeries(
             _ = backtesting_forecaster_multiseries(
                     forecaster=forecaster,
                     series=series,
+                    exog=None,
                     cv=cv,
+                    interval=[5, 95],
+                    interval_method='conformal',
                     metric='mean_squared_error',
                     show_progress=False
                 )
@@ -376,41 +453,17 @@ def run_benchmark_ForecasterRecursiveMultiSeries(
             _ = backtesting_forecaster_multiseries(
                     forecaster=forecaster,
                     series=series,
+                    exog=None,
                     initial_train_size=1200,
                     fixed_train_size=True,
                     steps=50,
+                    interval=[5, 95],
+                    interval_method='conformal',
                     metric='mean_squared_error',
                     show_progress=False
                 )
             
-    def ForecasterRecursiveMultiSeries_backtesting_series_is_dataframe_exog_dict(forecaster, series, exog):
-        if skforecast.__version__ >= '0.14.0':
-            cv = TimeSeriesFold(
-                    initial_train_size=1200,
-                    fixed_train_size=True,
-                    steps=50,
-                )
-            _ = backtesting_forecaster_multiseries(
-                    forecaster=forecaster,
-                    series=series,
-                    exog=exog,
-                    cv=cv,
-                    metric='mean_squared_error',
-                    show_progress=False
-                )
-        else:
-            _ = backtesting_forecaster_multiseries(
-                    forecaster=forecaster,
-                    series=series,
-                    exog=exog,
-                    initial_train_size=1200,
-                    fixed_train_size=True,
-                    steps=50,
-                    metric='mean_squared_error',
-                    show_progress=False
-                )
-            
-    def ForecasterRecursiveMultiSeries_backtesting_series_is_dataframe_exog_dict_conformal(forecaster, series, exog):
+    def ForecasterRecursiveMultiSeries_backtesting_series_is_dict_exog_dict_conformal(forecaster, series, exog):
         if skforecast.__version__ >= '0.14.0':
             cv = TimeSeriesFold(
                     initial_train_size=1200,
@@ -443,6 +496,11 @@ def run_benchmark_ForecasterRecursiveMultiSeries(
 
     runner = BenchmarkRunner(repeat=10, output_dir="./")
     _ = runner.benchmark(
+            ForecasterRecursiveMultiSeries__create_train_X_y_series_is_dict_no_exog,
+            forecaster=forecaster,
+            series=series_dict
+        )
+    _ = runner.benchmark(
             ForecasterRecursiveMultiSeries__create_train_X_y_series_is_dict_exog_is_dict,
             forecaster=forecaster,
             series=series_dict,
@@ -453,6 +511,13 @@ def run_benchmark_ForecasterRecursiveMultiSeries(
             forecaster=forecaster,
             series=series_dataframe
         )
+    _ = runner.benchmark(
+        ForecasterRecursiveMultiSeries__create_train_X_y_series_is_dataframe_exog_is_dataframe,
+            forecaster=forecaster,
+            series=series_dataframe,
+            exog=exog_dataframe,
+        )
+
     _ = runner.benchmark(
             ForecasterRecursiveMultiSeries__create_train_X_y_series_is_dataframe_exog_dict,
             forecaster=forecaster,
@@ -468,6 +533,11 @@ def run_benchmark_ForecasterRecursiveMultiSeries(
 
     runner = BenchmarkRunner(repeat=5, output_dir="./")
     _ = runner.benchmark(
+            ForecasterRecursiveMultiSeries_fit_series_is_dict_no_exog,
+            forecaster=forecaster,
+            series=series_dict
+        )
+    _ = runner.benchmark(
             ForecasterRecursiveMultiSeries_fit_series_is_dict_exog_is_dict,
             forecaster=forecaster,
             series=series_dict,
@@ -478,6 +548,19 @@ def run_benchmark_ForecasterRecursiveMultiSeries(
             forecaster=forecaster,
             series=series_dataframe
         )
+    _ = runner.benchmark(
+        ForecasterRecursiveMultiSeries_fit_series_is_dataframe_exog_is_dataframe,
+            forecaster=forecaster,
+            series=series_dataframe,
+            exog=exog_dataframe
+        )
+    _ = runner.benchmark(
+        ForecasterRecursiveMultiSeries_fit_series_is_dataframe_exog_is_dict,
+            forecaster=forecaster,
+            series=series_dataframe,
+            exog=exog_dict
+        )
+
 
     forecaster.fit(series=series_dict, exog=exog_dict, store_in_sample_residuals = True)
     runner = BenchmarkRunner(repeat=10, output_dir="./")

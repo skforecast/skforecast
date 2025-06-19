@@ -11,7 +11,7 @@ from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
 from lightgbm import LGBMRegressor
-from skforecast.preprocessing import RollingFeatures, series_wide_to_long
+from skforecast.preprocessing import RollingFeatures, reshape_series_wide_to_long
 from ....recursive import ForecasterRecursiveMultiSeries
 
 
@@ -22,7 +22,7 @@ def test_create_train_X_y_TypeError_when_exog_is_categorical_of_no_int():
     series = pd.DataFrame({'1': pd.Series(np.arange(4)),  
                            '2': pd.Series(np.arange(4))})
     series.index = pd.date_range(start='2000-01-01', periods=len(series), freq='D')
-    series = series_wide_to_long(series)
+    series = reshape_series_wide_to_long(series)
     exog = pd.Series(['A', 'B', 'C', 'D'], name='exog', dtype='category')
     exog.index = pd.date_range(start='2000-01-01', periods=len(exog), freq='D')
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
@@ -51,7 +51,7 @@ def test_create_train_X_y_ValueError_when_Forecaster_fitted_and_different_column
         'l4': pd.Series(np.arange(10))
     })
     new_series.index = pd.date_range(start='2000-01-01', periods=len(new_series), freq='D')
-    new_series = series_wide_to_long(new_series)
+    new_series = reshape_series_wide_to_long(new_series)
 
     err_msg = re.escape(
         "Once the Forecaster has been trained, `series` must contain "
@@ -78,7 +78,7 @@ def test_create_train_X_y_ValueError_when_Forecaster_fitted_without_exog_and_exo
         'l2': pd.Series(np.arange(10))
     })
     series.index = pd.date_range(start='2000-01-01', periods=len(series), freq='D')
-    series = series_wide_to_long(series)
+    series = reshape_series_wide_to_long(series)
     exog = pd.Series(np.arange(10), name='exog')
     exog.index = pd.date_range(start='2000-01-01', periods=len(exog), freq='D')
 
@@ -105,7 +105,7 @@ def test_create_train_X_y_ValueError_when_Forecaster_fitted_and_different_exog_c
         'l2': pd.Series(np.arange(10))
     })
     series.index = pd.date_range(start='2000-01-01', periods=len(series), freq='D')
-    series = series_wide_to_long(series)
+    series = reshape_series_wide_to_long(series)
     new_exog = pd.Series(np.arange(10), name='exog2')
     new_exog.index = pd.date_range(start='2000-01-01', periods=len(new_exog), freq='D')
 
@@ -127,7 +127,7 @@ def test_create_train_X_y_output_when_series_and_exog_is_None():
     series = pd.DataFrame({'1': pd.Series(np.arange(7, dtype=float)), 
                            '2': pd.Series(np.arange(7, dtype=float))})
     series.index = pd.date_range(start='2000-01-01', periods=len(series), freq='D')
-    series = series_wide_to_long(series)
+    series = reshape_series_wide_to_long(series)
 
     forecaster = ForecasterRecursiveMultiSeries(
         LinearRegression(),
@@ -369,7 +369,7 @@ def test_create_train_X_y_output_when_series_10_and_exog_is_dataframe_of_float_i
     series = pd.DataFrame({'1': pd.Series(np.arange(10, dtype=float)), 
                            '2': pd.Series(np.arange(10, dtype=float))})
     series.index = pd.date_range(start='2000-01-01', periods=len(series), freq='D')
-    series = series_wide_to_long(series)
+    series = reshape_series_wide_to_long(series)
     exog = pd.DataFrame({'exog_1': np.arange(100, 110, dtype=dtype),
                          'exog_2': np.arange(1000, 1010, dtype=dtype)})
     exog.index = pd.date_range(start='2000-01-01', periods=len(exog), freq='D')
@@ -458,7 +458,7 @@ def test_create_train_X_y_output_when_MissingExogWarning_exog_not_for_any_level(
     series = pd.DataFrame({'1': pd.Series(np.arange(10, dtype=float)), 
                            '2': pd.Series(np.arange(10, dtype=float))})
     series.index = pd.date_range(start='2000-01-01', periods=len(series), freq='D')
-    series = series_wide_to_long(series)
+    series = reshape_series_wide_to_long(series)
     exog = pd.DataFrame({'exog_1': np.arange(100, 110, dtype=float),
                          'exog_2': np.arange(1000, 1010, dtype=float)})
     exog.index = pd.date_range(start='2000-01-01', periods=len(exog), freq='D')
@@ -554,7 +554,7 @@ def test_create_train_X_y_output_when_series_10_and_exog_is_series_of_bool_str(e
     series = pd.DataFrame({'l1': pd.Series(np.arange(10, dtype=float)), 
                            'l2': pd.Series(np.arange(10, dtype=float))})
     series.index = pd.date_range(start='2000-01-01', periods=len(series), freq='D')
-    series = series_wide_to_long(series)
+    series = reshape_series_wide_to_long(series)
     exog = pd.Series(exog_values * 10, name='exog', dtype=dtype)
     exog.index = pd.date_range(start='2000-01-01', periods=len(exog), freq='D')
 
@@ -1330,7 +1330,7 @@ def test_create_train_X_y_output_when_series_different_length_and_exog_is_datafr
     series = pd.DataFrame({'l1': pd.Series(np.arange(10, dtype=float)), 
                            'l2': pd.Series([np.nan, np.nan, 2., 3., 4., 5., 6., 7., 8., 9.])})
     series.index = pd.date_range("1990-01-01", periods=10, freq='D')
-    series = series_wide_to_long(series)
+    series = reshape_series_wide_to_long(series)
     exog = pd.DataFrame({'exog_1': pd.Series(np.arange(100, 110), dtype=float),
                          'exog_2': pd.Series(np.arange(1000, 1010), dtype=int),
                          'exog_3': pd.Categorical(range(100, 110))})
