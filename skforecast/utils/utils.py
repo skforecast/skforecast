@@ -31,7 +31,8 @@ from ..exceptions import (
     MissingValuesWarning,
     SaveLoadSkforecastWarning,
     SkforecastVersionWarning,
-    UnknownLevelWarning
+    UnknownLevelWarning,
+    InputTypeWarning
 )
 
 optional_dependencies = {
@@ -2520,6 +2521,13 @@ def check_preprocess_series(
             series_id: series.loc[series_id][first_col].rename(series_id)
             for series_id in series.index.levels[0]
         }
+        warnings.warn(
+            "Using a long-format DataFrame as `series` requires additional transformations, "
+            "which can increase computational time. It is recommended to use a dictionary of "
+            "Series instead. For more information, see: "
+            "https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting#input-data",
+            InputTypeWarning
+        )
 
     else:
 
@@ -2657,6 +2665,13 @@ def check_preprocess_exog_multiseries(
                 }
             )
             series_ids_in_exog = exog.index.levels[0]
+            warnings.warn(
+                "Using a long-format DataFrame as `exog` requires additional transformations, "
+                "which can increase computational time. It is recommended to use a dictionary of "
+                "Series or DataFrames instead. For more information, see: "
+                "https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting#input-data",
+                InputTypeWarning
+            )
         else:
             if not isinstance(exog.index, series_index_type):
                 raise TypeError(

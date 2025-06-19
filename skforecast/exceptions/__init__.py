@@ -11,6 +11,7 @@ from .exceptions import (
     UnknownLevelWarning,
     SaveLoadSkforecastWarning,
     SkforecastVersionWarning,
+    InputTypeWarning,
     warn_skforecast_categories,
     set_warnings_style
 )
