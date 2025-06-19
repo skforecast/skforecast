@@ -454,30 +454,34 @@ def run_benchmark_ForecasterRecursiveMultiSeries(
             series=series_dict_different_length,
             exog=exog_dict
         )
-    _ = runner.benchmark(
-            ForecasterRecursiveMultiSeries__create_train_X_y_series_is_dict_exog_is_df_wide,
-            forecaster=forecaster,
-            series=series_dict,
-            exog=exog_df_wide
-        )
-    _ = runner.benchmark(
-        ForecasterRecursiveMultiSeries__create_train_X_y_series_is_df_long_no_exog,
-            forecaster=forecaster,
-            series=series_df_long,
-        )
+    if skforecast.__version__ >= "0.17.0":
+        _ = runner.benchmark(
+                ForecasterRecursiveMultiSeries__create_train_X_y_series_is_dict_exog_is_df_wide,
+                forecaster=forecaster,
+                series=series_dict,
+                exog=exog_df_wide
+            )
+    if skforecast.__version__ >= "0.17.0":
+        _ = runner.benchmark(
+            ForecasterRecursiveMultiSeries__create_train_X_y_series_is_df_long_no_exog,
+                forecaster=forecaster,
+                series=series_df_long,
+            )
 
-    _ = runner.benchmark(
-            ForecasterRecursiveMultiSeries__create_train_X_y_series_is_df_long_exog_is_df_long,
-            forecaster=forecaster,
-            series=series_df_long,
-            exog=exog_df_long
-        )
-    _ = runner.benchmark(
-            ForecasterRecursiveMultiSeries__create_train_X_y_series_is_df_long_exog_is_df_wide,
-            forecaster=forecaster,
-            series=series_df_long,
-            exog=exog_df_wide
-        )
+    if skforecast.__version__ >= "0.17.0":
+        _ = runner.benchmark(
+                ForecasterRecursiveMultiSeries__create_train_X_y_series_is_df_long_exog_is_df_long,
+                forecaster=forecaster,
+                series=series_df_long,
+                exog=exog_df_long
+            )
+    if skforecast.__version__ >= "0.17.0":
+        _ = runner.benchmark(
+                ForecasterRecursiveMultiSeries__create_train_X_y_series_is_df_long_exog_is_df_wide,
+                forecaster=forecaster,
+                series=series_df_long,
+                exog=exog_df_wide
+            )
     _ = runner.benchmark(
         ForecasterRecursiveMultiSeries__create_train_X_y_single_series,
             forecaster=forecaster,
@@ -513,23 +517,28 @@ def run_benchmark_ForecasterRecursiveMultiSeries(
             series=series_dict_different_length,
             exog=exog_dict
         )
-    _ = runner.benchmark(
-        ForecasterRecursiveMultiSeries_fit_series_is_dataframe_no_exog,
-            forecaster=forecaster,
-            series=series_df_long
-        )
-    _ = runner.benchmark(
-        ForecasterRecursiveMultiSeries_fit_series_is_dataframe_exog_is_dataframe,
-            forecaster=forecaster,
-            series=series_df_long,
-            exog=exog_df_long
-        )
-    _ = runner.benchmark(
-        ForecasterRecursiveMultiSeries_fit_series_is_dataframe_exog_is_dict,
-            forecaster=forecaster,
-            series=series_df_long,
-            exog=exog_dict
-        )
+    
+    if skforecast.__version__ >= "0.17.0":
+        _ = runner.benchmark(
+            ForecasterRecursiveMultiSeries_fit_series_is_dataframe_no_exog,
+                forecaster=forecaster,
+                series=series_df_long
+            )
+        
+    if skforecast.__version__ >= "0.17.0":
+        _ = runner.benchmark(
+            ForecasterRecursiveMultiSeries_fit_series_is_dataframe_exog_is_dataframe,
+                forecaster=forecaster,
+                series=series_df_long,
+                exog=exog_df_long
+            )
+    if skforecast.__version__ >= "0.17.0":
+        _ = runner.benchmark(
+            ForecasterRecursiveMultiSeries_fit_series_is_dataframe_exog_is_dict,
+                forecaster=forecaster,
+                series=series_df_long,
+                exog=exog_dict
+            )
 
     # Predict
     # --------------------------------------------------------------------------
@@ -548,11 +557,12 @@ def run_benchmark_ForecasterRecursiveMultiSeries(
             forecaster=forecaster,
             exog=exog_dict_prediction
         )
-    _ = runner.benchmark(
-            ForecasterRecursiveMultiSeries_predict_exog_is_df_long,
-            forecaster=forecaster,
-            exog=exog_df_long_prediction
-        )   
+    if skforecast.__version__ >= "0.17.0":
+        _ = runner.benchmark(
+                ForecasterRecursiveMultiSeries_predict_exog_is_df_long,
+                forecaster=forecaster,
+                exog=exog_df_long_prediction
+            )   
     _ = runner.benchmark(
             ForecasterRecursiveMultiSeries_predict_interval_exog_is_dict_conformal,
             forecaster=forecaster,
@@ -563,11 +573,12 @@ def run_benchmark_ForecasterRecursiveMultiSeries(
             forecaster=forecaster,
             exog=exog_dict_prediction
         )
-    _ = runner.benchmark(
-            ForecasterRecursiveMultiSeries__create_predict_inputs_exog_is_df_long,
-            forecaster=forecaster,
-            exog=exog_df_long_prediction
-        )
+    if skforecast.__version__ >= "0.17.0":
+        _ = runner.benchmark(
+                ForecasterRecursiveMultiSeries__create_predict_inputs_exog_is_df_long,
+                forecaster=forecaster,
+                exog=exog_df_long_prediction
+            )
 
     _ = runner.benchmark(
             ForecasterRecursiveMultiSeries__check_predict_inputs,
@@ -575,14 +586,15 @@ def run_benchmark_ForecasterRecursiveMultiSeries(
             exog=exog_dict_prediction
         )
     
-    # NOTE: Only when the forecaster is fitted with a wide dataframe, the exogenous variables can be
-    # passed as a wide dataframe.
-    forecaster.fit(series=series_dict, exog=exog_df_wide, store_in_sample_residuals = True)
-    _ = runner.benchmark(
-            ForecasterRecursiveMultiSeries__create_predict_inputs_exog_is_df_wide,
-            forecaster=forecaster,
-            exog=exog_df_wide_prediction
-        )
+    if skforecast.__version__ >= "0.17.0":
+        # NOTE: Only when the forecaster is fitted with a wide dataframe, the exogenous variables can be
+        # passed as a wide dataframe.
+        forecaster.fit(series=series_dict, exog=exog_df_wide, store_in_sample_residuals = True)
+        _ = runner.benchmark(
+                ForecasterRecursiveMultiSeries__create_predict_inputs_exog_is_df_wide,
+                forecaster=forecaster,
+                exog=exog_df_wide_prediction
+            )
 
     # Backtesting
     # --------------------------------------------------------------------------
