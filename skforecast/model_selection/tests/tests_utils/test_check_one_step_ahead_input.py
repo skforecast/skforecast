@@ -15,7 +15,11 @@ from skforecast.model_selection._utils import check_one_step_ahead_input
 
 # Fixtures
 from skforecast.model_selection.tests.fixtures_model_selection import y
-from skforecast.model_selection.tests.fixtures_model_selection_multiseries import series
+from skforecast.model_selection.tests.fixtures_model_selection_multiseries import (
+    series_wide_range,
+    series_dict_range,
+    series_dict_dt
+)
 
 
 def test_check_one_step_ahead_input_TypeError_when_cv_not_OneStepAheadFold():
@@ -125,192 +129,6 @@ def test_check_one_step_ahead_input_TypeError_when_series_is_not_pandas_DataFram
         )
 
 
-def test_check_one_step_ahead_input_TypeError_when_series_is_not_pandas_DataFrame_multiseries_dict():
-    """
-    Test TypeError is raised in check_one_step_ahead_input if `series` is not a 
-    pandas DataFrame in forecasters multiseries with dict.
-    """
-    forecaster = ForecasterRecursiveMultiSeries(regressor=Ridge(), lags=2)
-    bad_series = pd.Series(np.arange(50))
-    cv = OneStepAheadFold(initial_train_size=len(bad_series) - 12)
-
-    err_msg = re.escape(
-        f"`series` must be a pandas DataFrame or a dict of DataFrames or Series. "
-        f"Got {type(bad_series)}."
-    )
-    with pytest.raises(TypeError, match = err_msg):
-        check_one_step_ahead_input(
-            forecaster        = forecaster,
-            cv                = cv,
-            metric            = 'mean_absolute_error',
-            series            = bad_series,
-            show_progress     = False,
-            suppress_warnings = False
-        )
-
-
-def test_check_one_step_ahead_input_TypeError_when_series_is_dict_of_pandas_Series_multiseries_dict():
-    """
-    Test TypeError is raised in check_one_step_ahead_input if `series` is not a 
-    dict of pandas Series in forecasters multiseries with dict.
-    """
-    forecaster = ForecasterRecursiveMultiSeries(regressor=Ridge(), lags=2)
-    bad_series = {'l1': np.arange(50)}
-    cv = OneStepAheadFold(initial_train_size=len(bad_series['l1']) - 12)
-
-    err_msg = re.escape(
-        "If `series` is a dictionary, all series must be a named "
-        "pandas Series or a pandas DataFrame with a single column. "
-        "Review series: ['l1']"
-    )
-    with pytest.raises(TypeError, match = err_msg):
-        check_one_step_ahead_input(
-            forecaster        = forecaster,
-            cv                = cv,
-            metric            = 'mean_absolute_error',
-            series            = bad_series,
-            show_progress     = False,
-            suppress_warnings = False
-        )
-
-
-def test_check_one_step_ahead_input_ValueError_when_series_is_dict_no_DatetimeIndex_multiseries_dict():
-    """
-    Test ValueError is raised in check_one_step_ahead_input if `series` is a 
-    dict with pandas Series with no DatetimeIndex in forecasters 
-    multiseries with dict.
-    """
-    forecaster = ForecasterRecursiveMultiSeries(regressor=Ridge(), lags=2)
-    series_dict = {
-        'l1': pd.Series(np.arange(50)),
-        'l2': pd.Series(np.arange(50))
-    }
-    cv = OneStepAheadFold(initial_train_size=len(series_dict['l1']) - 12)
-
-    err_msg = re.escape(
-        "If `series` is a dictionary, all series must have a Pandas DatetimeIndex "
-        "as index with the same frequency. Review series: ['l1', 'l2']"
-    )
-    with pytest.raises(ValueError, match = err_msg):
-        check_one_step_ahead_input(
-            forecaster        = forecaster,
-            cv                = cv,
-            metric            = 'mean_absolute_error',
-            series            = series_dict,
-            show_progress     = False,
-            suppress_warnings = False
-        )
-
-
-def test_check_one_step_ahead_input_ValueError_when_series_is_dict_diff_freq_multiseries_dict():
-    """
-    Test ValueError is raised in check_one_step_ahead_input if `series` is a 
-    dict with pandas Series of difference frequency in forecasters 
-    multiseries with dict.
-    """
-    forecaster = ForecasterRecursiveMultiSeries(regressor=Ridge(), lags=2)
-    series_dict = {
-        'l1': pd.Series(np.arange(50)),
-        'l2': pd.Series(np.arange(50))
-    }
-    series_dict['l1'].index = pd.date_range(
-        start='2000-01-01', periods=len(series_dict['l1']), freq='D'
-    )
-    series_dict['l2'].index = pd.date_range(
-        start='2000-01-01', periods=len(series_dict['l2']), freq='MS'
-    )
-    
-    cv = OneStepAheadFold(initial_train_size=len(series_dict['l1']) - 12)
-
-    err_msg = re.escape(
-        "If `series` is a dictionary, all series must have a Pandas DatetimeIndex "
-        "as index with the same frequency. Found frequencies: ['<Day>', '<MonthBegin>']"
-    )
-    with pytest.raises(ValueError, match = err_msg):
-        check_one_step_ahead_input(
-            forecaster        = forecaster,
-            cv                = cv,
-            metric            = 'mean_absolute_error',
-            series            = series_dict,
-            show_progress     = False,
-            suppress_warnings = False
-        )
-
-
-def test_check_one_step_ahead_input_TypeError_when_not_valid_exog_type_multiseries_dict():
-    """
-    Test TypeError is raised in check_one_step_ahead_input if `exog` is not a
-    pandas Series, DataFrame, dictionary of pandas Series/DataFrames or None.
-    """
-    forecaster = ForecasterRecursiveMultiSeries(regressor=Ridge(), lags=2)
-    series_dict = {
-        'l1': pd.Series(np.arange(50)),
-        'l2': pd.Series(np.arange(50))
-    }
-    series_dict['l1'].index = pd.date_range(
-        start='2000-01-01', periods=len(series_dict['l1']), freq='D'
-    )
-    series_dict['l2'].index = pd.date_range(
-        start='2000-01-01', periods=len(series_dict['l2']), freq='D'
-    )
-
-    bad_exog = np.arange(50)
-    
-    cv = OneStepAheadFold(initial_train_size=len(series_dict['l1']) - 12)
-
-    err_msg = re.escape(
-        f"`exog` must be a pandas Series, DataFrame, dictionary of pandas "
-        f"Series/DataFrames or None. Got {type(bad_exog)}."
-    )
-    with pytest.raises(TypeError, match = err_msg):
-        check_one_step_ahead_input(
-            forecaster        = forecaster,
-            cv                = cv,
-            metric            = 'mean_absolute_error',
-            series            = series_dict,
-            exog              = bad_exog,
-            show_progress     = False,
-            suppress_warnings = False
-        )
-
-
-def test_check_one_step_ahead_input_TypeError_when_not_valid_exog_dict_type_multiseries_dict():
-    """
-    Test TypeError is raised in check_one_step_ahead_input if `exog` is not a
-    dictionary of pandas Series/DataFrames.
-    """
-    forecaster = ForecasterRecursiveMultiSeries(regressor=Ridge(), lags=2)
-    series_dict = {
-        'l1': pd.Series(np.arange(50)),
-        'l2': pd.Series(np.arange(50))
-    }
-    series_dict['l1'].index = pd.date_range(
-        start='2000-01-01', periods=len(series_dict['l1']), freq='D'
-    )
-    series_dict['l2'].index = pd.date_range(
-        start='2000-01-01', periods=len(series_dict['l2']), freq='D'
-    )
-
-    bad_exog = {'l1': np.arange(50)}
-    
-    cv = OneStepAheadFold(initial_train_size=len(series_dict['l1']) - 12)
-
-    err_msg = re.escape(
-        "If `exog` is a dictionary, All exog must be a named pandas "
-        "Series, a pandas DataFrame or None. Review exog: ['l1']"
-    )
-    with pytest.raises(TypeError, match = err_msg):
-        check_one_step_ahead_input(
-            forecaster        = forecaster,
-            cv                = cv,
-            metric            = 'mean_absolute_error',
-            series            = series_dict,
-            exog              = bad_exog,
-            show_progress     = False,
-            suppress_warnings = False
-        )
-
-
 def test_check_one_step_ahead_input_TypeError_when_not_valid_exog_type():
     """
     Test TypeError is raised in check_one_step_ahead_input if `exog` is not a
@@ -352,7 +170,9 @@ def test_check_one_step_ahead_input_ValueError_when_ForecasterRecursiveMultiSeri
     forecaster = ForecasterRecursiveMultiSeries(
         regressor=Ridge(), lags=2, differentiation=differentiation
     )
-    cv = OneStepAheadFold(initial_train_size=len(series) - 12, differentiation=1)
+    cv = OneStepAheadFold(
+        initial_train_size=len(series_dict_range['l1']) - 12, differentiation=1
+    )
     
     err_msg = re.escape(
         "When using a dict as `differentiation` in ForecasterRecursiveMultiSeries, "
@@ -366,7 +186,7 @@ def test_check_one_step_ahead_input_ValueError_when_ForecasterRecursiveMultiSeri
             forecaster        = forecaster,
             cv                = cv,
             metric            = 'mean_absolute_error',
-            series            = series,
+            series            = series_dict_range,
             show_progress     = False,
             suppress_warnings = False
         )
@@ -384,7 +204,7 @@ def test_check_one_step_ahead_input_ValueError_when_forecaster_diff_not_cv_diff(
     if type(forecaster).__name__ == 'ForecasterRecursive':
         data_length = len(y)
     else:
-        data_length = len(series)
+        data_length = len(series_dict_range['l1'])
     
     cv = OneStepAheadFold(initial_train_size=data_length - 12, differentiation=1)
     
@@ -400,7 +220,7 @@ def test_check_one_step_ahead_input_ValueError_when_forecaster_diff_not_cv_diff(
             cv                = cv,
             metric            = 'mean_absolute_error',
             y                 = y,
-            series            = series,
+            series            = series_dict_range,
             show_progress     = False,
             suppress_warnings = False
         )
@@ -450,14 +270,11 @@ def test_check_one_step_ahead_input_ValueError_when_initial_train_size_not_corre
     y_datetime = y.copy()
     y_datetime.index = pd.date_range(start='2000-01-01', periods=len(y), freq='D')
 
-    series_datetime = series.copy()
-    series_datetime.index = pd.date_range(start='2000-01-01', periods=len(y), freq='D')
-
     if type(forecaster).__name__ == 'ForecasterRecursive':
         data_length = len(y_datetime)
         data_name = 'y'
     else:
-        data_length = len(series_datetime)
+        data_length = len(series_dict_dt['l1'])
         data_name = 'series'
 
     if initial_train_size == 'greater':
@@ -481,7 +298,7 @@ def test_check_one_step_ahead_input_ValueError_when_initial_train_size_not_corre
             cv                = cv,
             metric            = 'mean_absolute_error',
             y                 = y_datetime,
-            series            = series_datetime,
+            series            = series_dict_dt,
             show_progress     = False,
             suppress_warnings = False
         )

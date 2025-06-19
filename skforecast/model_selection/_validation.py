@@ -1228,7 +1228,6 @@ def backtesting_forecaster_multiseries(
             f"the `model_selection` module. Got {forecaster_name}"
         )
     
-    # TODO: see if we can skip some warnings from create_train_X_y
     if forecaster_name == 'ForecasterRecursiveMultiSeries':
         series, series_indexes = check_preprocess_series(series)
         if exog is not None:

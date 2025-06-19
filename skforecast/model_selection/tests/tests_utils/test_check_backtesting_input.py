@@ -18,7 +18,11 @@ from skforecast.model_selection._utils import check_backtesting_input
 
 # Fixtures
 from skforecast.model_selection.tests.fixtures_model_selection import y
-from skforecast.model_selection.tests.fixtures_model_selection_multiseries import series
+from skforecast.model_selection.tests.fixtures_model_selection_multiseries import (
+    series_wide_range,
+    series_dict_range,
+    series_dict_dt
+)
 
 
 def test_check_backtesting_input_TypeError_when_cv_not_TimeSeriesFold():
@@ -129,274 +133,6 @@ def test_check_backtesting_input_TypeError_when_series_is_not_pandas_DataFrame_m
         )
 
 
-def test_check_backtesting_input_TypeError_when_series_is_not_pandas_DataFrame_multiseries_dict():
-    """
-    Test TypeError is raised in check_backtesting_input if `series` is not a 
-    pandas DataFrame in forecasters multiseries with dict.
-    """
-    forecaster = ForecasterRecursiveMultiSeries(regressor=Ridge(), lags=2)
-    bad_series = pd.Series(np.arange(50))
-    
-    cv = TimeSeriesFold(
-             steps                 = 3,
-             initial_train_size    = len(bad_series) - 12,
-             refit                 = False,
-             fixed_train_size      = False,
-             gap                   = 0,
-             allow_incomplete_fold = True,
-             verbose               = False
-         )
-
-    err_msg = re.escape(
-        f"`series` must be a pandas DataFrame or a dict of DataFrames or Series. "
-        f"Got {type(bad_series)}."
-    )
-    with pytest.raises(TypeError, match = err_msg):
-        check_backtesting_input(
-            forecaster              = forecaster,
-            cv                      = cv,
-            metric                  = 'mean_absolute_error',
-            series                  = bad_series,
-            interval                = None,
-            alpha                   = None,
-            n_boot                  = 500,
-            random_state            = 123,
-            use_in_sample_residuals = True,
-            show_progress           = False,
-            suppress_warnings       = False
-        )
-
-
-def test_check_backtesting_input_TypeError_when_series_is_dict_of_pandas_Series_multiseries_dict():
-    """
-    Test TypeError is raised in check_backtesting_input if `series` is not a 
-    dict of pandas Series in forecasters multiseries with dict.
-    """
-    forecaster = ForecasterRecursiveMultiSeries(regressor=Ridge(), lags=2)
-    bad_series = {'l1': np.arange(50)}
-    
-    cv = TimeSeriesFold(
-             steps                 = 3,
-             initial_train_size    = len(bad_series['l1'][:-12]),
-             refit                 = False,
-             fixed_train_size      = False,
-             gap                   = 0,
-             allow_incomplete_fold = True,
-             verbose               = False
-         )
-
-    err_msg = re.escape(
-        "If `series` is a dictionary, all series must be a named "
-        "pandas Series or a pandas DataFrame with a single column. "
-        "Review series: ['l1']"
-    )
-    with pytest.raises(TypeError, match = err_msg):
-        check_backtesting_input(
-            forecaster              = forecaster,
-            cv                      = cv,
-            metric                  = 'mean_absolute_error',
-            y                       = None,
-            series                  = bad_series,
-            interval                = None,
-            alpha                   = None,
-            n_boot                  = 500,
-            random_state            = 123,
-            use_in_sample_residuals = True,
-            show_progress           = False,
-            suppress_warnings       = False
-        )
-
-
-def test_check_backtesting_input_ValueError_when_series_is_dict_no_DatetimeIndex_multiseries_dict():
-    """
-    Test ValueError is raised in check_backtesting_input if `series` is a 
-    dict with pandas Series with no DatetimeIndex in forecasters 
-    multiseries with dict.
-    """
-    forecaster = ForecasterRecursiveMultiSeries(regressor=Ridge(), lags=2)
-    series_dict = {
-        'l1': pd.Series(np.arange(50)),
-        'l2': pd.Series(np.arange(50))
-    }
-    
-    cv = TimeSeriesFold(
-             steps                 = 3,
-             initial_train_size    = len(series_dict['l1'][:-12]),
-             refit                 = False,
-             fixed_train_size      = False,
-             gap                   = 0,
-             allow_incomplete_fold = True,
-             verbose               = False
-         )
-
-    err_msg = re.escape(
-        "If `series` is a dictionary, all series must have a Pandas DatetimeIndex "
-        "as index with the same frequency. Review series: ['l1', 'l2']"
-    )
-    with pytest.raises(ValueError, match = err_msg):
-        check_backtesting_input(
-            forecaster              = forecaster,
-            cv                      = cv,
-            metric                  = 'mean_absolute_error',
-            series                  = series_dict,
-            interval                = None,
-            alpha                   = None,
-            n_boot                  = 500,
-            random_state            = 123,
-            use_in_sample_residuals = True,
-            show_progress           = False,
-            suppress_warnings       = False
-        )
-
-
-def test_check_backtesting_input_ValueError_when_series_is_dict_diff_freq_multiseries_dict():
-    """
-    Test ValueError is raised in check_backtesting_input if `series` is a 
-    dict with pandas Series of difference frequency in forecasters 
-    multiseries with dict.
-    """
-    forecaster = ForecasterRecursiveMultiSeries(regressor=Ridge(), lags=2)
-    series_dict = {
-        'l1': pd.Series(np.arange(50)),
-        'l2': pd.Series(np.arange(50))
-    }
-    series_dict['l1'].index = pd.date_range(
-        start='2000-01-01', periods=len(series_dict['l1']), freq='D'
-    )
-    series_dict['l2'].index = pd.date_range(
-        start='2000-01-01', periods=len(series_dict['l2']), freq='MS'
-    )
-    
-    cv = TimeSeriesFold(
-             steps                 = 3,
-             initial_train_size    = len(series_dict['l1'][:-12]),
-             refit                 = False,
-             fixed_train_size      = False,
-             gap                   = 0,
-             allow_incomplete_fold = True,
-             verbose               = False
-         )
-
-    err_msg = re.escape(
-        "If `series` is a dictionary, all series must have a Pandas DatetimeIndex "
-        "as index with the same frequency. Found frequencies: ['<Day>', '<MonthBegin>']"
-    )
-    with pytest.raises(ValueError, match = err_msg):
-        check_backtesting_input(
-            forecaster              = forecaster,
-            cv                      = cv,
-            metric                  = 'mean_absolute_error',
-            series                  = series_dict,
-            interval                = None,
-            alpha                   = None,
-            n_boot                  = 500,
-            random_state            = 123,
-            use_in_sample_residuals = True,
-            show_progress           = False,
-            suppress_warnings       = False
-        )
-
-
-def test_check_backtesting_input_TypeError_when_not_valid_exog_type_multiseries_dict():
-    """
-    Test TypeError is raised in check_backtesting_input if `exog` is not a
-    pandas Series, DataFrame, dictionary of pandas Series/DataFrames or None.
-    """
-    forecaster = ForecasterRecursiveMultiSeries(regressor=Ridge(), lags=2)
-    series_dict = {
-        'l1': pd.Series(np.arange(50)),
-        'l2': pd.Series(np.arange(50))
-    }
-    series_dict['l1'].index = pd.date_range(
-        start='2000-01-01', periods=len(series_dict['l1']), freq='D'
-    )
-    series_dict['l2'].index = pd.date_range(
-        start='2000-01-01', periods=len(series_dict['l2']), freq='D'
-    )
-
-    bad_exog = np.arange(50)
-    
-    cv = TimeSeriesFold(
-             steps                 = 3,
-             initial_train_size    = len(series_dict['l1'][:-12]),
-             refit                 = False,
-             fixed_train_size      = False,
-             gap                   = 0,
-             allow_incomplete_fold = True,
-             verbose               = False
-         )
-
-    err_msg = re.escape(
-        f"`exog` must be a pandas Series, DataFrame, dictionary of pandas "
-        f"Series/DataFrames or None. Got {type(bad_exog)}."
-    )
-    with pytest.raises(TypeError, match = err_msg):
-        check_backtesting_input(
-            forecaster              = forecaster,
-            cv                      = cv,
-            metric                  = 'mean_absolute_error',
-            series                  = series_dict,
-            exog                    = bad_exog,
-            interval                = None,
-            alpha                   = None,
-            n_boot                  = 500,
-            random_state            = 123,
-            use_in_sample_residuals = True,
-            show_progress           = False,
-            suppress_warnings       = False
-        )
-
-
-def test_check_backtesting_input_TypeError_when_not_valid_exog_dict_type_multiseries_dict():
-    """
-    Test TypeError is raised in check_backtesting_input if `exog` is not a
-    dictionary of pandas Series/DataFrames.
-    """
-    forecaster = ForecasterRecursiveMultiSeries(regressor=Ridge(), lags=2)
-    series_dict = {
-        'l1': pd.Series(np.arange(50)),
-        'l2': pd.Series(np.arange(50))
-    }
-    series_dict['l1'].index = pd.date_range(
-        start='2000-01-01', periods=len(series_dict['l1']), freq='D'
-    )
-    series_dict['l2'].index = pd.date_range(
-        start='2000-01-01', periods=len(series_dict['l2']), freq='D'
-    )
-
-    bad_exog = {'l1': np.arange(50)}
-    
-    cv = TimeSeriesFold(
-             steps                 = 3,
-             initial_train_size    = len(series_dict['l1'][:-12]),
-             refit                 = False,
-             fixed_train_size      = False,
-             gap                   = 0,
-             allow_incomplete_fold = True,
-             verbose               = False
-         )
-
-    err_msg = re.escape(
-        "If `exog` is a dictionary, All exog must be a named pandas "
-        "Series, a pandas DataFrame or None. Review exog: ['l1']"
-    )
-    with pytest.raises(TypeError, match = err_msg):
-        check_backtesting_input(
-            forecaster              = forecaster,
-            cv                      = cv,
-            metric                  = 'mean_absolute_error',
-            series                  = series_dict,
-            exog                    = bad_exog,
-            interval                = None,
-            alpha                   = None,
-            n_boot                  = 500,
-            random_state            = 123,
-            use_in_sample_residuals = True,
-            show_progress           = False,
-            suppress_warnings       = False
-        )
-
-
 def test_check_backtesting_input_TypeError_when_not_valid_exog_type():
     """
     Test TypeError is raised in check_backtesting_input if `exog` is not a
@@ -454,7 +190,7 @@ def test_check_backtesting_input_ValueError_when_ForecasterRecursiveMultiSeries_
 
     cv = TimeSeriesFold(
              steps                 = 3,
-             initial_train_size    = len(series) - 12,
+             initial_train_size    = len(series_dict_range['l1']) - 12,
              refit                 = False,
              fixed_train_size      = False,
              gap                   = 0,
@@ -475,7 +211,7 @@ def test_check_backtesting_input_ValueError_when_ForecasterRecursiveMultiSeries_
             forecaster              = forecaster,
             cv                      = cv,
             metric                  = 'mean_absolute_error',
-            series                  = series,
+            series                  = series_dict_range,
             interval                = None,
             n_boot                  = 500,
             random_state            = 123,
@@ -497,7 +233,7 @@ def test_check_backtesting_input_ValueError_when_forecaster_diff_not_cv_diff(for
     if type(forecaster).__name__ == 'ForecasterRecursive':
         data_length = len(y)
     else:
-        data_length = len(series)
+        data_length = len(series_dict_range['l1'])
     
     cv = TimeSeriesFold(
              steps                 = 3,
@@ -522,7 +258,7 @@ def test_check_backtesting_input_ValueError_when_forecaster_diff_not_cv_diff(for
             cv                      = cv,
             metric                  = 'mean_absolute_error',
             y                       = y,
-            series                  = series,
+            series                  = series_dict_range,
             interval                = None,
             n_boot                  = 500,
             random_state            = 123,
@@ -631,14 +367,11 @@ def test_check_backtesting_input_ValueError_when_initial_train_size_not_correct_
     y_datetime = y.copy()
     y_datetime.index = pd.date_range(start='2000-01-01', periods=len(y), freq='D')
 
-    series_datetime = series.copy()
-    series_datetime.index = pd.date_range(start='2000-01-01', periods=len(y), freq='D')
-
     if type(forecaster).__name__ == 'ForecasterRecursive':
         data_length = len(y_datetime)
         data_name = 'y'
     else:
-        data_length = len(series_datetime)
+        data_length = len(series_dict_dt['l1'])
         data_name = 'series'
 
     if initial_train_size == 'greater':
@@ -669,7 +402,7 @@ def test_check_backtesting_input_ValueError_when_initial_train_size_not_correct_
             cv                      = cv,
             metric                  = 'mean_absolute_error',
             y                       = y_datetime,
-            series                  = series_datetime,
+            series                  = series_dict_dt,
             interval                = None,
             alpha                   = None,
             n_boot                  = 500,
@@ -695,14 +428,11 @@ def test_check_backtesting_input_ValueError_when_initial_train_size_plus_gap_les
     y_datetime = y.copy()
     y_datetime.index = pd.date_range(start='2000-01-01', periods=len(y), freq='D')
 
-    series_datetime = series.copy()
-    series_datetime.index = pd.date_range(start='2000-01-01', periods=len(y), freq='D')
-
     if type(forecaster).__name__ == 'ForecasterRecursive':
         data_length = len(y_datetime)
         data_name = 'y'
     else:
-        data_length = len(series_datetime)
+        data_length = len(series_dict_dt['l1'])
         data_name = 'series'
 
     if initial_train_size == 'int':
@@ -730,7 +460,7 @@ def test_check_backtesting_input_ValueError_when_initial_train_size_plus_gap_les
             cv                      = cv,
             metric                  = 'mean_absolute_error',
             y                       = y,
-            series                  = series,
+            series                  = series_dict_dt,
             interval                = None,
             alpha                   = None,
             n_boot                  = 500,
@@ -1189,7 +919,6 @@ def test_check_backtesting_input_ValueError_when_return_predictors_and_forecaste
             cv                = cv,
             metric            = 'mean_absolute_error',
             y                 = y,
-            series            = series,
             return_predictors = True,
             show_progress     = False,
             suppress_warnings = False
@@ -1208,7 +937,7 @@ def test_check_backtesting_input_ValueError_when_not_enough_data_to_create_a_fol
     if type(forecaster).__name__ == 'ForecasterRecursive':
         data_length = len(y)
     else:
-        data_length = len(series)
+        data_length = len(series_dict_range['l1'])
     
     cv = TimeSeriesFold(
              steps                 = 5,
@@ -1231,7 +960,7 @@ def test_check_backtesting_input_ValueError_when_not_enough_data_to_create_a_fol
             cv                      = cv,
             metric                  = 'mean_absolute_error',
             y                       = y,
-            series                  = series,
+            series                  = series_dict_range,
             interval                = None,
             alpha                   = None,
             n_boot                  = 500,
@@ -1276,7 +1005,7 @@ def test_check_backtesting_input_ValueError_when_Direct_forecaster_not_enough_st
             cv                = cv,
             metric            = 'mean_absolute_error',
             y                 = y,
-            series            = series,
+            series            = series_wide_range,
             show_progress     = False,
             suppress_warnings = False
         )

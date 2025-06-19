@@ -230,88 +230,20 @@ def check_backtesting_input(
         data_length = len(series)
         
     elif forecaster_name in forecasters_multi_dict:
-        if not isinstance(series, (pd.DataFrame, dict)):
-            raise TypeError(
-                f"`series` must be a pandas DataFrame or a dict of DataFrames or Series. "
-                f"Got {type(series)}."
-            )
+        
+        # NOTE: Checks are not need as they are done in the function 
+        # `check_preprocess_series` that is used before `check_backtesting_input`
+        # in the backtesting function.
         
         data_name = 'series'
-        if isinstance(series, dict):
-
-            # TODO: Review checks for long-format and redundant. This checks can be moved
-            # before check_backtesting_input and trasform multiseries to dict
-            # ------------------------------------------------------------------
-            not_valid_series = [
-                k 
-                for k, v in series.items()
-                if not isinstance(v, (pd.Series, pd.DataFrame))
-            ]
-            if not_valid_series:
-                raise TypeError(
-                    f"If `series` is a dictionary, all series must be a named "
-                    f"pandas Series or a pandas DataFrame with a single column. "
-                    f"Review series: {not_valid_series}"
-                )
-
-            not_valid_index = []
-            indexes_freq = set()
-            for k, v in series.items():
-                if isinstance(v.index, pd.DatetimeIndex):
-                    indexes_freq.add(v.index.freqstr)
-                elif isinstance(v.index, pd.RangeIndex):
-                    indexes_freq.add(v.index.step)
-                else:
-                    not_valid_index.append(k)
-
-            if not_valid_index:
-                raise ValueError(
-                    f"If `series` is a dictionary, all series must have a Pandas "
-                    f"RangeIndex or DatetimeIndex with the same step/frequency. "
-                    f"Review series: {not_valid_index}"
-                )
-
-            if None in indexes_freq:
-                raise ValueError(
-                    f"If `series` is a dictionary, all series must have a Pandas "
-                    f"RangeIndex or DatetimeIndex with the same step/frequency. "
-                    f"Found series with no frequency or step."
-                )
-            if not len(indexes_freq) == 1:
-                raise ValueError(
-                    f"If `series` is a dictionary, all series must have a Pandas "
-                    f"RangeIndex or DatetimeIndex with the same step/frequency. "
-                    f"Found frequencies: {sorted(indexes_freq)}"
-                )
-            # ------------------------------------------------------------------
-            
-            data_length = max([len(series[serie]) for serie in series])
-        else:
-            data_length = len(series)
+        data_length = max([len(series[serie]) for serie in series])
 
     if exog is not None:
         if forecaster_name in forecasters_multi_dict:
-            if not isinstance(exog, (pd.Series, pd.DataFrame, dict)):
-                raise TypeError(
-                    f"`exog` must be a pandas Series, DataFrame, dictionary of pandas "
-                    f"Series/DataFrames or None. Got {type(exog)}."
-                )
-            if isinstance(exog, dict):
-
-                # TODO: Review checks for long-format and redundant. This checks can be moved
-                # before check_backtesting_input and trasform multiseries to dict
-                # ------------------------------------------------------------------
-                not_valid_exog = [
-                    k 
-                    for k, v in exog.items()
-                    if not isinstance(v, (pd.Series, pd.DataFrame, type(None)))
-                ]
-                if not_valid_exog:
-                    raise TypeError(
-                        f"If `exog` is a dictionary, All exog must be a named pandas "
-                        f"Series, a pandas DataFrame or None. Review exog: {not_valid_exog}"
-                    )
-                # ------------------------------------------------------------------
+            # NOTE: Checks are not need as they are done in the function 
+            # `check_preprocess_exog_multiseries` that is used before 
+            # `check_backtesting_input` in the backtesting function.
+            pass
         else:
             if not isinstance(exog, (pd.Series, pd.DataFrame)):
                 raise TypeError(
@@ -594,88 +526,20 @@ def check_one_step_ahead_input(
     
     # TODO: Review checks for long-format and redundant
     elif forecaster_name in forecasters_multi_dict:
-        if not isinstance(series, (pd.DataFrame, dict)):
-            raise TypeError(
-                f"`series` must be a pandas DataFrame or a dict of DataFrames or Series. "
-                f"Got {type(series)}."
-            )
+        
+        # NOTE: Checks are not need as they are done in the function 
+        # `check_preprocess_series` that is used before `check_one_step_ahead_input`
+        # in the backtesting function.
         
         data_name = 'series'
-        if isinstance(series, dict):
-
-            # TODO: Review checks for long-format and redundant. This checks can be moved
-            # before check_backtesting_input and trasform multiseries to dict
-            # ------------------------------------------------------------------
-            not_valid_series = [
-                k 
-                for k, v in series.items()
-                if not isinstance(v, (pd.Series, pd.DataFrame))
-            ]
-            if not_valid_series:
-                raise TypeError(
-                    f"If `series` is a dictionary, all series must be a named "
-                    f"pandas Series or a pandas DataFrame with a single column. "
-                    f"Review series: {not_valid_series}"
-                )
-
-            not_valid_index = []
-            indexes_freq = set()
-            for k, v in series.items():
-                if isinstance(v.index, pd.DatetimeIndex):
-                    indexes_freq.add(v.index.freqstr)
-                elif isinstance(v.index, pd.RangeIndex):
-                    indexes_freq.add(v.index.step)
-                else:
-                    not_valid_index.append(k)
-
-            if not_valid_index:
-                raise TypeError(
-                    f"If `series` is a dictionary, all series must have a Pandas "
-                    f"RangeIndex or DatetimeIndex with the same step/frequency. "
-                    f"Review series: {not_valid_index}"
-                )
-
-            if None in indexes_freq:
-                raise TypeError(
-                    f"If `series` is a dictionary, all series must have a Pandas "
-                    f"RangeIndex or DatetimeIndex with the same step/frequency. "
-                    f"Found series with no frequency or step."
-                )
-            if not len(indexes_freq) == 1:
-                raise ValueError(
-                    f"If `series` is a dictionary, all series must have a Pandas "
-                    f"RangeIndex or DatetimeIndex with the same step/frequency. "
-                    f"Found frequencies: {sorted(indexes_freq)}"
-                )
-            # ------------------------------------------------------------------
-
-            data_length = max([len(series[serie]) for serie in series])
-        else:
-            data_length = len(series)
+        data_length = max([len(series[serie]) for serie in series])
 
     if exog is not None:
         if forecaster_name in forecasters_multi_dict:
-            if not isinstance(exog, (pd.Series, pd.DataFrame, dict)):
-                raise TypeError(
-                    f"`exog` must be a pandas Series, DataFrame, dictionary of pandas "
-                    f"Series/DataFrames or None. Got {type(exog)}."
-                )
-            if isinstance(exog, dict):
-
-                # TODO: Review checks for long-format and redundant. This checks can be moved
-                # before check_backtesting_input and trasform multiseries to dict
-                # ------------------------------------------------------------------
-                not_valid_exog = [
-                    k 
-                    for k, v in exog.items()
-                    if not isinstance(v, (pd.Series, pd.DataFrame, type(None)))
-                ]
-                if not_valid_exog:
-                    raise TypeError(
-                        f"If `exog` is a dictionary, All exog must be a named pandas "
-                        f"Series, a pandas DataFrame or None. Review exog: {not_valid_exog}"
-                    )
-                # ------------------------------------------------------------------
+            # NOTE: Checks are not need as they are done in the function 
+            # `check_preprocess_exog_multiseries` that is used before 
+            # `check_backtesting_input` in the backtesting function.
+            pass
         else:
             if not isinstance(exog, (pd.Series, pd.DataFrame)):
                 raise TypeError(
