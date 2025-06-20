@@ -2455,7 +2455,6 @@ def set_cpu_gpu_device(
     return original_device
 
 
-# TODO: Review docstring to include long format and delete short format
 def check_preprocess_series(
     series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
 ) -> tuple[dict[str, pd.Series], dict[str, pd.Index]]:

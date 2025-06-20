@@ -4,13 +4,12 @@ import re
 import pytest
 import numpy as np
 import pandas as pd
-from skforecast.exceptions import MissingExogWarning
+from skforecast.exceptions import InputTypeWarning, MissingExogWarning
 from skforecast.utils import check_preprocess_series
 from skforecast.utils import check_preprocess_exog_multiseries
 from skforecast.recursive.tests.tests_forecaster_recursive_multiseries.fixtures_forecaster_recursive_multiseries import (
     series_dict_range,
     series_dict_dt,
-
     exog_wide_range,
     exog_wide_dt,
     exog_long_dt,
@@ -317,12 +316,19 @@ def test_output_check_preprocess_exog_multiseries_when_exog_DataFrame_MultiIndex
     """
     series_dict, series_indexes = check_preprocess_series(series=series_dict_dt)
 
-    exog_dict, exog_names_in_ = check_preprocess_exog_multiseries(
-                                    series_names_in_  = ['l1', 'l2'],
-                                    series_index_type = type(series_indexes['l1']),
-                                    exog              = exog_long_dt,
-                                    exog_dict         = {'l1': None, 'l2': None}
-                                )
+    warn_msg = re.escape(
+        "Using a long-format DataFrame as `exog` requires additional transformations, "
+        "which can increase computational time. It is recommended to use a dictionary of "
+        "Series or DataFrames instead. For more information, see: "
+        "https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting#input-data"
+    )
+    with pytest.warns(InputTypeWarning, match=warn_msg):
+        exog_dict, exog_names_in_ = check_preprocess_exog_multiseries(
+                                        series_names_in_  = ['l1', 'l2'],
+                                        series_index_type = type(series_indexes['l1']),
+                                        exog              = exog_long_dt,
+                                        exog_dict         = {'l1': None, 'l2': None}
+                                    )
 
     expected_exog_dict = {
         'l1': pd.DataFrame(

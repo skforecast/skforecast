@@ -4,7 +4,7 @@ import re
 import pytest
 import numpy as np
 import pandas as pd
-from skforecast.exceptions import IgnoredArgumentWarning
+from skforecast.exceptions import IgnoredArgumentWarning, InputTypeWarning
 from skforecast.preprocessing import reshape_series_wide_to_long
 from skforecast.utils import check_preprocess_series
 from skforecast.recursive.tests.tests_forecaster_recursive_multiseries.fixtures_forecaster_recursive_multiseries import (
@@ -230,9 +230,16 @@ def test_ValueError_check_preprocess_series_when_all_series_values_are_missing_D
 
 def test_check_preprocess_series_when_series_is_pandas_DataFrame_MultiIndex_datetime():
     """
-    Test check_preprocess_series when `series` is a pandas DataFrame.
+    Test check_preprocess_series when `series` is a pandas DataFrame long format.
     """
-    series_dict, series_indexes = check_preprocess_series(series=series_long_dt)
+    warn_msg = re.escape(
+        "Using a long-format DataFrame as `series` requires additional transformations, "
+        "which can increase computational time. It is recommended to use a dictionary of "
+        "Series instead. For more information, see: "
+        "https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting#input-data"
+    )
+    with pytest.warns(InputTypeWarning, match=warn_msg):
+        series_dict, series_indexes = check_preprocess_series(series=series_long_dt)
 
     expected_series_dict = {
         '1': pd.Series(
