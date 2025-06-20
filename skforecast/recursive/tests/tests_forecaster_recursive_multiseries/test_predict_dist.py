@@ -11,9 +11,11 @@ from sklearn.preprocessing import OneHotEncoder
 from sklearn.linear_model import LinearRegression
 
 # Fixtures
-from .fixtures_forecaster_recursive_multiseries import series
-from .fixtures_forecaster_recursive_multiseries import exog
-from .fixtures_forecaster_recursive_multiseries import exog_predict
+from .fixtures_forecaster_recursive_multiseries import (
+    series_dict_range,
+    exog_wide_range,
+    exog_pred_wide_range
+)
 
 transformer_exog = ColumnTransformer(
                        [('scale', StandardScaler(), ['exog_1']),
@@ -34,7 +36,9 @@ def test_predict_dist_TypeError_when_distribution_object_is_not_valid():
                      transformer_series = StandardScaler(),
                      transformer_exog   = transformer_exog,
                  )
-    forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
+    forecaster.fit(
+        series=series_dict_range, exog=exog_wide_range, store_in_sample_residuals=True
+    )
     
     class CustomObject:  # pragma: no cover
         pass
@@ -46,7 +50,7 @@ def test_predict_dist_TypeError_when_distribution_object_is_not_valid():
     with pytest.raises(TypeError, match = err_msg):
         forecaster.predict_dist(
             steps                   = 2,
-            exog                    = exog_predict,
+            exog                    = exog_pred_wide_range,
             distribution            = CustomObject(),
             n_boot                  = 4,
             use_in_sample_residuals = True,
@@ -55,7 +59,7 @@ def test_predict_dist_TypeError_when_distribution_object_is_not_valid():
 
 
 @pytest.mark.parametrize("level", 
-                         ['1', ['1']], 
+                         ['l1', ['l1']], 
                          ids=lambda lvl: f'level: {lvl}')
 def test_predict_dist_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_True_exog_and_transformer(level):
     """
@@ -70,12 +74,14 @@ def test_predict_dist_output_when_forecaster_is_LinearRegression_steps_is_2_in_s
                      transformer_exog   = transformer_exog,
                  )
 
-    forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
+    forecaster.fit(
+        series=series_dict_range, exog=exog_wide_range, store_in_sample_residuals=True
+    )
     results = forecaster.predict_dist(
                   steps                   = 2,
                   distribution            = norm,
                   levels                  = level,
-                  exog                    = exog_predict,
+                  exog                    = exog_pred_wide_range,
                   n_boot                  = 4,
                   use_in_sample_residuals = True,
                   use_binned_residuals    = False,
@@ -84,7 +90,7 @@ def test_predict_dist_output_when_forecaster_is_LinearRegression_steps_is_2_in_s
 
     expected = pd.DataFrame(
         {
-            "level": ["1", "1"],
+            "level": ["l1", "l1"],
             "loc": [0.3071804611998517, 0.33695529446570166],
             "scale": [0.1435578185939024, 0.21900963160500286],
         },
@@ -95,7 +101,7 @@ def test_predict_dist_output_when_forecaster_is_LinearRegression_steps_is_2_in_s
 
 
 @pytest.mark.parametrize("levels", 
-                         [['1', '2'], None], 
+                         [['l1', 'l2'], None], 
                          ids=lambda lvl: f'levels: {lvl}')
 def test_predict_dist_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_False_exog_and_transformer(levels):
     """
@@ -110,13 +116,15 @@ def test_predict_dist_output_when_forecaster_is_LinearRegression_steps_is_2_in_s
                      transformer_exog   = transformer_exog,
                  )
 
-    forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
+    forecaster.fit(
+        series=series_dict_range, exog=exog_wide_range, store_in_sample_residuals=True
+    )
     forecaster.out_sample_residuals_ = forecaster.in_sample_residuals_
     results = forecaster.predict_dist(
                   steps                   = 2,
                   distribution            = norm,
                   levels                  = levels,
-                  exog                    = exog_predict,
+                  exog                    = exog_pred_wide_range,
                   n_boot                  = 4,
                   use_in_sample_residuals = False,
                   use_binned_residuals    = False
@@ -124,7 +132,7 @@ def test_predict_dist_output_when_forecaster_is_LinearRegression_steps_is_2_in_s
 
     expected = pd.DataFrame(
         {
-            "level": ["1", "2", "1", "2"],
+            "level": ["l1", "l2", "l1", "l2"],
             "loc": [
                 0.3071804611998517,
                 0.5812127014174517,

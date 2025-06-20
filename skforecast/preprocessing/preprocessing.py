@@ -374,7 +374,59 @@ class TimeSeriesDifferentiator(BaseEstimator, TransformerMixin):
             setattr(self, param, value)
 
 
-def series_long_to_dict(
+def reshape_series_wide_to_long(
+    data: pd.DataFrame,
+    return_multi_index: bool = True
+) -> pd.DataFrame:
+    """
+    Convert a pandas DataFrame where each column represents a different time series
+    into a long format DataFrame with a MultiIndex. The index of the input DataFrame
+    must be a pandas DatetimeIndex with a defined frequency. The function reshapes the
+    DataFrame from wide format to long format, where each row corresponds to a
+    specific time point and series ID. The resulting DataFrame will have a MultiIndex
+    with the series IDs as the first level and a pandas DatetimeIndex as the second
+    level. If `return_multi_index` is set to False, the returned DataFrame have three
+    columns: 'series_id', 'datetime' and 'value', with a regular index.
+
+    Parameters
+    ----------
+    data: pandas DataFrame
+        Wide format series. The index must be a pandas DatetimeIndex with a 
+        defined frequency and each column must represent a different time series.
+    return_multi_index: bool, default True
+        If True, the returned DataFrame will have a MultiIndex with the series IDs
+        as the first level and a pandas DatetimeIndex as the second level. If False,
+        the returned DataFrame will have a regular index.
+
+    Returns
+    -------
+    data: pandas DataFrame
+        Long format series with a MultiIndex. The first level contains the series IDs,
+        and the second level contains a pandas DatetimeIndex with the same frequency
+        for each series.
+
+    """
+
+    if not isinstance(data, pd.DataFrame):
+        raise TypeError("`data` must be a pandas DataFrame.")
+    
+    if not isinstance(data.index, pd.DatetimeIndex):
+        raise TypeError("`data` index must be a pandas DatetimeIndex.")
+    
+    freq = data.index.freqstr
+    data.index.name = "datetime"
+    data = data.reset_index()
+    data = pd.melt(data, id_vars="datetime", var_name="series_id", value_name="value")
+    data = data.groupby("series_id", sort=False).apply(
+        lambda x: x.set_index("datetime").asfreq(freq), include_groups=False
+    )
+
+    if not return_multi_index:
+        data = data.reset_index()
+
+    return data
+
+def reshape_series_long_to_dict(
     data: pd.DataFrame,
     series_id: str,
     index: str,
@@ -418,10 +470,11 @@ def series_long_to_dict(
     for col in [series_id, index, values]:
         if col not in data.columns:
             raise ValueError(f"Column '{col}' not found in `data`.")
-        
-    original_sizes = data.groupby(series_id, observed=True).size()
+
+    data_grouped = data.groupby(series_id, observed=True)   
+    original_sizes = data_grouped.size()
     series_dict = {}
-    for k, v in data.groupby(series_id, observed=True):
+    for k, v in data_grouped:
         series_dict[k] = v.set_index(index)[values].asfreq(freq, fill_value=np.nan).rename(k)
         series_dict[k].index.name = None
         if not suppress_warnings and len(series_dict[k]) != original_sizes[k]:
@@ -434,7 +487,7 @@ def series_long_to_dict(
     return series_dict
 
 
-def exog_long_to_dict(
+def reshape_exog_long_to_dict(
     data: pd.DataFrame,
     series_id: str,
     index: str,
@@ -488,8 +541,10 @@ def exog_long_to_dict(
         col for col in data.columns 
         if pd.api.types.is_float_dtype(data[col])
     }
-    original_sizes = data.groupby(series_id, observed=True).size()
-    exog_dict = dict(tuple(data.groupby(series_id, observed=True)))
+
+    data_grouped = data.groupby(series_id, observed=True) 
+    original_sizes = data_grouped.size()
+    exog_dict = dict(tuple(data_grouped))
     exog_dict = {
         k: v.set_index(index).asfreq(freq, fill_value=np.nan).drop(columns=series_id)
         for k, v in exog_dict.items()
@@ -969,8 +1024,8 @@ class RollingFeatures():
                 if stat not in kwargs_stats:
                     features_names.append(f"roll_{stat}_{window_size}")
                 else:
-                    kwargs_sufix = "_".join([f"{k}_{v}" for k, v in kwargs_stats[stat].items()])
-                    features_names.append(f"roll_{stat}_{window_size}_{kwargs_sufix}")
+                    kwargs_suffix = "_".join([f"{k}_{v}" for k, v in kwargs_stats[stat].items()])
+                    features_names.append(f"roll_{stat}_{window_size}_{kwargs_suffix}")
         self.features_names = features_names
 
         self.fillna = fillna

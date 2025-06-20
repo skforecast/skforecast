@@ -4,8 +4,6 @@ import re
 import pytest
 import numpy as np
 import pandas as pd
-import joblib
-from pathlib import Path
 from lightgbm import LGBMRegressor
 from sklearn.linear_model import Ridge
 from skforecast.recursive import ForecasterRecursiveMultiSeries
@@ -18,12 +16,13 @@ from sklearn.metrics import mean_absolute_percentage_error
 from skforecast.metrics import mean_absolute_scaled_error
 
 # Fixtures
-THIS_DIR = Path(__file__).parent.parent
-series = pd.read_parquet(THIS_DIR/'fixture_multi_series_items_sales.parquet')
-series = series.asfreq('D')
-exog = pd.DataFrame({'day_of_week': series.index.dayofweek}, index = series.index)
-series_dict = joblib.load(THIS_DIR/'fixture_sample_multi_series.joblib')
-exog_dict = joblib.load(THIS_DIR/'fixture_sample_multi_series_exog.joblib')
+from ..fixtures_model_selection_multiseries import (
+    series_wide_dt_item_sales,
+    series_dict_dt_item_sales,
+    exog_wide_dt_item_sales,
+    series_dict_nans,
+    exog_dict_nans,
+)
 
 
 def test_predict_and_calculate_metrics_one_step_ahead_multiseries_input_types():
@@ -47,8 +46,8 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_input_types():
         X_train_encoding,
         X_test_encoding
     ) = forecaster._train_test_split_one_step_ahead(
-            series             = series,
-            exog               = exog,
+            series             = series_dict_dt_item_sales,
+            exog               = exog_wide_dt_item_sales,
             initial_train_size = initial_train_size,
         )
 
@@ -69,7 +68,7 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_input_types():
     )
     with pytest.raises(TypeError, match=err_msg):
         _predict_and_calculate_metrics_one_step_ahead_multiseries(
-            forecaster, series, X_train_invalid, y_train, X_test, y_test, 
+            forecaster, series_dict_dt_item_sales, X_train_invalid, y_train, X_test, y_test, 
             X_train_encoding, X_test_encoding, levels, metrics, add_aggregated_metric
         )
 
@@ -81,7 +80,7 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_input_types():
     )  
     with pytest.raises(TypeError, match=err_msg):
         _predict_and_calculate_metrics_one_step_ahead_multiseries(
-            forecaster, series, X_train, y_train_invalid, X_test, y_test, 
+            forecaster, series_dict_dt_item_sales, X_train, y_train_invalid, X_test, y_test, 
             X_train_encoding, X_test_encoding, levels, metrics, add_aggregated_metric
         )
 
@@ -92,7 +91,7 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_input_types():
     )
     with pytest.raises(TypeError, match=err_msg):
         _predict_and_calculate_metrics_one_step_ahead_multiseries(
-            forecaster, series, X_train, y_train, X_test_invalid, y_test, 
+            forecaster, series_dict_dt_item_sales, X_train, y_train, X_test_invalid, y_test, 
             X_train_encoding, X_test_encoding, levels, metrics, add_aggregated_metric
         )
 
@@ -104,7 +103,7 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_input_types():
     )
     with pytest.raises(TypeError, match=err_msg):
         _predict_and_calculate_metrics_one_step_ahead_multiseries(
-            forecaster, series, X_train, y_train, X_test, y_test_invalid, 
+            forecaster, series_dict_dt_item_sales, X_train, y_train, X_test, y_test_invalid, 
             X_train_encoding, X_test_encoding, levels, metrics, add_aggregated_metric
         )
 
@@ -115,7 +114,7 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_input_types():
     )
     with pytest.raises(TypeError, match=err_msg):
         _predict_and_calculate_metrics_one_step_ahead_multiseries(
-            forecaster, series, X_train, y_train, X_test, y_test, 
+            forecaster, series_dict_dt_item_sales, X_train, y_train, X_test, y_test, 
             X_train_encoding_invalid, X_test_encoding, levels, metrics, add_aggregated_metric
         )
 
@@ -126,7 +125,7 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_input_types():
     )
     with pytest.raises(TypeError, match=err_msg):
         _predict_and_calculate_metrics_one_step_ahead_multiseries(
-            forecaster, series, X_train, y_train, X_test, y_test, 
+            forecaster, series_dict_dt_item_sales, X_train, y_train, X_test, y_test, 
             X_train_encoding, X_test_encoding_invalid, levels, metrics, add_aggregated_metric
         )
 
@@ -137,7 +136,7 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_input_types():
     )
     with pytest.raises(TypeError, match=err_msg):
         _predict_and_calculate_metrics_one_step_ahead_multiseries(
-            forecaster, series, X_train, y_train, X_test, y_test, 
+            forecaster, series_dict_dt_item_sales, X_train, y_train, X_test, y_test, 
             X_train_encoding, X_test_encoding, levels_invalid, metrics, add_aggregated_metric
         )
 
@@ -148,7 +147,7 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_input_types():
     )
     with pytest.raises(TypeError, match=err_msg):
         _predict_and_calculate_metrics_one_step_ahead_multiseries(
-            forecaster, series, X_train, y_train, X_test, y_test, 
+            forecaster, series_dict_dt_item_sales, X_train, y_train, X_test, y_test, 
             X_train_encoding, X_test_encoding, levels, metrics_invalid, add_aggregated_metric
         )
 
@@ -159,7 +158,7 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_input_types():
     )
     with pytest.raises(TypeError, match=err_msg):
         _predict_and_calculate_metrics_one_step_ahead_multiseries(
-            forecaster, series, X_train, y_train, X_test, y_test, 
+            forecaster, series_dict_dt_item_sales, X_train, y_train, X_test, y_test, 
             X_train_encoding, X_test_encoding, levels, metrics, add_aggregated_metric_invalid
         )
 
@@ -205,8 +204,10 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_equival
 
     if type(forecaster) is ForecasterRecursiveMultiSeries:
         levels = ['item_1', 'item_2', 'item_3']
+        series = series_dict_dt_item_sales
     else:
         levels = ['item_1']
+        series = series_wide_dt_item_sales
 
     cv = TimeSeriesFold(
              initial_train_size = initial_train_size,
@@ -217,7 +218,7 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_equival
 
     metrics_backtesting, pred_backtesting = backtesting_forecaster_multiseries(
         series=series,
-        exog=exog,
+        exog=exog_wide_dt_item_sales,
         forecaster=forecaster,
         cv=cv,
         metric=metrics,
@@ -242,7 +243,7 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_equival
         X_test_encoding
     ) = forecaster._train_test_split_one_step_ahead(
             series             = series,
-            exog               = exog,
+            exog               = exog_wide_dt_item_sales,
             initial_train_size = initial_train_size,
         )
 
@@ -293,14 +294,14 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_Forecas
         X_train_encoding,
         X_test_encoding
     ) = forecaster._train_test_split_one_step_ahead(
-            series             = series,
-            exog               = exog,
+            series             = series_dict_dt_item_sales,
+            exog               = exog_wide_dt_item_sales,
             initial_train_size = initial_train_size,
         )
 
     results = _predict_and_calculate_metrics_one_step_ahead_multiseries(
         forecaster=forecaster,
-        series=series,
+        series=series_dict_dt_item_sales,
         X_train = X_train,
         y_train = y_train,
         X_test = X_test,
@@ -385,14 +386,14 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_Forecas
         X_train_encoding,
         X_test_encoding
     ) = forecaster._train_test_split_one_step_ahead(
-            series             = series,
-            exog               = exog,
+            series             = series_dict_dt_item_sales,
+            exog               = exog_wide_dt_item_sales,
             initial_train_size = initial_train_size,
         )
 
     results = _predict_and_calculate_metrics_one_step_ahead_multiseries(
         forecaster=forecaster,
-        series=series,
+        series=series_dict_dt_item_sales,
         X_train = X_train,
         y_train = y_train,
         X_test = X_test,
@@ -489,14 +490,14 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_Forecas
         X_train_encoding,
         X_test_encoding
     ) = forecaster._train_test_split_one_step_ahead(
-            series             = series,
-            exog               = exog,
+            series             = series_wide_dt_item_sales,
+            exog               = exog_wide_dt_item_sales,
             initial_train_size = initial_train_size,
         )
 
     results = _predict_and_calculate_metrics_one_step_ahead_multiseries(
         forecaster=forecaster,
-        series=series,
+        series=series_wide_dt_item_sales,
         X_train = X_train,
         y_train = y_train,
         X_test = X_test,
@@ -572,8 +573,8 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_equival
         )
 
     metrics_backtesting, pred_backtesting = backtesting_forecaster_multiseries(
-        series=series_dict,
-        exog=exog_dict,
+        series=series_dict_nans,
+        exog=exog_dict_nans,
         forecaster=forecaster,
         cv=cv,
         metric=metrics,
@@ -597,14 +598,14 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_equival
         X_train_encoding,
         X_test_encoding
     ) = forecaster._train_test_split_one_step_ahead(
-            series             = series_dict,
-            exog               = exog_dict,
+            series             = series_dict_nans,
+            exog               = exog_dict_nans,
             initial_train_size = initial_train_size,
         )
     
     metrics_one_step_ahead, pred_one_step_ahead = _predict_and_calculate_metrics_one_step_ahead_multiseries(
         forecaster=forecaster,
-        series=series_dict,
+        series=series_dict_nans,
         X_train = X_train,
         y_train= y_train,
         X_test = X_test,
@@ -657,8 +658,8 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_equival
         )
 
     metrics_backtesting, pred_backtesting = backtesting_forecaster_multiseries(
-        series=series_dict,
-        exog=exog_dict,
+        series=series_dict_nans,
+        exog=exog_dict_nans,
         forecaster=forecaster,
         cv=cv,
         metric=metrics,
@@ -682,14 +683,14 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_equival
         X_train_encoding,
         X_test_encoding
     ) = forecaster._train_test_split_one_step_ahead(
-            series             = series_dict,
-            exog               = exog_dict,
+            series             = series_dict_nans,
+            exog               = exog_dict_nans,
             initial_train_size = initial_train_size,
         )
     
     metrics_one_step_ahead, pred_one_step_ahead = _predict_and_calculate_metrics_one_step_ahead_multiseries(
         forecaster=forecaster,
-        series=series_dict,
+        series=series_dict_nans,
         X_train = X_train,
         y_train= y_train,
         X_test = X_test,

@@ -2,10 +2,8 @@
 # ==============================================================================
 import re
 import pytest
-import joblib
 import numpy as np
 import pandas as pd
-from pathlib import Path
 from sklearn.exceptions import NotFittedError
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
@@ -24,24 +22,17 @@ from ....preprocessing import RollingFeatures
 from ....recursive import ForecasterRecursiveMultiSeries
 
 # Fixtures
-from .fixtures_forecaster_recursive_multiseries import series
-from .fixtures_forecaster_recursive_multiseries import exog
-from .fixtures_forecaster_recursive_multiseries import exog_predict
-from .fixtures_forecaster_recursive_multiseries import expected_df_to_long_format
-
-THIS_DIR = Path(__file__).parent
-series_dict = joblib.load(THIS_DIR/'fixture_sample_multi_series.joblib')
-exog_dict = joblib.load(THIS_DIR/'fixture_sample_multi_series_exog.joblib')
-end_train = "2016-07-31 23:59:00"
-series_dict_train = {k: v.loc[:end_train,] for k, v in series_dict.items()}
-exog_dict_train = {k: v.loc[:end_train,] for k, v in exog_dict.items()}
-series_dict_test = {k: v.loc[end_train:,] for k, v in series_dict.items()}
-exog_dict_test = {k: v.loc[end_train:,] for k, v in exog_dict.items()}
-
-series_2 = pd.DataFrame({
-    '1': pd.Series(np.arange(start=0, stop=50, dtype=float)), 
-    '2': pd.Series(np.arange(start=50, stop=100, dtype=float))
-})
+from .fixtures_forecaster_recursive_multiseries import (
+    series_wide_dt,
+    series_dict_range,
+    exog_wide_range,
+    exog_pred_wide_range,
+    exog_pred_dict_range,
+    series_dict_nans_train,
+    exog_dict_nans_train,
+    exog_dict_nans_test,
+    expected_df_to_long_format
+)
 
 
 def test_create_predict_X_NotFittedError_when_fitted_is_False():
@@ -62,6 +53,11 @@ def test_output_create_predict_X_when_regressor_is_LinearRegression():
     """
     Test output create_predict_X when using LinearRegression as regressor.
     """
+    series_2 = pd.DataFrame({
+        '1': pd.Series(np.arange(start=0, stop=50, dtype=float)), 
+        '2': pd.Series(np.arange(start=50, stop=100, dtype=float))
+    }).to_dict(orient='series')
+
     forecaster = ForecasterRecursiveMultiSeries(
         LinearRegression(), lags=5, transformer_series=None
     )
@@ -101,8 +97,14 @@ def test_create_predict_X_when_regressor_is_LinearRegression_and_StandardScaler(
     """
     Test output create_predict_X when using LinearRegression and StandardScaler.
     """
-    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=5,
-                                              transformer_series=StandardScaler())
+    series_2 = pd.DataFrame({
+        '1': pd.Series(np.arange(start=0, stop=50, dtype=float)), 
+        '2': pd.Series(np.arange(start=50, stop=100, dtype=float))
+    }).to_dict(orient='series')
+
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=5, transformer_series=StandardScaler()
+    )
     forecaster.fit(series=series_2)
     results = forecaster.create_predict_X(steps=5, levels='1')
 
@@ -139,11 +141,11 @@ def test_create_predict_X_output_when_regressor_is_LinearRegression_with_transfo
                      encoding           = 'onehot',
                      transformer_series = StandardScaler()
                  )
-    forecaster.fit(series=series)
-    results = forecaster.create_predict_X(steps=5, levels='1') 
+    forecaster.fit(series=series_dict_range)
+    results = forecaster.create_predict_X(steps=5, levels='l1') 
 
     expected = {
-        '1': pd.DataFrame(
+        'l1': pd.DataFrame(
                  data = np.array([
                      [ 0.47762884,  0.07582436,  2.08066403, -0.08097053, -1.08141835,
                        1.        ,  0.        ],
@@ -155,7 +157,7 @@ def test_create_predict_X_output_when_regressor_is_LinearRegression_with_transfo
                        1.        ,  0.        ],
                      [-0.09026999, -0.34454241, -0.24415873,  0.11208288,  0.47762884,
                        1.        ,  0.        ]]),
-                 columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', '1', '2'],
+                 columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'l1', 'l2'],
                  index = pd.RangeIndex(start=50, stop=55, step=1)
              )
     }
@@ -166,7 +168,7 @@ def test_create_predict_X_output_when_regressor_is_LinearRegression_with_transfo
 
 @pytest.mark.parametrize("transformer_series", 
                          [StandardScaler(),
-                          {'1': StandardScaler(), '2': StandardScaler(), '_unknown_level': StandardScaler()}], 
+                          {'l1': StandardScaler(), 'l2': StandardScaler(), '_unknown_level': StandardScaler()}], 
                          ids = lambda tr: f'transformer_series type: {type(tr)}')
 def test_create_predict_X_output_when_regressor_is_LinearRegression_with_transform_series_and_transform_exog(transformer_series):
     """
@@ -186,11 +188,11 @@ def test_create_predict_X_output_when_regressor_is_LinearRegression_with_transfo
                      transformer_series = transformer_series,
                      transformer_exog   = transformer_exog,
                  )
-    forecaster.fit(series=series, exog=exog)
-    results = forecaster.create_predict_X(steps=5, levels='1', exog=exog_predict)
+    forecaster.fit(series=series_dict_range, exog=exog_wide_range)
+    results = forecaster.create_predict_X(steps=5, levels='l1', exog=exog_pred_dict_range)
 
     expected = {
-        '1': pd.DataFrame(
+        'l1': pd.DataFrame(
                  data = np.array([
                      [ 0.47762884,  0.07582436,  2.08066403, -0.08097053, -1.08141835,
                        0.        , -0.09362908,  1.        ,  0.        ],
@@ -222,8 +224,11 @@ def test_create_predict_X_output_when_regressor_is_LinearRegression_with_transfo
     as transformer_series and transformer_exog as transformer_exog with series 
     of different lengths.
     """
-    new_series = series.copy()
-    new_series.iloc[:10, 1] = np.nan
+    series_dict_range_nan = {
+        '1': series_dict_range['l1'].copy(),
+        '2': series_dict_range['l2'].copy()
+    }
+    series_dict_range_nan['2'].iloc[:10] = np.nan
 
     transformer_exog = ColumnTransformer(
                            [('scale', StandardScaler(), ['exog_1']),
@@ -237,8 +242,8 @@ def test_create_predict_X_output_when_regressor_is_LinearRegression_with_transfo
                      transformer_series = transformer_series,
                      transformer_exog   = transformer_exog,
                  )
-    forecaster.fit(series=new_series, exog=exog)
-    results = forecaster.create_predict_X(steps=5, exog=exog_predict)
+    forecaster.fit(series=series_dict_range_nan, exog=exog_wide_range)
+    results = forecaster.create_predict_X(steps=5, exog=exog_pred_wide_range)
 
     expected = {
         '1': pd.DataFrame(
@@ -289,7 +294,7 @@ def test_create_predict_X_output_when_categorical_features_native_implementation
     Test create_predict_X output when using HistGradientBoostingRegressor and categorical variables.
     """
     df_exog = pd.DataFrame(
-        {'exog_1': exog['exog_1'],
+        {'exog_1': exog_wide_range['exog_1'],
          'exog_2': ['a', 'b'] * 25,
          'exog_3': pd.Categorical(['F', 'G', 'H', 'I', 'J'] * 10)}
     )
@@ -321,11 +326,11 @@ def test_create_predict_X_output_when_categorical_features_native_implementation
                      transformer_series = None,
                      transformer_exog   = transformer_exog
                  )
-    forecaster.fit(series=series, exog=df_exog)
+    forecaster.fit(series=series_dict_range, exog=df_exog)
     results = forecaster.create_predict_X(steps=10, exog=exog_predict)
 
     expected = {
-        '1': pd.DataFrame(
+        'l1': pd.DataFrame(
                  data = np.array([
                      [0.61289453, 0.51948512, 0.98555979, 0.48303426, 0.25045537,
                       0.        , 0.        , 0.        , 0.51312815],
@@ -351,7 +356,7 @@ def test_create_predict_X_output_when_categorical_features_native_implementation
                             '_level_skforecast', 'exog_2', 'exog_3', 'exog_1'],
                  index = pd.RangeIndex(start=50, stop=60, step=1)
              ).astype({'exog_2': int, 'exog_3': int}),
-        '2': pd.DataFrame(
+        'l2': pd.DataFrame(
                  data = np.array([
                      [0.34345601, 0.2408559 , 0.39887629, 0.15112745, 0.6917018 ,
                       1.        , 0.        , 0.        , 0.51312815],
@@ -388,7 +393,7 @@ def test_create_predict_X_when_categorical_features_auto_detect_LGBMRegressor():
     Test create_predict_X when using LGBMRegressor and categorical variables.
     """
     df_exog = pd.DataFrame(
-        {'exog_1': exog['exog_1'],
+        {'exog_1': exog_wide_range['exog_1'],
          'exog_2': ['a', 'b'] * 25,
          'exog_3': pd.Categorical(['F', 'G', 'H', 'I', 'J'] * 10)}
     )
@@ -424,11 +429,11 @@ def test_create_predict_X_when_categorical_features_auto_detect_LGBMRegressor():
                      transformer_series = None,
                      transformer_exog   = transformer_exog
                  )
-    forecaster.fit(series=series, exog=df_exog)
+    forecaster.fit(series=series_dict_range, exog=df_exog)
     results = forecaster.create_predict_X(steps=10, exog=exog_predict)
 
     expected = {
-        '1': pd.DataFrame(
+        'l1': pd.DataFrame(
                  data = np.array([
                      [0.61289453, 0.51948512, 0.98555979, 0.48303426, 0.25045537,
                       0.        , 0.        , 0.        , 0.51312815],
@@ -455,7 +460,7 @@ def test_create_predict_X_when_categorical_features_auto_detect_LGBMRegressor():
                  index = pd.RangeIndex(start=50, stop=60, step=1)
              ).astype({'exog_2': int, 'exog_3': int}
              ).astype({'exog_2': 'category', 'exog_3': 'category'}),
-        '2': pd.DataFrame(
+        'l2': pd.DataFrame(
                  data = np.array([
                      [0.34345601, 0.2408559 , 0.39887629, 0.15112745, 0.6917018 ,
                       1.        , 0.        , 0.        , 0.51312815],
@@ -504,10 +509,10 @@ def test_create_predict_X_output_when_series_and_exog_dict():
         transformer_exog   = StandardScaler(),
     )
     forecaster.fit(
-        series=series_dict_train, exog=exog_dict_train, suppress_warnings=True
+        series=series_dict_nans_train, exog=exog_dict_nans_train, suppress_warnings=True
     )
     results = forecaster.create_predict_X(
-        steps=5, exog=exog_dict_test, suppress_warnings=True
+        steps=5, exog=exog_dict_nans_test, suppress_warnings=True
     )
 
     expected = {
@@ -596,8 +601,10 @@ def test_create_predict_X_output_when_regressor_is_LinearRegression_with_exog_di
     end_train = '2003-01-30 23:59:00'
 
     # Data scaled and differentiated
-    series_datetime = series.copy()
-    series_datetime.index = pd.date_range(start='2003-01-01', periods=len(series), freq='D')
+    series_datetime = series_wide_dt.copy()
+    series_datetime.index = pd.date_range(
+        start='2003-01-01', periods=len(series_wide_dt), freq='D'
+    )
     series_dict_datetime = {
         "1": series_datetime['1'].loc[:end_train],
         "2": series_datetime['2'].loc[:end_train]
@@ -606,9 +613,9 @@ def test_create_predict_X_output_when_regressor_is_LinearRegression_with_exog_di
     # Simulated exogenous variable
     rng = np.random.default_rng(9876)
     exog = pd.Series(
-        rng.normal(loc=0, scale=1, size=len(series)), name='exog'
+        rng.normal(loc=0, scale=1, size=len(series_wide_dt)), name='exog'
     )
-    exog.index = pd.date_range(start='2003-01-01', periods=len(series), freq='D')
+    exog.index = pd.date_range(start='2003-01-01', periods=len(series_wide_dt), freq='D')
     exog_dict_datetime = {
         "1": exog.loc[:end_train],
         "2": exog.loc[:end_train]
@@ -702,10 +709,10 @@ def test_create_predict_X_output_when_series_and_exog_dict_encoding_None():
         transformer_exog   = StandardScaler()
     )
     forecaster.fit(
-        series=series_dict_train, exog=exog_dict_train, suppress_warnings=True
+        series=series_dict_nans_train, exog=exog_dict_nans_train, suppress_warnings=True
     )
     results = forecaster.create_predict_X(
-        steps=5, exog=exog_dict_test, suppress_warnings=True
+        steps=5, exog=exog_dict_nans_test, suppress_warnings=True
     )
 
     expected = {
@@ -795,7 +802,7 @@ def test_create_predict_X_output_when_series_and_exog_dict_unknown_level():
         transformer_exog   = StandardScaler()
     )
     forecaster.fit(
-        series=series_dict_train, exog=exog_dict_train, suppress_warnings=True
+        series=series_dict_nans_train, exog=exog_dict_nans_train, suppress_warnings=True
     )
     levels = ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']
     last_window = pd.DataFrame(
@@ -803,7 +810,7 @@ def test_create_predict_X_output_when_series_and_exog_dict_unknown_level():
     )
     last_window['id_1005'] = last_window['id_1004']
     results = forecaster.create_predict_X(
-        steps=5, levels=levels, last_window=last_window, exog=exog_dict_test, suppress_warnings=True
+        steps=5, levels=levels, last_window=last_window, exog=exog_dict_nans_test, suppress_warnings=True
     )
 
     expected = {
@@ -914,14 +921,14 @@ def test_create_predict_X_output_when_series_and_exog_dict_encoding_None_unknown
         transformer_exog   = StandardScaler()
     )
     forecaster.fit(
-        series=series_dict_train, exog=exog_dict_train, suppress_warnings=True
+        series=series_dict_nans_train, exog=exog_dict_nans_train, suppress_warnings=True
     )
     levels = ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']
     last_window = pd.DataFrame(
         {k: v for k, v in forecaster.last_window_.items() if k in levels}
     )
     last_window['id_1005'] = last_window['id_1004']
-    exog_dict_test_2 = exog_dict_test.copy()
+    exog_dict_test_2 = exog_dict_nans_test.copy()
     exog_dict_test_2['id_1005'] = exog_dict_test_2['id_1004']
     results = forecaster.create_predict_X(
         steps=5, levels=levels, last_window=last_window, exog=exog_dict_test_2, suppress_warnings=True
@@ -1036,7 +1043,7 @@ def test_create_predict_X_same_predictions_as_predict():
         transformer_exog   = None
     )
     forecaster.fit(
-        series=series_dict_train, exog=exog_dict_train, suppress_warnings=True
+        series=series_dict_nans_train, exog=exog_dict_nans_train, suppress_warnings=True
     )
     steps = 5
     levels = ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']
@@ -1045,14 +1052,14 @@ def test_create_predict_X_same_predictions_as_predict():
     )
     last_window['id_1005'] = last_window['id_1004']
     X_predict = forecaster.create_predict_X(
-        steps=steps, levels=levels, last_window=last_window, exog=exog_dict_test
+        steps=steps, levels=levels, last_window=last_window, exog=exog_dict_nans_test
     )
 
     results = forecaster.regressor.predict(
         X_predict[forecaster.X_train_features_names_out_]
     )
     expected = forecaster.predict(
-        steps=steps, levels=levels, last_window=last_window, exog=exog_dict_test
+        steps=steps, levels=levels, last_window=last_window, exog=exog_dict_nans_test
     )['pred'].to_numpy()
     
     np.testing.assert_array_almost_equal(results, expected, decimal=7)
@@ -1080,7 +1087,7 @@ def test_create_predict_X_same_predictions_as_predict_transformers():
         transformer_exog   = StandardScaler()
     )
     forecaster.fit(
-        series=series_dict_train, exog=exog_dict_train, suppress_warnings=True
+        series=series_dict_nans_train, exog=exog_dict_nans_train, suppress_warnings=True
     )
     steps = 5
     levels = ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']
@@ -1099,7 +1106,7 @@ def test_create_predict_X_same_predictions_as_predict_transformers():
     )
     with pytest.warns(DataTransformationWarning, match = warn_msg):
         X_predict = forecaster.create_predict_X(
-            steps=steps, levels=levels, last_window=last_window, exog=exog_dict_test
+            steps=steps, levels=levels, last_window=last_window, exog=exog_dict_nans_test
         )
     
     results = np.full(
@@ -1117,7 +1124,7 @@ def test_create_predict_X_same_predictions_as_predict_transformers():
         )
 
     expected = forecaster.predict(
-        steps=steps, levels=levels, last_window=last_window, exog=exog_dict_test
+        steps=steps, levels=levels, last_window=last_window, exog=exog_dict_nans_test
     )
     expected = expected.pivot(columns='level', values='pred').to_numpy()
     
@@ -1150,7 +1157,7 @@ def test_create_predict_X_same_predictions_as_predict_transformers_diff(differen
         differentiation    = differentiation
     )
     forecaster.fit(
-        series=series_dict_train, exog=exog_dict_train, suppress_warnings=True
+        series=series_dict_nans_train, exog=exog_dict_nans_train, suppress_warnings=True
     )
     steps = 5
     levels = ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']
@@ -1169,7 +1176,7 @@ def test_create_predict_X_same_predictions_as_predict_transformers_diff(differen
     )
     with pytest.warns(DataTransformationWarning, match = warn_msg):
         X_predict = forecaster.create_predict_X(
-            steps=steps, levels=levels, last_window=last_window, exog=exog_dict_test
+            steps=steps, levels=levels, last_window=last_window, exog=exog_dict_nans_test
         )
 
     results = np.full(
@@ -1192,7 +1199,7 @@ def test_create_predict_X_same_predictions_as_predict_transformers_diff(differen
         )
 
     expected = forecaster.predict(
-        steps=steps, levels=levels, last_window=last_window, exog=exog_dict_test
+        steps=steps, levels=levels, last_window=last_window, exog=exog_dict_nans_test
     )
     expected = expected.pivot(columns='level', values='pred').to_numpy()
     

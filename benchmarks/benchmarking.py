@@ -25,16 +25,9 @@ from plotly.express.colors import qualitative
 from lightgbm import LGBMRegressor
 from sklearn.preprocessing import StandardScaler
 from skforecast.utils import *
-if skforecast.__version__ >= '0.14.0':
-    from skforecast.recursive import ForecasterRecursive, ForecasterRecursiveMultiSeries
-    from skforecast.direct import ForecasterDirect, ForecasterDirectMultiVariate
-    from skforecast.model_selection import TimeSeriesFold, backtesting_forecaster, backtesting_forecaster_multiseries
-else:
-    from skforecast.ForecasterAutoreg import ForecasterAutoreg
-    from skforecast.ForecasterAutoregMultiSeries import ForecasterAutoregMultiSeries
-    from skforecast.ForecasterAutoregDirect import ForecasterAutoregDirect
-    from skforecast.ForecasterAutoregMultiVariate import ForecasterAutoregMultiVariate
-    from skforecast.model_selection import backtesting_forecaster, backtesting_forecaster_multiseries
+from skforecast.recursive import ForecasterRecursive, ForecasterRecursiveMultiSeries
+from skforecast.direct import ForecasterDirect, ForecasterDirectMultiVariate
+from skforecast.model_selection import TimeSeriesFold, backtesting_forecaster, backtesting_forecaster_multiseries
 
 
 class BenchmarkRunner:
@@ -242,9 +235,14 @@ def plot_benchmark_results(df, function_name, add_median=True, add_mean=True):
 
 def run_benchmark_ForecasterRecursiveMultiSeries(
     series_dict,
-    series_dataframe,
+    series_df_long,
+    series_dict_different_length,
     exog_dict,
-    exog_dict_prediction
+    exog_df_long,
+    exog_df_wide,
+    exog_dict_prediction,
+    exog_df_long_prediction,
+    exog_df_wide_prediction
 ):
     """
     Run all benchmarks for the ForecasterRecursiveMultiSeries class and save the results.
@@ -253,47 +251,62 @@ def run_benchmark_ForecasterRecursiveMultiSeries(
     print("Running benchmarks for ForecasterRecursiveMultiSeries...")
     print("skforecast version:", skforecast.__version__)
 
-    regressor = LGBMRegressor(random_state=8520, verbose=-1)
-    if skforecast.__version__ >= '0.14.0':
-        forecaster = ForecasterRecursiveMultiSeries(
-            regressor=regressor,
-            lags=50,
-            transformer_series=StandardScaler(),
-            transformer_exog=StandardScaler(),
-            encoding="ordinal"
-        )
-    else:
-        forecaster = ForecasterAutoregMultiSeries(
-            regressor=regressor,
-            lags=50,
-            transformer_series=StandardScaler(),
-            transformer_exog=StandardScaler(),
-            encoding="ordinal"
-        )
+    # Fit
+    # --------------------------------------------------------------------------
+    def ForecasterRecursiveMultiSeries_fit_series_is_dict_no_exog(forecaster, series):
+        forecaster.fit(series=series, exog=None)
 
     def ForecasterRecursiveMultiSeries_fit_series_is_dict_exog_is_dict(forecaster, series, exog):
         forecaster.fit(series=series, exog=exog)
-        
-    def ForecasterRecursiveMultiSeries__create_train_X_y_series_is_dict_exog_is_dict(forecaster, series, exog):
-        forecaster._create_train_X_y(series=series, exog=exog)
+
+    def ForecasterRecursiveMultiSeries_fit_series_is_dict_different_length_exog_is_dict(forecaster, series, exog):
+        forecaster.fit(series=series, exog=exog)
 
     def ForecasterRecursiveMultiSeries_fit_series_is_dataframe_no_exog(forecaster, series):
         forecaster.fit(series=series, exog=None)
 
-    def ForecasterRecursiveMultiSeries__create_train_X_y_series_is_dataframe_no_exog(forecaster, series):
+    def ForecasterRecursiveMultiSeries_fit_series_is_dataframe_exog_is_dataframe(forecaster, series, exog):
+        forecaster.fit(series=series, exog=exog)
+
+    def ForecasterRecursiveMultiSeries_fit_series_is_dataframe_exog_is_dict(forecaster, series, exog):
+        forecaster.fit(series=series, exog=exog)
+
+    # _create_train_X_y and create_train_X_y_single_series
+    # --------------------------------------------------------------------------
+    def ForecasterRecursiveMultiSeries__create_train_X_y_series_is_dict_no_exog(forecaster, series):
         forecaster._create_train_X_y(series=series, exog=None)
 
-    def ForecasterRecursiveMultiSeries__create_train_X_y_series_is_dataframe_exog_dict(forecaster, series, exog):
+    def ForecasterRecursiveMultiSeries__create_train_X_y_series_is_dict_exog_is_dict(forecaster, series, exog):
+        forecaster._create_train_X_y(series=series, exog=exog)
+
+    def ForecasterRecursiveMultiSeries__create_train_X_y_series_is_dict_different_length_exog_is_dict(forecaster, series, exog):
+        forecaster._create_train_X_y(series=series, exog=exog)
+
+    def ForecasterRecursiveMultiSeries__create_train_X_y_series_is_dict_exog_is_df_wide(forecaster, series, exog):
+        forecaster._create_train_X_y(series=series, exog=exog)
+
+    def ForecasterRecursiveMultiSeries__create_train_X_y_series_is_df_long_no_exog(forecaster, series):
+        forecaster._create_train_X_y(series=series, exog=None)
+
+    def ForecasterRecursiveMultiSeries__create_train_X_y_series_is_df_long_exog_is_df_long(forecaster, series, exog):
+        forecaster._create_train_X_y(series=series, exog=exog)
+
+    def ForecasterRecursiveMultiSeries__create_train_X_y_series_is_df_long_exog_is_df_wide(forecaster, series, exog):
         forecaster._create_train_X_y(series=series, exog=exog)
 
     def ForecasterRecursiveMultiSeries__create_train_X_y_single_series(forecaster, y, exog):
         _ = forecaster._create_train_X_y_single_series(
-                y = y,
-                exog = exog,
+                y           = y,
+                exog        = exog,
                 ignore_exog = False,
             )
 
+    # Predict
+    # --------------------------------------------------------------------------
     def ForecasterRecursiveMultiSeries_predict_exog_is_dict(forecaster, exog):
+        forecaster.predict(steps=100, exog=exog, suppress_warnings=True)
+
+    def ForecasterRecursiveMultiSeries_predict_exog_is_df_long(forecaster, exog):
         forecaster.predict(steps=100, exog=exog, suppress_warnings=True)
 
     def ForecasterRecursiveMultiSeries_predict_interval_exog_is_dict_conformal(forecaster, exog):
@@ -306,6 +319,20 @@ def run_benchmark_ForecasterRecursiveMultiSeries(
         )
 
     def ForecasterRecursiveMultiSeries__create_predict_inputs_exog_is_dict(forecaster, exog):
+        _ = forecaster._create_predict_inputs(
+                steps        = 100,
+                exog         = exog,
+                check_inputs = True
+            )
+
+    def ForecasterRecursiveMultiSeries__create_predict_inputs_exog_is_df_long(forecaster, exog):
+        _ = forecaster._create_predict_inputs(
+                steps        = 100,
+                exog         = exog,
+                check_inputs = True
+            )
+        
+    def ForecasterRecursiveMultiSeries__create_predict_inputs_exog_is_df_wide(forecaster, exog):
         _ = forecaster._create_predict_inputs(
                 steps        = 100,
                 exog         = exog,
@@ -331,117 +358,90 @@ def run_benchmark_ForecasterRecursiveMultiSeries(
             encoding         = forecaster.encoding
         )
 
+    # Backtesting
+    # --------------------------------------------------------------------------
+    def ForecasterRecursiveMultiSeries_backtesting_series_is_dict_no_exog(forecaster, series):
+        cv = TimeSeriesFold(
+                initial_train_size=1200,
+                fixed_train_size=True,
+                steps=50,
+            )
+        _ = backtesting_forecaster_multiseries(
+                forecaster=forecaster,
+                series=series,
+                exog=None,
+                cv=cv,
+                metric='mean_squared_error',
+                show_progress=False
+            )
+            
     def ForecasterRecursiveMultiSeries_backtesting_series_is_dict_exog_is_dict(forecaster, series, exog):
-        if skforecast.__version__ >= '0.14.0':
-            cv = TimeSeriesFold(
-                    initial_train_size=1200,
-                    fixed_train_size=True,
-                    steps=50,
-                )
-            _ = backtesting_forecaster_multiseries(
-                    forecaster=forecaster,
-                    series=series,
-                    exog=exog,
-                    cv=cv,
-                    metric='mean_squared_error',
-                    show_progress=False
-                )
-        else:
-            _ = backtesting_forecaster_multiseries(
-                    forecaster=forecaster,
-                    series=series,
-                    exog=exog,
-                    initial_train_size=1200,
-                    fixed_train_size=True,
-                    steps=50,
-                    metric='mean_squared_error',
-                    show_progress=False
-                )
+        cv = TimeSeriesFold(
+                initial_train_size=1200,
+                fixed_train_size=True,
+                steps=50,
+            )
+        _ = backtesting_forecaster_multiseries(
+                forecaster=forecaster,
+                series=series,
+                exog=exog,
+                cv=cv,
+                metric='mean_squared_error',
+                show_progress=False
+            )
+
+    def ForecasterRecursiveMultiSeries_backtesting_series_is_dict_no_exog_conformal(forecaster, series):
+        cv = TimeSeriesFold(
+                initial_train_size=1200,
+                fixed_train_size=True,
+                steps=50,
+            )
+        _ = backtesting_forecaster_multiseries(
+                forecaster=forecaster,
+                series=series,
+                exog=None,
+                cv=cv,
+                interval=[5, 95],
+                interval_method='conformal',
+                metric='mean_squared_error',
+                show_progress=False
+            )
             
-    def ForecasterRecursiveMultiSeries_backtesting_series_is_dataframe_no_exog(forecaster, series):
-        if skforecast.__version__ >= '0.14.0':
-            cv = TimeSeriesFold(
-                    initial_train_size=1200,
-                    fixed_train_size=True,
-                    steps=50,
-                )
-            _ = backtesting_forecaster_multiseries(
-                    forecaster=forecaster,
-                    series=series,
-                    cv=cv,
-                    metric='mean_squared_error',
-                    show_progress=False
-                )
-        else:
-            _ = backtesting_forecaster_multiseries(
-                    forecaster=forecaster,
-                    series=series,
-                    initial_train_size=1200,
-                    fixed_train_size=True,
-                    steps=50,
-                    metric='mean_squared_error',
-                    show_progress=False
-                )
-            
-    def ForecasterRecursiveMultiSeries_backtesting_series_is_dataframe_exog_dict(forecaster, series, exog):
-        if skforecast.__version__ >= '0.14.0':
-            cv = TimeSeriesFold(
-                    initial_train_size=1200,
-                    fixed_train_size=True,
-                    steps=50,
-                )
-            _ = backtesting_forecaster_multiseries(
-                    forecaster=forecaster,
-                    series=series,
-                    exog=exog,
-                    cv=cv,
-                    metric='mean_squared_error',
-                    show_progress=False
-                )
-        else:
-            _ = backtesting_forecaster_multiseries(
-                    forecaster=forecaster,
-                    series=series,
-                    exog=exog,
-                    initial_train_size=1200,
-                    fixed_train_size=True,
-                    steps=50,
-                    metric='mean_squared_error',
-                    show_progress=False
-                )
-            
-    def ForecasterRecursiveMultiSeries_backtesting_series_is_dataframe_exog_dict_conformal(forecaster, series, exog):
-        if skforecast.__version__ >= '0.14.0':
-            cv = TimeSeriesFold(
-                    initial_train_size=1200,
-                    fixed_train_size=True,
-                    steps=50,
-                )
-            _ = backtesting_forecaster_multiseries(
-                    forecaster=forecaster,
-                    series=series,
-                    exog=exog,
-                    cv=cv,
-                    interval=[5, 95],
-                    interval_method='conformal',
-                    metric='mean_squared_error',
-                    show_progress=False
-                )
-        else:
-            _ = backtesting_forecaster_multiseries(
-                    forecaster=forecaster,
-                    series=series,
-                    exog=exog,
-                    initial_train_size=1200,
-                    fixed_train_size=True,
-                    steps=50,
-                    interval=[5, 95],
-                    interval_method='conformal',
-                    metric='mean_squared_error',
-                    show_progress=False
-                )
+    def ForecasterRecursiveMultiSeries_backtesting_series_is_dict_exog_dict_conformal(forecaster, series, exog):
+        cv = TimeSeriesFold(
+                initial_train_size=1200,
+                fixed_train_size=True,
+                steps=50,
+            )
+        _ = backtesting_forecaster_multiseries(
+                forecaster=forecaster,
+                series=series,
+                exog=exog,
+                cv=cv,
+                interval=[5, 95],
+                interval_method='conformal',
+                metric='mean_squared_error',
+                show_progress=False
+            )
+
+    # Create train_X_y
+    # --------------------------------------------------------------------------
+    regressor = LGBMRegressor(random_state=8520, verbose=-1)
+    forecaster = ForecasterRecursiveMultiSeries(
+        regressor=regressor,
+        lags=50,
+        transformer_series=StandardScaler(),
+        transformer_exog=StandardScaler(),
+        encoding="ordinal"
+    )
+
 
     runner = BenchmarkRunner(repeat=10, output_dir="./")
+    _ = runner.benchmark(
+            ForecasterRecursiveMultiSeries__create_train_X_y_series_is_dict_no_exog,
+            forecaster=forecaster,
+            series=series_dict
+        )
     _ = runner.benchmark(
             ForecasterRecursiveMultiSeries__create_train_X_y_series_is_dict_exog_is_dict,
             forecaster=forecaster,
@@ -449,16 +449,39 @@ def run_benchmark_ForecasterRecursiveMultiSeries(
             exog=exog_dict
         )
     _ = runner.benchmark(
-            ForecasterRecursiveMultiSeries__create_train_X_y_series_is_dataframe_no_exog,
+            ForecasterRecursiveMultiSeries__create_train_X_y_series_is_dict_different_length_exog_is_dict,
             forecaster=forecaster,
-            series=series_dataframe
-        )
-    _ = runner.benchmark(
-            ForecasterRecursiveMultiSeries__create_train_X_y_series_is_dataframe_exog_dict,
-            forecaster=forecaster,
-            series=series_dataframe,
+            series=series_dict_different_length,
             exog=exog_dict
         )
+    if skforecast.__version__ >= "0.17.0":
+        _ = runner.benchmark(
+                ForecasterRecursiveMultiSeries__create_train_X_y_series_is_dict_exog_is_df_wide,
+                forecaster=forecaster,
+                series=series_dict,
+                exog=exog_df_wide
+            )
+    if skforecast.__version__ >= "0.17.0":
+        _ = runner.benchmark(
+            ForecasterRecursiveMultiSeries__create_train_X_y_series_is_df_long_no_exog,
+                forecaster=forecaster,
+                series=series_df_long,
+            )
+
+    if skforecast.__version__ >= "0.17.0":
+        _ = runner.benchmark(
+                ForecasterRecursiveMultiSeries__create_train_X_y_series_is_df_long_exog_is_df_long,
+                forecaster=forecaster,
+                series=series_df_long,
+                exog=exog_df_long
+            )
+    if skforecast.__version__ >= "0.17.0":
+        _ = runner.benchmark(
+                ForecasterRecursiveMultiSeries__create_train_X_y_series_is_df_long_exog_is_df_wide,
+                forecaster=forecaster,
+                series=series_df_long,
+                exog=exog_df_wide
+            )
     _ = runner.benchmark(
         ForecasterRecursiveMultiSeries__create_train_X_y_single_series,
             forecaster=forecaster,
@@ -466,7 +489,22 @@ def run_benchmark_ForecasterRecursiveMultiSeries(
             exog = exog_dict['series_0'],
         )
 
+    # Fit
+    # --------------------------------------------------------------------------
+    forecaster = ForecasterRecursiveMultiSeries(
+        regressor=regressor,
+        lags=50,
+        transformer_series=StandardScaler(),
+        transformer_exog=StandardScaler(),
+        encoding="ordinal"
+    )
+
     runner = BenchmarkRunner(repeat=5, output_dir="./")
+    _ = runner.benchmark(
+            ForecasterRecursiveMultiSeries_fit_series_is_dict_no_exog,
+            forecaster=forecaster,
+            series=series_dict
+        )
     _ = runner.benchmark(
             ForecasterRecursiveMultiSeries_fit_series_is_dict_exog_is_dict,
             forecaster=forecaster,
@@ -474,18 +512,57 @@ def run_benchmark_ForecasterRecursiveMultiSeries(
             exog=exog_dict
         )
     _ = runner.benchmark(
-        ForecasterRecursiveMultiSeries_fit_series_is_dataframe_no_exog,
+        ForecasterRecursiveMultiSeries_fit_series_is_dict_different_length_exog_is_dict,
             forecaster=forecaster,
-            series=series_dataframe
+            series=series_dict_different_length,
+            exog=exog_dict
         )
+    
+    if skforecast.__version__ >= "0.17.0":
+        _ = runner.benchmark(
+            ForecasterRecursiveMultiSeries_fit_series_is_dataframe_no_exog,
+                forecaster=forecaster,
+                series=series_df_long
+            )
+        
+    if skforecast.__version__ >= "0.17.0":
+        _ = runner.benchmark(
+            ForecasterRecursiveMultiSeries_fit_series_is_dataframe_exog_is_dataframe,
+                forecaster=forecaster,
+                series=series_df_long,
+                exog=exog_df_long
+            )
+    if skforecast.__version__ >= "0.17.0":
+        _ = runner.benchmark(
+            ForecasterRecursiveMultiSeries_fit_series_is_dataframe_exog_is_dict,
+                forecaster=forecaster,
+                series=series_df_long,
+                exog=exog_dict
+            )
 
+    # Predict
+    # --------------------------------------------------------------------------
+    forecaster = ForecasterRecursiveMultiSeries(
+        regressor=regressor,
+        lags=50,
+        transformer_series=StandardScaler(),
+        transformer_exog=StandardScaler(),
+        encoding="ordinal"
+    )
     forecaster.fit(series=series_dict, exog=exog_dict, store_in_sample_residuals = True)
+
     runner = BenchmarkRunner(repeat=10, output_dir="./")
     _ = runner.benchmark(
             ForecasterRecursiveMultiSeries_predict_exog_is_dict,
             forecaster=forecaster,
             exog=exog_dict_prediction
         )
+    if skforecast.__version__ >= "0.17.0":
+        _ = runner.benchmark(
+                ForecasterRecursiveMultiSeries_predict_exog_is_df_long,
+                forecaster=forecaster,
+                exog=exog_df_long_prediction
+            )   
     _ = runner.benchmark(
             ForecasterRecursiveMultiSeries_predict_interval_exog_is_dict_conformal,
             forecaster=forecaster,
@@ -496,13 +573,45 @@ def run_benchmark_ForecasterRecursiveMultiSeries(
             forecaster=forecaster,
             exog=exog_dict_prediction
         )
+    if skforecast.__version__ >= "0.17.0":
+        _ = runner.benchmark(
+                ForecasterRecursiveMultiSeries__create_predict_inputs_exog_is_df_long,
+                forecaster=forecaster,
+                exog=exog_df_long_prediction
+            )
+
     _ = runner.benchmark(
             ForecasterRecursiveMultiSeries__check_predict_inputs,
             forecaster=forecaster,
             exog=exog_dict_prediction
         )
+    
+    if skforecast.__version__ >= "0.17.0":
+        # NOTE: Only when the forecaster is fitted with a wide dataframe, the exogenous variables can be
+        # passed as a wide dataframe.
+        forecaster.fit(series=series_dict, exog=exog_df_wide, store_in_sample_residuals = True)
+        _ = runner.benchmark(
+                ForecasterRecursiveMultiSeries__create_predict_inputs_exog_is_df_wide,
+                forecaster=forecaster,
+                exog=exog_df_wide_prediction
+            )
+
+    # Backtesting
+    # --------------------------------------------------------------------------
+    forecaster = ForecasterRecursiveMultiSeries(
+        regressor=regressor,
+        lags=50,
+        transformer_series=StandardScaler(),
+        transformer_exog=StandardScaler(),
+        encoding="ordinal"
+    )
 
     runner = BenchmarkRunner(repeat=5, output_dir="./")
+    _ = runner.benchmark(
+            ForecasterRecursiveMultiSeries_backtesting_series_is_dict_no_exog,
+            forecaster=forecaster,
+            series=series_dict
+        )
     _ = runner.benchmark(
             ForecasterRecursiveMultiSeries_backtesting_series_is_dict_exog_is_dict,
             forecaster=forecaster,
@@ -510,20 +619,14 @@ def run_benchmark_ForecasterRecursiveMultiSeries(
             exog=exog_dict
         )
     _ = runner.benchmark(
-            ForecasterRecursiveMultiSeries_backtesting_series_is_dataframe_no_exog,
+            ForecasterRecursiveMultiSeries_backtesting_series_is_dict_no_exog_conformal,
             forecaster=forecaster,
-            series=series_dataframe,
+            series=series_dict
         )
     _ = runner.benchmark(
-            ForecasterRecursiveMultiSeries_backtesting_series_is_dataframe_exog_dict,
+            ForecasterRecursiveMultiSeries_backtesting_series_is_dict_exog_dict_conformal,
             forecaster=forecaster,
-            series=series_dataframe,
-            exog=exog_dict
-        )
-    _ = runner.benchmark(
-            ForecasterRecursiveMultiSeries_backtesting_series_is_dataframe_exog_dict_conformal,
-            forecaster=forecaster,
-            series=series_dataframe,
+            series=series_dict,
             exog=exog_dict
         )
     
@@ -538,29 +641,18 @@ def run_benchmark_ForecasterRecursive(
     """
 
     regressor = LGBMRegressor(random_state=8520, verbose=-1)
-    if skforecast.__version__ >= '0.14.0':
-        forecaster = ForecasterRecursive(
-            regressor=regressor,
-            lags=50,
-            transformer_y=StandardScaler(),
-            transformer_exog=StandardScaler(),
-        )
-    else:
-        forecaster = ForecasterAutoreg(
-            regressor=regressor,
-            lags=50,
-            transformer_y=StandardScaler(),
-            transformer_exog=StandardScaler(),
-        )
+    forecaster = ForecasterRecursive(
+        regressor=regressor,
+        lags=50,
+        transformer_y=StandardScaler(),
+        transformer_exog=StandardScaler(),
+    )
 
     def ForecasterRecursive_fit(forecaster, y, exog):
         forecaster.fit(y=y, exog=exog)
 
     def ForecasterRecursive__create_train_X_y(forecaster, y, exog):
-        if skforecast.__version__ >= '0.14.0':
-            forecaster._create_train_X_y(y=y, exog=exog)
-        else:
-            forecaster.create_train_X_y(y=y, exog=exog)
+        forecaster._create_train_X_y(y=y, exog=exog)
 
     def ForecasterRecursive_predict(forecaster, exog):
         forecaster.predict(steps=100, exog=exog)
@@ -581,63 +673,37 @@ def run_benchmark_ForecasterRecursive(
             )
         
     def ForecasterRecursive_backtesting(forecaster, y, exog):
-        if skforecast.__version__ >= '0.14.0':
-            cv = TimeSeriesFold(
-                    initial_train_size=1200,
-                    fixed_train_size=True,
-                    steps=50,
-                )
-            _ = backtesting_forecaster(
-                    forecaster=forecaster,
-                    y=y,
-                    exog=exog,
-                    cv=cv,
-                    metric='mean_squared_error',
-                    show_progress=False
-                )
-        else:
-            _ = backtesting_forecaster(
-                    forecaster=forecaster,
-                    y=y,
-                    exog=exog,
-                    initial_train_size=1200,
-                    fixed_train_size=True,
-                    steps=50,
-                    metric='mean_squared_error',
-                    show_progress=False
-                )
+        cv = TimeSeriesFold(
+                initial_train_size=1200,
+                fixed_train_size=True,
+                steps=50,
+            )
+        _ = backtesting_forecaster(
+                forecaster=forecaster,
+                y=y,
+                exog=exog,
+                cv=cv,
+                metric='mean_squared_error',
+                show_progress=False
+            )
 
     def ForecasterRecursive_backtesting_conformal(forecaster, y, exog):
-        if skforecast.__version__ >= '0.14.0':
-            cv = TimeSeriesFold(
-                    initial_train_size=1200,
-                    fixed_train_size=True,
-                    steps=50,
-                )
-            _ = backtesting_forecaster(
-                    forecaster=forecaster,
-                    y=y,
-                    exog=exog,
-                    interval=[5, 95],
-                    interval_method='conformal',
-                    cv=cv,
-                    metric='mean_squared_error',
+        cv = TimeSeriesFold(
+                initial_train_size=1200,
+                fixed_train_size=True,
+                steps=50,
+            )
+        _ = backtesting_forecaster(
+                forecaster=forecaster,
+                y=y,
+                exog=exog,
+                interval=[5, 95],
+                interval_method='conformal',
+                cv=cv,
+                metric='mean_squared_error',
 
-                    show_progress=False
-                )
-        else:
-            _ = backtesting_forecaster(
-                    forecaster=forecaster,
-                    y=y,
-                    exog=exog,
-                    initial_train_size=1200,
-                    fixed_train_size=True,
-                    steps=50,
-                    interval=[5, 95],
-                    interval_method='conformal',
-                    metric='mean_squared_error',
-                    show_progress=False
-                )
+                show_progress=False
+            )
 
     runner = BenchmarkRunner(repeat=30, output_dir="./")
     _ = runner.benchmark(ForecasterRecursive__create_train_X_y, forecaster=forecaster, y=y, exog=exog)
@@ -666,24 +732,14 @@ def run_benchmark_ForecasterDirectMultiVariate(
     """
 
     regressor = LGBMRegressor(random_state=8520, verbose=-1)
-    if skforecast.__version__ >= '0.14.0':
-        forecaster = ForecasterDirectMultiVariate(
-            regressor=regressor,
-            level='series_1',
-            steps=5,
-            lags=20,
-            transformer_series=StandardScaler(),
-            transformer_exog=StandardScaler(),
-        )
-    else:
-        forecaster = ForecasterAutoregMultiVariate(
-            regressor=regressor,
-            level='series_1',
-            steps=5,
-            lags=20,
-            transformer_series=StandardScaler(),
-            transformer_exog=StandardScaler(),
-        )
+    forecaster = ForecasterDirectMultiVariate(
+        regressor=regressor,
+        level='series_1',
+        steps=5,
+        lags=20,
+        transformer_series=StandardScaler(),
+        transformer_exog=StandardScaler(),
+    )
 
     def ForecasterDirectMultiVariate_fit(forecaster, series, exog):
         forecaster.fit(series=series, exog=exog)
@@ -736,87 +792,50 @@ def run_benchmark_ForecasterDirectMultiVariate(
         )
 
     def ForecasterDirectMultiVariate_backtesting(forecaster, series, exog):
-        if skforecast.__version__ >= '0.14.0':
-            cv = TimeSeriesFold(
-                    initial_train_size=900,
-                    fixed_train_size=True,
-                    steps=5,
-                )
-            _ = backtesting_forecaster_multiseries(
-                    forecaster=forecaster,
-                    series=series,
-                    exog=exog,
-                    cv=cv,
-                    metric='mean_squared_error',
-                    show_progress=False
-                )
-        else:
-            _ = backtesting_forecaster_multiseries(
-                    forecaster=forecaster,
-                    series=series,
-                    exog=exog,
-                    initial_train_size=900,
-                    fixed_train_size=True,
-                    steps=5,
-                    metric='mean_squared_error',
-                    show_progress=False
-                )
+        cv = TimeSeriesFold(
+                initial_train_size=900,
+                fixed_train_size=True,
+                steps=5,
+            )
+        _ = backtesting_forecaster_multiseries(
+                forecaster=forecaster,
+                series=series,
+                exog=exog,
+                cv=cv,
+                metric='mean_squared_error',
+                show_progress=False
+            )
             
     def ForecasterDirectMultiVariate_backtesting_no_exog(forecaster, series):
-        if skforecast.__version__ >= '0.14.0':
-            cv = TimeSeriesFold(
-                    initial_train_size=900,
-                    fixed_train_size=True,
-                    steps=5,
-                )
-            _ = backtesting_forecaster_multiseries(
-                    forecaster=forecaster,
-                    series=series,
-                    cv=cv,
-                    metric='mean_squared_error',
-                    show_progress=False
-                )
-        else:
-            _ = backtesting_forecaster_multiseries(
-                    forecaster=forecaster,
-                    series=series,
-                    initial_train_size=900,
-                    fixed_train_size=True,
-                    steps=5,
-                    metric='mean_squared_error',
-                    show_progress=False
-                )
+        cv = TimeSeriesFold(
+                initial_train_size=900,
+                fixed_train_size=True,
+                steps=5,
+            )
+        _ = backtesting_forecaster_multiseries(
+                forecaster=forecaster,
+                series=series,
+                cv=cv,
+                metric='mean_squared_error',
+                show_progress=False
+            )
             
     def ForecasterDirectMultiVariate_backtesting_conformal(forecaster, series, exog):
-        if skforecast.__version__ >= '0.14.0':
-            cv = TimeSeriesFold(
-                    initial_train_size=900,
-                    fixed_train_size=True,
-                    steps=5,
-                )
-            _ = backtesting_forecaster_multiseries(
-                    forecaster=forecaster,
-                    series=series,
-                    exog=exog,
-                    cv=cv,
-                    interval=[5, 95],
-                    interval_method='conformal',
-                    metric='mean_squared_error',
-                    show_progress=False
-                )
-        else:
-            _ = backtesting_forecaster_multiseries(
-                    forecaster=forecaster,
-                    series=series,
-                    exog=exog,
-                    initial_train_size=900,
-                    fixed_train_size=True,
-                    steps=5,
-                    interval=[5, 95],
-                    interval_method='conformal',
-                    metric='mean_squared_error',
-                    show_progress=False
-                )
+        cv = TimeSeriesFold(
+                initial_train_size=900,
+                fixed_train_size=True,
+                steps=5,
+            )
+        _ = backtesting_forecaster_multiseries(
+                forecaster=forecaster,
+                series=series,
+                exog=exog,
+                cv=cv,
+                interval=[5, 95],
+                interval_method='conformal',
+                metric='mean_squared_error',
+                show_progress=False
+            )
 
     runner = BenchmarkRunner(repeat=10, output_dir="./")
     _ = runner.benchmark(ForecasterDirectMultiVariate__create_train_X_y, forecaster=forecaster, series=series, exog=exog)
@@ -849,31 +868,19 @@ def run_benchmark_ForecasterDirect(
     """
 
     regressor = LGBMRegressor(random_state=8520, verbose=-1)
-    if skforecast.__version__ >= '0.14.0':
-        forecaster = ForecasterDirect(
-            regressor=regressor,
-            steps=5,
-            lags=20,
-            transformer_y=StandardScaler(),
-            transformer_exog=StandardScaler(),
-        )
-    else:
-        forecaster = ForecasterAutoregDirect(
-            regressor=regressor,
-            steps=5,
-            lags=20,
-            transformer_y=StandardScaler(),
-            transformer_exog=StandardScaler(),
-        )
+    forecaster = ForecasterDirect(
+        regressor=regressor,
+        steps=5,
+        lags=20,
+        transformer_y=StandardScaler(),
+        transformer_exog=StandardScaler(),
+    )
 
     def ForecasterDirect_fit(forecaster, y, exog):
         forecaster.fit(y=y, exog=exog)
 
     def ForecasterDirect__create_train_X_y(forecaster, y, exog):
-        if skforecast.__version__ >= '0.14.0':
-            forecaster._create_train_X_y(y=y, exog=exog)
-        else:
-            forecaster.create_train_X_y(y=y, exog=exog)
+        forecaster._create_train_X_y(y=y, exog=exog)
 
     def ForecasterDirect_predict(forecaster, exog):
         forecaster.predict(steps=5, exog=exog)
@@ -894,63 +901,37 @@ def run_benchmark_ForecasterDirect(
             )
         
     def ForecasterDirect_backtesting(forecaster, y, exog):
-        if skforecast.__version__ >= '0.14.0':
-            cv = TimeSeriesFold(
-                    initial_train_size=1200,
-                    fixed_train_size=True,
-                    steps=5,
-                )
-            _ = backtesting_forecaster(
-                    forecaster=forecaster,
-                    y=y,
-                    exog=exog,
-                    cv=cv,
-                    metric='mean_squared_error',
-                    show_progress=False
-                )
-        else:
-            _ = backtesting_forecaster(
-                    forecaster=forecaster,
-                    y=y,
-                    exog=exog,
-                    initial_train_size=1200,
-                    fixed_train_size=True,
-                    steps=5,
-                    metric='mean_squared_error',
-                    show_progress=False
-                )
+        cv = TimeSeriesFold(
+                initial_train_size=1200,
+                fixed_train_size=True,
+                steps=5,
+            )
+        _ = backtesting_forecaster(
+                forecaster=forecaster,
+                y=y,
+                exog=exog,
+                cv=cv,
+                metric='mean_squared_error',
+                show_progress=False
+            )
 
     def ForecasterDirect_backtesting_conformal(forecaster, y, exog):
-        if skforecast.__version__ >= '0.14.0':
-            cv = TimeSeriesFold(
-                    initial_train_size=1200,
-                    fixed_train_size=True,
-                    steps=5,
-                )
-            _ = backtesting_forecaster(
-                    forecaster=forecaster,
-                    y=y,
-                    exog=exog,
-                    interval=[5, 95],
-                    interval_method='conformal',
-                    cv=cv,
-                    metric='mean_squared_error',
+        cv = TimeSeriesFold(
+                initial_train_size=1200,
+                fixed_train_size=True,
+                steps=5,
+            )
+        _ = backtesting_forecaster(
+                forecaster=forecaster,
+                y=y,
+                exog=exog,
+                interval=[5, 95],
+                interval_method='conformal',
+                cv=cv,
+                metric='mean_squared_error',
 
-                    show_progress=False
-                )
-        else:
-            _ = backtesting_forecaster(
-                    forecaster=forecaster,
-                    y=y,
-                    exog=exog,
-                    initial_train_size=1200,
-                    fixed_train_size=True,
-                    steps=5,
-                    interval=[5, 95],
-                    interval_method='conformal',
-                    metric='mean_squared_error',
-                    show_progress=False
-                )
+                show_progress=False
+            )
 
     runner = BenchmarkRunner(repeat=30, output_dir="./")
     _ = runner.benchmark(ForecasterDirect__create_train_X_y, forecaster=forecaster, y=y, exog=exog)

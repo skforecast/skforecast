@@ -11,8 +11,11 @@ from skforecast.recursive import ForecasterRecursiveMultiSeries
 from skforecast.feature_selection import select_features_multiseries
 
 # Fixtures
-from .fixtures_feature_selection import series
-from .fixtures_feature_selection import exog_multiseries as exog
+from .fixtures_feature_selection import (
+    series_wide_range,
+    series_dict_range,
+    exog_multiseries as exog
+)
 
 
 def test_TypeError_select_features_multiseries_raise_when_forecaster_is_not_supported():
@@ -103,7 +106,7 @@ def test_select_features_multiseries_when_selector_is_RFE_and_select_only_is_exo
     selected_lags, selected_window_features, selected_exog = select_features_multiseries(
         selector    = selector,
         forecaster  = forecaster,
-        series      = series,
+        series      = series_dict_range,
         exog        = exog,
         select_only = 'exog',
         verbose     = False,
@@ -130,7 +133,7 @@ def test_select_features_multiseries_when_selector_is_RFE_and_select_only_is_exo
     selected_lags, selected_window_features, selected_exog = select_features_multiseries(
         selector    = selector,
         forecaster  = forecaster,
-        series      = series,
+        series      = series_dict_range,
         exog        = exog,
         select_only = 'exog',
         verbose     = False,
@@ -162,7 +165,7 @@ def test_select_features_multiseries_when_selector_is_RFE_and_select_only_is_exo
     selected_lags, selected_window_features, selected_exog = select_features_multiseries(
         selector    = selector,
         forecaster  = forecaster,
-        series      = series,
+        series      = series_dict_range,
         exog        = exog,
         select_only = 'exog',
         verbose     = False,
@@ -189,7 +192,7 @@ def test_select_features_multiseries_when_selector_is_RFE_and_select_only_is_aut
     selected_lags, selected_window_features, selected_exog = select_features_multiseries(
         selector    = selector,
         forecaster  = forecaster,
-        series      = series,
+        series      = series_dict_range,
         exog        = exog,
         select_only = 'autoreg',
         verbose     = False,
@@ -221,7 +224,7 @@ def test_select_features_multiseries_when_selector_is_RFE_and_select_only_is_aut
     selected_lags, selected_window_features, selected_exog = select_features_multiseries(
         selector    = selector,
         forecaster  = forecaster,
-        series      = series,
+        series      = series_dict_range,
         exog        = exog,
         select_only = 'autoreg',
         subsample   = 0.9,
@@ -256,7 +259,7 @@ def test_select_features_multiseries_when_selector_is_RFE_and_select_only_is_Non
         selected_lags, selected_window_features, selected_exog = select_features_multiseries(
             selector    = selector,
             forecaster  = forecaster,
-            series      = series,
+            series      = series_dict_range,
             exog        = exog,
             select_only = None,
             verbose     = False,
@@ -289,7 +292,7 @@ def test_select_features_multiseries_when_selector_is_RFE_and_select_only_is_Non
     selected_lags, selected_window_features, selected_exog = select_features_multiseries(
         selector    = selector,
         forecaster  = forecaster,
-        series      = series,
+        series      = series_dict_range,
         exog        = exog,
         select_only = None,
         verbose     = False,
@@ -320,7 +323,7 @@ def test_select_features_multiseries_when_selector_is_RFE_select_only_exog_is_Tr
     selected_lags, selected_window_features, selected_exog = select_features_multiseries(
         selector        = selector,
         forecaster      = forecaster,
-        series          = series,
+        series          = series_dict_range,
         exog            = exog,
         select_only     = 'exog',
         force_inclusion = "^exog_3",
@@ -348,7 +351,7 @@ def test_select_features_multiseries_when_selector_is_RFE_select_only_exog_is_Fa
     selected_lags, selected_window_features, selected_exog = select_features_multiseries(
         selector        = selector,
         forecaster      = forecaster,
-        series          = series,
+        series          = series_dict_range,
         exog            = exog,
         select_only     = None,
         force_inclusion = ['lag_1'],
@@ -380,7 +383,7 @@ def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterDire
     selected_lags, selected_window_features, selected_exog = select_features_multiseries(
         selector    = selector,
         forecaster  = forecaster,
-        series      = series,
+        series      = series_wide_range,
         exog        = exog,
         select_only = 'autoreg',
         verbose     = False,
@@ -408,7 +411,7 @@ def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterDire
     selected_lags, selected_window_features, selected_exog = select_features_multiseries(
         selector    = selector,
         forecaster  = forecaster,
-        series      = series,
+        series      = series_wide_range,
         exog        = exog,
         select_only = 'autoreg',
         verbose     = False,
@@ -441,7 +444,7 @@ def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterDire
     selected_lags, selected_window_features, selected_exog = select_features_multiseries(
         selector    = selector,
         forecaster  = forecaster,
-        series      = series,
+        series      = series_wide_range,
         exog        = exog,
         select_only = 'autoreg',
         verbose     = False,

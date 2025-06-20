@@ -1,8 +1,8 @@
-# Unit test series_long_to_dict
+# Unit test reshape_series_long_to_dict
 # ==============================================================================
 import pytest
 import pandas as pd
-from ...preprocessing import series_long_to_dict
+from ...preprocessing import reshape_series_long_to_dict
 from ....exceptions import MissingValuesWarning
 
 # Fixtures
@@ -11,9 +11,9 @@ from .fixtures_preprocessing import index_A, index_B, index_C
 from .fixtures_preprocessing import series_long
 
 
-def test_check_output_series_long_to_dict():
+def test_check_output_reshape_series_long_to_dict():
     """
-    Check output of series_long_to_dict.
+    Check output of reshape_series_long_to_dict.
     """
 
     expected = {
@@ -22,7 +22,7 @@ def test_check_output_series_long_to_dict():
         "C": pd.Series(values_C, index=index_C, name="C"),
     }
 
-    results = series_long_to_dict(
+    results = reshape_series_long_to_dict(
         data=series_long,
         series_id="series_id",
         index="datetime",
@@ -40,7 +40,7 @@ def test_TypeError_when_data_is_not_dataframe():
     """
     err_msg = "`data` must be a pandas DataFrame."
     with pytest.raises(TypeError, match=err_msg):
-        series_long_to_dict(
+        reshape_series_long_to_dict(
             data='not_a_dataframe',
             series_id="series_id",
             index="datetime",
@@ -56,7 +56,7 @@ def test_ValueError_when_series_id_not_in_data():
     series_id = "series_id_not_in_data"
     err_msg = f"Column '{series_id}' not found in `data`."
     with pytest.raises(ValueError, match=err_msg):
-        series_long_to_dict(
+        reshape_series_long_to_dict(
             data=series_long,
             series_id=series_id,
             index="datetime",
@@ -72,7 +72,7 @@ def test_ValueError_when_index_not_in_data():
     index = "series_id_not_in_data"
     err_msg = f"Column '{index}' not found in `data`."
     with pytest.raises(ValueError, match=err_msg):
-        series_long_to_dict(
+        reshape_series_long_to_dict(
             data=series_long,
             series_id="series_id",
             index=index,
@@ -88,7 +88,7 @@ def test_ValueError_when_values_not_in_data():
     values = "values_not_in_data"
     err_msg = f"Column '{values}' not found in `data`."
     with pytest.raises(ValueError, match=err_msg):
-        series_long_to_dict(
+        reshape_series_long_to_dict(
             data=series_long,
             series_id="series_id",
             index="datetime",
@@ -112,7 +112,7 @@ def test_warning_when_series_is_incomplete():
         "Series 'B' is incomplete. NaNs have been introduced after setting the frequency."
     )
     with pytest.warns(MissingValuesWarning, match=msg):
-        series_long_to_dict(
+        reshape_series_long_to_dict(
             data=data,
             series_id="series_id",
             index="index",

@@ -690,7 +690,7 @@ exog_feature_selection = pd.DataFrame(
     columns=[f"exog_{i}" for i in range(5)]
 )
 
-series = pd.DataFrame({
+series_wide_range = pd.DataFrame({
      'l1': pd.Series(np.array(
                [0.69646919, 0.28613933, 0.22685145, 0.55131477, 0.71946897,
                0.42310646, 0.9807642 , 0.68482974, 0.4809319 , 0.39211752,
@@ -718,6 +718,7 @@ series = pd.DataFrame({
                     )
           )
 })
+series_dict_range = series_wide_range.copy().to_dict(orient='series')
 
 exog_multiseries = pd.DataFrame({
      'exog1': pd.Series(np.array(
