@@ -7,6 +7,7 @@ import pandas as pd
 from skforecast.preprocessing import reshape_series_wide_to_long
 
 # Fixtures Description:
+# series_wide_range: DataFrame with two time series in wide format and range index.
 # series_wide_dt: DataFrame with two time series in wide format and datetime index.
 # series_long_dt: MultiIndex long format DataFrame with two time series and datetime index.
 # series_dict_range: Dictionary with two time series in wide format and range index.
@@ -33,7 +34,7 @@ from skforecast.preprocessing import reshape_series_wide_to_long
 # series_wide_dt['1'] = np.random.rand(50)
 # series_wide_dt['2'] = np.random.rand(50)
 # exog_wide_range['exog_1'] = np.random.rand(50)
-series_wide_dt = pd.DataFrame(
+series_wide_range = pd.DataFrame(
     {'1': pd.Series(np.array(
             [0.69646919, 0.28613933, 0.22685145, 0.55131477, 0.71946897,
             0.42310646, 0.9807642 , 0.68482974, 0.4809319 , 0.39211752,
@@ -60,6 +61,7 @@ series_wide_dt = pd.DataFrame(
         )
     }
 )
+series_wide_dt = series_wide_range.copy()
 series_wide_dt.index = pd.date_range(
     start='2000-01-01', periods=len(series_wide_dt), freq='D'
 )
