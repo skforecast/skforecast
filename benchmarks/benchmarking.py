@@ -137,15 +137,15 @@ def plot_benchmark_results(df, function_name, add_median=True, add_mean=True):
         for i, v in enumerate(sorted_versions)
     }
     platform_symbols = {
-        platform: symbol for platform, symbol in zip(df['platform'].unique(), [
+        pltf: symbol for pltf, symbol in zip(df['platform'].unique(), [
             'circle', 'square', 'diamond', 'cross', 'x', 'triangle-up', 'star'
         ])
     }
 
     fig = go.Figure()
     for version in sorted_versions:
-        for platform, symbol in platform_symbols.items():
-            sub_df = df[(df['skforecast_version'] == version) & (df['platform'] == platform)]
+        for pltf, symbol in platform_symbols.items():
+            sub_df = df[(df['skforecast_version'] == version) & (df['platform'] == pltf)]
             if sub_df.empty:
                 continue
             fig.add_trace(
@@ -167,7 +167,7 @@ def plot_benchmark_results(df, function_name, add_median=True, add_mean=True):
                         thickness=1.5,
                         width=5
                     ),
-                    name=f'{version} - {platform}',
+                    name=f'{version} - {pltf}',
                     text=sub_df.apply(lambda row: (
                         f"Forecaster: {row['forecaster_name']}<br>"
                         f"Regressor: {row['regressor_name']}<br>"
@@ -434,7 +434,6 @@ def run_benchmark_ForecasterRecursiveMultiSeries(
         transformer_exog=StandardScaler(),
         encoding="ordinal"
     )
-
 
     runner = BenchmarkRunner(repeat=10, output_dir="./")
     _ = runner.benchmark(
