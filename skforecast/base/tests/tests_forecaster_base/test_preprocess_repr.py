@@ -16,13 +16,13 @@ cols = [f"col_{i}" for i in range(n_cols)]
 exog_cols = [f"exog_{i}" for i in range(n_cols)]
 index = pd.date_range(start = "2000-01-01", periods = n_data, freq = "MS")
 
-series = pd.DataFrame(data, columns = cols, index = index)
+series_dict = pd.DataFrame(data, columns = cols, index = index).to_dict(orient = 'series')
 exog = pd.DataFrame(data, columns = exog_cols, index = index)
 
 
 @pytest.mark.parametrize("transformer_series", 
                          [StandardScaler(), 
-                          {k: StandardScaler() for k in list(series.columns) + ['_unknown_level']}], 
+                          {k: StandardScaler() for k in list(series_dict.keys()) + ['_unknown_level']}], 
                          ids = lambda ts: f'transformer_series: {ts}')
 def test_output_preprocess_repr(transformer_series):
     """
@@ -32,7 +32,7 @@ def test_output_preprocess_repr(transformer_series):
     forecaster = ForecasterRecursiveMultiSeries(
         LinearRegression(), lags=2, transformer_series=transformer_series
     )
-    forecaster.fit(series=series, exog=exog)
+    forecaster.fit(series=series_dict, exog=exog)
     results = forecaster._preprocess_repr(
                   regressor          = forecaster.regressor, 
                   training_range_    = forecaster.training_range_, 

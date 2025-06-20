@@ -295,7 +295,7 @@ class BaseFold():
                 max_index.append(idx[-1])
 
             if not_valid_index:
-                raise ValueError(
+                raise TypeError(
                     f"If `X` is a dictionary, all series must have a Pandas "
                     f"RangeIndex or DatetimeIndex with the same step/frequency. "
                     f"Review series: {not_valid_index}"

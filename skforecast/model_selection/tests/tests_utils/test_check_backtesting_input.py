@@ -365,7 +365,7 @@ def test_check_backtesting_input_ValueError_when_initial_train_size_not_correct_
     initial_train_size >= length `y` or `series` or initial_train_size < window_size.
     """
     y_datetime = y.copy()
-    y_datetime.index = pd.date_range(start='2000-01-01', periods=len(y), freq='D')
+    y_datetime.index = pd.date_range(start='2020-01-01', periods=len(y), freq='D')
 
     if type(forecaster).__name__ == 'ForecasterRecursive':
         data_length = len(y_datetime)
@@ -379,7 +379,7 @@ def test_check_backtesting_input_ValueError_when_initial_train_size_not_correct_
     elif initial_train_size == 'smaller':
         initial_train_size = forecaster.window_size - 1
     else:
-        initial_train_size = '2000-01-02'  # Smaller than window_size
+        initial_train_size = '2020-01-02'  # Smaller than window_size
     
     cv = TimeSeriesFold(
              steps                 = 3,

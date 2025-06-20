@@ -82,7 +82,7 @@ def test_ValueError_check_preprocess_series_when_series_is_dict_with_a_DataFrame
     series_dict = {'l1': series_wide_dt, 'l2': series_wide_dt}
     err_msg = re.escape(
         "If `series` is a dictionary, all series must be a named pandas Series "
-        "or a pandas DataFrame with a single column. Review series: 'l2'"
+        "or a pandas DataFrame with a single column. Review series: 'l1'"
     )
     with pytest.raises(ValueError, match = err_msg):
         check_preprocess_series(series = series_dict)
