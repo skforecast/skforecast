@@ -1017,6 +1017,7 @@ def check_predict_input(
                 raise TypeError(
                     f"`exog` must be a pandas Series, DataFrame or dict. Got {type(exog)}."
                 )
+            # TODO: We can delete this as doesn't require the same type as the training exog.
             if exog_type_in_ == dict and not isinstance(exog, dict):
                 raise TypeError(
                     f"Expected type for `exog`: {exog_type_in_}. Got {type(exog)}."
