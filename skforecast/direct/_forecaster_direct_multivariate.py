@@ -534,7 +534,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         return info
 
-
     def _repr_html_(self):
         """
         HTML representation of the object.

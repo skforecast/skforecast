@@ -97,14 +97,19 @@ def initialize_lags(
             if np.any(lags < 1):
                 raise ValueError("Minimum value of lags allowed is 1.")
         else:
-            if forecaster_name != 'ForecasterDirectMultiVariate':
+            if forecaster_name == 'ForecasterDirectMultiVariate':
+                raise TypeError(
+                    f"`lags` argument must be a dict, int, 1d numpy ndarray, range, "
+                    f"tuple or list. Got {type(lags)}."
+                )
+            elif forecaster_name == 'ForecasterRnn':
                 raise TypeError(
                     f"`lags` argument must be an int, 1d numpy ndarray, range, "
-                    f"tuple or list. Got {type(lags)}."
+                    f"tuple, list or 'auto'. Got {type(lags)}."
                 )
             else:
                 raise TypeError(
-                    f"`lags` argument must be a dict, int, 1d numpy ndarray, range, "
+                    f"`lags` argument must be an int, 1d numpy ndarray, range, "
                     f"tuple or list. Got {type(lags)}."
                 )
         
@@ -881,8 +886,7 @@ def check_predict_input(
     if interval is not None or alpha is not None:
         check_interval(interval=interval, alpha=alpha)
 
-    if forecaster_name in ['ForecasterRecursiveMultiSeries', 
-                           'ForecasterRnn']:
+    if forecaster_name in ['ForecasterRecursiveMultiSeries', 'ForecasterRnn']:
         if not isinstance(levels, (type(None), str, list)):
             raise TypeError(
                 "`levels` must be a `list` of column names, a `str` of a "
@@ -2951,7 +2955,7 @@ def preprocess_levels_self_last_window_multiseries(
 
 
 def prepare_steps_direct(
-    max_step: int,
+    max_step: int | list[int] | np.ndarray[int],
     steps: int | list[int] | None = None
 ) -> list[int]:
     """
@@ -2959,9 +2963,9 @@ def prepare_steps_direct(
 
     Parameters
     ----------
-    max_step : int
+    max_step : int, list, numpy ndarray
         Maximum number of future steps the forecaster will predict 
-        when using method `predict()`.
+        when using predict methods.
     steps : int, list, None, default None
         Predict n steps. The value of `steps` must be less than or equal to the 
         value of steps defined when initializing the forecaster. Starts at 1.
@@ -2982,7 +2986,10 @@ def prepare_steps_direct(
     if isinstance(steps, int):
         steps = list(np.arange(steps) + 1)
     elif steps is None:
-        steps = list(np.arange(max_step) + 1)
+        if isinstance(max_step, int):
+            steps = list(np.arange(max_step) + 1)
+        else:
+            steps = list(np.array(max_step))
     elif isinstance(steps, list):
         steps = list(np.array(steps))
     

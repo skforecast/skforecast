@@ -20,17 +20,18 @@ def test_TypeError_prepare_steps_direct_when_steps_list_contain_floats(steps):
         prepare_steps_direct(max_step=5, steps=steps)
 
 
-@pytest.mark.parametrize("steps, expected_steps", 
-                         [(4, [1, 2, 3, 4]),
-                          (None, [1, 2, 3, 4, 5]),
-                          ([1, 3], [1, 3])], 
+@pytest.mark.parametrize("steps, max_step, expected_steps", 
+                         [(4, 5, [1, 2, 3, 4]),
+                          (None, 5, [1, 2, 3, 4, 5]),
+                          (None, [1, 3], [1, 3]),
+                          ([1, 3], 5, [1, 3])], 
                          ids=lambda param: f'steps: {param}')
-def test_output_prepare_steps_direct(steps, expected_steps):
+def test_output_prepare_steps_direct(steps, max_step, expected_steps):
     """
     Test output prepare_steps_direct for different inputs.
     """
     steps = prepare_steps_direct(
-                max_step = 5, 
+                max_step = max_step, 
                 steps    = steps
             )
     
