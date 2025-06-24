@@ -23,17 +23,36 @@ from sklearn.preprocessing import MinMaxScaler
 import skforecast
 
 from ..base import ForecasterBase
-from ..exceptions import (DataTransformationWarning, IgnoredArgumentWarning,
-                          MissingValuesWarning, ResidualsUsageWarning,
-                          UnknownLevelWarning)
-from ..utils import (check_exog, check_exog_dtypes, check_interval,
-                     check_predict_input, check_residuals_input,
-                     check_select_fit_kwargs, check_y, expand_index,
-                     get_exog_dtypes, get_style_repr_html, initialize_lags,
-                     input_to_frame, prepare_levels_multiseries,
-                     prepare_steps_direct, preprocess_last_window,
-                     preprocess_y, set_skforecast_warnings,
-                     transform_dataframe, transform_numpy, transform_series)
+from ..exceptions import (
+    DataTransformationWarning,
+    IgnoredArgumentWarning,
+    MissingValuesWarning,
+    ResidualsUsageWarning,
+    UnknownLevelWarning,
+)
+from ..utils import (
+    check_exog,
+    check_exog_dtypes,
+    check_interval,
+    check_predict_input,
+    check_residuals_input,
+    check_select_fit_kwargs,
+    check_y,
+    expand_index,
+    get_exog_dtypes,
+    get_style_repr_html,
+    initialize_lags,
+    input_to_frame,
+    prepare_levels_multiseries,
+    prepare_steps_direct,
+    preprocess_last_window,
+    preprocess_y,
+    set_skforecast_warnings,
+    transform_dataframe,
+    transform_numpy,
+    transform_series,
+)
+
 
 
 # TODO. Test Interval
@@ -808,7 +827,7 @@ class ForecasterRnn(ForecasterBase):
             # self.X_train_exog_names_out_ = X_train_exog_names_out_
 
         if store_in_sample_residuals:
-            residuals = y_train - self.regressor.predict(
+            residuals = y_train.cpu() - self.regressor.predict(
                 x=X_train if exog_train is None else [X_train, exog_train], verbose=0
             )
             self.in_sample_residuals_ = {
@@ -1045,9 +1064,7 @@ class ForecasterRnn(ForecasterBase):
                 check_inputs = check_inputs
             )
 
-        print(X)
         predictions = self.regressor.predict(X, verbose=0)
-        print(predictions)
         predictions = np.reshape(
             predictions, (predictions.shape[1], predictions.shape[2])
         )[np.array(steps) - 1]
