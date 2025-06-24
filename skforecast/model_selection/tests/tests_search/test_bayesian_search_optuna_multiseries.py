@@ -15,7 +15,7 @@ from skforecast.recursive import ForecasterRecursiveMultiSeries
 from skforecast.direct import ForecasterDirectMultiVariate
 from skforecast.model_selection import backtesting_forecaster_multiseries
 from skforecast.model_selection._search import _bayesian_search_optuna_multiseries
-from skforecast.model_selection._split import TimeSeriesFold, OneStepAheadFold
+from skforecast.model_selection._split import TimeSeriesFold
 from skforecast.preprocessing import RollingFeatures
 import optuna
 from optuna.samplers import TPESampler
@@ -23,7 +23,12 @@ from tqdm import tqdm
 from functools import partialmethod
 
 # Fixtures
-from ..fixtures_model_selection_multiseries import series
+from ..fixtures_model_selection_multiseries import (
+    series_wide_range,
+    series_long_dt,
+    series_dict_range,
+    series_dict_dt,
+)
 
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)  # hide progress bar
@@ -59,7 +64,7 @@ def test_TypeError_bayesian_search_optuna_multiseries_when_cv_not_valid():
     with pytest.raises(TypeError, match = err_msg):
         _bayesian_search_optuna_multiseries(
             forecaster         = forecaster,
-            series             = series,
+            series             = series_dict_range,
             search_space       = search_space,
             cv                 = cv,
             metric             = 'mean_absolute_error',
@@ -82,11 +87,11 @@ def test_ValueError_bayesian_search_optuna_multiseries_when_not_allowed_aggregat
                      encoding  = 'onehot'
                  )
     cv = TimeSeriesFold(
-            initial_train_size = len(series[:-12]),
+            initial_train_size = len(series_dict_range['l1']) - 12,
             steps              = 3,
             refit              = True,
             fixed_train_size   = True
-    )
+        )
     
     def search_space(trial):  # pragma: no cover
         search_space  = {'alpha': trial.suggest_float('not_alpha', 1e-2, 1.0)}
@@ -94,13 +99,13 @@ def test_ValueError_bayesian_search_optuna_multiseries_when_not_allowed_aggregat
         return search_space
 
     err_msg = re.escape(
-        ("Allowed `aggregate_metric` are: ['average', 'weighted_average', 'pooling']. "
-         "Got: ['not_valid'].")
+        "Allowed `aggregate_metric` are: ['average', 'weighted_average', 'pooling']. "
+        "Got: ['not_valid']."
     )
     with pytest.raises(ValueError, match = err_msg):
         _bayesian_search_optuna_multiseries(
             forecaster         = forecaster,
-            series             = series,
+            series             = series_dict_range,
             search_space       = search_space,
             cv                 = cv,
             metric             = 'mean_absolute_error',
@@ -123,11 +128,11 @@ def test_ValueError_bayesian_search_optuna_multiseries_metric_list_duplicate_nam
                      encoding  = 'onehot'
                  )
     cv = TimeSeriesFold(
-            initial_train_size = len(series[:-12]),
+            initial_train_size = len(series_dict_range['l1']) - 12,
             steps              = 3,
             refit              = True,
             fixed_train_size   = True
-    )
+        )
     
     def search_space(trial):  # pragma: no cover
         search_space  = {'alpha': trial.suggest_float('not_alpha', 1e-2, 1.0)}
@@ -138,7 +143,7 @@ def test_ValueError_bayesian_search_optuna_multiseries_metric_list_duplicate_nam
     with pytest.raises(ValueError, match = err_msg):
         _bayesian_search_optuna_multiseries(
             forecaster         = forecaster,
-            series             = series,
+            series             = series_dict_range,
             search_space       = search_space,
             cv                 = cv,
             metric             = ['mean_absolute_error', mean_absolute_error],
@@ -161,10 +166,10 @@ def test_ValueError_bayesian_search_optuna_multiseries_when_search_space_names_d
                      encoding  = 'onehot'
                  )
     cv = TimeSeriesFold(
-                initial_train_size = len(series[:-12]),
-                steps              = 3,
-                refit              = True,
-                fixed_train_size   = True
+            initial_train_size = len(series_dict_range['l1']) - 12,
+            steps              = 3,
+            refit              = True,
+            fixed_train_size   = True
         )
 
     def search_space(trial):
@@ -180,7 +185,7 @@ def test_ValueError_bayesian_search_optuna_multiseries_when_search_space_names_d
     with pytest.raises(ValueError, match = err_msg):
         _bayesian_search_optuna_multiseries(
             forecaster         = forecaster,
-            series             = series,
+            series             = series_dict_range,
             cv                 = cv,
             search_space       = search_space,
             metric             = 'mean_absolute_error',
@@ -210,11 +215,11 @@ def test_results_output_bayesian_search_optuna_multiseries_with_mocked_when_lags
                      transformer_series = StandardScaler()
                  )
     cv = TimeSeriesFold(
-            initial_train_size = len(series[:-12]),
+            initial_train_size = len(series_dict_range['l1']) - 12,
             steps              = 3,
             refit              = True,
             fixed_train_size   = True
-    )
+        )
 
     def search_space(trial):
         search_space  = {
@@ -228,7 +233,7 @@ def test_results_output_bayesian_search_optuna_multiseries_with_mocked_when_lags
 
     results = _bayesian_search_optuna_multiseries(
                   forecaster         = forecaster,
-                  series             = series,
+                  series             = series_dict_range,
                   cv                 = cv,
                   search_space       = search_space,
                   metric             = 'mean_absolute_error',
@@ -296,11 +301,11 @@ def test_results_output_bayesian_search_optuna_multiseries_ForecasterRecursiveMu
                      transformer_series = StandardScaler()
                  )
     cv = TimeSeriesFold(
-            initial_train_size = len(series[:-12]),
+            initial_train_size = len(series_dict_range['l1']) - 12,
             steps              = 3,
             refit              = True,
             fixed_train_size   = True
-    )
+        )
     levels = ['l1']
 
     def search_space(trial):
@@ -313,7 +318,7 @@ def test_results_output_bayesian_search_optuna_multiseries_ForecasterRecursiveMu
 
     results = _bayesian_search_optuna_multiseries(
                   forecaster         = forecaster,
-                  series             = series,
+                  series             = series_dict_range,
                   cv                 = cv,
                   levels             = levels,
                   search_space       = search_space,
@@ -369,11 +374,11 @@ def test_results_output_bayesian_search_optuna_multiseries_ForecasterRecursiveMu
                      transformer_series = StandardScaler()
                  )
     cv = TimeSeriesFold(
-            initial_train_size = len(series[:-12]),
+            initial_train_size = len(series_dict_range['l1']) - 12,
             steps              = 3,
             refit              = True,
             fixed_train_size   = True
-    )
+        )
 
     def search_space(trial):
         search_space  = {
@@ -385,7 +390,7 @@ def test_results_output_bayesian_search_optuna_multiseries_ForecasterRecursiveMu
 
     results = _bayesian_search_optuna_multiseries(
                   forecaster         = forecaster,
-                  series             = series,
+                  series             = series_dict_range,
                   search_space       = search_space,
                   cv                 = cv,
                   metric             = ['mean_absolute_error', 'mean_absolute_scaled_error'],
@@ -542,11 +547,11 @@ def test_results_output_bayesian_search_optuna_multiseries_ForecasterRecursiveMu
                      transformer_series = StandardScaler()
                  )
     cv = TimeSeriesFold(
-            initial_train_size = len(series[:-12]),
+            initial_train_size = len(series_long_dt.loc['l1']) - 12,
             steps              = 3,
             refit              = True,
             fixed_train_size   = True
-    )
+        )
 
     def search_space(trial):
         search_space  = {
@@ -558,7 +563,7 @@ def test_results_output_bayesian_search_optuna_multiseries_ForecasterRecursiveMu
 
     results = _bayesian_search_optuna_multiseries(
                   forecaster         = forecaster,
-                  series             = series,
+                  series             = series_long_dt,
                   search_space       = search_space,
                   cv                 = cv,
                   metric             = ['mean_absolute_error', 'mean_absolute_scaled_error'],
@@ -708,11 +713,11 @@ def test_results_output_bayesian_search_optuna_multiseries_with_kwargs_create_st
                  )
 
     cv = TimeSeriesFold(
-            initial_train_size = len(series[:-12]),
+            initial_train_size = len(series_dict_dt['l1']) - 12,
             steps              = 3,
             refit              = False,
             fixed_train_size   = True
-    )
+        )
 
     def search_space(trial):
         search_space  = {
@@ -727,7 +732,7 @@ def test_results_output_bayesian_search_optuna_multiseries_with_kwargs_create_st
     }
     results = _bayesian_search_optuna_multiseries(
                   forecaster          = forecaster,
-                  series              = series,
+                  series              = series_dict_dt,
                   cv                  = cv,
                   search_space        = search_space,
                   metric              = 'mean_absolute_error',
@@ -788,11 +793,11 @@ def test_results_output_bayesian_search_optuna_multiseries_with_kwargs_study_opt
                      transformer_series = StandardScaler()
                  )
     cv = TimeSeriesFold(
-            initial_train_size = len(series[:-12]),
+            initial_train_size = len(series_dict_dt['l1']) - 12,
             steps              = 3,
             refit              = False,
             fixed_train_size   = True
-    )
+        )
 
     def search_space(trial):
         search_space  = {
@@ -807,7 +812,7 @@ def test_results_output_bayesian_search_optuna_multiseries_with_kwargs_study_opt
     kwargs_study_optimize = {'timeout': 3.0}
     results = _bayesian_search_optuna_multiseries(
                   forecaster            = forecaster,
-                  series                = series,
+                  series                = series_dict_dt,
                   cv                    = cv,
                   search_space          = search_space,
                   metric                = 'mean_absolute_error',
@@ -866,11 +871,11 @@ def test_results_output_bayesian_search_optuna_multiseries_when_lags_is_not_prov
                      transformer_series = StandardScaler()
                  )
     cv = TimeSeriesFold(
-            initial_train_size = len(series[:-12]),
+            initial_train_size = len(series_dict_dt['l1']) - 12,
             steps              = 3,
             refit              = True,
             fixed_train_size   = True
-    )
+        )
 
     def search_space(trial):
         search_space  = {'alpha': trial.suggest_float('alpha', 1e-2, 1.0)}
@@ -879,7 +884,7 @@ def test_results_output_bayesian_search_optuna_multiseries_when_lags_is_not_prov
 
     results = _bayesian_search_optuna_multiseries(
                   forecaster         = forecaster,
-                  series             = series,
+                  series             = series_dict_dt,
                   cv                 = cv,
                   search_space       = search_space,
                   metric             = 'mean_absolute_error',
@@ -944,7 +949,7 @@ def test_results_output_bayesian_search_optuna_multiseries_ForecasterDirectMulti
                      transformer_series = None
                  )
     cv = TimeSeriesFold(
-            initial_train_size = len(series[:-12]),
+            initial_train_size = len(series_wide_range) - 12,
             steps              = 3,
             refit              = True,
             fixed_train_size   = True
@@ -960,7 +965,7 @@ def test_results_output_bayesian_search_optuna_multiseries_ForecasterDirectMulti
 
     results = _bayesian_search_optuna_multiseries(
                   forecaster         = forecaster,
-                  series             = series,
+                  series             = series_wide_range,
                   cv                 = cv,
                   search_space       = search_space,
                   metric             = 'mean_absolute_error',
@@ -1017,7 +1022,7 @@ def test_results_output_bayesian_search_optuna_multiseries_ForecasterDirectMulti
                      transformer_series = None
                  )
     cv = TimeSeriesFold(
-            initial_train_size = len(series[:-12]),
+            initial_train_size = len(series_wide_range) - 12,
             steps              = 3,
             refit              = True,
             fixed_train_size   = True
@@ -1035,7 +1040,7 @@ def test_results_output_bayesian_search_optuna_multiseries_ForecasterDirectMulti
 
     results = _bayesian_search_optuna_multiseries(
                   forecaster         = forecaster,
-                  series             = series,
+                  series             = series_wide_range,
                   cv                 = cv,
                   search_space       = search_space,
                   metric             = 'mean_absolute_error',
@@ -1101,7 +1106,7 @@ def test_evaluate_bayesian_search_optuna_multiseries_when_return_best_Forecaster
                      transformer_series = StandardScaler()
                  )
     cv = TimeSeriesFold(
-            initial_train_size = len(series[:-12]),
+            initial_train_size = len(series_dict_range['l1']) - 12,
             steps              = 3,
             refit              = True,
             fixed_train_size   = True
@@ -1114,7 +1119,7 @@ def test_evaluate_bayesian_search_optuna_multiseries_when_return_best_Forecaster
 
     _bayesian_search_optuna_multiseries(
         forecaster         = forecaster,
-        series             = series,
+        series             = series_dict_range,
         cv                 = cv,
         search_space       = search_space,
         metric             = 'mean_absolute_error',
@@ -1142,7 +1147,7 @@ def test_results_opt_best_output__bayesian_search_optuna_multiseries_with_output
                      encoding  = 'onehot'
                  )
     cv = TimeSeriesFold(
-            initial_train_size = len(series[:-12]),
+            initial_train_size = len(series_dict_range['l1']) - 12,
             steps              = 3,
             refit              = True,
             fixed_train_size   = True
@@ -1157,7 +1162,7 @@ def test_results_opt_best_output__bayesian_search_optuna_multiseries_with_output
     def objective(
         trial,
         forecaster    = forecaster,
-        series        = series,
+        series        = series_dict_range,
         cv            = cv,
         metric        = metric,
         verbose       = verbose,
@@ -1182,8 +1187,9 @@ def test_results_opt_best_output__bayesian_search_optuna_multiseries_with_output
 
         return abs(metrics_levels.iloc[:, 1].mean())
 
-    study = optuna.create_study(direction="minimize", 
-                                sampler=TPESampler(seed=random_state))
+    study = optuna.create_study(
+        direction="minimize", sampler=TPESampler(seed=random_state)
+    )
     study.optimize(objective, n_trials=n_trials)
     best_trial = study.best_trial
 
@@ -1195,7 +1201,7 @@ def test_results_opt_best_output__bayesian_search_optuna_multiseries_with_output
     return_best  = False
     results_opt_best = _bayesian_search_optuna_multiseries(
                            forecaster    = forecaster,
-                           series        = series,
+                           series        = series_dict_range,
                            cv            = cv,
                            search_space  = search_space,
                            metric        = metric,
@@ -1220,7 +1226,7 @@ def test_bayesian_search_optuna_multiseries_ForecasterRecursiveMultiSeries_outpu
                      lags      = 2 
                  )
     cv = TimeSeriesFold(
-            initial_train_size = len(series[:-12]),
+            initial_train_size = len(series_dict_range['l1']) - 12,
             steps              = 3,
             refit              = False,
             fixed_train_size   = False
@@ -1238,7 +1244,7 @@ def test_bayesian_search_optuna_multiseries_ForecasterRecursiveMultiSeries_outpu
     output_file = 'test_bayesian_search_optuna_multiseries_output_file.txt'
     _ = _bayesian_search_optuna_multiseries(
             forecaster    = forecaster,
-            series        = series,
+            series        = series_dict_range,
             cv            = cv,
             search_space  = search_space,
             metric        = 'mean_absolute_error',
@@ -1265,7 +1271,7 @@ def test_bayesian_search_optuna_multiseries_ForecasterDirectMultiVariate_output_
                      steps     = 3
                  )
     cv = TimeSeriesFold(
-            initial_train_size = len(series[:-12]),
+            initial_train_size = len(series_wide_range) - 12,
             steps              = 3,
             refit              = False,
             fixed_train_size   = False
@@ -1283,7 +1289,7 @@ def test_bayesian_search_optuna_multiseries_ForecasterDirectMultiVariate_output_
     output_file = 'test_bayesian_search_optuna_multiseries_output_file_3.txt'
     _ = _bayesian_search_optuna_multiseries(
             forecaster   = forecaster,
-            series       = series,
+            series       = series_wide_range,
             cv           = cv,
             search_space = search_space,
             metric       = 'mean_absolute_error',

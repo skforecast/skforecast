@@ -125,7 +125,7 @@ def test_save_forecaster_save_custom_functions(weight_func):
     series = pd.DataFrame(
         {'serie_1': np.random.normal(size=20),
          'serie_2': np.random.normal(size=20)}
-    )
+    ).to_dict(orient='series')
     
     forecaster = ForecasterRecursiveMultiSeries(
                      regressor          = LinearRegression(),
@@ -134,8 +134,9 @@ def test_save_forecaster_save_custom_functions(weight_func):
                      transformer_series = StandardScaler()
                  )
     forecaster.fit(series=series)
-    save_forecaster(forecaster=forecaster, file_name='forecaster.joblib', 
-                    save_custom_functions=True)
+    save_forecaster(
+        forecaster=forecaster, file_name='forecaster.joblib', save_custom_functions=True
+    )
     load_forecaster(file_name='forecaster.joblib', verbose=True)
     os.remove('forecaster.joblib')
     
@@ -168,8 +169,9 @@ def test_save_forecaster_warning_dont_save_custom_functions(weight_func):
         "To save them, set `save_custom_functions` to `True`."
     )
     with pytest.warns(SaveLoadSkforecastWarning, match = warn_msg):
-        save_forecaster(forecaster=forecaster, file_name='forecaster.joblib', 
-                        save_custom_functions=False)
+        save_forecaster(
+            forecaster=forecaster, file_name='forecaster.joblib', save_custom_functions=False
+        )
         os.remove('forecaster.joblib')
 
 
@@ -195,6 +197,7 @@ def test_save_forecaster_warning_when_user_defined_window_features():
         "    Custom classes: " + ', '.join({'UserWindowFeature'}),
     )
     with pytest.warns(SaveLoadSkforecastWarning, match = warn_msg):
-        save_forecaster(forecaster=forecaster, file_name='forecaster.joblib', 
-                        save_custom_functions=False)
+        save_forecaster(
+            forecaster=forecaster, file_name='forecaster.joblib', save_custom_functions=False
+        )
         os.remove('forecaster.joblib')

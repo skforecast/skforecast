@@ -80,6 +80,22 @@ class IndexWarning(UserWarning):
         return self.message + "\n" + extra_message
 
 
+class InputTypeWarning(UserWarning):
+    """
+    Warning used to notify that input format is not the most efficient or
+    recommended for the forecaster.
+    """
+    def __init__(self, message):
+        self.message = message
+
+    def __str__(self):
+        extra_message = (
+            "You can suppress this warning using: "
+            "warnings.simplefilter('ignore', category=InputTypeWarning)"
+        )
+        return self.message + "\n" + extra_message
+
+
 class LongTrainingWarning(UserWarning):
     """
     Warning used to notify that a large number of models will be trained and the
@@ -215,6 +231,7 @@ warn_skforecast_categories = [
     DataTransformationWarning,
     IgnoredArgumentWarning,
     IndexWarning,
+    InputTypeWarning,
     LongTrainingWarning,
     MissingExogWarning,
     MissingValuesWarning,
@@ -222,7 +239,7 @@ warn_skforecast_categories = [
     ResidualsUsageWarning,
     UnknownLevelWarning,
     SaveLoadSkforecastWarning,
-    SkforecastVersionWarning,    
+    SkforecastVersionWarning
 ]
 
 

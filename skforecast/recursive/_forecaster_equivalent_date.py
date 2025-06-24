@@ -17,7 +17,8 @@ from ..utils import (
     check_predict_input,
     preprocess_y,
     preprocess_last_window,
-    expand_index    
+    expand_index,
+    get_style_repr_html
 )
 
 
@@ -193,6 +194,50 @@ class ForecasterEquivalentDate():
 
         return info
 
+    def _repr_html_(self):
+        """
+        HTML representation of the object.
+        The "General Information" section is expanded by default.
+        """
+
+        style, unique_id = get_style_repr_html(self.is_fitted)
+        
+        content = f"""
+        <div class="container-{unique_id}">
+            <h2>{type(self).__name__}</h2>
+            <details open>
+                <summary>General Information</summary>
+                <ul>
+                    <li><strong>Regressor:</strong> {type(self.regressor).__name__}</li>
+                    <li><strong>Offset:</strong> {self.offset}</li>
+                    <li><strong>Number of offsets:</strong> {self.n_offsets}</li>
+                    <li><strong>Aggregation function:</strong> {self.agg_func.__name__}</li>
+                    <li><strong>Window size:</strong> {self.window_size}</li>
+                    <li><strong>Creation date:</strong> {self.creation_date}</li>
+                    <li><strong>Last fit date:</strong> {self.fit_date}</li>
+                    <li><strong>Skforecast version:</strong> {self.skforecast_version}</li>
+                    <li><strong>Python version:</strong> {self.python_version}</li>
+                    <li><strong>Forecaster id:</strong> {self.forecaster_id}</li>
+                </ul>
+            </details>
+            <details>
+                <summary>Training Information</summary>
+                <ul>
+                    <li><strong>Training range:</strong> {self.training_range_.to_list() if self.is_fitted else 'Not fitted'}</li>
+                    <li><strong>Training index type:</strong> {str(self.index_type_).split('.')[-1][:-2] if self.is_fitted else 'Not fitted'}</li>
+                    <li><strong>Training index frequency:</strong> {self.index_freq_ if self.is_fitted else 'Not fitted'}</li>
+                </ul>
+            </details>
+            <p>
+                <a href="https://skforecast.org/{skforecast.__version__}/api/forecasterequivalentdate.html">&#128712 <strong>API Reference</strong></a>
+                &nbsp;&nbsp;
+                <a href="https://skforecast.org/{skforecast.__version__}/user_guides/forecasting-baseline.html">&#128462 <strong>User Guide</strong></a>
+            </p>
+        </div>
+        """
+
+        return style + content
+
     def fit(
         self,
         y: pd.Series,
@@ -353,8 +398,10 @@ class ForecasterEquivalentDate():
                 predictions = equivalent_values.ravel()
 
             if self.n_offsets > 1:
-                equivalent_indexes = [equivalent_indexes - n * self.offset 
-                                      for n in np.arange(self.n_offsets)]
+                equivalent_indexes = [
+                    equivalent_indexes - n * self.offset 
+                    for n in np.arange(self.n_offsets)
+                ]
                 equivalent_indexes = np.vstack(equivalent_indexes)
                 equivalent_values = last_window_values[equivalent_indexes]
                 predictions = np.apply_along_axis(
@@ -399,8 +446,7 @@ class ForecasterEquivalentDate():
             equivalent_values = pd.DataFrame(
                                     data    = equivalent_values,
                                     index   = predictions_index,
-                                    columns = [f'offset_{i}' 
-                                               for i in range(self.n_offsets)]
+                                    columns = [f'offset_{i}' for i in range(self.n_offsets)]
                                 )
             
             # Error if all values are missing

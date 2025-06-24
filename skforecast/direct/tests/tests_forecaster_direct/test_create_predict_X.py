@@ -9,9 +9,12 @@ from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import OrdinalEncoder
-from sklearn.compose import make_column_transformer
+from sklearn.preprocessing import FunctionTransformer
+from sklearn.compose import make_column_transformer, make_column_selector
+from sklearn.pipeline import make_pipeline
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import HistGradientBoostingRegressor
+from lightgbm import LGBMRegressor
 
 from ....exceptions import DataTransformationWarning
 from skforecast.utils import transform_numpy
@@ -34,8 +37,8 @@ def test_create_predict_X_TypeError_when_steps_list_contain_floats(steps):
     forecaster.fit(y=pd.Series(np.arange(10)))
 
     err_msg = re.escape(
-        (f"`steps` argument must be an int, a list of ints or `None`. "
-         f"Got {type(steps)}.")
+        f"`steps` argument must be an int, a list of ints or `None`. "
+        f"Got {type(steps)}."
     )
     with pytest.raises(TypeError, match = err_msg):
         forecaster.create_predict_X(steps=steps)
@@ -48,8 +51,8 @@ def test_create_predict_X_NotFittedError_when_fitted_is_False():
     forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=5)
 
     err_msg = re.escape(
-        ("This Forecaster instance is not fitted yet. Call `fit` with "
-         "appropriate arguments before using predict.")
+        "This Forecaster instance is not fitted yet. Call `fit` with "
+        "appropriate arguments before using predict."
     )
     with pytest.raises(NotFittedError, match = err_msg):
         forecaster.create_predict_X(steps=5)
@@ -129,8 +132,8 @@ def test_create_predict_X_output_when_exog():
     """
     forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=5)
     forecaster.fit(
-        y=pd.Series(np.arange(50, dtype=float)),
-        exog=pd.Series(np.arange(start=100, stop=150, step=1), name="exog")
+        y    = pd.Series(np.arange(50, dtype=float)),
+        exog = pd.Series(np.arange(start=100, stop=150, step=1, dtype=float), name="exog")
     )
     results = forecaster.create_predict_X(
                   steps = 5, 
@@ -144,7 +147,7 @@ def test_create_predict_X_output_when_exog():
             'lag_1': [49., 49., 49., 49., 49.],
             'lag_2': [48., 48., 48., 48., 48.],
             'lag_3': [47., 47., 47., 47., 47.],
-            'exog': [25, 25.5, 26, 26.5, 27]
+            'exog': [25., 25.5, 26., 26.5, 27.]
         },
         index = pd.RangeIndex(start=50, stop=55, step=1)
     )
@@ -248,8 +251,8 @@ def test_create_predict_X_output_when_categorical_features_native_implementation
     and categorical variables.
     """
     df_exog = pd.DataFrame({'exog_1': exog_categorical,
-                            'exog_2': ['a', 'b', 'c', 'd', 'e']*10,
-                            'exog_3': pd.Categorical(['F', 'G', 'H', 'I', 'J']*10)})
+                            'exog_2': ['a', 'b', 'c', 'd', 'e'] * 10,
+                            'exog_3': pd.Categorical(['F', 'G', 'H', 'I', 'J'] * 10)})
     
     exog_predict = df_exog.copy()
     exog_predict.index = pd.RangeIndex(start=50, stop=100)
@@ -300,7 +303,74 @@ def test_create_predict_X_output_when_categorical_features_native_implementation
                        0.30412079, 0.41702221, 0.68130077, 0.87545684, 0.51042234]
         },
         index = pd.RangeIndex(start=50, stop=60, step=1)
-    )
+    ).astype({'exog_2': int, 'exog_3': int})
+    
+    pd.testing.assert_frame_equal(results, expected)
+
+
+def test_create_predict_X_when_categorical_features_auto_detect_LGBMRegressor():
+    """
+    Test create_predict_X when using LGBMRegressor and categorical variables.
+    """
+    df_exog = pd.DataFrame({'exog_1': exog_categorical,
+                            'exog_2': ['a', 'b', 'c', 'd', 'e'] * 10,
+                            'exog_3': pd.Categorical(['F', 'G', 'H', 'I', 'J'] * 10)})
+    
+    exog_predict = df_exog.copy()
+    exog_predict.index = pd.RangeIndex(start=50, stop=100)
+
+    pipeline_categorical = make_pipeline(
+                               OrdinalEncoder(
+                                   dtype=int,
+                                   handle_unknown="use_encoded_value",
+                                   unknown_value=-1,
+                                   encoded_missing_value=-1
+                               ),
+                               FunctionTransformer(
+                                   func=lambda x: x.astype('category'),
+                                   feature_names_out= 'one-to-one'
+                               )
+                           )
+
+    transformer_exog = make_column_transformer(
+                           (
+                               pipeline_categorical,
+                               make_column_selector(dtype_exclude=np.number)
+                           ),
+                           remainder="passthrough",
+                           verbose_feature_names_out=False,
+                       ).set_output(transform="pandas")
+    
+    forecaster = ForecasterDirect(
+                     regressor        = LGBMRegressor(verbose=-1, random_state=123),
+                     lags             = 5,
+                     steps            = 10, 
+                     transformer_y    = None,
+                     transformer_exog = transformer_exog
+                 )
+    forecaster.fit(y=y_categorical, exog=df_exog)
+    results = forecaster.create_predict_X(steps=10, exog=exog_predict)
+
+    expected = pd.DataFrame(
+        data = {
+            'lag_1': [0.61289453, 0.61289453, 0.61289453, 0.61289453, 0.61289453,
+                      0.61289453, 0.61289453, 0.61289453, 0.61289453, 0.61289453],
+            'lag_2': [0.51948512, 0.51948512, 0.51948512, 0.51948512, 0.51948512,
+                      0.51948512, 0.51948512, 0.51948512, 0.51948512, 0.51948512],
+            'lag_3': [0.98555979, 0.98555979, 0.98555979, 0.98555979, 0.98555979,
+                      0.98555979, 0.98555979, 0.98555979, 0.98555979, 0.98555979],
+            'lag_4': [0.48303426, 0.48303426, 0.48303426, 0.48303426, 0.48303426,
+                      0.48303426, 0.48303426, 0.48303426, 0.48303426, 0.48303426],
+            'lag_5': [0.25045537, 0.25045537, 0.25045537, 0.25045537, 0.25045537,
+                      0.25045537, 0.25045537, 0.25045537, 0.25045537, 0.25045537],
+            'exog_2': [0., 1., 2., 3., 4., 0., 1., 2., 3., 4.],
+            'exog_3': [0., 1., 2., 3., 4., 0., 1., 2., 3., 4.],
+            'exog_1': [0.12062867, 0.8263408, 0.60306013, 0.54506801, 0.34276383,
+                       0.30412079, 0.41702221, 0.68130077, 0.87545684, 0.51042234]
+        },
+        index = pd.RangeIndex(start=50, stop=60, step=1)
+    ).astype({'exog_2': int, 'exog_3': int}
+    ).astype({'exog_2': 'category', 'exog_3': 'category'})
     
     pd.testing.assert_frame_equal(results, expected)
 
@@ -424,13 +494,13 @@ def test_create_predict_X_when_window_features_steps_10():
         name='y', dtype=float
     )
     exog_datetime = pd.DataFrame(
-        {'exog_1': np.arange(100, 120), 
-         'exog_2': np.arange(200, 220)},
+        {'exog_1': np.arange(100, 120, dtype=float), 
+         'exog_2': np.arange(200, 220, dtype=float)},
         index=pd.date_range('2000-01-01', periods=20, freq='D')
     )
     exog_datetime_pred = pd.DataFrame(
-        {'exog_1': np.arange(120, 130),
-         'exog_2': np.arange(220, 230)},
+        {'exog_1': np.arange(120, 130, dtype=float),
+         'exog_2': np.arange(220, 230, dtype=float)},
         index=pd.date_range('2000-01-21', periods=10, freq='D')
     )
     rolling = RollingFeatures(stats=['mean', 'median'], window_sizes=[5, 5])
@@ -472,13 +542,13 @@ def test_create_predict_X_when_window_features_and_lags_None_steps_10():
         name='y', dtype=float
     )
     exog_datetime = pd.DataFrame(
-        {'exog_1': np.arange(100, 120), 
-         'exog_2': np.arange(200, 220)},
+        {'exog_1': np.arange(100, 120, dtype=float), 
+         'exog_2': np.arange(200, 220, dtype=float)},
         index=pd.date_range('2000-01-01', periods=20, freq='D')
     )
     exog_datetime_pred = pd.DataFrame(
-        {'exog_1': np.arange(120, 130),
-         'exog_2': np.arange(220, 230)},
+        {'exog_1': np.arange(120, 130, dtype=float),
+         'exog_2': np.arange(220, 230, dtype=float)},
         index=pd.date_range('2000-01-21', periods=10, freq='D')
     )
     rolling = RollingFeatures(stats=['mean', 'median'], window_sizes=[5, 5])

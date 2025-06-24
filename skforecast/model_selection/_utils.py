@@ -228,69 +228,22 @@ def check_backtesting_input(
             raise TypeError("`series` must be a pandas DataFrame.")
         data_name = 'series'
         data_length = len(series)
-    
+        
     elif forecaster_name in forecasters_multi_dict:
-        if not isinstance(series, (pd.DataFrame, dict)):
-            raise TypeError(
-                f"`series` must be a pandas DataFrame or a dict of DataFrames or Series. "
-                f"Got {type(series)}."
-            )
+        
+        # NOTE: Checks are not need as they are done in the function 
+        # `check_preprocess_series` that is used before `check_backtesting_input`
+        # in the backtesting function.
         
         data_name = 'series'
-        if isinstance(series, dict):
-            not_valid_series = [
-                k 
-                for k, v in series.items()
-                if not isinstance(v, (pd.Series, pd.DataFrame))
-            ]
-            if not_valid_series:
-                raise TypeError(
-                    f"If `series` is a dictionary, all series must be a named "
-                    f"pandas Series or a pandas DataFrame with a single column. "
-                    f"Review series: {not_valid_series}"
-                )
-            not_valid_index = [
-                k 
-                for k, v in series.items()
-                if not isinstance(v.index, pd.DatetimeIndex)
-            ]
-            if not_valid_index:
-                raise ValueError(
-                    f"If `series` is a dictionary, all series must have a Pandas "
-                    f"DatetimeIndex as index with the same frequency. "
-                    f"Review series: {not_valid_index}"
-                )
-
-            indexes_freq = [f'{v.index.freq}' for v in series.values()]
-            indexes_freq = sorted(set(indexes_freq))
-            if not len(indexes_freq) == 1:
-                raise ValueError(
-                    f"If `series` is a dictionary, all series must have a Pandas "
-                    f"DatetimeIndex as index with the same frequency. "
-                    f"Found frequencies: {indexes_freq}"
-                )
-            data_length = max([len(series[serie]) for serie in series])
-        else:
-            data_length = len(series)
+        data_length = max([len(series[serie]) for serie in series])
 
     if exog is not None:
         if forecaster_name in forecasters_multi_dict:
-            if not isinstance(exog, (pd.Series, pd.DataFrame, dict)):
-                raise TypeError(
-                    f"`exog` must be a pandas Series, DataFrame, dictionary of pandas "
-                    f"Series/DataFrames or None. Got {type(exog)}."
-                )
-            if isinstance(exog, dict):
-                not_valid_exog = [
-                    k 
-                    for k, v in exog.items()
-                    if not isinstance(v, (pd.Series, pd.DataFrame, type(None)))
-                ]
-                if not_valid_exog:
-                    raise TypeError(
-                        f"If `exog` is a dictionary, All exog must be a named pandas "
-                        f"Series, a pandas DataFrame or None. Review exog: {not_valid_exog}"
-                    )
+            # NOTE: Checks are not need as they are done in the function 
+            # `check_preprocess_exog_multiseries` that is used before 
+            # `check_backtesting_input` in the backtesting function.
+            pass
         else:
             if not isinstance(exog, (pd.Series, pd.DataFrame)):
                 raise TypeError(
@@ -571,68 +524,22 @@ def check_one_step_ahead_input(
         data_name = 'series'
         data_length = len(series)
     
+    # TODO: Review checks for long-format and redundant
     elif forecaster_name in forecasters_multi_dict:
-        if not isinstance(series, (pd.DataFrame, dict)):
-            raise TypeError(
-                f"`series` must be a pandas DataFrame or a dict of DataFrames or Series. "
-                f"Got {type(series)}."
-            )
+        
+        # NOTE: Checks are not need as they are done in the function 
+        # `check_preprocess_series` that is used before `check_one_step_ahead_input`
+        # in the backtesting function.
         
         data_name = 'series'
-        if isinstance(series, dict):
-            not_valid_series = [
-                k 
-                for k, v in series.items()
-                if not isinstance(v, (pd.Series, pd.DataFrame))
-            ]
-            if not_valid_series:
-                raise TypeError(
-                    f"If `series` is a dictionary, all series must be a named "
-                    f"pandas Series or a pandas DataFrame with a single column. "
-                    f"Review series: {not_valid_series}"
-                )
-            not_valid_index = [
-                k 
-                for k, v in series.items()
-                if not isinstance(v.index, pd.DatetimeIndex)
-            ]
-            if not_valid_index:
-                raise ValueError(
-                    f"If `series` is a dictionary, all series must have a Pandas "
-                    f"DatetimeIndex as index with the same frequency. "
-                    f"Review series: {not_valid_index}"
-                )
-
-            indexes_freq = [f'{v.index.freq}' for v in series.values()]
-            indexes_freq = sorted(set(indexes_freq))
-            if not len(indexes_freq) == 1:
-                raise ValueError(
-                    f"If `series` is a dictionary, all series must have a Pandas "
-                    f"DatetimeIndex as index with the same frequency. "
-                    f"Found frequencies: {indexes_freq}"
-                )
-            data_length = max([len(series[serie]) for serie in series])
-        else:
-            data_length = len(series)
+        data_length = max([len(series[serie]) for serie in series])
 
     if exog is not None:
         if forecaster_name in forecasters_multi_dict:
-            if not isinstance(exog, (pd.Series, pd.DataFrame, dict)):
-                raise TypeError(
-                    f"`exog` must be a pandas Series, DataFrame, dictionary of pandas "
-                    f"Series/DataFrames or None. Got {type(exog)}."
-                )
-            if isinstance(exog, dict):
-                not_valid_exog = [
-                    k 
-                    for k, v in exog.items()
-                    if not isinstance(v, (pd.Series, pd.DataFrame, type(None)))
-                ]
-                if not_valid_exog:
-                    raise TypeError(
-                        f"If `exog` is a dictionary, All exog must be a named pandas "
-                        f"Series, a pandas DataFrame or None. Review exog: {not_valid_exog}"
-                    )
+            # NOTE: Checks are not need as they are done in the function 
+            # `check_preprocess_exog_multiseries` that is used before 
+            # `check_backtesting_input` in the backtesting function.
+            pass
         else:
             if not isinstance(exog, (pd.Series, pd.DataFrame)):
                 raise TypeError(
@@ -921,8 +828,20 @@ def _initialize_levels_model_selection_multiseries(
                 levels = list(series.columns)
             else:
                 levels = list(series.keys())
-        elif isinstance(levels, str):
-            levels = [levels]
+        else:
+            if isinstance(levels, str):
+                levels = [levels]
+            
+            if isinstance(series, pd.DataFrame):
+                available_levels = list(series.columns)
+            else:
+                available_levels = list(series.keys())
+
+            if not set(levels).issubset(set(available_levels)):
+                raise ValueError(
+                    f"Levels {levels} not found in `series`, available levels are "
+                    f"{available_levels}. Review `levels` argument."
+                )
 
     return levels
 
@@ -1012,7 +931,7 @@ def _extract_data_folds_multiseries(
 
             series_to_drop = []
             for col in series_train.columns:
-                if series_train[col].isna().all():
+                if series_train[col].isna().to_numpy().all():
                     series_to_drop.append(col)
                 else:
                     first_valid_index = series_train[col].first_valid_index()
@@ -1032,21 +951,20 @@ def _extract_data_folds_multiseries(
                 series_last_window = series_last_window.drop(columns=series_to_drop)
         else:
             series_train = {}
-            for k in series.keys():
-                v = series[k].loc[train_loc_start:train_loc_end]
-                if not v.isna().all():
-                    first_valid_index = v.first_valid_index()
-                    last_valid_index  = v.last_valid_index()
-                    if first_valid_index is not None and last_valid_index is not None:
-                        v = v.loc[first_valid_index : last_valid_index]
-                        if len(v) >= window_size:
-                            series_train[k] = v
-
             series_last_window = {}
             for k, v in series.items():
-                v = series[k].loc[last_window_loc_start:last_window_loc_end]
-                if ((externally_fitted or k in series_train) and len(v) >= window_size):
-                    series_last_window[k] = v
+                v_train = v.loc[train_loc_start:train_loc_end]
+                if not v_train.isna().to_numpy().all():
+                    first_valid_index = v_train.first_valid_index()
+                    last_valid_index  = v_train.last_valid_index()
+                    if first_valid_index is not None and last_valid_index is not None:
+                        v_train = v_train.loc[first_valid_index : last_valid_index]
+                        if len(v_train) >= window_size:
+                            series_train[k] = v_train
+                
+                v_last_window = v.loc[last_window_loc_start:last_window_loc_end]
+                if ((externally_fitted or k in series_train) and len(v_last_window) >= window_size):
+                    series_last_window[k] = v_last_window
 
             series_last_window = pd.DataFrame(series_last_window)
 
@@ -1062,19 +980,20 @@ def _extract_data_folds_multiseries(
                 exog_train = exog.iloc[train_iloc_start:train_iloc_end, ]
                 exog_test = exog.iloc[test_iloc_start:test_iloc_end, ]
             else:
-                exog_train = {
-                    k: v.loc[train_loc_start:train_loc_end] 
-                    for k, v in exog.items()
-                }
-                exog_train = {k: v for k, v in exog_train.items() if len(v) > 0}
-
-                exog_test = {
-                    k: v.loc[test_loc_start:test_loc_end]
-                    for k, v in exog.items()
-                    if externally_fitted or k in exog_train
-                }
-
-                exog_test = {k: v for k, v in exog_test.items() if len(v) > 0}
+                exog_train = {}
+                exog_test = {}
+                for k, v in exog.items():
+                    if v is None:
+                        exog_train[k] = None
+                        exog_test[k] = None
+                    else:
+                        v_train = v.loc[train_loc_start:train_loc_end]
+                        if len(v_train) > 0:
+                            exog_train[k] = v_train
+                        if externally_fitted or k in exog_train:
+                            v_test = v.loc[test_loc_start:test_loc_end]
+                            if not v_test.empty:
+                                exog_test[k] = v_test
         else:
             exog_train = None
             exog_test = None

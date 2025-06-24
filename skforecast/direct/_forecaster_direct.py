@@ -189,8 +189,13 @@ class ForecasterDirect(ForecasterBase):
     exog_type_in_ : type
         Type of exogenous data (pandas Series or DataFrame) used in training.
     exog_dtypes_in_ : dict
-        Type of each exogenous variable/s used in training. If `transformer_exog` 
-        is used, the dtypes are calculated after the transformation.
+        Type of each exogenous variable/s used in training before the transformation
+        applied by `transformer_exog`. If `transformer_exog` is not used, it
+        is equal to `exog_dtypes_out_`.
+    exog_dtypes_out_ : dict
+        Type of each exogenous variable/s used in training after the transformation 
+        applied by `transformer_exog`. If `transformer_exog` is not used, it 
+        is equal to `exog_dtypes_in_`.
     X_train_window_features_names_out_ : list
         Names of the window features included in the matrix `X_train` created
         internally for training.
@@ -304,6 +309,7 @@ class ForecasterDirect(ForecasterBase):
         self.exog_names_in_                     = None
         self.exog_type_in_                      = None
         self.exog_dtypes_in_                    = None
+        self.exog_dtypes_out_                   = None
         self.X_train_window_features_names_out_ = None
         self.X_train_exog_names_out_            = None
         self.X_train_direct_exog_names_out_     = None
@@ -655,6 +661,7 @@ class ForecasterDirect(ForecasterBase):
         list[str], 
         list[str], 
         list[str], 
+        dict[str, type], 
         dict[str, type]
     ]:
         """
@@ -688,8 +695,13 @@ class ForecasterDirect(ForecasterBase):
         X_train_features_names_out_ : list
             Names of the columns of the matrix created internally for training.
         exog_dtypes_in_ : dict
-            Type of each exogenous variable/s used in training. If `transformer_exog` 
-            is used, the dtypes are calculated before the transformation.
+            Type of each exogenous variable/s used in training before the transformation
+            applied by `transformer_exog`. If `transformer_exog` is not used, it
+            is equal to `exog_dtypes_out_`.
+        exog_dtypes_out_ : dict
+            Type of each exogenous variable/s used in training after the transformation 
+            applied by `transformer_exog`. If `transformer_exog` is not used, it 
+            is equal to `exog_dtypes_in_`.
         
         """
 
@@ -727,6 +739,7 @@ class ForecasterDirect(ForecasterBase):
 
         exog_names_in_ = None
         exog_dtypes_in_ = None
+        exog_dtypes_out_ = None
         X_as_pandas = False
         if exog is not None:
             check_exog(exog=exog, allow_nan=True)
@@ -759,6 +772,7 @@ class ForecasterDirect(ForecasterBase):
                    )
 
             check_exog_dtypes(exog, call_check_exog=True)
+            exog_dtypes_out_ = get_exog_dtypes(exog=exog)
             X_as_pandas = any(
                 not pd.api.types.is_numeric_dtype(dtype) or pd.api.types.is_bool_dtype(dtype) 
                 for dtype in set(exog.dtypes)
@@ -867,7 +881,8 @@ class ForecasterDirect(ForecasterBase):
             exog_names_in_,
             X_train_exog_names_out_,
             X_train_features_names_out_,
-            exog_dtypes_in_
+            exog_dtypes_in_,
+            exog_dtypes_out_
         )
 
     def create_train_X_y(
@@ -1122,6 +1137,7 @@ class ForecasterDirect(ForecasterBase):
         self.exog_names_in_                     = None
         self.exog_type_in_                      = None
         self.exog_dtypes_in_                    = None
+        self.exog_dtypes_out_                   = None
         self.X_train_window_features_names_out_ = None
         self.X_train_exog_names_out_            = None
         self.X_train_direct_exog_names_out_     = None
@@ -1138,7 +1154,8 @@ class ForecasterDirect(ForecasterBase):
             exog_names_in_,
             X_train_exog_names_out_,
             X_train_features_names_out_,
-            exog_dtypes_in_
+            exog_dtypes_in_,
+            exog_dtypes_out_
         ) = self._create_train_X_y(y=y, exog=exog)
 
         def fit_forecaster(regressor, X_train, y_train, step):
@@ -1235,6 +1252,7 @@ class ForecasterDirect(ForecasterBase):
             self.exog_type_in_ = type(exog)
             self.exog_names_in_ = exog_names_in_
             self.exog_dtypes_in_ = exog_dtypes_in_
+            self.exog_dtypes_out_ = exog_dtypes_out_
             self.X_train_exog_names_out_ = X_train_exog_names_out_
 
         if store_last_window:
@@ -1552,6 +1570,14 @@ class ForecasterDirect(ForecasterBase):
                         columns = Xs_col_names, 
                         index   = prediction_index
                     )
+        
+        if self.exog_in_:
+            categorical_features = any(
+                not pd.api.types.is_numeric_dtype(dtype) or pd.api.types.is_bool_dtype(dtype) 
+                for dtype in set(self.exog_dtypes_out_)
+            )
+            if categorical_features:
+                X_predict = X_predict.astype(self.exog_dtypes_out_)
         
         if self.transformer_y is not None or self.differentiation is not None:
             warnings.warn(

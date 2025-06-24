@@ -4,10 +4,114 @@ import pytest
 from pytest import approx
 import numpy as np
 import pandas as pd
+from sklearn.compose import ColumnTransformer
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import OneHotEncoder
 from skforecast.preprocessing import RollingFeatures
 from ....recursive import ForecasterRecursiveMultiSeries
+
+# Fixtures
+from .fixtures_forecaster_recursive_multiseries import (
+    series_dict_range,
+    exog_wide_range,
+    exog_dict_range
+)
+
+transformer_exog = ColumnTransformer(
+                       [('scale', StandardScaler(), ['exog_1']),
+                        ('onehot', OneHotEncoder(), ['exog_2'])],
+                       remainder = 'passthrough',
+                       verbose_feature_names_out = False
+                   )
+
+
+def test_forecaster_series_exog_features_stored():
+    """
+    Test forecaster stores series and exog features after fitting.
+    """
+    rolling = RollingFeatures(
+        stats=['ratio_min_max', 'median'], window_sizes=4
+    )
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=3, window_features=rolling, transformer_exog=transformer_exog
+    )
+    forecaster.fit(series=series_dict_range, exog=exog_wide_range)
+
+    series_names_in_ = ['l1', 'l2']
+    exog_in_ = True
+    exog_type_in_ = type(exog_wide_range)
+    exog_names_in_ = ['exog_1', 'exog_2']
+    exog_dtypes_in_ = {
+        'exog_1': np.dtype(float), 
+        'exog_2': np.dtype(object)
+    }
+    # All floats
+    exog_dtypes_out_ = {
+        'exog_1': np.dtype(float), 
+        'exog_2_a': np.dtype(float), 
+        'exog_2_b': np.dtype(float)
+    }
+    X_train_series_names_in_ = ['l1', 'l2']
+    X_train_window_features_names_out_ = ['roll_ratio_min_max_4', 'roll_median_4']
+    X_train_exog_names_out_ = ['exog_1', 'exog_2_a', 'exog_2_b']
+    X_train_features_names_out_ = [
+        'lag_1', 'lag_2', 'lag_3', 'roll_ratio_min_max_4', 'roll_median_4', 
+        '_level_skforecast', 'exog_1', 'exog_2_a', 'exog_2_b'
+    ]
+    
+    assert forecaster.series_names_in_ == series_names_in_
+    assert forecaster.exog_in_ == exog_in_
+    assert forecaster.exog_type_in_ == exog_type_in_
+    assert forecaster.exog_names_in_ == exog_names_in_
+    assert forecaster.exog_dtypes_in_ == exog_dtypes_in_
+    assert forecaster.exog_dtypes_out_ == exog_dtypes_out_
+    assert forecaster.X_train_series_names_in_ == X_train_series_names_in_
+    assert forecaster.X_train_window_features_names_out_ == X_train_window_features_names_out_
+    assert forecaster.X_train_exog_names_out_ == X_train_exog_names_out_
+    assert forecaster.X_train_features_names_out_ == X_train_features_names_out_
+
+
+def test_forecaster_series_not_matching_exog_features_stored():
+    """
+    Test forecaster stores series and exog features after fitting when exog keys
+    do not match series keys.
+    """
+    exog_dict_no_match = {
+        '1': exog_dict_range['l1'].copy(),
+        '2': exog_dict_range['l2'].copy(),
+    }
+    rolling = RollingFeatures(
+        stats=['ratio_min_max', 'median'], window_sizes=4
+    )
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=3, window_features=rolling, transformer_exog=transformer_exog
+    )
+    forecaster.fit(series=series_dict_range, exog=exog_dict_no_match)
+
+    series_names_in_ = ['l1', 'l2']
+    exog_in_ = False
+    exog_type_in_ = None
+    exog_names_in_ = None
+    exog_dtypes_in_ = None
+    exog_dtypes_out_ = None
+    X_train_series_names_in_ = ['l1', 'l2']
+    X_train_window_features_names_out_ = ['roll_ratio_min_max_4', 'roll_median_4']
+    X_train_exog_names_out_ = None
+    X_train_features_names_out_ = [
+        'lag_1', 'lag_2', 'lag_3', 'roll_ratio_min_max_4', 'roll_median_4', '_level_skforecast'
+    ]
+    
+    assert forecaster.series_names_in_ == series_names_in_
+    assert forecaster.exog_in_ == exog_in_
+    assert forecaster.exog_type_in_ == exog_type_in_
+    assert forecaster.exog_names_in_ == exog_names_in_
+    assert forecaster.exog_dtypes_in_ == exog_dtypes_in_
+    assert forecaster.exog_dtypes_out_ == exog_dtypes_out_
+    assert forecaster.X_train_series_names_in_ == X_train_series_names_in_
+    assert forecaster.X_train_window_features_names_out_ == X_train_window_features_names_out_
+    assert forecaster.X_train_exog_names_out_ == X_train_exog_names_out_
+    assert forecaster.X_train_features_names_out_ == X_train_features_names_out_
 
 
 def test_fit_correct_dict_create_series_weights_weight_func_transformer_series():
@@ -15,16 +119,10 @@ def test_fit_correct_dict_create_series_weights_weight_func_transformer_series()
     Test fit method creates correctly all the auxiliary dicts, series_weights_,
     weight_func_, transformer_series_.
     """
-    series = pd.DataFrame({'l1': pd.Series(np.arange(10)), 
-                           'l2': pd.Series(np.arange(10)), 
-                           'l3': pd.Series(np.arange(10))})
-                    
-    series.index = pd.DatetimeIndex(
-                       ['2022-01-04', '2022-01-05', '2022-01-06', 
-                        '2022-01-07', '2022-01-08', '2022-01-09', 
-                        '2022-01-10', '2022-01-11', '2022-01-12', 
-                        '2022-01-13'], dtype='datetime64[ns]', freq='D' 
-                   )
+    series = pd.DataFrame(
+        {'l1': np.arange(10), 'l2': np.arange(10), 'l3': np.arange(10)},
+        index = pd.date_range('2022-01-04', periods=10, freq='D')
+    ).to_dict(orient='series')
 
     def custom_weights(index):  # pragma: no cover
         """
@@ -76,7 +174,10 @@ def test_fit_correct_dict_create_series_weights_weight_func_transformer_series()
         assert forecaster.weight_func_[key].__code__.co_code == expected_weight_func_[key].__code__.co_code
     assert forecaster.series_weights_ == expected_series_weights_
 
-    forecaster.fit(series=series[['l1', 'l2']], store_in_sample_residuals=False)
+    forecaster.fit(
+        series = {k: v for k, v in series.items() if k in ['l1', 'l2']}, 
+        store_in_sample_residuals = False
+    )
 
     expected_transformer_series_ = {
         'l1': forecaster.transformer_series_['l1'], 
@@ -102,16 +203,18 @@ def test_forecaster_DatetimeIndex_index_freq_stored():
     """
     Test serie_with_DatetimeIndex.index.freqstr is stored in forecaster.index_freq_.
     """
-    series = pd.DataFrame({'1': pd.Series(np.arange(5)), 
-                           '2': pd.Series(np.arange(5))})
-
-    series.index = pd.date_range(start='2022-01-01', periods=5, freq='1D')
+    series = {
+        '1': pd.Series(np.arange(5)), 
+        '2': pd.Series(np.arange(5))
+    }
+    series['1'].index = pd.date_range(start='2022-01-01', periods=5, freq='D')
+    series['2'].index = pd.date_range(start='2022-01-01', periods=5, freq='D')
 
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
     forecaster.fit(series=series)
     results = forecaster.index_freq_
 
-    expected = series.index.freqstr
+    expected = series['1'].index.freqstr
 
     assert results == expected
 
@@ -120,14 +223,16 @@ def test_forecaster_index_step_stored():
     """
     Test serie without DatetimeIndex, step is stored in forecaster.index_freq_.
     """
-    series = pd.DataFrame({'1': pd.Series(np.arange(5)), 
-                           '2': pd.Series(np.arange(5))})
+    series = {
+        '1': pd.Series(np.arange(5)), 
+        '2': pd.Series(np.arange(5))
+    }
     
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
     forecaster.fit(series=series)
     results = forecaster.index_freq_
 
-    expected = series.index.step
+    expected = series['1'].index.step
 
     assert results == expected
 
@@ -140,8 +245,10 @@ def test_fit_in_sample_residuals_stored(encoding):
     Test that values of in_sample_residuals_ are stored after fitting
     when `store_in_sample_residuals=True`.
     """
-    series = pd.DataFrame({'1': pd.Series(np.arange(5)), 
-                           '2': pd.Series(np.arange(5))})
+    series = {
+        '1': pd.Series(np.arange(5)), 
+        '2': pd.Series(np.arange(5))
+    }
 
     rolling = RollingFeatures(
         stats=['ratio_min_max', 'median'], window_sizes=4
@@ -152,9 +259,11 @@ def test_fit_in_sample_residuals_stored(encoding):
     forecaster.fit(series=series, store_in_sample_residuals=True)
     results = forecaster.in_sample_residuals_
 
-    expected = {'1': np.array([-4.4408921e-16, 0.0000000e+00]),
-                '2': np.array([0., 0.]),
-                '_unknown_level': np.array([-4.4408921e-16, 0.0000000e+00, 0., 0.])}
+    expected = {
+        '1': np.array([-4.4408921e-16, 0.0000000e+00]),
+        '2': np.array([0., 0.]),
+        '_unknown_level': np.array([-4.4408921e-16, 0.0000000e+00, 0., 0.])
+    }
     
     X_train_window_features_names_out_ = ['roll_ratio_min_max_4', 'roll_median_4']
     X_train_features_names_out_ = (
@@ -182,7 +291,10 @@ def test_fit_in_sample_residuals_by_bin_stored(encoding):
     when `store_in_sample_residuals=True`.
     """
     rng = np.random.default_rng(1894)
-    series = pd.DataFrame({"1": rng.normal(10, 5, 20), "2": rng.normal(10, 5, 20)})
+    series = {
+        "1": pd.Series(rng.normal(10, 5, 20)), 
+        "2": pd.Series(rng.normal(10, 5, 20))
+    }
 
     rolling = RollingFeatures(stats=["ratio_min_max", "median"], window_sizes=4)
     forecaster = ForecasterRecursiveMultiSeries(
@@ -341,7 +453,7 @@ def test_fit_same_residuals_when_residuals_greater_than_10_000(encoding):
     series = pd.DataFrame(
         {"1": rng.normal(10, 1, 15_000), "2": rng.normal(10, 1, 15_000)},
         index=pd.date_range(start="2000-01-01", periods=15_000, freq="h"),
-    )
+    ).to_dict(orient='series')
 
     forecaster = ForecasterRecursiveMultiSeries(
         LinearRegression(), lags=3, encoding=encoding
@@ -374,7 +486,7 @@ def test_fit_same_residuals_by_bin_when_residuals_greater_than_10_000(encoding):
     series = pd.DataFrame(
         {"1": rng.normal(10, 1, 15_000), "2": rng.normal(10, 1, 15_000)},
         index=pd.date_range(start="2000-01-01", periods=15_000, freq="h"),
-    )
+    ).to_dict(orient='series')
 
     forecaster_1 = ForecasterRecursiveMultiSeries(
         LinearRegression(), lags=3, encoding=encoding, binner_kwargs={"n_bins": 3}
@@ -410,7 +522,10 @@ def test_fit_in_sample_residuals_not_stored_probabilistic_mode_binned(encoding):
     when `store_in_sample_residuals=False`. Binner intervals are stored.
     """
     rng = np.random.default_rng(1894)
-    series = pd.DataFrame({"1": rng.normal(10, 5, 20), "2": rng.normal(10, 5, 20)})
+    series = {
+        "1": pd.Series(rng.normal(10, 5, 20)), 
+        "2": pd.Series(rng.normal(10, 5, 20))
+    }
 
     rolling = RollingFeatures(stats=["ratio_min_max", "median"], window_sizes=4)
     forecaster = ForecasterRecursiveMultiSeries(
@@ -481,7 +596,10 @@ def test_fit_in_sample_residuals_not_stored_probabilistic_mode_False(encoding):
     when `store_in_sample_residuals=False` and _probabilistic_mode=False.
     """
     rng = np.random.default_rng(1894)
-    series = pd.DataFrame({"1": rng.normal(10, 5, 20), "2": rng.normal(10, 5, 20)})
+    series = {
+        "1": pd.Series(rng.normal(10, 5, 20)), 
+        "2": pd.Series(rng.normal(10, 5, 20))
+    }
 
     forecaster = ForecasterRecursiveMultiSeries(
         LinearRegression(), lags=3, encoding=encoding
@@ -520,8 +638,10 @@ def test_fit_last_window_stored():
     """
     Test that values of last window are stored after fitting.
     """
-    series = pd.DataFrame({'1': pd.Series(np.arange(5, dtype=float)), 
-                           '2': pd.Series(np.arange(5, dtype=float))})
+    series = {
+        '1': pd.Series(np.arange(5, dtype=float)), 
+        '2': pd.Series(np.arange(5, dtype=float))
+    }
 
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
     forecaster.fit(series=series)
@@ -555,8 +675,10 @@ def test_fit_encoding_mapping(encoding, encoding_mapping_):
     """
     Test the encoding mapping of _create_train_X_y.
     """
-    series = pd.DataFrame({'1': pd.Series(np.arange(7, dtype=float)), 
-                           '2': pd.Series(np.arange(7, dtype=float))})
+    series = {
+        '1': pd.Series(np.arange(7, dtype=float)), 
+        '2': pd.Series(np.arange(7, dtype=float))
+    }
     
     forecaster = ForecasterRecursiveMultiSeries(
                      LinearRegression(),

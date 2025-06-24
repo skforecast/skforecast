@@ -597,8 +597,8 @@ def test_check_predict_input_TypeError_when_last_window_index_is_not_of_index_ty
                            ) 
 
     err_msg = re.escape(
-        (f"Expected index of type {index_type_} for `last_window`. "
-         f"Got {type(last_window_index)}.")
+        f"Expected index of type {index_type_} for `last_window`. "
+        f"Got {type(last_window_index)}."
     )
     with pytest.raises(TypeError, match = err_msg):
         check_predict_input(
@@ -1083,8 +1083,8 @@ def test_check_predict_input_TypeError_when_exog_index_is_not_of_index_type():
     _, exog_index = preprocess_exog(exog=exog.iloc[:0, ])
 
     err_msg = re.escape(
-        (f"Expected index of type {index_type_} for `exog`. "
-         f"Got {type(exog_index)}.")
+        f"Expected index of type {index_type_} for `exog`. "
+        f"Got {type(exog_index)}."
     )
     with pytest.raises(TypeError, match = err_msg):
         check_predict_input(
@@ -1154,11 +1154,11 @@ def test_check_predict_input_ValueError_when_exog_index_does_not_follow_last_win
     expected_index = '2022-11-30 00:00:00'
 
     err_msg = re.escape(
-        (f"To make predictions `exog` must start one step "
-         f"ahead of `last_window`.\n"
-         f"    `last_window` ends at : {lw_datetime.index[-1]}.\n"
-         f"    `exog` starts at : {exog_datetime.index[0]}.\n"
-         f"     Expected index : {expected_index}.")
+        f"To make predictions `exog` must start one step "
+        f"ahead of `last_window`.\n"
+        f"    `last_window` ends at : {lw_datetime.index[-1]}.\n"
+        f"    `exog` starts at : {exog_datetime.index[0]}.\n"
+        f"    Expected index : {expected_index}."
     )
     with pytest.raises(ValueError, match = err_msg):
         check_predict_input(
@@ -1194,11 +1194,11 @@ def test_check_predict_input_ValueError_when_exog_index_does_not_follow_last_win
     expected_index = 10
 
     err_msg = re.escape(
-        (f"To make predictions `exog` must start one step "
-         f"ahead of `last_window`.\n"
-         f"    `last_window` ends at : {lw_datetime.index[-1]}.\n"
-         f"    `exog` starts at : {exog_datetime.index[0]}.\n"
-         f"     Expected index : {expected_index}.")
+        f"To make predictions `exog` must start one step "
+        f"ahead of `last_window`.\n"
+        f"    `last_window` ends at : {lw_datetime.index[-1]}.\n"
+        f"    `exog` starts at : {exog_datetime.index[0]}.\n"
+        f"    Expected index : {expected_index}."
     )
     with pytest.raises(ValueError, match = err_msg):
         check_predict_input(

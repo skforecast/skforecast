@@ -35,12 +35,12 @@ def test_create_train_X_y_single_series_ValueError_when_len_y_less_than_window_s
     rolling = RollingFeatures(stats=['mean', 'median'], window_sizes=6)
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=2, window_features=rolling)
     err_msg = re.escape(
-        ("Length of 'l1' must be greater than the maximum window size "
-         "needed by the forecaster.\n"
-         "    Length 'l1': 5.\n"
-         "    Max window size: 6.\n"
-         "    Lags window size: 2.\n"
-         "    Window features window size: 6.")
+        "Length of 'l1' must be greater than the maximum window size "
+        "needed by the forecaster.\n"
+        "    Length 'l1': 5.\n"
+        "    Max window size: 6.\n"
+        "    Lags window size: 2.\n"
+        "    Window features window size: 6."
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster._create_train_X_y_single_series(y=y, ignore_exog=True)
@@ -75,10 +75,10 @@ def test_create_train_X_y_single_series_output_when_series_and_exog_is_None(igno
             columns = ['lag_1', 'lag_2', 'lag_3', '_level_skforecast']
         ).astype({'lag_1': float, 'lag_2': float, 'lag_3': float}),
         None,
-        pd.DataFrame(
-            data    = np.nan,
-            columns = ['_dummy_exog_col_to_keep_shape'],
-            index   = pd.RangeIndex(start=3, stop=7, step=1)
+        pd.Series(
+            data  = np.nan,
+            name  = '_dummy_exog_col_to_keep_shape',
+            index = pd.RangeIndex(start=3, stop=7, step=1)
         ),
         pd.Series(
             data  = np.array([0., 0.5, 1., 1.5]),
@@ -93,7 +93,7 @@ def test_create_train_X_y_single_series_output_when_series_and_exog_is_None(igno
     if ignore_exog:
         assert isinstance(results[2], type(None))
     else:
-        pd.testing.assert_frame_equal(results[2], expected[2])
+        pd.testing.assert_series_equal(results[2], expected[2])
     pd.testing.assert_series_equal(results[3], expected[3])
 
 
