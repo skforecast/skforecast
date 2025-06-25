@@ -1228,6 +1228,8 @@ def backtesting_forecaster_multiseries(
             f"the `model_selection` module. Got {forecaster_name}"
         )
     
+    set_skforecast_warnings(suppress_warnings, action='ignore')
+    
     if forecaster_name == 'ForecasterRecursiveMultiSeries':
         series, series_indexes = check_preprocess_series(series)
         if exog is not None:
@@ -1239,6 +1241,8 @@ def backtesting_forecaster_multiseries(
                           exog              = exog,
                           exog_dict         = exog_dict
                       )
+    
+    set_skforecast_warnings(suppress_warnings, action='default')
     
     check_backtesting_input(
         forecaster              = forecaster,

@@ -2520,6 +2520,7 @@ def check_preprocess_series(
                 IgnoredArgumentWarning
             )
 
+        series = series.copy()
         series.index = series.index.set_names([series.index.names[0], None])
         series_dict = {
             series_id: series.loc[series_id][first_col].rename(series_id)

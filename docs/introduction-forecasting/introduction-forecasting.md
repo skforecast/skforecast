@@ -89,11 +89,13 @@ Some machine learning models, such as long short-term memory (LSTM) neural netwo
 
 ## Global forecasting models
 
-Univariate time series forecasting models a single time series as a linear or nonlinear combination of its lags, using past values of the series to predict its future. Global forecasting, involves building a single predictive model that considers all time series simultaneously. It attempts to capture the core patterns that govern the series, thereby mitigating the potential noise that each series might introduce. This approach is computationally efficient, easy to maintain, and can yield more robust generalizations across time series. There are two different strategies for global forecasting.
+**Univariate time series forecasting** focuses on modeling a single time series as a linear or nonlinear function of its own past values (lags), using historical observations to predict future ones. 
+
+**Global forecasting** builds a single predictive model that considers all time series simultaneously. This approach seeks to learn the shared patterns that underlie the different series, helping to reduce the influence of noise present in individual time series. It is computationally efficient, easier to maintain, and often yields more robust generalization across series. Two main strategies are used to implement global forecasting models.
 
 ### Independent Multi-Series Forecasting
 
-A single model is trained for all time series, but each time series remains independent of the others, meaning that past values of one series are not used as predictors of other series. However, modeling them together is useful because the series may follow the same intrinsic pattern regarding their past and future values. For instance, the sales of products A and B in the same store may not be related, but they follow the same dynamics, that of the store.
+A single model is trained using all time series, but each series is treated independently—past values of one series are not used to predict another. Modeling them together is still beneficial when the series share similar temporal dynamics. For example, sales of products A and B in the same store may not be directly related, but both are influenced by the same underlying store-level patterns.
 
 <p style="text-align: center">
     <img src="../img/forecaster_multi_series_train_matrix_diagram.png" style="width: 700px">
