@@ -14,9 +14,9 @@ All significant changes to this project are documented in this release file.
 
 The main changes in this release are:
 
-+ <span class="badge text-bg-api-change">API Change</span> `ForecasterRecursiveMultiSeries` does not accept anymore the series input as a wide dataframe. It now expects a long-format dataframe with a MultiIndex, where the first level is the series name and the second level is the time index or a dictionary with the series names as keys and the series data as values. This change is made to simplify the input data structure and make it more consistent with the other forecasters.
++ <span class="badge text-bg-api-change">API Change</span> <code>[ForecasterRecursiveMultiSeries]</code> does not accept anymore the series input as a wide dataframe. It now expects a long-format dataframe with a MultiIndex, where the first level is the series name and the second level is the time index or a dictionary with the series names as keys and the series data as values. This change is made to simplify the input data structure and make it more consistent with the other forecasters.
 
-+ <span class="badge text-bg-api-change">API Change</span> `ForecasterRecursiveMultiSeries` accept exog input as long-format dataframe with a MultiIndex, where the first level is the series name and the second level is the time index.
++ <span class="badge text-bg-api-change">API Change</span> <code>[ForecasterRecursiveMultiSeries]</code> accept exog input as long-format dataframe with a MultiIndex, where the first level is the series name and the second level is the time index.
   
 + <span class="badge text-bg-danger">Fix</span> A bug that prevented the use of `initial_train_size` as a date with the <code>[OneStepAheadFold]</code> during the hyperparameter search has been fixed.
 
@@ -26,13 +26,16 @@ The main changes in this release are:
 **Added**
 
 + Added attribute `exog_dtypes_out_` in all forecasters to store the data types of the exogenous variables used in training after the transformation applied by `transformer_exog`. If `transformer_exog` is not used, it is equal to `exog_dtypes_in_`.
-+ Added function `reshape_series_wide_to_long` in the <code>[utils]</code> module. This function reshapes a wide-format DataFrame where each column corresponds to a series into a long-format DataFrame with with a MultiIndex. The first level of the index is the series name and the second level is the time index.
+
++ Added function <code>[reshape_series_wide_to_long]</code> in the <code>[preprocessing]</code> module. This function reshapes a wide-format DataFrame where each column corresponds to a series into a long-format DataFrame with with a MultiIndex. The first level of the index is the series name and the second level is the time index.
+
++ Added metric <code>[symmetric_mean_absolute_percentage_error]</code> in the <code>[metrics]</code> module. This metric calculates the symmetric mean absolute percentage error (SMAPE) between the true values and the predicted values.
 
 **Changed**
 
-+ Function `series_long_to_dict` renamed to `reshape_series_long_to_dict` in the <code>[utils]</code> module. This function reshapes a long-format DataFrame with time series data into a dictionary format where each entry corresponds to a series.
++ Function `series_long_to_dict` renamed to <code>[reshape_series_long_to_dict]</code> in the <code>[preprocessing]</code> module. This function reshapes a long-format DataFrame with time series data into a dictionary format where each entry corresponds to a series.
   
-+ Function `exog_long_to_dict` renamed to `reshape_exog_long_to_dict` in the <code>[utils]</code> module. This function reshapes a long-format DataFrame with exogenous variables into a dictionary format where each entry corresponds to the exogenous variables of a series.
++ Function `exog_long_to_dict` renamed to <code>[reshape_exog_long_to_dict]</code> in the <code>[preprocessing]</code> module. This function reshapes a long-format DataFrame with exogenous variables into a dictionary format where each entry corresponds to the exogenous variables of a series.
 
 **Fixed**
 
@@ -1192,8 +1195,9 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 <!-- preprocessing -->
 [preprocessing]: ../api/preprocessing.html
 [RollingFeatures]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.RollingFeatures
-[series_long_to_dict]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.series_long_to_dict
-[exog_long_to_dict]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.exog_long_to_dict
+[reshape_series_wide_to_long]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.reshape_series_wide_to_long
+[reshape_series_long_to_dict]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.reshape_series_long_to_dict
+[reshape_exog_long_to_dict]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.reshape_exog_long_to_dict
 [TimeSeriesDifferentiator]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.TimeSeriesDifferentiator
 [QuantileBinner]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.QuantileBinner
 [ConformalIntervalCalibrator]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.ConformalIntervalCalibrator
@@ -1202,6 +1206,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [metrics]: ../api/metrics.html
 [mean_absolute_scaled_error]: ../api/metrics.html#skforecast.metrics.metrics.mean_absolute_scaled_error
 [root_mean_squared_scaled_error]: ../api/metrics.html#skforecast.metrics.metrics.root_mean_squared_scaled_error
+[symmetric_mean_absolute_percentage_error]: ../api/metrics.html#skforecast.metrics.metrics.symmetric_mean_absolute_percentage_error
 [add_y_train_argument]: ../api/metrics.html#skforecast.metrics.metrics.add_y_train_argument
 
 <!-- plot -->
@@ -1235,3 +1240,5 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [model_selection_sarimax]: https://skforecast.org/0.13.0/api/model_selection_sarimax
 [DateTimeFeatureTransformer]: https://skforecast.org/0.13.0/api/preprocessing#skforecast.preprocessing.DateTimeFeatureTransformer
 [create_datetime_features]: https://skforecast.org/0.13.0/api/preprocessing#skforecast.preprocessing.create_datetime_features
+[series_long_to_dict]: https://skforecast.org/0.16.0/api/preprocessing.html#skforecast.preprocessing.preprocessing.series_long_to_dict
+[exog_long_to_dict]: https://skforecast.org/0.16.0/api/preprocessing.html#skforecast.preprocessing.preprocessing.exog_long_to_dict
