@@ -95,7 +95,7 @@ Some machine learning models, such as long short-term memory (LSTM) neural netwo
 
 ### Independent Multi-Series Forecasting
 
-A single model is trained using all time series, but each series is treated independently—past values of one series are not used to predict another. Modeling them together is still beneficial when the series share similar temporal dynamics. For example, sales of products A and B in the same store may not be directly related, but both are influenced by the same underlying store-level patterns.
+In **independent multi-series forecasting**, a single model is trained using all time series, but each series is treated independently—past values of one series are not used to predict another. Modeling them together is still beneficial when the series share similar temporal dynamics. For example, sales of products A and B in the same store may not be directly related, but both are influenced by the same underlying store-level patterns.
 
 <p style="text-align: center">
     <img src="../img/forecaster_multi_series_train_matrix_diagram.png" style="width: 700px">
@@ -115,7 +115,9 @@ The [`ForecasterRecursiveMultiSeries`](../user_guides/independent-multi-time-ser
 
 ### Dependent Multi-Series Forecasting (multivariate time series)
 
-All series are modeled together in a single model, considering that each time series depends not only on its past values but also on the past values of the other series. The forecaster is expected not only to learn the information of each series separately but also to relate them. An example is the measurements made by all the sensors (flow, temperature, pressure...) installed on an industrial machine such as a compressor.
+In **dependent multi-series forecasting** (also known as **multivariate time series forecasting**), all series are modeled jointly under the assumption that each series depends not only on its own past values, but also on the past values of the other series. The forecaster is expected to learn both the individual dynamics of each series and the relationships between them.
+
+A typical example is the set of sensor readings (such as flow, temperature, and pressure) collected from an industrial machine like a compressor, where the variables influence each other over time.
 
 <p style="text-align: center">
     <img src="../img/forecaster_multivariate_train_matrix_diagram.png" style="width: 700px">
@@ -123,7 +125,7 @@ All series are modeled together in a single model, considering that each time se
     <font size="2.5"> <i>Transformation of two time series and an exogenous variable into the matrices needed to train a machine learning model in a multi-variate-series context</i></font>
 </p>
 
-The [`ForecasterDirectMultiVariate`](../user_guides/dependent-multi-series-multivariate-forecasting.html) class covers this process. 
+Using the [`ForecasterDirectMultiVariate`](../user_guides/dependent-multi-series-multivariate-forecasting.html) class, it is possible to easily build machine learning models for **multivariate forecasting**.
 
 
 ## Forecasters
