@@ -14,9 +14,9 @@ All significant changes to this project are documented in this release file.
 
 The main changes in this release are:
 
-+ <span class="badge text-bg-api-change">API Change</span> <code>[ForecasterRecursiveMultiSeries]</code> does not accept anymore the series input as a wide dataframe. It now expects a long-format dataframe with a MultiIndex, where the first level is the series name and the second level is the time index or a dictionary with the series names as keys and the series data as values. This change is made to simplify the input data structure and make it more consistent with the other forecasters.
++ <span class="badge text-bg-api-change">API Change</span> <code>[ForecasterRecursiveMultiSeries]</code> now accepts three input types for the `series` data: a wide-format DataFrame, where each column corresponds to a different time series; a long-format DataFrame with a MultiIndex, where the first level indicates the series name and the second level is the time index; or a dictionary with series names as keys and pandas `Series` as values.
 
-+ <span class="badge text-bg-api-change">API Change</span> <code>[ForecasterRecursiveMultiSeries]</code> accept exog input as long-format dataframe with a MultiIndex, where the first level is the series name and the second level is the time index.
++ <span class="badge text-bg-api-change">API Change</span> <code>[ForecasterRecursiveMultiSeries]</code> now accepts `exog` input as a wide-format DataFrame, where each column corresponds to a different exogenous variable; a long-format DataFrame with a MultiIndex, where the first level indicates the series name to which it belongs and the second level is the time index; or a dictionary with series names as keys and pandas `Series` or `DataFrames` as values.
   
 + <span class="badge text-bg-danger">Fix</span> A bug that prevented the use of `initial_train_size` as a date with the <code>[OneStepAheadFold]</code> during the hyperparameter search has been fixed.
 
@@ -32,6 +32,12 @@ The main changes in this release are:
 + Added metric <code>[symmetric_mean_absolute_percentage_error]</code> in the <code>[metrics]</code> module. This metric calculates the symmetric mean absolute percentage error (SMAPE) between the true values and the predicted values.
 
 **Changed**
+
++ <code>[ForecasterRecursiveMultiSeries]</code> now accepts three input types for the series data: a wide-format DataFrame, where each column corresponds to a different time series; a long-format DataFrame with a MultiIndex, where the first level indicates the series name and the second level is the time index; or a dictionary with series names as keys and pandas Series as values.
+
++ <code>[ForecasterRecursiveMultiSeries]</code> now accepts `exog` input as a wide-format DataFrame, where each column corresponds to a different exogenous variable; a long-format DataFrame with a MultiIndex, where the first level indicates the series name to which it belongs and the second level is the time index; or a dictionary with series names as keys and pandas `Series` or `DataFrames` as values.
+
++ When predicting, <code>[ForecasterRecursiveMultiSeries]</code> does not require the exog input to have the same type as the one used during training.
 
 + Function `series_long_to_dict` renamed to <code>[reshape_series_long_to_dict]</code> in the <code>[preprocessing]</code> module. This function reshapes a long-format DataFrame with time series data into a dictionary format where each entry corresponds to a series.
   

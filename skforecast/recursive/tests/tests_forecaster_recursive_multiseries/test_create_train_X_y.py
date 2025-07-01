@@ -785,14 +785,12 @@ def test_create_train_X_y_output_when_series_10_and_exog_is_dataframe_of_categor
     Test the output of _create_train_X_y when series has 2 columns and 
     exog is a pandas dataframe with two columns of category.
     """
-    series = {
-        'l1': pd.Series(
-            np.arange(10, dtype=float), index=pd.date_range(start='2000-01-01', periods=10, freq='D')
-        ), 
-        'l2': pd.Series(
-            np.arange(10, dtype=float), index=pd.date_range(start='2000-01-01', periods=10, freq='D')
-        )
-    }
+    series = pd.DataFrame({
+            'l1': np.arange(10, dtype=float), 
+            'l2': np.arange(10, dtype=float)
+        },
+        index=pd.date_range(start='2000-01-01', periods=10, freq='D')
+    )
     exog = pd.DataFrame({'exog_1': pd.Categorical(range(10)),
                          'exog_2': pd.Categorical(range(100, 110))})
     exog.index = pd.date_range(start='2000-01-01', periods=len(exog), freq='D')

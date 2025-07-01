@@ -1039,12 +1039,15 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         Notes
         -----
+        - If `series` is a wide-format pandas DataFrame, each column represents a
+        different time series, and the index must be either a `DatetimeIndex` or 
+        a `RangeIndex` with frequency or step size, as appropriate
         - If `series` is a long-format pandas DataFrame with a MultiIndex, the 
         first level of the index must contain the series IDs, and the second 
         level must be a `DatetimeIndex` with the same frequency across all series.
         - If series is a dictionary, each key must be a series ID, and each value 
         must be a named pandas Series. All series must have the same index, which 
-        must be either a DatetimeIndex or a RangeIndex, and they must share the 
+        must be either a `DatetimeIndex` or a `RangeIndex`, and they must share the 
         same frequency or step size, as appropriate.
         - If `exog` is a wide-format pandas DataFrame, it must share the same 
         index type as series. Each column represents a different exogenous variable, 
@@ -1308,7 +1311,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             last_window_
         )
 
-
     def create_train_X_y(
         self,
         series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
@@ -1340,12 +1342,15 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         Notes
         -----
+        - If `series` is a wide-format pandas DataFrame, each column represents a
+        different time series, and the index must be either a `DatetimeIndex` or 
+        a `RangeIndex` with frequency or step size, as appropriate
         - If `series` is a long-format pandas DataFrame with a MultiIndex, the 
         first level of the index must contain the series IDs, and the second 
         level must be a `DatetimeIndex` with the same frequency across all series.
         - If series is a dictionary, each key must be a series ID, and each value 
         must be a named pandas Series. All series must have the same index, which 
-        must be either a DatetimeIndex or a RangeIndex, and they must share the 
+        must be either a `DatetimeIndex` or a `RangeIndex`, and they must share the 
         same frequency or step size, as appropriate.
         - If `exog` is a wide-format pandas DataFrame, it must share the same 
         index type as series. Each column represents a different exogenous variable, 
@@ -1718,12 +1723,15 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         Notes
         -----
+        - If `series` is a wide-format pandas DataFrame, each column represents a
+        different time series, and the index must be either a `DatetimeIndex` or 
+        a `RangeIndex` with frequency or step size, as appropriate
         - If `series` is a long-format pandas DataFrame with a MultiIndex, the 
         first level of the index must contain the series IDs, and the second 
         level must be a `DatetimeIndex` with the same frequency across all series.
         - If series is a dictionary, each key must be a series ID, and each value 
         must be a named pandas Series. All series must have the same index, which 
-        must be either a DatetimeIndex or a RangeIndex, and they must share the 
+        must be either a `DatetimeIndex` or a `RangeIndex`, and they must share the 
         same frequency or step size, as appropriate.
         - If `exog` is a wide-format pandas DataFrame, it must share the same 
         index type as series. Each column represents a different exogenous variable, 
