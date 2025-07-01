@@ -14,6 +14,8 @@ All significant changes to this project are documented in this release file.
 
 The main changes in this release are:
 
++ <span class="badge text-bg-feature">Feature</span> <code>[ForecasterEquivalentDate]</code> can now predict intervals using the conformal prediction framework.
+
 + <span class="badge text-bg-api-change">API Change</span> `ForecasterRecursiveMultiSeries` does not accept anymore the series input as a wide dataframe. It now expects a long-format dataframe with a MultiIndex, where the first level is the series name and the second level is the time index or a dictionary with the series names as keys and the series data as values. This change is made to simplify the input data structure and make it more consistent with the other forecasters.
 
 + <span class="badge text-bg-api-change">API Change</span> `ForecasterRecursiveMultiSeries` accept exog input as long-format dataframe with a MultiIndex, where the first level is the series name and the second level is the time index.
@@ -27,6 +29,8 @@ The main changes in this release are:
 
 + Added attribute `exog_dtypes_out_` in all forecasters to store the data types of the exogenous variables used in training after the transformation applied by `transformer_exog`. If `transformer_exog` is not used, it is equal to `exog_dtypes_in_`.
 + Added function `reshape_series_wide_to_long` in the <code>[utils]</code> module. This function reshapes a wide-format DataFrame where each column corresponds to a series into a long-format DataFrame with with a MultiIndex. The first level of the index is the series name and the second level is the time index.
+
++ <code>[ForecasterEquivalentDate]</code> can now predict intervals using the conformal prediction framework.
 
 **Changed**
 
