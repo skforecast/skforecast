@@ -88,8 +88,8 @@ def test_forecaster_index_step_stored():
     results = forecaster.index_freq_
 
     assert results == expected
-    
-    
+
+
 def test_fit_in_sample_residuals_stored():
     """
     Test that values of in_sample_residuals_ are stored after fitting.

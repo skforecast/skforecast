@@ -1074,7 +1074,6 @@ class ForecasterRecursive(ForecasterBase):
             after fitting (`in_sample_residuals_` and `in_sample_residuals_by_bin_`
             attributes).
             If `False`, only the intervals of the bins are stored.
-            If `False`, only the intervals of the bins are stored.
         random_state : int, default 123
             Set a seed for the random generator so that the stored sample 
             residuals are always deterministic.
