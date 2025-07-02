@@ -377,14 +377,16 @@ class ForecasterEquivalentDate():
                     f"size of `y`."
                 )
         else:
-            if len(y) < self.window_size:
+            if len(y) <= self.window_size:
                 raise ValueError(
-                    f"The length of `y` ({len(y)}), must be greater than or equal "
-                    f"to the window size ({self.window_size}). This is because  "
+                    f"Length of `y` must be greater than the maximum window size "
+                    f"needed by the forecaster. This is because  "
                     f"the offset ({self.offset}) is larger than the available "
                     f"data. Try to decrease the size of the offset ({self.offset}), "
                     f"the number of `n_offsets` ({self.n_offsets}) or increase the "
-                    f"size of `y`."
+                    f"size of `y`.\n"
+                    f"    Length `y`: {len(y)}.\n"
+                    f"    Max window size: {self.window_size}.\n"
                 )
         
         self.is_fitted = True
@@ -448,30 +450,42 @@ class ForecasterEquivalentDate():
         
         """
         
-        # TODO: Create a public predict_in_sample method?
         # TODO: Error cuando hay muy poco dato
         if isinstance(self.offset, pd.tseries.offsets.DateOffset):
-            y_pred = [
-                y.loc[(y.index - self.offset * n_off)[self.window_size:]]
-                for n_off in range(1, self.n_offsets + 1)
-            ]
+            y_preds = []
+            for n_off in range(1, self.n_offsets + 1):
+                idx = y.index - self.offset * n_off
+                mask = idx >= y.index[0]
+                y_pred = y.loc[idx[mask]]
+                y_pred.index = y.index[-mask.sum():]
+                y_preds.append(y_pred)
+
+            y_preds = pd.concat(y_preds, axis=1).to_numpy()
+            y_true = y.to_numpy()[-len(y_preds):]
+
         else:
-            y_pred = [
+            y_preds = [
                 y.shift(self.offset * n_off)[self.window_size:]
                 for n_off in range(1, self.n_offsets + 1)
             ]
+            y_preds = np.column_stack(y_preds)
+            y_true = y.to_numpy()[self.window_size:]
 
         y_pred = np.apply_along_axis(
                      self.agg_func,
-                     axis = 0,
-                     arr  = np.vstack(y_pred)
+                     axis = 1,
+                     arr  = y_preds
                  )
 
-        y_true = y.to_numpy()[self.window_size:]
         residuals = y_true - y_pred
 
         if self._probabilistic_mode == "binned":
-            data = pd.DataFrame({'prediction': y_pred, 'residuals': residuals})
+            data = pd.DataFrame(
+                {'prediction': y_pred, 'residuals': residuals}
+            ).dropna()
+            y_pred = data['prediction'].to_numpy()
+            residuals = data['residuals'].to_numpy()
+
             self.binner.fit(y_pred)
             self.binner_intervals_ = self.binner.intervals_
     
@@ -488,6 +502,23 @@ class ForecasterEquivalentDate():
                     if len(v) > max_sample:
                         sample = v[rng.integers(low=0, high=len(v), size=max_sample)]
                         self.in_sample_residuals_by_bin_[k] = sample
+
+                for k in self.binner_intervals_.keys():
+                    if k not in self.in_sample_residuals_by_bin_:
+                        self.in_sample_residuals_by_bin_[k] = np.array([])
+
+                empty_bins = [
+                    k for k, v in self.in_sample_residuals_by_bin_.items() 
+                    if v.size == 0
+                ]
+                if empty_bins:
+                    empty_bin_size = min(max_sample, len(residuals))
+                    for k in empty_bins:
+                        self.in_sample_residuals_by_bin_[k] = rng.choice(
+                            a       = residuals,
+                            size    = empty_bin_size,
+                            replace = False
+                        )
    
             if len(residuals) > 10_000:
                 residuals = residuals[
@@ -644,7 +675,7 @@ class ForecasterEquivalentDate():
         
         return predictions
 
-# TODO: binned as false?
+    # TODO: binned as false?
     def predict_interval(
         self,
         steps: int,
@@ -856,7 +887,6 @@ class ForecasterEquivalentDate():
             aggregate_values = equivalent_values.apply(self.agg_func, axis=1)
             predictions = aggregate_values.to_numpy()
         
-        # TODO: Error when bin is empty
         if use_binned_residuals:
             correction_factor_by_bin = {
                 k: np.quantile(np.abs(v), nominal_coverage)

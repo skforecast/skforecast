@@ -67,12 +67,14 @@ def test_fit_ValueError_length_y_less_than_window_size_offset_int():
     y = pd.Series(np.arange(10))
 
     err_msg = re.escape(
-        "The length of `y` (10), must be greater than or equal "
-        "to the window size (12). This is because  "
+        "Length of `y` must be greater than the maximum window size "
+        "needed by the forecaster. This is because  "
         "the offset (6) is larger than the available "
         "data. Try to decrease the size of the offset (6), "
-        "the number of n_offsets (2) or increase the "
-        "size of `y`."
+        "the number of `n_offsets` (2) or increase the "
+        "size of `y`.\n"
+        "    Length `y`: 10.\n"
+        "    Max window size: 12.\n"
     )
     with pytest.raises(ValueError, match=err_msg):
         forecaster.fit(y=y)
@@ -102,7 +104,7 @@ def test_fit_ValueError_length_y_less_than_window_size_offset_DateOffset(offset,
         f"to the window size ({forecaster.window_size}). This is because  "
         f"the offset ({forecaster.offset}) is larger than the available "
         f"data. Try to decrease the size of the offset ({forecaster.offset}), "
-        f"the number of n_offsets (2) or increase the "
+        f"the number of `n_offsets` (2) or increase the "
         f"size of `y`."
     )
     with pytest.raises(ValueError, match=err_msg):
@@ -114,12 +116,14 @@ def test_fit_y_index_DatetimeIndex():
     Test index_freq_ is set correctly when y index is a DatetimeIndex.
     """
     forecaster = ForecasterEquivalentDate(
-                     offset        = 5,
+                     offset        = 2,
                      n_offsets     = 2,
                      agg_func      = np.mean,
                      forecaster_id = None
                  )
-    y = pd.Series(np.random.rand(10), index=pd.date_range(start='1/1/2021', periods=10))
+    y = pd.Series(
+        np.random.rand(10), index=pd.date_range(start='1/1/2021', periods=10)
+    )
     forecaster.fit(y)
 
     assert forecaster.index_freq_ == y.index.freqstr
@@ -130,7 +134,7 @@ def test_fit_y_index_not_DatetimeIndex():
     Test index_freq_ is set correctly when y index is not a DatetimeIndex.
     """
     forecaster = ForecasterEquivalentDate(
-                     offset        = 5,
+                     offset        = 2,
                      n_offsets     = 2,
                      agg_func      = np.mean,
                      forecaster_id = None
