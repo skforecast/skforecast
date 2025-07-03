@@ -249,12 +249,15 @@ def test_predict_interval_MissingValuesWarning_when_any_equivalent_values_are_mi
     )
     with pytest.warns(MissingValuesWarning, match = warn_msg):
         predictions = forecaster.predict_interval(steps=3, last_window=last_window)
-
-    expected = pd.Series(
-        data  = np.array([19., 19., 19.]),
-        index = pd.date_range(start='2000-03-31', periods=3, freq='D'),
-        name  = 'pred'
-    )
+    
+    expected = pd.DataFrame(
+                   data = np.array([
+                              [19. , -10.1,  48.1],
+                              [19. , -10.1,  48.1],
+                              [19. , -10.1,  48.1]]),
+                   index = pd.date_range(start='2000-03-31', periods=3, freq='D'),
+                   columns = ['pred', 'lower_bound', 'upper_bound']
+               )
 
     pd.testing.assert_frame_equal(predictions, expected)
 

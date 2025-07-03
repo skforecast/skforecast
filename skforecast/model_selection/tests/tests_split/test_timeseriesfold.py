@@ -92,6 +92,32 @@ def test_TimeSeriesFold_split_invalid_initial_train_size_date(initial_train_size
         cv.split(X=y)
 
 
+@pytest.mark.parametrize("initial_train_size",
+                         [30, "2000-01-30 23:59:00"], 
+                         ids = lambda initial_train_size: f'initial_train_size: {initial_train_size}')
+def test_TimeSeriesFold_split_ValueError_when_window_size_as_date_offset_and_greater_than_initial_train_size(initial_train_size):
+    """
+    Test ValueError is raised when the window_size as date offset is greater than
+    initial_train_size.
+    """
+    X = pd.Series(
+            data  = np.arange(50),
+            index = pd.date_range(start='2000-01-01', periods=50, freq='D'),
+            name  = 'y'
+        )
+    cv = TimeSeriesFold(
+        steps=5, initial_train_size=initial_train_size, window_size=pd.DateOffset(month=1)
+    )
+    msg = re.escape(
+        "If `initial_train_size` is an integer, it must be greater than "
+        "the `window_size` of the forecaster (31) "
+        "and smaller than the length of the series (50). If "
+        "it is a date, it must be within this range of the index."
+    )
+    with pytest.raises(ValueError, match=msg):
+        cv.split(X=X)
+
+
 def test_TimeSeriesFold_split_ValueError_when_time_series_not_enough_data():
     """
     Test ValueError is raised when time series has not enough data to create the folds.
