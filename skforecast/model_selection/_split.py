@@ -901,7 +901,8 @@ class TimeSeriesFold(BaseFold):
                 f"Got {type(X)}."
             )
         
-        if isinstance(self.window_size, pd.tseries.offsets.DateOffset):
+        window_size_as_date_offset = isinstance(self.window_size, pd.tseries.offsets.DateOffset)
+        if window_size_as_date_offset:
             # Calculate the window_size in steps. This is not a exact calculation
             # because the offset follows the calendar rules and the distance between
             # two dates may not be constant.
@@ -954,6 +955,16 @@ class TimeSeriesFold(BaseFold):
                                       method       = 'validation',
                                       date_literal = 'initial_train_size'
                                   )
+        
+        if window_size_as_date_offset:
+            if self.initial_train_size is not None:
+                if self.initial_train_size < self.window_size:
+                    raise ValueError(
+                        f"If `initial_train_size` is an integer, it must be greater than "
+                        f"the `window_size` of the forecaster ({self.window_size}) "
+                        f"and smaller than the length of the series ({len(X)}). If "
+                        f"it is a date, it must be within this range of the index."
+                    )
 
         if len(index) < self.initial_train_size + self.steps:
             raise ValueError(

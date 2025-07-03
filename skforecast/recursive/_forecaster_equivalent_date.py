@@ -450,7 +450,6 @@ class ForecasterEquivalentDate():
         
         """
         
-        # TODO: Error cuando hay muy poco dato
         if isinstance(self.offset, pd.tseries.offsets.DateOffset):
             y_preds = []
             for n_off in range(1, self.n_offsets + 1):
@@ -675,7 +674,6 @@ class ForecasterEquivalentDate():
         
         return predictions
 
-    # TODO: binned as false?
     def predict_interval(
         self,
         steps: int,
