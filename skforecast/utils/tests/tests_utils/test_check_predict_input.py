@@ -25,8 +25,8 @@ def test_check_predict_input_NotFittedError_when_fitted_is_False():
     Test NotFittedError is raised when fitted is False.
     """
     err_msg = re.escape(
-        ("This Forecaster instance is not fitted yet. Call `fit` with "
-         "appropriate arguments before using predict.")
+        "This Forecaster instance is not fitted yet. Call `fit` with "
+        "appropriate arguments before using predict."
     )
     with pytest.raises(NotFittedError, match = err_msg):
         check_predict_input(
@@ -56,7 +56,9 @@ def test_check_predict_input_ValueError_when_steps_int_lower_than_1():
     """
     steps = -5
 
-    err_msg = re.escape(f"`steps` must be an integer greater than or equal to 1. Got {steps}.")
+    err_msg = re.escape(
+        f"`steps` must be an integer greater than or equal to 1. Got {steps}."
+    )
     with pytest.raises(ValueError, match = err_msg):
         check_predict_input(
             forecaster_name  = 'ForecasterRecursive',
@@ -87,8 +89,8 @@ def test_check_predict_input_ValueError_when_steps_list_lower_than_1():
     steps = [0, 1, 2]
 
     err_msg = re.escape(
-        (f"The minimum value of `steps` must be equal to or greater than 1. "
-         f"Got {min(steps)}.")
+        f"The minimum value of `steps` must be equal to or greater than 1. "
+        f"Got {min(steps)}."
     )
     with pytest.raises(ValueError, match = err_msg):
         check_predict_input(
@@ -121,9 +123,9 @@ def test_check_predict_input_ValueError_when_last_step_greater_than_max_steps():
     max_steps = 10
 
     err_msg = re.escape(
-        (f"The maximum value of `steps` must be less than or equal to "
-         f"the value of steps defined when initializing the forecaster. "
-         f"Got {max(steps)}, but the maximum is {max_steps}.")
+        f"The maximum value of `steps` must be less than or equal to "
+        f"the value of steps defined when initializing the forecaster. "
+        f"Got {max(steps)}, but the maximum is {max_steps}."
     )
     with pytest.raises(ValueError, match = err_msg):
         check_predict_input(
@@ -153,7 +155,9 @@ def test_check_predict_input_TypeError_when_ForecasterRecursiveMultiSeries_and_l
     """
     levels = 5
 
-    err_msg = re.escape("`levels` must be a `list` of column names, a `str` of a column name or `None`.")   
+    err_msg = re.escape(
+        "`levels` must be a `list` of column names, a `str` of a column name or `None`."
+    )
     with pytest.raises(TypeError, match = err_msg):
         check_predict_input(
             forecaster_name  = 'ForecasterRecursiveMultiSeries',
@@ -191,8 +195,8 @@ def test_check_predict_input_UnknownLevelWarning_when_ForecasterRecursiveMultiSe
     )
 
     warn_msg = re.escape(
-        ("`levels` {'1'} were not included in training. The resulting "
-         "one-hot encoded columns for this feature will be all zeros.")
+        "`levels` {'1'} were not included in training. The resulting "
+        "one-hot encoded columns for this feature will be all zeros."
     )
     with pytest.warns(UnknownLevelWarning, match = warn_msg):
         check_predict_input(
@@ -234,9 +238,9 @@ def test_check_predict_input_UnknownLevelWarning_when_ForecasterRecursiveMultiSe
     )
 
     warn_msg = re.escape(
-        ("`levels` {'1'} were not included in training. "
-         "Unknown levels are encoded as NaN, which may cause the "
-         "prediction to fail if the regressor does not accept NaN values.")
+        "`levels` {'1'} were not included in training. "
+        "Unknown levels are encoded as NaN, which may cause the "
+        "prediction to fail if the regressor does not accept NaN values."
     )
     with pytest.warns(UnknownLevelWarning, match = warn_msg):
         check_predict_input(
@@ -272,8 +276,8 @@ def test_check_predict_input_ValueError_when_ForecasterRnn_and_level_not_in_leve
     (levels_forecaster) in a ForecasterRnn.
     """
     err_msg = re.escape(
-        (f"`levels` names must be included in the series used during fit "
-         f"({levels_forecaster}). Got {levels}.")
+        f"`levels` names must be included in the series used during fit "
+        f"({levels_forecaster}). Got {levels}."
     )
     with pytest.raises(ValueError, match = err_msg):
         check_predict_input(
@@ -302,8 +306,8 @@ def test_check_predict_input_ValueError_when_exog_is_none_and_exog_in_is_true():
     """
     """
     err_msg = re.escape(
-        ("Forecaster trained with exogenous variable/s. "
-         "Same variable/s must be provided when predicting.")
+        "Forecaster trained with exogenous variable/s. "
+        "Same variable/s must be provided when predicting."
     )   
     with pytest.raises(ValueError, match = err_msg):
         check_predict_input(
@@ -331,8 +335,8 @@ def test_check_predict_input_ValueError_when_exog_is_not_none_and_exog_in_is_fal
     """
     """
     err_msg = re.escape(
-        ("Forecaster trained without exogenous variable/s. "
-         "`exog` must be `None` when predicting.")
+        "Forecaster trained without exogenous variable/s. "
+        "`exog` must be `None` when predicting."
     )   
     with pytest.raises(ValueError, match = err_msg):
         check_predict_input(
@@ -361,8 +365,8 @@ def test_check_predict_input_ValueError_when_last_window_not_stored_during_train
     """
     last_window = None
     err_msg = re.escape(
-        ("`last_window` was not stored during training. If you don't want "
-         "to retrain the Forecaster, provide `last_window` as argument.")
+        "`last_window` was not stored during training. If you don't want "
+        "to retrain the Forecaster, provide `last_window` as argument."
     )
     with pytest.raises(ValueError, match = err_msg):
         check_predict_input(
@@ -396,7 +400,9 @@ def test_check_predict_input_TypeError_when_last_window_is_not_pandas_DataFrame(
     """
     last_window = np.arange(5)
 
-    err_msg = re.escape(f"`last_window` must be a pandas DataFrame. Got {type(last_window)}.")
+    err_msg = re.escape(
+        f"`last_window` must be a pandas DataFrame. Got {type(last_window)}."
+    )
     with pytest.raises(TypeError, match = err_msg):
         check_predict_input(
             forecaster_name  = forecaster_name,
@@ -471,10 +477,10 @@ def test_check_predict_input_ValueError_when_series_names_in__not_last_window_Fo
     series_names_in_ = ['l1', 'l2']
 
     err_msg = re.escape(
-        ("`last_window` columns must be the same as the `series` "
-         "column names used to create the X_train matrix.\n"
-         "    `last_window` columns    : ['l1', '4']\n"
-         "    `series` columns X train : ['l1', 'l2']")
+        "`last_window` columns must be the same as the `series` "
+        "column names used to create the X_train matrix.\n"
+        "    `last_window` columns    : ['l1', '4']\n"
+        "    `series` columns X train : ['l1', 'l2']"
     )
     with pytest.raises(ValueError, match = err_msg):
         check_predict_input(
@@ -533,8 +539,8 @@ def test_check_predict_input_ValueError_when_length_last_window_is_lower_than_wi
     window_size = 10
 
     err_msg = re.escape(
-        (f"`last_window` must have as many values as needed to "
-         f"generate the predictors. For this forecaster it is {window_size}.")
+        f"`last_window` must have as many values as needed to "
+        f"generate the predictors. For this forecaster it is {window_size}."
     )
     with pytest.raises(ValueError, match = err_msg):
         check_predict_input(
@@ -562,8 +568,8 @@ def test_check_predict_input_MissingValuesWarning_when_last_window_has_missing_v
     """
     """
     warn_msg = re.escape(
-        ("`last_window` has missing values. Most of machine learning models do "
-         "not allow missing values. Prediction method may fail.")
+        "`last_window` has missing values. Most of machine learning models do "
+        "not allow missing values. Prediction method may fail."
     )
     with pytest.warns(MissingValuesWarning, match = warn_msg):
         check_predict_input(
@@ -593,8 +599,8 @@ def test_check_predict_input_TypeError_when_last_window_index_is_not_of_index_ty
     last_window = pd.Series(np.arange(10))
     index_type_ = pd.DatetimeIndex
     _, last_window_index = preprocess_last_window(
-                                last_window = last_window.iloc[:0]
-                           ) 
+        last_window = last_window, return_values = False
+    )
 
     err_msg = re.escape(
         f"Expected index of type {index_type_} for `last_window`. "
@@ -628,12 +634,12 @@ def test_check_predict_input_TypeError_when_last_window_index_frequency_is_not_i
     last_window = pd.Series(np.arange(10), index=pd.date_range(start='1/1/2018', periods=10, freq='D'))
     index_freq_ = 'Y'
     _, last_window_index = preprocess_last_window(
-                                last_window = last_window.iloc[:0]
-                           )
+        last_window = last_window, return_values = False
+    )
 
     err_msg = re.escape(
-        (f"Expected frequency of type {index_freq_} for `last_window`. "
-         f"Got {last_window_index.freqstr}.")
+        f"Expected frequency of type {index_freq_} for `last_window`. "
+        f"Got {last_window_index.freqstr}."
     )
     with pytest.raises(TypeError, match = err_msg):
         check_predict_input(
@@ -682,39 +688,6 @@ def test_check_predict_input_TypeError_when_exog_is_not_pandas_series_or_datafra
             max_steps        = None,
             levels           = ['l1'],
             series_names_in_ = ['l1', 'l2']
-        )
-
-
-def test_check_predict_input_TypeError_when_exog_is_not_of_exog_type():
-    """
-    """
-    last_window = pd.Series(
-        np.arange(10), index=pd.date_range(start='1/1/2018', periods=10, freq=freq),
-        name = '1'
-    ).to_frame()
-    exog = pd.Series(np.arange(10))
-    exog_type_in_ = dict
-
-    err_msg = re.escape(f"Expected type for `exog`: {exog_type_in_}. Got {type(exog)}.")
-    with pytest.raises(TypeError, match = err_msg):
-        check_predict_input(
-            forecaster_name  = 'ForecasterRecursiveMultiSeries',
-            steps            = 5,
-            is_fitted        = True,
-            exog_in_         = True,
-            index_type_      = pd.DatetimeIndex,
-            index_freq_      = freq,
-            window_size      = 5,
-            last_window      = last_window,
-            last_window_exog = None,
-            exog             = exog,
-            exog_type_in_    = exog_type_in_,
-            exog_names_in_   = None,
-            interval         = None,
-            alpha            = None,
-            max_steps        = None,
-            levels           = ['1'],
-            series_names_in_ = ['1', '2']
         )
 
 
@@ -778,9 +751,9 @@ def test_check_predict_input_MissingExogWarning_when_exog_dict_and_no_key_for_so
     """
     """
     warn_msg = re.escape(
-        ("`exog` does not contain keys for levels {'l2'}. "
-         "Missing levels are filled with NaN. Most of machine learning "
-         "models do not allow missing values. Prediction method may fail.")
+        "`exog` does not contain keys for levels {'l2'}. "
+        "Missing levels are filled with NaN. Most of machine learning "
+        "models do not allow missing values. Prediction method may fail."
     )
     with pytest.warns(MissingExogWarning, match = warn_msg):
         check_predict_input(
@@ -808,8 +781,8 @@ def test_check_predict_input_MissingValuesWarning_when_exog_has_missing_values()
     """
     """
     warn_msg = re.escape(
-        ("`exog` has missing values. Most of machine learning models do "
-         "not allow missing values. Prediction method may fail.")
+        "`exog` has missing values. Most of machine learning models do "
+        "not allow missing values. Prediction method may fail."
     )
     with pytest.warns(MissingValuesWarning, match = warn_msg):
         check_predict_input(
@@ -840,10 +813,10 @@ def test_check_predict_input_MissingValuesWarning_when_len_exog_is_less_than_ste
     """
     last_step = max(steps) if isinstance(steps, list) else steps
     warn_msg = re.escape(
-        (f"`exog` doesn't have as many values as steps "
-         f"predicted, {last_step}. Missing values are filled "
-         f"with NaN. Most of machine learning models do not "
-         f"allow missing values. Prediction method may fail."),
+        f"`exog` doesn't have as many values as steps "
+        f"predicted, {last_step}. Missing values are filled "
+        f"with NaN. Most of machine learning models do not "
+        f"allow missing values. Prediction method may fail."
     )
     with pytest.warns(MissingValuesWarning, match = warn_msg):
         check_predict_input(
@@ -874,8 +847,8 @@ def test_check_predict_input_ValueError_when_len_exog_is_less_than_steps(steps):
     """
     last_step = max(steps) if isinstance(steps, list) else steps
     err_msg = re.escape(
-        (f"`exog` must have at least as many values as "
-         f"steps predicted, {last_step}.")
+        f"`exog` must have at least as many values as "
+        f"steps predicted, {last_step}."
     )
     with pytest.raises(ValueError, match = err_msg):
         check_predict_input(
@@ -909,8 +882,7 @@ def test_check_predict_input_MissingExogWarning_when_exog_is_DataFrame_without_c
     exog_names_in_ = ['col1', 'col3']
 
     warn_msg = re.escape(
-        ("{'col3'} not present in `exog`. All "
-         "values will be NaN.")
+        "{'col3'} not present in `exog`. All values will be NaN."
     )
     with pytest.warns(MissingExogWarning, match = warn_msg):
         check_predict_input(
@@ -942,8 +914,8 @@ def test_check_predict_input_ValueError_when_exog_is_DataFrame_without_columns_i
     exog_names_in_ = ['col1', 'col3']
 
     err_msg = re.escape(
-        (f"Missing columns in `exog`. Expected {exog_names_in_}. "
-         f"Got {exog.columns.to_list()}.")
+        f"Missing columns in `exog`. Expected {exog_names_in_}. "
+        f"Got {exog.columns.to_list()}."
     )
     with pytest.raises(ValueError, match = err_msg):
         check_predict_input(
@@ -975,7 +947,7 @@ def test_check_predict_input_ValueError_when_exog_is_Series_with_no_name():
     exog_names_in_ = ['exog1']
 
     err_msg = re.escape(
-         ("When `exog` is a pandas Series, it must have a name. Got None.")
+        "When `exog` is a pandas Series, it must have a name. Got None."
     )
     with pytest.raises(ValueError, match = err_msg):
         check_predict_input(
@@ -1015,8 +987,8 @@ def test_check_predict_input_IgnoredArgumentWarning_when_exog_is_Series_with_nam
     ).to_frame()
 
     warn_msg = re.escape(
-        ("'exog2' was not observed during training. `exog` is ignored. "
-         "Exogenous variables must be one of: ['exog1'].")
+        "'exog2' was not observed during training. `exog` is ignored. "
+        "Exogenous variables must be one of: ['exog1']."
     )
     with pytest.warns(IgnoredArgumentWarning, match = warn_msg):
         check_predict_input(
@@ -1049,8 +1021,8 @@ def test_check_predict_input_ValueError_when_exog_is_Series_with_name_not_in_exo
     exog_names_in_ = ['exog1']
 
     err_msg = re.escape(
-        ("'exog2' was not observed during training. "
-         "Exogenous variables must be: ['exog1'].")
+        "'exog2' was not observed during training. "
+        "Exogenous variables must be: ['exog1']."
     )
     with pytest.raises(ValueError, match = err_msg):
         check_predict_input(
@@ -1080,7 +1052,7 @@ def test_check_predict_input_TypeError_when_exog_index_is_not_of_index_type():
     exog = pd.Series(np.arange(10), name='exog1')
     index_type_ = pd.DatetimeIndex
     check_exog(exog = exog)
-    _, exog_index = preprocess_exog(exog=exog.iloc[:0, ])
+    _, exog_index = preprocess_exog(exog=exog, return_values=False)
 
     err_msg = re.escape(
         f"Expected index of type {index_type_} for `exog`. "
@@ -1114,11 +1086,11 @@ def test_check_predict_input_TypeError_when_exog_index_frequency_is_not_index_fr
     exog = pd.Series(np.arange(10), index=pd.date_range(start='1/1/2018', periods=10), name='exog1')
     index_freq_ = freq
     check_exog(exog = exog)
-    _, exog_index = preprocess_exog(exog=exog.iloc[:0, ])
+    _, exog_index = preprocess_exog(exog=exog, return_values=False)
 
     err_msg = re.escape(
-        (f"Expected frequency of type {index_freq_} for `exog`. "
-         f"Got {exog_index.freqstr}.")
+        f"Expected frequency of type {index_freq_} for `exog`. "
+        f"Got {exog_index.freqstr}."
     )
     with pytest.raises(TypeError, match = err_msg):
         check_predict_input(
@@ -1228,8 +1200,8 @@ def test_check_predict_input_ValueError_when_ForecasterSarimax_last_window_exog_
     is False.
     """
     err_msg = re.escape(
-        ("Forecaster trained without exogenous variable/s. "
-         "`last_window_exog` must be `None` when predicting.")
+        "Forecaster trained without exogenous variable/s. "
+        "`last_window_exog` must be `None` when predicting."
     )   
     with pytest.raises(ValueError, match = err_msg):
         check_predict_input(
@@ -1258,8 +1230,8 @@ def test_check_predict_input_TypeError_when_ForecasterSarimax_last_window_exog_i
     """
     last_window_exog = np.arange(5)
     err_msg = re.escape(
-        (f"`last_window_exog` must be a pandas Series or a "
-         f"pandas DataFrame. Got {type(last_window_exog)}.")
+        f"`last_window_exog` must be a pandas Series or a "
+        f"pandas DataFrame. Got {type(last_window_exog)}."
     )
     with pytest.raises(TypeError, match = err_msg):
         check_predict_input(
@@ -1289,8 +1261,8 @@ def test_check_predict_input_ValueError_when_ForecasterSarimax_length_last_windo
     window_size = 10
 
     err_msg = re.escape(
-        (f"`last_window_exog` must have as many values as needed to "
-         f"generate the predictors. For this forecaster it is {window_size}.")
+        f"`last_window_exog` must have as many values as needed to "
+        f"generate the predictors. For this forecaster it is {window_size}."
     )
     with pytest.raises(ValueError, match = err_msg):
         check_predict_input(
@@ -1318,8 +1290,8 @@ def test_check_predict_input_MissingValuesWarning_when_ForecasterSarimax_last_wi
     """
     """
     warn_msg = re.escape(
-        ("`last_window_exog` has missing values. Most of machine learning models "
-         "do not allow missing values. Prediction method may fail.")
+        "`last_window_exog` has missing values. Most of machine learning models "
+        "do not allow missing values. Prediction method may fail."
     )
     with pytest.warns(MissingValuesWarning, match = warn_msg):
         check_predict_input(
@@ -1349,12 +1321,12 @@ def test_check_predict_input_TypeError_when_ForecasterSarimax_last_window_exog_i
     last_window_exog = pd.Series(np.arange(10), name='exog1')
     index_type_ = pd.DatetimeIndex
     _, last_window_exog_index = preprocess_last_window(
-        last_window = last_window_exog.iloc[:0]
+        last_window = last_window_exog, return_values=False
     ) 
 
     err_msg = re.escape(
-        (f"Expected index of type {index_type_} for `last_window_exog`. "
-         f"Got {type(last_window_exog_index)}.")
+        f"Expected index of type {index_type_} for `last_window_exog`. "
+        f"Got {type(last_window_exog_index)}."
     )
     with pytest.raises(TypeError, match = err_msg):
         check_predict_input(
@@ -1385,12 +1357,12 @@ def test_check_predict_input_TypeError_when_ForecasterSarimax_last_window_exog_i
     last_window_exog = pd.Series(np.arange(10), index=pd.date_range(start='2018', periods=10, freq='YE'))
     index_freq_ = freq
     _, last_window_exog_index = preprocess_last_window(
-                                last_window = last_window_exog.iloc[:0]
-                           )
+        last_window = last_window_exog, return_values=False
+    )
 
     err_msg = re.escape(
-        (f"Expected frequency of type {index_freq_} for `last_window_exog`. "
-         f"Got {last_window_exog_index.freqstr}.")
+        f"Expected frequency of type {index_freq_} for `last_window_exog`. "
+        f"Got {last_window_exog_index.freqstr}."
     )
     with pytest.raises(TypeError, match = err_msg):
         check_predict_input(
@@ -1427,8 +1399,8 @@ def test_check_predict_input_ValueError_when_last_window_exog_is_DataFrame_witho
     last_window_exog.index = pd.date_range(start='1/1/2018', periods=5, freq=freq)
 
     err_msg = re.escape(
-        (f"Missing columns in `last_window_exog`. Expected {exog_names_in_}. "
-         f"Got {last_window_exog.columns.to_list()}.") 
+        f"Missing columns in `last_window_exog`. Expected {exog_names_in_}. "
+        f"Got {last_window_exog.columns.to_list()}."
     )
     with pytest.raises(ValueError, match = err_msg):
         check_predict_input(
@@ -1466,7 +1438,7 @@ def test_check_predict_input_ValueError_when_last_window_exog_is_Series_with_no_
     last_window_exog.index = pd.date_range(start='1/1/2018', periods=5, freq=freq)
     
     err_msg = re.escape(
-        ("When `last_window_exog` is a pandas Series, it must have a name. Got None.")
+        "When `last_window_exog` is a pandas Series, it must have a name. Got None."
     )
     with pytest.raises(ValueError, match = err_msg):
         check_predict_input(
@@ -1502,8 +1474,8 @@ def test_check_predict_input_ValueError_when_last_window_exog_is_Series_without_
     last_window_exog.index = pd.date_range(start='1/1/2018', periods=5, freq=freq)
     
     err_msg = re.escape(
-        ("'exog2' was not observed during training. "
-         "Exogenous variables must be: ['exog1'].")
+        "'exog2' was not observed during training. "
+        "Exogenous variables must be: ['exog1']."
     )
     with pytest.raises(ValueError, match = err_msg):
         check_predict_input(

@@ -8,6 +8,7 @@ from skforecast.exceptions import InputTypeWarning, MissingExogWarning
 from skforecast.utils import check_preprocess_series
 from skforecast.utils import check_preprocess_exog_multiseries
 from skforecast.recursive.tests.tests_forecaster_recursive_multiseries.fixtures_forecaster_recursive_multiseries import (
+    series_wide_range,
     series_dict_range,
     series_dict_dt,
     exog_wide_range,
@@ -236,11 +237,17 @@ def test_ValueError_check_preprocess_exog_multiseries_when_exog_has_columns_name
         )
 
 
-def test_output_check_preprocess_exog_multiseries_when_exog_pandas_Series():
+@pytest.mark.parametrize("series", 
+                         [series_wide_range, series_dict_range],
+                         ids = lambda series: f'series type: {type(series)}')
+def test_output_check_preprocess_exog_multiseries_when_exog_pandas_Series(series):
     """
     Test check_preprocess_exog_multiseries when `exog` is a pandas Series.
     """
-    series_dict, series_indexes = check_preprocess_series(series=series_dict_range)
+    if isinstance(series, pd.DataFrame):
+        series = series.rename(columns={'1': 'l1', '2': 'l2'})
+    
+    series_dict, series_indexes = check_preprocess_series(series=series)
 
     exog_dict, exog_names_in_ = check_preprocess_exog_multiseries(
                                     series_names_in_  = ['l1', 'l2'],

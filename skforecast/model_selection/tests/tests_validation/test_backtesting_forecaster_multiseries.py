@@ -279,17 +279,23 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
-def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_refit_list_metrics_with_mocked_metrics():
+@pytest.mark.parametrize("series", 
+                         [series_wide_range, series_dict_range],
+                         ids = lambda series: f'series type: {type(series)}')
+def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_refit_list_metrics_with_mocked_metrics(series):
     """
     Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 
     with refit and list of metrics with mocked and list of metrics 
     (mocked done in Skforecast v0.5.0).
     """
+    if isinstance(series, pd.DataFrame):
+        series = series.rename(columns={'1': 'l1', '2': 'l2'})
+    
     forecaster = ForecasterRecursiveMultiSeries(
         regressor=Ridge(random_state=123), lags=2, transformer_series=None, encoding='onehot'
     )
     cv = TimeSeriesFold(
-            initial_train_size = len(series_dict_range['l1']) - 12,
+            initial_train_size = len(series['l1']) - 12,
             steps              = 3,
             refit              = True,
             fixed_train_size   = False
@@ -297,7 +303,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
 
     metrics_levels, backtest_predictions = backtesting_forecaster_multiseries(
                                                forecaster            = forecaster,
-                                               series                = series_dict_range,
+                                               series                = series,
                                                cv                    = cv,
                                                levels                = 'l1',
                                                metric                = ['mean_absolute_error', mean_absolute_error],
