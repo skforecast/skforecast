@@ -203,10 +203,10 @@ def check_backtesting_input(
         "ForecasterDirect",
         "ForecasterRecursiveMultiSeries",
         "ForecasterDirectMultiVariate",
+        "ForecasterEquivalentDate",
     ]
     # NOTE: ForecasterSarimax has interval but not with bootstrapping or conformal
     forecasters_not_interval = [
-        "ForecasterEquivalentDate",
         "ForecasterRnn"
     ]
     forecasters_return_predictors = [

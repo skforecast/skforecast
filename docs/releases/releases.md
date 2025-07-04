@@ -14,6 +14,8 @@ All significant changes to this project are documented in this release file.
 
 The main changes in this release are:
 
++ <span class="badge text-bg-feature">Feature</span> <code>[ForecasterEquivalentDate]</code> can now predict intervals using the conformal prediction framework.
+
 + <span class="badge text-bg-api-change">API Change</span> <code>[ForecasterRecursiveMultiSeries]</code> now accepts three input types for the `series` data: a wide-format DataFrame, where each column corresponds to a different time series; a long-format DataFrame with a MultiIndex, where the first level indicates the series name and the second level is the time index; or a dictionary with series names as keys and pandas `Series` as values.
 
 + <span class="badge text-bg-api-change">API Change</span> <code>[ForecasterRecursiveMultiSeries]</code> now accepts `exog` input as a wide-format DataFrame, where each column corresponds to a different exogenous variable; a long-format DataFrame with a MultiIndex, where the first level indicates the series name to which it belongs and the second level is the time index; or a dictionary with series names as keys and pandas `Series` or `DataFrames` as values.
@@ -30,6 +32,8 @@ The main changes in this release are:
 + Added function <code>[reshape_series_wide_to_long]</code> in the <code>[preprocessing]</code> module. This function reshapes a wide-format DataFrame where each column corresponds to a series into a long-format DataFrame with with a MultiIndex. The first level of the index is the series name and the second level is the time index.
 
 + Added metric <code>[symmetric_mean_absolute_percentage_error]</code> in the <code>[metrics]</code> module. This metric calculates the symmetric mean absolute percentage error (SMAPE) between the true values and the predicted values.
+
++ <code>[ForecasterEquivalentDate]</code> can now predict intervals using the conformal prediction framework.
 
 **Changed**
 
