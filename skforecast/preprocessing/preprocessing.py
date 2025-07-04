@@ -426,6 +426,7 @@ def reshape_series_wide_to_long(
 
     return data
 
+
 def reshape_series_long_to_dict(
     data: pd.DataFrame,
     freq: str,
@@ -435,28 +436,29 @@ def reshape_series_long_to_dict(
     suppress_warnings: bool = False
 ) -> dict[str, pd.Series]:
     """
-    Convert long format series to dictionary of pandas Series with the given
-    frequency. Two formats are supported:
-        
-      - pandas DataFrame with columns for the series identifier, index and values.
-      - pandas DataFrame with a MultiIndex, where the first level is the series
-      identifier and the second level is the temporal index.
+    Convert a long-format DataFrame into a dictionary of pandas Series with the 
+    specified frequency. Supports two input formats:
+
+    - A pandas DataFrame with explicit columns for the series identifier, time 
+    index, and values.
+    - A pandas DataFrame with a MultiIndex, where the first level contains the 
+    series IDs, and the second level contains a pandas DatetimeIndex.
 
     Parameters
     ----------
     data: pandas DataFrame
-        Long format series.
-    series_id: str, optional
-        Column name with the series identifier. Not needed if the input data
-        is a pandas DataFrame with Multiindex.
-    index: str, optional
-        Column name with the time index. Not needed if the input data is a pandas
-        DataFrame with Multiindex.
-    values: str, optional
-        Column name with the values. Not needed if the input data is a pandas
-        DataFrame with Multiindex.
+        Long-format series.
     freq: str
         Frequency of the series.
+    series_id: str, default None
+        Column name with the series identifier. Not needed if the input data
+        is a pandas DataFrame with MultiIndex.
+    index: str, default None
+        Column name with the time index. Not needed if the input data is a pandas
+        DataFrame with MultiIndex.
+    values: str, default None
+        Column name with the values. Not needed if the input data is a pandas
+        DataFrame with MultiIndex.
     suppress_warnings: bool, default False
         If True, suppress warnings when a series is incomplete after setting the
         frequency.
@@ -485,9 +487,9 @@ def reshape_series_long_to_dict(
         for col in [series_id, index, values]:
             if col is None:
                 raise ValueError(
-                    "Arguments `series_id`, `index` and `values` cannot be `None` "
-                    "when input data does not have MultiIndex. Please provide a "
-                    "value for each."
+                    "Arguments `series_id`, `index`, and `values` must be "
+                    "specified when the input DataFrame does not have a MultiIndex. "
+                    "Please provide a value for each of these arguments."
                 )
             if col not in data.columns:
                 raise ValueError(f"Column '{col}' not found in `data`.")
@@ -518,13 +520,13 @@ def reshape_exog_long_to_dict(
     suppress_warnings: bool = False
 ) -> dict[str, pd.DataFrame]:
     """
+    Convert a long-format DataFrame of exogenous variables into a dictionary 
+    of pandas DataFrames with the specified frequency. Supports two input formats:
 
-    Convert long format exogenous variables to dictionary of pandas Series or
-    DataFrames with the given frequency. Two formats are supported:
-        
-      - pandas DataFrame with columns for the series identifier, index and exogenous variables.
-      - pandas DataFrame with a MultiIndex, where the first level is the series
-      identifier and the second level is the temporal index.
+    - A pandas DataFrame with explicit columns for the series identifier, time 
+    index, and exogenous variables.
+    - A pandas DataFrame with a MultiIndex, where the first level contains the 
+    series IDs, and the second level contains a pandas DatetimeIndex.
 
     Parameters
     ----------
@@ -532,12 +534,12 @@ def reshape_exog_long_to_dict(
         Long format exogenous variables.
     freq: str
         Frequency of the series.
-    series_id: str, optional
+    series_id: str, default None
         Column name with the series identifier. Not needed if the input data
-        is a pandas DataFrame with Multiindex.
-    index: str, optional
+        is a pandas DataFrame with MultiIndex.
+    index: str, default None
         Column name with the time index. Not needed if the input data is a pandas
-        DataFrame with Multiindex.
+        DataFrame with MultiIndex.
     drop_all_nan_cols: bool, default False
         If True, drop columns with all values as NaN. This is useful when
         there are series without some exogenous variables.
@@ -559,7 +561,6 @@ def reshape_exog_long_to_dict(
     if not isinstance(data, pd.DataFrame):
         raise TypeError("`data` must be a pandas DataFrame.")
     
-
     if isinstance(data.index, pd.MultiIndex):
 
         data.index = data.index.set_names([data.index.names[0], None])
@@ -572,9 +573,9 @@ def reshape_exog_long_to_dict(
         for col in [series_id, index]:
             if col is None:
                 raise ValueError(
-                    "Arguments `series_id` and `index` cannot be `None` "
-                    "when input data does not have MultiIndex. Please provide a "
-                    "value for each."
+                    "Arguments `series_id`, and `index` must be "
+                    "specified when the input DataFrame does not have a MultiIndex. "
+                    "Please provide a value for each of these arguments."
                 )
             if col not in data.columns:
                 raise ValueError(f"Column '{col}' not found in `data`.")
