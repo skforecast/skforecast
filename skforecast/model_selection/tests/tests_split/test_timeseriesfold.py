@@ -106,7 +106,7 @@ def test_TimeSeriesFold_split_ValueError_when_window_size_as_date_offset_and_gre
             name  = 'y'
         )
     cv = TimeSeriesFold(
-        steps=5, initial_train_size=initial_train_size, window_size=pd.DateOffset(month=1)
+        steps=5, initial_train_size=initial_train_size, window_size=pd.DateOffset(months=1)
     )
     msg = re.escape(
         "If `initial_train_size` is an integer, it must be greater than "
