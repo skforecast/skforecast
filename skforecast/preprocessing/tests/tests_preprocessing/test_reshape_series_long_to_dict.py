@@ -9,7 +9,7 @@ from ....exceptions import MissingValuesWarning
 from .fixtures_preprocessing import values_A, values_B, values_C
 from .fixtures_preprocessing import index_A, index_B, index_C
 from .fixtures_preprocessing import series_long
-
+series_long_multiindex = series_long.set_index(["series_id", "datetime"])
 
 def test_check_output_reshape_series_long_to_dict():
     """
@@ -27,6 +27,26 @@ def test_check_output_reshape_series_long_to_dict():
         series_id="series_id",
         index="datetime",
         values="values",
+        freq="D",
+    )
+
+    for k in expected.keys():
+        pd.testing.assert_series_equal(results[k], expected[k])
+
+
+def test_check_output_reshape_series_long_to_dict_when_multiindex():
+    """
+    Check output of reshape_series_long_to_dict when data is a MultiIndex DataFrame.
+    """
+
+    expected = {
+        "A": pd.Series(values_A, index=index_A, name="A"),
+        "B": pd.Series(values_B, index=index_B, name="B"),
+        "C": pd.Series(values_C, index=index_C, name="C"),
+    }
+
+    results = reshape_series_long_to_dict(
+        data=series_long_multiindex,
         freq="D",
     )
 
@@ -119,3 +139,17 @@ def test_warning_when_series_is_incomplete():
             values="values",
             freq="D",
         )
+
+def test_reshape_series_long_to_dict_raise_value_error_when_arguments_series_id_index_values_not_provided():
+    """
+    Check that ValueError is raised when the input dataframe does not have MultiIndex and the
+    arguments `series_id`, `index` and `values` are not provided
+    """
+
+    err_msg = (
+        "Arguments `series_id`, `index` and `values` cannot be `None` "
+        "when input data does not have MultiIndex. Please provide a "
+        "value for each."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        reshape_series_long_to_dict(data=series_long, freq="D")

@@ -10,9 +10,10 @@ from ....exceptions import MissingValuesWarning
 # Fixtures
 from .fixtures_preprocessing import exog_A, exog_B, exog_C, n_exog_A, n_exog_B, n_exog_C
 from .fixtures_preprocessing import exog_long
+exog_long_multiindex = exog_long.set_index(["series_id", "datetime"])
 
 
-def test_check_output_reshape_series_long_to_dict_dropna_False():
+def test_check_output_reshape_exog_long_to_dict_dropna_False():
     """
     Check output of reshape_exog_long_to_dict with dropna=False.
     """
@@ -61,9 +62,56 @@ def test_check_output_reshape_series_long_to_dict_dropna_False():
         pd.testing.assert_frame_equal(results[k], expected[k])
 
 
-def test_check_output_reshape_series_long_to_dict_dropna_True():
+def test_check_output_reshape_exog_long_to_dict_dropna_False_when_multiindex():
     """
-    Check output of reshape_series_long_to_dict with dropna=True.
+    Check output of reshape_exog_long_to_dict with dropna=False when input data is a MultiIndex DataFrame.
+    """
+    expected = {
+        'A': pd.DataFrame(
+            {
+                'exog_1': np.arange(n_exog_A),
+                'exog_2': np.nan,
+                'exog_3': np.nan
+            },
+            index=pd.date_range("2020-01-01", periods=n_exog_A, freq="D")
+        ),
+        'B': pd.DataFrame(
+            {
+                'exog_1': np.arange(n_exog_B),
+                'exog_2': 'b',
+                'exog_3': np.nan
+            },
+            index=pd.date_range("2020-01-01", periods=n_exog_B, freq="D")
+        ),
+        'C': pd.DataFrame(
+            {
+                'exog_1': np.arange(n_exog_C),
+                'exog_2': np.nan,
+                'exog_3': 1.0
+            },
+            index=pd.date_range("2020-01-01", periods=n_exog_C, freq="D")
+        )
+    }
+
+    for k in expected.keys():
+        expected[k]['exog_1'] = expected[k]['exog_1'].astype(int)
+        expected[k]['exog_2'] = expected[k]['exog_2'].astype(object)
+        expected[k]['exog_3'] = expected[k]['exog_3'].astype(float)
+
+    results = reshape_exog_long_to_dict(
+        data=exog_long_multiindex,
+        freq="D",
+        drop_all_nan_cols=False,
+        consolidate_dtypes=True,
+    )
+
+    for k in expected.keys():
+        pd.testing.assert_frame_equal(results[k], expected[k])
+
+
+def test_check_output_reshape_exog_long_to_dict_dropna_True():
+    """
+    Check output of reshape_exog_long_to_dict with dropna=True.
     """
 
     expected = {
@@ -79,6 +127,31 @@ def test_check_output_reshape_series_long_to_dict_dropna_True():
         data=exog_long,
         series_id="series_id",
         index="datetime",
+        freq="D",
+        drop_all_nan_cols=True,
+        consolidate_dtypes=True,
+    )
+
+    for k in expected.keys():
+        pd.testing.assert_frame_equal(results[k], expected[k], check_dtype=False)
+
+
+def test_check_output_reshape_exog_long_to_dict_dropna_True_when_multiindex():
+    """
+    Check output of reshape_exog_long_to_dict with dropna=True when input data is a MultiIndex DataFrame.
+    """
+
+    expected = {
+        "A": exog_A.set_index("datetime").asfreq("D").drop(columns="series_id"),
+        "B": exog_B.set_index("datetime").asfreq("D").drop(columns="series_id"),
+        "C": exog_C.set_index("datetime").asfreq("D").drop(columns="series_id"),
+    }
+
+    for k in expected.keys():
+        expected[k].index.name = None
+
+    results = reshape_exog_long_to_dict(
+        data=exog_long_multiindex,
         freq="D",
         drop_all_nan_cols=True,
         consolidate_dtypes=True,
@@ -160,9 +233,9 @@ def test_warning_when_exog_are_incomplete_and_dropna_False():
         )
 
 
-def test_reshape_series_long_to_dict_output_when_npnan_are_added_in_interger_columns_and_consolidate_true():
+def test_reshape_exog_long_to_dict_output_when_npnan_are_added_in_interger_columns_and_consolidate_true():
     """
-    Test the output of the function reshape_series_long_to_dict when np.nan are added in integer columns
+    Test the output of the function reshape_exog_long_to_dict when np.nan are added in integer columns
     these columns should be converted to float
     """
     exog_series_1 = pd.DataFrame({
@@ -198,9 +271,9 @@ def test_reshape_series_long_to_dict_output_when_npnan_are_added_in_interger_col
     pd.testing.assert_series_equal(exog_dict['series_1'].dtypes, exog_dict['series_2'].dtypes)
 
 
-def test_reshape_series_long_to_dict_output_when_npnan_are_added_in_interger_columns_and_consolidate_false():
+def test_reshape_exog_long_to_dict_output_when_npnan_are_added_in_interger_columns_and_consolidate_false():
     """
-    Test the output of the function reshape_series_long_to_dict when np.nan are added in integer columns
+    Test the output of the function reshape_exog_long_to_dict when np.nan are added in integer columns
     these columns should be converted to float
     """
     exog_series_1 = pd.DataFrame({
@@ -239,3 +312,19 @@ def test_reshape_series_long_to_dict_output_when_npnan_are_added_in_interger_col
         assert exog_dict['series_2'].dtypes.astype(str).to_list() == ['float64', 'category', 'int32']
     else:
         assert exog_dict['series_2'].dtypes.astype(str).to_list() == ['float64', 'category', 'int64']
+
+
+def test_reshape_exog_long_to_dict_raise_value_error_when_arguments_series_id_index_values_not_provided():
+    """
+    Check that ValueError is raised when the input dataframe does not have MultiIndex and the
+    arguments `series_id`, `index` and `values` are not provided
+    """
+
+    err_msg = (
+        "Arguments `series_id`, `index` and `values` cannot be `None` "
+        "when input data does not have MultiIndex. Please provide a "
+        "value for each."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+
+        reshape_exog_long_to_dict(data=exog_long, freq="D")
