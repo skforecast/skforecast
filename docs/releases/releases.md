@@ -16,6 +16,8 @@ The main changes in this release are:
 
 + <span class="badge text-bg-feature">Feature</span> <code>[ForecasterEquivalentDate]</code> can now predict intervals using the conformal prediction framework.
 
++ <span class="badge text-bg-feature">Feature</span> Created module <code>[experimental]</code>, this module contains experimental features that are not yet fully tested or may change in future releases.
+
 + <span class="badge text-bg-api-change">API Change</span> <code>[ForecasterRecursiveMultiSeries]</code> now accepts three input types for the `series` data: a wide-format DataFrame, where each column corresponds to a different time series; a long-format DataFrame with a MultiIndex, where the first level indicates the series name and the second level is the time index; or a dictionary with series names as keys and pandas `Series` as values.
 
 + <span class="badge text-bg-api-change">API Change</span> <code>[ForecasterRecursiveMultiSeries]</code> now accepts `exog` input as a wide-format DataFrame, where each column corresponds to a different exogenous variable; a long-format DataFrame with a MultiIndex, where the first level indicates the series name to which it belongs and the second level is the time index; or a dictionary with series names as keys and pandas `Series` or `DataFrames` as values.
@@ -34,6 +36,10 @@ The main changes in this release are:
 + Added metric <code>[symmetric_mean_absolute_percentage_error]</code> in the <code>[metrics]</code> module. This metric calculates the symmetric mean absolute percentage error (SMAPE) between the true values and the predicted values.
 
 + <code>[ForecasterEquivalentDate]</code> can now predict intervals using the conformal prediction framework.
+
++ Created module <code>[experimental]</code>, this module contains experimental features that are not yet fully tested or may change in future releases.
+
++ Include function <code>[calculate_days_to_holiday]</code> in the <code>[experimental]</code> module. It calculates the number of days to the next holiday and the number of days since the last holiday in a DataFrame with a date column.
 
 **Changed**
 
@@ -1230,6 +1236,10 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 
 <!-- utils -->
 [utils]: ../api/utils.html
+
+<!-- experimental -->
+[experimental]: ../api/experimental.html
+[calculate_distance_from_holiday]: ../api/experimental.html#skforecast.experimental.calculate_distance_from_holiday
 
 <!-- datasets -->
 [datasets]: ../api/datasets.html
