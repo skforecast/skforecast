@@ -321,7 +321,7 @@ def test_reshape_exog_long_to_dict_raise_value_error_when_arguments_series_id_in
     """
 
     err_msg = (
-        "Arguments `series_id`, `index` and `values` cannot be `None` "
+        "Arguments `series_id` and `index` cannot be `None` "
         "when input data does not have MultiIndex. Please provide a "
         "value for each."
     )

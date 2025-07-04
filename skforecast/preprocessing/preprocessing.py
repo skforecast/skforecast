@@ -573,7 +573,7 @@ def reshape_exog_long_to_dict(
         for col in [series_id, index]:
             if col is None:
                 raise ValueError(
-                    "Arguments `series_id`, `index` and `values` cannot be `None` "
+                    "Arguments `series_id` and `index` cannot be `None` "
                     "when input data does not have MultiIndex. Please provide a "
                     "value for each."
                 )
