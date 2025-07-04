@@ -8,8 +8,10 @@ from skforecast.exceptions import IgnoredArgumentWarning, InputTypeWarning
 from skforecast.preprocessing import reshape_series_wide_to_long
 from skforecast.utils import check_preprocess_series
 from skforecast.recursive.tests.tests_forecaster_recursive_multiseries.fixtures_forecaster_recursive_multiseries import (
+    series_wide_range,
     series_wide_dt,
     series_long_dt,
+    series_dict_range,
     series_dict_dt
 ) 
 
@@ -26,20 +28,6 @@ def test_TypeError_check_preprocess_series_when_series_is_not_pandas_DataFrame_o
     )
     with pytest.raises(TypeError, match = err_msg):
         check_preprocess_series(series = series)
-
-
-def test_TypeError_check_preprocess_series_when_series_pandas_DataFrame_but_no_MultiIndex():
-    """
-    Test TypeError is raised when series is a pandas DataFrame but not a MultiIndex.
-    """
-    err_msg = re.escape(
-        "If `series` is a DataFrame, it must be a long-format pandas "
-        "DataFrame with a MultiIndex. The first level contains the series "
-        "IDs, and the second level contains a pandas DatetimeIndex with "
-        "the same frequency for each series. Found <class 'pandas.core.indexes.datetimes.DatetimeIndex'>."
-    )
-    with pytest.raises(TypeError, match = err_msg):
-        check_preprocess_series(series=series_wide_dt)
 
 
 def test_TypeError_check_preprocess_series_when_series_is_pandas_DataFrame_MultiIndex_without_datetime():
@@ -153,7 +141,8 @@ def test_ValueError_check_preprocess_series_when_series_is_DataFrame_MultiIndex_
     Test ValueError is raised when series is a pandas DataFrame with a MultiIndex
     containing at least one series without frequency or with different frequencies.
     """
-    series_wide = pd.DataFrame({
+    series_wide = pd.DataFrame(
+        {
             'series_id': ['1', '1', '1', '1', '2', '2', '2', '2'],
             'datetime': pd.date_range(start='2000-01-01', periods=8, freq='D'),
             'value': np.random.rand(8)
@@ -228,18 +217,23 @@ def test_ValueError_check_preprocess_series_when_all_series_values_are_missing_D
         check_preprocess_series(series=series_long_nan)
 
 
-def test_check_preprocess_series_when_series_is_pandas_DataFrame_MultiIndex_datetime():
+@pytest.mark.parametrize("series", 
+                         [series_wide_dt, series_long_dt],
+                         ids = lambda series: f'series index type: {type(series.index)}')
+def test_check_preprocess_series_when_series_is_pandas_DataFrame_wide_or_MultiIndex_datetime(series):
     """
-    Test check_preprocess_series when `series` is a pandas DataFrame long format.
+    Test check_preprocess_series when `series` is a pandas DataFrame wide or 
+    long format.
     """
     warn_msg = re.escape(
-        "Using a long-format DataFrame as `series` requires additional transformations, "
-        "which can increase computational time. It is recommended to use a dictionary of "
-        "Series instead. For more information, see: "
-        "https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting#input-data"
+        "Passing a DataFrame (either wide or long format) as `series` requires "
+        "additional internal transformations, which can increase computational "
+        "time. It is recommended to use a dictionary of pandas Series instead. "
+        "For more details, see: "
+        "https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting.html#input-data"
     )
     with pytest.warns(InputTypeWarning, match=warn_msg):
-        series_dict, series_indexes = check_preprocess_series(series=series_long_dt)
+        series_dict, series_indexes = check_preprocess_series(series=series)
 
     expected_series_dict = {
         '1': pd.Series(
@@ -274,7 +268,8 @@ def test_check_preprocess_series_when_series_is_pandas_DataFrame_MultiIndex_date
 
 def test_check_preprocess_series_when_series_is_pandas_DataFrame_MultiIndex_datetime_with_two_columns():
     """
-    Test check_preprocess_series when `series` is a pandas DataFrame.
+    Test check_preprocess_series when `series` is a pandas DataFrame with a MultiIndex
+    containing two columns.
     """
     series_long_dt_two_columns = series_long_dt.copy()
     series_long_dt_two_columns['value_2'] = series_long_dt_two_columns['value']
@@ -316,6 +311,53 @@ def test_check_preprocess_series_when_series_is_pandas_DataFrame_MultiIndex_date
     for k in series_indexes:
         pd.testing.assert_index_equal(series_indexes[k], expected_series_indexes[k])
         assert series_indexes[k].freq == expected_series_indexes[k].freq
+
+
+@pytest.mark.parametrize("series", 
+                         [series_wide_range, series_dict_range],
+                         ids = lambda series: f'series type: {type(series)}')
+def test_check_preprocess_series_when_series_is_DataFrame_or_dict_with_RangeIndex(series):
+    """
+    Test check_preprocess_series when `series` is a dict or a pandas DataFrame with
+    a RangeIndex.
+    """
+    if isinstance(series, pd.DataFrame):
+        series = series.rename(columns={'1': 'l1', '2': 'l2'})
+    
+    series_dict, series_indexes = check_preprocess_series(series=series)
+
+    expected_series_dict = {
+        'l1': pd.Series(
+                  data  = series_dict_range['l1'].to_numpy(),
+                  index = pd.RangeIndex(start=0, stop=len(series_dict_range['l1']), step=1),
+                  name  ='l1'
+              ),
+        'l2': pd.Series(
+                  data  = series_dict_range['l2'].to_numpy(),
+                  index = pd.RangeIndex(start=0, stop=len(series_dict_range['l2']), step=1),
+                  name  ='l2'
+              ),
+    }
+
+    expected_series_indexes = {
+        k: v.index
+        for k, v in expected_series_dict.items()
+    }
+    
+    assert isinstance(series_dict, dict)
+    assert list(series_dict.keys()) == ['l1', 'l2']
+    for k in series_dict:
+        pd.testing.assert_series_equal(series_dict[k], expected_series_dict[k])
+        assert k == series_dict[k].name
+
+    indexes_step = [f'{v.index.step}' for v in series_dict.values()]
+    assert len(set(indexes_step)) == 1
+
+    assert isinstance(series_indexes, dict)
+    assert list(series_indexes.keys()) == ['l1', 'l2']
+    for k in series_indexes:
+        pd.testing.assert_index_equal(series_indexes[k], expected_series_indexes[k])
+        assert series_indexes[k].step == expected_series_indexes[k].step
 
 
 def test_check_preprocess_series_when_series_is_dict_with_a_pandas_Series_and_a_DataFrame():

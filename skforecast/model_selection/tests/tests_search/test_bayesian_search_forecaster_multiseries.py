@@ -78,11 +78,17 @@ def test_ValueError_bayesian_search_forecaster_multiseries_when_return_best_and_
         )
 
 
-def test_results_output_bayesian_search_forecaster_multiseries_ForecasterRecursiveMultiSeries():
+@pytest.mark.parametrize("series", 
+                         [series_wide_range, series_dict_range],
+                         ids = lambda series: f'series type: {type(series)}')
+def test_results_output_bayesian_search_forecaster_multiseries_ForecasterRecursiveMultiSeries(series):
     """
     Test output of bayesian_search_forecaster_multiseries in 
     ForecasterRecursiveMultiSeries with mocked (mocked done in Skforecast v0.12.0).
     """
+    if isinstance(series, pd.DataFrame):
+        series = series.rename(columns={'1': 'l1', '2': 'l2'})
+    
     forecaster = ForecasterRecursiveMultiSeries(
                      regressor = Ridge(random_state=123),
                      lags      = 2,
@@ -90,7 +96,7 @@ def test_results_output_bayesian_search_forecaster_multiseries_ForecasterRecursi
                      transformer_series = StandardScaler()
                  )
     cv = TimeSeriesFold(
-            initial_train_size = len(series_dict_range['l1']) - 12,
+            initial_train_size = len(series['l1']) - 12,
             steps              = 3,
             refit              = False,
             fixed_train_size   = True
@@ -106,7 +112,7 @@ def test_results_output_bayesian_search_forecaster_multiseries_ForecasterRecursi
 
     results = bayesian_search_forecaster_multiseries(
                   forecaster         = forecaster,
-                  series             = series_dict_range,
+                  series             = series,
                   cv                 = cv,
                   search_space       = search_space,
                   metric             = 'mean_absolute_error',

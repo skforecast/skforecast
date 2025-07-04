@@ -1021,11 +1021,6 @@ def check_predict_input(
                 raise TypeError(
                     f"`exog` must be a pandas Series, DataFrame or dict. Got {type(exog)}."
                 )
-            # TODO: We can delete this as doesn't require the same type as the training exog.
-            if exog_type_in_ == dict and not isinstance(exog, dict):
-                raise TypeError(
-                    f"Expected type for `exog`: {exog_type_in_}. Got {type(exog)}."
-                )
         else:
             if not isinstance(exog, (pd.Series, pd.DataFrame)):
                 raise TypeError(
@@ -2466,13 +2461,20 @@ def check_preprocess_series(
     """
     Check and preprocess `series` argument in `ForecasterRecursiveMultiSeries` class.
 
-    - If `series` is a pandas DataFrame, it must have a pandas MultiIndex where
-    the first level is the series ID and the second level is the temporal index.
-    It is converted to a dictionary of pandas Series, where the keys are the series IDs
-    and the values are the Series with the same index as the original DataFrame.
-    - If `series` is a dictionary, all values must be pandas Series or DataFrames
-    with a single column. Indexes must be either a pandas DatetimeIndex or a 
-    RangeIndex with the same step/frequency for all series.
+    - If `series` is a wide-format pandas DataFrame, each column represents a
+    different time series, and the index must be either a `DatetimeIndex` or 
+    a `RangeIndex` with frequency or step size, as appropriate
+    - If `series` is a long-format pandas DataFrame with a MultiIndex, the 
+    first level of the index must contain the series IDs, and the second 
+    level must be a `DatetimeIndex` with the same frequency across all series.
+    - If series is a dictionary, each key must be a series ID, and each value 
+    must be a named pandas Series. All series must have the same index, which 
+    must be either a `DatetimeIndex` or a `RangeIndex`, and they must share the 
+    same frequency or step size, as appropriate.
+
+    When `series` is a pandas DataFrame, it is converted to a dictionary of pandas 
+    Series, where the keys are the series IDs and the values are the Series with 
+    the same index as the original DataFrame.
     
     Parameters
     ----------
@@ -2497,39 +2499,39 @@ def check_preprocess_series(
     if isinstance(series, pd.DataFrame):
 
         if not isinstance(series.index, pd.MultiIndex):
-            raise TypeError(
-                f"If `series` is a DataFrame, it must be a long-format pandas "
-                f"DataFrame with a MultiIndex. The first level contains the series "
-                f"IDs, and the second level contains a pandas DatetimeIndex with "
-                f"the same frequency for each series. Found {type(series.index)}."
-            )
+            series = series.copy()
+            series.index.name = None
+            series_dict = series.to_dict(orient='series')
+        else:
+            if not isinstance(series.index.levels[1], pd.DatetimeIndex):
+                raise TypeError(
+                    f"The second level of the MultiIndex in `series` must be a "
+                    f"pandas DatetimeIndex with the same frequency for each series. "
+                    f"Found {type(series.index.levels[1])}."
+                )
+            
+            first_col = series.columns[0]
+            if len(series.columns) != 1:
+                warnings.warn(
+                    f"`series` DataFrame has multiple columns. Only the values of "
+                    f"first column, '{first_col}', will be used as series values. "
+                    f"All other columns will be ignored.",
+                    IgnoredArgumentWarning
+                )
 
-        if not isinstance(series.index.levels[1], pd.DatetimeIndex):
-            raise TypeError(
-                f"The second level of the MultiIndex in `series` must be a "
-                f"pandas DatetimeIndex with the same frequency for each series. "
-                f"Found {type(series.index.levels[1])}."
-            )
+            series = series.copy()
+            series.index = series.index.set_names([series.index.names[0], None])
+            series_dict = {
+                series_id: series.loc[series_id][first_col].rename(series_id)
+                for series_id in series.index.levels[0]
+            }
         
-        first_col = series.columns[0]
-        if len(series.columns) != 1:
-            warnings.warn(
-                f"`series` DataFrame has multiple columns. Only the values of "
-                f"first column, '{first_col}', will be used as series values. "
-                f"All other columns will be ignored.",
-                IgnoredArgumentWarning
-            )
-
-        series.index = series.index.set_names([series.index.names[0], None])
-        series_dict = {
-            series_id: series.loc[series_id][first_col].rename(series_id)
-            for series_id in series.index.levels[0]
-        }
         warnings.warn(
-            "Using a long-format DataFrame as `series` requires additional transformations, "
-            "which can increase computational time. It is recommended to use a dictionary of "
-            "Series instead. For more information, see: "
-            "https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting#input-data",
+            "Passing a DataFrame (either wide or long format) as `series` requires "
+            "additional internal transformations, which can increase computational "
+            "time. It is recommended to use a dictionary of pandas Series instead. "
+            "For more details, see: "
+            "https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting.html#input-data",
             InputTypeWarning
         )
 
@@ -2613,6 +2615,9 @@ def check_preprocess_exog_multiseries(
     """
     Check and preprocess `exog` argument in `ForecasterRecursiveMultiSeries` class.
 
+    - If `exog` is a wide-format pandas DataFrame, it must share the same 
+    index type as series. Each column represents a different exogenous variable, 
+    and the same values are applied to all time series.
     - If `exog` is a long-format pandas Series or DataFrame with a MultiIndex, 
     the first level contains the series IDs to which it belongs, and the 
     second level contains a pandas DatetimeIndex. One column must be created
@@ -2622,6 +2627,10 @@ def check_preprocess_exog_multiseries(
     the same index type as `series` or None. While it is not necessary for 
     all values to include all the exogenous variables, the dtypes must be 
     consistent for the same exogenous variable across all series.
+
+    When `exog` is a pandas DataFrame, it is converted to a dictionary of pandas 
+    DataFrames, where the keys are the series IDs and the values are the Series 
+    with the same index as the original DataFrame.
 
     Parameters
     ----------
