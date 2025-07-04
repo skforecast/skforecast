@@ -426,33 +426,39 @@ def reshape_series_wide_to_long(
 
     return data
 
+
 def reshape_series_long_to_dict(
     data: pd.DataFrame,
-    series_id: str,
-    index: str,
-    values: str,
     freq: str,
+    series_id: str | None = None,
+    index: str | None = None,
+    values: str | None = None,
     suppress_warnings: bool = False
 ) -> dict[str, pd.Series]:
     """
-    Convert long format series to dictionary of pandas Series with frequency.
-    Input data must be a pandas DataFrame with columns for the series identifier,
-    time index, and values. The function will group the data by the series
-    identifier and convert the time index to a datetime index with the given
-    frequency.
+    Convert a long-format DataFrame into a dictionary of pandas Series with the 
+    specified frequency. Supports two input formats:
+
+    - A pandas DataFrame with explicit columns for the series identifier, time 
+    index, and values.
+    - A pandas DataFrame with a MultiIndex, where the first level contains the 
+    series IDs, and the second level contains a pandas DatetimeIndex.
 
     Parameters
     ----------
     data: pandas DataFrame
-        Long format series.
-    series_id: str
-        Column name with the series identifier.
-    index: str
-        Column name with the time index.
-    values: str
-        Column name with the values.
+        Long-format series.
     freq: str
         Frequency of the series.
+    series_id: str, default None
+        Column name with the series identifier. Not needed if the input data
+        is a pandas DataFrame with MultiIndex.
+    index: str, default None
+        Column name with the time index. Not needed if the input data is a pandas
+        DataFrame with MultiIndex.
+    values: str, default None
+        Column name with the values. Not needed if the input data is a pandas
+        DataFrame with MultiIndex.
     suppress_warnings: bool, default False
         If True, suppress warnings when a series is incomplete after setting the
         frequency.
@@ -466,52 +472,74 @@ def reshape_series_long_to_dict(
 
     if not isinstance(data, pd.DataFrame):
         raise TypeError("`data` must be a pandas DataFrame.")
+    
+    if isinstance(data.index, pd.MultiIndex):
 
-    for col in [series_id, index, values]:
-        if col not in data.columns:
-            raise ValueError(f"Column '{col}' not found in `data`.")
+        first_col = data.columns[0]
+        data.index = data.index.set_names([data.index.names[0], None])
+        series_dict = {
+            id: data.loc[id][first_col].rename(id).asfreq(freq)
+            for id in data.index.levels[0]
+        }
 
-    data_grouped = data.groupby(series_id, observed=True)   
-    original_sizes = data_grouped.size()
-    series_dict = {}
-    for k, v in data_grouped:
-        series_dict[k] = v.set_index(index)[values].asfreq(freq, fill_value=np.nan).rename(k)
-        series_dict[k].index.name = None
-        if not suppress_warnings and len(series_dict[k]) != original_sizes[k]:
-            warnings.warn(
-                f"Series '{k}' is incomplete. NaNs have been introduced after "
-                f"setting the frequency.",
-                MissingValuesWarning
-            )
+    else:
+
+        for col in [series_id, index, values]:
+            if col is None:
+                raise ValueError(
+                    "Arguments `series_id`, `index`, and `values` must be "
+                    "specified when the input DataFrame does not have a MultiIndex. "
+                    "Please provide a value for each of these arguments."
+                )
+            if col not in data.columns:
+                raise ValueError(f"Column '{col}' not found in `data`.")
+
+        data_grouped = data.groupby(series_id, observed=True)   
+        original_sizes = data_grouped.size()
+        series_dict = {}
+        for k, v in data_grouped:
+            series_dict[k] = v.set_index(index)[values].asfreq(freq, fill_value=np.nan).rename(k)
+            series_dict[k].index.name = None
+            if not suppress_warnings and len(series_dict[k]) != original_sizes[k]:
+                warnings.warn(
+                    f"Series '{k}' is incomplete. NaNs have been introduced after "
+                    f"setting the frequency.",
+                    MissingValuesWarning
+                )
 
     return series_dict
 
 
 def reshape_exog_long_to_dict(
     data: pd.DataFrame,
-    series_id: str,
-    index: str,
     freq: str,
+    series_id: str | None = None,
+    index: str | None = None,
     drop_all_nan_cols: bool = False,
     consolidate_dtypes: bool = True,
     suppress_warnings: bool = False
 ) -> dict[str, pd.DataFrame]:
     """
-    Convert long format exogenous variables to dictionary. Input data must be a
-    pandas DataFrame with columns for the series identifier, time index, and
-    exogenous variables. The function will group the data by the series identifier
-    and convert the time index to a datetime index with the given frequency.
+    Convert a long-format DataFrame of exogenous variables into a dictionary 
+    of pandas DataFrames with the specified frequency. Supports two input formats:
+
+    - A pandas DataFrame with explicit columns for the series identifier, time 
+    index, and exogenous variables.
+    - A pandas DataFrame with a MultiIndex, where the first level contains the 
+    series IDs, and the second level contains a pandas DatetimeIndex.
 
     Parameters
     ----------
     data: pandas DataFrame
         Long format exogenous variables.
-    series_id: str
-        Column name with the series identifier.
-    index: str
-        Column name with the time index.
     freq: str
         Frequency of the series.
+    series_id: str, default None
+        Column name with the series identifier. Not needed if the input data
+        is a pandas DataFrame with MultiIndex.
+    index: str, default None
+        Column name with the time index. Not needed if the input data is a pandas
+        DataFrame with MultiIndex.
     drop_all_nan_cols: bool, default False
         If True, drop columns with all values as NaN. This is useful when
         there are series without some exogenous variables.
@@ -532,49 +560,64 @@ def reshape_exog_long_to_dict(
 
     if not isinstance(data, pd.DataFrame):
         raise TypeError("`data` must be a pandas DataFrame.")
+    
+    if isinstance(data.index, pd.MultiIndex):
 
-    for col in [series_id, index]:
-        if col not in data.columns:
-            raise ValueError(f"Column '{col}' not found in `data`.")
+        data.index = data.index.set_names([data.index.names[0], None])
+        exog_dict = {
+            id: data.loc[id].asfreq(freq) for id in data.index.levels[0]
+        }
 
-    cols_float_dtype = {
-        col for col in data.columns 
-        if pd.api.types.is_float_dtype(data[col])
-    }
+    else:
 
-    data_grouped = data.groupby(series_id, observed=True) 
-    original_sizes = data_grouped.size()
-    exog_dict = dict(tuple(data_grouped))
-    exog_dict = {
-        k: v.set_index(index).asfreq(freq, fill_value=np.nan).drop(columns=series_id)
-        for k, v in exog_dict.items()
-    }
+        for col in [series_id, index]:
+            if col is None:
+                raise ValueError(
+                    "Arguments `series_id`, and `index` must be "
+                    "specified when the input DataFrame does not have a MultiIndex. "
+                    "Please provide a value for each of these arguments."
+                )
+            if col not in data.columns:
+                raise ValueError(f"Column '{col}' not found in `data`.")
 
-    for k in exog_dict.keys():
-        exog_dict[k].index.name = None
+        cols_float_dtype = {
+            col for col in data.columns 
+            if pd.api.types.is_float_dtype(data[col])
+        }
 
-    nans_introduced = False
-    if not suppress_warnings or consolidate_dtypes:
-        for k, v in exog_dict.items():
-            if len(v) != original_sizes[k]:
-                nans_introduced = True
-                if not suppress_warnings:
-                    warnings.warn(
-                        f"Exogenous variables for series '{k}' are incomplete. "
-                        f"NaNs have been introduced after setting the frequency.",
-                        MissingValuesWarning
-                    )
-                if consolidate_dtypes:
-                    cols_float_dtype.update(
-                        {
-                            col for col in v.columns 
-                            if pd.api.types.is_float_dtype(v[col])
-                        }
-                    )
+        data_grouped = data.groupby(series_id, observed=True) 
+        original_sizes = data_grouped.size()
+        exog_dict = dict(tuple(data_grouped))
+        exog_dict = {
+            k: v.set_index(index).asfreq(freq, fill_value=np.nan).drop(columns=series_id)
+            for k, v in exog_dict.items()
+        }
 
-    if consolidate_dtypes and nans_introduced:
-        new_dtypes = {k: float for k in cols_float_dtype}
-        exog_dict = {k: v.astype(new_dtypes) for k, v in exog_dict.items()}
+        for k in exog_dict.keys():
+            exog_dict[k].index.name = None
+
+        nans_introduced = False
+        if not suppress_warnings or consolidate_dtypes:
+            for k, v in exog_dict.items():
+                if len(v) != original_sizes[k]:
+                    nans_introduced = True
+                    if not suppress_warnings:
+                        warnings.warn(
+                            f"Exogenous variables for series '{k}' are incomplete. "
+                            f"NaNs have been introduced after setting the frequency.",
+                            MissingValuesWarning
+                        )
+                    if consolidate_dtypes:
+                        cols_float_dtype.update(
+                            {
+                                col for col in v.columns 
+                                if pd.api.types.is_float_dtype(v[col])
+                            }
+                        )
+
+        if consolidate_dtypes and nans_introduced:
+            new_dtypes = {k: float for k in cols_float_dtype}
+            exog_dict = {k: v.astype(new_dtypes) for k, v in exog_dict.items()}
 
     if drop_all_nan_cols:
         exog_dict = {k: v.dropna(how="all", axis=1) for k, v in exog_dict.items()}
