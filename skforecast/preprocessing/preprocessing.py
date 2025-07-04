@@ -476,8 +476,8 @@ def reshape_series_long_to_dict(
         first_col = data.columns[0]
         data.index = data.index.set_names([data.index.names[0], None])
         series_dict = {
-            series_id: data.loc[series_id][first_col].rename(series_id).asfreq(freq)
-            for series_id in data.index.levels[0]
+            id: data.loc[id][first_col].rename(id).asfreq(freq)
+            for id in data.index.levels[0]
         }
 
     else:
@@ -564,8 +564,7 @@ def reshape_exog_long_to_dict(
 
         data.index = data.index.set_names([data.index.names[0], None])
         exog_dict = {
-            series_id: data.loc[series_id].asfreq(freq)
-            for series_id in data.index.levels[0]
+            id: data.loc[id].asfreq(freq) for id in data.index.levels[0]
         }
 
     else:
