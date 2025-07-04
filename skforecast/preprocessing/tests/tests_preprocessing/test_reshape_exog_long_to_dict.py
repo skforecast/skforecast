@@ -233,7 +233,7 @@ def test_warning_when_exog_are_incomplete_and_dropna_False():
         )
 
 
-def test_reshape_exog_long_to_dict_output_when_npnan_are_added_in_interger_columns_and_consolidate_true():
+def test_reshape_exog_long_to_dict_output_when_npnan_are_added_in_integer_columns_and_consolidate_true():
     """
     Test the output of the function reshape_exog_long_to_dict when np.nan are added in integer columns
     these columns should be converted to float
@@ -271,7 +271,7 @@ def test_reshape_exog_long_to_dict_output_when_npnan_are_added_in_interger_colum
     pd.testing.assert_series_equal(exog_dict['series_1'].dtypes, exog_dict['series_2'].dtypes)
 
 
-def test_reshape_exog_long_to_dict_output_when_npnan_are_added_in_interger_columns_and_consolidate_false():
+def test_reshape_exog_long_to_dict_output_when_npnan_are_added_in_integer_columns_and_consolidate_false():
     """
     Test the output of the function reshape_exog_long_to_dict when np.nan are added in integer columns
     these columns should be converted to float
