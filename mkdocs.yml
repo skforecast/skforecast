@@ -104,6 +104,7 @@ nav:
     - metrics: api/metrics.md
     - plot: api/plot.md
     - utils: api/utils.md
+    - experimental: api/experimental.md
     - datasets: api/datasets.md
     - exceptions: api/exceptions.md
 
