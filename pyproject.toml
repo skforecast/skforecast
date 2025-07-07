@@ -69,7 +69,6 @@ deeplearning = [
     "matplotlib>=3.3, <3.11",
     "keras>=3.0, <4.0",
     "numpy>=1.24, <2.0",
-
 ]
 
 all = [

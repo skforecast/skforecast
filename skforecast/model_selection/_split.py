@@ -913,9 +913,11 @@ class TimeSeriesFold(BaseFold):
                 self.window_size = window_size_idx_end - window_size_idx_start
             except KeyError:
                 raise ValueError(
-                    f"The length of `X` ({len(X)}), must be greater than or equal "
-                    f"to the window size ({self.window_size}). Try to decrease the "
-                    f"size of the offset (forecaster.offset), or increase the "
+                    f"The length of `y` ({len(X)}), must be greater than or equal "
+                    f"to the window size ({self.window_size}). This is because  "
+                    f"the offset (forecaster.offset) is larger than the available "
+                    f"data. Try to decrease the size of the offset (forecaster.offset), "
+                    f"the number of `n_offsets` (forecaster.n_offsets) or increase the "
                     f"size of `y`."
                 )
         

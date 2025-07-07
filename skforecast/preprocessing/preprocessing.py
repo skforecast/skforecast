@@ -145,10 +145,15 @@ class TimeSeriesDifferentiator(BaseEstimator, TransformerMixin):
         """
         Information displayed when printed.
         """
-            
-        return (
-            f"TimeSeriesDifferentiator(order={self.order}, window_size={self.window_size})"
+
+        info = (
+            f"TimeSeriesDifferentiator(\n"
+            f"    order       = {self.order},\n"
+            f"    window_size = {self.window_size},\n"
+            f")"
         )
+
+        return info
 
     @_check_X_numpy_ndarray_1d()
     def fit(

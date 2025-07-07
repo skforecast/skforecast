@@ -4,6 +4,7 @@ import re
 import pytest
 import numpy as np
 import pandas as pd
+from pandas.tseries.offsets import DateOffset
 from skforecast.model_selection._split import TimeSeriesFold
 
 
@@ -18,6 +19,38 @@ def test_TimeSeriesFold_split_TypeError_when_X_is_not_series_dataframe_or_dict()
     )
     with pytest.raises(TypeError, match=err_msg):
         cv.split(X=X)
+
+
+@pytest.mark.parametrize("offset, freq", 
+                         [({'days': 6}, 'D'), 
+                          ({'months': 6}, 'MS')])
+def test_TimeSeriesFold_split_ValueError_length_X_less_than_window_size_offset_DateOffset(offset, freq):
+    """
+    Test ValueError is raised when length of y is less than window_size
+    when offset is a pandas DateOffset.
+    """
+
+    y = pd.Series(
+        np.arange(5),
+        index=pd.date_range(start='01/01/2021', periods=5, freq=freq)
+    )
+    
+    cv = TimeSeriesFold(
+             steps=2, 
+             initial_train_size=3, 
+             window_size=DateOffset(**offset)
+         )
+
+    err_msg = re.escape(
+        f"The length of `y` (5), must be greater than or equal "
+        f"to the window size ({cv.window_size}). This is because  "
+        f"the offset (forecaster.offset) is larger than the available "
+        f"data. Try to decrease the size of the offset (forecaster.offset), "
+        f"the number of `n_offsets` (forecaster.n_offsets) or increase the "
+        f"size of `y`."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        cv.split(X=y)
 
 
 def test_TimeSeriesFold_split_ValueError_when_initial_train_size_and_window_size_None():

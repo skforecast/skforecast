@@ -4,6 +4,7 @@ import re
 import pytest
 import numpy as np
 import pandas as pd
+import keras
 from sklearn.linear_model import Ridge
 from sklearn.exceptions import NotFittedError
 from skforecast.sarimax import Sarimax
@@ -13,6 +14,8 @@ from skforecast.recursive import ForecasterSarimax
 from skforecast.recursive import ForecasterEquivalentDate
 from skforecast.recursive import ForecasterRecursiveMultiSeries
 from skforecast.direct import ForecasterDirectMultiVariate
+from skforecast.deep_learning import ForecasterRnn
+from skforecast.deep_learning.utils import create_and_compile_model
 from skforecast.model_selection._split import TimeSeriesFold
 from skforecast.model_selection._utils import check_backtesting_input
 
@@ -763,14 +766,33 @@ def test_check_backtesting_input_ValueError_when_interval_is_not_None_and_foreca
     Test ValueError is raised in check_backtesting_input when interval is not None
     and the forecaster does not support interval predictions.
     """
-    forecaster = ForecasterEquivalentDate(
-                     offset    = pd.DateOffset(days=3),
-                     n_offsets = 1
-                 )
+    series = pd.DataFrame({"1": pd.Series(np.arange(50)), "2": pd.Series(np.arange(50))})
+    lags = 3
+    steps = 1
+    levels = "1"
+    activation = "relu"
+    optimizer = keras.optimizers.Adam(learning_rate=0.01)
+    loss = keras.losses.MeanSquaredError()
+    recurrent_units = 100
+    dense_units = [128, 64]
+
+    model = create_and_compile_model(
+        series=series,
+        lags=lags,
+        steps=steps,
+        levels=levels,
+        recurrent_units=recurrent_units,
+        dense_units=dense_units,
+        activation=activation,
+        optimizer=optimizer,
+        loss=loss,
+    )
+    
+    forecaster = ForecasterRnn(model, levels, lags=lags)
     
     cv = TimeSeriesFold(
              steps                 = 3,
-             initial_train_size    = len(y) - 12,
+             initial_train_size    = len(series) - 12,
              refit                 = False,
              fixed_train_size      = False,
              gap                   = 0,
@@ -778,7 +800,7 @@ def test_check_backtesting_input_ValueError_when_interval_is_not_None_and_foreca
          )
     
     err_msg = re.escape(
-        "Interval predictions are not allowed for ForecasterEquivalentDate. "
+        "Interval predictions are not allowed for ForecasterRnn. "
         "Set `interval` and `alpha` to `None`."
     )
     with pytest.raises(ValueError, match = err_msg):
@@ -786,7 +808,7 @@ def test_check_backtesting_input_ValueError_when_interval_is_not_None_and_foreca
             forecaster              = forecaster,
             cv                      = cv,
             metric                  = 'mean_absolute_error',
-            y                       = y,
+            series                  = series,
             interval                = [10, 90],
             n_boot                  = 500,
             random_state            = 123,

@@ -1371,6 +1371,9 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
         {"y_train": y_train, "_level_skforecast": X_train_encoding},
         index=y_train.index,
     ).groupby("_level_skforecast")
+
+    # TODO: This fails when RangeIndex because it doesn't have asfreq method.
+
     # NOTE: Interleaved Nan values were excluded fom y_train. They are restored
     y_train_per_level = {key: group.asfreq(freq) for key, group in y_train_per_level}
 

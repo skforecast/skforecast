@@ -18,7 +18,9 @@ from skforecast.metrics import mean_absolute_scaled_error
 # Fixtures
 from ..fixtures_model_selection_multiseries import (
     series_wide_dt_item_sales,
+    series_dict_range_item_sales,
     series_dict_dt_item_sales,
+    exog_wide_range_item_sales,
     exog_wide_dt_item_sales,
     series_dict_nans,
     exog_dict_nans,
@@ -294,14 +296,14 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_Forecas
         X_train_encoding,
         X_test_encoding
     ) = forecaster._train_test_split_one_step_ahead(
-            series             = series_dict_dt_item_sales,
-            exog               = exog_wide_dt_item_sales,
+            series             = series_dict_range_item_sales,
+            exog               = exog_wide_range_item_sales,
             initial_train_size = initial_train_size,
         )
 
     results = _predict_and_calculate_metrics_one_step_ahead_multiseries(
         forecaster=forecaster,
-        series=series_dict_dt_item_sales,
+        series=series_dict_range_item_sales,
         X_train = X_train,
         y_train = y_train,
         X_test = X_test,

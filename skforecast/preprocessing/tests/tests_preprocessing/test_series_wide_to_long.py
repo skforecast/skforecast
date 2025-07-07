@@ -15,6 +15,20 @@ def test_TypeError_when_data_is_not_dataframe():
         reshape_series_wide_to_long(data='not_a_dataframe')
 
 
+def test_TypeError_when_data_not_DatetimeIndex():
+    """
+    Raise TypeError when `data` index is not a pandas DatetimeIndex.
+    """
+    data = pd.DataFrame({
+        'series_1': np.arange(10),
+        'series_2': np.arange(10, 20)
+    })
+
+    err_msg = "`data` index must be a pandas DatetimeIndex."
+    with pytest.raises(TypeError, match=err_msg):
+        reshape_series_wide_to_long(data=data)
+
+
 @pytest.mark.parametrize("return_multi_index", 
                          [True, False], 
                          ids = lambda dt: f'return_multi_index: {dt}')

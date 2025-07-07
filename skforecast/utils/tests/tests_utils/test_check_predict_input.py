@@ -1012,10 +1012,10 @@ def test_check_predict_input_IgnoredArgumentWarning_when_exog_is_Series_with_nam
         )
 
 
-def test_check_predict_input_ValueError_when_exog_is_Series_with_name_not_in_exog_names_in__multiseries():
+def test_check_predict_input_ValueError_when_exog_is_Series_with_name_not_in_exog_names_in_():
     """
     Raise ValueError when `exog` is a pandas Series and its name is not in 
-    `exog_names_in_` when Forecaster multi series.
+    `exog_names_in_`.
     """
     exog = pd.Series(np.arange(10), name='exog2')
     exog_names_in_ = ['exog1']
@@ -1043,6 +1043,45 @@ def test_check_predict_input_ValueError_when_exog_is_Series_with_name_not_in_exo
             max_steps        = None,
             levels           = None,
             series_names_in_ = None
+        )
+
+
+def test_check_predict_input_TypeError_when_exog_index_is_not_of_index_type_multiseries():
+    """
+    """
+    exog = pd.Series(np.arange(10), name='exog1')
+    exog.index = pd.RangeIndex(start=0, stop=10, step=1)
+    index_type_ = pd.DatetimeIndex
+
+    last_window = pd.Series(
+        np.arange(10), 
+        index = pd.date_range(start='01/01/2018', periods=10, freq=freq), 
+        name  = 'l1'
+    ).to_frame()
+
+    err_msg = re.escape(
+        f"Expected index of type {index_type_} for `exog`. "
+        f"Got {type(exog.index)}."
+    )
+    with pytest.raises(TypeError, match = err_msg):
+        check_predict_input(
+            forecaster_name  = 'ForecasterRecursiveMultiSeries',
+            steps            = 10,
+            is_fitted        = True,
+            exog_in_         = True,
+            index_type_      = index_type_,
+            index_freq_      = freq,
+            window_size      = 5,
+            last_window      = last_window,
+            last_window_exog = None,
+            exog             = exog,
+            exog_type_in_    = pd.Series,
+            exog_names_in_   = ['exog1'],
+            interval         = None,
+            alpha            = None,
+            max_steps        = None,
+            levels           = ['l1'],
+            series_names_in_ = ['l1', 'l2']
         )
 
 
