@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import sys
 import warnings
-from copy import copy, deepcopy
+from copy import deepcopy
 from typing import Any, Optional, Tuple, Union
 
 import keras
@@ -23,13 +23,7 @@ from sklearn.preprocessing import MinMaxScaler
 import skforecast
 
 from ..base import ForecasterBase
-from ..exceptions import (
-    DataTransformationWarning,
-    IgnoredArgumentWarning,
-    MissingValuesWarning,
-    ResidualsUsageWarning,
-    UnknownLevelWarning,
-)
+from ..exceptions import IgnoredArgumentWarning
 from ..utils import (
     check_exog,
     check_exog_dtypes,
@@ -52,7 +46,6 @@ from ..utils import (
     transform_numpy,
     transform_series,
 )
-
 
 
 # TODO. Test Interval
@@ -220,6 +213,7 @@ class ForecasterRnn(ForecasterBase):
         fit_kwargs: dict[str, object] | None = {},
         forecaster_id: str | int | None = None
     ) -> None:
+        
         self.regressor = deepcopy(regressor)
         self.levels = None
         self.transformer_series = transformer_series
@@ -260,6 +254,7 @@ class ForecasterRnn(ForecasterBase):
         layer_end = self.regressor.layers[-1]
 
         if lags == "auto":
+            # TODO: keras requirement is >= 3.0, delete if?
             if keras.__version__ < "3.0":
                 self.lags = np.arange(layer_init.input_shape[0][1]) + 1
             else:
@@ -271,6 +266,7 @@ class ForecasterRnn(ForecasterBase):
         )
         self.window_size = self.max_lag
         if steps == "auto":
+            # TODO: keras requirement is >= 3.0, delete if?
             if keras.__version__ < "3.0":
                 self.steps = np.arange(layer_end.output_shape[1]) + 1
                 self.n_series = layer_end.output_shape[-1]
@@ -288,6 +284,7 @@ class ForecasterRnn(ForecasterBase):
         
         self.max_step = np.max(self.steps)
 
+        # TODO: keras requirement is >= 3.0, delete if?
         if keras.__version__ < "3.0":
             self.outputs = layer_end.output_shape[-1]
         else:
@@ -304,7 +301,6 @@ class ForecasterRnn(ForecasterBase):
 
         self.series_val = None
         self.exog_val = None
-
         if "series_val" in fit_kwargs:
             self.series_val = fit_kwargs["series_val"]
             fit_kwargs.pop("series_val")
@@ -313,7 +309,8 @@ class ForecasterRnn(ForecasterBase):
             self.exog_val = fit_kwargs["exog_val"]
             fit_kwargs.pop("exog_val")
             
-        # TODO check that series_val & exog_val should be both available if exog is not None
+        # TODO cif series_val exists, and exog is not None, exog_val must be
+        # provided. CHeck this. Verify regressor has a layer named "exog_input"
 
         self.in_sample_residuals_ = {step: None for step in self.steps}
         self.in_sample_residuals_by_bin_ = None
@@ -472,7 +469,7 @@ class ForecasterRnn(ForecasterBase):
         # Return the combined style and content
         return style + content
 
-    # @TODO CREATE_LAGS_AND_STEPS
+    # TODO: CREATE_LAGS_AND_STEPS
     def _create_lags(
         self, 
         y: np.ndarray
@@ -611,7 +608,8 @@ class ForecasterRnn(ForecasterBase):
         X_train = []
         y_train = []
 
-        for i, serie in enumerate(series.columns):
+        # TODO: Add method argument to calculate lags and/or steps
+        for serie in series.columns:
             x = series[serie]
             check_y(y=x)
             x = transform_series(
@@ -623,7 +621,7 @@ class ForecasterRnn(ForecasterBase):
             X, _ = self._create_lags(x)
             X_train.append(X)
 
-        for i, level in enumerate(self.levels):
+        for level in self.levels:
             y = series[level]
             check_y(y=y)
             y = transform_series(

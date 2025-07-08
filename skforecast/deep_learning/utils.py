@@ -6,11 +6,7 @@
 # coding=utf-8
 
 from __future__ import annotations
-
-import warnings
-
 import pandas as pd
-
 from ..utils import check_optional_dependency
 
 try:
@@ -19,10 +15,8 @@ try:
         LSTM,
         Concatenate,
         Dense,
-        Flatten,
         Input,
         RepeatVector,
-        Reshape,
         SimpleRNN,
         TimeDistributed,
     )
@@ -49,7 +43,8 @@ def create_and_compile_model(
     compile_kwargs: dict[str, object] = {},
 ) -> keras.models.Model:
     """
-    Creates a neural network model for time series prediction with flexible recurrent layers and optional exogenous variables.
+    Creates a neural network model for time series prediction with flexible 
+    recurrent layers and optional exogenous variables.
 
     Parameters
     ----------
