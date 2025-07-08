@@ -354,7 +354,7 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_Forecas
                              [24.41084617, 11.46312403, 11.96414091],
                              [23.53329426, 11.05443539, 11.65551743]]),
             columns = ['item_1', 'item_2', 'item_3'],
-            index = pd.date_range(start='2014-07-16', periods=10, freq='D')
+            index = pd.RangeIndex(start=927, stop=937, step=1)
         )
     )
 

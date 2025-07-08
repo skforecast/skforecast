@@ -1372,10 +1372,20 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
         index=y_train.index,
     ).groupby("_level_skforecast")
 
-    # TODO: This fails when RangeIndex because it doesn't have asfreq method.
-
     # NOTE: Interleaved Nan values were excluded fom y_train. They are restored
-    y_train_per_level = {key: group.asfreq(freq) for key, group in y_train_per_level}
+    if isinstance(series[levels[0]].index, pd.DatetimeIndex):
+        y_train_per_level = {
+            key: group.asfreq(freq) for key, group in y_train_per_level
+        }
+    else:
+        y_train_per_level = {
+            key: group.reindex(
+                pd.RangeIndex(
+                    start=min(group.index), stop=max(group.index) + 1, step=freq
+                )
+            )
+            for key, group in y_train_per_level
+        }
 
     if forecaster.differentiation is not None:
         for level in predictions_per_level:
@@ -1513,6 +1523,13 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
         .pivot(columns="_level_skforecast", values="y_pred")
         .rename_axis(columns=None, index=None)
     )
-    predictions = predictions.asfreq(X_test.index.freq)
+    if isinstance(X_test.index, pd.DatetimeIndex):
+        predictions = predictions.asfreq(freq)
+    else:
+        predictions = predictions.reindex(
+            pd.RangeIndex(
+                start=min(X_test.index), stop=max(X_test.index) + 1, step=freq
+            )
+        )
 
     return metrics_levels, predictions
