@@ -698,7 +698,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         return data_to_return_dict, X_train_series_names_in_
 
-
     def _create_lags(
         self, 
         y: np.ndarray,
