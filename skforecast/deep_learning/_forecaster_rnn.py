@@ -13,6 +13,7 @@ from copy import deepcopy
 from typing import Any, Optional, Tuple, Union
 
 import keras
+import torch
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
@@ -216,7 +217,7 @@ class ForecasterRnn(ForecasterBase):
     ) -> None:
         
         self.regressor = deepcopy(regressor)
-        self.keras_backend = keras.backend.backend()
+        self.keras_backend_ = None
         self.levels = None
         self.transformer_series = transformer_series
         self.transformer_series_ = None
@@ -256,25 +257,16 @@ class ForecasterRnn(ForecasterBase):
         layer_end = self.regressor.layers[-1]
 
         if lags == "auto":
-            # TODO: keras requirement is >= 3.0, delete if?
-            if keras.__version__ < "3.0":
-                self.lags = np.arange(layer_init.input_shape[0][1]) + 1
-            else:
-                self.lags = np.arange(layer_init.output.shape[1]) + 1
-            lags = self.lags
+            lags = np.arange(layer_init.output.shape[1]) + 1
         
         self.lags, self.lags_names, self.max_lag = initialize_lags(
             type(self).__name__, lags
         )
         self.window_size = self.max_lag
+
         if steps == "auto":
-            # TODO: keras requirement is >= 3.0, delete if?
-            if keras.__version__ < "3.0":
-                self.steps = np.arange(layer_end.output_shape[1]) + 1
-                self.n_series = layer_end.output_shape[-1]
-            else:
-                self.steps = np.arange(layer_end.output.shape[1]) + 1
-                self.n_series = layer_end.output.shape[-1]
+            self.steps = np.arange(layer_end.output.shape[1]) + 1
+            self.n_series = layer_end.output.shape[-1]
         elif isinstance(steps, int):
             self.steps = np.arange(steps) + 1
         elif isinstance(steps, list):
@@ -285,12 +277,7 @@ class ForecasterRnn(ForecasterBase):
             )
         
         self.max_step = np.max(self.steps)
-
-        # TODO: keras requirement is >= 3.0, delete if?
-        if keras.__version__ < "3.0":
-            self.outputs = layer_end.output_shape[-1]
-        else:
-            self.outputs = layer_end.output.shape[-1]
+        self.outputs = layer_end.output.shape[-1]
 
         if isinstance(levels, str):
             self.levels = [levels]
@@ -621,8 +608,8 @@ class ForecasterRnn(ForecasterBase):
         X_train = np.stack(X_train, axis=2)
         y_train = np.stack(y_train, axis=2)
 
-        train_index = series.index.to_list()[
-            self.max_lag : (len(series.index.to_list()) - self.max_step + 1)
+        train_index = series.index[
+            self.max_lag : (len(series.index) - self.max_step + 1)
         ]
         dimension_names = {
             "X_train": {
@@ -638,6 +625,7 @@ class ForecasterRnn(ForecasterBase):
         }
 
         if exog is not None:
+
             check_exog(exog=exog, allow_nan=False)
             exog = input_to_frame(data=exog, input_name='exog')
             
@@ -700,14 +688,19 @@ class ForecasterRnn(ForecasterBase):
                 2: exog.columns.to_list(),
             }
         else:
+
+            # TODO Check that exog is provided when the model was created with exog=True
+            # if self.regressor.exog is True:
+            #     raise ValueError(
+            #         "Neural network architecture exects exog variables during fit."
+            #     )
+
             exog_train = None
             dimension_names["exog_train"] = {
                 0: None,
                 1: None,
                 2: None
             }
-
-        # TODO: Improve dimension names values
 
         return X_train, exog_train, y_train, dimension_names
 
@@ -752,6 +745,7 @@ class ForecasterRnn(ForecasterBase):
         set_skforecast_warnings(suppress_warnings, action="ignore")
 
         # Reset values in case the forecaster has already been fitted.
+        self.keras_backend_ = keras.backend.backend()
         self.last_window_ = None
         self.index_type_ = None
         self.index_freq_ = None
@@ -767,25 +761,17 @@ class ForecasterRnn(ForecasterBase):
         self.in_sample_residuals_ = None
         self.is_fitted = False
         self.fit_date = None
-
-        # TODO fix this check
-        # if self.regressor.exog and exog is None:
-        #     raise ValueError(
-        #         "Neural network architecture exects exog variables during fit."
-        #     )
             
         X_train, exog_train, y_train, dimension_names = self.create_train_X_y(
             series=series, exog=exog
         )
 
-        # TODO: keras requirement is >= 3.0, delete if?
-        if keras.__version__ > "3.0" and keras.backend.backend() == "torch":
-            import torch
+        # TODO: Check if this works when backend is tensorflow
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        print(f"Using device: {device}")
 
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        if self.keras_backend_ == "torch":
             torch_device = torch.device(device)
-
-            print(f"Using device: {device}")
             X_train = torch.tensor(X_train).to(torch_device)
             y_train = torch.tensor(y_train).to(torch_device)
             if exog_train is not None:
@@ -801,7 +787,7 @@ class ForecasterRnn(ForecasterBase):
             X_val, exog_val, y_val, _ = self.create_train_X_y(
                 series=series_val, exog=exog_val
             )
-            if keras.__version__ > "3.0" and keras.backend.backend() == "torch":
+            if self.keras_backend_ == "torch":
                 X_val = torch.tensor(X_val).to(torch_device)
                 y_val = torch.tensor(y_val).to(torch_device)
                 if exog_val:
@@ -989,6 +975,7 @@ class ForecasterRnn(ForecasterBase):
                            )[np.array(steps) - 1]
         last_window = last_window.to_numpy()
         
+        # TODO: Delete if the new code below works
         # for serie_name in self.series_names_in_:
         #     last_window_serie = last_window[serie_name].to_numpy()
         #     last_window_serie = transform_numpy(
@@ -1014,7 +1001,7 @@ class ForecasterRnn(ForecasterBase):
 
         X = np.reshape(last_window_values, (1, self.max_lag, last_window.shape[1]))
 
-        # TODO: Fill X_col_names
+        # TODO: Fill X_col_names, make this a dict with the dimensions
         X_col_names = []
 
         if exog is not None:
@@ -1025,12 +1012,6 @@ class ForecasterRnn(ForecasterBase):
                 fit=True,
                 inverse_transform=False,
             )
-            # exog_pred = []
-            # for _, exog_name in enumerate(exog.columns):
-            #     _, exog_step = self._create_lags(exog[exog_name])
-            #     exog_pred.append(exog_step)
-                
-            # exog_pred = np.stack(exog_pred, axis=2)
             exog_pred = exog.to_numpy()
             exog_pred = np.expand_dims(exog_pred[:self.max_step], axis=0)
             X = [X, exog_pred]
