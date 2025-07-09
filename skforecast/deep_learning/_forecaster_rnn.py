@@ -216,6 +216,7 @@ class ForecasterRnn(ForecasterBase):
     ) -> None:
         
         self.regressor = deepcopy(regressor)
+        self.keras_backend = keras.backend.backend()
         self.levels = None
         self.transformer_series = transformer_series
         self.transformer_series_ = None
@@ -706,6 +707,8 @@ class ForecasterRnn(ForecasterBase):
                 2: None
             }
 
+        # TODO: Improve dimension names values
+
         return X_train, exog_train, y_train, dimension_names
 
     def fit(
@@ -830,6 +833,7 @@ class ForecasterRnn(ForecasterBase):
             residuals = y_train - self.regressor.predict(
                 x=X_train if exog_train is None else [X_train, exog_train], verbose=0
             )
+            # TODO: In direct, we mix all residuals for all steps.
             self.in_sample_residuals_ = {
                 int(step): residuals[:, i, :] for i, step in enumerate(self.steps)
             }
@@ -969,8 +973,7 @@ class ForecasterRnn(ForecasterBase):
                     use_binned_residuals         = False,
                     in_sample_residuals_by_bin_  = None,
                     out_sample_residuals_by_bin_ = None,
-                    levels                       = self.levels,
-                    encoding                     = self.encoding
+                    levels                       = self.levels
                 )
 
         last_window = last_window.iloc[
@@ -984,24 +987,37 @@ class ForecasterRnn(ForecasterBase):
                                index = last_window_index,
                                steps = max(steps)
                            )[np.array(steps) - 1]
+        last_window = last_window.to_numpy()
         
-        for serie_name in self.series_names_in_:
-            last_window_serie = last_window[serie_name].to_numpy()
-            last_window_serie = transform_numpy(
-                array=last_window_serie,
-                transformer=self.transformer_series_[serie_name],
+        # for serie_name in self.series_names_in_:
+        #     last_window_serie = last_window[serie_name].to_numpy()
+        #     last_window_serie = transform_numpy(
+        #         array=last_window_serie,
+        #         transformer=self.transformer_series_[serie_name],
+        #         fit=False,
+        #         inverse_transform=False,
+        #     )
+        #     last_window.loc[:, serie_name] = last_window_serie
+        
+        last_window_values = np.full(
+            shape=last_window.shape, fill_value=np.nan, order='F', dtype=float
+        )
+        for idx_series, series in enumerate(self.series_names_in_):
+            last_window_series = last_window[:, idx_series]
+            last_window_series = transform_numpy(
+                array=last_window_series,
+                transformer=self.transformer_series_[series],
                 fit=False,
                 inverse_transform=False,
             )
-            last_window.loc[:, serie_name] = last_window_serie
+            last_window_values[:, idx_series] = last_window_series
 
-        X = np.reshape(last_window.to_numpy(), (1, self.max_lag, last_window.shape[1]))
+        X = np.reshape(last_window_values, (1, self.max_lag, last_window.shape[1]))
 
         # TODO: Fill X_col_names
         X_col_names = []
 
         if exog is not None:
-            check_exog(exog=exog, allow_nan=False)
             exog = input_to_frame(data=exog, input_name='exog')
             exog = transform_dataframe(
                 df=exog,

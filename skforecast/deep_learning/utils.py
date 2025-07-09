@@ -92,8 +92,10 @@ def create_and_compile_model(
 
     if isinstance(lags, list):
         lags = len(lags)
+
     if isinstance(steps, list):
         steps = len(steps)
+
     if isinstance(levels, list):
         levels = len(levels)
     elif levels is None:
@@ -119,11 +121,17 @@ def create_and_compile_model(
         )
 
         if recurrent_layer == "LSTM":
-            x = LSTM(units, activation=recurrent_activation,
-                     return_sequences=return_sequences)(x)
+            x = LSTM(
+                units,
+                activation=recurrent_activation,
+                return_sequences=return_sequences,
+            )(x)
         elif recurrent_layer == "RNN":
-            x = SimpleRNN(units, activation=recurrent_activation,
-                          return_sequences=return_sequences)(x)
+            x = SimpleRNN(
+                units,
+                activation=recurrent_activation,
+                return_sequences=return_sequences,
+            )(x)
         else:
             raise ValueError(f"Invalid recurrent layer: {recurrent_layer}")
 
@@ -143,7 +151,7 @@ def create_and_compile_model(
 
     model = Model(inputs=inputs, outputs=output)
     model.compile(optimizer=optimizer, loss=loss, **compile_kwargs)
-    
+
     model.exog = True if exog is not None else False
 
     return model
