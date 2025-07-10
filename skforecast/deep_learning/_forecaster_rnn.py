@@ -70,17 +70,6 @@ class ForecasterRnn(ForecasterBase):
         Name of one or more time series to be predicted. This determine the series
         the forecaster will be handling. If `None`, all series used during training
         will be available for prediction.
-    steps : int, list, str, default `'auto'`
-        Steps to be predicted. If 'auto', steps used are from 1 to N, where N is
-        extracted from the output layer `self.regressor.layers[-1].output_shape[1]`.
-    lags : int, list, numpy ndarray, range, str, default 'auto'
-        Lags used as predictors. Index starts at 1, so lag 1 is equal to t-1.
-    
-        -`auto`: lags used are from 1 to N, where N is extracted from the input
-        layer `self.regressor.layers[0].input_shape[0][1]`.
-        - `int`: include lags from 1 to `lags` (included).
-        - `list`, `1d numpy ndarray` or `range`: include only lags present in 
-        `lags`, all elements must be int.
     transformer_series : transformer (preprocessor), dict, default None
         An instance of a transformer (preprocessor) compatible with the scikit-learn
         preprocessing API with methods: fit, transform, fit_transform and 
@@ -178,6 +167,9 @@ class ForecasterRnn(ForecasterBase):
         Tag to identify if the regressor has been fitted (trained).
     fit_date : str
         Date of last fit.
+    keras_backend_ : str
+        Keras backend used to fit the forecaster. It can be 'tensorflow', 'torch' 
+        or 'jax'.
     skforcast_version : str
         Version of skforecast library used to create the forecaster.
     python_version : str
@@ -206,8 +198,6 @@ class ForecasterRnn(ForecasterBase):
         self,
         regressor: object,
         levels: str | list[str],
-        steps: int | list[int] | str = "auto",
-        lags: int | list[int] | np.ndarray[int] | range[int] | str = "auto",
         transformer_series: object | dict[str, object] | None = MinMaxScaler(
             feature_range=(0, 1)
         ),
@@ -217,7 +207,6 @@ class ForecasterRnn(ForecasterBase):
     ) -> None:
         
         self.regressor = deepcopy(regressor)
-        self.keras_backend_ = None
         self.levels = None
         self.transformer_series = transformer_series
         self.transformer_series_ = None
@@ -229,7 +218,6 @@ class ForecasterRnn(ForecasterBase):
         self.index_freq_ = None
         self.training_range_ = None
         self.series_names_in_ = None
-        self.exog_in_ = False
         self.exog_names_in_ = None
         self.exog_type_in_ = None
         self.exog_dtypes_in_ = None
@@ -239,6 +227,7 @@ class ForecasterRnn(ForecasterBase):
         self.is_fitted = False
         self.creation_date = pd.Timestamp.today().strftime("%Y-%m-%d %H:%M:%S")
         self.fit_date = None
+        self.keras_backend_ = None
         self.skforecast_version = skforecast.__version__
         self.python_version = sys.version.split(" ")[0]
         self.forecaster_id = forecaster_id
@@ -252,32 +241,20 @@ class ForecasterRnn(ForecasterBase):
         self.differentiator = None  # Ignored in this forecaster
         self.differentiator_ = None  # Ignored in this forecaster
 
-        # Infer parameters from the model
+        # TODO: Add to docstring all
         layer_init = self.regressor.layers[0]
         layer_end = self.regressor.layers[-1]
-
-        if lags == "auto":
-            lags = np.arange(layer_init.output.shape[1]) + 1
+        self.layers_names = [layer.name for layer in self.regressor.layers]
         
+        lags = layer_init.output.shape[1]
         self.lags, self.lags_names, self.max_lag = initialize_lags(
             type(self).__name__, lags
         )
         self.window_size = self.max_lag
 
-        if steps == "auto":
-            self.steps = np.arange(layer_end.output.shape[1]) + 1
-            self.n_series = layer_end.output.shape[-1]
-        elif isinstance(steps, int):
-            self.steps = np.arange(steps) + 1
-        elif isinstance(steps, list):
-            self.steps = np.array(steps)
-        else:
-            raise TypeError(
-                f"`steps` argument must be an int, list or 'auto'. Got {type(steps)}."
-            )
-        
+        # TODO: Add to docstring all
+        self.steps = np.arange(layer_end.output.shape[1]) + 1
         self.max_step = np.max(self.steps)
-        self.outputs = layer_end.output.shape[-1]
 
         if isinstance(levels, str):
             self.levels = [levels]
@@ -287,19 +264,43 @@ class ForecasterRnn(ForecasterBase):
             raise TypeError(
                 f"`levels` argument must be a string or list. Got {type(levels)}."
             )
+        
+        # TODO: Add to docstring all
+        self.n_series_in = self.regressor.get_layer('series_input').output.shape[-1]
+        self.n_levels_out = self.regressor.get_layer('output_layer').output.shape[-1]
+        self.exog_in_ = True if "exog_input" in self.layers_names else False
+        if self.exog_in_:
+            self.n_exog_in = self.regressor.get_layer('exog_input').output.shape[-1]
+        else:
+            self.n_exog_in = None
 
+        # TODO: Add to docstring series_val, exog_val
         self.series_val = None
         self.exog_val = None
         if "series_val" in fit_kwargs:
+            if not isinstance(fit_kwargs["series_val"], pd.DataFrame):
+                raise TypeError(
+                    f"`series_val` must be a pandas DataFrame. "
+                    f"Got {type(fit_kwargs['series_val'])}."
+                )
             self.series_val = fit_kwargs["series_val"]
             fit_kwargs.pop("series_val")
 
-        if "exog_val" in fit_kwargs:
-            self.exog_val = fit_kwargs["exog_val"]
-            fit_kwargs.pop("exog_val")
-            
-        # TODO if series_val exists, and exog is not None, exog_val must be
-        # provided. CHeck this. Verify regressor has a layer named "exog_input"
+            if self.exog_in_:
+                if "exog_val" not in fit_kwargs.keys():
+                    raise ValueError(
+                        "If `series_val` is provided, `exog_val` must also be "
+                        "provided using the `fit_kwargs` argument when the "
+                        "regressor has exogenous variables."
+                    )
+                else:
+                    if not isinstance(fit_kwargs["exog_val"], pd.DataFrame):
+                        raise TypeError(
+                            f"`exog_val` must be a pandas DataFrame. "
+                            f"Got {type(fit_kwargs['exog_val'])}."
+                        )
+                    self.exog_val = fit_kwargs["exog_val"]
+                    fit_kwargs.pop("exog_val")
 
         self.in_sample_residuals_ = {step: None for step in self.steps}
         self.in_sample_residuals_by_bin_ = None
@@ -356,6 +357,7 @@ class ForecasterRnn(ForecasterBase):
             f"fit_kwargs: {self.fit_kwargs} \n"
             f"Creation date: {self.creation_date} \n"
             f"Last fit date: {self.fit_date} \n"
+            f"Keras backend: {self.keras_backend_} \n"
             f"Skforecast version: {self.skforecast_version} \n"
             f"Python version: {self.python_version} \n"
             f"Forecaster id: {self.forecaster_id} \n"
@@ -363,6 +365,7 @@ class ForecasterRnn(ForecasterBase):
 
         return info
 
+    # TODO: Review info
     def _repr_html_(self):
         """
         HTML representation of the object.
@@ -401,6 +404,7 @@ class ForecasterRnn(ForecasterBase):
                     <li><strong>Exogenous included:</strong> {self.exog_in_}</li>
                     <li><strong>Creation date:</strong> {self.creation_date}</li>
                     <li><strong>Last fit date:</strong> {self.fit_date}</li>
+                    <li><strong>Keras backend:</strong> {self.keras_backend_}</li>
                     <li><strong>Skforecast version:</strong> {self.skforecast_version}</li>
                     <li><strong>Python version:</strong> {self.python_version}</li>
                     <li><strong>Forecaster id:</strong> {self.forecaster_id}</li>
@@ -541,12 +545,17 @@ class ForecasterRnn(ForecasterBase):
             Labels for the multi-dimensional arrays created internally for training
 
         """
-        # TODO: Check that number of series match self.n_series
 
         if not isinstance(series, pd.DataFrame):
             raise TypeError(f"`series` must be a pandas DataFrame. Got {type(series)}.")
 
         series_names_in_ = list(series.columns)
+        if not len(series_names_in_) == self.n_series_in:
+            raise ValueError(
+                f"Number of series in `series` ({len(series_names_in_)}) "
+                f"does not match the number of series expected by the forecaster "
+                f"({self.n_series_in})."
+            )
 
         if not set(self.levels).issubset(set(series_names_in_)):
             raise ValueError(
@@ -565,6 +574,12 @@ class ForecasterRnn(ForecasterBase):
                 f"    Max step : {self.max_step}.\n"
                 f"    Lags window size: {self.max_lag}.\n"
             )
+        
+        if exog is None and self.exog_in_:
+            raise ValueError(
+                "The regressor architecture expects exogenous variables "
+                "during training. Provide `exog` argument."
+            )
 
         fit_transformer = False
         if not self.is_fitted:
@@ -580,7 +595,7 @@ class ForecasterRnn(ForecasterBase):
         y_train = []
 
         # TODO: Add method argument to calculate lags and/or steps
-        for serie in series.columns:
+        for serie in series_names_in_:
             x = series[serie]
             check_y(y=x)
             x = transform_series(
@@ -615,7 +630,7 @@ class ForecasterRnn(ForecasterBase):
             "X_train": {
                 0: train_index,
                 1: ["lag_" + str(lag) for lag in self.lags],
-                2: series.columns.to_list(),
+                2: series_names_in_,
             },
             "y_train": {
                 0: train_index,
@@ -628,6 +643,13 @@ class ForecasterRnn(ForecasterBase):
 
             check_exog(exog=exog, allow_nan=False)
             exog = input_to_frame(data=exog, input_name='exog')
+
+            if len(exog.columns) != self.n_exog_in:
+                raise ValueError(
+                    f"Number of columns in `exog` ({len(exog.columns)}) "
+                    f"does not match the number of exogenous variables expected "
+                    f"by the regressor ({self.n_exog_in})."
+                )
             
             series_index_no_ws = series.index[self.window_size:]
             len_series = len(series)
@@ -688,13 +710,6 @@ class ForecasterRnn(ForecasterBase):
                 2: exog.columns.to_list(),
             }
         else:
-
-            # TODO Check that exog is provided when the model was created with exog=True
-            # if self.regressor.exog is True:
-            #     raise ValueError(
-            #         "Neural network architecture exects exog variables during fit."
-            #     )
-
             exog_train = None
             dimension_names["exog_train"] = {
                 0: None,
@@ -745,13 +760,11 @@ class ForecasterRnn(ForecasterBase):
         set_skforecast_warnings(suppress_warnings, action="ignore")
 
         # Reset values in case the forecaster has already been fitted.
-        self.keras_backend_ = keras.backend.backend()
         self.last_window_ = None
         self.index_type_ = None
         self.index_freq_ = None
         self.training_range_ = None
         self.series_names_in_ = None
-        self.exog_in_ = False
         self.exog_names_in_ = None
         self.exog_type_in_ = None
         self.exog_dtypes_in_ = None
@@ -761,6 +774,7 @@ class ForecasterRnn(ForecasterBase):
         self.in_sample_residuals_ = None
         self.is_fitted = False
         self.fit_date = None
+        self.keras_backend_ = keras.backend.backend()
             
         X_train, exog_train, y_train, dimension_names = self.create_train_X_y(
             series=series, exog=exog
@@ -843,7 +857,8 @@ class ForecasterRnn(ForecasterBase):
 
         # TODO: Make this variables output of the create_train_X_y method
         if exog is not None:
-            self.exog_in_ = True
+            # NOTE: self.exog_in_ is determined by the regressor architecture and
+            # set during initialization.
             self.exog_names_in_ = dimension_names["exog_train"][1]
             self.exog_type_in_ = type(exog)
             self.exog_dtypes_in_ = get_exog_dtypes(exog=exog)

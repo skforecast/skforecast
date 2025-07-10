@@ -101,7 +101,6 @@ def create_and_compile_model(
     elif levels is None:
         levels = n_series
 
-    # Input
     series_input = Input(shape=(lags, n_series), name="series_input")
     inputs = [series_input]
 
@@ -147,11 +146,11 @@ def create_and_compile_model(
         )
         x = TimeDistributed(Dense(units, activation=dense_activation))(x)
 
-    output = TimeDistributed(Dense(levels, activation="linear"))(x)
+    output = TimeDistributed(
+        Dense(levels, activation="linear"), name="output_layer"
+    )(x)
 
     model = Model(inputs=inputs, outputs=output)
     model.compile(optimizer=optimizer, loss=loss, **compile_kwargs)
-
-    model.exog = True if exog is not None else False
 
     return model
