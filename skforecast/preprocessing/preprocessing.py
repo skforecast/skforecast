@@ -1800,13 +1800,13 @@ class FastOrdinalEncoder: # pragma: no cover
         self.category_map_ = {category: idx for idx, category in enumerate(self.categories_)}
         self.inverse_category_map_ = {idx: category for idx, category in enumerate(self.categories_)}
     
-    def transform(self, X: np.ndarray | pd.Series) -> pd.Series:
+    def transform(self, X: np.ndarray | pd.Series | pd.DataFrame) -> pd.Series:
         """
         Transform the data to ordinal values using direct indexing.
 
         Parameters
         ----------
-        X : np.ndarray | pd.Series
+        X : np.ndarray, pd.Series, pd.DataFrame
             Input data to transform.
 
         Returns
@@ -1820,25 +1820,31 @@ class FastOrdinalEncoder: # pragma: no cover
             raise ValueError(
                 "The encoder has not been fitted yet. Call 'fit' before 'transform'."
             )
-        if not isinstance(X, (np.ndarray, pd.Series)):
-            raise ValueError("Input data must be a numpy array or pandas Series.")
+        if not isinstance(X, (np.ndarray, pd.Series, pd.DataFrame)):
+            raise ValueError("Input data must be a numpy array or pandas Series or DataFrame.")
+        
+        if isinstance(X, pd.DataFrame):
+            if X.shape[1] > 1:
+                raise ValueError("Input DataFrame must have only one column.")
+            X = X.iloc[:, 0]
         
         encoded_data = pd.Series(X).map(self.category_map_)
+        encoded_data = encoded_data.to_frame()
 
         return encoded_data
     
-    def inverse_transform(self, X: np.ndarray | pd.Series) -> pd.Series:
+    def inverse_transform(self, X: np.ndarray | pd.Series | pd.DataFrame) -> np.ndarray:
         """
         Inverse transform the encoded data back to original categories.
 
         Parameters
         ----------
-        X : np.ndarray | pd.Series
+        X : np.ndarray, pd.Series, pd.DataFrame
             Encoded data to inverse transform.
 
         Returns
         -------
-        pd.Series
+        np.ndarray
             Inverse transformed data with original categories.
         """
 
@@ -1846,13 +1852,18 @@ class FastOrdinalEncoder: # pragma: no cover
             raise ValueError(
                 "The encoder has not been fitted yet. Call 'fit' before 'inverse_transform'."
             )
-        if not isinstance(X, (np.ndarray, pd.Series)):
-            raise ValueError("Input data must be a numpy array or pandas Series.")
-        
+        if not isinstance(X, (np.ndarray, pd.Series, pd.DataFrame)):
+            raise ValueError("Input data must be a numpy array or pandas Series or DataFrame.")
+
+        if isinstance(X, pd.DataFrame):
+            if X.shape[1] > 1:
+                raise ValueError("Input DataFrame must have only one column.")
+            X = X.iloc[:, 0]
+
         inverse_encoded_data = (
             pd.Series(X)
             .map(self.inverse_category_map_)
-        )
+        ).to_numpy().reshape(-1, 1)
 
         return inverse_encoded_data
 

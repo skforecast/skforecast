@@ -54,7 +54,7 @@ from ..utils import (
     get_style_repr_html,
     set_cpu_gpu_device
 )
-from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
+from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner, FastOrdinalEncoder
 from ..model_selection._utils import _extract_data_folds_multiseries
 
 
@@ -463,10 +463,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                dtype         = int
                            ).set_output(transform='pandas')
         else:
-            self.encoder = OrdinalEncoder(
-                               categories = 'auto',
-                               dtype      = int
-                           ).set_output(transform='pandas')
+            # self.encoder = OrdinalEncoder(
+            #                    categories = 'auto',
+            #                    dtype      = int
+            #                ).set_output(transform='pandas')
+            self.encoder = FastOrdinalEncoder()
 
         scaling_regressors = tuple(
             member[1]
@@ -1155,9 +1156,14 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         if self.is_fitted:
             encoded_values = self.encoder.transform(X_train[['_level_skforecast']])
         else:
-            encoded_values = self.encoder.fit_transform(X_train[['_level_skforecast']])
-            for i, code in enumerate(self.encoder.categories_[0]):
-                self.encoding_mapping_[code] = i
+            if self.encoding == 'onehot':
+                encoded_values = self.encoder.fit_transform(X_train[['_level_skforecast']])
+                for i, code in enumerate(self.encoder.categories_[0]):
+                    self.encoding_mapping_[code] = i
+            else:
+                self.encoder.fit(categories=series_names_in_)
+                encoded_values = self.encoder.transform(X_train['_level_skforecast'])
+                self.encoding_mapping_ = self.encoder.category_map_.copy()
 
         if self.encoding == 'onehot': 
             encoded_values.columns = encoded_values.columns.str.replace('_level_skforecast_', '')
