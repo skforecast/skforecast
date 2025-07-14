@@ -274,7 +274,7 @@ class ForecasterRnn(ForecasterBase):
         else:
             self.n_exog_in = None
 
-        # TODO: Add to docstring series_val, exog_val
+        # TODO: Add to docstring series_val, exog_val, self.exog_dtypes_out_
         self.series_val = None
         self.exog_val = None
         if "series_val" in fit_kwargs:
@@ -629,12 +629,12 @@ class ForecasterRnn(ForecasterBase):
         dimension_names = {
             "X_train": {
                 0: train_index,
-                1: ["lag_" + str(lag) for lag in self.lags],
+                1: [f"lag_{lag}" for lag in self.lags],
                 2: series_names_in_,
             },
             "y_train": {
                 0: train_index,
-                1: ["step_" + str(lag) for lag in self.steps],
+                1: [f"step_{step}" for step in self.steps],
                 2: self.levels,
             },
         }
@@ -674,12 +674,23 @@ class ForecasterRnn(ForecasterBase):
                     f"  `exog`   columns : {exog_names_in_}."
                 )
             
+            exog_n_dim_in = len(exog_names_in_)
             exog = transform_dataframe(
                 df=exog,
                 transformer=self.transformer_exog,
                 fit=fit_transformer,
                 inverse_transform=False,
             )
+            exog_n_dim_out = len(exog.columns)
+
+            if exog_n_dim_in != exog_n_dim_out:
+                raise ValueError(
+                    f"Number of columns in `exog` after transformation ({exog_n_dim_out}) "
+                    f"does not match the number of columns before transformation ({exog_n_dim_in}). "
+                    f"The ForecasterRnn does not support transformations that "
+                    f"change the number of columns in `exog`. Preprocess `exog` "
+                    f"before passing it to the `create_and_compile_model` function."
+                )
 
             if len_exog == len_series:
                 if not (exog.index == series.index).all():
@@ -706,7 +717,7 @@ class ForecasterRnn(ForecasterBase):
 
             dimension_names["exog_train"] = {
                 0: train_index,
-                1: ["step_" + str(lag) for lag in self.steps],
+                1: [f"step_{step}" for step in self.steps],
                 2: exog.columns.to_list(),
             }
         else:
@@ -768,6 +779,7 @@ class ForecasterRnn(ForecasterBase):
         self.exog_names_in_ = None
         self.exog_type_in_ = None
         self.exog_dtypes_in_ = None
+        self.exog_dtypes_out_ = None
         self.X_train_dim_names_ = None
         self.y_train_dim_names_ = None
         self.exog_train_dim_names_ = None
@@ -779,6 +791,10 @@ class ForecasterRnn(ForecasterBase):
         X_train, exog_train, y_train, dimension_names = self.create_train_X_y(
             series=series, exog=exog
         )
+
+        series_names_in_ = dimension_names["X_train"][2]
+        if exog is not None:
+            exog_names_in_ = exog.columns.to_list()
 
         # TODO: Check if this works when backend is tensorflow
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -792,10 +808,9 @@ class ForecasterRnn(ForecasterBase):
                 exog_train = torch.tensor(exog_train).to(torch_device)
 
         if self.series_val is not None:
-            series_val = self.series_val[self.series_names_in_]
+            series_val = self.series_val[series_names_in_]
             if exog is not None:
-                # TODO: raise error if exog_val do not exist
-                exog_val = self.exog_val[self.exog_names_in_]
+                exog_val = self.exog_val[exog_names_in_]
             else:
                 exog_val = None
             X_val, exog_val, y_val, _ = self.create_train_X_y(
@@ -838,9 +853,10 @@ class ForecasterRnn(ForecasterBase):
                 int(step): residuals[:, i, :] for i, step in enumerate(self.steps)
             }
         
+        self.series_names_in_ = series_names_in_
+        self.X_train_series_names_in_ = series_names_in_
         self.X_train_dim_names_ = dimension_names["X_train"]
         self.y_train_dim_names_ = dimension_names["y_train"]
-        self.series_names_in_   = dimension_names["X_train"][2]
         self.history_ = history.history
 
         self.is_fitted = True
@@ -859,10 +875,15 @@ class ForecasterRnn(ForecasterBase):
         if exog is not None:
             # NOTE: self.exog_in_ is determined by the regressor architecture and
             # set during initialization.
-            self.exog_names_in_ = dimension_names["exog_train"][1]
+            self.exog_names_in_ = exog_names_in_
             self.exog_type_in_ = type(exog)
             self.exog_dtypes_in_ = get_exog_dtypes(exog=exog)
+            self.exog_dtypes_out_ = self.exog_dtypes_in_
             self.exog_train_dim_names_ = dimension_names["exog_train"]
+            self.X_train_exog_names_out_ = dimension_names["exog_train"][2]
+            self.X_train_features_names_out_ = dimension_names["X_train"][1] + dimension_names["exog_train"][2]
+        else:
+            self.X_train_features_names_out_ = dimension_names["X_train"][1]
 
         self.last_window_ = series.iloc[-self.max_lag :, :].copy()
 
@@ -1017,7 +1038,6 @@ class ForecasterRnn(ForecasterBase):
         X = np.reshape(last_window_values, (1, self.max_lag, last_window.shape[1]))
 
         # TODO: Fill X_col_names, make this a dict with the dimensions
-        X_col_names = []
 
         if exog is not None:
             exog = input_to_frame(data=exog, input_name='exog')
@@ -1030,8 +1050,20 @@ class ForecasterRnn(ForecasterBase):
             exog_pred = exog.to_numpy()
             exog_pred = np.expand_dims(exog_pred[:self.max_step], axis=0)
             X = [X, exog_pred]
+        
+        # ==============================================
+        # CONTINUE FROM HERE
+        # ==============================================
 
-        return X, X_col_names, steps, levels, prediction_index
+        # TODO: Review how to store dimensiones for each
+        X_predict_dimension_names = {
+            "X_autoreg": {},
+            "exog_pred": {0: prediction_index,
+            1: self.X_train_features_names_out_,
+            2: "series_names_in_"}
+        }
+
+        return X, X_predict_dimension_names, steps, levels, prediction_index
 
     def predict(
         self,
