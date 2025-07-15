@@ -629,7 +629,7 @@ class ForecasterRnn(ForecasterBase):
         dimension_names = {
             "X_train": {
                 0: train_index,
-                1: [f"lag_{lag}" for lag in self.lags],
+                1: self.lags_names,
                 2: series_names_in_,
             },
             "y_train": {
@@ -734,9 +734,10 @@ class ForecasterRnn(ForecasterBase):
         self,
         series: pd.DataFrame,
         exog: pd.DataFrame = None,
-        store_in_sample_residuals: bool = True,
-        suppress_warnings: bool = False,
-        store_last_window: str = "Ignored",
+        store_last_window: bool = True,
+        store_in_sample_residuals: bool = False,
+        random_state: int = 123,
+        suppress_warnings: bool = False
     ) -> None:
         """
         Training Forecaster.
@@ -752,15 +753,18 @@ class ForecasterRnn(ForecasterBase):
             Exogenous variable/s included as predictor/s. Must have the same
             number of observations as `series` and their indexes must be aligned so
             that series[i] is regressed on exog[i].
-        store_in_sample_residuals : bool, default `True`
+        store_last_window : bool, default True
+            Whether or not to store the last window (`last_window_`) of training data.
+        store_in_sample_residuals : bool, default False
             If `True`, in-sample residuals will be stored in the forecaster object
             after fitting (`in_sample_residuals_` attribute).
-        suppress_warnings : bool, default `False`
+        random_state : int, default 123
+            Set a seed for the random generator so that the stored sample 
+            residuals are always deterministic.
+        suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the prediction
             process. See skforecast.exceptions.warn_skforecast_categories for more
             information.
-        store_last_window : Ignored
-            Not used, present here for API consistency by convention.
         
         Returns
         -------
@@ -844,14 +848,28 @@ class ForecasterRnn(ForecasterBase):
                 **self.fit_kwargs,
             )
 
+        # TODO: Include binning in the forecaster
+        self.in_sample_residuals_ = {}
         if store_in_sample_residuals:
+
             residuals = y_train - self.regressor.predict(
                 x=X_train if exog_train is None else [X_train, exog_train], verbose=0
             )
-            # TODO: In direct, we mix all residuals for all steps.
-            self.in_sample_residuals_ = {
-                int(step): residuals[:, i, :] for i, step in enumerate(self.steps)
-            }
+            residuals = np.concatenate(
+                [residuals[:, i, :] for i, step in enumerate(self.steps)]
+            )
+
+            rng = np.random.default_rng(seed=random_state)
+            for i, level in enumerate(self.levels):
+                residuals_level = residuals[:, i]
+                if len(residuals_level) > 10_000:
+                    residuals_level = residuals_level[
+                        rng.integers(low=0, high=len(residuals_level), size=10_000)
+                    ]
+                self.in_sample_residuals_[level] = residuals_level
+        else:
+            for level in self.levels:
+                self.in_sample_residuals_[level] = None
         
         self.series_names_in_ = series_names_in_
         self.X_train_series_names_in_ = series_names_in_
@@ -885,7 +903,8 @@ class ForecasterRnn(ForecasterBase):
         else:
             self.X_train_features_names_out_ = dimension_names["X_train"][1]
 
-        self.last_window_ = series.iloc[-self.max_lag :, :].copy()
+        if store_last_window:
+            self.last_window_ = series.iloc[-self.max_lag :, :].copy()
 
         set_skforecast_warnings(suppress_warnings, action="default")
     
@@ -1011,17 +1030,6 @@ class ForecasterRnn(ForecasterBase):
                            )[np.array(steps) - 1]
         last_window = last_window.to_numpy()
         
-        # TODO: Delete if the new code below works
-        # for serie_name in self.series_names_in_:
-        #     last_window_serie = last_window[serie_name].to_numpy()
-        #     last_window_serie = transform_numpy(
-        #         array=last_window_serie,
-        #         transformer=self.transformer_series_[serie_name],
-        #         fit=False,
-        #         inverse_transform=False,
-        #     )
-        #     last_window.loc[:, serie_name] = last_window_serie
-        
         last_window_values = np.full(
             shape=last_window.shape, fill_value=np.nan, order='F', dtype=float
         )
@@ -1051,23 +1059,24 @@ class ForecasterRnn(ForecasterBase):
             exog_pred = np.expand_dims(exog_pred[:self.max_step], axis=0)
             X = [X, exog_pred]
         
-        # ==============================================
-        # CONTINUE FROM HERE
-        # ==============================================
-
-        # TODO: Review how to store dimensiones for each
         X_predict_dimension_names = {
-            "X_autoreg": {},
-            "exog_pred": {0: prediction_index,
-            1: self.X_train_features_names_out_,
-            2: "series_names_in_"}
+            "X_autoreg": {
+                0: "batch",
+                1: self.lags_names,
+                2: self.X_train_series_names_in_
+            },
+            "exog_pred": {
+                0: "batch",
+                1: [f"step_{step}" for step in self.steps],
+                2: self.X_train_exog_names_out_
+            }
         }
 
         return X, X_predict_dimension_names, steps, levels, prediction_index
 
     def predict(
         self,
-        steps: Optional[Union[int, list]] = None,
+        steps: int | list[int] | None = None,
         levels: Optional[Union[str, list]] = None,
         last_window: Optional[pd.DataFrame] = None,
         exog: pd.Series | pd.DataFrame | None = None,
@@ -1158,9 +1167,10 @@ class ForecasterRnn(ForecasterBase):
         return predictions
     
     # TODO: Check binned residuals
+    # TODO: Review docstring
     def _predict_interval_conformal(
         self,
-        steps: int | str | pd.Timestamp,
+        steps: int | list[int] | None = None,
         levels: str | list[str] | None = None,
         last_window: pd.Series | pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | None = None,
@@ -1246,11 +1256,10 @@ class ForecasterRnn(ForecasterBase):
             shape=(n_steps, n_levels), fill_value=np.nan, order='C', dtype=float
         )
 
-        for i, step in enumerate(steps):
-            for j, level in enumerate(levels):
-                correction_factor[i, j] = np.quantile(
-                    np.abs(residuals[step][:, j]), nominal_coverage
-                )
+        for i, level in enumerate(levels):
+            correction_factor[:, i] = np.quantile(
+                np.abs(residuals[level]), nominal_coverage
+            )
 
         lower_bound = predictions - correction_factor
         upper_bound = predictions + correction_factor
@@ -1282,7 +1291,7 @@ class ForecasterRnn(ForecasterBase):
 
     def predict_interval(
         self,
-        steps: int,
+        steps: int | list[int] | None = None,
         levels: str | list[str] | None = None,
         last_window: pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
@@ -1406,6 +1415,7 @@ class ForecasterRnn(ForecasterBase):
         -------
         fig: matplotlib.figure.Figure
             Matplotlib Figure.
+        
         """
 
         if ax is None:

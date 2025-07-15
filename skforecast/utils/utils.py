@@ -102,11 +102,6 @@ def initialize_lags(
                     f"`lags` argument must be a dict, int, 1d numpy ndarray, range, "
                     f"tuple or list. Got {type(lags)}."
                 )
-            elif forecaster_name == 'ForecasterRnn':
-                raise TypeError(
-                    f"`lags` argument must be an int, 1d numpy ndarray, range, "
-                    f"tuple, list or 'auto'. Got {type(lags)}."
-                )
             else:
                 raise TypeError(
                     f"`lags` argument must be an int, 1d numpy ndarray, range, "
