@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 from ..utils import (
     initialize_lags,
+    input_to_frame,
     check_optional_dependency
 )
 
@@ -40,7 +41,7 @@ def create_and_compile_model(
     lags: int | list[int] | np.ndarray[int] | range[int],
     steps: int,
     levels: str | list[str] | tuple[str] | None = None,
-    exog: pd.DataFrame | None = None,
+    exog: pd.Series | pd.DataFrame | None = None,
     recurrent_layer: str = "LSTM",
     recurrent_units: int | list[int] | tuple[int] = 100,
     recurrent_layers_kwargs: dict[str, Any] | list[dict[str, Any]] | None = None,
@@ -70,7 +71,7 @@ def create_and_compile_model(
     levels : str, list, default None
        Output level(s) (features) to predict. If None, defaults to the names of 
        input series.
-    exog : pandas DataFrame, default None
+    exog : pandas Series, pandas DataFrame, default None
         Exogenous variables to be included as input, should have the same number 
         of rows as `series`.
     recurrent_layer : str, default 'LSTM'
@@ -122,13 +123,17 @@ def create_and_compile_model(
         raise TypeError(
             f"`series` must be a pandas DataFrame. Got {type(series)}."
         )
-    if exog is not None and not isinstance(exog, pd.DataFrame):
-        raise TypeError(
-            f"`exog` must be a pandas DataFrame or None. Got {type(exog)}."
-        )
-
     n_series = series.shape[1]
-    n_exog = exog.shape[1] if exog is not None else 0
+
+    if exog is not None: 
+        if not isinstance(exog, (pd.Series, pd.DataFrame)):
+            raise TypeError(
+                f"`exog` must be a pandas Series, DataFrame or None. Got {type(exog)}."
+            )
+        exog = input_to_frame(data=exog, input_name='exog')
+        n_exog = exog.shape[1]
+    else:
+        n_exog = 0
 
     lags, _, _ = initialize_lags('ForecasterRNN', lags)
     n_lags = len(lags)

@@ -148,17 +148,20 @@ class ForecasterRnn(ForecasterBase):
     exog_type_in_ : type
         Type of exogenous variable/s used in training.
     exog_dtypes_in_ : dict
-        Type of each exogenous variable/s used in training. If `transformer_exog` 
-        is used, the dtypes are calculated after the transformation.
+        Type of each exogenous variable/s used in training before the transformation
+        applied by `transformer_exog`. If `transformer_exog` is not used, it
+        is equal to `exog_dtypes_out_`.
     exog_dtypes_out_ : dict
-        Type of each exogenous variable/s after transformation.
+        Type of each exogenous variable/s used in training after the transformation 
+        applied by `transformer_exog`. If `transformer_exog` is not used, it 
+        is equal to `exog_dtypes_in_`.
     X_train_dim_names_ : dict
         Labels for the multi-dimensional arrays created internally for training.
     y_train_dim_names_ : dict
         Labels for the multi-dimensional arrays created internally for training.
-    series_val : pandas DataFrame, default None
+    series_val : pandas DataFrame
         Values of the series used for validation during training.
-    exog_val : pandas DataFrame, default None
+    exog_val : pandas DataFrame
         Values of the exogenous variables used for validation during training.
     history : dict
         Dictionary with the history of the training of each step. It is created
@@ -294,8 +297,7 @@ class ForecasterRnn(ForecasterBase):
                     f"`series_val` must be a pandas DataFrame. "
                     f"Got {type(fit_kwargs['series_val'])}."
                 )
-            self.series_val = fit_kwargs["series_val"]
-            fit_kwargs.pop("series_val")
+            self.series_val = fit_kwargs.pop("series_val")            
 
             if self.exog_in_:
                 if "exog_val" not in fit_kwargs.keys():
@@ -305,18 +307,19 @@ class ForecasterRnn(ForecasterBase):
                         "regressor has exogenous variables."
                     )
                 else:
-                    if not isinstance(fit_kwargs["exog_val"], pd.DataFrame):
+                    if not isinstance(fit_kwargs["exog_val"], (pd.Series, pd.DataFrame)):
                         raise TypeError(
-                            f"`exog_val` must be a pandas DataFrame. "
+                            f"`exog_val` must be a pandas Series or DataFrame. "
                             f"Got {type(fit_kwargs['exog_val'])}."
                         )
-                    self.exog_val = fit_kwargs["exog_val"]
-                    fit_kwargs.pop("exog_val")
+                    self.exog_val = input_to_frame(
+                        data=fit_kwargs.pop("exog_val"), input_name='exog_val'
+                    )
 
-        self.in_sample_residuals_ = {step: None for step in self.steps}
-        self.in_sample_residuals_by_bin_ = None
+        self.in_sample_residuals_ = None
+        self.in_sample_residuals_by_bin_ = None  # Ignored in this forecaster
         self.out_sample_residuals_ = None
-        self.out_sample_residuals_by_bin_ = None
+        self.out_sample_residuals_by_bin_ = None  # Ignored in this forecaster
 
         self.fit_kwargs = check_select_fit_kwargs(
             regressor=self.regressor, fit_kwargs=fit_kwargs
@@ -744,7 +747,7 @@ class ForecasterRnn(ForecasterBase):
     def fit(
         self,
         series: pd.DataFrame,
-        exog: pd.DataFrame = None,
+        exog: pd.Series | pd.DataFrame = None,
         store_last_window: bool = True,
         store_in_sample_residuals: bool = False,
         random_state: int = 123,
@@ -827,6 +830,7 @@ class ForecasterRnn(ForecasterBase):
                 exog_val = self.exog_val[exog_names_in_]
             else:
                 exog_val = None
+            
             X_val, exog_val, y_val, _ = self.create_train_X_y(
                 series=series_val, exog=exog_val
             )
@@ -917,8 +921,7 @@ class ForecasterRnn(ForecasterBase):
             self.last_window_ = series.iloc[-self.max_lag :, :].copy()
 
         set_skforecast_warnings(suppress_warnings, action="default")
-    
-    # TODO: Review docstring
+
     def _create_predict_inputs(
         self,
         steps: int | list[int] | None = None,
@@ -936,16 +939,16 @@ class ForecasterRnn(ForecasterBase):
         ----------
         steps : int, list, None, default None
             Predict n steps. The value of `steps` must be less than or equal to the 
-            value of steps defined when initializing the forecaster. Starts at 1.
+            value of steps defined in the regressor architecture.
         
             - If `int`: Only steps within the range of 1 to int are predicted.
             - If `list`: List of ints. Only the steps contained in the list 
             are predicted.
-            - If `None`: As many steps are predicted as were defined at 
-            initialization.
-        levels : str, list, default `None`
-            Name of one or more time series to be predicted. It must be included
-            in `levels` defined when initializing the forecaster. If `None`, all
+            - If `None`: As many steps are predicted as defined in the regressor
+            architecture.
+        levels : str, list, default None
+            Name(s) of the time series to be predicted. It must be included
+            in `levels`, defined when initializing the forecaster. If `None`, all
             all series used during training will be available for prediction.
         last_window : pandas Series, pandas DataFrame, default None
             Series values used to create the predictors (lags) needed to 
@@ -1098,18 +1101,18 @@ class ForecasterRnn(ForecasterBase):
 
         Parameters
         ----------
-        steps : int, list, None, default `None`
-            Predict n steps. The value of `steps` must be less than or equal to the
-            value of steps defined when initializing the forecaster. Starts at 1.
-
+        steps : int, list, None, default None
+            Predict n steps. The value of `steps` must be less than or equal to the 
+            value of steps defined in the regressor architecture.
+        
             - If `int`: Only steps within the range of 1 to int are predicted.
-            - If `list`: List of ints. Only the steps contained in the list
+            - If `list`: List of ints. Only the steps contained in the list 
             are predicted.
-            - If `None`: As many steps are predicted as were defined at
-            initialization.
-        levels : str, list, default `None`
-            Name of one or more time series to be predicted. It must be included
-            in `levels` defined when initializing the forecaster. If `None`, all
+            - If `None`: As many steps are predicted as defined in the regressor
+            architecture.
+        levels : str, list, default None
+            Name(s) of the time series to be predicted. It must be included
+            in `levels`, defined when initializing the forecaster. If `None`, all
             all series used during training will be available for prediction.
         last_window : pandas DataFrame, default `None`
             Series values used to create the predictors (lags) needed in the
@@ -1176,7 +1179,6 @@ class ForecasterRnn(ForecasterBase):
 
         return predictions
     
-    # TODO: Review docstring
     def _predict_interval_conformal(
         self,
         steps: int | list[int] | None = None,
@@ -1192,14 +1194,19 @@ class ForecasterRnn(ForecasterBase):
 
         Parameters
         ----------
-        steps : int, str, pandas Timestamp
-            Number of steps to predict. 
-            
-            - If steps is int, number of steps to predict. 
-            - If str or pandas Datetime, the prediction will be up to that date.
+        steps : int, list, None, default None
+            Predict n steps. The value of `steps` must be less than or equal to the 
+            value of steps defined in the regressor architecture.
+        
+            - If `int`: Only steps within the range of 1 to int are predicted.
+            - If `list`: List of ints. Only the steps contained in the list 
+            are predicted.
+            - If `None`: As many steps are predicted as defined in the regressor
+            architecture.
         levels : str, list, default None
-            Time series to be predicted. If `None` all levels whose last window
-            ends at the same datetime index will be predicted together.
+            Name(s) of the time series to be predicted. It must be included
+            in `levels`, defined when initializing the forecaster. If `None`, all
+            all series used during training will be available for prediction.
         last_window : pandas Series, pandas DataFrame, default None
             Series values used to create the predictors (lags) needed in the 
             first iteration of the prediction (t + 1).
@@ -1298,13 +1305,12 @@ class ForecasterRnn(ForecasterBase):
 
         return predictions
 
-    # TODO: Review docstring
     def predict_interval(
         self,
         steps: int | list[int] | None = None,
         levels: str | list[str] | None = None,
         last_window: pd.DataFrame | None = None,
-        exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
+        exog: pd.Series | pd.DataFrame | None = None,
         method: str = 'conformal',
         interval: float | list[float] | tuple[float] = [5, 95],
         use_in_sample_residuals: bool = True,
@@ -1317,11 +1323,19 @@ class ForecasterRnn(ForecasterBase):
         
         Parameters
         ----------
-        steps : int
-            Number of steps to predict. 
+        steps : int, list, None, default None
+            Predict n steps. The value of `steps` must be less than or equal to the 
+            value of steps defined in the regressor architecture.
+        
+            - If `int`: Only steps within the range of 1 to int are predicted.
+            - If `list`: List of ints. Only the steps contained in the list 
+            are predicted.
+            - If `None`: As many steps are predicted as defined in the regressor
+            architecture.
         levels : str, list, default None
-            Time series to be predicted. If `None` all levels whose last window
-            ends at the same datetime index will be predicted together.
+            Name(s) of the time series to be predicted. It must be included
+            in `levels`, defined when initializing the forecaster. If `None`, all
+            all series used during training will be available for prediction.
         last_window : pandas DataFrame, default None
             Series values used to create the predictors (lags) needed in the 
             first iteration of the prediction (t + 1).
