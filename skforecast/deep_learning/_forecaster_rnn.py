@@ -27,7 +27,6 @@ from ..base import ForecasterBase
 from ..exceptions import IgnoredArgumentWarning
 from ..utils import (
     check_exog,
-    check_exog_dtypes,
     check_interval,
     check_predict_input,
     check_residuals_input,
@@ -98,15 +97,20 @@ class ForecasterRnn(ForecasterBase):
         Name of one or more time series to be predicted. This determine the series
         the forecaster will be handling. If `None`, all series used during training
         will be available for prediction.
+    layers_names : list
+        Names of the layers in the Keras model used as regressor.
     steps : numpy ndarray
         Future steps the forecaster will predict when using prediction methods.
+    max_step : int
+        Maximum step the forecaster is able to predict. It is the maximum value
+        included in `steps`.
     lags : numpy ndarray
         Lags used as predictors.
     max_lag : int
         Maximum lag included in `lags`.
     window_size : int
         Size of the window needed to create the predictors.
-     transformer_series : object, dict
+    transformer_series : object, dict
         An instance of a transformer (preprocessor) compatible with the scikit-learn
         preprocessing API with methods: fit, transform, fit_transform and
         inverse_transform. Transformation is applied to each `series` before training
@@ -133,6 +137,10 @@ class ForecasterRnn(ForecasterBase):
         First and last values of index of the data used during training.
     series_names_in_ : list
         Names of the series used during training.
+    n_series_in : int
+        Number of series used during training.
+    n_levels_out : int
+        Number of levels (series) to be predicted by the forecaster.
     exog_in_ : bool
         If the forecaster has been trained using exogenous variable/s.
     exog_names_in_ : list
@@ -142,10 +150,16 @@ class ForecasterRnn(ForecasterBase):
     exog_dtypes_in_ : dict
         Type of each exogenous variable/s used in training. If `transformer_exog` 
         is used, the dtypes are calculated after the transformation.
+    exog_dtypes_out_ : dict
+        Type of each exogenous variable/s after transformation.
     X_train_dim_names_ : dict
         Labels for the multi-dimensional arrays created internally for training.
     y_train_dim_names_ : dict
         Labels for the multi-dimensional arrays created internally for training.
+    series_val : pandas DataFrame, default None
+        Values of the series used for validation during training.
+    exog_val : pandas DataFrame, default None
+        Values of the exogenous variables used for validation during training.
     history : dict
         Dictionary with the history of the training of each step. It is created
         internally to avoid overwriting.
@@ -241,7 +255,6 @@ class ForecasterRnn(ForecasterBase):
         self.differentiator = None  # Ignored in this forecaster
         self.differentiator_ = None  # Ignored in this forecaster
 
-        # TODO: Add to docstring all
         layer_init = self.regressor.layers[0]
         layer_end = self.regressor.layers[-1]
         self.layers_names = [layer.name for layer in self.regressor.layers]
@@ -252,7 +265,6 @@ class ForecasterRnn(ForecasterBase):
         )
         self.window_size = self.max_lag
 
-        # TODO: Add to docstring all
         self.steps = np.arange(layer_end.output.shape[1]) + 1
         self.max_step = np.max(self.steps)
 
@@ -265,7 +277,6 @@ class ForecasterRnn(ForecasterBase):
                 f"`levels` argument must be a string or list. Got {type(levels)}."
             )
         
-        # TODO: Add to docstring all
         self.n_series_in = self.regressor.get_layer('series_input').output.shape[-1]
         self.n_levels_out = self.regressor.get_layer('output_dense_td_layer').output.shape[-1]
         self.exog_in_ = True if "exog_input" in self.layers_names else False
@@ -274,7 +285,7 @@ class ForecasterRnn(ForecasterBase):
         else:
             self.n_exog_in = None
 
-        # TODO: Add to docstring series_val, exog_val, self.exog_dtypes_out_
+        # TODO: Acorde a la docstring self.exog_dtypes_out_ es lo mismo que self.exog_dtypes_in_
         self.series_val = None
         self.exog_val = None
         if "series_val" in fit_kwargs:
