@@ -1769,12 +1769,12 @@ class FastOrdinalEncoder: # pragma: no cover
         Mapping of categories to integers.
     inverse_category_map_ : dict
         Mapping of integers to categories.
-    unknown_value : int | float, default=-1
+    unknown_value : int | float, default=np.nan
         Value to use for unknown categories.
     
     """
 
-    def __init__(self, unknown_value: int | float = -1):
+    def __init__(self, unknown_value: int | float = np.nan):
 
         self.unknown_value = unknown_value
         self.categories_ = None
@@ -1863,6 +1863,7 @@ class FastOrdinalEncoder: # pragma: no cover
         inverse_encoded_data = (
             pd.Series(X)
             .map(self.inverse_category_map_)
+            .fillna(self.unknown_value)
         ).to_numpy().reshape(-1, 1)
 
         return inverse_encoded_data
