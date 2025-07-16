@@ -43,7 +43,7 @@ def create_and_compile_model(
     exog: pd.DataFrame | None = None,
     recurrent_layer: str = "LSTM",
     recurrent_units: int | list[int] | tuple[int] = 100,
-    recurrent_layers_kwargs: dict[str, Any] | list[dict[str, Any]] | None = {"activation": "relu"},
+    recurrent_layers_kwargs: dict[str, Any] | list[dict[str, Any]] | None = None,
     dense_units: int | list[int] | tuple[int] = 64,
     dense_layers_kwargs: dict[str, Any] | list[dict[str, Any]] | None = {"activation": "relu"},
     output_dense_layer_kwargs: dict[str, Any] | None = {"activation": "linear"},
@@ -74,19 +74,19 @@ def create_and_compile_model(
         Exogenous variables to be included as input, should have the same number 
         of rows as `series`.
     recurrent_layer : str, default 'LSTM'
-        Type of recurrent layer to be used ('LSTM', 'GRU' or 'RNN').
+        Type of recurrent layer to be used, 'LSTM' [1]_, 'GRU' [2]_, or 'RNN' [3]_.
     recurrent_units : int, list, default 100
         Number of units in the recurrent layer(s). Can be an integer for single 
         recurrent layer, or a list of integers for multiple recurrent layers.
-    recurrent_layers_kwargs : dict, list, default {'activation': 'relu'}
-        Additional keyword arguments for the recurrent layers. Can be a single
-        dictionary for all layers or a list of dictionaries specifying different
-        parameters for each recurrent layer.
+    recurrent_layers_kwargs : dict, list, default None
+        Additional keyword arguments for the recurrent layers [1]_, [2]_, [3]_. 
+        Can be a single dictionary for all layers or a list of dictionaries 
+        specifying different parameters for each recurrent layer.
     dense_units : int, list, tuple, default 64
-        Number of units in the dense layer(s). Can be an integer for single
+        Number of units in the dense layer(s) [4]_. Can be an integer for single
         dense layer, or a list of integers for multiple dense layers.
     dense_layers_kwargs : dict, list, default {'activation': 'relu'}
-        Additional keyword arguments for the dense layers. Can be a single
+        Additional keyword arguments for the dense layers [4]_. Can be a single
         dictionary for all layers or a list of dictionaries specifying different
         parameters for each dense layer.
     output_dense_layer_kwargs : dict, default {'activation': 'linear'}
@@ -101,7 +101,21 @@ def create_and_compile_model(
     -------
     model : keras.models.Model
         Compiled Keras model ready for training.
-    
+
+    References
+    ----------
+    .. [1] LSTM layer Keras documentation.
+           https://keras.io/api/layers/recurrent_layers/lstm/
+
+    .. [2] GRU layer Keras documentation.
+           https://keras.io/api/layers/recurrent_layers/gru/
+
+    .. [3] SimpleRNN layer Keras documentation.
+           https://keras.io/api/layers/recurrent_layers/simple_rnn/
+
+    .. [4] Dense layer Keras documentation.
+           https://keras.io/api/layers/core_layers/dense/
+
     """
 
     if not isinstance(series, pd.DataFrame):
@@ -132,19 +146,20 @@ def create_and_compile_model(
 
     if levels is None:
         n_levels = n_series
-    elif isinstance(levels, (list, tuple)):
-        n_levels = len(levels)
-    elif isinstance(levels, str):
-        n_levels = 1
     else:
-        raise ValueError(f"Invalid type for `levels`: {type(levels)}.")
-    
-    series_names_in = series.columns.tolist()
-    missing_levels = [level for level in levels if level not in series_names_in]
-    if missing_levels:
-        raise ValueError(
-            f"Levels {missing_levels} not found in series columns: {series_names_in}."
-        )
+        if isinstance(levels, str):
+            levels = [levels]
+        elif not isinstance(levels, (list, tuple)):
+            raise TypeError(f"Invalid type for `levels`: {type(levels)}.")
+        
+        series_names_in = series.columns.tolist()
+        missing_levels = [level for level in levels if level not in series_names_in]
+        if missing_levels:
+            raise ValueError(
+                f"Levels {missing_levels} not found in series columns: {series_names_in}."
+            )
+        
+        n_levels = len(levels)
 
     series_input = Input(shape=(n_lags, n_series), name="series_input")
     inputs = [series_input]
@@ -164,9 +179,11 @@ def create_and_compile_model(
                 "If `recurrent_layers_kwargs` is a list, it must have the same "
                 "length as `recurrent_units`. One dict of kwargs per recurrent layer."
             )
+    elif recurrent_layers_kwargs is None:
+        recurrent_layers_kwargs = [{}] * len(recurrent_units)
     else:
         raise TypeError(
-            f"`recurrent_layers_kwargs` must be a dict or a list of dicts. "
+            f"`recurrent_layers_kwargs` must be a dict, a list of dicts or None. "
             f"Got {type(recurrent_layers_kwargs)}."
         )
 
@@ -212,9 +229,11 @@ def create_and_compile_model(
                 "If `dense_layers_kwargs` is a list, it must have the same "
                 "length as `dense_units`. One dict of kwargs per dense layer."
             )
+    elif dense_layers_kwargs is None:
+        dense_layers_kwargs = [{}] * len(dense_units)
     else:
         raise TypeError(
-            f"`dense_layers_kwargs` must be a dict or a list of dicts. "
+            f"`dense_layers_kwargs` must be a dict, a list of dicts or None. "
             f"Got {type(dense_layers_kwargs)}."
         )
     
@@ -231,7 +250,11 @@ def create_and_compile_model(
 
         x = TimeDistributed(Dense(**layer_kwargs), name=layer_name)(x)
 
-    output_layer_kwargs = deepcopy(output_dense_layer_kwargs)
+    if output_dense_layer_kwargs is None:
+        output_layer_kwargs = {}
+    else:
+        output_layer_kwargs = deepcopy(output_dense_layer_kwargs)
+    
     output_layer_kwargs.update({
         "units": n_levels,
     })
