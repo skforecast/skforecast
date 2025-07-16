@@ -267,7 +267,7 @@ class ForecasterRnn(ForecasterBase):
         
         # TODO: Add to docstring all
         self.n_series_in = self.regressor.get_layer('series_input').output.shape[-1]
-        self.n_levels_out = self.regressor.get_layer('output_layer').output.shape[-1]
+        self.n_levels_out = self.regressor.get_layer('output_dense_td_layer').output.shape[-1]
         self.exog_in_ = True if "exog_input" in self.layers_names else False
         if self.exog_in_:
             self.n_exog_in = self.regressor.get_layer('exog_input').output.shape[-1]
@@ -800,7 +800,6 @@ class ForecasterRnn(ForecasterBase):
         if exog is not None:
             exog_names_in_ = exog.columns.to_list()
 
-        # TODO: Check if this works when backend is tensorflow
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print(f"Using device: {device}")
 
@@ -1045,8 +1044,6 @@ class ForecasterRnn(ForecasterBase):
 
         X = np.reshape(last_window_values, (1, self.max_lag, last_window.shape[1]))
 
-        # TODO: Fill X_col_names, make this a dict with the dimensions
-
         if exog is not None:
             exog = input_to_frame(data=exog, input_name='exog')
             exog = transform_dataframe(
@@ -1073,6 +1070,8 @@ class ForecasterRnn(ForecasterBase):
         }
 
         return X, X_predict_dimension_names, steps, levels, prediction_index
+    
+    # TODO: Create method create_predict_X
 
     def predict(
         self,
@@ -1166,7 +1165,6 @@ class ForecasterRnn(ForecasterBase):
 
         return predictions
     
-    # TODO: Check binned residuals
     # TODO: Review docstring
     def _predict_interval_conformal(
         self,
@@ -1289,6 +1287,7 @@ class ForecasterRnn(ForecasterBase):
 
         return predictions
 
+    # TODO: Review docstring
     def predict_interval(
         self,
         steps: int | list[int] | None = None,

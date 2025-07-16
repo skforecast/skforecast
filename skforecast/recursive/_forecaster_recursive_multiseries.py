@@ -2253,7 +2253,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                         levels_encoded[i, self.X_train_series_names_in_.index(level)] = 1.
             else:
                 levels_encoded = np.array(
-                    [self.encoding_mapping_.get(level, None) for level in levels],
+                    [self.encoding_mapping_.get(level, np.nan) for level in levels],
                     dtype="float64"
                 ).reshape(-1, 1)
             levels_encoded_shape = levels_encoded.shape[1]

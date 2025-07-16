@@ -6,6 +6,8 @@
 # coding=utf-8
 
 from __future__ import annotations
+from typing import Any
+from copy import deepcopy
 import numpy as np
 import pandas as pd
 from ..utils import (
@@ -41,15 +43,11 @@ def create_and_compile_model(
     exog: pd.DataFrame | None = None,
     recurrent_layer: str = "LSTM",
     recurrent_units: int | list[int] | tuple[int] = 100,
-    recurrent_layers_kwargs: dict[str, str | list[str]] | None = {"activation": "relu"},
+    recurrent_layers_kwargs: dict[str, Any] | list[dict[str, Any]] | None = {"activation": "relu"},
     dense_units: int | list[int] | tuple[int] = 64,
-    dense_layers_kwargs: dict[str, str | list[str]] | None = {"activation": "relu"},
-    # activation: str | dict[str, str | list[str]] = "relu",
-    output_layer_kwargs: dict[str, str | list[str]] | None = {"activation": "linear"},
-    # output_activation: str = "linear",
-    # optimizer: object = Adam(learning_rate=0.01),
-    # loss: object = MeanSquaredError(),
-    compile_kwargs: dict[str, object] = {"optimizer": Adam(learning_rate=0.01), "loss": MeanSquaredError()},
+    dense_layers_kwargs: dict[str, Any] | list[dict[str, Any]] | None = {"activation": "relu"},
+    output_dense_layer_kwargs: dict[str, Any] | None = {"activation": "linear"},
+    compile_kwargs: dict[str, Any] = {"optimizer": Adam(learning_rate=0.01), "loss": MeanSquaredError()},
     model_name: str | None = None
 ) -> keras.models.Model:
     """
@@ -60,7 +58,7 @@ def create_and_compile_model(
     ----------
     series : pandas DataFrame
         Input time series with shape (n_obs, n_series). Each column is a time series.
-    lags : int, list
+    lags : int, list, numpy ndarray, range
         Number of lagged time steps to consider in the input, index starts at 1, 
         so lag 1 is equal to t-1.
     
@@ -70,33 +68,39 @@ def create_and_compile_model(
     steps : int
         Number of steps to predict.
     levels : str, list, default None
-       Output levels (features) to predict, or a list of specific level(s). If None, 
-       defaults to the number of input series.
+       Output level(s) (features) to predict. If None, defaults to the names of 
+       input series.
     exog : pandas DataFrame, default None
-        Exogenous variables to be included as input, should have the same number of rows as `series`.
+        Exogenous variables to be included as input, should have the same number 
+        of rows as `series`.
     recurrent_layer : str, default 'LSTM'
-        Type of recurrent layer to be used ('LSTM' or 'RNN').
+        Type of recurrent layer to be used ('LSTM', 'GRU' or 'RNN').
     recurrent_units : int, list, default 100
-        Number of units in the recurrent layer(s). Can be an integer or a list of integers for multiple layers.
+        Number of units in the recurrent layer(s). Can be an integer for single 
+        recurrent layer, or a list of integers for multiple recurrent layers.
+    recurrent_layers_kwargs : dict, list, default {'activation': 'relu'}
+        Additional keyword arguments for the recurrent layers. Can be a single
+        dictionary for all layers or a list of dictionaries specifying different
+        parameters for each recurrent layer.
     dense_units : int, list, tuple, default 64
-        List of integers representing the number of units in each dense layer.
-    activation : str, dict, default 'relu'
-        Activation function for the recurrent and dense layers. Can be a single
-        string for all layers or a dictionary specifying different activations
-        for 'recurrent_units' and 'dense_units'.
-    optimizer : object, default Adam(learning_rate=0.01)
-        Optimization algorithm and learning rate.
-    loss : object, default MeanSquaredError()
-        Loss function for model training.
-    output_activation : str, default 'linear'
-        Activation function for the output layer.
-    compile_kwargs : dict, default {}
-        Additional arguments for model compilation.
+        Number of units in the dense layer(s). Can be an integer for single
+        dense layer, or a list of integers for multiple dense layers.
+    dense_layers_kwargs : dict, list, default {'activation': 'relu'}
+        Additional keyword arguments for the dense layers. Can be a single
+        dictionary for all layers or a list of dictionaries specifying different
+        parameters for each dense layer.
+    output_dense_layer_kwargs : dict, default {'activation': 'linear'}
+        Additional keyword arguments for the output dense layer.
+    compile_kwargs : dict, default {'optimizer': Adam(learning_rate=0.01), 'loss': MeanSquaredError()}
+        Additional keyword arguments for the model compilation, such as optimizer 
+        and loss function.
+    model_name : str, default None
+        Name of the model.
 
     Returns
     -------
     model : keras.models.Model
-        Compiled neural network model.
+        Compiled Keras model ready for training.
     
     """
 
@@ -135,7 +139,6 @@ def create_and_compile_model(
     else:
         raise ValueError(f"Invalid type for `levels`: {type(levels)}.")
     
-    # TODO: levels must be one of the series columns names? Yes
     series_names_in = series.columns.tolist()
     missing_levels = [level for level in levels if level not in series_names_in]
     if missing_levels:
@@ -150,26 +153,34 @@ def create_and_compile_model(
         inputs.append(exog_input)
 
     x = series_input
-    if not isinstance(recurrent_units, list):
+    if not isinstance(recurrent_units, (list, tuple)):
         recurrent_units = [recurrent_units]
 
-    for i, units in enumerate(recurrent_units):
-        return_sequences = i < len(recurrent_units) - 1
-        recurrent_activation = (
-            activation if isinstance(activation, str)
-            else activation.get("recurrent_units", "relu")
+    if isinstance(recurrent_layers_kwargs, dict):
+        recurrent_layers_kwargs = [recurrent_layers_kwargs] * len(recurrent_units)
+    elif isinstance(recurrent_layers_kwargs, (list, tuple)):
+        if len(recurrent_layers_kwargs) != len(recurrent_units):
+            raise ValueError(
+                "If `recurrent_layers_kwargs` is a list, it must have the same "
+                "length as `recurrent_units`. One dict of kwargs per recurrent layer."
+            )
+    else:
+        raise TypeError(
+            f"`recurrent_layers_kwargs` must be a dict or a list of dicts. "
+            f"Got {type(recurrent_layers_kwargs)}."
         )
 
-        layer_kwargs = {
-            "units": units,
-            "activation": recurrent_activation,
-            "return_sequences": return_sequences,
-            "name": f"{recurrent_layer.lower()}_{i + 1}"
-        }
+    for i, units in enumerate(recurrent_units):
 
-        if dropout_rate is not None:
-            layer_kwargs["dropout"] = dropout_rate
-            layer_kwargs["recurrent_dropout"] = dropout_rate
+        return_sequences = i < len(recurrent_units) - 1
+
+        layer_kwargs = deepcopy(recurrent_layers_kwargs[i])
+        layer_kwargs.update({
+            "units": units,
+            "return_sequences": return_sequences,
+        })
+        if "name" not in layer_kwargs:
+            layer_kwargs["name"] = f"{recurrent_layer.lower()}_{i + 1}"
         
         if recurrent_layer == "LSTM":
             x = LSTM(**layer_kwargs)(x)
@@ -190,22 +201,48 @@ def create_and_compile_model(
         # NOTE: Shape (batch, steps, features + n_exog)
         x = Concatenate(axis=-1, name="concat_exog")([x, exog_input])  
 
-    dense_units = dense_units if isinstance(dense_units, (list, tuple)) else [dense_units]
-    for i, units in enumerate(dense_units):
-        dense_activation = (
-            activation if isinstance(activation, str)
-            else activation.get("dense_units", "relu")
+    if not isinstance(dense_units, (list, tuple)):
+        dense_units = [dense_units]
+
+    if isinstance(dense_layers_kwargs, dict):
+        dense_layers_kwargs = [dense_layers_kwargs] * len(dense_units)
+    elif isinstance(dense_layers_kwargs, (list, tuple)):
+        if len(dense_layers_kwargs) != len(dense_units):
+            raise ValueError(
+                "If `dense_layers_kwargs` is a list, it must have the same "
+                "length as `dense_units`. One dict of kwargs per dense layer."
+            )
+    else:
+        raise TypeError(
+            f"`dense_layers_kwargs` must be a dict or a list of dicts. "
+            f"Got {type(dense_layers_kwargs)}."
         )
-        x = TimeDistributed(
-            Dense(units, activation=dense_activation), name=f"dense_td_{i+1}"
-        )(x)
+    
+    for i, units in enumerate(dense_units):
+        
+        layer_kwargs = deepcopy(dense_layers_kwargs[i])
+        layer_kwargs.update({
+            "units": units,
+        })
+        if "name" in layer_kwargs:
+            layer_name = layer_kwargs.pop("name")
+        else:
+            layer_name = f"dense_td_{i + 1}"
 
-    output = TimeDistributed(
-        Dense(n_levels, activation=output_activation), name="output_layer"
-    )(x)
+        x = TimeDistributed(Dense(**layer_kwargs), name=layer_name)(x)
 
-    # NOTE: decide name
+    output_layer_kwargs = deepcopy(output_dense_layer_kwargs)
+    output_layer_kwargs.update({
+        "units": n_levels,
+    })
+    if "name" in output_layer_kwargs:
+        layer_name = output_layer_kwargs.pop("name")
+    else:
+        layer_name = "output_dense_td_layer"
+
+    output = TimeDistributed(Dense(**output_layer_kwargs), name=layer_name)(x)
+
     model = Model(inputs=inputs, outputs=output, name=model_name)
-    model.compile(optimizer=optimizer, loss=loss, **compile_kwargs)
+    model.compile(**compile_kwargs)
 
     return model
