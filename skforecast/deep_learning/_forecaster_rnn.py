@@ -288,7 +288,6 @@ class ForecasterRnn(ForecasterBase):
         else:
             self.n_exog_in = None
 
-        # TODO: Acorde a la docstring self.exog_dtypes_out_ es lo mismo que self.exog_dtypes_in_
         self.series_val = None
         self.exog_val = None
         if "series_val" in fit_kwargs:
@@ -354,11 +353,12 @@ class ForecasterRnn(ForecasterBase):
             f"{type(self).__name__} \n"
             f"{'=' * len(type(self).__name__)} \n"
             f"Regressor: {self.regressor} \n"
-            f"Target series (levels): {self.levels} \n"
+            f"Layers names: {self.layers_names} \n"
             f"Lags: {self.lags} \n"
             f"Window size: {self.window_size} \n"
             f"Maximum steps to predict: {self.steps} \n"
-            f"Multivariate series: {series_names_in_} \n"
+            f"Series names: {series_names_in_} \n"
+            f"Target series (levels): {self.levels} \n"
             f"Exogenous included: {self.exog_in_} \n"
             f"Exogenous names: {exog_names_in_} \n"
             f"Transformer for series: {transformer_series} \n"
@@ -379,7 +379,6 @@ class ForecasterRnn(ForecasterBase):
 
         return info
 
-    # TODO: Review info
     def _repr_html_(self):
         """
         HTML representation of the object.
@@ -411,7 +410,7 @@ class ForecasterRnn(ForecasterBase):
                 <summary>General Information</summary>
                 <ul>
                     <li><strong>Regressor:</strong> {type(self.regressor).__name__}</li>
-                    <li><strong>Target series (levels):</strong> {self.levels}</li>
+                    <li><strong>Layers names:</strong> {self.layers_names}</li>
                     <li><strong>Lags:</strong> {self.lags}</li>
                     <li><strong>Window size:</strong> {self.window_size}</li>
                     <li><strong>Maximum steps to predict:</strong> {self.steps}</li>
@@ -440,8 +439,8 @@ class ForecasterRnn(ForecasterBase):
             <details>
                 <summary>Training Information</summary>
                 <ul>
+                    <li><strong>Series names:</strong> {series_names_in_}</li>
                     <li><strong>Target series (levels):</strong> {self.levels}</li>
-                    <li><strong>Multivariate series:</strong> {series_names_in_}</li>
                     <li><strong>Training range:</strong> {self.training_range_.to_list() if self.is_fitted else 'Not fitted'}</li>
                     <li><strong>Training index type:</strong> {str(self.index_type_).split('.')[-1][:-2] if self.is_fitted else 'Not fitted'}</li>
                     <li><strong>Training index frequency:</strong> {self.index_freq_ if self.is_fitted else 'Not fitted'}</li>
@@ -528,11 +527,19 @@ class ForecasterRnn(ForecasterBase):
 
         return X_data, y_data
 
-    def create_train_X_y(
+    def _create_train_X_y(
         self,
         series: pd.DataFrame,
         exog: pd.Series | pd.DataFrame | None = None
-    ) -> Tuple[np.ndarray, np.ndarray, dict]:
+    ) -> tuple[
+        np.ndarray, 
+        np.ndarray, 
+        np.ndarray, 
+        dict[int, list], 
+        list[str], 
+        dict[str, type], 
+        dict[str, type]
+    ]:
         """
         Create training matrices. The resulting multi-dimensional matrices contain
         the target variable and predictors needed to train the model.
@@ -547,16 +554,26 @@ class ForecasterRnn(ForecasterBase):
 
         Returns
         -------
-        X_train : np.ndarray
+        X_train : numpy ndarray
             Training values (predictors) for each step. The resulting array has
             3 dimensions: (time_points, n_lags, n_series)
-        exog_train: np.ndarray
+        exog_train: numpy ndarray
             Value of exogenous variables aligned with X_train. (time_points, n_exog)
-        y_train : np.ndarray
+        y_train : numpy ndarray
             Values (target) of the time series related to each row of `X_train`
             The resulting array has 3 dimensions: (time_points, n_steps, n_levels)
         dimension_names : dict
             Labels for the multi-dimensional arrays created internally for training
+        exog_names_in_ : list
+            Names of the exogenous variables included in the training matrices.
+        exog_dtypes_in_ : dict
+            Type of each exogenous variable/s used in training before the transformation
+            applied by `transformer_exog`. If `transformer_exog` is not used, it
+            is equal to `exog_dtypes_out_`.
+        exog_dtypes_out_ : dict
+            Type of each exogenous variable/s used in training after the transformation 
+            applied by `transformer_exog`. If `transformer_exog` is not used, it 
+            is equal to `exog_dtypes_in_`.
 
         """
 
@@ -689,6 +706,7 @@ class ForecasterRnn(ForecasterBase):
                 )
             
             exog_n_dim_in = len(exog_names_in_)
+            exog_dtypes_in_ = get_exog_dtypes(exog=exog)
             exog = transform_dataframe(
                 df=exog,
                 transformer=self.transformer_exog,
@@ -696,6 +714,7 @@ class ForecasterRnn(ForecasterBase):
                 inverse_transform=False,
             )
             exog_n_dim_out = len(exog.columns)
+            exog_dtypes_out_ = get_exog_dtypes(exog=exog)
 
             if exog_n_dim_in != exog_n_dim_out:
                 raise ValueError(
@@ -736,11 +755,72 @@ class ForecasterRnn(ForecasterBase):
             }
         else:
             exog_train = None
+            exog_names_in_ = None
+            exog_dtypes_in_ = None
+            exog_dtypes_out_ = None
             dimension_names["exog_train"] = {
                 0: None,
                 1: None,
                 2: None
             }
+
+        return (
+            X_train, 
+            exog_train, 
+            y_train, 
+            dimension_names,
+            exog_names_in_,
+            exog_dtypes_in_,
+            exog_dtypes_out_
+        )
+    
+    def create_train_X_y(
+        self,
+        series: pd.DataFrame,
+        exog: pd.Series | pd.DataFrame | None = None,
+        suppress_warnings: bool = False
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, dict[int, list]]:
+        """
+        Create training matrices. The resulting multi-dimensional matrices contain
+        the target variable and predictors needed to train the model.
+
+        Parameters
+        ----------
+        series : pandas DataFrame
+            Training time series.
+        exog : pandas Series, pandas DataFrame, default None
+            Exogenous variable/s included as predictor/s. Must have the same
+            number of observations as `series` and their indexes must be aligned.
+        suppress_warnings : bool, default False
+            If `True`, skforecast warnings will be suppressed during the creation
+            of the training matrices. See skforecast.exceptions.warn_skforecast_categories 
+            for more information.
+
+        Returns
+        -------
+        X_train : numpy ndarray
+            Training values (predictors) for each step. The resulting array has
+            3 dimensions: (time_points, n_lags, n_series)
+        exog_train: numpy ndarray
+            Value of exogenous variables aligned with X_train. (time_points, n_exog)
+        y_train : numpy ndarray
+            Values (target) of the time series related to each row of `X_train`
+            The resulting array has 3 dimensions: (time_points, n_steps, n_levels)
+        dimension_names : dict
+            Labels for the multi-dimensional arrays created internally for training
+
+        """
+
+        set_skforecast_warnings(suppress_warnings, action='ignore')
+
+        output = self._create_train_X_y(series=series, exog=exog)
+
+        X_train = output[0]
+        exog_train = output[1]
+        y_train = output[2]
+        dimension_names = output[3]
+        
+        set_skforecast_warnings(suppress_warnings, action='default')
 
         return X_train, exog_train, y_train, dimension_names
 
@@ -806,13 +886,17 @@ class ForecasterRnn(ForecasterBase):
         self.fit_date = None
         self.keras_backend_ = keras.backend.backend()
             
-        X_train, exog_train, y_train, dimension_names = self.create_train_X_y(
-            series=series, exog=exog
-        )
+        (
+            X_train,
+            exog_train,
+            y_train,
+            dimension_names,
+            exog_names_in_,
+            exog_dtypes_in_,
+            exog_dtypes_out_,
+        ) = self.create_train_X_y(series=series, exog=exog)
 
         series_names_in_ = dimension_names["X_train"][2]
-        if exog is not None:
-            exog_names_in_ = exog.columns.to_list()
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print(f"Using device: {device}")
@@ -903,14 +987,13 @@ class ForecasterRnn(ForecasterBase):
         else:
             self.index_freq_ = y_index.step
 
-        # TODO: Make this variables output of the create_train_X_y method
         if exog is not None:
             # NOTE: self.exog_in_ is determined by the regressor architecture and
             # set during initialization.
             self.exog_names_in_ = exog_names_in_
             self.exog_type_in_ = type(exog)
-            self.exog_dtypes_in_ = get_exog_dtypes(exog=exog)
-            self.exog_dtypes_out_ = self.exog_dtypes_in_
+            self.exog_dtypes_in_ = exog_dtypes_in_
+            self.exog_dtypes_out_ = exog_dtypes_out_
             self.exog_train_dim_names_ = dimension_names["exog_train"]
             self.X_train_exog_names_out_ = dimension_names["exog_train"][2]
             self.X_train_features_names_out_ = dimension_names["X_train"][1] + dimension_names["exog_train"][2]

@@ -44,7 +44,7 @@ def create_and_compile_model(
     exog: pd.Series | pd.DataFrame | None = None,
     recurrent_layer: str = "LSTM",
     recurrent_units: int | list[int] | tuple[int] = 100,
-    recurrent_layers_kwargs: dict[str, Any] | list[dict[str, Any]] | None = None,
+    recurrent_layers_kwargs: dict[str, Any] | list[dict[str, Any]] | None = {"activation": "tanh"},
     dense_units: int | list[int] | tuple[int] = 64,
     dense_layers_kwargs: dict[str, Any] | list[dict[str, Any]] | None = {"activation": "relu"},
     output_dense_layer_kwargs: dict[str, Any] | None = {"activation": "linear"},
@@ -79,7 +79,7 @@ def create_and_compile_model(
     recurrent_units : int, list, default 100
         Number of units in the recurrent layer(s). Can be an integer for single 
         recurrent layer, or a list of integers for multiple recurrent layers.
-    recurrent_layers_kwargs : dict, list, default None
+    recurrent_layers_kwargs : dict, list, default {'activation': 'tanh'}
         Additional keyword arguments for the recurrent layers [1]_, [2]_, [3]_. 
         Can be a single dictionary for all layers or a list of dictionaries 
         specifying different parameters for each recurrent layer.
