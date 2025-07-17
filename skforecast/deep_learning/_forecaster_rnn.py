@@ -1015,7 +1015,7 @@ class ForecasterRnn(ForecasterBase):
         predict_probabilistic: bool = False,
         use_in_sample_residuals: bool = True,
         check_inputs: bool = True
-    ) -> tuple[list[np.ndarray], list[str], list[int], pd.Index]:
+    ) -> tuple[list[np.ndarray], dict[str, dict], list[int], list[str], pd.Index]:
         """
         Create the inputs needed for the prediction process.
         
@@ -1058,12 +1058,16 @@ class ForecasterRnn(ForecasterBase):
 
         Returns
         -------
-        Xs : list
-            List of numpy arrays with the predictors for each step.
-        Xs_col_names : list
-            Names of the columns of the matrix created internally for prediction.
+        X : list
+            List of numpy arrays needed for prediction. The first element
+            is the matrix of lags and the second element is the matrix of
+            exogenous variables.
+        X_predict_dimension_names : dict
+            Labels for the multi-dimensional arrays created internally for prediction.
         steps : list
             Steps to predict.
+        levels : list
+            Levels (series) to predict.
         prediction_index : pandas Index
             Index of the predictions.
         
@@ -1145,9 +1149,17 @@ class ForecasterRnn(ForecasterBase):
             )
             last_window_values[:, idx_series] = last_window_series
 
-        X = np.reshape(last_window_values, (1, self.max_lag, last_window.shape[1]))
+        X = [np.reshape(last_window_values, (1, self.max_lag, last_window.shape[1]))]
+        X_predict_dimension_names = {
+            "X_autoreg": {
+                0: "batch",
+                1: self.lags_names,
+                2: self.X_train_series_names_in_
+            }
+        }
 
         if exog is not None:
+
             exog = input_to_frame(data=exog, input_name='exog')
             exog = transform_dataframe(
                 df=exog,
@@ -1155,22 +1167,16 @@ class ForecasterRnn(ForecasterBase):
                 fit=True,
                 inverse_transform=False,
             )
+
             exog_pred = exog.to_numpy()
             exog_pred = np.expand_dims(exog_pred[:self.max_step], axis=0)
-            X = [X, exog_pred]
-        
-        X_predict_dimension_names = {
-            "X_autoreg": {
-                0: "batch",
-                1: self.lags_names,
-                2: self.X_train_series_names_in_
-            },
-            "exog_pred": {
+            X.append(exog_pred)
+
+            X_predict_dimension_names["exog_pred"] = {
                 0: "batch",
                 1: [f"step_{step}" for step in self.steps],
                 2: self.X_train_exog_names_out_
             }
-        }
 
         return X, X_predict_dimension_names, steps, levels, prediction_index
 
@@ -1182,7 +1188,7 @@ class ForecasterRnn(ForecasterBase):
         exog: pd.Series | pd.DataFrame | None = None,
         suppress_warnings: bool = False,
         check_inputs: bool = True
-    ) -> tuple[pd.DataFrame, pd.DataFrame]:
+    ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
         """
         Create the predictors needed to predict `steps` ahead.
         
@@ -1232,9 +1238,7 @@ class ForecasterRnn(ForecasterBase):
         (
             X,
             X_predict_dimension_names,
-            _,
-            _,
-            _
+            *_
         ) = self._create_predict_inputs(
                 steps        = steps,
                 levels       = levels,
@@ -1346,7 +1350,9 @@ class ForecasterRnn(ForecasterBase):
                 check_inputs = check_inputs
             )
 
-        predictions = self.regressor.predict(X, verbose=0)
+        predictions = self.regressor.predict(
+            X[0] if not self.exog_in_ else X, verbose=0
+        )
         predictions = np.reshape(
             predictions, (predictions.shape[1], predictions.shape[2])
         )[np.array(steps) - 1]
@@ -1453,7 +1459,9 @@ class ForecasterRnn(ForecasterBase):
         else:
             residuals = self.out_sample_residuals_
 
-        predictions = self.regressor.predict(X, verbose=0)
+        predictions = self.regressor.predict(
+            X[0] if not self.exog_in_ else X, verbose=0
+        )
         predictions = np.reshape(
             predictions, (predictions.shape[1], predictions.shape[2])
         )[np.array(steps) - 1]
@@ -1928,191 +1936,62 @@ class ForecasterRnn(ForecasterBase):
                         f"`y_pred` must have the same index. Error in series {k}."
                     )
         
-        if not set(y_pred.keys()) == {self.levels}:
+        series_to_update = set(y_pred.keys()).intersection(set(self.levels))
+        if not series_to_update:
             raise ValueError(
-                f"`y_pred` and `y_true` must have only the key '{self.levels}'. " 
-                f"Got {set(y_pred.keys())}."
+                f"Provided keys in `y_pred` and `y_true` do not match any of the "
+                f"target time series in the forecaster, {self.levels}. Residuals "
+                f"cannot be updated."
             )
         
-        y_true = deepcopy(y_true[self.level])
-        y_pred = deepcopy(y_pred[self.level])        
-        if not isinstance(y_pred, np.ndarray):
-            y_pred = y_pred.to_numpy()
-        if not isinstance(y_true, np.ndarray):
-            y_true = y_true.to_numpy()
-
-        if self.transformer_series:
-            y_true = transform_numpy(
-                         array             = y_true,
-                         transformer       = self.transformer_series_[self.level],
-                         fit               = False,
-                         inverse_transform = False
-                     )
-            y_pred = transform_numpy(
-                         array             = y_pred,
-                         transformer       = self.transformer_series_[self.level],
-                         fit               = False,
-                         inverse_transform = False
-                     )
-        
-        if self.differentiation is not None:
-            differentiator = copy(self.differentiator)
-            differentiator.set_params(window_size=None)
-            y_true = differentiator.fit_transform(y_true)[self.differentiation:]
-            y_pred = differentiator.fit_transform(y_pred)[self.differentiation:]
-
-        data = pd.DataFrame(
-            {'prediction': y_pred, 'residuals': y_true - y_pred}
-        ).dropna()
-        y_pred = data['prediction'].to_numpy()
-        residuals = data['residuals'].to_numpy()
-
-        data['bin'] = self.binner[self.level].transform(y_pred).astype(int)
-        residuals_by_bin = data.groupby('bin')['residuals'].apply(np.array).to_dict()
-
         if self.out_sample_residuals_ is None:
-            self.out_sample_residuals_ = {self.level: None}
-            self.out_sample_residuals_by_bin_ = {self.level: None}
+            self.out_sample_residuals_ = {level: None for level in self.levels}
         
-        out_sample_residuals = (
-            np.array([]) 
-            if self.out_sample_residuals_[self.level] is None
-            else self.out_sample_residuals_[self.level]
-        )
-        out_sample_residuals_by_bin = (
-            {} 
-            if self.out_sample_residuals_by_bin_[self.level] is None
-            else self.out_sample_residuals_by_bin_[self.level]
-        )
-        if append:
-            out_sample_residuals = np.concatenate([out_sample_residuals, residuals])
-            for k, v in residuals_by_bin.items():
-                if k in out_sample_residuals_by_bin:
-                    out_sample_residuals_by_bin[k] = np.concatenate(
-                        (out_sample_residuals_by_bin[k], v)
-                    )
-                else:
-                    out_sample_residuals_by_bin[k] = v
-        else:
-            out_sample_residuals = residuals
-            out_sample_residuals_by_bin = residuals_by_bin
-
-        max_samples = 10_000 // self.binner[self.level].n_bins_
         rng = np.random.default_rng(seed=random_state)
-        for k, v in out_sample_residuals_by_bin.items():
-            if len(v) > max_samples:
-                sample = rng.choice(a=v, size=max_samples, replace=False)
-                out_sample_residuals_by_bin[k] = sample
+        for level in series_to_update:
 
-        for k in self.binner_intervals_.get(self.level, {}).keys():
-            if k not in out_sample_residuals_by_bin:
-                out_sample_residuals_by_bin[k] = np.array([])
+            y_true_level = deepcopy(y_true[level])
+            y_pred_level = deepcopy(y_pred[level])
+            if not isinstance(y_true_level, np.ndarray):
+                y_true_level = y_true_level.to_numpy()
+            if not isinstance(y_pred_level, np.ndarray):
+                y_pred_level = y_pred_level.to_numpy()
 
-        empty_bins = [
-            k for k, v in out_sample_residuals_by_bin.items() 
-            if v.size == 0
-        ]
-        if empty_bins:
-            warnings.warn(
-                f"The following bins of level '{self.level}' have no out of sample residuals: "
-                f"{empty_bins}. No predicted values fall in the interval "
-                f"{[self.binner_intervals_[self.level][bin] for bin in empty_bins]}. "
-                f"Empty bins will be filled with a random sample of residuals.", 
-                ResidualsUsageWarning
+            if self.transformer_series:
+                y_true_level = transform_numpy(
+                                   array             = y_true_level,
+                                   transformer       = self.transformer_series_[level],
+                                   fit               = False,
+                                   inverse_transform = False
+                               )
+                y_pred_level = transform_numpy(
+                                   array             = y_pred_level,
+                                   transformer       = self.transformer_series_[level],
+                                   fit               = False,
+                                   inverse_transform = False
+                               )
+
+            data = pd.DataFrame(
+                {'prediction': y_pred_level, 'residuals': y_true_level - y_pred_level}
+            ).dropna()
+            residuals = data['residuals'].to_numpy()
+
+            out_sample_residuals = self.out_sample_residuals_.get(level, np.array([]))
+            out_sample_residuals = (
+                np.array([]) 
+                if out_sample_residuals is None
+                else out_sample_residuals
             )
-            empty_bin_size = min(max_samples, len(out_sample_residuals))
-            for k in empty_bins:
-                out_sample_residuals_by_bin[k] = rng.choice(
-                    a       = out_sample_residuals,
-                    size    = empty_bin_size,
+            if append:
+                out_sample_residuals = np.concatenate([out_sample_residuals, residuals])
+            else:
+                out_sample_residuals = residuals
+
+            if len(out_sample_residuals) > 10_000:
+                out_sample_residuals = rng.choice(
+                    a       = out_sample_residuals, 
+                    size    = 10_000, 
                     replace = False
                 )
 
-        if len(out_sample_residuals) > 10_000:
-            out_sample_residuals = rng.choice(
-                a       = out_sample_residuals, 
-                size    = 10_000, 
-                replace = False
-            )
-
-        self.out_sample_residuals_[self.level] = out_sample_residuals
-        self.out_sample_residuals_by_bin_[self.level] = out_sample_residuals_by_bin
-    
-# TODO: set_out_sample method
-    # def set_out_sample_residuals(
-    #     self,
-    #     residuals: np.ndarray,
-    #     append: bool = True,
-    #     transform: bool = True,
-    #     random_state: int = 123,
-    # ) -> None:
-    #     """
-    #     Set new values to the attribute `out_sample_residuals`. Out of sample
-    #     residuals are meant to be calculated using observations that did not
-    #     participate in the training process.
-
-    #     Parameters
-    #     ----------
-    #     residuals : numpy ndarray
-    #         Values of residuals. If len(residuals) > 1000, only a random sample
-    #         of 1000 values are stored.
-    #     append : bool, default `True`
-    #         If `True`, new residuals are added to the once already stored in the
-    #         attribute `out_sample_residuals`. Once the limit of 1000 values is
-    #         reached, no more values are appended. If False, `out_sample_residuals`
-    #         is overwritten with the new residuals.
-    #     transform : bool, default `True`
-    #         If `True`, new residuals are transformed using self.transformer_y.
-    #     random_state : int, default `123`
-    #         Sets a seed to the random sampling for reproducible output.
-
-    #     Returns
-    #     -------
-    #     None
-
-    #     """
-
-    #     if not isinstance(residuals, np.ndarray):
-    #         raise TypeError(
-    #             f"`residuals` argument must be `numpy ndarray`. Got {type(residuals)}."
-    #         )
-
-    #     if not transform and self.transformer_y is not None:
-    #         warnings.warn(
-    #             (
-    #                 f"Argument `transform` is set to `False` but forecaster was trained "
-    #                 f"using a transformer {self.transformer_y}. Ensure that the new residuals "
-    #                 f"are already transformed or set `transform=True`."
-    #             )
-    #         )
-
-    #     if transform and self.transformer_y is not None:
-    #         warnings.warn(
-    #             (
-    #                 f"Residuals will be transformed using the same transformer used "
-    #                 f"when training the forecaster ({self.transformer_y}). Ensure that the "
-    #                 f"new residuals are on the same scale as the original time series."
-    #             )
-    #         )
-
-    #         residuals = transform_series(
-    #             series=pd.Series(residuals, name="residuals"),
-    #             transformer=self.transformer_y,
-    #             fit=False,
-    #             inverse_transform=False,
-    #         ).to_numpy()
-
-    #     if len(residuals) > 1000:
-    #         rng = np.random.default_rng(seed=random_state)
-    #         residuals = rng.choice(a=residuals, size=1000, replace=False)
-
-    #     if append and self.out_sample_residuals is not None:
-    #         free_space = max(0, 1000 - len(self.out_sample_residuals))
-    #         if len(residuals) < free_space:
-    #             residuals = np.hstack((self.out_sample_residuals, residuals))
-    #         else:
-    #             residuals = np.hstack(
-    #                 (self.out_sample_residuals, residuals[:free_space])
-    #             )
-
-    #     self.out_sample_residuals = residuals
+            self.out_sample_residuals_[level] = out_sample_residuals
