@@ -3021,8 +3021,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
     def set_out_sample_residuals(
         self,
-        y_true: dict[int, np.ndarray | pd.Series],
-        y_pred: dict[int, np.ndarray | pd.Series],
+        y_true: dict[str, np.ndarray | pd.Series],
+        y_pred: dict[str, np.ndarray | pd.Series],
         append: bool = False,
         random_state: int = 123
     ) -> None:
