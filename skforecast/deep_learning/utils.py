@@ -8,6 +8,7 @@
 from __future__ import annotations
 from typing import Any
 from copy import deepcopy
+import warnings
 import numpy as np
 import pandas as pd
 from ..utils import (
@@ -37,6 +38,58 @@ except Exception as e:
 
 
 def create_and_compile_model(
+    series: pd.DataFrame,
+    lags: int | list[int] | np.ndarray[int] | range[int],
+    steps: int,
+    levels: str | list[str] | tuple[str] | None = None,
+    exog: pd.Series | pd.DataFrame | None = None,
+    recurrent_layer: str = "LSTM",
+    recurrent_units: int | list[int] | tuple[int] = 100,
+    recurrent_layers_kwargs: dict[str, Any] | list[dict[str, Any]] | None = {"activation": "tanh"},
+    dense_units: int | list[int] | tuple[int] = 64,
+    dense_layers_kwargs: dict[str, Any] | list[dict[str, Any]] | None = {"activation": "relu"},
+    output_dense_layer_kwargs: dict[str, Any] | None = {"activation": "linear"},
+    compile_kwargs: dict[str, Any] = {"optimizer": Adam(learning_rate=0.01), "loss": MeanSquaredError()},
+    model_name: str | None = None
+) -> keras.models.Model:
+    """
+    """
+    if exog is None:
+        model = _create_and_compile_model_no_exog(
+            series=series,
+            lags=lags,
+            steps=steps,
+            levels=levels,
+            recurrent_layer=recurrent_layer,
+            recurrent_units=recurrent_units,
+            recurrent_layers_kwargs=recurrent_layers_kwargs,
+            dense_units=dense_units,
+            dense_layers_kwargs=dense_layers_kwargs,
+            output_dense_layer_kwargs=output_dense_layer_kwargs,
+            compile_kwargs=compile_kwargs,
+            model_name=model_name
+        )
+    else:
+        model = _create_and_compile_model_exog(
+            series=series,
+            lags=lags,
+            steps=steps,
+            levels=levels,
+            exog=exog,
+            recurrent_layer=recurrent_layer,
+            recurrent_units=recurrent_units,
+            recurrent_layers_kwargs=recurrent_layers_kwargs,
+            dense_units=dense_units,
+            dense_layers_kwargs=dense_layers_kwargs,
+            output_dense_layer_kwargs=output_dense_layer_kwargs,
+            compile_kwargs=compile_kwargs,
+            model_name=model_name
+        )
+    
+    return model
+
+
+def _create_and_compile_model_exog(
     series: pd.DataFrame,
     lags: int | list[int] | np.ndarray[int] | range[int],
     steps: int,
@@ -271,6 +324,253 @@ def create_and_compile_model(
     output = TimeDistributed(Dense(**output_layer_kwargs), name=layer_name)(x)
 
     model = Model(inputs=inputs, outputs=output, name=model_name)
+    model.compile(**compile_kwargs)
+
+    return model
+
+
+def _create_and_compile_model_no_exog(
+    series: pd.DataFrame,
+    lags: int | list[int] | np.ndarray[int] | range[int],
+    steps: int,
+    levels: str | list[str] | tuple[str] | None = None,
+    recurrent_layer: str = "LSTM",
+    recurrent_units: int | list[int] | tuple[int] = 100,
+    recurrent_layers_kwargs: dict[str, Any] | list[dict[str, Any]] | None = {"activation": "tanh"},
+    dense_units: int | list[int] | tuple[int] = 64,
+    dense_layers_kwargs: dict[str, Any] | list[dict[str, Any]] | None = {"activation": "relu"},
+    output_dense_layer_kwargs: dict[str, Any] | None = {"activation": "linear"},
+    compile_kwargs: dict[str, Any] = {"optimizer": Adam(learning_rate=0.01), "loss": MeanSquaredError()},
+    model_name: str | None = None
+) -> keras.models.Model:
+    """
+    Build and compile a RNN-based Keras model for time series prediction.
+
+    Parameters
+    ----------
+    series : pandas DataFrame
+        Input time series with shape (n_obs, n_series). Each column is a time series.
+    lags : int, list, numpy ndarray, range
+        Number of lagged time steps to consider in the input, index starts at 1, 
+        so lag 1 is equal to t-1.
+    
+        - `int`: include lags from 1 to `lags` (included).
+        - `list`, `1d numpy ndarray` or `range`: include only lags present in 
+        `lags`, all elements must be int.
+    steps : int
+        Number of steps to predict.
+    levels : str, list, default None
+       Output level(s) (features) to predict. If None, defaults to the names of 
+       input series.
+    recurrent_layer : str, default 'LSTM'
+        Type of recurrent layer to be used, 'LSTM' [1]_, 'GRU' [2]_, or 'RNN' [3]_.
+    recurrent_units : int, list, default 100
+        Number of units in the recurrent layer(s). Can be an integer for single 
+        recurrent layer, or a list of integers for multiple recurrent layers.
+    recurrent_layers_kwargs : dict, list, default {'activation': 'tanh'}
+        Additional keyword arguments for the recurrent layers [1]_, [2]_, [3]_. 
+        Can be a single dictionary for all layers or a list of dictionaries 
+        specifying different parameters for each recurrent layer.
+    dense_units : int, list, tuple, default 64
+        Number of units in the dense layer(s) [4]_. Can be an integer for single
+        dense layer, or a list of integers for multiple dense layers.
+    dense_layers_kwargs : dict, list, default {'activation': 'relu'}
+        Additional keyword arguments for the dense layers [4]_. Can be a single
+        dictionary for all layers or a list of dictionaries specifying different
+        parameters for each dense layer.
+    output_dense_layer_kwargs : dict, default {'activation': 'linear'}
+        Additional keyword arguments for the output dense layer.
+    compile_kwargs : dict, default {'optimizer': Adam(learning_rate=0.01), 'loss': MeanSquaredError()}
+        Additional keyword arguments for the model compilation, such as optimizer 
+        and loss function.
+    model_name : str, default None
+        Name of the model.
+
+    Returns
+    -------
+    model : keras.models.Model
+        Compiled Keras model ready for training.
+
+    References
+    ----------
+    .. [1] LSTM layer Keras documentation.
+           https://keras.io/api/layers/recurrent_layers/lstm/
+
+    .. [2] GRU layer Keras documentation.
+           https://keras.io/api/layers/recurrent_layers/gru/
+
+    .. [3] SimpleRNN layer Keras documentation.
+           https://keras.io/api/layers/recurrent_layers/simple_rnn/
+
+    .. [4] Dense layer Keras documentation.
+           https://keras.io/api/layers/core_layers/dense/
+
+    """
+
+    if not isinstance(series, pd.DataFrame):
+        raise TypeError(
+            f"`series` must be a pandas DataFrame. Got {type(series)}."
+        )
+    n_series = series.shape[1]
+
+    lags, _, _ = initialize_lags('ForecasterRNN', lags)
+    n_lags = len(lags)
+
+    if not isinstance(steps, int):
+        raise TypeError(
+            f"`steps` argument must be an int greater than or equal to 1. "
+            f"Got {type(steps)}."
+        )
+
+    if steps < 1:
+        raise ValueError(
+            f"`steps` argument must be greater than or equal to 1. Got {steps}."
+        )
+
+    if levels is None:
+        n_levels = n_series
+    else:
+        if isinstance(levels, str):
+            levels = [levels]
+        elif not isinstance(levels, (list, tuple)):
+            raise TypeError(f"Invalid type for `levels`: {type(levels)}.")
+        
+        series_names_in = series.columns.tolist()
+        missing_levels = [level for level in levels if level not in series_names_in]
+        if missing_levels:
+            raise ValueError(
+                f"Levels {missing_levels} not found in series columns: {series_names_in}."
+            )
+        
+        n_levels = len(levels)
+
+    series_input = Input(shape=(n_lags, n_series), name="series_input")
+    x = series_input
+
+    # Recurrent units must be a list or int
+    if not isinstance(recurrent_units, (list, int)):
+        raise TypeError(
+            f"`recurrent_units` argument must be a list or int. Got {type(recurrent_units)}."
+        )
+    if not isinstance(recurrent_units, (list, tuple)):
+        recurrent_units = [recurrent_units]
+    
+    if isinstance(recurrent_layers_kwargs, dict):
+        recurrent_layers_kwargs = [recurrent_layers_kwargs] * len(recurrent_units)
+    elif isinstance(recurrent_layers_kwargs, (list, tuple)):
+        if len(recurrent_layers_kwargs) != len(recurrent_units):
+            raise ValueError(
+                "If `recurrent_layers_kwargs` is a list, it must have the same "
+                "length as `recurrent_units`. One dict of kwargs per recurrent layer."
+            )
+    elif recurrent_layers_kwargs is None:
+        recurrent_layers_kwargs = [{}] * len(recurrent_units)
+    else:
+        raise TypeError(
+            f"`recurrent_layers_kwargs` must be a dict, a list of dicts or None. "
+            f"Got {type(recurrent_layers_kwargs)}."
+        )
+
+    # Dynamically create multiple recurrent layers if recurrent_units is a list
+    if isinstance(recurrent_units, list):
+
+        for i, units in enumerate(recurrent_units[:-1]):  # All layers except the last one
+
+            layer_kwargs = deepcopy(recurrent_layers_kwargs[i])
+            layer_kwargs.update({
+                "units": units,
+                "return_sequences": True,
+            })
+            if "name" not in layer_kwargs:
+                layer_kwargs["name"] = f"{recurrent_layer.lower()}_{i + 1}"
+
+            if recurrent_layer == "LSTM":
+                x = LSTM(**layer_kwargs)(x)
+            elif recurrent_layer == "RNN":
+                x = SimpleRNN(**layer_kwargs)(x)
+            else:
+                raise ValueError(f"Invalid recurrent layer: {recurrent_layer}")
+        
+        # Last layer without return_sequences
+        layer_kwargs = deepcopy(recurrent_layers_kwargs[-1])
+        layer_kwargs.update({
+            "units": recurrent_units[-1],
+            "return_sequences": False,
+        })
+        if "name" not in layer_kwargs:
+            layer_kwargs["name"] = f"{recurrent_layer.lower()}_{len(recurrent_units)}"
+
+        if recurrent_layer == "LSTM":
+            x = LSTM(**layer_kwargs)(x)
+        elif recurrent_layer == "RNN":
+            x = SimpleRNN(**layer_kwargs)(x)
+        else:
+            raise ValueError(f"Invalid recurrent layer: {recurrent_layer}")
+    else:
+        layer_kwargs = deepcopy(recurrent_layers_kwargs[0])
+        layer_kwargs.update({
+            "units": recurrent_units,
+        })
+        if "name" not in layer_kwargs:
+            layer_kwargs["name"] = f"{recurrent_layer.lower()}_1"
+        
+        # Single recurrent layer
+        if recurrent_layer == "LSTM":
+            x = LSTM(**layer_kwargs)(x)
+        elif recurrent_layer == "RNN":
+            x = SimpleRNN(**layer_kwargs)(x)
+        else:
+            raise ValueError(f"Invalid recurrent layer: {recurrent_layer}")
+
+    # Dense layers
+    if not isinstance(dense_units, (list, tuple)):
+        dense_units = [dense_units]
+
+    if isinstance(dense_layers_kwargs, dict):
+        dense_layers_kwargs = [dense_layers_kwargs] * len(dense_units)
+    elif isinstance(dense_layers_kwargs, (list, tuple)):
+        if len(dense_layers_kwargs) != len(dense_units):
+            raise ValueError(
+                "If `dense_layers_kwargs` is a list, it must have the same "
+                "length as `dense_units`. One dict of kwargs per dense layer."
+            )
+    elif dense_layers_kwargs is None:
+        dense_layers_kwargs = [{}] * len(dense_units)
+    else:
+        raise TypeError(
+            f"`dense_layers_kwargs` must be a dict, a list of dicts or None. "
+            f"Got {type(dense_layers_kwargs)}."
+        )
+ 
+    if dense_units is not None:
+        for i, nn in enumerate(dense_units):
+        
+            layer_kwargs = deepcopy(dense_layers_kwargs[i])
+            layer_kwargs.update({
+                "units": nn,
+            })
+            if "name" not in layer_kwargs:
+                layer_kwargs['name'] = f"dense_{i + 1}"
+            
+            x = Dense(**layer_kwargs)(x)
+
+    # Output layer
+    if output_dense_layer_kwargs is None:
+        output_layer_kwargs = {}
+    else:
+        output_layer_kwargs = deepcopy(output_dense_layer_kwargs)
+    
+    output_layer_kwargs.update({
+        "units": n_levels * steps,
+    })
+    if "name" not in output_layer_kwargs:
+        output_layer_kwargs['name'] = "output_dense_td_layer"
+    
+    x = Dense(**output_layer_kwargs)(x)
+    # model = Model(inputs=input_layer, outputs=x)
+    output_layer = keras.layers.Reshape((steps, n_levels))(x)
+
+    model = Model(inputs=series_input, outputs=output_layer, name=model_name)
     model.compile(**compile_kwargs)
 
     return model

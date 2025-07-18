@@ -1357,14 +1357,16 @@ class ForecasterRnn(ForecasterBase):
             predictions, (predictions.shape[1], predictions.shape[2])
         )[np.array(steps) - 1]
 
-        for i, level in enumerate(levels):
-
-            predictions[:, i] = transform_numpy(
-                array             = predictions[:, i],
-                transformer       = self.transformer_series_[level],
-                fit               = False,
-                inverse_transform = True
-            )
+        for i, level in enumerate(self.levels):
+            # NOTE: The inverse transformation is applied only if the level
+            # is included in the levels to predict.
+            if level in levels:
+                predictions[:, i] = transform_numpy(
+                    array             = predictions[:, i],
+                    transformer       = self.transformer_series_[level],
+                    fit               = False,
+                    inverse_transform = True
+                )
 
         n_steps, n_levels = predictions.shape
         predictions = pd.DataFrame(
@@ -1471,11 +1473,15 @@ class ForecasterRnn(ForecasterBase):
         correction_factor = np.full(
             shape=(n_steps, n_levels), fill_value=np.nan, order='C', dtype=float
         )
-
-        for i, level in enumerate(levels):
-            correction_factor[:, i] = np.quantile(
-                np.abs(residuals[level]), nominal_coverage
-            )
+        for i, level in enumerate(self.levels):
+            # NOTE: The correction factor is calculated only for the levels
+            # included in the levels to predict.
+            if level in levels:
+                correction_factor[:, i] = np.quantile(
+                    np.abs(residuals[level]), nominal_coverage
+                )
+            else:
+                correction_factor[:, i] = 0.
 
         lower_bound = predictions - correction_factor
         upper_bound = predictions + correction_factor
@@ -1483,17 +1489,20 @@ class ForecasterRnn(ForecasterBase):
         # NOTE: Create a 3D array with shape (n_levels, intervals, steps)
         predictions = np.array([predictions, lower_bound, upper_bound]).swapaxes(0, 2)
 
-        for i, level in enumerate(levels):
-            transformer_level = self.transformer_series_[level]
-            if transformer_level is not None:
-                predictions[i, :, :] = np.apply_along_axis(
-                    func1d            = transform_numpy,
-                    axis              = 0,
-                    arr               = predictions[i, :, :],
-                    transformer       = transformer_level,
-                    fit               = False,
-                    inverse_transform = True
-                )
+        for i, level in enumerate(self.levels):
+            # NOTE: The inverse transformation is applied only if the level
+            # is included in the levels to predict.
+            if level in levels:
+                transformer_level = self.transformer_series_[level]
+                if transformer_level is not None:
+                    predictions[i, :, :] = np.apply_along_axis(
+                        func1d            = transform_numpy,
+                        axis              = 0,
+                        arr               = predictions[i, :, :],
+                        transformer       = transformer_level,
+                        fit               = False,
+                        inverse_transform = True
+                    )
         
         predictions = pd.DataFrame(
                           data    = predictions.swapaxes(0, 1).reshape(-1, 3),
