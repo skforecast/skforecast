@@ -1164,7 +1164,7 @@ class ForecasterRnn(ForecasterBase):
             exog = transform_dataframe(
                 df=exog,
                 transformer=self.transformer_exog,
-                fit=True,
+                fit=False,
                 inverse_transform=False,
             )
 
