@@ -213,8 +213,7 @@ def check_backtesting_input(
         "ForecasterRecursive",
         "ForecasterDirect",
         "ForecasterRecursiveMultiSeries",
-        "ForecasterDirectMultiVariate",
-        "ForecasterRNN",
+        "ForecasterDirectMultiVariate"
     ]
 
     if forecaster_name in forecasters_uni:

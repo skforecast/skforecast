@@ -64,25 +64,28 @@ plotting = [
 ]
 
 deeplearning = [
-    'tensorflow>=2.13, <2.19; python_version < "3.13"',
-    'torch>=2.2, <2.7; python_version < "3.13"',
-    "matplotlib>=3.3, <3.11",
     "keras>=3.0, <4.0",
-    "numpy>=1.24, <2.0",
+    'tensorflow>=2.18, <2.20; python_version < "3.13"',
+    'torch>=2.4, <2.8; python_version < "3.13"',
+    "matplotlib>=3.3, <3.11",
 ]
 
 all = [
     "matplotlib>=3.3, <3.11",
     "seaborn>=0.11, <0.14",
     "statsmodels>=0.12, <0.15",
-    "keras>=2.6, <4.0"
+    "keras>=3.0, <4.0",
+    'tensorflow>=2.18, <2.20; python_version < "3.13"',
+    'torch>=2.4, <2.8; python_version < "3.13"'
 ]
 
 full = [
     "matplotlib>=3.3, <3.11",
     "seaborn>=0.11, <0.14",
     "statsmodels>=0.12, <0.15",
-    "keras>=2.6, <4.0",
+    "keras>=3.0, <4.0",
+    'tensorflow>=2.18, <2.20; python_version < "3.13"',
+    'torch>=2.4, <2.8; python_version < "3.13"'
 ]
 
 docs = [
@@ -105,8 +108,9 @@ test = [
     "pytest-xdist>=3.3",
     "lightgbm>=4.0, <4.7",
     "xgboost>=2.1, <4.0",
-    'tensorflow>=2.13, <2.20; python_version < "3.13"',
-    "torch>=2.2, <2.8",
+    "keras>=3.0, <4.0",
+    'tensorflow>=2.18, <2.20; python_version < "3.13"',
+    'torch>=2.4, <2.8; python_version < "3.13"',
     "tomli>=2.0",
     "pandas[parquet]>=1.5"
 ]

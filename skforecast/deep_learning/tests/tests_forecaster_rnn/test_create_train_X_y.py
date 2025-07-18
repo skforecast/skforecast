@@ -43,7 +43,7 @@ def test_create_train_X_y_TypeError_when_series_not_dataframe():
             optimizer=optimizer,
             loss=loss,
         )
-        forecaster = ForecasterRnn(model, lags=lags)
+        forecaster = ForecasterRnn(model)
 
 
 def test_create_train_X_y_UserWarning_when_levels_of_transformer_series_not_equal_to_series_col_names():

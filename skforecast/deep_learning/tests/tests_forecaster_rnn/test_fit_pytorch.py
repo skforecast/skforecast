@@ -1,40 +1,31 @@
 # Unit test fit method
 # ==============================================================================
 import os
-
 import numpy as np
 import pandas as pd
-import pytest
-
+from keras.optimizers import Adam
+from keras.losses import MeanSquaredError
 from skforecast.deep_learning import ForecasterRnn
-
-os.environ["KERAS_BACKEND"] = "torch"
-import keras
-
 from skforecast.deep_learning.utils import create_and_compile_model
+os.environ["KERAS_BACKEND"] = "torch"
 
-series = pd.DataFrame(np.random.randn(100, 3))
+series = pd.DataFrame({"1": pd.Series(np.arange(5)), "2": pd.Series(np.arange(5))})
 lags = 3
 steps = 1
 levels = "1"
-activation = "relu"
-optimizer = keras.optimizers.Adam(learning_rate=0.01)
-loss = keras.losses.MeanSquaredError()
-recurrent_units = 100
-dense_units = [128, 64]
-
-series = pd.DataFrame({"1": pd.Series(np.arange(5)), "2": pd.Series(np.arange(5))})
 
 model = create_and_compile_model(
-    series=series,
-    lags=lags,
-    steps=steps,
-    levels=levels,
-    recurrent_units=recurrent_units,
-    dense_units=dense_units,
-    activation=activation,
-    optimizer=optimizer,
-    loss=loss,
+    series=series, 
+    levels=levels,    
+    lags=lags,           
+    steps=steps,              
+    recurrent_layer="LSTM",
+    recurrent_units=100,
+    recurrent_layers_kwargs={"activation": "relu"},
+    dense_units=[128, 64],
+    dense_layers_kwargs={"activation": "relu"},
+    output_dense_layer_kwargs={"activation": "linear"},
+    compile_kwargs={"optimizer": Adam(learning_rate=0.01), "loss": MeanSquaredError()},
 )
 
 
