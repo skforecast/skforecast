@@ -54,7 +54,8 @@ from ..utils import (
     get_style_repr_html,
     set_cpu_gpu_device
 )
-from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner, FastOrdinalEncoder
+from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
+from ..experimental import FastOrdinalEncoder
 from ..model_selection._utils import _extract_data_folds_multiseries
 
 
