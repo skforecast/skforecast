@@ -86,24 +86,6 @@ def test_TypeError_initialize_lags_when_lags_is_not_valid_type_ForecasterDirectM
 @pytest.mark.parametrize("lags", 
                          [1.5, 'not_valid_type'], 
                          ids = lambda lags: f'lags: {lags}')
-def test_TypeError_initialize_lags_when_lags_is_not_valid_type_ForecasterRnn(lags):
-    """
-    Test TypeError is raised when lags is not a valid type in ForecasterRnn.
-    """    
-    err_msg = re.escape(
-        f"`lags` argument must be an int, 1d numpy ndarray, range, "
-        f"tuple, list or 'auto'. Got {type(lags)}."
-    )
-    with pytest.raises(TypeError, match = err_msg):
-        initialize_lags(
-            forecaster_name = 'ForecasterRnn',
-            lags            = lags
-        )
-
-
-@pytest.mark.parametrize("lags", 
-                         [1.5, 'not_valid_type'], 
-                         ids = lambda lags: f'lags: {lags}')
 def test_TypeError_initialize_lags_when_lags_is_not_valid_type(lags):
     """
     Test TypeError is raised when lags is not a valid type.

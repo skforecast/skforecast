@@ -47,6 +47,7 @@ from ..utils import (
     check_residuals_input,
     check_interval,
     preprocess_last_window,
+    input_to_frame,
     expand_index,
     transform_numpy,
     transform_dataframe,
@@ -2107,9 +2108,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     index=prediction_index,
                 )
             else:
-                if isinstance(exog, pd.Series):
-                    exog = exog.to_frame()
-                
+                exog = input_to_frame(data=exog, input_name='exog')                
                 exog = transform_dataframe(
                            df                = exog,
                            transformer       = self.transformer_exog,
@@ -2178,6 +2177,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                          )
                 
                 check_exog_dtypes(exog=exog_values_all_levels)
+            
             exog_values_all_levels = exog_values_all_levels.to_numpy()
             exog_values_dict = {
                 i + 1: exog_values_all_levels[i::steps, :] 
@@ -2253,7 +2253,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                         levels_encoded[i, self.X_train_series_names_in_.index(level)] = 1.
             else:
                 levels_encoded = np.array(
-                    [self.encoding_mapping_.get(level, None) for level in levels],
+                    [self.encoding_mapping_.get(level, np.nan) for level in levels],
                     dtype="float64"
                 ).reshape(-1, 1)
             levels_encoded_shape = levels_encoded.shape[1]

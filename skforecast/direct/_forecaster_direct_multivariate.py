@@ -698,7 +698,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         return data_to_return_dict, X_train_series_names_in_
 
-
     def _create_lags(
         self, 
         y: np.ndarray,
@@ -3022,8 +3021,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
     def set_out_sample_residuals(
         self,
-        y_true: dict[int, np.ndarray | pd.Series],
-        y_pred: dict[int, np.ndarray | pd.Series],
+        y_true: dict[str, np.ndarray | pd.Series],
+        y_pred: dict[str, np.ndarray | pd.Series],
         append: bool = False,
         random_state: int = 123
     ) -> None:
@@ -3116,7 +3115,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             )
         
         y_true = deepcopy(y_true[self.level])
-        y_pred = deepcopy(y_pred[self.level])        
+        y_pred = deepcopy(y_pred[self.level])
         if not isinstance(y_pred, np.ndarray):
             y_pred = y_pred.to_numpy()
         if not isinstance(y_true, np.ndarray):
