@@ -13,7 +13,6 @@ from copy import deepcopy
 from typing import Any
 
 import keras
-import torch
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
@@ -899,10 +898,12 @@ class ForecasterRnn(ForecasterBase):
 
         series_names_in_ = dimension_names["X_train"][2]
 
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        print(f"Using device: {device}")
-
         if self.keras_backend_ == "torch":
+            
+            import torch
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            print(f"Using {self.keras_backend_} backend with device: {device}")
+
             torch_device = torch.device(device)
             X_train = torch.tensor(X_train).to(torch_device)
             y_train = torch.tensor(y_train).to(torch_device)
