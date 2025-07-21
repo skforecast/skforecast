@@ -18,6 +18,8 @@ The main changes in this release are:
 
 + <span class="badge text-bg-feature">Feature</span> Created module <code>[experimental]</code>, this module contains experimental features that are not yet fully tested or may change in future releases.
 
++ <span class="badge text-bg-enhancement">Enhancement</span> The <code>[ForecasterRNN]</code> and the function <code>[create_and_compile_model]</code> have been refactored to allow for the inclusion of exogenous variables. The forecaster can also make interval predictions using the conformal prediction framework.
+
 + <span class="badge text-bg-api-change">API Change</span> <code>[ForecasterRecursiveMultiSeries]</code> now accepts three input types for the `series` data: a wide-format DataFrame, where each column corresponds to a different time series; a long-format DataFrame with a MultiIndex, where the first level indicates the series name and the second level is the time index; or a dictionary with series names as keys and pandas `Series` as values.
 
 + <span class="badge text-bg-api-change">API Change</span> <code>[ForecasterRecursiveMultiSeries]</code> now accepts `exog` input as a wide-format DataFrame, where each column corresponds to a different exogenous variable; a long-format DataFrame with a MultiIndex, where the first level indicates the series name to which it belongs and the second level is the time index; or a dictionary with series names as keys and pandas `Series` or `DataFrames` as values.
@@ -43,6 +45,11 @@ The main changes in this release are:
 
 + Include function <code>[calculate_days_to_holiday]</code> in the <code>[experimental]</code> module. It calculates the number of days to the next holiday and the number of days since the last holiday in a DataFrame with a date column.
 
++ The <code>[ForecasterRNN]</code> and the function <code>[create_and_compile_model]</code> now support the inclusion of exogenous variables.
+
++ Added method `predict_interval` to the <code>[ForecasterRNN]</code> using the conformal prediction framework.
+
+
 **Changed**
 
 + <code>[ForecasterRecursiveMultiSeries]</code> now accepts three input types for the series data: a wide-format DataFrame, where each column corresponds to a different time series; a long-format DataFrame with a MultiIndex, where the first level indicates the series name and the second level is the time index; or a dictionary with series names as keys and pandas Series as values.
@@ -54,6 +61,11 @@ The main changes in this release are:
 + Function `series_long_to_dict` renamed to <code>[reshape_series_long_to_dict]</code> in the <code>[preprocessing]</code> module. This function reshapes a long-format DataFrame with time series data into a dictionary format where each entry corresponds to a series.
   
 + Function `exog_long_to_dict` renamed to <code>[reshape_exog_long_to_dict]</code> in the <code>[preprocessing]</code> module. This function reshapes a long-format DataFrame with exogenous variables into a dictionary format where each entry corresponds to the exogenous variables of a series.
+
++ The <code>[create_and_compile_model]</code> function has been refactored. All arguments related with layers and compilation are now passed as a dictionary using the following arguments: `recurrent_layers_kwargs`, `dense_layers_kwargs`, `output_dense_layer_kwargs`, and `compile_kwargs`.
+
++ The arguments `lags` and `steps` were removed from the <code>[ForecasterRNN]</code> initialization. These arguments are now inferred from the regressor architecture.
+
 
 **Fixed**
 
