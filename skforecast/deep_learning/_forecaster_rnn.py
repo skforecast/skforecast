@@ -1169,8 +1169,8 @@ class ForecasterRnn(ForecasterBase):
                 inverse_transform=False,
             )
 
-            exog_pred = exog.to_numpy()
-            exog_pred = np.expand_dims(exog_pred[:self.max_step], axis=0)
+            exog_pred = exog.to_numpy()[:self.max_step]
+            exog_pred = np.expand_dims(exog_pred, axis=0)
             X.append(exog_pred)
 
             X_predict_dimension_names["exog_pred"] = {
