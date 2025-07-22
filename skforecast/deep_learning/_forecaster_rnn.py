@@ -69,6 +69,12 @@ class ForecasterRnn(ForecasterBase):
         Name of one or more time series to be predicted. This determine the series
         the forecaster will be handling. If `None`, all series used during training
         will be available for prediction.
+    lags : int, list, numpy ndarray, range
+        Lags used as predictors. Index starts at 1, so lag 1 is equal to t-1.
+    
+        - `int`: include lags from 1 to `lags` (included).
+        - `list`, `1d numpy ndarray` or `range`: include only lags present in 
+        `lags`, all elements must be int.
     transformer_series : transformer (preprocessor), dict, default None
         An instance of a transformer (preprocessor) compatible with the scikit-learn
         preprocessing API with methods: fit, transform, fit_transform and 
@@ -215,6 +221,7 @@ class ForecasterRnn(ForecasterBase):
         self,
         regressor: object,
         levels: str | list[str],
+        lags: int | list[int] | np.ndarray[int] | range[int],
         transformer_series: object | dict[str, object] | None = MinMaxScaler(
             feature_range=(0, 1)
         ),
@@ -262,10 +269,16 @@ class ForecasterRnn(ForecasterBase):
         layer_end = self.regressor.layers[-1]
         self.layers_names = [layer.name for layer in self.regressor.layers]
         
-        lags = layer_init.output.shape[1]
         self.lags, self.lags_names, self.max_lag = initialize_lags(
             type(self).__name__, lags
         )
+        n_lags_regressor = layer_init.output.shape[1]
+        if len(self.lags) != n_lags_regressor:
+            raise ValueError(
+                f"Number of lags ({len(self.lags)}) does not match the number of "
+                f"lags expected by the regressor architecture ({n_lags_regressor})."
+            )
+        
         self.window_size = self.max_lag
 
         self.steps = np.arange(layer_end.output.shape[1]) + 1
@@ -660,7 +673,7 @@ class ForecasterRnn(ForecasterBase):
         dimension_names = {
             "X_train": {
                 0: train_index,
-                1: self.lags_names,
+                1: self.lags_names[::-1],
                 2: series_names_in_,
             },
             "y_train": {
@@ -896,6 +909,9 @@ class ForecasterRnn(ForecasterBase):
             exog_dtypes_out_,
         ) = self._create_train_X_y(series=series, exog=exog)
 
+        # NOTE: Need here to avoid refitting the transformer_series_ with the 
+        # validation data.
+        self.is_fitted = True
         series_names_in_ = dimension_names["X_train"][2]
 
         if self.keras_backend_ == "torch":
@@ -917,7 +933,7 @@ class ForecasterRnn(ForecasterBase):
             else:
                 exog_val = None
             
-            X_val, exog_val, y_val, _ = self.create_train_X_y(
+            X_val, exog_val, y_val, *_ = self._create_train_X_y(
                 series=series_val, exog=exog_val
             )
             if self.keras_backend_ == "torch":
@@ -977,7 +993,6 @@ class ForecasterRnn(ForecasterBase):
         self.y_train_dim_names_ = dimension_names["y_train"]
         self.history_ = history.history
 
-        self.is_fitted = True
         self.fit_date = pd.Timestamp.today().strftime("%Y-%m-%d %H:%M:%S")
         _, y_index = preprocess_y(
             y=series[self.levels], return_values=False, suppress_warnings=True
@@ -1154,7 +1169,7 @@ class ForecasterRnn(ForecasterBase):
         X_predict_dimension_names = {
             "X_autoreg": {
                 0: "batch",
-                1: self.lags_names,
+                1: self.lags_names[::-1],
                 2: self.X_train_series_names_in_
             }
         }
@@ -1170,6 +1185,23 @@ class ForecasterRnn(ForecasterBase):
             )
 
             exog_pred = exog.to_numpy()[:self.max_step]
+
+            # NOTE: This is done to ensure that the exogenous variables
+            # have the same number of rows as the maximum step to predict 
+            # during backtesting when the last fold is incomplete 
+            if len(exog_pred) < self.max_step:
+                exog_pred = np.concatenate(
+                    [
+                        exog_pred,
+                        np.full(
+                            shape=(self.max_step - len(exog_pred), exog_pred.shape[1]),
+                            fill_value=0.,
+                            dtype=float
+                        )
+                    ],
+                    axis=0
+                )
+
             exog_pred = np.expand_dims(exog_pred, axis=0)
             X.append(exog_pred)
 
