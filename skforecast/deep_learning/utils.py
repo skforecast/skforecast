@@ -118,7 +118,7 @@ def create_and_compile_model(
     .. [4] Dense layer Keras documentation.
            https://keras.io/api/layers/core_layers/dense/
 
-    .. [5] Model training APIs compile method.
+    .. [5] Model training APIs: compile method.
            https://keras.io/api/models/model_training_apis/
     
     """
@@ -233,7 +233,7 @@ def _create_and_compile_model_exog(
         Additional keyword arguments for the output dense layer.
     compile_kwargs : dict, default {'optimizer': Adam(), 'loss': MeanSquaredError()}
         Additional keyword arguments for the model compilation, such as optimizer 
-        and loss function.
+        and loss function. [5]_
     model_name : str, default None
         Name of the model.
 
@@ -255,6 +255,9 @@ def _create_and_compile_model_exog(
 
     .. [4] Dense layer Keras documentation.
            https://keras.io/api/layers/core_layers/dense/
+
+    .. [5] Model training APIs: compile method.
+           https://keras.io/api/models/model_training_apis/
 
     """
 
@@ -468,7 +471,7 @@ def _create_and_compile_model_no_exog(
         Additional keyword arguments for the output dense layer.
     compile_kwargs : dict, default {'optimizer': Adam(), 'loss': MeanSquaredError()}
         Additional keyword arguments for the model compilation, such as optimizer 
-        and loss function.
+        and loss function. [5]_
     model_name : str, default None
         Name of the model.
 
@@ -490,6 +493,9 @@ def _create_and_compile_model_no_exog(
 
     .. [4] Dense layer Keras documentation.
            https://keras.io/api/layers/core_layers/dense/
+
+    .. [5] Model training APIs: compile method.
+           https://keras.io/api/models/model_training_apis/
 
     """
 

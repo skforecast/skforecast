@@ -52,12 +52,12 @@ from ..utils import (
 # TODO. Test Interval
 # TODO. Test Grid search
 # TODO. Include window features
-# TODO. Include diferentiation
+# TODO. Include differentiation
 # TODO. Include binner residuals
 class ForecasterRnn(ForecasterBase):
     """
     This class turns any regressor compatible with the Keras API into a
-    Keras RNN multi-serie multi-step forecaster. A unique model is created
+    Keras RNN multi-series multi-step forecaster. A unique model is created
     to forecast all time steps and series. Keras enables workflows on top of
     either JAX, TensorFlow, or PyTorch. See documentation for more details.
 
@@ -193,7 +193,7 @@ class ForecasterRnn(ForecasterBase):
     keras_backend_ : str
         Keras backend used to fit the forecaster. It can be 'tensorflow', 'torch' 
         or 'jax'.
-    skforcast_version : str
+    skforecast_version : str
         Version of skforecast library used to create the forecaster.
     python_version : str
         Version of python used to create the forecaster.
@@ -604,7 +604,7 @@ class ForecasterRnn(ForecasterBase):
         if not set(self.levels).issubset(set(series_names_in_)):
             raise ValueError(
                 f"`levels` defined when initializing the forecaster must be "
-                f"included in `series` used for trainng. "
+                f"included in `series` used for training. "
                 f"{set(self.levels) - set(series_names_in_)} not found."
             )
 
@@ -918,7 +918,7 @@ class ForecasterRnn(ForecasterBase):
             
             import torch
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            print(f"Using {self.keras_backend_} backend with device: {device}")
+            print(f"Using '{self.keras_backend_}' backend with device: {device}")
 
             torch_device = torch.device(device)
             X_train = torch.tensor(X_train).to(torch_device)
@@ -1733,9 +1733,10 @@ class ForecasterRnn(ForecasterBase):
 
         return fig
 
-    def set_params(self, params: dict) -> None:  # TODO testear
+    # TODO create testing
+    def set_params(self, params: dict) -> None:  
         """
-        Set new values to the parameters of the scikit learn model stored in the
+        Set new values to the parameters of the scikit-learn model stored in the
         forecaster. It is important to note that all models share the same
         configuration of parameters and hyperparameters.
 
