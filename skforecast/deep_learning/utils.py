@@ -26,6 +26,7 @@ try:
         RepeatVector,
         Concatenate,
         Dense,
+        Reshape,
         TimeDistributed,
     )
     from keras.optimizers import Adam
@@ -48,7 +49,7 @@ def create_and_compile_model(
     dense_units: int | list[int] | tuple[int] = 64,
     dense_layers_kwargs: dict[str, Any] | list[dict[str, Any]] | None = {"activation": "relu"},
     output_dense_layer_kwargs: dict[str, Any] | None = {"activation": "linear"},
-    compile_kwargs: dict[str, Any] = {"optimizer": Adam(learning_rate=0.01), "loss": MeanSquaredError()},
+    compile_kwargs: dict[str, Any] = {"optimizer": Adam(), "loss": MeanSquaredError()},
     model_name: str | None = None
 ) -> keras.models.Model:
     """
@@ -92,9 +93,9 @@ def create_and_compile_model(
         parameters for each dense layer.
     output_dense_layer_kwargs : dict, default {'activation': 'linear'}
         Additional keyword arguments for the output dense layer.
-    compile_kwargs : dict, default {'optimizer': Adam(learning_rate=0.01), 'loss': MeanSquaredError()}
+    compile_kwargs : dict, default {'optimizer': Adam(), 'loss': MeanSquaredError()}
         Additional keyword arguments for the model compilation, such as optimizer 
-        and loss function.
+        and loss function. [5]_
     model_name : str, default None
         Name of the model.
 
@@ -116,6 +117,9 @@ def create_and_compile_model(
 
     .. [4] Dense layer Keras documentation.
            https://keras.io/api/layers/core_layers/dense/
+
+    .. [5] Model training APIs: compile method.
+           https://keras.io/api/models/model_training_apis/
     
     """
 
@@ -183,7 +187,7 @@ def _create_and_compile_model_exog(
     dense_units: int | list[int] | tuple[int] = 64,
     dense_layers_kwargs: dict[str, Any] | list[dict[str, Any]] | None = {"activation": "relu"},
     output_dense_layer_kwargs: dict[str, Any] | None = {"activation": "linear"},
-    compile_kwargs: dict[str, Any] = {"optimizer": Adam(learning_rate=0.01), "loss": MeanSquaredError()},
+    compile_kwargs: dict[str, Any] = {"optimizer": Adam(), "loss": MeanSquaredError()},
     model_name: str | None = None
 ) -> keras.models.Model:
     """
@@ -227,9 +231,9 @@ def _create_and_compile_model_exog(
         parameters for each dense layer.
     output_dense_layer_kwargs : dict, default {'activation': 'linear'}
         Additional keyword arguments for the output dense layer.
-    compile_kwargs : dict, default {'optimizer': Adam(learning_rate=0.01), 'loss': MeanSquaredError()}
+    compile_kwargs : dict, default {'optimizer': Adam(), 'loss': MeanSquaredError()}
         Additional keyword arguments for the model compilation, such as optimizer 
-        and loss function.
+        and loss function. [5]_
     model_name : str, default None
         Name of the model.
 
@@ -251,6 +255,9 @@ def _create_and_compile_model_exog(
 
     .. [4] Dense layer Keras documentation.
            https://keras.io/api/layers/core_layers/dense/
+
+    .. [5] Model training APIs: compile method.
+           https://keras.io/api/models/model_training_apis/
 
     """
 
@@ -356,7 +363,7 @@ def _create_and_compile_model_exog(
 
     if exog is not None:
         # NOTE: Shape (batch, steps, features + n_exog)
-        x = Concatenate(axis=-1, name="concat_exog")([x, exog_input])  
+        x = Concatenate(axis=-1, name="concat_exog")([x, exog_input])
 
     if not isinstance(dense_units, (list, tuple)):
         dense_units = [dense_units]
@@ -422,7 +429,7 @@ def _create_and_compile_model_no_exog(
     dense_units: int | list[int] | tuple[int] = 64,
     dense_layers_kwargs: dict[str, Any] | list[dict[str, Any]] | None = {"activation": "relu"},
     output_dense_layer_kwargs: dict[str, Any] | None = {"activation": "linear"},
-    compile_kwargs: dict[str, Any] = {"optimizer": Adam(learning_rate=0.01), "loss": MeanSquaredError()},
+    compile_kwargs: dict[str, Any] = {"optimizer": Adam(), "loss": MeanSquaredError()},
     model_name: str | None = None
 ) -> keras.models.Model:
     """
@@ -462,9 +469,9 @@ def _create_and_compile_model_no_exog(
         parameters for each dense layer.
     output_dense_layer_kwargs : dict, default {'activation': 'linear'}
         Additional keyword arguments for the output dense layer.
-    compile_kwargs : dict, default {'optimizer': Adam(learning_rate=0.01), 'loss': MeanSquaredError()}
+    compile_kwargs : dict, default {'optimizer': Adam(), 'loss': MeanSquaredError()}
         Additional keyword arguments for the model compilation, such as optimizer 
-        and loss function.
+        and loss function. [5]_
     model_name : str, default None
         Name of the model.
 
@@ -486,6 +493,9 @@ def _create_and_compile_model_no_exog(
 
     .. [4] Dense layer Keras documentation.
            https://keras.io/api/layers/core_layers/dense/
+
+    .. [5] Model training APIs: compile method.
+           https://keras.io/api/models/model_training_apis/
 
     """
 
@@ -622,8 +632,7 @@ def _create_and_compile_model_no_exog(
         output_layer_kwargs['name'] = "output_dense_td_layer"
     
     x = Dense(**output_layer_kwargs)(x)
-    # model = Model(inputs=input_layer, outputs=x)
-    output_layer = keras.layers.Reshape((steps, n_levels))(x)
+    output_layer = Reshape((steps, n_levels))(x)
 
     model = Model(inputs=series_input, outputs=output_layer, name=model_name)
     model.compile(**compile_kwargs)

@@ -52,12 +52,12 @@ from ..utils import (
 # TODO. Test Interval
 # TODO. Test Grid search
 # TODO. Include window features
-# TODO. Include diferentiation
+# TODO. Include differentiation
 # TODO. Include binner residuals
 class ForecasterRnn(ForecasterBase):
     """
     This class turns any regressor compatible with the Keras API into a
-    Keras RNN multi-serie multi-step forecaster. A unique model is created
+    Keras RNN multi-series multi-step forecaster. A unique model is created
     to forecast all time steps and series. Keras enables workflows on top of
     either JAX, TensorFlow, or PyTorch. See documentation for more details.
 
@@ -69,6 +69,12 @@ class ForecasterRnn(ForecasterBase):
         Name of one or more time series to be predicted. This determine the series
         the forecaster will be handling. If `None`, all series used during training
         will be available for prediction.
+    lags : int, list, numpy ndarray, range
+        Lags used as predictors. Index starts at 1, so lag 1 is equal to t-1.
+    
+        - `int`: include lags from 1 to `lags` (included).
+        - `list`, `1d numpy ndarray` or `range`: include only lags present in 
+        `lags`, all elements must be int.
     transformer_series : transformer (preprocessor), dict, default None
         An instance of a transformer (preprocessor) compatible with the scikit-learn
         preprocessing API with methods: fit, transform, fit_transform and 
@@ -187,7 +193,7 @@ class ForecasterRnn(ForecasterBase):
     keras_backend_ : str
         Keras backend used to fit the forecaster. It can be 'tensorflow', 'torch' 
         or 'jax'.
-    skforcast_version : str
+    skforecast_version : str
         Version of skforecast library used to create the forecaster.
     python_version : str
         Version of python used to create the forecaster.
@@ -215,6 +221,7 @@ class ForecasterRnn(ForecasterBase):
         self,
         regressor: object,
         levels: str | list[str],
+        lags: int | list[int] | np.ndarray[int] | range[int],
         transformer_series: object | dict[str, object] | None = MinMaxScaler(
             feature_range=(0, 1)
         ),
@@ -262,10 +269,16 @@ class ForecasterRnn(ForecasterBase):
         layer_end = self.regressor.layers[-1]
         self.layers_names = [layer.name for layer in self.regressor.layers]
         
-        lags = layer_init.output.shape[1]
         self.lags, self.lags_names, self.max_lag = initialize_lags(
             type(self).__name__, lags
         )
+        n_lags_regressor = layer_init.output.shape[1]
+        if len(self.lags) != n_lags_regressor:
+            raise ValueError(
+                f"Number of lags ({len(self.lags)}) does not match the number of "
+                f"lags expected by the regressor architecture ({n_lags_regressor})."
+            )
+        
         self.window_size = self.max_lag
 
         self.steps = np.arange(layer_end.output.shape[1]) + 1
@@ -556,14 +569,14 @@ class ForecasterRnn(ForecasterBase):
         -------
         X_train : numpy ndarray
             Training values (predictors) for each step. The resulting array has
-            3 dimensions: (time_points, n_lags, n_series)
+            3 dimensions: (n_observations, n_lags, n_series)
         exog_train: numpy ndarray
-            Value of exogenous variables aligned with X_train. (time_points, n_exog)
+            Value of exogenous variables aligned with X_train. (n_observations, n_exog)
         y_train : numpy ndarray
-            Values (target) of the time series related to each row of `X_train`
-            The resulting array has 3 dimensions: (time_points, n_steps, n_levels)
+            Values (target) of the time series related to each row of `X_train`.
+            The resulting array has 3 dimensions: (n_observations, n_steps, n_levels)
         dimension_names : dict
-            Labels for the multi-dimensional arrays created internally for training
+            Labels for the multi-dimensional arrays created internally for training.
         exog_names_in_ : list
             Names of the exogenous variables included in the training matrices.
         exog_dtypes_in_ : dict
@@ -591,7 +604,7 @@ class ForecasterRnn(ForecasterBase):
         if not set(self.levels).issubset(set(series_names_in_)):
             raise ValueError(
                 f"`levels` defined when initializing the forecaster must be "
-                f"included in `series` used for trainng. "
+                f"included in `series` used for training. "
                 f"{set(self.levels) - set(series_names_in_)} not found."
             )
 
@@ -660,7 +673,7 @@ class ForecasterRnn(ForecasterBase):
         dimension_names = {
             "X_train": {
                 0: train_index,
-                1: self.lags_names,
+                1: self.lags_names[::-1],
                 2: series_names_in_,
             },
             "y_train": {
@@ -800,14 +813,14 @@ class ForecasterRnn(ForecasterBase):
         -------
         X_train : numpy ndarray
             Training values (predictors) for each step. The resulting array has
-            3 dimensions: (time_points, n_lags, n_series)
+            3 dimensions: (n_observations, n_lags, n_series)
         exog_train: numpy ndarray
-            Value of exogenous variables aligned with X_train. (time_points, n_exog)
+            Value of exogenous variables aligned with X_train. (n_observations, n_exog)
         y_train : numpy ndarray
-            Values (target) of the time series related to each row of `X_train`
-            The resulting array has 3 dimensions: (time_points, n_steps, n_levels)
+            Values (target) of the time series related to each row of `X_train`.
+            The resulting array has 3 dimensions: (n_observations, n_steps, n_levels)
         dimension_names : dict
-            Labels for the multi-dimensional arrays created internally for training
+            Labels for the multi-dimensional arrays created internally for training.
 
         """
 
@@ -896,13 +909,16 @@ class ForecasterRnn(ForecasterBase):
             exog_dtypes_out_,
         ) = self._create_train_X_y(series=series, exog=exog)
 
+        # NOTE: Need here to avoid refitting the transformer_series_ with the 
+        # validation data.
+        self.is_fitted = True
         series_names_in_ = dimension_names["X_train"][2]
 
         if self.keras_backend_ == "torch":
             
             import torch
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            print(f"Using {self.keras_backend_} backend with device: {device}")
+            print(f"Using '{self.keras_backend_}' backend with device: {device}")
 
             torch_device = torch.device(device)
             X_train = torch.tensor(X_train).to(torch_device)
@@ -917,7 +933,7 @@ class ForecasterRnn(ForecasterBase):
             else:
                 exog_val = None
             
-            X_val, exog_val, y_val, _ = self.create_train_X_y(
+            X_val, exog_val, y_val, *_ = self._create_train_X_y(
                 series=series_val, exog=exog_val
             )
             if self.keras_backend_ == "torch":
@@ -977,7 +993,6 @@ class ForecasterRnn(ForecasterBase):
         self.y_train_dim_names_ = dimension_names["y_train"]
         self.history_ = history.history
 
-        self.is_fitted = True
         self.fit_date = pd.Timestamp.today().strftime("%Y-%m-%d %H:%M:%S")
         _, y_index = preprocess_y(
             y=series[self.levels], return_values=False, suppress_warnings=True
@@ -1154,7 +1169,7 @@ class ForecasterRnn(ForecasterBase):
         X_predict_dimension_names = {
             "X_autoreg": {
                 0: "batch",
-                1: self.lags_names,
+                1: self.lags_names[::-1],
                 2: self.X_train_series_names_in_
             }
         }
@@ -1169,8 +1184,25 @@ class ForecasterRnn(ForecasterBase):
                 inverse_transform=False,
             )
 
-            exog_pred = exog.to_numpy()
-            exog_pred = np.expand_dims(exog_pred[:self.max_step], axis=0)
+            exog_pred = exog.to_numpy()[:self.max_step]
+
+            # NOTE: This is done to ensure that the exogenous variables
+            # have the same number of rows as the maximum step to predict 
+            # during backtesting when the last fold is incomplete 
+            if len(exog_pred) < self.max_step:
+                exog_pred = np.concatenate(
+                    [
+                        exog_pred,
+                        np.full(
+                            shape=(self.max_step - len(exog_pred), exog_pred.shape[1]),
+                            fill_value=0.,
+                            dtype=float
+                        )
+                    ],
+                    axis=0
+                )
+
+            exog_pred = np.expand_dims(exog_pred, axis=0)
             X.append(exog_pred)
 
             X_predict_dimension_names["exog_pred"] = {
@@ -1701,9 +1733,10 @@ class ForecasterRnn(ForecasterBase):
 
         return fig
 
-    def set_params(self, params: dict) -> None:  # TODO testear
+    # TODO create testing
+    def set_params(self, params: dict) -> None:  
         """
-        Set new values to the parameters of the scikit learn model stored in the
+        Set new values to the parameters of the scikit-learn model stored in the
         forecaster. It is important to note that all models share the same
         configuration of parameters and hyperparameters.
 
