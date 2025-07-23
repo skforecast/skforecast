@@ -569,14 +569,14 @@ class ForecasterRnn(ForecasterBase):
         -------
         X_train : numpy ndarray
             Training values (predictors) for each step. The resulting array has
-            3 dimensions: (time_points, n_lags, n_series)
+            3 dimensions: (n_observations, n_lags, n_series)
         exog_train: numpy ndarray
-            Value of exogenous variables aligned with X_train. (time_points, n_exog)
+            Value of exogenous variables aligned with X_train. (n_observations, n_exog)
         y_train : numpy ndarray
-            Values (target) of the time series related to each row of `X_train`
-            The resulting array has 3 dimensions: (time_points, n_steps, n_levels)
+            Values (target) of the time series related to each row of `X_train`.
+            The resulting array has 3 dimensions: (n_observations, n_steps, n_levels)
         dimension_names : dict
-            Labels for the multi-dimensional arrays created internally for training
+            Labels for the multi-dimensional arrays created internally for training.
         exog_names_in_ : list
             Names of the exogenous variables included in the training matrices.
         exog_dtypes_in_ : dict
@@ -813,14 +813,14 @@ class ForecasterRnn(ForecasterBase):
         -------
         X_train : numpy ndarray
             Training values (predictors) for each step. The resulting array has
-            3 dimensions: (time_points, n_lags, n_series)
+            3 dimensions: (n_observations, n_lags, n_series)
         exog_train: numpy ndarray
-            Value of exogenous variables aligned with X_train. (time_points, n_exog)
+            Value of exogenous variables aligned with X_train. (n_observations, n_exog)
         y_train : numpy ndarray
-            Values (target) of the time series related to each row of `X_train`
-            The resulting array has 3 dimensions: (time_points, n_steps, n_levels)
+            Values (target) of the time series related to each row of `X_train`.
+            The resulting array has 3 dimensions: (n_observations, n_steps, n_levels)
         dimension_names : dict
-            Labels for the multi-dimensional arrays created internally for training
+            Labels for the multi-dimensional arrays created internally for training.
 
         """
 
