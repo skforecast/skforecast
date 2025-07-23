@@ -13,7 +13,7 @@ datasets_keys = [
     'store_sales', 'bicimad', 'm4_daily', 'm4_hourly', 'ashrae_daily', 
     'bdg2_daily', 'bdg2_daily_sample', 'bdg2_hourly', 'bdg2_hourly_sample', 
     'm5', 'ett_m1', 'ett_m2', 'ett_m2_extended', 'expenditures_australia', 
-    'public_transport_madrid'
+    'public_transport_madrid', 'turbine_emission'
 ]
 
 
