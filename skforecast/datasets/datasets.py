@@ -640,6 +640,30 @@ def fetch_dataset(
                 'https://datos.crtm.es/documents/a7210254c4514a19a51b1617cfd61f75/about'
             )
         },
+        'turbine_emission': {
+            'url': (
+                f'https://raw.githubusercontent.com/skforecast/skforecast-datasets/refs/heads/'
+                f'{version}/data/turbine_emission.csv'
+            ),
+            'sep': ',',
+            'index_col': 'datetime',
+            'date_format': '%Y-%m-%d %H:%M:%S',
+            'freq': 'h',
+            'file_type': 'csv',
+            'description': (
+                'The dataset contains 36733 instances of 11 sensor measures aggregated over one hour, '
+                'from a gas turbine located in Turkey for the purpose of studying flue gas emissions, '
+                'namely CO and NOx. Available variables include: Ambient temperature (AT), '
+                'Ambient pressure (AP), Ambient humidity (AH), Air filter difference pressure (AFDP), '
+                'Gas turbine exhaust pressure (GTEP), Turbine inlet temperature (TIT), '
+                'Turbine after temperature (TAT), Compressor discharge pressure (CDP), Turbine energy yield (TEY), '
+                'Carbon monoxide (CO), and Nitrogen oxides (NOx). Covered period from 2011-01-01 00:00:00 '
+                'to 2015-03-11 12:00:00.'
+            ),
+            'source': (
+                'https://archive.ics.uci.edu/dataset/551/gas+turbine+co+and+nox+emission+data+set'
+            )
+        },
     }
     
     if name not in datasets.keys():
