@@ -6,14 +6,13 @@ from skforecast.recursive import ForecasterRecursive
 from sklearn.linear_model import LinearRegression
 
 
-def test_create_train_X_y_output_when_y_and_exog_no_pandas_index():
+def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_series_of_float():
     """
-    Test the output of create_train_X_y when y and exog have no pandas index 
-    that doesn't start at 0.
+    Test the output of create_train_X_y when y=pd.Series(np.arange(10)) and 
+    exog is a pandas series of floats.
     """
-    y = pd.Series(np.arange(10), index=np.arange(3, 13), dtype=float)
-    exog = pd.Series(np.arange(100, 110), index=np.arange(3, 13), 
-                     name='exog', dtype=float)
+    y = pd.Series(np.arange(10), dtype=float)
+    exog = pd.Series(np.arange(100, 110), name='exog', dtype=float)
     forecaster = ForecasterRecursive(LinearRegression(), lags=5)
     results = forecaster.create_train_X_y(y=y, exog=exog)
     expected = (

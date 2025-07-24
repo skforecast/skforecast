@@ -46,7 +46,6 @@ from ..utils import (
     check_predict_input,
     check_residuals_input,
     check_interval,
-    preprocess_last_window,
     input_to_frame,
     expand_index,
     transform_numpy,
@@ -2063,7 +2062,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 window_size      = self.window_size,
                 last_window      = last_window,
                 exog             = exog,
-                exog_type_in_    = self.exog_type_in_,
                 exog_names_in_   = self.exog_names_in_,
                 interval         = None,
                 levels           = levels,
@@ -2087,15 +2085,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         last_window = last_window.iloc[
             -self.window_size :, last_window.columns.get_indexer(levels)
         ].copy()
-        _, last_window_index = preprocess_last_window(
-                                   last_window   = last_window,
-                                   return_values = False
-                               )
         prediction_index = expand_index(
-                               index = last_window_index,
+                               index = last_window.index,
                                steps = steps
                            )
-        last_window = last_window.to_numpy()
 
         if exog is not None:
             if isinstance(exog, dict):
@@ -2121,12 +2114,13 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             exog_values = None
         
         # NOTE: This needs to be done to ensure that the last window dtype is float.
-        last_window_values = np.full(
+        last_window_values = last_window.to_numpy()
+        last_window_matrix = np.full(
             shape=last_window.shape, fill_value=np.nan, order='F', dtype=float
         )
         exog_values_all_levels = []
         for idx_level, level in enumerate(levels):
-            last_window_level = last_window[:, idx_level]
+            last_window_level = last_window_values[:, idx_level]
             last_window_level = transform_numpy(
                 array             = last_window_level,
                 transformer       = self.transformer_series_.get(level, self.transformer_series_['_unknown_level']),
@@ -2142,7 +2136,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                         self.differentiator_[level].fit_transform(last_window_level)
                     )
 
-            last_window_values[:, idx_level] = last_window_level
+            last_window_matrix[:, idx_level] = last_window_level
 
             if isinstance(exog, dict):
                 # Fill the empty dataframe with the exog values of each level
@@ -2159,9 +2153,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             exog_values_all_levels.append(exog_values)
 
         last_window = pd.DataFrame(
-                          data    = last_window_values,
+                          data    = last_window_matrix,
                           columns = levels,
-                          index   = last_window_index
+                          index   = last_window.index
                       )
 
         if exog is not None:

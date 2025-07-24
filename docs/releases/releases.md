@@ -20,6 +20,8 @@ The main changes in this release are:
 
 + <span class="badge text-bg-enhancement">Enhancement</span> The <code>[ForecasterRNN]</code> and the function <code>[create_and_compile_model]</code> have been refactored to allow for the inclusion of exogenous variables. The forecaster can also make interval predictions using the conformal prediction framework.
 
++ <span class="badge text-bg-api-change">API Change</span> Input data passed to all functions/classes must have either a pandas `RangeIndex` or `DatetimeIndex`. Previously, if the input did not meet this condition, a `RangeIndex` starting at 0 was automatically generated. This behavior has been removed to ensure consistent and explicit handling of input data.
+
 + <span class="badge text-bg-api-change">API Change</span> <code>[ForecasterRecursiveMultiSeries]</code> now accepts three input types for the `series` data: a wide-format DataFrame, where each column corresponds to a different time series; a long-format DataFrame with a MultiIndex, where the first level indicates the series name and the second level is the time index; or a dictionary with series names as keys and pandas `Series` as values.
 
 + <span class="badge text-bg-api-change">API Change</span> <code>[ForecasterRecursiveMultiSeries]</code> now accepts `exog` input as a wide-format DataFrame, where each column corresponds to a different exogenous variable; a long-format DataFrame with a MultiIndex, where the first level indicates the series name to which it belongs and the second level is the time index; or a dictionary with series names as keys and pandas `Series` or `DataFrames` as values.
@@ -52,6 +54,8 @@ The main changes in this release are:
 
 **Changed**
 
++ Input data passed to all functions/classes must have either a pandas `RangeIndex` or `DatetimeIndex`. Previously, if the input did not meet this condition, a `RangeIndex` starting at 0 was automatically generated. This behavior has been removed to ensure consistent and explicit handling of input data.
+
 + <code>[ForecasterRecursiveMultiSeries]</code> now accepts three input types for the series data: a wide-format DataFrame, where each column corresponds to a different time series; a long-format DataFrame with a MultiIndex, where the first level indicates the series name and the second level is the time index; or a dictionary with series names as keys and pandas Series as values.
 
 + <code>[ForecasterRecursiveMultiSeries]</code> now accepts `exog` input as a wide-format DataFrame, where each column corresponds to a different exogenous variable; a long-format DataFrame with a MultiIndex, where the first level indicates the series name to which it belongs and the second level is the time index; or a dictionary with series names as keys and pandas `Series` or `DataFrames` as values.
@@ -65,6 +69,8 @@ The main changes in this release are:
 + The <code>[create_and_compile_model]</code> function has been refactored. All arguments related with layers and compilation are now passed as a dictionary using the following arguments: `recurrent_layers_kwargs`, `dense_layers_kwargs`, `output_dense_layer_kwargs`, and `compile_kwargs`.
 
 + The arguments `lags` and `steps` were removed from the <code>[ForecasterRNN]</code> initialization. These arguments are now inferred from the regressor architecture.
+
++ Remove `preprocess_y`, `preprocess_last_window` and `preprocess_exog` in favor of `check_extract_values_and_index` in the <code>[utils]</code> module. This function checks if the index is a pandas `DatetimeIndex` or `RangeIndex` and extracts the values and index accordingly.
 
 
 **Fixed**

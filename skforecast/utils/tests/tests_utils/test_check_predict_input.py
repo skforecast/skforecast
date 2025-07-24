@@ -7,8 +7,7 @@ import pandas as pd
 from sklearn.exceptions import NotFittedError
 from skforecast.utils import check_predict_input
 from skforecast.utils import check_exog
-from skforecast.utils import preprocess_exog
-from skforecast.utils import preprocess_last_window
+from skforecast.utils import check_extract_values_and_index
 from skforecast.exceptions import MissingValuesWarning
 from skforecast.exceptions import MissingExogWarning
 from skforecast.exceptions import IgnoredArgumentWarning
@@ -40,7 +39,6 @@ def test_check_predict_input_NotFittedError_when_fitted_is_False():
             last_window      = None,
             last_window_exog = None,
             exog             = None,
-            exog_type_in_    = None,
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
@@ -71,7 +69,6 @@ def test_check_predict_input_ValueError_when_steps_int_lower_than_1():
             last_window      = None,
             last_window_exog = None,
             exog             = None,
-            exog_type_in_    = None,
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
@@ -104,7 +101,6 @@ def test_check_predict_input_ValueError_when_steps_list_lower_than_1():
             last_window      = None,
             last_window_exog = None,
             exog             = None,
-            exog_type_in_    = None,
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
@@ -139,7 +135,6 @@ def test_check_predict_input_ValueError_when_last_step_greater_than_max_steps():
             last_window      = None,
             last_window_exog = None,
             exog             = None,
-            exog_type_in_    = None,
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
@@ -170,7 +165,6 @@ def test_check_predict_input_TypeError_when_ForecasterRecursiveMultiSeries_and_l
             last_window      = None,
             last_window_exog = None,
             exog             = None,
-            exog_type_in_    = None,
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
@@ -210,7 +204,6 @@ def test_check_predict_input_UnknownLevelWarning_when_ForecasterRecursiveMultiSe
             last_window       = last_window,
             last_window_exog  = None,
             exog              = None,
-            exog_type_in_     = None,
             exog_names_in_    = None,
             interval          = [2.5, 97.5],
             alpha             = None,
@@ -254,7 +247,6 @@ def test_check_predict_input_UnknownLevelWarning_when_ForecasterRecursiveMultiSe
             last_window       = last_window,
             last_window_exog  = None,
             exog              = None,
-            exog_type_in_     = None,
             exog_names_in_    = None,
             interval          = None,
             alpha             = None,
@@ -291,7 +283,6 @@ def test_check_predict_input_ValueError_when_ForecasterRnn_and_level_not_in_leve
             last_window       = None,
             last_window_exog  = None,
             exog              = None,
-            exog_type_in_     = None,
             exog_names_in_    = None,
             interval          = None,
             alpha             = None,
@@ -321,7 +312,6 @@ def test_check_predict_input_ValueError_when_exog_is_none_and_exog_in_is_true():
             last_window      = None,
             last_window_exog = None,
             exog             = None,
-            exog_type_in_    = None,
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
@@ -350,7 +340,6 @@ def test_check_predict_input_ValueError_when_exog_is_not_none_and_exog_in_is_fal
             last_window      = None,
             last_window_exog = None,
             exog             = pd.Series(np.arange(10)),
-            exog_type_in_    = None,
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
@@ -380,7 +369,6 @@ def test_check_predict_input_ValueError_when_last_window_not_stored_during_train
             last_window      = last_window,
             last_window_exog = None,
             exog             = pd.Series(np.arange(10)),
-            exog_type_in_    = pd.Series,
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
@@ -415,7 +403,6 @@ def test_check_predict_input_TypeError_when_last_window_is_not_pandas_DataFrame(
             last_window      = last_window,
             last_window_exog = None,
             exog             = pd.Series(np.arange(10)),
-            exog_type_in_    = pd.Series,
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
@@ -458,7 +445,6 @@ def test_check_predict_input_ValueError_when_levels_not_in_last_window_Forecaste
             last_window      = last_window,
             last_window_exog = None,
             exog             = pd.Series(np.arange(10)),
-            exog_type_in_    = pd.Series,
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
@@ -494,7 +480,6 @@ def test_check_predict_input_ValueError_when_series_names_in__not_last_window_Fo
             last_window      = last_window,
             last_window_exog = None,
             exog             = pd.Series(np.arange(10)),
-            exog_type_in_    = pd.Series,
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
@@ -523,7 +508,6 @@ def test_check_predict_input_TypeError_when_last_window_is_not_pandas_series():
             last_window      = last_window,
             last_window_exog = None,
             exog             = pd.Series(np.arange(10)),
-            exog_type_in_    = pd.Series,
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
@@ -554,7 +538,6 @@ def test_check_predict_input_ValueError_when_length_last_window_is_lower_than_wi
             last_window      = pd.Series(np.arange(5)),
             last_window_exog = None,
             exog             = pd.Series(np.arange(10)),
-            exog_type_in_    = pd.Series,
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
@@ -583,7 +566,6 @@ def test_check_predict_input_MissingValuesWarning_when_last_window_has_missing_v
             last_window      = pd.Series([1, 2, 3, 4, 5, np.nan]),
             last_window_exog = None,
             exog             = None,
-            exog_type_in_    = None,
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
@@ -598,8 +580,8 @@ def test_check_predict_input_TypeError_when_last_window_index_is_not_of_index_ty
     """
     last_window = pd.Series(np.arange(10))
     index_type_ = pd.DatetimeIndex
-    _, last_window_index = preprocess_last_window(
-        last_window = last_window, return_values = False
+    _, last_window_index = check_extract_values_and_index(
+        data=last_window, data_label='`last_window`', ignore_freq=False, return_values=False
     )
 
     err_msg = re.escape(
@@ -618,7 +600,6 @@ def test_check_predict_input_TypeError_when_last_window_index_is_not_of_index_ty
             last_window      = last_window,
             last_window_exog = None,
             exog             = None,
-            exog_type_in_    = None,
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
@@ -633,8 +614,8 @@ def test_check_predict_input_TypeError_when_last_window_index_frequency_is_not_i
     """
     last_window = pd.Series(np.arange(10), index=pd.date_range(start='1/1/2018', periods=10, freq='D'))
     index_freq_ = 'Y'
-    _, last_window_index = preprocess_last_window(
-        last_window = last_window, return_values = False
+    _, last_window_index = check_extract_values_and_index(
+        data=last_window, data_label='`last_window`', ignore_freq=False, return_values=False
     )
 
     err_msg = re.escape(
@@ -653,7 +634,6 @@ def test_check_predict_input_TypeError_when_last_window_index_frequency_is_not_i
             last_window      = last_window,
             last_window_exog = None,
             exog             = None,
-            exog_type_in_    = None,
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
@@ -681,7 +661,6 @@ def test_check_predict_input_TypeError_when_exog_is_not_pandas_series_or_datafra
             last_window      = pd.DataFrame(np.arange(10), columns=['l1'], index=pd.date_range(start='1/1/2018', periods=10, freq=freq)),
             last_window_exog = None,
             exog             = np.arange(10),
-            exog_type_in_    = None,
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
@@ -709,7 +688,6 @@ def test_check_predict_input_TypeError_when_exog_is_not_pandas_series_or_datafra
             last_window      = pd.DataFrame(np.arange(10), columns=['l1'], index=pd.date_range(start='1/1/2018', periods=10, freq=freq)),
             last_window_exog = None,
             exog             = np.arange(10),
-            exog_type_in_    = None,
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
@@ -737,7 +715,6 @@ def test_check_predict_input_TypeError_when_exog_dict_and_not_pandas_series_or_D
             last_window      = pd.DataFrame(np.arange(10), columns=['l1'], index=pd.date_range(start='1/1/2018', periods=10, freq=freq)),
             last_window_exog = None,
             exog             = {'l1': np.arange(10)},
-            exog_type_in_    = dict,
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
@@ -767,7 +744,6 @@ def test_check_predict_input_MissingExogWarning_when_exog_dict_and_no_key_for_so
             last_window      = pd.DataFrame({'l1': np.arange(10), 'l2': np.arange(10)}, index=pd.date_range(start='1/1/2018', periods=10, freq=freq)),
             last_window_exog = None,
             exog             = {'l1': pd.DataFrame(np.arange(10), columns=['exog_1'], index=pd.date_range(start='11/1/2018', periods=10, freq=freq))},
-            exog_type_in_    = dict,
             exog_names_in_   = ['exog_1'],
             interval         = None,
             alpha            = None,
@@ -796,7 +772,6 @@ def test_check_predict_input_MissingValuesWarning_when_exog_has_missing_values()
             last_window      = pd.Series(np.arange(10), index=pd.date_range(start='1/1/2018', periods=10, freq=freq)),
             last_window_exog = None,
             exog             = pd.Series([1, 2, 3, np.nan], index=pd.date_range(start='11/1/2018', periods=4, freq=freq), name='exog1'),
-            exog_type_in_    = pd.Series,
             exog_names_in_   = ['exog1'],
             interval         = None,
             alpha            = None,
@@ -830,7 +805,6 @@ def test_check_predict_input_MissingValuesWarning_when_len_exog_is_less_than_ste
             last_window      = pd.Series(np.arange(10), name='l1', index=pd.date_range(start='1/1/2018', periods=10, freq=freq)).to_frame(),
             last_window_exog = None,
             exog             = pd.Series(np.arange(5), name='exog1', index=pd.date_range(start='11/1/2018', periods=5, freq=freq)),
-            exog_type_in_    = pd.Series,
             exog_names_in_   = ['exog1'],
             interval         = None,
             alpha            = None,
@@ -862,7 +836,6 @@ def test_check_predict_input_ValueError_when_len_exog_is_less_than_steps(steps):
             last_window      = pd.Series(np.arange(10), index=pd.date_range(start='1/1/2018', periods=10, freq=freq)),
             last_window_exog = None,
             exog             = pd.Series(np.arange(5)),
-            exog_type_in_    = pd.Series,
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
@@ -896,7 +869,6 @@ def test_check_predict_input_MissingExogWarning_when_exog_is_DataFrame_without_c
             last_window      = pd.DataFrame(np.arange(10), columns=['l1'], index=pd.date_range(start='1/1/2018', periods=10, freq=freq)),
             last_window_exog = None,
             exog             = exog,
-            exog_type_in_    = pd.DataFrame,
             exog_names_in_   = exog_names_in_,
             interval         = None,
             alpha            = None,
@@ -929,7 +901,6 @@ def test_check_predict_input_ValueError_when_exog_is_DataFrame_without_columns_i
             last_window      = pd.Series(np.arange(10), index=pd.date_range(start='1/1/2018', periods=10, freq=freq)),
             last_window_exog = None,
             exog             = exog,
-            exog_type_in_    = pd.DataFrame,
             exog_names_in_   = exog_names_in_,
             interval         = None,
             alpha            = None,
@@ -961,7 +932,6 @@ def test_check_predict_input_ValueError_when_exog_is_Series_with_no_name():
             last_window      = pd.Series(np.arange(10), index=pd.date_range(start='1/1/2018', periods=10, freq=freq)),
             last_window_exog = None,
             exog             = exog,
-            exog_type_in_    = pd.Series,
             exog_names_in_   = exog_names_in_,
             interval         = None,
             alpha            = None,
@@ -1002,7 +972,6 @@ def test_check_predict_input_IgnoredArgumentWarning_when_exog_is_Series_with_nam
             last_window      = last_window,
             last_window_exog = None,
             exog             = exog,
-            exog_type_in_    = pd.Series,
             exog_names_in_   = exog_names_in_,
             interval         = None,
             alpha            = None,
@@ -1036,7 +1005,6 @@ def test_check_predict_input_ValueError_when_exog_is_Series_with_name_not_in_exo
             last_window      = pd.Series(np.arange(10), index=pd.date_range(start='1/1/2018', periods=10, freq=freq)),
             last_window_exog = None,
             exog             = exog,
-            exog_type_in_    = pd.Series,
             exog_names_in_   = exog_names_in_,
             interval         = None,
             alpha            = None,
@@ -1075,7 +1043,6 @@ def test_check_predict_input_TypeError_when_exog_index_is_not_of_index_type_mult
             last_window      = last_window,
             last_window_exog = None,
             exog             = exog,
-            exog_type_in_    = pd.Series,
             exog_names_in_   = ['exog1'],
             interval         = None,
             alpha            = None,
@@ -1091,7 +1058,9 @@ def test_check_predict_input_TypeError_when_exog_index_is_not_of_index_type():
     exog = pd.Series(np.arange(10), name='exog1')
     index_type_ = pd.DatetimeIndex
     check_exog(exog = exog)
-    _, exog_index = preprocess_exog(exog=exog, return_values=False)
+    _, exog_index = check_extract_values_and_index(
+        data=exog, data_label='`exog`', ignore_freq=True, return_values=False
+    )
 
     err_msg = re.escape(
         f"Expected index of type {index_type_} for `exog`. "
@@ -1109,41 +1078,6 @@ def test_check_predict_input_TypeError_when_exog_index_is_not_of_index_type():
             last_window      = pd.Series(np.arange(10), index=pd.date_range(start='1/1/2018', periods=10, freq=freq)),
             last_window_exog = None,
             exog             = exog,
-            exog_type_in_    = pd.Series,
-            exog_names_in_   = ['exog1'],
-            interval         = None,
-            alpha            = None,
-            max_steps        = None,
-            levels           = None,
-            series_names_in_ = None
-        )
-
-
-def test_check_predict_input_TypeError_when_exog_index_frequency_is_not_index_freq():
-    """
-    """
-    exog = pd.Series(np.arange(10), index=pd.date_range(start='1/1/2018', periods=10), name='exog1')
-    index_freq_ = freq
-    check_exog(exog = exog)
-    _, exog_index = preprocess_exog(exog=exog, return_values=False)
-
-    err_msg = re.escape(
-        f"Expected frequency of type {index_freq_} for `exog`. "
-        f"Got {exog_index.freqstr}."
-    )
-    with pytest.raises(TypeError, match = err_msg):
-        check_predict_input(
-            forecaster_name  = 'ForecasterRecursive',
-            steps            = 10,
-            is_fitted        = True,
-            exog_in_         = True,
-            index_type_      = pd.DatetimeIndex,
-            index_freq_      = freq,
-            window_size      = 5,
-            last_window      = pd.Series(np.arange(10), index=pd.date_range(start='1/1/2018', periods=10, freq=freq)),
-            last_window_exog = None,
-            exog             = exog,
-            exog_type_in_    = pd.Series,
             exog_names_in_   = ['exog1'],
             interval         = None,
             alpha            = None,
@@ -1183,7 +1117,6 @@ def test_check_predict_input_ValueError_when_exog_index_does_not_follow_last_win
             last_window      = lw_datetime,
             last_window_exog = None,
             exog             = exog_datetime,
-            exog_type_in_    = pd.Series,
             exog_names_in_   = ['exog1'],
             interval         = None,
             alpha            = None,
@@ -1223,7 +1156,6 @@ def test_check_predict_input_ValueError_when_exog_index_does_not_follow_last_win
             last_window      = lw_datetime,
             last_window_exog = None,
             exog             = exog_datetime,
-            exog_type_in_    = pd.Series,
             exog_names_in_   = ['exog1'],
             interval         = None,
             alpha            = None,
@@ -1254,7 +1186,6 @@ def test_check_predict_input_ValueError_when_ForecasterSarimax_last_window_exog_
             last_window      = pd.Series(np.arange(5)),
             last_window_exog = pd.Series(np.arange(5)),
             exog             = None,
-            exog_type_in_    = None,
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
@@ -1284,7 +1215,6 @@ def test_check_predict_input_TypeError_when_ForecasterSarimax_last_window_exog_i
             last_window      = pd.Series(np.arange(5)),
             last_window_exog = last_window_exog,
             exog             = pd.Series(np.arange(10), index=pd.RangeIndex(start=5, stop=15), name='exog1'),
-            exog_type_in_    = pd.Series,
             exog_names_in_   = ['exog1'],
             interval         = None,
             alpha            = None,
@@ -1315,7 +1245,6 @@ def test_check_predict_input_ValueError_when_ForecasterSarimax_length_last_windo
             last_window      = pd.Series(np.arange(10)),
             last_window_exog = pd.Series(np.arange(5)),
             exog             = pd.Series(np.arange(10), index=pd.RangeIndex(start=10, stop=20), name='exog1'),
-            exog_type_in_    = pd.Series,
             exog_names_in_   = ['exog1'],
             interval         = None,
             alpha            = None,
@@ -1344,7 +1273,6 @@ def test_check_predict_input_MissingValuesWarning_when_ForecasterSarimax_last_wi
             last_window      = pd.Series(np.arange(10)),
             last_window_exog = pd.Series([1, 2, 3, 4, 5, np.nan], name='exog1'),
             exog             = pd.Series(np.arange(10), index=pd.RangeIndex(start=10, stop=20), name='exog1'),
-            exog_type_in_    = pd.Series,
             exog_names_in_   = ['exog1'],
             interval         = None,
             alpha            = None,
@@ -1359,9 +1287,9 @@ def test_check_predict_input_TypeError_when_ForecasterSarimax_last_window_exog_i
     """
     last_window_exog = pd.Series(np.arange(10), name='exog1')
     index_type_ = pd.DatetimeIndex
-    _, last_window_exog_index = preprocess_last_window(
-        last_window = last_window_exog, return_values=False
-    ) 
+    _, last_window_exog_index = check_extract_values_and_index(
+        data=last_window_exog, data_label='`last_window_exog`', return_values=False
+    )
 
     err_msg = re.escape(
         f"Expected index of type {index_type_} for `last_window_exog`. "
@@ -1379,7 +1307,6 @@ def test_check_predict_input_TypeError_when_ForecasterSarimax_last_window_exog_i
             last_window      = pd.Series(np.arange(10), index=pd.date_range(start='1/1/2018', periods=10, freq=freq)),
             last_window_exog = last_window_exog,
             exog             = pd.Series(np.arange(10), index=pd.date_range(start='30/11/2018', periods=10, freq=freq), name='exog1'),
-            exog_type_in_    = pd.Series,
             exog_names_in_   = ['exog1'],
             interval         = None,
             alpha            = None,
@@ -1395,8 +1322,8 @@ def test_check_predict_input_TypeError_when_ForecasterSarimax_last_window_exog_i
     
     last_window_exog = pd.Series(np.arange(10), index=pd.date_range(start='2018', periods=10, freq='YE'))
     index_freq_ = freq
-    _, last_window_exog_index = preprocess_last_window(
-        last_window = last_window_exog, return_values=False
+    _, last_window_exog_index = check_extract_values_and_index(
+        data=last_window_exog, data_label='`last_window_exog`', return_values=False
     )
 
     err_msg = re.escape(
@@ -1415,7 +1342,6 @@ def test_check_predict_input_TypeError_when_ForecasterSarimax_last_window_exog_i
             last_window      = pd.Series(np.arange(10), index=pd.date_range(start='1/1/2018', periods=10, freq=freq)),
             last_window_exog = last_window_exog,
             exog             = pd.Series(np.arange(10), index=pd.date_range(start='30/11/2018', periods=10, freq=freq), name='exog1'),
-            exog_type_in_    = pd.Series,
             exog_names_in_   = ['exog1'],
             interval         = None,
             alpha            = None,
@@ -1453,7 +1379,6 @@ def test_check_predict_input_ValueError_when_last_window_exog_is_DataFrame_witho
             last_window      = pd.Series(np.arange(5), index=pd.date_range(start='1/1/2018', periods=5, freq=freq)),
             last_window_exog = last_window_exog,
             exog             = exog,
-            exog_type_in_    = pd.DataFrame,
             exog_names_in_   = exog_names_in_,
             interval         = None,
             alpha            = None,
@@ -1491,7 +1416,6 @@ def test_check_predict_input_ValueError_when_last_window_exog_is_Series_with_no_
             last_window      = pd.Series(np.arange(5), index=pd.date_range(start='1/1/2018', periods=5, freq=freq)),
             last_window_exog = last_window_exog,
             exog             = exog,
-            exog_type_in_    = pd.Series,
             exog_names_in_   = exog_names_in_,
             interval         = None,
             alpha            = None,
@@ -1528,7 +1452,6 @@ def test_check_predict_input_ValueError_when_last_window_exog_is_Series_without_
             last_window      = pd.Series(np.arange(5), index=pd.date_range(start='1/1/2018', periods=5, freq=freq)),
             last_window_exog = last_window_exog,
             exog             = exog,
-            exog_type_in_    = pd.Series,
             exog_names_in_   = exog_names_in_,
             interval         = None,
             alpha            = None,

@@ -766,29 +766,23 @@ def test_check_backtesting_input_ValueError_when_interval_is_not_None_and_foreca
     Test ValueError is raised in check_backtesting_input when interval is not None
     and the forecaster does not support interval predictions.
     """
-    series = pd.DataFrame({"1": pd.Series(np.arange(50)), "2": pd.Series(np.arange(50))})
+    series = pd.DataFrame(
+        {"1": pd.Series(np.arange(50)), 
+         "2": pd.Series(np.arange(50))}
+    )
     lags = 3
-    steps = 1
     levels = "1"
-    activation = "relu"
-    optimizer = keras.optimizers.Adam(learning_rate=0.01)
-    loss = keras.losses.MeanSquaredError()
-    recurrent_units = 100
-    dense_units = [128, 64]
 
     model = create_and_compile_model(
         series=series,
         lags=lags,
-        steps=steps,
+        steps=1,
         levels=levels,
-        recurrent_units=recurrent_units,
-        dense_units=dense_units,
-        activation=activation,
-        optimizer=optimizer,
-        loss=loss,
+        recurrent_units=64,
+        dense_units=32
     )
     
-    forecaster = ForecasterRnn(model, levels, lags=lags)
+    forecaster = ForecasterRnn(model, levels=levels, lags=lags)
     
     cv = TimeSeriesFold(
              steps                 = 3,
@@ -927,8 +921,7 @@ def test_check_backtesting_input_ValueError_when_return_predictors_and_forecaste
         "ForecasterRecursive",
         "ForecasterDirect",
         "ForecasterRecursiveMultiSeries",
-        "ForecasterDirectMultiVariate",
-        "ForecasterRNN",
+        "ForecasterDirectMultiVariate"
     ]
     
     err_msg = re.escape(

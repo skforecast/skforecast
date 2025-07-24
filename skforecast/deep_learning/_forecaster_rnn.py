@@ -32,6 +32,7 @@ from ..utils import (
     check_residuals_input,
     check_select_fit_kwargs,
     check_y,
+    check_extract_values_and_index,
     expand_index,
     get_exog_dtypes,
     get_style_repr_html,
@@ -40,8 +41,6 @@ from ..utils import (
     input_to_frame,
     prepare_levels_multiseries,
     prepare_steps_direct,
-    preprocess_last_window,
-    preprocess_y,
     set_skforecast_warnings,
     transform_dataframe,
     transform_numpy,
@@ -593,6 +592,9 @@ class ForecasterRnn(ForecasterBase):
         if not isinstance(series, pd.DataFrame):
             raise TypeError(f"`series` must be a pandas DataFrame. Got {type(series)}.")
 
+        _, series_index = check_extract_values_and_index(
+            data=series, data_label="`series`", return_values=False
+        )
         series_names_in_ = list(series.columns)
         if not len(series_names_in_) == self.n_series_in:
             raise ValueError(
@@ -667,11 +669,9 @@ class ForecasterRnn(ForecasterBase):
         X_train = np.stack(X_train, axis=2)
         y_train = np.stack(y_train, axis=2)
 
-        _, series_index = preprocess_y(y=series, return_values=False)
         train_index = series_index[
             self.max_lag : (len(series_index) - self.max_step + 1)
         ]
-
         dimension_names = {
             "X_train": {
                 0: train_index,
@@ -689,6 +689,9 @@ class ForecasterRnn(ForecasterBase):
 
             check_exog(exog=exog, allow_nan=False)
             exog = input_to_frame(data=exog, input_name='exog')
+            _, exog_index = check_extract_values_and_index(
+                data=exog, data_label='`exog`', ignore_freq=True, return_values=False
+            )
 
             if len(exog.columns) != self.n_exog_in:
                 raise ValueError(
@@ -697,7 +700,7 @@ class ForecasterRnn(ForecasterBase):
                     f"by the regressor ({self.n_exog_in})."
                 )
             
-            series_index_no_ws = series.index[self.window_size:]
+            series_index_no_ws = series_index[self.window_size:]
             len_series = len(series)
             len_series_no_ws = len_series - self.window_size
             len_exog = len(exog)
@@ -706,7 +709,7 @@ class ForecasterRnn(ForecasterBase):
                     f"Length of `exog` must be equal to the length of `series` (if "
                     f"index is fully aligned) or length of `series` - `window_size` "
                     f"(if `exog` starts after the first `window_size` values).\n"
-                    f"    `exog`                   : ({exog.index[0]} -- {exog.index[-1]})  (n={len_exog})\n"
+                    f"    `exog`                   : ({exog_index[0]} -- {exog_index[-1]})  (n={len_exog})\n"
                     f"    `series`                 : ({series.index[0]} -- {series.index[-1]})  (n={len_series})\n"
                     f"    `series` - `window_size` : ({series_index_no_ws[0]} -- {series_index_no_ws[-1]})  (n={len_series_no_ws})"
                 )
@@ -741,14 +744,14 @@ class ForecasterRnn(ForecasterBase):
                 )
 
             if len_exog == len_series:
-                if not (exog.index == series.index).all():
+                if not (exog_index == series_index).all():
                     raise ValueError(
                         "When `exog` has the same length as `series`, the index "
                         "of `exog` must be aligned with the index of `series` "
                         "to ensure the correct alignment of values."
                     )
             else:
-                if not (exog.index == series_index_no_ws).all():
+                if not (exog_index == series_index_no_ws).all():
                     raise ValueError(
                         "When `exog` doesn't contain the first `window_size` "
                         "observations, the index of `exog` must be aligned with "
@@ -996,15 +999,12 @@ class ForecasterRnn(ForecasterBase):
         self.history_ = history.history
 
         self.fit_date = pd.Timestamp.today().strftime("%Y-%m-%d %H:%M:%S")
-        _, y_index = preprocess_y(
-            y=series[self.levels], return_values=False, suppress_warnings=True
-        )
-        self.training_range_ = y_index[[0, -1]]
-        self.index_type_ = type(y_index)
-        if isinstance(y_index, pd.DatetimeIndex):
-            self.index_freq_ = y_index.freqstr
+        self.training_range_ = series.index[[0, -1]]
+        self.index_type_ = type(series.index)
+        if isinstance(series.index, pd.DatetimeIndex):
+            self.index_freq_ = series.index.freqstr
         else:
-            self.index_freq_ = y_index.step
+            self.index_freq_ = series.index.step
 
         if exog is not None:
             # NOTE: self.exog_in_ is determined by the regressor architecture and
@@ -1114,7 +1114,6 @@ class ForecasterRnn(ForecasterBase):
                 window_size=self.window_size,
                 last_window=last_window,
                 exog=exog,
-                exog_type_in_=None,
                 exog_names_in_=self.exog_names_in_,
                 interval=None,
                 max_steps=self.max_step,
@@ -1139,35 +1138,22 @@ class ForecasterRnn(ForecasterBase):
         last_window = last_window.iloc[
             -self.window_size :, last_window.columns.get_indexer(self.series_names_in_)
         ].copy()
-        _, last_window_index = preprocess_last_window(
-                                   last_window   = last_window,
-                                   return_values = False
-                               )
-        
-        prediction_index = expand_index(
-                               index = last_window_index,
-                               steps = max(steps)
-                           )[np.array(steps) - 1]
-        if isinstance(last_window_index, pd.DatetimeIndex) and np.array_equal(
-            steps, np.arange(min(steps), max(steps) + 1)
-        ):
-            prediction_index.freq = last_window_index.freq
 
-        last_window = last_window.to_numpy()
-        last_window_values = np.full(
+        last_window_values = last_window.to_numpy()
+        last_window_matrix = np.full(
             shape=last_window.shape, fill_value=np.nan, order='F', dtype=float
         )
         for idx_series, series in enumerate(self.series_names_in_):
-            last_window_series = last_window[:, idx_series]
+            last_window_series = last_window_values[:, idx_series]
             last_window_series = transform_numpy(
                 array=last_window_series,
                 transformer=self.transformer_series_[series],
                 fit=False,
                 inverse_transform=False,
             )
-            last_window_values[:, idx_series] = last_window_series
+            last_window_matrix[:, idx_series] = last_window_series
 
-        X = [np.reshape(last_window_values, (1, self.max_lag, last_window.shape[1]))]
+        X = [np.reshape(last_window_matrix, (1, self.max_lag, last_window.shape[1]))]
         X_predict_dimension_names = {
             "X_autoreg": {
                 0: "batch",
@@ -1212,6 +1198,15 @@ class ForecasterRnn(ForecasterBase):
                 1: [f"step_{step}" for step in self.steps],
                 2: self.X_train_exog_names_out_
             }
+        
+        prediction_index = expand_index(
+                               index = last_window.index,
+                               steps = max(steps)
+                           )[np.array(steps) - 1]
+        if isinstance(last_window.index, pd.DatetimeIndex) and np.array_equal(
+            steps, np.arange(min(steps), max(steps) + 1)
+        ):
+            prediction_index.freq = last_window.index.freq
 
         return X, X_predict_dimension_names, steps, levels, prediction_index
 
@@ -1836,17 +1831,22 @@ class ForecasterRnn(ForecasterBase):
                 "This forecaster is not fitted yet. Call `fit` with appropriate "
                 "arguments before using `set_in_sample_residuals()`."
             )
+
+        if not isinstance(series, pd.DataFrame):
+            raise TypeError(
+                f"`series` must be a pandas DataFrame. Got {type(series)}."
+            )
         
-        y_index_range = preprocess_y(
-            y=series[self.levels], return_values=False, suppress_warnings=True
+        series_index_range = check_extract_values_and_index(
+            data=series, data_label='`series`', return_values=False
         )[1][[0, -1]]
-        if not y_index_range.equals(self.training_range_):
+        if not series_index_range.equals(self.training_range_):
             raise IndexError(
                 f"The index range of `series` does not match the range "
                 f"used during training. Please ensure the index is aligned "
                 f"with the training data.\n"
                 f"    Expected : {self.training_range_}\n"
-                f"    Received : {y_index_range}"
+                f"    Received : {series_index_range}"
             )
             
         (
