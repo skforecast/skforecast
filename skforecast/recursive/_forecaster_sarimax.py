@@ -478,7 +478,6 @@ class ForecasterSarimax():
             last_window      = last_window_check,
             last_window_exog = last_window_exog,
             exog             = exog,
-            exog_type_in_    = self.exog_type_in_,
             exog_names_in_   = self.exog_names_in_,
             interval         = None,
             alpha            = None

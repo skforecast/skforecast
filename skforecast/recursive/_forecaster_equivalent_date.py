@@ -16,11 +16,11 @@ from sklearn.exceptions import NotFittedError
 import skforecast
 from ..exceptions import MissingValuesWarning, ResidualsUsageWarning
 from ..utils import (
+    check_y,
     check_predict_input,
     check_residuals_input,
     check_interval,
-    preprocess_y,
-    preprocess_last_window,
+    check_extract_values_and_index,
     expand_index,
     get_style_repr_html
 )
@@ -354,7 +354,9 @@ class ForecasterEquivalentDate():
         self.series_name_in_ = None
         self.is_fitted       = False
 
-        _, y_index = preprocess_y(y=y, return_values=False)
+        _, y_index = check_extract_values_and_index(
+            data=y, data_label='`y`', return_values=False
+        )
 
         if isinstance(self.offset, pd.tseries.offsets.DateOffset):
             # Calculate the window_size in steps for compatibility with the
@@ -574,15 +576,11 @@ class ForecasterEquivalentDate():
                 last_window     = last_window
             )
 
-        last_window = last_window.copy()
-
-        last_window_values, last_window_index = preprocess_last_window(
-                                                    last_window = last_window
-                                                )
-        prediction_index = expand_index(index=last_window_index, steps=steps)
+        prediction_index = expand_index(index=last_window.index, steps=steps)
         
         if isinstance(self.offset, int):
-
+            
+            last_window_values = last_window.to_numpy(copy=True).ravel()
             equivalent_indexes = np.tile(
                                      np.arange(-self.offset, 0),
                                      int(np.ceil(steps / self.offset))
@@ -613,13 +611,13 @@ class ForecasterEquivalentDate():
                           )
 
         if isinstance(self.offset, pd.tseries.offsets.DateOffset):
+            
+            last_window = last_window.copy()
+            max_allowed_date = last_window.index[-1]
 
-            predictions_index = prediction_index
-            max_allowed_date = last_window_index[-1]
-
-            # For every date in predictions_index, calculate the n offsets
+            # For every date in prediction_index, calculate the n offsets
             offset_dates = []
-            for date in predictions_index:
+            for date in prediction_index:
                 selected_offsets = []
                 while len(selected_offsets) < self.n_offsets:
                     offset_date = date - self.offset
@@ -641,7 +639,7 @@ class ForecasterEquivalentDate():
             )
             equivalent_values = pd.DataFrame(
                                     data    = equivalent_values,
-                                    index   = predictions_index,
+                                    index   = prediction_index,
                                     columns = [f'offset_{i}' for i in range(self.n_offsets)]
                                 )
             
@@ -792,16 +790,12 @@ class ForecasterEquivalentDate():
         else:
             residuals = self.out_sample_residuals_
             residuals_by_bin = self.out_sample_residuals_by_bin_
-
-        last_window = last_window.copy()
-
-        last_window_values, last_window_index = preprocess_last_window(
-                                                    last_window = last_window
-                                                )
-        prediction_index = expand_index(index=last_window_index, steps=steps)
+        
+        prediction_index = expand_index(index=last_window.index, steps=steps)
         
         if isinstance(self.offset, int):
-
+            
+            last_window_values = last_window.to_numpy(copy=True).ravel()
             equivalent_indexes = np.tile(
                                      np.arange(-self.offset, 0),
                                      int(np.ceil(steps / self.offset))
@@ -826,13 +820,13 @@ class ForecasterEquivalentDate():
                               )
 
         if isinstance(self.offset, pd.tseries.offsets.DateOffset):
+            
+            last_window = last_window.copy()
+            max_allowed_date = last_window.index[-1]
 
-            predictions_index = prediction_index
-            max_allowed_date = last_window_index[-1]
-
-            # For every date in predictions_index, calculate the n offsets
+            # For every date in prediction_index, calculate the n offsets
             offset_dates = []
-            for date in predictions_index:
+            for date in prediction_index:
                 selected_offsets = []
                 while len(selected_offsets) < self.n_offsets:
                     offset_date = date - self.offset
@@ -854,7 +848,7 @@ class ForecasterEquivalentDate():
             )
             equivalent_values = pd.DataFrame(
                                     data    = equivalent_values,
-                                    index   = predictions_index,
+                                    index   = prediction_index,
                                     columns = [f'offset_{i}' for i in range(self.n_offsets)]
                                 )
             
@@ -956,14 +950,9 @@ class ForecasterEquivalentDate():
                 "arguments before using `set_in_sample_residuals()`."
             )
         
-        if not isinstance(y, pd.Series):
-            raise TypeError(
-                f"`y` must be a pandas Series with a DatetimeIndex or a RangeIndex. "
-                f"Found {type(y)}."
-            )
-
-        y_index_range = preprocess_y(
-            y=y, return_values=False, suppress_warnings=True
+        check_y(y=y)
+        y_index_range = check_extract_values_and_index(
+            data=y, data_label='`y`', return_values=False
         )[1][[0, -1]]
         if not y_index_range.equals(self.training_range_):
             raise IndexError(

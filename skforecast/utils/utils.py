@@ -521,7 +521,10 @@ def check_y(
     """
     
     if not isinstance(y, pd.Series):
-        raise TypeError(f"{series_id} must be a pandas Series.")
+        raise TypeError(
+            f"{series_id} must be a pandas Series with a DatetimeIndex or a RangeIndex. "
+            f"Found {type(y)}."
+        )
         
     if y.isna().to_numpy().any():
         raise ValueError(f"{series_id} has missing values.")
@@ -782,7 +785,6 @@ def check_predict_input(
     last_window: pd.Series | pd.DataFrame | None,
     last_window_exog: pd.Series | pd.DataFrame | None = None,
     exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
-    exog_type_in_: type | None = None,
     exog_names_in_: list[str] | None = None,
     interval: list[float] | None = None,
     alpha: float | None = None,
@@ -822,8 +824,6 @@ def check_predict_input(
         ForecasterSarimax predictions.
     exog : pandas Series, pandas DataFrame, dict, default None
         Exogenous variable/s included as predictor/s.
-    exog_type_in_ : type, default None
-        Type of exogenous variable/s used in training.
     exog_names_in_ : list, default None
         Names of the exogenous variables used during training.
     interval : list, tuple, default None
@@ -991,10 +991,10 @@ def check_predict_input(
             "not allow missing values. Prediction method may fail.", 
             MissingValuesWarning
         )
-    _, last_window_index = preprocess_last_window(
-                               last_window   = last_window,
-                               return_values = False
-                           ) 
+    
+    _, last_window_index = check_extract_values_and_index(
+        data=last_window, data_label='`last_window`', ignore_freq=False, return_values=False
+    )
     if not isinstance(last_window_index, index_type_):
         raise TypeError(
             f"Expected index of type {index_type_} for `last_window`. "
@@ -1040,7 +1040,7 @@ def check_predict_input(
             exogs_to_check = [('`exog`', exog)]
 
         last_step = max(steps) if isinstance(steps, list) else steps
-        expected_index = expand_index(last_window.index, 1)[0]
+        expected_index = expand_index(last_window_index, 1)[0]
         for exog_name, exog_to_check in exogs_to_check:
 
             if not isinstance(exog_to_check, (pd.Series, pd.DataFrame)):
@@ -1107,31 +1107,14 @@ def check_predict_input(
                         )
 
             # Check index dtype and freq
-            if forecaster_name == 'ForecasterRecursiveMultiSeries':
-                # NOTE: Since exog can have no frequency, preprocess_exog will reset 
-                # the index causing an error.
-                exog_index = exog_to_check.index
-                if not isinstance(exog_index, index_type_):
-                    raise TypeError(
-                        f"Expected index of type {index_type_} for {exog_name}. "
-                        f"Got {type(exog_index)}."
-                    )
-            else:
-                _, exog_index = preprocess_exog(
-                                    exog          = exog_to_check,
-                                    return_values = False
-                                )
-                if not isinstance(exog_index, index_type_):
-                    raise TypeError(
-                        f"Expected index of type {index_type_} for {exog_name}. "
-                        f"Got {type(exog_index)}."
-                    )
-                if isinstance(exog_index, pd.DatetimeIndex):
-                    if not exog_index.freqstr == index_freq_:
-                        raise TypeError(
-                            f"Expected frequency of type {index_freq_} for {exog_name}. "
-                            f"Got {exog_index.freqstr}."
-                        )
+            _, exog_index = check_extract_values_and_index(
+                data=exog_to_check, data_label=exog_name, ignore_freq=True, return_values=False
+            )
+            if not isinstance(exog_index, index_type_):
+                raise TypeError(
+                    f"Expected index of type {index_type_} for {exog_name}. "
+                    f"Got {type(exog_index)}."
+                )
 
             # Check exog starts one step ahead of last_window end.
             if expected_index != exog_index[0]:
@@ -1180,10 +1163,9 @@ def check_predict_input(
                     "models do not allow missing values. Prediction method may fail.",
                     MissingValuesWarning
             )
-            _, last_window_exog_index = preprocess_last_window(
-                                            last_window   = last_window_exog,
-                                            return_values = False
-                                        ) 
+            _, last_window_exog_index = check_extract_values_and_index(
+                data=last_window_exog, data_label='`last_window_exog`', return_values=False
+            )
             if not isinstance(last_window_exog_index, index_type_):
                 raise TypeError(
                     f"Expected index of type {index_type_} for `last_window_exog`. "
@@ -1338,214 +1320,57 @@ def check_residuals_input(
                 )
 
 
-def preprocess_y(
-    y: pd.Series | pd.DataFrame,
-    return_values: bool = True,
-    suppress_warnings: bool = False
+def check_extract_values_and_index(
+    data: pd.Series | pd.DataFrame,
+    data_label: str = '`y`',
+    ignore_freq: bool = False,
+    return_values: bool = True
 ) -> tuple[np.ndarray | None, pd.Index]:
     """
-    Return values and index of series separately. Index is overwritten 
-    according to the next rules:
-    
-    - If index is of type `DatetimeIndex` and has frequency, nothing is 
-    changed.
-    - If index is of type `RangeIndex`, nothing is changed.
-    - If index is of type `DatetimeIndex` but has no frequency, a 
-    `RangeIndex` is created.
-    - If index is not of type `DatetimeIndex`, a `RangeIndex` is created.
+    Return values and index of series separately. Check that index is a pandas
+    `DatetimeIndex` or `RangeIndex`. Optionally, check that the index has a
+    frequency.
     
     Parameters
     ----------
-    y : pandas Series, pandas DataFrame
+    data : pandas Series, pandas DataFrame
         Time series.
+    data_label : str, default '`y`'
+        Label of the data to be used in warnings and errors.
+    ignore_freq : bool, default False
+        If `True`, ignore the frequency of the index. If `False`, check that the
+        index is a pandas `DatetimeIndex` with a frequency.
     return_values : bool, default True
-        If `True` return the values of `y` as numpy ndarray. This option is 
-        intended to avoid copying data when it is not necessary.
-    suppress_warnings : bool, default False
-        If `True`, suppress warnings.
-
-    Returns
-    -------
-    y_values : numpy ndarray, None
-        Numpy array with values of `y`.
-    y_index : pandas Index
-        Index of `y` modified according to the rules.
-    
-    """
-    
-    warning_msg = None
-    if isinstance(y.index, pd.DatetimeIndex) and y.index.freq is not None:
-        y_index = y.index
-    elif isinstance(y.index, pd.RangeIndex):
-        y_index = y.index
-    elif isinstance(y.index, pd.DatetimeIndex) and y.index.freq is None:
-        warning_msg = (
-            "Series has a pandas DatetimeIndex without a frequency. The index "
-            "will be replaced by a RangeIndex starting from 0 with a step of 1. "
-            "To avoid this warning, set the frequency of the DatetimeIndex using "
-            "`y = y.asfreq('desired_frequency', fill_value=np.nan)`."
-        )
-        y_index = pd.RangeIndex(
-                      start = 0,
-                      stop  = len(y),
-                      step  = 1
-                  )
-    else:
-        warning_msg = (
-            "Series has an unsupported index type (not pandas DatetimeIndex or "
-            "RangeIndex). The index will be replaced by a RangeIndex starting "
-            "from 0 with a step of 1. To avoid this warning, ensure that "
-            "`y.index` is a DatetimeIndex with a frequency or a RangeIndex."
-        )
-        y_index = pd.RangeIndex(
-                      start = 0,
-                      stop  = len(y),
-                      step  = 1
-                  )
-        
-    if warning_msg and not suppress_warnings:
-        warnings.warn(warning_msg, IndexWarning)
-
-    y_values = y.to_numpy(copy=True).ravel() if return_values else None
-
-    return y_values, y_index
-
-
-def preprocess_last_window(
-    last_window: pd.Series | pd.DataFrame,
-    return_values: bool = True
- ) -> tuple[np.ndarray, pd.Index]:
-    """
-    Return values and index of series separately. Index is overwritten 
-    according to the next rules:
-    
-    - If index is of type `DatetimeIndex` and has frequency, nothing is 
-    changed.
-    - If index is of type `RangeIndex`, nothing is changed.
-    - If index is of type `DatetimeIndex` but has no frequency, a 
-    `RangeIndex` is created.
-    - If index is not of type `DatetimeIndex`, a `RangeIndex` is created.
-    
-    Parameters
-    ----------
-    last_window : pandas Series, pandas DataFrame
-        Time series values.
-    return_values : bool, default True
-        If `True` return the values of `last_window` as numpy ndarray. This option 
-        is intended to avoid copying data when it is not necessary.
-
-    Returns
-    -------
-    last_window_values : numpy ndarray
-        Numpy array with values of `last_window`.
-    last_window_index : pandas Index
-        Index of `last_window` modified according to the rules.
-    
-    """
-    
-    if isinstance(last_window.index, pd.DatetimeIndex) and last_window.index.freq is not None:
-        last_window_index = last_window.index
-    elif isinstance(last_window.index, pd.RangeIndex):
-        last_window_index = last_window.index
-    elif isinstance(last_window.index, pd.DatetimeIndex) and last_window.index.freq is None:
-        warnings.warn(
-            "`last_window` has a pandas DatetimeIndex without a frequency. The index "
-            "will be replaced by a RangeIndex starting from 0 with a step of 1. "
-            "To avoid this warning, set the frequency of the DatetimeIndex using "
-            "`last_window = last_window.asfreq('desired_frequency', fill_value=np.nan)`.",
-            IndexWarning
-        )
-        last_window_index = pd.RangeIndex(
-                                start = 0,
-                                stop  = len(last_window),
-                                step  = 1
-                            )
-    else:
-        warnings.warn(
-            "`last_window` has an unsupported index type (not pandas DatetimeIndex or "
-            "RangeIndex). The index will be replaced by a RangeIndex starting "
-            "from 0 with a step of 1. To avoid this warning, ensure that "
-            "`last_window.index` is a DatetimeIndex with a frequency or a RangeIndex.",
-            IndexWarning
-        )
-        last_window_index = pd.RangeIndex(
-                                start = 0,
-                                stop  = len(last_window),
-                                step  = 1
-                            )
-
-    last_window_values = last_window.to_numpy(copy=True).ravel() if return_values else None
-
-    return last_window_values, last_window_index
-
-
-def preprocess_exog(
-    exog: pd.Series | pd.DataFrame,
-    return_values: bool = True
-) -> tuple[np.ndarray | None, pd.Index]:
-    """
-    Return values and index of series or data frame separately. Index is
-    overwritten  according to the next rules:
-    
-    - If index is of type `DatetimeIndex` and has frequency, nothing is 
-    changed.
-    - If index is of type `RangeIndex`, nothing is changed.
-    - If index is of type `DatetimeIndex` but has no frequency, a 
-    `RangeIndex` is created.
-    - If index is not of type `DatetimeIndex`, a `RangeIndex` is created.
-
-    Parameters
-    ----------
-    exog : pandas Series, pandas DataFrame
-        Exogenous variables.
-    return_values : bool, default True
-        If `True` return the values of `exog` as numpy ndarray. This option is 
+        If `True` return the values of `data` as numpy ndarray. This option is
         intended to avoid copying data when it is not necessary.
 
     Returns
     -------
-    exog_values : numpy ndarray, None
-        Numpy array with values of `exog`.
-    exog_index : pandas Index
-        Index of `exog` modified according to the rules.
-    
+    data_values : numpy ndarray, None
+        Numpy array with values of `data`.
+    data_index : pandas Index
+        Index of `data`.
+
     """
     
-    if isinstance(exog.index, pd.DatetimeIndex) and exog.index.freq is not None:
-        exog_index = exog.index
-    elif isinstance(exog.index, pd.RangeIndex):
-        exog_index = exog.index
-    elif isinstance(exog.index, pd.DatetimeIndex) and exog.index.freq is None:
-        warnings.warn(
-            "`exog` has a pandas DatetimeIndex without a frequency. The index "
-            "will be replaced by a RangeIndex starting from 0 with a step of 1. "
-            "To avoid this warning, set the frequency of the DatetimeIndex using "
-            "`exog = exog.asfreq('desired_frequency', fill_value=np.nan)`.",
-            IndexWarning
-        )
-        exog_index = pd.RangeIndex(
-                         start = 0,
-                         stop  = len(exog),
-                         step  = 1
-                     )
-
+    if isinstance(data.index, pd.DatetimeIndex):            
+        if not ignore_freq and data.index.freq is None:
+            raise ValueError(
+                f"{data_label} has a pandas DatetimeIndex without a frequency. "
+                f"To avoid this error, set the frequency of the DatetimeIndex."
+            )
+        data_index = data.index
+    elif isinstance(data.index, pd.RangeIndex):
+        data_index = data.index
     else:
-        warnings.warn(
-            "`exog` has an unsupported index type (not pandas DatetimeIndex or "
-            "RangeIndex). The index will be replaced by a RangeIndex starting "
-            "from 0 with a step of 1. To avoid this warning, ensure that "
-            "`exog.index` is a DatetimeIndex with a frequency or a RangeIndex.",
-            IndexWarning
+        raise TypeError(
+            f"{data_label} has an unsupported index type. The index must be a "
+            f"pandas DatetimeIndex or a RangeIndex. Got {type(data.index)}."
         )
-        exog_index = pd.RangeIndex(
-                         start = 0,
-                         stop  = len(exog),
-                         step  = 1
-                     )
 
-    exog_values = exog.to_numpy(copy=True) if return_values else None
+    data_values = data.to_numpy(copy=True).ravel() if return_values else None
 
-    return exog_values, exog_index
+    return data_values, data_index
 
 
 def input_to_frame(
@@ -2494,6 +2319,9 @@ def check_preprocess_series(
     if isinstance(series, pd.DataFrame):
 
         if not isinstance(series.index, pd.MultiIndex):
+            _, _ = check_extract_values_and_index(
+                data=series, data_label='`series`', return_values=False
+            )
             series = series.copy()
             series.index.name = None
             series_dict = series.to_dict(orient='series')
