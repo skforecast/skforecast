@@ -9,14 +9,17 @@ from skforecast.utils import check_y
 
 @pytest.mark.parametrize("y", 
                          [10, [1, 2, 3], np.arange(10).reshape(-1, 1)], 
-                         ids = lambda y : f'y: {y}'
+                         ids = lambda y: f'y: {y}'
                         )
 def test_check_y_exception_when_y_not_pandas_series(y):
     """
     Check exception is raised when y is not a pandas Series.
     """
-    err_msg = re.escape('`y` must be a pandas Series.')
-    with pytest.raises(TypeError, match = err_msg):
+    err_msg = re.escape(
+        f"`y` must be a pandas Series with a DatetimeIndex or a RangeIndex. "
+        f"Found {type(y)}."
+    )
+    with pytest.raises(TypeError, match=err_msg):
         check_y(y=y)
 
 
