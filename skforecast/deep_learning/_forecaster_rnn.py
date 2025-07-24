@@ -667,9 +667,11 @@ class ForecasterRnn(ForecasterBase):
         X_train = np.stack(X_train, axis=2)
         y_train = np.stack(y_train, axis=2)
 
-        train_index = series.index[
-            self.max_lag : (len(series.index) - self.max_step + 1)
+        _, series_index = preprocess_y(y=series, return_values=False)
+        train_index = series_index[
+            self.max_lag : (len(series_index) - self.max_step + 1)
         ]
+
         dimension_names = {
             "X_train": {
                 0: train_index,
