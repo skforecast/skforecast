@@ -192,7 +192,6 @@ If you found **skforecast** useful, you can support us with a donation. Your con
     <img style="margin-bottom: 1em; ; width: 240px;" src="./images/github_sponsor_button.png" alt="Become a GitHub Sponsor">
 </a>
 <br>
-<script data-name="BMC-Widget" data-cfasync="false" src="https://cdnjs.buymeacoffee.com/1.0.0/widget.prod.min.js" data-id="skforecast" data-description="Support me on Buy me a coffee!" data-message="" data-color="#FFDD00" data-position="Right" data-x_margin="18" data-y_margin="18"></script>
 
 
 [![paypal](https://www.paypalobjects.com/en_US/ES/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/donate/?hosted_button_id=D2JZSWRLTZDL6)
