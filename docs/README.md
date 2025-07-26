@@ -71,9 +71,9 @@ The **skforecast** library offers a variety of forecaster types, each tailored t
 | Forecaster                      | Single series | Multiple series | Recursive strategy | Direct strategy | Probabilistic prediction | Time series differentiation | Exogenous features | Window features |
 |:--------------------------------|:-------------:|:---------------:|:------------------:|:---------------:|:------------------------:|:---------------------------:|:------------------:|:---------------:|
 |[ForecasterRecursive]            |✔️||✔️||✔️|✔️|✔️|✔️|
-|[ForecasterDirect]               |✔️|||✔️|✔️||✔️|✔️|
+|[ForecasterDirect]               |✔️|||✔️|✔️|✔️|✔️|✔️|
 |[ForecasterRecursiveMultiSeries] ||✔️|✔️||✔️|✔️|✔️|✔️|
-|[ForecasterDirectMultiVariate]   ||✔️||✔️|✔️||✔️|✔️|
+|[ForecasterDirectMultiVariate]   ||✔️||✔️|✔️|✔️|✔️|✔️|
 |[ForecasterRNN]                  ||✔️||✔️|✔️||✔️||
 |[ForecasterSarimax]              |✔️||✔️||✔️|✔️|✔️||
 
