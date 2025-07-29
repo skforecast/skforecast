@@ -1,3 +1,3 @@
 # `experimental`
 
-::: skforecast.experimental.experimental.calculate_distance_from_holiday
+::: skforecast.experimental._experimental.calculate_distance_from_holiday

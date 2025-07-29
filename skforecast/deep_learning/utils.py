@@ -70,8 +70,8 @@ def create_and_compile_model(
     steps : int
         Number of steps to predict.
     levels : str, list, default None
-       Output level(s) (features) to predict. If None, defaults to the names of 
-       input series.
+        Output level(s) (features) to predict. If None, defaults to the names of 
+        input series.
     exog : pandas Series, pandas DataFrame, default None
         Exogenous variables to be included as input, should have the same number 
         of rows as `series`.
@@ -208,8 +208,8 @@ def _create_and_compile_model_exog(
     steps : int
         Number of steps to predict.
     levels : str, list, default None
-       Output level(s) (features) to predict. If None, defaults to the names of 
-       input series.
+        Output level(s) (features) to predict. If None, defaults to the names of 
+        input series.
     exog : pandas Series, pandas DataFrame, default None
         Exogenous variables to be included as input, should have the same number 
         of rows as `series`.
@@ -449,8 +449,8 @@ def _create_and_compile_model_no_exog(
     steps : int
         Number of steps to predict.
     levels : str, list, default None
-       Output level(s) (features) to predict. If None, defaults to the names of 
-       input series.
+        Output level(s) (features) to predict. If None, defaults to the names of 
+        input series.
     recurrent_layer : str, default 'LSTM'
         Type of recurrent layer to be used, 'LSTM' [1]_, 'GRU' [2]_, or 'RNN' [3]_.
     recurrent_units : int, list, default 100
