@@ -87,4 +87,4 @@ def test_fit_with_validation_data():
     assert forecaster.is_fitted is True
 
     # # Assert that the history is not None
-    assert forecaster.history is not None
+    assert forecaster.history_ is not None

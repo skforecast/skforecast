@@ -145,6 +145,37 @@ def test_create_train_X_y_ValueError_when_series_values_are_missing(values):
         forecaster.create_train_X_y(series=series)
 
 
+def test_create_train_X_y_exception_when_n_splits_less_than_0():
+    """
+    Check exception is raised when n_splits in create_train_X_y is less than 0.
+    """
+    series = pd.DataFrame(np.arange(10), columns=["l1"])
+    model = create_and_compile_model(
+                series=series, 
+                levels="l1",    
+                lags=20,           
+                steps=3,              
+                recurrent_layer="LSTM",
+                recurrent_units=100,
+                recurrent_layers_kwargs={"activation": "relu"},
+                dense_units=[128, 64],
+                dense_layers_kwargs={"activation": "relu"},
+                output_dense_layer_kwargs={"activation": "linear"},
+                compile_kwargs={"optimizer": Adam(learning_rate=0.01), "loss": MeanSquaredError()},
+            )
+
+    y_array = np.arange(10)
+    forecaster = ForecasterRnn(model, levels="l1", lags=20)
+
+    err_msg = re.escape(
+        f"The maximum lag ({forecaster.max_lag}) must be less than the length "
+        f"of the series minus the maximum of steps ({len(series)-forecaster.max_step})."
+    )
+
+    with pytest.raises(ValueError, match=err_msg):
+        forecaster._create_lags(y=y_array)
+
+
 def test_create_train_X_y_output_when_series_10_and_transformer_series_is_StandardScaler():
     """
     Test the output of create_train_X_y when exog is None and transformer_series
