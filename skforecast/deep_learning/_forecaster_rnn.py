@@ -299,6 +299,15 @@ class ForecasterRnn(ForecasterBase):
             self.n_exog_in = self.regressor.get_layer('exog_input').output.shape[-1]
         else:
             self.n_exog_in = None
+            # NOTE: This is needed because the Reshape layer changes the output 
+            # shape in _create_and_compile_model_no_exog
+            self.n_levels_out = int(self.n_levels_out / self.max_step)
+
+        if not len(self.levels) == self.n_levels_out:
+            raise ValueError(
+                f"Number of levels ({len(self.levels)}) does not match the number of "
+                f"levels expected by the regressor architecture ({self.n_levels_out})."
+            )
 
         self.series_val = None
         self.exog_val = None
