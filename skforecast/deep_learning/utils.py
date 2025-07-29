@@ -46,7 +46,7 @@ def create_and_compile_model(
     recurrent_layer: str = "LSTM",
     recurrent_units: int | list[int] | tuple[int] = 100,
     recurrent_layers_kwargs: dict[str, Any] | list[dict[str, Any]] | None = {"activation": "tanh"},
-    dense_units: int | list[int] | tuple[int] = 64,
+    dense_units: int | list[int] | tuple[int] | None = 64,
     dense_layers_kwargs: dict[str, Any] | list[dict[str, Any]] | None = {"activation": "relu"},
     output_dense_layer_kwargs: dict[str, Any] | None = {"activation": "linear"},
     compile_kwargs: dict[str, Any] = {"optimizer": Adam(), "loss": MeanSquaredError()},
@@ -84,7 +84,7 @@ def create_and_compile_model(
         Additional keyword arguments for the recurrent layers [1]_, [2]_, [3]_. 
         Can be a single dictionary for all layers or a list of dictionaries 
         specifying different parameters for each recurrent layer.
-    dense_units : int, list, tuple, default 64
+    dense_units : int, list, tuple, None, default 64
         Number of units in the dense layer(s) [4]_. Can be an integer for single
         dense layer, or a list of integers for multiple dense layers.
     dense_layers_kwargs : dict, list, default {'activation': 'relu'}
@@ -184,7 +184,7 @@ def _create_and_compile_model_exog(
     recurrent_layer: str = "LSTM",
     recurrent_units: int | list[int] | tuple[int] = 100,
     recurrent_layers_kwargs: dict[str, Any] | list[dict[str, Any]] | None = {"activation": "tanh"},
-    dense_units: int | list[int] | tuple[int] = 64,
+    dense_units: int | list[int] | tuple[int] | None = 64,
     dense_layers_kwargs: dict[str, Any] | list[dict[str, Any]] | None = {"activation": "relu"},
     output_dense_layer_kwargs: dict[str, Any] | None = {"activation": "linear"},
     compile_kwargs: dict[str, Any] = {"optimizer": Adam(), "loss": MeanSquaredError()},
@@ -222,7 +222,7 @@ def _create_and_compile_model_exog(
         Additional keyword arguments for the recurrent layers [1]_, [2]_, [3]_. 
         Can be a single dictionary for all layers or a list of dictionaries 
         specifying different parameters for each recurrent layer.
-    dense_units : int, list, tuple, default 64
+    dense_units : int, list, tuple, None, default 64
         Number of units in the dense layer(s) [4]_. Can be an integer for single
         dense layer, or a list of integers for multiple dense layers.
     dense_layers_kwargs : dict, list, default {'activation': 'relu'}
@@ -438,7 +438,7 @@ def _create_and_compile_model_no_exog(
     recurrent_layer: str = "LSTM",
     recurrent_units: int | list[int] | tuple[int] = 100,
     recurrent_layers_kwargs: dict[str, Any] | list[dict[str, Any]] | None = {"activation": "tanh"},
-    dense_units: int | list[int] | tuple[int] = 64,
+    dense_units: int | list[int] | tuple[int] | None = 64,
     dense_layers_kwargs: dict[str, Any] | list[dict[str, Any]] | None = {"activation": "relu"},
     output_dense_layer_kwargs: dict[str, Any] | None = {"activation": "linear"},
     compile_kwargs: dict[str, Any] = {"optimizer": Adam(), "loss": MeanSquaredError()},
@@ -472,7 +472,7 @@ def _create_and_compile_model_no_exog(
         Additional keyword arguments for the recurrent layers [1]_, [2]_, [3]_. 
         Can be a single dictionary for all layers or a list of dictionaries 
         specifying different parameters for each recurrent layer.
-    dense_units : int, list, tuple, default 64
+    dense_units : int, list, tuple, None, default 64
         Number of units in the dense layer(s) [4]_. Can be an integer for single
         dense layer, or a list of integers for multiple dense layers.
     dense_layers_kwargs : dict, list, default {'activation': 'relu'}
