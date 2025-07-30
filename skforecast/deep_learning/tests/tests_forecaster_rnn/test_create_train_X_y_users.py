@@ -1,4 +1,4 @@
-# Unit test create_train_X_y ForecasterRnn using PyTorch backend
+# Unit test create_train_X_y ForecasterRnn using TensorFlow backend
 # ==============================================================================
 import os
 import re
@@ -10,7 +10,7 @@ import pytest
 from skforecast.deep_learning import ForecasterRnn
 from skforecast.deep_learning.utils import create_and_compile_model
 
-os.environ["KERAS_BACKEND"] = "torch"
+os.environ["KERAS_BACKEND"] = "tensorflow"
 import keras
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
@@ -25,8 +25,6 @@ def test_create_train_X_y_TypeError_when_series_not_dataframe():
     Test TypeError is raised when series is not a pandas DataFrame.
     """
     series = pd.Series(np.arange(7))
-    # Call the function to create and compile the model
-
     err_msg = f"`series` must be a pandas DataFrame. Got {type(series)}."
     with pytest.raises(TypeError, match=err_msg):
         model = create_and_compile_model(

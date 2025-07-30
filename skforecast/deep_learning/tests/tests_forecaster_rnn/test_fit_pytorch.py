@@ -34,25 +34,13 @@ def test_fit_without_validation_data():
     """
     Test case for fitting the forecaster without validation data
     """
-    # Call the function to create and compile the model
 
     forecaster = ForecasterRnn(model, levels, lags=lags)
-
-    # Assert that the forecaster is fitted
     assert forecaster.is_fitted is False
-
-    # Fit the forecaster
     forecaster.fit(series)
-
-    # Assert that the forecaster is fitted
     assert forecaster.is_fitted is True
-
-    # Assert that the training range is set correctly
     assert all(forecaster.training_range_ == (0, 4))
-
-    # Assert that the last window is set correctly
     last_window = pd.DataFrame({"1": [2, 3, 4], "2": [2, 3, 4]})
-
     np.testing.assert_array_almost_equal(forecaster.last_window_, last_window)
 
 
@@ -62,12 +50,9 @@ def test_fit_with_validation_data():
     Test case for fitting the forecaster with validation data
     """
 
-    # Create a validation series
     series_val = pd.DataFrame(
         {"1": pd.Series(np.arange(5)), "2": pd.Series(np.arange(5))}
     )
-
-    # Create an instance of ForecasterRnn
     forecaster = ForecasterRnn(
         regressor=model,
         levels=levels,
@@ -78,15 +63,7 @@ def test_fit_with_validation_data():
         },
         lags=lags
     )
-
-    # Assert that the forecaster is not fitted
     assert forecaster.is_fitted is False
-
-    # Fit the forecaster
     forecaster.fit(series)
-
-    # Assert that the forecaster is fitted
     assert forecaster.is_fitted is True
-
-    # # Assert that the history is not None
     assert forecaster.history_ is not None

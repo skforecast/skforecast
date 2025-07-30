@@ -7,7 +7,8 @@ from skforecast.deep_learning import ForecasterRnn
 
 os.environ["KERAS_BACKEND"] = "torch"
 import keras
-from keras.optimizers import Adam, MeanSquaredError
+from keras.optimizers import Adam
+from keras.losses import MeanSquaredError
 import matplotlib.pyplot as plt
 
 from skforecast.deep_learning.utils import create_and_compile_model
