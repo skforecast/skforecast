@@ -1,4 +1,4 @@
-# Unit test _create_lags ForecasterRnn
+# Unit test _create_lags ForecasterRnn using PyTorch backend
 # ==============================================================================
 import os
 import re
@@ -15,23 +15,6 @@ os.environ["KERAS_BACKEND"] = "torch"
 import keras
 from keras.optimizers import Adam
 from keras.losses import MeanSquaredError
-
-
-series = pd.DataFrame(np.arange(10), columns=["l1"])
-model = create_and_compile_model(
-            series=series, 
-            levels="l1",    
-            lags=20,           
-            steps=3,              
-            recurrent_layer="LSTM",
-            recurrent_units=100,
-            recurrent_layers_kwargs={"activation": "relu"},
-            dense_units=[128, 64],
-            dense_layers_kwargs={"activation": "relu"},
-            output_dense_layer_kwargs={"activation": "linear"},
-            compile_kwargs={"optimizer": Adam(learning_rate=0.01), "loss": MeanSquaredError()},
-        )
-
 
 # parametrize tests
 @pytest.mark.parametrize(
@@ -109,9 +92,20 @@ def test_create_lags_several_configurations(lags, steps, expected):
     Test matrix of lags created with different configurations.
     """
     series = pd.DataFrame(np.arange(10), columns=["l1"])
-
-    forecaster = ForecasterRnn(regressor=model, levels='l1', lags=lags, steps=steps)
-
+    model = create_and_compile_model(
+                series=series, 
+                levels="l1",    
+                lags=lags,           
+                steps=steps,              
+                recurrent_layer="LSTM",
+                recurrent_units=100,
+                recurrent_layers_kwargs={"activation": "relu"},
+                dense_units=[128, 64],
+                dense_layers_kwargs={"activation": "relu"},
+                output_dense_layer_kwargs={"activation": "linear"},
+                compile_kwargs={"optimizer": Adam(learning_rate=0.01), "loss": MeanSquaredError()},
+            )
+    forecaster = ForecasterRnn(regressor=model, levels='l1', lags=lags)
     results = forecaster._create_lags(y=np.arange(10))
 
     np.testing.assert_array_almost_equal(results[0], expected[0])

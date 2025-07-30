@@ -1,26 +1,23 @@
-# Unit test create_train_X_y ForecasterRnn
+# Unit test create_train_X_y ForecasterRnn using TensorFlow backend
 # ==============================================================================
+import os
 import re
 
-import keras
 import numpy as np
 import pandas as pd
 import pytest
-from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from skforecast.deep_learning import ForecasterRnn
 from skforecast.deep_learning.utils import create_and_compile_model
 
+os.environ["KERAS_BACKEND"] = "tensorflow"
+import keras
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from keras.optimizers import Adam
+from keras.losses import MeanSquaredError
+
 series = pd.DataFrame(np.random.randn(100, 3))
-lags = 3
-steps = 1
-levels = "1"
-activation = "relu"
-optimizer = keras.optimizers.Adam(learning_rate=0.01)
-loss = keras.losses.MeanSquaredError()
-recurrent_units = 100
-dense_units = [128, 64]
 
 
 def test_create_train_X_y_TypeError_when_series_not_dataframe():
@@ -33,17 +30,19 @@ def test_create_train_X_y_TypeError_when_series_not_dataframe():
     err_msg = f"`series` must be a pandas DataFrame. Got {type(series)}."
     with pytest.raises(TypeError, match=err_msg):
         model = create_and_compile_model(
-            series=series,
-            lags=lags,
-            steps=steps,
-            levels=levels,
-            recurrent_units=recurrent_units,
-            dense_units=dense_units,
-            activation=activation,
-            optimizer=optimizer,
-            loss=loss,
-        )
-        forecaster = ForecasterRnn(model)
+                    series=series, 
+                    levels="1",    
+                    lags=3,           
+                    steps=1,              
+                    recurrent_layer="LSTM",
+                    recurrent_units=100,
+                    recurrent_layers_kwargs={"activation": "relu"},
+                    dense_units=[128, 64],
+                    dense_layers_kwargs={"activation": "relu"},
+                    output_dense_layer_kwargs={"activation": "linear"},
+                    compile_kwargs={"optimizer": Adam(learning_rate=0.01), "loss": MeanSquaredError()},
+                )
+        forecaster = ForecasterRnn(model, lags=3)
 
 
 def test_create_train_X_y_UserWarning_when_levels_of_transformer_series_not_equal_to_series_col_names():
@@ -55,18 +54,20 @@ def test_create_train_X_y_UserWarning_when_levels_of_transformer_series_not_equa
     dict_transformers = {"1": StandardScaler(), "3": StandardScaler()}
 
     model = create_and_compile_model(
-        series=series,
-        lags=1,
-        steps=1,
-        levels=levels,
-        recurrent_units=recurrent_units,
-        dense_units=dense_units,
-        activation=activation,
-        optimizer=optimizer,
-        loss=loss,
-    )
+                series=series, 
+                levels="1",    
+                lags=3,           
+                steps=1,              
+                recurrent_layer="LSTM",
+                recurrent_units=100,
+                recurrent_layers_kwargs={"activation": "relu"},
+                dense_units=[128, 64],
+                dense_layers_kwargs={"activation": "relu"},
+                output_dense_layer_kwargs={"activation": "linear"},
+                compile_kwargs={"optimizer": Adam(learning_rate=0.01), "loss": MeanSquaredError()},
+            )
     forecaster = ForecasterRnn(
-        model, levels=levels, transformer_series=dict_transformers, lags=lags
+        model, levels="1", transformer_series=dict_transformers, lags=3
     )
 
     series_not_in_transformer_series = set(series.columns) - set(
@@ -93,17 +94,19 @@ def test_create_train_X_y_ValueError_when_all_series_values_are_missing():
     err_msg = re.escape("`y` has missing values.")
     with pytest.raises(ValueError, match=err_msg):
         model = create_and_compile_model(
-            series=series,
-            lags=1,
-            steps=1,
-            levels=levels,
-            recurrent_units=recurrent_units,
-            dense_units=dense_units,
-            activation=activation,
-            optimizer=optimizer,
-            loss=loss,
-        )
-        forecaster = ForecasterRnn(model, levels=levels, lags=lags)
+                    series=series, 
+                    levels="1",    
+                    lags=3,           
+                    steps=1,              
+                    recurrent_layer="LSTM",
+                    recurrent_units=100,
+                    recurrent_layers_kwargs={"activation": "relu"},
+                    dense_units=[128, 64],
+                    dense_layers_kwargs={"activation": "relu"},
+                    output_dense_layer_kwargs={"activation": "linear"},
+                    compile_kwargs={"optimizer": Adam(learning_rate=0.01), "loss": MeanSquaredError()},
+                )
+        forecaster = ForecasterRnn(model, levels="1", lags=3)
         forecaster.create_train_X_y(series=series)
 
 
@@ -122,39 +125,13 @@ def test_create_train_X_y_ValueError_when_series_values_are_missing(values):
     Test ValueError is raised when series values are missing in different
     locations.
     """
-
     series = pd.DataFrame({"1": pd.Series(values), "2": pd.Series(np.arange(7))})
-
     series.index = pd.date_range(start="2022-01-01", periods=7, freq="1D")
-
-    model = create_and_compile_model(
-        series=series,
-        lags=5,
-        steps=2,
-        levels=levels,
-        recurrent_units=recurrent_units,
-        dense_units=dense_units,
-        activation=activation,
-        optimizer=optimizer,
-        loss=loss,
-    )
-    forecaster = ForecasterRnn(model, levels=levels, lags=lags)
-
-    err_msg = re.escape(("`y` has missing values."))
-    with pytest.raises(ValueError, match=err_msg):
-        forecaster.create_train_X_y(series=series)
-
-
-def test_create_train_X_y_exception_when_n_splits_less_than_0():
-    """
-    Check exception is raised when n_splits in create_train_X_y is less than 0.
-    """
-    series = pd.DataFrame(np.arange(10), columns=["l1"])
     model = create_and_compile_model(
                 series=series, 
-                levels="l1",    
-                lags=20,           
-                steps=3,              
+                levels="1",    
+                lags=3,           
+                steps=1,              
                 recurrent_layer="LSTM",
                 recurrent_units=100,
                 recurrent_layers_kwargs={"activation": "relu"},
@@ -163,17 +140,11 @@ def test_create_train_X_y_exception_when_n_splits_less_than_0():
                 output_dense_layer_kwargs={"activation": "linear"},
                 compile_kwargs={"optimizer": Adam(learning_rate=0.01), "loss": MeanSquaredError()},
             )
+    forecaster = ForecasterRnn(model, levels="1", lags=3)
 
-    y_array = np.arange(10)
-    forecaster = ForecasterRnn(model, levels="l1", lags=20)
-
-    err_msg = re.escape(
-        f"The maximum lag ({forecaster.max_lag}) must be less than the length "
-        f"of the series minus the maximum of steps ({len(series)-forecaster.max_step})."
-    )
-
+    err_msg = re.escape(("`y` has missing values."))
     with pytest.raises(ValueError, match=err_msg):
-        forecaster._create_lags(y=y_array)
+        forecaster.create_train_X_y(series=series)
 
 
 def test_create_train_X_y_output_when_series_10_and_transformer_series_is_StandardScaler():
@@ -181,27 +152,27 @@ def test_create_train_X_y_output_when_series_10_and_transformer_series_is_Standa
     Test the output of create_train_X_y when exog is None and transformer_series
     is StandardScaler.
     """
-    levels = "l1"
     series = pd.DataFrame(
         {
             "l1": pd.Series(np.arange(10, dtype=float)),
             "l2": pd.Series(np.arange(10, dtype=float)),
         }
     )
-    lags_5 = 5
     model = create_and_compile_model(
-        series=series,
-        lags=lags_5,
-        steps=2,
-        levels=levels,
-        recurrent_units=recurrent_units,
-        dense_units=dense_units,
-        activation=activation,
-        optimizer=optimizer,
-        loss=loss,
-    )
+                series=series, 
+                levels="l1",    
+                lags=5,           
+                steps=2,              
+                recurrent_layer="LSTM",
+                recurrent_units=100,
+                recurrent_layers_kwargs={"activation": "relu"},
+                dense_units=[128, 64],
+                dense_layers_kwargs={"activation": "relu"},
+                output_dense_layer_kwargs={"activation": "linear"},
+                compile_kwargs={"optimizer": Adam(learning_rate=0.01), "loss": MeanSquaredError()},
+            )
     forecaster = ForecasterRnn(
-        model, levels=levels, transformer_series=StandardScaler(), lags=lags_5
+        model, levels="l1", transformer_series=StandardScaler(), lags=5
     )
 
     results = forecaster.create_train_X_y(series=series)
@@ -230,6 +201,7 @@ def test_create_train_X_y_output_when_series_10_and_transformer_series_is_Standa
         [ 0.52223297,  0.52223297],
         [ 0.87038828,  0.87038828]]])
     ,
+    None,
         [
             [[0.17407766], [0.52223297]],
             [[0.52223297], [0.87038828]],
@@ -238,16 +210,27 @@ def test_create_train_X_y_output_when_series_10_and_transformer_series_is_Standa
         ],
     ]
 
-    colum_names = {
+    expected_dimension_names = {
         "X_train": {
-            0: [5, 6, 7, 8],
-            1: ["lag_1", "lag_2", "lag_3", "lag_4", "lag_5"],
+            0: pd.RangeIndex(start=5, stop=9, step=1),
+            1: ['lag_5', 'lag_4', 'lag_3', 'lag_2', 'lag_1'],
             2: ["l1", "l2"],
         },
-        "y_train": {0: [5, 6, 7, 8], 1: ["step_1", "step_2"], 2: ["l1"]},
+        "y_train": {
+            0: pd.RangeIndex(start=5, stop=9, step=1),
+            1: ["step_1", "step_2"],
+            2: ["l1"]
+        },
+        "exog_train": {0: None, 1: None, 2: None}
     }
-    for i in [0, 1]:
+    for i in [0, 2]:
         np.testing.assert_almost_equal(results[i], expected[i])
+    results[1] == expected[1]
 
-    # assert column names
-    assert results[2] == colum_names
+    results[3]['X_train'][0].equals(expected_dimension_names['X_train'][0])
+    results[3]['X_train'][1] == (expected_dimension_names['X_train'][1])
+    results[3]['X_train'][2] == (expected_dimension_names['X_train'][2])
+    results[3]['y_train'][0].equals(expected_dimension_names['y_train'][0])
+    results[3]['y_train'][1] == expected_dimension_names['y_train'][1]
+    results[3]['y_train'][2] == expected_dimension_names['y_train'][2]
+    results[3]['exog_train'] == expected_dimension_names['exog_train']

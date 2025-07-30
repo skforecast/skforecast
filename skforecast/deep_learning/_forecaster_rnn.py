@@ -1508,7 +1508,7 @@ class ForecasterRnn(ForecasterBase):
         )[np.array(steps) - 1]
         
         n_steps = len(steps)
-        n_levels = len(levels)
+        n_levels = len(self.levels)
         correction_factor = np.full(
             shape=(n_steps, n_levels), fill_value=np.nan, order='C', dtype=float
         )
