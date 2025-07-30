@@ -190,10 +190,10 @@ def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_and_n
     """
     rng = np.random.default_rng(123)
     y_true = {
-        'l1':pd.Series(rng.normal(loc=10, scale=10, size=1000)), 
+        'l1': pd.Series(rng.normal(loc=10, scale=10, size=1000)), 
     }
     y_pred = {
-        'l1':pd.Series(rng.normal(loc=10, scale=10, size=1000)), 
+        'l1': pd.Series(rng.normal(loc=10, scale=10, size=1000)), 
     }
 
     forecaster = ForecasterDirectMultiVariate(
@@ -203,11 +203,11 @@ def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_and_n
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred, append=False)
     results = {
-        'l1':np.sort(forecaster.out_sample_residuals_['l1']),
+        'l1': np.sort(forecaster.out_sample_residuals_['l1']),
     }
 
     expected = {
-        'l1':np.sort(y_true['l1'] - y_pred['l1']),
+        'l1': np.sort(y_true['l1'] - y_pred['l1']),
     }
 
     assert forecaster.out_sample_residuals_.keys() == expected.keys()
@@ -222,10 +222,10 @@ def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_and_a
     """
     rng = np.random.default_rng(123)
     y_true = {
-        'l1':pd.Series(rng.normal(loc=10, scale=10, size=1000))
+        'l1': pd.Series(rng.normal(loc=10, scale=10, size=1000))
     }
     y_pred = {
-        'l1':pd.Series(rng.normal(loc=10, scale=10, size=1000))
+        'l1': pd.Series(rng.normal(loc=10, scale=10, size=1000))
     }
 
     forecaster = ForecasterDirectMultiVariate(
@@ -235,12 +235,12 @@ def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_and_a
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred, append=True)
     results = {
-        'l1':np.sort(forecaster.out_sample_residuals_['l1'])
+        'l1': np.sort(forecaster.out_sample_residuals_['l1'])
     }
 
     residuals_1 = (y_true['l1'] - y_pred['l1'])
     expected = {
-        'l1':np.sort(np.concatenate((residuals_1, residuals_1))),
+        'l1': np.sort(np.concatenate((residuals_1, residuals_1))),
     }
 
     assert forecaster.out_sample_residuals_.keys() == expected.keys()
@@ -411,10 +411,10 @@ def test_forecaster_set_out_sample_residuals_when_transformer_y_and_differentiat
         )
     })
     y_true  = {
-        'l1':rng.normal(loc=0, scale=1, size=5)
+        'l1': rng.normal(loc=0, scale=1, size=5)
     }
     y_pred = {
-        'l1':rng.normal(loc=0, scale=1, size=5)
+        'l1': rng.normal(loc=0, scale=1, size=5)
     }
     forecaster = ForecasterDirectMultiVariate(
                      regressor          = LinearRegression(),
@@ -434,7 +434,7 @@ def test_forecaster_set_out_sample_residuals_when_transformer_y_and_differentiat
     y_pred['l1'] = forecaster.transformer_series_['l1'].transform(y_pred['l1'].reshape(-1, 1)).flatten()
     y_true['l1'] = forecaster.differentiator_['l1'].transform(y_true['l1'])[forecaster.differentiation:]
     y_pred['l1'] = forecaster.differentiator_['l1'].transform(y_pred['l1'])[forecaster.differentiation:]
-    residuals = {'l1' : y_true['l1'] - y_pred['l1']}
+    residuals = {'l1': y_true['l1'] - y_pred['l1']}
 
     assert forecaster.out_sample_residuals_.keys() == residuals.keys()
     for key in residuals.keys():
