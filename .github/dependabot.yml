@@ -1,0 +1,36 @@
+# To get started with Dependabot version updates, you'll need to specify which
+# package ecosystems to update and where the package manifests are located.
+# Please see the documentation for all configuration options:
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  - package-ecosystem: "pip" # Monitor Python dependencies
+    directory: "/" # Location of package manifests
+    schedule:
+      interval: "weekly"
+    # Additional configuration options
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "dependabot"
+    labels:
+      - "dependencies"
+    reviewers:
+      - "skforecast/core-devs"
+    assignees:
+      - "skforecast/core-devs"
+  
+  - package-ecosystem: "github-actions" # Monitor GitHub Actions
+    directory: "/" # Location of workflow files
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "dependabot"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    reviewers:
+      - "skforecast/core-devs"
+    assignees:
+      - "skforecast/core-devs"

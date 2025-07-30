@@ -120,6 +120,8 @@ Homepage = "https://www.skforecast.org"
 Repository = "https://github.com/skforecast/skforecast"
 Documentation = "https://www.skforecast.org"
 "Release Notes" = "https://skforecast.org/latest/releases/releases"
+Download = "https://pypi.org/project/skforecast/#files"
+Tracker = "https://github.com/skforecast/skforecast/issues"
 
 [build-system]
 requires = ["setuptools>=61", "toml", "build"]
