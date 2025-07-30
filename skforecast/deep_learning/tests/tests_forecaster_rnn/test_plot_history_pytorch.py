@@ -1,15 +1,14 @@
-# Unit test plot history method
+# Unit test plot history method with PyTorch backend
 # ==============================================================================
 import os
-
 import numpy as np
 import pandas as pd
-import pytest
-
 from skforecast.deep_learning import ForecasterRnn
 
 os.environ["KERAS_BACKEND"] = "torch"
 import keras
+from keras.optimizers import Adam
+from keras.losses import MeanSquaredError
 import matplotlib.pyplot as plt
 
 from skforecast.deep_learning.utils import create_and_compile_model
@@ -21,28 +20,21 @@ series = pd.DataFrame(
         "3": pd.Series(np.arange(50)),
     }
 )
-lags = 3
-steps = 4
-levels = ["1", "2"]
-activation = "relu"
-optimizer = keras.optimizers.Adam(learning_rate=0.01)
-loss = keras.losses.MeanSquaredError()
-recurrent_units = 100
-dense_units = [128, 64]
-
 
 model = create_and_compile_model(
-    series=series,
-    lags=lags,
-    steps=steps,
-    levels=levels,
-    recurrent_units=recurrent_units,
-    dense_units=dense_units,
-    activation=activation,
-    optimizer=optimizer,
-    loss=loss,
-)
-forecaster = ForecasterRnn(model, levels, lags=lags)
+            series=series, 
+            levels=["1", "2"],    
+            lags=3,           
+            steps=4,              
+            recurrent_layer="LSTM",
+            recurrent_units=100,
+            recurrent_layers_kwargs={"activation": "relu"},
+            dense_units=[128, 64],
+            dense_layers_kwargs={"activation": "relu"},
+            output_dense_layer_kwargs={"activation": "linear"},
+            compile_kwargs={"optimizer": Adam(learning_rate=0.01), "loss": MeanSquaredError()},
+        )
+forecaster = ForecasterRnn(model, levels=["1", "2"], lags=3)
 forecaster.fit(series)
 
 

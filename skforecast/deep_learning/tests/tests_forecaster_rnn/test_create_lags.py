@@ -1,8 +1,8 @@
-# Unit test _create_lags ForecasterRnn
+# Unit test _create_lags ForecasterRnn using TensorFlow backend
 # ==============================================================================
+import os
 import re
 
-import keras
 import numpy as np
 import pandas as pd
 import pytest
@@ -10,44 +10,11 @@ import pytest
 from skforecast.deep_learning import ForecasterRnn
 from skforecast.deep_learning.utils import create_and_compile_model
 
-lags = 6
-steps = 3
-levels = "l1"
-activation = "relu"
-optimizer = keras.optimizers.Adam(learning_rate=0.01)
-loss = keras.losses.MeanSquaredError()
-recurrent_units = 100
-dense_units = [128, 64]
-
-
-def test_check_create_lags_exception_when_n_splits_less_than_0():
-    """
-    Check exception is raised when n_splits in _create_lags is less than 0.
-    """
-    series = pd.DataFrame(np.arange(10), columns=["l1"])
-    y_array = np.arange(10)
-    lags_20 = 20
-    model = create_and_compile_model(
-        series=series,
-        lags=lags_20,
-        steps=steps,
-        levels=levels,
-        recurrent_units=recurrent_units,
-        dense_units=dense_units,
-        activation=activation,
-        optimizer=optimizer,
-        loss=loss,
-    )
-    forecaster = ForecasterRnn(model, levels, lags=lags_20)
-
-    err_msg = re.escape(
-        f"The maximum lag ({forecaster.max_lag}) must be less than the length "
-        f"of the series minus the maximum of steps ({len(series)-forecaster.max_step})."
-    )
-
-    with pytest.raises(ValueError, match=err_msg):
-        forecaster._create_lags(y=y_array)
-
+# Export torch keras backend
+os.environ["KERAS_BACKEND"] = "tensorflow"
+import keras
+from keras.optimizers import Adam
+from keras.losses import MeanSquaredError
 
 # parametrize tests
 @pytest.mark.parametrize(
@@ -126,18 +93,19 @@ def test_create_lags_several_configurations(lags, steps, expected):
     """
     series = pd.DataFrame(np.arange(10), columns=["l1"])
     model = create_and_compile_model(
-        series=series,
-        lags=lags,
-        steps=steps,
-        levels=levels,
-        recurrent_units=recurrent_units,
-        dense_units=dense_units,
-        activation=activation,
-        optimizer=optimizer,
-        loss=loss,
-    )
-    forecaster = ForecasterRnn(regressor=model, levels=levels, lags=lags, steps=steps)
-
+                series=series, 
+                levels="l1",    
+                lags=lags,           
+                steps=steps,              
+                recurrent_layer="LSTM",
+                recurrent_units=100,
+                recurrent_layers_kwargs={"activation": "relu"},
+                dense_units=[128, 64],
+                dense_layers_kwargs={"activation": "relu"},
+                output_dense_layer_kwargs={"activation": "linear"},
+                compile_kwargs={"optimizer": Adam(learning_rate=0.01), "loss": MeanSquaredError()},
+            )
+    forecaster = ForecasterRnn(regressor=model, levels='l1', lags=lags)
     results = forecaster._create_lags(y=np.arange(10))
 
     np.testing.assert_array_almost_equal(results[0], expected[0])

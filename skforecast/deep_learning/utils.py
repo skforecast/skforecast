@@ -46,7 +46,7 @@ def create_and_compile_model(
     recurrent_layer: str = "LSTM",
     recurrent_units: int | list[int] | tuple[int] = 100,
     recurrent_layers_kwargs: dict[str, Any] | list[dict[str, Any]] | None = {"activation": "tanh"},
-    dense_units: int | list[int] | tuple[int] = 64,
+    dense_units: int | list[int] | tuple[int] | None = 64,
     dense_layers_kwargs: dict[str, Any] | list[dict[str, Any]] | None = {"activation": "relu"},
     output_dense_layer_kwargs: dict[str, Any] | None = {"activation": "linear"},
     compile_kwargs: dict[str, Any] = {"optimizer": Adam(), "loss": MeanSquaredError()},
@@ -84,7 +84,7 @@ def create_and_compile_model(
         Additional keyword arguments for the recurrent layers [1]_, [2]_, [3]_. 
         Can be a single dictionary for all layers or a list of dictionaries 
         specifying different parameters for each recurrent layer.
-    dense_units : int, list, tuple, default 64
+    dense_units : int, list, tuple, None, default 64
         Number of units in the dense layer(s) [4]_. Can be an integer for single
         dense layer, or a list of integers for multiple dense layers.
     dense_layers_kwargs : dict, list, default {'activation': 'relu'}
@@ -184,7 +184,7 @@ def _create_and_compile_model_exog(
     recurrent_layer: str = "LSTM",
     recurrent_units: int | list[int] | tuple[int] = 100,
     recurrent_layers_kwargs: dict[str, Any] | list[dict[str, Any]] | None = {"activation": "tanh"},
-    dense_units: int | list[int] | tuple[int] = 64,
+    dense_units: int | list[int] | tuple[int] | None = 64,
     dense_layers_kwargs: dict[str, Any] | list[dict[str, Any]] | None = {"activation": "relu"},
     output_dense_layer_kwargs: dict[str, Any] | None = {"activation": "linear"},
     compile_kwargs: dict[str, Any] = {"optimizer": Adam(), "loss": MeanSquaredError()},
@@ -222,7 +222,7 @@ def _create_and_compile_model_exog(
         Additional keyword arguments for the recurrent layers [1]_, [2]_, [3]_. 
         Can be a single dictionary for all layers or a list of dictionaries 
         specifying different parameters for each recurrent layer.
-    dense_units : int, list, tuple, default 64
+    dense_units : int, list, tuple, None, default 64
         Number of units in the dense layer(s) [4]_. Can be an integer for single
         dense layer, or a list of integers for multiple dense layers.
     dense_layers_kwargs : dict, list, default {'activation': 'relu'}
@@ -315,6 +315,12 @@ def _create_and_compile_model_exog(
         inputs.append(exog_input)
 
     x = series_input
+    if not isinstance(recurrent_units, (list, tuple, int)):
+        raise TypeError(
+            f"At least one recurrent layer (LSTM, GRU, or SimpleRNN) is required."
+            f"`recurrent_units` argument must be an int or a list of ints. "
+            f"Got {type(recurrent_units)}."
+        )
     if not isinstance(recurrent_units, (list, tuple)):
         recurrent_units = [recurrent_units]
 
@@ -365,37 +371,43 @@ def _create_and_compile_model_exog(
         # NOTE: Shape (batch, steps, features + n_exog)
         x = Concatenate(axis=-1, name="concat_exog")([x, exog_input])
 
-    if not isinstance(dense_units, (list, tuple)):
-        dense_units = [dense_units]
-
-    if isinstance(dense_layers_kwargs, dict):
-        dense_layers_kwargs = [dense_layers_kwargs] * len(dense_units)
-    elif isinstance(dense_layers_kwargs, (list, tuple)):
-        if len(dense_layers_kwargs) != len(dense_units):
-            raise ValueError(
-                "If `dense_layers_kwargs` is a list, it must have the same "
-                "length as `dense_units`. One dict of kwargs per dense layer."
+    if dense_units is not None:
+        if not isinstance(dense_units, (list, tuple, int)):
+            raise TypeError(
+                f"`dense_units` argument must be an int, a list of ints or None. "
+                f"Got {type(dense_units)}."
             )
-    elif dense_layers_kwargs is None:
-        dense_layers_kwargs = [{}] * len(dense_units)
-    else:
-        raise TypeError(
-            f"`dense_layers_kwargs` must be a dict, a list of dicts or None. "
-            f"Got {type(dense_layers_kwargs)}."
-        )
-    
-    for i, units in enumerate(dense_units):
-        
-        layer_kwargs = deepcopy(dense_layers_kwargs[i])
-        layer_kwargs.update({
-            "units": units,
-        })
-        if "name" in layer_kwargs:
-            layer_name = layer_kwargs.pop("name")
-        else:
-            layer_name = f"dense_td_{i + 1}"
+        if not isinstance(dense_units, (list, tuple)):
+            dense_units = [dense_units]
 
-        x = TimeDistributed(Dense(**layer_kwargs), name=layer_name)(x)
+        if isinstance(dense_layers_kwargs, dict):
+            dense_layers_kwargs = [dense_layers_kwargs] * len(dense_units)
+        elif isinstance(dense_layers_kwargs, (list, tuple)):
+            if len(dense_layers_kwargs) != len(dense_units):
+                raise ValueError(
+                    "If `dense_layers_kwargs` is a list, it must have the same "
+                    "length as `dense_units`. One dict of kwargs per dense layer."
+                )
+        elif dense_layers_kwargs is None:
+            dense_layers_kwargs = [{}] * len(dense_units)
+        else:
+            raise TypeError(
+                f"`dense_layers_kwargs` must be a dict, a list of dicts or None. "
+                f"Got {type(dense_layers_kwargs)}."
+            )
+        
+        for i, units in enumerate(dense_units):
+            
+            layer_kwargs = deepcopy(dense_layers_kwargs[i])
+            layer_kwargs.update({
+                "units": units,
+            })
+            if "name" in layer_kwargs:
+                layer_name = layer_kwargs.pop("name")
+            else:
+                layer_name = f"dense_td_{i + 1}"
+
+            x = TimeDistributed(Dense(**layer_kwargs), name=layer_name)(x)
 
     if output_dense_layer_kwargs is None:
         output_layer_kwargs = {}
@@ -426,7 +438,7 @@ def _create_and_compile_model_no_exog(
     recurrent_layer: str = "LSTM",
     recurrent_units: int | list[int] | tuple[int] = 100,
     recurrent_layers_kwargs: dict[str, Any] | list[dict[str, Any]] | None = {"activation": "tanh"},
-    dense_units: int | list[int] | tuple[int] = 64,
+    dense_units: int | list[int] | tuple[int] | None = 64,
     dense_layers_kwargs: dict[str, Any] | list[dict[str, Any]] | None = {"activation": "relu"},
     output_dense_layer_kwargs: dict[str, Any] | None = {"activation": "linear"},
     compile_kwargs: dict[str, Any] = {"optimizer": Adam(), "loss": MeanSquaredError()},
@@ -460,7 +472,7 @@ def _create_and_compile_model_no_exog(
         Additional keyword arguments for the recurrent layers [1]_, [2]_, [3]_. 
         Can be a single dictionary for all layers or a list of dictionaries 
         specifying different parameters for each recurrent layer.
-    dense_units : int, list, tuple, default 64
+    dense_units : int, list, tuple, None, default 64
         Number of units in the dense layer(s) [4]_. Can be an integer for single
         dense layer, or a list of integers for multiple dense layers.
     dense_layers_kwargs : dict, list, default {'activation': 'relu'}
@@ -539,10 +551,12 @@ def _create_and_compile_model_no_exog(
     series_input = Input(shape=(n_lags, n_series), name="series_input")
     x = series_input
 
-    # Recurrent units must be a list or int
-    if not isinstance(recurrent_units, (list, int)):
+    # Recurrent units
+    if not isinstance(recurrent_units, (list, tuple, int)):
         raise TypeError(
-            f"`recurrent_units` argument must be a list or int. Got {type(recurrent_units)}."
+            f"At least one recurrent layer (LSTM, GRU, or SimpleRNN) is required."
+            f"`recurrent_units` argument must be an int or a list of ints. "
+            f"Got {type(recurrent_units)}."
         )
     if not isinstance(recurrent_units, (list, tuple)):
         recurrent_units = [recurrent_units]
@@ -588,26 +602,31 @@ def _create_and_compile_model_no_exog(
             )
 
     # Dense layers
-    if not isinstance(dense_units, (list, tuple)):
-        dense_units = [dense_units]
-
-    if isinstance(dense_layers_kwargs, dict):
-        dense_layers_kwargs = [dense_layers_kwargs] * len(dense_units)
-    elif isinstance(dense_layers_kwargs, (list, tuple)):
-        if len(dense_layers_kwargs) != len(dense_units):
-            raise ValueError(
-                "If `dense_layers_kwargs` is a list, it must have the same "
-                "length as `dense_units`. One dict of kwargs per dense layer."
-            )
-    elif dense_layers_kwargs is None:
-        dense_layers_kwargs = [{}] * len(dense_units)
-    else:
-        raise TypeError(
-            f"`dense_layers_kwargs` must be a dict, a list of dicts or None. "
-            f"Got {type(dense_layers_kwargs)}."
-        )
- 
     if dense_units is not None:
+        if not isinstance(dense_units, (list, tuple, int)):
+            raise TypeError(
+                f"`dense_units` argument must be an int, a list of ints or None. "
+                f"Got {type(dense_units)}."
+            )
+        if not isinstance(dense_units, (list, tuple)):
+            dense_units = [dense_units]
+
+        if isinstance(dense_layers_kwargs, dict):
+            dense_layers_kwargs = [dense_layers_kwargs] * len(dense_units)
+        elif isinstance(dense_layers_kwargs, (list, tuple)):
+            if len(dense_layers_kwargs) != len(dense_units):
+                raise ValueError(
+                    "If `dense_layers_kwargs` is a list, it must have the same "
+                    "length as `dense_units`. One dict of kwargs per dense layer."
+                )
+        elif dense_layers_kwargs is None:
+            dense_layers_kwargs = [{}] * len(dense_units)
+        else:
+            raise TypeError(
+                f"`dense_layers_kwargs` must be a dict, a list of dicts or None. "
+                f"Got {type(dense_layers_kwargs)}."
+            )
+        
         for i, units in enumerate(dense_units):
         
             layer_kwargs = deepcopy(dense_layers_kwargs[i])
@@ -632,7 +651,7 @@ def _create_and_compile_model_no_exog(
         output_layer_kwargs['name'] = "output_dense_td_layer"
     
     x = Dense(**output_layer_kwargs)(x)
-    output_layer = Reshape((steps, n_levels))(x)
+    output_layer = Reshape((steps, n_levels), name="reshape")(x)
 
     model = Model(inputs=series_input, outputs=output_layer, name=model_name)
     model.compile(**compile_kwargs)

@@ -1,11 +1,13 @@
-# Unit test fit method
+# Unit test fit method with TensorFlow backend
 # ==============================================================================
+import os
 import numpy as np
 import pandas as pd
 from keras.optimizers import Adam
 from keras.losses import MeanSquaredError
 from skforecast.deep_learning import ForecasterRnn
 from skforecast.deep_learning.utils import create_and_compile_model
+os.environ["KERAS_BACKEND"] = "tensorflow"
 
 series = pd.DataFrame({"1": pd.Series(np.arange(5)), "2": pd.Series(np.arange(5))})
 lags = 3
@@ -45,10 +47,10 @@ def test_fit_without_validation_data():
     # Assert that the forecaster is fitted
     assert forecaster.is_fitted is True
 
-    # # Assert that the training range is set correctly
+    # Assert that the training range is set correctly
     assert all(forecaster.training_range_ == (0, 4))
 
-    # # Assert that the last window is set correctly
+    # Assert that the last window is set correctly
     last_window = pd.DataFrame({"1": [2, 3, 4], "2": [2, 3, 4]})
 
     np.testing.assert_array_almost_equal(forecaster.last_window_, last_window)
@@ -87,4 +89,4 @@ def test_fit_with_validation_data():
     assert forecaster.is_fitted is True
 
     # # Assert that the history is not None
-    assert forecaster.history is not None
+    assert forecaster.history_ is not None

@@ -3,6 +3,7 @@
 import pytest
 import numpy as np
 import pandas as pd
+import sklearn
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
 from skforecast.recursive import ForecasterRecursiveMultiSeries
@@ -48,6 +49,8 @@ def test_output_preprocess_repr(transformer_series):
         "exog_0, exog_1, exog_2, exog_3, exog_4, exog_5, exog_6, exog_7, exog_8, exog_9, exog_10, exog_11, exog_12, exog_13, exog_14, exog_15, exog_16, exog_17, exog_18, exog_19, exog_20, exog_21, exog_22, exog_23, exog_24, ..., exog_35, exog_36, exog_37, exog_38, exog_39, exog_40, exog_41, exog_42, exog_43, exog_44, exog_45, exog_46, exog_47, exog_48, exog_49, exog_50, exog_51, exog_52, exog_53, exog_54, exog_55, exog_56, exog_57, exog_58, exog_59",
         "StandardScaler()"
     ]
+    if sklearn.__version__ >= "1.7.0":
+        expected[0] = expected[0][:-1] + ", 'tol': 1e-06}"
     if isinstance(transformer_series, dict):
         expected[-1] = "'col_0': StandardScaler(), 'col_1': StandardScaler(), 'col_2': StandardScaler(), 'col_3': StandardScaler(), 'col_4': StandardScaler(), ..., 'col_56': StandardScaler(), 'col_57': StandardScaler(), 'col_58': StandardScaler(), 'col_59': StandardScaler(), '_unknown_level': StandardScaler()"
 
