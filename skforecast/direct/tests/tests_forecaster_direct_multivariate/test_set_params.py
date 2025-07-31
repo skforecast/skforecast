@@ -1,6 +1,7 @@
 # Unit test set_params ForecasterDirectMultiVariate
 # ==============================================================================
 import sklearn
+from packaging import version
 from skforecast.direct import ForecasterDirectMultiVariate
 from sklearn.linear_model import LinearRegression
 
@@ -19,7 +20,7 @@ def test_set_params():
         'n_jobs': None,
         'positive': False
     }
-    if sklearn.__version__ >= '1.6':
+    if version.parse(sklearn.__version__) >= version.parse("1.6.0"):
         expected.update({'tol': 1e-06})
     
     results = forecaster.regressor.get_params()
