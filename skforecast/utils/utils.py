@@ -26,7 +26,6 @@ from ..exceptions import warn_skforecast_categories
 from ..exceptions import (
     DataTypeWarning,
     IgnoredArgumentWarning,
-    IndexWarning,
     MissingExogWarning,
     MissingValuesWarning,
     SaveLoadSkforecastWarning,
@@ -40,8 +39,8 @@ optional_dependencies = {
         'statsmodels>=0.12, <0.15'
     ],
     'deeplearning': [
+        'keras>=3.0, <4.0',
         'matplotlib>=3.3, <3.11',
-        'keras>=2.6, <4.0',
     ],
     'plotting': [
         'matplotlib>=3.3, <3.11', 

@@ -1,20 +1,14 @@
-# Unit test _create_lags ForecasterRnn using TensorFlow backend
+# Unit test _create_lags ForecasterRnn using PyTorch backend
 # ==============================================================================
 import os
-import re
-
 import numpy as np
 import pandas as pd
 import pytest
-
+os.environ["KERAS_BACKEND"] = "torch"
+import keras
 from skforecast.deep_learning import ForecasterRnn
 from skforecast.deep_learning.utils import create_and_compile_model
 
-# Export torch keras backend
-os.environ["KERAS_BACKEND"] = "tensorflow"
-import keras
-from keras.optimizers import Adam
-from keras.losses import MeanSquaredError
 
 # parametrize tests
 @pytest.mark.parametrize(
@@ -98,12 +92,8 @@ def test_create_lags_several_configurations(lags, steps, expected):
                 lags=lags,           
                 steps=steps,              
                 recurrent_layer="LSTM",
-                recurrent_units=100,
-                recurrent_layers_kwargs={"activation": "relu"},
-                dense_units=[128, 64],
-                dense_layers_kwargs={"activation": "relu"},
-                output_dense_layer_kwargs={"activation": "linear"},
-                compile_kwargs={"optimizer": Adam(learning_rate=0.01), "loss": MeanSquaredError()},
+                recurrent_units=128,
+                dense_units=64,
             )
     forecaster = ForecasterRnn(regressor=model, levels='l1', lags=lags)
     results = forecaster._create_lags(y=np.arange(10))

@@ -1,10 +1,13 @@
 # Unit test set_out_sample_residuals ForecasterRnn
 # ==============================================================================
+import os
 import re
 import pytest
 import numpy as np
 import pandas as pd
 from sklearn.exceptions import NotFittedError
+os.environ["KERAS_BACKEND"] = "torch"
+import keras
 from skforecast.deep_learning import create_and_compile_model
 from skforecast.deep_learning import ForecasterRnn
 

@@ -953,7 +953,7 @@ class ForecasterRnn(ForecasterBase):
             if self.keras_backend_ == "torch":
                 X_val = torch.tensor(X_val).to(torch_device)
                 y_val = torch.tensor(y_val).to(torch_device)
-                if exog_val:
+                if exog_val is not None:
                     exog_val = torch.tensor(exog_val).to(torch_device)
 
             if self.exog_val is not None:
@@ -982,9 +982,14 @@ class ForecasterRnn(ForecasterBase):
         self.in_sample_residuals_ = {}
         if store_in_sample_residuals:
 
+            # NOTE: Convert to numpy array if using torch backend
+            if self.keras_backend_ == "torch":
+                y_train = y_train.detach().cpu().numpy()
+
             residuals = y_train - self.regressor.predict(
                 x=X_train if exog_train is None else [X_train, exog_train], verbose=0
             )
+
             residuals = np.concatenate(
                 [residuals[:, i, :] for i, step in enumerate(self.steps)]
             )

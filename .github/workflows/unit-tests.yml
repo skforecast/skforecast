@@ -39,8 +39,12 @@ jobs:
     - name: Run tests with pytest
       shell: bash
       run: |
-        if [ "${{ matrix.python-version }}" == "3.13" ]; then
-          pytest -vv --ignore=skforecast/deep_learning
-        else
-          pytest -vv
-        fi
+        pytest -vv
+      
+      # Uncomment the following lines if you want to skip tests for Python 3.13+
+      # run: |
+      #   if [ "${{ matrix.python-version }}" == "3.13" ]; then
+      #     pytest -vv --ignore=skforecast/deep_learning
+      #   else
+      #     pytest -vv
+      #   fi

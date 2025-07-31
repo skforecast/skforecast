@@ -1,18 +1,15 @@
-# Unit test _create_train_X_y ForecasterRnn
+# Unit test _create_train_X_y ForecasterRnn using PyTorch backend
 # ==============================================================================
 import os
 import re
+import pytest
 import numpy as np
 import pandas as pd
-import pytest
-from skforecast.deep_learning import ForecasterRnn
-from skforecast.deep_learning.utils import create_and_compile_model
-os.environ["KERAS_BACKEND"] = "tensorflow"
+os.environ["KERAS_BACKEND"] = "torch"
 import keras
-from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from keras.optimizers import Adam
-from keras.losses import MeanSquaredError
+from sklearn.preprocessing import StandardScaler
+from skforecast.deep_learning.utils import create_and_compile_model
+from skforecast.deep_learning import ForecasterRnn
 
 series = pd.DataFrame(np.random.randn(100, 3), columns=['l1', 'l2', 'l3'])
 
@@ -21,25 +18,23 @@ def test_create_train_X_y_TypeError_when_series_not_dataframe():
     """
     Test TypeError is raised when series is not a pandas DataFrame.
     """
+    series = pd.DataFrame(np.random.randn(100, 3), columns=['l1', 'l2', 'l3'])
+    model = create_and_compile_model(
+                series=series, 
+                levels="l1",    
+                lags=3,           
+                steps=1,              
+                recurrent_layer="LSTM",
+                recurrent_units=100,
+                dense_units=[128, 64],
+            )
+    forecaster = ForecasterRnn(model, lags=3, levels="l1")
+    series = pd.Series(np.arange(7))
 
-    err_msg = f"`series` must be a pandas DataFrame. Got <class 'pandas.core.series.Series'>."
+    err_msg = (
+        "`series` must be a pandas DataFrame. Got <class 'pandas.core.series.Series'>."
+    )
     with pytest.raises(TypeError, match=err_msg):
-        series = pd.DataFrame(np.random.randn(100, 3), columns=['l1', 'l2', 'l3'])
-        model = create_and_compile_model(
-                    series=series, 
-                    levels="l1",    
-                    lags=3,           
-                    steps=1,              
-                    recurrent_layer="LSTM",
-                    recurrent_units=100,
-                    recurrent_layers_kwargs={"activation": "relu"},
-                    dense_units=[128, 64],
-                    dense_layers_kwargs={"activation": "relu"},
-                    output_dense_layer_kwargs={"activation": "linear"},
-                    compile_kwargs={"optimizer": Adam(learning_rate=0.01), "loss": MeanSquaredError()},
-                )
-        forecaster = ForecasterRnn(model, lags=3, levels="l1")
-        series = pd.Series(np.arange(7))
         forecaster._create_train_X_y(series=series)
 
 
@@ -57,11 +52,7 @@ def test_create_train_X_y_UserWarning_when_levels_of_transformer_series_not_equa
                 steps=1,              
                 recurrent_layer="LSTM",
                 recurrent_units=100,
-                recurrent_layers_kwargs={"activation": "relu"},
                 dense_units=[128, 64],
-                dense_layers_kwargs={"activation": "relu"},
-                output_dense_layer_kwargs={"activation": "linear"},
-                compile_kwargs={"optimizer": Adam(learning_rate=0.01), "loss": MeanSquaredError()},
             )
     forecaster = ForecasterRnn(
         model, levels="1", transformer_series=dict_transformers, lags=3
@@ -72,10 +63,8 @@ def test_create_train_X_y_UserWarning_when_levels_of_transformer_series_not_equa
     )
 
     warn_msg = re.escape(
-        (
-            f"{series_not_in_transformer_series} not present in `transformer_series`."
-            f" No transformation is applied to these series."
-        )
+        f"{series_not_in_transformer_series} not present in `transformer_series`."
+        f" No transformation is applied to these series."
     )
     with pytest.warns(UserWarning, match=warn_msg):
         forecaster._create_train_X_y(series=series)
@@ -87,22 +76,19 @@ def test_create_train_X_y_ValueError_when_all_series_values_are_missing():
     """
     series = pd.DataFrame({"1": pd.Series(np.arange(7)), "2": pd.Series([np.nan] * 7)})
     series.index = pd.date_range(start="2022-01-01", periods=7, freq="1D")
+    model = create_and_compile_model(
+                series=series, 
+                levels="1",    
+                lags=3,           
+                steps=1,              
+                recurrent_layer="LSTM",
+                recurrent_units=100,
+                dense_units=[128, 64],
+            )
+    forecaster = ForecasterRnn(model, levels="1", lags=3)
+
     err_msg = re.escape("`y` has missing values.")
     with pytest.raises(ValueError, match=err_msg):
-        model = create_and_compile_model(
-                    series=series, 
-                    levels="1",    
-                    lags=3,           
-                    steps=1,              
-                    recurrent_layer="LSTM",
-                    recurrent_units=100,
-                    recurrent_layers_kwargs={"activation": "relu"},
-                    dense_units=[128, 64],
-                    dense_layers_kwargs={"activation": "relu"},
-                    output_dense_layer_kwargs={"activation": "linear"},
-                    compile_kwargs={"optimizer": Adam(learning_rate=0.01), "loss": MeanSquaredError()},
-                )
-        forecaster = ForecasterRnn(model, levels="1", lags=3)
         forecaster._create_train_X_y(series=series)
 
 
@@ -130,15 +116,11 @@ def test_create_train_X_y_ValueError_when_series_values_are_missing(values):
                 steps=1,              
                 recurrent_layer="LSTM",
                 recurrent_units=100,
-                recurrent_layers_kwargs={"activation": "relu"},
                 dense_units=[128, 64],
-                dense_layers_kwargs={"activation": "relu"},
-                output_dense_layer_kwargs={"activation": "linear"},
-                compile_kwargs={"optimizer": Adam(learning_rate=0.01), "loss": MeanSquaredError()},
             )
     forecaster = ForecasterRnn(model, levels="1", lags=3)
 
-    err_msg = re.escape(("`y` has missing values."))
+    err_msg = re.escape("`y` has missing values.")
     with pytest.raises(ValueError, match=err_msg):
         forecaster._create_train_X_y(series=series)
 
@@ -160,12 +142,8 @@ def test_create_train_X_y_output_when_series_10_and_transformer_series_is_Standa
                 lags=5,           
                 steps=2,              
                 recurrent_layer="LSTM",
-                recurrent_units=100,
-                recurrent_layers_kwargs={"activation": "relu"},
-                dense_units=[128, 64],
-                dense_layers_kwargs={"activation": "relu"},
-                output_dense_layer_kwargs={"activation": "linear"},
-                compile_kwargs={"optimizer": Adam(learning_rate=0.01), "loss": MeanSquaredError()},
+                recurrent_units=128,
+                dense_units=64,
             )
     forecaster = ForecasterRnn(
         model, levels="l1", transformer_series=StandardScaler(), lags=5
@@ -272,12 +250,8 @@ def test_create_train_X_y_output_when_series_10_and_transformer_series_is_Standa
                 lags=5,
                 steps=2,
                 recurrent_layer="LSTM",
-                recurrent_units=100,
-                recurrent_layers_kwargs={"activation": "relu"},
-                dense_units=[128, 64],
-                dense_layers_kwargs={"activation": "relu"},
-                output_dense_layer_kwargs={"activation": "linear"},
-                compile_kwargs={"optimizer": Adam(learning_rate=0.01), "loss": MeanSquaredError()},
+                recurrent_units=128,
+                dense_units=64,
             )
     forecaster = ForecasterRnn(
         model, levels="l1", transformer_series=StandardScaler(), lags=5

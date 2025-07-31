@@ -1,10 +1,12 @@
 
-# Unit test __init__ ForecasterRnn
+# Unit test __init__ ForecasterRnn using PyTorch backend
 # ==============================================================================
 import re
 import pytest
 import numpy as np
 import pandas as pd
+import os
+os.environ["KERAS_BACKEND"] = "torch"
 import keras
 from skforecast.deep_learning import ForecasterRnn
 from skforecast.deep_learning import create_and_compile_model
