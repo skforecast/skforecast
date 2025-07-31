@@ -39,7 +39,7 @@ jobs:
     - name: Run tests with pytest
       shell: bash
       run: |
-        pytest -vv
+        pytest -vv -s  # Extra verbosity and show print statements
       
       # Uncomment the following lines if you want to skip tests for Python 3.13+
       # run: |
