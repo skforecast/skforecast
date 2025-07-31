@@ -95,7 +95,7 @@ def test_predict_interval_output_size_3_steps_ahead():
     forecaster.fit(series, store_in_sample_residuals=True)
 
     # Call the predict method
-    int_preds = forecaster.predict_interval(steps=3, alpha=0.9)
+    int_preds = forecaster.predict_interval(steps=3, interval=0.9)
 
     # Check the shape and values of the predictions
     assert int_preds.shape == (3 * len(["1", "2"]), 4)
