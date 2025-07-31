@@ -90,7 +90,7 @@ docs = [
     "mkdocs-jupyter==0.25.1",
     "mkdocs-material==9.6.7",
     "mkdocstrings==0.29.0",
-    "mkdocstrings-python==1.16.5",
+    "mkdocstrings-python==1.16.12",
     "notebook==6.5.7",
     "jupyter-contrib-nbextensions==0.7.0",
     "black==25.1.0"
