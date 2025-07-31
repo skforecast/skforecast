@@ -32,9 +32,7 @@ from ..utils import (
     check_predict_input,
     check_residuals_input,
     check_interval,
-    preprocess_y,
-    preprocess_last_window,
-    preprocess_exog,
+    check_extract_values_and_index,
     input_to_frame,
     date_to_index_position,
     expand_index,
@@ -659,7 +657,7 @@ class ForecasterRecursive(ForecasterBase):
                 fit               = fit_transformer,
                 inverse_transform = False,
             )
-        y_values, y_index = preprocess_y(y=y)
+        y_values, y_index = check_extract_values_and_index(data=y, data_label='`y`')
         train_index = y_index[self.window_size:]
 
         if self.differentiation is not None:
@@ -676,6 +674,9 @@ class ForecasterRecursive(ForecasterBase):
         if exog is not None:
             check_exog(exog=exog, allow_nan=True)
             exog = input_to_frame(data=exog, input_name='exog')
+            _, exog_index = check_extract_values_and_index(
+                data=exog, data_label='`exog`', ignore_freq=True, return_values=False
+            )
 
             len_y = len(y_values)
             len_train_index = len(train_index)
@@ -685,7 +686,7 @@ class ForecasterRecursive(ForecasterBase):
                     f"Length of `exog` must be equal to the length of `y` (if index is "
                     f"fully aligned) or length of `y` - `window_size` (if `exog` "
                     f"starts after the first `window_size` values).\n"
-                    f"    `exog`              : ({exog.index[0]} -- {exog.index[-1]})  (n={len_exog})\n"
+                    f"    `exog`              : ({exog_index[0]} -- {exog_index[-1]})  (n={len_exog})\n"
                     f"    `y`                 : ({y.index[0]} -- {y.index[-1]})  (n={len_y})\n"
                     f"    `y` - `window_size` : ({train_index[0]} -- {train_index[-1]})  (n={len_train_index})"
                 )
@@ -707,7 +708,6 @@ class ForecasterRecursive(ForecasterBase):
                 for dtype in set(exog.dtypes)
             )
 
-            _, exog_index = preprocess_exog(exog=exog, return_values=False)
             if len_exog == len_y:
                 if not (exog_index == y_index).all():
                     raise ValueError(
@@ -1008,14 +1008,12 @@ class ForecasterRecursive(ForecasterBase):
         self.is_fitted = True
         self.series_name_in_ = y.name if y.name is not None else 'y'
         self.fit_date = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
-        self.training_range_ = preprocess_y(
-            y=y, return_values=False, suppress_warnings=True
-        )[1][[0, -1]]
-        self.index_type_ = type(X_train.index)
-        if isinstance(X_train.index, pd.DatetimeIndex):
-            self.index_freq_ = X_train.index.freqstr
+        self.training_range_ = y.index[[0, -1]]
+        self.index_type_ = type(y.index)
+        if isinstance(y.index, pd.DatetimeIndex):
+            self.index_freq_ = y.index.freqstr
         else: 
-            self.index_freq_ = X_train.index.step
+            self.index_freq_ = y.index.step
 
         if exog is not None:
             self.exog_in_ = True
@@ -1073,7 +1071,6 @@ class ForecasterRecursive(ForecasterBase):
             If `True`, in-sample residuals will be stored in the forecaster object
             after fitting (`in_sample_residuals_` and `in_sample_residuals_by_bin_`
             attributes).
-            If `False`, only the intervals of the bins are stored.
             If `False`, only the intervals of the bins are stored.
         random_state : int, default 123
             Set a seed for the random generator so that the stored sample 
@@ -1188,18 +1185,17 @@ class ForecasterRecursive(ForecasterBase):
 
         if check_inputs:
             check_predict_input(
-                forecaster_name  = type(self).__name__,
-                steps            = steps,
-                is_fitted        = self.is_fitted,
-                exog_in_         = self.exog_in_,
-                index_type_      = self.index_type_,
-                index_freq_      = self.index_freq_,
-                window_size      = self.window_size,
-                last_window      = last_window,
-                exog             = exog,
-                exog_type_in_    = self.exog_type_in_,
-                exog_names_in_   = self.exog_names_in_,
-                interval         = None
+                forecaster_name = type(self).__name__,
+                steps           = steps,
+                is_fitted       = self.is_fitted,
+                exog_in_        = self.exog_in_,
+                index_type_     = self.index_type_,
+                index_freq_     = self.index_freq_,
+                window_size     = self.window_size,
+                last_window     = last_window,
+                exog            = exog,
+                exog_names_in_  = self.exog_names_in_,
+                interval        = None
             )
 
             if predict_probabilistic:
@@ -1213,11 +1209,9 @@ class ForecasterRecursive(ForecasterBase):
                     out_sample_residuals_by_bin_ = self.out_sample_residuals_by_bin_
                 )
 
-        last_window = last_window.iloc[-self.window_size:].copy()
-        last_window_values, last_window_index = preprocess_last_window(
-                                                    last_window = last_window
-                                                )
-
+        last_window_values = (
+            last_window.iloc[-self.window_size:].to_numpy(copy=True).ravel()
+        )
         last_window_values = transform_numpy(
                                  array             = last_window_values,
                                  transformer       = self.transformer_y,
@@ -1242,7 +1236,7 @@ class ForecasterRecursive(ForecasterBase):
             exog_values = None
 
         prediction_index = expand_index(
-                               index = last_window_index,
+                               index = last_window.index,
                                steps = steps,
                            )
 
@@ -2301,8 +2295,8 @@ class ForecasterRecursive(ForecasterBase):
             )
         
         check_y(y=y)
-        y_index_range = preprocess_y(
-            y=y, return_values=False, suppress_warnings=True
+        y_index_range = check_extract_values_and_index(
+            data=y, data_label='`y`', return_values=False
         )[1][[0, -1]]
         if not y_index_range.equals(self.training_range_):
             raise IndexError(

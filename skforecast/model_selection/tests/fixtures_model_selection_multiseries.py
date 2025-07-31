@@ -1,8 +1,11 @@
 # Fixtures model_selection multi-series
 # ==============================================================================
+import joblib
+from pathlib import Path
 import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_absolute_error
+from skforecast.preprocessing import reshape_series_wide_to_long
 
 # Fixtures
 # series_1 = np.random.rand(50)
@@ -12,7 +15,7 @@ from sklearn.metrics import mean_absolute_error
 # exog_3   = np.random.rand(50)
 # exog_4   = series_2 + np.random.normal(0, 0.1, 50)
 
-series = pd.DataFrame({
+series_wide_range = pd.DataFrame({
      'l1': pd.Series(np.array(
                [0.69646919, 0.28613933, 0.22685145, 0.55131477, 0.71946897,
                0.42310646, 0.9807642 , 0.68482974, 0.4809319 , 0.39211752,
@@ -40,6 +43,18 @@ series = pd.DataFrame({
                     )
           )
 })
+series_wide_dt = series_wide_range.copy()
+series_wide_dt.index = pd.date_range(
+    start='2020-01-01', periods=len(series_wide_dt), freq='D'
+)
+series_long_dt = reshape_series_wide_to_long(series_wide_dt)
+
+series_wide_dt_nans = series_wide_dt.copy()
+series_wide_dt_nans.iloc[:10, series_wide_dt_nans.columns.get_loc('l2')] = np.nan
+series_long_dt_nans = reshape_series_wide_to_long(series_wide_dt_nans)
+
+series_dict_range = series_wide_range.copy().to_dict(orient='series')
+series_dict_dt = series_wide_dt.copy().to_dict(orient='series')
 
 exog = pd.DataFrame({
      'exog1': pd.Series(np.array(
@@ -91,6 +106,40 @@ exog = pd.DataFrame({
           0.76451127,  0.37253453,  0.37938831,  0.12500821,  0.30680189])
      ),
 })
+
+THIS_DIR = Path(__file__).parent
+series_dict_nans = joblib.load(THIS_DIR/'fixture_sample_multi_series.joblib')
+exog_dict_nans = joblib.load(THIS_DIR/'fixture_sample_multi_series_exog.joblib')
+
+for k in series_dict_nans.keys():
+    series_dict_nans[k].index.name = None
+for k in exog_dict_nans.keys():
+    exog_dict_nans[k].index.name = None
+
+end_train = "2016-07-31 23:59:00"
+series_dict_nans_train = {k: v.loc[:end_train,] for k, v in series_dict_nans.items()}
+exog_dict_nans_train = {k: v.loc[:end_train,] for k, v in exog_dict_nans.items()}
+series_dict_nans_test = {k: v.loc[end_train:,] for k, v in series_dict_nans.items()}
+exog_dict_nans_test = {k: v.loc[end_train:,] for k, v in exog_dict_nans.items()}
+
+series_wide_dt_item_sales = pd.read_parquet(THIS_DIR/'fixture_multi_series_items_sales.parquet')
+series_wide_dt_item_sales = series_wide_dt_item_sales.asfreq('D')
+series_wide_range_item_sales = series_wide_dt_item_sales.copy()
+series_wide_range_item_sales.index = pd.RangeIndex(start=0, stop=len(series_wide_dt_item_sales), step=1)
+series_long_dt_item_sales = reshape_series_wide_to_long(series_wide_dt_item_sales)
+series_dict_dt_item_sales = series_wide_dt_item_sales.copy().to_dict(orient='series')
+series_dict_range_item_sales = series_wide_range_item_sales.copy().to_dict(orient='series')
+exog_wide_dt_item_sales = pd.DataFrame(
+    {'day_of_week': series_wide_dt_item_sales.index.dayofweek}, index = series_wide_dt_item_sales.index
+)
+exog_wide_range_item_sales = pd.DataFrame(
+    {'day_of_week': series_wide_dt_item_sales.index.dayofweek}, index = series_wide_range_item_sales.index
+)
+exog_long_dt_item_sales = exog_wide_dt_item_sales.copy()
+exog_long_dt_item_sales.index.name = "datetime"
+exog_long_dt_item_sales = [exog_long_dt_item_sales.assign(series_id=f"item_{i}") for i in range(1, 4)]
+exog_long_dt_item_sales = pd.concat(exog_long_dt_item_sales)
+exog_long_dt_item_sales = exog_long_dt_item_sales.set_index(["series_id", exog_long_dt_item_sales.index])
 
 
 def custom_metric(y_true, y_pred):  # pragma: no cover

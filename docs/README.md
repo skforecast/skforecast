@@ -20,7 +20,7 @@
 [![paypal](https://img.shields.io/static/v1?style=social&amp;label=Donate&amp;message=%E2%9D%A4&amp;logo=Paypal&amp;color&amp;link=%3curl%3e)](https://www.paypal.com/donate/?hosted_button_id=D2JZSWRLTZDL6)
 [![buymeacoffee](https://img.shields.io/badge/-Buy_me_a%C2%A0coffee-gray?logo=buy-me-a-coffee)](https://www.buymeacoffee.com/skforecast)
 ![GitHub Sponsors](https://img.shields.io/github/sponsors/joaquinamatrodrigo?logo=github&label=Github%20sponsors&link=https%3A%2F%2Fgithub.com%2Fsponsors%2FJoaquinAmatRodrigo)
-[![!linkedin](https://img.shields.io/static/v1?logo=linkedin&label=LinkedIn&message=news&color=lightblue)](https://www.linkedin.com/company/skforecast/) [![!discord](https://img.shields.io/static/v1?logo=discord&label=discord&message=chat&color=lightgreen)](https://discord.gg/Bqqb6eJ9)
+[![!linkedin](https://img.shields.io/static/v1?logo=linkedin&label=LinkedIn&message=news&color=lightblue)](https://www.linkedin.com/company/skforecast/) [![!discord](https://img.shields.io/static/v1?logo=discord&label=discord&message=chat&color=lightgreen)](https://discord.gg/3V52qpNkuj)
 [![NumFOCUS Affiliated](https://img.shields.io/badge/NumFOCUS-Affiliated%20Project-orange.svg?style=flat&colorA=E1523D&colorB=007D8A)](https://numfocus.org/sponsored-projects/affiliated-projects)
 [![GC.OS Affiliated](https://img.shields.io/badge/GC.OS-Affiliated%20Project-orange.svg?style=flat&colorA=0eac92&colorB=2077b4)](https://gc-os-ai.github.io/)
 
@@ -71,10 +71,10 @@ The **skforecast** library offers a variety of forecaster types, each tailored t
 | Forecaster                      | Single series | Multiple series | Recursive strategy | Direct strategy | Probabilistic prediction | Time series differentiation | Exogenous features | Window features |
 |:--------------------------------|:-------------:|:---------------:|:------------------:|:---------------:|:------------------------:|:---------------------------:|:------------------:|:---------------:|
 |[ForecasterRecursive]            |✔️||✔️||✔️|✔️|✔️|✔️|
-|[ForecasterDirect]               |✔️|||✔️|✔️||✔️|✔️|
+|[ForecasterDirect]               |✔️|||✔️|✔️|✔️|✔️|✔️|
 |[ForecasterRecursiveMultiSeries] ||✔️|✔️||✔️|✔️|✔️|✔️|
-|[ForecasterDirectMultiVariate]   ||✔️||✔️|✔️||✔️|✔️|
-|[ForecasterRNN]                  ||✔️||✔️|||||
+|[ForecasterDirectMultiVariate]   ||✔️||✔️|✔️|✔️|✔️|✔️|
+|[ForecasterRNN]                  ||✔️||✔️|✔️||✔️||
 |[ForecasterSarimax]              |✔️||✔️||✔️|✔️|✔️||
 
 [ForecasterRecursive]: ./user_guides/autoregresive-forecaster.html
@@ -118,25 +118,25 @@ If you use skforecast for a scientific publication, we would appreciate citation
 **Zenodo**
 
 ```
-Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2025). skforecast (v0.16.0). Zenodo. https://doi.org/10.5281/zenodo.8382788
+Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2025). skforecast (v0.17.0). Zenodo. https://doi.org/10.5281/zenodo.8382788
 ```
 
 **APA**:
 ```
-Amat Rodrigo, J., & Escobar Ortiz, J. (2025). skforecast (Version 0.16.0) [Computer software]. https://doi.org/10.5281/zenodo.8382788
+Amat Rodrigo, J., & Escobar Ortiz, J. (2025). skforecast (Version 0.17.0) [Computer software]. https://doi.org/10.5281/zenodo.8382788
 ```
 
 **BibTeX**:
 ```
 @software{skforecast,
-author = {Amat Rodrigo, Joaquin and Escobar Ortiz, Javier},
-title = {skforecast},
-version = {0.16.0},
-month = {5},
-year = {2025},
-license = {BSD-3-Clause},
-url = {https://skforecast.org/},
-doi = {10.5281/zenodo.8382788}
+  author  = {Amat Rodrigo, Joaquin and Escobar Ortiz, Javier},
+  title   = {skforecast},
+  version = {0.17.0},
+  month   = {8},
+  year    = {2025},
+  license = {BSD-3-Clause},
+  url     = {https://skforecast.org/},
+  doi     = {10.5281/zenodo.8382788}
 }
 ```
 
@@ -224,7 +224,7 @@ Marcillo Vera, F., Rosado, R., Zambrano, P., Velastegui, J., Morales, G., Lagla,
 If you found **skforecast** useful, you can support us with a donation. Your contribution will help us **continue developing, maintaining, and improving** this project. Every contribution, no matter the size, makes a difference. **Thank you for your support!**
 
 <a href="https://www.buymeacoffee.com/skforecast" target="_blank" title="Buy me a coffee skforecast">
-    <img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=skforecast&button_colour=f79939&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00" />
+    <img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=skforecast&button_colour=f79939&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00" alt="Buy me a coffee skforecast">
 </a>
 <br>
 <a href="https://github.com/sponsors/JoaquinAmatRodrigo" target="_blank" title="Become a GitHub Sponsor">

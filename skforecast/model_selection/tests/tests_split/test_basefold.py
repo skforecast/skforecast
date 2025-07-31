@@ -361,17 +361,21 @@ def test_basefold_extract_index_when_X_is_dict():
     pd.testing.assert_index_equal(index, expected_index)
 
 
-def test_basefold_extract_index_raise_error_when_X_is_dict_with_series_with_different_freq():
+def test_basefold_extract_index_raise_error_when_X_is_dict_with_series_with_no_valid_index():
     """
-    Test that ValueError is raised when X is a dict with series with different frequencies.
+    Test that TypeError is raised when X is a dict with series with no valid index type.
     """
     cv = BaseFold()
     X = {
         "a": pd.Series(np.arange(10), index=pd.date_range(start="2022-01-01", periods=10, freq="D")),
-        "b": pd.Series(np.arange(10), index=pd.date_range(start="2022-01-10", periods=10, freq="h")),
+        "b": pd.Series(np.arange(10), index=pd.Index(np.arange(10))),
     }
-    msg = 'All series with frequency must have the same frequency.'
-    with pytest.raises(ValueError, match=msg):
+    msg = re.escape(
+        "If `X` is a dictionary, all series must have a Pandas "
+        "RangeIndex or DatetimeIndex with the same step/frequency. "
+        "Review series: ['b']"
+    )
+    with pytest.raises(TypeError, match=msg):
         cv._extract_index(X)
 
 
@@ -386,7 +390,29 @@ def test_basefold_extract_index_raise_error_when_X_is_dict_with_series_non_with_
     }
     X["a"].index.freq = None
     X["b"].index.freq = None
-    msg = 'At least one series must have a frequency.'
+    msg = re.escape(
+        "If `X` is a dictionary, all series must have a Pandas "
+        "RangeIndex or DatetimeIndex with the same step/frequency. "
+        "Found series with no frequency or step."
+    )
+    with pytest.raises(ValueError, match=msg):
+        cv._extract_index(X)
+
+
+def test_basefold_extract_index_raise_error_when_X_is_dict_with_series_with_different_freq():
+    """
+    Test that ValueError is raised when X is a dict with series with different frequencies.
+    """
+    cv = BaseFold()
+    X = {
+        "a": pd.Series(np.arange(10), index=pd.date_range(start="2022-01-01", periods=10, freq="D")),
+        "b": pd.Series(np.arange(10), index=pd.date_range(start="2022-01-10", periods=10, freq="2D")),
+    }
+    msg = re.escape(
+        "If `X` is a dictionary, all series must have a Pandas "
+        "RangeIndex or DatetimeIndex with the same step/frequency. "
+        "Found frequencies: ['2D', 'D']"
+    )
     with pytest.raises(ValueError, match=msg):
         cv._extract_index(X)
 

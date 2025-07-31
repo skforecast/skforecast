@@ -1,5 +1,8 @@
 name: Unit Tests
 
+permissions:
+  contents: read
+
 on:
   pull_request:
     branches:
@@ -13,31 +16,45 @@ jobs:
         python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
         platform: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.platform }}
+
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Install libomp on macOS
+    - name: Install system dependency libomp on macOS
       if: startsWith(matrix.platform, 'macos-')
       run: |
         brew install libomp
 
-    - name: Install dependencies
+    - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
         python -m pip install tomli
         python extract_dependences.py
         python -m pip install -r requirements.txt
 
+    - name: Show environment info
+      run: |
+        python --version
+        python -m pip list
+        python -c "import sys; print('Python executable:', sys.executable)"
+        echo "OS: ${{ runner.os }}"
+        echo "Platform: ${{ matrix.platform }}"
+
     - name: Run tests with pytest
       shell: bash
       run: |
-        if [ "${{ matrix.python-version }}" == "3.13" ]; then
-          pytest -vv --ignore=skforecast/deep_learning
+        if [[ "${{ matrix.platform }}" == macos* ]]; then
+          echo "Saltando tests de deep_learning en macOS por problemas con MPS"
+          pytest -vv -s --ignore=skforecast/deep_learning
         else
-          pytest -vv
+          pytest -vv -s  # Extra verbosity and show print statements
         fi
+
+      # Condition to skip python 3.13
+      # if [ "${{ matrix.python-version }}" == "3.13" ]; then

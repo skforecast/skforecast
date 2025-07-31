@@ -9,7 +9,7 @@ from skforecast.model_selection._utils import _initialize_levels_model_selection
 from skforecast.exceptions import IgnoredArgumentWarning
 
 # Fixtures
-from ..fixtures_model_selection_multiseries import series
+from ..fixtures_model_selection_multiseries import series_wide_range, series_dict_range
 
 
 def test_initialize_levels_model_selection_multiseries_TypeError_when_levels_not_list_str_None():
@@ -23,15 +23,15 @@ def test_initialize_levels_model_selection_multiseries_TypeError_when_levels_not
     levels = 5
 
     err_msg = re.escape(
-        ("`levels` must be a `list` of column names, a `str` of a column "
-         "name or `None` when using a forecaster of type "
-         "['ForecasterRecursiveMultiSeries', 'ForecasterRnn']. If the forecaster "
-         "is of type `ForecasterDirectMultiVariate`, this argument is ignored.")
+        "`levels` must be a `list` of column names, a `str` of a column "
+        "name or `None` when using a forecaster of type "
+        "['ForecasterRecursiveMultiSeries', 'ForecasterRnn']. If the forecaster "
+        "is of type `ForecasterDirectMultiVariate`, this argument is ignored."
     )
     with pytest.raises(TypeError, match = err_msg):
         _initialize_levels_model_selection_multiseries(
             forecaster = forecaster, 
-            series     = series,
+            series     = series_dict_range,
             levels     = levels
         )
 
@@ -51,27 +51,56 @@ def test_initialize_levels_model_selection_multiseries_IgnoredArgumentWarning_fo
     levels = 'not_l1_or_None'
     
     warn_msg = re.escape(
-        ("`levels` argument have no use when the forecaster is of type "
-         "`ForecasterDirectMultiVariate`. The level of this forecaster is "
-         "'l1', to predict another level, change the `level` "
-         "argument when initializing the forecaster.")
+        "`levels` argument have no use when the forecaster is of type "
+        "`ForecasterDirectMultiVariate`. The level of this forecaster is "
+        "'l1', to predict another level, change the `level` "
+        "argument when initializing the forecaster."
     )
     with pytest.warns(IgnoredArgumentWarning, match = warn_msg):
         levels = _initialize_levels_model_selection_multiseries(
                      forecaster = forecaster, 
-                     series     = series,
+                     series     = series_dict_range,
                      levels     = levels
                  )
         
     assert levels == ['l1']
 
 
+@pytest.mark.parametrize("series_as_dict",
+                         [True, False],
+                         ids=lambda series_as_dict: f'series_as_dict: {series_as_dict}')
+def test_initialize_levels_model_selection_multiseries_ValueError_when_levels_not_in_series(series_as_dict):
+    """
+    Test ValueError is raised in _initialize_levels_model_selection_multiseries when 
+    `levels` is not present in `series`.
+    """
+
+    forecaster = ForecasterRecursiveMultiSeries(
+        regressor = Ridge(random_state=123), lags = 4
+    )
+    levels = ['l3']
+
+    err_msg = re.escape(
+        "Levels ['l3'] not found in `series`, available levels are "
+        "['l1', 'l2']. Review `levels` argument."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        _initialize_levels_model_selection_multiseries(
+            forecaster = forecaster, 
+            series     = series_dict_range if series_as_dict else series_wide_range,
+            levels     = levels
+        )
+
+
+@pytest.mark.parametrize("series_as_dict",
+                         [True, False],
+                         ids=lambda series_as_dict: f'series_as_dict: {series_as_dict}')
 @pytest.mark.parametrize("levels, levels_expected",
                          [(None, ['l1', 'l2']), 
                           ('l1', ['l1']),
                           (['l1', 'l2'], ['l1', 'l2'])],
                          ids=lambda lags: f'lags, lags_grid_expected: {lags}')
-def test_initialize_levels_model_selection_multiseries_for_all_inputs(levels, levels_expected):
+def test_initialize_levels_model_selection_multiseries_for_all_inputs(series_as_dict, levels, levels_expected):
     """
     Test initialize_levels_model_selection_multiseries when levels is None, 
     str or list.
@@ -83,32 +112,7 @@ def test_initialize_levels_model_selection_multiseries_for_all_inputs(levels, le
     
     levels = _initialize_levels_model_selection_multiseries(
                  forecaster = forecaster, 
-                 series     = series,
-                 levels     = levels
-             )
-    
-    assert levels == levels_expected
-
-
-@pytest.mark.parametrize("levels, levels_expected",
-                         [(None, ['l1', 'l2']), 
-                          ('l1', ['l1']),
-                          (['l1', 'l2'], ['l1', 'l2'])],
-                         ids=lambda lags: f'lags, lags_grid_expected: {lags}')
-def test_initialize_levels_model_selection_multiseries_for_all_inputs_series_as_dict(levels, levels_expected):
-    """
-    Test initialize_levels_model_selection_multiseries when levels is None, 
-    str or list when series is a dict.
-    """
-    series_as_dict = series.to_dict()
-    forecaster = ForecasterRecursiveMultiSeries(
-                     regressor = Ridge(random_state=123),
-                     lags      = 2
-                 )
-    
-    levels = _initialize_levels_model_selection_multiseries(
-                 forecaster = forecaster, 
-                 series     = series_as_dict,
+                 series     = series_dict_range if series_as_dict else series_wide_range,
                  levels     = levels
              )
     

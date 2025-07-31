@@ -109,10 +109,10 @@ The **skforecast** library offers a variety of forecaster types, each tailored t
 | Forecaster | Single series | Multiple series | Recursive strategy | Direct strategy | Probabilistic prediction | Time series differentiation | Exogenous features | Window features |
 |:-----------|:-------------:|:---------------:|:------------------:|:---------------:|:------------------------:|:---------------------------:|:------------------:|:---------------:|
 |[ForecasterRecursive]|:heavy_check_mark:||:heavy_check_mark:||:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
-|[ForecasterDirect]|:heavy_check_mark:|||:heavy_check_mark:|:heavy_check_mark:||:heavy_check_mark:|:heavy_check_mark:|
+|[ForecasterDirect]|:heavy_check_mark:|||:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
 |[ForecasterRecursiveMultiSeries]||:heavy_check_mark:|:heavy_check_mark:||:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
-|[ForecasterDirectMultiVariate]||:heavy_check_mark:||:heavy_check_mark:|:heavy_check_mark:||:heavy_check_mark:|:heavy_check_mark:|
-|[ForecasterRNN]||:heavy_check_mark:||:heavy_check_mark:|||||
+|[ForecasterDirectMultiVariate]||:heavy_check_mark:||:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
+|[ForecasterRNN]||:heavy_check_mark:||:heavy_check_mark:|:heavy_check_mark:||:heavy_check_mark:||
 |[ForecasterSarimax]|:heavy_check_mark:||:heavy_check_mark:||:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:||
 
 [ForecasterRecursive]: https://skforecast.org/latest/user_guides/autoregresive-forecaster.html
@@ -151,25 +151,25 @@ If you use skforecast for a scientific publication, we would appreciate citation
 **Zenodo**
 
 ```
-Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2025). skforecast (v0.16.0). Zenodo. https://doi.org/10.5281/zenodo.8382788
+Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2025). skforecast (v0.17.0). Zenodo. https://doi.org/10.5281/zenodo.8382788
 ```
 
 **APA**:
 ```
-Amat Rodrigo, J., & Escobar Ortiz, J. (2025). skforecast (Version 0.16.0) [Computer software]. https://doi.org/10.5281/zenodo.8382788
+Amat Rodrigo, J., & Escobar Ortiz, J. (2025). skforecast (Version 0.17.0) [Computer software]. https://doi.org/10.5281/zenodo.8382788
 ```
 
 **BibTeX**:
 ```
 @software{skforecast,
-author = {Amat Rodrigo, Joaquin and Escobar Ortiz, Javier},
-title = {skforecast},
-version = {0.16.0},
-month = {5},
-year = {2025},
-license = {BSD-3-Clause},
-url = {https://skforecast.org/},
-doi = {10.5281/zenodo.8382788}
+  author  = {Amat Rodrigo, Joaquin and Escobar Ortiz, Javier},
+  title   = {skforecast},
+  version = {0.17.0},
+  month   = {8},
+  year    = {2025},
+  license = {BSD-3-Clause},
+  url     = {https://skforecast.org/},
+  doi     = {10.5281/zenodo.8382788}
 }
 ```
 
@@ -181,7 +181,7 @@ View the [citation file](https://github.com/skforecast/skforecast/blob/master/CI
 If you found **skforecast** useful, you can support us with a donation. Your contribution will help us **continue developing, maintaining, and improving** this project. Every contribution, no matter the size, makes a difference. **Thank you for your support!**
 
 <a href="https://www.buymeacoffee.com/skforecast" target="_blank" title="Buy me a coffee skforecast">
-    <img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=skforecast&button_colour=f79939&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00" />
+    <img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=skforecast&button_colour=f79939&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00">
 </a>
 <br>
 <a href="https://github.com/sponsors/JoaquinAmatRodrigo" target="_blank" title="Become a GitHub Sponsor">
@@ -192,6 +192,7 @@ If you found **skforecast** useful, you can support us with a donation. Your con
     <img style="margin-bottom: 1em; ; width: 240px;" src="./images/github_sponsor_button.png" alt="Become a GitHub Sponsor">
 </a>
 <br>
+
 
 [![paypal](https://www.paypalobjects.com/en_US/ES/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/donate/?hosted_button_id=D2JZSWRLTZDL6)
 

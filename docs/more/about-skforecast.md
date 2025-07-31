@@ -12,7 +12,7 @@
 
 ## Core Development Team
 
-[![!linkedin](https://img.shields.io/static/v1?logo=linkedin&label=LinkedIn&message=news&color=lightblue)](https://www.linkedin.com/company/skforecast/) [![!discord](https://img.shields.io/static/v1?logo=discord&label=discord&message=chat&color=lightgreen)](https://discord.gg/Bqqb6eJ9)
+[![!linkedin](https://img.shields.io/static/v1?logo=linkedin&label=LinkedIn&message=news&color=lightblue)](https://www.linkedin.com/company/skforecast/) [![!discord](https://img.shields.io/static/v1?logo=discord&label=discord&message=chat&color=lightgreen)](https://discord.gg/3V52qpNkuj)
 
 Meet the core developers behind [skforecast](https://github.com/skforecast/skforecast).
 
@@ -94,25 +94,25 @@ If you use skforecast for a scientific publication, we would appreciate citation
 **Zenodo**
 
 ```
-Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2025). skforecast (v0.16.0). Zenodo. https://doi.org/10.5281/zenodo.8382788
+Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2025). skforecast (v0.17.0). Zenodo. https://doi.org/10.5281/zenodo.8382788
 ```
 
 **APA**:
 ```
-Amat Rodrigo, J., & Escobar Ortiz, J. (2025). skforecast (Version 0.16.0) [Computer software]. https://doi.org/10.5281/zenodo.8382788
+Amat Rodrigo, J., & Escobar Ortiz, J. (2025). skforecast (Version 0.17.0) [Computer software]. https://doi.org/10.5281/zenodo.8382788
 ```
 
 **BibTeX**:
 ```
 @software{skforecast,
-author = {Amat Rodrigo, Joaquin and Escobar Ortiz, Javier},
-title = {skforecast},
-version = {0.16.0},
-month = {5},
-year = {2025},
-license = {BSD-3-Clause},
-url = {https://skforecast.org/},
-doi = {10.5281/zenodo.8382788}
+  author  = {Amat Rodrigo, Joaquin and Escobar Ortiz, Javier},
+  title   = {skforecast},
+  version = {0.17.0},
+  month   = {8},
+  year    = {2025},
+  license = {BSD-3-Clause},
+  url     = {https://skforecast.org/},
+  doi     = {10.5281/zenodo.8382788}
 }
 ```
 

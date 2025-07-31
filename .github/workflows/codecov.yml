@@ -1,8 +1,13 @@
 name: Codecov coverage
+
+permissions:
+  contents: read
+
 on:
   pull_request:
     branches:
     - master
+
 jobs:
   run:
     runs-on: ubuntu-latest

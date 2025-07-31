@@ -1,13 +1,13 @@
-# Unit test plot history method
+# Unit test plot history method with PyTorch backend
 # ==============================================================================
-import keras
-import matplotlib.pyplot as plt
+import os
 import numpy as np
 import pandas as pd
-import pytest
-
-from skforecast.deep_learning import ForecasterRnn
+import matplotlib.pyplot as plt
+os.environ["KERAS_BACKEND"] = "torch"
+import keras
 from skforecast.deep_learning.utils import create_and_compile_model
+from skforecast.deep_learning import ForecasterRnn
 
 series = pd.DataFrame(
     {
@@ -16,28 +16,17 @@ series = pd.DataFrame(
         "3": pd.Series(np.arange(50)),
     }
 )
-lags = 3
-steps = 4
-levels = ["1", "2"]
-activation = "relu"
-optimizer = keras.optimizers.Adam(learning_rate=0.01)
-loss = keras.losses.MeanSquaredError()
-recurrent_units = 100
-dense_units = [128, 64]
-
 
 model = create_and_compile_model(
-    series=series,
-    lags=lags,
-    steps=steps,
-    levels=levels,
-    recurrent_units=recurrent_units,
-    dense_units=dense_units,
-    activation=activation,
-    optimizer=optimizer,
-    loss=loss,
-)
-forecaster = ForecasterRnn(model, levels, lags=lags)
+            series=series, 
+            levels=["1", "2"],    
+            lags=3,           
+            steps=4,              
+            recurrent_layer="LSTM",
+            recurrent_units=128,
+            dense_units=64,
+        )
+forecaster = ForecasterRnn(model, levels=["1", "2"], lags=3)
 forecaster.fit(series)
 
 

@@ -7,6 +7,7 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
 from ....recursive import ForecasterRecursiveMultiSeries
+from ....preprocessing import reshape_series_wide_to_long
 
 
 def custom_weights(index):  # pragma: no cover
@@ -61,23 +62,9 @@ series = pd.DataFrame(
         ]
     ),
     columns=["series_1", "series_2"],
-    index=pd.DatetimeIndex(
-        [
-            "2022-01-04",
-            "2022-01-05",
-            "2022-01-06",
-            "2022-01-07",
-            "2022-01-08",
-            "2022-01-09",
-            "2022-01-10",
-            "2022-01-11",
-            "2022-01-12",
-            "2022-01-13",
-        ],
-        dtype="datetime64[ns]",
-        freq="D",
-    ),
+    index=pd.date_range(start="2022-01-04", periods=10, freq="D")
 )
+series = reshape_series_wide_to_long(series)
 
 X_train_onehot = pd.DataFrame(
     data=np.array(
@@ -545,8 +532,8 @@ def test_create_sample_weights_ValueError_when_weights_all_zeros(encoding, X_tra
     forecaster.encoding_mapping_ = {"series_1": 0, "series_2": 1}
 
     err_msg = re.escape(
-        ("The resulting `weights` cannot be normalized because "
-         "the sum of the weights is zero.")
+        "The resulting `weights` cannot be normalized because "
+        "the sum of the weights is zero."
     )
     with pytest.raises(ValueError, match=err_msg):
         forecaster.create_sample_weights(

@@ -1,7 +1,6 @@
 # Unit test predict_quantiles ForecasterRecursiveMultiSeries
 # ==============================================================================
 import pytest
-import numpy as np
 import pandas as pd
 from ....recursive import ForecasterRecursiveMultiSeries
 from sklearn.compose import ColumnTransformer
@@ -10,9 +9,11 @@ from sklearn.preprocessing import OneHotEncoder
 from sklearn.linear_model import LinearRegression
 
 # Fixtures
-from .fixtures_forecaster_recursive_multiseries import series
-from .fixtures_forecaster_recursive_multiseries import exog
-from .fixtures_forecaster_recursive_multiseries import exog_predict
+from .fixtures_forecaster_recursive_multiseries import (
+    series_dict_range,
+    exog_wide_range,
+    exog_pred_wide_range
+)
 
 transformer_exog = ColumnTransformer(
                        [('scale', StandardScaler(), ['exog_1']),
@@ -23,7 +24,7 @@ transformer_exog = ColumnTransformer(
 
 
 @pytest.mark.parametrize("level", 
-                         ['1', ['1']], 
+                         ['l1', ['l1']], 
                          ids=lambda lvl: f'level: {lvl}')
 def test_predict_quantiles_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_True_exog_and_transformer(level):
     """
@@ -38,12 +39,14 @@ def test_predict_quantiles_output_when_forecaster_is_LinearRegression_steps_is_2
                      transformer_exog   = transformer_exog,
                  )
     
-    forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
+    forecaster.fit(
+        series=series_dict_range, exog=exog_wide_range, store_in_sample_residuals=True
+    )
     results = forecaster.predict_quantiles(
                   steps                   = 2,
                   quantiles               = [0.05, 0.55, 0.95],
                   levels                  = level,
-                  exog                    = exog_predict,
+                  exog                    = exog_pred_wide_range,
                   n_boot                  = 4,
                   use_in_sample_residuals = True,
                   use_binned_residuals    = False,
@@ -51,7 +54,7 @@ def test_predict_quantiles_output_when_forecaster_is_LinearRegression_steps_is_2
               )
     
     expected = pd.DataFrame(
-        {'level': ['1', '1'],
+        {'level': ['l1', 'l1'],
          'q_0.05': [0.1283750019253314, 0.09385929028369558],
          'q_0.55': [0.3392034161273868, 0.3207904249631374],
          'q_0.95': [0.47157639833964976, 0.6231596160709784]},
@@ -62,7 +65,7 @@ def test_predict_quantiles_output_when_forecaster_is_LinearRegression_steps_is_2
 
 
 @pytest.mark.parametrize("levels", 
-                         [['1', '2'], None], 
+                         [['l1', 'l2'], None], 
                          ids=lambda lvl: f'levels: {lvl}')
 def test_predict_quantiles_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_False_exog_and_transformer(levels):
     """
@@ -77,13 +80,15 @@ def test_predict_quantiles_output_when_forecaster_is_LinearRegression_steps_is_2
                      transformer_exog   = transformer_exog,
                  )
 
-    forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
+    forecaster.fit(
+        series=series_dict_range, exog=exog_wide_range, store_in_sample_residuals=True
+    )
     forecaster.out_sample_residuals_ = forecaster.in_sample_residuals_
     results = forecaster.predict_quantiles(
                   steps                   = 2,
                   quantiles               = (0.05, 0.55, 0.95),
                   levels                  = levels,
-                  exog                    = exog_predict,
+                  exog                    = exog_pred_wide_range,
                   n_boot                  = 4,
                   use_in_sample_residuals = False,
                   use_binned_residuals    = False
@@ -91,7 +96,7 @@ def test_predict_quantiles_output_when_forecaster_is_LinearRegression_steps_is_2
     
     expected = pd.DataFrame(
         {
-            "level": ["1", "2", "1", "2"],
+            "level": ["l1", "l2", "l1", "l2"],
             "q_0.05": [
                 0.1283750019253314,
                 0.1615361493231256,

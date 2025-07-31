@@ -45,6 +45,7 @@ def _get_metric(metric: str) -> Callable:
         "mean_absolute_scaled_error",
         "root_mean_squared_scaled_error",
         "median_absolute_error",
+        "symmetric_mean_absolute_percentage_error"
     ]
 
     if metric not in allowed_metrics:
@@ -58,6 +59,7 @@ def _get_metric(metric: str) -> Callable:
         "mean_absolute_scaled_error": mean_absolute_scaled_error,
         "root_mean_squared_scaled_error": root_mean_squared_scaled_error,
         "median_absolute_error": median_absolute_error,
+        "symmetric_mean_absolute_percentage_error": symmetric_mean_absolute_percentage_error
     }
 
     metric = add_y_train_argument(metrics[metric])
@@ -101,9 +103,9 @@ def add_y_train_argument(func: Callable) -> Callable:
 
 
 def mean_absolute_scaled_error(
-    y_true: pd.Series | np.ndarray,
-    y_pred: pd.Series | np.ndarray,
-    y_train: list[float] | pd.Series | np.ndarray,
+    y_true: np.ndarray | pd.Series,
+    y_pred: np.ndarray | pd.Series,
+    y_train: list[float] | np.ndarray | pd.Series,
 ) -> float:
     """
     Mean Absolute Scaled Error (MASE)
@@ -168,9 +170,9 @@ def mean_absolute_scaled_error(
 
 
 def root_mean_squared_scaled_error(
-    y_true: pd.Series | np.ndarray,
-    y_pred: pd.Series | np.ndarray,
-    y_train: list[float] | pd.Series | np.ndarray,
+    y_true: np.ndarray | pd.Series,
+    y_pred: np.ndarray | pd.Series,
+    y_train: list[float] | np.ndarray | pd.Series,
 ) -> float:
     """
     Root Mean Squared Scaled Error (RMSSE)
@@ -414,3 +416,72 @@ def create_mean_pinball_loss(alpha: float) -> callable:
         return mean_pinball_loss(y_true, y_pred, alpha=alpha)
     
     return mean_pinball_loss_q
+
+
+def symmetric_mean_absolute_percentage_error(
+    y_true: np.ndarray | pd.Series,
+    y_pred: np.ndarray | pd.Series
+) -> float:
+    """
+    Compute the Symmetric Mean Absolute Percentage Error (SMAPE).
+
+    SMAPE is a relative error metric used to measure the accuracy 
+    of forecasts. Unlike MAPE, it is symmetric and prevents division 
+    by zero by averaging the absolute values of actual and predicted values.
+
+    The result is expressed as a percentage and ranges from 0% 
+    (perfect prediction) to 200% (maximum error).
+
+    Parameters
+    ----------
+    y_true : numpy ndarray, pandas Series
+        True values of the target variable.
+    y_pred : numpy ndarray, pandas Series
+        Predicted values of the target variable.
+
+    Returns
+    -------
+    smape : float
+        SMAPE value as a percentage.
+
+    Notes
+    -----
+    When both `y_true` and `y_pred` are zero, the corresponding term is treated as zero
+    to avoid division by zero.
+
+    Examples
+    --------
+    ```python
+    import numpy as np
+    from skforecast.metrics import symmetric_mean_absolute_percentage_error
+    
+    y_true = np.array([100, 200, 0])
+    y_pred = np.array([110, 180, 10])
+    result = symmetric_mean_absolute_percentage_error(y_true, y_pred)
+    print(f"SMAPE: {result:.2f}%")
+    
+    # SMAPE: 73.35%
+    ```
+
+    """
+
+    if not isinstance(y_true, (pd.Series, np.ndarray)):
+        raise TypeError("`y_true` must be a pandas Series or numpy ndarray.")
+    if not isinstance(y_pred, (pd.Series, np.ndarray)):
+        raise TypeError("`y_pred` must be a pandas Series or numpy ndarray.")
+    if len(y_true) != len(y_pred):
+        raise ValueError("`y_true` and `y_pred` must have the same length.")
+    if len(y_true) == 0 or len(y_pred) == 0:
+        raise ValueError("`y_true` and `y_pred` must have at least one element.")
+    
+    numerator = np.abs(y_true - y_pred)
+    denominator = (np.abs(y_true) + np.abs(y_pred)) / 2
+    
+    # NOTE: Avoid division by zero
+    mask = denominator != 0
+    smape_values = np.zeros_like(denominator)
+    smape_values[mask] = numerator[mask] / denominator[mask]
+
+    smape = 100 * np.mean(smape_values)
+    
+    return smape

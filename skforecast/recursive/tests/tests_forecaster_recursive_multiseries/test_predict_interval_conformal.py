@@ -1,9 +1,7 @@
 # Unit test _predict_interval_conformal ForecasterRecursiveMultiSeries
 # ==============================================================================
-import joblib
 import numpy as np
 import pandas as pd
-from pathlib import Path
 from lightgbm import LGBMRegressor
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
@@ -12,20 +10,18 @@ from sklearn.linear_model import LinearRegression
 from skforecast.recursive import ForecasterRecursiveMultiSeries
 
 # Fixtures
-from .fixtures_forecaster_recursive_multiseries import series, exog, exog_predict
+from .fixtures_forecaster_recursive_multiseries import (
+    series_dict_range,
+    exog_wide_range,
+    exog_pred_wide_range,
+    series_dict_nans_train,
+    exog_dict_nans_train,
+    exog_dict_nans_test
+)
 
-THIS_DIR = Path(__file__).parent
-series_dict = joblib.load(THIS_DIR/'fixture_sample_multi_series.joblib')
-exog_dict = joblib.load(THIS_DIR/'fixture_sample_multi_series_exog.joblib')
-end_train = "2016-07-31 23:59:00"
-series_dict_train = {k: v.loc[:end_train,] for k, v in series_dict.items()}
-exog_dict_train = {k: v.loc[:end_train,] for k, v in exog_dict.items()}
-series_dict_test = {k: v.loc[end_train:,] for k, v in series_dict.items()}
-exog_dict_test = {k: v.loc[end_train:,] for k, v in exog_dict.items()}
-series_2 = pd.DataFrame({
-    'l1': pd.Series(np.arange(10)),
-    'l2': pd.Series(np.arange(10))
-})
+series_2 = pd.DataFrame(
+    {'l1': pd.Series(np.arange(10)), 'l2': pd.Series(np.arange(10))}
+).to_dict(orient='series')
 
 
 def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_steps_is_1_in_sample_residuals_is_True():
@@ -122,7 +118,7 @@ def test_predict_interval_conformal_output_when_regressor_is_LinearRegression_wi
                      lags               = 5,
                      transformer_series = StandardScaler()
                  )
-    forecaster.fit(series=series, store_in_sample_residuals=True)
+    forecaster.fit(series=series_dict_range, store_in_sample_residuals=True)
     results = forecaster._predict_interval_conformal(
         steps=5, nominal_coverage=0.95, use_in_sample_residuals=True, use_binned_residuals=False
     )
@@ -142,7 +138,7 @@ def test_predict_interval_conformal_output_when_regressor_is_LinearRegression_wi
                    columns = ['pred', 'lower_bound', 'upper_bound'],
                    index   = pd.Index([50, 50, 51, 51, 52, 52, 53, 53, 54, 54])
                )
-    expected.insert(0, 'level', np.array(['1', '2'] * 5))
+    expected.insert(0, 'level', np.array(['l1', 'l2'] * 5))
     
     pd.testing.assert_frame_equal(results, expected)
 
@@ -164,9 +160,11 @@ def test_predict_interval_conformal_output_when_regressor_is_LinearRegression_wi
                      transformer_series = StandardScaler(),
                      transformer_exog   = transformer_exog,
                  )
-    forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
+    forecaster.fit(
+        series=series_dict_range, exog=exog_wide_range, store_in_sample_residuals=True
+    )
     results = forecaster._predict_interval_conformal(
-        steps=5, levels=['1', '2'], exog=exog_predict, nominal_coverage=0.95,
+        steps=5, levels=['l1', 'l2'], exog=exog_pred_wide_range, nominal_coverage=0.95,
         use_in_sample_residuals=True, use_binned_residuals=False
     )
     
@@ -186,7 +184,7 @@ def test_predict_interval_conformal_output_when_regressor_is_LinearRegression_wi
                    columns = ['pred', 'lower_bound', 'upper_bound'],
                    index   = pd.Index([50, 50, 51, 51, 52, 52, 53, 53, 54, 54])
                )
-    expected.insert(0, 'level', np.array(['1', '2'] * 5))
+    expected.insert(0, 'level', np.array(['l1', 'l2'] * 5))
     
     pd.testing.assert_frame_equal(results, expected)
 
@@ -207,11 +205,11 @@ def test_predict_interval_conformal_output_when_series_and_exog_dict():
         transformer_exog=StandardScaler(),
     )
     forecaster.fit(
-        series=series_dict_train, exog=exog_dict_train, 
+        series=series_dict_nans_train, exog=exog_dict_nans_train, 
         store_in_sample_residuals=True, suppress_warnings=True
     )
     results = forecaster._predict_interval_conformal(
-        steps=5, exog=exog_dict_test, nominal_coverage=0.95, 
+        steps=5, exog=exog_dict_nans_test, nominal_coverage=0.95, 
         use_in_sample_residuals=True, use_binned_residuals=False
     )
 
@@ -351,7 +349,7 @@ def test_predict_interval_conformal_output_when_series_and_exog_dict_unknown_lev
                      transformer_exog   = StandardScaler()
                  )
     forecaster.fit(
-        series=series_dict_train, exog=exog_dict_train, 
+        series=series_dict_nans_train, exog=exog_dict_nans_train, 
         store_in_sample_residuals=True, suppress_warnings=True
     )
 
@@ -360,7 +358,7 @@ def test_predict_interval_conformal_output_when_series_and_exog_dict_unknown_lev
         {k: v for k, v in forecaster.last_window_.items() if k in levels}
     )
     last_window['id_1005'] = last_window['id_1004'] * 0.9
-    exog_dict_test_2 = exog_dict_test.copy()
+    exog_dict_test_2 = exog_dict_nans_test.copy()
     exog_dict_test_2['id_1005'] = exog_dict_test_2['id_1001']
     results = forecaster._predict_interval_conformal(
         steps=5, levels=levels, last_window=last_window, exog=exog_dict_test_2,
@@ -528,7 +526,7 @@ def test_predict_interval_conformal_output_when_series_and_exog_dict_unknown_lev
                      transformer_exog   = StandardScaler()
                  )
     forecaster.fit(
-        series=series_dict_train, exog=exog_dict_train, 
+        series=series_dict_nans_train, exog=exog_dict_nans_train, 
         store_in_sample_residuals=True, suppress_warnings=True
     )
 
@@ -537,7 +535,7 @@ def test_predict_interval_conformal_output_when_series_and_exog_dict_unknown_lev
         {k: v for k, v in forecaster.last_window_.items() if k in levels}
     )
     last_window['id_1005'] = last_window['id_1004'] * 0.9
-    exog_dict_test_2 = exog_dict_test.copy()
+    exog_dict_test_2 = exog_dict_nans_test.copy()
     exog_dict_test_2['id_1005'] = exog_dict_test_2['id_1001']
     results = forecaster._predict_interval_conformal(
         steps=5, levels=levels, last_window=last_window, exog=exog_dict_test_2,
@@ -706,7 +704,7 @@ def test_predict_interval_conformal_output_when_series_and_exog_dict_encoding_No
                      differentiation    = 1
                  )
     forecaster.fit(
-        series=series_dict_train, exog=exog_dict_train, 
+        series=series_dict_nans_train, exog=exog_dict_nans_train, 
         store_in_sample_residuals=True, suppress_warnings=True
     )
 
@@ -715,7 +713,7 @@ def test_predict_interval_conformal_output_when_series_and_exog_dict_encoding_No
         {k: v for k, v in forecaster.last_window_.items() if k in levels}
     )
     last_window['id_1005'] = last_window['id_1004'] * 0.9
-    exog_dict_test_2 = exog_dict_test.copy()
+    exog_dict_test_2 = exog_dict_nans_test.copy()
     exog_dict_test_2['id_1005'] = exog_dict_test_2['id_1001']
     results = forecaster._predict_interval_conformal(
         steps=5, levels=levels, last_window=last_window, exog=exog_dict_test_2,
@@ -884,7 +882,7 @@ def test_predict_interval_conformal_output_when_series_and_exog_dict_encoding_No
                      differentiation    = 1
                  )
     forecaster.fit(
-        series=series_dict_train, exog=exog_dict_train, 
+        series=series_dict_nans_train, exog=exog_dict_nans_train, 
         store_in_sample_residuals=True, suppress_warnings=True
     )
 
@@ -893,7 +891,7 @@ def test_predict_interval_conformal_output_when_series_and_exog_dict_encoding_No
         {k: v for k, v in forecaster.last_window_.items() if k in levels}
     )
     last_window['id_1005'] = last_window['id_1004'] * 0.9
-    exog_dict_test_2 = exog_dict_test.copy()
+    exog_dict_test_2 = exog_dict_nans_test.copy()
     exog_dict_test_2['id_1005'] = exog_dict_test_2['id_1001']
     results = forecaster._predict_interval_conformal(
         steps=5, levels=levels, last_window=last_window, exog=exog_dict_test_2,

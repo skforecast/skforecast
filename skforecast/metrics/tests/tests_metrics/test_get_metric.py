@@ -25,7 +25,8 @@ def test_get_metric_ValueError_when_metric_not_in_metrics_allowed():
         "mean_squared_log_error",
         "mean_absolute_scaled_error",
         "root_mean_squared_scaled_error",
-        "median_absolute_error"
+        "median_absolute_error",
+        'symmetric_mean_absolute_percentage_error'
     ]
     
     err_msg = re.escape(f"Allowed metrics are: {allowed_metrics}. Got {metric}.")

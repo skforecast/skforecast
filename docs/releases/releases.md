@@ -10,21 +10,67 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
 
-## 0.17.0 <small>In progress</small> { id="0.17.0" }
+## 0.17.0 <small>Aug 06, 2025</small> { id="0.17.0" }
 
 The main changes in this release are:
 
++ <span class="badge text-bg-feature">Feature</span> <code>[ForecasterEquivalentDate]</code> can now predict intervals using the conformal prediction framework.
+
++ <span class="badge text-bg-feature">Feature</span> Created module <code>[experimental]</code>, this module contains experimental features that are not yet fully tested or may change in future releases.
+
++ <span class="badge text-bg-enhancement">Enhancement</span> The <code>[ForecasterRNN]</code> and the function <code>[create_and_compile_model]</code> have been refactored to allow for the inclusion of exogenous variables. The forecaster can also make interval predictions using the conformal prediction framework.
+
++ <span class="badge text-bg-api-change">API Change</span> Input data passed to all functions/classes must have either a pandas `RangeIndex` or `DatetimeIndex`. Previously, if the input did not meet this condition, a `RangeIndex` starting at 0 was automatically generated. This behavior has been removed to ensure consistent and explicit handling of input data.
+
++ <span class="badge text-bg-api-change">API Change</span> <code>[ForecasterRecursiveMultiSeries]</code> now accepts three input types for the `series` data: a wide-format DataFrame, where each column corresponds to a different time series; a long-format DataFrame with a MultiIndex, where the first level indicates the series name and the second level is the time index; or a dictionary with series names as keys and pandas `Series` as values.
+
++ <span class="badge text-bg-api-change">API Change</span> <code>[ForecasterRecursiveMultiSeries]</code> now accepts `exog` input as a wide-format DataFrame, where each column corresponds to a different exogenous variable; a long-format DataFrame with a MultiIndex, where the first level indicates the series name to which it belongs and the second level is the time index; or a dictionary with series names as keys and pandas `Series` or `DataFrames` as values.
+  
 + <span class="badge text-bg-danger">Fix</span> A bug that prevented the use of `initial_train_size` as a date with the <code>[OneStepAheadFold]</code> during the hyperparameter search has been fixed.
 
 + <span class="badge text-bg-danger">Fix</span> A bug that caused the data types to be set incorrectly when creating the predicting matrix with the `create_predict_X` method or when `return_predictors=True` in the <code>[backtesting_forecaster]</code> and <code>[backtesting_forecaster_multiseries]</code> functions has been fixed. The dtypes of the predictors are now set to match those of the training data.
+
++ <span class="badge text-bg-danger">Fix</span> A bug that prevented the use of a `pd.RangeIndex` with the <code>[OneStepAheadFold]</code> during the hyperparameter search has been fixed.
 
 
 **Added**
 
 + Added attribute `exog_dtypes_out_` in all forecasters to store the data types of the exogenous variables used in training after the transformation applied by `transformer_exog`. If `transformer_exog` is not used, it is equal to `exog_dtypes_in_`.
 
++ Added function <code>[reshape_series_wide_to_long]</code> in the <code>[preprocessing]</code> module. This function reshapes a wide-format DataFrame where each column corresponds to a series into a long-format DataFrame with with a MultiIndex. The first level of the index is the series name and the second level is the time index.
+
++ Added metric <code>[symmetric_mean_absolute_percentage_error]</code> in the <code>[metrics]</code> module. This metric calculates the symmetric mean absolute percentage error (SMAPE) between the true values and the predicted values.
+
++ <code>[ForecasterEquivalentDate]</code> can now predict intervals using the conformal prediction framework.
+
++ Created module <code>[experimental]</code>, this module contains experimental features that are not yet fully tested or may change in future releases.
+
++ Include function <code>[calculate_days_to_holiday]</code> in the <code>[experimental]</code> module. It calculates the number of days to the next holiday and the number of days since the last holiday in a DataFrame with a date column.
+
++ The <code>[ForecasterRNN]</code> and the function <code>[create_and_compile_model]</code> now support the inclusion of exogenous variables.
+
++ Added method `predict_interval` to the <code>[ForecasterRNN]</code> using the conformal prediction framework.
+
 
 **Changed**
+
++ Input data passed to all functions/classes must have either a pandas `RangeIndex` or `DatetimeIndex`. Previously, if the input did not meet this condition, a `RangeIndex` starting at 0 was automatically generated. This behavior has been removed to ensure consistent and explicit handling of input data.
+
++ <code>[ForecasterRecursiveMultiSeries]</code> now accepts three input types for the series data: a wide-format DataFrame, where each column corresponds to a different time series; a long-format DataFrame with a MultiIndex, where the first level indicates the series name and the second level is the time index; or a dictionary with series names as keys and pandas Series as values.
+
++ <code>[ForecasterRecursiveMultiSeries]</code> now accepts `exog` input as a wide-format DataFrame, where each column corresponds to a different exogenous variable; a long-format DataFrame with a MultiIndex, where the first level indicates the series name to which it belongs and the second level is the time index; or a dictionary with series names as keys and pandas `Series` or `DataFrames` as values.
+
++ When predicting, <code>[ForecasterRecursiveMultiSeries]</code> does not require the exog input to have the same type as the one used during training.
+
++ Function `series_long_to_dict` renamed to <code>[reshape_series_long_to_dict]</code> in the <code>[preprocessing]</code> module. This function reshapes a long-format DataFrame with time series data into a dictionary format where each entry corresponds to a series.
+  
++ Function `exog_long_to_dict` renamed to <code>[reshape_exog_long_to_dict]</code> in the <code>[preprocessing]</code> module. This function reshapes a long-format DataFrame with exogenous variables into a dictionary format where each entry corresponds to the exogenous variables of a series.
+
++ The <code>[create_and_compile_model]</code> function has been refactored. All arguments related with layers and compilation are now passed as a dictionary using the following arguments: `recurrent_layers_kwargs`, `dense_layers_kwargs`, `output_dense_layer_kwargs`, and `compile_kwargs`.
+
++ The arguments `lags` and `steps` were removed from the <code>[ForecasterRNN]</code> initialization. These arguments are now inferred from the regressor architecture.
+
++ Remove `preprocess_y`, `preprocess_last_window` and `preprocess_exog` in favor of `check_extract_values_and_index` in the <code>[utils]</code> module. This function checks if the index is a pandas `DatetimeIndex` or `RangeIndex` and extracts the values and index accordingly.
 
 
 **Fixed**
@@ -32,6 +78,8 @@ The main changes in this release are:
 + A bug that prevented the use of `initial_train_size` as a date with the <code>[OneStepAheadFold]</code> during the hyperparameter search has been fixed.
 
 + A bug that caused the data types to be set incorrectly when creating the predicting matrix with the `create_predict_X` method or when `return_predictors=True` in the <code>[backtesting_forecaster]</code> and <code>[backtesting_forecaster_multiseries]</code> functions has been fixed. The dtypes of the predictors are now set to match those of the training data.
+
++ A bug that prevented the use of a `pd.RangeIndex` with the <code>[OneStepAheadFold]</code> during the hyperparameter search has been fixed.
 
 
 ## 0.16.0 <small>May 01, 2025</small> { id="0.16.0" }
@@ -1185,8 +1233,9 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 <!-- preprocessing -->
 [preprocessing]: ../api/preprocessing.html
 [RollingFeatures]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.RollingFeatures
-[series_long_to_dict]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.series_long_to_dict
-[exog_long_to_dict]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.exog_long_to_dict
+[reshape_series_wide_to_long]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.reshape_series_wide_to_long
+[reshape_series_long_to_dict]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.reshape_series_long_to_dict
+[reshape_exog_long_to_dict]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.reshape_exog_long_to_dict
 [TimeSeriesDifferentiator]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.TimeSeriesDifferentiator
 [QuantileBinner]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.QuantileBinner
 [ConformalIntervalCalibrator]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.ConformalIntervalCalibrator
@@ -1195,6 +1244,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [metrics]: ../api/metrics.html
 [mean_absolute_scaled_error]: ../api/metrics.html#skforecast.metrics.metrics.mean_absolute_scaled_error
 [root_mean_squared_scaled_error]: ../api/metrics.html#skforecast.metrics.metrics.root_mean_squared_scaled_error
+[symmetric_mean_absolute_percentage_error]: ../api/metrics.html#skforecast.metrics.metrics.symmetric_mean_absolute_percentage_error
 [add_y_train_argument]: ../api/metrics.html#skforecast.metrics.metrics.add_y_train_argument
 
 <!-- plot -->
@@ -1208,6 +1258,10 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 
 <!-- utils -->
 [utils]: ../api/utils.html
+
+<!-- experimental -->
+[experimental]: ../api/experimental.html
+[calculate_distance_from_holiday]: ../api/experimental.html#skforecast.experimental.calculate_distance_from_holiday
 
 <!-- datasets -->
 [datasets]: ../api/datasets.html
@@ -1228,3 +1282,5 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [model_selection_sarimax]: https://skforecast.org/0.13.0/api/model_selection_sarimax
 [DateTimeFeatureTransformer]: https://skforecast.org/0.13.0/api/preprocessing#skforecast.preprocessing.DateTimeFeatureTransformer
 [create_datetime_features]: https://skforecast.org/0.13.0/api/preprocessing#skforecast.preprocessing.create_datetime_features
+[series_long_to_dict]: https://skforecast.org/0.16.0/api/preprocessing.html#skforecast.preprocessing.preprocessing.series_long_to_dict
+[exog_long_to_dict]: https://skforecast.org/0.16.0/api/preprocessing.html#skforecast.preprocessing.preprocessing.exog_long_to_dict

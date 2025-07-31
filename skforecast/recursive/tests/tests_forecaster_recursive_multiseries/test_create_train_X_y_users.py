@@ -2,9 +2,10 @@
 # ==============================================================================
 import numpy as np
 import pandas as pd
-from ....recursive import ForecasterRecursiveMultiSeries
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
+from ....recursive import ForecasterRecursiveMultiSeries
+from ....preprocessing import reshape_series_wide_to_long
 
 
 def test_create_train_X_y_output_when_series_and_exog_is_None():
@@ -14,6 +15,9 @@ def test_create_train_X_y_output_when_series_and_exog_is_None():
     """
     series = pd.DataFrame({'1': pd.Series(np.arange(7, dtype=float)), 
                            '2': pd.Series(np.arange(7, dtype=float))})
+    series.index = pd.date_range(start='2000-01-01', periods=len(series), freq='D')
+    series = reshape_series_wide_to_long(series)
+
     forecaster = ForecasterRecursiveMultiSeries(
         regressor = LinearRegression(),
         lags      = 3,
@@ -32,12 +36,18 @@ def test_create_train_X_y_output_when_series_and_exog_is_None():
                              [ 0. , -0.5, -1. , 0., 1.],
                              [ 0.5,  0. , -0.5, 0., 1.],
                              [ 1. ,  0.5,  0. , 0., 1.]]),
-            index   = pd.Index([3, 4, 5, 6, 3, 4, 5, 6]),
+            index   = pd.DatetimeIndex([
+                "2000-01-04", "2000-01-05", "2000-01-06", "2000-01-07",
+                "2000-01-04", "2000-01-05", "2000-01-06", "2000-01-07"
+            ]),
             columns = ['lag_1', 'lag_2', 'lag_3', '1', '2']
         ).astype({'1': int, '2': int}),
         pd.Series(
             data  = np.array([0., 0.5, 1., 1.5, 0., 0.5, 1., 1.5]),
-            index = pd.Index([3, 4, 5, 6, 3, 4, 5, 6]),
+            index = pd.DatetimeIndex([
+                "2000-01-04", "2000-01-05", "2000-01-06", "2000-01-07",
+                "2000-01-04", "2000-01-05", "2000-01-06", "2000-01-07"
+            ]),
             name  = 'y',
             dtype = float
         )

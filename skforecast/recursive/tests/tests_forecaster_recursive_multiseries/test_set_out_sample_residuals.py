@@ -11,8 +11,10 @@ from skforecast.exceptions import UnknownLevelWarning
 from ....recursive import ForecasterRecursiveMultiSeries
 
 # Fixtures
-series = pd.DataFrame({'l1': pd.Series(np.arange(10)), 
-                       'l2': pd.Series(np.arange(10))})
+series = {
+    'l1': pd.Series(np.arange(10)), 
+    'l2': pd.Series(np.arange(10))
+}
 
 
 def test_set_out_sample_residuals_NotFittedError_when_forecaster_not_fitted():
@@ -203,7 +205,10 @@ def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_and_n
     is False.
     """
     rng = np.random.default_rng(12345)
-    series = pd.DataFrame({"l1": rng.normal(10, 3, 20), "l2": rng.normal(10, 3, 20)})
+    series = {
+        "l1": pd.Series(rng.normal(10, 3, 20)), 
+        "l2": pd.Series(rng.normal(10, 3, 20))
+    }
     forecaster = ForecasterRecursiveMultiSeries(
         LinearRegression(), lags=3, encoding=encoding, binner_kwargs={"n_bins": 3}
     )

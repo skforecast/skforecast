@@ -198,8 +198,8 @@ def test_fit_same_residuals_when_residuals_greater_than_10000(n_jobs):
     for k in results_1.keys():
         assert isinstance(results_1[k], np.ndarray)
         assert isinstance(results_2[k], np.ndarray)
-        assert len(results_1[k] == 10_000)
-        assert len(results_2[k] == 10_000)
+        assert len(results_1[k]) == 10_000
+        assert len(results_2[k]) == 10_000
         np.testing.assert_array_equal(results_1[k], results_2[k])
 
 

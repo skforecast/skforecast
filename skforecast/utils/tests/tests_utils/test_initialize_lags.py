@@ -68,17 +68,17 @@ def test_ValueError_initialize_lags_when_lags_has_values_lower_than_1(lags):
 @pytest.mark.parametrize("lags", 
                          [1.5, 'not_valid_type'], 
                          ids = lambda lags: f'lags: {lags}')
-def test_TypeError_initialize_lags_when_lags_is_not_valid_type(lags):
+def test_TypeError_initialize_lags_when_lags_is_not_valid_type_ForecasterDirectMultiVariate(lags):
     """
-    Test TypeError is raised when lags is not a valid type.
-    """
+    Test TypeError is raised when lags is not a valid type in ForecasterDirectMultiVariate.
+    """    
     err_msg = re.escape(
-        (f"`lags` argument must be an int, 1d numpy ndarray, range, tuple or list. "
-         f"Got {type(lags)}.")
+        f"`lags` argument must be a dict, int, 1d numpy ndarray, range, tuple or list. "
+        f"Got {type(lags)}."
     )
     with pytest.raises(TypeError, match = err_msg):
         initialize_lags(
-            forecaster_name = 'ForecasterRecursive',
+            forecaster_name = 'ForecasterDirectMultiVariate',
             lags            = lags
         )
 
@@ -86,17 +86,17 @@ def test_TypeError_initialize_lags_when_lags_is_not_valid_type(lags):
 @pytest.mark.parametrize("lags", 
                          [1.5, 'not_valid_type'], 
                          ids = lambda lags: f'lags: {lags}')
-def test_TypeError_initialize_lags_when_lags_is_not_valid_type_ForecasterDirectMultiVariate(lags):
+def test_TypeError_initialize_lags_when_lags_is_not_valid_type(lags):
     """
-    Test TypeError is raised when lags is not a valid type in ForecasterDirectMultiVariate.
-    """    
+    Test TypeError is raised when lags is not a valid type.
+    """
     err_msg = re.escape(
-        (f"`lags` argument must be a dict, int, 1d numpy ndarray, range, tuple or list. "
-         f"Got {type(lags)}.")
+        f"`lags` argument must be an int, 1d numpy ndarray, range, tuple or list. "
+        f"Got {type(lags)}."
     )
     with pytest.raises(TypeError, match = err_msg):
         initialize_lags(
-            forecaster_name = 'ForecasterDirectMultiVariate',
+            forecaster_name = 'ForecasterRecursive',
             lags            = lags
         )
 

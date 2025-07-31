@@ -5,6 +5,7 @@ import pytest
 import numpy as np
 import pandas as pd
 from sklearn.exceptions import NotFittedError
+from skforecast.exceptions import MissingValuesWarning
 from skforecast.recursive import ForecasterEquivalentDate
 
 # Fixtures
@@ -18,9 +19,9 @@ def test_predict_NotFittedError_when_fitted_is_False():
     forecaster = ForecasterEquivalentDate(offset=1, n_offsets=1)
 
     err_msg = re.escape(
-                ('This Forecaster instance is not fitted yet. Call `fit` with '
-                 'appropriate arguments before using predict.')
-              )
+        'This Forecaster instance is not fitted yet. Call `fit` with '
+        'appropriate arguments before using predict.'
+    )
     with pytest.raises(NotFittedError, match = err_msg):
         forecaster.predict(steps=3)
 
@@ -144,11 +145,13 @@ def test_predict_7_steps_with_int_offset_5_n_offsets_2_using_last_window():
 
 def test_predict_ValueError_when_all_equivalent_values_are_missing():
     """
-    Test ValueError when equivalent values are missing because the offset is
+    Test ValueError when all equivalent values are missing because the offset is
     too large.
     """
-    y = pd.Series(np.arange(7), 
-                  index=pd.date_range(start='2000-02-25', periods=7, freq='D'))
+    y = pd.Series(
+        np.arange(7), 
+        index=pd.date_range(start='2000-02-25', periods=7, freq='D')
+    )
 
     forecaster = ForecasterEquivalentDate(
                      offset    = pd.offsets.MonthEnd(1),
@@ -156,28 +159,32 @@ def test_predict_ValueError_when_all_equivalent_values_are_missing():
                  )
     forecaster.fit(y=y)
 
-    last_window = pd.Series(np.arange(5), 
-                            index=pd.date_range(start='2000-02-10', periods=5, freq='D'))
+    last_window = pd.Series(
+        np.arange(5), 
+        index=pd.date_range(start='2000-02-10', periods=5, freq='D')
+    )
 
     err_msg = re.escape(
-                (f"All equivalent values are missing. This is caused by using "
-                 f"an offset (<MonthEnd>) larger than the available data. "
-                 f"Try to decrease the size of the offset (<MonthEnd>), "
-                 f"the number of n_offsets (1) or increase the "
-                 f"size of `last_window`. In backtesting, this error may be "
-                 f"caused by using an `initial_train_size` too small.")
-              )
+        "All equivalent values are missing. This is caused by using "
+        "an offset (<MonthEnd>) larger than the available data. "
+        "Try to decrease the size of the offset (<MonthEnd>), "
+        "the number of `n_offsets` (1) or increase the "
+        "size of `last_window`. In backtesting, this error may be "
+        "caused by using an `initial_train_size` too small."
+    )
     with pytest.raises(ValueError, match = err_msg):
         forecaster.predict(steps=3, last_window=last_window)
 
 
-def test_predict_ValueError_when_any_equivalent_values_are_missing():
+def test_predict_MissingValuesWarning_when_any_equivalent_values_are_missing():
     """
-    Test ValueError when equivalent values are missing because the offset is
-    too large.
+    Test MissingValuesWarning when some equivalent values are missing because the 
+    offset is too large.
     """
-    y = pd.Series(np.arange(51), 
-                  index=pd.date_range(start='2000-02-25', periods=51, freq='D'))
+    y = pd.Series(
+        np.arange(51), 
+        index=pd.date_range(start='2000-02-25', periods=51, freq='D')
+    )
     
     forecaster = ForecasterEquivalentDate(
                      offset    = pd.offsets.MonthEnd(1),
@@ -186,18 +193,28 @@ def test_predict_ValueError_when_any_equivalent_values_are_missing():
                  )
     forecaster.fit(y=y)
 
-    last_window = pd.Series(np.arange(50), 
-                            index=pd.date_range(start='2000-02-10', periods=50, freq='D'))
+    last_window = pd.Series(
+        np.arange(50), 
+        index=pd.date_range(start='2000-02-10', periods=50, freq='D')
+    )
 
     warn_msg = re.escape(
-                (f"Steps: ['2000-03-31', '2000-04-01', '2000-04-02'] "
-                 f"are calculated with less than 2 n_offsets. "
-                 f"To avoid this, increase the `last_window` size or decrease "
-                 f"the number of n_offsets. The current configuration requires " 
-                 f"a total offset of <2 * MonthEnds>.")
-              )
-    with pytest.warns(UserWarning, match = warn_msg):
-        forecaster.predict(steps=3, last_window=last_window)
+        "Steps: ['2000-03-31', '2000-04-01', '2000-04-02'] "
+        "are calculated with less than 2 `n_offsets`. "
+        "To avoid this, increase the `last_window` size or decrease "
+        "the number of `n_offsets`. The current configuration requires " 
+        "a total offset of <2 * MonthEnds>."
+    )
+    with pytest.warns(MissingValuesWarning, match = warn_msg):
+        predictions = forecaster.predict(steps=3, last_window=last_window)
+
+    expected = pd.Series(
+        data  = np.array([19., 19., 19.]),
+        index = pd.date_range(start='2000-03-31', periods=3, freq='D'),
+        name  = 'pred'
+    )
+
+    pd.testing.assert_series_equal(predictions, expected)
 
 
 def test_predict_7_steps_with_offset_Day_5_n_offsets_1_using_last_window():

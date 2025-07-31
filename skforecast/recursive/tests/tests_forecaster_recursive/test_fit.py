@@ -88,8 +88,8 @@ def test_forecaster_index_step_stored():
     results = forecaster.index_freq_
 
     assert results == expected
-    
-    
+
+
 def test_fit_in_sample_residuals_stored():
     """
     Test that values of in_sample_residuals_ are stored after fitting.
@@ -117,8 +117,8 @@ def test_fit_same_residuals_when_residuals_greater_than_10000():
     
     assert isinstance(results_1, np.ndarray)
     assert isinstance(results_2, np.ndarray)
-    assert len(results_1 == 10_000)
-    assert len(results_2 == 10_000)
+    assert len(results_1) == 10_000
+    assert len(results_2) == 10_000
     np.testing.assert_array_almost_equal(results_1, results_2)
 
 

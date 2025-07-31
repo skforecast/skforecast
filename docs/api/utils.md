@@ -13,9 +13,7 @@
 ::: skforecast.utils.utils.check_interval
 ::: skforecast.utils.utils.check_predict_input
 ::: skforecast.utils.utils.check_residuals_input
-::: skforecast.utils.utils.preprocess_y
-::: skforecast.utils.utils.preprocess_last_window
-::: skforecast.utils.utils.preprocess_exog
+::: skforecast.utils.utils.check_extract_values_and_index
 ::: skforecast.utils.utils.cast_exog_dtypes
 ::: skforecast.utils.utils.exog_to_direct
 ::: skforecast.utils.utils.exog_to_direct_numpy
