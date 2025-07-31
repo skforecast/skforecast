@@ -4,7 +4,6 @@ import re
 import pytest
 import numpy as np
 import pandas as pd
-import keras
 from sklearn.linear_model import Ridge
 from sklearn.exceptions import NotFittedError
 from skforecast.sarimax import Sarimax
@@ -14,8 +13,6 @@ from skforecast.recursive import ForecasterSarimax
 from skforecast.recursive import ForecasterEquivalentDate
 from skforecast.recursive import ForecasterRecursiveMultiSeries
 from skforecast.direct import ForecasterDirectMultiVariate
-from skforecast.deep_learning import ForecasterRnn
-from skforecast.deep_learning.utils import create_and_compile_model
 from skforecast.model_selection._split import TimeSeriesFold
 from skforecast.model_selection._utils import check_backtesting_input
 
@@ -756,57 +753,6 @@ def test_check_backtesting_input_TypeError_when_n_jobs_not_int_or_auto(n_jobs):
             random_state            = 123,
             use_in_sample_residuals = True,
             n_jobs                  = n_jobs,
-            show_progress           = False,
-            suppress_warnings       = False
-        )
-
-
-def test_check_backtesting_input_ValueError_when_interval_is_not_None_and_forecaster_not_interval():
-    """
-    Test ValueError is raised in check_backtesting_input when interval is not None
-    and the forecaster does not support interval predictions.
-    """
-    series = pd.DataFrame(
-        {"1": pd.Series(np.arange(50)), 
-         "2": pd.Series(np.arange(50))}
-    )
-    lags = 3
-    levels = "1"
-
-    model = create_and_compile_model(
-        series=series,
-        lags=lags,
-        steps=1,
-        levels=levels,
-        recurrent_units=64,
-        dense_units=32
-    )
-    
-    forecaster = ForecasterRnn(model, levels=levels, lags=lags)
-    
-    cv = TimeSeriesFold(
-             steps                 = 3,
-             initial_train_size    = len(series) - 12,
-             refit                 = False,
-             fixed_train_size      = False,
-             gap                   = 0,
-             allow_incomplete_fold = True
-         )
-    
-    err_msg = re.escape(
-        "Interval predictions are not allowed for ForecasterRnn. "
-        "Set `interval` and `alpha` to `None`."
-    )
-    with pytest.raises(ValueError, match = err_msg):
-        check_backtesting_input(
-            forecaster              = forecaster,
-            cv                      = cv,
-            metric                  = 'mean_absolute_error',
-            series                  = series,
-            interval                = [10, 90],
-            n_boot                  = 500,
-            random_state            = 123,
-            use_in_sample_residuals = True,
             show_progress           = False,
             suppress_warnings       = False
         )

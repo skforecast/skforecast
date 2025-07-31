@@ -197,7 +197,10 @@ def test__create_and_compile_model_exog_model_output_shape_single_series_no_exog
     Check model output shape for single series without exogenous variables.
     """
     series = pd.DataFrame({"a": np.arange(10, dtype=float)})
-    model = _create_and_compile_model_exog(series=series, lags=2, steps=3)
+    model = _create_and_compile_model_exog(
+        series=series, lags=2, steps=3, recurrent_layer='RNN',
+        recurrent_layers_kwargs=None, dense_layers_kwargs=None, output_dense_layer_kwargs=None
+    )
 
     assert isinstance(model, keras.Model)
     assert model.output_shape == (None, 3, 1)

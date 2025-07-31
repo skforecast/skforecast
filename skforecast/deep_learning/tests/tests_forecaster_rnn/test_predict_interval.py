@@ -1,6 +1,8 @@
 # Unit test predict interval method with PyTorch backend
 # ==============================================================================
 import os
+import re
+import pytest
 import numpy as np
 import pandas as pd
 os.environ["KERAS_BACKEND"] = "torch"
@@ -55,6 +57,20 @@ model_exog = create_and_compile_model(
         )
 
 
+def test_predict_interval_ValueError_when_method_not_valid():
+    """
+    Test ValueError is raised when an invalid method is passed to predict_interval.
+    """
+    forecaster = ForecasterRnn(model, levels=["1", "2"], lags=3)
+    forecaster.fit(series, store_in_sample_residuals=True)
+
+    err_msg = re.escape(
+        "Invalid `method` 'not_conformal'. Only 'conformal' is available."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        forecaster.predict_interval(method="not_conformal")
+
+
 def test_predict_interval_output_size_with_steps_by_default():
     """
     Test output sizes for predicting steps defined by default with intervals
@@ -79,7 +95,7 @@ def test_predict_interval_output_size_3_steps_ahead():
     forecaster.fit(series, store_in_sample_residuals=True)
 
     # Call the predict method
-    int_preds = forecaster.predict_interval(steps=3)
+    int_preds = forecaster.predict_interval(steps=3, alpha=0.9)
 
     # Check the shape and values of the predictions
     assert int_preds.shape == (3 * len(["1", "2"]), 4)

@@ -198,16 +198,13 @@ def check_backtesting_input(
     forecasters_multi_dict = [
         "ForecasterRecursiveMultiSeries"
     ]
+    # NOTE: ForecasterSarimax has interval but not with bootstrapping or conformal
     forecasters_boot_conformal = [
         "ForecasterRecursive",
         "ForecasterDirect",
         "ForecasterRecursiveMultiSeries",
         "ForecasterDirectMultiVariate",
         "ForecasterEquivalentDate",
-    ]
-    # NOTE: ForecasterSarimax has interval but not with bootstrapping or conformal
-    forecasters_not_interval = [
-        "ForecasterRnn"
     ]
     forecasters_return_predictors = [
         "ForecasterRecursive",
@@ -357,11 +354,6 @@ def check_backtesting_input(
         raise TypeError("`suppress_warnings_fit` must be a boolean: `True`, `False`.")
 
     if interval is not None or alpha is not None:
-        if forecaster_name in forecasters_not_interval:
-            raise ValueError(
-                f"Interval predictions are not allowed for {forecaster_name}. "
-                f"Set `interval` and `alpha` to `None`."
-            )
         
         if forecaster_name in forecasters_boot_conformal:
 

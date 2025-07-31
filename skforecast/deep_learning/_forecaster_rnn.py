@@ -608,8 +608,8 @@ class ForecasterRnn(ForecasterBase):
         if not len(series_names_in_) == self.n_series_in:
             raise ValueError(
                 f"Number of series in `series` ({len(series_names_in_)}) "
-                f"does not match the number of series expected by the forecaster "
-                f"({self.n_series_in})."
+                f"does not match the number of series expected by the model "
+                f"architecture ({self.n_series_in})."
             )
 
         if not set(self.levels).issubset(set(series_names_in_)):
@@ -627,7 +627,7 @@ class ForecasterRnn(ForecasterBase):
                 f"lag, {self.max_lag}, if no more data is available.\n"
                 f"    Length `series`: {len(series)}.\n"
                 f"    Max step : {self.max_step}.\n"
-                f"    Lags window size: {self.max_lag}.\n"
+                f"    Lags window size: {self.max_lag}."
             )
         
         if exog is None and self.exog_in_:
@@ -706,7 +706,7 @@ class ForecasterRnn(ForecasterBase):
                 raise ValueError(
                     f"Number of columns in `exog` ({len(exog.columns)}) "
                     f"does not match the number of exogenous variables expected "
-                    f"by the regressor ({self.n_exog_in})."
+                    f"by the model architecture ({self.n_exog_in})."
                 )
             
             series_index_no_ws = series_index[self.window_size:]
@@ -732,6 +732,8 @@ class ForecasterRnn(ForecasterBase):
                     f"  `exog`   columns : {exog_names_in_}."
                 )
             
+            print(exog)
+            
             exog_n_dim_in = len(exog_names_in_)
             exog_dtypes_in_ = get_exog_dtypes(exog=exog)
             exog = transform_dataframe(
@@ -742,6 +744,10 @@ class ForecasterRnn(ForecasterBase):
             )
             exog_n_dim_out = len(exog.columns)
             exog_dtypes_out_ = get_exog_dtypes(exog=exog)
+
+            print(exog_n_dim_in)
+            print(exog_n_dim_out)
+            print(exog)
 
             if exog_n_dim_in != exog_n_dim_out:
                 raise ValueError(
@@ -1568,7 +1574,9 @@ class ForecasterRnn(ForecasterBase):
         interval: float | list[float] | tuple[float] = [5, 95],
         use_in_sample_residuals: bool = True,
         suppress_warnings: bool = False,
-        use_binned_residuals: Any = True
+        n_boot: Any = None,
+        use_binned_residuals: Any = None,
+        random_state: Any = None,
     ) -> pd.DataFrame:
         """
         Predict n steps ahead and estimate prediction intervals using conformal 
@@ -1621,7 +1629,11 @@ class ForecasterRnn(ForecasterBase):
             If `True`, skforecast warnings will be suppressed during the prediction 
             process. See skforecast.exceptions.warn_skforecast_categories for more
             information.
+        n_boot : Ignored
+            Not used, present here for API consistency by convention.
         use_binned_residuals : Ignored
+            Not used, present here for API consistency by convention.
+        random_state : Ignored
             Not used, present here for API consistency by convention.
 
         Returns

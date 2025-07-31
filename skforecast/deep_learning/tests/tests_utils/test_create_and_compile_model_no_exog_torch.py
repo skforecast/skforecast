@@ -183,6 +183,7 @@ def test__create_and_compile_model_no_exog_model_output_shape_single_series():
     """
     series = pd.DataFrame({"a": np.arange(10, dtype=float)})
     model = _create_and_compile_model_no_exog(series=series, lags=2, steps=3)
+
     assert isinstance(model, keras.Model)
     assert model.output_shape == (None, 3, 1)
     assert len(model.inputs) == 1
@@ -197,7 +198,11 @@ def test__create_and_compile_model_no_exog_model_output_shape_multi_series():
         "a": np.arange(10, dtype=float),
         "b": np.arange(10, 20, dtype=float),
     })
-    model = _create_and_compile_model_no_exog(series=series, lags=[1, 2], steps=2)
+    model = _create_and_compile_model_no_exog(
+        series=series, lags=[1, 2], steps=2, recurrent_layer='RNN',
+        recurrent_layers_kwargs=None, dense_layers_kwargs=None, output_dense_layer_kwargs=None
+    )
+
     assert isinstance(model, keras.Model)
     assert model.output_shape == (None, 2, 2)
     assert len(model.inputs) == 1
