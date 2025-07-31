@@ -7,7 +7,7 @@ from itertools import chain
 def main():
     """
     """
-    with open("./pyproject.toml", mode='rb') as fp:
+    with open("../pyproject.toml", mode='rb') as fp:
         pyproject = tomli.load(fp)
 
     dependencies_optional = [
