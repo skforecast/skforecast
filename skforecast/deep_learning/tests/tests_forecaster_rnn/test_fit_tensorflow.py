@@ -71,6 +71,7 @@ def test_fit_without_validation_data():
 
     # Assert that the forecaster is fitted
     assert forecaster.is_fitted is True
+    print("GITHUB_ACTIONS =", os.environ.get("GITHUB_ACTIONS"))
     if os.environ.get("GITHUB_ACTIONS") == "true":
         assert forecaster.keras_backend_ == "tensorflow"
 
