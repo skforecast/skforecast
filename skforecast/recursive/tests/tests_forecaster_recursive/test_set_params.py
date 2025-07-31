@@ -20,7 +20,7 @@ def test_set_params():
         'n_jobs': None,
         'positive': False
     }
-    if version.parse(sklearn.__version__) >= version.parse("1.6.0"):
+    if version.parse(sklearn.__version__) >= version.parse("1.7.0"):
         expected.update({'tol': 1e-06})
 
     results = forecaster.regressor.get_params()
