@@ -5,20 +5,20 @@
 
 version: 2
 updates:
-  - package-ecosystem: "pip" # Monitor Python dependencies
-    directory: "/" # Location of package manifests
-    schedule:
-      interval: "weekly"
-    # Additional configuration options
-    open-pull-requests-limit: 10
-    commit-message:
-      prefix: "dependabot"
-    labels:
-      - "dependencies"
-    reviewers:
-      - "skforecast/core-devs"
-    assignees:
-      - "skforecast/core-devs"
+  # - package-ecosystem: "pip" # Monitor Python dependencies
+  #   directory: "/" # Location of package manifests
+  #   schedule:
+  #     interval: "weekly"
+  #   # Additional configuration options
+  #   open-pull-requests-limit: 10
+  #   commit-message:
+  #     prefix: "dependabot"
+  #   labels:
+  #     - "dependencies"
+  #   reviewers:
+  #     - "skforecast/core-devs"
+  #   assignees:
+  #     - "skforecast/core-devs"
   
   - package-ecosystem: "github-actions" # Monitor GitHub Actions
     directory: "/" # Location of workflow files
