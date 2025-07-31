@@ -1,7 +1,7 @@
 mike==2.1.3
 mkdocs==1.6.1
 mkdocs-jupyter==0.25.1
-mkdocs-material==9.6.7
+mkdocs-material==9.6.16
 mkdocstrings==0.29.0
 mkdocstrings-python==1.16.5
 notebook==6.5.7
