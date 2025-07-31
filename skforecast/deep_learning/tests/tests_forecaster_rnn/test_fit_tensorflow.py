@@ -71,8 +71,7 @@ def test_fit_without_validation_data():
 
     # Assert that the forecaster is fitted
     assert forecaster.is_fitted is True
-    print("GITHUB_ACTIONS =", os.environ.get("GITHUB_ACTIONS"))
-    if os.environ.get("GITHUB_ACTIONS") == "true":
+    if os.getenv('GITHUB_ACTIONS') == 'true' or os.getenv('CI') == 'true' or 'GITHUB_WORKFLOW' in os.environ:
         assert forecaster.keras_backend_ == "tensorflow"
 
     assert forecaster.series_names_in_ == ["1", "2"]
@@ -118,7 +117,7 @@ def test_fit_with_validation_data():
 
     # Assert that the forecaster is fitted
     assert forecaster.is_fitted is True
-    if os.environ.get("GITHUB_ACTIONS") == "true":
+    if os.getenv('GITHUB_ACTIONS') == 'true' or os.getenv('CI') == 'true' or 'GITHUB_WORKFLOW' in os.environ:
         assert forecaster.keras_backend_ == "tensorflow"
 
     # # Assert that the history is not None
@@ -150,7 +149,7 @@ def test_fit_with_exog_and_validation_data():
     assert forecaster.is_fitted is False
     forecaster.fit(series, exog=exog)
     assert forecaster.is_fitted is True
-    if os.environ.get("GITHUB_ACTIONS") == "true":
+    if os.getenv('GITHUB_ACTIONS') == 'true' or os.getenv('CI') == 'true' or 'GITHUB_WORKFLOW' in os.environ:
         assert forecaster.keras_backend_ == "tensorflow"
     assert forecaster.history_ is not None
     assert forecaster.exog_names_in_ == ["exog1", "exog2"]

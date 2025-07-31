@@ -39,10 +39,6 @@ jobs:
     - name: Run tests with pytest
       shell: bash
       run: |
-        # Forzar PyTorch a CPU en macOS
-        if [[ "$RUNNER_OS" == "macOS" ]]; then
-          export PYTORCH_ENABLE_MPS_FALLBACK=1
-        fi
         pytest -vv
       
       # Uncomment the following lines if you want to skip tests for Python 3.13+
