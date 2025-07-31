@@ -69,10 +69,10 @@ def test_fit_without_validation_data():
     # Fit the forecaster
     forecaster.fit(series)
 
-    print(f"GITHUB_ACTIONS: {os.getenv('GITHUB_ACTIONS')}")
-    print(f"CI: {os.getenv('CI')}")
-    print(f"GITHUB_WORKFLOW in environ: {'GITHUB_WORKFLOW' in os.environ}")
-    print(f"GITHUB_WORKFLOW value: {os.getenv('GITHUB_WORKFLOW')}")
+    # print(f"GITHUB_ACTIONS: {os.getenv('GITHUB_ACTIONS')}")
+    # print(f"CI: {os.getenv('CI')}")
+    # print(f"GITHUB_WORKFLOW in environ: {'GITHUB_WORKFLOW' in os.environ}")
+    # print(f"GITHUB_WORKFLOW value: {os.getenv('GITHUB_WORKFLOW')}")
 
     # Assert that the forecaster is fitted
     assert forecaster.is_fitted is True
