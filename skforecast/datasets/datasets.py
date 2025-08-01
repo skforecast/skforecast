@@ -8,6 +8,7 @@
 
 import pandas as pd
 import textwrap
+from urllib.parse import urlparse
 
 
 def fetch_dataset(
@@ -675,7 +676,8 @@ def fetch_dataset(
     file_type = datasets[name]['file_type']
 
     if not isinstance(url, list):
-        if url.startswith('https://drive.google.com'):
+        parsed = urlparse(url)
+        if parsed.scheme == "https" and parsed.netloc == "drive.google.com":
             file_id = url.split('/')[-2]
             url = 'https://drive.google.com/uc?id=' + file_id
         if file_type == 'csv':
