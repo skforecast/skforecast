@@ -19,6 +19,16 @@ updates:
       - "skforecast/core-devs"
     assignees:
       - "skforecast/core-devs"
+    ignore:
+      - dependency-name: "mike"
+      - dependency-name: "mkdocs"
+      - dependency-name: "mkdocs-jupyter"
+      - dependency-name: "mkdocs-material"
+      - dependency-name: "mkdocstrings"
+      - dependency-name: "mkdocstrings-python"
+      - dependency-name: "notebook"
+      - dependency-name: "jupyter-contrib-nbextensions"
+      - dependency-name: "black"
   
   - package-ecosystem: "github-actions" # Monitor GitHub Actions
     directory: "/" # Location of workflow files
