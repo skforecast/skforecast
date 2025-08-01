@@ -50,7 +50,7 @@ jobs:
       shell: bash
       run: |
         if [[ "${{ matrix.platform }}" == macos* ]]; then
-          echo "Saltando tests de deep_learning en macOS por problemas con MPS"
+          echo "Skipping deep_learning tests on macOS due to MPS issues"
           pytest -vv -s --ignore=skforecast/deep_learning
         else
           pytest -vv -s  # Extra verbosity and show print statements
