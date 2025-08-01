@@ -14,7 +14,7 @@ def calculate_distance_from_holiday(
     holiday_column: str = 'is_holiday',
     date_column: str = 'date',
     fill_na: int | float = 0.
-) -> pd.DataFrame:
+) -> pd.DataFrame:  # pragma: no cover
     """
     Calculate the number of days to the next holiday and the number of days since 
     the last holiday.

@@ -8,6 +8,6 @@ coverage:
         threshold: 1%
     patch:
       default:
-        #Minimum coverage for all new code. If, for example
+        # Minimum coverage for all new code. If, for example
         target: auto
         target: 80%

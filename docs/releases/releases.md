@@ -45,7 +45,7 @@ The main changes in this release are:
 
 + Created module <code>[experimental]</code>, this module contains experimental features that are not yet fully tested or may change in future releases.
 
-+ Include function <code>[calculate_days_to_holiday]</code> in the <code>[experimental]</code> module. It calculates the number of days to the next holiday and the number of days since the last holiday in a DataFrame with a date column.
++ Include function <code>[calculate_distance_from_holiday]</code> in the <code>[experimental]</code> module. It calculates the number of days to the next holiday and the number of days since the last holiday in a DataFrame with a date column.
 
 + The <code>[ForecasterRNN]</code> and the function <code>[create_and_compile_model]</code> now support the inclusion of exogenous variables.
 
