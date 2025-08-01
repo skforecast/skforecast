@@ -24,7 +24,6 @@ def main():
     dependencies_optional = list(set(dependencies_optional))
     dependencies = pyproject['project']['dependencies']
     dependencies_all = dependencies + dependencies_optional
-    dependencies_all
 
     with open(requirements_path, mode='w') as fp:
         for dependency in dependencies_all:
