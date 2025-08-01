@@ -129,9 +129,9 @@ Using the [`ForecasterDirectMultiVariate`](../user_guides/dependent-multi-series
 
 ## Forecasters
 
-A **Forecaster** object in the skforecast library is a comprehensive container that provides essential **functionality and methods** for training a forecasting model and generating predictions for future points in time.
+A **Forecaster** object in the skforecast library is a comprehensive **container that provides essential functionality and methods** for training a forecasting model and generating predictions for future points in time.
 
-The **skforecast** library offers a variety of forecaster types, each tailored to specific requirements such as single or multiple time series, direct or recursive strategies, or custom predictors. Regardless of the specific forecaster type, all instances share the same API.
+The **skforecast** library offers a **variety of forecaster** types, each tailored to specific requirements such as single or multiple time series, direct or recursive strategies, or custom predictors. Regardless of the specific forecaster type, all instances share the same API.
 
 | Forecaster                   | Single series | Multiple series | Recursive strategy | Direct strategy | Probabilistic prediction | Time series differentiation | Exogenous features | Window features |
 |:-----------------------------|:-------------:|:---------------:|:------------------:|:---------------:|:------------------------:|:---------------------------:|:------------------:|:---------------:|
