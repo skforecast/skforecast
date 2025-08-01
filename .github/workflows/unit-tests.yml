@@ -35,7 +35,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install tomli
-        python tools/extract_dependences.py
+        python tools/extract_dependencies.py
         python -m pip install -r tools/requirements.txt
 
     - name: Show environment info
