@@ -116,13 +116,17 @@ def test_predict_interval_output_size_2_steps_ahead_specific_levels():
     assert int_preds.shape == (2 * 1, 4)
 
 
-def test_predict_interval_exog():
+def test_predict_interval_exog_and_out_sample_residuals():
     """
     Test case for predicting with exogenous variables
     """
     forecaster = ForecasterRnn(model_exog, levels=["1", "2", "3"], lags=10)
     forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
-    predictions = forecaster.predict_interval(steps=None, exog=exog_pred)
+    forecaster.out_sample_residuals_ = forecaster.in_sample_residuals_
+
+    predictions = forecaster.predict_interval(
+        steps=None, exog=exog_pred, use_in_sample_residuals=False
+    )
 
     assert predictions.shape == (24, 4)
 

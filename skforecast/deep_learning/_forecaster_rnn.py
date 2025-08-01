@@ -1778,6 +1778,7 @@ class ForecasterRnn(ForecasterBase):
         self.regressor.reset_states()
         self.regressor.compile(**params)
 
+    # TODO create testing
     def set_fit_kwargs(self, fit_kwargs: dict) -> None:
         """
         Set new values for the additional keyword arguments passed to the `fit`
@@ -1796,7 +1797,7 @@ class ForecasterRnn(ForecasterBase):
 
         self.fit_kwargs = check_select_fit_kwargs(self.regressor, fit_kwargs=fit_kwargs)
 
-    def set_lags(self, lags: Any) -> None:
+    def set_lags(self, lags: Any) -> None:  # pragma: no cover
         """
         Not used, present here for API consistency by convention.
 

@@ -216,11 +216,17 @@ def test__create_and_compile_model_exog_model_output_shape_multi_series_no_exog(
         "a": np.arange(10, dtype=float),
         "b": np.arange(10, 20, dtype=float),
     })
-    model = _create_and_compile_model_exog(series=series, lags=[1, 2], steps=2)
+    model = _create_and_compile_model_exog(
+        series=series, lags=[1, 2], steps=2, 
+        dense_layers_kwargs={'name': 'dense_layer'}, 
+        output_dense_layer_kwargs={'name': 'output_layer'}
+    )
 
     assert isinstance(model, keras.Model)
     assert model.output_shape == (None, 2, 2)
     assert len(model.inputs) == 1
+    assert model.get_layer('dense_layer').name == "dense_layer"
+    assert model.layers[-1].name == "output_layer"
 
 
 def test__create_and_compile_model_exog_model_output_shape_single_series_with_exog():
