@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block outdated %}
+This is documentation for an unstable development version.
+  {% if alternate_url %}
+    <a href="{{ alternate_url }}">
+      <strong>Switch to latest stable version.</strong>
+    </a>
+  {% else %}
+    <a href="{{ '../' ~ base_url }}">
+      <strong>Switch to latest stable version.</strong>
+    </a>
+  {% endif %}
+{% endblock %}
