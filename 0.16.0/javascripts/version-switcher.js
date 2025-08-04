@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
         banner.id = 'skf-version-banner';
         // Detect theme (Material)
         const isDark = document.documentElement.getAttribute("data-md-color-scheme") === "slate";
-        banner.innerHTML = `<span style="margin-right: 0.7em; font-size:1.3em; vertical-align:middle;">&#9888;&#65039;</span>${message}`;
+        banner.innerHTML = `<span style="margin-right: 0.7em; font-size:1.5em; vertical-align:middle;">&#9888;&#65039;</span>${message}`;
         banner.setAttribute('role', 'alert');
         banner.style.position = 'fixed';
         banner.style.top = '24px';
@@ -58,9 +58,9 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 showBanner(
                   "This page does not exist in the latest documentation version. Redirecting to the home page...", 
-                  4000
+                  4000 // banner duration
                 );
-                setTimeout(() => window.location.href = "/latest/", 4200);
+                setTimeout(() => window.location.href = "/latest/", 4200);  // Redirect after banner + 200ms
             }
         }).catch(() => {
             window.location.href = "/latest/";
