@@ -1,36 +1,31 @@
-document.addEventListener('DOMContentLoaded', function() {
+(function() {
     const link = document.getElementById('version-switch-link');
     if (!link) return;
 
-    // Usa el pathname base de la versión estable como referencia
-    const stableUrl = new URL(link.href, window.location.origin);
-    const stableVersion = stableUrl.pathname.split('/').filter(Boolean)[0] || 'latest';
+    const stableVersion = "latest";
+    const currentPath = window.location.pathname;
+    const pathParts = currentPath.split('/').filter(Boolean);
 
-    // Obtén el path actual (ej: "/0.16.0/user_guides/algo/")
-    const pathParts = window.location.pathname.split('/').filter(Boolean);
-
-    // Si el path tiene un segmento de versión tipo X.Y.Z
+    let candidateUrl = "/latest/";
     if (pathParts.length > 1 && /^\d+\.\d+\.\d+$/.test(pathParts[0])) {
         pathParts[0] = stableVersion;
-        var candidateUrl = '/' + pathParts.join('/') + '/';
-    } else {
-        var candidateUrl = stableUrl.pathname;
+        candidateUrl = '/' + pathParts.join('/') + '/';
     }
 
-    // Al hacer click, comprobamos si existe el destino
-    link.addEventListener('click', function(e) {
+    link.href = candidateUrl;
+
+    link.onclick = function(e) {
         e.preventDefault();
+
         fetch(candidateUrl, { method: 'HEAD' }).then(r => {
             if (r.ok) {
                 window.location.href = candidateUrl;
             } else {
-                window.location.href = stableUrl.pathname; // home de latest
+                alert("This page does not exist in the latest documentation version. You will be redirected to the homepage.");
+                window.location.href = "/latest/";
             }
         }).catch(() => {
-            window.location.href = stableUrl.pathname;
+            window.location.href = "/latest/";
         });
-    });
-
-    // Para que al pasar el ratón, el navegador muestre el link real
-    link.href = candidateUrl;
-});
+    };
+})();
