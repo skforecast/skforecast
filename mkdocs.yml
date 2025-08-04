@@ -1,6 +1,4 @@
 site_name: Skforecast Docs
-extra_css:
-  - stylesheets/extra.css
 repo_url: https://github.com/skforecast/skforecast
 site_url: https://skforecast.org
 remote_branch: docs_dev
@@ -127,6 +125,11 @@ nav:
     - About skforecast: more/about-skforecast.md
     - Consulting & Professional services: more/consulting.md
     - Funding: more/funding.md
+
+extra_css:
+  - stylesheets/extra.css
+extra_javascript:
+  - javascripts/version-switcher.js
 
 plugins:
   # - git-revision-date-localized: Incluir última fecha de modificación al final de las páginas
