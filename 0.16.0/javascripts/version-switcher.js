@@ -21,28 +21,46 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const banner = document.createElement('div');
         banner.id = 'skf-version-banner';
-        // Detect theme (Material)
-        const isDark = document.documentElement.getAttribute("data-md-color-scheme") === "slate";
-        banner.innerHTML = `<span style="margin-right: 0.7em; font-size:1.5em; vertical-align:middle;">&#9888;&#65039;</span>${message}`;
+
+        // SVG warning icon (centrado verticalmente y mayor tamaño)
+        const warningSvg = `
+            <svg style="vertical-align:middle; margin-right:1em; flex-shrink:0;" width="32" height="32" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="12" fill="#fff"/>
+                <path d="M12 7v6M12 17h.01" stroke="#F79939" stroke-width="2.2" stroke-linecap="round"/>
+            </svg>
+        `;
+
+        // Banner layout: icono y texto alineados
+        banner.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 1em;">
+                ${warningSvg}
+                <span style="font-size: 1.25em; font-weight: 600; line-height:1.3;">
+                    ${message}
+                </span>
+            </div>
+        `;
+
         banner.setAttribute('role', 'alert');
         banner.style.position = 'fixed';
-        banner.style.top = '24px';
+        banner.style.top = '32px';
         banner.style.left = '50%';
         banner.style.transform = 'translateX(-50%)';
         banner.style.background = "#f79939";
-        banner.style.color = isDark ? "#222" : "#001633";
-        banner.style.padding = '1em 2em';
-        banner.style.borderRadius = '10px';
-        banner.style.boxShadow = '0 2px 12px rgba(0,0,0,0.16)';
+        banner.style.color = "#001633";
+        banner.style.padding = '1.35em 2.2em';
+        banner.style.borderRadius = '14px';
+        banner.style.boxShadow = '0 2px 18px rgba(0,0,0,0.16)';
         banner.style.zIndex = 10000;
         banner.style.fontWeight = 'bold';
-        banner.style.fontSize = '1.05em';
         banner.style.fontFamily = 'inherit';
         banner.style.textAlign = 'center';
         banner.style.maxWidth = "95vw";
         banner.style.opacity = 0;
         banner.style.transition = 'opacity 0.4s';
+        banner.style.fontSize = "1.3em";
+
         document.body.appendChild(banner);
+
         setTimeout(() => banner.style.opacity = 1, 10); // Fade-in
         setTimeout(() => {
             banner.style.opacity = 0;
