@@ -1,27 +1,35 @@
-/**
- * Version Switcher: para docs con versiones tipo 0.16.0, 1.0.0, etc.
- * Reemplaza el primer segmento del path por la versión del enlace banner (ej. "latest")
- */
-
 document.addEventListener('DOMContentLoaded', function() {
     const link = document.getElementById('version-switch-link');
     if (!link) return;
 
-    // Detecta la versión estable a partir del href del enlace del banner
     const stableUrl = new URL(link.href);
     const stableVersion = stableUrl.pathname.split('/').filter(Boolean)[0] || 'latest';
 
-    // Path actual, ej: "/0.16.0/user_guides/..."
     const currentPath = window.location.pathname;
     const pathParts = currentPath.split('/').filter(Boolean);
 
-    // Si la ruta empieza por algo tipo "0.16.0", "1.0.0", etc.
+    let targetHref = stableUrl.href;
     if (pathParts.length > 1 && /^\d+\.\d+\.\d+$/.test(pathParts[0])) {
         pathParts[0] = stableVersion;
-        const newPath = '/' + pathParts.join('/') + '/';
-        link.href = stableUrl.origin + newPath;
-    } else {
-        // Si no detecta la versión, deja el link tal cual (al home de latest)
-        link.href = stableUrl.href;
+        targetHref = stableUrl.origin + '/' + pathParts.join('/') + '/';
     }
+
+    link.addEventListener('click', function(e) {
+        e.preventDefault(); // Evita la navegación directa
+        // Primero, prueba si existe la página en latest
+        fetch(targetHref, { method: 'HEAD' })
+          .then(response => {
+              if (response.ok) {
+                  window.location.href = targetHref;
+              } else {
+                  window.location.href = stableUrl.href; // Home de latest
+              }
+          })
+          .catch(() => {
+              window.location.href = stableUrl.href;
+          });
+    });
+
+    // Opcional: actualiza el href para mostrar la URL real al pasar el ratón
+    link.href = targetHref;
 });
