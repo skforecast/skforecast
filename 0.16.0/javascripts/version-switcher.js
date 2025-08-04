@@ -2,34 +2,35 @@ document.addEventListener('DOMContentLoaded', function() {
     const link = document.getElementById('version-switch-link');
     if (!link) return;
 
-    const stableUrl = new URL(link.href);
+    // Usa el pathname base de la versión estable como referencia
+    const stableUrl = new URL(link.href, window.location.origin);
     const stableVersion = stableUrl.pathname.split('/').filter(Boolean)[0] || 'latest';
 
-    const currentPath = window.location.pathname;
-    const pathParts = currentPath.split('/').filter(Boolean);
+    // Obtén el path actual (ej: "/0.16.0/user_guides/algo/")
+    const pathParts = window.location.pathname.split('/').filter(Boolean);
 
-    let targetHref = stableUrl.href;
+    // Si el path tiene un segmento de versión tipo X.Y.Z
     if (pathParts.length > 1 && /^\d+\.\d+\.\d+$/.test(pathParts[0])) {
         pathParts[0] = stableVersion;
-        targetHref = stableUrl.origin + '/' + pathParts.join('/') + '/';
+        var candidateUrl = '/' + pathParts.join('/') + '/';
+    } else {
+        var candidateUrl = stableUrl.pathname;
     }
 
+    // Al hacer click, comprobamos si existe el destino
     link.addEventListener('click', function(e) {
-        e.preventDefault(); // Evita la navegación directa
-        // Primero, prueba si existe la página en latest
-        fetch(targetHref, { method: 'HEAD' })
-          .then(response => {
-              if (response.ok) {
-                  window.location.href = targetHref;
-              } else {
-                  window.location.href = stableUrl.href; // Home de latest
-              }
-          })
-          .catch(() => {
-              window.location.href = stableUrl.href;
-          });
+        e.preventDefault();
+        fetch(candidateUrl, { method: 'HEAD' }).then(r => {
+            if (r.ok) {
+                window.location.href = candidateUrl;
+            } else {
+                window.location.href = stableUrl.pathname; // home de latest
+            }
+        }).catch(() => {
+            window.location.href = stableUrl.pathname;
+        });
     });
 
-    // Opcional: actualiza el href para mostrar la URL real al pasar el ratón
-    link.href = targetHref;
+    // Para que al pasar el ratón, el navegador muestre el link real
+    link.href = candidateUrl;
 });
