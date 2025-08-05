@@ -48,6 +48,8 @@ jobs:
 
     - name: Run tests with pytest
       shell: bash
+      env:
+        KERAS_BACKEND: torch
       run: |
         if [[ "${{ matrix.platform }}" == macos* ]]; then
           echo "Skipping deep_learning tests on macOS due to MPS issues"
