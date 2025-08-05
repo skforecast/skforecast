@@ -1,4 +1,3 @@
-
 # Unit test _create_and_compile_model_exog with torch backend
 # ==============================================================================
 import os

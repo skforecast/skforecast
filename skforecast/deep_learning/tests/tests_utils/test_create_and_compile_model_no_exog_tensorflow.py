@@ -1,4 +1,3 @@
-
 # Unit test _create_and_compile_model_no_exog
 # ==============================================================================
 import sys
