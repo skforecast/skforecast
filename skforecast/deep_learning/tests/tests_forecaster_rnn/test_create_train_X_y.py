@@ -144,11 +144,41 @@ def test_create_train_X_y_ValueError_when_exog_not_included_but_model_requires_e
     forecaster = ForecasterRnn(model, lags=3, levels="l1")
 
     err_msg = re.escape(
-        "The regressor architecture expects exogenous variables "
-        "during training. Provide `exog` argument."
+        "The regressor architecture expects exogenous variables during "
+        "training. Please provide the `exog` argument. If this is "
+        "unexpected, check your regressor architecture or the "
+        "initialization parameters of the forecaster."
     )
     with pytest.raises(ValueError, match=err_msg):
         forecaster._create_train_X_y(series=series)
+
+
+def test_create_train_X_y_ValueError_when_exog_included_but_model_no_exog():
+    """
+    Test ValueError is raised when `exog` is included but the model
+    does not require `exog` to be present.
+    """
+    series = pd.DataFrame(np.random.randn(100, 3), columns=['l1', 'l2', 'l3'])
+    exog = pd.DataFrame(np.random.randn(100, 2), columns=['exog1', 'exog2'])
+    model = create_and_compile_model(
+                series=series,
+                levels="l1",    
+                lags=3,           
+                steps=1,              
+                recurrent_layer="LSTM",
+                recurrent_units=100,
+                dense_units=[128, 64],
+            )
+    forecaster = ForecasterRnn(model, lags=3, levels="l1")
+
+    err_msg = re.escape(
+        "Exogenous variables (`exog`) were provided, but the model "
+        "architecture was not built to expect exogenous variables. Please "
+        "remove the `exog` argument or rebuild the model to include "
+        "exogenous inputs."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        forecaster._create_train_X_y(series=series, exog=exog)
 
 
 def test_create_train_X_y_ValueError_when_number_of_exog_columns_not_equal_to_model():

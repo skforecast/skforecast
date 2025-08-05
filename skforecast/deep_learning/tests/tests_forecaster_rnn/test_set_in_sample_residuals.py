@@ -32,6 +32,15 @@ exog = pd.DataFrame(
 
 model = create_and_compile_model(
     series=series,
+    lags=3,
+    steps=5,
+    levels=["1", "2", "3"],
+    recurrent_units=64,
+    dense_units=32,
+)
+
+model_exog = create_and_compile_model(
+    series=series,
     exog=exog,
     lags=3,
     steps=5,
@@ -64,7 +73,7 @@ def test_set_in_sample_residuals_TypeError_when_series_not_dataframe():
     forecaster = ForecasterRnn(
         model, levels=["1", "2", "3"], lags=3
     )
-    forecaster.fit(series=series, exog=exog)
+    forecaster.fit(series=series)
 
     wrong_series = np.arange(10)
     err_msg = re.escape(
@@ -85,7 +94,7 @@ def test_set_in_sample_residuals_IndexError_when_series_has_different_index_than
     forecaster = ForecasterRnn(
         model, levels=["1", "2", "3"], lags=3
     )
-    forecaster.fit(series=series, exog=exog)
+    forecaster.fit(series=series)
 
     series_diff_index = series.copy()
     series_diff_index.index = diff_index
@@ -140,6 +149,31 @@ def test_set_in_sample_residuals_store_same_residuals_as_fit():
     """
     forecaster = ForecasterRnn(
         model, levels=["1", "2", "3"], lags=3
+    )
+    forecaster.fit(series=series, store_in_sample_residuals=True)
+    scaler_id_after_fit = id(forecaster.transformer_series_["1"])
+    residuals_fit = forecaster.in_sample_residuals_
+
+    forecaster.in_sample_residuals_ = None  # Reset in-sample residuals
+    forecaster.set_in_sample_residuals(series=series)
+    scaler_id_after_set_in_sample_residuals = id(forecaster.transformer_series_["1"])
+    residuals_in_sample = forecaster.in_sample_residuals_
+
+    # Transformer
+    assert scaler_id_after_fit == scaler_id_after_set_in_sample_residuals
+
+    # Residuals
+    assert residuals_fit.keys() == residuals_in_sample.keys()
+    for level in residuals_fit.keys():
+        np.testing.assert_almost_equal(residuals_fit[level], residuals_in_sample[level])
+
+
+def test_set_in_sample_residuals_store_same_residuals_as_fit_exog():
+    """
+    Test that set_in_sample_residuals stores same residuals as fit with exogenous variables.
+    """
+    forecaster = ForecasterRnn(
+        model_exog, levels=["1", "2", "3"], lags=3
     )
     forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
     scaler_id_after_fit = id(forecaster.transformer_series_["1"])

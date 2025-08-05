@@ -8,6 +8,16 @@
 from __future__ import annotations
 from typing import Any
 from copy import deepcopy
+
+import sys
+import os
+
+# NOTE: Depending on the Python version, we set the KERAS_BACKEND environment variable
+# to 'torch' to avoid issues with TensorFlow in Python 3.13.
+# This is a workaround since TensorFlow is not supported in Python 3.13.
+if sys.version_info >= (3, 13):
+    os.environ["KERAS_BACKEND"] = "torch"
+
 import numpy as np
 import pandas as pd
 from ..utils import (
@@ -16,6 +26,9 @@ from ..utils import (
     check_optional_dependency
 )
 
+# NOTE: When using Python 3.13, we set the KERAS_BACKEND to 'torch' to avoid issues
+# with TensorFlow, which is not supported in Python 3.13.
+# This allows us to use Keras with the torch backend instead.
 try:
     import keras
     from keras.layers import (
@@ -32,9 +45,17 @@ try:
     from keras.optimizers import Adam
     from keras.losses import MeanSquaredError
     from keras.models import Model
-except Exception as e:
-    package_name = str(e).split(" ")[-1].replace("'", "")
-    check_optional_dependency(package_name=package_name)
+except ImportError as e:
+    if sys.version_info >= (3, 13):
+        raise ImportError(
+            "Python 3.13 is not supported by TensorFlow, which is required by Keras. "
+            "The KERAS_BACKEND environment variable has been set to 'torch'. "
+            "Make sure you have PyTorch installed to use Keras with the torch backend. "
+            "For installation instructions, visit https://pytorch.org/get-started/locally/"
+        )
+    else:
+        package_name = str(e).split(" ")[-1].replace("'", "")
+        check_optional_dependency(package_name=package_name)
 
 
 def create_and_compile_model(

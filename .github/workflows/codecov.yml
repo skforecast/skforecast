@@ -28,6 +28,8 @@ jobs:
           python -m pip install -r tools/requirements.txt
 
       - name: Run tests and collect coverage
+        env:
+          KERAS_BACKEND: torch
         run: pytest --cov --junitxml=junit.xml -o junit_family=legacy
 
       - name: Upload coverage to Codecov

@@ -542,6 +542,42 @@ def test_create_train_X_y_output_when_MissingExogWarning_exog_not_for_any_level(
     assert results[10] == expected[10]
 
 
+def test_create_train_X_y_ValueError_when_transformer_exog_modifies_exog_index():
+    """
+    Test ValueError is raised when the transformer_exog modifies the index of exog
+    and the index of series is not equal to the index of exog after transformation.
+    """
+
+    series = pd.DataFrame({
+        'l1': pd.Series(np.arange(10)),
+        'l2': pd.Series(np.arange(10))
+    })
+    custom_exog = pd.Series(np.arange(10), name='exog1')
+
+    class CustomTransformerExog:  # pragma: no cover
+        def fit(self, X, y=None):
+            return self
+        
+        def transform(self, X):
+            # This transformer modifies the index of the exog
+            X.index = pd.date_range(start='2000-01-01', periods=len(X), freq='D')
+            return X
+        
+        def fit_transform(self, X, y=None):
+            return self.transform(X)
+        
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=3, transformer_exog=CustomTransformerExog()
+    )
+
+    err_msg = re.escape(
+        "Different index for `series` and `exog` after transformation. "
+        "They must be equal to ensure the correct alignment of values."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        forecaster._create_train_X_y(series=series, exog=custom_exog)
+
+
 @pytest.mark.parametrize("exog_values, dtype", 
                          [([True]    , bool), 
                           (['string'], str)], 

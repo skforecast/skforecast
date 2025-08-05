@@ -22,7 +22,6 @@ from sklearn.base import clone
 from sklearn.preprocessing import MinMaxScaler
 
 import skforecast
-
 from ..base import ForecasterBase
 from ..exceptions import DataTransformationWarning
 from ..utils import (
@@ -632,8 +631,17 @@ class ForecasterRnn(ForecasterBase):
         
         if exog is None and self.exog_in_:
             raise ValueError(
-                "The regressor architecture expects exogenous variables "
-                "during training. Provide `exog` argument."
+                "The regressor architecture expects exogenous variables during "
+                "training. Please provide the `exog` argument. If this is "
+                "unexpected, check your regressor architecture or the "
+                "initialization parameters of the forecaster."
+            )
+        if exog is not None and not self.exog_in_:
+            raise ValueError(
+                "Exogenous variables (`exog`) were provided, but the model "
+                "architecture was not built to expect exogenous variables. Please "
+                "remove the `exog` argument or rebuild the model to include "
+                "exogenous inputs."
             )
 
         fit_transformer = False
@@ -732,8 +740,6 @@ class ForecasterRnn(ForecasterBase):
                     f"  `exog`   columns : {exog_names_in_}."
                 )
             
-            print(exog)
-            
             exog_n_dim_in = len(exog_names_in_)
             exog_dtypes_in_ = get_exog_dtypes(exog=exog)
             exog = transform_dataframe(
@@ -744,10 +750,6 @@ class ForecasterRnn(ForecasterBase):
             )
             exog_n_dim_out = len(exog.columns)
             exog_dtypes_out_ = get_exog_dtypes(exog=exog)
-
-            print(exog_n_dim_in)
-            print(exog_n_dim_out)
-            print(exog)
 
             if exog_n_dim_in != exog_n_dim_out:
                 raise ValueError(
@@ -1778,6 +1780,7 @@ class ForecasterRnn(ForecasterBase):
         self.regressor.reset_states()
         self.regressor.compile(**params)
 
+    # TODO create testing
     def set_fit_kwargs(self, fit_kwargs: dict) -> None:
         """
         Set new values for the additional keyword arguments passed to the `fit`
@@ -1796,7 +1799,7 @@ class ForecasterRnn(ForecasterBase):
 
         self.fit_kwargs = check_select_fit_kwargs(self.regressor, fit_kwargs=fit_kwargs)
 
-    def set_lags(self, lags: Any) -> None:
+    def set_lags(self, lags: Any) -> None:  # pragma: no cover
         """
         Not used, present here for API consistency by convention.
 

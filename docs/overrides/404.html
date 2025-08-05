@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="md-typeset" style="max-width: 700px; margin: 3rem auto; text-align: center;">
+    <h1 style="font-size: 3rem; margin-bottom: 1rem;">Page Not Found (404)</h1>
+    <p style="font-size: 1.25rem; margin-bottom: 2rem;">
+        Sorry, the page you are looking for does not exist or has been removed in this version of the documentation.
+    </p>
+
+    <p style="font-size: 1rem; margin-bottom: 2rem;">
+        You can:
+    </p>
+
+    <ul style="list-style-type: none; padding-left: 0; font-size: 1.1rem;">
+        <li style="margin-bottom: 1rem;">
+            🔍 Use the <strong>search</strong> to find what you need.
+        </li>
+        <li style="margin-bottom: 1rem;">
+            🏠 Return to the <a href="{{ base_url }}"
+                style="color: var(--md-typeset-a-color); text-decoration: underline;">main page</a> of the
+            documentation.
+        </li>
+        <li style="margin-bottom: 1rem;">
+            📖 Browse the <a href="{{ base_url }}/user_guides/table-of-contents"
+                style="color: var(--md-typeset-a-color); text-decoration: underline;">User Guides</a> for important
+            topics.
+        </li>
+    </ul>
+
+    <p style="margin-top: 3rem; font-style: italic; color: var(--md-secondary-fg-color); font-size: 0.9rem;">
+        If you believe this is an error, please <a href="https://github.com/skforecast/skforecast/issues"
+            target="_blank" rel="noopener noreferrer"
+            style="color: var(--md-typeset-a-color); text-decoration: underline;">open an issue on GitHub</a>.
+    </p>
+</div>
+{% endblock %}
