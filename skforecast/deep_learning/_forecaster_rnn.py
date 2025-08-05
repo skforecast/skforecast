@@ -732,8 +732,6 @@ class ForecasterRnn(ForecasterBase):
                     f"  `exog`   columns : {exog_names_in_}."
                 )
             
-            print(exog)
-            
             exog_n_dim_in = len(exog_names_in_)
             exog_dtypes_in_ = get_exog_dtypes(exog=exog)
             exog = transform_dataframe(
@@ -744,10 +742,6 @@ class ForecasterRnn(ForecasterBase):
             )
             exog_n_dim_out = len(exog.columns)
             exog_dtypes_out_ = get_exog_dtypes(exog=exog)
-
-            print(exog_n_dim_in)
-            print(exog_n_dim_out)
-            print(exog)
 
             if exog_n_dim_in != exog_n_dim_out:
                 raise ValueError(
