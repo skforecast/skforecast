@@ -22,7 +22,6 @@ from sklearn.base import clone
 from sklearn.preprocessing import MinMaxScaler
 
 import skforecast
-
 from ..base import ForecasterBase
 from ..exceptions import DataTransformationWarning
 from ..utils import (
@@ -632,8 +631,17 @@ class ForecasterRnn(ForecasterBase):
         
         if exog is None and self.exog_in_:
             raise ValueError(
-                "The regressor architecture expects exogenous variables "
-                "during training. Provide `exog` argument."
+                "The regressor architecture expects exogenous variables during "
+                "training. Please provide the `exog` argument. If this is "
+                "unexpected, check your regressor architecture or the "
+                "initialization parameters of the forecaster."
+            )
+        if exog is not None and not self.exog_in_:
+            raise ValueError(
+                "Exogenous variables (`exog`) were provided, but the model "
+                "architecture was not built to expect exogenous variables. Please "
+                "remove the `exog` argument or rebuild the model to include "
+                "exogenous inputs."
             )
 
         fit_transformer = False

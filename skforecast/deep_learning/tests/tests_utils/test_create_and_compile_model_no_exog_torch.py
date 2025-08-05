@@ -10,7 +10,7 @@ import pandas as pd
 import keras
 from keras.optimizers import Adam
 from keras.losses import MeanSquaredError
-from skforecast.deep_learning.utils import create_and_compile_model
+from skforecast.deep_learning import create_and_compile_model
 from skforecast.deep_learning.utils import _create_and_compile_model_no_exog
 
 

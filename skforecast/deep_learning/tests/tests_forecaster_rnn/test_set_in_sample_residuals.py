@@ -73,7 +73,7 @@ def test_set_in_sample_residuals_TypeError_when_series_not_dataframe():
     forecaster = ForecasterRnn(
         model, levels=["1", "2", "3"], lags=3
     )
-    forecaster.fit(series=series, exog=exog)
+    forecaster.fit(series=series)
 
     wrong_series = np.arange(10)
     err_msg = re.escape(
@@ -94,7 +94,7 @@ def test_set_in_sample_residuals_IndexError_when_series_has_different_index_than
     forecaster = ForecasterRnn(
         model, levels=["1", "2", "3"], lags=3
     )
-    forecaster.fit(series=series, exog=exog)
+    forecaster.fit(series=series)
 
     series_diff_index = series.copy()
     series_diff_index.index = diff_index
