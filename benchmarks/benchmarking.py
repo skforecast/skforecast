@@ -188,6 +188,8 @@ def plot_benchmark_results(df, function_name, add_median=True, add_mean=True):
                         f"Processor: {row['processor']}<br>"
                         f"CPU count: {row['cpu_count']}<br>"
                         f"Memory (GB): {row['memory_gb']:.2f}<br>"
+                        f"Run time avg: {row['run_time_avg']:.4f} seconds<br>"
+                        f"Run time std dev: {row['run_time_std_dev']:.4f} seconds"
                     ), axis=1),
                     hovertemplate='%{text}<extra></extra>',
                     showlegend=True
