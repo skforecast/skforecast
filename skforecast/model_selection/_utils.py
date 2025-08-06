@@ -516,7 +516,6 @@ def check_one_step_ahead_input(
         data_name = 'series'
         data_length = len(series)
     
-    # TODO: Review checks for long-format and redundant
     elif forecaster_name in forecasters_multi_dict:
         
         # NOTE: Checks are not need as they are done in the function 
@@ -1094,10 +1093,12 @@ def _calculate_metrics_backtesting_multiseries(
 
     # TODO: review list of metric that do not need y_train
     metrics_no_y_train = [
-        "mean_absolute_error",
         "mean_squared_error",
-        "median_absolute_error",
+        "mean_absolute_error",
         "mean_absolute_percentage_error",
+        "mean_squared_log_error",
+        "median_absolute_error",
+        "symmetric_mean_absolute_percentage_error"
     ]
 
     train_indexes = []

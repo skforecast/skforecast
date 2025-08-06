@@ -1242,7 +1242,6 @@ def check_residuals_input(
     
     """
 
-    # TODO: Review when Rnn as MultiSeries
     forecasters_multiseries = [
         'ForecasterRecursiveMultiSeries',
         'ForecasterDirectMultiVariate',
