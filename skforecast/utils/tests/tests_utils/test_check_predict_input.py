@@ -42,7 +42,7 @@ def test_check_predict_input_NotFittedError_when_fitted_is_False():
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = None,
             series_names_in_ = None
         )
@@ -72,7 +72,7 @@ def test_check_predict_input_ValueError_when_steps_int_lower_than_1():
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = None,
             series_names_in_ = None
         )
@@ -104,24 +104,24 @@ def test_check_predict_input_ValueError_when_steps_list_lower_than_1():
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = None,
             series_names_in_ = None
         )
 
 
-def test_check_predict_input_ValueError_when_last_step_greater_than_max_steps():
+def test_check_predict_input_ValueError_when_last_step_greater_than_max_step():
     """
-    Test ValueError is raised when max(steps) > max_steps. (`ForecasterDirect` 
+    Test ValueError is raised when max(steps) > max_step. (`ForecasterDirect` 
     and `ForecasterDirectMultiVariate`).
     """
     steps = list(np.arange(20) + 1)
-    max_steps = 10
+    max_step = 10
 
     err_msg = re.escape(
         f"The maximum value of `steps` must be less than or equal to "
         f"the value of steps defined when initializing the forecaster. "
-        f"Got {max(steps)}, but the maximum is {max_steps}."
+        f"Got {max(steps)}, but the maximum is {max_step}."
     )
     with pytest.raises(ValueError, match = err_msg):
         check_predict_input(
@@ -138,7 +138,7 @@ def test_check_predict_input_ValueError_when_last_step_greater_than_max_steps():
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
-            max_steps        = max_steps,
+            max_step         = max_step,
             levels           = None,
             series_names_in_ = None
         )
@@ -168,7 +168,7 @@ def test_check_predict_input_TypeError_when_ForecasterRecursiveMultiSeries_and_l
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = levels,
             series_names_in_ = ['1', '2']
         )
@@ -207,7 +207,7 @@ def test_check_predict_input_UnknownLevelWarning_when_ForecasterRecursiveMultiSe
             exog_names_in_    = None,
             interval          = [2.5, 97.5],
             alpha             = None,
-            max_steps         = None,
+            max_step          = None,
             levels            = levels,
             series_names_in_  = series_names_in_,
             levels_forecaster = None,
@@ -250,7 +250,7 @@ def test_check_predict_input_UnknownLevelWarning_when_ForecasterRecursiveMultiSe
             exog_names_in_    = None,
             interval          = None,
             alpha             = None,
-            max_steps         = None,
+            max_step          = None,
             levels            = levels,
             series_names_in_  = series_names_in_,
             levels_forecaster = None,
@@ -286,7 +286,7 @@ def test_check_predict_input_ValueError_when_ForecasterRnn_and_level_not_in_leve
             exog_names_in_    = None,
             interval          = None,
             alpha             = None,
-            max_steps         = None,
+            max_step          = None,
             levels            = levels,
             series_names_in_  = None,
             levels_forecaster = levels_forecaster,
@@ -315,7 +315,7 @@ def test_check_predict_input_ValueError_when_exog_is_none_and_exog_in_is_true():
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = None,
             series_names_in_ = None
         )
@@ -343,7 +343,7 @@ def test_check_predict_input_ValueError_when_exog_is_not_none_and_exog_in_is_fal
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = None,
             series_names_in_ = None
         )
@@ -372,7 +372,7 @@ def test_check_predict_input_ValueError_when_last_window_not_stored_during_train
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = None,
             series_names_in_ = None
         )
@@ -406,7 +406,7 @@ def test_check_predict_input_TypeError_when_last_window_is_not_pandas_DataFrame(
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = '1',
             series_names_in_ = ['1', '2']
         )
@@ -448,7 +448,7 @@ def test_check_predict_input_ValueError_when_levels_not_in_last_window_Forecaste
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = levels,
             series_names_in_ = ['1', '2']
         )
@@ -483,7 +483,7 @@ def test_check_predict_input_ValueError_when_series_names_in__not_last_window_Fo
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = None,
             series_names_in_ = series_names_in_
         )
@@ -511,7 +511,7 @@ def test_check_predict_input_TypeError_when_last_window_is_not_pandas_series():
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = None,
             series_names_in_ = None
         )
@@ -541,7 +541,7 @@ def test_check_predict_input_ValueError_when_length_last_window_is_lower_than_wi
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = None,
             series_names_in_ = None
         )
@@ -569,7 +569,7 @@ def test_check_predict_input_MissingValuesWarning_when_last_window_has_missing_v
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = None,
             series_names_in_ = None
         )
@@ -603,7 +603,7 @@ def test_check_predict_input_TypeError_when_last_window_index_is_not_of_index_ty
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = None,
             series_names_in_ = None
         )
@@ -637,7 +637,7 @@ def test_check_predict_input_TypeError_when_last_window_index_frequency_is_not_i
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = None,
             series_names_in_ = None
         )
@@ -664,7 +664,7 @@ def test_check_predict_input_TypeError_when_exog_is_not_pandas_series_or_datafra
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = ['l1'],
             series_names_in_ = ['l1', 'l2']
         )
@@ -691,7 +691,7 @@ def test_check_predict_input_TypeError_when_exog_is_not_pandas_series_or_datafra
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = ['l1'],
             series_names_in_ = ['l1', 'l2']
         )
@@ -718,7 +718,7 @@ def test_check_predict_input_TypeError_when_exog_dict_and_not_pandas_series_or_D
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = ['l1'],
             series_names_in_ = ['l1', 'l2']
         )
@@ -747,7 +747,7 @@ def test_check_predict_input_MissingExogWarning_when_exog_dict_and_no_key_for_so
             exog_names_in_   = ['exog_1'],
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = ['l1', 'l2'],
             series_names_in_ = ['l1', 'l2']
         )
@@ -775,7 +775,7 @@ def test_check_predict_input_MissingValuesWarning_when_exog_has_missing_values()
             exog_names_in_   = ['exog1'],
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = None,
             series_names_in_ = None
         )
@@ -808,7 +808,7 @@ def test_check_predict_input_MissingValuesWarning_when_len_exog_is_less_than_ste
             exog_names_in_   = ['exog1'],
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = ['l1'],
             series_names_in_ = ['l1', 'l2']
         )
@@ -839,7 +839,7 @@ def test_check_predict_input_ValueError_when_len_exog_is_less_than_steps(steps):
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = None,
             series_names_in_ = None
         )
@@ -872,7 +872,7 @@ def test_check_predict_input_MissingExogWarning_when_exog_is_DataFrame_without_c
             exog_names_in_   = exog_names_in_,
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = ['l1'],
             series_names_in_ = ['l1', 'l2']
         )
@@ -904,7 +904,7 @@ def test_check_predict_input_ValueError_when_exog_is_DataFrame_without_columns_i
             exog_names_in_   = exog_names_in_,
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = None,
             series_names_in_ = None
         )
@@ -935,7 +935,7 @@ def test_check_predict_input_ValueError_when_exog_is_Series_with_no_name():
             exog_names_in_   = exog_names_in_,
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = None,
             series_names_in_ = None
         )
@@ -975,7 +975,7 @@ def test_check_predict_input_IgnoredArgumentWarning_when_exog_is_Series_with_nam
             exog_names_in_   = exog_names_in_,
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = ['l1'],
             series_names_in_ = ['l1', 'l2']
         )
@@ -1008,7 +1008,7 @@ def test_check_predict_input_ValueError_when_exog_is_Series_with_name_not_in_exo
             exog_names_in_   = exog_names_in_,
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = None,
             series_names_in_ = None
         )
@@ -1046,7 +1046,7 @@ def test_check_predict_input_TypeError_when_exog_index_is_not_of_index_type_mult
             exog_names_in_   = ['exog1'],
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = ['l1'],
             series_names_in_ = ['l1', 'l2']
         )
@@ -1081,7 +1081,7 @@ def test_check_predict_input_TypeError_when_exog_index_is_not_of_index_type():
             exog_names_in_   = ['exog1'],
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = None,
             series_names_in_ = None
         )
@@ -1120,7 +1120,7 @@ def test_check_predict_input_ValueError_when_exog_index_does_not_follow_last_win
             exog_names_in_   = ['exog1'],
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = None,
             series_names_in_ = None
         )
@@ -1159,7 +1159,7 @@ def test_check_predict_input_ValueError_when_exog_index_does_not_follow_last_win
             exog_names_in_   = ['exog1'],
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = None,
             series_names_in_ = None
         )
@@ -1189,7 +1189,7 @@ def test_check_predict_input_ValueError_when_ForecasterSarimax_last_window_exog_
             exog_names_in_   = None,
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = None,
             series_names_in_ = None
         )
@@ -1218,7 +1218,7 @@ def test_check_predict_input_TypeError_when_ForecasterSarimax_last_window_exog_i
             exog_names_in_   = ['exog1'],
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = None,
             series_names_in_ = None
         )
@@ -1248,7 +1248,7 @@ def test_check_predict_input_ValueError_when_ForecasterSarimax_length_last_windo
             exog_names_in_   = ['exog1'],
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = None,
             series_names_in_ = None
         )
@@ -1276,7 +1276,7 @@ def test_check_predict_input_MissingValuesWarning_when_ForecasterSarimax_last_wi
             exog_names_in_   = ['exog1'],
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = None,
             series_names_in_ = None
         )
@@ -1310,7 +1310,7 @@ def test_check_predict_input_TypeError_when_ForecasterSarimax_last_window_exog_i
             exog_names_in_   = ['exog1'],
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = None,
             series_names_in_ = None
         )
@@ -1345,7 +1345,7 @@ def test_check_predict_input_TypeError_when_ForecasterSarimax_last_window_exog_i
             exog_names_in_   = ['exog1'],
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = None,
             series_names_in_ = None
         )
@@ -1382,7 +1382,7 @@ def test_check_predict_input_ValueError_when_last_window_exog_is_DataFrame_witho
             exog_names_in_   = exog_names_in_,
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = None,
             series_names_in_ = None
         )
@@ -1419,7 +1419,7 @@ def test_check_predict_input_ValueError_when_last_window_exog_is_Series_with_no_
             exog_names_in_   = exog_names_in_,
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = None,
             series_names_in_ = None
         )
@@ -1455,7 +1455,7 @@ def test_check_predict_input_ValueError_when_last_window_exog_is_Series_without_
             exog_names_in_   = exog_names_in_,
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            max_step         = None,
             levels           = None,
             series_names_in_ = None
         )

@@ -4,6 +4,7 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 
 <span style="font-size: 1.3em;">Single series Forecasters</span>
 
+- [Input data](../user_guides/input-data.html)
 - [Recursive multi-step forecasting](../user_guides/autoregresive-forecaster.html)
 - [Direct multi-step forecasting](../user_guides/direct-multi-step-forecasting.html)
 - [ARIMA and SARIMAX forecasting](../user_guides/forecasting-sarimax-arima.html)

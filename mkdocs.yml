@@ -147,11 +147,7 @@ plugins:
             docstring_section_style: table
             docstring_options:
               ignore_init_summary: true
-            # filters: ["!__"] # exclude all members starting with __
-            filters:
-              - "!^attribute$"
-              - "!^property$"
-              - "!^__"
+            filters: ["!__"] # exclude all members starting with __
             members_order: source
             merge_init_into_class: true
             separate_signature: true

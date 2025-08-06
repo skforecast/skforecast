@@ -142,7 +142,7 @@ def test_predict_interval_conformal_output_when_regressor_is_LinearRegression():
                    index = pd.RangeIndex(start=50, stop=53, step=1),
                    columns = ['pred', 'lower_bound', 'upper_bound']
                )
-    expected.insert(0, 'level', np.tile(['l1'], forecaster.steps))
+    expected.insert(0, 'level', np.tile(['l1'], forecaster.max_step))
     
     pd.testing.assert_frame_equal(results, expected)
 
@@ -170,7 +170,7 @@ def test_predict_interval_conformal_output():
                    index = pd.RangeIndex(start=50, stop=53, step=1),
                    columns = ['pred', 'lower_bound', 'upper_bound']
                )
-    expected.insert(0, 'level', np.tile(['l1'], forecaster.steps))
+    expected.insert(0, 'level', np.tile(['l1'], forecaster.max_step))
     
     pd.testing.assert_frame_equal(results, expected)
 
@@ -201,7 +201,7 @@ def test_predict_interval_conformal_output_when_out_sample_residuals():
                    index = pd.RangeIndex(start=50, stop=53, step=1),
                    columns = ['pred', 'lower_bound', 'upper_bound']
                )
-    expected.insert(0, 'level', np.tile(['l1'], forecaster.steps))
+    expected.insert(0, 'level', np.tile(['l1'], forecaster.max_step))
     
     pd.testing.assert_frame_equal(results, expected)
 
@@ -230,7 +230,7 @@ def test_predict_interval_conformal_output_binned_residuals():
                    index = pd.RangeIndex(start=50, stop=53, step=1),
                    columns = ['pred', 'lower_bound', 'upper_bound']
                )
-    expected.insert(0, 'level', np.tile(['l1'], forecaster.steps))
+    expected.insert(0, 'level', np.tile(['l1'], forecaster.max_step))
     
     pd.testing.assert_frame_equal(results, expected)
 
@@ -261,7 +261,7 @@ def test_predict_interval_conformal_output_binned__out_sample_residuals():
                    index = pd.RangeIndex(start=50, stop=53, step=1),
                    columns = ['pred', 'lower_bound', 'upper_bound']
                )
-    expected.insert(0, 'level', np.tile(['l1'], forecaster.steps))
+    expected.insert(0, 'level', np.tile(['l1'], forecaster.max_step))
     
     pd.testing.assert_frame_equal(results, expected)
 
@@ -291,6 +291,6 @@ def test_predict_interval_conformal_output_with_differentiation():
                    index = pd.RangeIndex(start=50, stop=53, step=1),
                    columns = ['pred', 'lower_bound', 'upper_bound']
                )
-    expected.insert(0, 'level', np.tile(['l1'], forecaster.steps))
+    expected.insert(0, 'level', np.tile(['l1'], forecaster.max_step))
     
     pd.testing.assert_frame_equal(results, expected)

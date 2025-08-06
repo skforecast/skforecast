@@ -1325,7 +1325,8 @@ def _evaluate_grid_hyperparameters_multiseries(
                           exog_dict         = exog_dict
                       )
     else:
-        # TODO: This only applies to wide DataFrames. Delete when input is always dict.
+        # TODO: This only applies to wide DataFrames. Delete when input is always dict
+        # in all forecasters.
         if return_best and exog is not None and (len(exog) != len(series)):
             raise ValueError(
                 f"`exog` must have same number of samples as `series`. "
@@ -1813,7 +1814,8 @@ def _bayesian_search_optuna_multiseries(
                           exog_dict         = exog_dict
                       )
     else:
-        # TODO: This only applies to wide DataFrames. Delete when input is always dict.
+        # TODO: This only applies to wide DataFrames. Delete when input is always dict
+        # in all forecasters.
         if return_best and exog is not None and (len(exog) != len(series)):
             raise ValueError(
                 f"`exog` must have same number of samples as `series`. "

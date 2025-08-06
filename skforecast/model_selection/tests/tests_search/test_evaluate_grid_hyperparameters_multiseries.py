@@ -1366,7 +1366,7 @@ def test_evaluate_grid_hyperparameters_multiseries_when_return_best_ForecasterDi
     expected_series_names_in_ = ['l1', 'l2']
     
     assert (expected_lags == forecaster.lags).all()
-    for i in range(1, forecaster.steps + 1):
+    for i in forecaster.steps:
         assert expected_alpha == forecaster.regressors_[i].alpha
     assert expected_series_names_in_ == forecaster.series_names_in_
 

@@ -66,10 +66,10 @@ def test_NotFittedError_is_raised_when_forecaster_is_not_fitted():
 
 
 @pytest.mark.parametrize("step", [0, 2], ids=lambda step: f'step: {step}')
-def test_ValueError_is_raised_when_step_is_greater_than_forecaster_steps(step):
+def test_ValueError_is_raised_when_step_is_greater_than_forecaster_max_step(step):
     """
     Test ValueError is raised when calling get_feature_importances() and step is 
-    less than 1 or greater than the forecaster.steps.
+    less than 1 or greater than the forecaster.max_step.
     """
     forecaster = ForecasterDirectMultiVariate(
                      regressor = RandomForestRegressor(random_state=123),
@@ -81,7 +81,7 @@ def test_ValueError_is_raised_when_step_is_greater_than_forecaster_steps(step):
 
     err_msg = re.escape(
                 (f"The step must have a value from 1 to the maximum number of steps "
-                 f"({forecaster.steps}). Got {step}.")
+                 f"({forecaster.max_step}). Got {step}.")
             )
     with pytest.raises(ValueError, match = err_msg):         
         forecaster.get_feature_importances(step=step)

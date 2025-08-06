@@ -12,7 +12,6 @@ import warnings
 from copy import deepcopy
 from typing import Any
 
-import keras
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
@@ -44,11 +43,26 @@ from ..utils import (
     transform_dataframe,
     transform_numpy,
     transform_series,
+    check_optional_dependency
 )
 
+try:
+    import keras
+except ImportError as e:
+    import sys
+    if sys.version_info >= (3, 13):
+        raise ImportError(
+            "Python 3.13 is not supported by TensorFlow, which is the default "
+            "backend used by Keras. To use Keras with Python 3.13, the KERAS_BACKEND "
+            "environment variable needs to be set to 'torch', `os.environ['KERAS_BACKEND'] = 'torch'`."
+            "Make sure you have PyTorch installed to use Keras with the torch backend. "
+            "For installation instructions, visit https://pytorch.org/get-started/locally/"
+        )
+    else:
+        package_name = str(e).split(" ")[-1].replace("'", "")
+        check_optional_dependency(package_name=package_name)
 
-# TODO. Test Interval
-# TODO. Test Grid search
+
 # TODO. Include window features
 # TODO. Include differentiation
 # TODO. Include binner residuals
@@ -1138,14 +1152,13 @@ class ForecasterRnn(ForecasterBase):
                 exog=exog,
                 exog_names_in_=self.exog_names_in_,
                 interval=None,
-                max_steps=self.max_step,
+                max_step=self.max_step,
                 levels=levels,
                 levels_forecaster=self.levels,
                 series_names_in_=self.series_names_in_,
             )
 
             if predict_probabilistic:
-                # TODO: Check for this forecaster
                 check_residuals_input(
                     forecaster_name              = type(self).__name__,
                     use_in_sample_residuals      = use_in_sample_residuals,
@@ -1780,7 +1793,6 @@ class ForecasterRnn(ForecasterBase):
         self.regressor.reset_states()
         self.regressor.compile(**params)
 
-    # TODO create testing
     def set_fit_kwargs(self, fit_kwargs: dict) -> None:
         """
         Set new values for the additional keyword arguments passed to the `fit`
