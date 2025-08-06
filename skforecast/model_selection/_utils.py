@@ -424,15 +424,12 @@ def check_backtesting_input(
             f"    Steps                   : {steps}"
         )
 
-    # TODO: Review when unify steps and max_step
-    if forecaster_name in forecasters_direct:
-        max_step = forecaster.steps if forecaster_name != "ForecasterRnn" else forecaster.max_step
-        if max_step < steps + gap:
-            raise ValueError(
-                f"When using a {forecaster_name}, the combination of steps "
-                f"+ gap ({steps + gap}) cannot be greater than the `steps` parameter "
-                f"declared when the forecaster is initialized ({max_step})."
-            )
+    if forecaster_name in forecasters_direct and forecaster.max_step < steps + gap:
+        raise ValueError(
+            f"When using a {forecaster_name}, the combination of steps "
+            f"+ gap ({steps + gap}) cannot be greater than the `steps` parameter "
+            f"declared when the forecaster is initialized ({forecaster.max_step})."
+        )
 
 
 def check_one_step_ahead_input(

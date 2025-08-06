@@ -787,7 +787,7 @@ def check_predict_input(
     exog_names_in_: list[str] | None = None,
     interval: list[float] | None = None,
     alpha: float | None = None,
-    max_steps: int | None = None,
+    max_step: int | None = None,
     levels: str | list[str] | None = None,
     levels_forecaster: str | list[str] | None = None,
     series_names_in_: list[str] | None = None,
@@ -831,7 +831,7 @@ def check_predict_input(
         interval of 95% should be as `interval = [2.5, 97.5]`.
     alpha : float, default None
         The confidence intervals used in ForecasterSarimax are (1 - alpha) %.
-    max_steps: int, default None
+    max_step: int, default None
         Maximum number of steps allowed (`ForecasterDirect` and 
         `ForecasterDirectMultiVariate`).
     levels : str, list, default None
@@ -869,12 +869,12 @@ def check_predict_input(
            f"Got {min(steps)}."
         )
 
-    if max_steps is not None:
-        if max(steps) > max_steps:
+    if max_step is not None:
+        if max(steps) > max_step:
             raise ValueError(
                 f"The maximum value of `steps` must be less than or equal to "
                 f"the value of steps defined when initializing the forecaster. "
-                f"Got {max(steps)}, but the maximum is {max_steps}."
+                f"Got {max(steps)}, but the maximum is {max_step}."
             )
 
     if interval is not None or alpha is not None:

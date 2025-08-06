@@ -298,7 +298,7 @@ def test_out_sample_residuals_by_bin_and_in_sample_residuals_by_bin_equivalence(
 
     y_true = []
     y_pred = []
-    for step in range(1, forecaster.steps + 1):
+    for step in forecaster.steps:
         X_train_step, y_train_step = forecaster.filter_train_X_y_for_step(
             step=step, X_train=X_train, y_train=y_train
         )

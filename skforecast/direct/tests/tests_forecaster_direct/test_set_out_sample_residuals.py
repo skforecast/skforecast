@@ -172,7 +172,7 @@ def test_out_sample_residuals_by_bin_and_in_sample_residuals_by_bin_equivalence(
                 )
     forecaster.fit(y, store_in_sample_residuals=True)
     X_train, y_train = forecaster.create_train_X_y(y)
-    for step  in np.arange(forecaster.steps) + 1:
+    for step in forecaster.steps:
         X_train_step, y_train_step = forecaster.filter_train_X_y_for_step(
             step=step, X_train=X_train, y_train=y_train
         )
@@ -180,7 +180,7 @@ def test_out_sample_residuals_by_bin_and_in_sample_residuals_by_bin_equivalence(
         y_pred = forecaster.regressors_[step].predict(X_train_step)
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred, append=True)
 
-    assert(set(forecaster.out_sample_residuals_) == set(forecaster.in_sample_residuals_))
+    assert (set(forecaster.out_sample_residuals_) == set(forecaster.in_sample_residuals_))
 
     for k in forecaster.out_sample_residuals_by_bin_.keys():
         np.testing.assert_array_almost_equal(

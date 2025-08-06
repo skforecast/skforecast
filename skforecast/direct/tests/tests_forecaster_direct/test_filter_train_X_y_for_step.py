@@ -21,7 +21,7 @@ def test_filter_train_X_y_for_step_ValueError_when_step_not_in_steps(step):
 
     err_msg = re.escape(
         f"Invalid value `step`. For this forecaster, minimum value is 1 "
-        f"and the maximum step is {forecaster.steps}."
+        f"and the maximum step is {forecaster.max_step}."
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster.filter_train_X_y_for_step(step=step, X_train=X_train, y_train=y_train)

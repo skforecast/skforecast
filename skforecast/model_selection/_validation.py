@@ -242,10 +242,10 @@ def _backtesting_forecaster(
                 f" amounts of time. If not feasible, try with `refit = False`.\n",
                 LongTrainingWarning
             )
-        elif type(forecaster).__name__ == 'ForecasterDirect' and n_of_fits * forecaster.steps > 50:
+        elif type(forecaster).__name__ == 'ForecasterDirect' and n_of_fits * forecaster.max_step > 50:
             warnings.warn(
-                f"The forecaster will be fit {n_of_fits * forecaster.steps} times "
-                f"({n_of_fits} folds * {forecaster.steps} regressors). This can take "
+                f"The forecaster will be fit {n_of_fits * forecaster.max_step} times "
+                f"({n_of_fits} folds * {forecaster.max_step} regressors). This can take "
                 f"substantial amounts of time. If not feasible, try with `refit = False`.\n",
                 LongTrainingWarning
             )
@@ -850,10 +850,10 @@ def _backtesting_forecaster_multiseries(
                 f"amounts of time. If not feasible, try with `refit = False`.\n",
                 LongTrainingWarning,
             )
-        elif type(forecaster).__name__ == 'ForecasterDirectMultiVariate' and n_of_fits * forecaster.steps > 50:
+        elif type(forecaster).__name__ == 'ForecasterDirectMultiVariate' and n_of_fits * forecaster.max_step > 50:
             warnings.warn(
-                f"The forecaster will be fit {n_of_fits * forecaster.steps} times "
-                f"({n_of_fits} folds * {forecaster.steps} regressors). This can take "
+                f"The forecaster will be fit {n_of_fits * forecaster.max_step} times "
+                f"({n_of_fits} folds * {forecaster.max_step} regressors). This can take "
                 f"substantial amounts of time. If not feasible, try with `refit = False`.\n",
                 LongTrainingWarning
             )

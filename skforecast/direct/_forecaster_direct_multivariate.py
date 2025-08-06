@@ -128,10 +128,13 @@ class ForecasterDirectMultiVariate(ForecasterBase):
     regressors_ : dict
         Dictionary with regressors trained for each step. They are initialized 
         as a copy of `regressor`.
-    steps : int
-        Number of future steps the forecaster will predict when using method
-        `predict()`. Since a different model is created for each step, this value
-        should be defined before training.
+    steps : numpy array
+        Future steps the forecaster will predict when using method `predict()`. 
+        Since a different model is created for each step, this value should be 
+        defined before training.
+    max_step : int
+        Maximum step the forecaster is able to predict. It is the maximum value
+        included in `steps`.
     lags : numpy ndarray, dict
         Lags used as predictors.
     lags_ : dict
@@ -327,7 +330,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         
         self.regressor                          = copy(regressor)
         self.level                              = level
-        self.steps                              = steps
         self.lags_                              = None
         self.transformer_series                 = transformer_series
         self.transformer_series_                = None
@@ -383,7 +385,10 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 f"`steps` argument must be greater than or equal to 1. Got {steps}."
             )
         
-        self.regressors_ = {step: clone(self.regressor) for step in range(1, steps + 1)}
+        self.steps    = np.arange(steps) + 1
+        self.max_step = steps
+        
+        self.regressors_ = {step: clone(self.regressor) for step in self.steps}
 
         if isinstance(lags, dict):
             self.lags = {}
@@ -511,7 +516,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             f"Lags: {self.lags} \n"
             f"Window features: {self.window_features_names} \n"
             f"Window size: {self.window_size} \n"
-            f"Maximum steps to predict: {self.steps} \n"
+            f"Maximum steps to predict: {self.max_step} \n"
             f"Multivariate series: {series_names_in_} \n"
             f"Exogenous included: {self.exog_in_} \n"
             f"Exogenous names: {exog_names_in_} \n"
@@ -565,7 +570,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                     <li><strong>Lags:</strong> {self.lags}</li>
                     <li><strong>Window features:</strong> {self.window_features_names}</li>
                     <li><strong>Window size:</strong> {self.window_size}</li>
-                    <li><strong>Maximum steps to predict:</strong> {self.steps}</li>
+                    <li><strong>Maximum steps to predict:</strong> {self.max_step}</li>
                     <li><strong>Exogenous included:</strong> {self.exog_in_}</li>
                     <li><strong>Weight function included:</strong> {self.weight_func is not None}</li>
                     <li><strong>Differentiation order:</strong> {self.differentiation}</li>
@@ -731,7 +736,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         y_data = None
         if data_to_return is not None:
 
-            n_rows = len(y) - self.window_size - (self.steps - 1)
+            n_rows = len(y) - self.window_size - (self.max_step - 1)
 
             if data_to_return != 'y':
                 # If `data_to_return` is not 'y', it means is 'X' or 'both', X_data is created
@@ -739,14 +744,14 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                     shape=(n_rows, len(lags)), fill_value=np.nan, order='F', dtype=float
                 )
                 for i, lag in enumerate(lags):
-                    X_data[:, i] = y[self.window_size - lag : -(lag + self.steps - 1)]
+                    X_data[:, i] = y[self.window_size - lag : -(lag + self.max_step - 1)]
 
             if data_to_return != 'X':
                 # If `data_to_return` is not 'X', it means is 'y' or 'both', y_data is created
                 y_data = np.full(
-                    shape=(n_rows, self.steps), fill_value=np.nan, order='F', dtype=float
+                    shape=(n_rows, self.max_step), fill_value=np.nan, order='F', dtype=float
                 )
-                for step in range(self.steps):
+                for step in range(self.max_step):
                     y_data[:, step] = y[self.window_size + step : self.window_size + step + n_rows]
         
         return X_data, y_data
@@ -875,14 +880,14 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 f"`series` must be a pandas DataFrame. Got {type(series)}."
             )
 
-        if len(series) < self.window_size + self.steps:
+        if len(series) < self.window_size + self.max_step:
             raise ValueError(
                 f"Minimum length of `series` for training this forecaster is "
-                f"{self.window_size + self.steps}. Reduce the number of "
-                f"predicted steps, {self.steps}, or the maximum "
+                f"{self.window_size + self.max_step}. Reduce the number of "
+                f"predicted steps, {self.max_step}, or the maximum "
                 f"window_size, {self.window_size}, if no more data is available.\n"
                 f"    Length `series`: {len(series)}.\n"
-                f"    Max step : {self.steps}.\n"
+                f"    Max step : {self.max_step}.\n"
                 f"    Max window size: {self.window_size}.\n"
                 f"    Lags window size: {self.max_lag}.\n"
                 f"    Window features window size: {self.max_size_window_features}."
@@ -1003,7 +1008,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         X_train_autoreg = []
         X_train_window_features_names_out_ = [] if self.window_features is not None else None
         X_train_features_names_out_ = []
-        train_index = series_index[self.window_size + (self.steps - 1):]
+        train_index = series_index[self.window_size + (self.max_step - 1):]
         for col in series_to_create_autoreg_features_and_y:
 
             y_values = series[col].to_numpy(copy=True).ravel()
@@ -1038,7 +1043,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
             if self.window_features is not None:
                 n_diff = 0 if self.differentiation is None else self.differentiation
-                end_wf = None if self.steps == 1 else -(self.steps - 1)
+                end_wf = None if self.max_step == 1 else -(self.max_step - 1)
                 y_window_features = pd.Series(
                     y_values[n_diff:end_wf], index=series_index[n_diff:end_wf], name=col
                 )
@@ -1083,12 +1088,12 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             X_train_exog_names_out_ = exog.columns.to_list()
             if X_as_pandas:
                 exog_direct, X_train_direct_exog_names_out_ = exog_to_direct(
-                    exog=exog, steps=self.steps
+                    exog=exog, steps=self.max_step
                 )
                 exog_direct.index = train_index
             else:
                 exog_direct, X_train_direct_exog_names_out_ = exog_to_direct_numpy(
-                    exog=exog, steps=self.steps
+                    exog=exog, steps=self.max_step
                 )
 
             # NOTE: Need here for filter_train_X_y_for_step to work without fitting
@@ -1120,7 +1125,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                       index = series_index[self.window_size + step - 1:][:len_train_index],
                       name  = f"{self.level}_step_{step}"
                   )
-            for step in range(1, self.steps + 1)
+            for step in self.steps
         }
 
         return (
@@ -1220,10 +1225,10 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         """
 
-        if (step < 1) or (step > self.steps):
+        if (step < 1) or (step > self.max_step):
             raise ValueError(
                 f"Invalid value `step`. For this forecaster, minimum value is 1 "
-                f"and the maximum step is {self.steps}."
+                f"and the maximum step is {self.max_step}."
             )
 
         y_train_step = y_train[step]
@@ -1239,7 +1244,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 len(self.X_train_window_features_names_out_) if self.window_features is not None else 0
             )
             idx_columns_autoreg = np.arange(n_lags + n_window_features)
-            n_exog = len(self.X_train_direct_exog_names_out_) / self.steps
+            n_exog = len(self.X_train_direct_exog_names_out_) / self.max_step
             idx_columns_exog = (
                 np.arange((step - 1) * n_exog, (step) * n_exog) + idx_columns_autoreg[-1] + 1 
             )
@@ -1546,7 +1551,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 y_train   = y_train,
                 step      = step
             )
-            for step in range(1, self.steps + 1))
+            for step in self.steps)
         )
 
         self.regressors_ = {step: regressor for step, regressor, *_ in results_fit}
@@ -1742,7 +1747,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         
         steps = prepare_steps_direct(
                     steps    = steps,
-                    max_step = self.steps
+                    max_step = self.max_step
                 )
 
         if last_window is None:
@@ -1761,7 +1766,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 exog             = exog,
                 exog_names_in_   = self.exog_names_in_,
                 interval         = None,
-                max_steps        = self.steps,
+                max_step         = self.max_step,
                 series_names_in_ = self.X_train_series_names_in_
             )
 
@@ -2741,8 +2746,10 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         self.regressor = clone(self.regressor)
         self.regressor.set_params(**params)
-        self.regressors_ = {step: clone(self.regressor)
-                            for step in range(1, self.steps + 1)}
+        self.regressors_ = {
+            step: clone(self.regressor)
+            for step in self.steps
+        }
 
     def set_fit_kwargs(
         self, 
@@ -2991,7 +2998,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         y_true_steps = []
         y_pred_steps = []
         self.in_sample_residuals_ = {}
-        for step in range(1, self.steps + 1):
+        for step in self.steps:
             X_train_step, y_train_step = self.filter_train_X_y_for_step(
                                              step          = step,
                                              X_train       = X_train,
@@ -3255,10 +3262,10 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 "arguments before using `get_feature_importances()`."
             )
 
-        if (step < 1) or (step > self.steps):
+        if (step < 1) or (step > self.max_step):
             raise ValueError(
                 f"The step must have a value from 1 to the maximum number of steps "
-                f"({self.steps}). Got {step}."
+                f"({self.max_step}). Got {step}."
             )
 
         if isinstance(self.regressor, Pipeline):

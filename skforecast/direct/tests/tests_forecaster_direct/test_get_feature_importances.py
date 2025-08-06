@@ -51,18 +51,18 @@ def test_NotFittedError_is_raised_when_forecaster_is_not_fitted():
                  )
 
     err_msg = re.escape(
-                ("This forecaster is not fitted yet. Call `fit` with appropriate "
-                 "arguments before using `get_feature_importances()`.")
-              )
+        "This forecaster is not fitted yet. Call `fit` with appropriate "
+        "arguments before using `get_feature_importances()`."
+    )
     with pytest.raises(NotFittedError, match = err_msg):         
         forecaster.get_feature_importances(step=1)
 
 
 @pytest.mark.parametrize("step", [0, 2], ids=lambda step: f'step: {step}')
-def test_exception_is_raised_when_step_is_greater_than_forecaster_steps(step):
+def test_exception_is_raised_when_step_is_greater_than_forecaster_max_step(step):
     """
     Test exception is raised when calling get_feature_importances() and step is 
-    less than 1 or greater than the forecaster.steps.
+    less than 1 or greater than the forecaster.max_step.
     """
     forecaster = ForecasterDirect(
                      regressor = RandomForestRegressor(random_state=123),
@@ -72,9 +72,9 @@ def test_exception_is_raised_when_step_is_greater_than_forecaster_steps(step):
     forecaster.fit(y=pd.Series(np.arange(5)))
 
     err_msg = re.escape(
-                (f"The step must have a value from 1 to the maximum number of steps "
-                 f"({forecaster.steps}). Got {step}.")
-            )
+        f"The step must have a value from 1 to the maximum number of steps "
+        f"({forecaster.max_step}). Got {step}."
+    )
     with pytest.raises(ValueError, match = err_msg):         
         forecaster.get_feature_importances(step=step)
 

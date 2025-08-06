@@ -586,7 +586,7 @@ def test_create_predict_X_same_predictions_as_predict():
     forecaster.fit(series=series.loc[:end_train], exog=exog.loc[:end_train])
     X_predict = forecaster.create_predict_X(exog=exog.loc[end_train:]).drop(columns=['level'])
 
-    for i, step in enumerate(range(1, forecaster.steps + 1)):
+    for i, step in enumerate(forecaster.steps):
         results = forecaster.regressors_[step].predict(X_predict.iloc[[i]])
         expected = forecaster.predict(
             steps=[step], exog=exog.loc[end_train:]
@@ -640,7 +640,7 @@ def test_create_predict_X_same_predictions_as_predict_transformers():
     with pytest.warns(DataTransformationWarning, match = warn_msg):
         X_predict = forecaster.create_predict_X(exog=exog.loc[end_train:]).drop(columns=['level'])
 
-    for i, step in enumerate(range(1, forecaster.steps + 1)):
+    for i, step in enumerate(forecaster.steps):
         results = forecaster.regressors_[step].predict(X_predict.iloc[[i]])
         results = transform_numpy(
                       array             = results,
@@ -697,7 +697,7 @@ def test_create_predict_X_same_predictions_as_predict_transformers_diff():
     with pytest.warns(DataTransformationWarning, match = warn_msg):
         X_predict = forecaster.create_predict_X(exog=exog.loc[end_train:]).drop(columns=['level'])
 
-    for i, step in enumerate(range(1, forecaster.steps + 1)):
+    for i, step in enumerate(forecaster.steps):
         results = forecaster.regressors_[step].predict(X_predict.iloc[[i]])
         results = forecaster.differentiator_[forecaster.level].inverse_transform_next_window(results)
         results = transform_numpy(
