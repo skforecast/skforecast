@@ -787,7 +787,7 @@ def run_benchmark_ForecasterDirectMultiVariate(
             exog             = exog,
             exog_names_in_   = forecaster.exog_names_in_,
             interval         = None,
-            max_steps        = forecaster.steps,
+            max_step         = forecaster.max_step,
             series_names_in_ = forecaster.X_train_series_names_in_
         )
 
@@ -1038,7 +1038,7 @@ def run_benchmark_ForecasterRnn(
             exog              = exog,
             exog_names_in_    = forecaster.exog_names_in_,
             interval          = None,
-            max_steps         = forecaster.max_steps,
+            max_step          = forecaster.max_step,
             levels            = forecaster.levels,
             levels_forecaster = forecaster.levels,
             series_names_in_  = forecaster.series_names_in_,
