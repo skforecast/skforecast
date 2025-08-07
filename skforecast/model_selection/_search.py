@@ -875,18 +875,19 @@ def _bayesian_search_optuna(
     # only the optimized value can be returned.
     metric_values = []
 
-    warnings.filterwarnings(
-        "ignore",
-        category = UserWarning,
-        message  = "Choices for a categorical distribution should be*"
-    )
-
     study = optuna.create_study(**kwargs_create_study)
 
     if 'sampler' not in kwargs_create_study.keys():
         study.sampler = TPESampler(seed=random_state)
 
-    study.optimize(_objective, n_trials=n_trials, **kwargs_study_optimize)
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            category = UserWarning,
+            message  = "Choices for a categorical distribution should be*"
+        )
+        study.optimize(_objective, n_trials=n_trials, **kwargs_study_optimize)
+
     best_trial = study.best_trial
 
     if output_file is not None:
@@ -898,7 +899,6 @@ def _bayesian_search_optuna(
             f"  Search Space keys  : {list(search_space(best_trial).keys())}\n"
             f"  Trial objects keys : {list(best_trial.params.keys())}."
         )
-    warnings.filterwarnings('default')
     
     lags_list = []
     params_list = []
@@ -2029,18 +2029,19 @@ def _bayesian_search_optuna_multiseries(
     # only the optimized value can be returned.
     metrics_list = []
 
-    warnings.filterwarnings(
-        "ignore",
-        category=UserWarning,
-        message="Choices for a categorical distribution should be*"
-    )
-
     study = optuna.create_study(**kwargs_create_study)
 
     if 'sampler' not in kwargs_create_study.keys():
         study.sampler = TPESampler(seed=random_state)
 
-    study.optimize(_objective, n_trials=n_trials, **kwargs_study_optimize)
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            category=UserWarning,
+            message="Choices for a categorical distribution should be*"
+        )
+        study.optimize(_objective, n_trials=n_trials, **kwargs_study_optimize)
+
     best_trial = study.best_trial
 
     if output_file is not None:
