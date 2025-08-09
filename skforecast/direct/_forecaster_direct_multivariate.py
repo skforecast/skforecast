@@ -1821,7 +1821,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         X_autoreg = np.concatenate(X_autoreg).reshape(1, -1)
         if exog is not None:
             exog = input_to_frame(data=exog, input_name='exog')
-            exog = exog.loc[:, self.exog_names_in_]
+            exog = exog[self.exog_names_in_]
             exog = transform_dataframe(
                        df                = exog,
                        transformer       = self.transformer_exog,
