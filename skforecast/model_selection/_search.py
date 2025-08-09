@@ -2053,7 +2053,6 @@ def _bayesian_search_optuna_multiseries(
             f"  Search Space keys  : {list(search_space(best_trial).keys())}\n"
             f"  Trial objects keys : {list(best_trial.params.keys())}"
         )
-    warnings.filterwarnings('default')
     
     lags_list = []
     params_list = []
