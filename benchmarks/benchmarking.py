@@ -24,11 +24,40 @@ from plotly.express.colors import qualitative
 
 from lightgbm import LGBMRegressor
 from sklearn.preprocessing import StandardScaler
+from sklearn.base import BaseEstimator, RegressorMixin
+from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 from skforecast.utils import *
 from skforecast.recursive import ForecasterRecursive, ForecasterRecursiveMultiSeries
 from skforecast.direct import ForecasterDirect, ForecasterDirectMultiVariate
 # from skforecast.deep_learning import create_and_compile_model, ForecasterRnn
 from skforecast.model_selection import TimeSeriesFold, backtesting_forecaster, backtesting_forecaster_multiseries
+
+
+class DummyRegressor(BaseEstimator, RegressorMixin):
+    """
+    Dummy regressor that always predicts a constant value.
+
+    Parameters
+    ----------
+    constant : float, default=1.0
+        The constant value to predict for all inputs.
+    """
+    def __init__(self, constant: float = 1.0):
+        self.constant = float(constant)
+
+    def fit(self, X, y):
+        X, y = check_X_y(X, y, accept_sparse=False, multi_output=True)
+        self.n_features_in_ = X.shape[1]
+        self.n_outputs_ = y.shape[1] if y.ndim > 1 else 1
+        self.is_fitted_ = True
+        return self
+
+    def predict(self, X):
+        check_is_fitted(self, "is_fitted_")
+        X = check_array(X)
+        if self.n_outputs_ > 1:
+            return np.full((X.shape[0], self.n_outputs_), self.constant, dtype=float)
+        return np.full(X.shape[0], self.constant, dtype=float)
 
 
 class BenchmarkRunner:
@@ -248,7 +277,8 @@ def run_benchmark_ForecasterRecursiveMultiSeries(
     exog_df_wide,
     exog_dict_prediction,
     exog_df_long_prediction,
-    exog_df_wide_prediction
+    exog_df_wide_prediction,
+    regressor=LGBMRegressor(random_state=8520, verbose=-1)
 ):
     """
     Run all benchmarks for the ForecasterRecursiveMultiSeries class and save the results.
@@ -431,7 +461,6 @@ def run_benchmark_ForecasterRecursiveMultiSeries(
 
     # Create train_X_y
     # --------------------------------------------------------------------------
-    regressor = LGBMRegressor(random_state=8520, verbose=-1)
     forecaster = ForecasterRecursiveMultiSeries(
         regressor=regressor,
         lags=50,
@@ -638,13 +667,13 @@ def run_benchmark_ForecasterRecursiveMultiSeries(
 def run_benchmark_ForecasterRecursive(
     y,
     exog,
-    exog_prediction
+    exog_prediction,
+    regressor = LGBMRegressor(random_state=8520, verbose=-1)
 ):
     """
     Run all benchmarks for the ForecasterRecursive class and save the results.
     """
 
-    regressor = LGBMRegressor(random_state=8520, verbose=-1)
     forecaster = ForecasterRecursive(
         regressor=regressor,
         lags=50,
@@ -729,13 +758,13 @@ def run_benchmark_ForecasterRecursive(
 def run_benchmark_ForecasterDirectMultiVariate(
     series,
     exog,
-    exog_prediction
+    exog_prediction,
+    regressor=LGBMRegressor(random_state=8520, verbose=-1)
 ):
     """
     Run all benchmarks for the ForecasterDirectMultiVariate class and save the results.
     """
 
-    regressor = LGBMRegressor(random_state=8520, verbose=-1)
     forecaster = ForecasterDirectMultiVariate(
         regressor=regressor,
         level='series_1',
@@ -863,13 +892,13 @@ def run_benchmark_ForecasterDirectMultiVariate(
 def run_benchmark_ForecasterDirect(
     y,
     exog,
-    exog_prediction
+    exog_prediction,
+    regressor=LGBMRegressor(random_state=8520, verbose=-1)
 ):
     """
     Run all benchmarks for the ForecasterDirect class and save the results.
     """
 
-    regressor = LGBMRegressor(random_state=8520, verbose=-1)
     forecaster = ForecasterDirect(
         regressor=regressor,
         steps=5,
@@ -960,7 +989,7 @@ def run_benchmark_ForecasterDirect(
 #     """
 #     Run all benchmarks for the ForecasterRnn class and save the results.
 #     """
-# 
+
 #     model = create_and_compile_model(
 #         series=series, 
 #         lags=10, 
@@ -970,7 +999,7 @@ def run_benchmark_ForecasterDirect(
 #         dense_units=64, 
 #         model_name="benchmark_no_exog"
 #     )
-# 
+
 #     model_exog = create_and_compile_model(
 #         series=series, 
 #         exog=exog,
@@ -981,36 +1010,36 @@ def run_benchmark_ForecasterDirect(
 #         dense_units=64, 
 #         model_name="benchmark_exog"
 #     )
-# 
+
 #     forecaster = ForecasterRnn(
 #                      regressor  = model,
 #                      levels     = list(series.columns),
 #                      lags       = 10,
 #                      fit_kwargs = {'epochs': 25, 'batch_size': 32}
 #                  )
-#     
+    
 #     forecaster_exog = ForecasterRnn(
 #                           regressor  = model_exog,
 #                           levels     = list(series.columns),
 #                           lags       = 10,
 #                           fit_kwargs = {'epochs': 25, 'batch_size': 32}
 #                       )
-# 
+
 #     def ForecasterRnn_fit(forecaster, series, exog):
 #         forecaster.fit(series=series, exog=exog)
-# 
+
 #     def ForecasterRnn__create_train_X_y(forecaster, series, exog):
 #         forecaster._create_train_X_y(series=series, exog=exog)
-# 
+
 #     def ForecasterRnn_fit_series_no_exog(forecaster, series):
 #         forecaster.fit(series=series)
-# 
+
 #     def ForecasterRnn__create_train_X_y_no_exog(forecaster, series):
 #         forecaster._create_train_X_y(series=series)
-# 
+
 #     def ForecasterRnn_predict(forecaster, exog):
 #         forecaster.predict(steps=5, exog=exog, suppress_warnings=True)
-# 
+
 #     def ForecasterRnn_predict_interval_conformal(forecaster, exog):
 #         forecaster.predict_interval(
 #             steps=5,
@@ -1019,14 +1048,14 @@ def run_benchmark_ForecasterDirect(
 #             interval=[5, 95],
 #             suppress_warnings=True
 #         )
-# 
+
 #     def ForecasterRnn__create_predict_inputs(forecaster, exog):
 #         _ = forecaster._create_predict_inputs(
 #                 steps        = 5,
 #                 exog         = exog,
 #                 check_inputs = True
 #             )
-# 
+
 #     def ForecasterRnn__check_predict_inputs(forecaster, exog):
 #         check_predict_input(
 #             forecaster_name   = type(forecaster).__name__,
@@ -1045,7 +1074,7 @@ def run_benchmark_ForecasterDirect(
 #             levels_forecaster = forecaster.levels,
 #             series_names_in_  = forecaster.series_names_in_,
 #         )
-# 
+
 #     def ForecasterRnn_backtesting(forecaster, series, exog):
 #         cv = TimeSeriesFold(
 #                 initial_train_size=900,
@@ -1060,7 +1089,7 @@ def run_benchmark_ForecasterDirect(
 #                 metric='mean_squared_error',
 #                 show_progress=False
 #             )
-#             
+            
 #     def ForecasterRnn_backtesting_no_exog(forecaster, series):
 #         cv = TimeSeriesFold(
 #                 initial_train_size=900,
@@ -1074,7 +1103,7 @@ def run_benchmark_ForecasterDirect(
 #                 metric='mean_squared_error',
 #                 show_progress=False
 #             )
-#             
+            
 #     def ForecasterRnn_backtesting_conformal(forecaster, series, exog):
 #         cv = TimeSeriesFold(
 #                 initial_train_size=900,
@@ -1091,22 +1120,22 @@ def run_benchmark_ForecasterDirect(
 #                 metric='mean_squared_error',
 #                 show_progress=False
 #             )
-# 
+
 #     runner = BenchmarkRunner(repeat=10, output_dir="./")
 #     _ = runner.benchmark(ForecasterRnn__create_train_X_y, forecaster=forecaster_exog, series=series, exog=exog)
 #     _ = runner.benchmark(ForecasterRnn__create_train_X_y_no_exog, forecaster=forecaster, series=series)
-# 
+
 #     runner = BenchmarkRunner(repeat=5, output_dir="./")
 #     _ = runner.benchmark(ForecasterRnn_fit, forecaster=forecaster_exog, series=series, exog=exog)
 #     _ = runner.benchmark(ForecasterRnn_fit_series_no_exog, forecaster=forecaster, series=series)
-# 
+
 #     forecaster_exog.fit(series=series, exog=exog, store_in_sample_residuals=True)
 #     runner = BenchmarkRunner(repeat=10, output_dir="./")
 #     _ = runner.benchmark(ForecasterRnn_predict, forecaster=forecaster_exog, exog=exog_prediction)
 #     _ = runner.benchmark(ForecasterRnn_predict_interval_conformal, forecaster=forecaster_exog, exog=exog_prediction)
 #     _ = runner.benchmark(ForecasterRnn__create_predict_inputs, forecaster=forecaster_exog, exog=exog_prediction)
 #     _ = runner.benchmark(ForecasterRnn__check_predict_inputs, forecaster=forecaster_exog, exog=exog_prediction)
-# 
+
 #     runner = BenchmarkRunner(repeat=5, output_dir="./")
 #     _ = runner.benchmark(ForecasterRnn_backtesting, forecaster=forecaster_exog, series=series, exog=exog)
 #     _ = runner.benchmark(ForecasterRnn_backtesting_no_exog, forecaster=forecaster, series=series)
