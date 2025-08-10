@@ -19,7 +19,7 @@ import pandas as pd
 import lightgbm
 import skforecast
 import plotly.graph_objects as go
-from packaging.version import parse as parse_version
+from packaging.version import parse
 from plotly.express.colors import qualitative
 
 from lightgbm import LGBMRegressor
@@ -160,7 +160,7 @@ def plot_benchmark_results(df, function_name, add_median=True, add_mean=True):
     """
 
     np.random.seed(42164)
-    sorted_versions = sorted(df['skforecast_version'].unique(), key=parse_version)
+    sorted_versions = sorted(df['skforecast_version'].unique(), key=parse)
     df['skforecast_version'] = pd.Categorical(df['skforecast_version'], categories=sorted_versions, ordered=True)
     df = df.sort_values("skforecast_version")
     version_to_num = {v: i for i, v in enumerate(sorted_versions)}
@@ -487,28 +487,28 @@ def run_benchmark_ForecasterRecursiveMultiSeries(
             series=series_dict_different_length,
             exog=exog_dict
         )
-    if skforecast.__version__ >= "0.17.0":
+    if parse(skforecast.__version__) >= parse("0.17.0"):
         _ = runner.benchmark(
                 ForecasterRecursiveMultiSeries__create_train_X_y_series_is_dict_exog_is_df_wide,
                 forecaster=forecaster,
                 series=series_dict,
                 exog=exog_df_wide
             )
-    if skforecast.__version__ >= "0.17.0":
+    if parse(skforecast.__version__) >= parse("0.17.0"):
         _ = runner.benchmark(
             ForecasterRecursiveMultiSeries__create_train_X_y_series_is_df_long_no_exog,
                 forecaster=forecaster,
                 series=series_df_long,
             )
 
-    if skforecast.__version__ >= "0.17.0":
+    if parse(skforecast.__version__) >= parse("0.17.0"):
         _ = runner.benchmark(
                 ForecasterRecursiveMultiSeries__create_train_X_y_series_is_df_long_exog_is_df_long,
                 forecaster=forecaster,
                 series=series_df_long,
                 exog=exog_df_long
             )
-    if skforecast.__version__ >= "0.17.0":
+    if parse(skforecast.__version__) >= parse("0.17.0"):
         _ = runner.benchmark(
                 ForecasterRecursiveMultiSeries__create_train_X_y_series_is_df_long_exog_is_df_wide,
                 forecaster=forecaster,
@@ -551,21 +551,21 @@ def run_benchmark_ForecasterRecursiveMultiSeries(
             exog=exog_dict
         )
     
-    if skforecast.__version__ >= "0.17.0":
+    if parse(skforecast.__version__) >= parse("0.17.0"):
         _ = runner.benchmark(
             ForecasterRecursiveMultiSeries_fit_series_is_dataframe_no_exog,
                 forecaster=forecaster,
                 series=series_df_long
             )
         
-    if skforecast.__version__ >= "0.17.0":
+    if parse(skforecast.__version__) >= parse("0.17.0"):
         _ = runner.benchmark(
             ForecasterRecursiveMultiSeries_fit_series_is_dataframe_exog_is_dataframe,
                 forecaster=forecaster,
                 series=series_df_long,
                 exog=exog_df_long
             )
-    if skforecast.__version__ >= "0.17.0":
+    if parse(skforecast.__version__) >= parse("0.17.0"):
         _ = runner.benchmark(
             ForecasterRecursiveMultiSeries_fit_series_is_dataframe_exog_is_dict,
                 forecaster=forecaster,
@@ -590,7 +590,7 @@ def run_benchmark_ForecasterRecursiveMultiSeries(
             forecaster=forecaster,
             exog=exog_dict_prediction
         )
-    if skforecast.__version__ >= "0.17.0":
+    if parse(skforecast.__version__) >= parse("0.17.0"):
         _ = runner.benchmark(
                 ForecasterRecursiveMultiSeries_predict_exog_is_df_long,
                 forecaster=forecaster,
@@ -606,7 +606,7 @@ def run_benchmark_ForecasterRecursiveMultiSeries(
             forecaster=forecaster,
             exog=exog_dict_prediction
         )
-    if skforecast.__version__ >= "0.17.0":
+    if parse(skforecast.__version__) >= parse("0.17.0"):
         _ = runner.benchmark(
                 ForecasterRecursiveMultiSeries__create_predict_inputs_exog_is_df_long,
                 forecaster=forecaster,
@@ -619,7 +619,7 @@ def run_benchmark_ForecasterRecursiveMultiSeries(
             exog=exog_dict_prediction
         )
     
-    if skforecast.__version__ >= "0.17.0":
+    if parse(skforecast.__version__) >= parse("0.17.0"):
         # NOTE: Only when the forecaster is fitted with a wide dataframe, the exogenous variables can be
         # passed as a wide dataframe.
         forecaster.fit(series=series_dict, exog=exog_df_wide, store_in_sample_residuals = True)
