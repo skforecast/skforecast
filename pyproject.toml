@@ -106,7 +106,7 @@ test = [
     "xgboost>=2.1, <4.0",
     "keras>=3.0, <4.0",
     'tensorflow>=2.18, <2.20; python_version < "3.13"',
-    "torch>=2.4, <2.8",
+    "torch>=2.4, <2.9",
     "tomli>=2.0",
     "pandas[parquet]>=1.5"
 ]

@@ -17,8 +17,6 @@ updates:
       - "dependencies"
     reviewers:
       - "skforecast/core-devs"
-    assignees:
-      - "skforecast/core-devs"
     ignore:
       - dependency-name: "mike"
       - dependency-name: "mkdocs"
@@ -41,6 +39,4 @@ updates:
       - "dependencies"
       - "github-actions"
     reviewers:
-      - "skforecast/core-devs"
-    assignees:
       - "skforecast/core-devs"
