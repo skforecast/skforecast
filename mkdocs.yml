@@ -137,7 +137,7 @@ plugins:
   - mkdocstrings:
       handlers:
         python:
-          import:
+          inventories:
             - https://docs.python.org/3/objects.inv
             - https://mkdocstrings.github.io/autorefs/objects.inv
             - https://www.mkdocs.org/objects.inv
