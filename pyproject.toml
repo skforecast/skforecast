@@ -74,7 +74,7 @@ all = [
     "statsmodels>=0.12, <0.15",
     "keras>=3.0, <4.0",
     'tensorflow>=2.18, <2.20; python_version < "3.13"',
-    'torch>=2.4, <2.8; python_version < "3.13"'
+    'torch>=2.4, <2.9; python_version < "3.13"'
 ]
 
 full = [
