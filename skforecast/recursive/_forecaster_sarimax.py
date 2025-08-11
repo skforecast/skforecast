@@ -396,14 +396,13 @@ class ForecasterSarimax():
             check_exog_dtypes(exog, call_check_exog=True)
             self.exog_dtypes_out_ = get_exog_dtypes(exog=exog)
             self.X_train_exog_names_out_ = exog.columns.to_list()
-            
-        if suppress_warnings:
-            warnings.filterwarnings("ignore")
-        
-        self.regressor.fit(y=y, exog=exog)
 
         if suppress_warnings:
-            warnings.filterwarnings("default")
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                self.regressor.fit(y=y, exog=exog)
+        else:
+            self.regressor.fit(y=y, exog=exog)
 
         self.is_fitted = True
         self.series_name_in_ = y.name if y.name is not None else 'y'

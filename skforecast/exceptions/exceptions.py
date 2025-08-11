@@ -340,7 +340,7 @@ def rich_warning_handler(
         category_name = category.__name__
         text = (
             f"{message.message}\n\n"
-            f"Category : {category_name}\n"
+            f"Category : skforecast.exceptions.{category_name}\n"
             f"Location : {filename}:{lineno}\n"
             f"Suppress : warnings.simplefilter('ignore', category={category_name})"
         )
