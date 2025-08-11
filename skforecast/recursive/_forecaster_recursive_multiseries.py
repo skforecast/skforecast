@@ -1219,7 +1219,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 X_train_exog_names_out_ = X_train_exog.columns.to_list()
                 X_train = pd.concat([X_train, X_train_exog], axis=1, copy=False)
 
-        # TODO; replace with y_train.hasnans
+        # TODO: replace with y_train.hasnans
         if y_train.isna().to_numpy().any():
             mask = y_train.notna().to_numpy()
             y_train = y_train.iloc[mask]
@@ -1233,7 +1233,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             )
 
         if self.dropna_from_series:
-            # TODO; replace with X_train.hasnans()
+            # TODO: replace with X_train.hasnans()
             if np.any(X_train.isnull().to_numpy()):
                 mask = X_train.notna().all(axis=1).to_numpy()
                 X_train = X_train.iloc[mask, ]
@@ -1246,7 +1246,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     MissingValuesWarning
                 )
         else:
-            # TODO; replace with X_train.hasnans()
+            # TODO: replace with X_train.hasnans()
             if np.any(X_train.isnull().to_numpy()):
                 warnings.warn(
                     "NaNs detected in `X_train`. Some regressors do not allow "
