@@ -25,12 +25,11 @@ These tutorials focus on global models and multi-series forecasting, where you c
 
 <i class="fa-duotone fa-water fa" style="font-size: 25px; color: teal;"></i> [Global Forecasting Models I: Multi-series forecasting](https://www.cienciadedatos.net/documentos/py44-multi-series-forecasting-skforecast.html)
 
-
 <i class="fa-solid fa-globe" style="font-size: 25px; color: #6b8e23;"></i> [Global Forecasting Models II: Comparative Analysis of Single and Multi-Series Forecasting Modeling](https://www.cienciadedatos.net/documentos/py53-global-forecasting-models.html)
 
 <i class="fa-solid fa-stairs" style="font-size: 25px; color: #B197FC;"></i> [Global Forecasting Models III: Modeling thousand time series with a single global model](https://www.cienciadedatos.net/documentos/py59-scalable-forecasting-models.html)
 
-<i class="fa-brabs fa-kaggle" style="font-size: 25px; color:rgb(230, 12, 12);"></i> [Global Forecasting Models IV: A step by step guide to global time series forecasting using Kaggle sticker sales data](https://cienciadedatos.net/documentos/py66-forecasting-sticker-sales-kaggle.html)
+<i class="fa-brands fa-kaggle" style="font-size: 25px; color:rgb(230, 12, 12);"></i> [Global Forecasting Models IV: A step by step guide to global time series forecasting using Kaggle sticker sales data](https://cienciadedatos.net/documentos/py66-forecasting-sticker-sales-kaggle.html)
 
 <i class="fa-solid fa-basket-shopping" style="font-size: 25px; color: #74C0FC;"></i> [Global Forecasting Models V: The M5 Accuracy competition: the success of global forecasting models](https://www.cienciadedatos.net/documentos/py61-m5-forecasting-competition.html)
 

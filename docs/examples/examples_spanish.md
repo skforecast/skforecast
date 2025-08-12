@@ -32,7 +32,7 @@ Estos tutoriales se centran en modelos globales y en el pronóstico de series m�
 
 <i class="fa-solid fa-stairs" style="font-size: 25px; color: #B197FC;"></i> [Modelos de Forecasting Globales III: Predecir mil series temporales con un único modelo](https://www.cienciadedatos.net/documentos/py59-modelos-forecasting-escalables.html)
 
-<i class="fa-brabs fa-kaggle" style="font-size: 25px; color:rgb(230, 12, 12);"></i> [Modelos de Forecasting Globales IV: Guia paso a paso con Kaggle sticker sales](https://cienciadedatos.net/documentos/py66-forecasting-sticker-sales-kaggle-es.html)
+<i class="fa-brands fa-kaggle" style="font-size: 25px; color:rgb(230, 12, 12);"></i> [Modelos de Forecasting Globales IV: Guia paso a paso con Kaggle sticker sales](https://cienciadedatos.net/documentos/py66-forecasting-sticker-sales-kaggle-es.html)
 
 <i class="fa-solid fa-layer-group" style="font-size: 25px; color: #001633;"></i> [Forecasting con Deep Learning](https://cienciadedatos.net/documentos/py54-forecasting-con-deep-learning)
 
