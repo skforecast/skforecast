@@ -4315,9 +4315,9 @@ In terms of performance, using a <code>dict</code> is more efficient than a <cod
 </div>
 <p>If your original data is not in the desired format, <strong>skforecast</strong> provides several utility functions to perform the necessary transformations:</p>
 <ul>
-<li><p><code><a href="../api/reshape_series_wide_to_long.html">reshape_series_wide_to_long</a></code>: Converts a wide-format DataFrame into a <strong>long-format DataFrame with a MultiIndex</strong>, where the first level contains the series IDs and the second level contains a <code>DatetimeIndex</code>.</p>
+<li><p><code><a href="../api/preprocessing.html#skforecast.preprocessing.preprocessing.reshape_series_wide_to_long">reshape_series_wide_to_long</a></code>: Converts a wide-format DataFrame into a <strong>long-format DataFrame with a MultiIndex</strong>, where the first level contains the series IDs and the second level contains a <code>DatetimeIndex</code>.</p>
 </li>
-<li><p><code><a href="../api/reshape_series_long_to_dict.html">reshape_series_long_to_dict</a></code>: Converts a long-format DataFrame with a MultiIndex into a <strong>dictionary of pandas Series</strong>, where the keys are the series IDs and the values are the Series with the same index as the original DataFrame.</p>
+<li><p><code><a href="../api/preprocessing.html#skforecast.preprocessing.preprocessing.reshape_series_long_to_dict">reshape_series_long_to_dict</a></code>: Converts a long-format DataFrame with a MultiIndex into a <strong>dictionary of pandas Series</strong>, where the keys are the series IDs and the values are the Series with the same index as the original DataFrame.</p>
 </li>
 </ul>
 </div>
@@ -4559,7 +4559,7 @@ series_long.index[:5]</div>
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>If you want to leverage the performance of a dictionary, you can use the function <code><a href="../api/reshape_series_long_to_dict.html">reshape_series_long_to_dict</a></code> to transform a long format DataFrame into a dictionary. The resulting dictionary will have the series ID as keys and the corresponding <code>pandas Series</code> as values.</p>
+<p>If you want to leverage the performance of a dictionary, you can use the function <code><a href="../api/preprocessing.html#skforecast.preprocessing.preprocessing.reshape_series_long_to_dict">reshape_series_long_to_dict</a></code> to transform a long format DataFrame into a dictionary. The resulting dictionary will have the series ID as keys and the corresponding <code>pandas Series</code> as values.</p>
 </div>
 </div>
 </div>
