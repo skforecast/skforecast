@@ -2506,6 +2506,29 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/examples_chinese.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Chinese (中文)
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -4651,9 +4674,7 @@ clickable and can be expanded/collapsed.
 /* Toggleable content - dropdown */
 
 #sk-container-id-1 div.sk-toggleable__content {
-  max-height: 0;
-  max-width: 0;
-  overflow: hidden;
+  display: none;
   text-align: left;
   /* unfitted */
   background-color: var(--sklearn-color-unfitted-level-0);
@@ -4679,9 +4700,9 @@ clickable and can be expanded/collapsed.
 
 #sk-container-id-1 input.sk-toggleable__control:checked~div.sk-toggleable__content {
   /* Expand drop-down */
-  max-height: 200px;
-  max-width: 100%;
-  overflow: auto;
+  display: block;
+  width: 100%;
+  overflow: visible;
 }
 
 #sk-container-id-1 input.sk-toggleable__control:checked~label.sk-toggleable__label-arrow:before {
@@ -4886,17 +4907,410 @@ div.sk-label-container:hover .sk-estimator-doc-link.fitted:hover,
   /* fitted */
   background-color: var(--sklearn-color-fitted-level-3);
 }
-</style><div class="sk-top-container" id="sk-container-id-1"><div class="sk-text-repr-fallback"><pre>StackingRegressor(cv=KFold(n_splits=5, random_state=None, shuffle=False),
+
+.estimator-table summary {
+    padding: .5rem;
+    font-family: monospace;
+    cursor: pointer;
+}
+
+.estimator-table details[open] {
+    padding-left: 0.1rem;
+    padding-right: 0.1rem;
+    padding-bottom: 0.3rem;
+}
+
+.estimator-table .parameters-table {
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
+.estimator-table .parameters-table tr:nth-child(odd) {
+    background-color: #fff;
+}
+
+.estimator-table .parameters-table tr:nth-child(even) {
+    background-color: #f6f6f6;
+}
+
+.estimator-table .parameters-table tr:hover {
+    background-color: #e0e0e0;
+}
+
+.estimator-table table td {
+    border: 1px solid rgba(106, 105, 104, 0.232);
+}
+
+.user-set td {
+    color:rgb(255, 94, 0);
+    text-align: left;
+}
+
+.user-set td.value pre {
+    color:rgb(255, 94, 0) !important;
+    background-color: transparent !important;
+}
+
+.default td {
+    color: black;
+    text-align: left;
+}
+
+.user-set td i,
+.default td i {
+    color: black;
+}
+
+.copy-paste-icon {
+    background-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0NDggNTEyIj48IS0tIUZvbnQgQXdlc29tZSBGcmVlIDYuNy4yIGJ5IEBmb250YXdlc29tZSAtIGh0dHBzOi8vZm9udGF3ZXNvbWUuY29tIExpY2Vuc2UgLSBodHRwczovL2ZvbnRhd2Vzb21lLmNvbS9saWNlbnNlL2ZyZWUgQ29weXJpZ2h0IDIwMjUgRm9udGljb25zLCBJbmMuLS0+PHBhdGggZD0iTTIwOCAwTDMzMi4xIDBjMTIuNyAwIDI0LjkgNS4xIDMzLjkgMTQuMWw2Ny45IDY3LjljOSA5IDE0LjEgMjEuMiAxNC4xIDMzLjlMNDQ4IDMzNmMwIDI2LjUtMjEuNSA0OC00OCA0OGwtMTkyIDBjLTI2LjUgMC00OC0yMS41LTQ4LTQ4bDAtMjg4YzAtMjYuNSAyMS41LTQ4IDQ4LTQ4ek00OCAxMjhsODAgMCAwIDY0LTY0IDAgMCAyNTYgMTkyIDAgMC0zMiA2NCAwIDAgNDhjMCAyNi41LTIxLjUgNDgtNDggNDhMNDggNTEyYy0yNi41IDAtNDgtMjEuNS00OC00OEwwIDE3NmMwLTI2LjUgMjEuNS00OCA0OC00OHoiLz48L3N2Zz4=);
+    background-repeat: no-repeat;
+    background-size: 14px 14px;
+    background-position: 0;
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+}
+</style><body><div class="sk-top-container" id="sk-container-id-1"><div class="sk-text-repr-fallback"><pre>StackingRegressor(cv=KFold(n_splits=5, random_state=None, shuffle=False),
                   estimators=[('ridge', Ridge(alpha=0.001)),
                               ('lgbm',
                                LGBMRegressor(max_depth=5, n_estimators=500,
                                              random_state=42, verbose=-1))],
-                  final_estimator=Ridge())</pre><b>In a Jupyter environment, please rerun this cell to show the HTML representation or trust the notebook. <br/>On GitHub, the HTML representation is unable to render, please try loading this page with nbviewer.org.</b></div><div class="sk-container" hidden=""><div class="sk-item sk-dashed-wrapped"><div class="sk-label-container"><div class="sk-label sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-1" type="checkbox"/><label class="sk-toggleable__label sk-toggleable__label-arrow" for="sk-estimator-id-1"><div><div>StackingRegressor</div></div><div><a class="sk-estimator-doc-link" href="https://scikit-learn.org/1.6/modules/generated/sklearn.ensemble.StackingRegressor.html" rel="noreferrer" target="_blank">?<span>Documentation for StackingRegressor</span></a><span class="sk-estimator-doc-link">i<span>Not fitted</span></span></div></label><div class="sk-toggleable__content"><pre>StackingRegressor(cv=KFold(n_splits=5, random_state=None, shuffle=False),
-                  estimators=[('ridge', Ridge(alpha=0.001)),
-                              ('lgbm',
-                               LGBMRegressor(max_depth=5, n_estimators=500,
-                                             random_state=42, verbose=-1))],
-                  final_estimator=Ridge())</pre></div> </div></div><div class="sk-serial"><div class="sk-item"><div class="sk-parallel"><div class="sk-parallel-item"><div class="sk-item"><div class="sk-label-container"><div class="sk-label sk-toggleable"><label>ridge</label></div></div><div class="sk-serial"><div class="sk-item"><div class="sk-estimator sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-2" type="checkbox"/><label class="sk-toggleable__label sk-toggleable__label-arrow" for="sk-estimator-id-2"><div><div>Ridge</div></div><div><a class="sk-estimator-doc-link" href="https://scikit-learn.org/1.6/modules/generated/sklearn.linear_model.Ridge.html" rel="noreferrer" target="_blank">?<span>Documentation for Ridge</span></a></div></label><div class="sk-toggleable__content"><pre>Ridge(alpha=0.001)</pre></div> </div></div></div></div></div><div class="sk-parallel-item"><div class="sk-item"><div class="sk-label-container"><div class="sk-label sk-toggleable"><label>lgbm</label></div></div><div class="sk-serial"><div class="sk-item"><div class="sk-estimator sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-3" type="checkbox"/><label class="sk-toggleable__label sk-toggleable__label-arrow" for="sk-estimator-id-3"><div><div>LGBMRegressor</div></div></label><div class="sk-toggleable__content"><pre>LGBMRegressor(max_depth=5, n_estimators=500, random_state=42, verbose=-1)</pre></div> </div></div></div></div></div></div></div><div class="sk-item"><div class="sk-parallel"><div class="sk-parallel-item"><div class="sk-item"><div class="sk-label-container"><div class="sk-label sk-toggleable"><label>final_estimator</label></div></div><div class="sk-serial"><div class="sk-item"><div class="sk-estimator sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-4" type="checkbox"/><label class="sk-toggleable__label sk-toggleable__label-arrow" for="sk-estimator-id-4"><div><div>Ridge</div></div><div><a class="sk-estimator-doc-link" href="https://scikit-learn.org/1.6/modules/generated/sklearn.linear_model.Ridge.html" rel="noreferrer" target="_blank">?<span>Documentation for Ridge</span></a></div></label><div class="sk-toggleable__content"><pre>Ridge()</pre></div> </div></div></div></div></div></div></div></div></div></div></div>
+                  final_estimator=Ridge())</pre><b>In a Jupyter environment, please rerun this cell to show the HTML representation or trust the notebook. <br/>On GitHub, the HTML representation is unable to render, please try loading this page with nbviewer.org.</b></div><div class="sk-container" hidden=""><div class="sk-item sk-dashed-wrapped"><div class="sk-label-container"><div class="sk-label sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-1" type="checkbox"/><label class="sk-toggleable__label sk-toggleable__label-arrow" for="sk-estimator-id-1"><div><div>StackingRegressor</div></div><div><a class="sk-estimator-doc-link" href="https://scikit-learn.org/1.7/modules/generated/sklearn.ensemble.StackingRegressor.html" rel="noreferrer" target="_blank">?<span>Documentation for StackingRegressor</span></a><span class="sk-estimator-doc-link">i<span>Not fitted</span></span></div></label><div class="sk-toggleable__content" data-param-prefix="">
+<div class="estimator-table">
+<details>
+<summary>Parameters</summary>
+<table class="parameters-table">
+<tbody>
+<tr class="user-set">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('estimators',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">estimators </td>
+<td class="value">[('ridge', ...), ('lgbm', ...)]</td>
+</tr>
+<tr class="user-set">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('final_estimator',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">final_estimator </td>
+<td class="value">Ridge()</td>
+</tr>
+<tr class="user-set">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('cv',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">cv </td>
+<td class="value">KFold(n_split...shuffle=False)</td>
+</tr>
+<tr class="default">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('n_jobs',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">n_jobs </td>
+<td class="value">None</td>
+</tr>
+<tr class="default">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('passthrough',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">passthrough </td>
+<td class="value">False</td>
+</tr>
+<tr class="default">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('verbose',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">verbose </td>
+<td class="value">0</td>
+</tr>
+</tbody>
+</table>
+</details>
+</div>
+</div></div></div><div class="sk-serial"><div class="sk-item"><div class="sk-parallel"><div class="sk-parallel-item"><div class="sk-item"><div class="sk-label-container"><div class="sk-label sk-toggleable"><label>ridge</label></div></div><div class="sk-serial"><div class="sk-item"><div class="sk-estimator sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-2" type="checkbox"/><label class="sk-toggleable__label sk-toggleable__label-arrow" for="sk-estimator-id-2"><div><div>Ridge</div></div><div><a class="sk-estimator-doc-link" href="https://scikit-learn.org/1.7/modules/generated/sklearn.linear_model.Ridge.html" rel="noreferrer" target="_blank">?<span>Documentation for Ridge</span></a></div></label><div class="sk-toggleable__content" data-param-prefix="ridge__">
+<div class="estimator-table">
+<details>
+<summary>Parameters</summary>
+<table class="parameters-table">
+<tbody>
+<tr class="user-set">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('alpha',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">alpha </td>
+<td class="value">0.001</td>
+</tr>
+<tr class="default">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('fit_intercept',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">fit_intercept </td>
+<td class="value">True</td>
+</tr>
+<tr class="default">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('copy_X',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">copy_X </td>
+<td class="value">True</td>
+</tr>
+<tr class="default">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('max_iter',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">max_iter </td>
+<td class="value">None</td>
+</tr>
+<tr class="default">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('tol',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">tol </td>
+<td class="value">0.0001</td>
+</tr>
+<tr class="default">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('solver',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">solver </td>
+<td class="value">'auto'</td>
+</tr>
+<tr class="default">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('positive',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">positive </td>
+<td class="value">False</td>
+</tr>
+<tr class="default">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('random_state',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">random_state </td>
+<td class="value">None</td>
+</tr>
+</tbody>
+</table>
+</details>
+</div>
+</div></div></div></div></div></div><div class="sk-parallel-item"><div class="sk-item"><div class="sk-label-container"><div class="sk-label sk-toggleable"><label>lgbm</label></div></div><div class="sk-serial"><div class="sk-item"><div class="sk-estimator sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-3" type="checkbox"/><label class="sk-toggleable__label sk-toggleable__label-arrow" for="sk-estimator-id-3"><div><div>LGBMRegressor</div></div></label><div class="sk-toggleable__content" data-param-prefix="lgbm__">
+<div class="estimator-table">
+<details>
+<summary>Parameters</summary>
+<table class="parameters-table">
+<tbody>
+<tr class="default">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('boosting_type',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">boosting_type </td>
+<td class="value">'gbdt'</td>
+</tr>
+<tr class="default">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('num_leaves',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">num_leaves </td>
+<td class="value">31</td>
+</tr>
+<tr class="user-set">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('max_depth',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">max_depth </td>
+<td class="value">5</td>
+</tr>
+<tr class="default">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('learning_rate',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">learning_rate </td>
+<td class="value">0.1</td>
+</tr>
+<tr class="user-set">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('n_estimators',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">n_estimators </td>
+<td class="value">500</td>
+</tr>
+<tr class="default">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('subsample_for_bin',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">subsample_for_bin </td>
+<td class="value">200000</td>
+</tr>
+<tr class="default">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('objective',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">objective </td>
+<td class="value">None</td>
+</tr>
+<tr class="default">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('class_weight',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">class_weight </td>
+<td class="value">None</td>
+</tr>
+<tr class="default">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('min_split_gain',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">min_split_gain </td>
+<td class="value">0.0</td>
+</tr>
+<tr class="default">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('min_child_weight',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">min_child_weight </td>
+<td class="value">0.001</td>
+</tr>
+<tr class="default">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('min_child_samples',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">min_child_samples </td>
+<td class="value">20</td>
+</tr>
+<tr class="default">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('subsample',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">subsample </td>
+<td class="value">1.0</td>
+</tr>
+<tr class="default">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('subsample_freq',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">subsample_freq </td>
+<td class="value">0</td>
+</tr>
+<tr class="default">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('colsample_bytree',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">colsample_bytree </td>
+<td class="value">1.0</td>
+</tr>
+<tr class="default">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('reg_alpha',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">reg_alpha </td>
+<td class="value">0.0</td>
+</tr>
+<tr class="default">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('reg_lambda',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">reg_lambda </td>
+<td class="value">0.0</td>
+</tr>
+<tr class="user-set">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('random_state',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">random_state </td>
+<td class="value">42</td>
+</tr>
+<tr class="default">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('n_jobs',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">n_jobs </td>
+<td class="value">None</td>
+</tr>
+<tr class="default">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('importance_type',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">importance_type </td>
+<td class="value">'split'</td>
+</tr>
+<tr class="user-set">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('verbose',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">verbose </td>
+<td class="value">-1</td>
+</tr>
+</tbody>
+</table>
+</details>
+</div>
+</div></div></div></div></div></div></div></div><div class="sk-item"><div class="sk-parallel"><div class="sk-parallel-item"><div class="sk-item"><div class="sk-label-container"><div class="sk-label sk-toggleable"><label>final_estimator</label></div></div><div class="sk-serial"><div class="sk-item"><div class="sk-estimator sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-4" type="checkbox"/><label class="sk-toggleable__label sk-toggleable__label-arrow" for="sk-estimator-id-4"><div><div>Ridge</div></div><div><a class="sk-estimator-doc-link" href="https://scikit-learn.org/1.7/modules/generated/sklearn.linear_model.Ridge.html" rel="noreferrer" target="_blank">?<span>Documentation for Ridge</span></a></div></label><div class="sk-toggleable__content" data-param-prefix="final_estimator__">
+<div class="estimator-table">
+<details>
+<summary>Parameters</summary>
+<table class="parameters-table">
+<tbody>
+<tr class="default">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('alpha',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">alpha </td>
+<td class="value">1.0</td>
+</tr>
+<tr class="default">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('fit_intercept',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">fit_intercept </td>
+<td class="value">True</td>
+</tr>
+<tr class="default">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('copy_X',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">copy_X </td>
+<td class="value">True</td>
+</tr>
+<tr class="default">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('max_iter',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">max_iter </td>
+<td class="value">None</td>
+</tr>
+<tr class="default">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('tol',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">tol </td>
+<td class="value">0.0001</td>
+</tr>
+<tr class="default">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('solver',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">solver </td>
+<td class="value">'auto'</td>
+</tr>
+<tr class="default">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('positive',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">positive </td>
+<td class="value">False</td>
+</tr>
+<tr class="default">
+<td><i class="copy-paste-icon" onclick="copyToClipboard('random_state',
+                          this.parentElement.nextElementSibling)"></i></td>
+<td class="param">random_state </td>
+<td class="value">None</td>
+</tr>
+</tbody>
+</table>
+</details>
+</div>
+</div></div></div></div></div></div></div></div></div></div></div></div><script>function copyToClipboard(text, element) {
+    // Get the parameter prefix from the closest toggleable content
+    const toggleableContent = element.closest('.sk-toggleable__content');
+    const paramPrefix = toggleableContent ? toggleableContent.dataset.paramPrefix : '';
+    const fullParamName = paramPrefix ? `${paramPrefix}${text}` : text;
+
+    const originalStyle = element.style;
+    const computedStyle = window.getComputedStyle(element);
+    const originalWidth = computedStyle.width;
+    const originalHTML = element.innerHTML.replace('Copied!', '');
+
+    navigator.clipboard.writeText(fullParamName)
+        .then(() => {
+            element.style.width = originalWidth;
+            element.style.color = 'green';
+            element.innerHTML = "Copied!";
+
+            setTimeout(() => {
+                element.innerHTML = originalHTML;
+                element.style = originalStyle;
+            }, 2000);
+        })
+        .catch(err => {
+            console.error('Failed to copy:', err);
+            element.style.color = 'red';
+            element.innerHTML = "Failed!";
+            setTimeout(() => {
+                element.innerHTML = originalHTML;
+                element.style = originalStyle;
+            }, 2000);
+        });
+    return false;
+}
+
+document.querySelectorAll('.fa-regular.fa-copy').forEach(function(element) {
+    const toggleableContent = element.closest('.sk-toggleable__content');
+    const paramPrefix = toggleableContent ? toggleableContent.dataset.paramPrefix : '';
+    const paramName = element.parentElement.nextElementSibling.textContent.trim();
+    const fullParamName = paramPrefix ? `${paramPrefix}${paramName}` : paramName;
+
+    element.setAttribute('title', fullParamName);
+});
+</script></body>
 </div>
 </div>
 </div>

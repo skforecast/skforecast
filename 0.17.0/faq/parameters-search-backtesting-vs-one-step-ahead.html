@@ -2514,6 +2514,29 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/examples_chinese.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Chinese (中文)
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -4219,7 +4242,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [1]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-1">
@@ -4260,8 +4283,8 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <span class="kn">from</span><span class="w"> </span><span class="nn">skforecast.model_selection</span><span class="w"> </span><span class="kn">import</span> <span class="n">backtesting_forecaster_multiseries</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">skforecast.model_selection</span><span class="w"> </span><span class="kn">import</span> <span class="n">grid_search_forecaster_multiseries</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">skforecast.model_selection</span><span class="w"> </span><span class="kn">import</span> <span class="n">bayesian_search_forecaster_multiseries</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">skforecast.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">series_long_to_dict</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">skforecast.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">exog_long_to_dict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">skforecast.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">reshape_series_long_to_dict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">skforecast.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">reshape_exog_long_to_dict</span>
 
 <span class="c1"># Warnings</span>
 <span class="c1"># ==============================================================================</span>
@@ -4298,8 +4321,8 @@ from skforecast.direct import ForecasterDirectMultiVariate
 from skforecast.model_selection import backtesting_forecaster_multiseries
 from skforecast.model_selection import grid_search_forecaster_multiseries
 from skforecast.model_selection import bayesian_search_forecaster_multiseries
-from skforecast.preprocessing import series_long_to_dict
-from skforecast.preprocessing import exog_long_to_dict
+from skforecast.preprocessing import reshape_series_long_to_dict
+from skforecast.preprocessing import reshape_exog_long_to_dict
 
 # Warnings
 # ==============================================================================
@@ -4410,7 +4433,7 @@ Number of logical cores: 8
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [3]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
 <clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-3">
@@ -4462,14 +4485,15 @@ Number of logical cores: 8
 <span class="p">)</span>
 <span class="n">series_dict</span><span class="p">[</span><span class="s1">'timestamp'</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">series_dict</span><span class="p">[</span><span class="s1">'timestamp'</span><span class="p">])</span>
 <span class="n">exog_dict</span><span class="p">[</span><span class="s1">'timestamp'</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">exog_dict</span><span class="p">[</span><span class="s1">'timestamp'</span><span class="p">])</span>
-<span class="n">series_dict</span> <span class="o">=</span> <span class="n">series_long_to_dict</span><span class="p">(</span>
+
+<span class="n">series_dict</span> <span class="o">=</span> <span class="n">reshape_series_long_to_dict</span><span class="p">(</span>
     <span class="n">data</span>      <span class="o">=</span> <span class="n">series_dict</span><span class="p">,</span>
     <span class="n">series_id</span> <span class="o">=</span> <span class="s1">'series_id'</span><span class="p">,</span>
     <span class="n">index</span>     <span class="o">=</span> <span class="s1">'timestamp'</span><span class="p">,</span>
     <span class="n">values</span>    <span class="o">=</span> <span class="s1">'value'</span><span class="p">,</span>
     <span class="n">freq</span>      <span class="o">=</span> <span class="s1">'D'</span>
 <span class="p">)</span>
-<span class="n">exog_dict</span> <span class="o">=</span> <span class="n">exog_long_to_dict</span><span class="p">(</span>
+<span class="n">exog_dict</span> <span class="o">=</span> <span class="n">reshape_exog_long_to_dict</span><span class="p">(</span>
     <span class="n">data</span>      <span class="o">=</span> <span class="n">exog_dict</span><span class="p">,</span>
     <span class="n">series_id</span> <span class="o">=</span> <span class="s1">'series_id'</span><span class="p">,</span>
     <span class="n">index</span>     <span class="o">=</span> <span class="s1">'timestamp'</span><span class="p">,</span>
@@ -4515,14 +4539,15 @@ exog_dict = pd.read_csv(
 )
 series_dict['timestamp'] = pd.to_datetime(series_dict['timestamp'])
 exog_dict['timestamp'] = pd.to_datetime(exog_dict['timestamp'])
-series_dict = series_long_to_dict(
+
+series_dict = reshape_series_long_to_dict(
     data      = series_dict,
     series_id = 'series_id',
     index     = 'timestamp',
     values    = 'value',
     freq      = 'D'
 )
-exog_dict = exog_long_to_dict(
+exog_dict = reshape_exog_long_to_dict(
     data      = exog_dict,
     series_id = 'series_id',
     index     = 'timestamp',

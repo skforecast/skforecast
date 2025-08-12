@@ -870,6 +870,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#number-of-time-series" class="md-nav__link">
+    <span class="md-ellipsis">
+      Number of time series
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#libraries-and-data" class="md-nav__link">
     <span class="md-ellipsis">
       Libraries and data
@@ -2495,6 +2504,29 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/examples_chinese.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Chinese (中文)
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -4001,15 +4033,16 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>Skforecast only allows pandas series and dataframes as input (although numpy arrays are used internally for better performance). The type of pandas index is used to determine how the data is processed:</p>
+<p>Working with sequential or time series data requires a consistent and regular spacing between observations.
+Uneven or irregularly spaced data can lead to ambiguous results and unreliable forecasts. For this reason, <strong>skforecast</strong> strictly enforces the use of <strong>regular indices</strong>.</p>
+<p>To ensure reproducibility and clarity in forecasting tasks, skforecast only allows two types of index:</p>
 <ul>
-<li><p>If the index is not of type DatetimeIndex, a RangeIndex is created.</p>
+<li><p><strong>DatetimeIndex with frequency</strong>: A time-based index with a defined and regular frequency (e.g., daily, monthly).</p>
 </li>
-<li><p>If the index is of type DatetimeIndex but has no frequency, a RangeIndex is created.</p>
-</li>
-<li><p>If the index is of type DatetimeIndex and has a frequency, it remains unchanged.</p>
+<li><p><strong>RangeIndex with step</strong>: A default integer index, regularly spaced.</p>
 </li>
 </ul>
+<p>Other index types (such as <code>DatetimeIndex</code> without frequency, or custom indices) are not supported, and their use will raise an error.</p>
 </div>
 </div>
 </div>
@@ -4020,13 +4053,90 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<div class="admonition note" name="html-admonition" style="background: rgba(0,184,212,.1); padding-top: 0px; padding-bottom: 6px; border-radius: 8px; border-left: 8px solid #00b8d4; border-color: #00b8d4; padding-left: 10px; padding-right: 10px;">
-<p class="title">
-<i style="font-size: 18px; color:#00b8d4;"></i>
-<b style="color: #00b8d4;">✎ Note</b>
-</p>
-<p>Although it is possible to use data without an associated date/time index, when using a pandas series with an associated frequency prediction results will have a more useful index.</p>
-</div>
+<h2 id="number-of-time-series">Number of time series<a class="anchor-link" href="#number-of-time-series">¶</a></h2><p>The <strong>skforecast</strong> library offers a <strong>variety of forecaster</strong> types, each tailored to specific requirements such as single or multiple time series, direct or recursive strategies, or custom predictors. Regardless of the specific forecaster type, all instances share the same API.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Forecaster</th>
+<th style="text-align:center">Single series</th>
+<th style="text-align:center">Multiple series</th>
+<th style="text-align:center">Recursive strategy</th>
+<th style="text-align:center">Direct strategy</th>
+<th style="text-align:center">Probabilistic prediction</th>
+<th style="text-align:center">Time series differentiation</th>
+<th style="text-align:center">Exogenous features</th>
+<th style="text-align:center">Window features</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><a href="../user_guides/autoregresive-forecaster.html">ForecasterRecursive</a></td>
+<td style="text-align:center">✔️</td>
+<td style="text-align:center"></td>
+<td style="text-align:center">✔️</td>
+<td style="text-align:center"></td>
+<td style="text-align:center">✔️</td>
+<td style="text-align:center">✔️</td>
+<td style="text-align:center">✔️</td>
+<td style="text-align:center">✔️</td>
+</tr>
+<tr>
+<td style="text-align:left"><a href="../user_guides/direct-multi-step-forecasting.html">ForecasterDirect</a></td>
+<td style="text-align:center">✔️</td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+<td style="text-align:center">✔️</td>
+<td style="text-align:center">✔️</td>
+<td style="text-align:center">✔️</td>
+<td style="text-align:center">✔️</td>
+<td style="text-align:center">✔️</td>
+</tr>
+<tr>
+<td style="text-align:left"><a href="../user_guides/independent-multi-time-series-forecasting.html">ForecasterRecursiveMultiSeries</a></td>
+<td style="text-align:center"></td>
+<td style="text-align:center">✔️</td>
+<td style="text-align:center">✔️</td>
+<td style="text-align:center"></td>
+<td style="text-align:center">✔️</td>
+<td style="text-align:center">✔️</td>
+<td style="text-align:center">✔️</td>
+<td style="text-align:center">✔️</td>
+</tr>
+<tr>
+<td style="text-align:left"><a href="../user_guides/dependent-multi-series-multivariate-forecasting.html">ForecasterDirectMultiVariate</a></td>
+<td style="text-align:center"></td>
+<td style="text-align:center">✔️</td>
+<td style="text-align:center"></td>
+<td style="text-align:center">✔️</td>
+<td style="text-align:center">✔️</td>
+<td style="text-align:center">✔️</td>
+<td style="text-align:center">✔️</td>
+<td style="text-align:center">✔️</td>
+</tr>
+<tr>
+<td style="text-align:left"><a href="../user_guides/forecasting-with-deep-learning-rnn-lstm.html">ForecasterRNN</a></td>
+<td style="text-align:center"></td>
+<td style="text-align:center">✔️</td>
+<td style="text-align:center"></td>
+<td style="text-align:center">✔️</td>
+<td style="text-align:center">✔️</td>
+<td style="text-align:center"></td>
+<td style="text-align:center">✔️</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:left"><a href="../user_guides/forecasting-sarimax-arima.html">ForecasterSarimax</a></td>
+<td style="text-align:center">✔️</td>
+<td style="text-align:center"></td>
+<td style="text-align:center">✔️</td>
+<td style="text-align:center"></td>
+<td style="text-align:center">✔️</td>
+<td style="text-align:center">✔️</td>
+<td style="text-align:center">✔️</td>
+<td style="text-align:center"></td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 </div>
@@ -4250,6 +4360,53 @@ Shape of the dataset: (204, 2)
 </div>
 </clipboard-copy>
 </div>
+<div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Index type and frequency</span>
+<span class="c1"># ==============================================================================</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Index type      : </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Index frequency : </span><span class="si">{</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">freq</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+<div class="clipboard-copy-txt" id="cell-3"># Index type and frequency
+# ==============================================================================
+print(f"Index type      : {type(data.index)}")
+print(f"Index frequency : {data.index.freq}")</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Index type      : &lt;class 'pandas.core.indexes.datetimes.DatetimeIndex'&gt;
+Index frequency : &lt;MonthBegin&gt;
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [4]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="CodeMirror cm-s-jupyter">
+<div class="zeroclipboard-container">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-4">
+<div>
+<span class="notice" hidden="">Copied!</span>
+<svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
+<path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+<path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+</svg>
+</div>
+</clipboard-copy>
+</div>
 <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Create and fit forecaster</span>
 <span class="c1"># ==============================================================================</span>
 <span class="n">forecaster</span> <span class="o">=</span> <span class="n">ForecasterRecursive</span><span class="p">(</span>
@@ -4263,7 +4420,7 @@ Shape of the dataset: (204, 2)
 <span class="c1"># ==============================================================================</span>
 <span class="n">forecaster</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">steps</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
 </pre></div>
-<div class="clipboard-copy-txt" id="cell-3"># Create and fit forecaster
+<div class="clipboard-copy-txt" id="cell-4"># Create and fit forecaster
 # ==============================================================================
 forecaster = ForecasterRecursive(
                  regressor = LGBMRegressor(random_state=123, verbose=-1),
@@ -4284,7 +4441,7 @@ forecaster.predict(steps=5)</div>
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[3]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[4]:</div>
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
 <pre>2008-07-01    0.861239
 2008-08-01    0.871102
@@ -4314,10 +4471,10 @@ Freq: MS, Name: pred, dtype: float64</pre>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [4]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
-<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-4">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-5">
 <div>
 <span class="notice" hidden="">Copied!</span>
 <svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
@@ -4332,7 +4489,7 @@ Freq: MS, Name: pred, dtype: float64</pre>
 <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">data</span>
 </pre></div>
-<div class="clipboard-copy-txt" id="cell-4"># Data without datetime index
+<div class="clipboard-copy-txt" id="cell-5"># Data without datetime index
 # ==============================================================================
 data = data.reset_index(drop=True)
 data</div>
@@ -4345,7 +4502,7 @@ data</div>
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[4]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[5]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
@@ -4428,10 +4585,57 @@ data</div>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [6]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="CodeMirror cm-s-jupyter">
 <div class="zeroclipboard-container">
-<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-5">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-6">
+<div>
+<span class="notice" hidden="">Copied!</span>
+<svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
+<path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+<path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z" fill="currentColor" fill-rule="evenodd"></path>
+</svg>
+</div>
+</clipboard-copy>
+</div>
+<div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Index type and step</span>
+<span class="c1"># ==============================================================================</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Index type : </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Index step : </span><span class="si">{</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">step</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+<div class="clipboard-copy-txt" id="cell-6"># Index type and step
+# ==============================================================================
+print(f"Index type : {type(data.index)}")
+print(f"Index step : {data.index.step}")</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Index type : &lt;class 'pandas.core.indexes.range.RangeIndex'&gt;
+Index step : 1
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [7]:</div><div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="CodeMirror cm-s-jupyter">
+<div class="zeroclipboard-container">
+<clipboard-copy ,="" aria-label="Copy to Clipboard" for="cell-7">
 <div>
 <span class="notice" hidden="">Copied!</span>
 <svg aria-hidden="true" class="clipboard-copy-icon" data-view-component="true" height="20" version="1.1" viewbox="0 0 16 16" width="20">
@@ -4446,7 +4650,7 @@ data</div>
 <span class="n">forecaster</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s1">'y'</span><span class="p">])</span>
 <span class="n">forecaster</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">steps</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
 </pre></div>
-<div class="clipboard-copy-txt" id="cell-5"># Fit - Predict
+<div class="clipboard-copy-txt" id="cell-7"># Fit - Predict
 # ==============================================================================
 forecaster.fit(y=data['y'])
 forecaster.predict(steps=5)</div>
@@ -4459,7 +4663,7 @@ forecaster.predict(steps=5)</div>
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[5]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[7]:</div>
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
 <pre>204    0.861239
 205    0.871102
