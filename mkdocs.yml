@@ -83,6 +83,7 @@ nav:
   - Examples and tutorials:
     - English: examples/examples_english.md
     - Spanish: examples/examples_spanish.md
+    - Chinese (中文): examples/examples_chinese.md
 
   - API Reference:
     - recursive:
