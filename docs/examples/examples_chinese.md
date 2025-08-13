@@ -8,6 +8,8 @@
 
 本节面向时间序列预测初学者，涵盖最常用的模型与技术，帮助你打下扎实的理论与实践基础。  
 
-<i class="fa-duotone fa-chart-line fa" style="font-size: 25px; color: #1DA1F2;"></i> [Skforecast：用机器学习做时间序列预测](https://www.cienciadedatos.net/documentos/py27-time-series-forecasting-python-cn.html) 
+<i class="fa-duotone fa-chart-line fa" style="font-size: 25px; color: #1DA1F2;"></i> [Skforecast：用机器学习做时间序列预测](https://cienciadedatos.net/documentos/py27-time-series-forecasting-python-scikitlearn-cn.html) 
+
+<i class="fa-solid fa-arrow-trend-up" style="font-size: 25px; color: #E60023;"></i> [ARIMA和SARIMAX模型](https://www.cienciadedatos.net/documentos/py51-arima-sarimax-models-python-cn.html)
 
 <i class="fa-solid fa-sitemap fa" style="font-size: 25px; color: #00cc99;"></i> [基于梯度提升的预测：XGBoost、LightGBM 与 CatBoost](https://www.cienciadedatos.net/documentos/py39-forecasting-time-series-with-skforecast-xgboost-lightgbm-catboost-cn.html)
