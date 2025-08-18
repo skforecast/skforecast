@@ -76,7 +76,7 @@ The **skforecast** library offers a **variety of forecaster** types, each tailor
 |[ForecasterDirect]               |✔️|||✔️|✔️|✔️|✔️|✔️|
 |[ForecasterRecursiveMultiSeries] ||✔️|✔️||✔️|✔️|✔️|✔️|
 |[ForecasterDirectMultiVariate]   ||✔️||✔️|✔️|✔️|✔️|✔️|
-|[ForecasterRNN]                  ||✔️||✔️|✔️||✔️||
+|[ForecasterRNN]                  |✔️|✔️||✔️|✔️||✔️||
 |[ForecasterSarimax]              |✔️||✔️||✔️|✔️|✔️||
 
 [ForecasterRecursive]: ./user_guides/autoregresive-forecaster.html
