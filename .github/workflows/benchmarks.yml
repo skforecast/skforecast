@@ -1,10 +1,10 @@
 name: Benchmarks
 
 on:
-  workflow_dispatch: {}   # solo ejecución manual desde GitHub
+  workflow_dispatch: {}   # manual execution only from GitHub
 
 permissions:
-  contents: write  # necesario para poder hacer push
+  contents: write  # necessary to push changes
 
 jobs:
   run-benchmarks:
@@ -22,8 +22,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0            # trae el historial para poder commitear encima
-          persist-credentials: true # usa GITHUB_TOKEN para push
+          fetch-depth: 0            # fetch all history for committing
+          persist-credentials: true # use GITHUB_TOKEN for push
 
       - name: Set up Python
         uses: actions/setup-python@v5
