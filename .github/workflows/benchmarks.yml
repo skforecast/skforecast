@@ -11,12 +11,12 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      OMP_NUM_THREADS: "1"
-      OPENBLAS_NUM_THREADS: "1"
-      MKL_NUM_THREADS: "1"
-      NUMEXPR_NUM_THREADS: "1"
-      VECLIB_MAXIMUM_THREADS: "1"
-      PYTHONWARNINGS: "ignore"
+      OMP_NUM_THREADS: "1"         # Force OpenMP-based libraries to run single-threaded (e.g., NumPy, scikit-learn, LightGBM) to reduce variance and avoid oversubscription.
+      OPENBLAS_NUM_THREADS: "1"    # Limit OpenBLAS (BLAS/LAPACK backend) to 1 thread for deterministic, stable timings.
+      MKL_NUM_THREADS: "1"         # Limit Intel MKL to 1 thread; many NumPy wheels use MKL on CI.
+      NUMEXPR_NUM_THREADS: "1"     # Restrict numexpr parallelism (used by pandas/NumPy for vectorized expressions) to 1 thread.
+      VECLIB_MAXIMUM_THREADS: "1"  # Cap Apple's Accelerate/vecLib threads to 1; no effect on Linux, harmless to keep for portability.
+      PYTHONWARNINGS: "ignore"     # Silence Python warnings so benchmark logs are clean; switch to "default" if you want to see warnings.
 
     steps:
       - name: Checkout code

@@ -121,6 +121,7 @@ def run_benchmark_ForecasterRecursive():
                 exog=exog,
                 cv=cv,
                 metric='mean_squared_error',
+                n_jobs=1,
                 show_progress=False
             )
 
@@ -138,6 +139,7 @@ def run_benchmark_ForecasterRecursive():
                 interval_method='conformal',
                 cv=cv,
                 metric='mean_squared_error',
+                n_jobs=1,
                 show_progress=False
             )
 
