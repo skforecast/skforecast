@@ -11,13 +11,19 @@ from sklearn.dummy import DummyRegressor
 from sklearn.preprocessing import StandardScaler
 from skforecast.recursive import ForecasterRecursive
 from skforecast.model_selection import TimeSeriesFold, backtesting_forecaster
+from skforecast.utils import check_predict_input
 from .benchmark_runner import BenchmarkRunner
+
+# Global config
+LEN_SERIES = 2000
+STEPS = 100
+RANDOM_STATE = 123
 
 
 def _make_data(
-    len_series: int = 2000, 
-    steps: int = 100, 
-    random_state: int = 123
+    len_series: int = LEN_SERIES, 
+    steps: int = STEPS, 
+    random_state: int = RANDOM_STATE
 ) -> tuple[pd.Series, pd.DataFrame, pd.DataFrame]:
     """
     Create synthetic time series data for benchmarking.
@@ -37,7 +43,7 @@ def _make_data(
         Target time series.
     exog : pandas DataFrame
         Exogenous variables for training.
-    exog_prediction : pandas DataFrame
+    exog_pred : pandas DataFrame
         Exogenous variables for prediction.
     
     """
@@ -76,6 +82,7 @@ def run_benchmark_ForecasterRecursive():
     """
 
     # Setup
+    # ==========================================================================
     y, exog, exog_pred = _make_data()
 
     forecaster = ForecasterRecursive(
@@ -85,25 +92,40 @@ def run_benchmark_ForecasterRecursive():
         transformer_exog=StandardScaler(),
     )
 
-    def ForecasterRecursive_fit(forecaster, y, exog):
-        forecaster.fit(y=y, exog=exog)
-
     def ForecasterRecursive__create_train_X_y(forecaster, y, exog):
         forecaster._create_train_X_y(y=y, exog=exog)
 
+    def ForecasterRecursive_fit(forecaster, y, exog):
+        forecaster.fit(y=y, exog=exog)
+
+    def ForecasterRecursive_check_predict_inputs(forecaster, exog):
+        check_predict_input(
+            forecaster_name = type(forecaster).__name__,
+            steps           = STEPS,
+            is_fitted       = forecaster.is_fitted,
+            exog_in_        = forecaster.exog_in_,
+            index_type_     = forecaster.index_type_,
+            index_freq_     = forecaster.index_freq_,
+            window_size     = forecaster.window_size,
+            last_window     = forecaster.last_window_,
+            exog            = exog,
+            exog_names_in_  = forecaster.exog_names_in_,
+            interval        = None
+        )
+
     def ForecasterRecursive__create_predict_inputs(forecaster, exog):
         _ = forecaster._create_predict_inputs(
-                steps        = 100,
+                steps        = STEPS,
                 exog         = exog,
                 check_inputs = True
             )
 
     def ForecasterRecursive_predict(forecaster, exog):
-        forecaster.predict(steps=100, exog=exog)
+        forecaster.predict(steps=STEPS, exog=exog)
 
     def ForecasterRecursive_predict_interval_conformal(forecaster, exog):
         forecaster.predict_interval(
-            steps=100,
+            steps=STEPS,
             exog=exog,
             interval=[5, 95],
             method='conformal'
@@ -151,6 +173,7 @@ def run_benchmark_ForecasterRecursive():
 
     runner = BenchmarkRunner(repeat=30, output_dir="./benchmarks")
     forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True)
+    _ = runner.benchmark(ForecasterRecursive_check_predict_inputs, forecaster=forecaster, exog=exog)
     _ = runner.benchmark(ForecasterRecursive__create_predict_inputs, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterRecursive_predict, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterRecursive_predict_interval_conformal, forecaster=forecaster, exog=exog_pred)
