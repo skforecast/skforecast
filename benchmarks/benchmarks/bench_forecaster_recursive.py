@@ -138,7 +138,6 @@ def run_benchmark_ForecasterRecursive():
                 interval_method='conformal',
                 cv=cv,
                 metric='mean_squared_error',
-
                 show_progress=False
             )
 
