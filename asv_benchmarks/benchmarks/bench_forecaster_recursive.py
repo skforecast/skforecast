@@ -124,7 +124,7 @@ class TimeForecasterRecursive_Fit:
         self.exog = exog
 
         self.forecaster = ForecasterRecursive(
-            regressor=DummyRegressor(strategy='constant', constant=1),
+            regressor=DummyRegressor(strategy='constant', constant=1.),
             lags=lags,
             transformer_y=StandardScaler(),
             transformer_exog=StandardScaler(),
