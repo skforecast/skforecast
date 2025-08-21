@@ -59,6 +59,11 @@ asv publish
 asv preview
 ```
 
+```bash
+# Compare 2 branches
+asv run 0.17.x..feature_asv_benchmark
+```
+
 If some tests are heavy, raise the timeout in `asv.conf.json`:
 
 ```json
