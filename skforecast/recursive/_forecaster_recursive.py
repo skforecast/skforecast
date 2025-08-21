@@ -293,8 +293,6 @@ class ForecasterRecursive(ForecasterBase):
                 "predictors used in training the forecaster."
             )
         
-        print(self.lags)
-        
         self.window_size = max(
             [ws for ws in [self.max_lag, self.max_size_window_features] 
              if ws is not None]
