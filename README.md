@@ -112,7 +112,7 @@ The **skforecast** library offers a **variety of forecaster** types, each tailor
 |[ForecasterDirect]|:heavy_check_mark:|||:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
 |[ForecasterRecursiveMultiSeries]||:heavy_check_mark:|:heavy_check_mark:||:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
 |[ForecasterDirectMultiVariate]||:heavy_check_mark:||:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
-|[ForecasterRNN]||:heavy_check_mark:||:heavy_check_mark:|:heavy_check_mark:||:heavy_check_mark:||
+|[ForecasterRNN]|:heavy_check_mark:|:heavy_check_mark:||:heavy_check_mark:|:heavy_check_mark:||:heavy_check_mark:||
 |[ForecasterSarimax]|:heavy_check_mark:||:heavy_check_mark:||:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:||
 
 [ForecasterRecursive]: https://skforecast.org/latest/user_guides/autoregresive-forecaster.html
@@ -181,7 +181,7 @@ View the [citation file](https://github.com/skforecast/skforecast/blob/master/CI
 If you found **skforecast** useful, you can support us with a donation. Your contribution will help us **continue developing, maintaining, and improving** this project. Every contribution, no matter the size, makes a difference. **Thank you for your support!**
 
 <a href="https://www.buymeacoffee.com/skforecast" target="_blank" title="Buy me a coffee skforecast">
-    <img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=skforecast&button_colour=f79939&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00">
+    <img style="margin-bottom: 1em; width: 240px;" src="./images/buymeacoffee_button.png" alt="Buy me a coffee skforecast">
 </a>
 <br>
 <a href="https://github.com/sponsors/JoaquinAmatRodrigo" target="_blank" title="Become a GitHub Sponsor">

@@ -83,6 +83,7 @@ nav:
   - Examples and tutorials:
     - English: examples/examples_english.md
     - Spanish: examples/examples_spanish.md
+    - Chinese (中文): examples/examples_chinese.md
 
   - API Reference:
     - recursive:
@@ -137,7 +138,7 @@ plugins:
   - mkdocstrings:
       handlers:
         python:
-          import:
+          inventories:
             - https://docs.python.org/3/objects.inv
             - https://mkdocstrings.github.io/autorefs/objects.inv
             - https://www.mkdocs.org/objects.inv
