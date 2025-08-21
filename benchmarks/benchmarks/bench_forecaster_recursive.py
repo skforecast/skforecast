@@ -11,7 +11,7 @@ from sklearn.dummy import DummyRegressor
 from sklearn.preprocessing import StandardScaler
 from skforecast.recursive import ForecasterRecursive
 from skforecast.model_selection import TimeSeriesFold, backtesting_forecaster
-from .common import BenchmarkRunner
+from .benchmark_runner import BenchmarkRunner
 
 
 def _make_data(
