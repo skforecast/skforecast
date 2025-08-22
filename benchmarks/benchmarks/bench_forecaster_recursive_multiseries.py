@@ -166,7 +166,7 @@ def run_benchmark_ForecasterRecursiveMultiSeries():
     forecaster = ForecasterRecursiveMultiSeries(
         regressor=DummyRegressor(strategy='constant', constant=1.),
         lags=50,
-        transformer_y=StandardScaler(),
+        transformer_series=StandardScaler(),
         transformer_exog=StandardScaler(),
         encoding="ordinal"
     )

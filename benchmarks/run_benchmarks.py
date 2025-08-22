@@ -2,9 +2,11 @@
 import os
 import numpy as np
 from skforecast import __version__ as skforecast_version
-from benchmarks.bench_forecaster_recursive import (
+from benchmarks import (
     run_benchmark_ForecasterRecursive,
-    run_benchmark_ForecasterRecursiveMultiSeries
+    run_benchmark_ForecasterRecursiveMultiSeries,
+    run_benchmark_ForecasterDirect,
+    run_benchmark_ForecasterDirectMultiVariate
 )
 
 # Fijar semillas reproducibles
@@ -26,6 +28,8 @@ def main():
     print(f"Running skforecast benchmarks (skforecast={skforecast_version})")
     run_benchmark_ForecasterRecursive()
     run_benchmark_ForecasterRecursiveMultiSeries()
+    run_benchmark_ForecasterDirect()
+    run_benchmark_ForecasterDirectMultiVariate()
 
 
 if __name__ == "__main__":

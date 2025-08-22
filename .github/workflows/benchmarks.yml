@@ -17,6 +17,7 @@ jobs:
       NUMEXPR_NUM_THREADS: "1"     # Restrict numexpr parallelism (used by pandas/NumPy for vectorized expressions) to 1 thread.
       VECLIB_MAXIMUM_THREADS: "1"  # Cap Apple's Accelerate/vecLib threads to 1; no effect on Linux, harmless to keep for portability.
       PYTHONWARNINGS: "ignore"     # Silence Python warnings so benchmark logs are clean; switch to "default" if you want to see warnings.
+      KERAS_BACKEND: torch         # Use PyTorch as the backend for Keras.
 
     steps:
       - name: Checkout code
