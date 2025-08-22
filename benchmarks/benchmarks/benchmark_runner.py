@@ -109,6 +109,7 @@ class BenchmarkRunner:
             return df_combined
         
         else:
+            print(f"Writting in {result_file}")
             joblib.dump(df_new, result_file)
 
             return df_new

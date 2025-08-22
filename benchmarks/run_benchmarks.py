@@ -27,9 +27,9 @@ def main():
     """
     print(f"Running skforecast benchmarks (skforecast={skforecast_version})")
     run_benchmark_ForecasterRecursive()
-    run_benchmark_ForecasterRecursiveMultiSeries()
-    run_benchmark_ForecasterDirect()
-    run_benchmark_ForecasterDirectMultiVariate()
+    # run_benchmark_ForecasterRecursiveMultiSeries()
+    # run_benchmark_ForecasterDirect()
+    # run_benchmark_ForecasterDirectMultiVariate()
 
 
 if __name__ == "__main__":
