@@ -147,5 +147,4 @@ jobs:
             echo "### Next steps"
             echo "- If this was the first run, the job attempted to create and commit the new joblib."
             echo "- Subsequent runs will append entries and commit only when changes are detected."
-            echo "- You can also download the artifact attached to this run for quick inspection."
-          } >> "$GITHUB_STEP_SUMMARY"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
