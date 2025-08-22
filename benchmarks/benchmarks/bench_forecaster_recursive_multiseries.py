@@ -144,7 +144,7 @@ def _make_data(
     )
 
 
-def run_benchmark_ForecasterRecursiveMultiSeries():
+def run_benchmark_ForecasterRecursiveMultiSeries(output_dir):
     """
     Run all benchmarks for the ForecasterRecursiveMultiSeries class and save the results.
     """
@@ -353,7 +353,7 @@ def run_benchmark_ForecasterRecursiveMultiSeries():
         encoding="ordinal"
     )
 
-    runner = BenchmarkRunner(repeat=10, output_dir="./benchmarks")
+    runner = BenchmarkRunner(repeat=10, output_dir=output_dir)
     _ = runner.benchmark(
             ForecasterRecursiveMultiSeries__create_train_X_y_series_is_dict_no_exog,
             forecaster=forecaster,
@@ -416,7 +416,7 @@ def run_benchmark_ForecasterRecursiveMultiSeries():
         encoding="ordinal"
     )
 
-    runner = BenchmarkRunner(repeat=5, output_dir="./benchmarks")
+    runner = BenchmarkRunner(repeat=5, output_dir=output_dir)
     _ = runner.benchmark(
             ForecasterRecursiveMultiSeries_fit_series_is_dict_no_exog,
             forecaster=forecaster,
@@ -468,7 +468,7 @@ def run_benchmark_ForecasterRecursiveMultiSeries():
     )
     forecaster.fit(series=series_dict, exog=exog_dict, store_in_sample_residuals = True)
 
-    runner = BenchmarkRunner(repeat=10, output_dir="./benchmarks")
+    runner = BenchmarkRunner(repeat=10, output_dir=output_dir)
     _ = runner.benchmark(
             ForecasterRecursiveMultiSeries_check_predict_inputs,
             forecaster=forecaster,
@@ -526,7 +526,7 @@ def run_benchmark_ForecasterRecursiveMultiSeries():
         encoding="ordinal"
     )
 
-    runner = BenchmarkRunner(repeat=5, output_dir="./benchmarks")
+    runner = BenchmarkRunner(repeat=5, output_dir=output_dir)
     _ = runner.benchmark(
             ForecasterRecursiveMultiSeries_backtesting_series_is_dict_no_exog,
             forecaster=forecaster,

@@ -89,7 +89,7 @@ def _make_data(
     return series, exog, exog_pred
 
 
-def run_benchmark_ForecasterRnn():
+def run_benchmark_ForecasterRnn(output_dir):
     """
     Run all benchmarks for the ForecasterRnn class and save the results.
     """
@@ -229,22 +229,22 @@ def run_benchmark_ForecasterRnn():
                 show_progress=False
             )
 
-    runner = BenchmarkRunner(repeat=10, output_dir="./benchmarks")
+    runner = BenchmarkRunner(repeat=10, output_dir=output_dir)
     _ = runner.benchmark(ForecasterRnn__create_train_X_y, forecaster=forecaster_exog, series=series, exog=exog)
     _ = runner.benchmark(ForecasterRnn__create_train_X_y_no_exog, forecaster=forecaster, series=series)
 
-    runner = BenchmarkRunner(repeat=5, output_dir="./benchmarks")
+    runner = BenchmarkRunner(repeat=5, output_dir=output_dir)
     _ = runner.benchmark(ForecasterRnn_fit, forecaster=forecaster_exog, series=series, exog=exog)
     _ = runner.benchmark(ForecasterRnn_fit_series_no_exog, forecaster=forecaster, series=series)
 
     forecaster_exog.fit(series=series, exog=exog, store_in_sample_residuals=True)
-    runner = BenchmarkRunner(repeat=10, output_dir="./benchmarks")
+    runner = BenchmarkRunner(repeat=10, output_dir=output_dir)
     _ = runner.benchmark(ForecasterRnn_check_predict_inputs, forecaster=forecaster_exog, exog=exog_pred)
     _ = runner.benchmark(ForecasterRnn__create_predict_inputs, forecaster=forecaster_exog, exog=exog_pred)
     _ = runner.benchmark(ForecasterRnn_predict, forecaster=forecaster_exog, exog=exog_pred)
     _ = runner.benchmark(ForecasterRnn_predict_interval_conformal, forecaster=forecaster_exog, exog=exog_pred)
 
-    runner = BenchmarkRunner(repeat=5, output_dir="./benchmarks")
+    runner = BenchmarkRunner(repeat=5, output_dir=output_dir)
     _ = runner.benchmark(ForecasterRnn_backtesting, forecaster=forecaster_exog, series=series, exog=exog)
     _ = runner.benchmark(ForecasterRnn_backtesting_no_exog, forecaster=forecaster, series=series)
     _ = runner.benchmark(ForecasterRnn_backtesting_conformal, forecaster=forecaster_exog, series=series, exog=exog)

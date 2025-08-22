@@ -88,7 +88,7 @@ def _make_data(
     return series, exog, exog_pred
 
 
-def run_benchmark_ForecasterDirectMultiVariate():
+def run_benchmark_ForecasterDirectMultiVariate(output_dir):
     """
     Run all benchmarks for the ForecasterDirectMultiVariate class and save the results.
     """
@@ -204,22 +204,22 @@ def run_benchmark_ForecasterDirectMultiVariate():
                 show_progress=False
             )
 
-    runner = BenchmarkRunner(repeat=10, output_dir="./benchmarks")
+    runner = BenchmarkRunner(repeat=10, output_dir=output_dir)
     _ = runner.benchmark(ForecasterDirectMultiVariate__create_train_X_y, forecaster=forecaster, series=series, exog=exog)
     _ = runner.benchmark(ForecasterDirectMultiVariate__create_train_X_y_no_exog, forecaster=forecaster, series=series)
 
-    runner = BenchmarkRunner(repeat=5, output_dir="./benchmarks")
+    runner = BenchmarkRunner(repeat=5, output_dir=output_dir)
     _ = runner.benchmark(ForecasterDirectMultiVariate_fit, forecaster=forecaster, series=series, exog=exog)
     _ = runner.benchmark(ForecasterDirectMultiVariate_fit_series_no_exog, forecaster=forecaster, series=series)
 
-    runner = BenchmarkRunner(repeat=10, output_dir="./benchmarks")
+    runner = BenchmarkRunner(repeat=10, output_dir=output_dir)
     forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
     _ = runner.benchmark(ForecasterDirectMultiVariate_check_predict_inputs, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterDirectMultiVariate__create_predict_inputs, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterDirectMultiVariate_predict, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterDirectMultiVariate_predict_interval_conformal, forecaster=forecaster, exog=exog_pred)
 
-    runner = BenchmarkRunner(repeat=5, output_dir="./benchmarks")
+    runner = BenchmarkRunner(repeat=5, output_dir=output_dir)
     _ = runner.benchmark(ForecasterDirectMultiVariate_backtesting, forecaster=forecaster, series=series, exog=exog)
     _ = runner.benchmark(ForecasterDirectMultiVariate_backtesting_no_exog, forecaster=forecaster, series=series)
     _ = runner.benchmark(ForecasterDirectMultiVariate_backtesting_conformal, forecaster=forecaster, series=series, exog=exog)
