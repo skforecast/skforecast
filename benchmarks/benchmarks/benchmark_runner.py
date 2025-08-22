@@ -1,5 +1,5 @@
 ################################################################################
-#                               Benchmarking Common                            #
+#                                BenchmarkRunner                               #
 #                                                                              #
 # This work by skforecast team is licensed under the BSD 3-Clause License      #
 ################################################################################
@@ -99,17 +99,19 @@ class BenchmarkRunner:
                 )
                 if mask.any():
                     warnings.warn(
-                        "This benchmark already exists with the same hash and system info. Skipping save."
+                        f"Benchmark skipped: identical entry already exists in {result_file}, "
+                        f"skipping save."
                     )
                     return df_existing
             
             df_combined = pd.concat([df_existing, df_new], ignore_index=True)
             joblib.dump(df_combined, result_file)
+            print(f"Appended new benchmark entry to existing file: {result_file}")
 
             return df_combined
         
         else:
-            print(f"Writting in {result_file}")
             joblib.dump(df_new, result_file)
+            print(f"Created new benchmark file: {result_file}")
 
             return df_new

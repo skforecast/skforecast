@@ -51,20 +51,34 @@ jobs:
       - name: Run benchmarks
         run: |
           python benchmarks/run_benchmarks.py
+          ls -lh benchmarks || true
     
       - name: Commit & push updated joblib
         run: |
           set -e
+          # Comprobación básica: ¿se generó el fichero?
+          if [ ! -f benchmarks/benchmark.joblib ]; then
+            echo "No benchmarks/benchmark.joblib produced; nothing to commit."
+            exit 0
+          fi
+
           # Config git para el bot
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          
+          # Muestra estado antes
+          git status --porcelain
+          ls -lh benchmarks/benchmark.joblib
 
-          # Añade solo si hay cambios
-          if ! git diff --quiet -- benchmarks/benchmark.joblib; then
-            git add benchmarks/benchmark.joblib
-            git commit -m "benchmarks: update benchmark.joblib (run $GITHUB_RUN_NUMBER @ $GITHUB_SHA)"
+          # Stage del archivo (detecta también archivos nuevos)
+          git add -A benchmarks/benchmark.joblib
+
+          # ¿Hay algo staged para este path?
+          if git diff --cached --quiet -- benchmarks/benchmark.joblib; then
+            echo "No changes in benchmarks/benchmark.joblib; skipping commit."
+          else
+            git commit -m "benchmarks: update benchmark.joblib (run ${GITHUB_RUN_NUMBER} @ ${GITHUB_SHA::7})"
             git push
             echo "Pushed updated benchmarks/benchmark.joblib"
-          else
-            echo "No changes in benchmarks/benchmark.joblib; skipping commit."
           fi
+          
