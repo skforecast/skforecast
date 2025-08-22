@@ -26,59 +26,126 @@ jobs:
           fetch-depth: 0            # fetch all history for committing
           persist-credentials: true # use GITHUB_TOKEN for push
 
+      - name: Show runner context (verbose)
+        shell: bash
+        run: |
+          echo ">> Repository: $GITHUB_REPOSITORY"
+          echo ">> Default branch: $GITHUB_REF_NAME"
+          echo ">> Commit SHA: ${GITHUB_SHA}"
+          echo ">> Run number: ${GITHUB_RUN_NUMBER}"
+          echo ">> Actor: ${GITHUB_ACTOR}"
+          echo ">> Runner OS: $RUNNER_OS"
+          echo ">> Working directory:"
+          pwd
+          echo ">> Git status (before changes):"
+          git status --porcelain || true
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Install Python dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r benchmarks/requirements_benchmarks.txt
-          pip install .
-
-      - name: Show environment info
-        run: |
-          python --version
-          python -m pip list
-          python - << 'PY'
-          import sys, platform, os
-          print('Python executable:', sys.executable)
-          print('Platform:', platform.platform())
-          print('CWD:', os.getcwd())
-          PY
-        
-      - name: Run benchmarks
-        run: |
-          python benchmarks/run_benchmarks.py
-          ls -lh benchmarks || true
-    
-      - name: Commit & push updated joblib
+      - name: Install Python dependencies (verbose)
+        shell: bash
         run: |
           set -e
-          # Comprobación básica: ¿se generó el fichero?
+          echo ">> Upgrading pip..."
+          python -m pip install --upgrade pip
+          echo ">> Installing benchmark requirements..."
+          pip install -r benchmarks/requirements_benchmarks.txt
+          echo ">> Installing project..."
+          pip install .
+
+
+      - name: Show environment info
+        shell: bash
+        run: |
+          echo ">> Python environment summary:"
+          python --version
+          python -m pip list | sed -n '1,120p'  # Truncate long lists for readability
+          
+      - name: Sanity check paths (verbose)
+        shell: bash
+        run: |
+          echo ">> Listing repo root:"
+          ls -la
+          echo ">> Listing benchmarks directory (if present):"
+          ls -la benchmarks || echo "No 'benchmarks' directory yet."
+          echo ">> Expected output file: benchmarks/benchmark.joblib"
+        
+      - name: Run benchmarks
+        shell: bash
+        run: |
+          set -e
+          echo ">> Running benchmark script..."
+          # Ensure your script writes to benchmarks/benchmark.joblib
+          python benchmarks/run_benchmarks.py
+          echo ">> Benchmark script finished with exit code $?"
+          echo ">> Listing benchmarks directory after run:"
+          ls -lh benchmarks || true
+          if [ -f benchmarks/benchmark.joblib ]; then
+            echo ">> Found output: benchmarks/benchmark.joblib"
+          else
+            echo "!! No output file produced at benchmarks/benchmark.joblib"
+          fi
+    
+      - name: Commit & push updated joblib
+        if: always()
+        shell: bash
+        run: |
+          set -e
+          echo ">> Preparing to commit benchmarks/benchmark.joblib (if changed)..."
+
           if [ ! -f benchmarks/benchmark.joblib ]; then
-            echo "No benchmarks/benchmark.joblib produced; nothing to commit."
+            echo "!! benchmarks/benchmark.joblib not found. Skipping commit."
             exit 0
           fi
 
-          # Config git para el bot
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          
-          # Muestra estado antes
-          git status --porcelain
-          ls -lh benchmarks/benchmark.joblib
 
-          # Stage del archivo (detecta también archivos nuevos)
+          echo ">> Git status before staging:"
+          git status --porcelain || true
+
+          # Stage new or changed file (covers untracked and modified cases)
           git add -A benchmarks/benchmark.joblib
 
-          # ¿Hay algo staged para este path?
+          # If there is any diff in the staged file, commit and push
           if git diff --cached --quiet -- benchmarks/benchmark.joblib; then
-            echo "No changes in benchmarks/benchmark.joblib; skipping commit."
+            echo ">> No changes detected in benchmarks/benchmark.joblib. Skipping commit."
           else
+            echo ">> Changes detected. Committing..."
             git commit -m "benchmarks: update benchmark.joblib (run ${GITHUB_RUN_NUMBER} @ ${GITHUB_SHA::7})"
+            echo ">> Pushing commit..."
             git push
-            echo "Pushed updated benchmarks/benchmark.joblib"
+            echo ">> Push completed."
           fi
-          
+
+          echo ">> Git status after potential commit:"
+          git status --porcelain || true
+
+      - name: Job summary (human-friendly)
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Benchmarks workflow summary"
+            echo ""
+            echo "- **Repo:** \`${GITHUB_REPOSITORY}\`"
+            echo "- **Branch/Ref:** \`${GITHUB_REF_NAME}\`"
+            echo "- **Commit:** \`${GITHUB_SHA}\`"
+            echo "- **Run number:** \`${GITHUB_RUN_NUMBER}\`"
+            echo ""
+            if [ -f benchmarks/benchmark.joblib ]; then
+              echo "### Output file"
+              echo "- Generated: \`benchmarks/benchmark.joblib\`"
+            else
+              echo "### Output file"
+              echo "- ❌ Not produced (check logs above)."
+            fi
+            echo ""
+            echo "### Next steps"
+            echo "- If this was the first run, the job attempted to create and commit the new joblib."
+            echo "- Subsequent runs will append entries and commit only when changes are detected."
+            echo "- You can also download the artifact attached to this run for quick inspection."
+          } >> "$GITHUB_STEP_SUMMARY"

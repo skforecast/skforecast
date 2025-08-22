@@ -31,9 +31,14 @@ def main():
     """
     Run all benchmarks for skforecast.
     """
-    print(f"Running skforecast benchmarks (skforecast={skforecast_version})")
 
     output_dir = "benchmarks"
+
+    print(
+        f"Running skforecast benchmarks (skforecast={skforecast_version}), "
+        f"output will be saved in {output_dir}"
+    )
+    
     run_benchmark_ForecasterRecursive(output_dir)
     # run_benchmark_ForecasterRecursiveMultiSeries(output_dir)
     # run_benchmark_ForecasterDirect(output_dir)
