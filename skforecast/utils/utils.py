@@ -31,7 +31,8 @@ from ..exceptions import (
     SaveLoadSkforecastWarning,
     SkforecastVersionWarning,
     UnknownLevelWarning,
-    InputTypeWarning
+    InputTypeWarning,
+    FeatureOutOfRangeWarning
 )
 
 optional_dependencies = {
@@ -3028,7 +3029,7 @@ def check_features_range(features_ranges: dict, X: pd.DataFrame | pd.Series, ser
                 )
                 if series_name:
                     msg = f"'{series_name}': " + msg
-                warnings.warn(msg)
+                warnings.warn(msg, FeatureOutOfRangeWarning)
         else:
             if (~X[col].isin(rule)).any():
                 msg = (
@@ -3037,5 +3038,5 @@ def check_features_range(features_ranges: dict, X: pd.DataFrame | pd.Series, ser
                 )
                 if series_name:
                     msg = f"'{series_name}': " + msg
-                warnings.warn(msg)
+                warnings.warn(msg, FeatureOutOfRangeWarning)
     return

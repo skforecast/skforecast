@@ -23,13 +23,13 @@ from ..exceptions import DataTransformationWarning, ResidualsUsageWarning
 from ..utils import (
     initialize_lags,
     initialize_window_features,
-    initialize_weights,
-    get_features_range,
-    check_features_range,
+    initialize_weights,    
     check_select_fit_kwargs,
     check_y,
     check_exog,
     get_exog_dtypes,
+    get_features_range,
+    check_features_range,
     check_exog_dtypes,
     check_predict_input,
     check_residuals_input,
@@ -161,6 +161,8 @@ class ForecasterRecursive(ForecasterBase):
         First and last values of index of the data used during training.
     series_name_in_ : str
         Names of the series provided by the user during training.
+    series_values_range_ : dict
+        Range of values of the target series used during training.
     exog_in_ : bool
         If the forecaster has been trained using exogenous variable/s.
     exog_names_in_ : list
@@ -175,6 +177,8 @@ class ForecasterRecursive(ForecasterBase):
         Type of each exogenous variable/s used in training after the transformation 
         applied by `transformer_exog`. If `transformer_exog` is not used, it 
         is equal to `exog_dtypes_in_`.
+    exog_values_range_ : dict
+        Range of values of the exogenous variables used during training.
     X_train_window_features_names_out_ : list
         Names of the window features included in the matrix `X_train` created
         internally for training.
@@ -1469,7 +1473,7 @@ class ForecasterRecursive(ForecasterBase):
         last_window: pd.Series | pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | None = None,
         check_inputs: bool = True,
-        warning_drift: bool = True
+        warning_drift: bool = False
     ) -> pd.Series:
         """
         Predict n steps ahead. It is an recursive process in which, each prediction,
@@ -1494,6 +1498,9 @@ class ForecasterRecursive(ForecasterBase):
             If `True`, the input is checked for possible warnings and errors 
             with the `check_predict_input` function. This argument is created 
             for internal use and is not recommended to be changed.
+        warning_drift : bool, default False
+            If `True`, the input is checked to detect if input values are out of
+            the range seen during training.
 
         Returns
         -------
@@ -1502,14 +1509,13 @@ class ForecasterRecursive(ForecasterBase):
         
         """
 
-        # TODO:
         if warning_drift:
             check_features_range(
-                features_ranges=self.series_values_range_,
-                X=self.last_window_ if self.last_window_ is not None else last_window
+                features_ranges = self.series_values_range_,
+                X = last_window if last_window is not None else self.last_window_
             )
             if exog is not None:
-                check_features_range(features_ranges=self.series_values_range_, X=exog)
+                check_features_range(features_ranges=self.exog_values_range_, X=exog)
 
         (
             last_window_values,

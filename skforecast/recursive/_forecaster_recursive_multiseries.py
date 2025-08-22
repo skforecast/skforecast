@@ -42,6 +42,8 @@ from ..utils import (
     prepare_levels_multiseries,
     preprocess_levels_self_last_window_multiseries,
     get_exog_dtypes,
+    get_features_range,
+    check_features_range,
     check_exog_dtypes,
     check_predict_input,
     check_residuals_input,
@@ -264,6 +266,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         series.
     series_names_in_ : list
         Names of the series (levels) provided by the user during training.
+    series_values_range_ : dict
+        Range of values of the target series used during training.
     exog_in_ : bool
         If the forecaster has been trained using exogenous variable/s.
     exog_names_in_ : list
@@ -278,6 +282,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         Type of each exogenous variable/s used in training after the transformation 
         applied by `transformer_exog`. If `transformer_exog` is not used, it 
         is equal to `exog_dtypes_in_`.
+    exog_values_range_ : dict
+        Range of values of the exogenous variables used during training.
     X_train_series_names_in_ : list
         Names of the series (levels) included in the matrix `X_train` created
         internally for training. It can be different from `series_names_in_` if
@@ -407,11 +413,13 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self.index_freq_                        = None
         self.training_range_                    = None
         self.series_names_in_                   = None
+        self.series_values_range_               = None
         self.exog_in_                           = False
         self.exog_names_in_                     = None
         self.exog_type_in_                      = None
         self.exog_dtypes_in_                    = None
-        self.exog_dtypes_out_                   = None 
+        self.exog_dtypes_out_                   = None
+        self.exog_values_range_                 = None
         self.X_train_series_names_in_           = None
         self.X_train_window_features_names_out_ = None
         self.X_train_exog_names_out_            = None
@@ -1760,11 +1768,13 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self.index_freq_                        = None
         self.training_range_                    = None
         self.series_names_in_                   = None
+        self.series_values_range_               = None
         self.exog_in_                           = False
         self.exog_names_in_                     = None
         self.exog_type_in_                      = None
         self.exog_dtypes_in_                    = None
         self.exog_dtypes_out_                   = None
+        self.exog_values_range_                 = None
         self.X_train_series_names_in_           = None
         self.X_train_window_features_names_out_ = None
         self.X_train_exog_names_out_            = None
@@ -1775,6 +1785,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self.binner_intervals_                  = {}
         self.is_fitted                          = False
         self.fit_date                           = None
+
+        self.series_values_range_ = get_features_range(X=series)
 
         (
             X_train,
@@ -1836,6 +1848,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             self.exog_dtypes_in_ = exog_dtypes_in_
             self.exog_dtypes_out_ = exog_dtypes_out_
             self.X_train_exog_names_out_ = X_train_exog_names_out_
+            self.exog_values_range_ = get_features_range(X=exog)
 
         self.in_sample_residuals_ = {}
         self.in_sample_residuals_by_bin_ = {}
@@ -2501,7 +2514,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         last_window: pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
         suppress_warnings: bool = False,
-        check_inputs: bool = True
+        check_inputs: bool = True,
+        warning_drift: bool = False
+
     ) -> pd.DataFrame:
         """
         Predict n steps ahead. It is an recursive process in which, each prediction,
@@ -2531,6 +2546,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             If `True`, the input is checked for possible warnings and errors 
             with the `check_predict_input` function. This argument is created 
             for internal use and is not recommended to be changed.
+        warning_drift: bool = False
+            If `True`, the input is checked to detect if input values are out of
+            the range seen during training.
 
         Returns
         -------
@@ -2539,6 +2557,17 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             and `pred`.
 
         """
+
+        # TODO: should warning drift be set to False if suppress warnings is True?
+        if suppress_warnings:
+            warning_drift = False
+        if warning_drift:
+            check_features_range(
+                features_ranges = self.series_values_range_,
+                X = last_window if last_window is not None else self.last_window_
+            )
+            if exog is not None:
+                check_features_range(features_ranges=self.exog_values_range_, X=exog)
 
         set_skforecast_warnings(suppress_warnings, action='ignore')
 
