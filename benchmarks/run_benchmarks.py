@@ -1,4 +1,10 @@
-# .github/scripts/run_benchmarks.py
+################################################################################
+#                              Run Benchmarking                                #
+#                                                                              #
+# This work by skforecast team is licensed under the BSD 3-Clause License      #
+################################################################################
+# coding=utf-8
+
 import os
 import numpy as np
 from skforecast import __version__ as skforecast_version
@@ -27,7 +33,7 @@ def main():
     """
     print(f"Running skforecast benchmarks (skforecast={skforecast_version})")
 
-    output_dir = "./"
+    output_dir = "benchmarks"
     run_benchmark_ForecasterRecursive(output_dir)
     # run_benchmark_ForecasterRecursiveMultiSeries(output_dir)
     # run_benchmark_ForecasterDirect(output_dir)
