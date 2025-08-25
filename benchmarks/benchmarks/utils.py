@@ -127,34 +127,25 @@ def plot_benchmark_results(df, function_name, add_median=True, add_mean=True):
     fig.show()
 
 
-def plot_benchmark_results_v2(df, forecaster=None, regressor=None, add_median=True, add_mean=True):
+def plot_benchmark_results_v2(df, forecaster_names, regressors=None, add_median=True, add_mean=True):
     """
     Plot benchmark results with jittered strip points and per-point standard deviation error bars,
     with error bars matching point colors.
     """
-    if forecaster is not None:
-        if not isinstance(forecaster, list):
-            forecaster = [forecaster]
-        df = df.query("forecaster_name in @forecaster")
+    if not isinstance(forecaster_names, list):
+        forecaster_names = [forecaster_names]
+    df = df.query("forecaster_name in @forecaster_names")
 
-    if regressor is not None:
-        if not isinstance(regressor, list):
-            regressor = [regressor]
-        df = df.query("regressor_name in @regressor")
-
-    df['skforecast_version'] = pd.Categorical(
-        df['skforecast_version'], 
-        ordered=True, 
-        categories=sorted(df['skforecast_version'].unique())
-    )
-
+    if regressors is not None:
+        if not isinstance(regressors, list):
+            regressors = [regressors]
+        df = df.query("regressor_name in @regressors")
 
     def try_version(v):
         try: 
             return Version(str(v).lstrip('v'))
         except: 
             return Version("0")  # fallback
-
 
     versions_sorted = sorted(df['skforecast_version'].unique(), key=try_version)
     df['skforecast_version'] = pd.Categorical(
@@ -163,12 +154,13 @@ def plot_benchmark_results_v2(df, forecaster=None, regressor=None, add_median=Tr
         ordered=True
     )
 
+    # --- paleta por versión ---
     version_colors = {
         v: qualitative.Plotly[i % len(qualitative.Plotly)] 
         for i, v in enumerate(versions_sorted)
     }
 
-    methods = list(df['function_name'].unique())
+    methods = list(df['method_name'].unique())
     metrics = [
         ("Mean", "run_time_avg"),
         ("Median", "run_time_median"),
@@ -178,39 +170,68 @@ def plot_benchmark_results_v2(df, forecaster=None, regressor=None, add_median=Tr
 
     fig = go.Figure()
 
-    # Creamos un trace por (método, métrica). Solo mostramos (método0, media) al inicio.
+    # --- un trace por (método, métrica); colores por versión en los puntos ---
     for j, (label, col) in enumerate(metrics):
         for i, m in enumerate(methods):
-            sub_df = df[df['function_name'] == m].sort_values('skforecast_version')
+
+            sub_df = df[df['method_name'] == m].sort_values('skforecast_version')
             if sub_df.empty:
                 continue
-            visible = (i == 0 and j == 0)  # solo la primera combinación visible
-            # Sólo ponemos barras de error para la media (std)
+
+            visible = (i == 0 and j == 0)
+
+            marker = dict(
+                size=8,
+                line=dict(width=0),
+                color=[version_colors[v] for v in sub_df['skforecast_version']],
+                opacity=0.7
+            )   
+
             error_y = dict(
                 type='data', 
                 array=sub_df['run_time_std'], 
-                visible=(label in ['Mean', 'Median'])
+                visible=(label in ['Mean', 'Median']),
+                color=[version_colors[v] for v in sub_df['skforecast_version']]
             )
+
             fig.add_trace(go.Scatter(
                 x=sub_df['skforecast_version'],
                 y=sub_df[col],
                 mode='lines+markers',
-                name=f"{m} — {label}",
-                visible=visible,
-                hovertemplate="<b>%{x}</b><br>"
-                            f"Método: {m}<br>"
-                            f"Métrica: {label}<br>"
-                            "Tiempo: %{y:.6f} s<br>"
-                            "runs: %{customdata}",
-                customdata=np.c_[sub_df['cpu_count']],
+                marker=marker,
                 error_y=error_y,
+                visible=visible,
+                # name=f"{methods[i]} — {label}",
+                text = sub_df.apply(lambda row: (
+                    f"Forecaster: {row['forecaster_name']}<br>"
+                    f"Regressor: {row['regressor_name']}<br>"
+                    f"Function: {row['function_name']}<br>"
+                    f"Function_hash: {row['function_hash']}<br>"
+                    f"Method: {row['method_name']}<br>"
+                    f"Datetime: {row['datetime']}<br>"
+                    f"Python version: {row['python_version']}<br>"
+                    f"skforecast version: {row['skforecast_version']}<br>"
+                    f"numpy version: {row['numpy_version']}<br>"
+                    f"pandas version: {row['pandas_version']}<br>"
+                    f"sklearn version: {row['sklearn_version']}<br>"
+                    f"lightgbm version: {row['lightgbm_version']}<br>"
+                    f"Platform: {row['platform']}<br>"
+                    f"Processor: {row['processor']}<br>"
+                    f"CPU count: {row['cpu_count']}<br>"
+                    f"Memory (GB): {row['memory_gb']:.2f}<br>"
+                    f"Run time avg: {row['run_time_avg']:.6f} s<br>"
+                    f"Run time median: {row['run_time_median']:.6f} s<br>"
+                    f"Run time p95: {row['run_time_p95']:.6f} s<br>"
+                    f"Run time std: {row['run_time_std']:.6f} s<br>"
+                    f"Nº repeats: {row['n_repeats']}"
+                ), axis=1),
+                hovertemplate = '%{text}<extra></extra>'
             ))
 
-    # Helpers para visibilidades
+    # --- helpers de visibilidad ---
     def mask_for(method_idx, metric_idx):
         """Devuelve un vector de visibilidad para todos los traces."""
         vis = [False] * (len(methods) * len(metrics))
-        # índice lineal = metric_idx * len(methods) + method_idx
         vis[metric_idx * len(methods) + method_idx] = True
         return vis
 
@@ -220,8 +241,10 @@ def plot_benchmark_results_v2(df, forecaster=None, regressor=None, add_median=Tr
         buttons_methods.append(dict(
             label=m,
             method="update",
-            args=[{"visible": mask_for(i, 0)},  # por defecto deja 'Media'
-                {"title": f"Tiempos por versión — método: {m}"}]
+            args=[
+                {"visible": mask_for(i, 0)},  # por defecto deja 'Mean'
+                {"title": f"Tiempos por versión — método: {m}"} 
+            ]
         ))
 
     # Dropdown 2: métrica
@@ -233,8 +256,7 @@ def plot_benchmark_results_v2(df, forecaster=None, regressor=None, add_median=Tr
         buttons_metrics.append(dict(
             label=label,
             method="update",
-            args=[{"visible": mask_for(0, j)},
-                {}]
+            args=[{"visible": mask_for(0, j)}, {}]
         ))
 
     # Botones Linear/Log
@@ -244,40 +266,26 @@ def plot_benchmark_results_v2(df, forecaster=None, regressor=None, add_median=Tr
     ]
 
     fig.update_layout(
-        title=f"Tiempos por versión — método: {methods[0]}",
+        title=dict(
+            text=f"Tiempos por versión — método: {methods[0]}",
+            y=0.99, yanchor="top"  # título arriba
+        ),
         xaxis_title="Versión del paquete",
         yaxis_title="Tiempo (s)",
         template="plotly_white",
+        margin=dict(l=60, r=20, t=100, b=60),  # más margen superior
         updatemenus=[
-            # 1) Botones Linear/Log (arriba‑derecha)
-            dict(
-                type="buttons",
-                buttons=buttons_scale,
-                showactive=True,
-                direction="left",
-                x=1.00, y=1.18, xanchor="right", yanchor="top",
-                pad={"r": 0, "t": 0}
-            ),
-            # 2) Dropdown de Métrica
-            dict(
-                type="dropdown",
-                buttons=buttons_metrics,
-                showactive=True,
-                direction="down",
-                x=0.91, y=1.18, xanchor="right", yanchor="top",
-                pad={"r": 0, "t": 0}
-            ),
-            # 3) Dropdown de Método
-            dict(
-                type="dropdown",
-                buttons=buttons_methods,
-                showactive=True,
-                direction="down",
-                x=0.83, y=1.18, xanchor="right", yanchor="top",
-                pad={"r": 0, "t": 0}
-            ),
+            # Barra de controles *debajo del título* (y ~1.03)
+            dict(type="dropdown", buttons=buttons_methods, showactive=True,
+                 direction="down", x=1.00, y=1.03, xanchor="right", yanchor="bottom",
+                 pad={"r": 2, "t": 0}),
+            dict(type="dropdown", buttons=buttons_metrics, showactive=True,
+                 direction="down", x=0.80, y=1.03, xanchor="right", yanchor="bottom",
+                 pad={"r": 2, "t": 0}),
+            dict(type="buttons", buttons=buttons_scale, showactive=True,
+                 direction="left", x=0.60, y=1.03, xanchor="right", yanchor="bottom",
+                 pad={"r": 2, "t": 0}),
         ],
-        margin=dict(l=60, r=20, t=80, b=60),  # un poco más de margen superior
         legend=dict(title=""),
     )
     fig.update_xaxes(tickangle=0)  # cambia a 45 si las versiones son largas

@@ -81,6 +81,7 @@ class BenchmarkRunner:
         
         func_name = func.__name__
         hash_code = self.hash_function_code(func)
+        method_name = func_name.replace(f'{forecaster}_', '') 
         timing = self.time_function(func, forecaster, *args, **kwargs)
         system_info = self.get_system_info()
 
@@ -90,6 +91,7 @@ class BenchmarkRunner:
             'regressor_name': regressor_name,
             'function_name': func_name,
             'function_hash': hash_code,
+            'method_name': method_name,
             'run_time_avg': timing['avg_time'],
             'run_time_median': timing['median_time'],
             'run_time_p95': timing['p95_time'],
