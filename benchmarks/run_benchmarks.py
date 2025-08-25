@@ -40,9 +40,9 @@ def main():
     )
     
     run_benchmark_ForecasterRecursive(output_dir)
-    run_benchmark_ForecasterRecursiveMultiSeries(output_dir)
-    run_benchmark_ForecasterDirect(output_dir)
-    run_benchmark_ForecasterDirectMultiVariate(output_dir)
+    # run_benchmark_ForecasterRecursiveMultiSeries(output_dir)
+    # run_benchmark_ForecasterDirect(output_dir)
+    # run_benchmark_ForecasterDirectMultiVariate(output_dir)
 
 
 if __name__ == "__main__":

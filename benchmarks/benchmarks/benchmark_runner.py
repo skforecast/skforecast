@@ -54,10 +54,20 @@ class BenchmarkRunner:
                 end = time.perf_counter()
                 times.append(end - start)
 
-            return {'avg_time': np.mean(times), 'std_dev': np.std(times)}
+            return {
+                'avg_time': np.mean(times), 
+                'median_time': np.median(times),
+                'p95_time': np.percentile(times, 95),
+                'std_time': np.std(times)
+            }
         except Exception as e:
             warnings.warn(f"The function {func.__name__} raised an exception: {e}")
-            return {'avg_time': np.nan, 'std_dev': np.nan}
+            return {
+                'avg_time': np.nan, 
+                'median_time': np.nan, 
+                'p95_time': np.nan, 
+                'std_time': np.nan
+            }
 
     def benchmark(self, func, forecaster=None, allow_repeated_execution=True, *args, **kwargs):
         """
@@ -81,7 +91,10 @@ class BenchmarkRunner:
             'function_name': func_name,
             'function_hash': hash_code,
             'run_time_avg': timing['avg_time'],
-            'run_time_std_dev': timing['std_dev'],
+            'run_time_median': timing['median_time'],
+            'run_time_p95': timing['p95_time'],
+            'run_time_std': timing['std_time'],
+            'n_repeats': self.repeat,
             **system_info
         }
 
@@ -90,7 +103,10 @@ class BenchmarkRunner:
         if os.path.exists(result_file):
             df_existing = joblib.load(result_file)
             if not allow_repeated_execution:
-                cols_to_ignore = ['run_time_avg', 'run_time_std_dev', 'datetime']
+                cols_to_ignore = [
+                    'run_time_avg', 'run_time_median', 'run_time_p95', 
+                    'run_time_std', 'n_repeats', 'datetime'
+                ]
                 mask = (
                     df_existing
                     .drop(columns = cols_to_ignore)
