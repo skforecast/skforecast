@@ -157,10 +157,10 @@ def run_benchmark_ForecasterDirectMultiVariate(output_dir):
         
     def ForecasterDirectMultiVariate_backtesting(forecaster, series, exog):
         cv = TimeSeriesFold(
-                initial_train_size=900,
-                fixed_train_size=True,
-                steps=STEPS,
-            )
+                 initial_train_size=900,
+                 steps=STEPS,
+                 refit=False
+             )
         _ = backtesting_forecaster_multiseries(
                 forecaster=forecaster,
                 series=series,
@@ -173,10 +173,10 @@ def run_benchmark_ForecasterDirectMultiVariate(output_dir):
             
     def ForecasterDirectMultiVariate_backtesting_no_exog(forecaster, series):
         cv = TimeSeriesFold(
-                initial_train_size=900,
-                fixed_train_size=True,
-                steps=5,
-            )
+                 initial_train_size=900,
+                 steps=STEPS,
+                 refit=False
+             )
         _ = backtesting_forecaster_multiseries(
                 forecaster=forecaster,
                 series=series,
@@ -188,10 +188,10 @@ def run_benchmark_ForecasterDirectMultiVariate(output_dir):
 
     def ForecasterDirectMultiVariate_backtesting_conformal(forecaster, series, exog):
         cv = TimeSeriesFold(
-                initial_train_size=900,
-                fixed_train_size=True,
-                steps=STEPS,
-            )
+                 initial_train_size=900,
+                 steps=STEPS,
+                 refit=False
+             )
         _ = backtesting_forecaster_multiseries(
                 forecaster=forecaster,
                 series=series,

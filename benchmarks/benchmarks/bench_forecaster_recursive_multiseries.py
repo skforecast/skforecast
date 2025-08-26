@@ -281,10 +281,10 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir):
     # ==========================================================================
     def ForecasterRecursiveMultiSeries_backtesting_series_is_dict_no_exog(forecaster, series):
         cv = TimeSeriesFold(
-                initial_train_size=1200,
-                fixed_train_size=True,
-                steps=50,
-            )
+                 initial_train_size=1200,
+                 steps=50,
+                 refit=False
+             )
         _ = backtesting_forecaster_multiseries(
                 forecaster=forecaster,
                 series=series,
@@ -296,10 +296,10 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir):
             
     def ForecasterRecursiveMultiSeries_backtesting_series_is_dict_exog_is_dict(forecaster, series, exog):
         cv = TimeSeriesFold(
-                initial_train_size=1200,
-                fixed_train_size=True,
-                steps=50,
-            )
+                 initial_train_size=1200,
+                 steps=50,
+                 refit=False
+             )
         _ = backtesting_forecaster_multiseries(
                 forecaster=forecaster,
                 series=series,
@@ -311,10 +311,10 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir):
 
     def ForecasterRecursiveMultiSeries_backtesting_series_is_dict_no_exog_conformal(forecaster, series):
         cv = TimeSeriesFold(
-                initial_train_size=1200,
-                fixed_train_size=True,
-                steps=50,
-            )
+                 initial_train_size=1200,
+                 steps=50,
+                 refit=False
+             )
         _ = backtesting_forecaster_multiseries(
                 forecaster=forecaster,
                 series=series,
@@ -328,10 +328,10 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir):
             
     def ForecasterRecursiveMultiSeries_backtesting_series_is_dict_exog_dict_conformal(forecaster, series, exog):
         cv = TimeSeriesFold(
-                initial_train_size=1200,
-                fixed_train_size=True,
-                steps=50,
-            )
+                 initial_train_size=1200,
+                 steps=50,
+                 refit=False
+             )
         _ = backtesting_forecaster_multiseries(
                 forecaster=forecaster,
                 series=series,

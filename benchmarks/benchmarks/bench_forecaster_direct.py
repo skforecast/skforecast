@@ -136,10 +136,10 @@ def run_benchmark_ForecasterDirect(output_dir):
         
     def ForecasterDirect_backtesting(forecaster, y, exog):
         cv = TimeSeriesFold(
-                initial_train_size=1200,
-                fixed_train_size=True,
-                steps=STEPS,
-            )
+                 initial_train_size=1200,
+                 steps=STEPS,
+                 refit=False
+             )
         _ = backtesting_forecaster(
                 forecaster=forecaster,
                 y=y,
@@ -152,10 +152,10 @@ def run_benchmark_ForecasterDirect(output_dir):
 
     def ForecasterDirect_backtesting_conformal(forecaster, y, exog):
         cv = TimeSeriesFold(
-                initial_train_size=1200,
-                fixed_train_size=True,
-                steps=STEPS,
-            )
+                 initial_train_size=1200,
+                 steps=STEPS,
+                 refit=False
+             )
         _ = backtesting_forecaster(
                 forecaster=forecaster,
                 y=y,

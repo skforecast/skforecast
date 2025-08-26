@@ -133,10 +133,10 @@ def run_benchmark_ForecasterRecursive(output_dir):
         
     def ForecasterRecursive_backtesting(forecaster, y, exog):
         cv = TimeSeriesFold(
-                initial_train_size=1200,
-                fixed_train_size=True,
-                steps=50,
-            )
+                 initial_train_size=1200,
+                 steps=50,
+                 refit=False
+             )
         _ = backtesting_forecaster(
                 forecaster=forecaster,
                 y=y,
@@ -149,10 +149,10 @@ def run_benchmark_ForecasterRecursive(output_dir):
 
     def ForecasterRecursive_backtesting_conformal(forecaster, y, exog):
         cv = TimeSeriesFold(
-                initial_train_size=1200,
-                fixed_train_size=True,
-                steps=50,
-            )
+                 initial_train_size=1200,
+                 steps=50,
+                 refit=False
+             )
         _ = backtesting_forecaster(
                 forecaster=forecaster,
                 y=y,

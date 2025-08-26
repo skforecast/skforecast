@@ -19,7 +19,7 @@ def plot_benchmark_results(
     regressors: str | list[str] | None = None, 
     add_median: bool = True, 
     add_mean: bool = True
-):
+) -> None:
     """
     Plot interactive benchmark results by method and package version.
 
@@ -50,7 +50,7 @@ def plot_benchmark_results(
         A Plotly figure object containing the benchmark results.
 
     """
-    
+
     if not isinstance(forecaster_names, list):
         forecaster_names = [forecaster_names]
     df = df.query("forecaster_name in @forecaster_names")
@@ -163,7 +163,7 @@ def plot_benchmark_results(
             )
             if med_df.empty:
                 continue
-            
+
             median_color = "#374151"
             med_df['x_center'] = med_df['skforecast_version'].map(version_to_num)
             fig.add_trace(go.Scatter(
@@ -189,7 +189,7 @@ def plot_benchmark_results(
             )
             if mean_df.empty:
                 continue
-            
+
             mean_color = "#9CA3AF"
             mean_df['x_center'] = mean_df['skforecast_version'].map(version_to_num)
             fig.add_trace(go.Scatter(
@@ -228,33 +228,40 @@ def plot_benchmark_results(
                 {"title": f"Execution time — method: {m}"} 
             ]
         ))
-    
+
     fig.update_layout(
         title=f"{forecaster_names[0]} — Execution time `{methods[0]}`",
         xaxis=dict(
-            tickmode='array',
+            tickmode="array",
             tickvals=list(version_to_num.values()),
             ticktext=list(version_to_num.keys()),
-            title='skforecast version',
+            title="skforecast version",
             tickangle=0,
+            automargin=True,
+        ),
+        yaxis=dict(
+            title="Execution time (s)", 
             automargin=True
         ),
-        yaxis_title="Execution time (s)",
         # template="plotly_white",
-        margin=dict(l=70, r=20, t=100, b=60),  # más margen superior
+        margin=dict(l=70, r=20, t=100, b=60), 
         updatemenus=[
-            dict(type="dropdown", buttons=buttons_methods, showactive=True,
-                 direction="down", x=1.00, y=1.03, xanchor="right", yanchor="bottom",
-                 pad={"r": 2, "t": 0}),
+            dict(
+                type="dropdown",
+                buttons=buttons_methods,
+                showactive=True,
+                direction="down",
+                x=1.00,
+                y=1.03,
+                xanchor="right",
+                yanchor="bottom",
+                pad={"r": 2, "t": 0},
+            ),
         ],
         legend=dict(title=""),
-        showlegend=False
+        showlegend=False,
     )
 
-    # Sincroniza el dropdown de métricas con el método visible al cambiarlo
-    # (workaround simple: al hacer click en un método, queda 'Media';
-    # si quieres sincronización perfecta, hay que añadir callbacks JS o
-    # construir todas las combinaciones de visibilidad en los menús).
     fig.show()
 
 
