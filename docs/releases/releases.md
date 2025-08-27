@@ -25,6 +25,8 @@ The main changes in this release are:
 + <span class="badge text-bg-api-change">API Change</span> <code>[ForecasterRecursiveMultiSeries]</code> now accepts three input types for the `series` data: a wide-format DataFrame, where each column corresponds to a different time series; a long-format DataFrame with a MultiIndex, where the first level indicates the series name and the second level is the time index; or a dictionary with series names as keys and pandas `Series` as values.
 
 + <span class="badge text-bg-api-change">API Change</span> <code>[ForecasterRecursiveMultiSeries]</code> now accepts `exog` input as a wide-format DataFrame, where each column corresponds to a different exogenous variable; a long-format DataFrame with a MultiIndex, where the first level indicates the series name to which it belongs and the second level is the time index; or a dictionary with series names as keys and pandas `Series` or `DataFrames` as values.
+
++ <span class="badge text-bg-api-change">API Change</span> The functions `series_long_to_dict` and `exog_long_to_dict` have been renamed to <code>[reshape_series_long_to_dict]</code> and <code>[reshape_exog_long_to_dict]</code> in the <code>[preprocessing]</code> module.
   
 + <span class="badge text-bg-danger">Fix</span> A bug that prevented the use of `initial_train_size` as a date with the <code>[OneStepAheadFold]</code> during the hyperparameter search has been fixed.
 

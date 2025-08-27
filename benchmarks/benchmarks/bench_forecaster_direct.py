@@ -1,5 +1,5 @@
 ################################################################################
-#                       Benchmarking ForecasterRecursive                       #
+#                         Benchmarking ForecasterDirect                        #
 #                                                                              #
 # This work by skforecast team is licensed under the BSD 3-Clause License      #
 ################################################################################
@@ -7,16 +7,18 @@
 
 import numpy as np
 import pandas as pd
+from packaging.version import parse
 from sklearn.dummy import DummyRegressor
 from sklearn.preprocessing import StandardScaler
-from skforecast.recursive import ForecasterRecursive
+from skforecast import __version__ as skforecast_version
+from skforecast.direct import ForecasterDirect
 from skforecast.model_selection import TimeSeriesFold, backtesting_forecaster
 from skforecast.utils import check_predict_input
 from .benchmark_runner import BenchmarkRunner
 
 # Global config
 LEN_SERIES = 2000
-STEPS = 100
+STEPS = 10
 RANDOM_STATE = 123
 
 
@@ -76,54 +78,73 @@ def _make_data(
     return y, exog, exog_pred
 
 
-def run_benchmark_ForecasterRecursive(output_dir):
+def run_benchmark_ForecasterDirect(output_dir):
     """
-    Run all benchmarks for the ForecasterRecursive class and save the results.
+    Run all benchmarks for the ForecasterDirect class and save the results.
     """
 
     # Setup
     # ==========================================================================
     y, exog, exog_pred = _make_data()
 
-    forecaster = ForecasterRecursive(
+    forecaster = ForecasterDirect(
         regressor=DummyRegressor(strategy='constant', constant=1.),
-        lags=50,
+        steps=STEPS,
+        lags=20,
         transformer_y=StandardScaler(),
         transformer_exog=StandardScaler(),
+        n_jobs=1
     )
 
-    def ForecasterRecursive__create_train_X_y(forecaster, y, exog):
+    def ForecasterDirect__create_train_X_y(forecaster, y, exog):
         forecaster._create_train_X_y(y=y, exog=exog)
 
-    def ForecasterRecursive_fit(forecaster, y, exog):
+    def ForecasterDirect_fit(forecaster, y, exog):
         forecaster.fit(y=y, exog=exog)
 
-    def ForecasterRecursive_check_predict_inputs(forecaster, exog):
-        check_predict_input(
-            forecaster_name = type(forecaster).__name__,
-            steps           = STEPS,
-            is_fitted       = forecaster.is_fitted,
-            exog_in_        = forecaster.exog_in_,
-            index_type_     = forecaster.index_type_,
-            index_freq_     = forecaster.index_freq_,
-            window_size     = forecaster.window_size,
-            last_window     = forecaster.last_window_,
-            exog            = exog,
-            exog_names_in_  = forecaster.exog_names_in_,
-            interval        = None
-        )
+    def ForecasterDirect_check_predict_inputs(forecaster, exog):
+        if parse(skforecast_version) >= parse("0.17.0"):
+            check_predict_input(
+                forecaster_name = type(forecaster).__name__,
+                steps           = list(np.arange(STEPS) + 1),
+                is_fitted       = forecaster.is_fitted,
+                exog_in_        = forecaster.exog_in_,
+                index_type_     = forecaster.index_type_,
+                index_freq_     = forecaster.index_freq_,
+                window_size     = forecaster.window_size,
+                last_window     = forecaster.last_window_,
+                exog            = exog,
+                exog_names_in_  = forecaster.exog_names_in_,
+                interval        = None,
+                max_step        = forecaster.max_step
+            )
+        else:
+            check_predict_input(
+                forecaster_name = type(forecaster).__name__,
+                steps           = list(np.arange(STEPS) + 1),
+                is_fitted       = forecaster.is_fitted,
+                exog_in_        = forecaster.exog_in_,
+                index_type_     = forecaster.index_type_,
+                index_freq_     = forecaster.index_freq_,
+                window_size     = forecaster.window_size,
+                last_window     = forecaster.last_window_,
+                exog            = exog,
+                exog_names_in_  = forecaster.exog_names_in_,
+                interval        = None,
+                max_steps       = forecaster.steps
+            )
 
-    def ForecasterRecursive__create_predict_inputs(forecaster, exog):
+    def ForecasterDirect__create_predict_inputs(forecaster, exog):
         _ = forecaster._create_predict_inputs(
                 steps        = STEPS,
                 exog         = exog,
                 check_inputs = True
             )
 
-    def ForecasterRecursive_predict(forecaster, exog):
+    def ForecasterDirect_predict(forecaster, exog):
         forecaster.predict(steps=STEPS, exog=exog)
 
-    def ForecasterRecursive_predict_interval_conformal(forecaster, exog):
+    def ForecasterDirect_predict_interval_conformal(forecaster, exog):
         forecaster.predict_interval(
             steps=STEPS,
             exog=exog,
@@ -131,10 +152,10 @@ def run_benchmark_ForecasterRecursive(output_dir):
             method='conformal'
         )
         
-    def ForecasterRecursive_backtesting(forecaster, y, exog):
+    def ForecasterDirect_backtesting(forecaster, y, exog):
         cv = TimeSeriesFold(
                  initial_train_size=1200,
-                 steps=50,
+                 steps=STEPS,
                  refit=False
              )
         _ = backtesting_forecaster(
@@ -147,10 +168,10 @@ def run_benchmark_ForecasterRecursive(output_dir):
                 show_progress=False
             )
 
-    def ForecasterRecursive_backtesting_conformal(forecaster, y, exog):
+    def ForecasterDirect_backtesting_conformal(forecaster, y, exog):
         cv = TimeSeriesFold(
                  initial_train_size=1200,
-                 steps=50,
+                 steps=STEPS,
                  refit=False
              )
         _ = backtesting_forecaster(
@@ -166,18 +187,18 @@ def run_benchmark_ForecasterRecursive(output_dir):
             )
 
     runner = BenchmarkRunner(repeat=30, output_dir=output_dir)
-    _ = runner.benchmark(ForecasterRecursive__create_train_X_y, forecaster=forecaster, y=y, exog=exog)
+    _ = runner.benchmark(ForecasterDirect__create_train_X_y, forecaster=forecaster, y=y, exog=exog)
 
     runner = BenchmarkRunner(repeat=10, output_dir=output_dir)
-    _ = runner.benchmark(ForecasterRecursive_fit, forecaster=forecaster, y=y, exog=exog)
+    _ = runner.benchmark(ForecasterDirect_fit, forecaster=forecaster, y=y, exog=exog)
 
     runner = BenchmarkRunner(repeat=30, output_dir=output_dir)
     forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True)
-    _ = runner.benchmark(ForecasterRecursive_check_predict_inputs, forecaster=forecaster, exog=exog_pred)
-    _ = runner.benchmark(ForecasterRecursive__create_predict_inputs, forecaster=forecaster, exog=exog_pred)
-    _ = runner.benchmark(ForecasterRecursive_predict, forecaster=forecaster, exog=exog_pred)
-    _ = runner.benchmark(ForecasterRecursive_predict_interval_conformal, forecaster=forecaster, exog=exog_pred)
+    _ = runner.benchmark(ForecasterDirect_check_predict_inputs, forecaster=forecaster, exog=exog_pred)
+    _ = runner.benchmark(ForecasterDirect__create_predict_inputs, forecaster=forecaster, exog=exog_pred)
+    _ = runner.benchmark(ForecasterDirect_predict, forecaster=forecaster, exog=exog_pred)
+    _ = runner.benchmark(ForecasterDirect_predict_interval_conformal, forecaster=forecaster, exog=exog_pred)
 
     runner = BenchmarkRunner(repeat=5, output_dir=output_dir)
-    _ = runner.benchmark(ForecasterRecursive_backtesting, forecaster=forecaster, y=y, exog=exog)
-    _ = runner.benchmark(ForecasterRecursive_backtesting_conformal, forecaster=forecaster, y=y, exog=exog)
+    _ = runner.benchmark(ForecasterDirect_backtesting, forecaster=forecaster, y=y, exog=exog)
+    _ = runner.benchmark(ForecasterDirect_backtesting_conformal, forecaster=forecaster, y=y, exog=exog)

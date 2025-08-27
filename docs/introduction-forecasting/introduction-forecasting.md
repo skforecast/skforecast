@@ -59,7 +59,7 @@ Since the value *t(n-1)* is required to predict *t(n)*, and *t(n-1)* is unknown,
     <font size="2.5"> <i>Diagram of recursive multi-step forecasting</i></font>
 </p>
 <p style="text-align: center">
-    <img src="../img/recursive_forecasting_gif.gif" style="width: 500px; padding: 10px; background-color: white; border-radius: 4px;">
+    <img src="../img/recursive-forecasting-gif.gif" style="width: 500px; padding: 10px; background-color: white; border-radius: 4px;">
     <br>
     <font size="2.5"> <i>Recursive forecasting</i></font>
 </p>
@@ -75,7 +75,7 @@ Direct multi-step forecasting consists of **training a different model for each 
     <font size="2.5"> <i>Diagram of direct multi-step forecasting</i></font>
 </p>
 <p style="text-align: center">
-    <img src="../img/direct_forecasting_gif.gif" style="width: 500px; padding: 10px; background-color: white; border-radius: 4px;">
+    <img src="../img/direct-forecasting-gif.gif" style="width: 500px; padding: 10px; background-color: white; border-radius: 4px;">
     <br>
     <font size="2.5"> <i>Direct forecasting</i></font>
 </p>

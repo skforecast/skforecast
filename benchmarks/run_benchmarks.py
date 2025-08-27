@@ -1,8 +1,19 @@
-# .github/scripts/run_benchmarks.py
+################################################################################
+#                              Run Benchmarking                                #
+#                                                                              #
+# This work by skforecast team is licensed under the BSD 3-Clause License      #
+################################################################################
+# coding=utf-8
+
 import os
 import numpy as np
-from skforecast import __version__ as skf_version
-from benchmarks.bench_forecaster_recursive import run_benchmark_ForecasterRecursive
+from skforecast import __version__ as skforecast_version
+from benchmarks import (
+    run_benchmark_ForecasterRecursive,
+    run_benchmark_ForecasterRecursiveMultiSeries,
+    run_benchmark_ForecasterDirect,
+    run_benchmark_ForecasterDirectMultiVariate
+)
 
 # Fijar semillas reproducibles
 np.random.seed(123)
@@ -20,8 +31,18 @@ def main():
     """
     Run all benchmarks for skforecast.
     """
-    print(f"Running skforecast benchmarks (skforecast={skf_version})")
-    run_benchmark_ForecasterRecursive()
+
+    output_dir = "benchmarks"
+
+    print(
+        f"Running skforecast benchmarks (skforecast={skforecast_version}), "
+        f"output will be saved in '{output_dir}'"
+    )
+    
+    run_benchmark_ForecasterRecursive(output_dir)
+    run_benchmark_ForecasterRecursiveMultiSeries(output_dir)
+    run_benchmark_ForecasterDirect(output_dir)
+    run_benchmark_ForecasterDirectMultiVariate(output_dir)
 
 
 if __name__ == "__main__":
