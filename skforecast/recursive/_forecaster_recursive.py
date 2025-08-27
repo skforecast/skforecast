@@ -337,27 +337,6 @@ class ForecasterRecursive(ForecasterBase):
         self.binner = QuantileBinner(**self.binner_kwargs)
         self.binner_intervals_ = None
 
-        # TODO: incluir self._probabilistic_mode?
-        self.__skforecast_tags__ = {
-            "library": "skforecast",
-            "estimator_type": "forecaster",
-            "forecasting_scope": "univariate",  # univariate, multivariate, global
-            "forecasting_strategy": "recursive",
-            "handles_exog": True,
-            "handles_missing_values": False,
-            "handles_missing_values_exog": True,
-            "supports_lags": True,
-            "supports_window_features": True,
-            "supports_transformer_y": True,
-            "supports_transformer_exog": True,
-            "supports_differentiation": True,
-            "supports_sample_weight": True,  # depende del regressor pero a nivel forecaster lo permite
-            "probabilistic_capabilities": ["binned"],
-            "prediction_type": ["point", "bootstrapping", "conformal"],
-            "requires_fitted": True,
-            "stateful": True,  # Mantiene variables internas como last_window después del fit
-        }
-
     def __repr__(
         self
     ) -> str:
