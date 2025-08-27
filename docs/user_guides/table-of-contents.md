@@ -80,6 +80,7 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 - [Backtesting vs One-step-ahead](../faq/parameters-search-backtesting-vs-one-step-ahead.html)
 - [Cyclical features in time series](../faq/cyclical-features-time-series.html)
 - [Time series aggregation](../faq/time-series-aggregation.html)
+- [Benchmarking skforecast](../faq/skforecast-benchmark.html)
 - [Parallelization in skforecast](../faq/parallelization-skforecast.html)
 - [Profiling skforecast](../faq/profiling-skforecast.html)
 
