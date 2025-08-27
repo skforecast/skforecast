@@ -2280,6 +2280,29 @@
   
   
     <li class="md-nav__item">
+      <a href="../faq/skforecast-benchmark.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Benchmarking skforecast
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../faq/parallelization-skforecast.html" class="md-nav__link">
         
   
@@ -3292,6 +3315,29 @@
   
   
     <li class="md-nav__item">
+      <a href="../faq/skforecast-benchmark.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Benchmarking skforecast
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../faq/parallelization-skforecast.html" class="md-nav__link">
         
   
@@ -3865,6 +3911,9 @@
 </li>
 <li>
 <p><span class="badge text-bg-api-change">API Change</span> <code><a href="../api/forecasterrecursivemultiseries.html">ForecasterRecursiveMultiSeries</a></code> now accepts <code>exog</code> input as a wide-format DataFrame, where each column corresponds to a different exogenous variable; a long-format DataFrame with a MultiIndex, where the first level indicates the series name to which it belongs and the second level is the time index; or a dictionary with series names as keys and pandas <code>Series</code> or <code>DataFrames</code> as values.</p>
+</li>
+<li>
+<p><span class="badge text-bg-api-change">API Change</span> The functions <code>series_long_to_dict</code> and <code>exog_long_to_dict</code> have been renamed to <code><a href="../api/preprocessing.html#skforecast.preprocessing.preprocessing.reshape_series_long_to_dict">reshape_series_long_to_dict</a></code> and <code><a href="../api/preprocessing.html#skforecast.preprocessing.preprocessing.reshape_exog_long_to_dict">reshape_exog_long_to_dict</a></code> in the <code><a href="../api/preprocessing.html">preprocessing</a></code> module.</p>
 </li>
 <li>
 <p><span class="badge text-bg-danger">Fix</span> A bug that prevented the use of <code>initial_train_size</code> as a date with the <code><a href="../api/model_selection.html#skforecast.model_selection._split.OneStepAheadFold">OneStepAheadFold</a></code> during the hyperparameter search has been fixed.</p>
