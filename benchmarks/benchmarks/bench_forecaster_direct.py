@@ -7,8 +7,10 @@
 
 import numpy as np
 import pandas as pd
+from packaging.version import parse
 from sklearn.dummy import DummyRegressor
 from sklearn.preprocessing import StandardScaler
+from skforecast import __version__ as skforecast_version
 from skforecast.direct import ForecasterDirect
 from skforecast.model_selection import TimeSeriesFold, backtesting_forecaster
 from skforecast.utils import check_predict_input
@@ -101,20 +103,36 @@ def run_benchmark_ForecasterDirect(output_dir):
         forecaster.fit(y=y, exog=exog)
 
     def ForecasterDirect_check_predict_inputs(forecaster, exog):
-        check_predict_input(
-            forecaster_name = type(forecaster).__name__,
-            steps           = list(np.arange(STEPS) + 1),
-            is_fitted       = forecaster.is_fitted,
-            exog_in_        = forecaster.exog_in_,
-            index_type_     = forecaster.index_type_,
-            index_freq_     = forecaster.index_freq_,
-            window_size     = forecaster.window_size,
-            last_window     = forecaster.last_window_,
-            exog            = exog,
-            exog_names_in_  = forecaster.exog_names_in_,
-            interval        = None,
-            max_step        = forecaster.max_step
-        )
+        if parse(skforecast_version) >= parse("0.17.0"):
+            check_predict_input(
+                forecaster_name = type(forecaster).__name__,
+                steps           = list(np.arange(STEPS) + 1),
+                is_fitted       = forecaster.is_fitted,
+                exog_in_        = forecaster.exog_in_,
+                index_type_     = forecaster.index_type_,
+                index_freq_     = forecaster.index_freq_,
+                window_size     = forecaster.window_size,
+                last_window     = forecaster.last_window_,
+                exog            = exog,
+                exog_names_in_  = forecaster.exog_names_in_,
+                interval        = None,
+                max_step        = forecaster.max_step
+            )
+        else:
+            check_predict_input(
+                forecaster_name = type(forecaster).__name__,
+                steps           = list(np.arange(STEPS) + 1),
+                is_fitted       = forecaster.is_fitted,
+                exog_in_        = forecaster.exog_in_,
+                index_type_     = forecaster.index_type_,
+                index_freq_     = forecaster.index_freq_,
+                window_size     = forecaster.window_size,
+                last_window     = forecaster.last_window_,
+                exog            = exog,
+                exog_names_in_  = forecaster.exog_names_in_,
+                interval        = None,
+                max_steps       = forecaster.steps
+            )
 
     def ForecasterDirect__create_predict_inputs(forecaster, exog):
         _ = forecaster._create_predict_inputs(
