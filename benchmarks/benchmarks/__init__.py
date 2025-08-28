@@ -1,0 +1,4 @@
+from .bench_forecaster_recursive import run_benchmark_ForecasterRecursive
+from .bench_forecaster_recursive_multiseries import run_benchmark_ForecasterRecursiveMultiSeries
+from .bench_forecaster_direct import run_benchmark_ForecasterDirect
+from .bench_forecaster_direct_multivariate import run_benchmark_ForecasterDirectMultiVariate
