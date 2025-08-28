@@ -128,7 +128,7 @@ def test_TimeSeriesFold_split_invalid_initial_train_size_date(initial_train_size
 @pytest.mark.parametrize("initial_train_size",
                          [30, "2000-01-30 23:59:00"], 
                          ids = lambda initial_train_size: f'initial_train_size: {initial_train_size}')
-def test_TimeSeriesFold_split_ValueError_when_window_size_as_date_offset_and_greater_than_initial_train_size(initial_train_size):
+def test_TimeSeriesFold_split_ValueError_window_size_as_date_offset_greater_initial_train_size(initial_train_size):
     """
     Test ValueError is raised when the window_size as date offset is greater than
     initial_train_size.
@@ -173,8 +173,7 @@ def test_TimeSeriesFold_split_ValueError_when_time_series_not_enough_data():
                                   [range(0, 70), range(87, 90), range(90, 100), range(90, 100), False]]),
                           (False, [[[0, 70], [67, 70], [70, 80], [70, 80], True],
                                    [[0, 70], [77, 80], [80, 90], [80, 90], False],
-                                   [[0, 70], [87, 90], [90, 100], [90, 100], False]])], 
-                         ids = lambda argument: f'{argument}')
+                                   [[0, 70], [87, 90], [90, 100], [90, 100], False]])])
 def test_TimeSeriesFold_split_no_refit_no_gap_no_remainder(capfd, return_all_indexes, expected):
     """
     Test TimeSeriesFold split method output when refit is False, gap=0 and not 
@@ -226,8 +225,7 @@ def test_TimeSeriesFold_split_no_refit_no_gap_no_remainder(capfd, return_all_ind
                                   [range(0, 65), range(81, 85), range(85, 95), range(85, 95), False]]),
                           (False, [[[0, 65], [61, 65], [65, 75], [65, 75], True],
                                    [[0, 65], [71, 75], [75, 85], [75, 85], False],
-                                   [[0, 65], [81, 85], [85, 95], [85, 95], False]])], 
-                         ids = lambda argument: f'{argument}')
+                                   [[0, 65], [81, 85], [85, 95], [85, 95], False]])])
 def test_TimeSeriesFold_split_no_refit_no_gap_allow_incomplete_fold_False(capfd, return_all_indexes, expected):
     """s
     Test TimeSeriesFold split method output when refit is 0 (False), gap=0, 
@@ -283,8 +281,7 @@ def test_TimeSeriesFold_split_no_refit_no_gap_allow_incomplete_fold_False(capfd,
                           (False, [[[0, 70], [65, 70], [70, 82], [75, 82], True],
                                    [[0, 70], [72, 77], [77, 89], [82, 89], False],
                                    [[0, 70], [79, 84], [84, 96], [89, 96], False],
-                                   [[0, 70], [86, 91], [91, 100], [96, 100], False]])], 
-                         ids = lambda argument: f'{argument}')
+                                   [[0, 70], [86, 91], [91, 100], [96, 100], False]])])
 def test_TimeSeriesFold_split_no_refit_gap_allow_incomplete_fold_True(capfd, return_all_indexes, expected):
     """
     Test TimeSeriesFold split method output when refit is False, gap=5, 
@@ -351,8 +348,7 @@ def test_TimeSeriesFold_split_no_refit_gap_allow_incomplete_fold_True(capfd, ret
                                    [[0, 15], [40, 55], [55, 70], [60, 70], False],
                                    [[0, 15], [50, 65], [65, 80], [70, 80], False],
                                    [[0, 15], [60, 75], [75, 90], [80, 90], False],
-                                   [[0, 15], [70, 85], [85, 100], [90, 100], False]])], 
-                         ids = lambda argument: f'{argument}')
+                                   [[0, 15], [70, 85], [85, 100], [90, 100], False]])])
 def test_TimeSeriesFold_split_no_refit_initial_train_size_None_gap(capfd, return_all_indexes, expected):
     """
     Test TimeSeriesFold split method output when refit is False, gap=5, 
@@ -418,8 +414,7 @@ def test_TimeSeriesFold_split_no_refit_initial_train_size_None_gap(capfd, return
                                   [range(0, 90), range(88, 90), range(90, 100), range(90, 100), True]]),
                           (False, [[[0, 70], [68, 70], [70, 80], [70, 80], True],
                                    [[0, 80], [78, 80], [80, 90], [80, 90], True],
-                                   [[0, 90], [88, 90], [90, 100], [90, 100], True]])], 
-                         ids = lambda argument: f'{argument}')
+                                   [[0, 90], [88, 90], [90, 100], [90, 100], True]])])
 def test_TimeSeriesFold_split_refit_no_fixed_no_gap_no_remainder(capfd, return_all_indexes, expected):
     """
     Test TimeSeriesFold split method output when refit is True, fixed_train_size is 
@@ -473,8 +468,7 @@ def test_TimeSeriesFold_split_refit_no_fixed_no_gap_no_remainder(capfd, return_a
                                   [range(20, 90), range(84, 90), range(90, 100), range(90, 100), True]]),
                           (False, [[[0, 70], [64, 70], [70, 80], [70, 80], True],
                                    [[10, 80], [74, 80], [80, 90], [80, 90], True],
-                                   [[20, 90], [84, 90], [90, 100], [90, 100], True]])], 
-                         ids = lambda argument: f'{argument}')
+                                   [[20, 90], [84, 90], [90, 100], [90, 100], True]])])
 def test_TimeSeriesFold_split_refit_fixed_train_size_no_gap_no_remainder(capfd, return_all_indexes, expected):
     """
     Test TimeSeriesFold split method output when refit is 1 (True), fixed_train_size 
@@ -529,8 +523,7 @@ def test_TimeSeriesFold_split_refit_fixed_train_size_no_gap_no_remainder(capfd, 
                           (False, [[[0, 70], [67, 70], [70, 82], [75, 82], True],
                                    [[0, 77], [74, 77], [77, 89], [82, 89], True],
                                    [[0, 84], [81, 84], [84, 96], [89, 96], True],
-                                   [[0, 91], [88, 91], [91, 100], [96, 100], True]])], 
-                         ids = lambda argument: f'{argument}')
+                                   [[0, 91], [88, 91], [91, 100], [96, 100], True]])])
 def test_TimeSeriesFold_split_refit_no_fixed_gap_allow_incomplete_fold_True(capfd, return_all_indexes, expected):
     """
     Test TimeSeriesFold split method output when refit is True, fixed_train_size is 
@@ -589,8 +582,7 @@ def test_TimeSeriesFold_split_refit_no_fixed_gap_allow_incomplete_fold_True(capf
                           (False, [[[0, 70], [65, 70], [70, 82], [75, 82], True],
                                    [[7, 77], [72, 77], [77, 89], [82, 89], True],
                                    [[14, 84], [79, 84], [84, 96], [89, 96], True],
-                                   [[21, 91], [86, 91], [91, 100], [96, 100], True]])], 
-                         ids = lambda argument: f'{argument}')
+                                   [[21, 91], [86, 91], [91, 100], [96, 100], True]])])
 def test_TimeSeriesFold_split_refit_fixed_train_size_gap_allow_incomplete_fold_True(capfd, return_all_indexes, expected):
     """
     Test TimeSeriesFold split method output when refit is True, fixed_train_size is 
@@ -646,8 +638,7 @@ def test_TimeSeriesFold_split_refit_fixed_train_size_gap_allow_incomplete_fold_T
                                   [range(0, 84), range(81, 84), range(84, 96), range(89, 96), True]]),
                           (False, [[[0, 70], [67, 70], [70, 82], [75, 82], True],
                                    [[0, 77], [74, 77], [77, 89], [82, 89], True],
-                                   [[0, 84], [81, 84], [84, 96], [89, 96], True]])], 
-                         ids = lambda argument: f'{argument}')
+                                   [[0, 84], [81, 84], [84, 96], [89, 96], True]])])
 def test_TimeSeriesFold_split_refit_no_fixed_gap_allow_incomplete_fold_False(capfd, return_all_indexes, expected):
     """
     Test TimeSeriesFold split method output when refit is True, fixed_train_size is 
@@ -701,8 +692,7 @@ def test_TimeSeriesFold_split_refit_no_fixed_gap_allow_incomplete_fold_False(cap
                                   [range(14, 84), range(80, 84), range(84, 96), range(89, 96), True]]),
                           (False, [[[0, 70], [66, 70], [70, 82], [75, 82], True],
                                    [[7, 77], [73, 77], [77, 89], [82, 89], True],
-                                   [[14, 84], [80, 84], [84, 96], [89, 96], True]])], 
-                         ids = lambda argument: f'{argument}')
+                                   [[14, 84], [80, 84], [84, 96], [89, 96], True]])])
 def test_TimeSeriesFold_split_refit_fixed_train_size_gap_allow_incomplete_fold_False(capfd, return_all_indexes, expected):
     """
     Test TimeSeriesFold split method output when refit is True, fixed_train_size is 
@@ -757,8 +747,7 @@ def test_TimeSeriesFold_split_refit_fixed_train_size_gap_allow_incomplete_fold_F
                           (False, [[[0, 60], [56, 60], [60, 70], [60, 70], True],
                                    [[0, 60], [66, 70], [70, 80], [70, 80], False],
                                    [[0, 80], [76, 80], [80, 90], [80, 90], True],
-                                   [[0, 80], [86, 90], [90, 100], [90, 100], False]])], 
-                         ids = lambda argument: f'{argument}')
+                                   [[0, 80], [86, 90], [90, 100], [90, 100], False]])])
 def test_TimeSeriesFold_split_refit_int_no_fixed_no_gap_no_remainder(capfd, return_all_indexes, expected):
     """
     Test TimeSeriesFold split method output when refit is 2, fixed_train_size is 
@@ -816,8 +805,7 @@ def test_TimeSeriesFold_split_refit_int_no_fixed_no_gap_no_remainder(capfd, retu
                           (False, [[[0, 60], [58, 60], [60, 70], [60, 70], True],
                                    [[0, 60], [68, 70], [70, 80], [70, 80], False],
                                    [[0, 60], [78, 80], [80, 90], [80, 90], False],
-                                   [[30, 90], [88, 90], [90, 100], [90, 100], True]])], 
-                         ids = lambda argument: f'{argument}')
+                                   [[30, 90], [88, 90], [90, 100], [90, 100], True]])])
 def test_TimeSeriesFold_split_refit_int_fixed_train_size_no_gap_no_remainder(capfd, return_all_indexes, expected):
     """
     Test TimeSeriesFold split method output when refit is 3, fixed_train_size is 
@@ -875,8 +863,7 @@ def test_TimeSeriesFold_split_refit_int_fixed_train_size_no_gap_no_remainder(cap
                           (False, [[[0, 70], [60, 70], [70, 82], [75, 82], True],
                                    [[0, 70], [67, 77], [77, 89], [82, 89], False],
                                    [[0, 84], [74, 84], [84, 96], [89, 96], True],
-                                   [[0, 84], [81, 91], [91, 100], [96, 100], False]])], 
-                         ids = lambda argument: f'{argument}')
+                                   [[0, 84], [81, 91], [91, 100], [96, 100], False]])])
 def test_TimeSeriesFold_split_refit_int_no_fixed_gap_allow_incomplete_fold_True(capfd, return_all_indexes, expected):
     """
     Test TimeSeriesFold split method output when refit is 2, fixed_train_size is 
@@ -935,8 +922,7 @@ def test_TimeSeriesFold_split_refit_int_no_fixed_gap_allow_incomplete_fold_True(
                           (False, [[[0, 70], [55, 70], [70, 82], [75, 82], True],
                                    [[0, 70], [62, 77], [77, 89], [82, 89], False],
                                    [[0, 70], [69, 84], [84, 96], [89, 96], False],
-                                   [[21, 91], [76, 91], [91, 100], [96, 100], True]])], 
-                         ids = lambda argument: f'{argument}')
+                                   [[21, 91], [76, 91], [91, 100], [96, 100], True]])])
 def test_TimeSeriesFold_split_refit_int_fixed_train_size_gap_allow_incomplete_fold_True(capfd, return_all_indexes, expected):
     """
     Test TimeSeriesFold split method output when refit is 3, fixed_train_size is 
@@ -992,8 +978,7 @@ def test_TimeSeriesFold_split_refit_int_fixed_train_size_gap_allow_incomplete_fo
                                   [range(0, 70), range(64, 84), range(84, 96), range(89, 96), False]]),
                           (False, [[[0, 70], [50, 70], [70, 82], [75, 82], True],
                                    [[0, 70], [57, 77], [77, 89], [82, 89], False],
-                                   [[0, 70], [64, 84], [84, 96], [89, 96], False]])], 
-                         ids = lambda argument: f'{argument}')
+                                   [[0, 70], [64, 84], [84, 96], [89, 96], False]])])
 def test_TimeSeriesFold_split_refit_int_no_fixed_gap_allow_incomplete_fold_False(capfd, return_all_indexes, expected):
     """
     Test TimeSeriesFold split method output when refit is 3, fixed_train_size is 
@@ -1047,8 +1032,7 @@ def test_TimeSeriesFold_split_refit_int_no_fixed_gap_allow_incomplete_fold_False
                                   [range(14, 84), range(74, 84), range(84, 96), range(89, 96), True]]),
                           (False, [[[0, 70], [60, 70], [70, 82], [75, 82], True],
                                    [[0, 70], [67, 77], [77, 89], [82, 89], False],
-                                   [[14, 84], [74, 84], [84, 96], [89, 96], True]])], 
-                         ids = lambda argument: f'{argument}')
+                                   [[14, 84], [74, 84], [84, 96], [89, 96], True]])])
 def test_TimeSeriesFold_split_refit_int_fixed_train_size_gap_allow_incomplete_fold_False(capfd, return_all_indexes, expected):
     """
     Test TimeSeriesFold split method output when refit is True, fixed_train_size is 
@@ -1101,8 +1085,7 @@ def test_TimeSeriesFold_split_refit_int_fixed_train_size_gap_allow_incomplete_fo
                                   [range(0, 90), range(87, 90), range(90, 100), range(90, 100), True]]),
                           (False, [[[0, 70], [67, 70], [70, 80], [70, 80], True],
                                    [[0, 80], [77, 80], [80, 90], [80, 90], True],
-                                   [[0, 90], [87, 90], [90, 100], [90, 100], True]])], 
-                         ids = lambda argument: f'{argument}')
+                                   [[0, 90], [87, 90], [90, 100], [90, 100], True]])])
 def test_TimeSeriesFold_split_refit_no_fixed_no_gap_no_remainder_differentiation(capfd, return_all_indexes, expected):
     """
     Test TimeSeriesFold split method output when refit is True, fixed_train_size is 
@@ -1160,8 +1143,7 @@ def test_TimeSeriesFold_split_refit_no_fixed_no_gap_no_remainder_differentiation
                                   [range(60, 130), range(128, 130), range(130, 140), range(130, 140), True]]),
                           (False, [[[0, 70], [68, 70], [70, 80], [70, 80], True],
                                    [[30, 100], [98, 100], [100, 110], [100, 110], True],
-                                   [[60, 130], [128, 130], [130, 140], [130, 140], True]])],
-                         ids = lambda argument: f'{argument}')
+                                   [[60, 130], [128, 130], [130, 140], [130, 140], True]])])
 def test_TimeSeriesFold_split_refit_fixed_no_gap_no_remainder_skip_folds_3(capfd, skip_folds, return_all_indexes, expected):
     """
     Test TimeSeriesFold split method output when refit is True, fixed_train_size is 
@@ -1321,8 +1303,7 @@ def test_TimeSeriesFold_split_as_pandas_return_all_indexes_False(window_size):
                            [[[0, 70], [60, 70], [70, 82], [75, 82], True],
                             [[0, 70], [67, 77], [77, 89], [82, 89], False],
                             [[0, 70], [74, 84], [84, 96], [89, 96], False],
-                            [[0, 70], [81, 91], [91, 100], [96, 100], False]]),], 
-                         ids = lambda argument: f'{argument}')
+                            [[0, 70], [81, 91], [91, 100], [96, 100], False]])])
 def test_TimeSeriesFold_split_int_and_date_initial_train_size(capfd, initial_train_size, expected):
     """
     Test TimeSeriesFold split method output when initial_train_size is 

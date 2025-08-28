@@ -46,7 +46,7 @@ def test_preprocess_levels_self_last_window_multiseries_IgnoredArgumentWarning_w
 @pytest.mark.parametrize("last_window_",
                          [{'1': pd.Series(np.arange(10), name='1')}, None],
                          ids=lambda lw: f"last_window: {type(lw)}")
-def test_preprocess_levels_self_last_window_multiseries_ValueError_when_not_available_self_last_window_for_levels(last_window_):
+def test_preprocess_levels_self_last_window_multiseries_ValueError_when_not_last_window_for_levels(last_window_):
     """
     Test ValueError is raised when last window is not available for all 
     levels because it was not stored during fit.
@@ -56,9 +56,9 @@ def test_preprocess_levels_self_last_window_multiseries_ValueError_when_not_avai
     input_levels_is_list = False
 
     err_msg = re.escape(
-        ("No series to predict. None of the series {'2'} are present in "
-         "`last_window_` attribute. Provide `last_window` as argument "
-         "in predict method.")
+        "No series to predict. None of the series {'2'} are present in "
+        "`last_window_` attribute. Provide `last_window` as argument "
+        "in predict method."
     )
     with pytest.raises(ValueError, match = err_msg):
         levels, last_window = preprocess_levels_self_last_window_multiseries(

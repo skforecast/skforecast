@@ -96,7 +96,6 @@ def test_fit_in_sample_residuals_stored(n_jobs):
     np.testing.assert_array_almost_equal(results, expected)
         
 
-
 @pytest.mark.parametrize("n_jobs", [1, -1, 'auto'], 
                          ids=lambda n_jobs: f'n_jobs: {n_jobs}')
 def test_fit_same_residuals_when_residuals_greater_than_10000(n_jobs):

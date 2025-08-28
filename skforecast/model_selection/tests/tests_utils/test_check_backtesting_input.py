@@ -60,7 +60,7 @@ def test_check_backtesting_input_TypeError_when_cv_not_TimeSeriesFold():
                           ForecasterDirect(regressor=Ridge(), lags=2, steps=3),
                           ForecasterSarimax(regressor=Sarimax(order=(1, 1, 1)))], 
                          ids = lambda fr: f'forecaster: {type(fr).__name__}')
-def test_check_backtesting_input_TypeError_when_y_is_not_pandas_Series_uniseries(forecaster):
+def test_check_backtesting_input_TypeError_when_y_is_not_pandas_Series(forecaster):
     """
     Test TypeError is raised in check_backtesting_input if `y` is not a 
     pandas Series in forecasters uni-series.
@@ -99,7 +99,7 @@ def test_check_backtesting_input_TypeError_when_y_is_not_pandas_Series_uniseries
                          [ForecasterDirectMultiVariate(regressor=Ridge(), lags=2, 
                                                         steps=3, level='l1')], 
                          ids = lambda fr: f'forecaster: {type(fr).__name__}')
-def test_check_backtesting_input_TypeError_when_series_is_not_pandas_DataFrame_multiseries(forecaster):
+def test_check_backtesting_input_TypeError_when_series_not_pandas_DataFrame(forecaster):
     """
     Test TypeError is raised in check_backtesting_input if `series` is not a 
     pandas DataFrame in forecasters multiseries.
@@ -358,7 +358,7 @@ def test_check_backtesting_input_ValueError_when_initial_train_size_is_None_Fore
 @pytest.mark.parametrize("forecaster", 
                          [ForecasterRecursive(regressor=Ridge(), lags=3),
                           ForecasterRecursiveMultiSeries(regressor=Ridge(), lags=3)], 
-                         ids = lambda fr: f'forecaster: {type(fr).__name__}')
+                         ids = lambda fr: f'{type(fr).__name__}')
 def test_check_backtesting_input_ValueError_when_initial_train_size_not_correct_value(initial_train_size, forecaster):
     """
     Test ValueError is raised in check_backtesting_input when 
@@ -419,8 +419,8 @@ def test_check_backtesting_input_ValueError_when_initial_train_size_not_correct_
 @pytest.mark.parametrize("forecaster", 
                          [ForecasterRecursive(regressor=Ridge(), lags=2),
                           ForecasterRecursiveMultiSeries(regressor=Ridge(), lags=2)], 
-                         ids = lambda fr: f'forecaster: {type(fr).__name__}')
-def test_check_backtesting_input_ValueError_when_initial_train_size_plus_gap_less_than_data_length(forecaster, initial_train_size):
+                         ids = lambda fr: f'{type(fr).__name__}')
+def test_check_backtesting_input_ValueError_when_initial_train_size_plus_gap_less_than_data_len(forecaster, initial_train_size):
     """
     Test ValueError is raised in check_backtesting_input when 
     initial_train_size + gap >= length `y` or `series` depending on the forecaster.
@@ -474,7 +474,7 @@ def test_check_backtesting_input_ValueError_when_initial_train_size_plus_gap_les
 @pytest.mark.parametrize("forecaster", 
                          [ForecasterSarimax(regressor=Sarimax(order=(1, 1, 1))),
                           ForecasterEquivalentDate(offset=1, n_offsets=1)], 
-                         ids = lambda fr: f'forecaster: {type(fr).__name__}')
+                         ids = lambda fr: f'{type(fr).__name__}')
 def test_check_backtesting_input_ValueError_Sarimax_Equivalent_when_initial_train_size_is_None(forecaster):
     """
     Test ValueError is raised in check_backtesting_input when initial_train_size 
@@ -681,7 +681,7 @@ def test_check_backtesting_input_TypeError_when_boolean_arguments_not_bool(boole
                           ('random_state', 'not_int'),  
                           ('random_state', -3)], 
                          ids = lambda argument: f'{argument}')
-def test_check_backtesting_input_TypeError_when_integer_arguments_not_int_or_greater_than_0(int_argument, value):
+def test_check_backtesting_input_TypeError_when_integer_args_not_int_or_greater_than_0(int_argument, value):
     """
     Test TypeError is raised in check_backtesting_input when integer arguments 
     are not int or are greater than 0.
@@ -889,7 +889,7 @@ def test_check_backtesting_input_ValueError_when_return_predictors_and_forecaste
 @pytest.mark.parametrize("forecaster", 
                          [ForecasterRecursive(regressor=Ridge(), lags=2),
                           ForecasterRecursiveMultiSeries(regressor=Ridge(), lags=2)], 
-                         ids = lambda fr: f'forecaster: {type(fr).__name__}')
+                         ids = lambda fr: f'{type(fr).__name__}')
 def test_check_backtesting_input_ValueError_when_not_enough_data_to_create_a_fold(forecaster):
     """
     Test ValueError is raised in check_backtesting_input when there is not enough 
@@ -935,7 +935,7 @@ def test_check_backtesting_input_ValueError_when_not_enough_data_to_create_a_fol
 @pytest.mark.parametrize("forecaster", 
                          [ForecasterDirect(regressor=Ridge(), lags=5, steps=5),
                           ForecasterDirectMultiVariate(regressor=Ridge(), level='l1', lags=5, steps=5)], 
-                         ids = lambda fr: f'forecaster: {type(fr).__name__}')
+                         ids = lambda fr: f'{type(fr).__name__}')
 def test_check_backtesting_input_ValueError_when_Direct_forecaster_not_enough_steps(forecaster):
     """
     Test ValueError is raised in check_backtesting_input when there is not enough 

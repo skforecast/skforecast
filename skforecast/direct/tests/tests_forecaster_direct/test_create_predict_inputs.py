@@ -79,7 +79,7 @@ def test_create_predict_inputs_output(steps):
     pd.testing.assert_index_equal(results[3], expected[3])
 
 
-def test_create_predict_inputs_output_when_regressor_is_LinearRegression_with_list_interspersed():
+def test_create_predict_inputs_output_when_with_list_interspersed():
     """
     Test _create_predict_inputs output when steps is
     a list with interspersed steps.
@@ -341,7 +341,7 @@ def test_create_predict_inputs_output_when_categorical_features_native_implement
     pd.testing.assert_index_equal(results[3], expected[3])
 
 
-def test_create_predict_inputs_when_regressor_is_LinearRegression_with_exog_differentiation_is_1():
+def test_create_predict_inputs_when_with_exog_differentiation_is_1():
     """
     Test _create_predict_inputs when using LinearRegression as regressor 
     and differentiation=1.

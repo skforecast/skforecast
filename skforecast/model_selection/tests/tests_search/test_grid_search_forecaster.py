@@ -109,7 +109,7 @@ forecasters = [
     ),
 ]
 @pytest.mark.parametrize("forecaster", forecasters)
-def test_output_grid_search_forecaster_equivalence_backtesting_one_step_ahead(
+def test_grid_search_forecaster_equivalence_backtesting_one_step_ahead(
     forecaster,
 ):
     """

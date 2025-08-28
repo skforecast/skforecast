@@ -81,7 +81,7 @@ def test_ValueError_bayesian_search_forecaster_multiseries_when_return_best_and_
 @pytest.mark.parametrize("series", 
                          [series_wide_range, series_dict_range],
                          ids = lambda series: f'series type: {type(series)}')
-def test_results_output_bayesian_search_forecaster_multiseries_ForecasterRecursiveMultiSeries(series):
+def test_bayesian_search_forecaster_multiseries_ForecasterRecursiveMultiSeries(series):
     """
     Test output of bayesian_search_forecaster_multiseries in 
     ForecasterRecursiveMultiSeries with mocked (mocked done in Skforecast v0.12.0).
@@ -817,7 +817,7 @@ def test_results_output_bayesian_search_forecaster_multivariate_ForecasterDirect
 @pytest.mark.parametrize("initial_train_size", 
                          [1000, '2014-09-26 00:00:00', pd.to_datetime('2014-09-26 00:00:00')], 
                          ids=lambda initial_train_size: f'initial_train_size: {initial_train_size}')
-def test_output_bayesian_search_forecaster_multiseries_ForecasterDirectMultiVariate_one_step_ahead(initial_train_size):
+def test_bayesian_search_forecaster_multiseries_ForecasterDirectMultiVariate_one_step_ahead(initial_train_size):
     """
     Test output of bayesian_search_forecaster_multiseries when forecaster is ForecasterRecursiveMultiSeries
     and method is one_step_ahead.
@@ -917,7 +917,7 @@ def test_output_bayesian_search_forecaster_multiseries_ForecasterDirectMultiVari
 @pytest.mark.parametrize("initial_train_size", 
                          [1000, '2014-09-26 00:00:00', pd.to_datetime('2014-09-26 00:00:00')], 
                          ids=lambda initial_train_size: f'initial_train_size: {initial_train_size}')
-def test_output_bayesian_search_forecaster_multiseries_ForecasterRecursiveMultiSeries_one_step_ahead(initial_train_size):
+def test_bayesian_search_forecaster_multiseries_ForecasterRecursiveMultiSeries_one_step_ahead(initial_train_size):
     """
     Test output of bayesian_search_forecaster_multiseries when forecaster is ForecasterRecursiveMultiSeries
     and method is one_step_ahead.
@@ -1072,7 +1072,7 @@ def test_output_bayesian_search_forecaster_multiseries_ForecasterRecursiveMultiS
 @pytest.mark.parametrize("initial_train_size", 
                          [1000, '2014-09-26 00:00:00', pd.to_datetime('2014-09-26 00:00:00')], 
                          ids=lambda initial_train_size: f'initial_train_size: {initial_train_size}')
-def test_output_bayesian_search_forecaster_multiseries_ForecasterRecursiveMultiSeries_one_step_ahead_long_format(initial_train_size):
+def test_bayesian_search_forecaster_multiseries_ForecasterRecursiveMultiSeries_one_step_ahead_long_format(initial_train_size):
     """
     Test output of bayesian_search_forecaster_multiseries when forecaster is ForecasterRecursiveMultiSeries
     and method is one_step_ahead.

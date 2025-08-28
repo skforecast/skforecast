@@ -37,7 +37,7 @@ def test_TypeError_select_features_raise_when_forecaster_is_not_supported():
 @pytest.mark.parametrize("select_only", 
                          ['not_exog_or_autoreg', 1, False], 
                          ids=lambda so: f'select_only: {so}')
-def test_ValueError_select_features_raise_when_select_only_is_not_autoreg_exog_None(select_only):
+def test_ValueError_select_features_select_only_not_autoreg_exog_None(select_only):
     """
     Test ValueError is raised in select_features when `select_only` is not 'autoreg',
     'exog' or None.
@@ -64,7 +64,7 @@ def test_ValueError_select_features_raise_when_select_only_is_not_autoreg_exog_N
 @pytest.mark.parametrize("subsample", 
                          [-1, -0.5, 0, 0., 1.1, 2], 
                          ids=lambda ss: f'subsample: {ss}')
-def test_ValueError_select_features_raise_when_subsample_is_not_greater_0_less_equal_1(subsample):
+def test_ValueError_select_features_subsample_not_greater_0_less_equal_1(subsample):
     """
     Test ValueError is raised in select_features when `subsample` is not in (0, 1].
     """
