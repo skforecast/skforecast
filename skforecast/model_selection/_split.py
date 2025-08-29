@@ -1551,7 +1551,6 @@ class TimeSeriesFold_New(BaseFold):
         idx = range(len(index))
         folds = []
         i = 0
-        last_fold_excluded = False
 
         self.initial_train_size = date_to_index_position(
                                       index        = index, 
@@ -1686,11 +1685,17 @@ class TimeSeriesFold_New(BaseFold):
         if not self.return_all_indexes:
             # NOTE: +1 to prevent iloc pandas from deleting the last observation
             folds = [
-                [[fold[0][0], fold[0][-1] + 1], 
-                 [fold[1][0], fold[1][-1] + 1] if self.window_size is not None else [],
-                 [fold[2][0], fold[2][-1] + 1],
-                 [fold[3][0], fold[3][-1] + 1],
-                 fold[4]] 
+                [
+                    [fold[0][0], fold[0][-1] + 1],
+                    (
+                        [fold[1][0], fold[1][-1] + 1]
+                        if self.window_size is not None
+                        else []
+                    ),
+                    [fold[2][0], fold[2][-1] + 1],
+                    [fold[3][0], fold[3][-1] + 1],
+                    fold[4],
+                ]
                 for fold in folds
             ]
 
