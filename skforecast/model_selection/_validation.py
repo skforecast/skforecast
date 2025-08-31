@@ -362,11 +362,9 @@ def _backtesting_forecaster(
         if type(forecaster).__name__ != 'ForecasterDirect' and gap > 0:
             pred = pred.iloc[gap:, ]
 
-        # TODO: pd.Series doesn't allow insert, return fold_number 
-        # and insert after pd.concat outside the parallel
-        pred.insert(0, 'fold', fold_number)
+        fold_labels = np.repeat(fold_number, pred.shape[0])
 
-        return pred
+        return pred, fold_labels
 
     kwargs_fit_predict_forecaster = {
         "forecaster": forecaster,
@@ -382,16 +380,19 @@ def _backtesting_forecaster(
         "random_state": random_state,
         "return_predictors": return_predictors
     }
-    backtest_predictions = Parallel(n_jobs=n_jobs)(
+    results = Parallel(n_jobs=n_jobs)(
         delayed(_fit_predict_forecaster)(
             fold_number=fold_number, fold=fold, **kwargs_fit_predict_forecaster
         )
         for fold_number, fold in enumerate(folds)
     )
 
+    backtest_predictions, fold_labels = zip(*results)
+
     backtest_predictions = pd.concat(backtest_predictions)
     if isinstance(backtest_predictions, pd.Series):
         backtest_predictions = backtest_predictions.to_frame()
+    backtest_predictions.insert(0, 'fold', list(chain(*fold_labels)))
 
     train_indexes = []
     for i, fold in enumerate(folds):

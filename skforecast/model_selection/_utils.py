@@ -305,12 +305,30 @@ def check_backtesting_input(
                 f"and smaller than the length of `{data_name}` ({data_length}). If "
                 f"it is a date, it must be within this range of the index."
             )
-        if initial_train_size + gap >= data_length:
-            raise ValueError(
-                f"The total size of `initial_train_size` {initial_train_size} plus "
-                f"`gap` {gap} cannot be greater than the length of `{data_name}` "
-                f"({data_length})."
-            )
+        if allow_incomplete_fold:
+            # At least one observation after the gap to allow incomplete fold
+            if data_length <= initial_train_size + gap:
+                raise ValueError(
+                    f"`{data_name}` must have more than `initial_train_size + gap` "
+                    f"observations to create at least one fold.\n"
+                    f"    Time series length: {data_length}\n"
+                    f"    Required > {initial_train_size + gap}\n"
+                    f"    initial_train_size: {initial_train_size}\n"
+                    f"    gap: {gap}\n"
+                )
+        else:
+            # At least one complete fold
+            if data_length < initial_train_size + gap + steps:
+                raise ValueError(
+                    f"`{data_name}` must have at least `initial_train_size + gap + steps` "
+                    f"observations to create a minimum of one complete fold "
+                    f"(allow_incomplete_fold=False).\n"
+                    f"    Time series length: {data_length}\n"
+                    f"    Required >= {initial_train_size + gap + steps}\n"
+                    f"    initial_train_size: {initial_train_size}\n"
+                    f"    gap: {gap}\n"
+                    f"    steps: {steps}\n"
+                )
     else:
         if forecaster_name in ['ForecasterSarimax', 'ForecasterEquivalentDate']:
             raise ValueError(
@@ -410,18 +428,6 @@ def check_backtesting_input(
         raise ValueError(
             f"`return_predictors` is only allowed for forecasters of type "
             f"{forecasters_return_predictors}. Got {forecaster_name}."
-        )
-
-    if (
-        not allow_incomplete_fold
-        and initial_train_size is not None
-        and data_length - (initial_train_size + gap) < steps
-    ):        
-        raise ValueError(
-            f"There is not enough data to evaluate {steps} steps in a single "
-            f"fold. Set `allow_incomplete_fold` to `True` to allow incomplete folds.\n"
-            f"    Data available for test : {data_length - (initial_train_size + gap)}\n"
-            f"    Steps                   : {steps}"
         )
 
     if forecaster_name in forecasters_direct and forecaster.max_step < steps + gap:

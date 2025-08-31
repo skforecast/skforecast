@@ -151,17 +151,45 @@ def test_TimeSeriesFold_split_ValueError_window_size_as_date_offset_greater_init
         cv.split(X=X)
 
 
-def test_TimeSeriesFold_split_ValueError_when_time_series_not_enough_data():
+def test_TimeSeriesFold_split_ValueError_when_time_series_not_enough_data_allow_incomplete_fold():
     """
-    Test ValueError is raised when time series has not enough data to create the folds.
+    Test ValueError is raised when time series has not enough data to create 
+    the folds when allow_incomplete_fold is True.
     """
     X = pd.Series(np.arange(5))
     cv = TimeSeriesFold(
-        steps=10, initial_train_size=10, window_size=5, refit=True
+        steps=10, initial_train_size=10, window_size=5, refit=True, allow_incomplete_fold=True
     )
     msg = re.escape(
-        f"The time series must have at least `initial_train_size + steps` "
-        f"observations. Got {len(X)} observations."
+        f"The time series must have more than `initial_train_size + gap` "
+        f"observations to create at least one fold.\n"
+        f"    Time series length: {len(X)}\n"
+        f"    Required > {cv.initial_train_size + cv.gap}\n"
+        f"    initial_train_size: {cv.initial_train_size}\n"
+        f"    gap: {cv.gap}\n"
+    )
+    with pytest.raises(ValueError, match=msg):
+        cv.split(X=X)
+
+
+def test_TimeSeriesFold_split_ValueError_when_time_series_not_enough_data_allow_incomplete_fold_False():
+    """
+    Test ValueError is raised when time series has not enough data to create 
+    the folds when allow_incomplete_fold is False.
+    """
+    X = pd.Series(np.arange(5))
+    cv = TimeSeriesFold(
+        steps=10, initial_train_size=10, window_size=5, refit=True, allow_incomplete_fold=False
+    )
+    msg = re.escape(
+        f"The time series must have at least `initial_train_size + gap + steps` "
+        f"observations to create a minimum of one complete fold "
+        f"(allow_incomplete_fold=False).\n"
+        f"    Time series length: {len(X)}\n"
+        f"    Required >= {cv.initial_train_size + cv.gap + cv.steps}\n"
+        f"    initial_train_size: {cv.initial_train_size}\n"
+        f"    gap: {cv.gap}\n"
+        f"    steps: {cv.steps}\n"
     )
     with pytest.raises(ValueError, match=msg):
         cv.split(X=X)

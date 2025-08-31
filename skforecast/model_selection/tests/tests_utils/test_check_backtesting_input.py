@@ -420,10 +420,10 @@ def test_check_backtesting_input_ValueError_when_initial_train_size_not_correct_
                          [ForecasterRecursive(regressor=Ridge(), lags=2),
                           ForecasterRecursiveMultiSeries(regressor=Ridge(), lags=2)], 
                          ids = lambda fr: f'{type(fr).__name__}')
-def test_check_backtesting_input_ValueError_when_initial_train_size_plus_gap_less_than_data_len(forecaster, initial_train_size):
+def test_check_backtesting_input_ValueError_when_not_enough_data_to_create_a_fold_allow_incomplete_fold(initial_train_size, forecaster):
     """
-    Test ValueError is raised in check_backtesting_input when 
-    initial_train_size + gap >= length `y` or `series` depending on the forecaster.
+    Test ValueError is raised in check_backtesting_input when there is not enough 
+    data to evaluate even single fold because `allow_incomplete_fold` = `True`.
     """
     y_datetime = y.copy()
     y_datetime.index = pd.date_range(start='2000-01-01', periods=len(y), freq='D')
@@ -450,9 +450,12 @@ def test_check_backtesting_input_ValueError_when_initial_train_size_plus_gap_les
          )
     
     err_msg = re.escape(
-        f"The total size of `initial_train_size` {cv.initial_train_size} plus "
-        f"`gap` {cv.gap} cannot be greater than the length of `{data_name}` "
-        f"({data_length})."
+        f"`{data_name}` must have more than `initial_train_size + gap` "
+        f"observations to create at least one fold.\n"
+        f"    Time series length: {data_length}\n"
+        f"    Required > {cv.initial_train_size + cv.gap}\n"
+        f"    initial_train_size: {cv.initial_train_size}\n"
+        f"    gap: {cv.gap}\n"
     )
     with pytest.raises(ValueError, match = err_msg):
         check_backtesting_input(
@@ -460,7 +463,70 @@ def test_check_backtesting_input_ValueError_when_initial_train_size_plus_gap_les
             cv                      = cv,
             metric                  = 'mean_absolute_error',
             y                       = y,
-            series                  = series_dict_dt,
+            series                  = series_dict_range,
+            interval                = None,
+            alpha                   = None,
+            n_boot                  = 500,
+            random_state            = 123,
+            use_in_sample_residuals = True,
+            show_progress           = False,
+            suppress_warnings       = False
+        )
+
+
+@pytest.mark.parametrize("initial_train_size", 
+                         ['int', 'date'], 
+                         ids = lambda initial: f'initial_train_size: {initial}')
+@pytest.mark.parametrize("forecaster", 
+                         [ForecasterRecursive(regressor=Ridge(), lags=2),
+                          ForecasterRecursiveMultiSeries(regressor=Ridge(), lags=2)], 
+                         ids = lambda fr: f'{type(fr).__name__}')
+def test_check_backtesting_input_ValueError_when_not_enough_data_to_create_a_fold_allow_incomplete_fold_False(initial_train_size, forecaster):
+    """
+    Test ValueError is raised in check_backtesting_input when there is not enough 
+    data to evaluate even single fold because `allow_incomplete_fold` = `False`.
+    """
+    y_datetime = y.copy()
+    y_datetime.index = pd.date_range(start='2000-01-01', periods=len(y), freq='D')
+
+    if type(forecaster).__name__ == 'ForecasterRecursive':
+        data_length = len(y_datetime)
+        data_name = 'y'
+    else:
+        data_length = len(series_dict_dt['l1'])
+        data_name = 'series'
+
+    if initial_train_size == 'int':
+        initial_train_size = data_length - 1
+    else:
+        initial_train_size = '2000-02-19'
+    
+    cv = TimeSeriesFold(
+             steps                 = 3,
+             initial_train_size    = data_length - 1,
+             refit                 = False,
+             fixed_train_size      = False,
+             gap                   = 2,
+             allow_incomplete_fold = False
+         )
+    
+    err_msg = re.escape(
+        f"`{data_name}` must have at least `initial_train_size + gap + steps` "
+        f"observations to create a minimum of one complete fold "
+        f"(allow_incomplete_fold=False).\n"
+        f"    Time series length: {data_length}\n"
+        f"    Required >= {cv.initial_train_size + cv.gap + cv.steps}\n"
+        f"    initial_train_size: {cv.initial_train_size}\n"
+        f"    gap: {cv.gap}\n"
+        f"    steps: {cv.steps}\n"
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        check_backtesting_input(
+            forecaster              = forecaster,
+            cv                      = cv,
+            metric                  = 'mean_absolute_error',
+            y                       = y,
+            series                  = series_dict_range,
             interval                = None,
             alpha                   = None,
             n_boot                  = 500,
@@ -883,52 +949,6 @@ def test_check_backtesting_input_ValueError_when_return_predictors_and_forecaste
             return_predictors = True,
             show_progress     = False,
             suppress_warnings = False
-        )
-
-
-@pytest.mark.parametrize("forecaster", 
-                         [ForecasterRecursive(regressor=Ridge(), lags=2),
-                          ForecasterRecursiveMultiSeries(regressor=Ridge(), lags=2)], 
-                         ids = lambda fr: f'{type(fr).__name__}')
-def test_check_backtesting_input_ValueError_when_not_enough_data_to_create_a_fold(forecaster):
-    """
-    Test ValueError is raised in check_backtesting_input when there is not enough 
-    data to evaluate even single fold because `allow_incomplete_fold` = `False`.
-    """
-    if type(forecaster).__name__ == 'ForecasterRecursive':
-        data_length = len(y)
-    else:
-        data_length = len(series_dict_range['l1'])
-    
-    cv = TimeSeriesFold(
-             steps                 = 5,
-             initial_train_size    = data_length - 12,
-             refit                 = False,
-             fixed_train_size      = False,
-             gap                   = 10,
-             allow_incomplete_fold = False
-         )
-    
-    err_msg = re.escape(
-        f"There is not enough data to evaluate {cv.steps} steps in a single "
-        f"fold. Set `allow_incomplete_fold` to `True` to allow incomplete folds.\n"
-        f"    Data available for test : {data_length - (cv.initial_train_size + cv.gap)}\n"
-        f"    Steps                   : {cv.steps}"
-    )
-    with pytest.raises(ValueError, match = err_msg):
-        check_backtesting_input(
-            forecaster              = forecaster,
-            cv                      = cv,
-            metric                  = 'mean_absolute_error',
-            y                       = y,
-            series                  = series_dict_range,
-            interval                = None,
-            alpha                   = None,
-            n_boot                  = 500,
-            random_state            = 123,
-            use_in_sample_residuals = True,
-            show_progress           = False,
-            suppress_warnings       = False
         )
 
 
