@@ -2980,6 +2980,10 @@ def get_features_range(X: pd.DataFrame | pd.Series | dict) -> dict:
         a dict of dicts mapping the same keys to their feature summaries.
 
     """
+
+    if not isinstance(X, (pd.DataFrame, pd.Series, dict)):
+        raise TypeError("Input must be a pandas DataFrame, Series or dict.")
+
     if isinstance(X, dict):
         return {key: get_features_range(series) for key, series in X.items()}
 

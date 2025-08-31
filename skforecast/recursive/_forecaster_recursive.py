@@ -10,6 +10,7 @@ from typing import Callable
 import warnings
 import sys
 import numpy as np
+from numpy.lib.stride_tricks import sliding_window_view
 import pandas as pd
 import inspect
 from copy import copy, deepcopy
@@ -479,7 +480,7 @@ class ForecasterRecursive(ForecasterBase):
         return style + content
 
 
-    def _create_lags(
+    def _create_lags_deprecated(
         self,
         y: np.ndarray,
         X_as_pandas: bool = False,
@@ -525,6 +526,36 @@ class ForecasterRecursive(ForecasterBase):
                              columns = self.lags_names,
                              index   = train_index
                          )
+
+        y_data = y[self.window_size:]
+
+        return X_data, y_data
+
+
+    def _create_lags(
+        self,
+        y: np.ndarray,
+        X_as_pandas: bool = False,
+        train_index: pd.Index | None = None
+    ) -> tuple[np.ndarray | pd.DataFrame | None, np.ndarray]:
+        """
+        Create lagged values and target variable from a time series
+        using NumPy's sliding_window_view. The returned data is a view
+        into the original `y` so care must be taken when modifying it.
+        """
+        X_data = None
+
+        if self.lags is not None:
+            y_strided = sliding_window_view(y, self.window_size)[:-1]
+            cols = self.window_size - np.array(self.lags)
+            X_data = y_strided[:, cols]
+
+            if X_as_pandas:
+                X_data = pd.DataFrame(
+                    data=X_data,
+                    columns=self.lags_names,
+                    index=train_index
+                )
 
         y_data = y[self.window_size:]
 
@@ -990,8 +1021,6 @@ class ForecasterRecursive(ForecasterBase):
         self.is_fitted                          = False
         self.fit_date                           = None
 
-        self.series_values_range_ = get_features_range(X=y)
-
         (
             X_train,
             y_train,
@@ -1002,6 +1031,9 @@ class ForecasterRecursive(ForecasterBase):
             exog_dtypes_in_,
             exog_dtypes_out_
         ) = self._create_train_X_y(y=y, exog=exog)
+
+        self.series_values_range_ = get_features_range(X=y)
+
         sample_weight = self.create_sample_weights(X_train=X_train)
 
         if sample_weight is not None:

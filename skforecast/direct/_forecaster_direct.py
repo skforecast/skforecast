@@ -10,6 +10,7 @@ from typing import Callable
 import warnings
 import sys
 import numpy as np
+from numpy.lib.stride_tricks import sliding_window_view
 import pandas as pd
 import inspect
 from copy import copy, deepcopy
@@ -544,7 +545,7 @@ class ForecasterDirect(ForecasterBase):
         # Return the combined style and content
         return style + content
 
-    def _create_lags(
+    def _create_lags_deprecated(
         self, 
         y: np.ndarray,
         X_as_pandas: bool = False,
@@ -599,6 +600,58 @@ class ForecasterDirect(ForecasterBase):
             y_data[:, step] = y[self.window_size + step : self.window_size + step + n_rows]
         
         return X_data, y_data
+
+
+    def _create_lags(
+        self,
+        y: np.ndarray,
+        X_as_pandas: bool = False,
+        train_index: pd.Index | None = None
+    ) -> tuple[np.ndarray | pd.DataFrame | None, np.ndarray]:
+        """
+        Create the lagged values and their target variable from a time series.
+        
+        Note that the returned matrix `X_data` contains the lag 1 in the first 
+        column, the lag 2 in the in the second column and so on.
+        
+        Parameters
+        ----------
+        y : numpy ndarray
+            Training time series values.
+        X_as_pandas : bool, default False
+            If `True`, the returned matrix `X_data` is a pandas DataFrame.
+        train_index : pandas Index, default None
+            Index of the training data. It is used to create the pandas DataFrame
+            `X_data` when `X_as_pandas` is `True`.
+
+        Returns
+        -------
+        X_data : numpy ndarray, pandas DataFrame, None
+            Lagged values (predictors).
+        y_data : numpy ndarray
+            Values of the time series related to each row of `X_data`.
+        
+        """
+
+        windows = sliding_window_view(y, self.window_size + self.max_step)
+
+        X_data = None
+        if self.lags is not None:
+            lag_indices = [self.window_size - lag for lag in self.lags]
+            X_data = windows[:, lag_indices]
+
+            if X_as_pandas:
+                X_data = pd.DataFrame(
+                    data=X_data,
+                    columns=self.lags_names,
+                    index=train_index
+                )
+
+        y_data = windows[:, self.window_size : self.window_size + self.max_step]
+
+        return X_data, y_data
+
+
 
     def _create_window_features(
         self, 
