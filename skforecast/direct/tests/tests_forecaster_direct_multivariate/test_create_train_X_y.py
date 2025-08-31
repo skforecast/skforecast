@@ -440,8 +440,8 @@ def test_create_train_X_y_output_when_lags_dict_steps_2_and_exog_is_None(level, 
     Test output of _create_train_X_y when regressor is LinearRegression, 
     different lags and steps is 2.
     """
-    series = pd.DataFrame({'l1': pd.Series(np.arange(10)), 
-                           'l2': pd.Series(np.arange(100, 110))})
+    series = pd.DataFrame({'l1': pd.Series(np.arange(10, dtype=float)), 
+                           'l2': pd.Series(np.arange(100, 110, dtype=float))})
     exog = None
 
     forecaster = ForecasterDirectMultiVariate(LinearRegression(), level=level,
@@ -508,8 +508,8 @@ def test_create_train_X_y_output_when_lags_dict_with_None_steps_2_and_exog_is_No
     Test output of _create_train_X_y when regressor is LinearRegression, 
     lags is a dict with None and steps is 2.
     """
-    series = pd.DataFrame({'l1': pd.Series(np.arange(10)), 
-                           'l2': pd.Series(np.arange(100, 110))})
+    series = pd.DataFrame({'l1': pd.Series(np.arange(10, dtype=float)), 
+                           'l2': pd.Series(np.arange(100, 110, dtype=float))})
     exog = None
 
     forecaster = ForecasterDirectMultiVariate(LinearRegression(), level=level,

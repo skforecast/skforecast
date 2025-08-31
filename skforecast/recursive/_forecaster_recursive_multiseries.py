@@ -737,6 +737,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         return style + content
 
+    # TODO: Remove if new method works as expected
     def _create_lags_deprecated(
         self,
         y: np.ndarray,
@@ -796,10 +797,37 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         train_index: pd.Index | None = None
     ) -> tuple[np.ndarray | pd.DataFrame | None, np.ndarray]:
         """
-        Create lagged values and target variable from a time series
-        using NumPy's sliding_window_view. The returned data is a view
-        into the original `y` so care must be taken when modifying it.
+        Create the lagged values and their target variable from a time series.
+        
+        Note that the returned matrix `X_data` contains the lag 1 in the first 
+        column, the lag 2 in the in the second column and so on.
+
+        Returned matrices are views into the original `y` so care must be taken
+        when modifying them.
+
+        Parameters
+        ----------
+        y : numpy ndarray
+            Training time series values.
+        X_as_pandas : bool, default False
+            If `True`, the returned matrix `X_data` is a pandas DataFrame.
+        train_index : pandas Index, default None
+            Index of the training data. It is used to create the pandas DataFrame
+            `X_data` when `X_as_pandas` is `True`.
+
+        Returns
+        -------
+        X_data : numpy ndarray, pandas DataFrame, None
+            Lagged values (predictors).
+        y_data : numpy ndarray
+            Values of the time series related to each row of `X_data`.
+
+        Notes
+        -----
+        Returned matrices are views into the original `y` so care must be taken
+        when modifying them.
         """
+
         X_data = None
 
         if self.lags is not None:

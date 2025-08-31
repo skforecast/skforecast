@@ -545,6 +545,7 @@ class ForecasterDirect(ForecasterBase):
         # Return the combined style and content
         return style + content
 
+    # TODO: Remove if new method works as expected
     def _create_lags_deprecated(
         self, 
         y: np.ndarray,
@@ -613,7 +614,10 @@ class ForecasterDirect(ForecasterBase):
         
         Note that the returned matrix `X_data` contains the lag 1 in the first 
         column, the lag 2 in the in the second column and so on.
-        
+
+        The returned matrices are views into the original `y` so care must be taken
+        when modifying them.
+
         Parameters
         ----------
         y : numpy ndarray
@@ -630,7 +634,11 @@ class ForecasterDirect(ForecasterBase):
             Lagged values (predictors).
         y_data : numpy ndarray
             Values of the time series related to each row of `X_data`.
-        
+
+        Notes
+        -----
+        Returned matrices are views into the original `y` so care must be taken
+        when modifying them.
         """
 
         windows = sliding_window_view(y, self.window_size + self.max_step)
@@ -650,7 +658,6 @@ class ForecasterDirect(ForecasterBase):
         y_data = windows[:, self.window_size : self.window_size + self.max_step]
 
         return X_data, y_data
-
 
 
     def _create_window_features(

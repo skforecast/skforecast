@@ -17,7 +17,7 @@ def test_create_lags_when_lags_is_3_steps_1_and_y_is_numpy_arange_10():
     """
     forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1', 
                                                lags=3, steps=1)
-    results = forecaster._create_lags(y=np.arange(10), lags=np.array([1, 2, 3]))
+    results = forecaster._create_lags(y=np.arange(10, dtype=float), lags=np.array([1, 2, 3]))
     expected = (
         np.array([[2., 1., 0.],
                   [3., 2., 1.],
@@ -48,7 +48,7 @@ def test_create_lags_when_lags_is_list_interspersed_lags_steps_1_and_y_is_numpy_
     """
     forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1', 
                                                lags=[1, 5], steps=1)
-    results = forecaster._create_lags(y=np.arange(10), lags=np.array([1, 5]))
+    results = forecaster._create_lags(y=np.arange(10, dtype=float), lags=np.array([1, 5]))
     expected = (
         np.array([[4., 0.],
                   [5., 1.],
@@ -75,7 +75,7 @@ def test_create_lags_when_lags_is_3_steps_2_and_y_is_numpy_arange_10():
     """
     forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1', 
                                                lags=3, steps=2)
-    results = forecaster._create_lags(y=np.arange(10), lags=np.array([1, 2, 3]))
+    results = forecaster._create_lags(y=np.arange(10, dtype=float), lags=np.array([1, 2, 3]))
     expected = (
         np.array([[2., 1., 0.],
                   [3., 2., 1.],
@@ -104,7 +104,7 @@ def test_create_lags_when_lags_is_3_steps_5_and_y_is_numpy_arange_10():
     """
     forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1', 
                                                lags=3, steps=5)
-    results = forecaster._create_lags(y=np.arange(10), lags=np.array([1, 2, 3]))
+    results = forecaster._create_lags(y=np.arange(10, dtype=float), lags=np.array([1, 2, 3]))
     expected = (
         np.array([[2., 1., 0.],
                   [3., 2., 1.],
@@ -125,7 +125,7 @@ def test_create_lags_when_lags_is_3_steps_5_and_y_is_numpy_arange_10_data_to_ret
     """
     forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1', 
                                                lags=3, steps=5)
-    results = forecaster._create_lags(y=np.arange(10), lags=np.array([1, 2, 3]),
+    results = forecaster._create_lags(y=np.arange(10, dtype=float), lags=np.array([1, 2, 3]),
                                       data_to_return='X')
     expected = (
         np.array([[2., 1., 0.],
@@ -145,7 +145,7 @@ def test_create_lags_when_lags_is_3_steps_5_and_y_is_numpy_arange_10_data_to_ret
     """
     forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1', 
                                                lags=3, steps=5)
-    results = forecaster._create_lags(y=np.arange(10), lags=np.array([1, 2, 3]),
+    results = forecaster._create_lags(y=np.arange(10, dtype=float), lags=np.array([1, 2, 3]),
                                       data_to_return='y')
     expected = (
         None,
@@ -166,7 +166,7 @@ def test_create_lags_output_lags_None():
         LinearRegression(), level='l1', lags=None, steps=2, window_features=rolling
     )
     results = forecaster._create_lags(
-        y=np.arange(10), lags=None, data_to_return=None
+        y=np.arange(10, dtype=float), lags=None, data_to_return=None
     )
     expected = (
         None,
@@ -186,7 +186,7 @@ def test_create_lags_when_window_size_window_features_greater_than_max_lag():
         LinearRegression(), level='l1', lags=3, steps=2, window_features=rolling
     )
     results = forecaster._create_lags(
-        y=np.arange(10), lags=np.array([1, 2, 3]), data_to_return='both'
+        y=np.arange(10, dtype=float), lags=np.array([1, 2, 3]), data_to_return='both'
     )
     expected = (
         np.array([[5., 4., 3.],
