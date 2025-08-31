@@ -1581,8 +1581,9 @@ class TimeSeriesFold_New(BaseFold):
             # Al menos un fold COMPLETO (incluyendo gap)
             if len(index) < self.initial_train_size + self.gap + self.steps:
                 raise ValueError(
-                    "The time series must have at least `initial_train_size + gap + steps` "
-                    f"observations when `allow_incomplete_fold=False`. Got {len(index)}."
+                    f"The time series must have at least `initial_train_size + gap + steps` "
+                    f"observations when `allow_incomplete_fold=False` to create "
+                    f"at least one complete fold. Got {len(index)}."
                 )
         else:
             # Al menos 1 obs después del gap para permitir fold incompleto
@@ -1624,7 +1625,8 @@ class TimeSeriesFold_New(BaseFold):
         # NOTE: Delete all incomplete folds at the end if not allowed
         n_removed_folds = 0
         if not self.allow_incomplete_fold:
-            # While folds and the last "test_index_with_gap" is incomplete
+            # TODO: While folds and the last "test_index_with_gap" is incomplete,
+            # calculating len of range objects
             while folds and len(folds[-1][3]) < self.steps:
                 folds.pop()
                 n_removed_folds += 1

@@ -178,7 +178,8 @@ def _backtesting_forecaster(
     })
 
     refit = cv.refit
-    
+    overlapping_folds = cv.fold_stride < cv.steps
+
     if n_jobs == 'auto':
         n_jobs = select_n_jobs_backtesting(
                      forecaster = forecaster,
@@ -351,7 +352,6 @@ def _backtesting_forecaster(
                        exog         = next_window_exog,
                        check_inputs = False
                    )
-            pred.insert(0, 'fold', fold_number)
             preds.append(pred)
 
         if len(preds) == 1:
@@ -361,6 +361,10 @@ def _backtesting_forecaster(
 
         if type(forecaster).__name__ != 'ForecasterDirect' and gap > 0:
             pred = pred.iloc[gap:, ]
+
+        # TODO: pd.Series doesn't allow insert, return fold_number 
+        # and insert after pd.concat outside the parallel
+        pred.insert(0, 'fold', fold_number)
 
         return pred
 
@@ -403,10 +407,18 @@ def _backtesting_forecaster(
     train_indexes = np.unique(np.concatenate(train_indexes))
     y_train = y.iloc[train_indexes]
 
+    backtest_predictions_for_metrics = backtest_predictions
+    if overlapping_folds:
+        # TODO: Check best performance option
+        backtest_predictions_for_metrics = (
+            backtest_predictions_for_metrics
+            .loc[~backtest_predictions_for_metrics.index.duplicated(keep='last')]
+        )
+
     metric_values = [
         m(
-            y_true = y.loc[backtest_predictions.index],
-            y_pred = backtest_predictions['pred'],
+            y_true = y.loc[backtest_predictions_for_metrics.index],
+            y_pred = backtest_predictions_for_metrics['pred'],
             y_train = y_train
         ) 
         for m in metrics
