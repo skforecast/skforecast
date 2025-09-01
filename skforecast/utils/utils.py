@@ -3035,7 +3035,8 @@ def check_features_range(features_ranges: dict, X: pd.DataFrame | pd.Series, ser
                     msg = f"'{series_name}': " + msg
                 warnings.warn(msg, FeatureOutOfRangeWarning)
         else:
-            if (~X[col].isin(rule)).any():
+            unseen = set(X[col].unique()) - rule
+            if unseen:
                 msg = (
                     f"'{col}' has values not seen during training. Seen values: "
                     f"{rule}. This may affect the accuracy of the predictions."
@@ -3044,3 +3045,108 @@ def check_features_range(features_ranges: dict, X: pd.DataFrame | pd.Series, ser
                     msg = f"'{series_name}': " + msg
                 warnings.warn(msg, FeatureOutOfRangeWarning)
     return
+
+
+class DriftDetector:
+    """
+    Detector of out-of-range values based on training feature ranges.
+
+    The detector is intentionally lightweight: it does not compute advanced
+    drift statistics since it is used to check single observations not
+    distributions of data.
+    """
+
+    def __init__(self):
+        self.features_ranges_: dict | None = None
+        self.is_fitted_: bool = False
+
+    def fit(self, X: pd.DataFrame | pd.Series | dict) -> "DriftDetector":
+        """
+        Fit detector, storing training ranges.
+
+        Parameters
+        ----------
+        X : pd.DataFrame or pd.Series or dict
+            Input data to summarize. If a dict is provided it should map keys to
+            DataFrame or Series objects and the function will return a dict of
+            feature summaries for each key.
+
+        Returns
+        -------
+        self : DriftDetector
+            Fitted detector instance.
+
+        """
+
+        if not isinstance(X, (pd.DataFrame, pd.Series, dict)):
+            raise TypeError("Input must be a pandas DataFrame, Series or dict.")
+
+        if isinstance(X, dict):
+            return {key: get_features_range(series) for key, series in X.items()}
+
+        if isinstance(X, pd.Series):
+            X = X.to_frame()
+
+        num_cols = [col for col, dt in X.dtypes.items() if pd.api.types.is_numeric_dtype(dt)]
+        cat_cols = [col for col in X.columns if col not in num_cols]
+
+        features_ranges = {col: (X[col].min(), X[col].max()) for col in num_cols}
+        features_ranges.update({col: set(X[col].dropna().unique()) for col in cat_cols})
+
+        self.features_ranges_ = features_ranges
+        self.is_fitted_ = True
+
+        return
+
+    def predict(
+        self,
+        X: pd.DataFrame | pd.Series | dict,
+        series_name: str=None
+    ) -> dict | None:
+        """
+        Check if there is any value outside the training range. For numeric features,
+        it checks if the values are within the min and max range. For categorical features,
+        it checks if the values are among the seen categories.
+
+        Parameters
+        ----------
+        features_ranges : dict
+            Output from get_feature_summary()
+        X : pd.DataFrame or pd.Series
+            New data to validate
+        series_name : str, optional
+            Name of the time series being validated (for warning messages)
+
+        """
+
+        if isinstance(X, dict):
+            for key, v in X.items():
+                check_features_range(self.features_ranges_[key], v, series_name=key)
+                return
+
+        if isinstance(X, pd.Series):
+            X = X.to_frame()
+
+        for col in set(X.columns).intersection(self.features_ranges_.keys()):
+            rule = self.features_ranges_[col]
+            if isinstance(rule, tuple):  # numeric
+                if X[col].min() < rule[0] or X[col].max() > rule[1]:
+                    msg = (
+                        f"'{col}' has one or more values outside the range seen during training "
+                        f"[{rule[0]:.5f}, {rule[1]:.5f}]. "
+                        f"This may affect the accuracy of the predictions."
+                    )
+                    if series_name:
+                        msg = f"'{series_name}': " + msg
+                    warnings.warn(msg, FeatureOutOfRangeWarning)
+            else:
+                unseen = set(X[col].unique()) - rule
+                if unseen:
+                    msg = (
+                        f"'{col}' has values not seen during training. Seen values: "
+                        f"{rule}. This may affect the accuracy of the predictions."
+                    )
+                    if series_name:
+                        msg = f"'{series_name}': " + msg
+                    warnings.warn(msg, FeatureOutOfRangeWarning)
+        return
