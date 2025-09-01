@@ -141,6 +141,7 @@ class BaseFold():
         self.steps                 = steps
         self.initial_train_size    = initial_train_size
         self.fold_stride           = fold_stride if fold_stride is not None else steps
+        self.overlapping_folds     = self.fold_stride < self.steps
         self.window_size           = window_size
         self.differentiation       = differentiation
         self.refit                 = refit
@@ -165,7 +166,8 @@ class BaseFold():
         skip_folds: int | list[int] | None = None,
         allow_incomplete_fold: bool = True,
         return_all_indexes: bool = False,
-        verbose: bool = True
+        verbose: bool = True,
+        **kwargs
     ) -> None: 
         """
         Validate all input parameters to ensure correctness.

@@ -178,7 +178,7 @@ def _backtesting_forecaster(
     })
 
     refit = cv.refit
-    overlapping_folds = cv.fold_stride < cv.steps
+    overlapping_folds = cv.overlapping_folds
 
     if n_jobs == 'auto':
         n_jobs = select_n_jobs_backtesting(
@@ -361,10 +361,8 @@ def _backtesting_forecaster(
 
         if type(forecaster).__name__ != 'ForecasterDirect' and gap > 0:
             pred = pred.iloc[gap:, ]
-
-        fold_labels = np.repeat(fold_number, pred.shape[0])
-
-        return pred, fold_labels
+        
+        return pred
 
     kwargs_fit_predict_forecaster = {
         "forecaster": forecaster,
@@ -380,19 +378,20 @@ def _backtesting_forecaster(
         "random_state": random_state,
         "return_predictors": return_predictors
     }
-    results = Parallel(n_jobs=n_jobs)(
+    backtest_predictions = Parallel(n_jobs=n_jobs)(
         delayed(_fit_predict_forecaster)(
             fold_number=fold_number, fold=fold, **kwargs_fit_predict_forecaster
         )
         for fold_number, fold in enumerate(folds)
     )
-
-    backtest_predictions, fold_labels = zip(*results)
+    fold_labels = [
+        np.repeat(i, pred.shape[0]) for i, pred in enumerate(backtest_predictions)
+    ]
 
     backtest_predictions = pd.concat(backtest_predictions)
     if isinstance(backtest_predictions, pd.Series):
         backtest_predictions = backtest_predictions.to_frame()
-    backtest_predictions.insert(0, 'fold', list(chain(*fold_labels)))
+    backtest_predictions.insert(0, 'fold', np.concatenate(fold_labels))
 
     train_indexes = []
     for i, fold in enumerate(folds):
