@@ -78,9 +78,6 @@ class BaseFold():
 
     Attributes
     ----------
-    steps : int
-        Number of observations used to be predicted in each fold. This is also commonly
-        referred to as the forecast horizon or test size.
     initial_train_size : int
         Number of observations used for initial training.
     window_size : int
@@ -88,17 +85,6 @@ class BaseFold():
     differentiation : int
         Number of observations to use for differentiation. This is used to extend the
         `last_window` as many observations as the differentiation order.
-    refit : bool, int
-        Whether to refit the forecaster in each fold.
-    fixed_train_size : bool
-        Whether the training size is fixed or increases in each fold.
-    gap : int
-        Number of observations between the end of the training set and the start of the
-        test set.
-    skip_folds : int, list
-        Number of folds to skip.
-    allow_incomplete_fold : bool
-        Whether to allow the last fold to include fewer observations than `steps`.
     return_all_indexes : bool
         Whether to return all indexes or only the start and end indexes of each fold.
     verbose : bool
@@ -138,19 +124,11 @@ class BaseFold():
             verbose               = verbose
         )
 
-        self.steps                 = steps
-        self.initial_train_size    = initial_train_size
-        self.fold_stride           = fold_stride if fold_stride is not None else steps
-        self.overlapping_folds     = self.fold_stride < self.steps
-        self.window_size           = window_size
-        self.differentiation       = differentiation
-        self.refit                 = refit
-        self.fixed_train_size      = fixed_train_size
-        self.gap                   = gap
-        self.skip_folds            = skip_folds
-        self.allow_incomplete_fold = allow_incomplete_fold
-        self.return_all_indexes    = return_all_indexes
-        self.verbose               = verbose
+        self.initial_train_size = initial_train_size
+        self.window_size        = window_size
+        self.differentiation    = differentiation
+        self.return_all_indexes = return_all_indexes
+        self.verbose            = verbose
 
     def _validate_params(
         self,
@@ -256,17 +234,19 @@ class BaseFold():
                 f"`window_size` must be an integer greater than 0. Got {window_size}."
             )
         
-        if not isinstance(return_all_indexes, bool):
-            raise TypeError(
-                f"`return_all_indexes` must be a boolean: `True`, `False`. "
-                f"Got {return_all_indexes}."
-            )
         if differentiation is not None:
             if not isinstance(differentiation, (int, np.integer)) or differentiation < 0:
                 raise ValueError(
                     f"`differentiation` must be None or an integer greater than or "
                     f"equal to 0. Got {differentiation}."
                 )
+            
+        if not isinstance(return_all_indexes, bool):
+            raise TypeError(
+                f"`return_all_indexes` must be a boolean: `True`, `False`. "
+                f"Got {return_all_indexes}."
+            )
+        
         if not isinstance(verbose, bool):
             raise TypeError(
                 f"`verbose` must be a boolean: `True`, `False`. "
@@ -423,18 +403,6 @@ class OneStepAheadFold(BaseFold):
         Whether to return all indexes or only the start and end indexes of each fold.
     verbose : bool
         Whether to print information about generated folds.
-    steps : Any
-        This attribute is not used in this class. It is included for API consistency.
-    fixed_train_size : Any
-        This attribute is not used in this class. It is included for API consistency.
-    gap : Any
-        This attribute is not used in this class. It is included for API consistency.
-    skip_folds : Any
-        This attribute is not used in this class. It is included for API consistency.
-    allow_incomplete_fold : Any
-        This attribute is not used in this class. It is included for API consistency.
-    refit : Any
-        This attribute is not used in this class. It is included for API consistency.
     
     """
 
@@ -738,6 +706,11 @@ class TimeSeriesFold(BaseFold):
     initial_train_size : int
         Number of observations used for initial training. If `None` or 0, the initial
         forecaster is not trained in the first fold.
+    fold_stride : int
+        Number of observations that the start of the test set advances between
+        consecutive folds.
+    overlapping_folds : bool
+        Whether the folds overlap.
     window_size : int
         Number of observations needed to generate the autoregressive predictors.
     differentiation : int
@@ -817,6 +790,15 @@ class TimeSeriesFold(BaseFold):
             verbose               = verbose
         )
 
+        self.steps                 = steps
+        self.fold_stride           = fold_stride if fold_stride is not None else steps
+        self.overlapping_folds     = self.fold_stride < self.steps
+        self.refit                 = refit
+        self.fixed_train_size      = fixed_train_size
+        self.gap                   = gap
+        self.skip_folds            = skip_folds
+        self.allow_incomplete_fold = allow_incomplete_fold
+
     def __repr__(
         self
     ) -> str:
@@ -831,6 +813,7 @@ class TimeSeriesFold(BaseFold):
             f"Initial train size    = {self.initial_train_size},\n"
             f"Steps                 = {self.steps},\n"
             f"Fold stride           = {self.fold_stride},\n"
+            f"Overlapping folds     = {self.overlapping_folds},\n"
             f"Window size           = {self.window_size},\n"
             f"Differentiation       = {self.differentiation},\n"
             f"Refit                 = {self.refit},\n"
@@ -860,6 +843,7 @@ class TimeSeriesFold(BaseFold):
                     <li><strong>Initial train size:</strong> {self.initial_train_size}</li>
                     <li><strong>Steps:</strong> {self.steps}</li>
                     <li><strong>Fold stride:</strong> {self.fold_stride}</li>
+                    <li><strong>Overlapping folds:</strong> {self.overlapping_folds}</li>
                     <li><strong>Window size:</strong> {self.window_size}</li>
                     <li><strong>Differentiation:</strong> {self.differentiation}</li>
                     <li><strong>Refit:</strong> {self.refit}</li>
@@ -1230,21 +1214,19 @@ class TimeSeriesFold(BaseFold):
             f"    Number skipped folds: "
             f"{len(index_to_skip)} {index_to_skip if index_to_skip else ''}"
         )
-        # TODO: Enhance information steps vs fold_stride
         print(f"    Number of steps per fold: {self.steps}")
-        print(f"    Number of steps to exclude between folds (fold stride): {self.fold_stride}")
+        if self.steps != self.fold_stride:
+            print(f"    Number of steps to the next fold (fold stride): {self.fold_stride}")
         print(
             f"    Number of steps to exclude between last observed data "
             f"(last window) and predictions (gap): {self.gap}"
         )
-        # TODO: New
         if n_removed_folds > 0:
             print(
                 f"    Last {n_removed_folds} fold(s) have been excluded "
                 f"because they were incomplete."
             )
 
-        # TODO: Now can be more incomplete folds than last one
         if len(folds[-1][3]) < self.steps:
             print(f"    Last fold only includes {len(folds[-1][3])} observations.")
 

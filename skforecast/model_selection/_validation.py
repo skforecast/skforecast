@@ -409,7 +409,6 @@ def _backtesting_forecaster(
 
     backtest_predictions_for_metrics = backtest_predictions
     if overlapping_folds:
-        # TODO: Check best performance option
         backtest_predictions_for_metrics = (
             backtest_predictions_for_metrics
             .loc[~backtest_predictions_for_metrics.index.duplicated(keep='last')]
@@ -781,6 +780,7 @@ def _backtesting_forecaster_multiseries(
     })
 
     refit = cv.refit
+    overlapping_folds = cv.overlapping_folds
 
     if n_jobs == 'auto':
         n_jobs = select_n_jobs_backtesting(
@@ -983,7 +983,6 @@ def _backtesting_forecaster_multiseries(
                        suppress_warnings = suppress_warnings,
                        check_inputs      = False
                    ).iloc[:, 1:]
-            pred.insert(0, 'fold', fold_number)
             preds.append(pred)
 
         if len(preds) == 1:
@@ -1018,25 +1017,13 @@ def _backtesting_forecaster_multiseries(
         for fold_number, data_fold in enumerate(data_folds)
     )
 
-    backtest_predictions = pd.concat([result[0] for result in results], axis=0)
+    backtest_predictions = [result[0] for result in results]
+    fold_labels = [
+        np.repeat(i, pred.shape[0]) for i, pred in enumerate(backtest_predictions)
+    ]
+    backtest_predictions = pd.concat(backtest_predictions, axis=0)
+    backtest_predictions.insert(0, 'fold', np.concatenate(fold_labels))
     backtest_levels = set(chain(*[result[1] for result in results]))
-
-    cols_backtest_predictions = ['pred']
-    if interval is not None:
-        if interval == 'bootstrapping':
-            cols_backtest_predictions.extend([f'pred_boot_{i}' for i in range(n_boot)])
-        elif isinstance(interval, float):
-            cols_backtest_predictions.extend(['lower_bound', 'upper_bound'])
-        elif isinstance(interval, (list, tuple)):
-            if len(interval) == 2:
-                cols_backtest_predictions.extend(['lower_bound', 'upper_bound'])
-            else:
-                cols_backtest_predictions.extend([f'p_{p}' for p in interval])
-        else:
-            param_names = [
-                p for p in inspect.signature(interval._pdf).parameters if not p == "x"
-            ] + ["loc", "scale"]
-            cols_backtest_predictions.extend(param_names)
     
     backtest_predictions = (
         backtest_predictions
@@ -1052,21 +1039,29 @@ def _backtesting_forecaster_multiseries(
             no_valid_index = indices.difference(valid_index, sort=False)
             backtest_predictions.loc[no_valid_index, 'pred'] = np.nan
 
-    backtest_predictions = (
-        backtest_predictions
-        .reset_index('level')
-        .rename_axis(None, axis=0)
-    )
+    backtest_predictions_for_metrics = backtest_predictions
+    if overlapping_folds:
+        backtest_predictions_for_metrics = (
+            backtest_predictions_for_metrics
+            .loc[~backtest_predictions_for_metrics.index.duplicated(keep='last')]
+        )
 
+    # TODO: Document that now recibes a multiindex df as preds
     metrics_levels = _calculate_metrics_backtesting_multiseries(
         series                = series,
-        predictions           = backtest_predictions[['level', 'pred']],
+        predictions           = backtest_predictions_for_metrics[['pred']],
         folds                 = folds,
         span_index            = span_index,
         window_size           = forecaster.window_size,
         metrics               = metrics,
         levels                = levels,
         add_aggregated_metric = add_aggregated_metric
+    )
+
+    backtest_predictions = (
+        backtest_predictions
+        .reset_index('level')
+        .rename_axis(None, axis=0)
     )
        
     set_skforecast_warnings(suppress_warnings, action='default')
