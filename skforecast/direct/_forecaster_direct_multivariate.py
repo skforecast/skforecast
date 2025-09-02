@@ -10,7 +10,6 @@ from typing import Callable, Any
 import warnings
 import sys
 import numpy as np
-from numpy.lib.stride_tricks import sliding_window_view
 import pandas as pd
 import inspect
 from copy import copy, deepcopy
@@ -801,7 +800,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         if data_to_return is not None:
             n_rows = len(y) - self.window_size - (self.max_step - 1)
-            windows = sliding_window_view(y, self.window_size + self.max_step)
+            windows = np.lib.stride_tricks.sliding_window_view(y, self.window_size + self.max_step)
 
             if data_to_return != 'y':
                 # If `data_to_return` is not 'y', it means is 'X' or 'both', X_data is created

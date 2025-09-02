@@ -10,7 +10,6 @@ from typing import Callable
 import warnings
 import sys
 import numpy as np
-from numpy.lib.stride_tricks import sliding_window_view
 import pandas as pd
 import inspect
 from copy import copy, deepcopy
@@ -641,7 +640,7 @@ class ForecasterDirect(ForecasterBase):
         when modifying them.
         """
 
-        windows = sliding_window_view(y, self.window_size + self.max_step)
+        windows = np.lib.stride_tricks.sliding_window_view(y, self.window_size + self.max_step)
 
         X_data = None
         if self.lags is not None:

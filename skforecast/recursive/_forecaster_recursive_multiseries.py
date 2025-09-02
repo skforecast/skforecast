@@ -10,7 +10,6 @@ from typing import Callable
 import warnings
 import sys
 import numpy as np
-from numpy.lib.stride_tricks import sliding_window_view
 import pandas as pd
 import inspect
 from copy import copy, deepcopy
@@ -831,7 +830,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         X_data = None
 
         if self.lags is not None:
-            y_strided = sliding_window_view(y, self.window_size)[:-1]
+            y_strided = np.lib.stride_tricks.sliding_window_view(y, self.window_size)[:-1]
             cols = self.window_size - np.array(self.lags)
             X_data = y_strided[:, cols]
 
