@@ -28,8 +28,6 @@ from ..utils import (
     check_y,
     check_exog,
     get_exog_dtypes,
-    get_features_range,
-    check_features_range,
     check_exog_dtypes,
     check_predict_input,
     check_residuals_input,
@@ -161,8 +159,6 @@ class ForecasterRecursive(ForecasterBase):
         First and last values of index of the data used during training.
     series_name_in_ : str
         Names of the series provided by the user during training.
-    series_values_range_ : dict
-        Range of values of the target series used during training.
     exog_in_ : bool
         If the forecaster has been trained using exogenous variable/s.
     exog_names_in_ : list
@@ -177,8 +173,6 @@ class ForecasterRecursive(ForecasterBase):
         Type of each exogenous variable/s used in training after the transformation 
         applied by `transformer_exog`. If `transformer_exog` is not used, it 
         is equal to `exog_dtypes_in_`.
-    exog_values_range_ : dict
-        Range of values of the exogenous variables used during training.
     X_train_window_features_names_out_ : list
         Names of the window features included in the matrix `X_train` created
         internally for training.
@@ -268,13 +262,11 @@ class ForecasterRecursive(ForecasterBase):
         self.index_freq_                        = None
         self.training_range_                    = None
         self.series_name_in_                    = None
-        self.series_values_range_               = None
         self.exog_in_                           = False
         self.exog_names_in_                     = None
         self.exog_type_in_                      = None
         self.exog_dtypes_in_                    = None
         self.exog_dtypes_out_                   = None
-        self.exog_values_range_                 = None
         self.X_train_window_features_names_out_ = None
         self.X_train_exog_names_out_            = None
         self.X_train_features_names_out_        = None
@@ -1029,13 +1021,11 @@ class ForecasterRecursive(ForecasterBase):
         self.index_freq_                        = None
         self.training_range_                    = None
         self.series_name_in_                    = None
-        self.series_values_range_               = None
         self.exog_in_                           = False
         self.exog_names_in_                     = None
         self.exog_type_in_                      = None
         self.exog_dtypes_in_                    = None
         self.exog_dtypes_out_                   = None
-        self.exog_values_range_                 = None
         self.X_train_window_features_names_out_ = None
         self.X_train_exog_names_out_            = None
         self.X_train_features_names_out_        = None
@@ -1055,8 +1045,6 @@ class ForecasterRecursive(ForecasterBase):
             exog_dtypes_in_,
             exog_dtypes_out_
         ) = self._create_train_X_y(y=y, exog=exog)
-
-        self.series_values_range_ = get_features_range(X=y)
 
         sample_weight = self.create_sample_weights(X_train=X_train)
 
@@ -1090,7 +1078,6 @@ class ForecasterRecursive(ForecasterBase):
             self.exog_dtypes_in_ = exog_dtypes_in_
             self.exog_dtypes_out_ = exog_dtypes_out_
             self.X_train_exog_names_out_ = X_train_exog_names_out_
-            self.exog_values_range_ = get_features_range(X=exog)
 
         # NOTE: This is done to save time during fit in functions such as backtesting()
         if self._probabilistic_mode is not False:
@@ -1564,14 +1551,6 @@ class ForecasterRecursive(ForecasterBase):
             Predicted values.
         
         """
-
-        if warning_drift:
-            check_features_range(
-                features_ranges = self.series_values_range_,
-                X = last_window if last_window is not None else self.last_window_
-            )
-            if exog is not None:
-                check_features_range(features_ranges=self.exog_values_range_, X=exog)
 
         (
             last_window_values,
