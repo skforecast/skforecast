@@ -255,7 +255,7 @@ def _backtesting_forecaster(
         folds = tqdm(folds)
 
     def _fit_predict_forecaster(
-        fold_number, fold, forecaster, y, exog, store_in_sample_residuals, gap, interval, 
+        fold, forecaster, y, exog, store_in_sample_residuals, gap, interval, 
         interval_method, n_boot, use_in_sample_residuals, use_binned_residuals, 
         random_state, return_predictors
     ) -> pd.DataFrame:
@@ -380,9 +380,9 @@ def _backtesting_forecaster(
     }
     backtest_predictions = Parallel(n_jobs=n_jobs)(
         delayed(_fit_predict_forecaster)(
-            fold_number=fold_number, fold=fold, **kwargs_fit_predict_forecaster
+            fold=fold, **kwargs_fit_predict_forecaster
         )
-        for fold_number, fold in enumerate(folds)
+        for fold in folds
     )
     fold_labels = [
         np.repeat(i, pred.shape[0]) for i, pred in enumerate(backtest_predictions)
@@ -885,7 +885,7 @@ def _backtesting_forecaster_multiseries(
                  )
 
     def _fit_predict_forecaster(
-        fold_number, data_fold, forecaster, store_in_sample_residuals, levels, gap, 
+        data_fold, forecaster, store_in_sample_residuals, levels, gap, 
         interval, interval_method, n_boot, use_in_sample_residuals, 
         use_binned_residuals, random_state, return_predictors, suppress_warnings
     ) -> pd.DataFrame:
@@ -1012,9 +1012,9 @@ def _backtesting_forecaster_multiseries(
     }
     results = Parallel(n_jobs=n_jobs)(
         delayed(_fit_predict_forecaster)(
-            fold_number=fold_number, data_fold=data_fold, **kwargs_fit_predict_forecaster
+            data_fold=data_fold, **kwargs_fit_predict_forecaster
         )
-        for fold_number, data_fold in enumerate(data_folds)
+        for data_fold in data_folds
     )
 
     backtest_predictions = [result[0] for result in results]
@@ -1046,7 +1046,6 @@ def _backtesting_forecaster_multiseries(
             .loc[~backtest_predictions_for_metrics.index.duplicated(keep='last')]
         )
 
-    # TODO: Document that now recibes a multiindex df as preds
     metrics_levels = _calculate_metrics_backtesting_multiseries(
         series                = series,
         predictions           = backtest_predictions_for_metrics[['pred']],

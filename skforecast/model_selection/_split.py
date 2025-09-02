@@ -1223,7 +1223,7 @@ class TimeSeriesFold(BaseFold):
         )
         if n_removed_folds > 0:
             print(
-                f"    Last {n_removed_folds} fold(s) have been excluded "
+                f"    The last {n_removed_folds} fold(s) have been excluded "
                 f"because they were incomplete."
             )
 

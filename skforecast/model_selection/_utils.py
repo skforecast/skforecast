@@ -1023,7 +1023,7 @@ def _calculate_metrics_backtesting_multiseries(
     series : pandas DataFrame, dict
         Series data used for backtesting.
     predictions : pandas DataFrame
-        Predictions generated during the backtesting multiseries process.
+        MultiIndex DataFrame generated during the backtesting multiseries process. 
     folds : list, tqdm
         Folds created during the backtesting process.
     span_index : pandas DatetimeIndex, pandas RangeIndex
@@ -1074,7 +1074,6 @@ def _calculate_metrics_backtesting_multiseries(
         raise TypeError("`add_aggregated_metric` must be a boolean.")
     
     metric_names = [m.__name__ for m in metrics]
-    # levels_in_predictions = predictions['level'].unique()
     levels_in_predictions = predictions.index.get_level_values('level').unique()
 
     if isinstance(series, pd.DataFrame) and not isinstance(series.index, pd.MultiIndex):
@@ -1085,8 +1084,6 @@ def _calculate_metrics_backtesting_multiseries(
     else:
         series = pd.concat(series, names = ['level', 'idx']).to_frame('y_true')
     
-    # predictions = predictions.rename_axis('idx', axis=0)
-    # predictions = predictions.set_index('level', append=True)
     predictions = predictions.swaplevel()
     predictions.columns = ['y_pred']
 

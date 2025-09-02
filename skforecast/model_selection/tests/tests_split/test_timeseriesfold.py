@@ -255,7 +255,7 @@ def test_TimeSeriesFold_split_no_refit_no_gap_no_remainder(capfd, return_all_ind
                                    [[0, 65], [71, 75], [75, 85], [75, 85], False],
                                    [[0, 65], [81, 85], [85, 95], [85, 95], False]])])
 def test_TimeSeriesFold_split_no_refit_no_gap_allow_incomplete_fold_False(capfd, return_all_indexes, expected):
-    """s
+    """
     Test TimeSeriesFold split method output when refit is 0 (False), gap=0, 
     remainder and allow_incomplete_fold=False.
     """
@@ -285,7 +285,7 @@ def test_TimeSeriesFold_split_no_refit_no_gap_allow_incomplete_fold_False(capfd,
         "    Number skipped folds: 0 \n"
         "    Number of steps per fold: 10\n"
         "    Number of steps to exclude between last observed data (last window) and predictions (gap): 0\n"
-        "    Last fold has been excluded because it was incomplete.\n\n"
+        "    The last 1 fold(s) have been excluded because they were incomplete.\n\n"
         "Fold: 0\n"
         "    Training:   2022-01-01 00:00:00 -- 2022-03-06 00:00:00  (n=65)\n"
         "    Validation: 2022-03-07 00:00:00 -- 2022-03-16 00:00:00  (n=10)\n"
@@ -698,7 +698,7 @@ def test_TimeSeriesFold_split_refit_no_fixed_gap_allow_incomplete_fold_False(cap
         "    Number skipped folds: 0 \n"
         "    Number of steps per fold: 7\n"
         "    Number of steps to exclude between last observed data (last window) and predictions (gap): 5\n"
-        "    Last fold has been excluded because it was incomplete.\n\n"
+        "    The last 1 fold(s) have been excluded because they were incomplete.\n\n"
         "Fold: 0\n"
         "    Training:   2022-01-01 00:00:00 -- 2022-03-11 00:00:00  (n=70)\n"
         "    Validation: 2022-03-17 00:00:00 -- 2022-03-23 00:00:00  (n=7)\n"
@@ -751,7 +751,7 @@ def test_TimeSeriesFold_split_refit_fixed_train_size_gap_allow_incomplete_fold_F
         "    Number skipped folds: 0 \n"
         "    Number of steps per fold: 7\n"
         "    Number of steps to exclude between last observed data (last window) and predictions (gap): 5\n"
-        "    Last fold has been excluded because it was incomplete.\n\n"
+        "    The last 1 fold(s) have been excluded because they were incomplete.\n\n"
         "Fold: 0\n"
         "    Training:   0 -- 69  (n=70)\n"
         "    Validation: 75 -- 81  (n=7)\n"
@@ -1038,7 +1038,7 @@ def test_TimeSeriesFold_split_refit_int_no_fixed_gap_allow_incomplete_fold_False
         "    Number skipped folds: 0 \n"
         "    Number of steps per fold: 7\n"
         "    Number of steps to exclude between last observed data (last window) and predictions (gap): 5\n"
-        "    Last fold has been excluded because it was incomplete.\n\n"
+        "    The last 1 fold(s) have been excluded because they were incomplete.\n\n"
         "Fold: 0\n"
         "    Training:   2022-01-01 00:00:00 -- 2022-03-11 00:00:00  (n=70)\n"
         "    Validation: 2022-03-17 00:00:00 -- 2022-03-23 00:00:00  (n=7)\n"
@@ -1091,7 +1091,7 @@ def test_TimeSeriesFold_split_refit_int_fixed_train_size_gap_allow_incomplete_fo
         "    Number skipped folds: 0 \n"
         "    Number of steps per fold: 7\n"
         "    Number of steps to exclude between last observed data (last window) and predictions (gap): 5\n"
-        "    Last fold has been excluded because it was incomplete.\n\n"
+        "    The last 1 fold(s) have been excluded because they were incomplete.\n\n"
         "Fold: 0\n"
         "    Training:   0 -- 69  (n=70)\n"
         "    Validation: 75 -- 81  (n=7)\n"
@@ -1348,7 +1348,7 @@ def test_TimeSeriesFold_split_int_and_date_initial_train_size(capfd, initial_tra
     folds = cv.split(X=y)
                     
     out, _ = capfd.readouterr()
-    print(out)
+    
     expected_out = (
         "Information of folds\n"
         "--------------------\n"
@@ -1371,6 +1371,137 @@ def test_TimeSeriesFold_split_int_and_date_initial_train_size(capfd, initial_tra
         "Fold: 3\n"
         "    Training:   No training in this fold\n"
         "    Validation: 2022-04-07 00:00:00 -- 2022-04-10 00:00:00  (n=4)\n\n"
+    )
+
+    assert out == expected_out
+    assert folds == expected
+    
+
+@pytest.mark.parametrize("return_all_indexes, expected",
+                         [(True, [[range(0, 70), range(66, 70), range(70, 81), range(70, 81), True],
+                                  [range(0, 70), range(71, 75), range(75, 86), range(75, 86), False],
+                                  [range(0, 70), range(76, 80), range(80, 91), range(80, 91), False],
+                                  [range(0, 70), range(81, 85), range(85, 96), range(85, 96), False]]),
+                          (False, [[[0, 70], [66, 70], [70, 81], [70, 81], True],
+                                   [[0, 70], [71, 75], [75, 86], [75, 86], False],
+                                   [[0, 70], [76, 80], [80, 91], [80, 91], False],
+                                   [[0, 70], [81, 85], [85, 96], [85, 96], False]])])
+def test_TimeSeriesFold_split_no_refit_no_gap_allow_incomplete_fold_False_fold_stride(capfd, return_all_indexes, expected):
+    """
+    Test TimeSeriesFold split method output when refit is 0 (False), gap=0, 
+    remainder, allow_incomplete_fold=False and fold_stride=5.
+    """
+    y = pd.Series(np.arange(100))
+    y.index = pd.date_range(start='2022-01-01', periods=100, freq='D')
+    cv = TimeSeriesFold(
+            steps                 = 11,
+            initial_train_size    = 70,
+            fold_stride           = 5,
+            window_size           = 4,
+            differentiation       = None,
+            refit                 = 0,
+            fixed_train_size      = False,
+            gap                   = 0,
+            skip_folds            = None,
+            allow_incomplete_fold = False,
+            return_all_indexes    = return_all_indexes,
+        )
+    folds = cv.split(X=y)
+    
+    out, _ = capfd.readouterr()
+    expected_out = (
+        "Information of folds\n"
+        "--------------------\n"
+        "Number of observations used for initial training: 70\n"
+        "Number of observations used for backtesting: 30\n"
+        "    Number of folds: 4\n"
+        "    Number skipped folds: 0 \n"
+        "    Number of steps per fold: 11\n"
+        "    Number of steps to the next fold (fold stride): 5\n"
+        "    Number of steps to exclude between last observed data (last window) and predictions (gap): 0\n"
+        "    The last 2 fold(s) have been excluded because they were incomplete.\n\n"
+        "Fold: 0\n"
+        "    Training:   2022-01-01 00:00:00 -- 2022-03-11 00:00:00  (n=70)\n"
+        "    Validation: 2022-03-12 00:00:00 -- 2022-03-22 00:00:00  (n=11)\n"
+        "Fold: 1\n"
+        "    Training:   No training in this fold\n"
+        "    Validation: 2022-03-17 00:00:00 -- 2022-03-27 00:00:00  (n=11)\n"
+        "Fold: 2\n"
+        "    Training:   No training in this fold\n"
+        "    Validation: 2022-03-22 00:00:00 -- 2022-04-01 00:00:00  (n=11)\n"
+        "Fold: 3\n"
+        "    Training:   No training in this fold\n"
+        "    Validation: 2022-03-27 00:00:00 -- 2022-04-06 00:00:00  (n=11)\n\n"
+    )
+
+    assert out == expected_out
+    assert folds == expected
+    
+
+@pytest.mark.parametrize("return_all_indexes, expected",
+                         [(True, [[range(0, 70), range(64, 70), range(70, 83), range(72, 83), True],
+                                  [range(0, 75), range(69, 75), range(75, 88), range(77, 88), True],
+                                  [range(0, 80), range(74, 80), range(80, 93), range(82, 93), True],
+                                  [range(0, 85), range(79, 85), range(85, 98), range(87, 98), True],
+                                  [range(0, 90), range(84, 90), range(90, 100), range(92, 100), True],
+                                  [range(0, 95), range(89, 95), range(95, 100), range(97, 100), True]]),
+                          (False, [[[0, 70], [64, 70], [70, 83], [72, 83], True],
+                                   [[0, 75], [69, 75], [75, 88], [77, 88], True],
+                                   [[0, 80], [74, 80], [80, 93], [82, 93], True],
+                                   [[0, 85], [79, 85], [85, 98], [87, 98], True],
+                                   [[0, 90], [84, 90], [90, 100], [92, 100], True],
+                                   [[0, 95], [89, 95], [95, 100], [97, 100], True]])])
+def test_TimeSeriesFold_split_no_refit_gap_allow_incomplete_fold_True_fold_stride(capfd, return_all_indexes, expected):
+    """
+    Test TimeSeriesFold split method output when refit is True, gap=2, 
+    remainder, allow_incomplete_fold=True and fold_stride=5.
+    """
+    y = pd.Series(np.arange(100))
+    cv = TimeSeriesFold(
+            steps                 = 11,
+            initial_train_size    = 70,
+            fold_stride           = 5,
+            window_size           = 6,
+            differentiation       = None,
+            refit                 = True,
+            fixed_train_size      = False,
+            gap                   = 2,
+            skip_folds            = None,
+            allow_incomplete_fold = True,
+            return_all_indexes    = return_all_indexes,
+        )
+    folds = cv.split(X=y)
+                    
+    out, _ = capfd.readouterr()
+    expected_out = (
+        "Information of folds\n"
+        "--------------------\n"
+        "Number of observations used for initial training: 70\n"
+        "Number of observations used for backtesting: 30\n"
+        "    Number of folds: 6\n"
+        "    Number skipped folds: 0 \n"
+        "    Number of steps per fold: 11\n"
+        "    Number of steps to the next fold (fold stride): 5\n"
+        "    Number of steps to exclude between last observed data (last window) and predictions (gap): 2\n"
+        "    Last fold only includes 3 observations.\n\n"
+        "Fold: 0\n"
+        "    Training:   0 -- 69  (n=70)\n"
+        "    Validation: 72 -- 82  (n=11)\n"
+        "Fold: 1\n"
+        "    Training:   0 -- 74  (n=75)\n"
+        "    Validation: 77 -- 87  (n=11)\n"
+        "Fold: 2\n"
+        "    Training:   0 -- 79  (n=80)\n"
+        "    Validation: 82 -- 92  (n=11)\n"
+        "Fold: 3\n"
+        "    Training:   0 -- 84  (n=85)\n"
+        "    Validation: 87 -- 97  (n=11)\n"
+        "Fold: 4\n"
+        "    Training:   0 -- 89  (n=90)\n"
+        "    Validation: 92 -- 99  (n=8)\n"
+        "Fold: 5\n"
+        "    Training:   0 -- 94  (n=95)\n"
+        "    Validation: 97 -- 99  (n=3)\n\n"
     )
 
     assert out == expected_out

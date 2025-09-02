@@ -40,6 +40,7 @@ def test_output_backtesting_forecaster_no_exog_no_remainder_ForecasterRecursive_
                          0.4076433, 0.50904672, 0.50249462, 0.49232817])}, 
         index=pd.RangeIndex(start=38, stop=50, step=1)
     )
+    expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2])
 
     forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
     n_backtest = 12
@@ -100,6 +101,7 @@ def test_output_backtesting_forecaster_no_exog_no_remainder_ForecasterDirect_wit
         },
         index=pd.RangeIndex(start=38, stop=50, step=1),
     )
+    expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2])
 
     forecaster = ForecasterDirect(
                      regressor = LinearRegression(), 
@@ -162,6 +164,8 @@ def test_output_backtesting_forecaster_no_exog_yes_remainder_with_mocked():
         },
         index=pd.RangeIndex(start=38, stop=50, step=1),
     )
+    expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2])
+
     forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
 
     n_backtest = 12
@@ -220,6 +224,8 @@ def test_output_backtesting_forecaster_yes_exog_no_remainder_with_mocked():
         },
         index=pd.RangeIndex(start=38, stop=50, step=1),
     )
+    expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2])
+
     forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
 
     n_backtest = 12
@@ -270,6 +276,7 @@ def test_output_backtesting_forecaster_ForecasterRecursive_window_features_with_
         },
         index=pd.RangeIndex(start=38, stop=50, step=1),
     )
+    expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2])
 
     window_features = RollingFeatures(
         stats = ['mean', 'std', 'min', 'max', 'sum', 'median', 'ratio_min_max', 'coef_variation'],
@@ -327,6 +334,7 @@ def test_output_backtesting_forecaster_ForecasterDirect_window_features_with_moc
         },
         index=pd.RangeIndex(start=38, stop=50, step=1),
     )
+    expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2])
 
     window_features = RollingFeatures(
         stats = ['mean', 'std', 'min', 'max', 'sum', 'median', 'ratio_min_max', 'coef_variation'],
@@ -391,6 +399,8 @@ def test_output_backtesting_forecaster_yes_exog_yes_remainder_with_mocked():
         },
         index=pd.RangeIndex(start=38, stop=50, step=1),
     )
+    expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2])
+
     forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
 
     n_backtest = 12
@@ -444,6 +454,8 @@ def test_output_backtesting_forecaster_yes_exog_yes_remainder_skip_folds_with_mo
         },
         index=[38, 39, 40, 41, 42, 48, 49],
     )
+    expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 0, 2, 2])
+
     forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
 
     n_backtest = 12
@@ -490,6 +502,8 @@ def test_output_backtesting_forecaster_yes_exog_yes_remainder_skip_folds_intermi
         },
         index=[26, 27, 28, 32, 33, 34, 38, 39, 40, 44, 45, 46],
     )
+    expected_predictions.insert(0, 'fold', [0, 0, 0, 2, 2, 2, 4, 4, 4, 6, 6, 6])
+
     forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
 
     n_backtest = 24
@@ -548,6 +562,7 @@ def test_output_backtesting_forecaster_interval_no_exog_no_remainder_with_mocked
         columns=['pred', 'lower_bound', 'upper_bound'],
         index=pd.RangeIndex(start=38, stop=50, step=1)
     )
+    expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2])
 
     forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3, binner_kwargs={'n_bins': 15})
     n_backtest = 12
@@ -608,6 +623,7 @@ def test_output_backtesting_forecaster_interval_no_exog_yes_remainder_with_mocke
         columns=['pred', 'lower_bound', 'upper_bound'],
         index=pd.RangeIndex(start=38, stop=50, step=1)
     )
+    expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2])
 
     forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3, binner_kwargs={'n_bins': 15})
     n_backtest = 12
@@ -668,6 +684,7 @@ def test_output_backtesting_forecaster_interval_yes_exog_no_remainder_with_mocke
         columns=['pred', 'lower_bound', 'upper_bound'],
         index=pd.RangeIndex(start=38, stop=50, step=1)
     )
+    expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2])
 
     forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3, binner_kwargs={'n_bins': 15})
     n_backtest = 12
@@ -728,6 +745,7 @@ def test_output_backtesting_forecaster_interval_yes_exog_yes_remainder_with_mock
         columns=['pred', 'lower_bound', 'upper_bound'],
         index=pd.RangeIndex(start=38, stop=50, step=1)
     )
+    expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2])
 
     forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3, binner_kwargs={'n_bins': 15})
     n_backtest = 12
@@ -801,6 +819,7 @@ def test_output_backtesting_forecaster_refit_interval_percentiles_yes_exog(initi
         columns = ['pred', 'p_10', 'p_40', 'p_80', 'p_90'],
         index = pd.date_range(start='2022-01-31', periods=20, freq='D')
     )
+    expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3])
 
     forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
     cv = TimeSeriesFold(
@@ -839,34 +858,35 @@ def test_output_backtesting_forecaster_interval_conformal_and_binned_with_mocked
     expected_metric = pd.DataFrame({"mean_squared_error": [0.064250191230055]})
     expected_predictions = pd.DataFrame(
         data = np.array([
-            [0.59059622, 0.2974502 , 0.88374223, 0.        , 0.89338916,
+            [0.59059622, 0.2974502 , 0.88374223, 0.89338916,
              0.42635131, 0.31226122, 0.30476807],
-            [0.47257504, 0.22356317, 0.72158691, 0.        , 0.59059622,
+            [0.47257504, 0.22356317, 0.72158691, 0.59059622,
              0.89338916, 0.42635131, 0.39818568],
-            [0.53024098, 0.14339956, 0.91708239, 0.        , 0.47257504,
+            [0.53024098, 0.14339956, 0.91708239, 0.47257504,
              0.59059622, 0.89338916, 0.70495883],
-            [0.46163343, 0.21262156, 0.7106453 , 0.        , 0.53024098,
+            [0.46163343, 0.21262156, 0.7106453 , 0.53024098,
              0.47257504, 0.59059622, 0.99535848],
-            [0.50035119, 0.35604735, 0.64465502, 0.        , 0.46163343,
+            [0.50035119, 0.35604735, 0.64465502, 0.46163343,
              0.53024098, 0.47257504, 0.35591487],
-            [0.41975558, 0.20182965, 0.63768151, 1.        , 0.31728548,
+            [0.41975558, 0.20182965, 0.63768151, 0.31728548,
              0.1156184 , 0.62395295, 0.76254781],
-            [0.4256614 , 0.03773832, 0.81358449, 1.        , 0.41975558,
+            [0.4256614 , 0.03773832, 0.81358449, 0.41975558,
              0.31728548, 0.1156184 , 0.59317692],
-            [0.41176005, 0.19383413, 0.62968598, 1.        , 0.4256614 ,
+            [0.41176005, 0.19383413, 0.62968598, 0.4256614 ,
              0.41975558, 0.31728548, 0.6917018 ],
-            [0.52357817, 0.43392621, 0.61323014, 1.        , 0.41176005,
+            [0.52357817, 0.43392621, 0.61323014, 0.41176005,
              0.4256614 , 0.41975558, 0.15112745],
-            [0.509974  , 0.42032204, 0.59962597, 1.        , 0.52357817,
+            [0.509974  , 0.42032204, 0.59962597, 0.52357817,
              0.41176005, 0.4256614 , 0.39887629],
-            [0.65354628, 0.29763244, 1.00946013, 2.        , 0.98555979,
+            [0.65354628, 0.29763244, 1.00946013, 0.98555979,
              0.48303426, 0.25045537, 0.2408559 ],
-            [0.48210726, 0.17026625, 0.79394828, 2.        , 0.65354628,
+            [0.48210726, 0.17026625, 0.79394828, 0.65354628,
              0.98555979, 0.48303426, 0.34345601]]),
-        columns=['pred', 'lower_bound', 'upper_bound', 'fold', 
+        columns=['pred', 'lower_bound', 'upper_bound', 
                  'lag_1', 'lag_2', 'lag_3', 'exog'],
         index=pd.RangeIndex(start=38, stop=50, step=1)
-    ).astype({'fold': int})
+    )
+    expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2])
     
     forecaster = ForecasterRecursive(
         regressor=LinearRegression(), lags=3, binner_kwargs={'n_bins': 10}
@@ -925,6 +945,7 @@ def test_output_backtesting_forecaster_interval_conformal_and_binned_with_mocked
         columns=['pred', 'lower_bound', 'upper_bound'],
         index=pd.RangeIndex(start=38, stop=50, step=1)
     )
+    expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2])
     
     forecaster = ForecasterDirect(
         regressor=LinearRegression(), steps=5, lags=3, binner_kwargs={'n_bins': 10}
@@ -984,6 +1005,7 @@ def test_output_backtesting_forecaster_interval_out_sample_residuals_no_exog_no_
         columns=['pred', 'lower_bound', 'upper_bound'],
         index=pd.RangeIndex(start=38, stop=50, step=1)
     )
+    expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2])
 
     forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
     forecaster.out_sample_residuals_ = out_sample_residuals
@@ -1062,6 +1084,8 @@ def test_callable_metric_backtesting_forecaster_no_exog_no_remainder_with_mocked
         },
         index=pd.RangeIndex(start=38, stop=50, step=1),
     )
+    expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2])
+
     forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
 
     n_backtest = 12
@@ -1122,6 +1146,7 @@ def test_list_metrics_backtesting_forecaster_no_exog_no_remainder_with_mocked():
         },
         index=pd.RangeIndex(start=38, stop=50, step=1),
     )
+    expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2])
 
     forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
 
@@ -1185,6 +1210,7 @@ def test_output_backtesting_forecaster_fixed_train_size_no_exog_no_remainder_wit
         },
         index=pd.RangeIndex(start=38, stop=50, step=1),
     )
+    expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2])
 
     forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
 
@@ -1244,6 +1270,8 @@ def test_output_backtesting_forecaster_fixed_train_size_no_exog_yes_remainder_wi
         },
         index=pd.RangeIndex(start=38, stop=50, step=1),
     )
+    expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2])
+
     forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
 
     n_backtest = 12
@@ -1302,6 +1330,8 @@ def test_output_backtesting_forecaster_fixed_train_size_yes_exog_no_remainder_wi
         },
         index=pd.RangeIndex(start=38, stop=50, step=1),
     )
+    expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2])
+
     forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
 
     n_backtest = 12
@@ -1360,6 +1390,8 @@ def test_output_backtesting_forecaster_fixed_train_size_yes_exog_yes_remainder_w
         },
         index=pd.RangeIndex(start=38, stop=50, step=1),
     )
+    expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2])
+
     forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
 
     n_backtest = 12
@@ -1403,44 +1435,45 @@ def test_output_backtesting_forecaster_interval_yes_exog_yes_remainder_gap_with_
     """
     expected_metric = pd.DataFrame({'mean_squared_error': [0.0839045861490063]})
     expected_predictions = pd.DataFrame(
-        data = np.array([[0.65022999,  0.32111688,  1.0092382 ,  0.        ,  0.63097612,
+        data = np.array([[0.65022999,  0.32111688,  1.0092382 ,  0.63097612,
                           0.29371405,  0.22826323,  0.38895057],
-                         [0.52364637,  0.17891138,  0.88265459,  0.        ,  0.63097612,
+                         [0.52364637,  0.17891138,  0.88265459,  0.63097612,
                           0.29371405,  0.22826323,  0.92513249],
-                         [0.46809256,  0.14156566,  0.82710077,  0.        ,  0.63097612,
+                         [0.46809256,  0.14156566,  0.82710077,  0.63097612,
                           0.29371405,  0.22826323,  0.84167   ],
-                         [0.48759732,  0.16107043,  0.84202181,  0.        ,  0.63097612,
+                         [0.48759732,  0.16107043,  0.84202181,  0.63097612,
                           0.29371405,  0.22826323,  0.35739757],
-                         [0.47172445,  0.1418827 ,  0.82145924,  0.        ,  0.63097612,
+                         [0.47172445,  0.1418827 ,  0.82145924,  0.63097612,
                           0.29371405,  0.22826323,  0.04359146],
-                         [0.54075007,  0.20683169,  0.8966551 ,  1.        ,  0.42583029,
+                         [0.54075007,  0.20683169,  0.8966551 ,  0.42583029,
                           0.4936851 ,  0.43086276,  0.30476807],
-                         [0.50283999,  0.19947461,  0.85291605,  1.        ,  0.42583029,
+                         [0.50283999,  0.19947461,  0.85291605,  0.42583029,
                           0.4936851 ,  0.43086276,  0.39818568],
-                         [0.49737535,  0.17669038,  0.84772905,  1.        ,  0.42583029,
+                         [0.49737535,  0.17669038,  0.84772905,  0.42583029,
                           0.4936851 ,  0.43086276,  0.70495883],
-                         [0.49185456,  0.15793618,  0.83986246,  1.        ,  0.42583029,
+                         [0.49185456,  0.15793618,  0.83986246,  0.42583029,
                           0.4936851 ,  0.43086276,  0.99535848],
-                         [0.48906044,  0.14530175,  0.8391365 ,  1.        ,  0.42583029,
+                         [0.48906044,  0.14530175,  0.8391365 ,  0.42583029,
                           0.4936851 ,  0.43086276,  0.35591487],
-                         [0.27751064, -0.02499172,  0.67524686,  2.        ,  0.50183668,
+                         [0.27751064, -0.02499172,  0.67524686,  0.50183668,
                           0.94416002,  0.89338916,  0.76254781],
-                         [0.25859617, -0.09051231,  0.59235376,  2.        ,  0.50183668,
+                         [0.25859617, -0.09051231,  0.59235376,  0.50183668,
                           0.94416002,  0.89338916,  0.59317692],
-                         [0.32853669,  0.01962394,  0.6910329 ,  2.        ,  0.50183668,
+                         [0.32853669,  0.01962394,  0.6910329 ,  0.50183668,
                           0.94416002,  0.89338916,  0.6917018 ],
-                         [0.43751884,  0.13444931,  0.75663214,  2.        ,  0.50183668,
+                         [0.43751884,  0.13444931,  0.75663214,  0.50183668,
                           0.94416002,  0.89338916,  0.15112745],
-                         [0.33016371,  0.01926221,  0.69265992,  2.        ,  0.50183668,
+                         [0.33016371,  0.01926221,  0.69265992,  0.50183668,
                           0.94416002,  0.89338916,  0.39887629],
-                         [0.58126262,  0.21945267,  0.97135055,  3.        ,  0.86630916,
+                         [0.58126262,  0.21945267,  0.97135055,  0.86630916,
                           0.41482621,  0.31728548,  0.2408559 ],
-                         [0.52955296,  0.16642539,  0.94752912,  3.        ,  0.86630916,
+                         [0.52955296,  0.16642539,  0.94752912,  0.86630916,
                           0.41482621,  0.31728548,  0.34345601]]),
-        columns = ['pred', 'lower_bound', 'upper_bound', 'fold', 
+        columns = ['pred', 'lower_bound', 'upper_bound', 
                    'lag_1', 'lag_2', 'lag_3', 'exog'],
         index = pd.RangeIndex(start=33, stop=50, step=1)
-    ).astype({'fold': int})
+    )
+    expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3])
 
     forecaster = ForecasterDirect(
                      regressor = LinearRegression(), 
@@ -1513,6 +1546,7 @@ def test_output_backtesting_forecaster_interval_yes_exog_not_allow_remainder_gap
         columns = ['pred', 'lower_bound', 'upper_bound'],
         index = pd.date_range(start='2022-02-03', periods=15, freq='D')
     )
+    expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2])
 
     forecaster = ForecasterDirect(
                      regressor = LinearRegression(), 
@@ -1589,6 +1623,7 @@ def test_output_backtesting_forecaster_refit_int_interval_yes_exog_yes_remainder
         columns = ['pred', 'lower_bound', 'upper_bound'],
         index = pd.RangeIndex(start=30, stop=50, step=1)
     )
+    expected_predictions.insert(0, 'fold', [0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9])
 
     forecaster = ForecasterDirect(
                      regressor = Ridge(random_state=123), 
@@ -1664,6 +1699,7 @@ def test_output_backtesting_forecaster_refit_int_interval_yes_exog_not_allow_rem
                 columns = ['pred', 'lower_bound', 'upper_bound'],
         index = pd.date_range(start='2022-02-03', periods=16, freq='D')
     )
+    expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3])
 
     forecaster = ForecasterRecursive(regressor=Ridge(random_state=123), 
                                    lags=3, binner_kwargs={'n_bins': 15})
@@ -1681,8 +1717,8 @@ def test_output_backtesting_forecaster_refit_int_interval_yes_exog_not_allow_rem
         )
 
     warn_msg = re.escape(
-        ("If `refit` is an integer other than 1 (intermittent refit). `n_jobs` "
-         "is set to 1 to avoid unexpected results during parallelization.")
+        "If `refit` is an integer other than 1 (intermittent refit). `n_jobs` "
+        "is set to 1 to avoid unexpected results during parallelization."
     )
     with pytest.warns(IgnoredArgumentWarning, match = warn_msg):
         metric, backtest_predictions = _backtesting_forecaster(
