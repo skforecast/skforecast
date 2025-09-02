@@ -33,27 +33,48 @@ class RangeDriftDetector:
     """
 
     def __init__(self):
+        self.fit_series_names_: list[str] = []
         self.series_values_range_: dict | None = None
+        self.fit_exog_names_: list[str] = []
         self.exog_values_range_: dict | None = None
         self.is_fitted_: bool = False
+
+    def __repr__(
+        self
+    ) -> str:
+        """
+        Information displayed when a RangeDriftDetector object is printed.
+        """
+
+        info = (
+            f"{'=' * len(type(self).__name__)} \n"
+            f"{type(self).__name__} \n"
+            f"{'=' * len(type(self).__name__)} \n"
+            f"Series value ranges: {self.series_values_range_} \n"
+            f"Exogenous value ranges: {self.exog_values_range_} \n"
+            f"Fitted series: {self.fit_series_names_} \n"
+            f"Fitted exogenous: {self.fit_exog_names_} \n"
+        )
+
+        return info
 
     @classmethod
     def get_features_range(cls, X: pd.DataFrame | pd.Series | dict) -> dict:
         """
-        Get a summary of the features in the DataFrame or Series. For numeric features,
-        it returns the min and max values. For categorical features, it returns the
-        unique values.
+        Get a summary of the features in the DataFrame or Series. For numeric
+        features, it returns the min and max values. For categorical features,
+        it returns the unique values.
 
         Arguments
         ---------
-        X : pd.DataFrame or pd.Series or dict
+        X : pd.DataFrame, pd.Series, dict
             Input data to summarize. If a dict is provided it should map keys to
             DataFrame or Series objects and the function will return a dict of
             feature summaries for each key.
 
         Returns
         -------
-        dict
+        features_ranges: dict
             Summary of the features in the input data. If input is a dict, returns
             a dict of dicts mapping the same keys to their feature summaries.
 
@@ -71,7 +92,8 @@ class RangeDriftDetector:
         num_cols = [col for col, dt in X.dtypes.items() if pd.api.types.is_numeric_dtype(dt)]
         cat_cols = [col for col in X.columns if col not in num_cols]
 
-        features_ranges = {col: (X[col].min(), X[col].max()) for col in num_cols}
+        features_ranges = {}
+        features_ranges.update({col: (X[col].min(), X[col].max()) for col in num_cols})
         features_ranges.update({col: set(X[col].dropna().unique()) for col in cat_cols})
 
         return features_ranges
@@ -90,7 +112,7 @@ class RangeDriftDetector:
         Parameters
         ----------
         features_ranges : dict
-            Output from get_feature_summary()
+            Output from get_features_range()
         X : pd.DataFrame or pd.Series
             New data to validate
         """
@@ -158,9 +180,15 @@ class RangeDriftDetector:
             raise TypeError("Exogenous variables must be a pandas DataFrame, Series or dict.")  
 
         self.series_values_range_ = self.get_features_range(X=series)
+        self.fit_series_names_ = list(self.series_values_range_.keys())
         if exog is not None:
             self.exog_values_range_ = self.get_features_range(X=exog)
-
+            if any(isinstance(v, dict) for v in self.exog_values_range_.values()):
+                self.fit_exog_names_ = list(
+                    dict.fromkeys(k for v in self.exog_values_range_.values() for k in v)
+                )
+            else:
+                self.fit_exog_names_ = list(self.exog_values_range_.keys())
         self.is_fitted_ = True
 
         return
