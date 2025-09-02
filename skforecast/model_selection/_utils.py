@@ -907,12 +907,12 @@ def _extract_data_folds_multiseries(
     is_exog_dict = isinstance(exog, dict)
 
     for fold in folds:
-        train_iloc_start       = fold[0][0]
-        train_iloc_end         = fold[0][1]
-        last_window_iloc_start = fold[1][0]
-        last_window_iloc_end   = fold[1][1]
-        test_iloc_start        = fold[2][0]
-        test_iloc_end          = fold[2][1]
+        train_iloc_start       = fold[1][0]
+        train_iloc_end         = fold[1][1]
+        last_window_iloc_start = fold[2][0]
+        last_window_iloc_end   = fold[2][1]
+        test_iloc_start        = fold[3][0]
+        test_iloc_end          = fold[3][1]
 
         if is_series_dict or is_exog_dict:
             # Subtract 1 to the iloc indexes to get the loc indexes
@@ -1109,8 +1109,8 @@ def _calculate_metrics_backtesting_multiseries(
     for i, fold in enumerate(folds):
         fit_fold = fold[-1]
         if i == 0 or fit_fold:
-            train_iloc_start = fold[0][0]
-            train_iloc_end = fold[0][1]
+            train_iloc_start = fold[1][0]
+            train_iloc_end = fold[1][1]
             train_indexes.append(np.arange(train_iloc_start, train_iloc_end))
     
     train_indexes = np.unique(np.concatenate(train_indexes))

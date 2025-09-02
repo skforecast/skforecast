@@ -196,12 +196,12 @@ def test_TimeSeriesFold_split_ValueError_when_time_series_not_enough_data_allow_
 
 
 @pytest.mark.parametrize("return_all_indexes, expected",
-                         [(True, [[range(0, 70), range(67, 70), range(70, 80), range(70, 80), True],
-                                  [range(0, 70), range(77, 80), range(80, 90), range(80, 90), False],
-                                  [range(0, 70), range(87, 90), range(90, 100), range(90, 100), False]]),
-                          (False, [[[0, 70], [67, 70], [70, 80], [70, 80], True],
-                                   [[0, 70], [77, 80], [80, 90], [80, 90], False],
-                                   [[0, 70], [87, 90], [90, 100], [90, 100], False]])])
+                         [(True, [[0, range(0, 70), range(67, 70), range(70, 80), range(70, 80), True],
+                                  [1, range(0, 70), range(77, 80), range(80, 90), range(80, 90), False],
+                                  [2, range(0, 70), range(87, 90), range(90, 100), range(90, 100), False]]),
+                          (False, [[0, [0, 70], [67, 70], [70, 80], [70, 80], True],
+                                   [1, [0, 70], [77, 80], [80, 90], [80, 90], False],
+                                   [2, [0, 70], [87, 90], [90, 100], [90, 100], False]])])
 def test_TimeSeriesFold_split_no_refit_no_gap_no_remainder(capfd, return_all_indexes, expected):
     """
     Test TimeSeriesFold split method output when refit is False, gap=0 and not 
@@ -248,12 +248,12 @@ def test_TimeSeriesFold_split_no_refit_no_gap_no_remainder(capfd, return_all_ind
     
 
 @pytest.mark.parametrize("return_all_indexes, expected",
-                         [(True, [[range(0, 65), range(61, 65), range(65, 75), range(65, 75), True],
-                                  [range(0, 65), range(71, 75), range(75, 85), range(75, 85), False],
-                                  [range(0, 65), range(81, 85), range(85, 95), range(85, 95), False]]),
-                          (False, [[[0, 65], [61, 65], [65, 75], [65, 75], True],
-                                   [[0, 65], [71, 75], [75, 85], [75, 85], False],
-                                   [[0, 65], [81, 85], [85, 95], [85, 95], False]])])
+                         [(True, [[0, range(0, 65), range(61, 65), range(65, 75), range(65, 75), True],
+                                  [1, range(0, 65), range(71, 75), range(75, 85), range(75, 85), False],
+                                  [2, range(0, 65), range(81, 85), range(85, 95), range(85, 95), False]]),
+                          (False, [[0, [0, 65], [61, 65], [65, 75], [65, 75], True],
+                                   [1, [0, 65], [71, 75], [75, 85], [75, 85], False],
+                                   [2, [0, 65], [81, 85], [85, 95], [85, 95], False]])])
 def test_TimeSeriesFold_split_no_refit_no_gap_allow_incomplete_fold_False(capfd, return_all_indexes, expected):
     """
     Test TimeSeriesFold split method output when refit is 0 (False), gap=0, 
@@ -302,14 +302,14 @@ def test_TimeSeriesFold_split_no_refit_no_gap_allow_incomplete_fold_False(capfd,
     
 
 @pytest.mark.parametrize("return_all_indexes, expected",
-                         [(True, [[range(0, 70), range(65, 70), range(70, 82), range(75, 82), True],
-                                  [range(0, 70), range(72, 77), range(77, 89), range(82, 89), False],
-                                  [range(0, 70), range(79, 84), range(84, 96), range(89, 96), False],
-                                  [range(0, 70), range(86, 91), range(91, 100), range(96, 100), False]]),
-                          (False, [[[0, 70], [65, 70], [70, 82], [75, 82], True],
-                                   [[0, 70], [72, 77], [77, 89], [82, 89], False],
-                                   [[0, 70], [79, 84], [84, 96], [89, 96], False],
-                                   [[0, 70], [86, 91], [91, 100], [96, 100], False]])])
+                         [(True, [[0, range(0, 70), range(65, 70), range(70, 82), range(75, 82), True],
+                                  [1, range(0, 70), range(72, 77), range(77, 89), range(82, 89), False],
+                                  [2, range(0, 70), range(79, 84), range(84, 96), range(89, 96), False],
+                                  [3, range(0, 70), range(86, 91), range(91, 100), range(96, 100), False]]),
+                          (False, [[0, [0, 70], [65, 70], [70, 82], [75, 82], True],
+                                   [1, [0, 70], [72, 77], [77, 89], [82, 89], False],
+                                   [2, [0, 70], [79, 84], [84, 96], [89, 96], False],
+                                   [3, [0, 70], [86, 91], [91, 100], [96, 100], False]])])
 def test_TimeSeriesFold_split_no_refit_gap_allow_incomplete_fold_True(capfd, return_all_indexes, expected):
     """
     Test TimeSeriesFold split method output when refit is False, gap=5, 
@@ -361,22 +361,22 @@ def test_TimeSeriesFold_split_no_refit_gap_allow_incomplete_fold_True(capfd, ret
     
 
 @pytest.mark.parametrize("return_all_indexes, expected",
-                         [(True, [[range(0, 15), range(0, 15), range(15, 30), range(20, 30), False],
-                                  [range(0, 15), range(10, 25), range(25, 40), range(30, 40), False],
-                                  [range(0, 15), range(20, 35), range(35, 50), range(40, 50), False],
-                                  [range(0, 15), range(30, 45), range(45, 60), range(50, 60), False],
-                                  [range(0, 15), range(40, 55), range(55, 70), range(60, 70), False],
-                                  [range(0, 15), range(50, 65), range(65, 80), range(70, 80), False],
-                                  [range(0, 15), range(60, 75), range(75, 90), range(80, 90), False],
-                                  [range(0, 15), range(70, 85), range(85, 100), range(90, 100), False]]),
-                          (False, [[[0, 15], [0, 15], [15, 30], [20, 30], False],
-                                   [[0, 15], [10, 25], [25, 40], [30, 40], False],
-                                   [[0, 15], [20, 35], [35, 50], [40, 50], False],
-                                   [[0, 15], [30, 45], [45, 60], [50, 60], False],
-                                   [[0, 15], [40, 55], [55, 70], [60, 70], False],
-                                   [[0, 15], [50, 65], [65, 80], [70, 80], False],
-                                   [[0, 15], [60, 75], [75, 90], [80, 90], False],
-                                   [[0, 15], [70, 85], [85, 100], [90, 100], False]])])
+                         [(True, [[0, range(0, 15), range(0, 15), range(15, 30), range(20, 30), False],
+                                  [1, range(0, 15), range(10, 25), range(25, 40), range(30, 40), False],
+                                  [2, range(0, 15), range(20, 35), range(35, 50), range(40, 50), False],
+                                  [3, range(0, 15), range(30, 45), range(45, 60), range(50, 60), False],
+                                  [4, range(0, 15), range(40, 55), range(55, 70), range(60, 70), False],
+                                  [5, range(0, 15), range(50, 65), range(65, 80), range(70, 80), False],
+                                  [6, range(0, 15), range(60, 75), range(75, 90), range(80, 90), False],
+                                  [7, range(0, 15), range(70, 85), range(85, 100), range(90, 100), False]]),
+                          (False, [[0, [0, 15], [0, 15], [15, 30], [20, 30], False],
+                                   [1, [0, 15], [10, 25], [25, 40], [30, 40], False],
+                                   [2, [0, 15], [20, 35], [35, 50], [40, 50], False],
+                                   [3, [0, 15], [30, 45], [45, 60], [50, 60], False],
+                                   [4, [0, 15], [40, 55], [55, 70], [60, 70], False],
+                                   [5, [0, 15], [50, 65], [65, 80], [70, 80], False],
+                                   [6, [0, 15], [60, 75], [75, 90], [80, 90], False],
+                                   [7, [0, 15], [70, 85], [85, 100], [90, 100], False]])])
 def test_TimeSeriesFold_split_no_refit_initial_train_size_None_gap(capfd, return_all_indexes, expected):
     """
     Test TimeSeriesFold split method output when refit is False, gap=5, 
@@ -437,12 +437,12 @@ def test_TimeSeriesFold_split_no_refit_initial_train_size_None_gap(capfd, return
 
 
 @pytest.mark.parametrize("return_all_indexes, expected",
-                         [(True, [[range(0, 70), range(68, 70), range(70, 80), range(70, 80), True],
-                                  [range(0, 80), range(78, 80), range(80, 90), range(80, 90), True],
-                                  [range(0, 90), range(88, 90), range(90, 100), range(90, 100), True]]),
-                          (False, [[[0, 70], [68, 70], [70, 80], [70, 80], True],
-                                   [[0, 80], [78, 80], [80, 90], [80, 90], True],
-                                   [[0, 90], [88, 90], [90, 100], [90, 100], True]])])
+                         [(True, [[0, range(0, 70), range(68, 70), range(70, 80), range(70, 80), True],
+                                  [1, range(0, 80), range(78, 80), range(80, 90), range(80, 90), True],
+                                  [2, range(0, 90), range(88, 90), range(90, 100), range(90, 100), True]]),
+                          (False, [[0, [0, 70], [68, 70], [70, 80], [70, 80], True],
+                                   [1, [0, 80], [78, 80], [80, 90], [80, 90], True],
+                                   [2, [0, 90], [88, 90], [90, 100], [90, 100], True]])])
 def test_TimeSeriesFold_split_refit_no_fixed_no_gap_no_remainder(capfd, return_all_indexes, expected):
     """
     Test TimeSeriesFold split method output when refit is True, fixed_train_size is 
@@ -491,12 +491,12 @@ def test_TimeSeriesFold_split_refit_no_fixed_no_gap_no_remainder(capfd, return_a
 
 
 @pytest.mark.parametrize("return_all_indexes, expected",
-                         [(True, [[range(0, 70), range(64, 70), range(70, 80), range(70, 80), True],
-                                  [range(10, 80), range(74, 80), range(80, 90), range(80, 90), True],
-                                  [range(20, 90), range(84, 90), range(90, 100), range(90, 100), True]]),
-                          (False, [[[0, 70], [64, 70], [70, 80], [70, 80], True],
-                                   [[10, 80], [74, 80], [80, 90], [80, 90], True],
-                                   [[20, 90], [84, 90], [90, 100], [90, 100], True]])])
+                         [(True, [[0, range(0, 70), range(64, 70), range(70, 80), range(70, 80), True],
+                                  [1, range(10, 80), range(74, 80), range(80, 90), range(80, 90), True],
+                                  [2, range(20, 90), range(84, 90), range(90, 100), range(90, 100), True]]),
+                          (False, [[0, [0, 70], [64, 70], [70, 80], [70, 80], True],
+                                   [1, [10, 80], [74, 80], [80, 90], [80, 90], True],
+                                   [2, [20, 90], [84, 90], [90, 100], [90, 100], True]])])
 def test_TimeSeriesFold_split_refit_fixed_train_size_no_gap_no_remainder(capfd, return_all_indexes, expected):
     """
     Test TimeSeriesFold split method output when refit is 1 (True), fixed_train_size 
@@ -544,14 +544,14 @@ def test_TimeSeriesFold_split_refit_fixed_train_size_no_gap_no_remainder(capfd, 
     
 
 @pytest.mark.parametrize("return_all_indexes, expected",
-                         [(True, [[range(0, 70), range(67, 70), range(70, 82), range(75, 82), True],
-                                  [range(0, 77), range(74, 77), range(77, 89), range(82, 89), True],
-                                  [range(0, 84), range(81, 84), range(84, 96), range(89, 96), True],
-                                  [range(0, 91), range(88, 91), range(91, 100), range(96, 100), True]]),
-                          (False, [[[0, 70], [67, 70], [70, 82], [75, 82], True],
-                                   [[0, 77], [74, 77], [77, 89], [82, 89], True],
-                                   [[0, 84], [81, 84], [84, 96], [89, 96], True],
-                                   [[0, 91], [88, 91], [91, 100], [96, 100], True]])])
+                         [(True, [[0, range(0, 70), range(67, 70), range(70, 82), range(75, 82), True],
+                                  [1, range(0, 77), range(74, 77), range(77, 89), range(82, 89), True],
+                                  [2, range(0, 84), range(81, 84), range(84, 96), range(89, 96), True],
+                                  [3, range(0, 91), range(88, 91), range(91, 100), range(96, 100), True]]),
+                          (False, [[0, [0, 70], [67, 70], [70, 82], [75, 82], True],
+                                   [1, [0, 77], [74, 77], [77, 89], [82, 89], True],
+                                   [2, [0, 84], [81, 84], [84, 96], [89, 96], True],
+                                   [3, [0, 91], [88, 91], [91, 100], [96, 100], True]])])
 def test_TimeSeriesFold_split_refit_no_fixed_gap_allow_incomplete_fold_True(capfd, return_all_indexes, expected):
     """
     Test TimeSeriesFold split method output when refit is True, fixed_train_size is 
@@ -603,14 +603,14 @@ def test_TimeSeriesFold_split_refit_no_fixed_gap_allow_incomplete_fold_True(capf
     
 
 @pytest.mark.parametrize("return_all_indexes, expected",
-                         [(True, [[range(0, 70), range(65, 70), range(70, 82), range(75, 82), True],
-                                  [range(7, 77), range(72, 77), range(77, 89), range(82, 89), True],
-                                  [range(14, 84), range(79, 84), range(84, 96), range(89, 96), True],
-                                  [range(21, 91), range(86, 91), range(91, 100), range(96, 100), True]]),
-                          (False, [[[0, 70], [65, 70], [70, 82], [75, 82], True],
-                                   [[7, 77], [72, 77], [77, 89], [82, 89], True],
-                                   [[14, 84], [79, 84], [84, 96], [89, 96], True],
-                                   [[21, 91], [86, 91], [91, 100], [96, 100], True]])])
+                         [(True, [[0, range(0, 70), range(65, 70), range(70, 82), range(75, 82), True],
+                                  [1, range(7, 77), range(72, 77), range(77, 89), range(82, 89), True],
+                                  [2, range(14, 84), range(79, 84), range(84, 96), range(89, 96), True],
+                                  [3, range(21, 91), range(86, 91), range(91, 100), range(96, 100), True]]),
+                          (False, [[0, [0, 70], [65, 70], [70, 82], [75, 82], True],
+                                   [1, [7, 77], [72, 77], [77, 89], [82, 89], True],
+                                   [2, [14, 84], [79, 84], [84, 96], [89, 96], True],
+                                   [3, [21, 91], [86, 91], [91, 100], [96, 100], True]])])
 def test_TimeSeriesFold_split_refit_fixed_train_size_gap_allow_incomplete_fold_True(capfd, return_all_indexes, expected):
     """
     Test TimeSeriesFold split method output when refit is True, fixed_train_size is 
@@ -661,12 +661,12 @@ def test_TimeSeriesFold_split_refit_fixed_train_size_gap_allow_incomplete_fold_T
     
 
 @pytest.mark.parametrize("return_all_indexes, expected",
-                         [(True, [[range(0, 70), range(67, 70), range(70, 82), range(75, 82), True],
-                                  [range(0, 77), range(74, 77), range(77, 89), range(82, 89), True],
-                                  [range(0, 84), range(81, 84), range(84, 96), range(89, 96), True]]),
-                          (False, [[[0, 70], [67, 70], [70, 82], [75, 82], True],
-                                   [[0, 77], [74, 77], [77, 89], [82, 89], True],
-                                   [[0, 84], [81, 84], [84, 96], [89, 96], True]])])
+                         [(True, [[0, range(0, 70), range(67, 70), range(70, 82), range(75, 82), True],
+                                  [1, range(0, 77), range(74, 77), range(77, 89), range(82, 89), True],
+                                  [2, range(0, 84), range(81, 84), range(84, 96), range(89, 96), True]]),
+                          (False, [[0, [0, 70], [67, 70], [70, 82], [75, 82], True],
+                                   [1, [0, 77], [74, 77], [77, 89], [82, 89], True],
+                                   [2, [0, 84], [81, 84], [84, 96], [89, 96], True]])])
 def test_TimeSeriesFold_split_refit_no_fixed_gap_allow_incomplete_fold_False(capfd, return_all_indexes, expected):
     """
     Test TimeSeriesFold split method output when refit is True, fixed_train_size is 
@@ -715,12 +715,12 @@ def test_TimeSeriesFold_split_refit_no_fixed_gap_allow_incomplete_fold_False(cap
     
 
 @pytest.mark.parametrize("return_all_indexes, expected",
-                         [(True, [[range(0, 70), range(66, 70), range(70, 82), range(75, 82), True],
-                                  [range(7, 77), range(73, 77), range(77, 89), range(82, 89), True],
-                                  [range(14, 84), range(80, 84), range(84, 96), range(89, 96), True]]),
-                          (False, [[[0, 70], [66, 70], [70, 82], [75, 82], True],
-                                   [[7, 77], [73, 77], [77, 89], [82, 89], True],
-                                   [[14, 84], [80, 84], [84, 96], [89, 96], True]])])
+                         [(True, [[0, range(0, 70), range(66, 70), range(70, 82), range(75, 82), True],
+                                  [1, range(7, 77), range(73, 77), range(77, 89), range(82, 89), True],
+                                  [2, range(14, 84), range(80, 84), range(84, 96), range(89, 96), True]]),
+                          (False, [[0, [0, 70], [66, 70], [70, 82], [75, 82], True],
+                                   [1, [7, 77], [73, 77], [77, 89], [82, 89], True],
+                                   [2, [14, 84], [80, 84], [84, 96], [89, 96], True]])])
 def test_TimeSeriesFold_split_refit_fixed_train_size_gap_allow_incomplete_fold_False(capfd, return_all_indexes, expected):
     """
     Test TimeSeriesFold split method output when refit is True, fixed_train_size is 
@@ -768,14 +768,14 @@ def test_TimeSeriesFold_split_refit_fixed_train_size_gap_allow_incomplete_fold_F
 
 
 @pytest.mark.parametrize("return_all_indexes, expected",
-                         [(True, [[range(0, 60), range(56, 60), range(60, 70), range(60, 70), True],
-                                  [range(0, 60), range(66, 70), range(70, 80), range(70, 80), False],
-                                  [range(0, 80), range(76, 80), range(80, 90), range(80, 90), True],
-                                  [range(0, 80), range(86, 90), range(90, 100), range(90, 100), False]]),
-                          (False, [[[0, 60], [56, 60], [60, 70], [60, 70], True],
-                                   [[0, 60], [66, 70], [70, 80], [70, 80], False],
-                                   [[0, 80], [76, 80], [80, 90], [80, 90], True],
-                                   [[0, 80], [86, 90], [90, 100], [90, 100], False]])])
+                         [(True, [[0, range(0, 60), range(56, 60), range(60, 70), range(60, 70), True],
+                                  [1, range(0, 60), range(66, 70), range(70, 80), range(70, 80), False],
+                                  [2, range(0, 80), range(76, 80), range(80, 90), range(80, 90), True],
+                                  [3, range(0, 80), range(86, 90), range(90, 100), range(90, 100), False]]),
+                          (False, [[0, [0, 60], [56, 60], [60, 70], [60, 70], True],
+                                   [1, [0, 60], [66, 70], [70, 80], [70, 80], False],
+                                   [2, [0, 80], [76, 80], [80, 90], [80, 90], True],
+                                   [3, [0, 80], [86, 90], [90, 100], [90, 100], False]])])
 def test_TimeSeriesFold_split_refit_int_no_fixed_no_gap_no_remainder(capfd, return_all_indexes, expected):
     """
     Test TimeSeriesFold split method output when refit is 2, fixed_train_size is 
@@ -826,14 +826,14 @@ def test_TimeSeriesFold_split_refit_int_no_fixed_no_gap_no_remainder(capfd, retu
 
 
 @pytest.mark.parametrize("return_all_indexes, expected",
-                         [(True, [[range(0, 60), range(58, 60), range(60, 70), range(60, 70), True],
-                                  [range(0, 60), range(68, 70), range(70, 80), range(70, 80), False],
-                                  [range(0, 60), range(78, 80), range(80, 90), range(80, 90), False],
-                                  [range(30, 90), range(88, 90), range(90, 100), range(90, 100), True]]),
-                          (False, [[[0, 60], [58, 60], [60, 70], [60, 70], True],
-                                   [[0, 60], [68, 70], [70, 80], [70, 80], False],
-                                   [[0, 60], [78, 80], [80, 90], [80, 90], False],
-                                   [[30, 90], [88, 90], [90, 100], [90, 100], True]])])
+                         [(True, [[0, range(0, 60), range(58, 60), range(60, 70), range(60, 70), True],
+                                  [1, range(0, 60), range(68, 70), range(70, 80), range(70, 80), False],
+                                  [2, range(0, 60), range(78, 80), range(80, 90), range(80, 90), False],
+                                  [3, range(30, 90), range(88, 90), range(90, 100), range(90, 100), True]]),
+                          (False, [[0, [0, 60], [58, 60], [60, 70], [60, 70], True],
+                                   [1, [0, 60], [68, 70], [70, 80], [70, 80], False],
+                                   [2, [0, 60], [78, 80], [80, 90], [80, 90], False],
+                                   [3, [30, 90], [88, 90], [90, 100], [90, 100], True]])])
 def test_TimeSeriesFold_split_refit_int_fixed_train_size_no_gap_no_remainder(capfd, return_all_indexes, expected):
     """
     Test TimeSeriesFold split method output when refit is 3, fixed_train_size is 
@@ -884,14 +884,14 @@ def test_TimeSeriesFold_split_refit_int_fixed_train_size_no_gap_no_remainder(cap
     
 
 @pytest.mark.parametrize("return_all_indexes, expected",
-                         [(True, [[range(0, 70), range(60, 70), range(70, 82), range(75, 82), True],
-                                  [range(0, 70), range(67, 77), range(77, 89), range(82, 89), False],
-                                  [range(0, 84), range(74, 84), range(84, 96), range(89, 96), True],
-                                  [range(0, 84), range(81, 91), range(91, 100), range(96, 100), False]]),
-                          (False, [[[0, 70], [60, 70], [70, 82], [75, 82], True],
-                                   [[0, 70], [67, 77], [77, 89], [82, 89], False],
-                                   [[0, 84], [74, 84], [84, 96], [89, 96], True],
-                                   [[0, 84], [81, 91], [91, 100], [96, 100], False]])])
+                         [(True, [[0, range(0, 70), range(60, 70), range(70, 82), range(75, 82), True],
+                                  [1, range(0, 70), range(67, 77), range(77, 89), range(82, 89), False],
+                                  [2, range(0, 84), range(74, 84), range(84, 96), range(89, 96), True],
+                                  [3, range(0, 84), range(81, 91), range(91, 100), range(96, 100), False]]),
+                          (False, [[0, [0, 70], [60, 70], [70, 82], [75, 82], True],
+                                   [1, [0, 70], [67, 77], [77, 89], [82, 89], False],
+                                   [2, [0, 84], [74, 84], [84, 96], [89, 96], True],
+                                   [3, [0, 84], [81, 91], [91, 100], [96, 100], False]])])
 def test_TimeSeriesFold_split_refit_int_no_fixed_gap_allow_incomplete_fold_True(capfd, return_all_indexes, expected):
     """
     Test TimeSeriesFold split method output when refit is 2, fixed_train_size is 
@@ -943,14 +943,14 @@ def test_TimeSeriesFold_split_refit_int_no_fixed_gap_allow_incomplete_fold_True(
     
 
 @pytest.mark.parametrize("return_all_indexes, expected",
-                         [(True, [[range(0, 70), range(55, 70), range(70, 82), range(75, 82), True],
-                                  [range(0, 70), range(62, 77), range(77, 89), range(82, 89), False],
-                                  [range(0, 70), range(69, 84), range(84, 96), range(89, 96), False],
-                                  [range(21, 91), range(76, 91), range(91, 100), range(96, 100), True]]),
-                          (False, [[[0, 70], [55, 70], [70, 82], [75, 82], True],
-                                   [[0, 70], [62, 77], [77, 89], [82, 89], False],
-                                   [[0, 70], [69, 84], [84, 96], [89, 96], False],
-                                   [[21, 91], [76, 91], [91, 100], [96, 100], True]])])
+                         [(True, [[0, range(0, 70), range(55, 70), range(70, 82), range(75, 82), True],
+                                  [1, range(0, 70), range(62, 77), range(77, 89), range(82, 89), False],
+                                  [2, range(0, 70), range(69, 84), range(84, 96), range(89, 96), False],
+                                  [3, range(21, 91), range(76, 91), range(91, 100), range(96, 100), True]]),
+                          (False, [[0, [0, 70], [55, 70], [70, 82], [75, 82], True],
+                                   [1, [0, 70], [62, 77], [77, 89], [82, 89], False],
+                                   [2, [0, 70], [69, 84], [84, 96], [89, 96], False],
+                                   [3, [21, 91], [76, 91], [91, 100], [96, 100], True]])])
 def test_TimeSeriesFold_split_refit_int_fixed_train_size_gap_allow_incomplete_fold_True(capfd, return_all_indexes, expected):
     """
     Test TimeSeriesFold split method output when refit is 3, fixed_train_size is 
@@ -1001,12 +1001,12 @@ def test_TimeSeriesFold_split_refit_int_fixed_train_size_gap_allow_incomplete_fo
     
 
 @pytest.mark.parametrize("return_all_indexes, expected",
-                         [(True, [[range(0, 70), range(50, 70), range(70, 82), range(75, 82), True],
-                                  [range(0, 70), range(57, 77), range(77, 89), range(82, 89), False],
-                                  [range(0, 70), range(64, 84), range(84, 96), range(89, 96), False]]),
-                          (False, [[[0, 70], [50, 70], [70, 82], [75, 82], True],
-                                   [[0, 70], [57, 77], [77, 89], [82, 89], False],
-                                   [[0, 70], [64, 84], [84, 96], [89, 96], False]])])
+                         [(True, [[0, range(0, 70), range(50, 70), range(70, 82), range(75, 82), True],
+                                  [1, range(0, 70), range(57, 77), range(77, 89), range(82, 89), False],
+                                  [2, range(0, 70), range(64, 84), range(84, 96), range(89, 96), False]]),
+                          (False, [[0, [0, 70], [50, 70], [70, 82], [75, 82], True],
+                                   [1, [0, 70], [57, 77], [77, 89], [82, 89], False],
+                                   [2, [0, 70], [64, 84], [84, 96], [89, 96], False]])])
 def test_TimeSeriesFold_split_refit_int_no_fixed_gap_allow_incomplete_fold_False(capfd, return_all_indexes, expected):
     """
     Test TimeSeriesFold split method output when refit is 3, fixed_train_size is 
@@ -1055,12 +1055,12 @@ def test_TimeSeriesFold_split_refit_int_no_fixed_gap_allow_incomplete_fold_False
 
 
 @pytest.mark.parametrize("return_all_indexes, expected",
-                         [(True, [[range(0, 70), range(60, 70), range(70, 82), range(75, 82), True],
-                                  [range(0, 70), range(67, 77), range(77, 89), range(82, 89), False],
-                                  [range(14, 84), range(74, 84), range(84, 96), range(89, 96), True]]),
-                          (False, [[[0, 70], [60, 70], [70, 82], [75, 82], True],
-                                   [[0, 70], [67, 77], [77, 89], [82, 89], False],
-                                   [[14, 84], [74, 84], [84, 96], [89, 96], True]])])
+                         [(True, [[0, range(0, 70), range(60, 70), range(70, 82), range(75, 82), True],
+                                  [1, range(0, 70), range(67, 77), range(77, 89), range(82, 89), False],
+                                  [2, range(14, 84), range(74, 84), range(84, 96), range(89, 96), True]]),
+                          (False, [[0, [0, 70], [60, 70], [70, 82], [75, 82], True],
+                                   [1, [0, 70], [67, 77], [77, 89], [82, 89], False],
+                                   [2, [14, 84], [74, 84], [84, 96], [89, 96], True]])])
 def test_TimeSeriesFold_split_refit_int_fixed_train_size_gap_allow_incomplete_fold_False(capfd, return_all_indexes, expected):
     """
     Test TimeSeriesFold split method output when refit is True, fixed_train_size is 
@@ -1108,12 +1108,12 @@ def test_TimeSeriesFold_split_refit_int_fixed_train_size_gap_allow_incomplete_fo
 
 
 @pytest.mark.parametrize("return_all_indexes, expected",
-                         [(True, [[range(0, 70), range(67, 70), range(70, 80), range(70, 80), True],
-                                  [range(0, 80), range(77, 80), range(80, 90), range(80, 90), True],
-                                  [range(0, 90), range(87, 90), range(90, 100), range(90, 100), True]]),
-                          (False, [[[0, 70], [67, 70], [70, 80], [70, 80], True],
-                                   [[0, 80], [77, 80], [80, 90], [80, 90], True],
-                                   [[0, 90], [87, 90], [90, 100], [90, 100], True]])])
+                         [(True, [[0, range(0, 70), range(67, 70), range(70, 80), range(70, 80), True],
+                                  [1, range(0, 80), range(77, 80), range(80, 90), range(80, 90), True],
+                                  [2, range(0, 90), range(87, 90), range(90, 100), range(90, 100), True]]),
+                          (False, [[0, [0, 70], [67, 70], [70, 80], [70, 80], True],
+                                   [1, [0, 80], [77, 80], [80, 90], [80, 90], True],
+                                   [2, [0, 90], [87, 90], [90, 100], [90, 100], True]])])
 def test_TimeSeriesFold_split_refit_no_fixed_no_gap_no_remainder_differentiation(capfd, return_all_indexes, expected):
     """
     Test TimeSeriesFold split method output when refit is True, fixed_train_size is 
@@ -1166,12 +1166,12 @@ def test_TimeSeriesFold_split_refit_no_fixed_no_gap_no_remainder_differentiation
                          [3, [1, 2, 4, 5, 7]],
                          ids = lambda skip_folds: f'{skip_folds}')
 @pytest.mark.parametrize("return_all_indexes, expected",
-                         [(True, [[range(0, 70), range(68, 70), range(70, 80), range(70, 80), True],
-                                  [range(30, 100), range(98, 100), range(100, 110), range(100, 110), True],
-                                  [range(60, 130), range(128, 130), range(130, 140), range(130, 140), True]]),
-                          (False, [[[0, 70], [68, 70], [70, 80], [70, 80], True],
-                                   [[30, 100], [98, 100], [100, 110], [100, 110], True],
-                                   [[60, 130], [128, 130], [130, 140], [130, 140], True]])])
+                         [(True, [[0, range(0, 70), range(68, 70), range(70, 80), range(70, 80), True],
+                                  [3, range(30, 100), range(98, 100), range(100, 110), range(100, 110), True],
+                                  [6, range(60, 130), range(128, 130), range(130, 140), range(130, 140), True]]),
+                          (False, [[0, [0, 70], [68, 70], [70, 80], [70, 80], True],
+                                   [3, [30, 100], [98, 100], [100, 110], [100, 110], True],
+                                   [6, [60, 130], [128, 130], [130, 140], [130, 140], True]])])
 def test_TimeSeriesFold_split_refit_fixed_no_gap_no_remainder_skip_folds_3(capfd, skip_folds, return_all_indexes, expected):
     """
     Test TimeSeriesFold split method output when refit is True, fixed_train_size is 
@@ -1284,7 +1284,7 @@ def test_TimeSeriesFold_split_as_pandas_return_all_indexes_False(window_size):
             refit                 = False,
             fixed_train_size      = False,
             gap                   = 0,
-            skip_folds            = None,
+            skip_folds            = [1],
             allow_incomplete_fold = True,
             verbose               = False,
             return_all_indexes    = False
@@ -1292,46 +1292,46 @@ def test_TimeSeriesFold_split_as_pandas_return_all_indexes_False(window_size):
     folds = cv.split(X=y, as_pandas=True)
 
     expected = pd.DataFrame(
-        {'fold': [0, 1, 2],
-         'train_start': [0, 0, 0],
-         'train_end': [70, 70, 70],
-         'last_window_start': [67, 77, 87],
-         'last_window_end': [70, 80, 90],
-         'test_start': [70, 80, 90],
-         'test_end': [80, 90, 100],
-         'test_start_with_gap': [70, 80, 90],
-         'test_end_with_gap': [80, 90, 100],
-         'fit_forecaster': [True, False, False]}
+        {'fold': [0, 2],
+         'train_start': [0, 0],
+         'train_end': [70, 70],
+         'last_window_start': [67, 87],
+         'last_window_end': [70, 90],
+         'test_start': [70, 90],
+         'test_end': [80, 100],
+         'test_start_with_gap': [70, 90],
+         'test_end_with_gap': [80, 100],
+         'fit_forecaster': [True, False]}
     )
 
     if window_size is None:
-        expected['last_window_start'] = [None, None, None]
-        expected['last_window_end'] = [None, None, None]
+        expected['last_window_start'] = [None, None]
+        expected['last_window_end'] = [None, None]
     
     pd.testing.assert_frame_equal(folds, expected)
 
 
 @pytest.mark.parametrize("initial_train_size, expected",
                          [(70, 
-                           [[[0, 70], [60, 70], [70, 82], [75, 82], True],
-                            [[0, 70], [67, 77], [77, 89], [82, 89], False],
-                            [[0, 70], [74, 84], [84, 96], [89, 96], False],
-                            [[0, 70], [81, 91], [91, 100], [96, 100], False]]),
+                           [[0, [0, 70], [60, 70], [70, 82], [75, 82], True],
+                            [1, [0, 70], [67, 77], [77, 89], [82, 89], False],
+                            [2, [0, 70], [74, 84], [84, 96], [89, 96], False],
+                            [3, [0, 70], [81, 91], [91, 100], [96, 100], False]]),
                             ("2022-03-11", 
-                           [[[0, 70], [60, 70], [70, 82], [75, 82], True],
-                            [[0, 70], [67, 77], [77, 89], [82, 89], False],
-                            [[0, 70], [74, 84], [84, 96], [89, 96], False],
-                            [[0, 70], [81, 91], [91, 100], [96, 100], False]]),
+                           [[0, [0, 70], [60, 70], [70, 82], [75, 82], True],
+                            [1, [0, 70], [67, 77], [77, 89], [82, 89], False],
+                            [2, [0, 70], [74, 84], [84, 96], [89, 96], False],
+                            [3, [0, 70], [81, 91], [91, 100], [96, 100], False]]),
                             ("2022-03-11 00:00:00",
-                           [[[0, 70], [60, 70], [70, 82], [75, 82], True],
-                            [[0, 70], [67, 77], [77, 89], [82, 89], False],
-                            [[0, 70], [74, 84], [84, 96], [89, 96], False],
-                            [[0, 70], [81, 91], [91, 100], [96, 100], False]]),
+                           [[0, [0, 70], [60, 70], [70, 82], [75, 82], True],
+                            [1, [0, 70], [67, 77], [77, 89], [82, 89], False],
+                            [2, [0, 70], [74, 84], [84, 96], [89, 96], False],
+                            [3, [0, 70], [81, 91], [91, 100], [96, 100], False]]),
                             (pd.to_datetime("2022-03-11"),
-                           [[[0, 70], [60, 70], [70, 82], [75, 82], True],
-                            [[0, 70], [67, 77], [77, 89], [82, 89], False],
-                            [[0, 70], [74, 84], [84, 96], [89, 96], False],
-                            [[0, 70], [81, 91], [91, 100], [96, 100], False]])])
+                           [[0, [0, 70], [60, 70], [70, 82], [75, 82], True],
+                            [1, [0, 70], [67, 77], [77, 89], [82, 89], False],
+                            [2, [0, 70], [74, 84], [84, 96], [89, 96], False],
+                            [3, [0, 70], [81, 91], [91, 100], [96, 100], False]])])
 def test_TimeSeriesFold_split_int_and_date_initial_train_size(capfd, initial_train_size, expected):
     """
     Test TimeSeriesFold split method output when initial_train_size is 
@@ -1378,14 +1378,14 @@ def test_TimeSeriesFold_split_int_and_date_initial_train_size(capfd, initial_tra
     
 
 @pytest.mark.parametrize("return_all_indexes, expected",
-                         [(True, [[range(0, 70), range(66, 70), range(70, 81), range(70, 81), True],
-                                  [range(0, 70), range(71, 75), range(75, 86), range(75, 86), False],
-                                  [range(0, 70), range(76, 80), range(80, 91), range(80, 91), False],
-                                  [range(0, 70), range(81, 85), range(85, 96), range(85, 96), False]]),
-                          (False, [[[0, 70], [66, 70], [70, 81], [70, 81], True],
-                                   [[0, 70], [71, 75], [75, 86], [75, 86], False],
-                                   [[0, 70], [76, 80], [80, 91], [80, 91], False],
-                                   [[0, 70], [81, 85], [85, 96], [85, 96], False]])])
+                         [(True, [[0, range(0, 70), range(66, 70), range(70, 81), range(70, 81), True],
+                                  [1, range(0, 70), range(71, 75), range(75, 86), range(75, 86), False],
+                                  [2, range(0, 70), range(76, 80), range(80, 91), range(80, 91), False],
+                                  [3, range(0, 70), range(81, 85), range(85, 96), range(85, 96), False]]),
+                          (False, [[0, [0, 70], [66, 70], [70, 81], [70, 81], True],
+                                   [1, [0, 70], [71, 75], [75, 86], [75, 86], False],
+                                   [2, [0, 70], [76, 80], [80, 91], [80, 91], False],
+                                   [3, [0, 70], [81, 85], [85, 96], [85, 96], False]])])
 def test_TimeSeriesFold_split_no_refit_no_gap_allow_incomplete_fold_False_fold_stride(capfd, return_all_indexes, expected):
     """
     Test TimeSeriesFold split method output when refit is 0 (False), gap=0, 
@@ -1439,18 +1439,18 @@ def test_TimeSeriesFold_split_no_refit_no_gap_allow_incomplete_fold_False_fold_s
     
 
 @pytest.mark.parametrize("return_all_indexes, expected",
-                         [(True, [[range(0, 70), range(64, 70), range(70, 83), range(72, 83), True],
-                                  [range(0, 75), range(69, 75), range(75, 88), range(77, 88), True],
-                                  [range(0, 80), range(74, 80), range(80, 93), range(82, 93), True],
-                                  [range(0, 85), range(79, 85), range(85, 98), range(87, 98), True],
-                                  [range(0, 90), range(84, 90), range(90, 100), range(92, 100), True],
-                                  [range(0, 95), range(89, 95), range(95, 100), range(97, 100), True]]),
-                          (False, [[[0, 70], [64, 70], [70, 83], [72, 83], True],
-                                   [[0, 75], [69, 75], [75, 88], [77, 88], True],
-                                   [[0, 80], [74, 80], [80, 93], [82, 93], True],
-                                   [[0, 85], [79, 85], [85, 98], [87, 98], True],
-                                   [[0, 90], [84, 90], [90, 100], [92, 100], True],
-                                   [[0, 95], [89, 95], [95, 100], [97, 100], True]])])
+                         [(True, [[0, range(0, 70), range(64, 70), range(70, 83), range(72, 83), True],
+                                  [1, range(0, 75), range(69, 75), range(75, 88), range(77, 88), True],
+                                  [2, range(0, 80), range(74, 80), range(80, 93), range(82, 93), True],
+                                  [3, range(0, 85), range(79, 85), range(85, 98), range(87, 98), True],
+                                  [4, range(0, 90), range(84, 90), range(90, 100), range(92, 100), True],
+                                  [5, range(0, 95), range(89, 95), range(95, 100), range(97, 100), True]]),
+                          (False, [[0, [0, 70], [64, 70], [70, 83], [72, 83], True],
+                                   [1, [0, 75], [69, 75], [75, 88], [77, 88], True],
+                                   [2, [0, 80], [74, 80], [80, 93], [82, 93], True],
+                                   [3, [0, 85], [79, 85], [85, 98], [87, 98], True],
+                                   [4, [0, 90], [84, 90], [90, 100], [92, 100], True],
+                                   [5, [0, 95], [89, 95], [95, 100], [97, 100], True]])])
 def test_TimeSeriesFold_split_no_refit_gap_allow_incomplete_fold_True_fold_stride(capfd, return_all_indexes, expected):
     """
     Test TimeSeriesFold split method output when refit is True, gap=2, 

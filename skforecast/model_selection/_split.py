@@ -738,15 +738,16 @@ class TimeSeriesFold(BaseFold):
     the index, so they can be used to slice the data directly using iloc. For example,
     if the input series is `X = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]`, the 
     `initial_train_size = 3`, `window_size = 2`, `steps = 4`, and `gap = 1`,
-    the output of the first fold will: [[0, 3], [1, 3], [3, 8], [4, 8], True].
+    the output of the first fold will: [0, [0, 3], [1, 3], [3, 8], [4, 8], True].
 
-    The first list `[0, 3]` indicates that the training set goes from the first to the
-    third observation. The second list `[1, 3]` indicates that the last window seen by
-    the forecaster during training goes from the second to the third observation. The
-    third list `[3, 8]` indicates that the test set goes from the fourth to the eighth
-    observation. The fourth list `[4, 8]` indicates that the test set including the gap
-    goes from the fifth to the eighth observation. The boolean `False` indicates that the
-    forecaster should not be trained in this fold.
+    The first element is the fold number, the first list `[0, 3]` indicates that 
+    the training set goes from the first to the third observation. The second 
+    list `[1, 3]` indicates that the last window seen by the forecaster during 
+    training goes from the second to the third observation. The third list `[3, 8]` 
+    indicates that the test set goes from the fourth to the eighth observation. 
+    The fourth list `[4, 8]` indicates that the test set including the gap goes 
+    from the fifth to the eighth observation. The boolean `False` indicates that 
+    the forecaster should not be trained in this fold.
 
     Following the python convention, the start index is inclusive and the end index is
     exclusive. This means that the last index is not included in the slice.
@@ -886,6 +887,7 @@ class TimeSeriesFold(BaseFold):
             A list of lists containing the indices (position) for each fold. Each list
             contains 4 lists and a boolean with the following information:
 
+            - fold: fold number
             - [train_start, train_end]: list with the start and end positions of the
             training set.
             - [last_window_start, last_window_end]: list with the start and end positions
@@ -1057,7 +1059,7 @@ class TimeSeriesFold(BaseFold):
         # Replace partitions inside folds with length 0 with `None`
         folds = [
             [partition if len(partition) > 0 else None for partition in fold] 
-             for fold in folds
+            for fold in folds
         ]
 
         # Create a flag to know whether to train the forecaster
@@ -1073,9 +1075,10 @@ class TimeSeriesFold(BaseFold):
                 fit_forecaster[i] = True
         
         for i in range(len(folds)): 
+            folds[i].insert(0, i)
             folds[i].append(fit_forecaster[i])
             if fit_forecaster[i] is False:
-                folds[i][0] = folds[i - 1][0]
+                folds[i][1] = folds[i - 1][1]
 
         index_to_skip = []
         if self.skip_folds is not None:
@@ -1084,7 +1087,7 @@ class TimeSeriesFold(BaseFold):
                 index_to_skip = np.setdiff1d(np.arange(0, len(folds)), index_to_keep, assume_unique=True)
                 index_to_skip = [int(x) for x in index_to_skip]  # Required since numpy 2.0
             if isinstance(self.skip_folds, list):
-                index_to_skip = [i for i in self.skip_folds if i < len(folds)]        
+                index_to_skip = [i for i in self.skip_folds if i < len(folds)]
         
         if self.verbose:
             # TODO: Change last_fold_excluded with n_removed_folds
@@ -1101,32 +1104,34 @@ class TimeSeriesFold(BaseFold):
             # NOTE: +1 to prevent iloc pandas from deleting the last observation
             folds = [
                 [
-                    [fold[0][0], fold[0][-1] + 1],
+                    fold[0],
+                    [fold[1][0], fold[1][-1] + 1],
                     (
-                        [fold[1][0], fold[1][-1] + 1]
+                        [fold[2][0], fold[2][-1] + 1]
                         if self.window_size is not None
                         else []
                     ),
-                    [fold[2][0], fold[2][-1] + 1],
                     [fold[3][0], fold[3][-1] + 1],
-                    fold[4],
+                    [fold[4][0], fold[4][-1] + 1],
+                    fold[5],
                 ]
                 for fold in folds
             ]
 
         if externally_fitted:
             self.initial_train_size = None
-            folds[0][4] = False
+            folds[0][5] = False
 
         if as_pandas:
             if self.window_size is None:
                 for fold in folds:
-                    fold[1] = [None, None]
+                    fold[2] = [None, None]
 
             if not self.return_all_indexes:
                 folds = pd.DataFrame(
-                    data = [list(itertools.chain(*fold[:-1])) + [fold[-1]] for fold in folds],
+                    data = [[fold[0]] + list(itertools.chain(*fold[1:-1])) + [fold[-1]] for fold in folds],
                     columns = [
+                        'fold',
                         'train_start',
                         'train_end',
                         'last_window_start',
@@ -1142,6 +1147,7 @@ class TimeSeriesFold(BaseFold):
                 folds = pd.DataFrame(
                     data = folds,
                     columns = [
+                        'fold',
                         'train_index',
                         'last_window_index',
                         'test_index',
@@ -1149,7 +1155,6 @@ class TimeSeriesFold(BaseFold):
                         'fit_forecaster'
                     ],
                 )
-            folds.insert(0, 'fold', range(len(folds)))
 
         return folds
 
@@ -1227,8 +1232,8 @@ class TimeSeriesFold(BaseFold):
                 f"because they were incomplete."
             )
 
-        if len(folds[-1][3]) < self.steps:
-            print(f"    Last fold only includes {len(folds[-1][3])} observations.")
+        if len(folds[-1][4]) < self.steps:
+            print(f"    Last fold only includes {len(folds[-1][4])} observations.")
 
         print("")
 
@@ -1241,15 +1246,15 @@ class TimeSeriesFold(BaseFold):
             is_fold_skipped   = i in index_to_skip
             has_training      = fold[-1] if i != 0 else True
             training_start    = (
-                index[fold[0][0] + differentiation] if fold[0] is not None else None
+                index[fold[1][0] + differentiation] if fold[1] is not None else None
             )
-            training_end      = index[fold[0][-1]] if fold[0] is not None else None
+            training_end      = index[fold[1][-1]] if fold[1] is not None else None
             training_length   = (
-                len(fold[0]) - differentiation if fold[0] is not None else 0
+                len(fold[1]) - differentiation if fold[1] is not None else 0
             )
-            validation_start  = index[fold[3][0]]
-            validation_end    = index[fold[3][-1]]
-            validation_length = len(fold[3])
+            validation_start  = index[fold[4][0]]
+            validation_end    = index[fold[4][-1]]
+            validation_length = len(fold[4])
 
             print(f"Fold: {i}")
             if is_fold_skipped:

@@ -513,15 +513,16 @@ def backtesting_gif_creator(
         # NOTE: +1 to prevent iloc pandas from deleting the last observation
         folds = [
             [
-                [fold[0][0], fold[0][-1] + 1],
+                fold[0],
+                [fold[1][0], fold[1][-1] + 1],
                 (
-                    [fold[1][0], fold[1][-1] + 1]
+                    [fold[2][0], fold[2][-1] + 1]
                     if cv.window_size is not None
                     else []
                 ),
-                [fold[2][0], fold[2][-1] + 1],
                 [fold[3][0], fold[3][-1] + 1],
-                fold[4],
+                [fold[4][0], fold[4][-1] + 1],
+                fold[5],
             ]
             for fold in folds
         ]
@@ -576,7 +577,7 @@ def backtesting_gif_creator(
 
             # Rellenos: usamos axvspan (más robusto que fill_between para rangos)
             # Train
-            train_start, train_end = fold[0]
+            train_start, train_end = fold[1]
             ax.axvspan(
                 x_index[train_start],
                 x_index[train_end],
@@ -597,7 +598,7 @@ def backtesting_gif_creator(
                         IgnoredArgumentWarning
                     )
                 else:
-                    last_window_start, last_window_end = fold[1]
+                    last_window_start, last_window_end = fold[2]
                     ax.axvspan(
                         x_index[last_window_start],
                         x_index[last_window_end],
@@ -610,8 +611,8 @@ def backtesting_gif_creator(
                     )
 
             # Gap (si existe)
-            gap_start = fold[2][0]
-            gap_end = fold[3][0]
+            gap_start = fold[3][0]
+            gap_end = fold[4][0]
             if gap_start != gap_end:
                 ax.axvspan(
                     x_index[gap_start],
@@ -627,7 +628,7 @@ def backtesting_gif_creator(
                 )
 
             # Test
-            test_start, test_end = fold[3]
+            test_start, test_end = fold[4]
             ax.axvspan(
                 x_index[test_start],
                 x_index[test_end - 1],
@@ -672,7 +673,7 @@ def backtesting_gif_creator(
         def update(i):
             fold = folds[i]
             fold_num = min(i + 1, len(folds) - n_extra)
-            refit = fold[4] if len(fold) > 4 else i
+            refit = fold[5] if len(fold) > 4 else i
             title = title_template.format(fold_num=fold_num, refit=refit)
             _draw_fold(ax, fold, title=title)
             return (ax,)

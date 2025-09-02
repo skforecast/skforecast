@@ -367,7 +367,7 @@ def test_output_backtesting_forecaster_yes_exog_yes_remainder_skip_folds_with_mo
     expected_metric = pd.DataFrame({"mean_squared_error": [0.044538146622722964]})
     expected_predictions = pd.DataFrame(
         {
-            "fold": [0, 0, 0, 0, 0, 1, 1],
+            "fold": [0, 0, 0, 0, 0, 2, 2],
             "pred": [
                 0.590596217638621,
                 0.47257503863519656,

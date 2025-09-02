@@ -8,7 +8,6 @@
 from __future__ import annotations
 from typing import Callable
 from copy import deepcopy
-import inspect
 from itertools import chain
 import warnings
 import numpy as np
@@ -30,6 +29,10 @@ from ..utils import (
     check_preprocess_exog_multiseries,
     set_skforecast_warnings
 )
+
+# TODO: test fold_stripe backtesting
+# TODO: test fold_stripe backtesting_multiseries
+# TODO: Adaptar fold_stripe SARIMAX
 
 
 def _backtesting_forecaster(
@@ -233,7 +236,7 @@ def _backtesting_forecaster(
         )
         # This is done to allow parallelization when `refit` is `False`. The initial 
         # Forecaster fit is outside the auxiliary function.
-        folds[0][4] = False
+        folds[0][5] = False
 
     if refit:
         n_of_fits = int(len(folds) / refit)
@@ -264,14 +267,14 @@ def _backtesting_forecaster(
         function used to parallelize the backtesting_forecaster function.
         """
 
-        train_iloc_start       = fold[0][0]
-        train_iloc_end         = fold[0][1]
-        last_window_iloc_start = fold[1][0]
-        last_window_iloc_end   = fold[1][1]
-        test_iloc_start        = fold[2][0]
-        test_iloc_end          = fold[2][1]
+        train_iloc_start       = fold[1][0]
+        train_iloc_end         = fold[1][1]
+        last_window_iloc_start = fold[2][0]
+        last_window_iloc_end   = fold[2][1]
+        test_iloc_start        = fold[3][0]
+        test_iloc_end          = fold[3][1]
 
-        if fold[4] is False:
+        if fold[5] is False:
             # When the model is not fitted, last_window must be updated to include
             # the data needed to make predictions.
             last_window_y = y.iloc[last_window_iloc_start:last_window_iloc_end]
@@ -295,8 +298,8 @@ def _backtesting_forecaster(
         steps = len(range(test_iloc_start, test_iloc_end))
         if type(forecaster).__name__ == 'ForecasterDirect' and gap > 0:
             # Select only the steps that need to be predicted if gap > 0
-            test_no_gap_iloc_start = fold[3][0]
-            test_no_gap_iloc_end   = fold[3][1]
+            test_no_gap_iloc_start = fold[4][0]
+            test_no_gap_iloc_end   = fold[4][1]
             steps = list(
                 np.arange(len(range(test_no_gap_iloc_start, test_no_gap_iloc_end)))
                 + gap
@@ -385,7 +388,7 @@ def _backtesting_forecaster(
         for fold in folds
     )
     fold_labels = [
-        np.repeat(i, pred.shape[0]) for i, pred in enumerate(backtest_predictions)
+        np.repeat(fold[0], backtest_predictions[i].shape[0]) for i, fold in enumerate(folds)
     ]
 
     backtest_predictions = pd.concat(backtest_predictions)
@@ -400,8 +403,8 @@ def _backtesting_forecaster(
             # NOTE: When using a scaled metric, `y_train` doesn't include the
             # first window_size observations used to create the predictors and/or
             # rolling features.
-            train_iloc_start = fold[0][0] + window_size
-            train_iloc_end = fold[0][1]
+            train_iloc_start = fold[1][0] + window_size
+            train_iloc_end = fold[1][1]
             train_indexes.append(np.arange(train_iloc_start, train_iloc_end))
     
     train_indexes = np.unique(np.concatenate(train_indexes))
@@ -852,7 +855,7 @@ def _backtesting_forecaster_multiseries(
         )
         # This is done to allow parallelization when `refit` is `False`. The initial 
         # Forecaster fit is outside the auxiliary function.
-        folds[0][4] = False
+        folds[0][5] = False
         
     if refit:
         n_of_fits = int(len(folds) / refit)
@@ -904,7 +907,7 @@ def _backtesting_forecaster_multiseries(
             fold
         ) = data_fold
 
-        if fold[4] is True:
+        if fold[5] is True:
             forecaster.fit(
                 series                    = series_train, 
                 exog                      = exog_train,
@@ -913,13 +916,13 @@ def _backtesting_forecaster_multiseries(
                 suppress_warnings         = suppress_warnings
             )
 
-        test_iloc_start = fold[2][0]
-        test_iloc_end   = fold[2][1]
+        test_iloc_start = fold[3][0]
+        test_iloc_end   = fold[3][1]
         steps = len(range(test_iloc_start, test_iloc_end))
         if type(forecaster).__name__ == 'ForecasterDirectMultiVariate' and gap > 0:
             # Select only the steps that need to be predicted if gap > 0
-            test_iloc_start = fold[3][0]
-            test_iloc_end   = fold[3][1]
+            test_iloc_start = fold[4][0]
+            test_iloc_end   = fold[4][1]
             steps = list(np.arange(len(range(test_iloc_start, test_iloc_end))) + gap + 1)
 
         preds = []
@@ -1019,7 +1022,7 @@ def _backtesting_forecaster_multiseries(
 
     backtest_predictions = [result[0] for result in results]
     fold_labels = [
-        np.repeat(i, pred.shape[0]) for i, pred in enumerate(backtest_predictions)
+        np.repeat(fold[0], backtest_predictions[i].shape[0]) for i, fold in enumerate(folds)
     ]
     backtest_predictions = pd.concat(backtest_predictions, axis=0)
     backtest_predictions.insert(0, 'fold', np.concatenate(fold_labels))
@@ -1434,7 +1437,7 @@ def _backtesting_sarimax(
     )
     # This is done to allow parallelization when `refit` is `False`. The initial 
     # Forecaster fit is outside the auxiliary function.
-    folds[0][4] = False
+    folds[0][5] = False
     
     if refit:
         n_of_fits = int(len(folds) / refit)
@@ -1459,19 +1462,19 @@ def _backtesting_sarimax(
         # if fixed_train_size the train size doesn't increase but moves by `steps` 
         # in each iteration. if False the train size increases by `steps` in each 
         # iteration.
-        train_idx_start = fold[0][0]
-        train_idx_end   = fold[0][1]
-        test_idx_start  = fold[2][0]
-        test_idx_end    = fold[2][1]
+        train_idx_start = fold[1][0]
+        train_idx_end   = fold[1][1]
+        test_idx_start  = fold[3][0]
+        test_idx_end    = fold[3][1]
 
         if refit:
-            last_window_start = fold[0][1]  # Same as train_idx_end
-            last_window_end   = fold[1][1]
+            last_window_start = fold[1][1]  # Same as train_idx_end
+            last_window_end   = fold[2][1]
         else:
-            last_window_end   = fold[2][0]  # test_idx_start
+            last_window_end   = fold[3][0]  # test_idx_start
             last_window_start = last_window_end - steps
 
-        if fold[4] is False:
+        if fold[5] is False:
             # When the model is not fitted, last_window and last_window_exog must 
             # be updated to include the data needed to make predictions.
             last_window_y = y.iloc[last_window_start:last_window_end]
@@ -1541,8 +1544,8 @@ def _backtesting_sarimax(
     for i, fold in enumerate(folds):
         fit_fold = fold[-1]
         if i == 0 or fit_fold:
-            train_iloc_start = fold[0][0]
-            train_iloc_end = fold[0][1]
+            train_iloc_start = fold[1][0]
+            train_iloc_end = fold[1][1]
             train_indexes.append(np.arange(train_iloc_start, train_iloc_end))
     
     train_indexes = np.unique(np.concatenate(train_indexes))
