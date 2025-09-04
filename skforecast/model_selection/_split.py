@@ -664,6 +664,7 @@ class TimeSeriesFold(BaseFold):
         - If `fold_stride < steps`, test sets overlap and multiple forecasts will
         be generated for the same observations.
         - If `fold_stride > steps`, gaps are left between consecutive test sets.
+        **New in version 0.18.0**
     window_size : int, default None
         Number of observations needed to generate the autoregressive predictors.
     differentiation : int, default None

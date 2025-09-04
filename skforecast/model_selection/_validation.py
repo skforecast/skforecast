@@ -30,10 +30,6 @@ from ..utils import (
     set_skforecast_warnings
 )
 
-# TODO: test fold_stripe backtesting
-# TODO: test fold_stripe backtesting_multiseries
-# TODO: Adaptar fold_stripe SARIMAX
-
 
 def _backtesting_forecaster(
     forecaster: object,
@@ -82,7 +78,6 @@ def _backtesting_forecaster(
         - If `list`: List containing multiple strings and/or Callables.
     cv : TimeSeriesFold
         TimeSeriesFold object with the information needed to split the data into folds.
-        **New in version 0.14.0**
     exog : pandas Series, pandas DataFrame, default None
         Exogenous variable/s included as predictor/s. Must have the same
         number of observations as `y` and should be aligned so that y[i] is
@@ -142,6 +137,7 @@ def _backtesting_forecaster(
     backtest_predictions : pandas DataFrame
         Value of predictions. The  DataFrame includes the following columns:
 
+        - fold: Indicates the fold number where the prediction was made.
         - pred: Predicted values for the corresponding series and time steps.
 
         If `interval` is not `None`, additional columns are included depending on the method:
@@ -155,10 +151,24 @@ def _backtesting_forecaster(
         - For `scipy.stats` distribution objects: One column for each estimated 
         parameter of the distribution (e.g., `loc`, `scale`).
 
-        If `return_predictors` is `True`:
+        If `return_predictors` is `True`, one column per predictor is created.
 
-        - fold: Indicates the fold number where the prediction was made.
-        - One column per predictor is created.
+        Depending on the relation between `steps` and `fold_stride`, the output
+        may include repeated indexes (if `fold_stride < steps`) or gaps
+        (if `fold_stride > steps`). See Notes below for more details.
+
+    Notes
+    -----
+    Note on `fold_stride` vs. `steps`:
+
+    - If `fold_stride == steps`, test sets are placed back-to-back without overlap. 
+    Each observation appears only once in the output DataFrame, so the index is unique.
+    - If `fold_stride < steps`, test sets overlap. Multiple forecasts are generated 
+    for the same observations and, therefore, the output DataFrame contains repeated 
+    indexes.
+    - If `fold_stride > steps`, there are gaps between consecutive test sets. 
+    Some observations in the series will not have associated predictions, so 
+    the output DataFrame has non-contiguous indexes.
 
     References
     ----------
@@ -226,16 +236,14 @@ def _backtesting_forecaster(
     gap = cv.gap
 
     if initial_train_size is not None:
-        # First model training, this is done to allow parallelization when `refit`
-        # is `False`. The initial Forecaster fit is outside the auxiliary function.
+        # NOTE: This allows for parallelization when `refit` is `False`. The initial 
+        # Forecaster fit occurs outside of the auxiliary function.
         exog_train = exog.iloc[:initial_train_size, ] if exog is not None else None
         forecaster.fit(
             y                         = y.iloc[:initial_train_size, ],
             exog                      = exog_train,
             store_in_sample_residuals = store_in_sample_residuals
         )
-        # This is done to allow parallelization when `refit` is `False`. The initial 
-        # Forecaster fit is outside the auxiliary function.
         folds[0][5] = False
 
     if refit:
@@ -472,7 +480,6 @@ def backtesting_forecaster(
         Training time series.
     cv : TimeSeriesFold
         TimeSeriesFold object with the information needed to split the data into folds.
-        **New in version 0.14.0**
     metric : str, Callable, list
         Metric used to quantify the goodness of fit of the model.
         
@@ -541,6 +548,7 @@ def backtesting_forecaster(
     backtest_predictions : pandas DataFrame
         Value of predictions. The  DataFrame includes the following columns:
 
+        - fold: Indicates the fold number where the prediction was made.
         - pred: Predicted values for the corresponding series and time steps.
 
         If `interval` is not `None`, additional columns are included depending on the method:
@@ -554,10 +562,24 @@ def backtesting_forecaster(
         - For `scipy.stats` distribution objects: One column for each estimated 
         parameter of the distribution (e.g., `loc`, `scale`).
 
-        If `return_predictors` is `True`:
+        If `return_predictors` is `True`, one column per predictor is created.
 
-        - fold: Indicates the fold number where the prediction was made.
-        - One column per predictor is created.
+        Depending on the relation between `steps` and `fold_stride`, the output
+        may include repeated indexes (if `fold_stride < steps`) or gaps
+        (if `fold_stride > steps`). See Notes below for more details.
+
+    Notes
+    -----
+    Note on `fold_stride` vs. `steps`:
+
+    - If `fold_stride == steps`, test sets are placed back-to-back without overlap. 
+    Each observation appears only once in the output DataFrame, so the index is unique.
+    - If `fold_stride < steps`, test sets overlap. Multiple forecasts are generated 
+    for the same observations and, therefore, the output DataFrame contains repeated 
+    indexes.
+    - If `fold_stride > steps`, there are gaps between consecutive test sets. 
+    Some observations in the series will not have associated predictions, so 
+    the output DataFrame has non-contiguous indexes.
 
     References
     ----------
@@ -660,7 +682,6 @@ def _backtesting_forecaster_multiseries(
         Training time series.
     cv : TimeSeriesFold
         TimeSeriesFold object with the information needed to split the data into folds.
-        **New in version 0.14.0**
     metric : str, Callable, list
         Metric used to quantify the goodness of fit of the model.
         
@@ -742,6 +763,7 @@ def _backtesting_forecaster_multiseries(
         DataFrame includes the following columns:
         
         - `level`: Identifier for the time series or level being predicted.
+        - fold: Indicates the fold number where the prediction was made.
         - `pred`: Predicted values for the corresponding series and time steps.
 
         If `interval` is not `None`, additional columns are included depending on the method:
@@ -755,10 +777,24 @@ def _backtesting_forecaster_multiseries(
         - For `scipy.stats` distribution objects: One column for each estimated 
         parameter of the distribution (e.g., `loc`, `scale`).
 
-        If `return_predictors` is `True`:
+        If `return_predictors` is `True`, one column per predictor is created.
 
-        - fold: Indicates the fold number where the prediction was made.
-        - One column per predictor is created.
+        Depending on the relation between `steps` and `fold_stride`, the output
+        may include repeated indexes (if `fold_stride < steps`) or gaps
+        (if `fold_stride > steps`). See Notes below for more details.
+
+    Notes
+    -----
+    Note on `fold_stride` vs. `steps`:
+
+    - If `fold_stride == steps`, test sets are placed back-to-back without overlap. 
+    Each observation appears only once in the output DataFrame, so the index is unique.
+    - If `fold_stride < steps`, test sets overlap. Multiple forecasts are generated 
+    for the same observations and, therefore, the output DataFrame contains repeated 
+    indexes.
+    - If `fold_stride > steps`, there are gaps between consecutive test sets. 
+    Some observations in the series will not have associated predictions, so 
+    the output DataFrame has non-contiguous indexes.
 
     References
     ----------
@@ -834,8 +870,8 @@ def _backtesting_forecaster_multiseries(
     gap = cv.gap
 
     if initial_train_size is not None:
-        # First model training, this is done to allow parallelization when `refit`
-        # is `False`. The initial Forecaster fit is outside the auxiliary function.
+        # NOTE: This allows for parallelization when `refit` is `False`. The initial 
+        # Forecaster fit occurs outside of the auxiliary function.
         data_fold = _extract_data_folds_multiseries(
                         series             = series,
                         folds              = [folds[0]],
@@ -853,8 +889,6 @@ def _backtesting_forecaster_multiseries(
             store_in_sample_residuals = store_in_sample_residuals,
             suppress_warnings         = suppress_warnings
         )
-        # This is done to allow parallelization when `refit` is `False`. The initial 
-        # Forecaster fit is outside the auxiliary function.
         folds[0][5] = False
         
     if refit:
@@ -1195,6 +1229,7 @@ def backtesting_forecaster_multiseries(
         DataFrame includes the following columns:
         
         - `level`: Identifier for the time series or level being predicted.
+        - fold: Indicates the fold number where the prediction was made.
         - `pred`: Predicted values for the corresponding series and time steps.
 
         If `interval` is not `None`, additional columns are included depending on the method:
@@ -1208,10 +1243,24 @@ def backtesting_forecaster_multiseries(
         - For `scipy.stats` distribution objects: One column for each estimated 
         parameter of the distribution (e.g., `loc`, `scale`).
 
-        If `return_predictors` is `True`:
+        If `return_predictors` is `True`, one column per predictor is created.
 
-        - fold: Indicates the fold number where the prediction was made.
-        - One column per predictor is created.
+        Depending on the relation between `steps` and `fold_stride`, the output
+        may include repeated indexes (if `fold_stride < steps`) or gaps
+        (if `fold_stride > steps`). See Notes below for more details.
+
+    Notes
+    -----
+    Note on `fold_stride` vs. `steps`:
+
+    - If `fold_stride == steps`, test sets are placed back-to-back without overlap. 
+    Each observation appears only once in the output DataFrame, so the index is unique.
+    - If `fold_stride < steps`, test sets overlap. Multiple forecasts are generated 
+    for the same observations and, therefore, the output DataFrame contains repeated 
+    indexes.
+    - If `fold_stride > steps`, there are gaps between consecutive test sets. 
+    Some observations in the series will not have associated predictions, so 
+    the output DataFrame has non-contiguous indexes.
 
     References
     ----------
@@ -1333,7 +1382,6 @@ def _backtesting_sarimax(
         - If `list`: List containing multiple strings and/or Callables.
     cv : TimeSeriesFold
         TimeSeriesFold object with the information needed to split the data into folds.
-        **New in version 0.14.0**
     exog : pandas Series, pandas DataFrame, default None
         Exogenous variable/s included as predictor/s. Must have the same
         number of observations as `y` and should be aligned so that y[i] is
@@ -1364,11 +1412,32 @@ def _backtesting_sarimax(
     metric_values : pandas DataFrame
         Value(s) of the metric(s).
     backtest_predictions : pandas DataFrame
-        Predicted values and their estimated interval if `interval` is not `None`.
+        Value of predictions. The  DataFrame includes the following columns:
 
-        - column pred: predictions.
-        - column lower_bound: lower bound of the interval.
-        - column upper_bound: upper bound of the interval.
+        - fold: Indicates the fold number where the prediction was made.
+        - pred: Predicted values for the corresponding series and time steps.
+
+        If `interval` is not `None`, additional columns are included:
+
+        - lower_bound: lower bound of the interval.
+        - upper_bound: upper bound of the interval.
+
+        Depending on the relation between `steps` and `fold_stride`, the output
+        may include repeated indexes (if `fold_stride < steps`) or gaps
+        (if `fold_stride > steps`). See Notes below for more details.
+
+    Notes
+    -----
+    Note on `fold_stride` vs. `steps`:
+
+    - If `fold_stride == steps`, test sets are placed back-to-back without overlap. 
+    Each observation appears only once in the output DataFrame, so the index is unique.
+    - If `fold_stride < steps`, test sets overlap. Multiple forecasts are generated 
+    for the same observations and, therefore, the output DataFrame contains repeated 
+    indexes.
+    - If `fold_stride > steps`, there are gaps between consecutive test sets. 
+    Some observations in the series will not have associated predictions, so 
+    the output DataFrame has non-contiguous indexes.
     
     """
 
@@ -1382,6 +1451,7 @@ def _backtesting_sarimax(
     })
 
     refit = cv.refit
+    overlapping_folds = cv.overlapping_folds
     
     if refit == False:
         if n_jobs != 'auto' and n_jobs != 1:
@@ -1426,17 +1496,15 @@ def _backtesting_sarimax(
     steps = cv.steps
     gap = cv.gap
 
-    # initial_train_size cannot be None because of append method in Sarimax
-    # First model training, this is done to allow parallelization when `refit` 
-    # is `False`. The initial Forecaster fit is outside the auxiliary function.
+    # NOTE: initial_train_size cannot be None because of append method in Sarimax
+    # NOTE: This allows for parallelization when `refit` is `False`. The initial 
+    # Forecaster fit occurs outside of the auxiliary function.
     exog_train = exog.iloc[:initial_train_size, ] if exog is not None else None
     forecaster.fit(
         y                 = y.iloc[:initial_train_size, ],
         exog              = exog_train,
         suppress_warnings = suppress_warnings_fit
     )
-    # This is done to allow parallelization when `refit` is `False`. The initial 
-    # Forecaster fit is outside the auxiliary function.
     folds[0][5] = False
     
     if refit:
@@ -1462,43 +1530,43 @@ def _backtesting_sarimax(
         # if fixed_train_size the train size doesn't increase but moves by `steps` 
         # in each iteration. if False the train size increases by `steps` in each 
         # iteration.
-        train_idx_start = fold[1][0]
-        train_idx_end   = fold[1][1]
-        test_idx_start  = fold[3][0]
-        test_idx_end    = fold[3][1]
+        train_iloc_start = fold[1][0]
+        train_iloc_end   = fold[1][1]
+        test_iloc_start  = fold[3][0]
+        test_iloc_end    = fold[3][1]
 
         if refit:
-            last_window_start = fold[1][1]  # Same as train_idx_end
-            last_window_end   = fold[2][1]
+            last_window_iloc_start = fold[1][1]  # Same as train_iloc_end
+            last_window_iloc_end   = fold[2][1]
         else:
-            last_window_end   = fold[3][0]  # test_idx_start
-            last_window_start = last_window_end - steps
+            last_window_iloc_end   = fold[3][0]  # test_iloc_start
+            last_window_iloc_start = last_window_iloc_end - steps
 
         if fold[5] is False:
             # When the model is not fitted, last_window and last_window_exog must 
             # be updated to include the data needed to make predictions.
-            last_window_y = y.iloc[last_window_start:last_window_end]
-            last_window_exog = exog.iloc[last_window_start:last_window_end] if exog is not None else None 
+            last_window_y = y.iloc[last_window_iloc_start:last_window_iloc_end]
+            last_window_exog = exog.iloc[last_window_iloc_start:last_window_iloc_end] if exog is not None else None 
         else:
             # The model is fitted before making predictions. If `fixed_train_size`  
             # the train size doesn't increase but moves by `steps` in each iteration. 
             # If `False` the train size increases by `steps` in each  iteration.
-            y_train = y.iloc[train_idx_start:train_idx_end, ]
-            exog_train = exog.iloc[train_idx_start:train_idx_end, ] if exog is not None else None
+            y_train = y.iloc[train_iloc_start:train_iloc_end, ]
+            exog_train = exog.iloc[train_iloc_start:train_iloc_end, ] if exog is not None else None
             
             last_window_y = None
             last_window_exog = None
 
             forecaster.fit(y=y_train, exog=exog_train, suppress_warnings=suppress_warnings_fit)
 
-        next_window_exog = exog.iloc[test_idx_start:test_idx_end, ] if exog is not None else None
+        next_window_exog = exog.iloc[test_iloc_start:test_iloc_end, ] if exog is not None else None
 
         # After the first fit, Sarimax must use the last windows stored in the model
         if fold == folds[0]:
             last_window_y = None
             last_window_exog = None
 
-        steps = len(range(test_idx_start, test_idx_end))
+        steps = len(range(test_iloc_start, test_iloc_end))
         if alpha is None and interval is None:
             pred = forecaster.predict(
                        steps            = steps,
@@ -1520,25 +1588,27 @@ def _backtesting_sarimax(
         
         return pred
 
-    backtest_predictions = (
-        Parallel(n_jobs=n_jobs)
-        (delayed(_fit_predict_forecaster)
-        (
-            y=y, 
-            exog=exog, 
-            forecaster=forecaster, 
-            alpha=alpha, 
-            interval=interval, 
-            fold=fold, 
+    backtest_predictions = Parallel(n_jobs=n_jobs)(
+        delayed(_fit_predict_forecaster)(
+            y=y,
+            exog=exog,
+            forecaster=forecaster,
+            alpha=alpha,
+            interval=interval,
+            fold=fold,
             steps=steps,
-            gap=gap
+            gap=gap,
         )
-        for fold in folds_tqdm)
+        for fold in folds_tqdm
     )
+    fold_labels = [
+        np.repeat(fold[0], backtest_predictions[i].shape[0]) for i, fold in enumerate(folds)
+    ]
     
     backtest_predictions = pd.concat(backtest_predictions)
     if isinstance(backtest_predictions, pd.Series):
         backtest_predictions = pd.DataFrame(backtest_predictions)
+    backtest_predictions.insert(0, 'fold', np.concatenate(fold_labels))
 
     train_indexes = []
     for i, fold in enumerate(folds):
@@ -1551,10 +1621,17 @@ def _backtesting_sarimax(
     train_indexes = np.unique(np.concatenate(train_indexes))
     y_train = y.iloc[train_indexes]
 
+    backtest_predictions_for_metrics = backtest_predictions
+    if overlapping_folds:
+        backtest_predictions_for_metrics = (
+            backtest_predictions_for_metrics
+            .loc[~backtest_predictions_for_metrics.index.duplicated(keep='last')]
+        )
+
     metric_values = [
         m(
-            y_true = y.loc[backtest_predictions.index],
-            y_pred = backtest_predictions['pred'],
+            y_true = y.loc[backtest_predictions_for_metrics.index],
+            y_pred = backtest_predictions_for_metrics['pred'],
             y_train = y_train
         ) 
         for m in metrics
@@ -1595,7 +1672,6 @@ def backtesting_sarimax(
         Training time series.
     cv : TimeSeriesFold
         TimeSeriesFold object with the information needed to split the data into folds.
-        **New in version 0.14.0**
     metric : str, Callable, list
         Metric used to quantify the goodness of fit of the model.
         
@@ -1635,11 +1711,32 @@ def backtesting_sarimax(
     metric_values : pandas DataFrame
         Value(s) of the metric(s).
     backtest_predictions : pandas DataFrame
-        Predicted values and their estimated interval if `interval` is not `None`.
+        Value of predictions. The  DataFrame includes the following columns:
 
-        - column pred: predictions.
-        - column lower_bound: lower bound of the interval.
-        - column upper_bound: upper bound of the interval.
+        - fold: Indicates the fold number where the prediction was made.
+        - pred: Predicted values for the corresponding series and time steps.
+
+        If `interval` is not `None`, additional columns are included:
+        
+        - lower_bound: lower bound of the interval.
+        - upper_bound: upper bound of the interval.
+
+        Depending on the relation between `steps` and `fold_stride`, the output
+        may include repeated indexes (if `fold_stride < steps`) or gaps
+        (if `fold_stride > steps`). See Notes below for more details.
+
+    Notes
+    -----
+    Note on `fold_stride` vs. `steps`:
+
+    - If `fold_stride == steps`, test sets are placed back-to-back without overlap. 
+    Each observation appears only once in the output DataFrame, so the index is unique.
+    - If `fold_stride < steps`, test sets overlap. Multiple forecasts are generated 
+    for the same observations and, therefore, the output DataFrame contains repeated 
+    indexes.
+    - If `fold_stride > steps`, there are gaps between consecutive test sets. 
+    Some observations in the series will not have associated predictions, so 
+    the output DataFrame has non-contiguous indexes.
     
     """
     
