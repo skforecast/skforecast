@@ -54,6 +54,13 @@ def test_backtesting_gif_creator_raise_error_invalid_arguments():
         backtesting_gif_creator(data=data, cv=cv, dpi=dpi)
 
     series_to_plot = "x"
+    err_msg = re.escape(
+        f"`series_to_plot` must be a list of column names. Got {type(series_to_plot)}."
+    )
+    with pytest.raises(TypeError, match=err_msg):
+        backtesting_gif_creator(data=data, cv=cv, series_to_plot=series_to_plot)
+
+    series_to_plot = ["x"]
     err_msg = re.escape("Columns not found in `data`: ['x']")
     with pytest.raises(ValueError, match=err_msg):
         backtesting_gif_creator(data=data, cv=cv, series_to_plot=series_to_plot)

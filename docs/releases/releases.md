@@ -12,8 +12,18 @@ All significant changes to this project are documented in this release file.
 
 ## 0.18.0 <small>Under Development</small> { id="0.18.0" }
 
+The main changes in this release are:
+
++ <span class="badge text-bg-feature">Feature</span> New parameter `fold_stride` in <code>[TimeSeriesFold]</code>. This parameter controls how the start of the test set advances between consecutive folds during the <code>[backtesting_forecaster]</code>, <code>[backtesting_forecaster_multiseries]</code> and <code>[backtesting_sarimax]</code> functions. By default, `fold_stride` is equal to `steps`, which means that the test sets do not overlap and there are no gaps between them. However, if `fold_stride` is set to a value less than `steps`, the test sets will overlap, resulting in multiple forecasts for the same observations. Conversely, if `fold_stride` is set to a value greater than `steps`, gaps will be left between consecutive test sets.
+
++ <span class="badge text-bg-feature">Feature</span> New function <code>[backtesting_gif_creator]</code> in the <code>[plot]</code> module to create a gif that visualizes the backtesting process. 
+
 
 **Added**
+
++ New parameter `fold_stride` in <code>[TimeSeriesFold]</code>. This parameter controls how the start of the test set advances between consecutive folds during the <code>[backtesting_forecaster]</code>, <code>[backtesting_forecaster_multiseries]</code> and <code>[backtesting_sarimax]</code> functions. By default, `fold_stride` is equal to `steps`, which means that the test sets do not overlap and there are no gaps between them. However, if `fold_stride` is set to a value less than `steps`, the test sets will overlap, resulting in multiple forecasts for the same observations. Conversely, if `fold_stride` is set to a value greater than `steps`, gaps will be left between consecutive test sets.
+
++ New function <code>[backtesting_gif_creator]</code> in the <code>[plot]</code> module to create a gif that visualizes the backtesting process. 
 
 
 **Changed**
@@ -1265,10 +1275,11 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [plot]: ../api/plot.html
 [set_dark_theme]: ../api/plot.html#skforecast.plot.plot.set_dark_theme
 [plot_residuals]: ../api/plot.html#skforecast.plot.plot.plot_residuals
-[plot_multivariate_time_series_corr]: ../api/plot.html#skforecast.plot.plot.plot_multivariate_time_series_corr
 [calculate_lag_autocorrelation]: ../api/plot.html#skforecast.plot.plot.calculate_lag_autocorrelation
 [plot_prediction_distribution]: ../api/plot.html#skforecast.plot.plot.plot_prediction_distribution
 [plot_prediction_intervals]: ../api/plot.html#skforecast.plot.plot.plot_prediction_intervals
+[backtesting_gif_creator]: ../api/plot.html#skforecast.plot.plot.backtesting_gif_creator
+[plot_multivariate_time_series_corr]: ../api/plot.html#skforecast.plot.plot.plot_multivariate_time_series_corr
 
 <!-- utils -->
 [utils]: ../api/utils.html

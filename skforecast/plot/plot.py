@@ -504,6 +504,10 @@ def backtesting_gif_creator(
     if series_to_plot is None:
         series_to_plot = data.columns.to_list()
     else:
+        if not isinstance(series_to_plot, list):
+            raise TypeError(
+                f"`series_to_plot` must be a list of column names. Got {type(series_to_plot)}."
+            )
         missing_cols = [col for col in series_to_plot if col not in data.columns]
         if missing_cols:
             raise ValueError(f"Columns not found in `data`: {missing_cols}")
@@ -700,4 +704,4 @@ def backtesting_gif_creator(
 
     filename_path = os.path.join(os.getcwd(), filename)
 
-    return filename_path
+    return Path(filename_path)
