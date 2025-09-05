@@ -1313,6 +1313,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         span_index = series.index
 
         fold = [
+            0,
             [0, initial_train_size],
             [initial_train_size - self.window_size, initial_train_size],
             [initial_train_size - self.window_size, len(span_index)],

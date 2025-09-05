@@ -497,17 +497,21 @@ class OneStepAheadFold(BaseFold):
             A list of lists containing the indices (position) of the fold. The list
             contains 2 lists with the following information:
 
+            - fold: fold number.
             - [train_start, train_end]: list with the start and end positions of the
             training set.
             - [test_start, test_end]: list with the start and end positions of the test
             set. These are the observations used to evaluate the forecaster.
+            - fit_forecaster: boolean indicating whether the forecaster should be fitted
+            in this fold.
         
             It is important to note that the returned values are the positions of the
             observations and not the actual values of the index, so they can be used to
             slice the data directly using iloc.
 
             If `as_pandas` is `True`, the folds are returned as a DataFrame with the
-            following columns: 'fold', 'train_start', 'train_end', 'test_start', 'test_end'.
+            following columns: 'fold', 'train_start', 'train_end', 'test_start', 
+            'test_end', 'fit_forecaster'.
 
             Following the python convention, the start index is inclusive and the end
             index is exclusive. This means that the last index is not included in the
@@ -531,6 +535,7 @@ class OneStepAheadFold(BaseFold):
                                   )
 
         fold = [
+            0,
             [0, self.initial_train_size - 1],
             [self.initial_train_size, len(X)],
             True
@@ -542,22 +547,25 @@ class OneStepAheadFold(BaseFold):
         # NOTE: +1 to prevent iloc pandas from deleting the last observation
         if self.return_all_indexes:
             fold = [
-                [range(fold[0][0], fold[0][1] + 1)],
-                [range(fold[1][0], fold[1][1])],
-                fold[2]
+                fold[0], 
+                [range(fold[1][0], fold[1][1] + 1)],
+                [range(fold[2][0], fold[2][1])],
+                fold[3]
             ]
         else:
             fold = [
-                [fold[0][0], fold[0][1] + 1],
-                [fold[1][0], fold[1][1]],
-                fold[2]
+                fold[0], 
+                [fold[1][0], fold[1][1] + 1],
+                [fold[2][0], fold[2][1]],
+                fold[3]
             ]
 
         if as_pandas:
             if not self.return_all_indexes:
                 fold = pd.DataFrame(
-                    data = [list(itertools.chain(*fold[:-1])) + [fold[-1]]],
+                    data = [[fold[0]] + list(itertools.chain(*fold[1:-1])) + [fold[-1]]],
                     columns = [
+                        'fold',
                         'train_start',
                         'train_end',
                         'test_start',
@@ -569,12 +577,12 @@ class OneStepAheadFold(BaseFold):
                 fold = pd.DataFrame(
                     data = [fold],
                     columns = [
+                        'fold',
                         'train_index',
                         'test_index',
                         'fit_forecaster'
                     ],
                 )
-            fold.insert(0, 'fold', range(len(fold)))
 
         return fold
 
@@ -621,10 +629,10 @@ class OneStepAheadFold(BaseFold):
             f"Number of observations in test: {test_length}"
         )
         
-        training_start = index[fold[0][0] + differentiation]
-        training_end = index[fold[0][-1]]
-        test_start  = index[fold[1][0]]
-        test_end    = index[fold[1][-1] - 1]
+        training_start = index[fold[1][0] + differentiation]
+        training_end = index[fold[1][-1]]
+        test_start  = index[fold[2][0]]
+        test_end    = index[fold[2][-1] - 1]
         
         print(
             f"Training : {training_start} -- {training_end} (n={initial_train_size})"
@@ -888,7 +896,7 @@ class TimeSeriesFold(BaseFold):
             A list of lists containing the indices (position) for each fold. Each list
             contains 4 lists and a boolean with the following information:
 
-            - fold: fold number
+            - fold: fold number.
             - [train_start, train_end]: list with the start and end positions of the
             training set.
             - [last_window_start, last_window_end]: list with the start and end positions

@@ -30,6 +30,8 @@ from ..utils import (
     set_skforecast_warnings
 )
 
+# TODO: Adapt tests _calculate_metrics_backtesting_multiseries to new
+# pd long format input of predictions.
 
 def _backtesting_forecaster(
     forecaster: object,
@@ -955,9 +957,13 @@ def _backtesting_forecaster_multiseries(
         steps = len(range(test_iloc_start, test_iloc_end))
         if type(forecaster).__name__ == 'ForecasterDirectMultiVariate' and gap > 0:
             # Select only the steps that need to be predicted if gap > 0
-            test_iloc_start = fold[4][0]
-            test_iloc_end   = fold[4][1]
-            steps = list(np.arange(len(range(test_iloc_start, test_iloc_end))) + gap + 1)
+            test_no_gap_iloc_start = fold[4][0]
+            test_no_gap_iloc_end   = fold[4][1]
+            steps = list(
+                np.arange(len(range(test_no_gap_iloc_start, test_no_gap_iloc_end))) 
+                + gap 
+                + 1
+            )
 
         preds = []
         levels_predict = [level for level in levels if level in last_window_levels]
@@ -1029,7 +1035,7 @@ def _backtesting_forecaster_multiseries(
 
         # TODO: Check when long format with multiple levels in multivariate
         if type(forecaster).__name__ != 'ForecasterDirectMultiVariate' and gap > 0:
-            pred = pred.iloc[gap:, ]
+            pred = pred.iloc[len(levels_predict) * gap:, :]
 
         return pred, levels_predict
 

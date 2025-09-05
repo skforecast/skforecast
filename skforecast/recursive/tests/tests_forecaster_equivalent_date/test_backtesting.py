@@ -46,6 +46,7 @@ def test_backtesting_with_ForecasterEquivalentDate(initial_train_size):
         index   = pd.date_range(start='2000-01-31', periods=20, freq='D'),
         columns = ['pred']
     )
+    expected.insert(0, 'fold', [0] * 5 + [1] * 5 + [2] * 5 + [3] * 5)
 
     pd.testing.assert_frame_equal(metric, expected_metric)
     pd.testing.assert_frame_equal(predictions, expected)
@@ -105,6 +106,7 @@ def test_backtesting_with_ForecasterEquivalentDate_interval(initial_train_size):
                    index = pd.date_range(start='2000-01-31', periods=20, freq='D'),
                    columns = ['pred', 'lower_bound', 'upper_bound']
                )
+    expected.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6])
 
     pd.testing.assert_frame_equal(metric, expected_metric)
     pd.testing.assert_frame_equal(predictions, expected)
