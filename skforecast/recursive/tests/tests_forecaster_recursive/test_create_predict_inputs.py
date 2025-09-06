@@ -61,7 +61,7 @@ def test_create_predict_inputs_when_regressor_is_LinearRegression():
     assert results[3] == expected[3]
 
 
-def test_create_predict_inputs_when_regressor_is_LinearRegression_with_transform_y():
+def test_create_predict_inputs_when_with_transform_y():
     """
     Test _create_predict_inputs when using LinearRegression as regressor and StandardScaler.
     """
@@ -93,7 +93,7 @@ def test_create_predict_inputs_when_regressor_is_LinearRegression_with_transform
     assert results[3] == expected[3]
 
 
-def test_create_predict_inputs_when_regressor_is_LinearRegression_with_transform_y_and_transform_exog_series():
+def test_create_predict_inputs_when_with_transform_y_and_transform_exog_series():
     """
     Test _create_predict_inputs when using LinearRegression as regressor, StandardScaler
     as transformer_y and StandardScaler as transformer_exog.
@@ -125,7 +125,7 @@ def test_create_predict_inputs_when_regressor_is_LinearRegression_with_transform
     assert results[3] == expected[3]
 
 
-def test_create_predict_inputs_when_regressor_is_LinearRegression_with_transform_y_and_transform_exog_df():
+def test_create_predict_inputs_when_with_transform_y_and_transform_exog_df():
     """
     Test _create_predict_inputs when using LinearRegression as regressor, StandardScaler
     as transformer_y and transformer_exog as transformer_exog.
@@ -236,7 +236,7 @@ def test_create_predict_inputs_when_categorical_features_native_implementation_H
     assert results[3] == expected[3]
 
 
-def test_create_predict_inputs_when_regressor_is_LinearRegression_with_exog_differentiation_is_1():
+def test_create_predict_inputs_when_with_exog_differentiation_is_1():
     """
     Test _create_predict_inputs when using LinearRegression as regressor 
     and differentiation=1.

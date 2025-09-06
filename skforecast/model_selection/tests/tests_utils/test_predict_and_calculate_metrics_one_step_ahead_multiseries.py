@@ -192,7 +192,7 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_input_types():
             forecaster_id='multivariate_transformer'
         )
     ],
-ids=lambda forecaster: f'forecaster: {forecaster.forecaster_id}')
+ids=lambda forecaster: f'{forecaster.forecaster_id}')
 def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_equivalence_to_backtesting(forecaster):
     """
     Test that the output of _predict_and_calculate_metrics_one_step_ahead_multiseries is equivalent to
@@ -269,8 +269,8 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_equival
 
 @pytest.mark.parametrize("differentiation", 
     [1, {'item_1': 1, 'item_2': 1, 'item_3': 1, '_unknown_level': 1}], 
-     ids = lambda diff: f'differentiation: {diff}')
-def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_ForecasterRecursiveMultiSeries_differentiation(differentiation):
+     ids = lambda diff: f'diff: {diff}')
+def test_predict_and_calculate_metrics_one_step_ahead_multiseries_ForecasterRecursiveMultiSeries_diff(differentiation):
     """
     Test that the output of _predict_and_calculate_metrics_one_step_ahead_multiseries 
     when ForecasterRecursiveMultiSeries is used with differentiation.
@@ -554,8 +554,8 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_Forecas
             forecaster_id      = 'multiseries_lgbm'
         )
     ],
-ids=lambda forecaster: f'forecaster: {forecaster.forecaster_id}')
-def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_equivalence_to_backtesting_when_series_is_dict(forecaster):
+ids=lambda forecaster: f'{forecaster.forecaster_id}')
+def test_predict_and_calculate_metrics_one_step_ahead_multiseries_equivalence_backtesting_series_is_dict(forecaster):
     """
     Test that the output of _predict_and_calculate_metrics_one_step_ahead_multiseries is
     equivalent to the output of backtesting_forecaster_multiseries when steps=1 and
@@ -639,8 +639,8 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_equival
             forecaster_id      = 'multiseries_lgbm'
         )
     ],
-ids=lambda forecaster: f'forecaster: {forecaster.forecaster_id}')
-def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_equivalence_to_backtesting_when_series_is_dict_no_scaled(forecaster):
+ids=lambda forecaster: f'{forecaster.forecaster_id}')
+def test_predict_and_calculate_metrics_one_step_ahead_multiseries_equivalence_backtesting_series_is_dict_no_scaled(forecaster):
     """
     Test that the output of _predict_and_calculate_metrics_one_step_ahead_multiseries is
     equivalent to the output of backtesting_forecaster_multiseries when steps=1 and

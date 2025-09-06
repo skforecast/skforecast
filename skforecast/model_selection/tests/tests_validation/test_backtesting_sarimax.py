@@ -94,6 +94,7 @@ def test_output_backtesting_sarimax_no_refit_no_exog_no_remainder_with_mocked(n_
         columns = ['pred'],
         index   = pd.date_range(start='2038', periods=12, freq='YE')
     )
+    expected_preds.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])
 
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
@@ -139,6 +140,7 @@ def test_output_backtesting_sarimax_no_refit_no_exog_remainder_with_mocked(initi
         columns = ['pred'],
         index   = pd.date_range(start='2038', periods=12, freq='YE')
     )
+    expected_preds.insert(0, 'fold', [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2])
 
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
@@ -184,6 +186,7 @@ def test_output_backtesting_sarimax_yes_refit_no_exog_no_remainder_with_mocked(n
         columns = ['pred'],
         index   = pd.date_range(start='2038', periods=12, freq='YE')
     )
+    expected_preds.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])
 
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
@@ -229,6 +232,7 @@ def test_output_backtesting_sarimax_yes_refit_no_exog_remainder_with_mocked(n_jo
         columns = ['pred'],
         index   = pd.date_range(start='2038', periods=12, freq='YE')
     )
+    expected_preds.insert(0, 'fold', [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2])
 
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
@@ -271,6 +275,7 @@ def test_output_backtesting_sarimax_yes_refit_fixed_train_size_no_exog_no_remain
         columns = ['pred'],
         index   = pd.date_range(start='2038', periods=12, freq='YE')
     )
+    expected_preds.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])
 
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
@@ -313,6 +318,7 @@ def test_output_backtesting_sarimax_yes_refit_fixed_train_size_no_exog_remainder
         columns = ['pred'],
         index   = pd.date_range(start='2038', periods=12, freq='YE')
     )
+    expected_preds.insert(0, 'fold', [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2])
 
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
@@ -356,6 +362,7 @@ def test_output_backtesting_sarimax_no_refit_yes_exog_with_mocked():
         columns = ['pred'],
         index   = pd.date_range(start='2038', periods=12, freq='YE')
     )
+    expected_preds.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])
 
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
@@ -399,6 +406,7 @@ def test_output_backtesting_sarimax_yes_refit_yes_exog_with_mocked():
         columns = ['pred'],
         index   = pd.date_range(start='2038', periods=12, freq='YE')
     )
+    expected_preds.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])
 
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
@@ -442,6 +450,7 @@ def test_output_backtesting_sarimax_yes_refit_fixed_train_size_yes_exog_with_moc
         columns = ['pred'],
         index   = pd.date_range(start='2038', periods=12, freq='YE')
     )
+    expected_preds.insert(0, 'fold', [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2])
 
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
@@ -494,6 +503,7 @@ def test_output_backtesting_sarimax_no_refit_yes_exog_callable_metric_with_mocke
         columns = ['pred'],
         index   = pd.date_range(start='2038', periods=12, freq='YE')
     )
+    expected_preds.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])
 
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
@@ -537,6 +547,7 @@ def test_output_backtesting_sarimax_no_refit_no_exog_list_of_metrics_with_mocked
         columns = ['pred'],
         index   = pd.date_range(start='2038', periods=12, freq='YE')
     )
+    expected_preds.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])
 
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
@@ -579,6 +590,7 @@ def test_output_backtesting_sarimax_yes_refit_no_exog_callable_metric_with_mocke
         columns = ['pred'],
         index   = pd.date_range(start='2038', periods=12, freq='YE')
     )
+    expected_preds.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])
 
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
@@ -623,6 +635,7 @@ def test_output_backtesting_sarimax_yes_refit_fixed_train_size_yes_exog_list_of_
         columns = ['pred'],
         index   = pd.date_range(start='2038', periods=12, freq='YE')
     )
+    expected_preds.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])
 
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
@@ -680,7 +693,8 @@ def test_output_backtesting_sarimax_no_refit_yes_exog_interval_with_mocked(alpha
                                         data    = expected_values,
                                         columns = ['pred', 'lower_bound', 'upper_bound'],
                                         index   = pd.date_range(start='2038', periods=12, freq='YE')
-                                    )                                                     
+                                    )  
+    expected_backtest_predictions.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])                                                   
 
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
     pd.testing.assert_frame_equal(expected_backtest_predictions, backtest_predictions, atol=0.0001)
@@ -738,7 +752,8 @@ def test_output_backtesting_sarimax_yes_refit_yes_exog_interval_with_mocked(alph
                                         data    = expected_values,
                                         columns = ['pred', 'lower_bound', 'upper_bound'],
                                         index   = pd.date_range(start='2038', periods=12, freq='YE')
-                                    )                                                     
+                                    )  
+    expected_backtest_predictions.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])                                                     
 
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
     pd.testing.assert_frame_equal(expected_backtest_predictions, backtest_predictions, atol=0.0001)
@@ -796,7 +811,129 @@ def test_output_backtesting_sarimax_yes_refit_fixed_train_size_yes_exog_interval
                                         data    = expected_values,
                                         columns = ['pred', 'lower_bound', 'upper_bound'],
                                         index   = pd.date_range(start='2038', periods=12, freq='YE')
-                                    )                                                     
+                                    )
+    expected_backtest_predictions.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])                                                    
 
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
     pd.testing.assert_frame_equal(expected_backtest_predictions, backtest_predictions, atol=0.0001)
+
+
+def test_output_backtesting_sarimax_fold_stride_with_mocked():
+    """
+    Test output of backtesting_sarimax with backtesting mocked, Series y is mocked, yes exog, 
+    yes refit, fixed_train_size, 12 observations to backtest, steps=3 (no remainder), 
+    fold stride. Mocked done with skforecast 0.18.0.
+    """
+    forecaster = ForecasterSarimax(
+                     regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
+                 )
+    
+    cv = TimeSeriesFold(
+             steps                 = 6,
+             initial_train_size    = len(y_datetime) - 12,
+             fold_stride           = 3,
+             refit                 = True,
+             fixed_train_size      = True,
+             gap                   = 0,
+             allow_incomplete_fold = True
+         )
+    
+    metric, backtest_predictions = backtesting_sarimax(
+                                        forecaster = forecaster,
+                                        y          = y_datetime,
+                                        cv         = cv,
+                                        exog       = exog_datetime,
+                                        metric     = 'mean_absolute_error',
+                                        alpha      = None,
+                                        interval   = None,
+                                        verbose    = False
+                                   )
+    
+    expected_metric = pd.DataFrame({"mean_absolute_error": [0.313297672064354]})
+    expected_preds = pd.DataFrame(
+        data    = np.array([
+                      [0.        ,  0.59409098],
+                      [0.        ,  0.78323365],
+                      [0.        ,  0.99609033],
+                      [0.        ,  1.21449931],
+                      [0.        ,  1.4574755 ],
+                      [0.        ,  1.68696099],
+                      [1.        ,  0.88202026],
+                      [1.        ,  1.03241114],
+                      [1.        ,  1.16808941],
+                      [1.        ,  1.34390467],
+                      [1.        ,  1.4696968 ],
+                      [1.        ,  1.41286359],
+                      [2.        ,  0.86535534],
+                      [2.        ,  0.87277596],
+                      [2.        ,  0.69357041],
+                      [2.        ,  0.48557182],
+                      [2.        ,  0.28762654],
+                      [2.        ,  0.05433193],
+                      [3.        ,  0.16628876],
+                      [3.        , -0.17189178],
+                      [3.        , -0.56342057]]),
+        columns = ['fold', 'pred'],
+        index   = pd.DatetimeIndex([
+                    '2038-12-31', '2039-12-31', '2040-12-31', '2041-12-31',
+                    '2042-12-31', '2043-12-31', '2041-12-31', '2042-12-31',
+                    '2043-12-31', '2044-12-31', '2045-12-31', '2046-12-31',
+                    '2044-12-31', '2045-12-31', '2046-12-31', '2047-12-31',
+                    '2048-12-31', '2049-12-31', '2047-12-31', '2048-12-31',
+                    '2049-12-31'
+                ])
+    ).astype({'fold': int})
+
+    pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
+
+
+def test_output_backtesting_sarimax_fold_stride_greater_than_steps_with_mocked():
+    """
+    Test output of backtesting_sarimax with backtesting mocked, Series y is mocked, yes exog, 
+    yes refit, fixed_train_size, 12 observations to backtest, steps=3 (no remainder), 
+    fold stride greater than steps. Mocked done with skforecast 0.18.0.
+    """
+    forecaster = ForecasterSarimax(
+                     regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
+                 )
+    
+    cv = TimeSeriesFold(
+             steps                 = 2,
+             initial_train_size    = len(y_datetime) - 12,
+             fold_stride           = 4,
+             refit                 = True,
+             fixed_train_size      = True,
+             gap                   = 0,
+             allow_incomplete_fold = True
+         )
+    
+    metric, backtest_predictions = backtesting_sarimax(
+                                        forecaster = forecaster,
+                                        y          = y_datetime,
+                                        cv         = cv,
+                                        exog       = exog_datetime,
+                                        metric     = 'mean_absolute_error',
+                                        alpha      = None,
+                                        interval   = None,
+                                        verbose    = False
+                                   )
+    
+    expected_metric = pd.DataFrame({"mean_absolute_error": [0.080745243332592]})
+    expected_preds = pd.DataFrame(
+        data    = np.array([
+                      [0.        , 0.59409098],
+                      [0.        , 0.78323365],
+                      [1.        , 0.76895405],
+                      [1.        , 0.81593985],
+                      [2.        , 0.77460313],
+                      [2.        , 0.5839772 ]]),
+        columns = ['fold', 'pred'],
+        index   = pd.DatetimeIndex([
+                    '2038-12-31', '2039-12-31', '2042-12-31', '2043-12-31',
+                    '2046-12-31', '2047-12-31'
+                ])
+    ).astype({'fold': int})
+
+    pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)

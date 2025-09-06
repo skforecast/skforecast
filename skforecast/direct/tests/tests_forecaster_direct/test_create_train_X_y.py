@@ -404,7 +404,7 @@ def test_create_train_X_y_output_when_y_is_series_10_steps_2_and_exog_is_series_
 @pytest.mark.parametrize("dtype", 
                          [float, int], 
                          ids = lambda dt: f'dtype: {dt}')
-def test_create_train_X_y_output_when_y_is_series_10_steps_1_and_exog_is_series_of_float_int_with_no_window_size(datetime_index, dtype):
+def test_create_train_X_y_output_when_exog_as_float_int_with_no_window_size(datetime_index, dtype):
     """
     Test the output of _create_train_X_y when y=pd.Series(np.arange(10)), steps=1 
     and exog is a pandas Series of floats or ints and no initial window_size
@@ -474,7 +474,7 @@ def test_create_train_X_y_output_when_y_is_series_10_steps_1_and_exog_is_series_
 @pytest.mark.parametrize("dtype", 
                          [float, int], 
                          ids = lambda dt: f'dtype: {dt}')
-def test_create_train_X_y_output_when_y_is_series_10_steps_2_and_exog_is_series_of_float_int_with_no_window_size(datetime_index, dtype):
+def test_create_train_X_y_output_when_steps_2_and_exog_as_float_int_with_no_window_size(datetime_index, dtype):
     """
     Test the output of _create_train_X_y when y=pd.Series(np.arange(10)), steps=2 
     and exog is a pandas Series of floats or ints and no initial window_size
@@ -546,7 +546,7 @@ def test_create_train_X_y_output_when_y_is_series_10_steps_2_and_exog_is_series_
 @pytest.mark.parametrize("dtype", 
                          [float, int], 
                          ids = lambda dt: f'dtype: {dt}')
-def test_create_train_X_y_output_when_y_is_series_10_steps_1_and_exog_is_dataframe_of_float_int(dtype):
+def test_create_train_X_y_output_when_steps_1_and_exog_is_df_of_float_int(dtype):
     """
     Test the output of _create_train_X_y when y=pd.Series(np.arange(10)), steps=1 
     and exog is a pandas DataFrame of floats or ints.
@@ -604,7 +604,7 @@ def test_create_train_X_y_output_when_y_is_series_10_steps_1_and_exog_is_datafra
 @pytest.mark.parametrize("dtype", 
                          [float, int], 
                          ids = lambda dt: f'dtype: {dt}')
-def test_create_train_X_y_output_when_y_is_series_10_steps_3_and_exog_is_dataframe_of_float_int(dtype):
+def test_create_train_X_y_output_when_steps_3_and_exog_is_df_of_float_int(dtype):
     """
     Test the output of _create_train_X_y when y=pd.Series(np.arange(10)), steps=3 
     and exog is a pandas DataFrame of floats or ints.
@@ -683,7 +683,7 @@ def test_create_train_X_y_output_when_y_is_series_10_steps_3_and_exog_is_datafra
                          [([True]    , bool), 
                           (['string'], str)], 
                          ids = lambda dt: f'values, dtype: {dt}')
-def test_create_train_X_y_output_when_y_is_series_10_steps_1_and_exog_is_series_of_bool_str(exog_values, dtype):
+def test_create_train_X_y_output_when_steps_1_and_exog_is_series_of_bool_str(exog_values, dtype):
     """
     Test the output of _create_train_X_y when y=pd.Series(np.arange(10)), steps=1 
     and exog is a pandas Series of bool or str.
@@ -740,7 +740,7 @@ def test_create_train_X_y_output_when_y_is_series_10_steps_1_and_exog_is_series_
                          [([True]    , bool), 
                           (['string'], str)], 
                          ids = lambda dt: f'values, dtype: {dt}')
-def test_create_train_X_y_output_when_y_is_series_10_steps_2_and_exog_is_series_of_bool_str(exog_values, dtype):
+def test_create_train_X_y_output_when_steps_2_and_exog_is_series_of_bool_str(exog_values, dtype):
     """
     Test the output of _create_train_X_y when y=pd.Series(np.arange(10)), steps=2
     and exog is a pandas Series of bool or str.
@@ -803,7 +803,7 @@ def test_create_train_X_y_output_when_y_is_series_10_steps_2_and_exog_is_series_
                          [([True]    , [False]   , bool), 
                           (['string'], ['string'], str)], 
                          ids = lambda dt: f'values, dtype: {dt}')
-def test_create_train_X_y_output_when_y_is_series_10_steps_1_and_exog_is_dataframe_of_bool_str(v_exog_1, v_exog_2, dtype):
+def test_create_train_X_y_output_when_steps_1_and_exog_is_df_of_bool_str(v_exog_1, v_exog_2, dtype):
     """
     Test the output of _create_train_X_y when y=pd.Series(np.arange(10)), steps=1 
     and exog is a pandas dataframe with two columns of bool or str.
@@ -863,7 +863,7 @@ def test_create_train_X_y_output_when_y_is_series_10_steps_1_and_exog_is_datafra
                          [([True]    , [False]   , bool), 
                           (['string'], ['string'], str)], 
                          ids = lambda dt: f'values, dtype: {dt}')
-def test_create_train_X_y_output_when_y_is_series_10_steps_3_and_exog_is_dataframe_of_bool_str(v_exog_1, v_exog_2, dtype):
+def test_create_train_X_y_output_when_steps_3_and_exog_is_df_of_bool_str(v_exog_1, v_exog_2, dtype):
     """
     Test the output of _create_train_X_y when y=pd.Series(np.arange(10)), steps=3 
     and exog is a pandas dataframe with two columns of bool or str.
@@ -1528,7 +1528,7 @@ def test_create_train_X_y_output_when_transformer_y_and_transformer_exog_steps_2
 @pytest.mark.parametrize("fit_forecaster", 
                          [True, False], 
                          ids = lambda fitted: f'fit_forecaster: {fitted}')
-def test_create_train_X_y_output_when_y_is_series_exog_is_series_and_differentiation_is_1(fit_forecaster):
+def test_create_train_X_y_output_when_pandas_series_and_differentiation_is_1(fit_forecaster):
     """
     Test the output of _create_train_X_y when using differentiation=1. Comparing 
     the matrix created with and without differentiating the series.
@@ -1584,7 +1584,7 @@ def test_create_train_X_y_output_when_y_is_series_exog_is_series_and_differentia
 @pytest.mark.parametrize("fit_forecaster", 
                          [True, False], 
                          ids = lambda fitted: f'fit_forecaster: {fitted}')
-def test_create_train_X_y_output_when_y_is_series_exog_is_series_and_differentiation_is_1_steps_3(fit_forecaster):
+def test_create_train_X_y_output_when_pandas_series_and_differentiation_is_1_steps_3(fit_forecaster):
     """
     Test the output of _create_train_X_y when using differentiation=1. Comparing 
     the matrix created with and without differentiating the series with steps=3.

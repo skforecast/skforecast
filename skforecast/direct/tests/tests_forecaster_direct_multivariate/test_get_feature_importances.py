@@ -137,7 +137,7 @@ def test_output_get_feature_importances_when_regressor_is_RandomForestRegressor_
     pd.testing.assert_frame_equal(results, expected)
     
     
-def test_output_get_feature_importances_when_regressor_is_LinearRegression_lags_3_step_1():
+def test_output_get_feature_importances_when_lags_3_step_1():
     """
     Test output of get_feature_importances for step 1, when regressor is 
     LinearRegression with lags=3.
@@ -161,7 +161,7 @@ def test_output_get_feature_importances_when_regressor_is_LinearRegression_lags_
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_output_get_feature_importances_when_regressor_is_LinearRegression_lags_3_step_2_exog_included():
+def test_output_get_feature_importances_when_lags_3_step_2_exog_included():
     """
     Test output of get_feature_importances for step 2, when regressor is 
     LinearRegression with lags=3 and exog.
@@ -265,7 +265,7 @@ def test_output_get_feature_importances_when_pipeline_RandomForestRegressor():
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_output_get_feature_importances_when_regressor_is_LinearRegression_lags_dict_step_2_exog_included():
+def test_output_get_feature_importances_when_lags_dict_step_2_exog_included():
     """
     Test output of get_feature_importances for step 2, when regressor is 
     LinearRegression with lags as dict and exog.
@@ -289,7 +289,7 @@ def test_output_get_feature_importances_when_regressor_is_LinearRegression_lags_
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_output_get_feature_importances_when_regressor_is_LinearRegression_lags_dict_None_step_2_exog_included():
+def test_output_get_feature_importances_when_lags_dict_None_step_2_exog_included():
     """
     Test output of get_feature_importances for step 2, when regressor is 
     LinearRegression with lags as dict with None and exog.

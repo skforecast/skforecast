@@ -44,7 +44,7 @@ def test_check_interval_ValueError_when_method_is_not_valid_method():
 @pytest.mark.parametrize("interval", 
                          [0.90, [5, 95], (5, 95)], 
                          ids = lambda value: f'interval: {value}')
-def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_True_exog_and_transformer(interval):
+def test_predict_interval_output_when_in_sample_residuals_exog_and_transformer(interval):
     """
     Test output of predict_interval when regressor is LinearRegression,
     2 steps are predicted, using in-sample residuals, exog is included and both

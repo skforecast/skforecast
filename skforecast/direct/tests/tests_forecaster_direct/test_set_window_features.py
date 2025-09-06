@@ -7,7 +7,7 @@ from skforecast.preprocessing import RollingFeatures
 from skforecast.direct import ForecasterDirect
 
 
-def test_set_window_features_ValueError_when_window_features_set_to_None_and_lags_is_None():
+def test_set_window_features_ValueError_when_set_to_None_and_lags_is_None():
     """
     Test ValueError is raised when window_features is set to None and lags is None.
     """

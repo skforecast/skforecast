@@ -305,12 +305,30 @@ def check_backtesting_input(
                 f"and smaller than the length of `{data_name}` ({data_length}). If "
                 f"it is a date, it must be within this range of the index."
             )
-        if initial_train_size + gap >= data_length:
-            raise ValueError(
-                f"The total size of `initial_train_size` {initial_train_size} plus "
-                f"`gap` {gap} cannot be greater than the length of `{data_name}` "
-                f"({data_length})."
-            )
+        if allow_incomplete_fold:
+            # At least one observation after the gap to allow incomplete fold
+            if data_length <= initial_train_size + gap:
+                raise ValueError(
+                    f"`{data_name}` must have more than `initial_train_size + gap` "
+                    f"observations to create at least one fold.\n"
+                    f"    Time series length: {data_length}\n"
+                    f"    Required > {initial_train_size + gap}\n"
+                    f"    initial_train_size: {initial_train_size}\n"
+                    f"    gap: {gap}\n"
+                )
+        else:
+            # At least one complete fold
+            if data_length < initial_train_size + gap + steps:
+                raise ValueError(
+                    f"`{data_name}` must have at least `initial_train_size + gap + steps` "
+                    f"observations to create a minimum of one complete fold "
+                    f"(allow_incomplete_fold=False).\n"
+                    f"    Time series length: {data_length}\n"
+                    f"    Required >= {initial_train_size + gap + steps}\n"
+                    f"    initial_train_size: {initial_train_size}\n"
+                    f"    gap: {gap}\n"
+                    f"    steps: {steps}\n"
+                )
     else:
         if forecaster_name in ['ForecasterSarimax', 'ForecasterEquivalentDate']:
             raise ValueError(
@@ -410,18 +428,6 @@ def check_backtesting_input(
         raise ValueError(
             f"`return_predictors` is only allowed for forecasters of type "
             f"{forecasters_return_predictors}. Got {forecaster_name}."
-        )
-
-    if (
-        not allow_incomplete_fold
-        and initial_train_size is not None
-        and data_length - (initial_train_size + gap) < steps
-    ):        
-        raise ValueError(
-            f"There is not enough data to evaluate {steps} steps in a single "
-            f"fold. Set `allow_incomplete_fold` to `True` to allow incomplete folds.\n"
-            f"    Data available for test : {data_length - (initial_train_size + gap)}\n"
-            f"    Steps                   : {steps}"
         )
 
     if forecaster_name in forecasters_direct and forecaster.max_step < steps + gap:
@@ -901,12 +907,12 @@ def _extract_data_folds_multiseries(
     is_exog_dict = isinstance(exog, dict)
 
     for fold in folds:
-        train_iloc_start       = fold[0][0]
-        train_iloc_end         = fold[0][1]
-        last_window_iloc_start = fold[1][0]
-        last_window_iloc_end   = fold[1][1]
-        test_iloc_start        = fold[2][0]
-        test_iloc_end          = fold[2][1]
+        train_iloc_start       = fold[1][0]
+        train_iloc_end         = fold[1][1]
+        last_window_iloc_start = fold[2][0]
+        last_window_iloc_end   = fold[2][1]
+        test_iloc_start        = fold[3][0]
+        test_iloc_end          = fold[3][1]
 
         if is_series_dict or is_exog_dict:
             # Subtract 1 to the iloc indexes to get the loc indexes
@@ -1017,7 +1023,7 @@ def _calculate_metrics_backtesting_multiseries(
     series : pandas DataFrame, dict
         Series data used for backtesting.
     predictions : pandas DataFrame
-        Predictions generated during the backtesting multiseries process.
+        MultiIndex DataFrame generated during the backtesting multiseries process. 
     folds : list, tqdm
         Folds created during the backtesting process.
     span_index : pandas DatetimeIndex, pandas RangeIndex
@@ -1068,7 +1074,7 @@ def _calculate_metrics_backtesting_multiseries(
         raise TypeError("`add_aggregated_metric` must be a boolean.")
     
     metric_names = [m.__name__ for m in metrics]
-    levels_in_predictions = predictions['level'].unique()
+    levels_in_predictions = predictions.index.get_level_values('level').unique()
 
     if isinstance(series, pd.DataFrame) and not isinstance(series.index, pd.MultiIndex):
         series = series.melt(ignore_index=False, var_name='level', value_name='y_true')
@@ -1078,8 +1084,6 @@ def _calculate_metrics_backtesting_multiseries(
     else:
         series = pd.concat(series, names = ['level', 'idx']).to_frame('y_true')
     
-    predictions = predictions.rename_axis('idx', axis=0)
-    predictions = predictions.set_index('level', append=True)
     predictions = predictions.swaplevel()
     predictions.columns = ['y_pred']
 
@@ -1105,8 +1109,8 @@ def _calculate_metrics_backtesting_multiseries(
     for i, fold in enumerate(folds):
         fit_fold = fold[-1]
         if i == 0 or fit_fold:
-            train_iloc_start = fold[0][0]
-            train_iloc_end = fold[0][1]
+            train_iloc_start = fold[1][0]
+            train_iloc_end = fold[1][1]
             train_indexes.append(np.arange(train_iloc_start, train_iloc_end))
     
     train_indexes = np.unique(np.concatenate(train_indexes))

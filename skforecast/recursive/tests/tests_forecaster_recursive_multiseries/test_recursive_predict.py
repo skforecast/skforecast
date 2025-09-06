@@ -139,7 +139,7 @@ def test_recursive_predict_output_when_regressor_is_Ridge_StandardScaler_encodin
                          [StandardScaler(),
                           {'l1': StandardScaler(), 'l2': StandardScaler(), '_unknown_level': StandardScaler()}], 
                          ids = lambda tr: f'transformer_series type: {type(tr)}')
-def test_recursive_predict_output_when_regressor_is_LinearRegression_with_transform_series_and_transform_exog_different_length_series(transformer_series):
+def test_recursive_predict_output_when_with_transform_series_and_transform_exog_different_length_series(transformer_series):
     """
     Test _recursive_predict output when using LinearRegression as regressor, StandardScaler
     as transformer_series and transformer_exog as transformer_exog with series 

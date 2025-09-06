@@ -533,7 +533,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterRecursiveMultiSeries_lag
 @pytest.mark.parametrize("levels", 
                          ['l1', ['l1']], 
                          ids = lambda value: f'levels: {value}')
-def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterRecursiveMultiSeries_levels_str_list_with_mocked(levels):
+def test_evaluate_grid_hyperparameters_multiseries_ForecasterRecursiveMultiSeries_levels_str_list(levels):
     """
     Test output of _evaluate_grid_hyperparameters_multiseries in ForecasterRecursiveMultiSeries 
     with mocked when `levels` is a `str` or a `list` (mocked done in Skforecast v0.5.0).
@@ -1583,7 +1583,7 @@ def test_evaluate_grid_hyperparameters_equivalent_outputs_backtesting_and_one_st
             )
         ],
 ids=lambda forecaster: f'forecaster: {forecaster.forecaster_id}')
-def test_evaluate_grid_hyperparameters_equivalent_outputs_backtesting_and_one_step_ahead_when_series_is_dict(
+def test_evaluate_grid_hyperparameters_same_output_backtesting_and_one_step_ahead_when_series_is_dict(
     initial_train_size, forecaster,
 ):
     """

@@ -58,7 +58,7 @@ def test_predict_output_when_regressor_is_LinearRegression():
     pd.testing.assert_series_equal(predictions, expected)
 
         
-def test_predict_output_when_regressor_is_LinearRegression_with_exog():
+def test_predict_output_when_with_exog():
     """
     Test predict output when using LinearRegression as regressor.
     """
@@ -77,7 +77,7 @@ def test_predict_output_when_regressor_is_LinearRegression_with_exog():
     pd.testing.assert_series_equal(predictions, expected)
 
 
-def test_predict_output_when_regressor_is_LinearRegression_with_transform_y():
+def test_predict_output_when_with_transform_y():
     """
     Test predict output when using LinearRegression as regressor and StandardScaler.
     """
@@ -104,7 +104,7 @@ def test_predict_output_when_regressor_is_LinearRegression_with_transform_y():
     pd.testing.assert_series_equal(predictions, expected)
 
 
-def test_predict_output_when_regressor_is_LinearRegression_with_transform_y_and_transform_exog():
+def test_predict_output_when_with_transform_y_and_transform_exog():
     """
     Test predict output when using LinearRegression as regressor, StandardScaler
     as transformer_y and transformer_exog as transformer_exog.
@@ -144,7 +144,7 @@ def test_predict_output_when_regressor_is_LinearRegression_with_transform_y_and_
     pd.testing.assert_series_equal(predictions, expected)
 
 
-def test_predict_output_when_regressor_is_LinearRegression_and_weight_func():
+def test_predict_output_when_and_weight_func():
     """
     Test predict output when using LinearRegression as regressor and custom_weights.
     """
@@ -319,7 +319,7 @@ def test_predict_output_when_categorical_features_native_implementation_LGBMRegr
     pd.testing.assert_series_equal(predictions, expected)
 
 
-def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differentiation_is_1():
+def test_predict_output_when_with_exog_and_differentiation_is_1():
     """
     Test predict output when using LinearRegression as regressor and differentiation=1.
     """
@@ -351,7 +351,7 @@ def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differe
     pd.testing.assert_series_equal(predictions_1.asfreq('MS'), predictions_2, check_names=False)
 
 
-def test_predict_output_when_regressor_is_LinearRegression_with_exog_differentiation_is_1_and_transformer_y():
+def test_predict_output_when_with_exog_differentiation_is_1_and_transformer_y():
     """
     Test predict output when using LinearRegression as regressor and differentiation=1,
     and transformer_y is StandardScaler.
@@ -390,7 +390,7 @@ def test_predict_output_when_regressor_is_LinearRegression_with_exog_differentia
     pd.testing.assert_series_equal(predictions_1.asfreq('MS'), predictions_2, check_names=False)
 
 
-def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differentiation_is_2():
+def test_predict_output_when_with_exog_and_differentiation_is_2():
     """
     Test predict output when using LinearRegression as regressor and differentiation=2.
     """

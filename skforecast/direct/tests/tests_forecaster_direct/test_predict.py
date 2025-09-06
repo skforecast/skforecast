@@ -80,7 +80,7 @@ def test_predict_output_when_regressor_is_LinearRegression(steps):
     pd.testing.assert_series_equal(results, expected)
 
 
-def test_predict_output_when_regressor_is_LinearRegression_with_list_interspersed():
+def test_predict_output_when_with_list_interspersed():
     """
     Test predict output when using LinearRegression as regressor and steps is
     a list with interspersed steps.
@@ -98,7 +98,7 @@ def test_predict_output_when_regressor_is_LinearRegression_with_list_intersperse
     pd.testing.assert_series_equal(results, expected)
 
 
-def test_predict_output_when_regressor_is_LinearRegression_using_last_window():
+def test_predict_output_when_using_last_window():
     """
     Test predict output when using LinearRegression as regressor and last_window.
     """
@@ -117,7 +117,7 @@ def test_predict_output_when_regressor_is_LinearRegression_using_last_window():
     pd.testing.assert_series_equal(results, expected)
 
 
-def test_predict_output_when_regressor_is_LinearRegression_using_exog():
+def test_predict_output_when_using_exog():
     """
     Test predict output when using LinearRegression as regressor and exog.
     """
@@ -142,7 +142,7 @@ def test_predict_output_when_regressor_is_LinearRegression_using_exog():
     pd.testing.assert_series_equal(results, expected)
 
 
-def test_predict_output_when_regressor_is_LinearRegression_with_transform_y():
+def test_predict_output_when_with_transform_y():
     """
     Test predict output when using LinearRegression as regressor and StandardScaler.
     """
@@ -173,7 +173,7 @@ def test_predict_output_when_regressor_is_LinearRegression_with_transform_y():
 
 @pytest.mark.parametrize("n_jobs", [1, -1, 'auto'], 
                          ids=lambda n_jobs: f'n_jobs: {n_jobs}')
-def test_predict_output_when_regressor_is_LinearRegression_with_transform_y_and_transform_exog(n_jobs):
+def test_predict_output_when_transform_y_and_transform_exog(n_jobs):
     """
     Test predict output when using LinearRegression as regressor, StandardScaler
     as transformer_y and transformer_exog as transformer_exog.
@@ -219,7 +219,7 @@ def test_predict_output_when_regressor_is_LinearRegression_with_transform_y_and_
     pd.testing.assert_series_equal(predictions, expected)
 
 
-def test_predict_output_when_regressor_is_LinearRegression_and_weight_func():
+def test_predict_output_when_and_weight_func():
     """
     Test predict output when using LinearRegression as regressor and custom_weights.
     """
@@ -402,7 +402,7 @@ def test_predict_output_when_categorical_features_native_implementation_LGBMRegr
     pd.testing.assert_series_equal(predictions, expected)
 
 
-def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differentiation_is_1_steps_1():
+def test_predict_output_when_with_exog_and_differentiation_is_1_steps_1():
     """
     Test predict output when using LinearRegression as regressor and 
     differentiation=1 and steps=1.
@@ -434,7 +434,7 @@ def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differe
     pd.testing.assert_series_equal(predictions_1.asfreq('MS'), predictions_2, check_names=False)
 
 
-def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differentiation_is_1_steps_10():
+def test_predict_output_when_with_exog_and_differentiation_is_1_steps_10():
     """
     Test predict output when using LinearRegression as regressor and 
     differentiation=1 and steps=10.
@@ -466,7 +466,7 @@ def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differe
     pd.testing.assert_series_equal(predictions_1.asfreq('MS'), predictions_2, check_names=False)
 
 
-def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differentiation_is_2():
+def test_predict_output_when_with_exog_and_differentiation_is_2():
     """
     Test predict output when using LinearRegression as regressor and differentiation=2.
     """
@@ -504,7 +504,7 @@ def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differe
     pd.testing.assert_series_equal(predictions_1.asfreq('MS'), predictions_2, check_names=False)
 
 
-def test_predict_output_when_regressor_is_LinearRegression_with_exog_and_differentiation_is_2_steps_10():
+def test_predict_output_when_with_exog_and_differentiation_is_2_steps_10():
     """
     Test predict output when using LinearRegression as regressor and 
     differentiation=2 and steps=10.

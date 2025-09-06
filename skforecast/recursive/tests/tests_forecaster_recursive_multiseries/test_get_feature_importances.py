@@ -111,7 +111,7 @@ def test_output_get_feature_importances_when_regressor_is_LinearRegression():
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_output_get_feature_importances_when_regressor_is_LinearRegression_with_exog():
+def test_output_get_feature_importances_when_with_exog():
     """
     Test output of get_feature_importances when regressor is LinearRegression with lags=3
     and it is trained with series pandas DataFrame and a exogenous variable.

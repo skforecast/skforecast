@@ -40,7 +40,7 @@ def test_TypeError_select_features_multiseries_raise_when_forecaster_is_not_supp
 @pytest.mark.parametrize("select_only", 
                          ['not_exog_or_autoreg', 1, False], 
                          ids=lambda so: f'select_only: {so}')
-def test_ValueError_select_features_multiseries_raise_when_select_only_is_not_autoreg_exog_None(select_only):
+def test_ValueError_select_features_multiseries_when_select_only_not_autoreg_exog_None(select_only):
     """
     Test ValueError is raised in select_features_multiseries when `select_only` 
     is not 'autoreg', 'exog' or None.
@@ -67,7 +67,7 @@ def test_ValueError_select_features_multiseries_raise_when_select_only_is_not_au
 @pytest.mark.parametrize("subsample", 
                          [-1, -0.5, 0, 0., 1.1, 2], 
                          ids=lambda ss: f'subsample: {ss}')
-def test_ValueError_select_features_multiseries_raise_when_subsample_is_not_greater_0_less_equal_1(subsample):
+def test_ValueError_select_features_multiseries_when_subsample_not_greater_0_less_equal_1(subsample):
     """
     Test ValueError is raised in select_features_multiseries when `subsample` 
     is not in (0, 1].
@@ -366,7 +366,7 @@ def test_select_features_multiseries_when_selector_is_RFE_select_only_exog_is_Fa
 @pytest.mark.parametrize("lags", 
                          [{'l1': None, 'l2': 5}, {'l1': [], 'l2': 5}],
                          ids = lambda lags: f'lags: {lags}')
-def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterDirectMultiVariate_lags_dict(lags):
+def test_select_features_when_RFE_select_only_exog_ForecasterDirectMultiVariate_lags_dict(lags):
     """
     Test that select_features returns the expected values when selector is RFE
     and select_only is 'exog'. Forecaster is ForecasterDirectMultiVariate 

@@ -435,15 +435,15 @@ def test_basefold_set_params_valid_params():
     """
     Test set_params method with valid parameters.
     """
-    cv = BaseFold(steps=3, initial_train_size=10)
+    cv = BaseFold(initial_train_size=10, window_size=4)
     new_params = {
-        'steps': 5,
         'initial_train_size': 15,
+        'window_size': 5,
         'verbose': False
     }
     cv.set_params(new_params)
-    assert cv.steps == 5
     assert cv.initial_train_size == 15
+    assert cv.window_size == 5
     assert cv.verbose is False
 
 
@@ -451,9 +451,10 @@ def test_set_params_partial_update_and_unknown_param():
     """
     Test set_params method with partial update of parameters.
     """
-    cv = BaseFold(steps=3, initial_train_size=10, verbose=True)
+    cv = BaseFold(initial_train_size=10, window_size=4, verbose=True)
     new_params = {
-        'steps': 5,
+        'initial_train_size': 15,
+        'window_size': 4,
         'unknown_param': 5
     }
     warn_msg = re.escape(
@@ -462,6 +463,6 @@ def test_set_params_partial_update_and_unknown_param():
     with pytest.warns(IgnoredArgumentWarning, match=warn_msg):
         cv.set_params(new_params)
     
-    assert cv.steps == 5
-    assert cv.initial_train_size == 10
+    assert cv.initial_train_size == 15
+    assert cv.window_size == 4
     assert cv.verbose is True

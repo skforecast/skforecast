@@ -118,7 +118,7 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_2_
 @pytest.mark.parametrize("interval", 
                          [0.90, (5, 95)], 
                          ids = lambda value: f'interval: {value}')
-def test_predict_interval_output_when_regressor_is_LinearRegression_with_transform_y(interval):
+def test_predict_interval_output_when_with_transform_y(interval):
     """
     Test predict output when using LinearRegression as regressor and StandardScaler.
     """
@@ -152,7 +152,7 @@ def test_predict_interval_output_when_regressor_is_LinearRegression_with_transfo
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_predict_interval_output_when_regressor_is_LinearRegression_with_transform_y_and_transform_exog():
+def test_predict_interval_output_when_with_transform_y_and_transform_exog():
     """
     Test predict output when using LinearRegression as regressor, StandardScaler
     as transformer_y and transformer_exog as transformer_exog.
@@ -256,7 +256,7 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_5_
 @pytest.mark.parametrize("interval", 
                          [0.95, (2.5, 97.5)], 
                          ids = lambda value: f'interval: {value}')
-def test_predict_interval_conformal_output_when_regressor_is_LinearRegression_with_transform_y(interval):
+def test_predict_interval_conformal_output_when_with_transform_y(interval):
     """
     Test predict output when using LinearRegression as regressor and StandardScaler
     and conformal prediction.
