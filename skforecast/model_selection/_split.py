@@ -1026,7 +1026,6 @@ class TimeSeriesFold(BaseFold):
                     f"    steps: {self.steps}\n"
                 )
 
-        # TODO: testing with fold_stride
         while self.initial_train_size + (i * self.fold_stride) + self.gap < len(index):
 
             if self.refit:

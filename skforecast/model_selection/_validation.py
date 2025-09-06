@@ -30,8 +30,6 @@ from ..utils import (
     set_skforecast_warnings
 )
 
-# TODO: Adapt tests _calculate_metrics_backtesting_multiseries to new
-# pd long format input of predictions.
 
 def _backtesting_forecaster(
     forecaster: object,

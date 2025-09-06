@@ -116,6 +116,7 @@ def test_backtesting_forecaster_multiseries_ForecasterRnn_with_exog_and_interval
     cv = TimeSeriesFold(
             initial_train_size = len(series) - 20,
             steps              = forecaster.max_step - 2,
+            fold_stride        = forecaster.max_step - 3,
             gap                = 2,
             refit              = False
          )
@@ -133,4 +134,4 @@ def test_backtesting_forecaster_multiseries_ForecasterRnn_with_exog_and_interval
                      )
 
     assert metrics.shape == (5, 2)
-    assert preds.shape == (48, 5)
+    assert preds.shape == (52, 5)

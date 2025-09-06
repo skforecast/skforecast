@@ -77,7 +77,6 @@ def test_backtesting_gif_creator_raise_error_invalid_arguments():
         backtesting_gif_creator(data=data, cv=cv, colors=wrong_colors)
 
 
-# TODO: Uncomment when fold_stride
 @pytest.mark.parametrize(
     "cv_kwargs", 
     [{'steps': 10, 'initial_train_size': 70},
@@ -86,7 +85,7 @@ def test_backtesting_gif_creator_raise_error_invalid_arguments():
      {'steps': 10, 'initial_train_size': 70, 'gap': 5},
      {'steps': 8, 'initial_train_size': 70, 'gap': 5, 'allow_incomplete_fold': False, 'refit': 2},
      {'steps': 8, 'initial_train_size': 70, 'skip_folds': 2, 'allow_incomplete_fold': False},
-    #  {'steps': 8, 'initial_train_size': 70, 'fold_stride': 5}
+     {'steps': 8, 'initial_train_size': 70, 'fold_stride': 5}
      ], 
     ids=lambda cv_kwargs: f'cv_kwargs: {cv_kwargs}'
 )
