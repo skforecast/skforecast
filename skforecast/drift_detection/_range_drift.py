@@ -28,16 +28,26 @@ class RangeDriftDetector:
         Range of values of the target series used during training.
     exog_values_range_ : dict
         Range of values of the exogenous variables used during training.
+    series_names_in_ : list
+        Names of the series used during training.
+    exog_names_in_ : list
+        Names of the exogenous variables used during training.
     is_fitted_ : bool
         Whether the detector has been fitted to the training data.
+    series_type_in_ : type
+        Type of series data (pandas Series, DataFrame or dict) used in training.
+    exog_type_in_ : type
+        Type of exogenous data (pandas Series, DataFrame or dict) used in training.
     """
 
     def __init__(self):
-        self.series_names_in_: list[str] = []
-        self.series_values_range_: dict | None = None
-        self.exog_names_in_: list[str] = []
-        self.exog_values_range_: dict | None = None
-        self.is_fitted_: bool = False
+        self.series_names_in_ = []
+        self.series_values_range_ = {}
+        self.exog_names_in_ = []
+        self.exog_values_range_ = {}
+        self.is_fitted_ = False
+        self.series_dtypes_in_ = None
+        self.exog_dtypes_in_ = None
 
     def __repr__(
         self
@@ -54,12 +64,14 @@ class RangeDriftDetector:
             f"Exogenous value ranges: {self.exog_values_range_} \n"
             f"Fitted series: {self.series_names_in_} \n"
             f"Fitted exogenous: {self.exog_names_in_} \n"
+            f"Series data type: {self.series_dtypes_in_} \n"
+            f"Exogenous data type: {self.exog_dtypes_in_} \n"
         )
 
         return info
 
     @classmethod
-    def get_features_range_(cls, X: pd.DataFrame | pd.Series | dict) -> dict:
+    def _get_features_range(cls, X: pd.DataFrame | pd.Series) -> tuple | set | dict:
         """
         Get a summary of the features in the DataFrame or Series. For numeric
         features, it returns the min and max values. For categorical features,
@@ -67,44 +79,29 @@ class RangeDriftDetector:
 
         Arguments
         ---------
-        X : pd.DataFrame, pd.Series, dict
-            Input data to summarize. If a dict is provided it should map keys to
-            DataFrame or Series objects and the function will return a dict of
-            feature summaries for each key.
-
+        X : pd.DataFrame, pd.Series
+            Input data to summarize.
         Returns
         -------
-        features_ranges: dict
-            Summary of the features in the input data. If input is a dict, returns
-            a dict of dicts mapping the same keys to their feature summaries.
+        features_ranges: tuple, set, dict
+            Feature ranges. If X is a Series, returns a tuple (min, max) for numeric
+            data or a set of unique values for categorical data. If X is a DataFrame,
+            returns a dictionary with column names as keys and their respective ranges
+            (tuple or set) as values.
 
         """
 
-        if not isinstance(X, (pd.DataFrame, pd.Series, dict)):
-            raise TypeError("Input must be a pandas DataFrame, Series or dict.")
-        
+        if not isinstance(X, (pd.DataFrame, pd.Series)):
+            raise TypeError("Input must be a pandas DataFrame or Series.")
+
         if isinstance(X, pd.Series):
-            X = X.to_frame(name=X.name if X.name is not None else 'y')
-
-        if isinstance(X, dict):
-            features_ranges = {}
-            for key, value in X.items():
-                if not isinstance(value, (pd.DataFrame, pd.Series)):
-                    raise TypeError("All dictionary values must be DataFrame or Series.")
-                if isinstance(value, pd.Series):
-                    value = value.to_frame(name=key)
-                
-                num_cols = [col for col, dt in value.dtypes.items() if pd.api.types.is_numeric_dtype(dt)]
-                cat_cols = [col for col in value.columns if col not in num_cols]
-
-                ranges = {}
-                ranges.update({col: (value[col].min(), value[col].max()) for col in num_cols})
-                ranges.update({col: set(value[col].dropna().unique()) for col in cat_cols})
-
-                features_ranges[key] = ranges
+            if pd.api.types.is_numeric_dtype(X):
+                features_ranges = (X.min(), X.max())
+            else:
+                features_ranges = set(X.dropna().unique())
 
         if isinstance(X, pd.DataFrame):
-            num_cols = [col for col, dt in X.dtypes.items() if pd.api.types.is_numeric_dtype(dt)]
+            num_cols = [col for col in X.columns if pd.api.types.is_numeric_dtype(X[col])]
             cat_cols = [col for col in X.columns if col not in num_cols]
 
             features_ranges = {}
@@ -117,9 +114,8 @@ class RangeDriftDetector:
     def check_features_range_(
         cls,
         features_ranges: dict, 
-        X: pd.DataFrame | pd.Series | dict,
-        input_name: str = None
-    ) -> None:
+        X: pd.DataFrame | pd.Series,
+    ) -> list[str]:
         """
         Check if there is any value outside the training range. For numeric features,
         it checks if the values are within the min and max range. For categorical features,
@@ -128,64 +124,75 @@ class RangeDriftDetector:
         Parameters
         ----------
         features_ranges : dict
-            Output from get_features_range_()
-        X : pd.DataFrame, pd.Series, or dict
+            Output from _get_features_range()
+        X : pd.DataFrame, pd.Series
             New data to validate
-        input_name : str, optional
-            Name to prepend to warning messages if checking a dict of inputs.
+
+        Returns
+        -------
+        not_compliant_features : list[str]
+            List of features with values outside the training range.
         """
 
-        to_check = []
-        is_exog = input_name == 'exog'
+        if isinstance(X, pd.Series):
+            X = X.to_frame()
 
-        if isinstance(X, dict):
-            for key, value in X.items():
-                if isinstance(value, pd.Series):
-                    value = value.to_frame(name=value.name if value.name else 'y')
-                elif not isinstance(value, pd.DataFrame):
-                    raise TypeError("All dictionary values must be DataFrame or Series.")
-                to_check.append((key if is_exog else key, value))
-        elif isinstance(X, pd.Series):
-            to_check.append((input_name or 'X', X.to_frame(name=X.name if X.name else 'y')))
-        elif isinstance(X, pd.DataFrame):
-            to_check.append((input_name or 'X', X))
+        for col in set(X.columns).intersection(features_ranges.keys()):
+            rule = features_ranges[col]
+
+        not_compliant_features = []
+        if isinstance(rule, tuple):
+            if X[col].min() < rule[0] or X[col].max() > rule[1]:
+                not_compliant_features.append(col)
         else:
-            raise TypeError("Input must be a pandas DataFrame, Series, or dict.")
+            unseen = set(X[col].unique()) - rule
+            if unseen:
+                not_compliant_features.append(col)
+        
+        return not_compliant_features
+                
+    @classmethod
+    def _display_warnings(
+        cls, 
+        not_compliant_features: list[str],
+        feature_values_range: dict,
+        series_name: str = None
+    ) -> None:
+        """
+        Display warnings for features with values outside the training range.
 
-        for name, df in to_check:
-            if is_exog and isinstance(X, dict):
-                ranges = features_ranges[name]
-            else:
-                ranges = features_ranges
+        Parameters
+        ----------
+        not_compliant_features : list[str]
+            List of feature names with values outside the training range.
+        feature_values_range : dict
+            Dictionary with the training ranges of the features.
+        series_name : str, optional
+            Name of the series being checked, if applicable.
 
-            for col in set(df.columns).intersection(ranges.keys()):
-                rule = ranges[col]
+        Returns
+        -------
+        None
 
-                if isinstance(rule, tuple):  # numeric
-                    if df[col].min() < rule[0] or df[col].max() > rule[1]:
-                        if is_exog and isinstance(X, dict):
-                            label = f"exog '{col}'"
-                        else:
-                            label = f"'{col}'"
+        """
+        for feature in not_compliant_features:
+            rule = feature_values_range[feature]
+            if isinstance(rule, tuple):  # numeric
+                msg = (
+                    f"'{feature}' has one or more values outside the range seen during training "
+                    f"[{rule[0]:.5f}, {rule[1]:.5f}]. "
+                    f"This may affect the accuracy of the predictions."
+                )
+            else:  # categorical
+                msg = (
+                    f"'{feature}' has values not seen during training. Seen values: "
+                    f"{rule}. This may affect the accuracy of the predictions."
+                )
 
-                        msg = (
-                            f"{label} has one or more values outside the range seen during training "
-                            f"[{rule[0]:.5f}, {rule[1]:.5f}]. "
-                            f"This may affect the accuracy of the predictions."
-                        )
-                        if name:
-                            msg = f"'{name}': " + msg
-                        warnings.warn(msg, FeatureOutOfRangeWarning)
-                else:  # categorical
-                    unseen = set(df[col].unique()) - rule
-                    if unseen:
-                        msg = (
-                            f"'{col}' has values not seen during training. Seen values: "
-                            f"{rule}. This may affect the accuracy of the predictions."
-                        )
-                        if name:
-                            msg = f"'{name}': " + msg
-                        warnings.warn(msg, FeatureOutOfRangeWarning)
+            if series_name:
+                msg = f"'{series_name}': " + msg
+            
+            warnings.warn(msg, FeatureOutOfRangeWarning)
 
     def fit(
             self,
@@ -209,46 +216,72 @@ class RangeDriftDetector:
 
         """
 
+        self.series_values_range_ = {}
+        self.exog_values_range_ = {}
+        self.series_names_in_ = []
+        self.exog_names_in_ = []
+
         if not isinstance(series, (pd.DataFrame, pd.Series, dict)):
             raise TypeError("Input must be a pandas DataFrame, Series or dict.")
         
         if not isinstance(exog, (pd.DataFrame, pd.Series, dict, type(None))):
             raise TypeError("Exogenous variables must be a pandas DataFrame, Series or dict.")
 
-        if isinstance(series, pd.DataFrame) and isinstance(series.index, pd.MultiIndex):
-            first_col = series.columns[0]
-            if len(series.columns) != 1:
-                warnings.warn(
-                    f"`series` DataFrame has multiple columns. Only the values of "
-                    f"first column, '{first_col}', will be used as series values. "
-                    f"All other columns will be ignored.",
-                    IgnoredArgumentWarning
-                )
-            series = {
-                series_id: series.loc[series_id][first_col].rename(series_id)
-                for series_id in series.index.levels[0]
-            }
+        self.series_dtypes_in_ = type(series)
+        if isinstance(series, pd.Series):
+            if not series.name:
+                raise ValueError("Series must have a name when a pandas Series is provided.")
+            series = {series.name: series}
+        if isinstance(series, pd.DataFrame):
+            if isinstance(series.index, pd.MultiIndex):
+                first_col = series.columns[0]
+                if len(series.columns) != 1:
+                    warnings.warn(
+                        f"`series` DataFrame has multiple columns. Only the values of "
+                        f"first column, '{first_col}', will be used as series values. "
+                        f"All other columns will be ignored.",
+                        IgnoredArgumentWarning
+                    )
+                series = {
+                    series_id: series.loc[series_id][first_col].rename(series_id)
+                    for series_id in series.index.levels[0]
+                }
+            else:
+                series = {col: series[col] for col in series.columns}
 
-        self.series_values_range_ = self.get_features_range_(X=series)
         if isinstance(series, dict):
-            self.series_values_range_ = {
-                k: v[k] for k, v in self.series_values_range_.items()
-            }
-        self.series_names_in_ = list(self.series_values_range_.keys())
+            for key, value in series.items():
+                if not isinstance(value, (pd.Series, pd.DataFrame)):
+                    raise TypeError("All values in `series` must be DataFrame or Series.")
+                self.series_values_range_[key] = self._get_features_range(X=value)
+                self.series_names_in_.append(key)
 
         if exog is not None:
-            if isinstance(exog, pd.DataFrame) and isinstance(exog.index, pd.MultiIndex):
-                exog = {series_id: exog.loc[series_id] for series_id in exog.index.levels[0]}
+            self.exog_dtypes_in_ = type(exog)
+            if isinstance(exog, pd.Series):
+                if not exog.name:
+                    raise ValueError("Exog must have a name when a pandas Series is provided.")
+                exog = exog.to_frame()
             
-            self.exog_values_range_ = self.get_features_range_(X=exog)
+            if isinstance(exog, pd.DataFrame):
+                if isinstance(exog.index, pd.MultiIndex):
+                    exog = {series_id: exog.loc[series_id] for series_id in exog.index.levels[0]}
+                else:
+                    exog = {col: exog[col] for col in exog.columns}
+
             
-            if any(isinstance(v, dict) for v in self.exog_values_range_.values()):
-                self.exog_names_in_ = list(
-                    dict.fromkeys(k for v in self.exog_values_range_.values() for k in v)
-                )
-            else:
-                self.exog_names_in_ = list(self.exog_values_range_.keys())
-        
+            if isinstance(exog, dict):
+                for key, value in exog.items():
+                    if not isinstance(value, (pd.Series, pd.DataFrame)):
+                        raise TypeError("All values in `exog` must be DataFrame or Series.")
+                    self.exog_values_range_[key] = self._get_features_range(X=value)
+                if self.exog_dtypes_in_ is dict:
+                    self.exog_names_in_ = list(
+                        dict.fromkeys(k for v in self.exog_values_range_.values() for k in v)
+                    )
+                else:
+                    self.exog_names_in_ = list(self.exog_values_range_.keys())
+
         self.is_fitted_ = True
 
         return
@@ -276,10 +309,55 @@ class RangeDriftDetector:
 
         if not isinstance(last_window, (pd.DataFrame, pd.Series, dict, type(None))):
             raise TypeError("last_window must be a pandas DataFrame, Series, dict or None.")
+        
+        if not isinstance(exog, (pd.DataFrame, pd.Series, dict, type(None))):
+            raise TypeError("Exogenous variables must be a pandas DataFrame, Series, dict or None.")
+        
+        # if not isinstance(last_window, self.series_dtypes_in_):
+        #     raise TypeError(
+        #         f"last_window must be of type {self.series_dtypes_in_}. "
+        #         f"Got {type(last_window)} instead."
+        #     )
+        # if not isinstance(exog, self.exog_dtypes_in_):
+        #     raise TypeError(
+        #         f"exog must be of type {self.exog_dtypes_in_}. "
+        #         f"Got {type(exog)} instead."
+        #     )
 
         if last_window is not None:
-            self.check_features_range_(self.series_values_range_, last_window, input_name="last_window")
 
+            if isinstance(last_window, pd.Series):
+                if not last_window.name:
+                    raise ValueError("last_window Series must have a name.")
+                last_window = {last_window.name: last_window}
+
+            elif isinstance(last_window, pd.DataFrame):
+
+                if isinstance(last_window.index, pd.MultiIndex):
+                    last_window = {series_id: last_window.loc[series_id] for series_id in last_window.index.levels[0]}
+                else:
+                    last_window = {col: last_window[col] for col in last_window.columns}
+
+            for key, value in last_window.items():
+                
+                if not isinstance(value, (pd.Series, pd.DataFrame)):
+                    raise TypeError("All values in `last_window` must be DataFrame or Series.")
+                
+                features_ranges=self.series_values_range_[key]
+                if not isinstance(features_ranges, dict):
+                    features_ranges = {key: features_ranges}
+                
+                not_compliant_features = self.check_features_range_(
+                    features_ranges=features_ranges,
+                    X=value
+                )
+                self._display_warnings(
+                    not_compliant_features=not_compliant_features,
+                    feature_values_range=features_ranges,
+                    series_name=key
+                )
+
+           
         if exog is not None:
             if isinstance(exog, pd.DataFrame) and isinstance(exog.index, pd.MultiIndex):
                 exog = {series_id: exog.loc[series_id] for series_id in exog.index.levels[0]}
