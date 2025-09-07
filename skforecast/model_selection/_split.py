@@ -1098,7 +1098,6 @@ class TimeSeriesFold(BaseFold):
                 index_to_skip = [i for i in self.skip_folds if i < len(folds)]
         
         if self.verbose:
-            # TODO: Change last_fold_excluded with n_removed_folds
             self._print_info(
                 index              = index,
                 folds              = folds,
