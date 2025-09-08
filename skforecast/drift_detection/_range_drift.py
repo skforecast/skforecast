@@ -313,6 +313,12 @@ class RangeDriftDetector:
                 if isinstance(value, pd.Series):
                     value = value.to_frame()
                 for col in value.columns:
+                    if key not in self.series_names_in_:
+                        warnings.warn(
+                            f"'{key}' was not seen during training. Its range is unknown.",
+                            FeatureOutOfRangeWarning,
+                        )
+                        continue
                     out_of_range = self._check_feature_range(
                         feature_range=self.series_values_range_[col], X=value[col]
                     )
@@ -335,6 +341,12 @@ class RangeDriftDetector:
                         features_ranges = {key: features_ranges}
                     else:
                         is_single_series = False
+                    if col not in self.exog_names_in_:
+                        warnings.warn(
+                            f"'{col}' was not seen during training. Its range is unknown.",
+                            FeatureOutOfRangeWarning,
+                        )
+                        continue
                     not_compliant_features = self._check_feature_range(
                         feature_range=features_ranges[col], X=value[col]
                     )
