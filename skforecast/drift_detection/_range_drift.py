@@ -108,7 +108,9 @@ class RangeDriftDetector:
 
     @classmethod
     def _check_feature_range(
-        cls, feature_range: tuple | set, X: pd.Series | np.ndarray
+        cls,
+        feature_range: tuple | set,
+        X: pd.Series
     ) -> bool:
         """
         Check if there is any value outside the training range. For numeric features,
@@ -119,7 +121,7 @@ class RangeDriftDetector:
         ----------
         feature_range : tuple, set
             Output from _get_features_range() for a single feature.
-        X : pd.Series, np.ndarray
+        X : pd.Series
             New data to validate
 
         Returns
@@ -131,7 +133,7 @@ class RangeDriftDetector:
         if isinstance(feature_range, tuple):
             return X.min() < feature_range[0] or X.max() > feature_range[1]
         else:
-            unseen = set(X.unique()) - feature_range
+            unseen = set(X.dropna().unique()) - feature_range
             return bool(unseen)
 
     @classmethod
