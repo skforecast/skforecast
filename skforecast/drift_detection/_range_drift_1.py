@@ -34,6 +34,10 @@ class RangeDriftDetector:
         Names of the exogenous variables used during training.
     is_fitted_ : bool
         Whether the detector has been fitted to the training data.
+    series_type_in_ : type
+        Type of series data (pandas Series, DataFrame or dict) used in training.
+    exog_type_in_ : type
+        Type of exogenous data (pandas Series, DataFrame or dict) used in training.
     """
 
     def __init__(self):
@@ -42,8 +46,12 @@ class RangeDriftDetector:
         self.exog_names_in_ = []
         self.exog_values_range_ = {}
         self.is_fitted_ = False
+        self.series_dtypes_in_ = None
+        self.exog_dtypes_in_ = None
 
-    def __repr__(self) -> str:
+    def __repr__(
+        self
+    ) -> str:
         """
         Information displayed when a RangeDriftDetector object is printed.
         """
@@ -56,6 +64,8 @@ class RangeDriftDetector:
             f"Exogenous value ranges: {self.exog_values_range_} \n"
             f"Fitted series: {self.series_names_in_} \n"
             f"Fitted exogenous: {self.exog_names_in_} \n"
+            f"Series data type: {self.series_dtypes_in_} \n"
+            f"Exogenous data type: {self.exog_dtypes_in_} \n"
         )
 
         return info
@@ -91,25 +101,21 @@ class RangeDriftDetector:
                 features_ranges = set(X.dropna().unique())
 
         if isinstance(X, pd.DataFrame):
-            num_cols = [
-                col for col in X.columns if pd.api.types.is_numeric_dtype(X[col])
-            ]
+            num_cols = [col for col in X.columns if pd.api.types.is_numeric_dtype(X[col])]
             cat_cols = [col for col in X.columns if col not in num_cols]
 
             features_ranges = {}
-            features_ranges.update(
-                {col: (X[col].min(), X[col].max()) for col in num_cols}
-            )
-            features_ranges.update(
-                {col: set(X[col].dropna().unique()) for col in cat_cols}
-            )
+            features_ranges.update({col: (X[col].min(), X[col].max()) for col in num_cols})
+            features_ranges.update({col: set(X[col].dropna().unique()) for col in cat_cols})
 
         return features_ranges
 
     @classmethod
-    def _check_feature_range(
-        cls, feature_range: tuple | set, X: pd.Series | np.ndarray
-    ) -> bool:
+    def _check_features_range(
+        cls,
+        features_ranges: dict, 
+        X: pd.DataFrame | pd.Series,
+    ) -> list[str]:
         """
         Check if there is any value outside the training range. For numeric features,
         it checks if the values are within the min and max range. For categorical features,
@@ -117,39 +123,50 @@ class RangeDriftDetector:
 
         Parameters
         ----------
-        feature_range : tuple, set
-            Output from _get_features_range() for a single feature.
-        X : pd.Series, np.ndarray
+        features_ranges : dict
+            Output from _get_features_range()
+        X : pd.DataFrame, pd.Series
             New data to validate
 
         Returns
         -------
-        bool
-            True if there is any value outside the training range, False otherwise.
+        not_compliant_features : list[str]
+            List of features with values outside the training range.
         """
 
-        if isinstance(feature_range, tuple):
-            return X.min() < feature_range[0] or X.max() > feature_range[1]
-        else:
-            unseen = set(X.unique()) - feature_range
-            return bool(unseen)
+        if isinstance(X, pd.Series):
+            X = X.to_frame()
 
+        not_compliant_features = []
+        for col in set(X.columns).intersection(features_ranges.keys()):
+            print(col)
+            rule = features_ranges[col]
+            if isinstance(rule, tuple):
+                if X[col].min() < rule[0] or X[col].max() > rule[1]:
+                    not_compliant_features.append(col)
+            else:
+                unseen = set(X[col].unique()) - rule
+                if unseen:
+                    not_compliant_features.append(col)
+            
+        return not_compliant_features
+                
     @classmethod
     def _display_warnings(
-        cls,
-        not_compliant_feature: str,
-        feature_range: tuple | set,
-        series_name: str = None,
+        cls, 
+        not_compliant_features: list[str],
+        feature_values_range: dict,
+        series_name: str = None
     ) -> None:
         """
         Display warnings for features with values outside the training range.
 
         Parameters
         ----------
-        not_compliant_feature : str
-            Name of the feature with values outside the training range.
-        feature_range : tuple | set
-            Training range of the feature.
+        not_compliant_features : list[str]
+            List of feature names with values outside the training range.
+        feature_values_range : dict
+            Dictionary with the training ranges of the features.
         series_name : str, optional
             Name of the series being checked, if applicable.
 
@@ -158,34 +175,33 @@ class RangeDriftDetector:
         None
 
         """
-        if isinstance(feature_range, tuple):  # numeric
-            msg = (
-                f"'{not_compliant_feature}' has one or more values outside the range seen during training "
-                f"[{feature_range[0]:.5f}, {feature_range[1]:.5f}]. "
-                f"This may affect the accuracy of the predictions."
-            )
-        else:  # categorical
-            msg = (
-                f"'{not_compliant_feature}' has values not seen during training. Seen values: "
-                f"{feature_range}. This may affect the accuracy of the predictions."
-            )
+        for feature in not_compliant_features:
+            rule = feature_values_range[feature]
+            if isinstance(rule, tuple):  # numeric
+                msg = (
+                    f"'{feature}' has one or more values outside the range seen during training "
+                    f"[{rule[0]:.5f}, {rule[1]:.5f}]. "
+                    f"This may affect the accuracy of the predictions."
+                )
+            else:  # categorical
+                msg = (
+                    f"'{feature}' has values not seen during training. Seen values: "
+                    f"{rule}. This may affect the accuracy of the predictions."
+                )
 
-        if series_name:
-            msg = f"'{series_name}': " + msg
+            if series_name:
+                msg = f"'{series_name}': " + msg
+            
+            warnings.warn(msg, FeatureOutOfRangeWarning)
 
-        warnings.warn(msg, FeatureOutOfRangeWarning)
-
-    @classmethod
-    def _normalize_input(cls, X, name: str) -> dict:
+    def _normalize_input(self, X, name: str) -> dict:
         """
         Convert pd.Series, pd.DataFrame or dict into a standardized dict of
         pd.Series or pd.DataFrames.
         """
         if isinstance(X, pd.Series):
             if not X.name:
-                raise ValueError(
-                    f"{name} must have a name when a pandas Series is provided."
-                )
+                raise ValueError(f"{name} must have a name when a pandas Series is provided.")
             X = {X.name: X}
 
         if isinstance(X, pd.DataFrame):
@@ -196,31 +212,32 @@ class RangeDriftDetector:
                         warnings.warn(
                             f"`{name}` DataFrame has multiple columns. Only the first column "
                             f"'{col}' will be used. Others ignored.",
-                            IgnoredArgumentWarning,
+                            IgnoredArgumentWarning
                         )
                     X = {
                         series_id: X.loc[series_id][col].rename(series_id)
                         for series_id in X.index.levels[0]
                     }
                 else:
-                    X = {series_id: X.loc[series_id] for series_id in X.index.levels[0]}
+                    X = {
+                        series_id: X.loc[series_id]
+                        for series_id in X.index.levels[0]
+                    }
             else:
                 X = {col: X[col] for col in X.columns}
 
         if isinstance(X, dict):
             for k, v in X.items():
                 if not isinstance(v, (pd.Series, pd.DataFrame)):
-                    raise TypeError(
-                        f"All values in `{name}` must be Series or DataFrame."
-                    )
-
+                    raise TypeError(f"All values in `{name}` must be Series or DataFrame.")
+        
         return X
 
     def fit(
-        self,
-        series: pd.DataFrame | pd.Series | dict,
-        exog: pd.DataFrame | pd.Series | dict | None = None,
-    ) -> None:
+            self,
+            series: pd.DataFrame | pd.Series | dict,
+            exog: pd.DataFrame | pd.Series | dict | None = None
+        ) -> None:
         """
         Fit detector, storing training ranges.
 
@@ -245,12 +262,11 @@ class RangeDriftDetector:
 
         if not isinstance(series, (pd.DataFrame, pd.Series, dict)):
             raise TypeError("Input must be a pandas DataFrame, Series or dict.")
-
+        
         if not isinstance(exog, (pd.DataFrame, pd.Series, dict, type(None))):
-            raise TypeError(
-                "Exogenous variables must be a pandas DataFrame, Series or dict."
-            )
+            raise TypeError("Exogenous variables must be a pandas DataFrame, Series or dict.")
 
+        self.series_dtypes_in_ = type(series)
         series = self._normalize_input(series, name="series")
         for key, value in series.items():
             if not isinstance(value, (pd.Series, pd.DataFrame)):
@@ -259,6 +275,7 @@ class RangeDriftDetector:
             self.series_names_in_.append(key)
 
         if exog is not None:
+            self.exog_dtypes_in_ = type(exog)
             exog = self._normalize_input(exog, name="exog")
             for key, value in exog.items():
                 if not isinstance(value, (pd.Series, pd.DataFrame)):
@@ -279,7 +296,7 @@ class RangeDriftDetector:
     def predict(
         self,
         last_window: pd.Series | pd.DataFrame | dict | None = None,
-        exog: pd.Series | pd.DataFrame | dict | None = None,
+        exog: pd.Series | pd.DataFrame | dict | None = None
     ) -> None:
         """
         Check if there is any value outside the training range for last_window and exog.
@@ -287,7 +304,7 @@ class RangeDriftDetector:
         Parameters
         ----------
         last_window : pandas Series, pandas DataFrame, default None
-            Series values used to create the predictors (lags) needed in the
+            Series values used to create the predictors (lags) needed in the 
             first iteration of the prediction (t + 1).
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
@@ -298,51 +315,57 @@ class RangeDriftDetector:
             raise RuntimeError("Model is not fitted yet.")
 
         if not isinstance(last_window, (pd.DataFrame, pd.Series, dict, type(None))):
-            raise TypeError(
-                "last_window must be a pandas DataFrame, Series, dict or None."
-            )
-
+            raise TypeError("last_window must be a pandas DataFrame, Series, dict or None.")
+        
         if not isinstance(exog, (pd.DataFrame, pd.Series, dict, type(None))):
-            raise TypeError(
-                "Exogenous variables must be a pandas DataFrame, Series, dict or None."
-            )
+            raise TypeError("Exogenous variables must be a pandas DataFrame, Series, dict or None.")
+    
 
         if last_window is not None:
-            last_window = self._normalize_input(last_window, name="last_window")
-            for key, value in last_window.items():
-                if isinstance(value, pd.Series):
-                    value = value.to_frame()
-                for col in value.columns:
-                    out_of_range = self._check_feature_range(
-                        feature_range=self.series_values_range_[col], X=value[col]
-                    )
-                    if out_of_range:
-                        self._display_warnings(
-                            not_compliant_feature=col,
-                            feature_range=self.series_values_range_[col],
-                            series_name=None,
-                        )
 
+            last_window = self._normalize_input(last_window, name="last_window")
+            #print(last_window)
+            not_compliant_features = []
+
+            for key, value in last_window.items():
+                
+                print(key)
+                print(value)
+                features_ranges=self.series_values_range_[key]
+                print(features_ranges)
+                if not isinstance(features_ranges, dict):
+                    features_ranges = {key: features_ranges}
+
+                not_compliant = self._check_features_range(
+                    features_ranges=features_ranges,
+                    X=value
+                )
+                print(not_compliant)
+                not_compliant_features.extend(not_compliant)
+
+            print(not_compliant_features)
+            print(self.series_values_range_)
+            self._display_warnings(
+                not_compliant_features=not_compliant_features,
+                feature_values_range=self.series_values_range_,
+                series_name=None
+            )
+
+           
         if exog is not None:
             exog = self._normalize_input(exog, name="exog")
             for key, value in exog.items():
-                if isinstance(value, pd.Series):
-                    value = value.to_frame()
-                features_ranges = self.exog_values_range_.get(key, None)
-                for col in value.columns:
-                    if not isinstance(features_ranges, dict):
-                        is_single_series = True
-                        features_ranges = {key: features_ranges}
-                    else:
-                        is_single_series = False
-                    not_compliant_features = self._check_feature_range(
-                        feature_range=features_ranges[col], X=value[col]
-                    )
-                    if not_compliant_features:
-                        self._display_warnings(
-                            not_compliant_feature=col,
-                            feature_range=features_ranges[col],
-                            series_name=key if not is_single_series else None,
-                        )
+                features_ranges = self.exog_values_range_[key]
+                if not isinstance(features_ranges, dict):
+                    features_ranges = {key: features_ranges}
+                not_compliant_features = self._check_features_range(
+                    features_ranges=features_ranges,
+                    X=value
+                )
+            self._display_warnings(
+                not_compliant_features=not_compliant_features,
+                feature_values_range=features_ranges,
+                series_name=key
+            )
 
         return
