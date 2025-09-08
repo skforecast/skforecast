@@ -531,7 +531,6 @@ def backtesting_gif_creator(
             for fold in folds
         ]
 
-    # --------- Paleta y límites ----------
     if colors is None:
         colors = {
             "train": "#329239",
@@ -547,26 +546,22 @@ def backtesting_gif_creator(
                 f"{['train', 'last_window', 'gap', 'test', 'v_lines']}"
             )
 
-    # Límites Y comunes para evitar 'saltos' entre frames
     y_values = data[series_to_plot].to_numpy().flatten()
     y_min, y_max = np.nanmin(y_values), np.nanmax(y_values)
 
-    # Margen visual
+    # Include some padding to y-axis limits
     y_pad = 0.05 * (y_max - y_min if np.isfinite(y_max - y_min) and (y_max - y_min) > 0 else 1.0)
     y_min_plot = (y_min - y_pad) if np.isfinite(y_min) else -1
     y_max_plot = (y_max + y_pad) if np.isfinite(y_max) else 1
 
-    # --------- Figura base ----------
     with plt.style.context(plt_style):
         fig, ax = plt.subplots(figsize=figsize)
 
-        # Para ejes X (Datetimes vs Rangos)
         x_index = data.index
 
         def _draw_fold(ax, fold, title: str):
             ax.clear()
 
-            # Series completas en fondo
             for col in series_to_plot:
                 ax.plot(
                     x_index,
@@ -579,7 +574,6 @@ def backtesting_gif_creator(
             y_min_relative = (y_min - y_min_plot) / (y_max_plot - y_min_plot)
             y_max_relative = (y_max - y_min_plot) / (y_max_plot - y_min_plot)
 
-            # Rellenos: usamos axvspan (más robusto que fill_between para rangos)
             # Train
             train_start, train_end = fold[1]
             ax.axvspan(
@@ -614,7 +608,7 @@ def backtesting_gif_creator(
                         label="Last window",
                     )
 
-            # Gap (si existe)
+            # Gap (if exists)
             gap_start = fold[3][0]
             gap_end = fold[4][0]
             if gap_start != gap_end:
@@ -655,22 +649,17 @@ def backtesting_gif_creator(
                     color=colors["v_lines"],
                 )
 
-            # marcas
             vline(ax, train_end)
             vline(ax, test_start)
 
-            # Límites, leyenda y título
             ax.set_ylim(y_min_plot, y_max_plot)
             ax.set_title(title)
             ax.legend(loc="upper left")
             ax.grid(True, alpha=0.8)
 
-            # Formato X: dejamos que Matplotlib elija; si quieres años, se puede añadir DateFormatter.
-            # Si el índice es RangeIndex, etiquetado por defecto funciona bien.
-
-        # --------- Funciones de animación ----------
+        # --------- Animation functions ----------
         def init():
-            # Dibujo del primer fold como estado inicial
+            # Draw the first fold as the initial state
             _draw_fold(ax, folds[0], title=title_template.format(fold_num=1, refit=0))
             return (ax,)
 
@@ -682,7 +671,7 @@ def backtesting_gif_creator(
             _draw_fold(ax, fold, title=title)
             return (ax,)
 
-        # --------- Construcción y guardado ----------
+        # --------- Construction and saving ----------
         # Add extra folds for pause at the end
         n_extra = 2
         for i in range(n_extra):
@@ -693,11 +682,11 @@ def backtesting_gif_creator(
             update,
             frames=len(folds),
             init_func=init,
-            blit=False,       # blit=False es más estable con spans/leyendas
+            blit=False, 
             repeat=False
         )
 
-        # Guardar GIF
+        # Save GIF
         writer = PillowWriter(fps=max(1, int(fps)))
         ani.save(Path(filename).with_suffix('.gif'), writer=writer, dpi=dpi)
         plt.close(fig)

@@ -18,6 +18,8 @@ The main changes in this release are:
 
 + <span class="badge text-bg-feature">Feature</span> New function <code>[backtesting_gif_creator]</code> in the <code>[plot]</code> module to create a gif that visualizes the backtesting process. 
 
++ <span class="badge text-bg-feature">API Change</span> Backtesting functions output DataFrame now includes a `fold` column to identify the fold number of each prediction.
+
 + <span class="badge text-bg-danger">Fix</span> Fixed a bug that caused the gap to not be applied correctly in the <code>[backtesting_forecaster_multiseries]</code> function. ([#1028](https://github.com/skforecast/skforecast/issues/1028))
 
 
@@ -30,6 +32,7 @@ The main changes in this release are:
 
 **Changed**
 
++ Backtesting functions output DataFrame now includes a `fold` column to identify the fold number of each prediction.
 
 **Fixed**
 
