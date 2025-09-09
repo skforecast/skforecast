@@ -8,7 +8,13 @@
 import pandas as pd
 import numpy as np
 import warnings
-from ..exceptions import FeatureOutOfRangeWarning, IgnoredArgumentWarning
+from ..exceptions import (
+    FeatureOutOfRangeWarning,
+    IgnoredArgumentWarning,
+    MissingExogWarning,
+    UnknownLevelWarning
+)
+from ..utils import set_skforecast_warnings
 
 
 class RangeDriftDetector:
@@ -37,11 +43,11 @@ class RangeDriftDetector:
     """
 
     def __init__(self):
-        self.series_names_in_ = []
-        self.series_values_range_ = {}
-        self.exog_names_in_ = []
-        self.exog_values_range_ = {}
-        self.is_fitted_ = False
+        self.series_names_in_     = None
+        self.series_values_range_ = None
+        self.exog_names_in_       = None
+        self.exog_values_range_   = None
+        self.is_fitted_           = False
 
     def __repr__(self) -> str:
         """
@@ -91,6 +97,7 @@ class RangeDriftDetector:
                 features_ranges = set(X.dropna().unique())
 
         if isinstance(X, pd.DataFrame):
+            # TODO: check if max, min, unique are computed in batch (apply to full dataframe)
             num_cols = [
                 col for col in X.columns if pd.api.types.is_numeric_dtype(X[col])
             ]
@@ -178,6 +185,62 @@ class RangeDriftDetector:
         warnings.warn(msg, FeatureOutOfRangeWarning)
 
     @classmethod
+    def _summary(
+        cls,
+        out_of_range_series: list,
+        out_of_range_series_ranges: list,
+        out_of_range_exog: list,
+        out_of_range_exog_ranges: list,
+        out_of_range_series_id: list,
+    ):
+        """
+        Summarize the results of the range check.
+
+        Parameters
+        ----------
+        out_of_range_series : list
+            List of series names that are out of range.
+        out_of_range_series_ranges : list
+            List of ranges for the out-of-range series.
+        out_of_range_exog : list
+            List of exogenous variable names that are out of range.
+        out_of_range_exog_ranges : list
+            List of ranges for the out-of-range exogenous variables.
+        out_of_range_series_id : list
+            List of series IDs for the out-of-range exogenous variables. This is
+            used when exogenous variables are different for each series.
+        """
+        
+        msg = ""
+        if out_of_range_series:
+            msg += "Out-of-range series in 'last_window':\n"
+            msg += "-------------------------------------\n"
+            for series, series_range in zip(
+                out_of_range_series, out_of_range_series_ranges
+            ):
+                msg = (
+                    f"'{series}' has one or more values outside the range seen during training "
+                    f"[{series_range[0]:.5f}, {series_range[1]:.5f}]. \n"
+                )
+                msg += msg
+
+        if out_of_range_exog:
+            msg += "Out-of-range exogenous variables in 'exog':\n"
+            msg += "-------------------------------------------\n"
+            for exog, exog_range, series_id in zip(
+                out_of_range_exog, out_of_range_exog_ranges, out_of_range_series_id
+            ):
+                msg = (
+                    f"'{exog}' has one or more values outside the range seen during training "
+                    f"[{exog_range[0]:.5f}, {exog_range[1]:.5f}]. \n"
+                )
+                if series_id:
+                    msg = f"'{series_id}': " + msg
+                msg += msg
+
+        return msg
+
+    @classmethod
     def _normalize_input(cls, X, name: str) -> dict:
         """
         Convert pd.Series, pd.DataFrame or dict into a standardized dict of
@@ -190,7 +253,7 @@ class RangeDriftDetector:
                 )
             X = {X.name: X}
 
-        if isinstance(X, pd.DataFrame):
+        elif isinstance(X, pd.DataFrame):
             if isinstance(X.index, pd.MultiIndex):
                 if name in ["series", "last_window"]:
                     col = X.columns[0]
@@ -207,9 +270,10 @@ class RangeDriftDetector:
                 else:
                     X = {series_id: X.loc[series_id] for series_id in X.index.levels[0]}
             else:
+                # TODO: check if dataframe to dict is faster
                 X = {col: X[col] for col in X.columns}
 
-        if isinstance(X, dict):
+        elif isinstance(X, dict):
             for k, v in X.items():
                 if not isinstance(v, (pd.Series, pd.DataFrame)):
                     raise TypeError(
@@ -217,7 +281,8 @@ class RangeDriftDetector:
                     )
 
         return X
-
+    
+    # TODO: how to add a alias for y and series?
     def fit(
         self,
         series: pd.DataFrame | pd.Series | dict,
@@ -241,9 +306,9 @@ class RangeDriftDetector:
         """
 
         self.series_values_range_ = {}
-        self.exog_values_range_ = {}
-        self.series_names_in_ = []
-        self.exog_names_in_ = []
+        self.series_names_in_     = []
+        self.exog_values_range_   = None
+        self.exog_names_in_       = None
 
         if not isinstance(series, (pd.DataFrame, pd.Series, dict)):
             raise TypeError("Input must be a pandas DataFrame, Series or dict.")
@@ -255,23 +320,23 @@ class RangeDriftDetector:
 
         series = self._normalize_input(series, name="series")
         for key, value in series.items():
-            if not isinstance(value, (pd.Series, pd.DataFrame)):
-                raise TypeError("All values in `series` must be DataFrame or Series.")
             self.series_values_range_[key] = self._get_features_range(X=value)
             self.series_names_in_.append(key)
 
         if exog is not None:
+
             exog = self._normalize_input(exog, name="exog")
-            for key, value in exog.items():
-                if not isinstance(value, (pd.Series, pd.DataFrame)):
-                    raise TypeError("All values in `exog` must be DataFrame or Series.")
-                self.exog_values_range_[key] = self._get_features_range(X=value)
+
+            self.exog_values_range_ = {}
             self.exog_names_in_ = []
+
             for key, value in exog.items():
+                self.exog_values_range_[key] = self._get_features_range(X=value)
                 if isinstance(value, pd.Series):
                     self.exog_names_in_.append(key)
                 else:
                     self.exog_names_in_.extend(value.columns)
+
             self.exog_names_in_ = list(dict.fromkeys(self.exog_names_in_))
 
         self.is_fitted_ = True
@@ -282,17 +347,32 @@ class RangeDriftDetector:
         self,
         last_window: pd.Series | pd.DataFrame | dict | None = None,
         exog: pd.Series | pd.DataFrame | dict | None = None,
-    ) -> None:
+        verbose: bool = True,
+        suppress_warnings: bool = False,
+    ) -> tuple[bool, list, list]:
         """
         Check if there is any value outside the training range for last_window and exog.
 
         Parameters
         ----------
-        last_window : pandas Series, pandas DataFrame, default None
+        last_window : pandas Series, pandas DataFrame, dict, default None
             Series values used to create the predictors (lags) needed in the
             first iteration of the prediction (t + 1).
-        exog : pandas Series, pandas DataFrame, default None
+        exog : pandas Series, pandas DataFrame, dict, default None
             Exogenous variable/s included as predictor/s.
+        verbose : bool, default False
+            Whether to print a summary of the check.
+        suppress_warnings : bool, default False
+            Whether to suppress warnings.
+
+        Returns
+        -------
+        flag_out_of_range : bool
+            True if there is any value outside the training range, False otherwise.
+        out_of_range_series : list
+            List of series names that are out of range.
+        out_of_range_exog : list
+            List of exogenous variable names that are out of range.
 
         """
 
@@ -308,7 +388,12 @@ class RangeDriftDetector:
             raise TypeError(
                 "Exogenous variables must be a pandas DataFrame, Series, dict or None."
             )
-
+        
+        set_skforecast_warnings(suppress_warnings, action='ignore')
+        
+        flag_out_of_range = False
+        out_of_range_series = []
+        out_of_range_series_ranges = []
         if last_window is not None:
             last_window = self._normalize_input(last_window, name="last_window")
             for key, value in last_window.items():
@@ -318,19 +403,25 @@ class RangeDriftDetector:
                     if key not in self.series_names_in_:
                         warnings.warn(
                             f"'{key}' was not seen during training. Its range is unknown.",
-                            FeatureOutOfRangeWarning,
+                            UnknownLevelWarning,
                         )
                         continue
-                    out_of_range = self._check_feature_range(
+                    is_out_of_range = self._check_feature_range(
                         feature_range=self.series_values_range_[col], X=value[col]
                     )
-                    if out_of_range:
+                    if is_out_of_range:
+                        flag_out_of_range = True
+                        out_of_range_series.append(col)
+                        out_of_range_series_ranges.append(self.series_values_range_[col])
                         self._display_warnings(
                             not_compliant_feature=col,
                             feature_range=self.series_values_range_[col],
                             series_name=None,
                         )
 
+        out_of_range_series_id = []
+        out_of_range_exog = []
+        out_of_range_exog_ranges = []
         if exog is not None:
             exog = self._normalize_input(exog, name="exog")
             for key, value in exog.items():
@@ -346,17 +437,36 @@ class RangeDriftDetector:
                     if col not in self.exog_names_in_:
                         warnings.warn(
                             f"'{col}' was not seen during training. Its range is unknown.",
-                            FeatureOutOfRangeWarning,
+                            MissingExogWarning,
                         )
                         continue
-                    not_compliant_features = self._check_feature_range(
+                    is_out_of_range = self._check_feature_range(
                         feature_range=features_ranges[col], X=value[col]
                     )
-                    if not_compliant_features:
+                    if is_out_of_range:
+                        flag_out_of_range = True
+                        out_of_range_exog.append(col)
+                        out_of_range_exog_ranges.append(features_ranges[col])
+                        out_of_range_series_id.append(key if not is_single_series else col)
                         self._display_warnings(
                             not_compliant_feature=col,
                             feature_range=features_ranges[col],
                             series_name=key if not is_single_series else None,
                         )
 
-        return
+        if verbose:
+            msg = self._summary(
+                out_of_range_series,
+                out_of_range_series_ranges,
+                out_of_range_exog,
+                out_of_range_exog_ranges,
+                out_of_range_series_id
+            )
+            if msg != "":
+                print(msg)
+            else:
+                print("All series and exogenous variables are within the training range.")
+
+        set_skforecast_warnings(suppress_warnings, action='default')
+
+        return flag_out_of_range, out_of_range_series, out_of_range_exog
