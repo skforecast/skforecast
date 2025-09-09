@@ -97,7 +97,6 @@ class RangeDriftDetector:
                 features_ranges = set(X.dropna().unique())
 
         if isinstance(X, pd.DataFrame):
-            # TODO: check if max, min, unique are computed in batch (apply to full dataframe)
             num_cols = [
                 col for col in X.columns if pd.api.types.is_numeric_dtype(X[col])
             ]
@@ -270,8 +269,7 @@ class RangeDriftDetector:
                 else:
                     X = {series_id: X.loc[series_id] for series_id in X.index.levels[0]}
             else:
-                # TODO: check if dataframe to dict is faster
-                X = {col: X[col] for col in X.columns}
+                X = X.to_dict(orient="series")
 
         elif isinstance(X, dict):
             for k, v in X.items():
@@ -282,11 +280,11 @@ class RangeDriftDetector:
 
         return X
     
-    # TODO: how to add a alias for y and series?
     def fit(
         self,
         series: pd.DataFrame | pd.Series | dict,
         exog: pd.DataFrame | pd.Series | dict | None = None,
+        **kwargs
     ) -> None:
         """
         Fit detector, storing training ranges.
@@ -304,6 +302,18 @@ class RangeDriftDetector:
         None
 
         """
+
+        # Deprecation of 'y' argument in favor of 'series'
+        if 'y' in kwargs:
+            if series is not None:
+                raise TypeError("Cannot specify both 'series' and 'y'")
+            import warnings
+            warnings.warn(
+                "'y' is deprecated, use 'series' instead",
+                DeprecationWarning,
+                stacklevel=2
+            )
+            series = kwargs.pop('y')
 
         self.series_values_range_ = {}
         self.series_names_in_     = []
