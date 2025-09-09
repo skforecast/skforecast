@@ -4,11 +4,25 @@ All significant changes to this project are documented in this release file.
 
 | Legend                                                     |                                       |
 |:-----------------------------------------------------------|:--------------------------------------|
-| <span class="badge text-bg-feature">Feature</span>         | New feature                           |
+| +        | New feature                           |
 | <span class="badge text-bg-enhancement">Enhancement</span> | Improvement in existing functionality |
 | <span class="badge text-bg-api-change">API Change</span>   | Changes in the API                    |
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
+
+## 0.18.0 <small>Aug 11, 2025</small> { id="0.18.0" }
+
+The main changes in this release are:
+
+**Added**
+
++ <span class="badge text-bg-feature">Feature</span>  New function <code>[show_all_datasets_info]</code> to display information about all available datasets.
+
+
+**Changed**
+
+
+**Fixed**
 
 ## 0.17.0 <small>Aug 11, 2025</small> { id="0.17.0" }
 
@@ -1269,6 +1283,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [datasets]: ../api/datasets.html
 [fetch_dataset]: ../api/datasets.html#skforecast.datasets.fetch_dataset
 [load_demo_dataset]: ../api/datasets.html#skforecast.datasets.load_demo_dataset
+[show_all_datasets_info]: ../api/datasets.html#skforecast.datasets.show_all_datasets_info
 
 <!-- exceptions -->
 [exceptions]: ../api/exceptions.html
