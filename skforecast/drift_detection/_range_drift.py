@@ -282,7 +282,7 @@ class RangeDriftDetector:
     
     def fit(
         self,
-        series: pd.DataFrame | pd.Series | dict,
+        series: pd.DataFrame | pd.Series | dict | None = None,
         exog: pd.DataFrame | pd.Series | dict | None = None,
         **kwargs
     ) -> None:
@@ -307,11 +307,9 @@ class RangeDriftDetector:
         if 'y' in kwargs:
             if series is not None:
                 raise TypeError("Cannot specify both 'series' and 'y'")
-            import warnings
             warnings.warn(
                 "'y' is deprecated, use 'series' instead",
                 DeprecationWarning,
-                stacklevel=2
             )
             series = kwargs.pop('y')
 
@@ -358,7 +356,7 @@ class RangeDriftDetector:
         last_window: pd.Series | pd.DataFrame | dict | None = None,
         exog: pd.Series | pd.DataFrame | dict | None = None,
         verbose: bool = True,
-        suppress_warnings: bool = False,
+        suppress_warnings: bool = True,
     ) -> tuple[bool, list, list]:
         """
         Check if there is any value outside the training range for last_window and exog.
@@ -429,7 +427,7 @@ class RangeDriftDetector:
                             series_name=None,
                         )
 
-        out_of_range_series_id = []
+        out_of_range_exog_series_id = []
         out_of_range_exog = []
         out_of_range_exog_ranges = []
         if exog is not None:
@@ -457,7 +455,7 @@ class RangeDriftDetector:
                         flag_out_of_range = True
                         out_of_range_exog.append(col)
                         out_of_range_exog_ranges.append(features_ranges[col])
-                        out_of_range_series_id.append(key if not is_single_series else col)
+                        out_of_range_exog_series_id.append(key if not is_single_series else col)
                         self._display_warnings(
                             not_compliant_feature=col,
                             feature_range=features_ranges[col],
@@ -470,7 +468,7 @@ class RangeDriftDetector:
                 out_of_range_series_ranges,
                 out_of_range_exog,
                 out_of_range_exog_ranges,
-                out_of_range_series_id
+                out_of_range_exog_series_id
             )
             if msg != "":
                 print(msg)
