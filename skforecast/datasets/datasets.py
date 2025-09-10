@@ -632,15 +632,33 @@ datasets = {
 }
 
 
-def show_datasets_info(subsets = []version: str = 'latest') -> None:
+def show_datasets_info(
+        datasets_names: list[str] | None = None,
+        version: str = 'latest'
+) -> None:
     """
-    Print information about all available datasets.
+    Print information about available datasets. If `datasets_names` is provided,
+    only information about those datasets will be printed.
+
+    Parameters
+    ----------
+    datasets_names: list[str] | None, default None
+        List of dataset names to display information about. If None, information about all datasets
+        will be displayed.
+    version: str
+        Version of the datasets to display information about.
     """
+    datasets_names = datasets_names or datasets.keys()
     version = 'main' if version == 'latest' else f'{version}'
 
-    for dataset_name in datasets.keys():
-        if dataset_name in 
-        _print_dataset_info(dataset_name, version=version)
+    for dataset_name in datasets_names:
+        if dataset_name in datasets:
+            _print_dataset_info(dataset_name, version=version)
+        else:
+            print(
+                f"Dataset '{dataset_name}' not available."
+                f"Set argument datasets_names to None to see all available datasets."
+            )
 
 
 def _print_dataset_info(
@@ -679,7 +697,7 @@ def _print_dataset_info(
     )
 
     if shape is not None:
-        content += f"\n\n[bold]Shape:[/bold] {shape}"
+        content += f"\n\n[bold]Shape:[/bold] {shape[0]} rows x {shape[1]} columns"
 
     console.print(Panel(content, title=f"[bold]{dataset_name}[/bold]", expand=False))
 
@@ -776,7 +794,7 @@ def fetch_dataset(
             pass
     
     if verbose:
-        print_dataset_info(name, version=version, shape=df.shape)
+        _print_dataset_info(name, version=version, shape=df.shape)
 
     return df
 

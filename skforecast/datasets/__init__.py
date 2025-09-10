@@ -1,1 +1,1 @@
-from .datasets import datasets, fetch_dataset, load_demo_dataset, show_all_datasets_info
+from .datasets import datasets, fetch_dataset, load_demo_dataset, show_datasets_info
