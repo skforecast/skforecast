@@ -28,8 +28,8 @@ def test_extract_data_folds_multiseries_series_DataFrame_exog_None_RangeIndex(dr
 
     # Train, last_window, test_no_gap
     folds = [
-        [[0, 30], [25, 30], [30, 37]], 
-        [[0, 35], [30, 35], [35, 42]]
+        [0, [0, 30], [25, 30], [30, 37], True], 
+        [1, [0, 35], [30, 35], [35, 42], True]
     ]
     span_index = pd.RangeIndex(start=0, stop=50, step=1)
     window_size = 5
@@ -116,8 +116,8 @@ def test_extract_data_folds_multiseries_series_DataFrame_with_NaN_exog_RangeInde
 
     # Train, last_window, test_no_gap
     folds = [
-        [[0, 30], [25, 30], [30, 37]], 
-        [[0, 35], [30, 35], [35, 42]]
+        [0, [0, 30], [25, 30], [30, 37], True], 
+        [1, [0, 35], [30, 35], [35, 42], True]
     ]
     span_index = pd.RangeIndex(start=0, stop=50, step=1)
     window_size = 5
@@ -223,8 +223,8 @@ def test_extract_data_folds_multiseries_series_DataFrame_with_NaN_exog_DatetimeI
 
     # Train, last_window, test_no_gap
     folds = [
-        [[0, 30], [25, 30], [30, 37]], 
-        [[0, 35], [30, 35], [35, 42]]
+        [0, [0, 30], [25, 30], [30, 37], True], 
+        [1, [0, 35], [30, 35], [35, 42], True]
     ]
     span_index = pd.date_range(start='2020-01-01', periods=50, freq='D')
     window_size = 5
@@ -348,8 +348,8 @@ def test_extract_data_folds_multiseries_series_dict_exog_dict_DatetimeIndex(drop
 
     # Train, last_window, test_no_gap
     folds = [
-        [[0, 30], [25, 30], [30, 37]], 
-        [[0, 35], [30, 35], [35, 42]]
+        [0, [0, 30], [25, 30], [30, 37], True], 
+        [1, [0, 35], [30, 35], [35, 42], True]
     ]
     span_index = pd.date_range(start='2020-01-01', periods=50, freq='D')
     window_size = 5
@@ -538,8 +538,8 @@ def test_extract_data_folds_multiseries_series_dict_exog_dict_DatetimeIndex_with
 
     # Train, last_window, test_no_gap
     folds = [
-        [[0, 30], [25, 30], [30, 37]], 
-        [[0, 35], [30, 35], [35, 42]]
+        [0, [0, 30], [25, 30], [30, 37], True], 
+        [1, [0, 35], [30, 35], [35, 42], True]
     ]
     span_index = pd.date_range(start='2020-01-01', periods=50, freq='D')
     window_size = 5

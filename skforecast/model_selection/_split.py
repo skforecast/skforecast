@@ -33,6 +33,15 @@ class BaseFold():
         - If an integer, the number of observations used for initial training.
         - If a date string or pandas Timestamp, it is the last date included in 
         the initial training set.
+    fold_stride : int, default None
+        Number of observations that the start of the test set advances between
+        consecutive folds.
+
+        - If `None`, it defaults to the same value as `steps`, meaning that folds
+        are placed back-to-back without overlap.
+        - If `fold_stride < steps`, test sets overlap and multiple forecasts will
+        be generated for the same observations.
+        - If `fold_stride > steps`, gaps are left between consecutive test sets.
     window_size : int, default None
         Number of observations needed to generate the autoregressive predictors.
     differentiation : int, default None
@@ -69,9 +78,6 @@ class BaseFold():
 
     Attributes
     ----------
-    steps : int
-        Number of observations used to be predicted in each fold. This is also commonly
-        referred to as the forecast horizon or test size.
     initial_train_size : int
         Number of observations used for initial training.
     window_size : int
@@ -79,17 +85,6 @@ class BaseFold():
     differentiation : int
         Number of observations to use for differentiation. This is used to extend the
         `last_window` as many observations as the differentiation order.
-    refit : bool, int
-        Whether to refit the forecaster in each fold.
-    fixed_train_size : bool
-        Whether the training size is fixed or increases in each fold.
-    gap : int
-        Number of observations between the end of the training set and the start of the
-        test set.
-    skip_folds : int, list
-        Number of folds to skip.
-    allow_incomplete_fold : bool
-        Whether to allow the last fold to include fewer observations than `steps`.
     return_all_indexes : bool
         Whether to return all indexes or only the start and end indexes of each fold.
     verbose : bool
@@ -101,6 +96,7 @@ class BaseFold():
         self,
         steps: int | None = None,
         initial_train_size: int | str | pd.Timestamp | None = None,
+        fold_stride: int | None = None,
         window_size: int | None = None,
         differentiation: int | None = None,
         refit: bool | int = False,
@@ -116,6 +112,7 @@ class BaseFold():
             cv_name               = type(self).__name__,
             steps                 = steps,
             initial_train_size    = initial_train_size,
+            fold_stride           = fold_stride,
             window_size           = window_size,
             differentiation       = differentiation,
             refit                 = refit,
@@ -127,23 +124,18 @@ class BaseFold():
             verbose               = verbose
         )
 
-        self.steps                 = steps
-        self.initial_train_size    = initial_train_size
-        self.window_size           = window_size
-        self.differentiation       = differentiation
-        self.refit                 = refit
-        self.fixed_train_size      = fixed_train_size
-        self.gap                   = gap
-        self.skip_folds            = skip_folds
-        self.allow_incomplete_fold = allow_incomplete_fold
-        self.return_all_indexes    = return_all_indexes
-        self.verbose               = verbose
+        self.initial_train_size = initial_train_size
+        self.window_size        = window_size
+        self.differentiation    = differentiation
+        self.return_all_indexes = return_all_indexes
+        self.verbose            = verbose
 
     def _validate_params(
         self,
         cv_name: str,
         steps: int | None = None,
         initial_train_size: int | str | pd.Timestamp | None = None,
+        fold_stride: int | None = None,
         window_size: int | None = None,
         differentiation: int | None = None,
         refit: bool | int = False,
@@ -152,7 +144,8 @@ class BaseFold():
         skip_folds: int | list[int] | None = None,
         allow_incomplete_fold: bool = True,
         return_all_indexes: bool = False,
-        verbose: bool = True
+        verbose: bool = True,
+        **kwargs
     ) -> None: 
         """
         Validate all input parameters to ensure correctness.
@@ -173,6 +166,11 @@ class BaseFold():
                     f"`initial_train_size` must be an integer greater than 0, "
                     f"a date string, a pandas Timestamp, or None. Got {initial_train_size}."
                 )
+            if fold_stride is not None:
+                if not isinstance(fold_stride, (int, np.integer)) or fold_stride < 1:
+                    raise ValueError(
+                        f"`fold_stride` must be an integer greater than 0. Got {fold_stride}."
+                    )
             if not isinstance(refit, (bool, int, np.integer)):
                 raise TypeError(
                     f"`refit` must be a boolean or an integer equal or greater than 0. "
@@ -236,17 +234,19 @@ class BaseFold():
                 f"`window_size` must be an integer greater than 0. Got {window_size}."
             )
         
-        if not isinstance(return_all_indexes, bool):
-            raise TypeError(
-                f"`return_all_indexes` must be a boolean: `True`, `False`. "
-                f"Got {return_all_indexes}."
-            )
         if differentiation is not None:
             if not isinstance(differentiation, (int, np.integer)) or differentiation < 0:
                 raise ValueError(
                     f"`differentiation` must be None or an integer greater than or "
                     f"equal to 0. Got {differentiation}."
                 )
+            
+        if not isinstance(return_all_indexes, bool):
+            raise TypeError(
+                f"`return_all_indexes` must be a boolean: `True`, `False`. "
+                f"Got {return_all_indexes}."
+            )
+        
         if not isinstance(verbose, bool):
             raise TypeError(
                 f"`verbose` must be a boolean: `True`, `False`. "
@@ -403,18 +403,6 @@ class OneStepAheadFold(BaseFold):
         Whether to return all indexes or only the start and end indexes of each fold.
     verbose : bool
         Whether to print information about generated folds.
-    steps : Any
-        This attribute is not used in this class. It is included for API consistency.
-    fixed_train_size : Any
-        This attribute is not used in this class. It is included for API consistency.
-    gap : Any
-        This attribute is not used in this class. It is included for API consistency.
-    skip_folds : Any
-        This attribute is not used in this class. It is included for API consistency.
-    allow_incomplete_fold : Any
-        This attribute is not used in this class. It is included for API consistency.
-    refit : Any
-        This attribute is not used in this class. It is included for API consistency.
     
     """
 
@@ -509,17 +497,21 @@ class OneStepAheadFold(BaseFold):
             A list of lists containing the indices (position) of the fold. The list
             contains 2 lists with the following information:
 
+            - fold: fold number.
             - [train_start, train_end]: list with the start and end positions of the
             training set.
             - [test_start, test_end]: list with the start and end positions of the test
             set. These are the observations used to evaluate the forecaster.
+            - fit_forecaster: boolean indicating whether the forecaster should be fitted
+            in this fold.
         
             It is important to note that the returned values are the positions of the
             observations and not the actual values of the index, so they can be used to
             slice the data directly using iloc.
 
             If `as_pandas` is `True`, the folds are returned as a DataFrame with the
-            following columns: 'fold', 'train_start', 'train_end', 'test_start', 'test_end'.
+            following columns: 'fold', 'train_start', 'train_end', 'test_start', 
+            'test_end', 'fit_forecaster'.
 
             Following the python convention, the start index is inclusive and the end
             index is exclusive. This means that the last index is not included in the
@@ -543,6 +535,7 @@ class OneStepAheadFold(BaseFold):
                                   )
 
         fold = [
+            0,
             [0, self.initial_train_size - 1],
             [self.initial_train_size, len(X)],
             True
@@ -554,22 +547,25 @@ class OneStepAheadFold(BaseFold):
         # NOTE: +1 to prevent iloc pandas from deleting the last observation
         if self.return_all_indexes:
             fold = [
-                [range(fold[0][0], fold[0][1] + 1)],
-                [range(fold[1][0], fold[1][1])],
-                fold[2]
+                fold[0], 
+                [range(fold[1][0], fold[1][1] + 1)],
+                [range(fold[2][0], fold[2][1])],
+                fold[3]
             ]
         else:
             fold = [
-                [fold[0][0], fold[0][1] + 1],
-                [fold[1][0], fold[1][1]],
-                fold[2]
+                fold[0], 
+                [fold[1][0], fold[1][1] + 1],
+                [fold[2][0], fold[2][1]],
+                fold[3]
             ]
 
         if as_pandas:
             if not self.return_all_indexes:
                 fold = pd.DataFrame(
-                    data = [list(itertools.chain(*fold[:-1])) + [fold[-1]]],
+                    data = [[fold[0]] + list(itertools.chain(*fold[1:-1])) + [fold[-1]]],
                     columns = [
+                        'fold',
                         'train_start',
                         'train_end',
                         'test_start',
@@ -581,12 +577,12 @@ class OneStepAheadFold(BaseFold):
                 fold = pd.DataFrame(
                     data = [fold],
                     columns = [
+                        'fold',
                         'train_index',
                         'test_index',
                         'fit_forecaster'
                     ],
                 )
-            fold.insert(0, 'fold', range(len(fold)))
 
         return fold
 
@@ -633,10 +629,10 @@ class OneStepAheadFold(BaseFold):
             f"Number of observations in test: {test_length}"
         )
         
-        training_start = index[fold[0][0] + differentiation]
-        training_end = index[fold[0][-1]]
-        test_start  = index[fold[1][0]]
-        test_end    = index[fold[1][-1] - 1]
+        training_start = index[fold[1][0] + differentiation]
+        training_end = index[fold[1][-1]]
+        test_start  = index[fold[2][0]]
+        test_end    = index[fold[2][-1] - 1]
         
         print(
             f"Training : {training_start} -- {training_end} (n={initial_train_size})"
@@ -667,6 +663,16 @@ class TimeSeriesFold(BaseFold):
         - If an integer, the number of observations used for initial training.
         - If a date string or pandas Timestamp, it is the last date included in 
         the initial training set.
+    fold_stride : int, default None
+        Number of observations that the start of the test set advances between
+        consecutive folds.
+
+        - If `None`, it defaults to the same value as `steps`, meaning that folds
+        are placed back-to-back without overlap.
+        - If `fold_stride < steps`, test sets overlap and multiple forecasts will
+        be generated for the same observations.
+        - If `fold_stride > steps`, gaps are left between consecutive test sets.
+        **New in version 0.18.0**
     window_size : int, default None
         Number of observations needed to generate the autoregressive predictors.
     differentiation : int, default None
@@ -709,6 +715,11 @@ class TimeSeriesFold(BaseFold):
     initial_train_size : int
         Number of observations used for initial training. If `None` or 0, the initial
         forecaster is not trained in the first fold.
+    fold_stride : int
+        Number of observations that the start of the test set advances between
+        consecutive folds.
+    overlapping_folds : bool
+        Whether the folds overlap.
     window_size : int
         Number of observations needed to generate the autoregressive predictors.
     differentiation : int
@@ -736,18 +747,25 @@ class TimeSeriesFold(BaseFold):
     the index, so they can be used to slice the data directly using iloc. For example,
     if the input series is `X = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]`, the 
     `initial_train_size = 3`, `window_size = 2`, `steps = 4`, and `gap = 1`,
-    the output of the first fold will: [[0, 3], [1, 3], [3, 8], [4, 8], True].
+    the output of the first fold will: [0, [0, 3], [1, 3], [3, 8], [4, 8], True].
 
-    The first list `[0, 3]` indicates that the training set goes from the first to the
-    third observation. The second list `[1, 3]` indicates that the last window seen by
-    the forecaster during training goes from the second to the third observation. The
-    third list `[3, 8]` indicates that the test set goes from the fourth to the eighth
-    observation. The fourth list `[4, 8]` indicates that the test set including the gap
-    goes from the fifth to the eighth observation. The boolean `False` indicates that the
-    forecaster should not be trained in this fold.
+    The first element is the fold number, the first list `[0, 3]` indicates that 
+    the training set goes from the first to the third observation. The second 
+    list `[1, 3]` indicates that the last window seen by the forecaster during 
+    training goes from the second to the third observation. The third list `[3, 8]` 
+    indicates that the test set goes from the fourth to the eighth observation. 
+    The fourth list `[4, 8]` indicates that the test set including the gap goes 
+    from the fifth to the eighth observation. The boolean `False` indicates that 
+    the forecaster should not be trained in this fold.
 
     Following the python convention, the start index is inclusive and the end index is
     exclusive. This means that the last index is not included in the slice.
+
+    As an example, with `initial_train_size=50`, `steps=30`, and `fold_stride=7`,
+    the first test fold will cover observations [50, 80), the second fold [57, 87),
+    and the third fold [64, 94). This configuration produces multiple forecasts
+    for the same observations, which is often desirable in rolling-origin
+    evaluation.
 
     """
 
@@ -755,6 +773,7 @@ class TimeSeriesFold(BaseFold):
         self,
         steps: int,
         initial_train_size: int | str | pd.Timestamp | None = None,
+        fold_stride: int | None = None,
         window_size: int | None = None,
         differentiation: int | None = None,
         refit: bool | int = False,
@@ -765,10 +784,11 @@ class TimeSeriesFold(BaseFold):
         return_all_indexes: bool = False,
         verbose: bool = True
     ) -> None:
-        
+            
         super().__init__(
             steps                 = steps,
             initial_train_size    = initial_train_size,
+            fold_stride           = fold_stride,
             window_size           = window_size,
             differentiation       = differentiation,
             refit                 = refit,
@@ -779,6 +799,15 @@ class TimeSeriesFold(BaseFold):
             return_all_indexes    = return_all_indexes,
             verbose               = verbose
         )
+
+        self.steps                 = steps
+        self.fold_stride           = fold_stride if fold_stride is not None else steps
+        self.overlapping_folds     = self.fold_stride < self.steps
+        self.refit                 = refit
+        self.fixed_train_size      = fixed_train_size
+        self.gap                   = gap
+        self.skip_folds            = skip_folds
+        self.allow_incomplete_fold = allow_incomplete_fold
 
     def __repr__(
         self
@@ -793,6 +822,8 @@ class TimeSeriesFold(BaseFold):
             f"{'=' * len(type(self).__name__)} \n"
             f"Initial train size    = {self.initial_train_size},\n"
             f"Steps                 = {self.steps},\n"
+            f"Fold stride           = {self.fold_stride},\n"
+            f"Overlapping folds     = {self.overlapping_folds},\n"
             f"Window size           = {self.window_size},\n"
             f"Differentiation       = {self.differentiation},\n"
             f"Refit                 = {self.refit},\n"
@@ -821,6 +852,8 @@ class TimeSeriesFold(BaseFold):
                 <ul>
                     <li><strong>Initial train size:</strong> {self.initial_train_size}</li>
                     <li><strong>Steps:</strong> {self.steps}</li>
+                    <li><strong>Fold stride:</strong> {self.fold_stride}</li>
+                    <li><strong>Overlapping folds:</strong> {self.overlapping_folds}</li>
                     <li><strong>Window size:</strong> {self.window_size}</li>
                     <li><strong>Differentiation:</strong> {self.differentiation}</li>
                     <li><strong>Refit:</strong> {self.refit}</li>
@@ -863,6 +896,7 @@ class TimeSeriesFold(BaseFold):
             A list of lists containing the indices (position) for each fold. Each list
             contains 4 lists and a boolean with the following information:
 
+            - fold: fold number.
             - [train_start, train_end]: list with the start and end positions of the
             training set.
             - [last_window_start, last_window_end]: list with the start and end positions
@@ -949,7 +983,6 @@ class TimeSeriesFold(BaseFold):
         idx = range(len(index))
         folds = []
         i = 0
-        last_fold_excluded = False
 
         self.initial_train_size = date_to_index_position(
                                       index        = index, 
@@ -968,29 +1001,49 @@ class TimeSeriesFold(BaseFold):
                         f"it is a date, it must be within this range of the index."
                     )
 
-        if len(index) < self.initial_train_size + self.steps:
-            raise ValueError(
-                f"The time series must have at least `initial_train_size + steps` "
-                f"observations. Got {len(index)} observations."
-            )
+        if self.allow_incomplete_fold:
+            # At least one observation after the gap to allow incomplete fold
+            if len(index) <= self.initial_train_size + self.gap:
+                raise ValueError(
+                    f"The time series must have more than `initial_train_size + gap` "
+                    f"observations to create at least one fold.\n"
+                    f"    Time series length: {len(index)}\n"
+                    f"    Required > {self.initial_train_size + self.gap}\n"
+                    f"    initial_train_size: {self.initial_train_size}\n"
+                    f"    gap: {self.gap}\n"
+                )
+        else:
+            # At least one complete fold
+            if len(index) < self.initial_train_size + self.gap + self.steps:
+                raise ValueError(
+                    f"The time series must have at least `initial_train_size + gap + steps` "
+                    f"observations to create a minimum of one complete fold "
+                    f"(allow_incomplete_fold=False).\n"
+                    f"    Time series length: {len(index)}\n"
+                    f"    Required >= {self.initial_train_size + self.gap + self.steps}\n"
+                    f"    initial_train_size: {self.initial_train_size}\n"
+                    f"    gap: {self.gap}\n"
+                    f"    steps: {self.steps}\n"
+                )
 
-        while self.initial_train_size + (i * self.steps) + self.gap < len(index):
+        while self.initial_train_size + (i * self.fold_stride) + self.gap < len(index):
 
             if self.refit:
-                # If `fixed_train_size` the train size doesn't increase but moves by 
-                # `steps` positions in each iteration. If `False`, the train size
-                # increases by `steps` in each iteration.
-                train_iloc_start = i * (self.steps) if self.fixed_train_size else 0
-                train_iloc_end = self.initial_train_size + i * (self.steps)
+                # NOTE: If `fixed_train_size` the train size doesn't increase but 
+                # moves by `fold_stride` positions in each iteration. If `False`, 
+                # the train size increases by `fold_stride` in each iteration.
+                train_iloc_start = i * (self.fold_stride) if self.fixed_train_size else 0
+                train_iloc_end = self.initial_train_size + i * (self.fold_stride)
                 test_iloc_start = train_iloc_end
             else:
-                # The train size doesn't increase and doesn't move.
+                # NOTE: The train size doesn't increase and doesn't move.
                 train_iloc_start = 0
                 train_iloc_end = self.initial_train_size
-                test_iloc_start = self.initial_train_size + i * (self.steps)
+                test_iloc_start = self.initial_train_size + i * (self.fold_stride)
             
             if self.window_size is not None:
                 last_window_iloc_start = test_iloc_start - self.window_size
+
             test_iloc_end = test_iloc_start + self.gap + self.steps
         
             partitions = [
@@ -1002,14 +1055,19 @@ class TimeSeriesFold(BaseFold):
             folds.append(partitions)
             i += 1
 
-        if not self.allow_incomplete_fold and len(folds[-1][3]) < self.steps:
-            folds = folds[:-1]
-            last_fold_excluded = True
+        # NOTE: Delete all incomplete folds at the end if not allowed
+        n_removed_folds = 0
+        if not self.allow_incomplete_fold:
+            # NOTE: While folds and the last "test_index_with_gap" is incomplete,
+            # calculating len of range objects
+            while folds and len(folds[-1][3]) < self.steps:
+                folds.pop()
+                n_removed_folds += 1
 
         # Replace partitions inside folds with length 0 with `None`
         folds = [
             [partition if len(partition) > 0 else None for partition in fold] 
-             for fold in folds
+            for fold in folds
         ]
 
         # Create a flag to know whether to train the forecaster
@@ -1025,9 +1083,10 @@ class TimeSeriesFold(BaseFold):
                 fit_forecaster[i] = True
         
         for i in range(len(folds)): 
+            folds[i].insert(0, i)
             folds[i].append(fit_forecaster[i])
             if fit_forecaster[i] is False:
-                folds[i][0] = folds[i - 1][0]
+                folds[i][1] = folds[i - 1][1]
 
         index_to_skip = []
         if self.skip_folds is not None:
@@ -1036,14 +1095,14 @@ class TimeSeriesFold(BaseFold):
                 index_to_skip = np.setdiff1d(np.arange(0, len(folds)), index_to_keep, assume_unique=True)
                 index_to_skip = [int(x) for x in index_to_skip]  # Required since numpy 2.0
             if isinstance(self.skip_folds, list):
-                index_to_skip = [i for i in self.skip_folds if i < len(folds)]        
+                index_to_skip = [i for i in self.skip_folds if i < len(folds)]
         
         if self.verbose:
             self._print_info(
                 index              = index,
                 folds              = folds,
                 externally_fitted  = externally_fitted,
-                last_fold_excluded = last_fold_excluded,
+                n_removed_folds    = n_removed_folds,
                 index_to_skip      = index_to_skip
             )
 
@@ -1051,27 +1110,35 @@ class TimeSeriesFold(BaseFold):
         if not self.return_all_indexes:
             # NOTE: +1 to prevent iloc pandas from deleting the last observation
             folds = [
-                [[fold[0][0], fold[0][-1] + 1], 
-                 [fold[1][0], fold[1][-1] + 1] if self.window_size is not None else [],
-                 [fold[2][0], fold[2][-1] + 1],
-                 [fold[3][0], fold[3][-1] + 1],
-                 fold[4]] 
+                [
+                    fold[0],
+                    [fold[1][0], fold[1][-1] + 1],
+                    (
+                        [fold[2][0], fold[2][-1] + 1]
+                        if self.window_size is not None
+                        else []
+                    ),
+                    [fold[3][0], fold[3][-1] + 1],
+                    [fold[4][0], fold[4][-1] + 1],
+                    fold[5],
+                ]
                 for fold in folds
             ]
 
         if externally_fitted:
             self.initial_train_size = None
-            folds[0][4] = False
+            folds[0][5] = False
 
         if as_pandas:
             if self.window_size is None:
                 for fold in folds:
-                    fold[1] = [None, None]
+                    fold[2] = [None, None]
 
             if not self.return_all_indexes:
                 folds = pd.DataFrame(
-                    data = [list(itertools.chain(*fold[:-1])) + [fold[-1]] for fold in folds],
+                    data = [[fold[0]] + list(itertools.chain(*fold[1:-1])) + [fold[-1]] for fold in folds],
                     columns = [
+                        'fold',
                         'train_start',
                         'train_end',
                         'last_window_start',
@@ -1087,6 +1154,7 @@ class TimeSeriesFold(BaseFold):
                 folds = pd.DataFrame(
                     data = folds,
                     columns = [
+                        'fold',
                         'train_index',
                         'last_window_index',
                         'test_index',
@@ -1094,7 +1162,6 @@ class TimeSeriesFold(BaseFold):
                         'fit_forecaster'
                     ],
                 )
-            folds.insert(0, 'fold', range(len(folds)))
 
         return folds
 
@@ -1103,7 +1170,7 @@ class TimeSeriesFold(BaseFold):
         index: pd.Index,
         folds: list[list[int]],
         externally_fitted: bool,
-        last_fold_excluded: bool,
+        n_removed_folds: int,
         index_to_skip: list[int]
     ) -> None:
         """
@@ -1117,8 +1184,8 @@ class TimeSeriesFold(BaseFold):
             A list of lists containing the indices (position) for each fold.
         externally_fitted : bool
             Whether an already trained forecaster is to be used.
-        last_fold_excluded : bool
-            Whether the last fold has been excluded because it was incomplete.
+        n_removed_folds : int
+            Number of folds removed.
         index_to_skip : list
             Number of folds skipped.
 
@@ -1160,14 +1227,21 @@ class TimeSeriesFold(BaseFold):
             f"{len(index_to_skip)} {index_to_skip if index_to_skip else ''}"
         )
         print(f"    Number of steps per fold: {self.steps}")
+        if self.steps != self.fold_stride:
+            print(f"    Number of steps to the next fold (fold stride): {self.fold_stride}")
         print(
             f"    Number of steps to exclude between last observed data "
             f"(last window) and predictions (gap): {self.gap}"
         )
-        if last_fold_excluded:
-            print("    Last fold has been excluded because it was incomplete.")
-        if len(folds[-1][3]) < self.steps:
-            print(f"    Last fold only includes {len(folds[-1][3])} observations.")
+        if n_removed_folds > 0:
+            print(
+                f"    The last {n_removed_folds} fold(s) have been excluded "
+                f"because they were incomplete."
+            )
+
+        if len(folds[-1][4]) < self.steps:
+            print(f"    Last fold only includes {len(folds[-1][4])} observations.")
+
         print("")
 
         if self.differentiation is None:
@@ -1179,15 +1253,15 @@ class TimeSeriesFold(BaseFold):
             is_fold_skipped   = i in index_to_skip
             has_training      = fold[-1] if i != 0 else True
             training_start    = (
-                index[fold[0][0] + differentiation] if fold[0] is not None else None
+                index[fold[1][0] + differentiation] if fold[1] is not None else None
             )
-            training_end      = index[fold[0][-1]] if fold[0] is not None else None
+            training_end      = index[fold[1][-1]] if fold[1] is not None else None
             training_length   = (
-                len(fold[0]) - differentiation if fold[0] is not None else 0
+                len(fold[1]) - differentiation if fold[1] is not None else 0
             )
-            validation_start  = index[fold[3][0]]
-            validation_end    = index[fold[3][-1]]
-            validation_length = len(fold[3])
+            validation_start  = index[fold[4][0]]
+            validation_end    = index[fold[4][-1]]
+            validation_length = len(fold[4])
 
             print(f"Fold: {i}")
             if is_fold_skipped:
