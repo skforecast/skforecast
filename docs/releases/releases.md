@@ -34,6 +34,7 @@ The main changes in this release are:
 
 + Backtesting functions output DataFrame now includes a `fold` column to identify the fold number of each prediction.
 
+
 **Fixed**
 
 + Fixed a bug that caused the gap to not be applied correctly in the <code>[backtesting_forecaster_multiseries]</code> function. ([#1028](https://github.com/skforecast/skforecast/issues/1028))
