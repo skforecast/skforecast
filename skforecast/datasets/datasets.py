@@ -406,7 +406,7 @@ datasets = {
         )
     },
     'bdg2_daily_sample': {
-        'url': 'https://raw.githubusercontent.com/skforecast/skforecast-datasets/refs/heads/main/data/bdg2_daily_sample.csv',
+        'url': 'https://raw.githubusercontent.com/skforecast/skforecast-datasets/refs/heads/{version}/data/bdg2_daily_sample.csv',
         'sep': ',',
         'index_col': 'timestamp',
         'date_format': '%Y-%m-%d',
@@ -444,7 +444,7 @@ datasets = {
         )
     },
     'bdg2_hourly_sample': {
-        'url': 'https://raw.githubusercontent.com/skforecast/skforecast-datasets/refs/heads/main/data/bdg2_hourly_sample.csv',
+        'url': 'https://raw.githubusercontent.com/skforecast/skforecast-datasets/refs/heads/{version}/data/bdg2_hourly_sample.csv',
         'sep': ',',
         'index_col': 'timestamp',
         'date_format': '%Y-%m-%d %H:%M:%S',
@@ -632,20 +632,21 @@ datasets = {
 }
 
 
-def show_all_datasets_info(version: str = 'latest') -> None:
+def show_datasets_info(subsets = []version: str = 'latest') -> None:
     """
     Print information about all available datasets.
     """
     version = 'main' if version == 'latest' else f'{version}'
 
     for dataset_name in datasets.keys():
-        print_dataset_info(dataset_name, version=version)
+        if dataset_name in 
+        _print_dataset_info(dataset_name, version=version)
 
 
-def print_dataset_info(
+def _print_dataset_info(
     dataset_name: str,
     version: str = 'latest',
-    shape: tuple = None
+    shape: tuple[int, int] | None = None
 ) -> None:
     """
     Display information about the dataset in a card-style panel.
@@ -658,6 +659,9 @@ def print_dataset_info(
         Version of the dataset. If 'latest', the latest version will be used
         (the one in the main branch). For a list of available versions, see
         the repository branches.
+    shape: tuple[int, int], optional
+        Shape of the dataset (rows, columns). If provided, it will be
+        displayed in the panel.
     """
 
     version = 'main' if version == 'latest' else f'{version}'
@@ -669,7 +673,6 @@ def print_dataset_info(
     console = Console()
     description = textwrap.fill(info['description'], width=80)
     source = textwrap.fill(info['source'].format(version=version), width=80)
-
     content = (
         f"[bold]Description:[/bold]\n{description}\n\n"
         f"[bold]Source:[/bold]\n{source}"
