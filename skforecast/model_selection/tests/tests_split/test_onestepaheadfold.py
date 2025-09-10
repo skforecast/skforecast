@@ -47,8 +47,8 @@ def test_OneStepAhead_split_invalid_initial_train_size_date(invalid_date):
 
 
 @pytest.mark.parametrize("return_all_indexes, expected",
-                         [(True, [[range(0, 70)], [range(70, 100)], True]),
-                          (False, [[0, 70], [70, 100], True])], 
+                         [(True, [0, [range(0, 70)], [range(70, 100)], True]),
+                          (False, [0, [0, 70], [70, 100], True])], 
                          ids = lambda argument: f'{argument}')
 def test_OneStepAhead_split_initial_train_size_and_window_size(capfd, return_all_indexes, expected):
     """
@@ -92,7 +92,7 @@ def test_OneStepAhead_split_initial_train_size_and_window_size_differentiation_i
         )
     folds = cv.split(X=y)
     out, _ = capfd.readouterr()
-    expected_folds = [[0, 70], [70, 100], True]
+    expected_folds = [0, [0, 70], [70, 100], True]
     expected_out = (
         "Information of folds\n"
         "--------------------\n"
@@ -184,10 +184,10 @@ def test_OneStepAhead_split_initial_train_size_window_size_return_all_indexes_fa
 @pytest.mark.parametrize(
     "initial_train_size, expected",
     [
-        (70, [[0, 70], [70, 100], True]),
-        ("2022-03-11", [[0, 70], [70, 100], True]),
-        ("2022-03-11 00:00:00", [[0, 70], [70, 100], True]),
-        (pd.to_datetime("2022-03-11"), [[0, 70], [70, 100], True])
+        (70, [0, [0, 70], [70, 100], True]),
+        ("2022-03-11", [0, [0, 70], [70, 100], True]),
+        ("2022-03-11 00:00:00", [0, [0, 70], [70, 100], True]),
+        (pd.to_datetime("2022-03-11"), [0, [0, 70], [70, 100], True])
     ],
     ids=lambda x: f'initial_train_size={x}',
 )

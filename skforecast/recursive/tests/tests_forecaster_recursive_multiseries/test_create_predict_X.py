@@ -93,7 +93,7 @@ def test_output_create_predict_X_when_regressor_is_LinearRegression():
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_create_predict_X_when_regressor_is_LinearRegression_and_StandardScaler():
+def test_create_predict_X_when_and_StandardScaler():
     """
     Test output create_predict_X when using LinearRegression and StandardScaler.
     """
@@ -130,7 +130,7 @@ def test_create_predict_X_when_regressor_is_LinearRegression_and_StandardScaler(
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_create_predict_X_output_when_regressor_is_LinearRegression_with_transform_series():
+def test_create_predict_X_output_when_with_transform_series():
     """
     Test create_predict_X output when using LinearRegression as regressor 
     and StandardScaler.
@@ -170,7 +170,7 @@ def test_create_predict_X_output_when_regressor_is_LinearRegression_with_transfo
                          [StandardScaler(),
                           {'l1': StandardScaler(), 'l2': StandardScaler(), '_unknown_level': StandardScaler()}], 
                          ids = lambda tr: f'transformer_series type: {type(tr)}')
-def test_create_predict_X_output_when_regressor_is_LinearRegression_with_transform_series_and_transform_exog(transformer_series):
+def test_create_predict_X_output_when_with_transform_series_and_transform_exog(transformer_series):
     """
     Test create_predict_X output when using LinearRegression as regressor, 
     StandardScaler as transformer_series and transformer_exog as transformer_exog.
@@ -218,7 +218,7 @@ def test_create_predict_X_output_when_regressor_is_LinearRegression_with_transfo
                          [StandardScaler(),
                           {'1': StandardScaler(), '2': StandardScaler(), '_unknown_level': StandardScaler()}], 
                          ids = lambda tr: f'transformer_series type: {type(tr)}')
-def test_create_predict_X_output_when_regressor_is_LinearRegression_with_transform_series_and_transform_exog_different_length_series(transformer_series):
+def test_create_predict_X_output_when_with_transform_series_and_transform_exog_different_length_series(transformer_series):
     """
     Test create_predict_X output when using LinearRegression as regressor, StandardScaler
     as transformer_series and transformer_exog as transformer_exog with series 
@@ -593,7 +593,7 @@ def test_create_predict_X_output_when_series_and_exog_dict():
 @pytest.mark.parametrize("differentiation", 
                          [1, {'1': 1, '2': 1, '_unknown_level': 1}], 
                          ids = lambda diff: f'differentiation: {diff}')
-def test_create_predict_X_output_when_regressor_is_LinearRegression_with_exog_differentiation_is_1_and_transformer_series(differentiation):
+def test_create_predict_X_output_when_with_exog_differentiation_is_1_and_transformer_series(differentiation):
     """
     Test create_predict_X output when using LinearRegression as regressor and differentiation=1,
     and transformer_series is StandardScaler.

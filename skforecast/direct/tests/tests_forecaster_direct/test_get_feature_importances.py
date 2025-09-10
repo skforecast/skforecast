@@ -126,7 +126,7 @@ def test_output_get_feature_importances_when_regressor_is_RandomForestRegressor_
     pd.testing.assert_frame_equal(results, expected)
     
     
-def test_output_get_feature_importances_when_regressor_is_LinearRegression_lags_3_step_1():
+def test_output_get_feature_importances_when_lags_3_step_1():
     """
     Test output of get_feature_importances for step 1, when regressor is LinearRegression with lags=3
     and it is trained with y=pd.Series(np.arange(5)).
@@ -143,7 +143,7 @@ def test_output_get_feature_importances_when_regressor_is_LinearRegression_lags_
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_output_get_feature_importances_when_regressor_is_LinearRegression_lags_3_step_1_exog_included():
+def test_output_get_feature_importances_when_lags_3_step_1_exog_included():
     """
     Test output of get_feature_importances for step 1, when regressor is LinearRegression with lags=3
     and it is trained with y=pd.Series(np.arange(5)) and
