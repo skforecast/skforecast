@@ -648,7 +648,7 @@ def show_datasets_info(
     version: str
         Version of the datasets to display information about.
     """
-    datasets_names = datasets_names or datasets.keys()
+    datasets_names = datasets_names or sorted(datasets.keys())
     version = 'main' if version == 'latest' else f'{version}'
 
     for dataset_name in datasets_names:
@@ -691,12 +691,17 @@ def _print_dataset_info(
     console = Console()
     description = textwrap.fill(info['description'], width=80)
     source = info['source']
-    if '{version}' in source:
-        source = source.format(version=version)
     source = textwrap.fill(source, width=80)
+    url = info['url']
+    if isinstance(url, list):
+        url = "Data is stored in multiple files:\n  " + "\n  ".join(url)
+    if '{version}' in url:
+        url = url.format(version=version)
+    url = textwrap.fill(url, width=80)
     content = (
         f"[bold]Description:[/bold]\n{description}\n\n"
-        f"[bold]Source:[/bold]\n{source}"
+        f"[bold]Source:[/bold]\n{source}\n\n"
+        f"[bold]URL:[/bold]\n{url}"
     )
 
     if shape is not None:
@@ -744,7 +749,7 @@ def fetch_dataset(
     
     if name not in datasets.keys():
         raise ValueError(
-            f"Dataset '{name}' not found. Available datasets are: {list(datasets.keys())}"
+            f"Dataset '{name}' not found. Available datasets are: {sorted(datasets.keys())}"
         )
     
     url = datasets[name]['url']
