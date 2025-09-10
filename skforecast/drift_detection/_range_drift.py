@@ -8,6 +8,9 @@
 import pandas as pd
 import numpy as np
 import warnings
+import textwrap
+from rich.console import Console
+from rich.panel import Panel
 from ..exceptions import (
     FeatureOutOfRangeWarning,
     IgnoredArgumentWarning,
@@ -190,7 +193,7 @@ class RangeDriftDetector:
         out_of_range_series_ranges: list,
         out_of_range_exog: list,
         out_of_range_exog_ranges: list,
-        out_of_range_series_id: list,
+        out_of_range_exog_series_id: list,
     ):
         """
         Summarize the results of the range check.
@@ -205,39 +208,49 @@ class RangeDriftDetector:
             List of exogenous variable names that are out of range.
         out_of_range_exog_ranges : list
             List of ranges for the out-of-range exogenous variables.
-        out_of_range_series_id : list
+        out_of_range_exog_series_id : list
             List of series IDs for the out-of-range exogenous variables. This is
             used when exogenous variables are different for each series.
         """
         
-        msg = ""
+        msg_series = ""
+        msg_exog = ""
         if out_of_range_series:
-            msg += "Out-of-range series in 'last_window':\n"
-            msg += "-------------------------------------\n"
+            series_msgs = []
             for series, series_range in zip(
                 out_of_range_series, out_of_range_series_ranges
             ):
-                msg = (
-                    f"'{series}' has one or more values outside the range seen during training "
-                    f"[{series_range[0]:.5f}, {series_range[1]:.5f}]. \n"
+                msg_temp = (
+                    f"'{series}' has one or more values outside the observed range "
+                    f"[{series_range[0]:.5f}, {series_range[1]:.5f}]."
                 )
-                msg += msg
+                series_msgs.append(textwrap.fill(msg_temp, width=80))
+            msg_series = "\n".join(series_msgs) + "\n"
+        else:
+            msg_series = "No series with out-of-range values found.\n"
 
         if out_of_range_exog:
-            msg += "Out-of-range exogenous variables in 'exog':\n"
-            msg += "-------------------------------------------\n"
+            exog_msgs = []
             for exog, exog_range, series_id in zip(
-                out_of_range_exog, out_of_range_exog_ranges, out_of_range_series_id
+                out_of_range_exog, out_of_range_exog_ranges, out_of_range_exog_series_id
             ):
-                msg = (
-                    f"'{exog}' has one or more values outside the range seen during training "
-                    f"[{exog_range[0]:.5f}, {exog_range[1]:.5f}]. \n"
+                msg_temp = (
+                    f"'{exog}' has one or more values outside the observed range "
+                    f"[{exog_range[0]:.5f}, {exog_range[1]:.5f}]."
                 )
                 if series_id:
-                    msg = f"'{series_id}': " + msg
-                msg += msg
+                    msg_temp = f"'{series_id}': " + msg_temp
+                exog_msgs.append(textwrap.fill(msg_temp, width=80))
+            msg_exog = "\n".join(exog_msgs) + "\n"
+        else:
+            msg_exog = "No exogenous variables with out-of-range values found.\n"
 
-        return msg
+        console = Console()
+        content = (
+            f"[bold]Series:[/bold]\n{msg_series}\n"
+            f"[bold]Exogenous Variables:[/bold]\n{msg_exog}\n"
+        )
+        console.print(Panel(content, title=f"[bold]Out-of-range summary[/bold]", expand=False))
 
     @classmethod
     def _normalize_input(cls, X, name: str) -> dict:
@@ -304,15 +317,23 @@ class RangeDriftDetector:
         """
 
         # Deprecation of 'y' argument in favor of 'series'
+        if series is None and 'y' not in kwargs:
+            raise ValueError(
+                "`series` cannot be None. Please provide the time series data."
+            )
         if 'y' in kwargs:
             if series is not None:
-                raise TypeError("Cannot specify both 'series' and 'y'")
+                raise TypeError(
+                    "Cannot specify both 'series' and 'y'. Please use 'series' "
+                    "since 'y' is deprecated."
+                )
             warnings.warn(
-                "'y' is deprecated, use 'series' instead",
+                "'y' is deprecated and will be removed in a future version. "
+                "Please use 'series' instead.",
                 DeprecationWarning,
             )
             series = kwargs.pop('y')
-
+        
         self.series_values_range_ = {}
         self.series_names_in_     = []
         self.exog_values_range_   = None
@@ -356,7 +377,7 @@ class RangeDriftDetector:
         last_window: pd.Series | pd.DataFrame | dict | None = None,
         exog: pd.Series | pd.DataFrame | dict | None = None,
         verbose: bool = True,
-        suppress_warnings: bool = True,
+        suppress_warnings: bool = False
     ) -> tuple[bool, list, list]:
         """
         Check if there is any value outside the training range for last_window and exog.
@@ -463,17 +484,13 @@ class RangeDriftDetector:
                         )
 
         if verbose:
-            msg = self._summary(
+            self._summary(
                 out_of_range_series,
                 out_of_range_series_ranges,
                 out_of_range_exog,
                 out_of_range_exog_ranges,
                 out_of_range_exog_series_id
             )
-            if msg != "":
-                print(msg)
-            else:
-                print("All series and exogenous variables are within the training range.")
 
         set_skforecast_warnings(suppress_warnings, action='default')
 
