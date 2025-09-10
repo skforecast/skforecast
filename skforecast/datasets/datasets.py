@@ -257,7 +257,7 @@ datasets = {
             'Scraped data using the Wikipediatrend package in R.'
         ),
         'source': (
-            'https://github.com/facebook/prophet/blob/main/examples/'
+            'https://github.com/facebook/prophet/blob/{version}/examples/'
             'example_wp_log_peyton_manning.csv'
         )
     },
@@ -663,7 +663,7 @@ def show_datasets_info(
 
 def _print_dataset_info(
     dataset_name: str,
-    version: str = 'latest',
+    version: str | int = 'latest',
     shape: tuple[int, int] | None = None
 ) -> None:
     """
@@ -690,7 +690,10 @@ def _print_dataset_info(
         )
     console = Console()
     description = textwrap.fill(info['description'], width=80)
-    source = textwrap.fill(info['source'].format(version=version), width=80)
+    source = info['source']
+    if '{version}' in source:
+        source = source.format(version=version)
+    source = textwrap.fill(source, width=80)
     content = (
         f"[bold]Description:[/bold]\n{description}\n\n"
         f"[bold]Source:[/bold]\n{source}"
@@ -704,7 +707,7 @@ def _print_dataset_info(
 
 def fetch_dataset(
     name: str,
-    version: str = 'latest',
+    version: str | int = 'latest',
     raw: bool = False,
     kwargs_read_csv: dict = {},
     verbose: bool = True
@@ -744,7 +747,9 @@ def fetch_dataset(
             f"Dataset '{name}' not found. Available datasets are: {list(datasets.keys())}"
         )
     
-    url = datasets[name]['url'].format(version=version)
+    url = datasets[name]['url']
+    if '{version}' in url:
+        url = url.format(version=version)
     file_type = datasets[name]['file_type']
 
     if not isinstance(url, list):
