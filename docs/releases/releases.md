@@ -4,7 +4,7 @@ All significant changes to this project are documented in this release file.
 
 | Legend                                                     |                                       |
 |:-----------------------------------------------------------|:--------------------------------------|
-| +        | New feature                           |
+| <span class="badge text-bg-feature">Feature</span>         | New feature                           |
 | <span class="badge text-bg-enhancement">Enhancement</span> | Improvement in existing functionality |
 | <span class="badge text-bg-api-change">API Change</span>   | Changes in the API                    |
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
@@ -18,7 +18,7 @@ The main changes in this release are:
 
 + <span class="badge text-bg-feature">Feature</span> New function <code>[backtesting_gif_creator]</code> in the <code>[plot]</code> module to create a gif that visualizes the backtesting process. 
 
-+ <span class="badge text-bg-feature">Feature</span> New function <code>[show_all_datasets_info]</code> to display information about all available datasets.
++ <span class="badge text-bg-feature">Feature</span> New function <code>[show_datasets_info]</code> to display information about all available datasets.
 
 + <span class="badge text-bg-feature">API Change</span> Backtesting functions output DataFrame now includes a `fold` column to identify the fold number of each prediction.
 
@@ -31,7 +31,7 @@ The main changes in this release are:
 
 + New function <code>[backtesting_gif_creator]</code> in the <code>[plot]</code> module to create a gif that visualizes the backtesting process.
 
-+ New function <code>[show_all_datasets_info]</code> to display information about all available datasets.
++ New function <code>[show_datasets_info]</code> to display information about all available datasets.
 
 
 **Changed**
@@ -1304,7 +1304,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [datasets]: ../api/datasets.html
 [fetch_dataset]: ../api/datasets.html#skforecast.datasets.fetch_dataset
 [load_demo_dataset]: ../api/datasets.html#skforecast.datasets.load_demo_dataset
-[show_all_datasets_info]: ../api/datasets.html#skforecast.datasets.show_all_datasets_info
+[show_datasets_info]: ../api/datasets.html#skforecast.datasets.show_datasets_info
 
 <!-- exceptions -->
 [exceptions]: ../api/exceptions.html

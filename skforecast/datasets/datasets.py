@@ -633,8 +633,8 @@ datasets = {
 
 
 def show_datasets_info(
-        datasets_names: list[str] | None = None,
-        version: str = 'latest'
+    datasets_names: list[str] | None = None,
+    version: str = 'latest'
 ) -> None:
     """
     Print information about available datasets. If `datasets_names` is provided,
@@ -642,12 +642,18 @@ def show_datasets_info(
 
     Parameters
     ----------
-    datasets_names: list[str] | None, default None
-        List of dataset names to display information about. If None, information about all datasets
-        will be displayed.
+    datasets_names: list, default None
+        List of dataset names to display information about. If None, information 
+        about all datasets will be displayed.
     version: str
         Version of the datasets to display information about.
+
+    Returns
+    -------
+    None
+
     """
+
     datasets_names = datasets_names or sorted(datasets.keys())
     version = 'main' if version == 'latest' else f'{version}'
 
@@ -656,8 +662,8 @@ def show_datasets_info(
             _print_dataset_info(dataset_name, version=version)
         else:
             print(
-                f"Dataset '{dataset_name}' not available."
-                f"Set argument datasets_names to None to see all available datasets."
+                f"Dataset '{dataset_name}' not available. Set argument "
+                f"`datasets_names` to None to see all available datasets."
             )
 
 
@@ -677,9 +683,14 @@ def _print_dataset_info(
         Version of the dataset. If 'latest', the latest version will be used
         (the one in the main branch). For a list of available versions, see
         the repository branches.
-    shape: tuple[int, int], optional
+    shape: tuple, default None
         Shape of the dataset (rows, columns). If provided, it will be
         displayed in the panel.
+
+    Returns
+    -------
+    None
+
     """
 
     version = 'main' if version == 'latest' else f'{version}'
@@ -688,6 +699,7 @@ def _print_dataset_info(
         raise ValueError(
             f"Dataset '{dataset_name}' not found. Available datasets are: {list(datasets.keys())}"
         )
+    
     console = Console()
     description = textwrap.fill(info['description'], width=80)
     source = info['source']
