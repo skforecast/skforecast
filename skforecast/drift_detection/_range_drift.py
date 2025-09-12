@@ -19,7 +19,6 @@ from ..exceptions import (
 )
 from ..utils import set_skforecast_warnings
 
-
 class RangeDriftDetector:
     """
     Detector of out-of-range values based on training feature ranges.
@@ -171,7 +170,7 @@ class RangeDriftDetector:
         """
         if isinstance(feature_range, tuple):  # numeric
             msg = (
-                f"'{not_compliant_feature}' has one or more values outside the range seen during training "
+                f"'{not_compliant_feature}' has values outside the range seen during training "
                 f"[{feature_range[0]:.5f}, {feature_range[1]:.5f}]. "
                 f"This may affect the accuracy of the predictions."
             )
@@ -221,7 +220,7 @@ class RangeDriftDetector:
                 out_of_range_series, out_of_range_series_ranges
             ):
                 msg_temp = (
-                    f"'{series}' has one or more values outside the observed range "
+                    f"'{series}' has values outside the observed range "
                     f"[{series_range[0]:.5f}, {series_range[1]:.5f}]."
                 )
                 series_msgs.append(textwrap.fill(msg_temp, width=80))
@@ -235,7 +234,7 @@ class RangeDriftDetector:
                 out_of_range_exog, out_of_range_exog_ranges, out_of_range_exog_series_id
             ):
                 msg_temp = (
-                    f"'{exog}' has one or more values outside the observed range "
+                    f"'{exog}' has values outside the observed range "
                     f"[{exog_range[0]:.5f}, {exog_range[1]:.5f}]."
                 )
                 if series_id:
@@ -476,7 +475,7 @@ class RangeDriftDetector:
                         flag_out_of_range = True
                         out_of_range_exog.append(col)
                         out_of_range_exog_ranges.append(features_ranges[col])
-                        out_of_range_exog_series_id.append(key if not is_single_series else col)
+                        out_of_range_exog_series_id.append(key if not is_single_series else None)
                         self._display_warnings(
                             not_compliant_feature=col,
                             feature_range=features_ranges[col],
