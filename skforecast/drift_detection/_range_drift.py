@@ -256,6 +256,14 @@ class RangeDriftDetector:
         """
         Convert pd.Series, pd.DataFrame or dict into a standardized dict of
         pd.Series or pd.DataFrames.
+
+        Parameters
+        ----------
+        X : pd.Series, pd.DataFrame, dict
+            Input data to normalize.
+        name : str
+            Name of the input being normalized. Used for error messages.
+            Expected values are 'series', 'last_window' or 'exog'.
         """
         if isinstance(X, pd.Series):
             if not X.name:
