@@ -233,10 +233,16 @@ class RangeDriftDetector:
             for exog, exog_range, series_id in zip(
                 out_of_range_exog, out_of_range_exog_ranges, out_of_range_exog_series_id
             ):
-                msg_temp = (
-                    f"'{exog}' has values outside the observed range "
-                    f"[{exog_range[0]:.5f}, {exog_range[1]:.5f}]."
-                )
+                if isinstance(exog_range, tuple):  # numeric
+                    msg_temp = (
+                        f"'{exog}' has values outside the observed range "
+                        f"[{exog_range[0]:.5f}, {exog_range[1]:.5f}]."
+                    )
+                else:  # categorical
+                    msg_temp = (
+                        f"'{exog}' has values not seen during training. Seen values: "
+                        f"{exog_range}."
+                    )
                 if series_id:
                     msg_temp = f"'{series_id}': " + msg_temp
                 exog_msgs.append(textwrap.fill(msg_temp, width=80))
@@ -334,12 +340,13 @@ class RangeDriftDetector:
                     "Cannot specify both 'series' and 'y'. Please use 'series' "
                     "since 'y' is deprecated."
                 )
-            warnings.warn(
-                "'y' is deprecated and will be removed in a future version. "
-                "Please use 'series' instead.",
-                DeprecationWarning,
-            )
-            series = kwargs.pop('y')
+            else:
+                warnings.warn(
+                    "`y` is deprecated and will be removed in a future version. "
+                    "Please use 'series' instead.",
+                    FutureWarning,
+                )
+                series = kwargs.pop('y')
         
         self.series_values_range_ = {}
         self.series_names_in_     = []
