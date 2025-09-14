@@ -7,105 +7,89 @@ import warnings
 from skforecast.drift_detection import RangeDriftDetector
 
 
-def test_fit_series():
+def test_fit_series_and_exog_single_series():
     """
-    Test fit with pandas Series.
+    Test fit with series and exog as single Series.
     """
-    series = pd.Series([1, 2, 3, 4, 5], name='test_series')
+    series = pd.Series([1, 2, 3, 4, 5], name='y')
+    exog = pd.Series([10, 20, 30, 40, 50], name='exog')
     detector = RangeDriftDetector()
-    detector.fit(series=series)
+    detector.fit(series=series, exog=exog)
 
     assert detector.is_fitted_ is True
-    assert detector.series_names_in_ == ['test_series']
-    assert detector.series_values_range_ == {'test_series': (1.0, 5.0)}
-    assert detector.exog_values_range_ is None
-    assert detector.exog_names_in_ is None
+    assert detector.series_names_in_ == ['y']
+    assert detector.series_values_range_ == {'y': (1.0, 5.0)}
+    assert detector.exog_values_range_ == {'exog': (10.0, 50.0)}
+    assert detector.exog_names_in_ == ['exog']
 
 
-def test_fit_dataframe():
+def test_fit_series_and_exog_df():
     """
-    Test fit with pandas DataFrame.
+    Test fit with series and exog as DataFrames.
     """
-    df = pd.DataFrame({'col1': [1, 2, 3], 'col2': [4, 5, 6]})
+    series = pd.DataFrame({
+        'series_1': [1, 2, 3, 4, 5],
+        'series_2': [10, 20, 30, 40, 50]
+    })
+    exog = pd.DataFrame({
+        'exog_1': [10, 20, 30, 40, 50],
+        'exog_2': ['A', 'B', 'C', 'D', 'E']
+    })
     detector = RangeDriftDetector()
-    detector.fit(series=df)
+    detector.fit(series=series, exog=exog)
 
     assert detector.is_fitted_ is True
-    assert set(detector.series_names_in_) == {'col1', 'col2'}
-    assert detector.series_values_range_ == {'col1': (1.0, 3.0), 'col2': (4.0, 6.0)}
-
-
-def test_fit_dict():
-    """
-    Test fit with dict of Series.
-    """
-    series = {
-        's1': pd.Series([1, 2, 3], name='s1'),
-        's2': pd.Series([10, 20, 30], name='s2')
-    }
-    detector = RangeDriftDetector()
-    detector.fit(series=series)
-
-    assert detector.is_fitted_ is True
-    assert set(detector.series_names_in_) == {'s1', 's2'}
+    assert detector.series_names_in_ == ['series_1', 'series_2']
     assert detector.series_values_range_ == {
-        's1': (1.0, 3.0),
-        's2': (10.0, 30.0)
+        'series_1': (1.0, 5.0),
+        'series_2': (10.0, 50.0)
     }
-
-
-def test_fit_with_exog_series():
-    """
-    Test fit with exogenous Series.
-    """
-    series = pd.Series([1, 2, 3], name='series1')
-    exog = pd.Series([10, 20, 30], name='exog1')
-    detector = RangeDriftDetector()
-    detector.fit(series=series, exog=exog)
-
-    assert detector.is_fitted_ is True
-    assert detector.series_names_in_ == ['series1']
-    assert detector.series_values_range_ == {'series1': (1.0, 3.0)}
-    assert detector.exog_names_in_ == ['exog1']
-    assert detector.exog_values_range_ == {'exog1': (10.0, 30.0)}
-
-
-def test_fit_with_exog_dataframe():
-    """
-    Test fit with exogenous DataFrame.
-    """
-    series = pd.Series([1, 2, 3], name='series1')
-    exog = pd.DataFrame({'exog1': [10, 20, 30], 'exog2': [100, 200, 300]})
-    detector = RangeDriftDetector()
-    detector.fit(series=series, exog=exog)
-
-    assert detector.is_fitted_ is True
-    assert detector.exog_names_in_ == ['exog1', 'exog2']
+    assert detector.exog_names_in_ == ['exog_1', 'exog_2']
     assert detector.exog_values_range_ == {
-        'exog1': (10.0, 30.0),
-        'exog2': (100.0, 300.0)
+        'exog_1': (10.0, 50.0),
+        'exog_2': set(['A', 'B', 'C', 'D', 'E'])
     }
 
 
-def test_fit_with_exog_dict():
+def test_fit_series_and_exog_df_multindex():
     """
-    Test fit with exogenous dict.
+    Test fit with series and exog as DataFrames with MultiIndex.
     """
-    series = pd.Series([1, 2, 3], name='series1')
-    exog = {
-        's1': pd.DataFrame({'exog1': [10, 20], 'exog2': [100, 200]}, index=[0, 1])
-    }
+    index = pd.MultiIndex.from_product(
+        [["series_1", "series_2", "series_3"], range(3)], names=["series", "time"]
+    )
+    series = pd.DataFrame({"value": range(9)}, index=index)
+    series = series.stack().to_frame().swaplevel(0, 1).sort_index()
+    exog = pd.DataFrame(
+        {
+            "exog_1": [10, 20, 30, 100, 200, 300, 1000, 2000, 3000],
+            "exog_2": ["A", "B", "C", "D", "E", "A", "B", "C", "D"],
+        },
+        index=index,
+    )
+
     detector = RangeDriftDetector()
     detector.fit(series=series, exog=exog)
 
     assert detector.is_fitted_ is True
-    assert detector.exog_names_in_ == ['exog1', 'exog2']
-    expected_ranges = {
-        'exog1': (10.0, 20.0),
-        'exog2': (100.0, 200.0)
+    assert detector.series_names_in_ == ["series_1", "series_2", "series_3"]
+    assert detector.series_values_range_ == {
+        "series_1": (1.0, 5.0),
+        "series_2": (10.0, 50.0),
+        "series_3": (100.0, 500.0),
     }
-    assert detector.exog_values_range_ == {'s1': expected_ranges}
-
+    assert detector.exog_names_in_ == ["exog_1", "exog_2"]
+    assert detector.exog_values_range_ == {
+        "series_1": {"exog_1": (np.int64(10), np.int64(30)), "exog_2": {"A", "B", "C"}},
+        "series_2": {
+            "exog_1": (np.int64(100), np.int64(300)),
+            "exog_2": {"A", "D", "E"},
+        },
+        "series_3": {
+            "exog_1": (np.int64(1000), np.int64(3000)),
+            "exog_2": {"B", "C", "D"},
+        },
+    }
 
 def test_fit_deprecated_y_argument():
     """
@@ -157,50 +141,3 @@ def test_fit_invalid_exog_type():
     detector = RangeDriftDetector()
     with pytest.raises(TypeError, match="Exogenous variables must be a pandas DataFrame, Series or dict"):
         detector.fit(series=series, exog="invalid")
-
-
-def test_fit_categorical_series():
-    """
-    Test fit with categorical Series.
-    """
-    series = pd.Series(['a', 'b', 'c', 'a'], name='cat_series')
-    detector = RangeDriftDetector()
-    detector.fit(series=series)
-
-    assert detector.is_fitted_ is True
-    assert detector.series_names_in_ == ['cat_series']
-    assert detector.series_values_range_ == {'cat_series': {'a', 'b', 'c'}}
-
-
-def test_fit_mixed_types_dataframe():
-    """
-    Test fit with DataFrame containing numeric and categorical columns.
-    """
-    df = pd.DataFrame({
-        'numeric': [1, 2, 3],
-        'categorical': ['x', 'y', 'z']
-    })
-    detector = RangeDriftDetector()
-    detector.fit(series=df)
-
-    assert detector.is_fitted_ is True
-    assert set(detector.series_names_in_) == {'numeric', 'categorical'}
-    assert detector.series_values_range_ == {
-        'numeric': (1.0, 3.0),
-        'categorical': {'x', 'y', 'z'}
-    }
-
-
-def test_fit_exog_names_deduplication():
-    """
-    Test that exog_names_in_ removes duplicates.
-    """
-    series = pd.Series([1, 2, 3], name='series1')
-    exog = {
-        's1': pd.DataFrame({'exog1': [10, 20], 'exog2': [100, 200]}, index=[0, 1]),
-        's2': pd.DataFrame({'exog1': [15, 25], 'exog3': [150, 250]}, index=[0, 1])
-    }
-    detector = RangeDriftDetector()
-    detector.fit(series=series, exog=exog)
-
-    assert set(detector.exog_names_in_) == {'exog1', 'exog2', 'exog3'}

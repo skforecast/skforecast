@@ -118,12 +118,10 @@ def test_predict_out_of_range_series_pandas_dataframe_multiindex():
     Test predict with series values out of training range.
     Series is a pandas dataframe multiindex.
     """
-    index = pd.MultiIndex.from_tuples(
-        [('series_1', 0), ('series_1', 1), ('series_1', 2),
-         ('series_2', 0), ('series_2', 1), ('series_2', 2),
-         ('series_3', 0), ('series_3', 1), ('series_3', 2)],
-        names=['series', 'time']
-    )
+    index = pd.MultiIndex.from_product(
+                [['series_1', 'series_2', 'series_3'], range(3)],
+                names=['series', 'time']
+            )
     series = pd.DataFrame({
         'value': [1, 2, 3, 10, 20, 30, 100, 200, 300]
     }, index=index) 
@@ -200,12 +198,10 @@ def test_predict_out_of_range_exog_pandas_dataframe_multiindex():
     DataFrame with MultiIndex.
     """
     series = pd.Series([1, 2, 3], name='series_1')
-    index = pd.MultiIndex.from_tuples(
-        [('series_1', 0), ('series_1', 1), ('series_1', 2),
-            ('series_2', 0), ('series_2', 1), ('series_2', 2),
-            ('series_3', 0), ('series_3', 1), ('series_3', 2)],
-        names=['series', 'datetime']
-    )
+    index = pd.MultiIndex.from_product(
+                [['series_1', 'series_2', 'series_3'], range(3)],
+                names=['series', 'time']
+            )
     exog = pd.DataFrame(
         {'exog1': [10, 20, 30, 100, 200, 300, 1000, 2000, 3000],
         'exog2': [-10, -20, -30, -100, -200, -300, -1000, -2000, -3000]},
@@ -214,11 +210,9 @@ def test_predict_out_of_range_exog_pandas_dataframe_multiindex():
     detector = RangeDriftDetector()
     detector.fit(series=series, exog=exog)
 
-    index_pred = pd.MultiIndex.from_tuples(
-        [('series_1', 0), ('series_1', 1),
-        ('series_2', 0), ('series_2', 1),
-        ('series_3', 0), ('series_3', 1)],
-        names=['series', 'datetime']
+    index_pred = pd.MultiIndex.from_product(
+        [['series_1', 'series_2', 'series_3'], range(2)],
+        names=['series', 'time']
     )
     # Series 1, exog 1: in range
     # Series 1, exog 2: out of range
@@ -228,7 +222,7 @@ def test_predict_out_of_range_exog_pandas_dataframe_multiindex():
     # Series 3, exog 2: out of range
     exog_pred = pd.DataFrame(
         {'exog1': [15, 25, 400, 500, 4000, 5000],
-        'exog2': [-15, -25, -200, -200, -4000, -5000]},
+         'exog2': [-15, -25, -200, -200, -4000, -5000]},
         index=index_pred
     )
 
