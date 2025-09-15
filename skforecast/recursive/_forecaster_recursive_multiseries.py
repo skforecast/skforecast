@@ -42,8 +42,6 @@ from ..utils import (
     prepare_levels_multiseries,
     preprocess_levels_self_last_window_multiseries,
     get_exog_dtypes,
-    get_features_range,
-    check_features_range,
     check_exog_dtypes,
     check_predict_input,
     check_residuals_input,
