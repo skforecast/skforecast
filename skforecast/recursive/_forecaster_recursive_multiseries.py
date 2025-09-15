@@ -139,7 +139,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         - If `True`, drop NaNs in X_train and same rows in y_train.
         - If `False`, leave NaNs in X_train and warn the user.
-        **New in version 0.12.0**
     fit_kwargs : dict, default None
         Additional arguments to be passed to the `fit` method of the regressor.
     binner_kwargs : dict, default None
@@ -190,7 +189,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         **Changed to 'ordinal' in version 0.14.0**
     encoder : sklearn.preprocessing
         Scikit-learn preprocessing encoder used to encode the series.
-        **New in version 0.12.0**
     encoding_mapping_ : dict
         Mapping of the encoding used to identify the different series.
     transformer_series : transformer (preprocessor), dict
