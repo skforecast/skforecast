@@ -75,8 +75,8 @@ class RangeDriftDetector:
         features, it returns the min and max values. For categorical features,
         it returns the unique values.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         X : pd.DataFrame, pd.Series
             Input data to summarize.
         Returns
