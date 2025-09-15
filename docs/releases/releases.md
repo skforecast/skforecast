@@ -35,6 +35,8 @@ The main changes in this release are:
 
 **Added**
 
++ Added module <code>[drift_detection]</code> with class <code>[RangeDriftDetector]</code> to detect out-of-range values in time series data and exogenous variables.
+
 + Added attribute `exog_dtypes_out_` in all forecasters to store the data types of the exogenous variables used in training after the transformation applied by `transformer_exog`. If `transformer_exog` is not used, it is equal to `exog_dtypes_in_`.
 
 + Added function <code>[reshape_series_wide_to_long]</code> in the <code>[preprocessing]</code> module. This function reshapes a wide-format DataFrame where each column corresponds to a series into a long-format DataFrame with with a MultiIndex. The first level of the index is the series name and the second level is the time index.
@@ -1239,6 +1241,10 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [TimeSeriesDifferentiator]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.TimeSeriesDifferentiator
 [QuantileBinner]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.QuantileBinner
 [ConformalIntervalCalibrator]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.ConformalIntervalCalibrator
+
+<!-- drift_detection -->
+[drift_detection]: ../api/drift_detection.html
+[RangeDriftDetector]: ../api/drift_detection.html#skforecast.drift_detection._range_drift.RangeDriftDetector
 
 <!-- metrics -->
 [metrics]: ../api/metrics.html
