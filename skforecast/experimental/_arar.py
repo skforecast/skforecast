@@ -289,6 +289,17 @@ def summary_arar(model_tuple):
     print(f"Max: {np.max(Y):.4f}")
 
 
+
+# TODO: 
+# 
+# + argument h in predict canged to steps to be consistent with skforecast naming
+# - Add method update_interl_state or append (statsmodels call it append) to update
+# the model with new data without refitting. This will allow compatibility with last_window
+# in skforecast functionalities.
+# - Add exog for compatibility with skforecast. It will be ignored.
+# Input must be pd.series or pd.dataframes although it will be converted to np.ndarray
+# internally.
+# - prediction output: pd series with the extended index.
 class Arar(BaseEstimator, RegressorMixin):
     """
     Scikit-learn style wrapper for the ARAR time-series model.
@@ -338,7 +349,7 @@ class Arar(BaseEstimator, RegressorMixin):
         self.max_lag = max_lag
         self.safe = safe
 
-    def fit(self, y) -> "Arar":
+    def fit(self, y, exog=None) -> "Arar":
         """
         Fit the ARAR model to a univariate time series.
 
@@ -346,12 +357,15 @@ class Arar(BaseEstimator, RegressorMixin):
         ----------
         y : array-like of shape (n_samples,)
             Time-ordered numeric sequence.
+        exog : array-like of shape (n_samples, n_features)
+            Exogenous variables. Ignored, present for API compatibility.
 
         Returns
         -------
         self : Arar
             Fitted estimator.
         """
+        y_index = y.index
         y = np.asarray(y, dtype=float).ravel()
         if y.ndim != 1:
             raise ValueError("`y` must be a 1D array-like sequence.")
@@ -371,17 +385,20 @@ class Arar(BaseEstimator, RegressorMixin):
         self.n_features_in_ = 1
 
         self.fitted_values_ = fitted_arar(self.model_)["fitted"]
+        self.fitted_index_ = y_index
         self.residuals_in_ = residuals_arar(self.model_)
         return self
 
-    def predict(self, h: int = 1) -> np.ndarray:
+    def predict(self, steps: int, exog=None) -> np.ndarray:
         """
-        Generate mean forecasts h steps ahead.
+        Generate mean forecasts steps ahead.
 
         Parameters
         ----------
-        h : int, default=1
-            Forecast horizon (must be > 0).
+        steps : int
+            Forecast horizon (must be > 0)
+        exog : array-like of shape (n_samples, n_features)
+            Exogenous variables. Ignored, present for API compatibility.
 
         Returns
         -------
@@ -389,12 +406,12 @@ class Arar(BaseEstimator, RegressorMixin):
             Point forecasts for steps 1..h.
         """
         check_is_fitted(self, "model_")
-        if not isinstance(h, (int, np.integer)) or h <= 0:
-            raise ValueError("`h` must be a positive integer.")
-        return forecast(self.model_, h=h)["mean"]
+        if not isinstance(steps, (int, np.integer)) or steps <= 0:
+            raise ValueError("`steps` must be a positive integer.")
+        return forecast(self.model_, h=steps)["mean"]
 
     def predict_interval(
-        self, h: int = 1, level=(80, 95), as_frame: bool = True
+        self, steps: int = 1, level=(80, 95), as_frame: bool = True
     ) -> pd.DataFrame | dict:
         """
         Forecast with symmetric normal-theory prediction intervals.
@@ -416,11 +433,11 @@ class Arar(BaseEstimator, RegressorMixin):
             Else: the raw dict from `predict_arar`.
         """
         check_is_fitted(self, "model_")
-        out = forecast(self.model_, h=h, level=level)
+        out = forecast(self.model_, h=steps, level=level)
         if not as_frame:
             return out
 
-        idx = pd.RangeIndex(1, h + 1, name="step")
+        idx = pd.RangeIndex(1, steps + 1, name="step")
         df = pd.DataFrame({"mean": out["mean"]}, index=idx)
         for i, L in enumerate(out["level"]):
             df[f"lower_{L}"] = out["lower"][:, i]

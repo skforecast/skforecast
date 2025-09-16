@@ -24,6 +24,7 @@ from ..utils import (
     expand_index,
     get_exog_dtypes,
     transform_series,
+    transform_numpy,
     transform_dataframe,
     get_style_repr_html
 )
@@ -31,13 +32,13 @@ from ..utils import (
 
 class ForecasterStats():
     """
-    This class turns Sarimax model from the skforecast library into a Forecaster 
-    compatible with the skforecast API.
+    This class turns statistical model from the skforecast library (ARA, Sarimax)
+    into a Forecaster compatible with the skforecast API.
     
     Parameters
     ----------
-    regressor : skforecast.sarimax.Sarimax
-        A Sarimax model instance from skforecast.
+    regressor : skforecast.sarimax.Sarimax, skforecast.stats.ARA, skforecast.stats.ARIMA
+        A statistical model instance from skforecast.
     transformer_y : object transformer (preprocessor), default None
         An instance of a transformer (preprocessor) compatible with the scikit-learn
         preprocessing API with methods: fit, transform, fit_transform and inverse_transform.
@@ -155,10 +156,10 @@ class ForecasterStats():
         self.skforecast_version      = skforecast.__version__
         self.python_version          = sys.version.split(" ")[0]
         self.forecaster_id           = forecaster_id
-        
-        if not isinstance(self.regressor, skforecast.experimental.Arar):
+
+        if not isinstance(self.regressor, (skforecast.sarimax.Sarimax, skforecast.experimental.Arar)):
             raise TypeError(
-                f"`regressor` must be an instance of type "
+                f"`regressor` must be an instance of type skforecast.sarimax.Sarimax or "
                 f"`skforecast.experimental.Arar`. Got '{type(regressor)}'."
             )
 
@@ -254,8 +255,8 @@ class ForecasterStats():
                 <ul>
                     <li><strong>Regressor:</strong> {type(self.regressor).__name__}</li>
                     <li><strong>Order:</strong> {self.regressor.order}</li>
-                    <li><strong>Seasonal order:</strong> {self.regressor.seasonal_order}</li>
-                    <li><strong>Trend:</strong> {self.regressor.trend}</li>
+                    # <li><strong>Seasonal order:</strong> {self.regressor.seasonal_order}</li>
+                    # <li><strong>Trend:</strong> {self.regressor.trend}</li>
                     <li><strong>Window size:</strong> {self.window_size}</li>
                     <li><strong>Series name:</strong> {self.series_name_in_}</li>
                     <li><strong>Exogenous included:</strong> {self.exog_in_}</li>
@@ -415,8 +416,11 @@ class ForecasterStats():
 
         if store_last_window:
             self.last_window_ = y.copy()
-        
-        self.extended_index_ = self.regressor.sarimax_res.fittedvalues.index.copy()
+
+        if isinstance(self.regressor, skforecast.sarimax.Sarimax):
+            self.extended_index_ = self.regressor.sarimax_res.fittedvalues.index.copy()
+        else:
+            self.extended_index_ = self.regressor.fitted_index_.copy()
         self.params = self.regressor.get_params(deep=True)
 
     def _create_predict_inputs(
@@ -623,19 +627,31 @@ class ForecasterStats():
             self.extended_index_ = self.regressor.sarimax_res.fittedvalues.index
 
         # Get following n steps predictions
-        predictions = self.regressor.predict(
-                          steps = steps,
-                          exog  = exog
-                      ).iloc[:, 0]
-
-        predictions = transform_series(
+        if isinstance(self.regressor, skforecast.sarimax.Sarimax):
+            predictions = self.regressor.predict(
+                              steps = steps,
+                              exog  = exog
+                          ).iloc[:, 0]
+            predictions = transform_series(
                           series            = predictions,
                           transformer       = self.transformer_y,
                           fit               = False,
                           inverse_transform = True
                       )
-        predictions.name = 'pred'
-        
+            predictions.name = 'pred'
+        else:
+            predictions = self.regressor.predict(
+                              steps = steps,
+                              exog  = exog
+                          )
+            predictions = transform_numpy(
+                          array             = predictions,
+                          transformer       = self.transformer_y,
+                          fit               = False,
+                          inverse_transform = True
+                      )
+            predictions = pd.Series(predictions, name='pred')
+            
         return predictions
 
     def predict_interval(
