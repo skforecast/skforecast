@@ -38,14 +38,14 @@ class RangeDriftDetector:
 
     Attributes
     ----------
-    series_values_range_ : dict
-        Range of values of the target series used during training.
-    exog_values_range_ : dict
-        Range of values of the exogenous variables used during training.
     series_names_in_ : list
         Names of the series used during training.
+    series_values_range_ : dict
+        Range of values of the target series used during training.
     exog_names_in_ : list
         Names of the exogenous variables used during training.
+    exog_values_range_ : dict
+        Range of values of the exogenous variables used during training.
     is_fitted : bool
         Whether the detector has been fitted to the training data.
     
