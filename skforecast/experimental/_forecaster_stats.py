@@ -1,5 +1,5 @@
 ################################################################################
-#                            ForecasterSarimax                                 #
+#                             ForecasterStats                                  #
 #                                                                              #
 # This work by skforecast team is licensed under the BSD 3-Clause License.     #
 ################################################################################
@@ -33,7 +33,6 @@ class ForecasterStats():
     """
     This class turns Sarimax model from the skforecast library into a Forecaster 
     compatible with the skforecast API.
-    **New in version 0.10.0**
     
     Parameters
     ----------
@@ -157,10 +156,10 @@ class ForecasterStats():
         self.python_version          = sys.version.split(" ")[0]
         self.forecaster_id           = forecaster_id
         
-        if not isinstance(self.regressor, skforecast.sarimax.Sarimax):
+        if not isinstance(self.regressor, skforecast.experimental.Arar):
             raise TypeError(
                 f"`regressor` must be an instance of type "
-                f"`skforecast.sarimax.Sarimax`. Got '{type(regressor)}'."
+                f"`skforecast.experimental.Arar`. Got '{type(regressor)}'."
             )
 
         self.params = self.regressor.get_params(deep=True)
