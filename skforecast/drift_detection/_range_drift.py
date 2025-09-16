@@ -11,13 +11,17 @@ import warnings
 import textwrap
 from rich.console import Console
 from rich.panel import Panel
+import skforecast
 from ..exceptions import (
     FeatureOutOfRangeWarning,
     IgnoredArgumentWarning,
     MissingExogWarning,
     UnknownLevelWarning
 )
-from ..utils import set_skforecast_warnings
+from ..utils import (
+    set_skforecast_warnings,
+    get_style_repr_html
+)
 
 
 class RangeDriftDetector:
@@ -42,7 +46,7 @@ class RangeDriftDetector:
         Names of the series used during training.
     exog_names_in_ : list
         Names of the exogenous variables used during training.
-    is_fitted_ : bool
+    is_fitted : bool
         Whether the detector has been fitted to the training data.
     
     """
@@ -53,7 +57,7 @@ class RangeDriftDetector:
         self.series_values_range_ = None
         self.exog_names_in_       = None
         self.exog_values_range_   = None
-        self.is_fitted_           = False
+        self.is_fitted            = False
 
     def __repr__(self) -> str:
         """
@@ -64,13 +68,66 @@ class RangeDriftDetector:
             f"{'=' * len(type(self).__name__)} \n"
             f"{type(self).__name__} \n"
             f"{'=' * len(type(self).__name__)} \n"
-            f"Fitted series: {self.series_names_in_} \n"
-            f"Series value ranges: {self.series_values_range_} \n"
-            f"Fitted exogenous: {self.exog_names_in_} \n"
-            f"Exogenous value ranges: {self.exog_values_range_} \n"
+            f"Fitted series          = {self.series_names_in_} \n"
+            f"Series value ranges    = {self.series_values_range_} \n"
+            f"Fitted exogenous       = {self.exog_names_in_} \n"
+            f"Exogenous value ranges = {self.exog_values_range_} \n"
         )
 
         return info
+
+    # TODO: Update version in link when create user guide
+    def _repr_html_(self):
+        """
+        HTML representation of the object.
+        The "General Information" section is expanded by default.
+        """
+    
+        series_names_in_ = None
+        if self.series_names_in_ is not None:
+            if len(self.series_names_in_) > 50:
+                series_names_in_ = self.series_names_in_[:25] + ["..."] + self.series_names_in_[-25:]
+            series_names_in_ = ", ".join(series_names_in_)
+
+        exog_names_in_ = None
+        if self.exog_names_in_ is not None:
+            if len(self.exog_names_in_) > 50:
+                exog_names_in_ = self.exog_names_in_[:25] + ["..."] + self.exog_names_in_[-25:]
+            exog_names_in_ = ", ".join(exog_names_in_)
+
+        style, unique_id = get_style_repr_html(self.is_fitted)
+        content = f"""
+        <div class="container-{unique_id}">
+            <h2>{type(self).__name__}</h2>
+            <details open>
+                <summary>General Information</summary>
+                <ul>
+                    <li><strong>Fitted series:</strong> {series_names_in_}</li>
+                    <li><strong>Fitted exogenous:</strong> {exog_names_in_}</li>
+                    <li><strong>Is fitted:</strong> {self.is_fitted}</li>
+                </ul>
+            </details>
+            <details>
+                <summary>Series value ranges</summary>
+                <ul>
+                    {self.series_values_range_}
+                </ul>
+            </details>
+            <details>
+                <summary>Exogenous value ranges</summary>
+                <ul>
+                    {self.exog_values_range_}
+                </ul>
+            </details>
+            <p>
+                <a href="https://skforecast.org/{skforecast.__version__}/api/drift_detection.html#skforecast.drift_detection.drift_detection.RangeDriftDetector">&#128712 <strong>API Reference</strong></a>
+                &nbsp;&nbsp;
+                <a href="https://skforecast.org/{skforecast.__version__}/user_guides/window-features-and-custom-features.html">&#128462 <strong>User Guide</strong></a>
+            </p>
+        </div>
+        """
+        
+        return style + content
 
     @classmethod
     def _get_features_range(
@@ -383,7 +440,7 @@ class RangeDriftDetector:
         self.series_values_range_ = {}
         self.exog_names_in_       = None
         self.exog_values_range_   = None
-        self.is_fitted_           = False
+        self.is_fitted            = False
 
         if not isinstance(series, (pd.DataFrame, pd.Series, dict)):
             raise TypeError("Input must be a pandas DataFrame, Series or dict.")
@@ -413,7 +470,7 @@ class RangeDriftDetector:
 
             self.exog_names_in_ = list(dict.fromkeys(self.exog_names_in_))
 
-        self.is_fitted_ = True
+        self.is_fitted = True
 
         return
 
@@ -450,7 +507,7 @@ class RangeDriftDetector:
 
         """
 
-        if not self.is_fitted_:
+        if not self.is_fitted:
             raise RuntimeError("Model is not fitted yet.")
 
         if not isinstance(last_window, (pd.DataFrame, pd.Series, dict, type(None))):
