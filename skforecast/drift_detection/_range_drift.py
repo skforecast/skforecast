@@ -76,7 +76,6 @@ class RangeDriftDetector:
 
         return info
 
-    # TODO: Update version in link when create user guide
     def _repr_html_(self):
         """
         HTML representation of the object.
@@ -122,7 +121,7 @@ class RangeDriftDetector:
             <p>
                 <a href="https://skforecast.org/{skforecast.__version__}/api/drift_detection.html#skforecast.drift_detection.drift_detection.RangeDriftDetector">&#128712 <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
-                <a href="https://skforecast.org/{skforecast.__version__}/user_guides/window-features-and-custom-features.html">&#128462 <strong>User Guide</strong></a>
+                <a href="https://skforecast.org/{skforecast.__version__}/user_guides/drift-detection.html">&#128462 <strong>User Guide</strong></a>
             </p>
         </div>
         """
@@ -417,24 +416,16 @@ class RangeDriftDetector:
 
         """
 
-        # Deprecation of 'y' argument in favor of 'series'
         if series is None and 'y' not in kwargs:
             raise ValueError(
-                "`series` cannot be None. Please provide the time series data."
+                "One of `series` or `y` must be provided."
             )
         if 'y' in kwargs:
             if series is not None:
                 raise TypeError(
-                    "Cannot specify both 'series' and 'y'. Please use 'series' "
-                    "since 'y' is deprecated."
+                    "Cannot specify both `series` and `y`. Please provide only one of them."
                 )
-            else:
-                warnings.warn(
-                    "`y` is deprecated and will be removed in a future version. "
-                    "Please use 'series' instead.",
-                    FutureWarning,
-                )
-                series = kwargs.pop('y')
+            series = kwargs.pop('y')
         
         self.series_names_in_     = []
         self.series_values_range_ = {}
