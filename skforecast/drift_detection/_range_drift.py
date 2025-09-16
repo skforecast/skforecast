@@ -392,7 +392,6 @@ class RangeDriftDetector:
 
         return X
     
-    # TODO: `y` is an alias
     def fit(
         self,
         series: pd.DataFrame | pd.Series | dict[str, pd.Series | pd.DataFrame] | None = None,
@@ -404,7 +403,7 @@ class RangeDriftDetector:
 
         Parameters
         ----------
-        series : pandas Series, pandas DataFrame, dict
+        series : pandas Series, pandas DataFrame, dict, aliases: `y`
             Input time series data to fit the detector, ideally the same ones
             used to fit the forecaster.
         exog : pandas Series, pandas DataFrame, dict, default None
