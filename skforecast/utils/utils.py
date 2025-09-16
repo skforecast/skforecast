@@ -31,7 +31,7 @@ from ..exceptions import (
     SaveLoadSkforecastWarning,
     SkforecastVersionWarning,
     UnknownLevelWarning,
-    InputTypeWarning,
+    InputTypeWarning
 )
 
 optional_dependencies = {

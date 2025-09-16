@@ -2557,9 +2557,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         last_window: pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
         suppress_warnings: bool = False,
-        check_inputs: bool = True,
-        warning_drift: bool = False
-
+        check_inputs: bool = True
     ) -> pd.DataFrame:
         """
         Predict n steps ahead. It is an recursive process in which, each prediction,
@@ -2589,9 +2587,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             If `True`, the input is checked for possible warnings and errors 
             with the `check_predict_input` function. This argument is created 
             for internal use and is not recommended to be changed.
-        warning_drift: bool = False
-            If `True`, the input is checked to detect if input values are out of
-            the range seen during training.
 
         Returns
         -------

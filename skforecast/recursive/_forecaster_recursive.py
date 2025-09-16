@@ -1045,7 +1045,7 @@ class ForecasterRecursive(ForecasterBase):
             exog_dtypes_in_,
             exog_dtypes_out_
         ) = self._create_train_X_y(y=y, exog=exog)
-
+        
         sample_weight = self.create_sample_weights(X_train=X_train)
 
         if sample_weight is not None:

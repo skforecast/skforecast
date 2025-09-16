@@ -101,8 +101,7 @@ nav:
     - model_selection: api/model_selection.md
     - feature_selection: api/feature_selection.md
     - preprocessing: api/preprocessing.md
-    - drift_detection:
-      - RangeDriftDetector: api/RangeDriftDetector.md
+    - drift_detection: api/drift_detection.md
     - metrics: api/metrics.md
     - plot: api/plot.md
     - utils: api/utils.md
