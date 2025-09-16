@@ -10,7 +10,7 @@ from skforecast.direct import ForecasterDirectMultiVariate
 @pytest.mark.parametrize("lags", 
                          [None, {'l1': None, 'l2': None}], 
                          ids = lambda lags: f'lags: {lags}')
-def test_set_window_features_ValueError_when_window_features_set_to_None_and_lags_is_None(lags):
+def test_set_window_features_ValueError_when_set_to_None_and_lags_is_None(lags):
     """
     Test ValueError is raised when window_features is set to None and lags is None.
     """

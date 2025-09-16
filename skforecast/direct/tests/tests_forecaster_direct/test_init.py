@@ -91,7 +91,7 @@ def test_init_window_size_correctly_stored(lags, window_features, expected):
 @pytest.mark.parametrize("dif", 
                          [0, 0.5, 1.5, 'not_int'], 
                          ids = lambda dif: f'differentiation: {dif}')
-def test_init_ValueError_when_differentiation_argument_is_not_int_or_greater_than_0(dif):
+def test_init_ValueError_when_differentiation_is_not_int_or_greater_than_0(dif):
     """
     Test ValueError is raised when differentiation is not an int or greater than 0.
     """

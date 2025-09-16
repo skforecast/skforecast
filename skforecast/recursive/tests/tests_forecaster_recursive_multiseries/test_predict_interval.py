@@ -77,7 +77,7 @@ def expected_pandas_dataframe(request):
     return levels, expected_df
 
 
-def test_predict_output_when_regressor_is_LinearRegression_steps_is_1_in_sample_residuals_is_True_with_fixture(expected_pandas_dataframe):
+def test_predict_output_when_steps_is_1_in_sample_residuals_is_True_with_fixture(expected_pandas_dataframe):
     """
     Test output when regressor is LinearRegression and one step ahead is predicted
     using in sample residuals. This test is equivalent to the next one.
@@ -194,7 +194,7 @@ def expected_pandas_dataframe_2(request):
     return levels, expected_df
 
 
-def test_predict_output_when_regressor_is_LinearRegression_steps_is_2_in_sample_residuals_is_True_with_fixture(expected_pandas_dataframe_2):
+def test_predict_output_when_steps_is_2_in_sample_residuals_is_True_with_fixture(expected_pandas_dataframe_2):
     """
     Test output when regressor is LinearRegression and one step ahead is predicted
     using in sample residuals. This test is equivalent to the next one.
@@ -280,7 +280,7 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_2_
     pd.testing.assert_frame_equal(results_3, expected[2])
 
 
-def test_predict_output_when_regressor_is_LinearRegression_steps_is_1_in_sample_residuals_is_False_with_fixture(expected_pandas_dataframe):
+def test_predict_output_when_steps_is_1_in_sample_residuals_is_False_with_fixture(expected_pandas_dataframe):
     """
     Test output when regressor is LinearRegression and one step ahead is predicted
     using out sample residuals.
@@ -305,7 +305,7 @@ def test_predict_output_when_regressor_is_LinearRegression_steps_is_1_in_sample_
     pd.testing.assert_frame_equal(predictions, expected)
 
 
-def test_predict_output_when_regressor_is_LinearRegression_steps_is_2_in_sample_residuals_is_False_with_fixture(expected_pandas_dataframe_2):
+def test_predict_output_when_steps_is_2_in_sample_residuals_is_False_with_fixture(expected_pandas_dataframe_2):
     """
     Test output when regressor is LinearRegression and one step ahead is predicted
     using in sample residuals. This test is equivalent to the next one.
@@ -331,7 +331,7 @@ def test_predict_output_when_regressor_is_LinearRegression_steps_is_2_in_sample_
 @pytest.mark.parametrize("interval", 
                          [0.90, [5, 95], (5, 95)], 
                          ids = lambda value: f'interval: {value}')
-def test_predict_interval_output_when_regressor_is_LinearRegression_with_transform_series(interval):
+def test_predict_interval_output_when_with_transform_series(interval):
     """
     Test predict_interval output when using LinearRegression as regressor and StandardScaler.
     """
@@ -361,7 +361,7 @@ def test_predict_interval_output_when_regressor_is_LinearRegression_with_transfo
     pd.testing.assert_frame_equal(predictions, expected)
 
 
-def test_predict_interval_output_when_regressor_is_LinearRegression_with_transform_series_as_dict():
+def test_predict_interval_output_when_with_transform_series_as_dict():
     """
     Test predict_interval output when using LinearRegression as regressor and transformer_series
     is a dict with 2 different transformers.
@@ -394,7 +394,7 @@ def test_predict_interval_output_when_regressor_is_LinearRegression_with_transfo
     pd.testing.assert_frame_equal(predictions, expected)
 
 
-def test_predict_interval_output_when_regressor_is_LinearRegression_with_transform_series_and_transform_exog():
+def test_predict_interval_output_when_with_transform_series_and_transform_exog():
     """
     Test predict_interval output when using LinearRegression as regressor, StandardScaler
     as transformer_series and transformer_exog as transformer_exog.

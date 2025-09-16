@@ -192,5 +192,29 @@ def expected_df_to_long_format(
             .rename(columns={"level_aux": "level"})
             [['level', 'pred', 'lower_bound', 'upper_bound']]
         )
+    elif method == "backtesting-predict":
+        df = (
+            df.melt(id_vars=['fold'], var_name="level", value_name="pred", ignore_index=False)
+            .reset_index()
+            .sort_values(by=["index", "level"])
+            .set_index("index")
+            .rename_axis(None, axis=0)
+            [['level', 'fold', 'pred']]
+        )
+    elif method == "backtesting-interval":
+        df = df.melt(id_vars=['fold'], var_name="level", value_name="pred", ignore_index=False).reset_index()
+        df['level_aux'] = df['level'].str.replace(r'_lower_bound|_upper_bound', '', regex=True)
+        df['bound_type'] = df['level'].str.extract(r'(lower_bound|upper_bound)$', expand=False).fillna('pred')
+
+        df = (
+            df.pivot_table(index=["index", "level_aux", "fold"], columns="bound_type", values="pred")
+            .reset_index()
+            .sort_values(by=["index", "level_aux"])
+            .set_index("index")
+            .rename_axis(None, axis=0)
+            .rename_axis(None, axis=1)
+            .rename(columns={"level_aux": "level"})
+            [['level', 'fold', 'pred', 'lower_bound', 'upper_bound']]
+        )
 
     return df

@@ -69,7 +69,7 @@ def test_create_predict_X_when_regressor_is_LinearRegression():
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_create_predict_X_when_regressor_is_LinearRegression_and_StandardScaler():
+def test_create_predict_X_when_and_StandardScaler():
     """
     Test create_predict_X when using LinearRegression as regressor and StandardScaler.
     """
@@ -95,7 +95,7 @@ def test_create_predict_X_when_regressor_is_LinearRegression_and_StandardScaler(
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_create_predict_X_when_regressor_is_LinearRegression_with_transform_y():
+def test_create_predict_X_when_with_transform_y():
     """
     Test create_predict_X when using LinearRegression as regressor and StandardScaler.
     """
@@ -128,7 +128,7 @@ def test_create_predict_X_when_regressor_is_LinearRegression_with_transform_y():
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_create_predict_X_when_regressor_is_LinearRegression_with_transform_y_and_transform_exog_series():
+def test_create_predict_X_when_with_transform_y_and_transform_exog_series():
     """
     Test create_predict_X when using LinearRegression as regressor, StandardScaler
     as transformer_y and StandardScaler as transformer_exog.
@@ -162,7 +162,7 @@ def test_create_predict_X_when_regressor_is_LinearRegression_with_transform_y_an
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_create_predict_X_when_regressor_is_LinearRegression_with_transform_y_and_transform_exog_df():
+def test_create_predict_X_when_with_transform_y_and_transform_exog_df():
     """
     Test create_predict_X when using LinearRegression as regressor, StandardScaler
     as transformer_y and transformer_exog as transformer_exog.
@@ -355,7 +355,7 @@ def test_create_predict_X_when_categorical_features_auto_detect_LGBMRegressor():
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_create_predict_X_when_regressor_is_LinearRegression_with_exog_differentiation_is_1_and_transformer_y():
+def test_create_predict_X_when_with_exog_differentiation_is_1_and_transformer_y():
     """
     Test create_predict_X when using LinearRegression as regressor and differentiation=1,
     and transformer_y is StandardScaler.

@@ -14,7 +14,7 @@ from sklearn.neighbors import KNeighborsRegressor
 
 @pytest.mark.parametrize("forecaster_name", 
                          ['ForecasterRecursive', 'ForecasterDirect', 'ForecasterDirectMultiVariate'], 
-                         ids=lambda fn: f'forecaster_name: {fn}')
+                         ids=lambda fn: f'{fn}')
 def test_TypeError_initialize_weights_when_weight_func_is_not_a_Callable(forecaster_name):
     """
     Test TypeError is raised when weight_func is not a Callable.
@@ -115,7 +115,7 @@ def test_IgnoredArgumentWarning_initialize_weights_when_series_weights_is_provid
 
 @pytest.mark.parametrize("regressor", 
                          [LinearRegression(), RandomForestRegressor()], 
-                         ids=lambda regressor: f'regressor: {type(regressor).__name__}')
+                         ids=lambda regressor: f'{type(regressor).__name__}')
 def test_initialize_weights_finds_sample_weight_in_different_regressors_when_weight_func(recwarn, regressor):
     """
     Test initialize weights finds `sample_weight` attribute in different
@@ -137,7 +137,7 @@ def test_initialize_weights_finds_sample_weight_in_different_regressors_when_wei
 
 @pytest.mark.parametrize("regressor", 
                          [LinearRegression(), RandomForestRegressor()], 
-                         ids=lambda regressor: f'regressor: {type(regressor).__name__}')
+                         ids=lambda regressor: f'{type(regressor).__name__}')
 def test_initialize_weights_finds_sample_weight_in_different_regressors_when_series_weights(recwarn, regressor):
     """
     Test initialize weights finds `sample_weight` attribute in different

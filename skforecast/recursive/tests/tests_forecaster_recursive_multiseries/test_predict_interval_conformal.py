@@ -109,7 +109,7 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_predict_interval_conformal_output_when_regressor_is_LinearRegression_with_transform_series():
+def test_predict_interval_conformal_output_when_with_transform_series():
     """
     Test _predict_interval_conformal output when using LinearRegression as regressor and StandardScaler.
     """
@@ -143,7 +143,7 @@ def test_predict_interval_conformal_output_when_regressor_is_LinearRegression_wi
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_predict_interval_conformal_output_when_regressor_is_LinearRegression_with_transform_series_and_transform_exog():
+def test_predict_interval_conformal_output_when_with_transform_series_and_transform_exog():
     """
     Test _predict_interval_conformal output when using LinearRegression as regressor, StandardScaler
     as transformer_series and transformer_exog as transformer_exog.

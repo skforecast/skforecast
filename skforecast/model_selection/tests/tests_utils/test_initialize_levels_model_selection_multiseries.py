@@ -98,8 +98,7 @@ def test_initialize_levels_model_selection_multiseries_ValueError_when_levels_no
 @pytest.mark.parametrize("levels, levels_expected",
                          [(None, ['l1', 'l2']), 
                           ('l1', ['l1']),
-                          (['l1', 'l2'], ['l1', 'l2'])],
-                         ids=lambda lags: f'lags, lags_grid_expected: {lags}')
+                          (['l1', 'l2'], ['l1', 'l2'])])
 def test_initialize_levels_model_selection_multiseries_for_all_inputs(series_as_dict, levels, levels_expected):
     """
     Test initialize_levels_model_selection_multiseries when levels is None, 

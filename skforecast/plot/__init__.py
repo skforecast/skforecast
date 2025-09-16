@@ -4,5 +4,6 @@ from .plot import (
     plot_prediction_distribution,
     plot_prediction_intervals,
     calculate_lag_autocorrelation,
+    backtesting_gif_creator,
     set_dark_theme
 )
