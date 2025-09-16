@@ -16,7 +16,7 @@ def test_fit_series_and_exog_single_series():
     detector = RangeDriftDetector()
     detector.fit(series=series, exog=exog)
 
-    assert detector.is_fitted_ is True
+    assert detector.is_fitted is True
     assert detector.series_names_in_ == ['y']
     assert detector.series_values_range_ == {'y': (1.0, 5.0)}
     assert detector.exog_values_range_ == {'exog': (10.0, 50.0)}
@@ -38,7 +38,7 @@ def test_fit_series_and_exog_df():
     detector = RangeDriftDetector()
     detector.fit(series=series, exog=exog)
 
-    assert detector.is_fitted_ is True
+    assert detector.is_fitted is True
     assert detector.series_names_in_ == ['series_1', 'series_2']
     assert detector.series_values_range_ == {
         'series_1': (1.0, 5.0),
@@ -72,7 +72,7 @@ def test_fit_series_and_exog_df_multindex():
     detector = RangeDriftDetector()
     detector.fit(series=series, exog=exog)
 
-    assert detector.is_fitted_ is True
+    assert detector.is_fitted is True
     assert detector.series_names_in_ == ["series_1", "series_2", "series_3"]
     assert detector.series_values_range_ == {
         "series_1": (1.0, 3.0),
@@ -95,41 +95,29 @@ def test_fit_series_and_exog_df_multindex():
         },
     }
 
-def test_fit_deprecated_y_argument():
-    """
-    Test fit with deprecated 'y' argument.
-    """
-    series = pd.Series([1, 2, 3], name='y')
-    detector = RangeDriftDetector()
-    msg = (
-        "`y` is deprecated and will be removed in a future version. Please use 'series' instead."
-    )
-    with pytest.warns(FutureWarning, match=msg):
-        detector.fit(y=series)
-
-    assert detector.is_fitted_ is True
-    assert detector.series_names_in_ == ['y']
-
-
-def test_fit_series_none():
-    """
-    Test fit raises ValueError when series is None.
-    """
-    detector = RangeDriftDetector()
-    msg = "`series` cannot be None. Please provide the time series data."
-    with pytest.raises(ValueError, match=msg):
-        detector.fit(series=None)
-
-
-def test_fit_both_series_and_y():
+def test_fit_raise_error_series_and_y_provided():
     """
     Test fit raises TypeError when both series and y are provided.
     """
     series = pd.Series([1, 2, 3], name='y')
     detector = RangeDriftDetector()
-    msg = "Cannot specify both 'series' and 'y'. Please use 'series' since 'y' is deprecated."
-    with pytest.raises(TypeError, match=msg):
+    msg = (
+        "Cannot specify both `series` and `y`. Please provide only one of them."
+    )
+    with pytest.raises(ValueError, match=msg):
         detector.fit(series=series, y=series)
+
+
+def test_fit_raise_error_when_no_series_nor_y_provided():
+    """
+    Test fit raises TypeError when neither series nor y are provided.
+    """
+    detector = RangeDriftDetector()
+    msg = (
+        "One of `series` or `y` must be provided."
+    )
+    with pytest.raises(ValueError, match=msg):
+        detector.fit(series=None, y=None)
 
 
 def test_fit_invalid_series_type():

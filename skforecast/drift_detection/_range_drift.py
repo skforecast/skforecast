@@ -86,13 +86,13 @@ class RangeDriftDetector:
         if self.series_names_in_ is not None:
             if len(self.series_names_in_) > 50:
                 series_names_in_ = self.series_names_in_[:25] + ["..."] + self.series_names_in_[-25:]
-            series_names_in_ = ", ".join(series_names_in_)
+            series_names_in_ = ", ".join(self.series_names_in_)
 
         exog_names_in_ = None
         if self.exog_names_in_ is not None:
             if len(self.exog_names_in_) > 50:
                 exog_names_in_ = self.exog_names_in_[:25] + ["..."] + self.exog_names_in_[-25:]
-            exog_names_in_ = ", ".join(exog_names_in_)
+            exog_names_in_ = ", ".join(self.exog_names_in_)
 
         style, unique_id = get_style_repr_html(self.is_fitted)
         content = f"""
@@ -415,13 +415,13 @@ class RangeDriftDetector:
 
         """
 
-        if series is None and 'y' not in kwargs:
+        if series is None and ('y' not in kwargs or kwargs['y'] is None):
             raise ValueError(
                 "One of `series` or `y` must be provided."
             )
         if 'y' in kwargs:
             if series is not None:
-                raise TypeError(
+                raise ValueError(
                     "Cannot specify both `series` and `y`. Please provide only one of them."
                 )
             series = kwargs.pop('y')

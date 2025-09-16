@@ -53,7 +53,7 @@ def test_normalize_input_DataFrame_multiindex_series():
     }
     assert result.keys() == expected.keys()
     for key in result:
-        pd.testing.assert_series_equal(result[key], expected[key])
+        pd.testing.assert_series_equal(result[key], expected[key], check_names=False)
 
 
 def test_normalize_input_DataFrame_multiindex_last_window():

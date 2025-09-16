@@ -26,7 +26,7 @@ def test_predict_invalid_last_window_type():
     Test predict raises TypeError for invalid last_window type.
     """
     detector = RangeDriftDetector()
-    detector.is_fitted_ = True
+    detector.is_fitted = True
     with pytest.raises(TypeError, match="last_window must be a pandas DataFrame, Series, dict or None."):
         detector.predict(last_window="invalid")
 
@@ -36,7 +36,7 @@ def test_predict_invalid_exog_type():
     Test predict raises TypeError for invalid exog type.
     """
     detector = RangeDriftDetector()
-    detector.is_fitted_ = True 
+    detector.is_fitted = True 
     with pytest.raises(TypeError, match="Exogenous variables must be a pandas DataFrame, Series, dict or None."):
         detector.predict(exog="invalid")
 
