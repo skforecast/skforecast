@@ -336,29 +336,36 @@ class ForecasterRecursive(ForecasterBase):
             }
         self.binner = QuantileBinner(**self.binner_kwargs)
         self.binner_intervals_ = None
-
-        # TODO: incluir self._probabilistic_mode?
+        
         self.__skforecast_tags__ = {
             "library": "skforecast",
             "estimator_type": "forecaster",
             "estimator_name": "ForecasterRecursive",
-            "forecasting_scope": "univariate",  # univariate, multivariate, global
-            "forecasting_strategy": "recursive",  # recursive, direct, deep_learning
-            "allowed_input_types": [pd.Series, pd.DataFrame],
-            "allowed_input_types_exog": [pd.Series, pd.DataFrame],
-            "handles_exog": True,
-            "handles_missing_values": False,
-            "handles_missing_values_exog": True,
+            "estimator_task": "regression",
+            "forecasting_scope": "single-series",  # single-series | global
+            "forecasting_strategy": "recursive",   # recursive | direct | deep_learning
+            "index_types_supported": ["pandas.RangeIndex", "pandas.DatetimeIndex"],
+            "requires_index_frequency": True,
+
+            "allowed_input_types": ["pandas.Series"],
+            "supports_exog": True,
+            "allowed_input_types_exog": ["pandas.Series", "pandas.DataFrame"],
+            "handles_missing_values_series": False, 
+            "handles_missing_values_exog": True, 
+
             "supports_lags": True,
             "supports_window_features": True,
-            "supports_transformer_series": True,  
+            "supports_transformer_series": True,
             "supports_transformer_exog": True,
+            "supports_weight_func": True,
             "supports_differentiation": True,
-            "supports_sample_weight": True,  # depende del regressor pero a nivel forecaster lo permite
-            "probabilistic_capabilities": ["binned"],
-            "prediction_type": ["point", "bootstrapping", "conformal"],
-            "requires_fitted": True
+
+            "prediction_types": ["point", "interval", "bootstrapping", "quantiles", "distribution"],
+            "supports_probabilistic": True,
+            "probabilistic_methods": ["bootstrapping", "conformal"],
+            "handles_binned_residuals": True
         }
+
 
     def __repr__(
         self
