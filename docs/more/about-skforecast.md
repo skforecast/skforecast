@@ -54,7 +54,7 @@ Special mention to the main contributors who have significantly impacted the lib
 
 ## Contributors
 
-![GitHub contributors](https://img.shields.io/github/contributors-anon/skforecast/skforecast)
+[![GitHub contributors](https://img.shields.io/github/contributors-anon/skforecast/skforecast)](https://github.com/skforecast/skforecast/graphs/contributors)
 
 ???+ note "Get Involved"
 

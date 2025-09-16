@@ -85,8 +85,8 @@ def test_check_one_step_ahead_input_TypeError_when_forecaster_not_allowed():
 @pytest.mark.parametrize("forecaster", 
                          [ForecasterRecursive(regressor=Ridge(), lags=2),
                           ForecasterDirect(regressor=Ridge(), lags=2, steps=3)], 
-                         ids = lambda fr: f'forecaster: {type(fr).__name__}')
-def test_check_one_step_ahead_input_TypeError_when_y_is_not_pandas_Series_uniseries(forecaster):
+                         ids = lambda fr: f'{type(fr).__name__}')
+def test_check_one_step_ahead_input_TypeError_when_y_is_not_pandas_Series(forecaster):
     """
     Test TypeError is raised in check_one_step_ahead_input if `y` is not a 
     pandas Series in forecasters uni-series.
@@ -108,8 +108,8 @@ def test_check_one_step_ahead_input_TypeError_when_y_is_not_pandas_Series_uniser
 
 @pytest.mark.parametrize("forecaster", 
                          [ForecasterDirectMultiVariate(regressor=Ridge(), lags=2, steps=3, level='l1')], 
-                         ids = lambda fr: f'forecaster: {type(fr).__name__}')
-def test_check_one_step_ahead_input_TypeError_when_series_is_not_pandas_DataFrame_multiseries(forecaster):
+                         ids = lambda fr: f'{type(fr).__name__}')
+def test_check_one_step_ahead_input_TypeError_when_series_is_not_pandas_DataFrame(forecaster):
     """
     Test TypeError is raised in check_one_step_ahead_input if `series` is not a 
     pandas DataFrame in forecasters multiseries.
@@ -195,7 +195,7 @@ def test_check_one_step_ahead_input_ValueError_when_ForecasterRecursiveMultiSeri
 @pytest.mark.parametrize("forecaster", 
     [ForecasterRecursive(regressor=Ridge(), lags=2, differentiation=2),
      ForecasterRecursiveMultiSeries(regressor=Ridge(), lags=2, differentiation=2)], 
-     ids = lambda fr: f'forecaster: {type(fr).__name__}')
+     ids = lambda fr: f'{type(fr).__name__}')
 def test_check_one_step_ahead_input_ValueError_when_forecaster_diff_not_cv_diff(forecaster):
     """
     Test ValueError is raised in check_one_step_ahead_input if `differentiation`
@@ -261,7 +261,7 @@ def test_check_one_step_ahead_input_TypeError_when_metric_not_correct_type():
 @pytest.mark.parametrize("forecaster", 
                          [ForecasterRecursive(regressor=Ridge(), lags=3),
                           ForecasterRecursiveMultiSeries(regressor=Ridge(), lags=3)], 
-                         ids = lambda fr: f'forecaster: {type(fr).__name__}')
+                         ids = lambda fr: f'{type(fr).__name__}')
 def test_check_one_step_ahead_input_ValueError_when_initial_train_size_not_correct_value(initial_train_size, forecaster):
     """
     Test ValueError is raised in check_one_step_ahead_input when 

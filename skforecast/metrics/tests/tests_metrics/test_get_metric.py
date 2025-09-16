@@ -57,7 +57,7 @@ def test_get_metric_output_for_all_metrics(metric_str, metric_callable):
 @pytest.mark.parametrize("metric_str, metric_callable", 
                          [('mean_absolute_scaled_error', mean_absolute_scaled_error),
                           ('root_mean_squared_scaled_error', root_mean_squared_scaled_error)], 
-                         ids = lambda dt : f'mertic_str, metric_callable: {dt}')
+                         ids = lambda dt: f'mertic_str, metric_callable: {dt}')
 def test_get_metric_output_for_all_metrics_y_train(metric_str, metric_callable):
     """
     Test output for all metrics allowed with y_train argument.

@@ -31,7 +31,7 @@ def test_set_in_sample_residuals_NotFittedError_when_forecaster_not_fitted():
                          [pd.RangeIndex(start=50, stop=100), 
                           pd.date_range(start='1991-07-01', periods=50, freq='MS')], 
                          ids=lambda idx: f'diff_index: {idx[[0, -1]]}')
-def test_set_in_sample_residuals_IndexError_when_y_has_different_index_than_training(diff_index):
+def test_set_in_sample_residuals_IndexError_when_different_index_than_training(diff_index):
     """
     Test IndexError is raised when y has different index than training.
     """

@@ -3,10 +3,9 @@
 import pytest
 import numpy as np
 import pandas as pd
-from skforecast.model_selection._utils import _calculate_metrics_backtesting_multiseries
-from skforecast.metrics import add_y_train_argument
 from sklearn.metrics import mean_absolute_error
-from skforecast.metrics import mean_absolute_scaled_error
+from skforecast.metrics import mean_absolute_scaled_error, add_y_train_argument
+from skforecast.model_selection._utils import _calculate_metrics_backtesting_multiseries
 
 # Fixtures
 data = pd.DataFrame(
@@ -79,7 +78,8 @@ predictions = (
     .reset_index()
     .sort_values(by=["index", "level"])
     .set_index("index")
-    .rename_axis(None, axis=0)
+    .rename_axis('idx', axis=0)
+    .set_index('level', append=True)
 )
 predictions_missing_level = predictions.query("level != 'item_3'").copy()
 
@@ -113,15 +113,16 @@ predictions_different_length = (
     .reset_index()
     .sort_values(by=["index", "level"])
     .set_index("index")
-    .rename_axis(None, axis=0)
+    .rename_axis('idx', axis=0)
+    .set_index('level', append=True)
 )
 
 span_index = pd.date_range(start="2012-01-01", end="2012-02-19", freq="D")
 
 folds = [
-    [[0, 25], [24, 25], [25, 35], [25, 35], False],
-    [[0, 25], [34, 35], [35, 45], [35, 45], False],
-    [[0, 25], [44, 45], [45, 50], [45, 50], False],
+    [0, [0, 25], [24, 25], [25, 35], [25, 35], True],
+    [1, [0, 25], [34, 35], [35, 45], [35, 45], False],
+    [2, [0, 25], [44, 45], [45, 50], [45, 50], False],
 ]
 window_size = 2
 levels = ["item_1", "item_2", "item_3"]

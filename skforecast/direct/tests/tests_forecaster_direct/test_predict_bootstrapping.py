@@ -62,7 +62,7 @@ def test_predict_bootstrapping_ValueError_when_out_sample_residuals_is_None(use_
 
 @pytest.mark.parametrize("steps", [2, [1, 2], None], 
                          ids=lambda steps: f'steps: {steps}')
-def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_True_exog_and_transformer(steps):
+def test_predict_bootstrapping_output_when_in_sample_residuals_exog_and_transformer(steps):
     """
     Test output of predict_bootstrapping when regressor is LinearRegression,
     2 steps are predicted, using in-sample residuals, exog is included and both

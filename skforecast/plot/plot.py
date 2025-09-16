@@ -6,14 +6,19 @@
 # coding=utf-8
 
 from __future__ import annotations
+import os
 from typing import Any
+from pathlib import Path
+import warnings
 import numpy as np
 import pandas as pd
-from ..utils import check_optional_dependency
+from ..utils import check_optional_dependency, input_to_frame
+from ..exceptions import IgnoredArgumentWarning
 
 try:
     import matplotlib
     import matplotlib.pyplot as plt
+    from matplotlib.animation import FuncAnimation, PillowWriter
     import seaborn as sns
     from statsmodels.graphics.tsaplots import plot_acf
     from statsmodels.tsa.stattools import acf, pacf
@@ -413,3 +418,279 @@ def calculate_lag_autocorrelation(
         results = results.sort_values(by=sort_by, ascending=False).reset_index(drop=True)
 
     return results
+
+
+def backtesting_gif_creator(
+    data: pd.Series | pd.DataFrame,
+    cv: object,
+    series_to_plot: list[str] | None = None,
+    plot_last_window: bool = False,
+    filename: str = "backtesting.gif",
+    plt_style: str = "ggplot",
+    figsize: tuple[int, int] = (9, 4),
+    colors: dict[str, str] | None = None,
+    title_template: str = "Backtesting — Fold {fold_num} (refit: {refit})",
+    fps: int = 2,
+    dpi: int = 100
+) -> str:
+    """
+    Create a GIF of the backtesting folds using Matplotlib FuncAnimation.
+
+    Parameters
+    ----------
+    data : pandas Series, pandas DataFrame
+        Time series data to be used for backtesting. Can be a single series or 
+        multiple series.
+    cv : TimeSeriesFold
+        TimeSeriesFold object with the information needed to split the data into folds.
+    series_to_plot : list, default None
+        List of series names to plot. If None, all series will be plotted.
+    plot_last_window : bool, default False
+        Whether to plot the last window of the time series. If True, window_size 
+        must be specified in the cv object. 
+    filename : str, default "backtesting.gif"
+        Name of the output GIF file.
+    figsize : tuple, default (9, 4)
+        Size of the figure.
+    plt_style : str, default "ggplot"
+        Style to use for the plots. See Matplotlib styles for available options 
+        here: https://matplotlib.org/stable/gallery/style_sheets/style_sheets_reference.html.
+    colors : dict, default None
+        Dictionary with colors for the different elements of the plot. Must 
+        contain the following keys: ['train', 'last_window', 'gap', 'test', 'v_lines'].
+        Defaults colors are {"train": "#329239", "last_window": "#f7931a",
+        "gap": "#4d4d4d", "test": "#0d579b", "v_lines": "#252525"}
+    title_template : str, default "Backtesting — Fold {fold_num} (refit: {refit})"
+        Template for the title of each plot.
+    fps : int, default 2
+        Frames per second for the GIF.
+    dpi : int, default 100
+        Dots per inch for the GIF.
+
+    Returns
+    -------
+    filename_path : str
+        Path to the output GIF file.
+
+    """
+
+    if isinstance(data, pd.Series):
+        data = input_to_frame(
+                   data       = data, 
+                   input_name = data.name if data.name is not None else 'y'
+               )
+
+    if not isinstance(data, pd.DataFrame):
+        raise TypeError(
+            f"`data` must be a pandas Series or DataFrame. Got {type(data)}."
+        )
+
+    if not isinstance(data.index, (pd.RangeIndex, pd.DatetimeIndex)):
+        raise TypeError(
+            f"`data` must have a pandas RangeIndex or DatetimeIndex. Got {type(data.index)}."
+        )
+
+    cv_name = type(cv).__name__
+    if cv_name != "TimeSeriesFold":
+        raise TypeError(
+            f"`cv` must be a 'TimeSeriesFold' object. Got '{cv_name}'."
+        )
+
+    if not isinstance(fps, int) or fps <= 0:
+        raise TypeError(f"`fps` must be a positive integer. Got {fps}.")
+    if not isinstance(dpi, int) or dpi <= 0:
+        raise TypeError(f"`dpi` must be a positive integer. Got {dpi}.")
+
+    if series_to_plot is None:
+        series_to_plot = data.columns.to_list()
+    else:
+        if not isinstance(series_to_plot, list):
+            raise TypeError(
+                f"`series_to_plot` must be a list of column names. Got {type(series_to_plot)}."
+            )
+        missing_cols = [col for col in series_to_plot if col not in data.columns]
+        if missing_cols:
+            raise ValueError(f"Columns not found in `data`: {missing_cols}")
+
+    folds = cv.split(X=data)
+    if cv.return_all_indexes:
+        # NOTE: +1 to prevent iloc pandas from deleting the last observation
+        folds = [
+            [
+                fold[0],
+                [fold[1][0], fold[1][-1] + 1],
+                (
+                    [fold[2][0], fold[2][-1] + 1]
+                    if cv.window_size is not None
+                    else []
+                ),
+                [fold[3][0], fold[3][-1] + 1],
+                [fold[4][0], fold[4][-1] + 1],
+                fold[5],
+            ]
+            for fold in folds
+        ]
+
+    if colors is None:
+        colors = {
+            "train": "#329239",
+            "last_window": "#f7931a",
+            "gap": "#4d4d4d",
+            "test": "#0d579b",
+            "v_lines": "#252525",
+        }
+    else:
+        if not set(colors.keys()) >= {"train", "last_window", "gap", "test", "v_lines"}:
+            raise ValueError(
+                f"`colors` must contain the following keys: "
+                f"{['train', 'last_window', 'gap', 'test', 'v_lines']}"
+            )
+
+    y_values = data[series_to_plot].to_numpy().flatten()
+    y_min, y_max = np.nanmin(y_values), np.nanmax(y_values)
+
+    # Include some padding to y-axis limits
+    y_pad = 0.05 * (y_max - y_min if np.isfinite(y_max - y_min) and (y_max - y_min) > 0 else 1.0)
+    y_min_plot = (y_min - y_pad) if np.isfinite(y_min) else -1
+    y_max_plot = (y_max + y_pad) if np.isfinite(y_max) else 1
+
+    with plt.style.context(plt_style):
+        fig, ax = plt.subplots(figsize=figsize)
+
+        x_index = data.index
+
+        def _draw_fold(ax, fold, title: str):
+            ax.clear()
+
+            for col in series_to_plot:
+                ax.plot(
+                    x_index,
+                    data[col].to_numpy(),
+                    linewidth=1.5,
+                    alpha=0.9,
+                    label=col,
+                )
+
+            y_min_relative = (y_min - y_min_plot) / (y_max_plot - y_min_plot)
+            y_max_relative = (y_max - y_min_plot) / (y_max_plot - y_min_plot)
+
+            # Train
+            train_start, train_end = fold[1]
+            ax.axvspan(
+                x_index[train_start],
+                x_index[train_end],
+                y_min_relative,
+                y_max_relative,
+                facecolor=colors["train"],
+                alpha=0.2 if plot_last_window else 0.4,
+                zorder=0,
+                label="Train",
+            )
+
+            # last_window
+            if plot_last_window:
+                if cv.window_size is None:
+                    warnings.warn(
+                        "Last window cannot be calculated because the `window_size` "
+                        "of the `cv` object is None.",
+                        IgnoredArgumentWarning
+                    )
+                else:
+                    last_window_start, last_window_end = fold[2]
+                    ax.axvspan(
+                        x_index[last_window_start],
+                        x_index[last_window_end],
+                        y_min_relative,
+                        y_max_relative,
+                        facecolor=colors["last_window"],
+                        alpha=0.4,
+                        zorder=0,
+                        label="Last window",
+                    )
+
+            # Gap (if exists)
+            gap_start = fold[3][0]
+            gap_end = fold[4][0]
+            if gap_start != gap_end:
+                ax.axvspan(
+                    x_index[gap_start],
+                    x_index[gap_end],
+                    y_min_relative,
+                    y_max_relative,
+                    facecolor="#bababa",
+                    alpha=0.9,
+                    zorder=0,
+                    label="Gap",
+                    hatch="////",
+                    edgecolor=colors["gap"], 
+                )
+
+            # Test
+            test_start, test_end = fold[4]
+            ax.axvspan(
+                x_index[test_start],
+                x_index[test_end - 1],
+                y_min_relative,
+                y_max_relative,
+                facecolor=colors["test"],
+                alpha=0.4,
+                zorder=0,
+                label="Test",
+            )
+
+            def vline(ax, i):
+                ax.axvline(
+                    x_index[i],
+                    ymin=y_min_relative,
+                    ymax=y_max_relative,
+                    lw=1,
+                    ls="--",
+                    alpha=0.5,
+                    color=colors["v_lines"],
+                )
+
+            vline(ax, train_end)
+            vline(ax, test_start)
+
+            ax.set_ylim(y_min_plot, y_max_plot)
+            ax.set_title(title)
+            ax.legend(loc="upper left")
+            ax.grid(True, alpha=0.8)
+
+        # --------- Animation functions ----------
+        def init():
+            # Draw the first fold as the initial state
+            _draw_fold(ax, folds[0], title=title_template.format(fold_num=1, refit=0))
+            return (ax,)
+
+        def update(i):
+            fold = folds[i]
+            fold_num = min(i + 1, len(folds) - n_extra)
+            refit = fold[5] if len(fold) > 4 else i
+            title = title_template.format(fold_num=fold_num, refit=refit)
+            _draw_fold(ax, fold, title=title)
+            return (ax,)
+
+        # --------- Construction and saving ----------
+        # Add extra folds for pause at the end
+        n_extra = 2
+        for i in range(n_extra):
+            folds.append(folds[-1])
+
+        ani = FuncAnimation(
+            fig,
+            update,
+            frames=len(folds),
+            init_func=init,
+            blit=False, 
+            repeat=False
+        )
+
+        # Save GIF
+        writer = PillowWriter(fps=max(1, int(fps)))
+        ani.save(Path(filename).with_suffix('.gif'), writer=writer, dpi=dpi)
+        plt.close(fig)
+
+    filename_path = os.path.join(os.getcwd(), filename)
+
+    return Path(filename_path)
