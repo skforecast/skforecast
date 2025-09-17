@@ -624,7 +624,10 @@ class ForecasterStats():
                 exog  = last_window_exog,
                 refit = False
             )
-            self.extended_index_ = self.regressor.sarimax_res.fittedvalues.index
+            if isinstance(self.regressor, skforecast.sarimax.Sarimax):
+                self.extended_index_ = self.regressor.sarimax_res.fittedvalues.index
+            else:
+                self.extended_index_ = self.regressor.fitted_index_
 
         # Get following n steps predictions
         if isinstance(self.regressor, skforecast.sarimax.Sarimax):
@@ -650,8 +653,9 @@ class ForecasterStats():
                           fit               = False,
                           inverse_transform = True
                       )
-            predictions = pd.Series(predictions, name='pred')
-            
+            predictions_index = expand_index(index=self.extended_index_, steps=steps)
+            predictions = pd.Series(predictions, index=predictions_index, name='pred')
+
         return predictions
 
     def predict_interval(
@@ -739,12 +743,23 @@ class ForecasterStats():
             self.extended_index_ = self.regressor.sarimax_res.fittedvalues.index
 
         # Get following n steps predictions with intervals
-        predictions = self.regressor.predict(
-                          steps = steps,
-                          exog  = exog,
-                          return_conf_int = True,
-                          alpha = alpha
-                      )
+        if isinstance(self.regressor, skforecast.sarimax.Sarimax):
+            predictions = self.regressor.predict(
+                            steps           = steps,
+                            exog            = exog,
+                            return_conf_int = True,
+                            alpha           = alpha
+                        )
+        else:
+            predictions = self.regressor.predict_interval(
+                            steps           = steps,
+                            exog            = exog,
+                            level           = [100 * (1 - alpha)],
+                            as_frame        = True
+                        )
+            predictions_index = expand_index(index=self.extended_index_, steps=steps)
+            predictions.index = predictions_index
+            predictions.columns = ['pred', 'lower_bound', 'upper_bound']
 
         if self.transformer_y:
             predictions = predictions.apply(lambda col: transform_series(
