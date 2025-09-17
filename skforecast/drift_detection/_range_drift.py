@@ -63,14 +63,26 @@ class RangeDriftDetector:
         """
         Information displayed when a RangeDriftDetector object is printed.
         """
+    
+        series_names_in_ = None
+        if self.series_names_in_ is not None:
+            if len(self.series_names_in_) > 50:
+                series_names_in_ = self.series_names_in_[:25] + ["..."] + self.series_names_in_[-25:]
+            series_names_in_ = ", ".join(self.series_names_in_)
+
+        exog_names_in_ = None
+        if self.exog_names_in_ is not None:
+            if len(self.exog_names_in_) > 50:
+                exog_names_in_ = self.exog_names_in_[:25] + ["..."] + self.exog_names_in_[-25:]
+            exog_names_in_ = ", ".join(self.exog_names_in_)
 
         info = (
             f"{'=' * len(type(self).__name__)} \n"
             f"{type(self).__name__} \n"
             f"{'=' * len(type(self).__name__)} \n"
-            f"Fitted series          = {self.series_names_in_} \n"
+            f"Fitted series          = {series_names_in_} \n"
             f"Series value ranges    = {self.series_values_range_} \n"
-            f"Fitted exogenous       = {self.exog_names_in_} \n"
+            f"Fitted exogenous       = {exog_names_in_} \n"
             f"Exogenous value ranges = {self.exog_values_range_} \n"
         )
 
@@ -249,7 +261,7 @@ class RangeDriftDetector:
             )
 
         if series_name:
-            msg = f"'{series_name}': " + msg
+            msg = f"`{series_name}`: " + msg
 
         warnings.warn(msg, FeatureOutOfRangeWarning)
 
@@ -319,11 +331,11 @@ class RangeDriftDetector:
                         f"{exog_range}."
                     )
                 if series_id:
-                    msg_temp = f"'{series_id}': " + msg_temp
+                    msg_temp = f"`{series_id}`: " + msg_temp
                 exog_msgs.append(textwrap.fill(msg_temp, width=80))
-            msg_exog = "\n".join(exog_msgs) + "\n"
+            msg_exog = "\n".join(exog_msgs)
         else:
-            msg_exog = "No exogenous variables with out-of-range values found.\n"
+            msg_exog = "No exogenous variables with out-of-range values found."
 
         console = Console()
         content = (
@@ -370,8 +382,8 @@ class RangeDriftDetector:
                     col = X.columns[0]
                     if len(X.columns) != 1:
                         warnings.warn(
-                            f"`{name}` DataFrame has multiple columns. Only the first column "
-                            f"'{col}' will be used. Others ignored.",
+                            f"`{name}` DataFrame has multiple columns. Only the "
+                            f"first column, '{col}', will be used. Others ignored.",
                             IgnoredArgumentWarning,
                         )
                     X = {
@@ -387,7 +399,7 @@ class RangeDriftDetector:
             for k, v in X.items():
                 if not isinstance(v, (pd.Series, pd.DataFrame)):
                     raise TypeError(
-                        f"All values in `{name}` must be Series or DataFrame."
+                        f"All values in `{name}` must be pandas Series or DataFrame."
                     )
 
         return X
@@ -577,11 +589,11 @@ class RangeDriftDetector:
 
         if verbose:
             self._summary(
-                out_of_range_series,
-                out_of_range_series_ranges,
-                out_of_range_exog,
-                out_of_range_exog_ranges,
-                out_of_range_exog_series_id
+                out_of_range_series         = out_of_range_series,
+                out_of_range_series_ranges  = out_of_range_series_ranges,
+                out_of_range_exog           = out_of_range_exog,
+                out_of_range_exog_ranges    = out_of_range_exog_ranges,
+                out_of_range_exog_series_id = out_of_range_exog_series_id
             )
 
         set_skforecast_warnings(suppress_warnings, action='default')

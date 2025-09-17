@@ -1,5 +1,6 @@
 # Unit test _create_predict_inputs ForecasterRecursiveMultiSeries
 # ==============================================================================
+from operator import index
 import re
 import pytest
 import numpy as np
@@ -44,6 +45,39 @@ def test_create_predict_inputs_NotFittedError_when_fitted_is_False():
     )
     with pytest.raises(NotFittedError, match = err_msg):
         forecaster._create_predict_inputs(steps=5)
+
+
+def test_create_predict_inputs_ValueError_when_last_window_MultiIndex_is_used():
+    """
+    Test ValueError is raised when last_window is a MultiIndex DataFrame.
+    """
+
+    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=5)
+    forecaster.fit(series=series_long_dt, exog=exog_long_dt)
+
+    idx = pd.MultiIndex.from_product(
+        [forecaster.series_names_in_, forecaster.last_window_["1"].index],
+        names=["series_id", "datetime"],
+    )
+    last_window_long = pd.DataFrame(
+        {
+            "values": np.concatenate(
+                [
+                    forecaster.last_window_["1"].to_numpy(),
+                    forecaster.last_window_["2"].to_numpy(),
+                ]
+            )
+        },
+        index=idx,
+    )
+
+    err_msg = re.escape(
+        "`last_window` must be a pandas DataFrame with one column "
+        "per series and a single-level index (MultiIndex is not "
+        "supported)."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        forecaster._create_predict_inputs(steps=5, last_window=last_window_long)
 
 
 def test_create_predict_inputs_TypeError_when_exog_MultiIndex_no_DatetimeIndex():

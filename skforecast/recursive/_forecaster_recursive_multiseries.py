@@ -2092,6 +2092,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                           last_window_         = self.last_window_
                                       )
             else:
+                if isinstance(last_window, pd.DataFrame) and isinstance(last_window.index, pd.MultiIndex):
+                    raise ValueError(
+                        "`last_window` must be a pandas DataFrame with one column "
+                        "per series and a single-level index (MultiIndex is not "
+                        "supported)."
+                    )
                 if input_levels_is_None and isinstance(last_window, pd.DataFrame):
                     levels = last_window.columns.to_list()
 
