@@ -301,9 +301,9 @@ class Arar(BaseEstimator, RegressorMixin):
 
     Parameters
     ----------
-    max_ar_depth : int
+    max_ar_depth : int, default=26
         Maximum AR depth considered for the (1, i, j, k) AR selection stage.
-    max_lag : int
+    max_lag : int, default=40
         Maximum lag used when estimating autocovariances.
     safe : bool, default=True
         If True, falls back to a mean-only model on numerical issues or very
@@ -315,7 +315,7 @@ class Arar(BaseEstimator, RegressorMixin):
         Maximum AR depth considered for the (1, i, j, k) AR selection stage.
     max_lag : int
         Maximum lag used when estimating autocovariances.
-    safe : bool, default=True
+    safe : bool
         If True, falls back to a mean-only model on numerical issues or very
         short series; otherwise errors are raised.
     model_ : tuple
@@ -336,27 +336,16 @@ class Arar(BaseEstimator, RegressorMixin):
         For sklearn compatibility (always 1).
     fitted_values_ : ndarray of shape (n_samples,)
         In-sample fitted values (NaN for first k-1 terms).
-    fitted_index_ : pd.Index
-        Index of the training series. Only available if `y` is a pd.Series.
     residuals_in_ : ndarray of shape (n_samples,)
         In-sample residuals (observed - fitted).
     """
 
-    def __init__(
-            self,
-            max_ar_depth: int = 26,
-            max_lag: int = 40,
-            safe: bool = True
-    ):
+    def __init__(self, max_ar_depth: int = 26, max_lag: int = 40, safe: bool = True):
         self.max_ar_depth = max_ar_depth
         self.max_lag = max_lag
         self.safe = safe
 
-    def fit(
-            self,
-            y: pd.Series | np.ndarray,
-            exog: None = None
-    ) -> "Arar":
+    def fit(self, y: pd.Series | np.ndarray, exog: None = NotImplementedError) -> "Arar":
         """
         Fit the ARAR model to a univariate time series.
 
@@ -372,15 +361,9 @@ class Arar(BaseEstimator, RegressorMixin):
         self : Arar
             Fitted estimator.
         """
-
-        if isinstance(y, pd.Series):
-            y_index = y.index
-            y = y.to_numpy()
-        else:
-            y = np.asarray(y, dtype=float).ravel()
-            y_index = pd.RangeIndex(start=0, stop=y.size)
+        y = np.asarray(y, dtype=float).ravel()
         if y.ndim != 1:
-            raise ValueError("`y` must be a pandas Series or 1D array-like.")
+            raise ValueError("`y` must be a 1D array-like sequence.")
         if y.size < 2 and not self.safe:
             raise ValueError("Series too short to fit ARAR when safe=False.")
 
@@ -397,12 +380,10 @@ class Arar(BaseEstimator, RegressorMixin):
         self.n_features_in_ = 1
 
         self.fitted_values_ = fitted_arar(self.model_)["fitted"]
-        self.fitted_index_ = y_index
         self.residuals_in_ = residuals_arar(self.model_)
 
         return self
     
-
     def predict(self, steps: int, exog: None = None) -> np.ndarray:
         """
         Generate mean forecasts steps ahead.

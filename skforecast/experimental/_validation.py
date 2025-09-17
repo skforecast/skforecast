@@ -133,8 +133,9 @@ def _backtesting_stats(
     if isinstance(forecaster.regressor, Arar):
         if cv.refit is False:
             warnings.warn(
-                "If `forecaster` uses `Arar` as regressor, `cv.refit` must be "
-                "`True`. Setting `cv.refit = True`.",
+                "If `ForecasterStats` uses `Arar` as regressor, `cv.refit` must be "
+                "`True` since predictions must start from the end of the training set."
+                " Setting `cv.refit = True`.",
                 IgnoredArgumentWarning
             )
             cv.refit = True

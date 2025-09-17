@@ -32,12 +32,12 @@ from ..utils import (
 
 class ForecasterStats():
     """
-    This class turns statistical model from the skforecast library (ARA, Sarimax)
+    This class turns statistical model from the skforecast library (ARAR, Sarimax)
     into a Forecaster compatible with the skforecast API.
     
     Parameters
     ----------
-    regressor : skforecast.sarimax.Sarimax, skforecast.stats.ARA, skforecast.stats.ARIMA
+    regressor : skforecast.sarimax.Sarimax, skforecast.stats.ARAR, skforecast.stats.ARIMA
         A statistical model instance from skforecast.
     transformer_y : object transformer (preprocessor), default None
         An instance of a transformer (preprocessor) compatible with the scikit-learn
@@ -157,10 +157,10 @@ class ForecasterStats():
         self.python_version          = sys.version.split(" ")[0]
         self.forecaster_id           = forecaster_id
 
-        if not isinstance(self.regressor, (skforecast.sarimax.Sarimax, skforecast.experimental.Arar)):
+        if not isinstance(self.regressor, (skforecast.sarimax.Sarimax, skforecast.stats.Arar)):
             raise TypeError(
                 f"`regressor` must be an instance of type skforecast.sarimax.Sarimax or "
-                f"`skforecast.experimental.Arar`. Got '{type(regressor)}'."
+                f"`skforecast.stats.Arar`. Got '{type(regressor)}'."
             )
 
         self.params = self.regressor.get_params(deep=True)
@@ -235,7 +235,7 @@ class ForecasterStats():
         )
 
         return info
-    
+
     def _repr_html_(
         self
     ) -> str:
@@ -254,9 +254,6 @@ class ForecasterStats():
                 <summary>General Information</summary>
                 <ul>
                     <li><strong>Regressor:</strong> {type(self.regressor).__name__}</li>
-                    <li><strong>Order:</strong> {self.regressor.order}</li>
-                    # <li><strong>Seasonal order:</strong> {self.regressor.seasonal_order}</li>
-                    # <li><strong>Trend:</strong> {self.regressor.trend}</li>
                     <li><strong>Window size:</strong> {self.window_size}</li>
                     <li><strong>Series name:</strong> {self.series_name_in_}</li>
                     <li><strong>Exogenous included:</strong> {self.exog_in_}</li>
@@ -420,7 +417,7 @@ class ForecasterStats():
         if isinstance(self.regressor, skforecast.sarimax.Sarimax):
             self.extended_index_ = self.regressor.sarimax_res.fittedvalues.index.copy()
         else:
-            self.extended_index_ = self.regressor.fitted_index_.copy()
+            self.extended_index_ = y.index
         self.params = self.regressor.get_params(deep=True)
 
     def _create_predict_inputs(
