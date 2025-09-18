@@ -170,7 +170,7 @@ class RangeDriftDetector:
 
         if isinstance(X, pd.Series):
             if pd.api.types.is_numeric_dtype(X):
-                features_ranges = (X.min(), X.max())
+                features_ranges = (float(X.min()), float(X.max()))
             else:
                 features_ranges = set(X.dropna().unique())
 
@@ -182,7 +182,7 @@ class RangeDriftDetector:
 
             features_ranges = {}
             features_ranges.update(
-                {col: (X[col].min(), X[col].max()) for col in num_cols}
+                {col: (float(X[col].min()), float(X[col].max())) for col in num_cols}
             )
             features_ranges.update(
                 {col: set(X[col].dropna().unique()) for col in cat_cols}
@@ -472,6 +472,7 @@ class RangeDriftDetector:
                 self.exog_values_range_[key] = self._get_features_range(X=value)
 
             self.exog_names_in_ = list(dict.fromkeys(self.exog_names_in_))
+            self.multi_exog_ = any(key in self.series_names_in_ for key in exog.keys())
 
         self.is_fitted = True
 
@@ -554,7 +555,7 @@ class RangeDriftDetector:
                             series_name           = None
                         )
 
-        out_of_range_exog = []
+        out_of_range_exog = {} if self.multi_exog_ else []
         out_of_range_exog_ranges = []
         out_of_range_exog_series_id = []
         if exog is not None:
@@ -563,12 +564,13 @@ class RangeDriftDetector:
                 if isinstance(value, pd.Series):
                     value = value.to_frame()
                 features_ranges = self.exog_values_range_.get(key, None)
+                
+                if self.multi_exog_:
+                    out_of_range_exog[key] = []
                 for col in value.columns:
                     if not isinstance(features_ranges, dict):
-                        is_single_series = True
                         features_ranges = {key: features_ranges}
-                    else:
-                        is_single_series = False
+                    
                     if col not in self.exog_names_in_:
                         warnings.warn(
                             f"'{col}' was not seen during training. Its range is unknown.",
@@ -578,20 +580,28 @@ class RangeDriftDetector:
                     is_out_of_range = self._check_feature_range(
                         feature_range=features_ranges[col], X=value[col]
                     )
-                    # TODO: Include series_id when exog is dict
-                    # out_of_range_exog.append(col if is_single_series else f"{key}:{col}")
+                    
                     if is_out_of_range:
                         flag_out_of_range = True
-                        out_of_range_exog.append(col)
+                        if self.multi_exog_:
+                            out_of_range_exog[key].append(col)
+                            out_of_range_exog_series_id.append(key)
+                        else:
+                            out_of_range_exog.append(col)
+                            out_of_range_exog_series_id.append(None)
                         out_of_range_exog_ranges.append(features_ranges[col])
-                        out_of_range_exog_series_id.append(key if not is_single_series else None)
                         self._display_warnings(
                             not_compliant_feature = col,
                             feature_range         = features_ranges[col],
-                            series_name           = key if not is_single_series else None,
+                            series_name           = key if self.multi_exog_ else None,
                         )
 
+                if self.multi_exog_ and not out_of_range_exog[key]:
+                    out_of_range_exog.pop(key)
+
         if verbose:
+            # TODO: Review
+            # TODO: docstring multi_Exog_ and out_of_range_exog_series_id as dict
             self._summary(
                 out_of_range_series         = out_of_range_series,
                 out_of_range_series_ranges  = out_of_range_series_ranges,

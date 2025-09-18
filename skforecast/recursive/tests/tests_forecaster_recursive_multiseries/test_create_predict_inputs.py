@@ -1,6 +1,5 @@
 # Unit test _create_predict_inputs ForecasterRecursiveMultiSeries
 # ==============================================================================
-from operator import index
 import re
 import pytest
 import numpy as np
