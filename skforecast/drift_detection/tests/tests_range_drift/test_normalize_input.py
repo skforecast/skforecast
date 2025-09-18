@@ -1,5 +1,6 @@
 # Unit test _normalize_input
 # ==============================================================================
+import re
 import pytest
 import pandas as pd
 import numpy as np
@@ -104,9 +105,9 @@ def test_normalize_warning_input_DataFrame_multiindex_series_multiple_columns():
         names=['series', 'datetime']
     )
     df = pd.DataFrame({'value1': [1, 2, 3, 4], 'value2': [5, 6, 7, 8]}, index=index)
-    msg = (
-        "`series` DataFrame has multiple columns. Only the first column 'value1' will be used. "
-        "Others ignored."
+    msg = re.escape(
+        "`series` DataFrame has multiple columns. Only the "
+        "first column, 'value1', will be used. Others ignored.",
     )
     with pytest.warns(IgnoredArgumentWarning, match=msg):
         result = RangeDriftDetector._normalize_input(df, name="series")
@@ -135,6 +136,9 @@ def test_normalize_raise_error_input_dict_invalid_value():
     Test _normalize_input with a dict containing invalid value type.
     """
     data = {'key1': pd.Series([1, 2]), 'key2': [3, 4]}
-    msg = "All values in `test` must be Series or DataFrame."
+    msg = re.escape(
+        "All values in `test` must be a pandas Series or DataFrame. " 
+        "Review the value for key 'key2'."
+    )
     with pytest.raises(TypeError, match=msg):
         RangeDriftDetector._normalize_input(data, name="test")

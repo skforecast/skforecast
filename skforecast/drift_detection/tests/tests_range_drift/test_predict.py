@@ -1,5 +1,6 @@
 # Unit test predict
 # ==============================================================================
+import re
 import pytest
 import pandas as pd
 import numpy as np
@@ -27,7 +28,11 @@ def test_predict_invalid_last_window_type():
     """
     detector = RangeDriftDetector()
     detector.is_fitted = True
-    with pytest.raises(TypeError, match="last_window must be a pandas DataFrame, Series, dict or None."):
+
+    msg = re.escape(
+        "`last_window` must be a pandas Series, DataFrame, dict or None."
+    )
+    with pytest.raises(TypeError, match=msg):
         detector.predict(last_window="invalid")
 
 
@@ -37,7 +42,11 @@ def test_predict_invalid_exog_type():
     """
     detector = RangeDriftDetector()
     detector.is_fitted = True 
-    with pytest.raises(TypeError, match="Exogenous variables must be a pandas DataFrame, Series, dict or None."):
+
+    msg = re.escape(
+        "`exog` must be a pandas Series, DataFrame, dict or None."
+    )
+    with pytest.raises(TypeError, match=msg):
         detector.predict(exog="invalid")
 
 
@@ -314,13 +323,13 @@ def test_predict_with_dict_inputs_series_and_exog():
     detector.fit(series=series, exog=exog)
 
     last_window = {
-        'series_1': pd.Series([-10, 0, -5], name='series_1'), # out of range
-        'series_2': pd.Series([15, 16, 17], name='series_2')  # in range
+        'series_1': pd.Series([-10, 0, -5], name='series_1'),  # out of range
+        'series_2': pd.Series([15, 16, 17], name='series_2')   # in range
     }
     exog_pred = {
         'series_1': pd.DataFrame({
-            'exog_1': [11, 12, 13], # in range
-            'exog_2': [-5, -1, -0]  # out of range
+            'exog_1': [11, 12, 13],  # in range
+            'exog_2': [-5, -1, -0]   # out of range
         }, index=[0, 1, 2]),
         'series_2': pd.DataFrame({
             'exog_1': [100, 110, 120],  # in range
@@ -329,10 +338,10 @@ def test_predict_with_dict_inputs_series_and_exog():
     }
 
     with pytest.warns(FeatureOutOfRangeWarning):
-        flag, out_series, out_exog = detector.predict(
-            last_window=last_window, exog=exog_pred, verbose=False
+        flag_out_of_range, out_of_range_series, out_of_range_exog = detector.predict(
+            last_window=last_window, exog=exog_pred, verbose=True, suppress_warnings=False
         )
 
-    assert flag is True
-    assert out_series == ['series_1']
-    assert out_exog == ['exog_2', 'exog_2']
+    assert flag_out_of_range is True
+    assert out_of_range_series == ['series_1']
+    assert out_of_range_exog == ['exog_2', 'exog_2']

@@ -261,7 +261,7 @@ class RangeDriftDetector:
             )
 
         if series_name:
-            msg = f"`{series_name}`: " + msg
+            msg = f"'{series_name}': " + msg
 
         warnings.warn(msg, FeatureOutOfRangeWarning)
 
@@ -331,7 +331,7 @@ class RangeDriftDetector:
                         f"{exog_range}."
                     )
                 if series_id:
-                    msg_temp = f"`{series_id}`: " + msg_temp
+                    msg_temp = f"'{series_id}': " + msg_temp
                 exog_msgs.append(textwrap.fill(msg_temp, width=80))
             msg_exog = "\n".join(exog_msgs)
         else:
@@ -340,7 +340,7 @@ class RangeDriftDetector:
         console = Console()
         content = (
             f"[bold]Series:[/bold]\n{msg_series}\n"
-            f"[bold]Exogenous Variables:[/bold]\n{msg_exog}\n"
+            f"[bold]Exogenous Variables:[/bold]\n{msg_exog}"
         )
         console.print(Panel(content, title="[bold]Out-of-range summary[/bold]", expand=False))
 
@@ -399,7 +399,8 @@ class RangeDriftDetector:
             for k, v in X.items():
                 if not isinstance(v, (pd.Series, pd.DataFrame)):
                     raise TypeError(
-                        f"All values in `{name}` must be pandas Series or DataFrame."
+                        f"All values in `{name}` must be a pandas Series or DataFrame. "
+                        f"Review the value for key '{k}'."
                     )
 
         return X
@@ -437,20 +438,20 @@ class RangeDriftDetector:
                     "Cannot specify both `series` and `y`. Please provide only one of them."
                 )
             series = kwargs.pop('y')
+
+        if not isinstance(series, (pd.Series, pd.DataFrame, dict)):
+            raise TypeError("Input must be a pandas Series, DataFrame or dict.")
+
+        if not isinstance(exog, (pd.Series, pd.DataFrame, dict, type(None))):
+            raise TypeError(
+                "Exogenous variables must be a pandas Series, DataFrame or dict."
+            )
         
         self.series_names_in_     = []
         self.series_values_range_ = {}
         self.exog_names_in_       = None
         self.exog_values_range_   = None
         self.is_fitted            = False
-
-        if not isinstance(series, (pd.DataFrame, pd.Series, dict)):
-            raise TypeError("Input must be a pandas DataFrame, Series or dict.")
-
-        if not isinstance(exog, (pd.DataFrame, pd.Series, dict, type(None))):
-            raise TypeError(
-                "Exogenous variables must be a pandas DataFrame, Series or dict."
-            )
 
         series = self._normalize_input(series, name="series")
         for key, value in series.items():
@@ -478,11 +479,11 @@ class RangeDriftDetector:
 
     def predict(
         self,
-        last_window: pd.Series | pd.DataFrame | dict | None = None,
-        exog: pd.Series | pd.DataFrame | dict | None = None,
+        last_window: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
+        exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
         verbose: bool = True,
         suppress_warnings: bool = False
-    ) -> tuple[bool, list, list]:
+    ) -> tuple[bool, list[str], list[str]]:
         """
         Check if there is any value outside the training range for last_window and exog.
 
@@ -512,19 +513,20 @@ class RangeDriftDetector:
         if not self.is_fitted:
             raise RuntimeError("Model is not fitted yet.")
 
-        if not isinstance(last_window, (pd.DataFrame, pd.Series, dict, type(None))):
+        if not isinstance(last_window, (pd.Series, pd.DataFrame, dict, type(None))):
             raise TypeError(
-                "last_window must be a pandas DataFrame, Series, dict or None."
+                "`last_window` must be a pandas Series, DataFrame, dict or None."
             )
 
-        if not isinstance(exog, (pd.DataFrame, pd.Series, dict, type(None))):
+        if not isinstance(exog, (pd.Series, pd.DataFrame, dict, type(None))):
             raise TypeError(
-                "Exogenous variables must be a pandas DataFrame, Series, dict or None."
+                "`exog` must be a pandas Series, DataFrame, dict or None."
             )
         
         set_skforecast_warnings(suppress_warnings, action='ignore')
         
         flag_out_of_range = False
+
         out_of_range_series = []
         out_of_range_series_ranges = []
         if last_window is not None:
@@ -547,14 +549,14 @@ class RangeDriftDetector:
                         out_of_range_series.append(col)
                         out_of_range_series_ranges.append(self.series_values_range_[col])
                         self._display_warnings(
-                            not_compliant_feature=col,
-                            feature_range=self.series_values_range_[col],
-                            series_name=None,
+                            not_compliant_feature = col,
+                            feature_range         = self.series_values_range_[col],
+                            series_name           = None
                         )
 
-        out_of_range_exog_series_id = []
         out_of_range_exog = []
         out_of_range_exog_ranges = []
+        out_of_range_exog_series_id = []
         if exog is not None:
             exog = self._normalize_input(exog, name="exog")
             for key, value in exog.items():
@@ -576,15 +578,17 @@ class RangeDriftDetector:
                     is_out_of_range = self._check_feature_range(
                         feature_range=features_ranges[col], X=value[col]
                     )
+                    # TODO: Include series_id when exog is dict
+                    # out_of_range_exog.append(col if is_single_series else f"{key}:{col}")
                     if is_out_of_range:
                         flag_out_of_range = True
                         out_of_range_exog.append(col)
                         out_of_range_exog_ranges.append(features_ranges[col])
                         out_of_range_exog_series_id.append(key if not is_single_series else None)
                         self._display_warnings(
-                            not_compliant_feature=col,
-                            feature_range=features_ranges[col],
-                            series_name=key if not is_single_series else None,
+                            not_compliant_feature = col,
+                            feature_range         = features_ranges[col],
+                            series_name           = key if not is_single_series else None,
                         )
 
         if verbose:

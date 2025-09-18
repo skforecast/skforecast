@@ -125,7 +125,7 @@ def test_fit_invalid_series_type():
     Test fit raises TypeError for invalid series type.
     """
     detector = RangeDriftDetector()
-    msg = "Input must be a pandas DataFrame, Series or dict"
+    msg = "Input must be a pandas Series, DataFrame or dict"
     with pytest.raises(TypeError, match=msg):
         detector.fit(series="invalid")
 
@@ -136,6 +136,6 @@ def test_fit_invalid_exog_type():
     """
     series = pd.Series([1, 2, 3], name='y')
     detector = RangeDriftDetector()
-    msg = "Exogenous variables must be a pandas DataFrame, Series or dict"
+    msg = "Exogenous variables must be a pandas Series, DataFrame or dict"
     with pytest.raises(TypeError, match=msg):
         detector.fit(series=series, exog="invalid")
