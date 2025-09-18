@@ -15,6 +15,8 @@ from sklearn.base import clone
 from sklearn.exceptions import NotFittedError
 
 import skforecast
+from ..sarimax import Sarimax
+from ..stats import Arar
 from ..exceptions import IgnoredArgumentWarning
 from ..utils import (
     check_y,
@@ -157,7 +159,7 @@ class ForecasterStats():
         self.python_version          = sys.version.split(" ")[0]
         self.forecaster_id           = forecaster_id
 
-        if not isinstance(self.regressor, (skforecast.sarimax.Sarimax, skforecast.stats.Arar)):
+        if not isinstance(self.regressor, (Sarimax, Arar)):
             raise TypeError(
                 f"`regressor` must be an instance of type skforecast.sarimax.Sarimax or "
                 f"`skforecast.stats.Arar`. Got '{type(regressor)}'."
