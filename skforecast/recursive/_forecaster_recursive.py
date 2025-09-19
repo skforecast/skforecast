@@ -229,6 +229,8 @@ class ForecasterRecursive(ForecasterBase):
         Version of python used to create the forecaster.
     forecaster_id : str, int
         Name used as an identifier of the forecaster.
+    __skforecast_tags__ : dict
+        Tags associated with the forecaster.
     _probabilistic_mode: str, bool
         Private attribute used to indicate whether the forecaster should perform 
         some calculations during backtesting.
@@ -336,6 +338,36 @@ class ForecasterRecursive(ForecasterBase):
             }
         self.binner = QuantileBinner(**self.binner_kwargs)
         self.binner_intervals_ = None
+        
+        self.__skforecast_tags__ = {
+            "library": "skforecast",
+            "estimator_type": "forecaster",
+            "estimator_name": "ForecasterRecursive",
+            "estimator_task": "regression",
+            "forecasting_scope": "single-series",  # single-series | global
+            "forecasting_strategy": "recursive",   # recursive | direct | deep_learning
+            "index_types_supported": ["pandas.RangeIndex", "pandas.DatetimeIndex"],
+            "requires_index_frequency": True,
+
+            "allowed_input_types_series": ["pandas.Series"],
+            "supports_exog": True,
+            "allowed_input_types_exog": ["pandas.Series", "pandas.DataFrame"],
+            "handles_missing_values_series": False, 
+            "handles_missing_values_exog": True, 
+
+            "supports_lags": True,
+            "supports_window_features": True,
+            "supports_transformer_series": True,
+            "supports_transformer_exog": True,
+            "supports_weight_func": True,
+            "supports_differentiation": True,
+
+            "prediction_types": ["point", "interval", "bootstrapping", "quantiles", "distribution"],
+            "supports_probabilistic": True,
+            "probabilistic_methods": ["bootstrapping", "conformal"],
+            "handles_binned_residuals": True
+        }
+
 
     def __repr__(
         self
