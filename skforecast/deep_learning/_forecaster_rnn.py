@@ -370,7 +370,7 @@ class ForecasterRnn(ForecasterBase):
             "index_types_supported": ["pandas.RangeIndex", "pandas.DatetimeIndex"],
             "requires_index_frequency": True,
 
-            "allowed_input_types": ["pandas.DataFrame"],
+            "allowed_input_types_series": ["pandas.DataFrame"],
             "supports_exog": True,
             "allowed_input_types_exog": ["pandas.Series", "pandas.DataFrame"],
             "handles_missing_values_series": False, 

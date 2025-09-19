@@ -186,7 +186,7 @@ class ForecasterSarimax():
             "index_types_supported": ["pandas.RangeIndex", "pandas.DatetimeIndex"],
             "requires_index_frequency": True,
 
-            "allowed_input_types": ["pandas.Series"],
+            "allowed_input_types_series": ["pandas.Series"],
             "supports_exog": True,
             "allowed_input_types_exog": ["pandas.Series", "pandas.DataFrame"],
             "handles_missing_values_series": False, 

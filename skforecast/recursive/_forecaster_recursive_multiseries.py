@@ -596,7 +596,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             "index_types_supported": ["pandas.RangeIndex", "pandas.DatetimeIndex"],
             "requires_index_frequency": True,
 
-            "allowed_input_types": ["pandas.DataFrame", "dict"],
+            "allowed_input_types_series": ["pandas.DataFrame", "dict"],
             "supports_exog": True,
             "allowed_input_types_exog": ["pandas.Series", "pandas.DataFrame", "dict"],
             "handles_missing_values_series": True, 
@@ -2320,6 +2320,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 features[:, -n_exog:] = exog_values_dict[i + 1]
 
             pred = self.regressor.predict(features)
+            # NOTE: CatBoost makes the input array read-only.
+            if not features.flags.writeable:
+                features.flags.writeable = True
             
             if residuals is not None:
 
