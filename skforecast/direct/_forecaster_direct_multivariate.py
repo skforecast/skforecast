@@ -702,7 +702,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         return data_to_return_dict, X_train_series_names_in_
 
-    def _create_lags(
+    #TODO: remove if new method works as expected
+    def _create_lags_deprecated(
         self, 
         y: np.ndarray,
         lags: np.ndarray,
@@ -754,6 +755,62 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 for step in range(self.max_step):
                     y_data[:, step] = y[self.window_size + step : self.window_size + step + n_rows]
         
+        return X_data, y_data
+    
+
+    def _create_lags(
+        self, 
+        y: np.ndarray,
+        lags: np.ndarray,
+        data_to_return: str | None = 'both'
+    ) -> tuple[np.ndarray | None, np.ndarray | None]:
+        """
+        Create the lagged values and their target variable from a time series.
+
+        Note that the returned matrix `X_data` contains the lag 1 in the first 
+        column, the lag 2 in the in the second column and so on.
+
+        The returned matrices are views into the original `y` so care must be taken
+        when modifying them.
+
+        Parameters
+        ----------
+        y : numpy ndarray
+            Training time series values.
+        lags : numpy ndarray
+            lags to create.
+        data_to_return : str, default 'both'
+            Specifies which data to return. Options are 'X', 'y', 'both' or None.
+
+        Returns
+        -------
+        X_data : numpy ndarray, None
+            Lagged values (predictors).
+        y_data : numpy ndarray, None
+            Values of the time series related to each row of `X_data`.
+
+        Notes
+        -----
+        Returned matrices are views into the original `y` so care must be taken
+        when modifying them.
+        """
+
+        X_data = None
+        y_data = None
+
+        if data_to_return is not None:
+            n_rows = len(y) - self.window_size - (self.max_step - 1)
+            windows = np.lib.stride_tricks.sliding_window_view(y, self.window_size + self.max_step)
+
+            if data_to_return != 'y':
+                # If `data_to_return` is not 'y', it means is 'X' or 'both', X_data is created
+                lag_indices = [self.window_size - lag for lag in lags]
+                X_data = windows[:n_rows, lag_indices]
+
+            if data_to_return != 'X':
+                # If `data_to_return` is not 'X', it means is 'y' or 'both', y_data is created
+                y_data = windows[:n_rows, self.window_size:self.window_size + self.max_step]
+
         return X_data, y_data
 
 

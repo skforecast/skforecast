@@ -139,7 +139,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         - If `True`, drop NaNs in X_train and same rows in y_train.
         - If `False`, leave NaNs in X_train and warn the user.
-        **New in version 0.12.0**
     fit_kwargs : dict, default None
         Additional arguments to be passed to the `fit` method of the regressor.
     binner_kwargs : dict, default None
@@ -190,7 +189,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         **Changed to 'ordinal' in version 0.14.0**
     encoder : sklearn.preprocessing
         Scikit-learn preprocessing encoder used to encode the series.
-        **New in version 0.12.0**
     encoding_mapping_ : dict
         Mapping of the encoding used to identify the different series.
     transformer_series : transformer (preprocessor), dict
@@ -411,7 +409,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self.exog_names_in_                     = None
         self.exog_type_in_                      = None
         self.exog_dtypes_in_                    = None
-        self.exog_dtypes_out_                   = None 
+        self.exog_dtypes_out_                   = None
         self.X_train_series_names_in_           = None
         self.X_train_window_features_names_out_ = None
         self.X_train_exog_names_out_            = None
@@ -728,7 +726,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         return style + content
 
-    def _create_lags(
+    # TODO: Remove if new method works as expected
+    def _create_lags_deprecated(
         self,
         y: np.ndarray,
         X_as_pandas: bool = False,
@@ -774,6 +773,63 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                              columns = self.lags_names,
                              index   = train_index
                          )
+
+        y_data = y[self.window_size:]
+
+        return X_data, y_data
+
+
+    def _create_lags(
+        self,
+        y: np.ndarray,
+        X_as_pandas: bool = False,
+        train_index: pd.Index | None = None
+    ) -> tuple[np.ndarray | pd.DataFrame | None, np.ndarray]:
+        """
+        Create the lagged values and their target variable from a time series.
+        
+        Note that the returned matrix `X_data` contains the lag 1 in the first 
+        column, the lag 2 in the in the second column and so on.
+
+        Returned matrices are views into the original `y` so care must be taken
+        when modifying them.
+
+        Parameters
+        ----------
+        y : numpy ndarray
+            Training time series values.
+        X_as_pandas : bool, default False
+            If `True`, the returned matrix `X_data` is a pandas DataFrame.
+        train_index : pandas Index, default None
+            Index of the training data. It is used to create the pandas DataFrame
+            `X_data` when `X_as_pandas` is `True`.
+
+        Returns
+        -------
+        X_data : numpy ndarray, pandas DataFrame, None
+            Lagged values (predictors).
+        y_data : numpy ndarray
+            Values of the time series related to each row of `X_data`.
+
+        Notes
+        -----
+        Returned matrices are views into the original `y` so care must be taken
+        when modifying them.
+        """
+
+        X_data = None
+
+        if self.lags is not None:
+            y_strided = np.lib.stride_tricks.sliding_window_view(y, self.window_size)[:-1]
+            cols = self.window_size - np.array(self.lags)
+            X_data = y_strided[:, cols]
+
+            if X_as_pandas:
+                X_data = pd.DataFrame(
+                    data=X_data,
+                    columns=self.lags_names,
+                    index=train_index
+                )
 
         y_data = y[self.window_size:]
 
@@ -2036,6 +2092,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                           last_window_         = self.last_window_
                                       )
             else:
+                if isinstance(last_window, pd.DataFrame) and isinstance(last_window.index, pd.MultiIndex):
+                    raise ValueError(
+                        "`last_window` must be a pandas DataFrame with one column "
+                        "per series and a single-level index (MultiIndex is not "
+                        "supported)."
+                    )
                 if input_levels_is_None and isinstance(last_window, pd.DataFrame):
                     levels = last_window.columns.to_list()
 

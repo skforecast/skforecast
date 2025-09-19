@@ -60,6 +60,7 @@ nav:
     - Model deployment:
       - Save and load forecaster: user_guides/save-load-forecaster.ipynb
       - Forecaster in production: user_guides/forecaster-in-production.ipynb
+      - Drift detection: user_guides/drift-detection.ipynb
     - Plotting: user_guides/plotting.ipynb
     - Datasets: user_guides/datasets.ipynb
     - Additional Resources:
@@ -101,6 +102,7 @@ nav:
     - model_selection: api/model_selection.md
     - feature_selection: api/feature_selection.md
     - preprocessing: api/preprocessing.md
+    - drift_detection: api/drift_detection.md
     - metrics: api/metrics.md
     - plot: api/plot.md
     - utils: api/utils.md

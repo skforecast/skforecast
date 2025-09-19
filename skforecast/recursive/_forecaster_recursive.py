@@ -23,7 +23,7 @@ from ..exceptions import DataTransformationWarning, ResidualsUsageWarning
 from ..utils import (
     initialize_lags,
     initialize_window_features,
-    initialize_weights,
+    initialize_weights,    
     check_select_fit_kwargs,
     check_y,
     check_exog,
@@ -471,7 +471,8 @@ class ForecasterRecursive(ForecasterBase):
         return style + content
 
 
-    def _create_lags(
+    # TODO: Remove if new method works as expected
+    def _create_lags_deprecated(
         self,
         y: np.ndarray,
         X_as_pandas: bool = False,
@@ -517,6 +518,60 @@ class ForecasterRecursive(ForecasterBase):
                              columns = self.lags_names,
                              index   = train_index
                          )
+
+        y_data = y[self.window_size:]
+
+        return X_data, y_data
+
+
+    def _create_lags(
+        self,
+        y: np.ndarray,
+        X_as_pandas: bool = False,
+        train_index: pd.Index | None = None
+    ) -> tuple[np.ndarray | pd.DataFrame | None, np.ndarray]:
+        """
+        Create the lagged values and their target variable from a time series.
+        
+        Note that the returned matrix `X_data` contains the lag 1 in the first 
+        column, the lag 2 in the in the second column and so on.
+        
+        Parameters
+        ----------
+        y : numpy ndarray
+            Training time series values.
+        X_as_pandas : bool, default False
+            If `True`, the returned matrix `X_data` is a pandas DataFrame.
+        train_index : pandas Index, default None
+            Index of the training data. It is used to create the pandas DataFrame
+            `X_data` when `X_as_pandas` is `True`.
+
+        Returns
+        -------
+        X_data : numpy ndarray, pandas DataFrame, None
+            Lagged values (predictors).
+        y_data : numpy ndarray
+            Values of the time series related to each row of `X_data`.
+        
+        Notes
+        -----
+        Returned matrices are views into the original `y` so care must be taken
+        when modifying them.
+        """
+        
+        X_data = None
+
+        if self.lags is not None:
+            y_strided = np.lib.stride_tricks.sliding_window_view(y, self.window_size)[:-1]
+            cols = self.window_size - np.array(self.lags)
+            X_data = y_strided[:, cols]
+
+            if X_as_pandas:
+                X_data = pd.DataFrame(
+                    data=X_data,
+                    columns=self.lags_names,
+                    index=train_index
+                )
 
         y_data = y[self.window_size:]
 
@@ -990,6 +1045,7 @@ class ForecasterRecursive(ForecasterBase):
             exog_dtypes_in_,
             exog_dtypes_out_
         ) = self._create_train_X_y(y=y, exog=exog)
+        
         sample_weight = self.create_sample_weights(X_train=X_train)
 
         if sample_weight is not None:
@@ -1452,7 +1508,6 @@ class ForecasterRecursive(ForecasterBase):
             )
 
         return X_predict
-
 
     def predict(
         self,
