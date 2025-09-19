@@ -139,7 +139,7 @@ class RangeDriftDetector:
                 </ul>
             </details>
             <p>
-                <a href="https://skforecast.org/{skforecast.__version__}/api/drift_detection.html#skforecast.drift_detection.drift_detection.RangeDriftDetector">&#128712 <strong>API Reference</strong></a>
+                <a href="https://skforecast.org/{skforecast.__version__}/api/drift_detection.html#skforecast.drift_detection._range_drift.RangeDriftDetector">&#128712 <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
                 <a href="https://skforecast.org/{skforecast.__version__}/user_guides/drift-detection.html">&#128462 <strong>User Guide</strong></a>
             </p>
