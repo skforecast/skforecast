@@ -6,6 +6,7 @@
 # coding=utf-8
 
 from __future__ import annotations
+from typing import Any
 import warnings
 import sys
 import pandas as pd
@@ -122,6 +123,8 @@ class ForecasterSarimax():
         Version of python used to create the forecaster.
     forecaster_id : str, int
         Name used as an identifier of the forecaster.
+    __skforecast_tags__ : dict
+        Tags associated with the forecaster.
     
     """
     
@@ -172,6 +175,35 @@ class ForecasterSarimax():
                 IgnoredArgumentWarning
             )
         self.fit_kwargs = {}
+        
+        self.__skforecast_tags__ = {
+            "library": "skforecast",
+            "estimator_type": "forecaster",
+            "estimator_name": "ForecasterSarimax",
+            "estimator_task": "regression",
+            "forecasting_scope": "single-series",  # single-series | global
+            "forecasting_strategy": "recursive",   # recursive | direct | deep_learning
+            "index_types_supported": ["pandas.RangeIndex", "pandas.DatetimeIndex"],
+            "requires_index_frequency": True,
+
+            "allowed_input_types": ["pandas.Series"],
+            "supports_exog": True,
+            "allowed_input_types_exog": ["pandas.Series", "pandas.DataFrame"],
+            "handles_missing_values_series": False, 
+            "handles_missing_values_exog": False, 
+
+            "supports_lags": False,
+            "supports_window_features": False,
+            "supports_transformer_series": True,
+            "supports_transformer_exog": True,
+            "supports_weight_func": False,
+            "supports_differentiation": False,
+
+            "prediction_types": ["point", "interval"],
+            "supports_probabilistic": True,
+            "probabilistic_methods": ["distribution"],
+            "handles_binned_residuals": False
+        }
     
     def _preprocess_repr(self) -> tuple[str, str]:
         """
@@ -867,6 +899,19 @@ class ForecasterSarimax():
         metric = self.regressor.get_info_criteria(criteria=criteria, method=method)
         
         return metric
+
+    def get_tags(self) -> dict[str, Any]:
+        """
+        Return the tags that characterize the behavior of the forecaster.
+
+        Returns
+        -------
+        skforecast_tags : dict
+            Dictionary with forecaster tags.
+
+        """
+
+        return self.__skforecast_tags__
 
     def summary(self) -> None:
         """

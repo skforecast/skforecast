@@ -211,6 +211,8 @@ class ForecasterRnn(ForecasterBase):
         Version of python used to create the forecaster.
     forecaster_id : str, int
         Name used as an identifier of the forecaster.
+    __skforecast_tags__ : dict
+        Tags associated with the forecaster.
     _probabilistic_mode: str, bool
         Private attribute used to indicate whether the forecaster should perform 
         some calculations during backtesting.
@@ -357,6 +359,36 @@ class ForecasterRnn(ForecasterBase):
         self.fit_kwargs = check_select_fit_kwargs(
             regressor=self.regressor, fit_kwargs=fit_kwargs
         )
+        
+        self.__skforecast_tags__ = {
+            "library": "skforecast",
+            "estimator_type": "forecaster",
+            "estimator_name": "ForecasterRNN",
+            "estimator_task": "regression",
+            "forecasting_scope": "global",  # single-series | global
+            "forecasting_strategy": "deep_learning",  # recursive | direct | deep_learning
+            "index_types_supported": ["pandas.RangeIndex", "pandas.DatetimeIndex"],
+            "requires_index_frequency": True,
+
+            "allowed_input_types": ["pandas.DataFrame"],
+            "supports_exog": True,
+            "allowed_input_types_exog": ["pandas.Series", "pandas.DataFrame"],
+            "handles_missing_values_series": False, 
+            "handles_missing_values_exog": False, 
+
+            "supports_lags": True,
+            "supports_window_features": False,
+            "supports_transformer_series": True,
+            "supports_transformer_exog": True,
+            "supports_weight_func": False,
+            "supports_series_weights": False,
+            "supports_differentiation": False,
+
+            "prediction_types": ["point", "interval"],
+            "supports_probabilistic": True,
+            "probabilistic_methods": ["conformal"],
+            "handles_binned_residuals": False
+        }
 
     def __repr__(self) -> str:
         """

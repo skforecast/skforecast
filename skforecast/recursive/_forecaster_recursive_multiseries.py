@@ -346,6 +346,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         Version of python used to create the forecaster.
     forecaster_id : str, int
         Name used as an identifier of the forecaster.
+    __skforecast_tags__ : dict
+        Tags associated with the forecaster.
     _probabilistic_mode: str, bool
         Private attribute used to indicate whether the forecaster should perform 
         some calculations during backtesting.
@@ -583,6 +585,37 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 'n_bins': 10, 'method': 'linear', 'subsample': 200000,
                 'random_state': 789654, 'dtype': np.float64
             }
+        
+        self.__skforecast_tags__ = {
+            "library": "skforecast",
+            "estimator_type": "forecaster",
+            "estimator_name": "ForecasterRecursiveMultiSeries",
+            "estimator_task": "regression",
+            "forecasting_scope": "global",  # single-series | global
+            "forecasting_strategy": "recursive",  # recursive | direct | deep_learning
+            "index_types_supported": ["pandas.RangeIndex", "pandas.DatetimeIndex"],
+            "requires_index_frequency": True,
+
+            "allowed_input_types": ["pandas.DataFrame", "dict"],
+            "supports_exog": True,
+            "allowed_input_types_exog": ["pandas.Series", "pandas.DataFrame", "dict"],
+            "handles_missing_values_series": True, 
+            "handles_missing_values_exog": True, 
+
+            "supports_lags": True,
+            "supports_window_features": True,
+            "allowed_encoding": ["ordinal", "ordinal_category", "onehot", None],
+            "supports_transformer_series": True,
+            "supports_transformer_exog": True,
+            "supports_weight_func": True,
+            "supports_series_weights": True,
+            "supports_differentiation": True,
+
+            "prediction_types": ["point", "interval", "bootstrapping", "quantiles", "distribution"],
+            "supports_probabilistic": True,
+            "probabilistic_methods": ["bootstrapping", "conformal"],
+            "handles_binned_residuals": True
+        }
         
 
     def __repr__(
