@@ -1,6 +1,5 @@
 # Unit test _summary
-# ==============================================================================
-import pytest
+# ============================================================================== 
 from skforecast.drift_detection import RangeDriftDetector
 
 
@@ -12,14 +11,12 @@ def test_summary_no_out_of_range(capsys):
     out_of_range_series_ranges = []
     out_of_range_exog = []
     out_of_range_exog_ranges = []
-    out_of_range_exog_series_id = []
 
     RangeDriftDetector._summary(
         out_of_range_series=out_of_range_series,
         out_of_range_series_ranges=out_of_range_series_ranges,
         out_of_range_exog=out_of_range_exog,
-        out_of_range_exog_ranges=out_of_range_exog_ranges,
-        out_of_range_exog_series_id=out_of_range_exog_series_id
+        out_of_range_exog_ranges=out_of_range_exog_ranges
     )
 
     captured = capsys.readouterr()
@@ -35,14 +32,12 @@ def test_summary_out_of_range_series(capsys):
     out_of_range_series_ranges = [(1.0, 10.0), (2.0, 20.0)]
     out_of_range_exog = []
     out_of_range_exog_ranges = []
-    out_of_range_exog_series_id = []
 
     RangeDriftDetector._summary(
         out_of_range_series=out_of_range_series,
         out_of_range_series_ranges=out_of_range_series_ranges,
         out_of_range_exog=out_of_range_exog,
-        out_of_range_exog_ranges=out_of_range_exog_ranges,
-        out_of_range_exog_series_id=out_of_range_exog_series_id
+        out_of_range_exog_ranges=out_of_range_exog_ranges
     )
 
     captured = capsys.readouterr()
@@ -57,16 +52,14 @@ def test_summary_out_of_range_exog(capsys):
     """
     out_of_range_series = []
     out_of_range_series_ranges = []
-    out_of_range_exog = ["exog1", "exog2"]
-    out_of_range_exog_ranges = [(0.0, 5.0), (10.0, 15.0)]
-    out_of_range_exog_series_id = ["series_1", "series_1"]
+    out_of_range_exog = {'series_1': ["exog1", "exog2"]}
+    out_of_range_exog_ranges = {'series_1': [(0.0, 5.0), (10.0, 15.0)]}
 
     RangeDriftDetector._summary(
         out_of_range_series=out_of_range_series,
         out_of_range_series_ranges=out_of_range_series_ranges,
         out_of_range_exog=out_of_range_exog,
-        out_of_range_exog_ranges=out_of_range_exog_ranges,
-        out_of_range_exog_series_id=out_of_range_exog_series_id
+        out_of_range_exog_ranges=out_of_range_exog_ranges
     )
 
     captured = capsys.readouterr()
@@ -83,14 +76,12 @@ def test_summary_both_out_of_range(capsys):
     out_of_range_series_ranges = [(1.0, 10.0)]
     out_of_range_exog = ["exog1"]
     out_of_range_exog_ranges = [(0.0, 5.0)]
-    out_of_range_exog_series_id = [None]
 
     RangeDriftDetector._summary(
         out_of_range_series=out_of_range_series,
         out_of_range_series_ranges=out_of_range_series_ranges,
         out_of_range_exog=out_of_range_exog,
-        out_of_range_exog_ranges=out_of_range_exog_ranges,
-        out_of_range_exog_series_id=out_of_range_exog_series_id
+        out_of_range_exog_ranges=out_of_range_exog_ranges
     )
 
     captured = capsys.readouterr()

@@ -3,7 +3,6 @@
 import re
 import pytest
 import pandas as pd
-import numpy as np
 import warnings
 from skforecast.drift_detection import RangeDriftDetector
 from skforecast.exceptions import (
@@ -206,11 +205,13 @@ def test_predict_out_of_range_exog_pandas_dataframe_multiindex():
     Test predict with exogenous values out of training range when exog is a
     DataFrame with MultiIndex.
     """
-    series = pd.Series([1, 2, 3], name='series_1')
     index = pd.MultiIndex.from_product(
                 [['series_1', 'series_2', 'series_3'], range(3)],
-                names=['series', 'time']
+                names=['series_id', 'time']
             )
+    series = pd.DataFrame(
+        {"values": [1, 2, 3, 10, 20, 30, 100, 200, 300]}, index=index
+    )
     exog = pd.DataFrame(
         {'exog1': [10, 20, 30, 100, 200, 300, 1000, 2000, 3000],
         'exog2': [-10, -20, -30, -100, -200, -300, -1000, -2000, -3000]},
@@ -221,7 +222,7 @@ def test_predict_out_of_range_exog_pandas_dataframe_multiindex():
 
     index_pred = pd.MultiIndex.from_product(
         [['series_1', 'series_2', 'series_3'], range(2)],
-        names=['series', 'time']
+        names=['series_id', 'time']
     )
     # Series 1, exog 1: in range
     # Series 1, exog 2: out of range
@@ -231,7 +232,7 @@ def test_predict_out_of_range_exog_pandas_dataframe_multiindex():
     # Series 3, exog 2: out of range
     exog_pred = pd.DataFrame(
         {'exog1': [15, 25, 400, 500, 4000, 5000],
-         'exog2': [-15, -25, -200, -200, -4000, -5000]},
+         'exog2': [-15, -35, -200, -200, -4000, -5000]},
         index=index_pred
     )
 
@@ -240,9 +241,17 @@ def test_predict_out_of_range_exog_pandas_dataframe_multiindex():
             exog=exog_pred, verbose=False
         )
 
+    expected_out_exog = {
+        'series_1': ['exog2'], 
+        'series_2': ['exog1'], 
+        'series_3': ['exog1', 'exog2']
+    }
+
     assert flag is True
     assert out_series == []
-    assert out_exog == ['exog1', 'exog1', 'exog2']
+    assert set(out_exog.keys()) == set(expected_out_exog.keys())
+    for k in out_exog.keys():
+        assert out_exog[k] == expected_out_exog[k]
 
 
 def test_predict_unknown_series():
@@ -342,6 +351,13 @@ def test_predict_with_dict_inputs_series_and_exog():
             last_window=last_window, exog=exog_pred, verbose=True, suppress_warnings=False
         )
 
+    expected_out_exog = {
+        'series_1': ['exog_2'], 
+        'series_2': ['exog_2'], 
+    }
+
     assert flag_out_of_range is True
     assert out_of_range_series == ['series_1']
-    assert out_of_range_exog == ['exog_2', 'exog_2']
+    assert set(out_of_range_exog.keys()) == set(expected_out_exog.keys())
+    for k in out_of_range_exog.keys():
+        assert out_of_range_exog[k] == expected_out_exog[k]

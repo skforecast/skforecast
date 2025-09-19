@@ -46,6 +46,10 @@ class RangeDriftDetector:
         Names of the exogenous variables used during training.
     exog_values_range_ : dict
         Range of values of the exogenous variables used during training.
+    series_specific_exog_ : bool
+        Indicates whether exogenous variables have different values across
+        target series during training (i.e., exogenous is series-specific
+        rather than global).
     is_fitted : bool
         Whether the detector has been fitted to the training data.
     
@@ -53,11 +57,12 @@ class RangeDriftDetector:
 
     def __init__(self) -> None:
 
-        self.series_names_in_     = None
-        self.series_values_range_ = None
-        self.exog_names_in_       = None
-        self.exog_values_range_   = None
-        self.is_fitted            = False
+        self.series_names_in_      = None
+        self.series_values_range_  = None
+        self.exog_names_in_        = None
+        self.exog_values_range_    = None
+        self.series_specific_exog_ = False
+        self.is_fitted             = False
 
     def __repr__(self) -> str:
         """
@@ -84,6 +89,8 @@ class RangeDriftDetector:
             f"Series value ranges    = {self.series_values_range_} \n"
             f"Fitted exogenous       = {exog_names_in_} \n"
             f"Exogenous value ranges = {self.exog_values_range_} \n"
+            f"Series-specific exog   = {self.series_specific_exog_} \n"
+            f"Is fitted              = {self.is_fitted}"
         )
 
         return info
@@ -115,6 +122,7 @@ class RangeDriftDetector:
                 <ul>
                     <li><strong>Fitted series:</strong> {series_names_in_}</li>
                     <li><strong>Fitted exogenous:</strong> {exog_names_in_}</li>
+                    <li><strong>Series-specific exogenous:</strong> {self.series_specific_exog_}</li>
                     <li><strong>Is fitted:</strong> {self.is_fitted}</li>
                 </ul>
             </details>
@@ -271,8 +279,7 @@ class RangeDriftDetector:
         out_of_range_series: list,
         out_of_range_series_ranges: list,
         out_of_range_exog: list,
-        out_of_range_exog_ranges: list,
-        out_of_range_exog_series_id: list
+        out_of_range_exog_ranges: list
     ) -> None:
         """
         Summarize the results of the range check.
@@ -287,9 +294,6 @@ class RangeDriftDetector:
             List of exogenous variable names that are out of range.
         out_of_range_exog_ranges : list
             List of ranges for the out-of-range exogenous variables.
-        out_of_range_exog_series_id : list
-            List of series IDs for the out-of-range exogenous variables. This is
-            used when exogenous variables are different for each series.
 
         Returns
         -------
@@ -315,24 +319,39 @@ class RangeDriftDetector:
         msg_exog = ""
         if out_of_range_exog:
             exog_msgs = []
-            for exog, exog_range, series_id in zip(
-                out_of_range_exog, out_of_range_exog_ranges, out_of_range_exog_series_id
-            ):
-                if isinstance(exog_range, tuple):
-                    # Numeric
-                    msg_temp = (
-                        f"'{exog}' has values outside the observed range "
-                        f"[{exog_range[0]:.5f}, {exog_range[1]:.5f}]."
-                    )
-                else:
-                    # Categorical
-                    msg_temp = (
-                        f"'{exog}' has values not seen during training. Seen values: "
-                        f"{exog_range}."
-                    )
-                if series_id:
-                    msg_temp = f"'{series_id}': " + msg_temp
-                exog_msgs.append(textwrap.fill(msg_temp, width=80))
+            if isinstance(out_of_range_exog, list):
+                for exog, exog_range in zip(out_of_range_exog, out_of_range_exog_ranges):
+                    if isinstance(exog_range, tuple):
+                        # Numeric
+                        msg_temp = (
+                            f"'{exog}' has values outside the observed range "
+                            f"[{exog_range[0]:.5f}, {exog_range[1]:.5f}]."
+                        )
+                    else:
+                        # Categorical
+                        msg_temp = (
+                            f"'{exog}' has values not seen during training. Seen values: "
+                            f"{exog_range}."
+                        )
+                    exog_msgs.append(textwrap.fill(msg_temp, width=80))
+            else:
+                for key, value in out_of_range_exog.items():
+                    for exog, exog_range in zip(value, out_of_range_exog_ranges[key]):
+                        if isinstance(exog_range, tuple):
+                            # Numeric
+                            msg_temp = (
+                                f"'{exog}' has values outside the observed range "
+                                f"[{exog_range[0]:.5f}, {exog_range[1]:.5f}]."
+                            )
+                        else:
+                            # Categorical
+                            msg_temp = (
+                                f"'{exog}' has values not seen during training. Seen values: "
+                                f"{exog_range}."
+                            )
+                        msg_temp = f"'{key}': " + msg_temp
+                        exog_msgs.append(textwrap.fill(msg_temp, width=80))
+
             msg_exog = "\n".join(exog_msgs)
         else:
             msg_exog = "No exogenous variables with out-of-range values found."
@@ -344,12 +363,12 @@ class RangeDriftDetector:
         )
         console.print(Panel(content, title="[bold]Out-of-range summary[/bold]", expand=False))
 
-    @classmethod
     def _normalize_input(
-        cls, 
+        self, 
         X: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
-        name: str
-    ) -> dict:
+        name: str,
+        series_ids: list[str] | None = None
+    ) -> dict[str, pd.Series | pd.DataFrame]:
         """
         Convert pd.Series, pd.DataFrame or dict into a standardized dict of
         pd.Series or pd.DataFrames.
@@ -361,6 +380,8 @@ class RangeDriftDetector:
         name : str
             Name of the input being normalized. Used for error messages.
             Expected values are 'series', 'last_window' or 'exog'.
+        series_ids : list, default None
+            Series IDs to include in the normalization of exogenous variables.
 
         Returns
         -------
@@ -393,7 +414,10 @@ class RangeDriftDetector:
                 else:
                     X = {series_id: X.loc[series_id] for series_id in X.index.levels[0]}
             else:
-                X = X.to_dict(orient="series")
+                if self.series_specific_exog_ and series_ids:
+                    X = {series_id: X.copy() for series_id in series_ids}
+                else:
+                    X = X.to_dict(orient="series")
 
         elif isinstance(X, dict):
             for k, v in X.items():
@@ -447,11 +471,12 @@ class RangeDriftDetector:
                 "Exogenous variables must be a pandas Series, DataFrame or dict."
             )
         
-        self.series_names_in_     = []
-        self.series_values_range_ = {}
-        self.exog_names_in_       = None
-        self.exog_values_range_   = None
-        self.is_fitted            = False
+        self.series_names_in_      = []
+        self.series_values_range_  = {}
+        self.exog_names_in_        = None
+        self.exog_values_range_    = None
+        self.series_specific_exog_ = False
+        self.is_fitted             = False
 
         series = self._normalize_input(series, name="series")
         for key, value in series.items():
@@ -472,11 +497,9 @@ class RangeDriftDetector:
                 self.exog_values_range_[key] = self._get_features_range(X=value)
 
             self.exog_names_in_ = list(dict.fromkeys(self.exog_names_in_))
-            self.multi_exog_ = any(key in self.series_names_in_ for key in exog.keys())
+            self.series_specific_exog_ = any(key in self.series_names_in_ for key in exog.keys())
 
         self.is_fitted = True
-
-        return
 
     def predict(
         self,
@@ -484,7 +507,7 @@ class RangeDriftDetector:
         exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
         verbose: bool = True,
         suppress_warnings: bool = False
-    ) -> tuple[bool, list[str], list[str]]:
+    ) -> tuple[bool, list[str], list[str] | dict[str, list[str]]]:
         """
         Check if there is any value outside the training range for last_window and exog.
 
@@ -506,8 +529,14 @@ class RangeDriftDetector:
             True if there is any value outside the training range, False otherwise.
         out_of_range_series : list
             List of series names that are out of range.
-        out_of_range_exog : list
-            List of exogenous variable names that are out of range.
+        out_of_range_exog : list, dict
+            Exogenous variables that are out of range.
+
+            - If `self.series_specific_exog_` is False: returns a list with the names
+            of exogenous variables that are out of range (global exogenous).
+            - If `self.series_specific_exog_` is True: returns a dictionary where
+            keys are series names and values are lists of out-of-range exogenous
+            variables for each series.
 
         """
 
@@ -555,19 +584,23 @@ class RangeDriftDetector:
                             series_name           = None
                         )
 
-        out_of_range_exog = {} if self.multi_exog_ else []
-        out_of_range_exog_ranges = []
-        out_of_range_exog_series_id = []
+        out_of_range_exog = {} if self.series_specific_exog_ else []
+        out_of_range_exog_ranges = {} if self.series_specific_exog_ else []
         if exog is not None:
-            exog = self._normalize_input(exog, name="exog")
+            series_ids = list(last_window.keys()) if last_window is not None else self.series_names_in_
+            exog = self._normalize_input(exog, name="exog", series_ids=series_ids)
             for key, value in exog.items():
+
                 if isinstance(value, pd.Series):
                     value = value.to_frame()
                 features_ranges = self.exog_values_range_.get(key, None)
                 
-                if self.multi_exog_:
+                if self.series_specific_exog_:
                     out_of_range_exog[key] = []
+                    out_of_range_exog_ranges[key] = []
+                
                 for col in value.columns:
+
                     if not isinstance(features_ranges, dict):
                         features_ranges = {key: features_ranges}
                     
@@ -577,37 +610,37 @@ class RangeDriftDetector:
                             MissingExogWarning,
                         )
                         continue
+
                     is_out_of_range = self._check_feature_range(
                         feature_range=features_ranges[col], X=value[col]
                     )
                     
                     if is_out_of_range:
+
                         flag_out_of_range = True
-                        if self.multi_exog_:
+                        if self.series_specific_exog_:
                             out_of_range_exog[key].append(col)
-                            out_of_range_exog_series_id.append(key)
+                            out_of_range_exog_ranges[key].append(features_ranges[col])
                         else:
                             out_of_range_exog.append(col)
-                            out_of_range_exog_series_id.append(None)
-                        out_of_range_exog_ranges.append(features_ranges[col])
+                            out_of_range_exog_ranges.append(features_ranges[col])
+
                         self._display_warnings(
                             not_compliant_feature = col,
                             feature_range         = features_ranges[col],
-                            series_name           = key if self.multi_exog_ else None,
+                            series_name           = key if self.series_specific_exog_ else None,
                         )
 
-                if self.multi_exog_ and not out_of_range_exog[key]:
+                if self.series_specific_exog_ and not out_of_range_exog[key]:
                     out_of_range_exog.pop(key)
+                    out_of_range_exog_ranges.pop(key)
 
         if verbose:
-            # TODO: Review
-            # TODO: docstring multi_Exog_ and out_of_range_exog_series_id as dict
             self._summary(
-                out_of_range_series         = out_of_range_series,
-                out_of_range_series_ranges  = out_of_range_series_ranges,
-                out_of_range_exog           = out_of_range_exog,
-                out_of_range_exog_ranges    = out_of_range_exog_ranges,
-                out_of_range_exog_series_id = out_of_range_exog_series_id
+                out_of_range_series        = out_of_range_series,
+                out_of_range_series_ranges = out_of_range_series_ranges,
+                out_of_range_exog          = out_of_range_exog,
+                out_of_range_exog_ranges   = out_of_range_exog_ranges
             )
 
         set_skforecast_warnings(suppress_warnings, action='default')
