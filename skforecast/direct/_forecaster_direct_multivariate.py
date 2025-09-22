@@ -734,62 +734,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         return data_to_return_dict, X_train_series_names_in_
 
-    #TODO: remove if new method works as expected
-    def _create_lags_deprecated(
-        self, 
-        y: np.ndarray,
-        lags: np.ndarray,
-        data_to_return: str | None = 'both'
-    ) -> tuple[np.ndarray | None, np.ndarray | None]:
-        """
-        Create the lagged values and their target variable from a time series.
-        
-        Note that the returned matrix `X_data` contains the lag 1 in the first 
-        column, the lag 2 in the in the second column and so on.
-        
-        Parameters
-        ----------
-        y : numpy ndarray
-            Training time series values.
-        lags : numpy ndarray
-            lags to create.
-        data_to_return : str, default 'both'
-            Specifies which data to return. Options are 'X', 'y', 'both' or None.
-
-        Returns
-        -------
-        X_data : numpy ndarray, None
-            Lagged values (predictors).
-        y_data : numpy ndarray, None
-            Values of the time series related to each row of `X_data`.
-        
-        """
-
-        X_data = None
-        y_data = None
-        if data_to_return is not None:
-
-            n_rows = len(y) - self.window_size - (self.max_step - 1)
-
-            if data_to_return != 'y':
-                # If `data_to_return` is not 'y', it means is 'X' or 'both', X_data is created
-                X_data = np.full(
-                    shape=(n_rows, len(lags)), fill_value=np.nan, order='F', dtype=float
-                )
-                for i, lag in enumerate(lags):
-                    X_data[:, i] = y[self.window_size - lag : -(lag + self.max_step - 1)]
-
-            if data_to_return != 'X':
-                # If `data_to_return` is not 'X', it means is 'y' or 'both', y_data is created
-                y_data = np.full(
-                    shape=(n_rows, self.max_step), fill_value=np.nan, order='F', dtype=float
-                )
-                for step in range(self.max_step):
-                    y_data[:, step] = y[self.window_size + step : self.window_size + step + n_rows]
-        
-        return X_data, y_data
-    
-
     def _create_lags(
         self, 
         y: np.ndarray,
@@ -825,11 +769,11 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         -----
         Returned matrices are views into the original `y` so care must be taken
         when modifying them.
+
         """
 
         X_data = None
         y_data = None
-
         if data_to_return is not None:
             n_rows = len(y) - self.window_size - (self.max_step - 1)
             windows = np.lib.stride_tricks.sliding_window_view(y, self.window_size + self.max_step)
@@ -844,7 +788,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 y_data = windows[:n_rows, self.window_size:self.window_size + self.max_step]
 
         return X_data, y_data
-
 
     def _create_window_features(
         self, 
