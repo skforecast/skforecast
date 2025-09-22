@@ -6,6 +6,7 @@
 ################################################################################
 # coding=utf-8
 
+from __future__ import annotations
 import pandas as pd
 import textwrap
 from urllib.parse import urlparse
