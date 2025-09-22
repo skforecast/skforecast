@@ -698,7 +698,8 @@ def _print_dataset_info(
     info = datasets.get(dataset_name, None)
     if info is None:
         raise ValueError(
-            f"Dataset '{dataset_name}' not found. Available datasets are: {list(datasets.keys())}"
+            f"Dataset '{dataset_name}' not found. "
+            f"Available datasets are: {list(datasets.keys())}"
         )
     
     console = Console()
