@@ -28,6 +28,8 @@ The main changes in this release are:
 
 + <span class="badge text-bg-danger">Fix</span> Fixed a bug that caused the gap to not be applied correctly in the <code>[backtesting_forecaster_multiseries]</code> function. ([#1028](https://github.com/skforecast/skforecast/issues/1028))
 
++ <span class="badge text-bg-danger">Fix</span> Fixed a bug that prevented the `CatBoostRegressor` from working with the <code>[ForecasterRecursiveMultiSeries]</code>. ([#1039](https://github.com/skforecast/skforecast/issues/1039))
+
 
 **Added**
 
@@ -50,6 +52,8 @@ The main changes in this release are:
 **Fixed**
 
 + Fixed a bug that caused the gap to not be applied correctly in the <code>[backtesting_forecaster_multiseries]</code> function. ([#1028](https://github.com/skforecast/skforecast/issues/1028))
+
++ Fixed a bug that prevented the `CatBoostRegressor` from working with the <code>[ForecasterRecursiveMultiSeries]</code>. ([#1039](https://github.com/skforecast/skforecast/issues/1039))
 
 
 ## 0.17.0 <small>Aug 11, 2025</small> { id="0.17.0" }
