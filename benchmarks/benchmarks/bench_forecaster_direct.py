@@ -86,6 +86,7 @@ def run_benchmark_ForecasterDirect(output_dir):
     # Setup
     # ==========================================================================
     y, exog, exog_pred = _make_data()
+    y_values = y.to_numpy()
 
     forecaster = ForecasterDirect(
         regressor=DummyRegressor(strategy='constant', constant=1.),
@@ -95,6 +96,9 @@ def run_benchmark_ForecasterDirect(output_dir):
         transformer_exog=StandardScaler(),
         n_jobs=1
     )
+
+    def ForecasterDirect__create_lags(forecaster, y):
+        forecaster._create_lags(y=y, X_as_pandas=False, train_index=None)
 
     def ForecasterDirect__create_train_X_y(forecaster, y, exog):
         forecaster._create_train_X_y(y=y, exog=exog)
@@ -187,6 +191,7 @@ def run_benchmark_ForecasterDirect(output_dir):
             )
 
     runner = BenchmarkRunner(repeat=30, output_dir=output_dir)
+    _ = runner.benchmark(ForecasterDirect__create_lags, forecaster=forecaster, y=y_values)
     _ = runner.benchmark(ForecasterDirect__create_train_X_y, forecaster=forecaster, y=y, exog=exog)
 
     runner = BenchmarkRunner(repeat=10, output_dir=output_dir)

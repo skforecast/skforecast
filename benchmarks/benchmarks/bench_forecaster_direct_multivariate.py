@@ -98,6 +98,7 @@ def run_benchmark_ForecasterDirectMultiVariate(output_dir):
     # Setup
     # ==========================================================================
     series, exog, exog_pred = _make_data()
+    y_values = series['series_0'].to_numpy()
 
     forecaster = ForecasterDirectMultiVariate(
         regressor=DummyRegressor(strategy='constant', constant=1.),
@@ -108,6 +109,9 @@ def run_benchmark_ForecasterDirectMultiVariate(output_dir):
         transformer_exog=StandardScaler(),
         n_jobs=1
     )
+
+    def ForecasterDirectMultiVariate__create_lags(forecaster, y):
+        forecaster._create_lags(y=y, lags=np.arange(1, 21), data_to_return='both')
 
     def ForecasterDirectMultiVariate__create_train_X_y(forecaster, series, exog):
         forecaster._create_train_X_y(series=series, exog=exog)
@@ -222,6 +226,9 @@ def run_benchmark_ForecasterDirectMultiVariate(output_dir):
                 n_jobs=1,
                 show_progress=False
             )
+        
+    runner = BenchmarkRunner(repeat=30, output_dir=output_dir)
+    _ = runner.benchmark(ForecasterDirectMultiVariate__create_lags, forecaster=forecaster, y=y_values)
 
     runner = BenchmarkRunner(repeat=10, output_dir=output_dir)
     _ = runner.benchmark(ForecasterDirectMultiVariate__create_train_X_y, forecaster=forecaster, series=series, exog=exog)

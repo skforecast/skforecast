@@ -170,6 +170,13 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir):
         transformer_exog=StandardScaler(),
         encoding="ordinal"
     )
+    y_values = series_dict['series_0'].to_numpy()
+    train_index = series_dict['series_0'].index[forecaster.window_size:]
+
+    # _create_lags
+    # ==========================================================================
+    def ForecasterRecursiveMultiSeries__create_lags(forecaster, y, train_index):
+        forecaster._create_lags(y=y, X_as_pandas=True, train_index=train_index)
 
     # _create_train_X_y and create_train_X_y_single_series
     # ==========================================================================
@@ -343,7 +350,7 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir):
                 show_progress=False
             )
 
-    # Create train_X_y
+    # Create lags and train_X_y
     # ==========================================================================
     forecaster = ForecasterRecursiveMultiSeries(
         regressor=DummyRegressor(strategy='constant', constant=1.),
@@ -353,6 +360,14 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir):
         encoding="ordinal"
     )
 
+    runner = BenchmarkRunner(repeat=30, output_dir=output_dir)
+    _ = runner.benchmark(
+            ForecasterRecursiveMultiSeries__create_lags, 
+            forecaster=forecaster, 
+            y=y_values,
+            train_index=train_index
+        )
+    
     runner = BenchmarkRunner(repeat=10, output_dir=output_dir)
     _ = runner.benchmark(
             ForecasterRecursiveMultiSeries__create_train_X_y_series_is_dict_no_exog,
