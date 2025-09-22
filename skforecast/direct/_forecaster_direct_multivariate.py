@@ -735,7 +735,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         return data_to_return_dict, X_train_series_names_in_
 
     #TODO: remove if new method works as expected
-    def _create_lags_deprecated(
+    def _create_lags(
         self, 
         y: np.ndarray,
         lags: np.ndarray,
@@ -790,7 +790,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         return X_data, y_data
     
 
-    def _create_lags(
+    def _create_lags_new(
         self, 
         y: np.ndarray,
         lags: np.ndarray,

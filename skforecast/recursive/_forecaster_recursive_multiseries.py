@@ -760,7 +760,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         return style + content
 
     # TODO: Remove if new method works as expected
-    def _create_lags_deprecated(
+    def _create_lags(
         self,
         y: np.ndarray,
         X_as_pandas: bool = False,
@@ -812,7 +812,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         return X_data, y_data
 
 
-    def _create_lags(
+    def _create_lags_new(
         self,
         y: np.ndarray,
         X_as_pandas: bool = False,

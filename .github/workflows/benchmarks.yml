@@ -54,7 +54,7 @@ jobs:
           echo ">> Installing benchmark requirements..."
           pip install -r benchmarks/requirements_benchmarks.txt
           echo ">> Installing project..."
-          pip install skforecast==0.17
+          pip install .
 
 
       - name: Show environment info
