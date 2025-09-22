@@ -23,7 +23,7 @@ from ..exceptions import DataTransformationWarning, ResidualsUsageWarning
 from ..utils import (
     initialize_lags,
     initialize_window_features,
-    initialize_weights,
+    initialize_weights,    
     check_select_fit_kwargs,
     check_y,
     check_exog,
@@ -229,6 +229,8 @@ class ForecasterRecursive(ForecasterBase):
         Version of python used to create the forecaster.
     forecaster_id : str, int
         Name used as an identifier of the forecaster.
+    __skforecast_tags__ : dict
+        Tags associated with the forecaster.
     _probabilistic_mode: str, bool
         Private attribute used to indicate whether the forecaster should perform 
         some calculations during backtesting.
@@ -336,6 +338,36 @@ class ForecasterRecursive(ForecasterBase):
             }
         self.binner = QuantileBinner(**self.binner_kwargs)
         self.binner_intervals_ = None
+        
+        self.__skforecast_tags__ = {
+            "library": "skforecast",
+            "estimator_type": "forecaster",
+            "estimator_name": "ForecasterRecursive",
+            "estimator_task": "regression",
+            "forecasting_scope": "single-series",  # single-series | global
+            "forecasting_strategy": "recursive",   # recursive | direct | deep_learning
+            "index_types_supported": ["pandas.RangeIndex", "pandas.DatetimeIndex"],
+            "requires_index_frequency": True,
+
+            "allowed_input_types_series": ["pandas.Series"],
+            "supports_exog": True,
+            "allowed_input_types_exog": ["pandas.Series", "pandas.DataFrame"],
+            "handles_missing_values_series": False, 
+            "handles_missing_values_exog": True, 
+
+            "supports_lags": True,
+            "supports_window_features": True,
+            "supports_transformer_series": True,
+            "supports_transformer_exog": True,
+            "supports_weight_func": True,
+            "supports_differentiation": True,
+
+            "prediction_types": ["point", "interval", "bootstrapping", "quantiles", "distribution"],
+            "supports_probabilistic": True,
+            "probabilistic_methods": ["bootstrapping", "conformal"],
+            "handles_binned_residuals": True
+        }
+
 
     def __repr__(
         self
@@ -470,7 +502,6 @@ class ForecasterRecursive(ForecasterBase):
 
         return style + content
 
-
     def _create_lags(
         self,
         y: np.ndarray,
@@ -500,16 +531,18 @@ class ForecasterRecursive(ForecasterBase):
         y_data : numpy ndarray
             Values of the time series related to each row of `X_data`.
         
-        """
+        Notes
+        -----
+        Returned matrices are views into the original `y` so care must be taken
+        when modifying them.
 
+        """
+        
         X_data = None
         if self.lags is not None:
-            n_rows = len(y) - self.window_size
-            X_data = np.full(
-                shape=(n_rows, len(self.lags)), fill_value=np.nan, order='F', dtype=float
-            )
-            for i, lag in enumerate(self.lags):
-                X_data[:, i] = y[self.window_size - lag: -lag]
+            y_strided = np.lib.stride_tricks.sliding_window_view(y, self.window_size)[:-1]
+            cols = self.window_size - np.array(self.lags)
+            X_data = y_strided[:, cols]
 
             if X_as_pandas:
                 X_data = pd.DataFrame(
@@ -521,7 +554,6 @@ class ForecasterRecursive(ForecasterBase):
         y_data = y[self.window_size:]
 
         return X_data, y_data
-
 
     def _create_window_features(
         self, 
@@ -990,6 +1022,7 @@ class ForecasterRecursive(ForecasterBase):
             exog_dtypes_in_,
             exog_dtypes_out_
         ) = self._create_train_X_y(y=y, exog=exog)
+        
         sample_weight = self.create_sample_weights(X_train=X_train)
 
         if sample_weight is not None:
@@ -1452,7 +1485,6 @@ class ForecasterRecursive(ForecasterBase):
             )
 
         return X_predict
-
 
     def predict(
         self,

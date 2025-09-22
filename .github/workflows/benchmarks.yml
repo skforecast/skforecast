@@ -41,7 +41,7 @@ jobs:
           git status --porcelain || true
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -54,7 +54,7 @@ jobs:
           echo ">> Installing benchmark requirements..."
           pip install -r benchmarks/requirements_benchmarks.txt
           echo ">> Installing project..."
-          pip install skforecast .
+          pip install .
 
 
       - name: Show environment info

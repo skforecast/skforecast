@@ -6,7 +6,6 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
-from skforecast.exceptions import ResidualsUsageWarning
 from skforecast.direct import ForecasterDirect
 
 # Fixtures
@@ -33,7 +32,7 @@ def test_check_interval_ValueError_when_method_is_not_valid_method():
 @pytest.mark.parametrize("interval", 
                          [0.90, [5, 95], (5, 95)], 
                          ids = lambda value: f'interval: {value}')
-def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_True_exog_and_transformer(interval):
+def test_predict_interval_output_when_in_sample_residuals_exog_and_transformer(interval):
     """
     Test output of predict_interval when regressor is LinearRegression,
     2 steps are predicted, using in-sample residuals, exog is included and both
@@ -172,7 +171,7 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_5_
 @pytest.mark.parametrize("interval", 
                          [0.95, (2.5, 97.5)], 
                          ids = lambda value: f'interval: {value}')
-def test_predict_interval_conformal_output_when_regressor_is_LinearRegression_with_transform_y(interval):
+def test_predict_interval_conformal_output_when_transform_y(interval):
     """
     Test predict output when using LinearRegression as regressor and StandardScaler
     and conformal prediction.

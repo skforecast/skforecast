@@ -54,6 +54,7 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 
 - [Save and load forecaster](../user_guides/save-load-forecaster.html)
 - [Forecaster in production](../user_guides/forecaster-in-production.html)
+- [Drift detection](../user_guides/drift-detection.html)
 
 <span style="font-size: 1.3em;">Plotting</span>
 

@@ -80,7 +80,7 @@ def test_create_predict_X_output(steps):
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_create_predict_X_output_when_regressor_is_LinearRegression_with_list_interspersed():
+def test_create_predict_X_output_when_with_list_interspersed():
     """
     Test create_predict_X output when steps is
     a list with interspersed steps.
@@ -102,7 +102,7 @@ def test_create_predict_X_output_when_regressor_is_LinearRegression_with_list_in
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_create_predict_X_output_when_regressor_is_LinearRegression_using_last_window():
+def test_create_predict_X_output_when_using_last_window():
     """
     Test create_predict_X output when external last_window.
     """
@@ -375,7 +375,7 @@ def test_create_predict_X_when_categorical_features_auto_detect_LGBMRegressor():
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_create_predict_X_when_regressor_is_LinearRegression_with_exog_differentiation_is_1_and_transformer_y_steps_1():
+def test_create_predict_X_when_with_exog_differentiation_is_1_and_transformer_y_steps_1():
     """
     Test create_predict_X when using LinearRegression as regressor and differentiation=1,
     and transformer_y is StandardScaler, steps=1.
@@ -409,7 +409,7 @@ def test_create_predict_X_when_regressor_is_LinearRegression_with_exog_different
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_create_predict_X_when_regressor_is_LinearRegression_with_exog_differentiation_is_1_and_transformer_y_steps_5():
+def test_create_predict_X_when_with_exog_differentiation_is_1_and_transformer_y_steps_5():
     """
     Test create_predict_X when using LinearRegression as regressor and differentiation=1,
     and transformer_y is StandardScaler, steps=5.

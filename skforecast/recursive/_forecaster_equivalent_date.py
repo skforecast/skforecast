@@ -163,6 +163,8 @@ class ForecasterEquivalentDate():
         Version of python used to create the forecaster.
     forecaster_id : str, int
         Name used as an identifier of the forecaster.
+    __skforecast_tags__ : dict
+        Tags associated with the forecaster.
     _probabilistic_mode: str, bool
         Private attribute used to indicate whether the forecaster should perform 
         some calculations during backtesting.
@@ -224,6 +226,35 @@ class ForecasterEquivalentDate():
             }
         self.binner = QuantileBinner(**self.binner_kwargs)
         self.binner_intervals_ = None
+        
+        self.__skforecast_tags__ = {
+            "library": "skforecast",
+            "estimator_type": "forecaster",
+            "estimator_name": "ForecasterEquivalentDate",
+            "estimator_task": "regression",
+            "forecasting_scope": "single-series",  # single-series | global
+            "forecasting_strategy": "recursive",   # recursive | direct | deep_learning
+            "index_types_supported": ["pandas.RangeIndex", "pandas.DatetimeIndex"],
+            "requires_index_frequency": True,
+
+            "allowed_input_types_series": ["pandas.Series"],
+            "supports_exog": False,
+            "allowed_input_types_exog": [],
+            "handles_missing_values_series": False, 
+            "handles_missing_values_exog": False, 
+
+            "supports_lags": False,
+            "supports_window_features": False,
+            "supports_transformer_series": False,
+            "supports_transformer_exog": False,
+            "supports_weight_func": False,
+            "supports_differentiation": False,
+
+            "prediction_types": ["point", "interval"],
+            "supports_probabilistic": True,
+            "probabilistic_methods": ["conformal"],
+            "handles_binned_residuals": True
+        }
 
     def __repr__(
         self
@@ -1128,6 +1159,19 @@ class ForecasterEquivalentDate():
 
         self.out_sample_residuals_ = out_sample_residuals
         self.out_sample_residuals_by_bin_ = out_sample_residuals_by_bin
+
+    def get_tags(self) -> dict[str, Any]:
+        """
+        Return the tags that characterize the behavior of the forecaster.
+
+        Returns
+        -------
+        skforecast_tags : dict
+            Dictionary with forecaster tags.
+
+        """
+
+        return self.__skforecast_tags__
 
     def summary(self) -> None:
         """

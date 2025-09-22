@@ -46,6 +46,39 @@ def test_create_predict_inputs_NotFittedError_when_fitted_is_False():
         forecaster._create_predict_inputs(steps=5)
 
 
+def test_create_predict_inputs_ValueError_when_last_window_MultiIndex_is_used():
+    """
+    Test ValueError is raised when last_window is a MultiIndex DataFrame.
+    """
+
+    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=5)
+    forecaster.fit(series=series_long_dt, exog=exog_long_dt)
+
+    idx = pd.MultiIndex.from_product(
+        [forecaster.series_names_in_, forecaster.last_window_["1"].index],
+        names=["series_id", "datetime"],
+    )
+    last_window_long = pd.DataFrame(
+        {
+            "values": np.concatenate(
+                [
+                    forecaster.last_window_["1"].to_numpy(),
+                    forecaster.last_window_["2"].to_numpy(),
+                ]
+            )
+        },
+        index=idx,
+    )
+
+    err_msg = re.escape(
+        "`last_window` must be a pandas DataFrame with one column "
+        "per series and a single-level index (MultiIndex is not "
+        "supported)."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        forecaster._create_predict_inputs(steps=5, last_window=last_window_long)
+
+
 def test_create_predict_inputs_TypeError_when_exog_MultiIndex_no_DatetimeIndex():
     """
     Test NotFittedError is raised when fitted is False.
@@ -102,7 +135,7 @@ def test_output_create_predict_inputs_when_regressor_is_LinearRegression():
     pd.testing.assert_index_equal(results[3], expected[3])
 
 
-def test_create_predict_inputs_output_when_regressor_is_LinearRegression_with_transform_series():
+def test_create_predict_inputs_output_when_with_transform_series():
     """
     Test _create_predict_inputs output when using LinearRegression as regressor 
     and StandardScaler.
@@ -136,8 +169,8 @@ def test_create_predict_inputs_output_when_regressor_is_LinearRegression_with_tr
 @pytest.mark.parametrize("transformer_series", 
                          [StandardScaler(),
                           {'l1': StandardScaler(), 'l2': StandardScaler(), '_unknown_level': StandardScaler()}], 
-                         ids = lambda tr: f'transformer_series type: {type(tr)}')
-def test_create_predict_inputs_output_when_regressor_is_LinearRegression_with_transform_series_and_transform_exog(transformer_series):
+                         ids = lambda tr: f'transformer_series: {type(tr)}')
+def test_create_predict_inputs_when_transform_series_and_transform_exog(transformer_series):
     """
     Test _create_predict_inputs output when using LinearRegression as regressor, 
     StandardScaler as transformer_series and transformer_exog as transformer_exog.
@@ -186,8 +219,8 @@ def test_create_predict_inputs_output_when_regressor_is_LinearRegression_with_tr
 @pytest.mark.parametrize("transformer_series", 
                          [StandardScaler(),
                           {'l1': StandardScaler(), 'l2': StandardScaler(), '_unknown_level': StandardScaler()}], 
-                         ids = lambda tr: f'transformer_series type: {type(tr)}')
-def test_create_predict_inputs_output_when_regressor_is_LinearRegression_with_transform_series_and_transform_exog_different_length_series(transformer_series):
+                         ids = lambda tr: f'transformer_series: {type(tr)}')
+def test_create_predict_inputs_when_transform_series_and_transform_exog_different_length_series(transformer_series):
     """
     Test _create_predict_inputs output when using LinearRegression as regressor, StandardScaler
     as transformer_series and transformer_exog as transformer_exog with series 
@@ -384,7 +417,7 @@ def test_create_predict_inputs_output_when_series_and_exog_dict():
 @pytest.mark.parametrize("differentiation", 
                          [1, {'1': 1, '2': 1, '_unknown_level': 1}], 
                          ids = lambda diff: f'differentiation: {diff}')
-def test_create_predict_inputs_output_when_regressor_is_LinearRegression_with_exog_differentiation_is_1_and_transformer_series(differentiation):
+def test_create_predict_inputs_when_exog_differentiation_1_and_transformer_series(differentiation):
     """
     Test _create_predict_inputs output when using LinearRegression as regressor and differentiation=1,
     and transformer_series is StandardScaler.
@@ -502,7 +535,7 @@ def test_create_predict_inputs_output_when_regressor_is_LinearRegression_with_ex
 @pytest.mark.parametrize("levels", 
                          [None, ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']], 
                          ids = lambda levels: f'levels: {levels}')
-def test_create_predict_inputs_output_when_series_and_exog_dict_unknown_level(levels):
+def test_create_predict_inputs_when_series_and_exog_dict_unknown_level(levels):
     """
     Test output ForecasterRecursiveMultiSeries _create_predict_inputs method when 
     series and exog are dictionaries and unknown level.
@@ -581,7 +614,7 @@ def test_create_predict_inputs_output_when_series_and_exog_dict_unknown_level(le
 @pytest.mark.parametrize("levels", 
                          [None, ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']], 
                          ids = lambda levels: f'levels: {levels}')
-def test_create_predict_inputs_output_when_series_and_exog_dict_unknown_level_encoding_None(levels):
+def test_create_predict_inputs_when_series_and_exog_dict_unknown_level_encoding_None(levels):
     """
     Test output ForecasterRecursiveMultiSeries _create_predict_inputs method when 
     series and exog are dictionaries and unknown level with encoding=None.

@@ -107,7 +107,6 @@ def grid_search_forecaster(
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
         `None`, the results will not be saved to a file.
-        **New in version 0.12.0**
 
     Returns
     -------
@@ -215,7 +214,6 @@ def random_search_forecaster(
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
         `None`, the results will not be saved to a file.
-        **New in version 0.12.0**
 
     Returns
     -------
@@ -315,7 +313,6 @@ def _evaluate_grid_hyperparameters(
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
         `None`, the results will not be saved to a file.
-        **New in version 0.12.0**
 
     Returns
     -------
@@ -581,7 +578,6 @@ def bayesian_search_forecaster(
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
         `None`, the results will not be saved to a file.
-        **New in version 0.12.0**
     kwargs_create_study : dict, default {}
         Additional keyword arguments (key, value mappings) to pass to optuna.create_study().
         If default, the direction is set to 'minimize' and a TPESampler(seed=123) 
@@ -697,7 +693,6 @@ def _bayesian_search_optuna(
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
         `None`, the results will not be saved to a file.
-        **New in version 0.12.0**
     kwargs_create_study : dict, default {}
         Additional keyword arguments (key, value mappings) to pass to optuna.create_study().
         If default, the direction is set to 'minimize' and a TPESampler(seed=123) 
@@ -1039,7 +1034,6 @@ def grid_search_forecaster_multiseries(
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
         `None`, the results will not be saved to a file.
-        **New in version 0.12.0**
 
     Returns
     -------
@@ -1169,7 +1163,6 @@ def random_search_forecaster_multiseries(
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
         `None`, the results will not be saved to a file.
-        **New in version 0.12.0**
 
     Returns
     -------
@@ -1293,7 +1286,6 @@ def _evaluate_grid_hyperparameters_multiseries(
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
         `None`, the results will not be saved to a file.
-        **New in version 0.12.0**
 
     Returns
     -------
@@ -1641,7 +1633,6 @@ def bayesian_search_forecaster_multiseries(
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
         `None`, the results will not be saved to a file.
-        **New in version 0.12.0**
     kwargs_create_study : dict, default {}
         Additional keyword arguments (key, value mappings) to pass to optuna.create_study().
         If default, the direction is set to 'minimize' and a TPESampler(seed=123) 
@@ -1771,7 +1762,6 @@ def _bayesian_search_optuna_multiseries(
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
         `None`, the results will not be saved to a file.
-        **New in version 0.12.0**
     kwargs_create_study : dict, default {}
         Additional keyword arguments (key, value mappings) to pass to optuna.create_study().
         If default, the direction is set to 'minimize' and a TPESampler(seed=123) 
@@ -2196,7 +2186,6 @@ def grid_search_sarimax(
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
         `None`, the results will not be saved to a file.
-        **New in version 0.12.0**
 
     Returns
     -------
@@ -2295,7 +2284,6 @@ def random_search_sarimax(
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
         `None`, the results will not be saved to a file.
-        **New in version 0.12.0**
 
     Returns
     -------
@@ -2386,7 +2374,6 @@ def _evaluate_grid_hyperparameters_sarimax(
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
         `None`, the results will not be saved to a file.
-        **New in version 0.12.0**
 
     Returns
     -------

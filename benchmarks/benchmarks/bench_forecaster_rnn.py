@@ -97,6 +97,7 @@ def run_benchmark_ForecasterRnn(output_dir):
     # Setup
     # ==========================================================================
     series, exog, exog_pred = _make_data()
+    y_values = series['series_0'].to_numpy()
 
     model = create_and_compile_model(
         series=series, 
@@ -132,6 +133,9 @@ def run_benchmark_ForecasterRnn(output_dir):
                           lags       = 10,
                           fit_kwargs = {'epochs': 25, 'batch_size': 32}
                       )
+
+    def ForecasterRnn__create_lags(forecaster, y):
+        forecaster._create_lags(y=y)
 
     def ForecasterRnn__create_train_X_y(forecaster, series, exog):
         forecaster._create_train_X_y(series=series, exog=exog)
@@ -228,6 +232,9 @@ def run_benchmark_ForecasterRnn(output_dir):
                 metric='mean_squared_error',
                 show_progress=False
             )
+        
+    runner = BenchmarkRunner(repeat=30, output_dir=output_dir)
+    _ = runner.benchmark(ForecasterRnn__create_lags, forecaster=forecaster, y=y_values)
 
     runner = BenchmarkRunner(repeat=10, output_dir=output_dir)
     _ = runner.benchmark(ForecasterRnn__create_train_X_y, forecaster=forecaster_exog, series=series, exog=exog)
