@@ -76,7 +76,8 @@ class ForecasterStats():
         Not used, present here for API consistency by convention.
     last_window_ : pandas Series
         Last window the forecaster has seen during training. It stores the
-        values needed to predict the next `step` immediately after the training data.
+        values needed to predict the next `step` immediately after the training data. In the
+        statistical models from skforecast, it stores all the training data.
     extended_index_ : pandas Index
         When predicting using `last_window` and `last_window_exog`, the internal
         statsmodels SARIMAX will be updated using its append method. To do this,
@@ -161,8 +162,9 @@ class ForecasterStats():
         self.forecaster_id           = forecaster_id
         self.valid_regressor_types   = [
             'skforecast.sarimax._sarimax.Sarimax',
-            'skforecast.stats.Arar',
-            'aeon.forecasting.stats._arima.ARIMA'
+            'skforecast.stats._arar.Arar',
+            'aeon.forecasting.stats._arima.ARIMA',
+            'aeon.forecasting.stats._ets.ETS'
         ]
 
         regressor_type = f"{type(regressor).__module__}.{type(regressor).__name__}"
@@ -661,7 +663,7 @@ class ForecasterStats():
                       )
             predictions_index = expand_index(index=self.extended_index_, steps=steps)
             predictions = pd.Series(predictions, index=predictions_index, name='pred')
-        elif self.regressor_type == 'aeon.forecasting.stats._arima.ARIMA':
+        elif self.regressor_type in ['aeon.forecasting.stats._arima.ARIMA', 'aeon.forecasting.stats._ets.ETS']:
             predictions = self.regressor.iterative_forecast(
                               y                  = self.last_window_.to_numpy(),
                               prediction_horizon = steps,
