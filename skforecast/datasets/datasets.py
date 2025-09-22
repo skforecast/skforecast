@@ -699,7 +699,7 @@ def _print_dataset_info(
     if info is None:
         raise ValueError(
             f"Dataset '{dataset_name}' not found. "
-            f"Available datasets are: {list(datasets.keys())}"
+            f"Available datasets are: {sorted(datasets.keys())}"
         )
     
     console = Console()
@@ -763,7 +763,8 @@ def fetch_dataset(
     
     if name not in datasets.keys():
         raise ValueError(
-            f"Dataset '{name}' not found. Available datasets are: {sorted(datasets.keys())}"
+            f"Dataset '{name}' not found. "
+            f"Available datasets are: {sorted(datasets.keys())}"
         )
     
     url = datasets[name]['url']

@@ -31,7 +31,7 @@ def test_fetch_dataset():
 
     err_msg = re.escape(
         f"Dataset 'non_existent_dataset' not found. "
-        f"Available datasets are: {list(datasets.keys())}"
+        f"Available datasets are: {sorted(datasets.keys())}"
     )
     with pytest.raises(ValueError, match = err_msg):
         fetch_dataset('non_existent_dataset', version='latest', raw=False, verbose=False)
