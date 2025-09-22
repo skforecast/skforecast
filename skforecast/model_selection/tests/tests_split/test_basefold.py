@@ -11,6 +11,7 @@ from skforecast.model_selection._split import BaseFold
 valid_params = {
     "steps": 5,
     "initial_train_size": 100,
+    'fold_stride': None,
     "window_size": 10,
     "differentiation": None,
     "refit": True,
@@ -95,6 +96,28 @@ def test_basefold_validate_params_raise_invalid_initial_train_size_TimeSeriesFol
     # Test valid pandas Timestamp
     params["initial_train_size"] = pd.Timestamp("2022-01-01")
     cv._validate_params(cv_name="TimeSeriesFold", **params)
+
+
+def test_basefold_validate_params_raise_invalid_fold_stride():
+    """
+    Test that TypeError is raised when fold_stride is invalid.
+    """
+    cv = BaseFold()
+    params = dict(valid_params)
+    params["fold_stride"] = 0
+    msg = f"`fold_stride` must be an integer greater than 0. Got {params['fold_stride']}."
+    with pytest.raises(ValueError, match=msg):
+        cv._validate_params(cv_name="TimeSeriesFold", **params)
+
+    params["fold_stride"] = "invalid"
+    msg = f"`fold_stride` must be an integer greater than 0. Got {params['fold_stride']}."
+    with pytest.raises(ValueError, match=msg):
+        cv._validate_params(cv_name="TimeSeriesFold", **params)
+
+    params["fold_stride"] = 1.0
+    msg = f"`fold_stride` must be an integer greater than 0. Got {params['fold_stride']}."
+    with pytest.raises(ValueError, match=msg):
+        cv._validate_params(cv_name="TimeSeriesFold", **params)
 
 
 def test_basefold_validate_params_raise_invalid_refit():
