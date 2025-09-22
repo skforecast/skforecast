@@ -502,61 +502,7 @@ class ForecasterRecursive(ForecasterBase):
 
         return style + content
 
-
-    # TODO: Remove if new method works as expected
     def _create_lags(
-        self,
-        y: np.ndarray,
-        X_as_pandas: bool = False,
-        train_index: pd.Index | None = None
-    ) -> tuple[np.ndarray | pd.DataFrame | None, np.ndarray]:
-        """
-        Create the lagged values and their target variable from a time series.
-        
-        Note that the returned matrix `X_data` contains the lag 1 in the first 
-        column, the lag 2 in the in the second column and so on.
-        
-        Parameters
-        ----------
-        y : numpy ndarray
-            Training time series values.
-        X_as_pandas : bool, default False
-            If `True`, the returned matrix `X_data` is a pandas DataFrame.
-        train_index : pandas Index, default None
-            Index of the training data. It is used to create the pandas DataFrame
-            `X_data` when `X_as_pandas` is `True`.
-
-        Returns
-        -------
-        X_data : numpy ndarray, pandas DataFrame, None
-            Lagged values (predictors).
-        y_data : numpy ndarray
-            Values of the time series related to each row of `X_data`.
-        
-        """
-
-        X_data = None
-        if self.lags is not None:
-            n_rows = len(y) - self.window_size
-            X_data = np.full(
-                shape=(n_rows, len(self.lags)), fill_value=np.nan, order='F', dtype=float
-            )
-            for i, lag in enumerate(self.lags):
-                X_data[:, i] = y[self.window_size - lag: -lag]
-
-            if X_as_pandas:
-                X_data = pd.DataFrame(
-                             data    = X_data,
-                             columns = self.lags_names,
-                             index   = train_index
-                         )
-
-        y_data = y[self.window_size:]
-
-        return X_data, y_data
-
-
-    def _create_lags_new(
         self,
         y: np.ndarray,
         X_as_pandas: bool = False,
@@ -593,7 +539,6 @@ class ForecasterRecursive(ForecasterBase):
         """
         
         X_data = None
-
         if self.lags is not None:
             y_strided = np.lib.stride_tricks.sliding_window_view(y, self.window_size)[:-1]
             cols = self.window_size - np.array(self.lags)
@@ -601,15 +546,14 @@ class ForecasterRecursive(ForecasterBase):
 
             if X_as_pandas:
                 X_data = pd.DataFrame(
-                    data=X_data,
-                    columns=self.lags_names,
-                    index=train_index
-                )
+                             data    = X_data,
+                             columns = self.lags_names,
+                             index   = train_index
+                         )
 
         y_data = y[self.window_size:]
 
         return X_data, y_data
-
 
     def _create_window_features(
         self, 
