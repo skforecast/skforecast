@@ -1,9 +1,8 @@
 # Unit test fit
 # ==============================================================================
 import pytest
-import pandas as pd
 import numpy as np
-import warnings
+import pandas as pd
 from skforecast.drift_detection import RangeDriftDetector
 
 
@@ -14,7 +13,9 @@ def test_fit_series_and_exog_single_series():
     series = pd.Series([1, 2, 3, 4, 5], name='y')
     exog = pd.Series([10, 20, 30, 40, 50], name='exog')
     detector = RangeDriftDetector()
-    detector.fit(series=series, exog=exog)
+    detector.fit(y=series, exog=exog)
+    detector.__repr__()
+    detector._repr_html_()
 
     assert detector.is_fitted is True
     assert detector.series_names_in_ == ['y']
