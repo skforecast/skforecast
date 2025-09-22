@@ -10,7 +10,7 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
 
-## 0.18.0 <small>Under Development</small> { id="0.18.0" }
+## 0.18.0 <small>Sep 22, 2025</small> { id="0.18.0" }
 
 The main changes in this release are:
 
@@ -22,7 +22,7 @@ The main changes in this release are:
 
 + <span class="badge text-bg-feature">Feature</span> New function <code>[show_datasets_info]</code> to display information about all [available datasets](../user_guides/datasets.html).
 
-+ <span class="badge text-bg-feature">Feature</span> New attribute `__skforecast_tags__` in all forecasters and public method `get_tags()` to facilitate model identification and selection.
++ <span class="badge text-bg-feature">Feature</span> New attribute `__skforecast_tags__` and public method `get_tags()` in all forecasters which provide metadata about the forecaster, such as its capabilities and limitations. This attribute can be useful for [introspection and understanding the behavior](../quick-start/forecaster-attributes.html#skforecast-tags) of different forecasters.
 
 + <span class="badge text-bg-feature">API Change</span> Backtesting functions output DataFrame now includes a `fold` column to identify the fold number of each prediction.
 
@@ -41,7 +41,7 @@ The main changes in this release are:
 
 + New function <code>[show_datasets_info]</code> to display information about all [available datasets](../user_guides/datasets.html).
 
-+ New attribute `__skforecast_tags__` in all forecasters and public method `get_tags()` to facilitate model identification and selection.
++ New attribute `__skforecast_tags__` and public method `get_tags()` in all forecasters which provide metadata about the forecaster, such as its capabilities and limitations. This attribute can be useful for [introspection and understanding the behavior](../quick-start/forecaster-attributes.html#skforecast-tags) of different forecasters.
 
 
 **Changed**
