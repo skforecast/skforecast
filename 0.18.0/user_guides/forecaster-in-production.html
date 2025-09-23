@@ -4140,8 +4140,25 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h1 id="using-forecaster-models-in-production">Using forecaster models in production<a class="anchor-link" href="#using-forecaster-models-in-production">¶</a></h1><p>When using a trained model in production, regular predictions need to be generated, for example, on a weekly basis every Monday. By default, the <code>predict</code> method on a trained forecaster object generates predictions starting right after the last training observation. Therefore, the model could be retrained weekly, just before the first prediction is needed, and its predict method called. However, this approach may not be practical due to reasons such as: expensive model training, unavailability of the training data history, or high prediction frequency.</p>
-<p>In such scenarios, the model must be able to predict at any time, even if it has not been recently trained. Fortunately, every model generated using skforecast has the <code>last_window</code> argument in its <code>predict</code> method. This argument allows providing only the past values needed to create the autoregressive predictors (lags or custom predictors), enabling prediction without the need to retrain the model. This feature is particularly useful when there are limitations in retraining the model regularly or when dealing with high-frequency predictions.</p>
+<h1 id="using-forecaster-models-in-production">Using forecaster models in production<a class="anchor-link" href="#using-forecaster-models-in-production">¶</a></h1><p>When using a trained <strong>model in production</strong>, regular predictions need to be generated, for example, on a weekly basis every Monday. By default, the <code>predict</code> method on a trained forecaster object generates predictions starting right after the last training observation. Therefore, the model could be retrained weekly, just before the first prediction is needed, and its predict method called. However, this approach may not be practical due to reasons such as: expensive model training, unavailability of the training data history, or high prediction frequency.</p>
+<p>In such scenarios, the <strong>model must be able to predict at any time</strong>, even if it has not been recently trained. Fortunately, every model generated using skforecast has the <code>last_window</code> argument in its <code>predict</code> method. This argument allows providing only the past values needed to create the autoregressive predictors (lags or custom predictors), enabling prediction without the need to retrain the model. This feature is particularly useful when there are limitations in retraining the model regularly or when dealing with high-frequency predictions.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<div class="admonition note" name="html-admonition" style="background: rgba(0,191,191,.1); padding-top: 0px; padding-bottom: 6px; border-radius: 8px; border-left: 8px solid #00bfa5; border-color: #00bfa5; padding-left: 10px; padding-right: 10px;">
+<p class="title">
+<i style="font-size: 18px; color:#00bfa5;"></i>
+<b style="color: #00bfa5;">💡 Tip</b>
+</p>
+<p>When deploying a <b>forecaster in production</b>, it is good practice to <a href="../user_guides/drift-detection.html">pair it with a drift detector</a>. This ensures that both are trained on the <strong>same dataset</strong>, allowing the drift detector to verify the <strong>input data</strong> before the forecaster makes predictions.</p>
+</div>
 </div>
 </div>
 </div>
@@ -4241,15 +4258,23 @@ data = fetch_dataset(
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>h2o
----
-Monthly expenditure ($AUD) on corticosteroid drugs that the Australian health
-system had between 1991 and 2008.
-Hyndman R (2023). fpp3: Data for Forecasting: Principles and Practice(3rd
-Edition). http://pkg.robjhyndman.com/fpp3package/,https://github.com/robjhyndman
-/fpp3package, http://OTexts.com/fpp3.
-Shape of the dataset: (204, 2)
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output" data-mime-type="text/html" tabindex="0">
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">╭────────────────────────────────────── <span style="font-weight: bold">h2o</span> ───────────────────────────────────────╮
+│ <span style="font-weight: bold">Description:</span>                                                                     │
+│ Monthly expenditure ($AUD) on corticosteroid drugs that the Australian health    │
+│ system had between 1991 and 2008.                                                │
+│                                                                                  │
+│ <span style="font-weight: bold">Source:</span>                                                                          │
+│ Hyndman R (2023). fpp3: Data for Forecasting: Principles and Practice(3rd        │
+│ Edition). http://pkg.robjhyndman.com/fpp3package/,https://github.com/robjhyndman │
+│ /fpp3package, http://OTexts.com/fpp3.                                            │
+│                                                                                  │
+│ <span style="font-weight: bold">URL:</span>                                                                             │
+│ https://raw.githubusercontent.com/skforecast/skforecast-                         │
+│ datasets/main/data/h2o.csv                                                       │
+│                                                                                  │
+│ <span style="font-weight: bold">Shape:</span> 204 rows x 2 columns                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────╯
 </pre>
 </div>
 </div>
@@ -4987,9 +5012,9 @@ Regressor parameters:
     'n_jobs': None, 'oob_score': False, 'random_state': 123, 'verbose': 0,
     'warm_start': False} 
 fit_kwargs: {} 
-Creation date: 2025-08-06 13:42:42 
-Last fit date: 2025-08-06 13:42:42 
-Skforecast version: 0.17.0 
+Creation date: 2025-09-23 11:11:28 
+Last fit date: 2025-09-23 11:11:28 
+Skforecast version: 0.18.0 
 Python version: 3.12.11 
 Forecaster id: forecasting_series_y 
 

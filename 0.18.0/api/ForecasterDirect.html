@@ -5544,7 +5544,7 @@ note that all models share the same parameter and hyperparameter configuration.<
 
 
                   <details class="quote">
-                    <summary>Source code in <code>skforecast/direct/_forecaster_direct.py</code></summary>
+                    <summary>Source code in <code>skforecast\direct\_forecaster_direct.py</code></summary>
                     <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">281</span>
 <span class="normal">282</span>
 <span class="normal">283</span>
@@ -6660,7 +6660,7 @@ note that all models share the same parameter and hyperparameter configuration.<
   </span>
 
 <a href="#skforecast.direct._forecaster_direct.ForecasterDirect.regressors_" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">regressors_</span> <span class="o">=</span> <span class="p">{</span><span class="n">step</span><span class="p">:</span> <span class="n">clone</span><span class="p">(</span><span class="n">regressor</span><span class="p">)</span><span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="n">steps</span><span class="p">}</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">regressors_</span> <span class="o">=</span> <span class="p">{</span><span class="n">step</span><span class="p">:</span> <span class="p">(</span><span class="n">clone</span><span class="p">(</span><span class="n">regressor</span><span class="p">))</span><span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="p">(</span><span class="n">steps</span><span class="p">)}</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -6778,7 +6778,7 @@ note that all models share the same parameter and hyperparameter configuration.<
   </span>
 
 <a href="#skforecast.direct._forecaster_direct.ForecasterDirect.binner" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">binner</span> <span class="o">=</span> <span class="n">QuantileBinner</span><span class="p">(</span><span class="o">**</span><span class="n">binner_kwargs</span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">binner</span> <span class="o">=</span> <span class="n">QuantileBinner</span><span class="p">(</span><span class="o">**</span><span class="p">(</span><span class="n">binner_kwargs</span><span class="p">))</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -6853,7 +6853,7 @@ The "General Information" section is expanded by default.</p>
 
 
             <details class="quote">
-              <summary>Source code in <code>skforecast/direct/_forecaster_direct.py</code></summary>
+              <summary>Source code in <code>skforecast\direct\_forecaster_direct.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">493</span>
 <span class="normal">494</span>
 <span class="normal">495</span>
@@ -7151,7 +7151,7 @@ when modifying them.</p>
 </details>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast/direct/_forecaster_direct.py</code></summary>
+              <summary>Source code in <code>skforecast\direct\_forecaster_direct.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">578</span>
 <span class="normal">579</span>
 <span class="normal">580</span>
@@ -7383,7 +7383,7 @@ pandas DataFrame.</p>
 
 
             <details class="quote">
-              <summary>Source code in <code>skforecast/direct/_forecaster_direct.py</code></summary>
+              <summary>Source code in <code>skforecast\direct\_forecaster_direct.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">635</span>
 <span class="normal">636</span>
 <span class="normal">637</span>
@@ -7654,7 +7654,7 @@ is equal to <code>exog_dtypes_in_</code>.</p>
 
 
             <details class="quote">
-              <summary>Source code in <code>skforecast/direct/_forecaster_direct.py</code></summary>
+              <summary>Source code in <code>skforecast\direct\_forecaster_direct.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">689</span>
 <span class="normal">690</span>
 <span class="normal">691</span>
@@ -8233,7 +8233,7 @@ step in the form {step: y_step_[i]}.</p>
 
 
             <details class="quote">
-              <summary>Source code in <code>skforecast/direct/_forecaster_direct.py</code></summary>
+              <summary>Source code in <code>skforecast\direct\_forecaster_direct.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">925</span>
 <span class="normal">926</span>
 <span class="normal">927</span>
@@ -8446,7 +8446,7 @@ will be removed from the column names. </p>
 
 
             <details class="quote">
-              <summary>Source code in <code>skforecast/direct/_forecaster_direct.py</code></summary>
+              <summary>Source code in <code>skforecast\direct\_forecaster_direct.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 962</span>
 <span class="normal"> 963</span>
 <span class="normal"> 964</span>
@@ -8728,7 +8728,7 @@ step in the form {step: y_step_[i]}.</p>
 
 
             <details class="quote">
-              <summary>Source code in <code>skforecast/direct/_forecaster_direct.py</code></summary>
+              <summary>Source code in <code>skforecast\direct\_forecaster_direct.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1031</span>
 <span class="normal">1032</span>
 <span class="normal">1033</span>
@@ -8913,7 +8913,7 @@ methods, first return.</p>
 
 
             <details class="quote">
-              <summary>Source code in <code>skforecast/direct/_forecaster_direct.py</code></summary>
+              <summary>Source code in <code>skforecast\direct\_forecaster_direct.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1085</span>
 <span class="normal">1086</span>
 <span class="normal">1087</span>
@@ -9152,7 +9152,7 @@ residuals are always deterministic.</p>
 
 
             <details class="quote">
-              <summary>Source code in <code>skforecast/direct/_forecaster_direct.py</code></summary>
+              <summary>Source code in <code>skforecast\direct\_forecaster_direct.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1128</span>
 <span class="normal">1129</span>
 <span class="normal">1130</span>
@@ -9639,7 +9639,7 @@ residuals are always deterministic.</p>
 
 
             <details class="quote">
-              <summary>Source code in <code>skforecast/direct/_forecaster_direct.py</code></summary>
+              <summary>Source code in <code>skforecast\direct\_forecaster_direct.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1300</span>
 <span class="normal">1301</span>
 <span class="normal">1302</span>
@@ -10011,7 +10011,7 @@ for internal use and is not recommended to be changed.</p>
 
 
             <details class="quote">
-              <summary>Source code in <code>skforecast/direct/_forecaster_direct.py</code></summary>
+              <summary>Source code in <code>skforecast\direct\_forecaster_direct.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1371</span>
 <span class="normal">1372</span>
 <span class="normal">1373</span>
@@ -10504,7 +10504,7 @@ is the same as the prediction index.</p>
 
 
             <details class="quote">
-              <summary>Source code in <code>skforecast/direct/_forecaster_direct.py</code></summary>
+              <summary>Source code in <code>skforecast\direct\_forecaster_direct.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1546</span>
 <span class="normal">1547</span>
 <span class="normal">1548</span>
@@ -10808,7 +10808,7 @@ for internal use and is not recommended to be changed.</p>
 
 
             <details class="quote">
-              <summary>Source code in <code>skforecast/direct/_forecaster_direct.py</code></summary>
+              <summary>Source code in <code>skforecast\direct\_forecaster_direct.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1627</span>
 <span class="normal">1628</span>
 <span class="normal">1629</span>
@@ -11182,7 +11182,7 @@ Shape: (steps, n_boot)</p>
 </details>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast/direct/_forecaster_direct.py</code></summary>
+              <summary>Source code in <code>skforecast\direct\_forecaster_direct.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1710</span>
 <span class="normal">1711</span>
 <span class="normal">1712</span>
@@ -11661,7 +11661,7 @@ If <code>False</code>, residuals are selected randomly.</p>
 </details>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast/direct/_forecaster_direct.py</code></summary>
+              <summary>Source code in <code>skforecast\direct\_forecaster_direct.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1853</span>
 <span class="normal">1854</span>
 <span class="normal">1855</span>
@@ -12193,7 +12193,7 @@ If <code>False</code>, residuals are selected randomly.</p>
 </details>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast/direct/_forecaster_direct.py</code></summary>
+              <summary>Source code in <code>skforecast\direct\_forecaster_direct.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1987</span>
 <span class="normal">1988</span>
 <span class="normal">1989</span>
@@ -12703,7 +12703,7 @@ If <code>False</code>, residuals are selected randomly.</p>
 </details>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast/direct/_forecaster_direct.py</code></summary>
+              <summary>Source code in <code>skforecast\direct\_forecaster_direct.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2131</span>
 <span class="normal">2132</span>
 <span class="normal">2133</span>
@@ -13089,7 +13089,7 @@ If <code>False</code>, residuals are selected randomly.</p>
 </details>
 
             <details class="quote">
-              <summary>Source code in <code>skforecast/direct/_forecaster_direct.py</code></summary>
+              <summary>Source code in <code>skforecast\direct\_forecaster_direct.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2212</span>
 <span class="normal">2213</span>
 <span class="normal">2214</span>
@@ -13358,7 +13358,7 @@ configuration of parameters and hyperparameters.</p>
 
 
             <details class="quote">
-              <summary>Source code in <code>skforecast/direct/_forecaster_direct.py</code></summary>
+              <summary>Source code in <code>skforecast\direct\_forecaster_direct.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2308</span>
 <span class="normal">2309</span>
 <span class="normal">2310</span>
@@ -13488,7 +13488,7 @@ method of the regressor.</p>
 
 
             <details class="quote">
-              <summary>Source code in <code>skforecast/direct/_forecaster_direct.py</code></summary>
+              <summary>Source code in <code>skforecast\direct\_forecaster_direct.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2335</span>
 <span class="normal">2336</span>
 <span class="normal">2337</span>
@@ -13612,7 +13612,7 @@ method of the regressor.</p>
 
 
             <details class="quote">
-              <summary>Source code in <code>skforecast/direct/_forecaster_direct.py</code></summary>
+              <summary>Source code in <code>skforecast\direct\_forecaster_direct.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2356</span>
 <span class="normal">2357</span>
 <span class="normal">2358</span>
@@ -13770,7 +13770,7 @@ are created from the original time series and are included as predictors.</p>
 
 
             <details class="quote">
-              <summary>Source code in <code>skforecast/direct/_forecaster_direct.py</code></summary>
+              <summary>Source code in <code>skforecast\direct\_forecaster_direct.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2396</span>
 <span class="normal">2397</span>
 <span class="normal">2398</span>
@@ -13984,7 +13984,7 @@ that y[i] is regressed on exog[i].</p>
 
 
             <details class="quote">
-              <summary>Source code in <code>skforecast/direct/_forecaster_direct.py</code></summary>
+              <summary>Source code in <code>skforecast\direct\_forecaster_direct.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2440</span>
 <span class="normal">2441</span>
 <span class="normal">2442</span>
@@ -14371,7 +14371,7 @@ sample of residuals is stored.</p>
 
 
             <details class="quote">
-              <summary>Source code in <code>skforecast/direct/_forecaster_direct.py</code></summary>
+              <summary>Source code in <code>skforecast\direct\_forecaster_direct.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2559</span>
 <span class="normal">2560</span>
 <span class="normal">2561</span>
@@ -14840,7 +14840,7 @@ for each forecast time step). First step is 1.</p>
 
 
             <details class="quote">
-              <summary>Source code in <code>skforecast/direct/_forecaster_direct.py</code></summary>
+              <summary>Source code in <code>skforecast\direct\_forecaster_direct.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2745</span>
 <span class="normal">2746</span>
 <span class="normal">2747</span>

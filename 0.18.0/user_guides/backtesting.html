@@ -4278,10 +4278,10 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h1 id="backtesting">Backtesting<a class="anchor-link" href="#backtesting">¶</a></h1><p>In time series forecasting, the process of <em>backtesting</em> consists of evaluating the performance of a predictive model by applying it retrospectively to historical data. Therefore, it is a special type of cross-validation applied to the previous period(s).</p>
-<p>The purpose of backtesting is to evaluate the accuracy and effectiveness of a model and identify any potential issues or areas of improvement. By testing the model on historical data, one can assess how well it performs on data that it has not seen before. This is an important step in the modeling process, as it helps to ensure that the model is robust and reliable.</p>
-<p>Backtesting can be done using a variety of techniques, such as simple train-test splits or more sophisticated methods like rolling windows or expanding windows. The choice of method depends on the specific needs of the analysis and the characteristics of the time series data.</p>
-<p>Overall, backtesting is an essential step in the development of a time series forecasting model. By rigorously testing the model on historical data, one can improve its accuracy and ensure that it is effective at predicting future values of the time series.</p>
+<h1 id="backtesting">Backtesting<a class="anchor-link" href="#backtesting">¶</a></h1><p>In time series forecasting, the process of <em>backtesting</em> consists of <strong>evaluating the performance of a predictive model by applying it retrospectively to historical data</strong>. Therefore, it is a special type of cross-validation applied to the previous period(s).</p>
+<p>The purpose of backtesting is to <strong>evaluate the accuracy and effectiveness of a model</strong> and identify any potential issues or areas of improvement. By testing the model on historical data, one can assess how well it performs on data that it has not seen before. This is an important step in the modeling process, as it helps to ensure that the model is robust and reliable.</p>
+<p>Backtesting can be done using a <strong>variety of techniques</strong>, such as simple train-test splits or more sophisticated methods like rolling windows or expanding windows. The choice of method depends on the specific needs of the analysis and the characteristics of the time series data.</p>
+<p>Overall, backtesting is an <strong>essential step</strong> in the development of a time series forecasting model. By rigorously testing the model on historical data, one can improve its accuracy and ensure that it is effective at predicting future values of the time series.</p>
 <h2 id="backtesting-without-refit">Backtesting without refit<a class="anchor-link" href="#backtesting-without-refit">¶</a></h2><p>Backtesting without refit is a strategy where the model is trained only once and used sequentially without updating it, following the temporal order of the data. This approach is advantageous as it is much faster than other methods that require retraining the model each time. However, the model may lose its predictive power over time as it does not incorporate the latest information available.</p>
 <p style="text-align: center">
 <img alt="No description has been provided for this image" src="../img/diagram-backtesting-no-refit.png" style="width: 500px;"/>
@@ -4343,7 +4343,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </p>
 <p><em>Note: The argument needed to achieve this configuration is <code>fold_stride=n</code>, where $n$ is an integer.</em></p>
 <p>Depending on the relation between <code>steps</code> and <code>fold_stride</code>, the output may include repeated indexes (if <code>fold_stride &lt; steps</code>) or gaps (if <code>fold_stride &gt; steps</code>).</p>
-<h2 id="skip-folds">Skip folds<a class="anchor-link" href="#skip-folds">¶</a></h2><p>All of the above backtesting strategies can be combined with the option to skip a certain number of folds by setting the <code>skip_folds</code> argument. Since the model predicts fewer points in time, the computational cost is reduced and the backtesting process is faster. This is particularly useful when one is interested in an approximate estimate of the model's performance, but does not require an exact evaluation, for example, when searching for hyperparameters. If <code>skip_folds</code> is an integer, every 'skip_folds'-th is returned. If <code>skip_folds</code> is a list, the folds in the list are skipped. For example, if <code>skip_folds = 3</code>, and there are 10 folds, the returned folds will be [0, 3, 6, 9]. If <code>skip_folds</code> is a list [1, 2, 3], the returned folds will be [0, 4, 5, 6, 7, 8, 9].</p>
+<h2 id="skip-folds">Skip folds<a class="anchor-link" href="#skip-folds">¶</a></h2><p>All of the above backtesting strategies can be combined with the option <strong>to skip a certain number of folds</strong> by setting the <code>skip_folds</code> argument. Since the model predicts fewer points in time, the computational cost is reduced and the backtesting process is faster. This is particularly useful when one is interested in an approximate estimate of the model's performance, but does not require an exact evaluation, for example, when searching for hyperparameters. If <code>skip_folds</code> is an integer, every 'skip_folds'-th is returned. If <code>skip_folds</code> is a list, the folds in the list are skipped. For example, if <code>skip_folds = 3</code>, and there are 10 folds, the returned folds will be [0, 3, 6, 9]. If <code>skip_folds</code> is a list [1, 2, 3], the returned folds will be [0, 4, 5, 6, 7, 8, 9].</p>
 <h2 id="which-strategy-should-i-use">Which strategy should I use?<a class="anchor-link" href="#which-strategy-should-i-use">¶</a></h2><p>To ensure an accurate evaluation of your model and gain confidence in its predictive performance on new data, it is critical to employ an appropriate backtesting strategy. Factors such as use case characteristics, available computing resources and time intervals between predictions need to be considered to determine which strategy to use. These factors determine when the model should be refitted and the prediction horizon that should be used.</p>
 <ul>
 <li><p><strong>Prediction horizon</strong> (<code>steps</code>): suppose you need to predict the users of an application every Monday for the whole week. In this case, each iteration of backtesting would be a seven-step prediction, representing the seven days of the week.</p>
@@ -4540,15 +4540,23 @@ data.head(3)</div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>h2o
----
-Monthly expenditure ($AUD) on corticosteroid drugs that the Australian health
-system had between 1991 and 2008.
-Hyndman R (2023). fpp3: Data for Forecasting: Principles and Practice(3rd
-Edition). http://pkg.robjhyndman.com/fpp3package/,https://github.com/robjhyndman
-/fpp3package, http://OTexts.com/fpp3.
-Shape of the dataset: (204, 2)
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output" data-mime-type="text/html" tabindex="0">
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">╭────────────────────────────────────── <span style="font-weight: bold">h2o</span> ───────────────────────────────────────╮
+│ <span style="font-weight: bold">Description:</span>                                                                     │
+│ Monthly expenditure ($AUD) on corticosteroid drugs that the Australian health    │
+│ system had between 1991 and 2008.                                                │
+│                                                                                  │
+│ <span style="font-weight: bold">Source:</span>                                                                          │
+│ Hyndman R (2023). fpp3: Data for Forecasting: Principles and Practice(3rd        │
+│ Edition). http://pkg.robjhyndman.com/fpp3package/,https://github.com/robjhyndman │
+│ /fpp3package, http://OTexts.com/fpp3.                                            │
+│                                                                                  │
+│ <span style="font-weight: bold">URL:</span>                                                                             │
+│ https://raw.githubusercontent.com/skforecast/skforecast-                         │
+│ datasets/main/data/h2o.csv                                                       │
+│                                                                                  │
+│ <span style="font-weight: bold">Shape:</span> 204 rows x 2 columns                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────╯
 </pre>
 </div>
 </div>
@@ -6920,16 +6928,24 @@ data.index.name = 'datetime'</div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>h2o_exog
---------
-Monthly expenditure ($AUD) on corticosteroid drugs that the Australian health
-system had between 1991 and 2008. Two additional variables (exog_1, exog_2) are
-simulated.
-Hyndman R (2023). fpp3: Data for Forecasting: Principles and Practice (3rd
-Edition). http://pkg.robjhyndman.com/fpp3package/,
-https://github.com/robjhyndman/fpp3package, http://OTexts.com/fpp3.
-Shape of the dataset: (195, 3)
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output" data-mime-type="text/html" tabindex="0">
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">╭─────────────────────────────────── <span style="font-weight: bold">h2o_exog</span> ────────────────────────────────────╮
+│ <span style="font-weight: bold">Description:</span>                                                                    │
+│ Monthly expenditure ($AUD) on corticosteroid drugs that the Australian health   │
+│ system had between 1991 and 2008. Two additional variables (exog_1, exog_2) are │
+│ simulated.                                                                      │
+│                                                                                 │
+│ <span style="font-weight: bold">Source:</span>                                                                         │
+│ Hyndman R (2023). fpp3: Data for Forecasting: Principles and Practice (3rd      │
+│ Edition). http://pkg.robjhyndman.com/fpp3package/,                              │
+│ https://github.com/robjhyndman/fpp3package, http://OTexts.com/fpp3.             │
+│                                                                                 │
+│ <span style="font-weight: bold">URL:</span>                                                                            │
+│ https://raw.githubusercontent.com/skforecast/skforecast-                        │
+│ datasets/main/data/h2o_exog.csv                                                 │
+│                                                                                 │
+│ <span style="font-weight: bold">Shape:</span> 195 rows x 3 columns                                                     │
+╰─────────────────────────────────────────────────────────────────────────────────╯
 </pre>
 </div>
 </div>
