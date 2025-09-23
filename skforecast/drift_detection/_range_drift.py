@@ -35,7 +35,7 @@ class RangeDriftDetector:
 
     Parameters
     ----------
-    None
+    self
 
     Attributes
     ----------
