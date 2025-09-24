@@ -712,6 +712,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#forecasting-with-deep-learning" class="md-nav__link">
+    <span class="md-ellipsis">
+      Forecasting with Deep Learning
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -789,6 +798,21 @@
   </a>
   
 </li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#backtesting-with-fold-stride" class="md-nav__link">
+    <span class="md-ellipsis">
+      Backtesting with fold stride
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Backtesting with fold stride">
+      <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#which-strategy-should-i-use" class="md-nav__link">
@@ -3912,6 +3936,9 @@
 </p>
 
 <p>Using the <a href="../user_guides/dependent-multi-series-multivariate-forecasting.html"><code>ForecasterDirectMultiVariate</code></a> class, it is possible to easily build machine learning models for <strong>multivariate forecasting</strong>.</p>
+<h3 id="forecasting-with-deep-learning">Forecasting with Deep Learning<a class="headerlink" href="#forecasting-with-deep-learning" title="Permanent link">&para;</a></h3>
+<p><strong>Deep learning</strong> models have become increasingly popular for time series forecasting, especially when traditional statistical approaches struggle to capture <strong>non-linear relationships or complex temporal patterns</strong>. By leveraging neural network architectures, deep learning methods can automatically learn features and dependencies directly from raw data, offering significant advantages for large datasets, multivariate time series, and problems where classic models fall short.</p>
+<p>Using the <a href="../user_guides/forecasting-with-deep-learning-rnn-lstm.html"><code>ForecasterRnn</code></a> class, it is possible to easily build machine learning models using <strong>deep learning</strong>.</p>
 <h2 id="forecasters">Forecasters<a class="headerlink" href="#forecasters" title="Permanent link">&para;</a></h2>
 <p>A <strong>Forecaster</strong> object in the skforecast library is a comprehensive <strong>container that provides essential functionality and methods</strong> for training a forecasting model and generating predictions for future points in time.</p>
 <p>The <strong>skforecast</strong> library offers a <strong>variety of forecaster</strong> types, each tailored to specific requirements such as single or multiple time series, direct or recursive strategies, or custom predictors. Regardless of the specific forecaster type, all instances share the same API.</p>
@@ -4012,74 +4039,82 @@
 <p>In time series forecasting, the process of <em>backtesting</em> consists of <strong>evaluating the performance</strong> of a predictive model by applying it retrospectively to <strong>historical data</strong>. Therefore, it is a special type of cross-validation applied to the previous period(s).</p>
 <p>The purpose of backtesting is to evaluate the accuracy and effectiveness of a model and <strong>identify any potential issues or areas of improvement</strong>. By testing the model on historical data, one can assess how well it performs on data that it has not seen before. This is an important step in the modeling process, as it helps to <strong>ensure that the model is robust and reliable</strong>.</p>
 <p>Backtesting can be done using a <strong>variety of techniques</strong>, such as simple train-test splits or more sophisticated methods like rolling windows or expanding windows. The choice of method depends on the specific needs of the analysis and the characteristics of the time series data.</p>
-<p>Overall, backtesting is an essential step in the development of a time series forecasting model. By rigorously testing the model on historical data, one can improve its accuracy and ensure that it is effective at predicting future values of the time series.</p>
+<p>Overall, backtesting is an <strong>essential step</strong> in the development of a time series forecasting model. By rigorously testing the model on historical data, one can improve its accuracy and ensure that it is effective at predicting future values of the time series.</p>
 <h3 id="backtesting-without-refit">Backtesting without refit<a class="headerlink" href="#backtesting-without-refit" title="Permanent link">&para;</a></h3>
 <p>Backtesting without refit is a strategy where the <strong>model is trained only once</strong> and used sequentially without updating it, following the temporal order of the data. This approach is advantageous as it is much faster than other methods that require retraining the model each time. However, the model may lose its predictive power over time as it does not incorporate the latest information available.</p>
 <p style="text-align: center">
-<img src="../img/diagram-backtesting-no-refit.png" style="width: 500px;">
+    <img src="../img/diagram-backtesting-no-refit.png" style="width: 500px;">
 </p>
 
 <p style="text-align: center">
-<img src="../img/backtesting_no_refit.gif" style="width: 650px;">
-<br>
-<font size="2.5"> <i>Backtesting without refit</i></font>
+    <img src="../img/time-series-backtesting-forecasting-no-refit.gif" style="width: 650px;">
+    <br>
+    <font size="2.5"> <i>Backtesting without refit</i></font>
 </p>
 
 <h3 id="backtesting-with-refit-and-increasing-training-size-fixed-origin">Backtesting with refit and increasing training size (fixed origin)<a class="headerlink" href="#backtesting-with-refit-and-increasing-training-size-fixed-origin" title="Permanent link">&para;</a></h3>
 <p>In this approach, the <strong>model is trained before making predictions each time</strong>, and all available data up to that point is used in the training process. This differs from standard cross-validation, where the data is randomly distributed between training and validation sets.</p>
 <p>Instead of randomizing the data, this backtesting sequentially increases the size of the training set while maintaining the temporal order of the data. By doing this, the model can be tested on progressively larger amounts of historical data, providing a more accurate assessment of its predictive capabilities.</p>
 <p style="text-align: center">
-<img src="../img/diagram-backtesting-refit.png" style="width: 500px;">
+    <img src="../img/diagram-backtesting-refit.png" style="width: 500px;">
 </p>
 
 <p style="text-align: center">
-<img src="../img/backtesting_refit.gif" style="width: 650px;">
-<br>
-<font size="2.5"> <i>Backtesting with refit and increasing training size (fixed origin)</i></font>
+    <img src="../img/time-series-backtesting-forecasting-with-refit.gif" style="width: 650px;">
+    <br>
+    <font size="2.5"> <i>Backtesting with refit and increasing training size (fixed origin)</i></font>
 </p>
 
 <h3 id="backtesting-with-refit-and-fixed-training-size-rolling-origin">Backtesting with refit and fixed training size (rolling origin)<a class="headerlink" href="#backtesting-with-refit-and-fixed-training-size-rolling-origin" title="Permanent link">&para;</a></h3>
 <p>In this approach, the <strong>model is trained using a fixed window of past observations</strong>, and the testing is performed on a rolling basis, where the training window is moved forward in time. The size of the training window is kept constant, allowing for the model to be tested on different sections of the data. This technique is particularly useful when there is a limited amount of data available, or when the data is non-stationary, and the model's performance may vary over time. Is also known as time series cross-validation or walk-forward validation.</p>
 <p style="text-align: center">
-<img src="../img/diagram-backtesting-refit-fixed-train-size.png" style="width: 500px;">
+    <img src="../img/diagram-backtesting-refit-fixed-train-size.png" style="width: 500px;">
 </p>
 
 <p style="text-align: center">
-<img src="../img/backtesting_refit_fixed_train_size.gif" style="width: 650px;">
-<br>
-<font size="2.5"> <i>Backtesting with refit and fixed training size (rolling origin)</i></font>
+    <img src="../img/time-series-backtesting-forecasting-refit-fixed-train-size.gif" style="width: 650px;">
+    <br>
+    <font size="2.5"> <i>Backtesting with refit and fixed training size (rolling origin)</i></font>
 </p>
 
 <h3 id="backtesting-with-intermittent-refit">Backtesting with intermittent refit<a class="headerlink" href="#backtesting-with-intermittent-refit" title="Permanent link">&para;</a></h3>
-<p>The model is <strong>retrained every <em>n</em> iterations</strong>, a method often used when the model retraining is limited to certain time intervals, such as weekly, but a different time window, such as a day, needs to be used for prediction.</p>
-<p>This refit strategy can be implemented using either a fixed or rolling origin, providing flexibility in adapting the model to new data.</p>
+<p>The model is <strong>retrained every <em>n</em> iterations</strong>, which is useful when the retraining frequency differs from the prediction frequency. For example, a model may be updated weekly but used to generate daily forecasts.</p>
+<p>This strategy usually achieves a <strong>good balance</strong> between the <strong>computational cost</strong> of retraining and <strong>avoiding model degradation</strong>. It can be applied with either a fixed or rolling origin, offering flexibility in how the model adapts to new data.</p>
 <p style="text-align: center">
-<img src="../img/backtesting_intermittent_refit.gif" style="width: 650px;">
-<br>
-<font size="2.5"> <i>Backtesting with intermittent refit</i></font>
+    <img src="../img/time-series-backtesting-forecasting-intermittent-refit.gif" style="width: 650px;">
+    <br>
+    <font size="2.5"> <i>Backtesting with intermittent refit</i></font>
 </p>
 
 <h3 id="backtesting-including-gap">Backtesting including gap<a class="headerlink" href="#backtesting-including-gap" title="Permanent link">&para;</a></h3>
 <p>This approach introduces a <strong>time gap between the training and test sets</strong>, replicating a scenario where predictions cannot be made immediately after the end of the training data.</p>
 <p>For example, consider the goal of predicting the 24 hours of day D+1, but the predictions need to be made at 11:00 to allow sufficient flexibility. At 11:00 on day D, the task is to forecast hours [12 - 23] of the same day and hours [0 - 23] of day D+1. Thus, a total of 36 hours into the future must be predicted, with only the last 24 hours to be stored.</p>
 <p style="text-align: center">
-<img src="../img/backtesting_refit_gap.gif" style="width: 650px;">
-<br>
-<font size="2.5"> <i>Backtesting with refit and gap</i></font>
+    <img src="../img/time-series-backtesting-forecasting-with-gap.gif" style="width: 650px;">
+    <br>
+    <font size="2.5"> <i>Backtesting with refit and gap</i></font>
+</p>
+
+<h2 id="backtesting-with-fold-stride">Backtesting with fold stride<a class="headerlink" href="#backtesting-with-fold-stride" title="Permanent link">&para;</a></h2>
+<p>This method involves <strong>controlling how far the test set moves forward between folds</strong>. For example, you might want to forecast the next 30 days but generate a new forecast every 7 days. In this setup, each test window is 30 days long (<code>steps=30</code>), while the stride between folds is one week (<code>fold_stride=7</code>). This means forecasts overlap, and the same observations are predicted multiple times, which provides a richer view of model consistency and stability across different forecast origins.</p>
+<p style="text-align: center">
+    <img src="../img/time-series-backtesting-forecasting-fold-stride.gif" style="width: 650px;">
+    <br>
+    <font size="2.5"> <i>Backtesting with fold stride</i></font>
 </p>
 
 <h3 id="which-strategy-should-i-use">Which strategy should I use?<a class="headerlink" href="#which-strategy-should-i-use" title="Permanent link">&para;</a></h3>
 <p>To ensure an accurate evaluation of your model and gain confidence in its predictive performance on new data, it is critical to employ an <strong>appropriate backtesting strategy</strong>.</p>
-<p>To determine an appropriate strategy, <strong>factors</strong> such as use case characteristics, available computing resources, and time intervals between predictions must be considered. These factors determine when the model should be refitted and the prediction horizon that should be used.</p>
+<p>The choice depends on <strong>factors</strong> such as the use case, available computing resources, and the time interval between predictions. These will determine both the <strong>prediction horizon</strong> and the <strong>refit strategy</strong>.</p>
 <ul>
 <li>
-<p><strong>Prediction horizon</strong>: Suppose you need to predict the users of an App every Monday for the entire week. In this case, each iteration would be a seven-step prediction representing the seven days of the week.</p>
+<p><strong>Prediction horizon</strong>: Suppose you need to forecast the users of an app every Monday for the whole week. In this case, each iteration of backtesting would be a seven-step prediction, representing the seven days of the week.</p>
 </li>
 <li>
-<p><strong>Refit strategy</strong>: Continuing with the example above, at the end of the week you need to decide whether or not to update the model. Training the model with additional data can improve its predictive ability, but it requires more time and computational resources, which may not always be readily available. A reasonable approach is to retrain the model when the error metric shows a consistent upward trend. This behavior can be effectively simulated using the backtesting framework.</p>
+<p><strong>Refit strategy</strong>: Continuing with the example above, at the end of each week you must decide whether to update the model. Retraining with additional data can improve accuracy but increases time and computational cost. A reasonable approach is to retrain only when the error metric shows a consistent upward trend. This behavior can be effectively simulated with the backtesting framework.</p>
 </li>
 </ul>
-<p>As an example, backtesting is performed using the data from this <a href="https://www.cienciadedatos.net/documentos/py29-forecasting-electricity-power-demand-python.html">skforecast example</a>. The same backtest is run with different <code>refit</code> strategies: <code>False</code> (no refit between predictions), refit every <code>30</code> days, every <code>14</code> days, every <code>7</code> days and <code>True</code> (refit after every predictions). Notice that the significant increase in time does not correspond to a decrease in error.</p>
+<p>As an illustration, backtesting is performed using the data from this <a href="https://www.cienciadedatos.net/documentos/py29-forecasting-electricity-power-demand-python.html">skforecast example</a>. The same backtest is run with <code>steps=24</code> (predicting 24 hours ahead) and different <code>refit</code> strategies: <code>False</code> (no refit between predictions), re-fitting every <code>30</code> days, every <code>14</code> days, every <code>7</code> days, and <code>True</code> (re-fitting after every prediction). Notice that the significant increase in computation time does not necessarily correspond to lower error.</p>
 <table>
 <thead>
 <tr>
@@ -4116,6 +4151,10 @@
 </tr>
 </tbody>
 </table>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p><strong>Best practice:</strong> The reliability of backtesting results depends on how well the setup mirrors the real-world use case. The closer the backtesting process is to the actual conditions under which the model will operate — including prediction horizon, refit frequency, and data availability — the more trustworthy the estimated performance metrics will be.</p>
+</div>
 <p>For a code example illustrating the backtesting process, refer to the <a href="../user_guides/backtesting.html">Backtesting user guide</a>.</p>
 
 
