@@ -19,10 +19,8 @@ from optuna.samplers import TPESampler
 from sklearn.model_selection import ParameterGrid, ParameterSampler
 from ..exceptions import warn_skforecast_categories
 from ..model_selection._split import TimeSeriesFold, OneStepAheadFold
-from ..model_selection._validation import (
-    backtesting_forecaster, 
-    backtesting_forecaster_multiseries,
-    backtesting_sarimax
+from ..experimental._validation import (
+    backtesting_stats
 )
 from ..metrics import add_y_train_argument, _get_metric
 from ..model_selection._utils import (
@@ -114,7 +112,7 @@ def grid_search_stats(
 
     param_grid = list(ParameterGrid(param_grid))
 
-    results = _evaluate_grid_hyperparameters_sarimax(
+    results = _evaluate_grid_hyperparameters_stats(
         forecaster            = forecaster,
         y                     = y,
         cv                    = cv,
@@ -212,7 +210,7 @@ def random_search_stats(
 
     param_grid = list(ParameterSampler(param_distributions, n_iter=n_iter, random_state=random_state))
 
-    results = _evaluate_grid_hyperparameters_sarimax(
+    results = _evaluate_grid_hyperparameters_stats(
         forecaster            = forecaster,
         y                     = y,
         cv                    = cv,
@@ -328,7 +326,7 @@ def _evaluate_grid_hyperparameters_stats(
     for params in param_grid:
 
         forecaster.set_params(params)
-        metric_values = backtesting_sarimax(
+        metric_values = backtesting_stats(
                             forecaster            = forecaster,
                             y                     = y,
                             cv                    = cv,
