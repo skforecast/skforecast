@@ -73,16 +73,6 @@ def test_arar_nominal_returns_tuple_shapes():
     assert psi.ndim == 1 and psi.size >= 1
 
 
-def test_arar_fallback_when_incompatible_params_safe():
-    y = ar1_series(30)
-    model = arar(y, max_ar_depth=10, max_lag=5, safe=True)
-    Y, phi, lags, sigma2, psi, sbar, d, L = model
-    assert np.allclose(phi, np.zeros(4))
-    assert lags == (1, 1, 1, 1)
-    assert psi.shape == (1,) and psi[0] == 1.0
-    assert sigma2 >= 1e-12
-
-
 def test_forecast_shapes_and_monotone_uncertainty():
     y = ar1_series(120)
     model = arar(y, safe=True)
@@ -219,3 +209,8 @@ def test_arar_with_explicit_params_propagated_to_estimator():
     assert isinstance(est.max_lag, int)
     assert est.max_ar_depth >= 4
     assert est.max_lag >= est.max_ar_depth
+
+def test_invalid_parameter_ordering():
+    with pytest.raises(ValueError, match="max_lag must be greater than or equal to max_ar_depth. Got max_lag=12, max_ar_depth=13"):
+        arar(ar1_series(60), max_ar_depth=13, max_lag=12)
+
