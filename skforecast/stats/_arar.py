@@ -5,13 +5,14 @@
 ################################################################################
 # coding=utf-8
 
-from scipy.stats import norm
+import math
+import warnings
+
 import numpy as np
 import pandas as pd
+from scipy.stats import norm
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.utils.validation import check_is_fitted
-import warnings
-import math
 
 
 def setup_params(y_in, max_ar_depth: int | None = None, max_lag: int | None = None):
@@ -24,7 +25,7 @@ def setup_params(y_in, max_ar_depth: int | None = None, max_lag: int | None = No
             max_ar_depth = 26
         elif n >= 13:
             max_ar_depth = 13
-        else:  # 10 ≤ n < 13
+        else:
             max_ar_depth = max(4, math.ceil(n / 3))
 
     if max_lag is None:
@@ -34,8 +35,13 @@ def setup_params(y_in, max_ar_depth: int | None = None, max_lag: int | None = No
             max_lag = 13
         else:
             max_lag = max(4, math.ceil(n / 2))
-    return max_ar_depth, max_lag
 
+    if max_lag < max_ar_depth:
+        raise ValueError(
+            f"max_lag must be greater than or equal to max_ar_depth. "
+            f"Got max_lag={max_lag}, max_ar_depth={max_ar_depth}"
+        )
+    return max_ar_depth, max_lag
 
 def arar(y_in, max_ar_depth: int | None = None, max_lag: int | None = None, safe: bool = True):
     """
@@ -51,6 +57,9 @@ def arar(y_in, max_ar_depth: int | None = None, max_lag: int | None = None, safe
       psi       : memory-shortening filter (np.ndarray)
       sbar      : mean of shortened series (float)
     """
+    
+    max_ar_depth, max_lag = setup_params(y_in, max_ar_depth=max_ar_depth, max_lag=max_lag)
+    
     def mean_fallback(y):
         mu = float(np.nanmean(y))
         var = float(np.nanvar(y, ddof=1)) if y.size > 1 else 0.0
@@ -67,16 +76,11 @@ def arar(y_in, max_ar_depth: int | None = None, max_lag: int | None = None, safe
         y_in = np.asarray(y_in, dtype=float)
         Y = y_in.copy()
 
-        # FIX 1: call with y_in
-        max_ar_depth, max_lag = setup_params(y_in, max_ar_depth=max_ar_depth, max_lag=max_lag)
-
-        # quick guards
         if y_in.size < 5 or max_ar_depth < 4 or max_lag < max_ar_depth:
             if safe:
                 return mean_fallback(y_in)
             raise ValueError("Too short series or incompatible max_ar_depth/max_lag")
 
-        # --- memory shortening (≤ 3 rounds) ---
         y = y_in.copy()
         psi = np.array([1.0], dtype=float)
 
@@ -86,7 +90,6 @@ def arar(y_in, max_ar_depth: int | None = None, max_lag: int | None = None, safe
             if taus.size == 0:
                 break
 
-            # one-step regressions for taus
             best_idx = None
             best_err = np.inf
             best_phi1 = 0.0
@@ -101,11 +104,9 @@ def arar(y_in, max_ar_depth: int | None = None, max_lag: int | None = None, safe
             tau = int(taus[best_idx])
 
             if best_err <= 8.0 / n or (best_phi1 >= 0.93 and tau > 2):
-                # first-order reduction
                 y = y[tau:] - best_phi1 * y[:-tau]
                 psi = np.concatenate([psi, np.zeros(tau)]) - best_phi1 * np.concatenate([np.zeros(tau), psi])
             elif best_phi1 >= 0.93:
-                # second-order reduction (use least squares like Julia)
                 if n < 3:
                     break
                 A = np.zeros((2, 2), dtype=float)
@@ -122,12 +123,10 @@ def arar(y_in, max_ar_depth: int | None = None, max_lag: int | None = None, safe
             else:
                 break
 
-        # shortened series stats
         sbar = float(np.mean(y))
         X = y - sbar
         n = X.size
 
-        # gamma up to max_lag (biased). 0 for lags >= n — matches Julia’s slicing behavior.
         gamma = np.empty(max_lag + 1, dtype=float)
         xbar = float(np.mean(X))
         for lag in range(max_lag + 1):
@@ -141,11 +140,10 @@ def arar(y_in, max_ar_depth: int | None = None, max_lag: int | None = None, safe
         best_phi = np.zeros(4, dtype=float)
 
         def build_system(i, j, k):
-            # faithful 0-based mapping of the Julia code
             needed = [0, i - 1, j - 1, k - 1, j - i, k - i, k - j, 1, i, j, k]
             if any(idx < 0 or idx > max_lag for idx in needed):
                 return None, None
-            A = np.full((4, 4), gamma[0], dtype=float)          # diag = gamma[0]
+            A = np.full((4, 4), gamma[0], dtype=float)
             A[0, 1] = A[1, 0] = gamma[i - 1]
             A[0, 2] = A[2, 0] = gamma[j - 1]
             A[1, 2] = A[2, 1] = gamma[j - i]
@@ -164,13 +162,11 @@ def arar(y_in, max_ar_depth: int | None = None, max_lag: int | None = None, safe
                     phi, *_ = np.linalg.lstsq(A, b, rcond=None)
                     sigma2 = float(gamma[0] - float(np.dot(phi, b)))
 
-                    # Accept ANY finite σ² (including 0) — this matches Julia’s behavior.
                     if np.isfinite(sigma2) and sigma2 < best_sigma2:
                         best_sigma2 = sigma2
                         best_phi = phi.astype(float, copy=True)
                         best_lag = (1, i, j, k)
 
-        # Only fail if σ² is non-finite; Julia happily returns degenerate fits.
         if not np.isfinite(best_sigma2):
             if safe:
                 return mean_fallback(Y)
@@ -179,7 +175,7 @@ def arar(y_in, max_ar_depth: int | None = None, max_lag: int | None = None, safe
         return (Y,
                 best_phi.astype(float, copy=False),
                 best_lag,
-                max(best_sigma2, 1e-12),   # clamp for numerical safety
+                max(best_sigma2, 1e-12),
                 psi.astype(float, copy=False),
                 sbar, 
                 max_ar_depth, 
@@ -222,7 +218,7 @@ def forecast(model_tuple, h: int, level=(80, 95)):
     _, i, j, k = best_lag
 
     # build xi (combined filter impulse response)
-    def z(m):  # zeros helper
+    def z(m):
         return np.zeros(max(0, m), dtype=float)
 
     xi = np.concatenate([psi, z(k)])
