@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed, cpu_count
 from tqdm.auto import tqdm
-from ..stats import Arar
+from ..sarimax import Sarimax
 from ..metrics import add_y_train_argument, _get_metric
 from ..exceptions import LongTrainingWarning, IgnoredArgumentWarning
 from ..model_selection._split import TimeSeriesFold
@@ -130,15 +130,15 @@ def _backtesting_stats(
     forecaster = deepcopy(forecaster)
     cv = deepcopy(cv)
 
-    if isinstance(forecaster.regressor, Arar):
-        if cv.refit is False:
-            warnings.warn(
-                "If `ForecasterStats` uses `Arar` as regressor, `cv.refit` must be "
-                "`True` since predictions must start from the end of the training set."
-                " Setting `cv.refit = True`.",
-                IgnoredArgumentWarning
-            )
-            cv.refit = True
+    if not isinstance(forecaster.regressor, Sarimax) and cv.refit is False:
+        warnings.warn(
+            "If `ForecasterStats` uses a regressor different from "
+            "`skforecast.stats.Sarimax`, `cv.refit` must be `True` since "
+            "predictions must start from the end of the training set."
+            " Setting `cv.refit = True`.",
+            IgnoredArgumentWarning
+        )
+        cv.refit = True
 
     cv.set_params({
         'window_size': forecaster.window_size,
@@ -438,8 +438,8 @@ def backtesting_stats(
     
     if type(forecaster).__name__ not in ['ForecasterSarimax', 'ForecasterStats']:
         raise TypeError(
-            "`forecaster` must be of type `ForecasterSarimax`, for all other "
-            "types of forecasters use the functions available in the other "
+            "`forecaster` must be of type `ForecasterSarimax` or `ForecasterStats`, "
+            "for all other types of forecasters use the functions available in the other "
             "`model_selection` modules."
         )
     

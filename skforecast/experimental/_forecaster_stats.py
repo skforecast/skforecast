@@ -76,7 +76,8 @@ class ForecasterStats():
         Not used, present here for API consistency by convention.
     last_window_ : pandas Series
         Last window the forecaster has seen during training. It stores the
-        values needed to predict the next `step` immediately after the training data.
+        values needed to predict the next `step` immediately after the training data. In the
+        statistical models from skforecast, it stores all the training data.
     extended_index_ : pandas Index
         When predicting using `last_window` and `last_window_exog`, the internal
         statsmodels SARIMAX will be updated using its append method. To do this,
@@ -137,6 +138,7 @@ class ForecasterStats():
     ) -> None:
         
         self.regressor               = copy(regressor)
+        self.regressor_type          = None
         self.transformer_y           = transformer_y
         self.transformer_exog        = transformer_exog
         self.window_size             = 1
@@ -158,12 +160,20 @@ class ForecasterStats():
         self.skforecast_version      = skforecast.__version__
         self.python_version          = sys.version.split(" ")[0]
         self.forecaster_id           = forecaster_id
+        self.valid_regressor_types   = [
+            'skforecast.sarimax._sarimax.Sarimax',
+            'skforecast.stats._arar.Arar',
+            'aeon.forecasting.stats._arima.ARIMA',
+            'aeon.forecasting.stats._ets.ETS'
+        ]
 
-        if not isinstance(self.regressor, (Sarimax, Arar)):
+        regressor_type = f"{type(regressor).__module__}.{type(regressor).__name__}"
+        if regressor_type not in self.valid_regressor_types:
             raise TypeError(
-                f"`regressor` must be an instance of type skforecast.sarimax.Sarimax or "
-                f"`skforecast.stats.Arar`. Got '{type(regressor)}'."
+                f"`regressor` must be an instance of type {self.valid_regressor_types}. "
+                f"Got '{type(regressor)}'."
             )
+        self.regressor_type = regressor_type
 
         self.params = self.regressor.get_params(deep=True)
 
@@ -416,7 +426,7 @@ class ForecasterStats():
         if store_last_window:
             self.last_window_ = y.copy()
 
-        if isinstance(self.regressor, skforecast.sarimax.Sarimax):
+        if self.regressor_type == 'skforecast.sarimax.Sarimax':
             self.extended_index_ = self.regressor.sarimax_res.fittedvalues.index.copy()
         else:
             self.extended_index_ = y.index
@@ -623,13 +633,12 @@ class ForecasterStats():
                 exog  = last_window_exog,
                 refit = False
             )
-            if isinstance(self.regressor, skforecast.sarimax.Sarimax):
+            if self.regressor_type == 'skforecast.sarimax._sarimax.Sarimax':
                 self.extended_index_ = self.regressor.sarimax_res.fittedvalues.index
             else:
                 self.extended_index_ = self.regressor.fitted_index_
 
-        # Get following n steps predictions
-        if isinstance(self.regressor, skforecast.sarimax.Sarimax):
+        if self.regressor_type == 'skforecast.sarimax._sarimax.Sarimax':
             predictions = self.regressor.predict(
                               steps = steps,
                               exog  = exog
@@ -641,10 +650,24 @@ class ForecasterStats():
                           inverse_transform = True
                       )
             predictions.name = 'pred'
-        else:
+        elif self.regressor_type == 'skforecast.stats._arar.Arar':
             predictions = self.regressor.predict(
                               steps = steps,
                               exog  = exog
+                          )
+            predictions = transform_numpy(
+                          array             = predictions,
+                          transformer       = self.transformer_y,
+                          fit               = False,
+                          inverse_transform = True
+                      )
+            predictions_index = expand_index(index=self.extended_index_, steps=steps)
+            predictions = pd.Series(predictions, index=predictions_index, name='pred')
+        elif self.regressor_type in ['aeon.forecasting.stats._arima.ARIMA', 'aeon.forecasting.stats._ets.ETS']:
+            predictions = self.regressor.iterative_forecast(
+                              y                  = self.last_window_.to_numpy(),
+                              prediction_horizon = steps,
+
                           )
             predictions = transform_numpy(
                           array             = predictions,
@@ -742,7 +765,7 @@ class ForecasterStats():
             self.extended_index_ = self.regressor.sarimax_res.fittedvalues.index
 
         # Get following n steps predictions with intervals
-        if isinstance(self.regressor, skforecast.sarimax.Sarimax):
+        if self.regressor_type == 'skforecast.sarimax.Sarimax':
             predictions = self.regressor.predict(
                             steps           = steps,
                             exog            = exog,
