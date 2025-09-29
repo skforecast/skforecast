@@ -447,11 +447,7 @@ def _evaluate_grid_hyperparameters(
                                         y_test     = y_test
                                     )
             except Exception as e:
-                warnings.warn(
-                    f"Exception raised for parameters {params}.\n"
-                    f"Parameters skipped. Exception: {e}",
-                    RuntimeWarning
-                )
+                warnings.warn(f"Parameters skipped: {params}. {e}", RuntimeWarning)
                 continue
 
             warnings.filterwarnings(
@@ -1478,11 +1474,7 @@ def _evaluate_grid_hyperparameters_multiseries(
                         add_aggregated_metric = add_aggregated_metric
                     )
             except Exception as e:
-                warnings.warn(
-                    f"Exception raised for parameters {params}.\n"
-                    f"Parameters skipped. Exception: {e}",
-                    RuntimeWarning
-                )
+                warnings.warn(f"Parameters skipped: {params}. {e}", RuntimeWarning)
                 continue
 
             if add_aggregated_metric:
@@ -2443,12 +2435,8 @@ def _evaluate_grid_hyperparameters_sarimax(
                                 show_progress         = False
                             )[0]
         except Exception as e:
-            warnings.warn(
-                f"Exception raised for parameters {params}.\n"
-                f"Parameters skipped. Exception: {e}",
-                RuntimeWarning
-            )
-            continue
+                warnings.warn(f"Parameters skipped: {params}. {e}", RuntimeWarning)
+                continue
         metric_values = metric_values.iloc[0, :].to_list()
         warnings.filterwarnings(
             'ignore', category=RuntimeWarning, message= "The forecaster will be fit.*"

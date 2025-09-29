@@ -5,7 +5,7 @@ import os
 import pytest
 import numpy as np
 import pandas as pd
-from sklearn.linear_model import Ridge
+from sklearn.linear_model import Ridge, ElasticNet
 from lightgbm import LGBMRegressor
 from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import mean_squared_error
@@ -1650,3 +1650,49 @@ def test_evaluate_grid_hyperparameters_same_output_backtesting_and_one_step_ahea
         )
 
     pd.testing.assert_frame_equal(results_backtesting, results_one_step_ahead)
+
+
+def test_evaluate_grid_hyperparameters_multiseries_warn_when_non_valid_params():
+    """
+    Test that a warning is raised when non valid params are included in param_grid.
+    """
+
+    param_grid = {
+        "alpha": [0.1],
+        "l1_ratio": [0.5, 10],  # 10 is not valid for ElasticNet
+    }
+    param_grid = list(ParameterGrid(param_grid))
+    cv = TimeSeriesFold(steps=12, initial_train_size=30, refit=False)
+    forecaster = ForecasterRecursiveMultiSeries(regressor=ElasticNet(), lags=5)
+    msg = re.escape(
+        "Parameters skipped: {'alpha': 0.1, 'l1_ratio': 10}. The 'l1_ratio' "
+        "parameter of ElasticNet must be a float in the range [0.0, 1.0]. "
+        "Got 10 instead."
+    )
+    with pytest.warns(RuntimeWarning, match=msg):
+        results = _evaluate_grid_hyperparameters_multiseries(
+            forecaster=forecaster,
+            series=series_dict_dt,
+            param_grid=param_grid,
+            cv=cv,
+            metric="mean_squared_error",
+            return_best=True,
+            n_jobs="auto",
+            verbose=False,
+            show_progress=False,
+        )
+
+    expected_results = pd.DataFrame(
+        {
+            "levels": {0: ["l1", "l2"]},
+            "lags": {0: np.array([1, 2, 3, 4, 5])},
+            "lags_label": {0: np.array([1, 2, 3, 4, 5])},
+            "params": {0: {"alpha": 0.1, "l1_ratio": 0.5}},
+            "mean_squared_error__weighted_average": {0: 0.06321861327736888},
+            "mean_squared_error__average": {0: 0.06321861327736888},
+            "mean_squared_error__pooling": {0: 0.06321861327736888},
+            "alpha": {0: 0.1},
+            "l1_ratio": {0: 0.5},
+        }
+    )
+    pd.testing.assert_frame_equal(results, expected_results)
