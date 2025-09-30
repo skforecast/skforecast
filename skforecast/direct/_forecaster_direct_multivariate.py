@@ -785,7 +785,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
             if data_to_return != 'X':
                 # If `data_to_return` is not 'X', it means is 'y' or 'both', y_data is created
-                y_data = windows[:n_rows, self.window_size:self.window_size + self.max_step]
+                y_data = windows[:n_rows, self.window_size : self.window_size + self.max_step]
 
         return X_data, y_data
 

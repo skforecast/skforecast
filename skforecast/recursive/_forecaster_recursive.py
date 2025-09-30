@@ -541,8 +541,7 @@ class ForecasterRecursive(ForecasterBase):
         X_data = None
         if self.lags is not None:
             y_strided = np.lib.stride_tricks.sliding_window_view(y, self.window_size)[:-1]
-            cols = self.window_size - np.array(self.lags)
-            X_data = y_strided[:, cols]
+            X_data = y_strided[:, self.window_size - self.lags]
 
             if X_as_pandas:
                 X_data = pd.DataFrame(
