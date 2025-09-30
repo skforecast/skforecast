@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from scipy.stats import ks_2samp, chisquare, ecdf
 from scipy.spatial.distance import jensenshannon
-  
+
 
 def ks_2samp_from_ecdf(ecdf1, ecdf2, alternative="two-sided"):
     """
@@ -45,86 +45,120 @@ def ks_2samp_from_ecdf(ecdf1, ecdf2, alternative="two-sided"):
     return distance
 
 
-class PopulationDriftDetectorFast:
+class PopulationDriftDetector:
     """
     A class to detect population drift between reference and new datasets.
+    This implementation computes Kolmogorov-Smirnov (KS) test for numeric features,
+    Chi-Square test for categorical features, and Jensen-Shannon (JS) divergence
+    for all features. It calculates empirical distributions of these statistics
+    from the reference data and uses quantile thresholds to determine drift in
+    new data.
+    
+    This implementation focuses on computational efficiency by precomputing necessary
+    information during fitting without storing the raw reference data.
 
     Parameters
     ----------
-    chunk_size : int or str, optional
-        Size of chunks for sequential drift analysis. If int, number of rows per chunk.
-        If str (e.g., 'D' for daily, 'W' for weekly), time-based chunks assuming a datetime index.
-        If None, analyzes the full dataset as a single chunk. Default is None.
-    threshold : float, optional
-        The quantile threshold (between 0 and 1) for determining drift based on empirical distributions.
-        Default is 0.95 (95th percentile).
+    chunk_size : int, string, pandas DateOffset, None, default None
+        Size of chunks for sequential drift analysis. If int, number of rows per
+        chunk. If str (e.g., 'D' for daily, 'W' for weekly), time-based chunks
+        assuming a datetime index. If None, analyzes the full dataset as a single
+        chunk.
+    threshold : float, default 0.95
+        The quantile threshold (between 0 and 1) for determining drift based on 
+        empirical distributions.
     
     Attributes
     ----------
-    chunk_size : int or str, optional
-        Size of chunks for sequential drift analysis. If int, number of rows per chunk.
-        If str (e.g., 'D' for daily, 'W' for weekly), time-based chunks assuming a datetime index.
-        If None, analyzes the full dataset as a single chunk. Default is None.
-    threshold : float, optional
-        The quantile threshold (between 0 and 1) for determining drift based on empirical distributions.
-        Default is 0.95 (95th percentile).
+    chunk_size : int, string, pandas DateOffset, None, default None
+        Size of chunks for sequential drift analysis. If int, number of rows per
+        chunk. If str (e.g., 'D' for daily, 'W' for weekly), time-based chunks
+        assuming a datetime index. If None, analyzes the full dataset as a single
+        chunk.
+    threshold : float, default 0.95
+        The quantile threshold (between 0 and 1) for determining drift based on 
+        empirical distributions.
     empirical_dist_ks_ : dict
-        Empirical distributions of KS test statistics for each numeric feature in reference data.
+        Empirical distributions of KS test statistics for each numeric feature in
+        reference data.
     empirical_dist_chi2_ : dict
-        Empirical distributions of Chi-Square test statistics for each categorical feature in reference data.
+        Empirical distributions of Chi-Square test statistics for each categorical
+        feature in reference data.
     empirical_dist_js_ : dict
-        Empirical distributions of Jensen-Shannon divergence for each feature in reference data (numeric and categorical).
+        Empirical distributions of Jensen-Shannon divergence for each feature in
+        reference data (numeric and categorical).
     empirical_threshold_ks_ : dict
-        Thresholds for KS statistics based on empirical distributions for each numeric feature in reference data.
+        Thresholds for KS statistics based on empirical distributions for each
+        numeric feature in reference data.
     empirical_threshold_chi2_ : dict
-        Thresholds for Chi-Square statistics based on empirical distributions for each categorical feature in reference data.
+        Thresholds for Chi-Square statistics based on empirical distributions for
+        each categorical feature in reference data.
     empirical_threshold_js_ : dict
-        Thresholds for Jensen-Shannon divergence based on empirical distributions for each feature in reference data (numeric and categorical).
-    X_ : pandas.DataFrame
-        The reference DataFrame used for fitting.
+        Thresholds for Jensen-Shannon divergence based on empirical distributions
+        for each feature in reference data (numeric and categorical).
     n_chunks_reference_data_ : int
-        Number of chunks in the reference data.
+        Number of chunks in the reference data used during fitting to compute
+        empirical distributions.
+    ref_ecdf_ : dict
+        Precomputed ECDFs for numeric features in the reference data.
+    ref_bins_edges_ : dict
+        Precomputed bin edges for numeric features in the reference data.
     ref_hist_ : dict
         Precomputed histograms for numeric features in the reference data.
-    ref_bins_ : dict
-        Precomputed bin edges for numeric features in the reference data.
     ref_probs_ : dict
-        Precomputed value counts (probabilities) for categorical features in the reference data.
+        Precomputed normalized value counts (probabilities) for each category of
+        categorical features in the reference data.
+    ref_ranges_ : dict
+        Min and max values for numeric features in the reference data.
+    ref_categories_ : dict
+        Unique categories for categorical features in the reference data.
     
+    Notes
+    -----
+    This implementation is inspired by NannyML's DriftDetector
+    https://nannyml.readthedocs.io/en/stable/tutorials/detecting_data_drift/univariate_drift_detection.html
+
+    It is a lightweight version adapted for skforecast's needs:
+    - It does not store the raw reference data, only the necessary precomputed
+    information to calculate the statistics efficiently during prediction.
+    - All empirical thresholds are calculated using the specified quantile from
+    the empirical distributions obtained from the reference data chunks.
+    - It also check out of range values in numeric features and new categories in
+    categorical features.
     """
 
-    # TODO: add RangeDriftDetector
-
     def __init__(self, chunk_size=None, threshold=0.95):
-        self.chunk_size  = chunk_size
-        self.threshold   = threshold
-        self.ref_ecdf_   = {}
-        self.ref_bins_edges_= {}
-        self.ref_hist_   = {}
-        self.ref_probs_  = {}
-        self.ref_counts_ = {}
-        self.empirical_dist_ks_    = {}
-        self.empirical_dist_chi2_  = {}
-        self.empirical_dist_js_    = {}
-        self.empirical_threshold_ks_  = {}
+        self.chunk_size                = chunk_size
+        self.threshold                 = threshold
+        self.ref_ecdf_                 = {}
+        self.ref_bins_edges_           = {}
+        self.ref_hist_                 = {}
+        self.ref_probs_                = {}
+        self.ref_counts_               = {}
+        self.empirical_dist_ks_        = {}
+        self.empirical_dist_chi2_      = {}
+        self.empirical_dist_js_        = {}
+        self.empirical_threshold_ks_   = {}
         self.empirical_threshold_chi2_ = {}
         self.empirical_threshold_js_   = {}
-        self.n_chunks_reference_data_ = None
+        self.ref_ranges_               = {}
+        self.ref_categories_           = {}
+        self.n_chunks_reference_data_  = None
 
     def fit(self, X):
         """
         Fit the drift detector by calculating empirical distributions and thresholds
-        from reference data.
+        from reference data. The empirical distributions are computed by chunking
+        the reference data according to the specified `chunk_size` and calculating
+        the statistics for each chunk.
 
         Parameters
         ----------
         X : pandas.DataFrame
-            Reference DataFrame (e.g., training data) used as the baseline for
-            drift detection.
+            Reference data used as the baseline for drift detection.
         """
 
         features = X.columns.tolist()
-        self.X_ = X.copy()
 
         if self.chunk_size is not None:
             if isinstance(self.chunk_size, int):
@@ -161,6 +195,7 @@ class PopulationDriftDetectorFast:
                 )
                 self.ref_bins_edges_[feature] = bins_edges
                 self.ref_hist_[feature] = ref_hist
+                self.ref_ranges_[feature] = (min_val, max_val)
 
                 # Precompute ECDF for Kolmogorov-Smirnov test
                 self.ref_ecdf_[feature] = ecdf(ref)
@@ -169,6 +204,7 @@ class PopulationDriftDetectorFast:
                 counts_norm = counts_raw / counts_raw.sum()
                 self.ref_counts_[feature] = counts_raw
                 self.ref_probs_[feature] = counts_norm
+                self.ref_categories_[feature] = set(counts_raw.index)
 
             for chunk in chunks_ref:
                 new = chunk[feature].dropna()
@@ -219,30 +255,33 @@ class PopulationDriftDetectorFast:
 
             # Calculate empirical thresholds using the the specified quantile
             # Using pandas Series quantile method to handle NaNs properly and warnings
-            self.empirical_threshold_ks_[feature] = pd.Series(self.empirical_dist_ks_[feature]).quantile(self.threshold)
-            self.empirical_threshold_chi2_[feature] = pd.Series(self.empirical_dist_chi2_[feature]).quantile(self.threshold)
-            self.empirical_threshold_js_[feature] = pd.Series(self.empirical_dist_js_[feature]).quantile(self.threshold)
+            self.empirical_threshold_ks_[feature] = pd.Series(
+                self.empirical_dist_ks_[feature]
+            ).quantile(self.threshold)
+            self.empirical_threshold_chi2_[feature] = pd.Series(
+                self.empirical_dist_chi2_[feature]
+            ).quantile(self.threshold)
+            self.empirical_threshold_js_[feature] = pd.Series(
+                self.empirical_dist_js_[feature]
+            ).quantile(self.threshold)
 
     def predict(self, X):
         """
-        Predict drift in new data by comparing feature distributions to reference thresholds.
+        Predict drift in new data by comparing the estimated statistics to
+        reference thresholds.
 
         Parameters
         ----------
         X : pandas.DataFrame
-            New DataFrame (e.g., production or test data) to compare against the reference.
+            New data to compare against the reference.
 
         Returns
         -------
-        pandas.DataFrame
-            DataFrame with columns: 'chunk', 'feature', 'test_stat', 'p_value', 'js_divergence', 'drift_detected'.
-            - 'chunk': Label for the chunk (e.g., 'chunk_0' or 'full').
-            - 'feature': Feature name.
-            - 'test_stat': Test statistic (KS for numeric, Chi-Square for categorical).
-            - 'p_value': P-value from the statistical test.
-            - 'js_divergence': Jensen-Shannon divergence (0 to 1, symmetric measure).
-            - 'drift_detected': Boolean indicating drift (True if p_value < significance_level or js_divergence > js_threshold).
+        results : pandas.DataFrame
+            DataFrame with the drift detection results for each chunk.
+
         """
+
         features = X.columns.tolist()
         results = []
 
@@ -267,11 +306,16 @@ class PopulationDriftDetectorFast:
             threshold_ks = self.empirical_threshold_ks_.get(feature, np.nan)
             threshold_chi2 = self.empirical_threshold_chi2_.get(feature, np.nan)
             threshold_js = self.empirical_threshold_js_.get(feature, np.nan)
+            ref_range = self.ref_ranges_.get(feature, (np.nan, np.nan))
 
             for chunk_idx, chunk in enumerate(chunks):
                 chunk_label = chunk_idx if self.chunk_size else "full"
                 new = chunk[feature].dropna()
-                
+                ks_stat = np.nan
+                chi2_stat = np.nan
+                js_divergence = np.nan
+                is_out_of_range = False
+
                 if is_numeric:
                     new_ecdf = ecdf(new)
                     new_hist, _ = np.histogram(
@@ -289,6 +333,10 @@ class PopulationDriftDetectorFast:
                         p = ref_hist + 1e-10,
                         q = new_hist + 1e-10
                     )
+                    is_out_of_range = (
+                        np.min(new) < ref_range[0] or
+                        np.max(new) > ref_range[1]
+                    )
                 else:
                     new_probs = new.value_counts(normalize=True).sort_index()
                     all_cats = ref_probs.index.union(new_probs.index)
@@ -304,21 +352,22 @@ class PopulationDriftDetectorFast:
                     else:
                         chi2_stat = np.nan
                         js_divergence = np.nan
-                    
-                
 
                 results.append({
                     "chunk": chunk_label,
                     "chunk_start": chunk.index.min(),
                     "chunk_end": chunk.index.max(),
                     "feature": feature,
-                    "ks_statistic": ks_stat if is_numeric else np.nan,
-                    "chi2_statistic": chi2_stat if not is_numeric else np.nan,
+                    "ks_statistic": ks_stat,
+                    "chi2_statistic": chi2_stat,
                     "jensen_shannon": js_divergence,
                     "threshold_ks": threshold_ks if is_numeric else np.nan,
                     "threshold_chi2": threshold_chi2 if not is_numeric else np.nan,
                     "threshold_js": threshold_js,
+                    "reference_range": ref_range,
+                    "is_out_of_range": is_out_of_range,
                 })
+
         results_df = pd.DataFrame(results)
         results_df['drift_ks_statistic'] = results_df['ks_statistic'] > results_df['threshold_ks']
         results_df['drift_chi2_statistic'] = results_df['chi2_statistic'] > results_df['threshold_chi2']
@@ -328,7 +377,6 @@ class PopulationDriftDetectorFast:
         )
 
         return results_df
-    
 
 
 # ---Deprecated ---
@@ -383,7 +431,7 @@ def _calculate_drift_metrics(ref, new):
 
     return stat, p_value, js_div
 
-class PopulationDriftDetector:
+class PopulationDriftDetectorDeprecated:
     """
     A class to detect population drift between reference and new datasets.
 
