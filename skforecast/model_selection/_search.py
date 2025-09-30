@@ -419,36 +419,34 @@ def _evaluate_grid_hyperparameters(
             )
 
         for params in param_grid:
-            try:
-                forecaster.set_params(params)
-                if cv_name == 'TimeSeriesFold':
 
-                    metric_values = backtesting_forecaster(
-                                        forecaster    = forecaster,
-                                        y             = y,
-                                        cv            = cv,
-                                        metric        = metric,
-                                        exog          = exog,
-                                        interval      = None,
-                                        n_jobs        = n_jobs,
-                                        verbose       = verbose,
-                                        show_progress = False
-                                    )[0]
-                    metric_values = metric_values.iloc[0, :].to_list()
+            forecaster.set_params(params)
 
-                else:
+            if cv_name == 'TimeSeriesFold':
 
-                    metric_values = _calculate_metrics_one_step_ahead(
-                                        forecaster = forecaster,
-                                        metrics    = metric,
-                                        X_train    = X_train,
-                                        y_train    = y_train,
-                                        X_test     = X_test,
-                                        y_test     = y_test
-                                    )
-            except Exception as e:
-                warnings.warn(f"Parameters skipped: {params}. {e}", RuntimeWarning)
-                continue
+                metric_values = backtesting_forecaster(
+                                    forecaster    = forecaster,
+                                    y             = y,
+                                    cv            = cv,
+                                    metric        = metric,
+                                    exog          = exog,
+                                    interval      = None,
+                                    n_jobs        = n_jobs,
+                                    verbose       = verbose,
+                                    show_progress = False
+                                )[0]
+                metric_values = metric_values.iloc[0, :].to_list()
+
+            else:
+
+                metric_values = _calculate_metrics_one_step_ahead(
+                                    forecaster = forecaster,
+                                    metrics    = metric,
+                                    X_train    = X_train,
+                                    y_train    = y_train,
+                                    X_test     = X_test,
+                                    y_test     = y_test
+                                )
 
             warnings.filterwarnings(
                 'ignore',
@@ -1437,45 +1435,41 @@ def _evaluate_grid_hyperparameters_multiseries(
             )
         
         for params in param_grid:
-            
-            try:
-                forecaster.set_params(params)
-            
-                if cv_name == 'TimeSeriesFold':
 
-                    metrics, _ = backtesting_forecaster_multiseries(
-                        forecaster            = forecaster,
-                        series                = series,
-                        cv                    = cv,
-                        exog                  = exog,
-                        levels                = levels,
-                        metric                = metric,
-                        add_aggregated_metric = add_aggregated_metric,
-                        interval              = None,
-                        verbose               = verbose,
-                        n_jobs                = n_jobs,
-                        show_progress         = False,
-                        suppress_warnings     = suppress_warnings
-                    )
+            forecaster.set_params(params)
+        
+            if cv_name == 'TimeSeriesFold':
 
-                else:
+                metrics, _ = backtesting_forecaster_multiseries(
+                    forecaster            = forecaster,
+                    series                = series,
+                    cv                    = cv,
+                    exog                  = exog,
+                    levels                = levels,
+                    metric                = metric,
+                    add_aggregated_metric = add_aggregated_metric,
+                    interval              = None,
+                    verbose               = verbose,
+                    n_jobs                = n_jobs,
+                    show_progress         = False,
+                    suppress_warnings     = suppress_warnings
+                )
 
-                    metrics, _ = _predict_and_calculate_metrics_one_step_ahead_multiseries(
-                        forecaster            = forecaster,
-                        series                = series,
-                        X_train               = X_train,
-                        y_train               = y_train,
-                        X_test                = X_test,
-                        y_test                = y_test,
-                        X_train_encoding      = X_train_encoding,
-                        X_test_encoding       = X_test_encoding,
-                        levels                = levels,
-                        metrics               = metric,
-                        add_aggregated_metric = add_aggregated_metric
-                    )
-            except Exception as e:
-                warnings.warn(f"Parameters skipped: {params}. {e}", RuntimeWarning)
-                continue
+            else:
+
+                metrics, _ = _predict_and_calculate_metrics_one_step_ahead_multiseries(
+                    forecaster            = forecaster,
+                    series                = series,
+                    X_train               = X_train,
+                    y_train               = y_train,
+                    X_test                = X_test,
+                    y_test                = y_test,
+                    X_train_encoding      = X_train_encoding,
+                    X_test_encoding       = X_test_encoding,
+                    levels                = levels,
+                    metrics               = metric,
+                    add_aggregated_metric = add_aggregated_metric
+                )
 
             if add_aggregated_metric:
                 metrics = metrics.loc[metrics['levels'].isin(aggregate_metric), :]
@@ -2419,24 +2413,20 @@ def _evaluate_grid_hyperparameters_sarimax(
     params_list = []
     for params in param_grid:
 
-        try:
-            forecaster.set_params(params)
-            metric_values = backtesting_sarimax(
-                                forecaster            = forecaster,
-                                y                     = y,
-                                cv                    = cv,
-                                metric                = metric,
-                                exog                  = exog,
-                                alpha                 = None,
-                                interval              = None,
-                                n_jobs                = n_jobs,
-                                verbose               = verbose,
-                                suppress_warnings_fit = suppress_warnings_fit,
-                                show_progress         = False
-                            )[0]
-        except Exception as e:
-                warnings.warn(f"Parameters skipped: {params}. {e}", RuntimeWarning)
-                continue
+        forecaster.set_params(params)
+        metric_values = backtesting_sarimax(
+                            forecaster            = forecaster,
+                            y                     = y,
+                            cv                    = cv,
+                            metric                = metric,
+                            exog                  = exog,
+                            alpha                 = None,
+                            interval              = None,
+                            n_jobs                = n_jobs,
+                            verbose               = verbose,
+                            suppress_warnings_fit = suppress_warnings_fit,
+                            show_progress         = False
+                        )[0]
         metric_values = metric_values.iloc[0, :].to_list()
         warnings.filterwarnings(
             'ignore', category=RuntimeWarning, message= "The forecaster will be fit.*"

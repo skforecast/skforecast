@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error
 from sklearn.model_selection import ParameterGrid
-from sklearn.linear_model import Ridge, ElasticNet
+from sklearn.linear_model import Ridge
 from sklearn.preprocessing import StandardScaler
 from skforecast.metrics import mean_absolute_scaled_error, root_mean_squared_scaled_error
 from skforecast.exceptions import OneStepAheadValidationWarning
@@ -131,48 +131,6 @@ def test_ValueError_evaluate_grid_hyperparameters_metric_list_duplicate_names():
             return_best = False,
             verbose     = False
         )
-
-def test_grid_hyperparameters_results_warn_when_non_valid_params():
-    """
-    Test that a warning is raised when non valid params are included in param_grid.
-    """
-
-    param_grid = {
-        "alpha": [0.1],
-        "l1_ratio": [0.5, 10],  # 10 is not valid for ElasticNet
-    }
-    param_grid = list(ParameterGrid(param_grid))
-    cv = TimeSeriesFold(steps=12, initial_train_size=30, refit=False)
-    forecaster = ForecasterRecursive(regressor=ElasticNet(), lags=5)
-    msg = re.escape(
-        "Parameters skipped: {'alpha': 0.1, 'l1_ratio': 10}. The 'l1_ratio' "
-        "parameter of ElasticNet must be a float in the range [0.0, 1.0]. "
-        "Got 10 instead."
-    )
-    with pytest.warns(RuntimeWarning, match=msg):
-        results = _evaluate_grid_hyperparameters(
-            forecaster=forecaster,
-            y=y,
-            param_grid=param_grid,
-            cv=cv,
-            metric="mean_squared_error",
-            return_best=True,
-            n_jobs="auto",
-            verbose=False,
-            show_progress=False,
-        )
-
-    expected_results = pd.DataFrame(
-        {
-            "lags": {0: np.array([1, 2, 3, 4, 5])},
-            "lags_label": {0: np.array([1, 2, 3, 4, 5])},
-            "params": {0: {"alpha": 0.1, "l1_ratio": 0.5}},
-            "mean_squared_error": {0: 0.061178815481733415},
-            "alpha": {0: 0.1},
-            "l1_ratio": {0: 0.5},
-        }
-    )
-    pd.testing.assert_frame_equal(results, expected_results)
 
 
 def test_output_evaluate_grid_hyperparameters_ForecasterRecursive_with_mocked():
