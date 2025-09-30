@@ -10,6 +10,20 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
 
+## 0.19.0 <small>In development</small> { id="0.19.0" }
+
+The main changes in this release are:
+
+
+**Added**
+
+
+**Changed**
+
+
+**Fixed**
+
+
 ## 0.18.0 <small>Sep 22, 2025</small> { id="0.18.0" }
 
 The main changes in this release are:
