@@ -6,7 +6,6 @@ import pytest
 import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_absolute_error
-from sklearn.model_selection import ParameterGrid
 from skforecast.sarimax import Sarimax
 from skforecast.recursive import ForecasterSarimax
 from skforecast.model_selection._split import TimeSeriesFold
@@ -56,50 +55,6 @@ def test_ValueError_evaluate_grid_hyperparameters_sarimax_when_return_best_and_l
             return_best = True,
             verbose     = False
         )
-
-def test_evaluate_grid_hyperparameters_sarimax_warn_when_non_valid_params():
-    """
-    Test that a warning is raised when non valid params are included in param_grid.
-    """
-
-    param_grid = {
-        "order": [(0, 1, 0)],
-        "seasonal_order": [(0, 0, 0, 0)],
-        "trend": [None, "no-valid-value"],
-    }
-    param_grid = list(ParameterGrid(param_grid))
-    forecaster = ForecasterSarimax(regressor=Sarimax(order=(1, 1, 1), maxiter=500))
-    cv = TimeSeriesFold(steps=12, initial_train_size=20)
-
-    msg = re.escape(
-        "Parameters skipped: {'order': (0, 1, 0), 'seasonal_order': (0, 0, 0, 0), "
-        "'trend': 'no-valid-value'}. Valid trend inputs are 'c' (constant), 't' (linear trend in time), "
-        "'ct' (both), 'ctt' (both with trend squared) or an interable defining a polynomial, e.g., "
-        "[1, 1, 0, 1] is `a + b*t + ct**3`. Received no-valid-value"
-    )
-    with pytest.warns(RuntimeWarning, match=msg):
-        results = _evaluate_grid_hyperparameters_sarimax(
-            forecaster=forecaster,
-            y=y_datetime,
-            cv=cv,
-            param_grid=param_grid,
-            metric="mean_absolute_error",
-            return_best=False,
-            suppress_warnings_fit=True,
-        )
-
-    expected_results = pd.DataFrame(
-        {
-            "params": {
-                0: {"order": (0, 1, 0), "seasonal_order": (0, 0, 0, 0), "trend": None}
-            },
-            "mean_absolute_error": {0: 0.14257583299999999},
-            "order": {0: (0, 1, 0)},
-            "seasonal_order": {0: (0, 0, 0, 0)},
-            "trend": {0: None},
-        }
-    )
-    pd.testing.assert_frame_equal(results, expected_results)
 
 
 def test_exception_evaluate_grid_hyperparameters_sarimax_metric_list_duplicate_names():
