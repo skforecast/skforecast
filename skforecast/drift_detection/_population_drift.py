@@ -134,8 +134,9 @@ class PopulationDriftDetector:
     """
 
     def __init__(self, chunk_size=None, threshold=0.95):
-        self.chunk_size                = chunk_size
-        self.threshold                 = threshold
+        
+        self.ref_features_             = None
+        self.is_fitted_                = False
         self.ref_ecdf_                 = {}
         self.ref_bins_edges_           = {}
         self.ref_hist_                 = {}
@@ -150,6 +151,21 @@ class PopulationDriftDetector:
         self.ref_ranges_               = {}
         self.ref_categories_           = {}
         self.n_chunks_reference_data_  = None
+        self.detectors_                = {} # Only used for multiseries
+
+        if not (0 < threshold < 1):
+            raise ValueError(f"`threshold` must be between 0 and 1. Got {threshold}.")
+        self.threshold = threshold
+
+        if not (isinstance(chunk_size, (int, str, pd.DateOffset, type(None)))):
+            raise ValueError(
+                f"`chunk_size` must be a positive integer, a string compatible with "
+                f"pandas DateOffset (e.g., 'D', 'W', 'M'), a pandas DateOffset object, or None. "
+                f"Got {type(chunk_size)}."
+            )
+        self.chunk_size = chunk_size
+        
+
 
     def fit(self, X):
         """
@@ -162,9 +178,55 @@ class PopulationDriftDetector:
         ----------
         X : pandas.DataFrame
             Reference data used as the baseline for drift detection.
+
+        Returns
+        -------
+        self : PopulationDriftDetector
+            Fitted estimator.
         """
 
+        if isinstance(X.index, pd.MultiIndex):
+            X = X.groupby(level=0)
+
+            for idx, group in X:
+                group = group.droplevel(0)
+                self.detectors_[idx] = PopulationDriftDetector(
+                    chunk_size=self.chunk_size,
+                    threshold=self.threshold
+                )
+                self.detectors_[idx]._fit(group)
+        else:
+            self._fit(X)
+        
+
+    def _fit(self, X):
+        """
+        Fit the drift detector by calculating empirical distributions and thresholds
+        from reference data. The empirical distributions are computed by chunking
+        the reference data according to the specified `chunk_size` and calculating
+        the statistics for each chunk.
+
+        Parameters
+        ----------
+        X : pandas.DataFrame
+            Reference data used as the baseline for drift detection.
+        """
+
+        if not isinstance(X, pd.DataFrame):
+            raise ValueError(f"`X` must be a pandas DataFrame. Got {type(X)} instead.")
+
+        if self.chunk_size is not None:
+            if isinstance(
+                self.chunk_size, (str, pd.offsets.DateOffset)
+            ) and not isinstance(X.index, pd.DatetimeIndex):
+                raise ValueError(
+                    "`chunk_size` is a string or pandas DateOffset but `X` does not have a DatetimeIndex."
+                )
+            if isinstance(self.chunk_size, int) and self.chunk_size <= 0:
+                raise ValueError("`chunk_size` must be a positive integer.")
+        
         features = X.columns.tolist()
+        self.ref_features_ = features
 
         if self.chunk_size is not None:
             if isinstance(self.chunk_size, int):
@@ -195,10 +257,6 @@ class PopulationDriftDetector:
                 # for efficiency.
                 min_val = ref.min()
                 max_val = ref.max()
-                # bins_edges = np.linspace(min_val, max_val, 50)
-                # ref_hist, _ = np.histogram(
-                #     ref, bins=bins_edges, range=(min_val, max_val), density=True
-                # )
                 bins_edges = np.histogram_bin_edges(ref.astype("float64"), bins='doane')
                 ref_hist = np.histogram(ref, bins=bins_edges)[0] / len(ref)
                 self.ref_bins_edges_[feature] = bins_edges
@@ -223,17 +281,12 @@ class PopulationDriftDetector:
 
                 if is_numeric:
                     new_ecdf = ecdf(new)
-                    # new_hist, _ = np.histogram(
-                    #     new,
-                    #     bins=self.ref_bins_edges_.get(feature),
-                    #     range=(
-                    #         self.ref_bins_edges_.get(feature)[0],
-                    #         self.ref_bins_edges_.get(feature)[-1]
-                    #     ),
-                    #     density=True
-                    # )
                     new_hist = np.histogram(new, bins=self.ref_bins_edges_[feature])[0] / len(new)
-                    # Handle out-of-bin data (leftover probability)
+                    # Handle out-of-bin data: if new data contains values outside the reference range,
+                    # they will not be counted in the histogram, leading to a sum < 1. To ensure
+                    # the histograms are comparable, we add an extra bin for "out-of-range" data with
+                    # the leftover probability mass in the new histogram and a corresponding zero bin
+                    # in the reference histogram.
                     leftover = 1 - np.sum(new_hist)
                     if leftover > 0:
                         new_hist = np.append(new_hist, leftover)
@@ -247,10 +300,6 @@ class PopulationDriftDetector:
                         ecdf2=new_ecdf,
                         alternative="two-sided"
                     )
-                    # js_distance = jensenshannon(
-                    #     p = self.ref_hist_.get(feature) + 1e-10,
-                    #     q = new_hist + 1e-10
-                    # )
                 else:
                     new_probs = new.value_counts(normalize=True).sort_index()
                     ref_probs = self.ref_probs_.get(feature)
@@ -264,9 +313,7 @@ class PopulationDriftDetector:
                     new_counts = new.value_counts().reindex(all_cats, fill_value=0).values
                     ref_counts = self.ref_counts_.get(feature).reindex(all_cats, fill_value=0).values
                     if new_counts.sum() > 0 and ref_counts.sum() > 0:
-                        # expected = ref_counts / ref_counts.sum() * new_counts.sum()
-                        # chi2_stat, _ = chisquare(f_obs=new_counts, f_exp=expected)
-                        # Create contingency table: rows = [reference, new], columns = categories
+                        # Create contingency table with rows = [reference, new], columns = categories
                         contingency_table = np.array([ref_counts, new_counts])
                         chi2_stat = chi2_contingency(contingency_table)[0]
 
@@ -286,7 +333,40 @@ class PopulationDriftDetector:
                 self.empirical_dist_js_[feature]
             ).quantile(self.threshold)
 
+        self.is_fitted_ = True
+
     def predict(self, X):
+        """
+        Predict drift in new data by comparing the estimated statistics to
+        reference thresholds.
+
+        Parameters
+        ----------
+        X : pandas.DataFrame
+            New data to compare against the reference.
+
+        Returns
+        -------
+        results : pandas.DataFrame
+            DataFrame with the drift detection results for each chunk.
+        """
+
+        if isinstance(X.index, pd.MultiIndex):
+            results_list = []
+            for idx, group in X.groupby(level=0):
+                group = group.droplevel(0)
+                if idx not in self.detectors_:
+                    raise ValueError(f"No detector found for index level {idx}. Ensure the MultiIndex levels match those used during fitting.")
+                detector = self.detectors_[idx]
+                result = detector._predict(group)
+                result.insert(0, 'level_0', idx)  # Insert level_0 column at the front
+                results_list.append(result)
+            results = pd.concat(results_list, ignore_index=True)
+            return results
+        else:
+            return self._predict(X)
+
+    def _predict(self, X):
         """
         Predict drift in new data by comparing the estimated statistics to
         reference thresholds.
@@ -302,6 +382,15 @@ class PopulationDriftDetector:
             DataFrame with the drift detection results for each chunk.
 
         """
+
+        if not isinstance(X, pd.DataFrame):
+            raise ValueError(f"`X` must be a pandas DataFrame. Got {type(X)} instead.")
+        
+        if not self.is_fitted_:
+            raise ValueError(
+                "This PopulationDriftDetector instance is not fitted yet. "
+                "Call 'fit' with appropriate arguments before using this estimator."
+            )
 
         features = X.columns.tolist()
         results = []
@@ -339,48 +428,42 @@ class PopulationDriftDetector:
 
                 if is_numeric:
                     new_ecdf = ecdf(new)
-                    # new_hist, _ = np.histogram(
-                    #     new,
-                    #     bins=ref_bin_edges,
-                    #     range=(ref_bin_edges[0], ref_bin_edges[-1]) if ref_bin_edges is not None else None,
-                    #     density=True
-                    # )
+                    # Compute histogram for new data using reference bin edges and normalize
                     new_hist = np.histogram(new, bins=self.ref_bins_edges_[feature])[0] / len(new)
+                    # Handle out-of-bin data: if new data contains values outside the reference range,
+                    # they will not be counted in the histogram, leading to a sum < 1. To ensure
+                    # the histograms are comparable, we add an extra bin for "out-of-range" data with
+                    # the leftover probability mass in the new histogram and a corresponding zero bin
+                    # in the reference histogram.
                     leftover = 1 - np.sum(new_hist)
                     if leftover > 0:
                         new_hist = np.append(new_hist, leftover)
-                        ref_hist_appended = np.append(self.ref_hist_[feature], 0)
+                        ref_hist_appended = np.append(ref_hist, 0)
                         js_distance = jensenshannon(ref_hist_appended, new_hist, base=2)
                     else:
-                        js_distance = jensenshannon(self.ref_hist_[feature], new_hist, base=2)
+                        js_distance = jensenshannon(ref_hist, new_hist, base=2)
 
                     ks_stat = ks_2samp_from_ecdf(
                         ecdf1=ref_ecdf,
                         ecdf2=new_ecdf,
                         alternative="two-sided"
                     )
-                    # js_distance = jensenshannon(
-                    #     p = ref_hist + 1e-10,
-                    #     q = new_hist + 1e-10
-                    # )
                     is_out_of_range = (
                         np.min(new) < ref_range[0] or
                         np.max(new) > ref_range[1]
                     )
                 else:
-                    # new_probs = new.value_counts(normalize=True).sort_index()
-                    # all_cats = ref_probs.index.union(new_probs.index)
-                    # ref_probs_aligned = ref_probs.reindex(all_cats, fill_value=0)
-                    # new_probs_aligned = new_probs.reindex(all_cats, fill_value=0)
-                    # js_distance = jensenshannon(ref_probs_aligned.values, new_probs_aligned.values)
-
                     ref_categories = self.ref_categories_[feature]
                     ref_probs = self.ref_probs_[feature].reindex(ref_categories, fill_value=0).values
                     # Map new data to reference categories
                     new_counts_dict = new.value_counts().to_dict()
                     new_counts_on_ref = [new_counts_dict.get(cat, 0) for cat in ref_categories]
                     new_probs = np.array(new_counts_on_ref) / len(new) if len(new) > 0 else np.zeros(len(ref_categories))
-                    # Compute leftover (probability of new categories not in reference)
+                    # Compute leftover (probability of new categories not in reference): if new data
+                    # contains categories not seen in reference, they will not be counted in the
+                    # histogram, leading to a sum < 1. To ensure the histograms are comparable,
+                    # we add an extra bin for "new categories" with the leftover probability mass
+                    # in the new histogram and a corresponding zero bin in the reference histogram.
                     leftover = 1 - np.sum(new_probs)
                     if leftover > 0:
                         new_probs = np.append(new_probs, leftover)
@@ -394,8 +477,6 @@ class PopulationDriftDetector:
                     new_counts = new.value_counts().reindex(all_cats, fill_value=0).values
                     ref_counts_aligned = ref_counts.reindex(all_cats, fill_value=0).values
                     if new_counts.sum() > 0 and ref_counts_aligned.sum() > 0:
-                        # expected = ref_counts_aligned / ref_counts_aligned.sum() * new_counts.sum()
-                        # chi2_stat, _ = chisquare(f_obs=new_counts, f_exp=expected)
                         # Create contingency table: rows = [reference, new], columns = categories
                         contingency_table = np.array([ref_counts_aligned, new_counts])
                         chi2_stat = chi2_contingency(contingency_table)[0]
