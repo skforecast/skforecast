@@ -1,10 +1,17 @@
+################################################################################
+#                             Population Drift Detector                        #
+#                                                                              #
+# This work by skforecast team is licensed under the BSD 3-Clause License.     #
+################################################################################
+# coding=utf-8
+
 import pandas as pd
 import numpy as np
-from scipy.stats import ks_2samp, chisquare, ecdf
+from scipy.stats import chisquare, chi2_contingency, ecdf
 from scipy.spatial.distance import jensenshannon
 
 
-def ks_2samp_from_ecdf(ecdf1, ecdf2, alternative="two-sided"):
+def ks_2samp_from_ecdf(ecdf1, ecdf2, alternative="two-sided") -> float:
     """
     Calculate the Kolmogorov-Smirnov distance (statistic) using precomputed
     scipy.stats.ecdf objects. This function replicates the behavior of
@@ -25,14 +32,13 @@ def ks_2samp_from_ecdf(ecdf1, ecdf2, alternative="two-sided"):
     distance : float
         KS distance (sup of |F1-F2| for two-sided, etc.).
     """
+
     # Common evaluation grid (all jump points from both ECDFs)
     grid = np.union1d(ecdf1.cdf.quantiles, ecdf2.cdf.quantiles)
 
-    # Evaluate both CDFs on the grid
     cdf1 = ecdf1.cdf.evaluate(grid)
     cdf2 = ecdf2.cdf.evaluate(grid)
 
-    # KS distance depending on alternative hypothesis
     if alternative == "two-sided":
         distance = np.max(np.abs(cdf1 - cdf2))
     elif alternative == "greater":
@@ -49,7 +55,7 @@ class PopulationDriftDetector:
     """
     A class to detect population drift between reference and new datasets.
     This implementation computes Kolmogorov-Smirnov (KS) test for numeric features,
-    Chi-Square test for categorical features, and Jensen-Shannon (JS) divergence
+    Chi-Square test for categorical features, and Jensen-Shannon (JS) distance
     for all features. It calculates empirical distributions of these statistics
     from the reference data and uses quantile thresholds to determine drift in
     new data.
@@ -85,7 +91,7 @@ class PopulationDriftDetector:
         Empirical distributions of Chi-Square test statistics for each categorical
         feature in reference data.
     empirical_dist_js_ : dict
-        Empirical distributions of Jensen-Shannon divergence for each feature in
+        Empirical distributions of Jensen-Shannon distance for each feature in
         reference data (numeric and categorical).
     empirical_threshold_ks_ : dict
         Thresholds for KS statistics based on empirical distributions for each
@@ -94,7 +100,7 @@ class PopulationDriftDetector:
         Thresholds for Chi-Square statistics based on empirical distributions for
         each categorical feature in reference data.
     empirical_threshold_js_ : dict
-        Thresholds for Jensen-Shannon divergence based on empirical distributions
+        Thresholds for Jensen-Shannon distance based on empirical distributions
         for each feature in reference data (numeric and categorical).
     n_chunks_reference_data_ : int
         Number of chunks in the reference data used during fitting to compute
@@ -183,16 +189,18 @@ class PopulationDriftDetector:
             self.empirical_dist_js_[feature] = []
 
             if is_numeric:
-                # Precompute histogram with bins for Jensen-Shannon divergence
+                # Precompute histogram with bins for Jensen-Shannon distance
                 # This may not perfectly align with bins used in predict if new data
                 # extends the range, but it provides a reasonable approximation
                 # for efficiency.
                 min_val = ref.min()
                 max_val = ref.max()
-                bins_edges = np.linspace(min_val, max_val, 50)
-                ref_hist, _ = np.histogram(
-                    ref, bins=bins_edges, range=(min_val, max_val), density=True
-                )
+                # bins_edges = np.linspace(min_val, max_val, 50)
+                # ref_hist, _ = np.histogram(
+                #     ref, bins=bins_edges, range=(min_val, max_val), density=True
+                # )
+                bins_edges = np.histogram_bin_edges(ref.astype("float64"), bins='doane')
+                ref_hist = np.histogram(ref, bins=bins_edges)[0] / len(ref)
                 self.ref_bins_edges_[feature] = bins_edges
                 self.ref_hist_[feature] = ref_hist
                 self.ref_ranges_[feature] = (min_val, max_val)
@@ -204,35 +212,45 @@ class PopulationDriftDetector:
                 counts_norm = counts_raw / counts_raw.sum()
                 self.ref_counts_[feature] = counts_raw
                 self.ref_probs_[feature] = counts_norm
-                self.ref_categories_[feature] = set(counts_raw.index)
+                self.ref_categories_[feature] = counts_raw.index.tolist()
 
             for chunk in chunks_ref:
                 new = chunk[feature].dropna()
                 ref = ref[~ref.index.isin(new.index)]
                 ks_stat = np.nan
                 chi2_stat = np.nan
-                js_divergence = np.nan
+                js_distance = np.nan
 
                 if is_numeric:
                     new_ecdf = ecdf(new)
-                    new_hist, _ = np.histogram(
-                        new,
-                        bins=self.ref_bins_edges_.get(feature),
-                        range=(
-                            self.ref_bins_edges_.get(feature)[0],
-                            self.ref_bins_edges_.get(feature)[-1]
-                        ),
-                        density=True
-                    )       
+                    # new_hist, _ = np.histogram(
+                    #     new,
+                    #     bins=self.ref_bins_edges_.get(feature),
+                    #     range=(
+                    #         self.ref_bins_edges_.get(feature)[0],
+                    #         self.ref_bins_edges_.get(feature)[-1]
+                    #     ),
+                    #     density=True
+                    # )
+                    new_hist = np.histogram(new, bins=self.ref_bins_edges_[feature])[0] / len(new)
+                    # Handle out-of-bin data (leftover probability)
+                    leftover = 1 - np.sum(new_hist)
+                    if leftover > 0:
+                        new_hist = np.append(new_hist, leftover)
+                        ref_hist_appended = np.append(self.ref_hist_[feature], 0)
+                        js_distance = jensenshannon(ref_hist_appended, new_hist, base=2)
+                    else:
+                        js_distance = jensenshannon(self.ref_hist_[feature], new_hist, base=2)
+
                     ks_stat = ks_2samp_from_ecdf(
                         ecdf1=self.ref_ecdf_.get(feature),
                         ecdf2=new_ecdf,
                         alternative="two-sided"
                     )
-                    js_divergence = jensenshannon(
-                        p = self.ref_hist_.get(feature) + 1e-10,
-                        q = new_hist + 1e-10
-                    )
+                    # js_distance = jensenshannon(
+                    #     p = self.ref_hist_.get(feature) + 1e-10,
+                    #     q = new_hist + 1e-10
+                    # )
                 else:
                     new_probs = new.value_counts(normalize=True).sort_index()
                     ref_probs = self.ref_probs_.get(feature)
@@ -240,18 +258,21 @@ class PopulationDriftDetector:
                     all_cats = ref_probs.index.union(new_probs.index)
                     ref_probs = ref_probs.reindex(all_cats, fill_value=0)
                     new_probs = new_probs.reindex(all_cats, fill_value=0)
-                    js_divergence = jensenshannon(ref_probs.values, new_probs.values)
+                    js_distance = jensenshannon(ref_probs.values, new_probs.values)
 
                     # Align categories and fill missing with 0
                     new_counts = new.value_counts().reindex(all_cats, fill_value=0).values
                     ref_counts = self.ref_counts_.get(feature).reindex(all_cats, fill_value=0).values
                     if new_counts.sum() > 0 and ref_counts.sum() > 0:
-                        expected = ref_counts / ref_counts.sum() * new_counts.sum()
-                        chi2_stat, _ = chisquare(f_obs=new_counts, f_exp=expected)
+                        # expected = ref_counts / ref_counts.sum() * new_counts.sum()
+                        # chi2_stat, _ = chisquare(f_obs=new_counts, f_exp=expected)
+                        # Create contingency table: rows = [reference, new], columns = categories
+                        contingency_table = np.array([ref_counts, new_counts])
+                        chi2_stat = chi2_contingency(contingency_table)[0]
 
                 self.empirical_dist_ks_[feature].append(ks_stat)
                 self.empirical_dist_chi2_[feature].append(chi2_stat)
-                self.empirical_dist_js_[feature].append(js_divergence)
+                self.empirical_dist_js_[feature].append(js_distance)
 
             # Calculate empirical thresholds using the the specified quantile
             # Using pandas Series quantile method to handle NaNs properly and warnings
@@ -313,45 +334,74 @@ class PopulationDriftDetector:
                 new = chunk[feature].dropna()
                 ks_stat = np.nan
                 chi2_stat = np.nan
-                js_divergence = np.nan
+                js_distance = np.nan
                 is_out_of_range = False
 
                 if is_numeric:
                     new_ecdf = ecdf(new)
-                    new_hist, _ = np.histogram(
-                        new,
-                        bins=ref_bin_edges,
-                        range=(ref_bin_edges[0], ref_bin_edges[-1]) if ref_bin_edges is not None else None,
-                        density=True
-                    )
+                    # new_hist, _ = np.histogram(
+                    #     new,
+                    #     bins=ref_bin_edges,
+                    #     range=(ref_bin_edges[0], ref_bin_edges[-1]) if ref_bin_edges is not None else None,
+                    #     density=True
+                    # )
+                    new_hist = np.histogram(new, bins=self.ref_bins_edges_[feature])[0] / len(new)
+                    leftover = 1 - np.sum(new_hist)
+                    if leftover > 0:
+                        new_hist = np.append(new_hist, leftover)
+                        ref_hist_appended = np.append(self.ref_hist_[feature], 0)
+                        js_distance = jensenshannon(ref_hist_appended, new_hist, base=2)
+                    else:
+                        js_distance = jensenshannon(self.ref_hist_[feature], new_hist, base=2)
+
                     ks_stat = ks_2samp_from_ecdf(
                         ecdf1=ref_ecdf,
                         ecdf2=new_ecdf,
                         alternative="two-sided"
                     )
-                    js_divergence = jensenshannon(
-                        p = ref_hist + 1e-10,
-                        q = new_hist + 1e-10
-                    )
+                    # js_distance = jensenshannon(
+                    #     p = ref_hist + 1e-10,
+                    #     q = new_hist + 1e-10
+                    # )
                     is_out_of_range = (
                         np.min(new) < ref_range[0] or
                         np.max(new) > ref_range[1]
                     )
                 else:
-                    new_probs = new.value_counts(normalize=True).sort_index()
-                    all_cats = ref_probs.index.union(new_probs.index)
-                    ref_probs_aligned = ref_probs.reindex(all_cats, fill_value=0)
-                    new_probs_aligned = new_probs.reindex(all_cats, fill_value=0)
-                    js_divergence = jensenshannon(ref_probs_aligned.values, new_probs_aligned.values)
+                    # new_probs = new.value_counts(normalize=True).sort_index()
+                    # all_cats = ref_probs.index.union(new_probs.index)
+                    # ref_probs_aligned = ref_probs.reindex(all_cats, fill_value=0)
+                    # new_probs_aligned = new_probs.reindex(all_cats, fill_value=0)
+                    # js_distance = jensenshannon(ref_probs_aligned.values, new_probs_aligned.values)
 
+                    ref_categories = self.ref_categories_[feature]
+                    ref_probs = self.ref_probs_[feature].reindex(ref_categories, fill_value=0).values
+                    # Map new data to reference categories
+                    new_counts_dict = new.value_counts().to_dict()
+                    new_counts_on_ref = [new_counts_dict.get(cat, 0) for cat in ref_categories]
+                    new_probs = np.array(new_counts_on_ref) / len(new) if len(new) > 0 else np.zeros(len(ref_categories))
+                    # Compute leftover (probability of new categories not in reference)
+                    leftover = 1 - np.sum(new_probs)
+                    if leftover > 0:
+                        new_probs = np.append(new_probs, leftover)
+                        ref_probs_appended = np.append(ref_probs, 0)
+                        js_distance = jensenshannon(ref_probs_appended, new_probs, base=2)
+                    else:
+                        js_distance = jensenshannon(ref_probs, new_probs, base=2)
+
+
+                    all_cats = set(self.ref_categories_[feature]).union(set(new_counts_dict.keys()))
                     new_counts = new.value_counts().reindex(all_cats, fill_value=0).values
                     ref_counts_aligned = ref_counts.reindex(all_cats, fill_value=0).values
                     if new_counts.sum() > 0 and ref_counts_aligned.sum() > 0:
-                        expected = ref_counts_aligned / ref_counts_aligned.sum() * new_counts.sum()
-                        chi2_stat, _ = chisquare(f_obs=new_counts, f_exp=expected)
+                        # expected = ref_counts_aligned / ref_counts_aligned.sum() * new_counts.sum()
+                        # chi2_stat, _ = chisquare(f_obs=new_counts, f_exp=expected)
+                        # Create contingency table: rows = [reference, new], columns = categories
+                        contingency_table = np.array([ref_counts_aligned, new_counts])
+                        chi2_stat = chi2_contingency(contingency_table)[0]
                     else:
                         chi2_stat = np.nan
-                        js_divergence = np.nan
+                        js_distance = np.nan
 
                 results.append({
                     "chunk": chunk_label,
@@ -360,7 +410,7 @@ class PopulationDriftDetector:
                     "feature": feature,
                     "ks_statistic": ks_stat,
                     "chi2_statistic": chi2_stat,
-                    "jensen_shannon": js_divergence,
+                    "jensen_shannon": js_distance,
                     "threshold_ks": threshold_ks if is_numeric else np.nan,
                     "threshold_chi2": threshold_chi2 if not is_numeric else np.nan,
                     "threshold_js": threshold_js,
