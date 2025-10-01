@@ -4385,7 +4385,7 @@ Freq: D, Name: y, dtype: float64</pre>
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=947bdb3d">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=3ee011c4">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -4426,7 +4426,7 @@ detector</div>
 <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[3]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <style>
-        .container-6b783809a5d342b6915d83a69d2b0687 {
+        .container-624e9f6fb59b4ea082db9d580ad5c579 {
             font-family: 'Arial', sans-serif;
             font-size: 0.9em;
             color: #333333;
@@ -4437,7 +4437,7 @@ detector</div>
             max-width: 600px;
             #margin: auto;
         }
-        .container-6b783809a5d342b6915d83a69d2b0687 h2 {
+        .container-624e9f6fb59b4ea082db9d580ad5c579 h2 {
             font-size: 1.5em;
             color: #222222;
             border-bottom: 2px solid #ddd;
@@ -4445,10 +4445,10 @@ detector</div>
             margin-bottom: 15px;
             margin-top: 5px;
         }
-        .container-6b783809a5d342b6915d83a69d2b0687 details {
+        .container-624e9f6fb59b4ea082db9d580ad5c579 details {
             margin: 10px 0;
         }
-        .container-6b783809a5d342b6915d83a69d2b0687 summary {
+        .container-624e9f6fb59b4ea082db9d580ad5c579 summary {
             font-weight: bold;
             font-size: 1.1em;
             color: #000000;
@@ -4458,38 +4458,38 @@ detector</div>
             padding: 5px;
             border-radius: 5px;
         }
-        .container-6b783809a5d342b6915d83a69d2b0687 summary:hover {
+        .container-624e9f6fb59b4ea082db9d580ad5c579 summary:hover {
             color: #000000;
             background-color: #e0e0e0;
         }
-        .container-6b783809a5d342b6915d83a69d2b0687 ul {
+        .container-624e9f6fb59b4ea082db9d580ad5c579 ul {
             font-family: 'Courier New', monospace;
             list-style-type: none;
             padding-left: 20px;
             margin: 10px 0;
             line-height: normal;
         }
-        .container-6b783809a5d342b6915d83a69d2b0687 li {
+        .container-624e9f6fb59b4ea082db9d580ad5c579 li {
             margin: 5px 0;
             font-family: 'Courier New', monospace;
         }
-        .container-6b783809a5d342b6915d83a69d2b0687 li strong {
+        .container-624e9f6fb59b4ea082db9d580ad5c579 li strong {
             font-weight: bold;
             color: #444444;
         }
-        .container-6b783809a5d342b6915d83a69d2b0687 li::before {
+        .container-624e9f6fb59b4ea082db9d580ad5c579 li::before {
             content: "- ";
             color: #666666;
         }
-        .container-6b783809a5d342b6915d83a69d2b0687 a {
+        .container-624e9f6fb59b4ea082db9d580ad5c579 a {
             color: #001633;
             text-decoration: none;
         }
-        .container-6b783809a5d342b6915d83a69d2b0687 a:hover {
+        .container-624e9f6fb59b4ea082db9d580ad5c579 a:hover {
             color: #359ccb; 
         }
     </style>
-<div class="container-6b783809a5d342b6915d83a69d2b0687">
+<div class="container-624e9f6fb59b4ea082db9d580ad5c579">
 <h2>RangeDriftDetector</h2>
 <details open="">
 <summary>General Information</summary>
@@ -4509,7 +4509,7 @@ detector</div>
 <details>
 <summary>Exogenous value ranges</summary>
 <ul>
-                    {'exog_1': (4.5430286262543085, 14.531041199734418), 'exog_2': {'A', 'C', 'E', 'D', 'B'}}
+                    {'exog_1': (4.5430286262543085, 14.531041199734418), 'exog_2': {'D', 'E', 'B', 'C', 'A'}}
                 </ul>
 </details>
 <p>
@@ -4642,8 +4642,8 @@ print("Exogenous out of range :", exog_out_of_range)</div>
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output" data-mime-type="text/html" tabindex="0">
 <pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"><span style="color: #ffaf00; text-decoration-color: #ffaf00">╭────────────────────────────── FeatureOutOfRangeWarning ──────────────────────────────╮</span>
-<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> 'exog_2' has values not seen during training. Seen values: {'A', 'C', 'E', 'D',      <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
-<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> 'B'}. This may affect the accuracy of the predictions.                               <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
+<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> 'exog_2' has values not seen during training. Seen values: {'D', 'E', 'B', 'C',      <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
+<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> 'A'}. This may affect the accuracy of the predictions.                               <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>                                                                                      <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> Category : skforecast.exceptions.FeatureOutOfRangeWarning                            <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> Location :                                                                           <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
@@ -4663,8 +4663,8 @@ print("Exogenous out of range :", exog_out_of_range)</div>
 │                                                                                 │
 │ <span style="font-weight: bold">Exogenous Variables:</span>                                                            │
 │ 'exog_1' has values outside the observed range [4.54303, 14.53104].             │
-│ 'exog_2' has values not seen during training. Seen values: {'A', 'C', 'E', 'D', │
-│ 'B'}.                                                                           │
+│ 'exog_2' has values not seen during training. Seen values: {'D', 'E', 'B', 'C', │
+│ 'A'}.                                                                           │
 ╰─────────────────────────────────────────────────────────────────────────────────╯
 </pre>
 </div>
@@ -4977,7 +4977,7 @@ detector</div>
 <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[6]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <style>
-        .container-71b064d8de9148608fde040f12743971 {
+        .container-07093f65d3b94e4285ee470bc736fa7a {
             font-family: 'Arial', sans-serif;
             font-size: 0.9em;
             color: #333333;
@@ -4988,7 +4988,7 @@ detector</div>
             max-width: 600px;
             #margin: auto;
         }
-        .container-71b064d8de9148608fde040f12743971 h2 {
+        .container-07093f65d3b94e4285ee470bc736fa7a h2 {
             font-size: 1.5em;
             color: #222222;
             border-bottom: 2px solid #ddd;
@@ -4996,10 +4996,10 @@ detector</div>
             margin-bottom: 15px;
             margin-top: 5px;
         }
-        .container-71b064d8de9148608fde040f12743971 details {
+        .container-07093f65d3b94e4285ee470bc736fa7a details {
             margin: 10px 0;
         }
-        .container-71b064d8de9148608fde040f12743971 summary {
+        .container-07093f65d3b94e4285ee470bc736fa7a summary {
             font-weight: bold;
             font-size: 1.1em;
             color: #000000;
@@ -5009,38 +5009,38 @@ detector</div>
             padding: 5px;
             border-radius: 5px;
         }
-        .container-71b064d8de9148608fde040f12743971 summary:hover {
+        .container-07093f65d3b94e4285ee470bc736fa7a summary:hover {
             color: #000000;
             background-color: #e0e0e0;
         }
-        .container-71b064d8de9148608fde040f12743971 ul {
+        .container-07093f65d3b94e4285ee470bc736fa7a ul {
             font-family: 'Courier New', monospace;
             list-style-type: none;
             padding-left: 20px;
             margin: 10px 0;
             line-height: normal;
         }
-        .container-71b064d8de9148608fde040f12743971 li {
+        .container-07093f65d3b94e4285ee470bc736fa7a li {
             margin: 5px 0;
             font-family: 'Courier New', monospace;
         }
-        .container-71b064d8de9148608fde040f12743971 li strong {
+        .container-07093f65d3b94e4285ee470bc736fa7a li strong {
             font-weight: bold;
             color: #444444;
         }
-        .container-71b064d8de9148608fde040f12743971 li::before {
+        .container-07093f65d3b94e4285ee470bc736fa7a li::before {
             content: "- ";
             color: #666666;
         }
-        .container-71b064d8de9148608fde040f12743971 a {
+        .container-07093f65d3b94e4285ee470bc736fa7a a {
             color: #001633;
             text-decoration: none;
         }
-        .container-71b064d8de9148608fde040f12743971 a:hover {
+        .container-07093f65d3b94e4285ee470bc736fa7a a:hover {
             color: #359ccb; 
         }
     </style>
-<div class="container-71b064d8de9148608fde040f12743971">
+<div class="container-07093f65d3b94e4285ee470bc736fa7a">
 <h2>RangeDriftDetector</h2>
 <details open="">
 <summary>General Information</summary>
@@ -5060,7 +5060,7 @@ detector</div>
 <details>
 <summary>Exogenous value ranges</summary>
 <ul>
-                    {'series_1': {'exog_1': (5.0, 7.0), 'exog_2': {'B', 'A', 'C'}}, 'series_2': {'exog_1': (15.0, 35.0), 'exog_2': {'E', 'F', 'D'}}, 'series_3': {'exog_1': (150.0, 350.0), 'exog_2': {'H', 'I', 'G'}}}
+                    {'series_1': {'exog_1': (5.0, 7.0), 'exog_2': {'A', 'C', 'B'}}, 'series_2': {'exog_1': (15.0, 35.0), 'exog_2': {'E', 'D', 'F'}}, 'series_3': {'exog_1': (150.0, 350.0), 'exog_2': {'I', 'H', 'G'}}}
                 </ul>
 </details>
 <p>
@@ -5364,7 +5364,7 @@ print("Exogenous out of range :", exog_out_of_range)</div>
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output" data-mime-type="text/html" tabindex="0">
 <pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"><span style="color: #ffaf00; text-decoration-color: #ffaf00">╭────────────────────────────── FeatureOutOfRangeWarning ──────────────────────────────╮</span>
-<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> 'series_3': 'exog_2' has values not seen during training. Seen values: {'H', 'I',    <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
+<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> 'series_3': 'exog_2' has values not seen during training. Seen values: {'I', 'H',    <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> 'G'}. This may affect the accuracy of the predictions.                               <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>                                                                                      <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> Category : skforecast.exceptions.FeatureOutOfRangeWarning                            <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
@@ -5385,8 +5385,8 @@ print("Exogenous out of range :", exog_out_of_range)</div>
 │                                                                                  │
 │ <span style="font-weight: bold">Exogenous Variables:</span>                                                             │
 │ 'series_2': 'exog_1' has values outside the observed range [15.00000, 35.00000]. │
-│ 'series_3': 'exog_2' has values not seen during training. Seen values: {'H',     │
-│ 'I', 'G'}.                                                                       │
+│ 'series_3': 'exog_2' has values not seen during training. Seen values: {'I',     │
+│ 'H', 'G'}.                                                                       │
 ╰──────────────────────────────────────────────────────────────────────────────────╯
 </pre>
 </div>
@@ -5701,8 +5701,9 @@ Freq: MS, Name: y, dtype: float64</pre>
 <span class="p">)</span>
 
 <span class="n">predictions</span> <span class="o">=</span> <span class="n">forecaster</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span>
-                  <span class="n">steps</span> <span class="o">=</span> <span class="mi">36</span><span class="p">,</span>
-                  <span class="n">exog</span>  <span class="o">=</span> <span class="n">data_test</span><span class="p">[[</span><span class="s1">'exog_1'</span><span class="p">,</span> <span class="s1">'exog_2'</span><span class="p">]]</span>
+                  <span class="n">steps</span>       <span class="o">=</span> <span class="mi">36</span><span class="p">,</span>
+                  <span class="n">last_window</span> <span class="o">=</span> <span class="n">last_window</span><span class="p">,</span>
+                  <span class="n">exog</span>        <span class="o">=</span> <span class="n">data_test</span><span class="p">[[</span><span class="s1">'exog_1'</span><span class="p">,</span> <span class="s1">'exog_2'</span><span class="p">]]</span>
               <span class="p">)</span>
 </pre></div>
 <div class="clipboard-copy-txt" id="cell-12"># Check data with RangeDriftDetector and predict with Forecaster
@@ -5715,8 +5716,9 @@ detector.predict(
 )
 
 predictions = forecaster.predict(
-                  steps = 36,
-                  exog  = data_test[['exog_1', 'exog_2']]
+                  steps       = 36,
+                  last_window = last_window,
+                  exog        = data_test[['exog_1', 'exog_2']]
               )</div>
 </div>
 </div>
