@@ -1,0 +1,92 @@
+name: "🐞 Bug report"
+description: "Report a reproducible bug or unexpected behavior"
+title: "[BUG]: "
+labels: ["bug"]
+
+body:
+- type: markdown
+  attributes:
+    value: >
+      #### Please make sure the bug hasn't already been addressed by searching
+      through the open and closed [issues](https://github.com/aeon-toolkit/aeon/issues?q=is%3Aissue).
+- type: textarea
+  attributes:
+    label: Describe the bug
+    description: >
+      A clear and concise description of what the bug is.
+  validations:
+    required: true
+- type: textarea
+  attributes:
+    label: Steps/Code to reproduce the bug
+    description: |
+      Please include a [minimal reproducible example](https://stackoverflow.com/help/mcve) so users can reproduce the error when running it. Be as succinct as possible, and do not depend on external data files.
+
+      i.e. If you were reporting a bug about the `plot_series` function, changing the input name as an unintended side effect, you could include the following code:
+
+      ```python
+      from aeon.datasets import load_airline
+      from aeon.visualisation import plot_series
+
+      y = load_airline()
+      y = y.to_frame()
+      y_name1 = y.index.name
+      plot_series(y)
+      y_name2 = y.index.name
+
+      assert y_name1 == y_name2
+      ```
+
+      Being able to copy and paste code to reproduce an error is extremely helpful for us, and the issue will take longer to resolve if one is not included. If including a code example is not applicable for your report, enter "N/A" in the box.
+
+      If the code is too long, feel free to put it in a public [gist](https://gist.github.com) and link it in the issue.
+    placeholder: |
+      ```python
+      Your code here. placing your code between three backticks will format it like the above example.
+      ```
+- type: textarea
+  attributes:
+    label: Expected results
+    description: >
+      Please provide a clear and concise description of the expected results or paste the correct output if available.
+    placeholder: >
+      For example: No error is thrown, or y_name1 == y_name2.
+  validations:
+    required: true
+- type: textarea
+  attributes:
+    label: Actual results
+    description: |
+      Please provide a clear and concise description of the actual seen results or paste the incorrect output if available.
+
+      If you observe an error, please paste the error message including the full traceback of the exception. For instance the code example above raises the following exception:
+
+      ```python-traceback
+      Traceback (most recent call last):
+        File "example_code.py", line 10, in <module>
+          assert y_name1 == y_name2
+      AssertionError
+      ```
+    placeholder: |
+      ```python-traceback
+      Place traceback error here if applicable. If your issue has no traceback, please describe the observed output without formatting.
+      ```
+  validations:
+    required: true
+- type: textarea
+  attributes:
+    label: Versions
+    description: |
+      Please run the following code snippet and paste the output here.
+
+      ```python
+      from aeon.utils import show_versions; show_versions()
+      ```
+    placeholder: |
+      <details>
+      Paste the output here. The details block will ensure that the output is not visible by default.
+      </details>
+- type: markdown
+  attributes:
+    value: >
+      Thank you for reporting a bug and contributing to `aeon`!
