@@ -42,7 +42,6 @@ from ..utils import (
     get_style_repr_html,
     set_cpu_gpu_device
 )
-from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
 
 
 class ForecasterRecursiveClassifier(ForecasterBase):
@@ -64,11 +63,17 @@ class ForecasterRecursiveClassifier(ForecasterBase):
     window_features : object, list, default None
         Instance or list of instances used to create window features. Window features
         are created from the original time series and are included as predictors.
-    transformer_y : object transformer (preprocessor), default None
-        An instance of a transformer (preprocessor) compatible with the scikit-learn
-        preprocessing API with methods: fit, transform, fit_transform and inverse_transform.
-        ColumnTransformers are not allowed since they do not have inverse_transform method.
-        The transformation is applied to `y` before training the forecaster. 
+    features_encoding : str, default 'auto'
+        Encoding method for features derived from the time series (lags and 
+        window features that return class values):
+        
+        - 'auto': Use categorical dtype if regressor supports native categorical
+          features (LightGBM, CatBoost, XGBoost), otherwise numeric encoding
+        - 'categorical': Force categorical dtype (requires compatible regressor)
+        - 'numeric': Treat as numeric features (assumes ordinal relationship)
+        
+        Note: This only affects features derived from the target series (y). 
+        Exogenous variables maintain their original dtypes.
     transformer_exog : object transformer (preprocessor), default None
         An instance of a transformer (preprocessor) compatible with the scikit-learn
         preprocessing API. The transformation is applied to `exog` before training the
@@ -135,14 +140,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         method. The resulting `sample_weight` cannot have negative values.
     source_code_weight_func : str
         Source code of the custom function used to create weights.
-    differentiation : int
-        Order of differencing applied to the time series before training the 
-        forecaster.
-    differentiation_max : int
-        Maximum order of differentiation. For this Forecaster, it is equal to
-        the value of the `differentiation` parameter.
-    differentiator : TimeSeriesDifferentiator
-        Skforecast object used to differentiate the time series.
     last_window_ : pandas DataFrame
         This window represents the most recent data observed by the predictor
         during its training phase. It contains the values needed to predict the
@@ -185,39 +182,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         Names of columns of the matrix created internally for training.
     fit_kwargs : dict
         Additional arguments to be passed to the `fit` method of the regressor.
-    in_sample_residuals_ : numpy ndarray
-        Residuals of the model when predicting training data. Only stored up to
-        10_000 values. If `transformer_y` is not `None`, residuals are stored in
-        the transformed scale. If `differentiation` is not `None`, residuals are
-        stored after differentiation.
-    in_sample_residuals_by_bin_ : dict
-        In sample residuals binned according to the predicted value each residual
-        is associated with. The number of residuals stored per bin is limited to 
-        `10_000 // self.binner.n_bins_` in the form `{bin: residuals}`. If 
-        `transformer_y` is not `None`, residuals are stored in the transformed 
-        scale. If `differentiation` is not `None`, residuals are stored after 
-        differentiation. 
-    out_sample_residuals_ : numpy ndarray
-        Residuals of the model when predicting non-training data. Only stored up to
-        10_000 values. Use `set_out_sample_residuals()` method to set values. If 
-        `transformer_y` is not `None`, residuals are stored in the transformed 
-        scale. If `differentiation` is not `None`, residuals are stored after 
-        differentiation.
-    out_sample_residuals_by_bin_ : dict
-        Out of sample residuals binned according to the predicted value each residual
-        is associated with. The number of residuals stored per bin is limited to 
-        `10_000 // self.binner.n_bins_` in the form `{bin: residuals}`. If 
-        `transformer_y` is not `None`, residuals are stored in the transformed 
-        scale. If `differentiation` is not `None`, residuals are stored after 
-        differentiation. 
-    binner : skforecast.preprocessing.QuantileBinner
-        `QuantileBinner` used to discretize residuals into k bins according 
-        to the predicted values associated with each residual.
-    binner_intervals_ : dict
-        Intervals used to discretize residuals into k bins according to the predicted
-        values associated with each residual.
-    binner_kwargs : dict
-        Additional arguments to pass to the `QuantileBinner`.
     creation_date : str
         Date of creation.
     is_fitted : bool
@@ -243,23 +207,18 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         regressor: object,
         lags: int | list[int] | np.ndarray[int] | range[int] | None = None,
         window_features: object | list[object] | None = None,
-        transformer_y: object | None = None,
+        features_encoding: str = 'auto',
         transformer_exog: object | None = None,
         weight_func: Callable | None = None,
-        differentiation: int | None = None,
         fit_kwargs: dict[str, object] | None = None,
-        binner_kwargs: dict[str, object] | None = None,
         forecaster_id: str | int | None = None
     ) -> None:
         
         self.regressor                          = copy(regressor)
-        # self.transformer_y                      = transformer_y
+        # self.transformer_y               = transformer_y
         self.transformer_exog                   = transformer_exog
         self.weight_func                        = weight_func
         self.source_code_weight_func            = None
-        # self.differentiation                    = differentiation
-        # self.differentiation_max                = None
-        # self.differentiator                     = None
         self.last_window_                       = None
         self.index_type_                        = None
         self.index_freq_                        = None
@@ -273,23 +232,45 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         self.X_train_window_features_names_out_ = None
         self.X_train_exog_names_out_            = None
         self.X_train_features_names_out_        = None
-        # self.in_sample_residuals_               = None
-        # self.out_sample_residuals_              = None
-        # self.in_sample_residuals_by_bin_        = None
-        # self.out_sample_residuals_by_bin_       = None
         self.creation_date                      = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
         self.is_fitted                          = False
         self.fit_date                           = None
         self.skforecast_version                 = skforecast.__version__
         self.python_version                     = sys.version.split(" ")[0]
         self.forecaster_id                      = forecaster_id
-        self._probabilistic_mode                = "binned"
+        self._probabilistic_mode                = "binned"  # TODO: Check
 
         # TODO: New attributes for classification
-        self.classes_                = None  # Array of class labels
-        self.n_classes_              = None  # Number of classes
-        self.y_dtype_original_       = None  # Original dtype of y
-        self.label_encoder_          = None  # LabelEncoder if needed
+        # ======================================================================
+        self.features_encoding                  = features_encoding
+        self.use_native_categoricals            = False
+        self.classes_                           = None  # Array of class labels
+        self.n_classes_                         = None  # Number of classes
+        self.series_dtype_                      = None  # Original dtype of y
+        self.label_encoder_                     = None  # LabelEncoder if needed
+        
+        valid_encodings = ['auto', 'categorical', 'numeric']
+        if features_encoding not in valid_encodings:
+            raise ValueError(
+                f"`features_encoding` must be one of {valid_encodings}. "
+                f"Got '{features_encoding}'."
+            )
+        
+        supports_categorical = self._check_categorical_support(regressor)
+        if features_encoding == 'categorical':
+            if supports_categorical:
+                self.use_native_categoricals = True
+            else:
+                raise ValueError(
+                    f"`features_encoding='categorical'` requires a regressor that "
+                    f"supports native categorical features (LightGBM, CatBoost, XGBoost). "
+                    f"Got {type(regressor).__name__}. Use 'auto' or 'numeric' instead."
+                )
+        elif features_encoding == 'auto':
+            if supports_categorical:
+                self.use_native_categoricals = True
+
+        # ======================================================================
 
         self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
         self.window_features, self.window_features_names, self.max_size_window_features = (
@@ -319,33 +300,12 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             series_weights  = None
         )
 
-        # if differentiation is not None:
-        #     if not isinstance(differentiation, int) or differentiation < 1:
-        #         raise ValueError(
-        #             f"Argument `differentiation` must be an integer equal to or "
-        #             f"greater than 1. Got {differentiation}."
-        #         )
-        #     self.differentiation = differentiation
-        #     self.differentiation_max = differentiation
-        #     self.window_size += differentiation
-        #     self.differentiator = TimeSeriesDifferentiator(
-        #         order=differentiation, window_size=self.window_size
-        #     )
-
         self.fit_kwargs = check_select_fit_kwargs(
                               regressor  = regressor,
                               fit_kwargs = fit_kwargs
                           )
-
-        # self.binner_kwargs = binner_kwargs
-        # if binner_kwargs is None:
-        #     self.binner_kwargs = {
-        #         'n_bins': 10, 'method': 'linear', 'subsample': 200000,
-        #         'random_state': 789654, 'dtype': np.float64
-        #     }
-        # self.binner = QuantileBinner(**self.binner_kwargs)
-        # self.binner_intervals_ = None
         
+        # TODO: Adapt
         self.__skforecast_tags__ = {
             "library": "skforecast",
             "estimator_type": "forecaster",
@@ -508,10 +468,43 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         """
 
         return style + content
+    
+    def _check_categorical_support(
+        self, 
+        regressor: object
+    ) -> bool:
+        """
+        Check if regressor supports native categorical features.
+        Checks by class name to avoid importing optional dependencies.
+        """
+
+        if isinstance(regressor, Pipeline):
+            estimator = regressor[-1]
+        else:
+            estimator = regressor
+        
+        class_name = type(estimator).__name__
+        module_name = type(estimator).__module__
+        
+        supported_models = {
+            'LGBMClassifier': 'lightgbm',
+            'CatBoostClassifier': 'catboost',
+            'XGBClassifier': 'xgboost',
+        }
+        
+        if class_name in supported_models:
+            expected_module = supported_models[class_name]
+            # NOTE: Verify if the estimator is from the expected module
+            # (in case someone creates a class with the same name)
+            if expected_module in module_name:
+                return True
+        
+        return False
 
     def _create_lags(
         self,
         y: np.ndarray,
+        y_classes: np.ndarray | None = None,
         X_as_pandas: bool = False,
         train_index: pd.Index | None = None
     ) -> tuple[np.ndarray | pd.DataFrame | None, np.ndarray]:
@@ -525,6 +518,8 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         ----------
         y : numpy ndarray
             Training time series values.
+        y_classes : numpy ndarray, default None
+            Array of unique classes in the target variable.
         X_as_pandas : bool, default False
             If `True`, the returned matrix `X_data` is a pandas DataFrame.
         train_index : pandas Index, default None
@@ -556,7 +551,14 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                              columns = self.lags_names,
                              index   = train_index
                          )
+                if self.use_native_categoricals:
+                    for col in X_data.columns:
+                        X_data[col] = pd.Categorical(
+                                          values     = X_data[col],
+                                          categories = y_classes
+                                      )
 
+        # TODO: Need y_train as categorical?
         y_data = y[self.window_size:]
 
         return X_data, y_data
@@ -726,18 +728,13 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                 y_values = self.label_encoder_.fit_transform(y_values)
             else:
                 y_values = self.label_encoder_.transform(y_values)
-
-        # if self.differentiation is not None:
-        #     if not self.is_fitted:
-        #         y_values = self.differentiator.fit_transform(y_values)
-        #     else:
-        #         differentiator = copy(self.differentiator)
-        #         y_values = differentiator.fit_transform(y_values)
+        
+        y_encoding_info['classes_codes'] = self.label_encoder_.transform(unique_classes)
 
         exog_names_in_ = None
         exog_dtypes_in_ = None
         exog_dtypes_out_ = None
-        X_as_pandas = False
+        X_as_pandas = False if not self.use_native_categoricals else True
         if exog is not None:
             check_exog(exog=exog, allow_nan=True)
             exog = input_to_frame(data=exog, input_name='exog')
@@ -770,10 +767,11 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             
             check_exog_dtypes(exog, call_check_exog=True)
             exog_dtypes_out_ = get_exog_dtypes(exog=exog)
-            X_as_pandas = any(
-                not pd.api.types.is_numeric_dtype(dtype) or pd.api.types.is_bool_dtype(dtype) 
-                for dtype in set(exog.dtypes)
-            )
+            if X_as_pandas is False:
+                X_as_pandas = any(
+                    not pd.api.types.is_numeric_dtype(dtype) or pd.api.types.is_bool_dtype(dtype) 
+                    for dtype in set(exog.dtypes)
+                )
 
             if len_exog == len_y:
                 if not (exog_index == y_index).all():
@@ -798,12 +796,16 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         X_train_features_names_out_ = []
 
         X_train_lags, y_train = self._create_lags(
-            y=y_values, X_as_pandas=X_as_pandas, train_index=train_index
-        )
+                                    y           = y_values, 
+                                    y_classes   = y_encoding_info['classes_codes'], 
+                                    X_as_pandas = X_as_pandas, 
+                                    train_index = train_index
+                                )
         if X_train_lags is not None:
             X_train.append(X_train_lags)
             X_train_features_names_out_.extend(self.lags_names)
         
+        # TODO: Adapt window_features for classification
         X_train_window_features_names_out_ = None
         if self.window_features is not None:
             # n_diff = 0 if self.differentiation is None else self.differentiation
@@ -847,17 +849,13 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                       name  = 'y'
                   )
 
-        # TODO: last_window needs to be stored here
+        # TODO: last_window needs to be stored here, already encoded?
+        last_window_ = None
         if store_last_window:
-            last_window_ = (
-                y.iloc[-self.window_size:]
-                .copy()
-                .to_frame(name=y.name if y.name is not None else 'y')
-            )
             last_window_ = pd.DataFrame(
                                data    = y_values[-self.window_size:],
                                index   = y_index[-self.window_size:],
-                               columns = [y.name if y.name is not None else 'y']   
+                               columns = y.columns   
                            )
 
         return (
@@ -1006,9 +1004,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         self,
         y: pd.Series,
         exog: pd.Series | pd.DataFrame | None = None,
-        store_last_window: bool = True,
-        store_in_sample_residuals: bool = False,
-        random_state: int = 123
+        store_last_window: bool = True
     ) -> None:
         """
         Training Forecaster.
@@ -1026,14 +1022,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             that y[i] is regressed on exog[i].
         store_last_window : bool, default True
             Whether or not to store the last window (`last_window_`) of training data.
-        store_in_sample_residuals : bool, default False
-            If `True`, in-sample residuals will be stored in the forecaster object
-            after fitting (`in_sample_residuals_` and `in_sample_residuals_by_bin_`
-            attributes).
-            If `False`, only the intervals of the bins are stored.
-        random_state : int, default 123
-            Set a seed for the random generator so that the stored sample 
-            residuals are always deterministic.
 
         Returns
         -------
@@ -1041,8 +1029,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         
         """
 
-        # TODO: create a method reset_forecaster() to reset all attributes
-        # Reset values in case the forecaster has already been fitted.
+        # TODO: View which arguments to reset
         self.last_window_                       = None
         self.index_type_                        = None
         self.index_freq_                        = None
@@ -1092,6 +1079,8 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         self.X_train_window_features_names_out_ = X_train_window_features_names_out_
         self.X_train_features_names_out_ = X_train_features_names_out_
 
+        # TODO: Store encoding info
+
         self.is_fitted = True
         self.series_name_in_ = y.name if y.name is not None else 'y'
         self.fit_date = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
@@ -1110,88 +1099,8 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             self.exog_dtypes_out_ = exog_dtypes_out_
             self.X_train_exog_names_out_ = X_train_exog_names_out_
 
-        # NOTE: This is done to save time during fit in functions such as backtesting()
-        if self._probabilistic_mode is not False:
-            self._binning_in_sample_residuals(
-                y_true                    = y_train.to_numpy(),
-                y_pred                    = self.regressor.predict(X_train).ravel(),
-                store_in_sample_residuals = store_in_sample_residuals,
-                random_state              = random_state
-            )
-
         if store_last_window:
             self.last_window_ = last_window_
-
-    def _binning_in_sample_residuals(
-        self,
-        y_true: np.ndarray,
-        y_pred: np.ndarray,
-        store_in_sample_residuals: bool = False,
-        random_state: int = 123
-    ) -> None:
-        """
-        Bin residuals according to the predicted value each residual is
-        associated with. First a `skforecast.preprocessing.QuantileBinner` object
-        is fitted to the predicted values. Then, residuals are binned according
-        to the predicted value each residual is associated with. Residuals are
-        stored in the forecaster object as `in_sample_residuals_` and
-        `in_sample_residuals_by_bin_`.
-
-        `y_true` and `y_pred` assumed to be differentiated and or transformed
-        according to the attributes `differentiation` and `transformer_y`.
-        The number of residuals stored per bin is limited to 
-        `10_000 // self.binner.n_bins_`. The total number of residuals stored is
-        `10_000`.
-        **New in version 0.14.0**
-
-        Parameters
-        ----------
-        y_true : numpy ndarray
-            True values of the time series.
-        y_pred : numpy ndarray
-            Predicted values of the time series.
-        store_in_sample_residuals : bool, default False
-            If `True`, in-sample residuals will be stored in the forecaster object
-            after fitting (`in_sample_residuals_` and `in_sample_residuals_by_bin_`
-            attributes).
-            If `False`, only the intervals of the bins are stored.
-        random_state : int, default 123
-            Set a seed for the random generator so that the stored sample 
-            residuals are always deterministic.
-
-        Returns
-        -------
-        None
-        
-        """
-
-        residuals = y_true - y_pred
-
-        if self._probabilistic_mode == "binned":
-            data = pd.DataFrame({'prediction': y_pred, 'residuals': residuals})
-            self.binner.fit(y_pred)
-            self.binner_intervals_ = self.binner.intervals_
-    
-        if store_in_sample_residuals:
-            rng = np.random.default_rng(seed=random_state)
-            if self._probabilistic_mode == "binned":
-                data['bin'] = self.binner.transform(y_pred).astype(int)
-                self.in_sample_residuals_by_bin_ = (
-                    data.groupby('bin')['residuals'].apply(np.array).to_dict()
-                )
-
-                max_sample = 10_000 // self.binner.n_bins_
-                for k, v in self.in_sample_residuals_by_bin_.items():
-                    if len(v) > max_sample:
-                        sample = v[rng.integers(low=0, high=len(v), size=max_sample)]
-                        self.in_sample_residuals_by_bin_[k] = sample
-   
-            if len(residuals) > 10_000:
-                residuals = residuals[
-                    rng.integers(low=0, high=len(residuals), size=10_000)
-                ]
-
-            self.in_sample_residuals_ = residuals
         
     def _create_predict_inputs(
         self,
@@ -1295,14 +1204,14 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         last_window_values = (
             last_window.iloc[-self.window_size:].to_numpy(copy=True).ravel()
         )
-        last_window_values = transform_numpy(
-                                 array             = last_window_values,
-                                 transformer       = self.transformer_y,
-                                 fit               = False,
-                                 inverse_transform = False
-                             )
-        if self.differentiation is not None:
-            last_window_values = self.differentiator.fit_transform(last_window_values)
+        # last_window_values = transform_numpy(
+        #                          array             = last_window_values,
+        #                          transformer       = self.transformer_y,
+        #                          fit               = False,
+        #                          inverse_transform = False
+        #                      )
+        # if self.differentiation is not None:
+        #     last_window_values = self.differentiator.fit_transform(last_window_values)
 
         if exog is not None:
             exog = input_to_frame(data=exog, input_name='exog')
@@ -1598,15 +1507,12 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                               exog_values        = exog_values
                           )
 
-        if self.differentiation is not None:
-            predictions = self.differentiator.inverse_transform_next_window(predictions)
-
-        predictions = transform_numpy(
-                          array             = predictions,
-                          transformer       = self.transformer_y,
-                          fit               = False,
-                          inverse_transform = True
-                      )
+        # predictions = transform_numpy(
+        #                   array             = predictions,
+        #                   transformer       = self.transformer_y,
+        #                   fit               = False,
+        #                   inverse_transform = True
+        #               )
 
         predictions = pd.Series(
                           data  = predictions,
@@ -2333,282 +2239,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         if self.differentiation is not None:
             self.window_size += self.differentiation
             self.differentiator.set_params(window_size=self.window_size)
-
-    def set_in_sample_residuals(
-        self,
-        y: pd.Series,
-        exog: pd.Series | pd.DataFrame | None = None,
-        random_state: int = 123
-    ) -> None:
-        """
-        Set in-sample residuals in case they were not calculated during the
-        training process. 
-        
-        In-sample residuals are calculated as the difference between the true 
-        values and the predictions made by the forecaster using the training 
-        data. The following internal attributes are updated:
-
-        + `in_sample_residuals_`: residuals stored in a numpy ndarray.
-        + `binner_intervals_`: intervals used to bin the residuals are calculated
-        using the quantiles of the predicted values.
-        + `in_sample_residuals_by_bin_`: residuals are binned according to the
-        predicted value they are associated with and stored in a dictionary, where
-        the keys are the intervals of the predicted values and the values are
-        the residuals associated with that range. 
-
-        A total of 10_000 residuals are stored in the attribute `in_sample_residuals_`.
-        If the number of residuals is greater than 10_000, a random sample of
-        10_000 residuals is stored. The number of residuals stored per bin is
-        limited to `10_000 // self.binner.n_bins_`.
-        
-        Parameters
-        ----------
-        y : pandas Series
-            Training time series.
-        exog : pandas Series, pandas DataFrame, default None
-            Exogenous variable/s included as predictor/s. Must have the same
-            number of observations as `y` and their indexes must be aligned so
-            that y[i] is regressed on exog[i].
-        random_state : int, default 123
-            Sets a seed to the random sampling for reproducible output.
-
-        Returns
-        -------
-        None
-
-        """
-
-        if not self.is_fitted:
-            raise NotFittedError(
-                "This forecaster is not fitted yet. Call `fit` with appropriate "
-                "arguments before using `set_in_sample_residuals()`."
-            )
-        
-        check_y(y=y)
-        y_index_range = check_extract_values_and_index(
-            data=y, data_label='`y`', return_values=False
-        )[1][[0, -1]]
-        if not y_index_range.equals(self.training_range_):
-            raise IndexError(
-                f"The index range of `y` does not match the range "
-                f"used during training. Please ensure the index is aligned "
-                f"with the training data.\n"
-                f"    Expected : {self.training_range_}\n"
-                f"    Received : {y_index_range}"
-            )
-        
-        (
-            X_train,
-            y_train,
-            _,
-            _,
-            _,
-            X_train_features_names_out_,
-            *_
-        ) = self._create_train_X_y(y=y, exog=exog)
-            
-        if not X_train_features_names_out_ == self.X_train_features_names_out_:
-            raise ValueError(
-                f"Feature mismatch detected after matrix creation. The features "
-                f"generated from the provided data do not match those used during "
-                f"the training process. To correctly set in-sample residuals, "
-                f"ensure that the same data and preprocessing steps are applied.\n"
-                f"    Expected output : {self.X_train_features_names_out_}\n"
-                f"    Current output  : {X_train_features_names_out_}"
-            )
-
-        self._binning_in_sample_residuals(
-            y_true                    = y_train.to_numpy(),
-            y_pred                    = self.regressor.predict(X_train).ravel(),
-            store_in_sample_residuals = True,
-            random_state              = random_state
-        )
-
-    def set_out_sample_residuals(
-        self,
-        y_true: np.ndarray | pd.Series,
-        y_pred: np.ndarray | pd.Series,
-        append: bool = False,
-        random_state: int = 123
-    ) -> None:
-        """
-        Set new values to the attribute `out_sample_residuals_`. Out of sample
-        residuals are meant to be calculated using observations that did not
-        participate in the training process. `y_true` and `y_pred` are expected
-        to be in the original scale of the time series. Residuals are calculated
-        as `y_true` - `y_pred`, after applying the necessary transformations and
-        differentiations if the forecaster includes them (`self.transformer_y`
-        and `self.differentiation`). Two internal attributes are updated:
-
-        + `out_sample_residuals_`: residuals stored in a numpy ndarray.
-        + `out_sample_residuals_by_bin_`: residuals are binned according to the
-        predicted value they are associated with and stored in a dictionary, where
-        the keys are the  intervals of the predicted values and the values are
-        the residuals associated with that range. If a bin binning is empty, it
-        is filled with a random sample of residuals from other bins. This is done
-        to ensure that all bins have at least one residual and can be used in the
-        prediction process.
-
-        A total of 10_000 residuals are stored in the attribute `out_sample_residuals_`.
-        If the number of residuals is greater than 10_000, a random sample of
-        10_000 residuals is stored. The number of residuals stored per bin is
-        limited to `10_000 // self.binner.n_bins_`.
-        
-        Parameters
-        ----------
-        y_true : numpy ndarray, pandas Series
-            True values of the time series from which the residuals have been
-            calculated.
-        y_pred : numpy ndarray, pandas Series
-            Predicted values of the time series.
-        append : bool, default False
-            If `True`, new residuals are added to the once already stored in the
-            forecaster. If after appending the new residuals, the limit of
-            `10_000 // self.binner.n_bins_` values per bin is reached, a random
-            sample of residuals is stored.
-        random_state : int, default 123
-            Sets a seed to the random sampling for reproducible output.
-
-        Returns
-        -------
-        None
-
-        """
-
-        if not self.is_fitted:
-            raise NotFittedError(
-                "This forecaster is not fitted yet. Call `fit` with appropriate "
-                "arguments before using `set_out_sample_residuals()`."
-            )
-
-        if not isinstance(y_true, (np.ndarray, pd.Series)):
-            raise TypeError(
-                f"`y_true` argument must be `numpy ndarray` or `pandas Series`. "
-                f"Got {type(y_true)}."
-            )
-        
-        if not isinstance(y_pred, (np.ndarray, pd.Series)):
-            raise TypeError(
-                f"`y_pred` argument must be `numpy ndarray` or `pandas Series`. "
-                f"Got {type(y_pred)}."
-            )
-        
-        if len(y_true) != len(y_pred):
-            raise ValueError(
-                f"`y_true` and `y_pred` must have the same length. "
-                f"Got {len(y_true)} and {len(y_pred)}."
-            )
-        
-        if isinstance(y_true, pd.Series) and isinstance(y_pred, pd.Series):
-            if not y_true.index.equals(y_pred.index):
-                raise ValueError(
-                    "`y_true` and `y_pred` must have the same index."
-                )
-        
-        y_true = deepcopy(y_true)
-        y_pred = deepcopy(y_pred)
-        if not isinstance(y_pred, np.ndarray):
-            y_pred = y_pred.to_numpy()
-        if not isinstance(y_true, np.ndarray):
-            y_true = y_true.to_numpy()
-
-        if self.transformer_y:
-            y_true = transform_numpy(
-                         array             = y_true,
-                         transformer       = self.transformer_y,
-                         fit               = False,
-                         inverse_transform = False
-                     )
-            y_pred = transform_numpy(
-                         array             = y_pred,
-                         transformer       = self.transformer_y,
-                         fit               = False,
-                         inverse_transform = False
-                     )
-        
-        if self.differentiation is not None:
-            differentiator = copy(self.differentiator)
-            differentiator.set_params(window_size=None)
-            y_true = differentiator.fit_transform(y_true)[self.differentiation:]
-            y_pred = differentiator.fit_transform(y_pred)[self.differentiation:]
-        
-        data = pd.DataFrame(
-            {'prediction': y_pred, 'residuals': y_true - y_pred}
-        ).dropna()
-        y_pred = data['prediction'].to_numpy()
-        residuals = data['residuals'].to_numpy()
-
-        data['bin'] = self.binner.transform(y_pred).astype(int)
-        residuals_by_bin = data.groupby('bin')['residuals'].apply(np.array).to_dict()
-
-        out_sample_residuals = (
-            np.array([]) 
-            if self.out_sample_residuals_ is None
-            else self.out_sample_residuals_
-        )
-        out_sample_residuals_by_bin = (
-            {} 
-            if self.out_sample_residuals_by_bin_ is None
-            else self.out_sample_residuals_by_bin_
-        )
-        if append:
-            out_sample_residuals = np.concatenate([out_sample_residuals, residuals])
-            for k, v in residuals_by_bin.items():
-                if k in out_sample_residuals_by_bin:
-                    out_sample_residuals_by_bin[k] = np.concatenate(
-                        (out_sample_residuals_by_bin[k], v)
-                    )
-                else:
-                    out_sample_residuals_by_bin[k] = v
-        else:
-            out_sample_residuals = residuals
-            out_sample_residuals_by_bin = residuals_by_bin
-
-        max_samples = 10_000 // self.binner.n_bins_
-        rng = np.random.default_rng(seed=random_state)
-        for k, v in out_sample_residuals_by_bin.items():
-            if len(v) > max_samples:
-                sample = rng.choice(a=v, size=max_samples, replace=False)
-                out_sample_residuals_by_bin[k] = sample
-
-        bin_keys = (
-            []
-            if self.binner_intervals_ is None
-            else self.binner_intervals_.keys()
-        )
-        for k in bin_keys:
-            if k not in out_sample_residuals_by_bin:
-                out_sample_residuals_by_bin[k] = np.array([])
-
-        empty_bins = [
-            k for k, v in out_sample_residuals_by_bin.items() 
-            if v.size == 0
-        ]
-        if empty_bins:
-            warnings.warn(
-                f"The following bins have no out of sample residuals: {empty_bins}. "
-                f"No predicted values fall in the interval "
-                f"{[self.binner_intervals_[bin] for bin in empty_bins]}. "
-                f"Empty bins will be filled with a random sample of residuals.",
-                ResidualsUsageWarning
-            )
-            empty_bin_size = min(max_samples, len(out_sample_residuals))
-            for k in empty_bins:
-                out_sample_residuals_by_bin[k] = rng.choice(
-                    a       = out_sample_residuals,
-                    size    = empty_bin_size,
-                    replace = False
-                )
-
-        if len(out_sample_residuals) > 10_000:
-            out_sample_residuals = rng.choice(
-                a       = out_sample_residuals, 
-                size    = 10_000, 
-                replace = False
-            )
-
-        self.out_sample_residuals_ = out_sample_residuals
-        self.out_sample_residuals_by_bin_ = out_sample_residuals_by_bin
 
     def get_feature_importances(
         self,
