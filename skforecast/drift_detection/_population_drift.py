@@ -11,6 +11,9 @@ from scipy.stats import chisquare, chi2_contingency, ecdf
 from scipy.spatial.distance import jensenshannon
 
 
+# TODO: crear reshape_series_exog_dict_to_long
+
+
 def ks_2samp_from_ecdf(ecdf1, ecdf2, alternative="two-sided") -> float:
     """
     Calculate the Kolmogorov-Smirnov distance (statistic) using precomputed
@@ -84,6 +87,10 @@ class PopulationDriftDetector:
     threshold : float, default 0.95
         The quantile threshold (between 0 and 1) for determining drift based on 
         empirical distributions.
+    is_fitted_ : bool
+        Indicates if the detector has been fitted with reference data.
+    ref_features_ : list
+        List of features in the reference data.
     empirical_dist_ks_ : dict
         Empirical distributions of KS test statistics for each numeric feature in
         reference data.
@@ -118,11 +125,16 @@ class PopulationDriftDetector:
         Min and max values for numeric features in the reference data.
     ref_categories_ : dict
         Unique categories for categorical features in the reference data.
+    detectors_ : dict
+        Dictionary of PopulationDriftDetector instances for each group when
+        fitting/predicting on MultiIndex DataFrames.
+    
+    
     
     Notes
     -----
-    This implementation is inspired by NannyML's DriftDetector
-    https://nannyml.readthedocs.io/en/stable/tutorials/detecting_data_drift/univariate_drift_detection.html
+    This implementation is inspired by NannyML's DriftDetector [1]_.
+    
 
     It is a lightweight version adapted for skforecast's needs:
     - It does not store the raw reference data, only the necessary precomputed
@@ -131,6 +143,11 @@ class PopulationDriftDetector:
     the empirical distributions obtained from the reference data chunks.
     - It also check out of range values in numeric features and new categories in
     categorical features.
+
+    References
+    ----------
+    .. [1] NannyML API Reference.
+           https://nannyml.readthedocs.io/en/stable/tutorials/detecting_data_drift/univariate_drift_detection.html
     """
 
     def __init__(self, chunk_size=None, threshold=0.95):
@@ -166,7 +183,6 @@ class PopulationDriftDetector:
         self.chunk_size = chunk_size
         
 
-
     def fit(self, X):
         """
         Fit the drift detector by calculating empirical distributions and thresholds
@@ -197,6 +213,8 @@ class PopulationDriftDetector:
                 self.detectors_[idx]._fit(group)
         else:
             self._fit(X)
+
+        self.is_fitted_ = True
         
 
     def _fit(self, X):
@@ -212,6 +230,24 @@ class PopulationDriftDetector:
             Reference data used as the baseline for drift detection.
         """
 
+        self.ref_features_             = []
+        self.is_fitted_                = False
+        self.ref_ecdf_                 = {}
+        self.ref_bins_edges_           = {}
+        self.ref_hist_                 = {}
+        self.ref_probs_                = {}
+        self.ref_counts_               = {}
+        self.empirical_dist_ks_        = {}
+        self.empirical_dist_chi2_      = {}
+        self.empirical_dist_js_        = {}
+        self.empirical_threshold_ks_   = {}
+        self.empirical_threshold_chi2_ = {}
+        self.empirical_threshold_js_   = {}
+        self.ref_ranges_               = {}
+        self.ref_categories_           = {}
+        self.n_chunks_reference_data_  = None
+        self.detectors_                = {} # Only used for multiseries
+
         if not isinstance(X, pd.DataFrame):
             raise ValueError(f"`X` must be a pandas DataFrame. Got {type(X)} instead.")
 
@@ -226,7 +262,6 @@ class PopulationDriftDetector:
                 raise ValueError("`chunk_size` must be a positive integer.")
         
         features = X.columns.tolist()
-        self.ref_features_ = features
 
         if self.chunk_size is not None:
             if isinstance(self.chunk_size, int):
@@ -246,9 +281,13 @@ class PopulationDriftDetector:
         for feature in features:
             is_numeric = pd.api.types.is_numeric_dtype(X[feature])
             ref = X[feature].dropna()
+            # TODO: skip if ref is empty. Poner warning
+            if ref.empty:
+                continue
             self.empirical_dist_ks_[feature] = []
             self.empirical_dist_chi2_[feature] = []
             self.empirical_dist_js_[feature] = []
+            self.ref_features_.append(feature)
 
             if is_numeric:
                 # Precompute histogram with bins for Jensen-Shannon distance
@@ -274,6 +313,7 @@ class PopulationDriftDetector:
 
             for chunk in chunks_ref:
                 new = chunk[feature].dropna()
+                # TODO: un chunk podria quedarse vacio por que todo son NaNs
                 ref = ref[~ref.index.isin(new.index)]
                 ks_stat = np.nan
                 chi2_stat = np.nan
@@ -352,16 +392,20 @@ class PopulationDriftDetector:
         """
 
         if isinstance(X.index, pd.MultiIndex):
-            results_list = []
+            results = []
             for idx, group in X.groupby(level=0):
                 group = group.droplevel(0)
                 if idx not in self.detectors_:
-                    raise ValueError(f"No detector found for index level {idx}. Ensure the MultiIndex levels match those used during fitting.")
+                    raise Warning(
+                        f"Series {idx} was not present during fitting. Skipping drift detection for "
+                        f"this series."
+                    )
+                    continue
                 detector = self.detectors_[idx]
                 result = detector._predict(group)
                 result.insert(0, 'level_0', idx)  # Insert level_0 column at the front
-                results_list.append(result)
-            results = pd.concat(results_list, ignore_index=True)
+                results.append(result)
+            results = pd.concat(results, ignore_index=True)
             return results
         else:
             return self._predict(X)
@@ -407,6 +451,12 @@ class PopulationDriftDetector:
             chunks = [X]
 
         for feature in features:
+            if feature not in self.ref_features_:
+                raise Warning(
+                    f"Feature '{feature}' was not present during fitting. Skipping drift detection "
+                    f"for this feature."
+                )
+                continue
             is_numeric = pd.api.types.is_numeric_dtype(X[feature])
             ref_bin_edges = self.ref_bins_edges_.get(feature, None)
             ref_hist = self.ref_hist_.get(feature, None)
@@ -419,6 +469,7 @@ class PopulationDriftDetector:
             ref_range = self.ref_ranges_.get(feature, (np.nan, np.nan))
 
             for chunk_idx, chunk in enumerate(chunks):
+                # TODO: un chunk podria quedarse vacio por que todo son NaNs
                 chunk_label = chunk_idx if self.chunk_size else "full"
                 new = chunk[feature].dropna()
                 ks_stat = np.nan
@@ -508,3 +559,13 @@ class PopulationDriftDetector:
         )
 
         return results_df
+    
+    def _collect_attributes(self):
+        """
+        Collect attributes for representation and inspection.
+        """
+
+        if len(self.detectors_) > 0:
+            attrs = {k: v for k, v in self.__dict__.items() if k != 'detectors_'}
+            attrs['detectors_'] = {k: v._collect_attributes() for k, v in self.detectors_.items()}
+        return attrs
