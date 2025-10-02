@@ -2972,7 +2972,7 @@ def show_versions(
 
     Returns
     -------
-    str_info : str,  None
+    vers_info : str
         The output string if `as_str` is True, otherwise None.
 
     Notes
@@ -2984,7 +2984,7 @@ def show_versions(
     Examples
     --------
     >>> from skforecast.utils import show_versions
-    >>> vers = show_versions(as_str=True)
+    >>> vers_info = show_versions(as_str=True)
 
     """
 
@@ -3007,22 +3007,26 @@ def show_versions(
         "executable": sys.executable,
         "machine": platform.platform(),
     }
-
-    str_info = "\nSystem:"
+    
+    lines = ["\nSystem:"]
     for k, stat in sys_info.items():
-        str_info = f"{str_info}\n{k:>10}: {stat}"
+        lines.append(f"{k:<11}: {stat}")
 
     deps_info = {"skforecast": __version__}
-    for modname in deps:
+    for mod_name in deps:
         try:
-            deps_info[modname] = version(modname)
+            deps_info[mod_name] = version(mod_name)
         except PackageNotFoundError:
-            deps_info[modname] = None
+            deps_info[mod_name] = None
 
-    str_info = f"{str_info}\nPython dependencies:"
+    lines.append("\nPython dependencies:")
     for k, stat in deps_info.items():
-        str_info = f"{str_info}\n{k:>13}: {stat}"
-    if as_str:
-        return str_info
+        lines.append(f"{k:<13}: {stat}")
 
-    print(str_info)
+    vers_info = "\n".join(lines)
+
+    if as_str:
+        return vers_info
+    else:
+        print(vers_info)
+        return None
