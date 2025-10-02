@@ -9,9 +9,8 @@ import pandas as pd
 import numpy as np
 from scipy.stats import chisquare, chi2_contingency, ecdf
 from scipy.spatial.distance import jensenshannon
-
-
-# TODO: crear reshape_series_exog_dict_to_long
+from copy import deepcopy
+import warnings
 
 
 def ks_2samp_from_ecdf(ecdf1, ecdf2, alternative="two-sided") -> float:
@@ -215,6 +214,7 @@ class PopulationDriftDetector:
             self._fit(X)
 
         self.is_fitted_ = True
+        self._collect_attributes()
         
 
     def _fit(self, X):
@@ -281,8 +281,11 @@ class PopulationDriftDetector:
         for feature in features:
             is_numeric = pd.api.types.is_numeric_dtype(X[feature])
             ref = X[feature].dropna()
-            # TODO: skip if ref is empty. Poner warning
             if ref.empty:
+                warnings.warn(
+                    f"Feature '{feature}' contains only NaN values in the reference dataset. "
+                    f"Drift detection skipped."
+                )
                 continue
             self.empirical_dist_ks_[feature] = []
             self.empirical_dist_chi2_[feature] = []
@@ -313,7 +316,8 @@ class PopulationDriftDetector:
 
             for chunk in chunks_ref:
                 new = chunk[feature].dropna()
-                # TODO: un chunk podria quedarse vacio por que todo son NaNs
+                if new.empty:
+                    continue
                 ref = ref[~ref.index.isin(new.index)]
                 ks_stat = np.nan
                 chi2_stat = np.nan
@@ -375,7 +379,7 @@ class PopulationDriftDetector:
 
         self.is_fitted_ = True
 
-    def predict(self, X):
+    def predict(self, X, return_only_drift=False):
         """
         Predict drift in new data by comparing the estimated statistics to
         reference thresholds.
@@ -384,6 +388,8 @@ class PopulationDriftDetector:
         ----------
         X : pandas.DataFrame
             New data to compare against the reference.
+        return_only_drift : bool, default False
+            If True, return only the rows where drift is detected.
 
         Returns
         -------
@@ -396,9 +402,8 @@ class PopulationDriftDetector:
             for idx, group in X.groupby(level=0):
                 group = group.droplevel(0)
                 if idx not in self.detectors_:
-                    raise Warning(
-                        f"Series {idx} was not present during fitting. Skipping drift detection for "
-                        f"this series."
+                    warnings.warn(
+                        f"Series {idx} was not present during fitting. Drift detection skipped."
                     )
                     continue
                 detector = self.detectors_[idx]
@@ -406,9 +411,13 @@ class PopulationDriftDetector:
                 result.insert(0, 'level_0', idx)  # Insert level_0 column at the front
                 results.append(result)
             results = pd.concat(results, ignore_index=True)
-            return results
         else:
-            return self._predict(X)
+            results = self._predict(X)
+
+        if return_only_drift:
+            results = results[results['drift_detected']]
+        
+        return results
 
     def _predict(self, X):
         """
@@ -452,8 +461,8 @@ class PopulationDriftDetector:
 
         for feature in features:
             if feature not in self.ref_features_:
-                raise Warning(
-                    f"Feature '{feature}' was not present during fitting. Skipping drift detection "
+                warnings.warn(
+                    f"Feature '{feature}' was not present during fitting. Drift detection skipped."
                     f"for this feature."
                 )
                 continue
@@ -469,71 +478,75 @@ class PopulationDriftDetector:
             ref_range = self.ref_ranges_.get(feature, (np.nan, np.nan))
 
             for chunk_idx, chunk in enumerate(chunks):
-                # TODO: un chunk podria quedarse vacio por que todo son NaNs
                 chunk_label = chunk_idx if self.chunk_size else "full"
                 new = chunk[feature].dropna()
                 ks_stat = np.nan
                 chi2_stat = np.nan
                 js_distance = np.nan
-                is_out_of_range = False
+                is_out_of_range = np.nan
+                threshold_ks = np.nan
+                threshold_chi2 = np.nan
+                threshold_js = np.nan
 
-                if is_numeric:
-                    new_ecdf = ecdf(new)
-                    # Compute histogram for new data using reference bin edges and normalize
-                    new_hist = np.histogram(new, bins=self.ref_bins_edges_[feature])[0] / len(new)
-                    # Handle out-of-bin data: if new data contains values outside the reference range,
-                    # they will not be counted in the histogram, leading to a sum < 1. To ensure
-                    # the histograms are comparable, we add an extra bin for "out-of-range" data with
-                    # the leftover probability mass in the new histogram and a corresponding zero bin
-                    # in the reference histogram.
-                    leftover = 1 - np.sum(new_hist)
-                    if leftover > 0:
-                        new_hist = np.append(new_hist, leftover)
-                        ref_hist_appended = np.append(ref_hist, 0)
-                        js_distance = jensenshannon(ref_hist_appended, new_hist, base=2)
+                if not new.empty:
+
+                    if is_numeric:
+                        new_ecdf = ecdf(new)
+                        # Compute histogram for new data using reference bin edges and normalize
+                        new_hist = np.histogram(new, bins=self.ref_bins_edges_[feature])[0] / len(new)
+                        # Handle out-of-bin data: if new data contains values outside the reference range,
+                        # they will not be counted in the histogram, leading to a sum < 1. To ensure
+                        # the histograms are comparable, we add an extra bin for "out-of-range" data with
+                        # the leftover probability mass in the new histogram and a corresponding zero bin
+                        # in the reference histogram.
+                        leftover = 1 - np.sum(new_hist)
+                        if leftover > 0:
+                            new_hist = np.append(new_hist, leftover)
+                            ref_hist_appended = np.append(ref_hist, 0)
+                            js_distance = jensenshannon(ref_hist_appended, new_hist, base=2)
+                        else:
+                            js_distance = jensenshannon(ref_hist, new_hist, base=2)
+
+                        ks_stat = ks_2samp_from_ecdf(
+                            ecdf1=ref_ecdf,
+                            ecdf2=new_ecdf,
+                            alternative="two-sided"
+                        )
+                        is_out_of_range = (
+                            np.min(new) < ref_range[0] or
+                            np.max(new) > ref_range[1]
+                        )
                     else:
-                        js_distance = jensenshannon(ref_hist, new_hist, base=2)
-
-                    ks_stat = ks_2samp_from_ecdf(
-                        ecdf1=ref_ecdf,
-                        ecdf2=new_ecdf,
-                        alternative="two-sided"
-                    )
-                    is_out_of_range = (
-                        np.min(new) < ref_range[0] or
-                        np.max(new) > ref_range[1]
-                    )
-                else:
-                    ref_categories = self.ref_categories_[feature]
-                    ref_probs = self.ref_probs_[feature].reindex(ref_categories, fill_value=0).values
-                    # Map new data to reference categories
-                    new_counts_dict = new.value_counts().to_dict()
-                    new_counts_on_ref = [new_counts_dict.get(cat, 0) for cat in ref_categories]
-                    new_probs = np.array(new_counts_on_ref) / len(new) if len(new) > 0 else np.zeros(len(ref_categories))
-                    # Compute leftover (probability of new categories not in reference): if new data
-                    # contains categories not seen in reference, they will not be counted in the
-                    # histogram, leading to a sum < 1. To ensure the histograms are comparable,
-                    # we add an extra bin for "new categories" with the leftover probability mass
-                    # in the new histogram and a corresponding zero bin in the reference histogram.
-                    leftover = 1 - np.sum(new_probs)
-                    if leftover > 0:
-                        new_probs = np.append(new_probs, leftover)
-                        ref_probs_appended = np.append(ref_probs, 0)
-                        js_distance = jensenshannon(ref_probs_appended, new_probs, base=2)
-                    else:
-                        js_distance = jensenshannon(ref_probs, new_probs, base=2)
+                        ref_categories = self.ref_categories_[feature]
+                        ref_probs = self.ref_probs_[feature].reindex(ref_categories, fill_value=0).values
+                        # Map new data to reference categories
+                        new_counts_dict = new.value_counts().to_dict()
+                        new_counts_on_ref = [new_counts_dict.get(cat, 0) for cat in ref_categories]
+                        new_probs = (
+                            np.array(new_counts_on_ref) / len(new) if len(new) > 0
+                            else np.zeros(len(ref_categories))
+                        )
+                        # Compute leftover (probability of new categories not in reference): if new data
+                        # contains categories not seen in reference, they will not be counted in the
+                        # histogram, leading to a sum < 1. To ensure the histograms are comparable,
+                        # we add an extra bin for "new categories" with the leftover probability mass
+                        # in the new histogram and a corresponding zero bin in the reference histogram.
+                        leftover = 1 - np.sum(new_probs)
+                        if leftover > 0:
+                            new_probs = np.append(new_probs, leftover)
+                            ref_probs_appended = np.append(ref_probs, 0)
+                            js_distance = jensenshannon(ref_probs_appended, new_probs, base=2)
+                        else:
+                            js_distance = jensenshannon(ref_probs, new_probs, base=2)
 
 
-                    all_cats = set(self.ref_categories_[feature]).union(set(new_counts_dict.keys()))
-                    new_counts = new.value_counts().reindex(all_cats, fill_value=0).values
-                    ref_counts_aligned = ref_counts.reindex(all_cats, fill_value=0).values
-                    if new_counts.sum() > 0 and ref_counts_aligned.sum() > 0:
-                        # Create contingency table: rows = [reference, new], columns = categories
-                        contingency_table = np.array([ref_counts_aligned, new_counts])
-                        chi2_stat = chi2_contingency(contingency_table)[0]
-                    else:
-                        chi2_stat = np.nan
-                        js_distance = np.nan
+                        all_cats = set(self.ref_categories_[feature]).union(set(new_counts_dict.keys()))
+                        new_counts = new.value_counts().reindex(all_cats, fill_value=0).values
+                        ref_counts_aligned = ref_counts.reindex(all_cats, fill_value=0).values
+                        if new_counts.sum() > 0 and ref_counts_aligned.sum() > 0:
+                            # Create contingency table: rows = [reference, new], columns = categories
+                            contingency_table = np.array([ref_counts_aligned, new_counts])
+                            chi2_stat = chi2_contingency(contingency_table)[0]
 
                 results.append({
                     "chunk": chunk_label,
@@ -543,8 +556,8 @@ class PopulationDriftDetector:
                     "ks_statistic": ks_stat,
                     "chi2_statistic": chi2_stat,
                     "jensen_shannon": js_distance,
-                    "threshold_ks": threshold_ks if is_numeric else np.nan,
-                    "threshold_chi2": threshold_chi2 if not is_numeric else np.nan,
+                    "threshold_ks": threshold_ks,
+                    "threshold_chi2": threshold_chi2,
                     "threshold_js": threshold_js,
                     "reference_range": ref_range,
                     "is_out_of_range": is_out_of_range,
@@ -555,17 +568,26 @@ class PopulationDriftDetector:
         results_df['drift_chi2_statistic'] = results_df['chi2_statistic'] > results_df['threshold_chi2']
         results_df['drift_js'] = results_df['jensen_shannon'] > results_df['threshold_js']
         results_df['drift_detected'] = (
-            results_df['drift_ks_statistic'] | results_df['drift_chi2_statistic'] | results_df['drift_js']
+            results_df['drift_ks_statistic']
+            | results_df['drift_chi2_statistic']
+            | results_df['drift_js']
+            | results_df['is_out_of_range']
         )
-
+        
         return results_df
     
     def _collect_attributes(self):
         """
-        Collect attributes for representation and inspection.
+        Collect attributes for representation and inspection and update the instance
+        dictionary with the collected values. For multi-series (when detectors_ is
+        populated), attributes are aggregated into nested dictionaries keyed by
+        detector names. For single-series, attributes remain unchanged.
         """
-
-        if len(self.detectors_) > 0:
-            attrs = {k: v for k, v in self.__dict__.items() if k != 'detectors_'}
-            attrs['detectors_'] = {k: v._collect_attributes() for k, v in self.detectors_.items()}
-        return attrs
+        attr_names = [k for k in self.__dict__.keys() if k not in ['is_fitted_', 'detectors_']]
+        
+        if self.detectors_:
+            for attr_name in attr_names:
+                collected = {}
+                for detector_key, detector in self.detectors_.items():
+                    collected[detector_key] = getattr(detector, attr_name, None)
+                self.__dict__[attr_name] = deepcopy(collected)
