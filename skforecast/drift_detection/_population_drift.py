@@ -7,7 +7,7 @@
 
 import pandas as pd
 import numpy as np
-from scipy.stats import chisquare, chi2_contingency, ecdf
+from scipy.stats import chi2_contingency, ecdf
 from scipy.spatial.distance import jensenshannon
 from copy import deepcopy
 import warnings
@@ -484,9 +484,6 @@ class PopulationDriftDetector:
                 chi2_stat = np.nan
                 js_distance = np.nan
                 is_out_of_range = np.nan
-                threshold_ks = np.nan
-                threshold_chi2 = np.nan
-                threshold_js = np.nan
 
                 if not new.empty:
 
@@ -554,10 +551,10 @@ class PopulationDriftDetector:
                     "chunk_end": chunk.index.max(),
                     "feature": feature,
                     "ks_statistic": ks_stat,
-                    "chi2_statistic": chi2_stat,
-                    "jensen_shannon": js_distance,
                     "threshold_ks": threshold_ks,
+                    "chi2_statistic": chi2_stat,
                     "threshold_chi2": threshold_chi2,
+                    "jensen_shannon": js_distance,
                     "threshold_js": threshold_js,
                     "reference_range": ref_range,
                     "is_out_of_range": is_out_of_range,
