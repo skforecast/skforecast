@@ -10,7 +10,7 @@ import pandas as pd
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
 
-import skforecast
+from .... import __version__
 from ....recursive import ForecasterRecursive
 from ....recursive import ForecasterRecursiveMultiSeries
 from ...utils import save_forecaster
@@ -103,7 +103,7 @@ def test_save_and_load_forecaster_SkforecastVersionWarning():
     warn_msg = re.escape(
         f"The skforecast version installed in the environment differs "
         f"from the version used to create the forecaster.\n"
-        f"    Installed Version  : {skforecast.__version__}\n"
+        f"    Installed Version  : {__version__}\n"
         f"    Forecaster Version : 0.0.0\n"
         f"This may create incompatibilities when using the library."
     )
