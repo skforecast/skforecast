@@ -12,7 +12,8 @@ import warnings
 import numpy as np
 import pandas as pd
 import itertools
-import skforecast
+
+from .. import __version__
 from ..utils import date_to_index_position, get_style_repr_html
 from ..exceptions import IgnoredArgumentWarning
 
@@ -463,9 +464,9 @@ class OneStepAheadFold(BaseFold):
                 </ul>
             </details>
             <p>
-                <a href="https://skforecast.org/{skforecast.__version__}/api/model_selection.html#skforecast.model_selection._split.OneStepAheadFold">&#128712 <strong>API Reference</strong></a>
+                <a href="https://skforecast.org/{__version__}/api/model_selection.html#skforecast.model_selection._split.OneStepAheadFold">&#128712 <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
-                <a href="https://skforecast.org/{skforecast.__version__}/faq/parameters-search-backtesting-vs-one-step-ahead.html">&#128462 <strong>User Guide</strong></a>
+                <a href="https://skforecast.org/{__version__}/faq/parameters-search-backtesting-vs-one-step-ahead.html">&#128462 <strong>User Guide</strong></a>
             </p>
         </div>
         """
@@ -865,9 +866,9 @@ class TimeSeriesFold(BaseFold):
                 </ul>
             </details>
             <p>
-                <a href="https://skforecast.org/{skforecast.__version__}/api/model_selection.html#skforecast.model_selection._split.TimeSeriesFold">&#128712 <strong>API Reference</strong></a>
+                <a href="https://skforecast.org/{__version__}/api/model_selection.html#skforecast.model_selection._split.TimeSeriesFold">&#128712 <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
-                <a href="https://skforecast.org/{skforecast.__version__}/user_guides/backtesting.html#timeseriesfold">&#128462 <strong>User Guide</strong></a>
+                <a href="https://skforecast.org/{__version__}/user_guides/backtesting.html#timeseriesfold">&#128462 <strong>User Guide</strong></a>
             </p>
         </div>
         """
