@@ -7,9 +7,12 @@
 
 from __future__ import annotations
 from copy import copy, deepcopy
-import importlib
+from importlib.metadata import PackageNotFoundError, version
+from importlib.util import find_spec
 import inspect
 from pathlib import Path
+import platform
+import sys
 from typing import Any, Callable
 import uuid
 import warnings
@@ -21,7 +24,7 @@ from sklearn.base import clone
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.exceptions import NotFittedError
-import skforecast
+from .. import __version__
 from ..exceptions import warn_skforecast_categories
 from ..exceptions import (
     DataTypeWarning,
@@ -2033,15 +2036,13 @@ def load_forecaster(
     """
 
     forecaster = joblib.load(filename=Path(file_name))
-
-    skforecast_v = skforecast.__version__
     forecaster_v = forecaster.skforecast_version
 
-    if forecaster_v != skforecast_v:
+    if forecaster_v != __version__:
         warnings.warn(
             f"The skforecast version installed in the environment differs "
             f"from the version used to create the forecaster.\n"
-            f"    Installed Version  : {skforecast_v}\n"
+            f"    Installed Version  : {__version__}\n"
             f"    Forecaster Version : {forecaster_v}\n"
             f"This may create incompatibilities when using the library.",
              SkforecastVersionWarning
@@ -2101,7 +2102,7 @@ def check_optional_dependency(
     
     """
 
-    if importlib.util.find_spec(package_name) is None:
+    if find_spec(package_name) is None:
         try:
             extra, package_version = _find_optional_dependency(package_name=package_name)
             msg = (
@@ -2956,3 +2957,72 @@ def get_style_repr_html(
     """
 
     return style, unique_id
+
+
+def show_versions(
+    as_str: bool = False
+) -> str | None:
+    """
+    Print useful debugging information.
+
+    Parameters
+    ----------
+    as_str : bool, default False
+        If True, return the output as a string instead of printing.
+
+    Returns
+    -------
+    str_info : str,  None
+        The output string if `as_str` is True, otherwise None.
+
+    Notes
+    -----
+    Adapted from the scikit-learn 1.7.2 show_versions function.
+    https://github.com/scikit-learn/scikit-learn/
+    Copyright (c) 2007-2025 The scikit-learn developers, BSD-3
+
+    Examples
+    --------
+    >>> from skforecast.utils import show_versions
+    >>> vers = show_versions(as_str=True)
+
+    """
+
+    deps = [
+        "pip",
+        "setuptools",
+        "numpy",
+        "pandas",
+        "tqdm",
+        "scikit-learn",
+        "optuna",
+        "joblib",
+        "numba",
+        "rich",
+        "keras",
+    ]
+    
+    sys_info = {
+        "python": sys.version.replace("\n", " "),
+        "executable": sys.executable,
+        "machine": platform.platform(),
+    }
+
+    str_info = "\nSystem:"
+    for k, stat in sys_info.items():
+        str_info = f"{str_info}\n{k:>10}: {stat}"
+
+    deps_info = {"skforecast": __version__}
+    for modname in deps:
+        try:
+            deps_info[modname] = version(modname)
+        except PackageNotFoundError:
+            deps_info[modname] = None
+
+    str_info = f"{str_info}\nPython dependencies:"
+    for k, stat in deps_info.items():
+        str_info = f"{str_info}\n{k:>13}: {stat}"
+    if as_str:
+        return str_info
+
+    print(str_info)

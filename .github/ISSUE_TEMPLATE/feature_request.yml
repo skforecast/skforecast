@@ -1,0 +1,45 @@
+name: ✨ Feature request
+description: Suggest a new feature or enhancement for skforecast
+title: "[FEATURE]: "
+labels: ["enhancement"]
+
+body:
+  - type: markdown
+    attributes:
+      value: "## Feature request"
+
+  - type: textarea
+    id: description
+    attributes:
+      label: "Describe the feature"
+      description: "A clear and concise description of what you'd like to see."
+      placeholder: "I would like the project to support..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: "Motivation"
+      description: "Why is this feature important? What problem does it solve?"
+      placeholder: "This feature would help me because..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: "Alternatives considered"
+      description: "Did you consider any other approaches or workarounds?"
+      placeholder: "An alternative could be..."
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: "Additional context"
+      description: "Any other information, screenshots, or references you’d like to add."
+      placeholder: "Related issues, PRs, screenshots..."
+    validations:
+      required: false
