@@ -51,7 +51,7 @@ When working with time series, it is seldom needed to predict only the next elem
 
 ### Recursive multi-step forecasting
 
-Since the value *t(n-1)* is required to predict *t(n)*, and *t(n-1)* is unknown, a recursive process is applied in which, **each new prediction, is based on the previous one**. This process is known as **recursive forecasting** or recursive multi-step forecasting and can be easily generated with the [`ForecasterRecursive`](../user_guides/autoregresive-forecaster.html) class.
+Since the value *t(n-1)* is required to predict *t(n)*, and *t(n-1)* is unknown, a recursive process is applied in which, **each new prediction, is based on the previous one**. This process is known as **recursive forecasting** or recursive multi-step forecasting and can be easily generated with the [`ForecasterRecursive`](../user_guides/autoregressive-forecaster.html) class.
 
 <p style="text-align: center">
     <img src="../img/diagram-recursive-mutistep-forecasting.png" style="width: 500px">
@@ -142,7 +142,7 @@ The **skforecast** library offers a **variety of forecaster** types, each tailor
 |[ForecasterRNN]               |✔️|✔️||✔️|✔️||✔️||
 |[ForecasterSarimax]           |✔️||✔️||✔️|✔️|✔️||
 
-[ForecasterRecursive]: ../user_guides/autoregresive-forecaster.html
+[ForecasterRecursive]: ../user_guides/autoregressive-forecaster.html
 [ForecasterDirect]: ../user_guides/direct-multi-step-forecasting.html
 [ForecasterRecursiveMultiSeries]: ../user_guides/independent-multi-time-series-forecasting.html
 [ForecasterDirectMultiVariate]: ../user_guides/dependent-multi-series-multivariate-forecasting.html
