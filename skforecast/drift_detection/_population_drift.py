@@ -12,7 +12,6 @@ from scipy.spatial.distance import jensenshannon
 from copy import deepcopy
 import warnings
 
-
 def ks_2samp_from_ecdf(ecdf1, ecdf2, alternative="two-sided") -> float:
     """
     Calculate the Kolmogorov-Smirnov distance (statistic) using precomputed
@@ -182,7 +181,7 @@ class PopulationDriftDetector:
         self.chunk_size = chunk_size
         
 
-    def fit(self, X):
+    def fit(self, X) -> None:
         """
         Fit the drift detector by calculating empirical distributions and thresholds
         from reference data. The empirical distributions are computed by chunking
@@ -194,10 +193,6 @@ class PopulationDriftDetector:
         X : pandas.DataFrame
             Reference data used as the baseline for drift detection.
 
-        Returns
-        -------
-        self : PopulationDriftDetector
-            Fitted estimator.
         """
 
         if isinstance(X.index, pd.MultiIndex):
@@ -217,7 +212,7 @@ class PopulationDriftDetector:
         self._collect_attributes()
         
 
-    def _fit(self, X):
+    def _fit(self, X) -> None:
         """
         Fit the drift detector by calculating empirical distributions and thresholds
         from reference data. The empirical distributions are computed by chunking
@@ -379,7 +374,7 @@ class PopulationDriftDetector:
 
         self.is_fitted_ = True
 
-    def predict(self, X, return_only_drift=False):
+    def predict(self, X, return_only_drift=False)-> tuple[pd.DataFrame, pd.DataFrame]:
         """
         Predict drift in new data by comparing the estimated statistics to
         reference thresholds.
@@ -395,6 +390,10 @@ class PopulationDriftDetector:
         -------
         results : pandas.DataFrame
             DataFrame with the drift detection results for each chunk.
+        summary : pandas.DataFrame
+            Summary DataFrame with the total number and percentage of chunks
+            with detected drift per feature (or per series_id and feature if
+            MultiIndex).
         """
 
         if isinstance(X.index, pd.MultiIndex):
@@ -408,7 +407,7 @@ class PopulationDriftDetector:
                     continue
                 detector = self.detectors_[idx]
                 result = detector._predict(group)
-                result.insert(0, 'level_0', idx)  # Insert level_0 column at the front
+                result.insert(0, 'series_id', idx)
                 results.append(result)
             results = pd.concat(results, ignore_index=True)
         else:
@@ -416,10 +415,24 @@ class PopulationDriftDetector:
 
         if return_only_drift:
             results = results[results['drift_detected']]
-        
-        return results
 
-    def _predict(self, X):
+        if results.columns[0] == 'series_id':
+            summary = (
+                results.groupby('series_id')['drift_detected']
+                .agg(['sum', 'mean'])
+                .rename(columns={'sum': 'n_chunks_with_drift', 'mean': 'pct_chunks_with_drift'})
+            )
+        else:
+            summary = (
+                results['drift_detected']
+                .agg(['sum', 'mean'])
+                .rename({'sum': 'n_chunks_with_drift', 'mean': 'pct_chunks_with_drift'})
+                .to_frame()
+            )
+        
+        return results, summary
+
+    def _predict(self, X) -> pd.DataFrame:
         """
         Predict drift in new data by comparing the estimated statistics to
         reference thresholds.
@@ -572,8 +585,8 @@ class PopulationDriftDetector:
         )
         
         return results_df
-    
-    def _collect_attributes(self):
+
+    def _collect_attributes(self) -> None:
         """
         Collect attributes for representation and inspection and update the instance
         dictionary with the collected values. For multi-series (when detectors_ is
