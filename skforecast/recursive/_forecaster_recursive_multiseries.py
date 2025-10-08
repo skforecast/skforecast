@@ -1472,7 +1472,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         
         if isinstance(idx, pd.DatetimeIndex):
             span_index = pd.date_range(
-                start=min(min_index), end=max(max_index), freq=idx.freqstr
+                start=min(min_index), end=max(max_index), freq=idx.freq
             )
         else:
             span_index = pd.RangeIndex(
@@ -1858,7 +1858,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self.training_range_ = {k: v[[0, -1]] for k, v in series_indexes.items()}
         self.index_type_ = type(series_indexes[series_names_in_[0]])
         if isinstance(series_indexes[series_names_in_[0]], pd.DatetimeIndex):
-            self.index_freq_ = series_indexes[series_names_in_[0]].freqstr
+            self.index_freq_ = series_indexes[series_names_in_[0]].freq
         else:
             self.index_freq_ = series_indexes[series_names_in_[0]].step
 

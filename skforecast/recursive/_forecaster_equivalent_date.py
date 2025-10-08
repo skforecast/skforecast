@@ -428,7 +428,7 @@ class ForecasterEquivalentDate():
         self.training_range_ = y_index[[0, -1]]
         self.index_type_ = type(y_index)
         self.index_freq_ = (
-            y_index.freqstr if isinstance(y_index, pd.DatetimeIndex) else y_index.step
+            y_index.freq if isinstance(y_index, pd.DatetimeIndex) else y_index.step
         )
 
         # NOTE: This is done to save time during fit in functions such as backtesting()

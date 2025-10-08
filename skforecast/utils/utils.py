@@ -1003,10 +1003,10 @@ def check_predict_input(
             f"Got {type(last_window_index)}."
         )
     if isinstance(last_window_index, pd.DatetimeIndex):
-        if not last_window_index.freqstr == index_freq_:
+        if not last_window_index.freq == index_freq_:
             raise TypeError(
                 f"Expected frequency of type {index_freq_} for `last_window`. "
-                f"Got {last_window_index.freqstr}."
+                f"Got {last_window_index.freq}."
             )
 
     # Checks exog
@@ -1174,10 +1174,10 @@ def check_predict_input(
                     f"Got {type(last_window_exog_index)}."
                 )
             if isinstance(last_window_exog_index, pd.DatetimeIndex):
-                if not last_window_exog_index.freqstr == index_freq_:
+                if not last_window_exog_index.freq == index_freq_:
                     raise TypeError(
                         f"Expected frequency of type {index_freq_} for "
-                        f"`last_window_exog`. Got {last_window_exog_index.freqstr}."
+                        f"`last_window_exog`. Got {last_window_exog_index.freq}."
                     )
 
             # Check all columns are in the pd.DataFrame, last_window_exog
@@ -2390,17 +2390,18 @@ def check_preprocess_series(
             series_dict[k] = v.iloc[:, 0]
 
         series_dict[k].name = k
-        if isinstance(v.index, pd.DatetimeIndex):
-            indexes_freq.add(v.index.freqstr)
-        elif isinstance(v.index, pd.RangeIndex):
-            indexes_freq.add(v.index.step)
+        idx = v.index
+        if isinstance(idx, pd.DatetimeIndex):
+            indexes_freq.add(idx.freq)
+        elif isinstance(idx, pd.RangeIndex):
+            indexes_freq.add(idx.step)
         else:
             not_valid_index.append(k)
 
         if v.isna().to_numpy().all():
             raise ValueError(f"All values of series '{k}' are NaN.")
 
-        series_indexes[k] = v.index
+        series_indexes[k] = idx
 
     if not_valid_index:
         raise TypeError(

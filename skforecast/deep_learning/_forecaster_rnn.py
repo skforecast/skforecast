@@ -1070,7 +1070,7 @@ class ForecasterRnn(ForecasterBase):
         self.training_range_ = series.index[[0, -1]]
         self.index_type_ = type(series.index)
         if isinstance(series.index, pd.DatetimeIndex):
-            self.index_freq_ = series.index.freqstr
+            self.index_freq_ = series.index.freq
         else:
             self.index_freq_ = series.index.step
 

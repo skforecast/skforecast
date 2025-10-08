@@ -285,10 +285,10 @@ class BaseFold():
                     continue
 
                 idx = v.index
-                if isinstance(v.index, pd.DatetimeIndex):
-                    indexes_freq.add(v.index.freqstr)
-                elif isinstance(v.index, pd.RangeIndex):
-                    indexes_freq.add(v.index.step)
+                if isinstance(idx, pd.DatetimeIndex):
+                    indexes_freq.add(idx.freq)
+                elif isinstance(idx, pd.RangeIndex):
+                    indexes_freq.add(idx.step)
                 else:
                     not_valid_index.append(k)
 
