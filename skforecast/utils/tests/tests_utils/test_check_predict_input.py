@@ -620,7 +620,7 @@ def test_check_predict_input_TypeError_when_last_window_index_frequency_is_not_i
 
     err_msg = re.escape(
         f"Expected frequency of type {index_freq_} for `last_window`. "
-        f"Got {last_window_index.freqstr}."
+        f"Got {last_window_index.freq}."
     )
     with pytest.raises(TypeError, match = err_msg):
         check_predict_input(
@@ -1328,7 +1328,7 @@ def test_check_predict_input_TypeError_when_ForecasterSarimax_last_window_exog_i
 
     err_msg = re.escape(
         f"Expected frequency of type {index_freq_} for `last_window_exog`. "
-        f"Got {last_window_exog_index.freqstr}."
+        f"Got {last_window_exog_index.freq}."
     )
     with pytest.raises(TypeError, match = err_msg):
         check_predict_input(
