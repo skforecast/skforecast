@@ -490,6 +490,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             'LGBMClassifier': 'lightgbm',
             'CatBoostClassifier': 'catboost',
             'XGBClassifier': 'xgboost',
+            'HistGradientBoostingClassifier': 'sklearn.ensemble._hist_gradient_boosting'
         }
         
         if class_name in supported_models:
@@ -552,10 +553,12 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                              index   = train_index
                          )
                 if self.use_native_categoricals:
+                    # TODO: ver si se puede aplicar a todas las cols de golpe
                     for col in X_data.columns:
                         X_data[col] = pd.Categorical(
                                           values     = X_data[col],
-                                          categories = y_classes
+                                          categories = y_classes,
+                                          ordered    = False
                                       )
 
         # TODO: Need y_train as categorical?
@@ -702,9 +705,11 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                     "Classification requires discrete classes. "
                     "Float values found that are not integers."
                 )
-            y_values = y_values.astype(int)
+            # y_values = y_values.astype(int)
 
-        unique_classes = np.unique(y_values)  # TODO: sort?
+        # TODO: Use pandas categorical and create encoding as multiseries
+
+        unique_classes = np.unique(y_values)  # TODO: sacar del pandas cat
         n_classes = len(unique_classes)
         
         if n_classes < 2:
@@ -720,7 +725,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             'is_numeric': np.issubdtype(y_values.dtype, np.number)
         }
         train_index = y_index[self.window_size:]
-  
+
         fit_transformer = False if self.is_fitted else True
         if not y_encoding_info['is_numeric']:
             if fit_transformer:
@@ -729,6 +734,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             else:
                 y_values = self.label_encoder_.transform(y_values)
         
+        # TODO: If it is numeric doesn't work
         y_encoding_info['classes_codes'] = self.label_encoder_.transform(unique_classes)
 
         exog_names_in_ = None
