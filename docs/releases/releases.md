@@ -38,7 +38,7 @@ The main changes in this release are:
 
 + <span class="badge text-bg-feature">Feature</span> New attribute `__skforecast_tags__` and public method `get_tags()` in all forecasters which provide metadata about the forecaster, such as its capabilities and limitations. This attribute can be useful for [introspection and understanding the behavior](../quick-start/forecaster-attributes.html#skforecast-tags) of different forecasters.
 
-+ <span class="badge text-bg-feature">API Change</span> Backtesting functions output DataFrame now includes a `fold` column to identify the fold number of each prediction.
++ <span class="badge text-bg-api-change">API Change</span> Backtesting functions output DataFrame now includes a `fold` column to identify the fold number of each prediction.
 
 + <span class="badge text-bg-danger">Fix</span> Fixed a bug that caused the gap to not be applied correctly in the <code>[backtesting_forecaster_multiseries]</code> function. ([#1028](https://github.com/skforecast/skforecast/issues/1028))
 
