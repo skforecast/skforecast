@@ -10,7 +10,7 @@ from skforecast.drift_detection import PopulationDriftDetector
 import joblib
 
 #fixtures
-data = joblib.load('fixture_data_population_drift.joblib')
+data = joblib.load('./fixture_data_population_drift.joblib')
 
 
 def test_predict_output_equivalence_nannyml():
