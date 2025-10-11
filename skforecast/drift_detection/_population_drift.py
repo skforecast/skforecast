@@ -415,17 +415,21 @@ class PopulationDriftDetector:
 
         if results.columns[0] == 'series_id':
             summary = (
-                results.groupby('series_id')['drift_detected']
+                results.groupby(['series_id', 'feature'])['drift_detected']
                 .agg(['sum', 'mean'])
+                .reset_index()
                 .rename(columns={'sum': 'n_chunks_with_drift', 'mean': 'pct_chunks_with_drift'})
             )
         else:
             summary = (
-                results['drift_detected']
+                results.groupby(['feature'])['drift_detected']
                 .agg(['sum', 'mean'])
-                .rename({'sum': 'n_chunks_with_drift', 'mean': 'pct_chunks_with_drift'})
-                .to_frame()
+                .reset_index()
+                .rename(columns={'sum': 'n_chunks_with_drift', 'mean': 'pct_chunks_with_drift'})
             )
+        summary['pct_chunks_with_drift'] = summary['pct_chunks_with_drift'] * 100
+
+            
         
         return results, summary
 
