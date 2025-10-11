@@ -374,17 +374,17 @@ class PopulationDriftDetector:
 
         self.is_fitted_ = True
 
-    def predict(self, X, return_only_drift=False)-> tuple[pd.DataFrame, pd.DataFrame]:
+    def predict(self, X)-> tuple[pd.DataFrame, pd.DataFrame]:
         """
         Predict drift in new data by comparing the estimated statistics to
-        reference thresholds.
+        reference thresholds. Two dataframes are returned, the first one with
+        detailed information of each chunck, the second only the total number
+        of chunks where drift have been detected.
 
         Parameters
         ----------
         X : pandas.DataFrame
             New data to compare against the reference.
-        return_only_drift : bool, default False
-            If True, return only the rows where drift is detected.
 
         Returns
         -------
@@ -412,9 +412,6 @@ class PopulationDriftDetector:
             results = pd.concat(results, ignore_index=True)
         else:
             results = self._predict(X)
-
-        if return_only_drift:
-            results = results[results['drift_detected']]
 
         if results.columns[0] == 'series_id':
             summary = (
