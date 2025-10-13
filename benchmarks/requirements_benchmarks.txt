@@ -5,6 +5,6 @@ tqdm==4.67.1
 optuna==4.5.0
 joblib==1.5.2
 numba==0.61.2
-rich==14.1.0
+rich==14.2.0
 lightgbm==4.6.0
 psutil
