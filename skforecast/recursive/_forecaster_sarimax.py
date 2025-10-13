@@ -442,7 +442,7 @@ class ForecasterSarimax():
         self.training_range_ = y.index[[0, -1]]
         self.index_type_ = type(y.index)
         if isinstance(y.index, pd.DatetimeIndex):
-            self.index_freq_ = y.index.freqstr
+            self.index_freq_ = y.index.freq
         else: 
             self.index_freq_ = y.index.step
 

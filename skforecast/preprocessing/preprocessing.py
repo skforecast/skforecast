@@ -419,7 +419,7 @@ def reshape_series_wide_to_long(
     if not isinstance(data.index, pd.DatetimeIndex):
         raise TypeError("`data` index must be a pandas DatetimeIndex.")
     
-    freq = data.index.freqstr
+    freq = data.index.freq
     data.index.name = "datetime"
     data = data.reset_index()
     data = pd.melt(data, id_vars="datetime", var_name="series_id", value_name="value")
