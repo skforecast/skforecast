@@ -11,6 +11,9 @@ from scipy.stats import chi2_contingency, ecdf
 from scipy.spatial.distance import jensenshannon
 from copy import deepcopy
 import warnings
+from ..utils import  get_style_repr_html
+from .. import __version__
+
 
 def ks_2samp_from_ecdf(ecdf1, ecdf2, alternative="two-sided") -> float:
     """
@@ -179,6 +182,49 @@ class PopulationDriftDetector:
                 f"Got {type(chunk_size)}."
             )
         self.chunk_size = chunk_size
+
+    def __repr__(self) -> str:
+        """
+        Information displayed when a RangeDriftDetector object is printed.
+        """
+    
+        info = (
+            f"{'=' * len(type(self).__name__)} \n"
+            f"{type(self).__name__} \n"
+            f"{'=' * len(type(self).__name__)} \n"
+            f"Fitted features = {self.ref_features_} \n"
+            f"Is fitted       = {self.is_fitted_}"
+        )
+
+        return info
+    
+    def _repr_html_(self):
+        """
+        HTML representation of the object.
+        The "General Information" section is expanded by default.
+        """
+    
+
+        style, unique_id = get_style_repr_html(self.is_fitted_)
+        content = f"""
+        <div class="container-{unique_id}">
+            <h2>{type(self).__name__}</h2>
+            <details open>
+                <summary>General Information</summary>
+                <ul>
+                    <li><strong>Fitted features:</strong> {self.ref_features_}</li>
+                    <li><strong>Is fitted:</strong> {self.is_fitted_}</li>
+                </ul>
+            </details>
+            <p>
+                <a href="https://skforecast.org/{__version__}/api/drift_detection.html#skforecast.drift_detection._range_drift.PopulationDriftDetector">&#128712 <strong>API Reference</strong></a>
+                &nbsp;&nbsp;
+                <a href="https://skforecast.org/{__version__}/user_guides/drift-detection.html">&#128462 <strong>User Guide</strong></a>
+            </p>
+        </div>
+        """
+        
+        return style + content
         
 
     def fit(self, X) -> None:
