@@ -1,16 +1,25 @@
 # Unit test predict
 # ==============================================================================
-import re
-import pytest
 import pandas as pd
 import numpy as np
-import nannyml as nml
-import warnings
 from skforecast.drift_detection import PopulationDriftDetector
 import joblib
 
 #fixtures
 data = joblib.load('./fixture_data_population_drift.joblib')
+results_nannyml = joblib.load('./fixture_results_nannyml.joblib')
+
+## Code used to generate fixture_results_nannyml
+# detector = nml.UnivariateDriftCalculator(
+#     column_names=data_train.columns.tolist(),
+#     timestamp_column_name="date_time",
+#     chunk_period='M',
+#     categorical_methods=['chi2', 'jensen_shannon'],
+#     continuous_methods=['kolmogorov_smirnov', 'jensen_shannon'],
+# )
+# detector.fit(reference_data=data_train.reset_index())
+# results_nannyml = detector.calculate(data=data_new.reset_index())
+# results_nannyml = results_nannyml.filter(period='analysis').to_df(multilevel=False)
 
 
 def test_predict_output_equivalence_nannyml():
@@ -22,24 +31,13 @@ def test_predict_output_equivalence_nannyml():
     data_new  = data.iloc[len(data)//2 :].copy()
     data_train['weather'] = data_train['weather'].astype('category')
     data_new['weather'] = pd.Categorical(data_new['weather'], categories=data_train['weather'].cat.categories)
-    
-    detector = nml.UnivariateDriftCalculator(
-        column_names=data_train.columns.tolist(),
-        timestamp_column_name="date_time",
-        chunk_period='M',
-        categorical_methods=['chi2', 'jensen_shannon'],
-        continuous_methods=['kolmogorov_smirnov', 'jensen_shannon'],
-    )
-    detector.fit(reference_data=data_train.reset_index())
-    results_nannyml = detector.calculate(data=data_new.reset_index())
-    results_nannyml = results_nannyml.filter(period='analysis').to_df(multilevel=False)
 
     detector = PopulationDriftDetector(
         chunk_size='ME',            
         threshold=0.99
     )
     detector.fit(data_train)
-    results_skforecast = detector.predict(data_new)
+    results_skforecast, _ = detector.predict(data_new)
 
     features = results_skforecast["feature"].unique()
     for feature in features:
