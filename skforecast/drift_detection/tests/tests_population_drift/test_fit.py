@@ -1,11 +1,52 @@
 # Unit test fit
 # ==============================================================================
+import pandas as pd
 import numpy as np
 from ....drift_detection import PopulationDriftDetector
 import joblib
 
 # fixtures
 data = joblib.load("fixture_data_population_drift.joblib")
+
+
+def test_fit_exception_X_is_not_dataframe():
+    """
+    Test that fit raises an exception when X is not a pandas DataFrame.
+    """
+    detector = PopulationDriftDetector(chunk_size="ME", threshold=0.95)
+    X = "not a dataframe"
+    err_msg = f"`X` must be a pandas DataFrame. Got {type(X)} instead."
+    with np.testing.assert_raises(ValueError, err_msg=err_msg):
+        detector.fit(X=X)
+
+
+def test_fit_exception_chunk_size_is_pandas_DateOffset_str_but_X_has_no_datetime_index():
+    """
+    Test that fit raises an exception when chunk_size is a string compatible with
+    pandas DateOffset but X has no datetime index.
+    """
+    detector = PopulationDriftDetector(chunk_size="ME", threshold=0.95)
+    X = pd.DataFrame({"A": np.random.rand(100), "B": np.random.rand(100)})
+    err_msg = (
+        "`chunk_size` is a pandas DateOffset but `X` does not have a DatetimeIndex."
+    )
+    with np.testing.assert_raises(ValueError, err_msg=err_msg):
+        detector.fit(X=X)
+
+
+def test_fit_exception_warning_when_fature_is_all_nan():
+    """
+    Test that fit raises a warning when a feature is all NaN.
+    """
+    detector = PopulationDriftDetector(chunk_size="ME", threshold=0.95)
+    X = data.copy()
+    X.loc[:, "temp"] = np.nan
+    warn_msg = (
+        "Feature 'temp' contains only NaN values in the reference dataset. "
+        "Drift detection skipped."
+    )
+    with np.testing.assert_warns(UserWarning, match=warn_msg):
+        detector.fit(X=X)
 
 
 def test_fit_stored_attributes():

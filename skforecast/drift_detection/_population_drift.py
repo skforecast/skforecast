@@ -175,12 +175,21 @@ class PopulationDriftDetector:
             raise ValueError(f"`threshold` must be between 0 and 1. Got {threshold}.")
         self.threshold = threshold
 
+        error_msg = (
+            "`chunk_size` must be a positive integer, a string compatible with "
+            "pandas DateOffset (e.g., 'D', 'W', 'M'), a pandas DateOffset object, or None."
+        )
+
         if not (isinstance(chunk_size, (int, str, pd.DateOffset, type(None)))):
-            raise ValueError(
-                f"`chunk_size` must be a positive integer, a string compatible with "
-                f"pandas DateOffset (e.g., 'D', 'W', 'M'), a pandas DateOffset object, or None. "
-                f"Got {type(chunk_size)}."
-            )
+            raise ValueError(f"{error_msg} Got {type(chunk_size)}.")
+        if isinstance(chunk_size, str):
+            try:
+                chunk_size = pd.tseries.frequencies.to_offset(chunk_size)
+            except ValueError:
+                raise ValueError(f"{error_msg} Got {type(chunk_size)}.")
+        if isinstance(chunk_size, int) and chunk_size <= 0:
+            raise ValueError(f"{error_msg} Got {chunk_size}.")
+        
         self.chunk_size = chunk_size
 
     def __repr__(self) -> str:
@@ -293,14 +302,10 @@ class PopulationDriftDetector:
             raise ValueError(f"`X` must be a pandas DataFrame. Got {type(X)} instead.")
 
         if self.chunk_size is not None:
-            if isinstance(
-                self.chunk_size, (str, pd.offsets.DateOffset)
-            ) and not isinstance(X.index, pd.DatetimeIndex):
+            if isinstance(self.chunk_size, pd.offsets.DateOffset) and not isinstance(X.index, pd.DatetimeIndex):
                 raise ValueError(
-                    "`chunk_size` is a string or pandas DateOffset but `X` does not have a DatetimeIndex."
+                    "`chunk_size` is a pandas DateOffset but `X` does not have a DatetimeIndex."
                 )
-            if isinstance(self.chunk_size, int) and self.chunk_size <= 0:
-                raise ValueError("`chunk_size` must be a positive integer.")
         
         features = X.columns.tolist()
 
@@ -504,6 +509,12 @@ class PopulationDriftDetector:
                 "This PopulationDriftDetector instance is not fitted yet. "
                 "Call 'fit' with appropriate arguments before using this estimator."
             )
+        
+        if self.chunk_size is not None:
+            if isinstance(self.chunk_size, pd.offsets.DateOffset) and not isinstance(X.index, pd.DatetimeIndex):
+                raise ValueError(
+                    "`chunk_size` is a pandas DateOffset but `X` does not have a DatetimeIndex."
+                )
 
         features = X.columns.tolist()
         results = []
