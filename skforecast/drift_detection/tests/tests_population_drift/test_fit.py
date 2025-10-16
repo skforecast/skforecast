@@ -2,11 +2,15 @@
 # ==============================================================================
 import pandas as pd
 import numpy as np
-from ....drift_detection import PopulationDriftDetector
 import joblib
+from pathlib import Path
+import pytest
+from ....drift_detection import PopulationDriftDetector
+
 
 # fixtures
-data = joblib.load("fixture_data_population_drift.joblib")
+THIS_DIR = Path(__file__).parent
+data = joblib.load(THIS_DIR/'fixture_data_population_drift.joblib')
 
 
 def test_fit_exception_X_is_not_dataframe():
@@ -16,7 +20,7 @@ def test_fit_exception_X_is_not_dataframe():
     detector = PopulationDriftDetector(chunk_size="ME", threshold=0.95)
     X = "not a dataframe"
     err_msg = f"`X` must be a pandas DataFrame. Got {type(X)} instead."
-    with np.testing.assert_raises(ValueError, err_msg=err_msg):
+    with pytest.raises(ValueError, match=err_msg):
         detector.fit(X=X)
 
 
@@ -30,7 +34,7 @@ def test_fit_exception_chunk_size_is_pandas_DateOffset_str_but_X_has_no_datetime
     err_msg = (
         "`chunk_size` is a pandas DateOffset but `X` does not have a DatetimeIndex."
     )
-    with np.testing.assert_raises(ValueError, err_msg=err_msg):
+    with pytest.raises(ValueError, match=err_msg):
         detector.fit(X=X)
 
 
@@ -45,7 +49,7 @@ def test_fit_exception_warning_when_fature_is_all_nan():
         "Feature 'temp' contains only NaN values in the reference dataset. "
         "Drift detection skipped."
     )
-    with np.testing.assert_warns(UserWarning, match=warn_msg):
+    with pytest.warns(UserWarning, match=warn_msg):
         detector.fit(X=X)
 
 
@@ -136,6 +140,8 @@ def test_fit_stored_attributes():
             for key in expected_value.keys():
                 if isinstance(expected_value[key], float) and np.isnan(expected_value[key]):
                     assert np.isnan(value[key])
+                elif isinstance(expected_value[key], list):
+                    assert value[key] == expected_value[key]
                 else:
                     np.testing.assert_almost_equal(value[key], expected_value[key], decimal=5)
         elif isinstance(value, list):

@@ -1,13 +1,16 @@
 # Unit test predict
 # ==============================================================================
+from pathlib import Path
+import pytest
 import pandas as pd
 import numpy as np
-from skforecast.drift_detection import PopulationDriftDetector
+from ..._population_drift import PopulationDriftDetector
 import joblib
 
 #fixtures
-data = joblib.load('./fixture_data_population_drift.joblib')
-results_nannyml = joblib.load('./fixture_results_nannyml.joblib')
+THIS_DIR = Path(__file__).parent
+data = joblib.load(THIS_DIR/'fixture_data_population_drift.joblib')
+results_nannyml = joblib.load(THIS_DIR/'fixture_results_nannyml.joblib')
 
 ## Code used to generate fixture_results_nannyml
 # detector = nml.UnivariateDriftCalculator(
@@ -34,7 +37,7 @@ def test_predict_exception_when_X_not_dataframe():
     detector.fit(data)
     X = 'not a dataframe'
     err_msg = f"`X` must be a pandas DataFrame. Got {type(X)} instead."
-    with pd.testing.assert_raises_regex(ValueError, err_msg):
+    with pytest.raises(ValueError, match=err_msg):
         detector.predict(X=X)
 
 
@@ -51,7 +54,7 @@ def test_predict_exception_when_detector_not_fitted():
                 "This PopulationDriftDetector instance is not fitted yet. "
                 "Call 'fit' with appropriate arguments before using this estimator."
             )
-    with pd.testing.assert_raises_regex(ValueError, err_msg):
+    with pytest.raises(ValueError, match=err_msg):
         detector.predict(X=X)
 
 
@@ -66,7 +69,7 @@ def test_predict_exception_when_chunk_size_is_DateOffset_but_X_index_not_datetim
     detector.fit(data)
     X = data.reset_index()
     err_msg = "`chunk_size` is a pandas DateOffset but `X` does not have a DatetimeIndex."
-    with pd.testing.assert_raises_regex(ValueError, err_msg):
+    with pytest.raises(ValueError, match=err_msg):
         detector.predict(X=X)
 
 
