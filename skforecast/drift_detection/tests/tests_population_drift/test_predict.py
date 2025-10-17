@@ -11,6 +11,8 @@ import joblib
 THIS_DIR = Path(__file__).parent
 data = joblib.load(THIS_DIR/'fixture_data_population_drift.joblib')
 results_nannyml = joblib.load(THIS_DIR/'fixture_results_nannyml.joblib')
+results_multiseries = joblib.load(THIS_DIR/'fixture_results_multiseries.joblib')
+summary_multiseries = joblib.load(THIS_DIR/'fixture_summary_multiseries.joblib')
 
 ## Code used to generate fixture_results_nannyml
 # detector = nml.UnivariateDriftCalculator(
@@ -167,3 +169,27 @@ def test_predict_output_equivalence_nannyml():
             df_all["jensen_shannon_skforecast"],
             check_names=False,
         )
+
+def test_predict_output_when_multiple_series():
+    """
+    Test that PopulationDriftDetector.predict works when data contains multiple series.
+    """
+
+    data_multiseries = pd.concat(
+        [
+            data.assign(series='series_1'),
+            data.assign(series='series_2'),
+            data.assign(series='series_3')
+        ]
+    ).set_index('series', append=True).swaplevel(0,1)
+
+    detector = PopulationDriftDetector(
+        chunk_size='ME',            
+        threshold=0.95
+    )
+    detector.fit(data_multiseries)
+    results, summary = detector.predict(data_multiseries)
+    pd.testing.assert_frame_equal(results, results_multiseries)
+    pd.testing.assert_frame_equal(summary, summary_multiseries)
+
+    
