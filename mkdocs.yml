@@ -57,8 +57,8 @@ nav:
       - Metrics in probabilistic forecasting: user_guides/probabilistic-forecasting-metrics.ipynb
       - Continuous Ranked Probability Score (CRPS): faq/probabilistic-forecasting-crps-score.ipynb
     - Model Explainability: user_guides/explainability.ipynb
-    - Drift detection: user_guides/drift-detection.ipynb
-    - Model deployment:
+    - Drift Detection: user_guides/drift-detection.ipynb
+    - Model Deployment:
       - Save and load forecaster: user_guides/save-load-forecaster.ipynb
       - Forecaster in production: user_guides/forecaster-in-production.ipynb
     - Plotting: user_guides/plotting.ipynb
