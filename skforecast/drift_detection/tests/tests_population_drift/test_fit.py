@@ -45,7 +45,7 @@ def test_fit_exception_chunk_size_is_pandas_DateOffset_str_but_X_has_no_datetime
         detector.fit(X=X)
 
 
-def test_fit_exception_warning_when_fature_is_all_nan():
+def test_fit_exception_warning_when_feature_is_all_nan():
     """
     Test that fit raises a warning when a feature is all NaN.
     """

@@ -11,7 +11,7 @@ from scipy.stats import chi2_contingency, ecdf
 from scipy.spatial.distance import jensenshannon
 from copy import deepcopy
 import warnings
-from ..utils import  get_style_repr_html
+from ..utils import get_style_repr_html
 from .. import __version__
 
 
