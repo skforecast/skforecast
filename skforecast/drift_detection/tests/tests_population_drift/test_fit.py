@@ -17,7 +17,7 @@ data_multiseries = pd.concat(
         data.assign(series='series_2'),
         data.assign(series='series_3')
     ]
-).set_index('series', append=True).swaplevel(0,1)
+).set_index('series', append=True).swaplevel(0, 1)
 
 
 def test_fit_exception_X_is_not_dataframe():

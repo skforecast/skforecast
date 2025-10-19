@@ -5,17 +5,22 @@
 ################################################################################
 # coding=utf-8
 
-import pandas as pd
+from copy import deepcopy
 import numpy as np
+import pandas as pd
 from scipy.stats import chi2_contingency, ecdf
 from scipy.spatial.distance import jensenshannon
-from copy import deepcopy
 import warnings
-from ..utils import get_style_repr_html
+
 from .. import __version__
+from ..utils import get_style_repr_html
 
 
-def ks_2samp_from_ecdf(ecdf1, ecdf2, alternative="two-sided") -> float:
+def ks_2samp_from_ecdf(
+    ecdf1: object, 
+    ecdf2: object, 
+    alternative: str = "two-sided"
+) -> float:
     """
     Calculate the Kolmogorov-Smirnov distance (statistic) using precomputed
     scipy.stats.ecdf objects. This function replicates the behavior of
@@ -28,13 +33,14 @@ def ks_2samp_from_ecdf(ecdf1, ecdf2, alternative="two-sided") -> float:
         ECDF object from sample 1.
     ecdf2 : scipy.stats.ecdf.ECDF
         ECDF object from sample 2.
-    alternative : {'two-sided', 'less', 'greater'}
-        Defines the alternative hypothesis. Default is 'two-sided'.
+    alternative : 'two-sided', 'less', 'greater', default 'two-sided'
+        Defines the alternative hypothesis.
 
     Returns
     -------
     distance : float
         KS distance (sup of |F1-F2| for two-sided, etc.).
+    
     """
 
     # Common evaluation grid (all jump points from both ECDFs)
@@ -69,7 +75,7 @@ class PopulationDriftDetector:
 
     Parameters
     ----------
-    chunk_size : int, string, pandas DateOffset, None, default None
+    chunk_size : int, string, pandas DateOffset, default None
         Size of chunks for sequential drift analysis. If int, number of rows per
         chunk. If str (e.g., 'D' for daily, 'W' for weekly), time-based chunks
         assuming a datetime index. If None, analyzes the full dataset as a single
@@ -80,12 +86,12 @@ class PopulationDriftDetector:
     
     Attributes
     ----------
-    chunk_size : int, string, pandas DateOffset, None, default None
+    chunk_size : int, string, pandas DateOffset
         Size of chunks for sequential drift analysis. If int, number of rows per
         chunk. If str (e.g., 'D' for daily, 'W' for weekly), time-based chunks
         assuming a datetime index. If None, analyzes the full dataset as a single
         chunk.
-    threshold : float, default 0.95
+    threshold : float
         The quantile threshold (between 0 and 1) for determining drift based on 
         empirical distributions.
     is_fitted_ : bool
@@ -130,12 +136,9 @@ class PopulationDriftDetector:
         Dictionary of PopulationDriftDetector instances for each group when
         fitting/predicting on MultiIndex DataFrames.
     
-    
-    
     Notes
     -----
     This implementation is inspired by NannyML's DriftDetector [1]_.
-    
 
     It is a lightweight version adapted for skforecast's needs:
     - It does not store the raw reference data, only the necessary precomputed
@@ -149,9 +152,14 @@ class PopulationDriftDetector:
     ----------
     .. [1] NannyML API Reference.
            https://nannyml.readthedocs.io/en/stable/tutorials/detecting_data_drift/univariate_drift_detection.html
+    
     """
 
-    def __init__(self, chunk_size=None, threshold=0.95):
+    def __init__(
+        self, 
+        chunk_size=None, 
+        threshold=0.95
+    ) -> None:
         
         self.ref_features_             = None
         self.is_fitted_                = False
@@ -169,17 +177,17 @@ class PopulationDriftDetector:
         self.ref_ranges_               = {}
         self.ref_categories_           = {}
         self.n_chunks_reference_data_  = None
-        self.detectors_                = {} # Only used for multiseries
+        self.detectors_                = {}  # NOTE: Only used for multiseries
 
         if not (0 < threshold < 1):
             raise ValueError(f"`threshold` must be between 0 and 1. Got {threshold}.")
+        
         self.threshold = threshold
 
         error_msg = (
             "`chunk_size` must be a positive integer, a string compatible with "
             "pandas DateOffset (e.g., 'D', 'W', 'M'), a pandas DateOffset object, or None."
         )
-
         if not (isinstance(chunk_size, (int, str, pd.DateOffset, type(None)))):
             raise ValueError(f"{error_msg} Got {type(chunk_size)}.")
         if isinstance(chunk_size, str):
@@ -212,7 +220,6 @@ class PopulationDriftDetector:
         HTML representation of the object.
         The "General Information" section is expanded by default.
         """
-    
 
         style, unique_id = get_style_repr_html(self.is_fitted_)
         content = f"""
@@ -226,7 +233,7 @@ class PopulationDriftDetector:
                 </ul>
             </details>
             <p>
-                <a href="https://skforecast.org/{__version__}/api/drift_detection.html#skforecast.drift_detection._range_drift.PopulationDriftDetector">&#128712 <strong>API Reference</strong></a>
+                <a href="https://skforecast.org/{__version__}/api/drift_detection.html#skforecast.drift_detection._population_drift.PopulationDriftDetector">&#128712 <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
                 <a href="https://skforecast.org/{__version__}/user_guides/drift-detection.html">&#128462 <strong>User Guide</strong></a>
             </p>
@@ -235,38 +242,6 @@ class PopulationDriftDetector:
         
         return style + content
         
-
-    def fit(self, X) -> None:
-        """
-        Fit the drift detector by calculating empirical distributions and thresholds
-        from reference data. The empirical distributions are computed by chunking
-        the reference data according to the specified `chunk_size` and calculating
-        the statistics for each chunk.
-
-        Parameters
-        ----------
-        X : pandas.DataFrame
-            Reference data used as the baseline for drift detection.
-
-        """
-
-        if isinstance(X.index, pd.MultiIndex):
-            X = X.groupby(level=0)
-
-            for idx, group in X:
-                group = group.droplevel(0)
-                self.detectors_[idx] = PopulationDriftDetector(
-                    chunk_size=self.chunk_size,
-                    threshold=self.threshold
-                )
-                self.detectors_[idx]._fit(group)
-        else:
-            self._fit(X)
-
-        self.is_fitted_ = True
-        self._collect_attributes()
-        
-
     def _fit(self, X) -> None:
         """
         Fit the drift detector by calculating empirical distributions and thresholds
@@ -276,8 +251,9 @@ class PopulationDriftDetector:
 
         Parameters
         ----------
-        X : pandas.DataFrame
+        X : pandas DataFrame
             Reference data used as the baseline for drift detection.
+        
         """
 
         self.ref_features_             = []
@@ -296,7 +272,7 @@ class PopulationDriftDetector:
         self.ref_ranges_               = {}
         self.ref_categories_           = {}
         self.n_chunks_reference_data_  = None
-        self.detectors_                = {} # Only used for multiseries
+        self.detectors_                = {}  # NOTE: Only used for multiseries
 
         if not isinstance(X, pd.DataFrame):
             raise ValueError(f"`X` must be a pandas DataFrame. Got {type(X)} instead.")
@@ -333,6 +309,7 @@ class PopulationDriftDetector:
                     f"Drift detection skipped."
                 )
                 continue
+
             self.empirical_dist_ks_[feature] = []
             self.empirical_dist_chi2_[feature] = []
             self.empirical_dist_js_[feature] = []
@@ -425,26 +402,57 @@ class PopulationDriftDetector:
 
         self.is_fitted_ = True
 
-    def predict(self, X)-> tuple[pd.DataFrame, pd.DataFrame]:
+    def fit(self, X) -> None:
+        """
+        Fit the drift detector by calculating empirical distributions and thresholds
+        from reference data. The empirical distributions are computed by chunking
+        the reference data according to the specified `chunk_size` and calculating
+        the statistics for each chunk.
+
+        Parameters
+        ----------
+        X : pandas DataFrame
+            Reference data used as the baseline for drift detection.
+
+        """
+
+        if isinstance(X.index, pd.MultiIndex):
+            X = X.groupby(level=0)
+
+            for idx, group in X:
+                group = group.droplevel(0)
+                self.detectors_[idx] = PopulationDriftDetector(
+                    chunk_size=self.chunk_size,
+                    threshold=self.threshold
+                )
+                self.detectors_[idx]._fit(group)
+        else:
+            self._fit(X)
+
+        self.is_fitted_ = True
+        self._collect_attributes()
+
+    def predict(self, X) -> tuple[pd.DataFrame, pd.DataFrame]:
         """
         Predict drift in new data by comparing the estimated statistics to
         reference thresholds. Two dataframes are returned, the first one with
-        detailed information of each chunck, the second only the total number
+        detailed information of each chunk, the second only the total number
         of chunks where drift have been detected.
 
         Parameters
         ----------
-        X : pandas.DataFrame
+        X : pandas DataFrame
             New data to compare against the reference.
 
         Returns
         -------
-        results : pandas.DataFrame
+        results : pandas DataFrame
             DataFrame with the drift detection results for each chunk.
-        summary : pandas.DataFrame
+        summary : pandas DataFrame
             Summary DataFrame with the total number and percentage of chunks
             with detected drift per feature (or per series_id and feature if
             MultiIndex).
+        
         """
 
         if isinstance(X.index, pd.MultiIndex):
@@ -456,10 +464,12 @@ class PopulationDriftDetector:
                         f"Series {idx} was not present during fitting. Drift detection skipped."
                     )
                     continue
+
                 detector = self.detectors_[idx]
                 result = detector._predict(group)
                 result.insert(0, 'series_id', idx)
                 results.append(result)
+
             results = pd.concat(results, ignore_index=True)
         else:
             results = self._predict(X)
@@ -479,8 +489,6 @@ class PopulationDriftDetector:
                 .rename(columns={'sum': 'n_chunks_with_drift', 'mean': 'pct_chunks_with_drift'})
             )
         summary['pct_chunks_with_drift'] = summary['pct_chunks_with_drift'] * 100
-
-            
         
         return results, summary
 
@@ -491,12 +499,12 @@ class PopulationDriftDetector:
 
         Parameters
         ----------
-        X : pandas.DataFrame
+        X : pandas DataFrame
             New data to compare against the reference.
 
         Returns
         -------
-        results : pandas.DataFrame
+        results : pandas DataFrame
             DataFrame with the drift detection results for each chunk.
 
         """
@@ -522,7 +530,7 @@ class PopulationDriftDetector:
         if self.chunk_size is not None:
             if isinstance(self.chunk_size, int):
                 chunks = [
-                    X.iloc[i:i+self.chunk_size]
+                    X.iloc[i:i + self.chunk_size]
                     for i in range(0, len(X), self.chunk_size)
                 ]
             else:
@@ -538,6 +546,7 @@ class PopulationDriftDetector:
                 )
                 continue
             is_numeric = pd.api.types.is_numeric_dtype(X[feature])
+            # TODO: Not used?
             ref_bin_edges = self.ref_bins_edges_.get(feature, None)
             ref_hist = self.ref_hist_.get(feature, None)
             ref_probs = self.ref_probs_.get(feature, None)
@@ -549,6 +558,7 @@ class PopulationDriftDetector:
             ref_range = self.ref_ranges_.get(feature, (np.nan, np.nan))
 
             for chunk_idx, chunk in enumerate(chunks):
+
                 chunk_label = chunk_idx if self.chunk_size else "full"
                 new = chunk[feature].dropna()
                 ks_stat = np.nan
@@ -607,7 +617,6 @@ class PopulationDriftDetector:
                         else:
                             js_distance = jensenshannon(ref_probs, new_probs, base=2)
 
-
                         all_cats = set(self.ref_categories_[feature]).union(set(new_counts_dict.keys()))
                         new_counts = new.value_counts().reindex(all_cats, fill_value=0).values
                         ref_counts_aligned = ref_counts.reindex(all_cats, fill_value=0).values
@@ -650,6 +659,15 @@ class PopulationDriftDetector:
         dictionary with the collected values. For multi-series (when detectors_ is
         populated), attributes are aggregated into nested dictionaries keyed by
         detector names. For single-series, attributes remain unchanged.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        None
+
         """
         attr_names = [k for k in self.__dict__.keys() if k not in ['is_fitted_', 'detectors_']]
         
