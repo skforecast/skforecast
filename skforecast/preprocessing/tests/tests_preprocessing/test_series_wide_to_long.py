@@ -58,5 +58,5 @@ def test_check_output_reshape_series_wide_to_long(return_multi_index):
 
     pd.testing.assert_frame_equal(results, expected)
     if return_multi_index:
-        assert results.loc['series_1'].index.freqstr == expected.loc['series_1'].index.freqstr
-        assert results.loc['series_2'].index.freqstr == expected.loc['series_2'].index.freqstr
+        assert results.loc['series_1'].index.freq == expected.loc['series_1'].index.freq
+        assert results.loc['series_2'].index.freq == expected.loc['series_2'].index.freq

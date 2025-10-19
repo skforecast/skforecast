@@ -15,7 +15,8 @@ import pandas as pd
 from sklearn.base import BaseEstimator
 from sklearn.base import TransformerMixin
 from sklearn.exceptions import NotFittedError
-import skforecast
+
+from .. import __version__
 from ..exceptions import MissingValuesWarning
 from ..metrics import calculate_coverage
 from ..utils import get_style_repr_html
@@ -418,7 +419,7 @@ def reshape_series_wide_to_long(
     if not isinstance(data.index, pd.DatetimeIndex):
         raise TypeError("`data` index must be a pandas DatetimeIndex.")
     
-    freq = data.index.freqstr
+    freq = data.index.freq
     data.index.name = "datetime"
     data = data.reset_index()
     data = pd.melt(data, id_vars="datetime", var_name="series_id", value_name="value")
@@ -1149,9 +1150,9 @@ class RollingFeatures():
                 </ul>
             </details>
             <p>
-                <a href="https://skforecast.org/{skforecast.__version__}/api/preprocessing.html#skforecast.preprocessing.preprocessing.RollingFeatures">&#128712 <strong>API Reference</strong></a>
+                <a href="https://skforecast.org/{__version__}/api/preprocessing.html#skforecast.preprocessing.preprocessing.RollingFeatures">&#128712 <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
-                <a href="https://skforecast.org/{skforecast.__version__}/user_guides/window-features-and-custom-features.html">&#128462 <strong>User Guide</strong></a>
+                <a href="https://skforecast.org/{__version__}/user_guides/window-features-and-custom-features.html">&#128462 <strong>User Guide</strong></a>
             </p>
         </div>
         """
@@ -1965,9 +1966,9 @@ class ConformalIntervalCalibrator:
                 </ul>
             </details>
             <p>
-                <a href="https://skforecast.org/{skforecast.__version__}/api/preprocessing#skforecast.preprocessing.preprocessing.ConformalIntervalCalibrator">&#128712 <strong>API Reference</strong></a>
+                <a href="https://skforecast.org/{__version__}/api/preprocessing#skforecast.preprocessing.preprocessing.ConformalIntervalCalibrator">&#128712 <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
-                <a href="https://skforecast.org/{skforecast.__version__}/user_guides/probabilistic-forecasting-conformal-calibration.html">&#128462 <strong>User Guide</strong></a>
+                <a href="https://skforecast.org/{__version__}/user_guides/probabilistic-forecasting-conformal-calibration.html">&#128462 <strong>User Guide</strong></a>
             </p>
         </div>
         """

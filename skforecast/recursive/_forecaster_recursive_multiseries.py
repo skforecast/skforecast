@@ -19,7 +19,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.base import clone
 from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder
 
-import skforecast
+from .. import __version__
 from ..base import ForecasterBase
 from ..exceptions import (
     DataTransformationWarning,
@@ -423,7 +423,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self.creation_date                      = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
         self.is_fitted                          = False
         self.fit_date                           = None
-        self.skforecast_version                 = skforecast.__version__
+        self.skforecast_version                 = __version__
         self.python_version                     = sys.version.split(" ")[0]
         self.forecaster_id                      = forecaster_id
         self._probabilistic_mode                = "binned"
@@ -750,9 +750,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 </ul>
             </details>
             <p>
-                <a href="https://skforecast.org/{skforecast.__version__}/api/forecasterrecursivemultiseries.html">&#128712 <strong>API Reference</strong></a>
+                <a href="https://skforecast.org/{__version__}/api/forecasterrecursivemultiseries.html">&#128712 <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
-                <a href="https://skforecast.org/{skforecast.__version__}/user_guides/independent-multi-time-series-forecasting.html">&#128462 <strong>User Guide</strong></a>
+                <a href="https://skforecast.org/{__version__}/user_guides/independent-multi-time-series-forecasting.html">&#128462 <strong>User Guide</strong></a>
             </p>
         </div>
         """
@@ -1472,7 +1472,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         
         if isinstance(idx, pd.DatetimeIndex):
             span_index = pd.date_range(
-                start=min(min_index), end=max(max_index), freq=idx.freqstr
+                start=min(min_index), end=max(max_index), freq=idx.freq
             )
         else:
             span_index = pd.RangeIndex(
@@ -1858,7 +1858,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self.training_range_ = {k: v[[0, -1]] for k, v in series_indexes.items()}
         self.index_type_ = type(series_indexes[series_names_in_[0]])
         if isinstance(series_indexes[series_names_in_[0]], pd.DatetimeIndex):
-            self.index_freq_ = series_indexes[series_names_in_[0]].freqstr
+            self.index_freq_ = series_indexes[series_names_in_[0]].freq
         else:
             self.index_freq_ = series_indexes[series_names_in_[0]].step
 
