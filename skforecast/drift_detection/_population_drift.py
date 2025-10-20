@@ -10,9 +10,11 @@ import numpy as np
 import pandas as pd
 from scipy.stats import chi2_contingency, ecdf
 from scipy.spatial.distance import jensenshannon
+from sklearn.exceptions import NotFittedError
 import warnings
 
 from .. import __version__
+from ..exceptions import UnknownLevelWarning
 from ..utils import get_style_repr_html
 
 
@@ -135,6 +137,8 @@ class PopulationDriftDetector:
     detectors_ : dict
         Dictionary of PopulationDriftDetector instances for each group when
         fitting/predicting on MultiIndex DataFrames.
+    series_names_in_ : list
+        List of series IDs present during fitting when using MultiIndex DataFrames.
     
     Notes
     -----
@@ -177,7 +181,8 @@ class PopulationDriftDetector:
         self.ref_ranges_               = {}
         self.ref_categories_           = {}
         self.n_chunks_reference_data_  = None
-        self.detectors_                = {}  # NOTE: Only used for multiseries
+        self.detectors_                = {}    # NOTE: Only used for multiseries
+        self.series_names_in_          = None  # NOTE: Only used for multiseries
 
         if not (0 < threshold < 1):
             raise ValueError(f"`threshold` must be between 0 and 1. Got {threshold}.")
@@ -225,7 +230,7 @@ class PopulationDriftDetector:
         content = f"""
         <div class="container-{unique_id}">
             <h2>{type(self).__name__}</h2>
-            <details open>
+            <details>
                 <summary>General Information</summary>
                 <ul>
                     <li><strong>Fitted features:</strong> {self.ref_features_}</li>
@@ -272,18 +277,14 @@ class PopulationDriftDetector:
         self.ref_ranges_               = {}
         self.ref_categories_           = {}
         self.n_chunks_reference_data_  = None
-        self.detectors_                = {}  # NOTE: Only used for multiseries
-
-        if not isinstance(X, pd.DataFrame):
-            raise ValueError(f"`X` must be a pandas DataFrame. Got {type(X)} instead.")
+        self.detectors_                = {}    # NOTE: Only used for multiseries
+        self.series_names_in_          = None  # NOTE: Only used for multiseries
 
         if self.chunk_size is not None:
             if isinstance(self.chunk_size, pd.offsets.DateOffset) and not isinstance(X.index, pd.DatetimeIndex):
                 raise ValueError(
                     "`chunk_size` is a pandas DateOffset but `X` does not have a DatetimeIndex."
                 )
-        
-        features = X.columns.tolist()
 
         if self.chunk_size is not None:
             if isinstance(self.chunk_size, int):
@@ -300,13 +301,15 @@ class PopulationDriftDetector:
 
         self.n_chunks_reference_data_ = len(chunks_ref)
 
+        features = X.columns.tolist()
         for feature in features:
             is_numeric = pd.api.types.is_numeric_dtype(X[feature])
             ref = X[feature].dropna()
             if ref.empty:
                 warnings.warn(
                     f"Feature '{feature}' contains only NaN values in the reference dataset. "
-                    f"Drift detection skipped."
+                    f"Drift detection skipped.",
+                    UnknownLevelWarning
                 )
                 continue
 
@@ -416,81 +419,27 @@ class PopulationDriftDetector:
 
         """
 
+        if not isinstance(X, pd.DataFrame):
+            raise ValueError(
+                f"`X` must be a pandas DataFrame. Got {type(X)} instead."
+            )
+
         if isinstance(X.index, pd.MultiIndex):
             X = X.groupby(level=0)
 
             for idx, group in X:
                 group = group.droplevel(0)
                 self.detectors_[idx] = PopulationDriftDetector(
-                    chunk_size=self.chunk_size,
-                    threshold=self.threshold
-                )
+                                           chunk_size = self.chunk_size,
+                                           threshold  = self.threshold
+                                       )
                 self.detectors_[idx]._fit(group)
         else:
             self._fit(X)
 
         self.is_fitted_ = True
+        self.series_names_in_ = list(self.detectors_.keys()) if self.detectors_ else None
         self._collect_attributes()
-
-    def predict(self, X) -> tuple[pd.DataFrame, pd.DataFrame]:
-        """
-        Predict drift in new data by comparing the estimated statistics to
-        reference thresholds. Two dataframes are returned, the first one with
-        detailed information of each chunk, the second only the total number
-        of chunks where drift have been detected.
-
-        Parameters
-        ----------
-        X : pandas DataFrame
-            New data to compare against the reference.
-
-        Returns
-        -------
-        results : pandas DataFrame
-            DataFrame with the drift detection results for each chunk.
-        summary : pandas DataFrame
-            Summary DataFrame with the total number and percentage of chunks
-            with detected drift per feature (or per series_id and feature if
-            MultiIndex).
-        
-        """
-
-        if isinstance(X.index, pd.MultiIndex):
-            results = []
-            for idx, group in X.groupby(level=0):
-                group = group.droplevel(0)
-                if idx not in self.detectors_:
-                    warnings.warn(
-                        f"Series {idx} was not present during fitting. Drift detection skipped."
-                    )
-                    continue
-
-                detector = self.detectors_[idx]
-                result = detector._predict(group)
-                result.insert(0, 'series_id', idx)
-                results.append(result)
-
-            results = pd.concat(results, ignore_index=True)
-        else:
-            results = self._predict(X)
-
-        if results.columns[0] == 'series_id':
-            summary = (
-                results.groupby(['series_id', 'feature'])['drift_detected']
-                .agg(['sum', 'mean'])
-                .reset_index()
-                .rename(columns={'sum': 'n_chunks_with_drift', 'mean': 'pct_chunks_with_drift'})
-            )
-        else:
-            summary = (
-                results.groupby(['feature'])['drift_detected']
-                .agg(['sum', 'mean'])
-                .reset_index()
-                .rename(columns={'sum': 'n_chunks_with_drift', 'mean': 'pct_chunks_with_drift'})
-            )
-        summary['pct_chunks_with_drift'] = summary['pct_chunks_with_drift'] * 100
-        
-        return results, summary
 
     def _predict(self, X) -> pd.DataFrame:
         """
@@ -508,24 +457,12 @@ class PopulationDriftDetector:
             DataFrame with the drift detection results for each chunk.
 
         """
-
-        if not isinstance(X, pd.DataFrame):
-            raise ValueError(f"`X` must be a pandas DataFrame. Got {type(X)} instead.")
-        
-        if not self.is_fitted_:
-            raise ValueError(
-                "This PopulationDriftDetector instance is not fitted yet. "
-                "Call 'fit' with appropriate arguments before using this estimator."
-            )
         
         if self.chunk_size is not None:
             if isinstance(self.chunk_size, pd.offsets.DateOffset) and not isinstance(X.index, pd.DatetimeIndex):
                 raise ValueError(
                     "`chunk_size` is a pandas DateOffset but `X` does not have a DatetimeIndex."
                 )
-
-        features = X.columns.tolist()
-        results = []
 
         if self.chunk_size is not None:
             if isinstance(self.chunk_size, int):
@@ -538,15 +475,18 @@ class PopulationDriftDetector:
         else:
             chunks = [X]
 
+        results = []
+        features = X.columns.tolist()
         for feature in features:
             if feature not in self.ref_features_:
                 warnings.warn(
                     f"Feature '{feature}' was not present during fitting. Drift detection skipped."
-                    f"for this feature."
+                    f"for this feature.",
+                    UnknownLevelWarning
                 )
                 continue
+
             is_numeric = pd.api.types.is_numeric_dtype(X[feature])
-            # TODO: Not used?
             ref_bin_edges = self.ref_bins_edges_.get(feature, None)
             ref_hist = self.ref_hist_.get(feature, None)
             ref_probs = self.ref_probs_.get(feature, None)
@@ -571,7 +511,7 @@ class PopulationDriftDetector:
                     if is_numeric:
                         new_ecdf = ecdf(new)
                         # Compute histogram for new data using reference bin edges and normalize
-                        new_hist = np.histogram(new, bins=self.ref_bins_edges_[feature])[0] / len(new)
+                        new_hist = np.histogram(new, bins=ref_bin_edges)[0] / len(new)
                         # Handle out-of-bin data: if new data contains values outside the reference range,
                         # they will not be counted in the histogram, leading to a sum < 1. To ensure
                         # the histograms are comparable, we add an extra bin for "out-of-range" data with
@@ -653,6 +593,76 @@ class PopulationDriftDetector:
         
         return results_df
 
+    def predict(self, X) -> tuple[pd.DataFrame, pd.DataFrame]:
+        """
+        Predict drift in new data by comparing the estimated statistics to
+        reference thresholds. Two dataframes are returned, the first one with
+        detailed information of each chunk, the second only the total number
+        of chunks where drift have been detected.
+
+        Parameters
+        ----------
+        X : pandas DataFrame
+            New data to compare against the reference.
+
+        Returns
+        -------
+        results : pandas DataFrame
+            DataFrame with the drift detection results for each chunk.
+        summary : pandas DataFrame
+            Summary DataFrame with the total number and percentage of chunks
+            with detected drift per feature (or per series_id and feature if
+            MultiIndex).
+        
+        """
+        
+        if not self.is_fitted_:
+            raise NotFittedError(
+                "This PopulationDriftDetector instance is not fitted yet. "
+                "Call 'fit' with appropriate arguments before using this estimator."
+            )
+
+        if not isinstance(X, pd.DataFrame):
+            raise ValueError(f"`X` must be a pandas DataFrame. Got {type(X)} instead.")
+
+        if isinstance(X.index, pd.MultiIndex):
+            results = []
+            for idx, group in X.groupby(level=0):
+                group = group.droplevel(0)
+                if idx not in self.detectors_:
+                    warnings.warn(
+                        f"Series '{idx}' was not present during fitting. Drift detection skipped.",
+                        UnknownLevelWarning
+                    )
+                    continue
+
+                detector = self.detectors_[idx]
+                result = detector._predict(group)
+                result.insert(0, 'series_id', idx)
+                results.append(result)
+
+            results = pd.concat(results, ignore_index=True)
+        else:
+            results = self._predict(X)
+
+        if results.columns[0] == 'series_id':
+            summary = (
+                results.groupby(['series_id', 'feature'])['drift_detected']
+                .agg(['sum', 'mean'])
+                .reset_index()
+                .rename(columns={'sum': 'n_chunks_with_drift', 'mean': 'pct_chunks_with_drift'})
+            )
+        else:
+            summary = (
+                results.groupby(['feature'])['drift_detected']
+                .agg(['sum', 'mean'])
+                .reset_index()
+                .rename(columns={'sum': 'n_chunks_with_drift', 'mean': 'pct_chunks_with_drift'})
+            )
+        summary['pct_chunks_with_drift'] = summary['pct_chunks_with_drift'] * 100
+        
+        return results, summary
+
     def _collect_attributes(self) -> None:
         """
         Collect attributes for representation and inspection and update the instance
@@ -669,7 +679,12 @@ class PopulationDriftDetector:
         None
 
         """
-        attr_names = [k for k in self.__dict__.keys() if k not in ['is_fitted_', 'detectors_']]
+
+        attr_names = [
+            k 
+            for k in self.__dict__.keys() 
+            if k not in ['is_fitted_', 'detectors_', 'series_names_in_']
+        ]
         
         if self.detectors_:
             for attr_name in attr_names:

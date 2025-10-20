@@ -577,7 +577,7 @@ class RangeDriftDetector:
                     if key not in self.series_names_in_:
                         warnings.warn(
                             f"'{key}' was not seen during training. Its range is unknown.",
-                            UnknownLevelWarning,
+                            UnknownLevelWarning
                         )
                         continue
                     is_out_of_range = self._check_feature_range(

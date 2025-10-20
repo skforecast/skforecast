@@ -2,19 +2,21 @@
 # ==============================================================================
 from pathlib import Path
 import pytest
-import pandas as pd
-import numpy as np
-from ..._population_drift import PopulationDriftDetector
 import joblib
+import numpy as np
+import pandas as pd
+from sklearn.exceptions import NotFittedError
+from ..._population_drift import PopulationDriftDetector
 
-#fixtures
+# Fixtures
 THIS_DIR = Path(__file__).parent
 data = joblib.load(THIS_DIR/'fixture_data_population_drift.joblib')
 results_nannyml = joblib.load(THIS_DIR/'fixture_results_nannyml.joblib')
 results_multiseries = joblib.load(THIS_DIR/'fixture_results_multiseries.joblib')
 summary_multiseries = joblib.load(THIS_DIR/'fixture_summary_multiseries.joblib')
 
-## Code used to generate fixture_results_nannyml
+
+# NOTE: Code used to generate fixture_results_nannyml
 # detector = nml.UnivariateDriftCalculator(
 #     column_names=data_train.columns.tolist(),
 #     timestamp_column_name="date_time",
@@ -26,6 +28,22 @@ summary_multiseries = joblib.load(THIS_DIR/'fixture_summary_multiseries.joblib')
 # results_nannyml = detector.calculate(data=data_new.reset_index())
 # results_nannyml = results_nannyml.filter(period='analysis').to_df(multilevel=False)
 
+
+def test_predict_exception_when_detector_not_fitted():
+    """
+    Test exception is raised when trying to predict before fitting the detector.
+    """
+    detector = PopulationDriftDetector(
+        chunk_size='ME',            
+        threshold=0.99
+    )
+    X = data
+    err_msg = (
+        "This PopulationDriftDetector instance is not fitted yet. "
+        "Call 'fit' with appropriate arguments before using this estimator."
+    )
+    with pytest.raises(NotFittedError, match=err_msg):
+        detector.predict(X=X)
 
 
 def test_predict_exception_when_X_not_dataframe():
@@ -39,23 +57,6 @@ def test_predict_exception_when_X_not_dataframe():
     detector.fit(data)
     X = 'not a dataframe'
     err_msg = f"`X` must be a pandas DataFrame. Got {type(X)} instead."
-    with pytest.raises(ValueError, match=err_msg):
-        detector.predict(X=X)
-
-
-def test_predict_exception_when_detector_not_fitted():
-    """
-    Test exception is raised when trying to predict before fitting the detector.
-    """
-    detector = PopulationDriftDetector(
-        chunk_size='ME',            
-        threshold=0.99
-    )
-    X = data
-    err_msg = (
-                "This PopulationDriftDetector instance is not fitted yet. "
-                "Call 'fit' with appropriate arguments before using this estimator."
-            )
     with pytest.raises(ValueError, match=err_msg):
         detector.predict(X=X)
 
@@ -80,8 +81,8 @@ def test_predict_output_equivalence_nannyml():
     Test that the output of PopulationDriftDetector.predict is equivalent to
     the output of NannyML's univariate drift detection for each series_id and feature.
     """
-    data_train = data.iloc[: len(data)//2].copy()
-    data_new  = data.iloc[len(data)//2 :].copy()
+    data_train = data.iloc[: len(data) // 2].copy()
+    data_new  = data.iloc[len(data) // 2 :].copy()
     data_train['weather'] = data_train['weather'].astype('category')
     data_new['weather'] = pd.Categorical(data_new['weather'], categories=data_train['weather'].cat.categories)
 
@@ -170,6 +171,7 @@ def test_predict_output_equivalence_nannyml():
             check_names=False,
         )
 
+
 def test_predict_output_when_multiple_series():
     """
     Test that PopulationDriftDetector.predict works when data contains multiple series.
@@ -181,7 +183,7 @@ def test_predict_output_when_multiple_series():
             data.assign(series='series_2'),
             data.assign(series='series_3')
         ]
-    ).set_index('series', append=True).swaplevel(0,1)
+    ).set_index('series', append=True).swaplevel(0, 1)
 
     detector = PopulationDriftDetector(
         chunk_size='ME',            
@@ -191,5 +193,4 @@ def test_predict_output_when_multiple_series():
     results, summary = detector.predict(data_multiseries)
     pd.testing.assert_frame_equal(results, results_multiseries)
     pd.testing.assert_frame_equal(summary, summary_multiseries)
-
     
