@@ -631,6 +631,59 @@ def reshape_exog_long_to_dict(
     return exog_dict
 
 
+def reshape_series_exog_dict_to_long(series: dict | None, exog: dict | None) -> pd.DataFrame:
+    """
+    Convert dictionaries of series and exogenous variables to a long format
+    pandas DataFrame with MultiIndex. The first level of the MultiIndex contains the
+    series identifiers, and the second level contains the temporal index.
+
+    Parameters
+    ----------
+    series: dict | None
+        Dictionary with multiple time series (expected: dict[str, pd.Series]).
+    exog: dict | None
+        Dictionary with exogenous variables (expected: dict[str, pd.Series or pd.DataFrame]).
+    Returns
+    -------
+    pd.DataFrame
+        Long format DataFrame with MultiIndex.
+    """
+    if series is None and exog is None:
+        raise ValueError("Both series and exog cannot be None.")
+
+    if series is not None:
+        for k, v in series.items():
+            if not isinstance(v, (pd.Series, pd.DataFrame)):
+                raise TypeError(f"series['{k}'] must be pd.Series or pd.DataFrame.")
+        series = pd.concat(series.values(), keys=series.keys()).to_frame()
+        series.index.names = ['series_id', 'datetime']
+        series.columns = ['series_value']
+
+    if exog is not None:
+        for k, v in exog.items():
+            if not isinstance(v, (pd.Series, pd.DataFrame)):
+                raise TypeError(f"exog['{k}'] must be pd.Series or pd.DataFrame.")
+        exog = pd.concat(exog.values(), keys=exog.keys())
+        if isinstance(exog, pd.Series):
+            exog = exog.to_frame()
+        exog.index.names = ['series_id', 'datetime']
+
+    if series is None:
+        results = exog
+    elif exog is None:
+        results = series
+    else:
+        results = pd.merge(
+                    series,
+                    exog,
+                    left_index=True,
+                    right_index=True,
+                    how='outer'
+                )
+
+    return results
+
+
 def create_datetime_features(
     X: pd.Series | pd.DataFrame,
     features: list[str] | None = None,
