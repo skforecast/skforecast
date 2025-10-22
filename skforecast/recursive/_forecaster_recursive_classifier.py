@@ -15,7 +15,7 @@ import inspect
 from copy import copy, deepcopy
 from sklearn.exceptions import NotFittedError
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import OrdinalEncoder
 from sklearn.base import clone
 
 import skforecast
@@ -244,6 +244,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         # ======================================================================
         self.features_encoding                  = features_encoding
         self.use_native_categoricals            = False
+        self.encoding_mapping_                  = {}
         self.classes_                           = None  # Array of class labels
         self.n_classes_                         = None  # Number of classes
         self.series_dtype_                      = None  # Original dtype of y
@@ -269,6 +270,12 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         elif features_encoding == 'auto':
             if supports_categorical:
                 self.use_native_categoricals = True
+
+        # TODO: Incluimos handle_unknown y unknown_value?
+        self.encoder = OrdinalEncoder(
+                           categories = 'auto',
+                           dtype      = int
+                       )
 
         # ======================================================================
 
@@ -505,7 +512,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
     def _create_lags(
         self,
         y: np.ndarray,
-        y_classes: np.ndarray | None = None,
         X_as_pandas: bool = False,
         train_index: pd.Index | None = None
     ) -> tuple[np.ndarray | pd.DataFrame | None, np.ndarray]:
@@ -519,8 +525,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         ----------
         y : numpy ndarray
             Training time series values.
-        y_classes : numpy ndarray, default None
-            Array of unique classes in the target variable.
         X_as_pandas : bool, default False
             If `True`, the returned matrix `X_data` is a pandas DataFrame.
         train_index : pandas Index, default None
@@ -554,10 +558,11 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                          )
                 if self.use_native_categoricals:
                     # TODO: ver si se puede aplicar a todas las cols de golpe
+                    y_categories_codes = self.encoding_mapping_.values()
                     for col in X_data.columns:
                         X_data[col] = pd.Categorical(
                                           values     = X_data[col],
-                                          categories = y_classes,
+                                          categories = y_categories_codes,
                                           ordered    = False
                                       )
 
@@ -680,7 +685,16 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             Type of each exogenous variable/s used in training after the transformation
             applied by `transformer_exog`. If `transformer_exog` is not used, it 
             is equal to `exog_dtypes_in_`.
-        
+
+        Notes
+        -----
+        Categorical features are encoded using an `OrdinalEncoder` (`self.encoder`).  
+        The encoder's mapping (`self.encoding_mapping_`) is stored and later used 
+        to ensure that lag features are converted to categorical variables consistently.  
+        The goal is that the numerical values of the lag features match exactly the integer
+        codes produced by the `OrdinalEncoder`, i.e.:
+        `(X_train['lag_1'].cat.codes == X_train['lag_1']).all()` evaluates to `True`.
+
         """
 
         check_y(y=y)
@@ -700,42 +714,47 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
         # TODO: additional checks for classification if numeric?
         if np.issubdtype(y_values.dtype, np.floating):
-            if not np.all(np.mod(y_values, 1) == 0):
+            not_allowed = np.mod(y_values, 1) != 0
+            if np.any(not_allowed):
+                # TODO: Refine message
                 raise ValueError(
                     "Classification requires discrete classes. "
-                    "Float values found that are not integers."
+                    "Found float values with decimals different from 0."
                 )
-            # y_values = y_values.astype(int)
+            examples = ", ".join(map(str, np.unique(y_values[not_allowed])[:5]))
+            raise ValueError(
+                f"Invalid target for classification: targets must be discrete class labels "
+                f"(e.g., integers or strings). Received float dtype "
+                f"'{y_values.dtype}' with non-integer values (e.g., {examples}). "
+                f"If labels are meant to be classes, convert them to integers or strings, "
+                f"e.g., `y = np.round(y).astype(int)` if values should be integers, or map "
+                f"the floats to classes explicitly."
+            )
 
         # TODO: Use pandas categorical and create encoding as multiseries
+        fit_transformer = False if self.is_fitted else True
+        if fit_transformer:
+            y_encoded = self.encoder.fit_transform(y_values.reshape(-1, 1)).ravel()
+            for i, code in enumerate(self.encoder.categories_[0]):
+                self.encoding_mapping_[code] = i
+        else:
+            y_encoded = self.encoder.transform(y_values.reshape(-1, 1)).ravel()
 
-        unique_classes = np.unique(y_values)  # TODO: sacar del pandas cat
-        n_classes = len(unique_classes)
-        
+        n_classes = len(self.encoding_mapping_.keys())
         if n_classes < 2:
             raise ValueError(
                 f"The target variable must have at least 2 classes. "
-                f"Found {unique_classes} class."
+                f"Found {self.encoding_mapping_.keys()} class."
             )
         
+        # TODO: Probably not needed, remove later
         y_encoding_info = {
-            'classes': unique_classes,
+            'classes': self.encoding_mapping_.keys(),
             'n_classes': n_classes,
             'dtype_original': y_values.dtype,
             'is_numeric': np.issubdtype(y_values.dtype, np.number)
         }
         train_index = y_index[self.window_size:]
-
-        fit_transformer = False if self.is_fitted else True
-        if not y_encoding_info['is_numeric']:
-            if fit_transformer:
-                self.label_encoder_ = LabelEncoder()
-                y_values = self.label_encoder_.fit_transform(y_values)
-            else:
-                y_values = self.label_encoder_.transform(y_values)
-        
-        # TODO: If it is numeric doesn't work
-        y_encoding_info['classes_codes'] = self.label_encoder_.transform(unique_classes)
 
         exog_names_in_ = None
         exog_dtypes_in_ = None
@@ -802,8 +821,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         X_train_features_names_out_ = []
 
         X_train_lags, y_train = self._create_lags(
-                                    y           = y_values, 
-                                    y_classes   = y_encoding_info['classes_codes'], 
+                                    y           = y_encoded, 
                                     X_as_pandas = X_as_pandas, 
                                     train_index = train_index
                                 )
@@ -900,6 +918,15 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             Training values (predictors).
         y_train : pandas Series
             Values of the time series related to each row of `X_data`.
+
+        Notes
+        -----
+        Categorical features are encoded using an `OrdinalEncoder` (`self.encoder`).  
+        The encoder's mapping (`self.encoding_mapping_`) is stored and later used 
+        to ensure that lag features are converted to categorical variables consistently.  
+        The goal is that the numerical values of the lag features match exactly the integer
+        codes produced by the `OrdinalEncoder`, i.e.:
+        `(X_train['lag_1'].cat.codes == X_train['lag_1']).all()` evaluates to `True`.
         
         """
 
@@ -1032,6 +1059,15 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         Returns
         -------
         None
+
+        Notes
+        -----
+        Categorical features are encoded using an `OrdinalEncoder` (`self.encoder`).  
+        The encoder's mapping (`self.encoding_mapping_`) is stored and later used 
+        to ensure that lag features are converted to categorical variables consistently.  
+        The goal is that the numerical values of the lag features match exactly the integer
+        codes produced by the `OrdinalEncoder`, i.e.:
+        `(X_train['lag_1'].cat.codes == X_train['lag_1']).all()` evaluates to `True`.
         
         """
 
