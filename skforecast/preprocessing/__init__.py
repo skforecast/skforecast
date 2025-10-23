@@ -6,6 +6,7 @@ from .preprocessing import (
     reshape_series_long_to_dict,
     reshape_exog_long_to_dict,
     RollingFeatures,
+    RollingFeaturesClassification,
     QuantileBinner,
     FastOrdinalEncoder,
     ConformalIntervalCalibrator,

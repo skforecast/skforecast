@@ -271,7 +271,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             if supports_categorical:
                 self.use_native_categoricals = True
 
-        # TODO: Incluimos handle_unknown y unknown_value?
         self.encoder = OrdinalEncoder(
                            categories = 'auto',
                            dtype      = int
@@ -279,6 +278,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
         # ======================================================================
 
+        # TODO: Checks that stats are the ones allowed for this forecaster
         self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
         self.window_features, self.window_features_names, self.max_size_window_features = (
             initialize_window_features(window_features)
@@ -557,7 +557,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                              index   = train_index
                          )
                 if self.use_native_categoricals:
-                    # TODO: ver si se puede aplicar a todas las cols de golpe
                     y_categories_codes = self.encoding_mapping_.values()
                     for col in X_data.columns:
                         X_data[col] = pd.Categorical(
@@ -566,7 +565,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                                           ordered    = False
                                       )
 
-        # TODO: Need y_train as categorical?
         y_data = y[self.window_size:]
 
         return X_data, y_data
@@ -716,22 +714,15 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         if np.issubdtype(y_values.dtype, np.floating):
             not_allowed = np.mod(y_values, 1) != 0
             if np.any(not_allowed):
-                # TODO: Refine message
+                examples = ", ".join(map(str, np.unique(y_values[not_allowed])[:5]))
                 raise ValueError(
-                    "Classification requires discrete classes. "
-                    "Found float values with decimals different from 0."
+                    f"Invalid target for classification: targets must be discrete "
+                    f"class labels (strings, integers or floats with decimals "
+                    f"equal to 0). Received float dtype '{y_values.dtype}' with "
+                    f"decimals (e.g., {examples}). "
                 )
-            examples = ", ".join(map(str, np.unique(y_values[not_allowed])[:5]))
-            raise ValueError(
-                f"Invalid target for classification: targets must be discrete class labels "
-                f"(e.g., integers or strings). Received float dtype "
-                f"'{y_values.dtype}' with non-integer values (e.g., {examples}). "
-                f"If labels are meant to be classes, convert them to integers or strings, "
-                f"e.g., `y = np.round(y).astype(int)` if values should be integers, or map "
-                f"the floats to classes explicitly."
-            )
 
-        # TODO: Use pandas categorical and create encoding as multiseries
+        # NOTE: See Notes sections for explanation
         fit_transformer = False if self.is_fitted else True
         if fit_transformer:
             y_encoded = self.encoder.fit_transform(y_values.reshape(-1, 1)).ravel()
@@ -830,6 +821,8 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             X_train_features_names_out_.extend(self.lags_names)
         
         # TODO: Adapt window_features for classification
+        # Proporción de cada clase en la ventana, por ejemplo 3 columnas si hay 3 clases
+        # Clase 0: 0.4, Clase 1: 0.5, Clase 2: 0.1
         X_train_window_features_names_out_ = None
         if self.window_features is not None:
             # n_diff = 0 if self.differentiation is None else self.differentiation
@@ -1246,6 +1239,17 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         last_window_values = (
             last_window.iloc[-self.window_size:].to_numpy(copy=True).ravel()
         )
+
+        # TODO: Check last_window is a subsett of encoding_mapping_.keys() y 
+        # no contienen nans.
+        invalid_values = set(last_window_values) - set(self.encoding_mapping_.keys())
+        if invalid_values:
+            raise ValueError(
+                f"The `last_window` contains class labels not seen during training "
+                f"({invalid_values}).\n"
+                f"All class labels seen during training: {set(self.encoding_mapping_.keys())}."
+            )
+
         # last_window_values = transform_numpy(
         #                          array             = last_window_values,
         #                          transformer       = self.transformer_y,
