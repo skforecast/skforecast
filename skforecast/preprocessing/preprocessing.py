@@ -631,11 +631,17 @@ def reshape_exog_long_to_dict(
     return exog_dict
 
 
-def reshape_series_exog_dict_to_long(series: dict | None, exog: dict | None) -> pd.DataFrame:
+def reshape_series_exog_dict_to_long(
+    series: dict | None,
+    exog: dict | None,
+    colname_series: str = 'series_value',
+    index_names: list[str] = ['series_id', 'datetime']
+) -> pd.DataFrame:
     """
     Convert dictionaries of series and exogenous variables to a long format
     pandas DataFrame with MultiIndex. The first level of the MultiIndex contains the
-    series identifiers, and the second level contains the temporal index.
+    series identifiers, and the second level contains the temporal index. If both
+    series and exog are provided, they are merged into a single DataFrame.
 
     Parameters
     ----------
@@ -643,6 +649,12 @@ def reshape_series_exog_dict_to_long(series: dict | None, exog: dict | None) -> 
         Dictionary with multiple time series (expected: dict[str, pd.Series]).
     exog: dict | None
         Dictionary with exogenous variables (expected: dict[str, pd.Series or pd.DataFrame]).
+    colname_series: str, default 'series_value'
+        Column name for the series values in the resulting DataFrame.
+    index_names: list[str], default ['series_id', 'datetime']
+        Names for the levels of the MultiIndex in the resulting DataFrame. The first
+        name corresponds to the series identifier, and the second name corresponds
+        to the temporal index.
     Returns
     -------
     pd.DataFrame
@@ -652,21 +664,25 @@ def reshape_series_exog_dict_to_long(series: dict | None, exog: dict | None) -> 
         raise ValueError("Both series and exog cannot be None.")
 
     if series is not None:
+        if not isinstance(series, dict):
+            raise TypeError(f"`series` must be a dictionary. Got {type(series)}.")
         for k, v in series.items():
-            if not isinstance(v, (pd.Series, pd.DataFrame)):
+            if not isinstance(v, pd.Series):
                 raise TypeError(f"series['{k}'] must be pd.Series or pd.DataFrame.")
         series = pd.concat(series.values(), keys=series.keys()).to_frame()
-        series.index.names = ['series_id', 'datetime']
-        series.columns = ['series_value']
+        series.index.names = index_names
+        series.columns = [colname_series]
 
     if exog is not None:
+        if not isinstance(exog, dict):
+            raise TypeError(f"`exog` must be a dictionary. Got {type(exog)}.")
         for k, v in exog.items():
             if not isinstance(v, (pd.Series, pd.DataFrame)):
                 raise TypeError(f"exog['{k}'] must be pd.Series or pd.DataFrame.")
         exog = pd.concat(exog.values(), keys=exog.keys())
         if isinstance(exog, pd.Series):
             exog = exog.to_frame()
-        exog.index.names = ['series_id', 'datetime']
+        exog.index.names = index_names
 
     if series is None:
         results = exog
@@ -678,7 +694,7 @@ def reshape_series_exog_dict_to_long(series: dict | None, exog: dict | None) -> 
                     exog,
                     left_index=True,
                     right_index=True,
-                    how='outer'
+                    how='left'
                 )
 
     return results
