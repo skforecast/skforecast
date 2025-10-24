@@ -273,7 +273,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
         self.encoder = OrdinalEncoder(
                            categories = 'auto',
-                           dtype      = int
+                           dtype      = float if features_encoding == 'numeric' else int
                        )
 
         # ======================================================================
@@ -378,7 +378,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             f"Transformer for y: {self.transformer_y} \n"
             f"Transformer for exog: {self.transformer_exog} \n"
             f"Weight function included: {True if self.weight_func is not None else False} \n"
-            f"Differentiation order: {self.differentiation} \n"
             f"Training range: {self.training_range_.to_list() if self.is_fitted else None} \n"
             f"Training index type: {str(self.index_type_).split('.')[-1][:-2] if self.is_fitted else None} \n"
             f"Training index frequency: {self.index_freq_ if self.is_fitted else None} \n"
@@ -425,7 +424,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                     <li><strong>Series name:</strong> {self.series_name_in_}</li>
                     <li><strong>Exogenous included:</strong> {self.exog_in_}</li>
                     <li><strong>Weight function included:</strong> {self.weight_func is not None}</li>
-                    <li><strong>Differentiation order:</strong> {self.differentiation}</li>
                     <li><strong>Creation date:</strong> {self.creation_date}</li>
                     <li><strong>Last fit date:</strong> {self.fit_date}</li>
                     <li><strong>Skforecast version:</strong> {self.skforecast_version}</li>
@@ -727,7 +725,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         if fit_transformer:
             y_encoded = self.encoder.fit_transform(y_values.reshape(-1, 1)).ravel()
             for i, code in enumerate(self.encoder.categories_[0]):
-                self.encoding_mapping_[code] = i
+                self.encoding_mapping_[code] = i if self.features_encoding != 'numeric' else float(i)
         else:
             y_encoded = self.encoder.transform(y_values.reshape(-1, 1)).ravel()
 
@@ -820,18 +818,18 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             X_train.append(X_train_lags)
             X_train_features_names_out_.extend(self.lags_names)
         
-        # TODO: Adapt window_features for classification
-        # Proporción de cada clase en la ventana, por ejemplo 3 columnas si hay 3 clases
-        # Clase 0: 0.4, Clase 1: 0.5, Clase 2: 0.1
         X_train_window_features_names_out_ = None
         if self.window_features is not None:
-            # n_diff = 0 if self.differentiation is None else self.differentiation
-            # y_window_features = pd.Series(y_values[n_diff:], index=y_index[n_diff:])
+            y_window_features = pd.Series(y_encoded, index=y_index)
             X_train_window_features, X_train_window_features_names_out_ = (
                 self._create_window_features(
-                    y=y_values, X_as_pandas=X_as_pandas, train_index=train_index
+                    y=y_window_features, X_as_pandas=X_as_pandas, train_index=train_index
                 )
             )
+
+            # FIXME: When 'mode' is used, ideally it should be converted to categorical
+            # not done as we can't know its position when 'proportion' is used.
+
             X_train.extend(X_train_window_features)
             X_train_features_names_out_.extend(X_train_window_features_names_out_)
 
@@ -866,7 +864,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                       name  = 'y'
                   )
 
-        # TODO: last_window needs to be stored here, already encoded?
         last_window_ = None
         if store_last_window:
             last_window_ = pd.DataFrame(

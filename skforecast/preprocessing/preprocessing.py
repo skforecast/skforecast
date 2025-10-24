@@ -12,6 +12,8 @@ import warnings
 from numba import njit
 import numpy as np
 import pandas as pd
+from scipy.stats import mode as scipy_mode
+from scipy.stats import entropy as scipy_entropy
 from sklearn.base import BaseEstimator
 from sklearn.base import TransformerMixin
 from sklearn.exceptions import NotFittedError
@@ -989,10 +991,10 @@ def _n_changes_jit(x):  # pragma: no cover
     for i in range(1, len(x)):
         if x[i] != x[i - 1]:
             changes += 1
+
     return changes
 
-from scipy.stats import mode as scipy_mode
-from scipy.stats import entropy as scipy_entropy
+
 def _entropy(x):  # pragma: no cover
     """
     Calculate entropy of class distribution.
@@ -1001,6 +1003,7 @@ def _entropy(x):  # pragma: no cover
         return np.nan
     _, counts = np.unique(x, return_counts=True)
     probabilities = counts / len(x)
+
     return scipy_entropy(probabilities, base=2)
 
 
@@ -1388,8 +1391,6 @@ class RollingFeatures():
             return rolling_obj.std() / rolling_obj.mean()
         elif stat == 'ewm':
             kwargs = self.kwargs_stats.get(stat, {})
-            # TODO: Show Ximo
-            # return rolling_obj.apply(lambda x: _ewm_jit(x.to_numpy(), **kwargs))
             return rolling_obj.apply(lambda x: _ewm_jit(x, **kwargs), raw=True)
         else:
             raise ValueError(f"Statistic '{stat}' is not implemented.")
@@ -1535,7 +1536,7 @@ class RollingFeatures():
         
         return rolling_features
 
-
+# TODO: Adapt docstring to Classification
 class RollingFeaturesClassification():
     """
     This class computes rolling features. To avoid data leakage, the last point 
@@ -1568,10 +1569,6 @@ class RollingFeaturesClassification():
     fillna : str, float, default None
         Fill missing values in `transform_batch` method. Available 
         methods are: 'mean', 'median', 'ffill', 'bfill', or a float value.
-    kwargs_stats : dict, default {'ewm': {'alpha': 0.3}}
-        Dictionary with additional arguments for the statistics. The keys are the
-        statistic names and the values are dictionaries with the arguments for the
-        corresponding statistic. For example, {'ewm': {'alpha': 0.3}}.
     
     Attributes
     ----------
@@ -1592,8 +1589,6 @@ class RollingFeaturesClassification():
     unique_rolling_windows : dict
         Dictionary containing unique rolling window parameters and the corresponding
         statistics.
-    kwargs_stats : dict
-        Dictionary with additional arguments for the statistics. 
         
     """
 
@@ -1603,11 +1598,9 @@ class RollingFeaturesClassification():
         window_sizes: int | list[int],
         min_periods: int | list[int] | None = None,
         features_names: list[str] | None = None, 
-        fillna: str | float | None = None,
-        kwargs_stats: dict[str, dict[str, object]] | None = {'ewm': {'alpha': 0.3}}
+        fillna: str | float | None = None
     ) -> None:
         
-        # TODO: kwargs_stats not used in classification yet.
         self._validate_params(
             stats          = stats,
             window_sizes   = window_sizes,
@@ -1632,9 +1625,11 @@ class RollingFeaturesClassification():
             min_periods = [min_periods] * self.n_stats
         self.min_periods = min_periods
 
-        self.classes = None  # TODO: Make it an argument?
+        self.classes = None
         if features_names is None:
-            features_names = self._generate_feature_names()
+            features_names = []
+            for stat, window_size in zip(self.stats, self.window_sizes):
+                features_names.append(f"roll_{stat}_{window_size}")
         self.features_names = features_names
 
         self.fillna = fillna
@@ -1673,19 +1668,20 @@ class RollingFeaturesClassification():
         """
 
         info = (
-            f"RollingFeatures(\n"
+            f"RollingFeaturesClassifier(\n"
             f"    stats           = {self.stats},\n"
             f"    window_sizes    = {self.window_sizes},\n"
             f"    Max window size = {self.max_window_size},\n"
             f"    min_periods     = {self.min_periods},\n"
+            f"    classes         = {self.classes},\n"
             f"    features_names  = {self.features_names},\n"
             f"    fillna          = {self.fillna}\n"
-            f"    kwargs_stats    = {self.kwargs_stats},\n"
             f")"
         )
 
         return info
     
+    # TODO: Change link to user guide
     def _repr_html_(self) -> str:
         """
         HTML representation of the object.
@@ -1703,13 +1699,13 @@ class RollingFeaturesClassification():
                     <li><strong>Window size:</strong> {self.window_sizes}</li>
                     <li><strong>Maximum window size:</strong> {self.max_window_size}</li>
                     <li><strong>Minimum periods:</strong> {self.min_periods}</li>
+                    <li><strong>Classes:</strong> {self.classes}</li>
                     <li><strong>Features names:</strong> {self.features_names}</li>
                     <li><strong>Fill na strategy:</strong> {self.fillna}</li>
-                    <li><strong>Kwargs stats:</strong> {self.kwargs_stats}</li>
                 </ul>
             </details>
             <p>
-                <a href="https://skforecast.org/{skforecast.__version__}/api/preprocessing.html#skforecast.preprocessing.preprocessing.RollingFeatures">&#128712 <strong>API Reference</strong></a>
+                <a href="https://skforecast.org/{skforecast.__version__}/api/preprocessing.html#skforecast.preprocessing.preprocessing.RollingFeaturesClassification">&#128712 <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
                 <a href="https://skforecast.org/{skforecast.__version__}/user_guides/window-features-and-custom-features.html">&#128462 <strong>User Guide</strong></a>
             </p>
@@ -1724,8 +1720,7 @@ class RollingFeaturesClassification():
         window_sizes: int | list[int],
         min_periods: int | list[int] | None = None,
         features_names: list[str] | None = None, 
-        fillna: str | float | None = None,
-        kwargs_stats: dict[str, dict[str, object]] | None = None
+        fillna: str | float | None = None
     ) -> None:
         """
         Validate the parameters of the RollingFeatures class.
@@ -1749,10 +1744,6 @@ class RollingFeaturesClassification():
         fillna : str, float, default None
             Fill missing values in `transform_batch` method. Available 
             methods are: 'mean', 'median', 'ffill', 'bfill', or a float value.
-        kwargs_stats : dict, default None
-            Dictionary with additional arguments for the statistics. The keys are the
-            statistic names and the values are dictionaries with the arguments for the
-            corresponding statistic. For example, {'ewm': {'alpha': 0.3}}.
 
         Returns
         -------
@@ -1833,8 +1824,6 @@ class RollingFeaturesClassification():
                 f"`features_names` must be a list of strings or None. Got {type(features_names)}."
             )
         
-        # TODO: What to do if proportion is used and there are multiple classes?
-        # features_names must be None if 'proportion' is in stats.
         if isinstance(features_names, list):
             n_features_names = len(features_names)
             if n_features_names != n_stats:
@@ -1843,6 +1832,8 @@ class RollingFeaturesClassification():
                     f"must match length of `stats` list ({n_stats})."
                 )
         
+        # TODO: Not used as ForecasterRecursiveClassifier doesn't allow NaNs. Check
+        # when creating ForecasterRecursiveMultiSeriesClassifier
         # fillna
         if fillna is not None:
             if not isinstance(fillna, (int, float, str)):
@@ -1857,21 +1848,6 @@ class RollingFeaturesClassification():
                         f"'{fillna}' is not allowed. Allowed `fillna` "
                         f"values are: {allowed_fill_strategy} or a float value."
                     )
-
-    def _generate_feature_names(self) -> list[str]:
-        """
-        Generate default feature names based on stats and window sizes.
-        """
-        
-        features_names = []
-        for stat, window_size in zip(self.stats, self.window_sizes):
-            if stat == 'proportion' and self.classes is not None:
-                for cls in self.classes:
-                    features_names.append(f"roll_proportion_{window_size}_class_{cls}")
-            else:
-                features_names.append(f"roll_{stat}_{window_size}")
-
-        return features_names
 
     def _apply_stat_pandas(
         self, 
@@ -1906,17 +1882,7 @@ class RollingFeaturesClassification():
             dummies = pd.get_dummies(X, prefix='class')
             proportions = dummies.rolling(**rolling_params).sum() / rolling_obj.window
 
-            # Ensure columns match self.classes order
-            result_cols = []
-            for cls in self.classes:
-                col_name = f'class_{cls}'
-                if col_name in proportions.columns:
-                    result_cols.append(proportions[col_name])
-                else:
-                    # Class not present in data, add zero column
-                    result_cols.append(pd.Series(0, index=proportions.index))
-            
-            return pd.concat(result_cols, axis=1)
+            return proportions
             
         elif stat == 'mode':
             return rolling_obj.apply(lambda x: scipy_mode(x)[0], raw=True)
@@ -1950,8 +1916,18 @@ class RollingFeaturesClassification():
         """
 
         if self.classes is None:
-            self.classes = sorted(X.unique())
-            self.features_names = self._generate_feature_names()
+            self.classes = np.sort(X.unique())
+
+            features_names = []
+            for stat, feature_name in zip(self.stats, self.features_names):
+                if stat != 'proportion':
+                    features_names.append(feature_name)
+                else:
+                    for cls in self.classes:
+                        feature_name_class = f"{feature_name}_class_{cls}"
+                        features_names.append(feature_name_class)
+            
+            self.features_names = features_names
 
         for k in self.unique_rolling_windows.keys():
             rolling_obj = X.rolling(**self.unique_rolling_windows[k]['params'])
@@ -2011,11 +1987,9 @@ class RollingFeaturesClassification():
         if stat == 'proportion':
             # Calculate proportions for each class
             proportions = np.zeros(len(self.classes))
-            if len(X_window) > 0:
-                for i, cls in enumerate(self.classes):
-                    proportions[i] = np.sum(X_window == cls) / len(X_window)
-            else:
-                proportions[:] = np.nan
+            len_window = len(X_window)
+            for i, cls in enumerate(self.classes):
+                proportions[i] = np.sum(X_window == cls) / len_window
             return proportions
             
         elif stat == 'mode':
