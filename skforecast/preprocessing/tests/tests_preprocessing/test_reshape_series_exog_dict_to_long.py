@@ -4,12 +4,6 @@ import pytest
 import numpy as np
 import pandas as pd
 from ...preprocessing import reshape_series_exog_dict_to_long
-from ....exceptions import MissingValuesWarning
-
-# Fixtures
-from .fixtures_preprocessing import values_A, values_B, values_C
-from .fixtures_preprocessing import index_A, index_B, index_C
-from .fixtures_preprocessing import series_long
 
 def test_reshape_series_exog_dict_to_long_raises_ValueError_when_both_None():
     """

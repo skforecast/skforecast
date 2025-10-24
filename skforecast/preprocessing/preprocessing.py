@@ -668,7 +668,7 @@ def reshape_series_exog_dict_to_long(
             raise TypeError(f"`series` must be a dictionary. Got {type(series)}.")
         for k, v in series.items():
             if not isinstance(v, pd.Series):
-                raise TypeError(f"series['{k}'] must be pd.Series or pd.DataFrame.")
+                raise TypeError(f"series['{k}'] must be pd.Series.")
         series = pd.concat(series.values(), keys=series.keys()).to_frame()
         series.index.names = index_names
         series.columns = [colname_series]
