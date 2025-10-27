@@ -676,6 +676,8 @@ def reshape_series_exog_dict_to_long(
         If both `series` and `exog` are provided, columns from both are present.
         If only one is provided, only its columns are present.
 
+    """
+
     if series is None and exog is None:
         raise ValueError("Both `series` and `exog` cannot be None.")
 
@@ -2330,3 +2332,4 @@ class ConformalIntervalCalibrator:
         conformalized_intervals = pd.concat(conformalized_intervals)
 
         return conformalized_intervals
+
