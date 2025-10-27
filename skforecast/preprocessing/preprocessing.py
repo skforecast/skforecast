@@ -630,12 +630,13 @@ def reshape_exog_long_to_dict(
 
     return exog_dict
 
-# TODO: Add argument merge_how? PAra evitar perder datos de exog
+
 def reshape_series_exog_dict_to_long(
     series: dict[str, pd.Series] | None,
     exog: dict[str, pd.Series | pd.DataFrame] | None,
     series_col_name: str = 'series_value',
-    index_names: list[str] = ['series_id', 'datetime']
+    index_names: list[str] = ['series_id', 'datetime'],
+    merge_how: str = 'left'
 ) -> pd.DataFrame:
     """
     Convert dictionaries of series and exogenous variables to a long-format
@@ -655,6 +656,13 @@ def reshape_series_exog_dict_to_long(
         Names for the levels of the MultiIndex in the resulting DataFrame. The first
         name corresponds to the series identifier, and the second name corresponds
         to the temporal index.
+    merge_how: str, default 'left'
+        Type of merge to perform when combining `series` and `exog`. Options are:
+
+        - 'left': Keep only indices from `series` (default)
+        - 'right': Keep only indices from `exog`
+        - 'outer': Keep all indices from both `series` and `exog`
+        - 'inner': Keep only indices present in both
     
     Returns
     -------
@@ -672,9 +680,6 @@ def reshape_series_exog_dict_to_long(
         for k, v in series.items():
             if not isinstance(v, pd.Series):
                 raise TypeError(f"series['{k}'] must be a pandas Series.")
-        # series = pd.concat(series.values(), keys=series.keys()).to_frame()
-        # series.index.names = index_names
-        # series.columns = [series_col_name]
         series = pd.concat(series, names=index_names).to_frame(series_col_name)
 
     if exog is not None:
@@ -685,11 +690,9 @@ def reshape_series_exog_dict_to_long(
                 raise TypeError(
                     f"exog['{k}'] must be a pandas Series or a pandas DataFrame."
                 )
-        # exog = pd.concat(exog.values(), keys=exog.keys())
         exog = pd.concat(exog, names=index_names)
         if isinstance(exog, pd.Series):
             exog = exog.to_frame(name='exog_value')
-        # exog.index.names = index_names
 
     if series is not None and exog is not None:
         series_idx_type = type(series.index.get_level_values(1))
@@ -713,7 +716,9 @@ def reshape_series_exog_dict_to_long(
     elif exog is None:
         long_df = series
     else:
-        long_df = pd.merge(series, exog, left_index=True, right_index=True, how="left")
+        long_df = pd.merge(
+            series, exog, left_index=True, right_index=True, how=merge_how
+        )
 
     return long_df
 
