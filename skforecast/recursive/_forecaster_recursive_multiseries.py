@@ -821,6 +821,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         X_as_pandas: bool = False,
     ) -> tuple[list[np.ndarray | pd.DataFrame], list[str]]:
         """
+        Create window features from a time series.
         
         Parameters
         ----------

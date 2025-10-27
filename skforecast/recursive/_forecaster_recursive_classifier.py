@@ -20,7 +20,7 @@ from sklearn.base import clone
 
 import skforecast
 from ..base import ForecasterBase
-from ..exceptions import DataTransformationWarning, ResidualsUsageWarning
+from ..exceptions import DataTransformationWarning
 from ..utils import (
     initialize_lags,
     initialize_window_features,
@@ -83,21 +83,8 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         index. For example, a function that assigns a lower weight to certain dates.
         Ignored if `regressor` does not have the argument `sample_weight` in its `fit`
         method. The resulting `sample_weight` cannot have negative values.
-    differentiation : int, default None
-        Order of differencing applied to the time series before training the forecaster.
-        If `None`, no differencing is applied. The order of differentiation is the number
-        of times the differencing operation is applied to a time series. Differencing
-        involves computing the differences between consecutive data points in the series.
-        Before returning a prediction, the differencing operation is reversed.
     fit_kwargs : dict, default None
         Additional arguments to be passed to the `fit` method of the regressor.
-    binner_kwargs : dict, default None
-        Additional arguments to pass to the `QuantileBinner` used to discretize 
-        the residuals into k bins according to the predicted values associated 
-        with each residual. Available arguments are: `n_bins`, `method`, `subsample`,
-        `random_state` and `dtype`. Argument `method` is passed internally to the
-        function `numpy.percentile`.
-        **New in version 0.14.0**
     forecaster_id : str, int, default None
         Name used as an identifier of the forecaster.
     
@@ -121,9 +108,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         Maximum window size required by the window features.
     window_size : int
         The window size needed to create the predictors. It is calculated as the 
-        maximum value between `max_lag` and `max_size_window_features`. If 
-        differentiation is used, `window_size` is increased by n units equal to 
-        the order of differentiation so that predictors can be generated correctly.
+        maximum value between `max_lag` and `max_size_window_features`.
     transformer_y : object transformer (preprocessor)
         An instance of a transformer (preprocessor) compatible with the scikit-learn
         preprocessing API with methods: fit, transform, fit_transform and inverse_transform.
@@ -144,11 +129,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         This window represents the most recent data observed by the predictor
         during its training phase. It contains the values needed to predict the
         next step immediately after the training data. These values are stored
-        in the original scale of the time series before undergoing any transformations
-        or differentiation. When `differentiation` parameter is specified, the
-        dimensions of the `last_window_` are expanded as many values as the order
-        of differentiation. For example, if `lags` = 7 and `differentiation` = 1,
-        `last_window_` will have 8 values.
+        in the original scale of the time series before undergoing any transformation.
     index_type_ : type
         Type of index of the input used in training.
     index_freq_ : str
@@ -316,8 +297,8 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         self.__skforecast_tags__ = {
             "library": "skforecast",
             "estimator_type": "forecaster",
-            "estimator_name": "ForecasterRecursive",
-            "estimator_task": "regression",
+            "estimator_name": "ForecasterRecursiveClassifier",
+            "estimator_task": "classification",
             "forecasting_scope": "single-series",  # single-series | global
             "forecasting_strategy": "recursive",   # recursive | direct | deep_learning
             "index_types_supported": ["pandas.RangeIndex", "pandas.DatetimeIndex"],
@@ -331,10 +312,10 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
             "supports_lags": True,
             "supports_window_features": True,
-            "supports_transformer_series": True,
+            "supports_transformer_series": False,
             "supports_transformer_exog": True,
             "supports_weight_func": True,
-            "supports_differentiation": True,
+            "supports_differentiation": False,
 
             "prediction_types": ["point", "interval", "bootstrapping", "quantiles", "distribution"],
             "supports_probabilistic": True,
@@ -574,6 +555,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         X_as_pandas: bool = False,
     ) -> tuple[list[np.ndarray | pd.DataFrame], list[str]]:
         """
+        Create window features from a time series.
         
         Parameters
         ----------
@@ -1075,9 +1057,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         self.X_train_window_features_names_out_ = None
         self.X_train_exog_names_out_            = None
         self.X_train_features_names_out_        = None
-        self.in_sample_residuals_               = None
-        self.in_sample_residuals_by_bin_        = None
-        self.binner_intervals_                  = None
         self.is_fitted                          = False
         self.fit_date                           = None
 
@@ -1119,7 +1098,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         self.training_range_ = y.index[[0, -1]]
         self.index_type_ = type(y.index)
         if isinstance(y.index, pd.DatetimeIndex):
-            self.index_freq_ = y.index.freqstr
+            self.index_freq_ = y.index.freq
         else: 
             self.index_freq_ = y.index.step
 
@@ -1139,9 +1118,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         steps: int | str | pd.Timestamp, 
         last_window: pd.Series | pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | None = None,
-        predict_probabilistic: bool = False,
-        use_in_sample_residuals: bool = True,
-        use_binned_residuals: bool = True,
         check_inputs: bool = True
     ) -> tuple[np.ndarray, np.ndarray | None, pd.Index, int]:
         """
@@ -1164,19 +1140,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             right after training data.
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
-        predict_probabilistic : bool, default False
-            If `True`, the necessary checks for probabilistic predictions will be 
-            performed.
-        use_in_sample_residuals : bool, default True
-            If `True`, residuals from the training data are used as proxy of
-            prediction error to create predictions. 
-            If `False`, out of sample residuals (calibration) are used. 
-            Out-of-sample residuals must be precomputed using Forecaster's
-            `set_out_sample_residuals()` method.
-        use_binned_residuals : bool, default True
-            If `True`, residuals are selected based on the predicted values 
-            (binned selection).
-            If `False`, residuals are selected randomly.
         check_inputs : bool, default True
             If `True`, the input is checked for possible warnings and errors 
             with the `check_predict_input` function. This argument is created 
@@ -1222,17 +1185,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                 interval        = None
             )
 
-            if predict_probabilistic:
-                check_residuals_input(
-                    forecaster_name              = type(self).__name__,
-                    use_in_sample_residuals      = use_in_sample_residuals,
-                    in_sample_residuals_         = self.in_sample_residuals_,
-                    out_sample_residuals_        = self.out_sample_residuals_,
-                    use_binned_residuals         = use_binned_residuals,
-                    in_sample_residuals_by_bin_  = self.in_sample_residuals_by_bin_,
-                    out_sample_residuals_by_bin_ = self.out_sample_residuals_by_bin_
-                )
-
         last_window_values = (
             last_window.iloc[-self.window_size:].to_numpy(copy=True).ravel()
         )
@@ -1253,8 +1205,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         #                          fit               = False,
         #                          inverse_transform = False
         #                      )
-        # if self.differentiation is not None:
-        #     last_window_values = self.differentiator.fit_transform(last_window_values)
 
         if exog is not None:
             exog = input_to_frame(data=exog, input_name='exog')
@@ -1290,9 +1240,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         self,
         steps: int,
         last_window_values: np.ndarray,
-        exog_values: np.ndarray | None = None,
-        residuals: np.ndarray | dict[str, np.ndarray] | None = None,
-        use_binned_residuals: bool = True,
+        exog_values: np.ndarray | None = None
     ) -> np.ndarray:
         """
         Predict n steps ahead. It is an iterative process in which, each prediction,
@@ -1307,13 +1255,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             iteration of the prediction (t + 1).
         exog_values : numpy ndarray, default None
             Exogenous variable/s included as predictor/s.
-        residuals : numpy ndarray, dict, default None
-            Residuals used to generate bootstrapping predictions.
-        use_binned_residuals : bool, default True
-            If `True`, residuals are selected based on the predicted values 
-            (binned selection).
-            If `False`, residuals are selected randomly.
-
+        
         Returns
         -------
         predictions : numpy ndarray
@@ -1351,17 +1293,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             if exog_values is not None:
                 X[n_lags + n_window_features:] = exog_values[i]
         
-            pred = self.regressor.predict(X.reshape(1, -1)).ravel()
-            
-            if residuals is not None:
-                if use_binned_residuals:
-                    predicted_bin = self.binner.transform(pred).item()
-                    step_residual = residuals[predicted_bin][i]
-                else:
-                    step_residual = residuals[i]
-                
-                pred += step_residual
-            
+            pred = self.regressor.predict(X.reshape(1, -1)).ravel()            
             predictions[i] = pred[0]
 
             # Update `last_window` values. The first position is discarded and 
@@ -1982,180 +1914,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
         return predictions
 
-
-    def predict_quantiles(
-        self,
-        steps: int | str | pd.Timestamp,
-        last_window: pd.Series | pd.DataFrame | None = None,
-        exog: pd.Series | pd.DataFrame | None = None,
-        quantiles: list[float] | tuple[float] = [0.05, 0.5, 0.95],
-        n_boot: int = 250,
-        use_in_sample_residuals: bool = True,
-        use_binned_residuals: bool = True,
-        random_state: int = 123,
-    ) -> pd.DataFrame:
-        """
-        Calculate the specified quantiles for each step. After generating 
-        multiple forecasting predictions through a bootstrapping process, each 
-        quantile is calculated for each step.
-        
-        Parameters
-        ----------
-        steps : int, str, pandas Timestamp
-            Number of steps to predict. 
-            
-            - If steps is int, number of steps to predict. 
-            - If str or pandas Datetime, the prediction will be up to that date.
-        last_window : pandas Series, pandas DataFrame, default None
-            Series values used to create the predictors (lags) needed in the 
-            first iteration of the prediction (t + 1).
-            If `last_window = None`, the values stored in` self.last_window_` are
-            used to calculate the initial predictors, and the predictions start
-            right after training data.
-        exog : pandas Series, pandas DataFrame, default None
-            Exogenous variable/s included as predictor/s.
-        quantiles : list, tuple, default [0.05, 0.5, 0.95]
-            Sequence of quantiles to compute, which must be between 0 and 1 
-            inclusive. For example, quantiles of 0.05, 0.5 and 0.95 should be as 
-            `quantiles = [0.05, 0.5, 0.95]`.
-        n_boot : int, default 250
-            Number of bootstrapping iterations to perform when estimating quantiles.
-        use_in_sample_residuals : bool, default True
-            If `True`, residuals from the training data are used as proxy of
-            prediction error to create predictions. 
-            If `False`, out of sample residuals (calibration) are used. 
-            Out-of-sample residuals must be precomputed using Forecaster's
-            `set_out_sample_residuals()` method.
-        use_binned_residuals : bool, default True
-            If `True`, residuals are selected based on the predicted values 
-            (binned selection).
-            If `False`, residuals are selected randomly.
-        random_state : int, default 123
-            Seed for the random number generator to ensure reproducibility.
-
-        Returns
-        -------
-        predictions : pandas DataFrame
-            Quantiles predicted by the forecaster.
-
-        References
-        ----------
-        .. [1] Forecasting: Principles and Practice (3rd ed) Rob J Hyndman and George Athanasopoulos.
-               https://otexts.com/fpp3/prediction-intervals.html
-        
-        """
-
-        check_interval(quantiles=quantiles)
-
-        boot_predictions = self.predict_bootstrapping(
-                               steps                   = steps,
-                               last_window             = last_window,
-                               exog                    = exog,
-                               n_boot                  = n_boot,
-                               random_state            = random_state,
-                               use_in_sample_residuals = use_in_sample_residuals,
-                               use_binned_residuals    = use_binned_residuals
-                           )
-
-        predictions = boot_predictions.quantile(q=quantiles, axis=1).transpose()
-        predictions.columns = [f'q_{q}' for q in quantiles]
-
-        return predictions
-
-
-    def predict_dist(
-        self,
-        steps: int | str | pd.Timestamp,
-        distribution: object,
-        last_window: pd.Series | pd.DataFrame | None = None,
-        exog: pd.Series | pd.DataFrame | None = None,
-        n_boot: int = 250,
-        use_in_sample_residuals: bool = True,
-        use_binned_residuals: bool = True,
-        random_state: int = 123,
-    ) -> pd.DataFrame:
-        """
-        Fit a given probability distribution for each step. After generating 
-        multiple forecasting predictions through a bootstrapping process, each 
-        step is fitted to the given distribution.
-        
-        Parameters
-        ----------
-        steps : int, str, pandas Timestamp
-            Number of steps to predict. 
-            
-            - If steps is int, number of steps to predict. 
-            - If str or pandas Datetime, the prediction will be up to that date.
-        distribution : object
-            A distribution object from scipy.stats with methods `_pdf` and `fit`. 
-            For example scipy.stats.norm.
-        last_window : pandas Series, pandas DataFrame, default None
-            Series values used to create the predictors (lags) needed in the 
-            first iteration of the prediction (t + 1).  
-            If `last_window = None`, the values stored in` self.last_window_` are
-            used to calculate the initial predictors, and the predictions start
-            right after training data.
-        exog : pandas Series, pandas DataFrame, default None
-            Exogenous variable/s included as predictor/s.
-        n_boot : int, default 250
-            Number of bootstrapping iterations to perform when estimating prediction
-            intervals.
-        use_in_sample_residuals : bool, default True
-            If `True`, residuals from the training data are used as proxy of
-            prediction error to create predictions. 
-            If `False`, out of sample residuals (calibration) are used. 
-            Out-of-sample residuals must be precomputed using Forecaster's
-            `set_out_sample_residuals()` method.
-        use_binned_residuals : bool, default True
-            If `True`, residuals are selected based on the predicted values 
-            (binned selection).
-            If `False`, residuals are selected randomly.
-        random_state : int, default 123
-            Seed for the random number generator to ensure reproducibility.
-
-        Returns
-        -------
-        predictions : pandas DataFrame
-            Distribution parameters estimated for each step.
-
-        References
-        ----------
-        .. [1] Forecasting: Principles and Practice (3rd ed) Rob J Hyndman and George Athanasopoulos.
-               https://otexts.com/fpp3/prediction-intervals.html
-
-        """
-
-        if not hasattr(distribution, "_pdf") or not callable(getattr(distribution, "fit", None)):
-            raise TypeError(
-                "`distribution` must be a valid probability distribution object "
-                "from scipy.stats, with methods `_pdf` and `fit`."
-            )
-
-        predictions = self.predict_bootstrapping(
-                          steps                   = steps,
-                          last_window             = last_window,
-                          exog                    = exog,
-                          n_boot                  = n_boot,
-                          random_state            = random_state,
-                          use_in_sample_residuals = use_in_sample_residuals,
-                          use_binned_residuals    = use_binned_residuals
-                      )       
-
-        param_names = [
-            p for p in inspect.signature(distribution._pdf).parameters
-            if not p == 'x'
-        ] + ["loc", "scale"]
-
-        predictions[param_names] = (
-            predictions.apply(
-                lambda x: distribution.fit(x), axis=1, result_type='expand'
-            )
-        )
-        predictions = predictions[param_names]
-
-        return predictions
-
-
     def set_params(
         self, 
         params: dict[str, object]
@@ -2235,9 +1993,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             [ws for ws in [self.max_lag, self.max_size_window_features] 
              if ws is not None]
         )
-        if self.differentiation is not None:
-            self.window_size += self.differentiation
-            self.differentiator.set_params(window_size=self.window_size)
 
     def set_window_features(
         self, 
@@ -2279,9 +2034,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             [ws for ws in [self.max_lag, self.max_size_window_features] 
              if ws is not None]
         )
-        if self.differentiation is not None:
-            self.window_size += self.differentiation
-            self.differentiator.set_params(window_size=self.window_size)
 
     def get_feature_importances(
         self,

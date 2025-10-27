@@ -1028,7 +1028,7 @@ class RollingFeatures():
         {'ewm': {'alpha': 0.3}}.
     window_sizes : int, list
         Size of the rolling window for each statistic. If an `int`, all stats share 
-        the same window size. If a `list`, it should have the same length as stats.
+        the same window size. If a `list`, it should have the same length as `stats`.
     min_periods : int, list, default None
         Minimum number of observations in window required to have a value. 
         Same as the `min_periods` argument of pandas rolling. If `None`, 
@@ -1536,36 +1536,33 @@ class RollingFeatures():
         
         return rolling_features
 
-# TODO: Adapt docstring to Classification
+
 class RollingFeaturesClassification():
     """
-    This class computes rolling features. To avoid data leakage, the last point 
-    in the window is excluded from calculations, ('closed': 'left' and 
-    'center': False).
-    
-    Currently, the following statistics are supported: 'mean', 'std', 'min', 'max',
-    'sum', 'median', 'ratio_min_max', 'coef_variation', 'ewm'. For 'ewm', the
-    alpha parameter can be set in the kwargs_stats dictionary, default is
-    {'ewm': {'alpha': 0.3}}.
+    This class computes rolling features for classification problems. To avoid data 
+    leakage, the last point in the window is excluded from calculations, 
+    ('closed': 'left' and 'center': False).
+
+    Currently, the following statistics are supported: 'proportion', 'mode', 
+    'entropy', 'n_changes', 'n_unique'.
 
     Parameters
     ----------
     stats : str, list
         Statistics to compute over the rolling window. Can be a `string` or a `list`,
-        and can have repeats. Available statistics are: 'mean', 'std', 'min', 'max',
-        'sum', 'median', 'ratio_min_max', 'coef_variation', 'ewm'. For 'ewm', the
-        alpha parameter can be set in the kwargs_stats dictionary, default is
-        {'ewm': {'alpha': 0.3}}.
+        and can have repeats. Available statistics are: 'proportion', 'mode', 
+        'entropy', 'n_changes', 'n_unique'.
     window_sizes : int, list
         Size of the rolling window for each statistic. If an `int`, all stats share 
-        the same window size. If a `list`, it should have the same length as stats.
+        the same window size. If a `list`, it should have the same length as `stats`.
     min_periods : int, list, default None
         Minimum number of observations in window required to have a value. 
         Same as the `min_periods` argument of pandas rolling. If `None`, 
         defaults to `window_sizes`.
     features_names : list, default None
         Names of the output features. If `None`, default names will be used in the 
-        format 'roll_stat_window_size', for example 'roll_mean_7'.
+        format 'roll_stat_window_size', for example 'roll_mode_7'. For 'proportion',
+        class-specific names are appended, e.g., 'roll_proportion_7_class_0'.
     fillna : str, float, default None
         Fill missing values in `transform_batch` method. Available 
         methods are: 'mean', 'median', 'ffill', 'bfill', or a float value.
@@ -1582,6 +1579,8 @@ class RollingFeaturesClassification():
         Maximum window size.
     min_periods : list
         Minimum number of observations in window required to have a value.
+    classes : list
+        Unique classes found in the data. Inferred during `transform_batch`.
     features_names : list
         Names of the output features.
     fillna : str, float
@@ -1723,24 +1722,25 @@ class RollingFeaturesClassification():
         fillna: str | float | None = None
     ) -> None:
         """
-        Validate the parameters of the RollingFeatures class.
+        Validate the parameters of the RollingFeaturesClassification class.
 
         Parameters
         ----------
         stats : str, list
             Statistics to compute over the rolling window. Can be a `string` or a `list`,
-            and can have repeats. Available statistics are: 'mean', 'std', 'min', 'max',
-            'sum', 'median', 'ratio_min_max', 'coef_variation', 'ewm'.
+            and can have repeats. Available statistics are: 'proportion', 'mode', 
+            'entropy', 'n_changes', 'n_unique'.
         window_sizes : int, list
             Size of the rolling window for each statistic. If an `int`, all stats share 
-            the same window size. If a `list`, it should have the same length as stats.
+            the same window size. If a `list`, it should have the same length as `stats`.
         min_periods : int, list, default None
             Minimum number of observations in window required to have a value. 
             Same as the `min_periods` argument of pandas rolling. If `None`, 
             defaults to `window_sizes`.
         features_names : list, default None
             Names of the output features. If `None`, default names will be used in the 
-            format 'roll_stat_window_size', for example 'roll_mean_7'.
+            format 'roll_stat_window_size', for example 'roll_mode_7'. For 'proportion',
+            class-specific names are appended, e.g., 'roll_proportion_7_class_0'.
         fillna : str, float, default None
             Fill missing values in `transform_batch` method. Available 
             methods are: 'mean', 'median', 'ffill', 'bfill', or a float value.
@@ -1916,7 +1916,7 @@ class RollingFeaturesClassification():
         """
 
         if self.classes is None:
-            self.classes = np.sort(X.unique())
+            self.classes = list(np.sort(X.unique()))
 
             features_names = []
             for stat, feature_name in zip(self.stats, self.features_names):
@@ -2076,7 +2076,7 @@ class RollingFeaturesClassification():
             rolling_features = rolling_features.ravel()
         
         return rolling_features
-    
+
 
 class QuantileBinner:
     """
