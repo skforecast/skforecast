@@ -21,7 +21,10 @@ The main changes in this release are:
 
 **Added**
 
-+ <span class="badge text-bg-feature">Feature</span> New class <code>[PopulationDriftDetector]</code> in the <code>[drift_detection]</code> module to detect population drift between reference and new data. Suitable to detect when forecasting models need to be retrained due to changes in the data distribution. It supports both target and exogenous variables, in single and multiseries forecasting.
++ New class <code>[PopulationDriftDetector]</code> in the <code>[drift_detection]</code> module to detect population drift between reference and new data. Suitable to detect when forecasting models need to be retrained due to changes in the data distribution. It supports both target and exogenous variables, in single and multiseries forecasting.
+
++ New function <code>[reshape_series_exog_dict_to_long]</code> in the <code>[preprocessing]</code> module to reshape series and exogenous variables from a dictionary format into a long-format pandas DataFrame with a MultiIndex. The first level of the index is the series name, and the second level is the time index.
+
 
 **Changed**
 
@@ -1305,6 +1308,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [reshape_series_wide_to_long]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.reshape_series_wide_to_long
 [reshape_series_long_to_dict]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.reshape_series_long_to_dict
 [reshape_exog_long_to_dict]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.reshape_exog_long_to_dict
+[reshape_series_exog_dict_to_long]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.reshape_series_exog_dict_to_long
 [TimeSeriesDifferentiator]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.TimeSeriesDifferentiator
 [QuantileBinner]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.QuantileBinner
 [ConformalIntervalCalibrator]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.ConformalIntervalCalibrator
