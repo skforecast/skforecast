@@ -1,15 +1,17 @@
-# Unit test reshape_series_long_to_dict
+# Unit test reshape_series_exog_dict_to_long
 # ==============================================================================
+import re
 import pytest
 import numpy as np
 import pandas as pd
 from ...preprocessing import reshape_series_exog_dict_to_long
 
+
 def test_reshape_series_exog_dict_to_long_raises_ValueError_when_both_None():
     """
     Test that ValueError is raised when both series and exog are None.
     """
-    with pytest.raises(ValueError, match="Both series and exog cannot be None."):
+    with pytest.raises(ValueError, match="Both `series` and `exog` cannot be None."):
         reshape_series_exog_dict_to_long(series=None, exog=None)
 
 
@@ -29,7 +31,9 @@ def test_reshape_series_exog_dict_to_long_raises_TypeError_when_series_value_not
         'series_1': pd.Series([1, 2, 3]),
         'series_2': [4, 5, 6]  # Not a Series
     }
-    with pytest.raises(TypeError, match="series\\['series_2'\\] must be pd.Series"):
+    
+    error_msg = re.escape("series['series_2'] must be a pandas Series.")
+    with pytest.raises(TypeError, match=error_msg):
         reshape_series_exog_dict_to_long(series=series, exog=None)
 
 
@@ -49,8 +53,58 @@ def test_reshape_series_exog_dict_to_long_raises_TypeError_when_exog_value_inval
         'series_1': pd.Series([1, 2, 3]),
         'series_2': [4, 5, 6]  # Not a Series or DataFrame
     }
-    with pytest.raises(TypeError, match="exog\\['series_2'\\] must be pd.Series or pd.DataFrame"):
+
+    error_msg = re.escape("exog['series_2'] must be a pandas Series or a pandas DataFrame.")
+    with pytest.raises(TypeError, match=error_msg):
         reshape_series_exog_dict_to_long(series=None, exog=exog)
+
+
+def test_TypeError_series_exog_dict_to_long_different_index_type():
+    """
+    Test TypeError is raised when series and exog have different index types.
+    """
+    series = {
+        'series_1': pd.Series([1, 2, 3], index=pd.date_range('2020-01-01', periods=3)),
+        'series_2': pd.Series([4, 5, 6], index=pd.date_range('2020-01-01', periods=3))
+    }
+    exog = {
+        'series_1': pd.Series([1, 2, 3], name='exog_1'),
+        'series_2': pd.Series([4, 5, 6], name='exog_2')
+    }
+
+    series_idx_type = "<class 'pandas.core.indexes.datetimes.DatetimeIndex'>"
+    exog_idx_type = "<class 'pandas.core.indexes.base.Index'>"
+
+    error_msg = re.escape(
+        f"Index type mismatch: series has index of type "
+        f"{series_idx_type}, but exog has {exog_idx_type}. "
+        f"Ensure all indices are compatible."
+    )
+    with pytest.raises(TypeError, match=error_msg):
+        reshape_series_exog_dict_to_long(series=series, exog=exog)
+
+
+def test_ValueError_when_series_col_name_in_exog_columns():
+    """
+    Test ValueError is raised when `series_col_name` is already in exog columns.
+    """
+    series = {
+        'series_1': pd.Series([1, 2, 3], index=pd.date_range('2020-01-01', periods=3)),
+        'series_2': pd.Series([4, 5, 6], index=pd.date_range('2020-01-01', periods=3))
+    }
+    exog = {
+        'series_1': pd.Series([1, 2, 3], index=pd.date_range('2020-01-01', periods=3), name='exog_1'),
+        'series_2': pd.Series([4, 5, 6], index=pd.date_range('2020-01-01', periods=3), name='exog_2')
+    }
+
+    error_msg = re.escape(
+        "Column name conflict: 'exog' already exists in exog. "
+        "Please choose a different `series_col_name` value."
+    )
+    with pytest.raises(ValueError, match=error_msg):
+        reshape_series_exog_dict_to_long(
+            series=series, exog=exog, series_col_name='exog'
+        )
 
 
 def test_reshape_series_exog_dict_to_long_only_series():
@@ -91,6 +145,7 @@ def test_reshape_series_exog_dict_to_long_only_exog_Series():
             names=["series_id", "datetime"],
         ),
     )
+
     pd.testing.assert_frame_equal(result, expected_result)
 
 
@@ -117,6 +172,7 @@ def test_reshape_series_exog_dict_to_long_only_exog_DataFrame():
             names=["series_id", "datetime"],
         ),
     )
+
     pd.testing.assert_frame_equal(result, expected_result)
 
 
@@ -164,4 +220,5 @@ def test_reshape_series_exog_dict_to_long_series_and_exog():
             names=["series_id", "datetime"],
         ),
     )
+
     pd.testing.assert_frame_equal(result, expected_result)

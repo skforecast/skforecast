@@ -630,74 +630,92 @@ def reshape_exog_long_to_dict(
 
     return exog_dict
 
-
+# TODO: Add argument merge_how? PAra evitar perder datos de exog
 def reshape_series_exog_dict_to_long(
-    series: dict | None,
-    exog: dict | None,
-    colname_series: str = 'series_value',
+    series: dict[str, pd.Series] | None,
+    exog: dict[str, pd.Series | pd.DataFrame] | None,
+    series_col_name: str = 'series_value',
     index_names: list[str] = ['series_id', 'datetime']
 ) -> pd.DataFrame:
     """
-    Convert dictionaries of series and exogenous variables to a long format
+    Convert dictionaries of series and exogenous variables to a long-format
     pandas DataFrame with MultiIndex. The first level of the MultiIndex contains the
     series identifiers, and the second level contains the temporal index. If both
     series and exog are provided, they are merged into a single DataFrame.
 
     Parameters
     ----------
-    series: dict | None
+    series: dict, None
         Dictionary with multiple time series (expected: dict[str, pd.Series]).
-    exog: dict | None
+    exog: dict, None
         Dictionary with exogenous variables (expected: dict[str, pd.Series or pd.DataFrame]).
-    colname_series: str, default 'series_value'
+    series_col_name: str, default 'series_value'
         Column name for the series values in the resulting DataFrame.
     index_names: list[str], default ['series_id', 'datetime']
         Names for the levels of the MultiIndex in the resulting DataFrame. The first
         name corresponds to the series identifier, and the second name corresponds
         to the temporal index.
+    
     Returns
     -------
-    pd.DataFrame
-        Long format DataFrame with MultiIndex.
+    long_df : pandas DataFrame
+        Long-format DataFrame with MultiIndex.
+    
     """
+
     if series is None and exog is None:
-        raise ValueError("Both series and exog cannot be None.")
+        raise ValueError("Both `series` and `exog` cannot be None.")
 
     if series is not None:
         if not isinstance(series, dict):
             raise TypeError(f"`series` must be a dictionary. Got {type(series)}.")
         for k, v in series.items():
             if not isinstance(v, pd.Series):
-                raise TypeError(f"series['{k}'] must be pd.Series.")
-        series = pd.concat(series.values(), keys=series.keys()).to_frame()
-        series.index.names = index_names
-        series.columns = [colname_series]
+                raise TypeError(f"series['{k}'] must be a pandas Series.")
+        # series = pd.concat(series.values(), keys=series.keys()).to_frame()
+        # series.index.names = index_names
+        # series.columns = [series_col_name]
+        series = pd.concat(series, names=index_names).to_frame(series_col_name)
 
     if exog is not None:
         if not isinstance(exog, dict):
             raise TypeError(f"`exog` must be a dictionary. Got {type(exog)}.")
         for k, v in exog.items():
             if not isinstance(v, (pd.Series, pd.DataFrame)):
-                raise TypeError(f"exog['{k}'] must be pd.Series or pd.DataFrame.")
-        exog = pd.concat(exog.values(), keys=exog.keys())
+                raise TypeError(
+                    f"exog['{k}'] must be a pandas Series or a pandas DataFrame."
+                )
+        # exog = pd.concat(exog.values(), keys=exog.keys())
+        exog = pd.concat(exog, names=index_names)
         if isinstance(exog, pd.Series):
-            exog = exog.to_frame()
-        exog.index.names = index_names
+            exog = exog.to_frame(name='exog_value')
+        # exog.index.names = index_names
+
+    if series is not None and exog is not None:
+        series_idx_type = type(series.index.get_level_values(1))
+        exog_idx_type = type(exog.index.get_level_values(1))
+
+        if series_idx_type != exog_idx_type:
+            raise TypeError(
+                f"Index type mismatch: series has index of type "
+                f"{series_idx_type}, but exog has {exog_idx_type}. "
+                f"Ensure all indices are compatible."
+            )
+        
+        if series_col_name in exog.columns:
+            raise ValueError(
+                f"Column name conflict: '{series_col_name}' already exists in exog. "
+                f"Please choose a different `series_col_name` value."
+            )
 
     if series is None:
-        results = exog
+        long_df = exog
     elif exog is None:
-        results = series
+        long_df = series
     else:
-        results = pd.merge(
-                    series,
-                    exog,
-                    left_index=True,
-                    right_index=True,
-                    how='left'
-                )
+        long_df = pd.merge(series, exog, left_index=True, right_index=True, how="left")
 
-    return results
+    return long_df
 
 
 def create_datetime_features(
