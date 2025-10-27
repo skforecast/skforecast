@@ -666,10 +666,15 @@ def reshape_series_exog_dict_to_long(
     
     Returns
     -------
-    long_df : pandas DataFrame
-        Long-format DataFrame with MultiIndex.
-    
-    """
+    long_df : pandas.DataFrame
+        Long-format DataFrame with a MultiIndex of two levels:
+        - First level: series identifier (named by `index_names[0]`, default 'series_id')
+        - Second level: temporal index (named by `index_names[1]`, default 'datetime')
+        Columns include:
+        - Series values (named by `series_col_name`, default 'series_value') if `series` is provided.
+        - Exogenous variable columns (from `exog`) if `exog` is provided.
+        If both `series` and `exog` are provided, columns from both are present.
+        If only one is provided, only its columns are present.
 
     if series is None and exog is None:
         raise ValueError("Both `series` and `exog` cannot be None.")
