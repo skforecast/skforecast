@@ -1,45 +1,41 @@
-# Unit test RollingFeatures
+# Unit test RollingFeaturesClassification
 # ==============================================================================
 import re
 import pytest
 import numpy as np
 import pandas as pd
-from skforecast.preprocessing import RollingFeatures
+from skforecast.preprocessing import RollingFeaturesClassification
 
 # Fixtures
-from .fixtures_preprocessing import X
+from .fixtures_preprocessing import X_classification
 
 
-def test_RollingFeatures_validate_params():
+def test_RollingFeaturesClassification_validate_params():
     """
-    Test RollingFeatures _validate_params method.
+    Test RollingFeaturesClassification _validate_params method.
     """
 
     params = {
         0: {'stats': 5, 'window_sizes': 5},
         1: {'stats': 'not_valid_stat', 'window_sizes': 5},
-        2: {'stats': 'mean', 'window_sizes': 'not_int_list'},
-        3: {'stats': 'mean', 'window_sizes': [5, 6]},
-        4: {'stats': ['mean', 'median'], 'window_sizes': [6]},
-        5: {'stats': ['mean', 'median', 'mean'], 'window_sizes': [6, 5, 6]},
-        6: {'stats': ['mean'], 'window_sizes': [5], 'min_periods': 'not_int_list'},
-        7: {'stats': ['mean'], 'window_sizes': 5, 'min_periods': [5, 4]},
-        8: {'stats': ['mean', 'median'], 'window_sizes': 6, 'min_periods': [5]},
-        9: {'stats': ['mean', 'median'], 'window_sizes': [5, 3], 'min_periods': [5, 4]},
-        10: {'stats': ['mean', 'median'], 'window_sizes': [5, 6], 
+        2: {'stats': 'proportion', 'window_sizes': 'not_int_list'},
+        3: {'stats': 'proportion', 'window_sizes': [5, 6]},
+        4: {'stats': ['proportion', 'mode'], 'window_sizes': [6]},
+        5: {'stats': ['proportion', 'mode', 'proportion'], 'window_sizes': [6, 5, 6]},
+        6: {'stats': ['proportion'], 'window_sizes': [5], 'min_periods': 'not_int_list'},
+        7: {'stats': ['proportion'], 'window_sizes': 5, 'min_periods': [5, 4]},
+        8: {'stats': ['proportion', 'mode'], 'window_sizes': 6, 'min_periods': [5]},
+        9: {'stats': ['proportion', 'mode'], 'window_sizes': [5, 3], 'min_periods': [5, 4]},
+        10: {'stats': ['proportion', 'mode'], 'window_sizes': [5, 6], 
              'min_periods': None, 'features_names': 'not_list'},
-        11: {'stats': ['mean'], 'window_sizes': 5, 
-             'min_periods': 5, 'features_names': ['mean_5', 'median_6']},
-        12: {'stats': ['mean', 'median'], 'window_sizes': [5, 6], 
-             'min_periods': 4, 'features_names': ['mean_5']},
-        13: {'stats': ['mean', 'median'], 'window_sizes': [5, 6], 
-             'min_periods': 5, 'features_names': ['mean_5', 'median_6'], 'fillna': {}},
-        14: {'stats': ['mean', 'median'], 'window_sizes': [5, 6], 
-             'min_periods': [5, 5], 'features_names': None, 'fillna': 'not_valid_fillna'},
-        15: {'stats': ['mean', 'median'], 'window_sizes': [5, 6], 'min_periods': [5, 5], 
-             'features_names': None, 'fillna': 'ffill', 'kwargs_stats': 'not_valid_kwargs_stats'},
-        16: {'stats': ['mean', 'median'], 'window_sizes': [5, 6], 'min_periods': [5, 5], 
-             'features_names': None, 'fillna': 'ffill', 'kwargs_stats': {'median': {'alpha': 0.3}}},
+        11: {'stats': ['proportion'], 'window_sizes': 5, 
+             'min_periods': 5, 'features_names': ['proportion_5', 'mode_6']},
+        12: {'stats': ['proportion', 'mode'], 'window_sizes': [5, 6], 
+             'min_periods': 4, 'features_names': ['proportion_5']},
+        13: {'stats': ['proportion', 'mode'], 'window_sizes': [5, 6], 
+             'min_periods': 5, 'features_names': ['proportion_5', 'mode_6'], 'fillna': {}},
+        14: {'stats': ['proportion', 'mode'], 'window_sizes': [5, 6], 
+             'min_periods': [5, 5], 'features_names': None, 'fillna': 'not_valid_fillna'}
     }
     
     # stats
@@ -47,222 +43,221 @@ def test_RollingFeatures_validate_params():
         f"`stats` must be a string or a list of strings. Got {type(params[0]['stats'])}."
     ) 
     with pytest.raises(TypeError, match = err_msg):
-        RollingFeatures(**params[0])
+        RollingFeaturesClassification(**params[0])
     err_msg = re.escape(
-        "Statistic 'not_valid_stat' is not allowed. Allowed stats are: ['mean', "
-        "'std', 'min', 'max', 'sum', 'median', 'ratio_min_max', 'coef_variation', 'ewm']."
+        "Statistic 'not_valid_stat' is not allowed. Allowed stats are: ['proportion', "
+        "'mode', 'entropy', 'n_changes', 'n_unique']."
     ) 
     with pytest.raises(ValueError, match = err_msg):
-        RollingFeatures(**params[1])
+        RollingFeaturesClassification(**params[1])
 
     # window_sizes
     err_msg = re.escape(
         f"`window_sizes` must be an int or a list of ints. Got {type(params[2]['window_sizes'])}."
     ) 
     with pytest.raises(TypeError, match = err_msg):
-        RollingFeatures(**params[2])
+        RollingFeaturesClassification(**params[2])
     err_msg = re.escape(
         "Length of `window_sizes` list (2) must match length of `stats` list (1)."
     ) 
     with pytest.raises(ValueError, match = err_msg):
-        RollingFeatures(**params[3])
+        RollingFeaturesClassification(**params[3])
     err_msg = re.escape(
         "Length of `window_sizes` list (1) must match length of `stats` list (2)."
     ) 
     with pytest.raises(ValueError, match = err_msg):
-        RollingFeatures(**params[4])
+        RollingFeaturesClassification(**params[4])
     
     # Check duplicates (stats, window_sizes)
     err_msg = re.escape(
         "Duplicate (stat, window_size) pairs are not allowed.\n"
-        "    `stats`        : ['mean', 'median', 'mean']\n"
+        "    `stats`        : ['proportion', 'mode', 'proportion']\n"
         "    `window_sizes` : [6, 5, 6]"
     )
     with pytest.raises(ValueError, match = err_msg):
-        RollingFeatures(**params[5])
+        RollingFeaturesClassification(**params[5])
 
     # min_periods
     err_msg = re.escape(
         f"`min_periods` must be an int, list of ints, or None. Got {type(params[6]['min_periods'])}."
     )
     with pytest.raises(TypeError, match = err_msg):
-        RollingFeatures(**params[6])
+        RollingFeaturesClassification(**params[6])
     err_msg = re.escape(
         "Length of `min_periods` list (2) must match length of `stats` list (1)."
     ) 
     with pytest.raises(ValueError, match = err_msg):
-        RollingFeatures(**params[7])
+        RollingFeaturesClassification(**params[7])
     err_msg = re.escape(
         "Length of `min_periods` list (1) must match length of `stats` list (2)."
     ) 
     with pytest.raises(ValueError, match = err_msg):
-        RollingFeatures(**params[8])
+        RollingFeaturesClassification(**params[8])
     err_msg = re.escape(
         "Each `min_period` must be less than or equal to its corresponding `window_size`."
     ) 
     with pytest.raises(ValueError, match = err_msg):
-        RollingFeatures(**params[9])
+        RollingFeaturesClassification(**params[9])
 
     # features_names
     err_msg = re.escape(
         f"`features_names` must be a list of strings or None. Got {type(params[10]['features_names'])}."
     )
     with pytest.raises(TypeError, match = err_msg):
-        RollingFeatures(**params[10])
+        RollingFeaturesClassification(**params[10])
     err_msg = re.escape(
         "Length of `features_names` list (2) must match length of `stats` list (1)."
     ) 
     with pytest.raises(ValueError, match = err_msg):
-        RollingFeatures(**params[11])
+        RollingFeaturesClassification(**params[11])
     err_msg = re.escape(
         "Length of `features_names` list (1) must match length of `stats` list (2)."
     ) 
     with pytest.raises(ValueError, match = err_msg):
-        RollingFeatures(**params[12])
+        RollingFeaturesClassification(**params[12])
 
     # fillna
     err_msg = re.escape(
         f"`fillna` must be a float, string, or None. Got {type(params[13]['fillna'])}."
     )
     with pytest.raises(TypeError, match = err_msg):
-        RollingFeatures(**params[13])
+        RollingFeaturesClassification(**params[13])
     err_msg = re.escape(
         "'not_valid_fillna' is not allowed. Allowed `fillna` "
         "values are: ['mean', 'median', 'ffill', 'bfill'] or a float value."
     ) 
     with pytest.raises(ValueError, match = err_msg):
-        RollingFeatures(**params[14])
-
-    # kwargs_stats
-    err_msg = re.escape(
-        f"`kwargs_stats` must be a dictionary or None. Got {type(params[15]['kwargs_stats'])}."
-    )
-    with pytest.raises(TypeError, match = err_msg):
-        RollingFeatures(**params[15])
-    allowed_kwargs_stats = ['ewm']
-    err_msg = re.escape(
-        f"Invalid statistic 'median' found in `kwargs_stats`. "
-        f"Allowed statistics with additional arguments are: "
-        f"{allowed_kwargs_stats}. Please ensure all keys in "
-        f"`kwargs_stats` are among the allowed statistics."
-    ) 
-    with pytest.raises(ValueError, match = err_msg):
-        RollingFeatures(**params[16])
+        RollingFeaturesClassification(**params[14])
 
 
 @pytest.mark.parametrize(
     "params", 
-    [{'stats': ['mean', 'ewm'], 'window_sizes': 5, 'min_periods': None, 
-      'features_names': None, 'fillna': 'ffill', 
-      'kwargs_stats': {'ewm': {'alpha': 0.3}}},
-     {'stats': ['mean', 'ewm'], 'window_sizes': [5, 5], 'min_periods': 5, 
-      'features_names': ['roll_mean_5', 'roll_ewm_5_alpha_0.3'], 
-      'fillna': 'ffill', 'kwargs_stats': {'ewm': {'alpha': 0.3}}}], 
+    [{'stats': ['proportion', 'entropy'], 'window_sizes': 5, 'min_periods': None, 
+      'features_names': None, 'fillna': 'ffill'},
+     {'stats': ['proportion', 'entropy'], 'window_sizes': [5, 5], 'min_periods': 5, 
+      'features_names': ['roll_proportion_5', 'roll_entropy_5'], 
+      'fillna': 'ffill'}], 
     ids = lambda params: f'params: {params}')
-def test_RollingFeatures_init_store_parameters(params):
+def test_RollingFeaturesClassification_init_store_parameters(params):
     """
-    Test RollingFeatures initialization and stored parameters.
+    Test RollingFeaturesClassification initialization and stored parameters.
     """
 
-    rolling = RollingFeatures(**params)
+    rolling = RollingFeaturesClassification(**params)
 
-    assert rolling.stats == ['mean', 'ewm']
+    assert rolling.stats == ['proportion', 'entropy']
     assert rolling.n_stats == 2
     assert rolling.window_sizes == [5, 5]
     assert rolling.max_window_size == 5
     assert rolling.min_periods == [5, 5]
-    assert rolling.features_names == ['roll_mean_5', 'roll_ewm_5_alpha_0.3']
+    assert rolling.features_names == ['roll_proportion_5', 'roll_entropy_5']
     assert rolling.fillna == 'ffill'
-    assert rolling.kwargs_stats == {'ewm': {'alpha': 0.3}}
 
     unique_rolling_windows = {
-        '5_5': {'params': {'window': 5, 'min_periods': 5, 'center': False, 'closed': 'left'}, 
-                'stats_idx': [0, 1],
-                'stats_names': ['roll_mean_5', 'roll_ewm_5_alpha_0.3'],
-                'rolling_obj': None}
+        '5_5': {
+            'params': {'window': 5, 'min_periods': 5, 'center': False, 'closed': 'left'}, 
+            'stats_idx': [0, 1],
+            'stats_names': ['roll_proportion_5', 'roll_entropy_5'],
+            'rolling_obj': None
+        }
     }
 
     assert rolling.unique_rolling_windows == unique_rolling_windows
 
 
-def test_RollingFeatures_init_store_parameters_multiple_stats():
+def test_RollingFeaturesClassification_init_store_parameters_multiple_stats():
     """
-    Test RollingFeatures initialization and stored parameters 
+    Test RollingFeaturesClassification initialization and stored parameters 
     when multiple stats are passed.
     """
 
-    rolling = RollingFeatures(stats=['mean', 'median', 'sum'], window_sizes=[5, 5, 6])
+    rolling = RollingFeaturesClassification(stats=['proportion', 'mode', 'entropy'], window_sizes=[5, 5, 6])
 
-    assert rolling.stats == ['mean', 'median', 'sum']
+    assert rolling.stats == ['proportion', 'mode', 'entropy']
     assert rolling.n_stats == 3
     assert rolling.window_sizes == [5, 5, 6]
     assert rolling.max_window_size == 6
     assert rolling.min_periods == [5, 5, 6]
-    assert rolling.features_names == ['roll_mean_5', 'roll_median_5', 'roll_sum_6']
+    assert rolling.features_names == ['roll_proportion_5', 'roll_mode_5', 'roll_entropy_6']
     assert rolling.fillna is None
 
     unique_rolling_windows = {
-        '5_5': {'params': {'window': 5, 'min_periods': 5, 'center': False, 'closed': 'left'}, 
-                'stats_idx': [0, 1],
-                'stats_names': ['roll_mean_5', 'roll_median_5'],
-                'rolling_obj': None},
-        '6_6': {'params': {'window': 6, 'min_periods': 6, 'center': False, 'closed': 'left'}, 
-                'stats_idx': [2],
-                'stats_names': ['roll_sum_6'],
-                'rolling_obj': None}
+        '5_5': {
+            'params': {'window': 5, 'min_periods': 5, 'center': False, 'closed': 'left'}, 
+            'stats_idx': [0, 1],
+            'stats_names': ['roll_proportion_5', 'roll_mode_5'],
+            'rolling_obj': None
+        },
+        '6_6': {
+            'params': {'window': 6, 'min_periods': 6, 'center': False, 'closed': 'left'}, 
+            'stats_idx': [2],
+            'stats_names': ['roll_entropy_6'],
+            'rolling_obj': None
+        }
     }
 
     assert rolling.unique_rolling_windows == unique_rolling_windows
 
 
-def test_RollingFeatures_ValueError_apply_stat_when_stat_not_implemented():
+def test_RollingFeaturesClassification_ValueError_apply_stat_when_stat_not_implemented():
     """
-    Test RollingFeatures ValueError _apply_stat_pandas and _apply_stat_numpy 
+    Test RollingFeaturesClassification ValueError _apply_stat_pandas and _apply_stat_numpy 
     when applying a statistic not implemented.
     """
     
-    rolling = RollingFeatures(stats='mean', window_sizes=10)
-    X_window = X.iloc[-10:]
+    rolling = RollingFeaturesClassification(stats='proportion', window_sizes=10)
+    X_window = X_classification.iloc[-10:]
     rolling_obj = X_window.rolling(**rolling.unique_rolling_windows['10_10']['params'])
 
     err_msg = re.escape("Statistic 'not_valid' is not implemented.") 
     with pytest.raises(ValueError, match = err_msg):
-        rolling._apply_stat_pandas(rolling_obj, 'not_valid')
+        rolling._apply_stat_pandas(X=X_window, rolling_obj=rolling_obj, stat='not_valid')
     with pytest.raises(ValueError, match = err_msg):
         rolling._apply_stat_numpy_jit(X_window.to_numpy(), 'not_valid')
 
 
-def test_RollingFeatures_apply_stat_pandas_numpy():
+def test_RollingFeaturesClassification_apply_stat_pandas_numpy():
     """
-    Test RollingFeatures _apply_stat_pandas and _apply_stat_numpy methods.
+    Test RollingFeaturesClassification _apply_stat_pandas and _apply_stat_numpy methods.
     """
 
-    stats = ['mean', 'std', 'min', 'max', 'sum', 'median', 
-             'ratio_min_max', 'coef_variation', 'ewm']
+    stats = [
+        'proportion', 'mode', 'entropy', 'n_changes', 'n_unique'
+    ]
     
-    rolling = RollingFeatures(stats=stats, window_sizes=10)
-    X_window_pandas = X.iloc[-11:]
-    X_window_numpy = X.to_numpy()[-11:-1]
+    rolling = RollingFeaturesClassification(stats=stats, window_sizes=10)
+    X_window_pandas = X_classification.iloc[-11:]
+    X_window_numpy = X_classification.to_numpy()[-11:-1]
+    rolling.classes = list(np.sort(X_window_pandas.unique()))
 
     for stat in stats:
 
         rolling_obj = X_window_pandas.rolling(**rolling.unique_rolling_windows['10_10']['params'])
-        stat_pandas = rolling._apply_stat_pandas(rolling_obj, stat).iat[-1]
+        stat_pandas = rolling._apply_stat_pandas(
+            X=X_window_pandas, rolling_obj=rolling_obj, stat=stat
+        )
+        if isinstance(stat_pandas, pd.DataFrame):
+            stat_pandas = stat_pandas.iloc[-1].to_numpy()
+        else:
+            stat_pandas = stat_pandas.iat[-1]
         stat_numpy = rolling._apply_stat_numpy_jit(X_window_numpy, stat)
 
         np.testing.assert_almost_equal(stat_pandas, stat_numpy, decimal=7)
 
 
-def test_RollingFeatures_transform_batch():
+def test_RollingFeaturesClassification_transform_batch():
     """
-    Test RollingFeatures transform_batch method.
+    Test RollingFeaturesClassification transform_batch method.
     """
-    X_datetime = X.copy()
-    X_datetime.index = pd.date_range(start='1990-01-01', periods=len(X), freq='D')
+    X_datetime = X_classification.copy()
+    X_datetime.index = pd.date_range(
+        start='1990-01-01', periods=len(X_classification), freq='D'
+    )
 
-    stats = ['mean', 'std', 'min', 'max', 'sum', 'median', 
-             'ratio_min_max', 'coef_variation', 'ewm']
-    rolling = RollingFeatures(stats=stats, window_sizes=4)
+    stats = [
+        'proportion', 'mode', 'entropy', 'n_changes', 'n_unique'
+    ]
+    rolling = RollingFeaturesClassification(stats=stats, window_sizes=4)
     rolling_features = rolling.transform_batch(X_datetime).head(10)
 
     expected = pd.DataFrame(
@@ -382,21 +377,23 @@ def test_RollingFeatures_transform_batch():
     pd.testing.assert_frame_equal(rolling_features, expected)
 
 
-def test_RollingFeatures_transform_batch_different_rolling_and_fillna():
+def test_RollingFeaturesClassification_transform_batch_different_rolling_and_fillna():
     """
-    Test RollingFeatures transform_batch method with different rolling windows 
+    Test RollingFeaturesClassification transform_batch method with different rolling windows 
     and fillna.
     """
-    X_datetime = X.copy()
-    X_datetime.index = pd.date_range(start='1990-01-01', periods=len(X), freq='D')
+    X_datetime = X_classification.copy()
+    X_datetime.index = pd.date_range(
+        start='1990-01-01', periods=len(X_classification), freq='D'
+    )
     X_datetime.iloc[9] = np.nan
 
-    stats = ['mean', 'std', 'mean', 'max']
+    stats = ['proportion', 'mode', 'entropy', 'entropy']
     window_sizes = [4, 5, 6, 4]
     min_periods = [3, 5, 6, 3]
-    features_names = ['my_mean', 'my_std', 'my_mean_2', 'my_max']
+    features_names = ['my_proportion', 'my_mode', 'my_entropy', 'my_entropy_2']
     
-    rolling = RollingFeatures(
+    rolling = RollingFeaturesClassification(
         stats=stats, window_sizes=window_sizes, min_periods=min_periods,
         features_names=features_names, fillna='bfill'
     )
@@ -430,11 +427,11 @@ def test_RollingFeatures_transform_batch_different_rolling_and_fillna():
     "fillna", 
     ['mean', 'median', 'ffill', 'bfill', None, 5., 0], 
     ids = lambda fillna: f'fillna: {fillna}')
-def test_RollingFeatures_transform_batch_fillna_all_methods(fillna):
+def test_RollingFeaturesClassification_transform_batch_fillna_all_methods(fillna):
     """
-    Test RollingFeatures transform_batch method with all fillna methods.
+    Test RollingFeaturesClassification transform_batch method with all fillna methods.
     """
-    X_datetime = X.head(10).copy()
+    X_datetime = X_classification.head(10).copy()
     X_datetime.index = pd.date_range(start='1990-01-01', periods=len(X_datetime), freq='D')
     X_datetime.iloc[5] = np.nan
 
@@ -449,7 +446,7 @@ def test_RollingFeatures_transform_batch_fillna_all_methods(fillna):
         0: np.array([0, 0, 0]),
     } 
 
-    rolling = RollingFeatures(stats=['mean'], window_sizes=3, fillna=fillna)
+    rolling = RollingFeaturesClassification(stats=['mean'], window_sizes=3, fillna=fillna)
     rolling_features = rolling.transform_batch(X_datetime)
 
     expected_array = base_array
@@ -463,23 +460,15 @@ def test_RollingFeatures_transform_batch_fillna_all_methods(fillna):
     pd.testing.assert_frame_equal(rolling_features, expected)
 
 
-def test_RollingFeatures_transform():
+def test_RollingFeaturesClassification_transform():
     """
-    Test RollingFeatures transform method.
+    Test RollingFeaturesClassification transform method.
     """
     stats = [
-        "mean",
-        "std",
-        "min",
-        "max",
-        "sum",
-        "median",
-        "ratio_min_max",
-        "coef_variation",
-        "ewm",
+        'proportion', 'mode', 'entropy', 'n_changes', 'n_unique'
     ]
-    rolling = RollingFeatures(stats=stats, window_sizes=4)
-    rolling_features = rolling.transform(X.to_numpy(copy=True))
+    rolling = RollingFeaturesClassification(stats=stats, window_sizes=4)
+    rolling_features = rolling.transform(X_classification.to_numpy(copy=True))
 
     expected = np.array(
         [
@@ -498,26 +487,18 @@ def test_RollingFeatures_transform():
     np.testing.assert_array_almost_equal(rolling_features, expected)
 
 
-def test_RollingFeatures_transform_2d():
+def test_RollingFeaturesClassification_transform_2d():
     """
-    Test RollingFeatures transform method with 2 dimensions.
+    Test RollingFeaturesClassification transform method with 2 dimensions.
     """
 
-    X_2d = X.to_numpy(copy=True)
+    X_2d = X_classification.to_numpy(copy=True)
     X_2d = np.tile(X_2d, (2, 1)).T
 
     stats = [
-        "mean",
-        "std",
-        "min",
-        "max",
-        "sum",
-        "median",
-        "ratio_min_max",
-        "coef_variation",
-        "ewm",
+        'proportion', 'mode', 'entropy', 'n_changes', 'n_unique'
     ]
-    rolling = RollingFeatures(stats=stats, window_sizes=4)
+    rolling = RollingFeaturesClassification(stats=stats, window_sizes=4)
     rolling_features = rolling.transform(X_2d)
 
     expected = np.array(
@@ -538,27 +519,19 @@ def test_RollingFeatures_transform_2d():
     np.testing.assert_array_almost_equal(rolling_features, expected)
 
 
-def test_RollingFeatures_transform_with_nans():
+def test_RollingFeaturesClassification_transform_with_nans():
     """
-    Test RollingFeatures transform method with nans.
+    Test RollingFeaturesClassification transform method with nans.
     """
     
-    X_nans = X.to_numpy(copy=True)
+    X_nans = X_classification.to_numpy(copy=True)
     X_nans[-7] = np.nan
 
     stats = [
-        "mean",
-        "std",
-        "min",
-        "max",
-        "sum",
-        "median",
-        "ratio_min_max",
-        "coef_variation",
-        "ewm",
+        'proportion', 'mode', 'entropy', 'n_changes', 'n_unique'
     ]
-    window_sizes = [10, 10, 15, 4, 15, 4, 4, 4, 4]
-    rolling = RollingFeatures(stats=stats, window_sizes=window_sizes)
+    window_sizes = [10, 10, 15, 4, 15]
+    rolling = RollingFeaturesClassification(stats=stats, window_sizes=window_sizes)
     rolling_features = rolling.transform(X_nans)
 
     expected = np.array(
@@ -578,20 +551,19 @@ def test_RollingFeatures_transform_with_nans():
     np.testing.assert_array_almost_equal(rolling_features, expected)
 
 
-def test_RollingFeatures_transform_with_nans_2d():
+def test_RollingFeaturesClassification_transform_with_nans_2d():
     """
-    Test RollingFeatures transform method with nans and 2 dimensions.
+    Test RollingFeaturesClassification transform method with nans and 2 dimensions.
     """
     
-    X_2d_nans = X.to_numpy(copy=True)
+    X_2d_nans = X_classification.to_numpy(copy=True)
     X_2d_nans = np.tile(X_2d_nans, (2, 1)).T
     X_2d_nans[-7, 0] = np.nan
     X_2d_nans[-5, 1] = np.nan
 
-    stats = ['mean', 'std', 'min', 'max', 'sum', 'median', 
-             'ratio_min_max', 'coef_variation']
-    window_sizes = [10, 10, 15, 4, 15, 4, 4, 4]
-    rolling = RollingFeatures(stats=stats, window_sizes=window_sizes)
+    stats = ['proportion', 'mode', 'entropy', 'n_changes', 'n_unique']
+    window_sizes = [10, 10, 15, 4, 15]
+    rolling = RollingFeaturesClassification(stats=stats, window_sizes=window_sizes)
     rolling_features = rolling.transform(X_2d_nans)
     
     expected_0 = np.array([0.53051056, 0.28145959, 0.11561840, 0.98555979, 
@@ -603,14 +575,14 @@ def test_RollingFeatures_transform_with_nans_2d():
     np.testing.assert_array_almost_equal(rolling_features, expected)
 
 
-def test_equivalence_results_RollingFeatures_and_custom_class():
+def test_equivalence_results_RollingFeaturesClassification_and_custom_class():
     """
-    Test equivalence of results between RollingFeatures and custom class that
+    Test equivalence of results between RollingFeaturesClassification and custom class that
     calculates rolling mean and std.
     """
         
-    y = pd.Series([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-    x = np.array([1, 20, 3])
+    y = pd.Series([1, 2, 3, 1, 1, 3, 2, 2, 1, 3])
+    x = np.array([1, 2, 3])
 
     class RollingMeanStd():
         """
@@ -648,7 +620,7 @@ def test_equivalence_results_RollingFeatures_and_custom_class():
             
             return results
         
-    window_features_1 = RollingFeatures(
+    window_features_1 = RollingFeaturesClassification(
                 stats        = ['mean', 'std'],
                 window_sizes = [3, 3]
                 )

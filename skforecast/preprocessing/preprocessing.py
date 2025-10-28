@@ -1277,8 +1277,8 @@ class RollingFeatures():
         if len(set(zip(stats, window_sizes))) != n_stats:
             raise ValueError(
                 f"Duplicate (stat, window_size) pairs are not allowed.\n"
-                f"    `stats`       : {stats}\n"
-                f"    `window_sizes : {window_sizes}"
+                f"    `stats`        : {stats}\n"
+                f"    `window_sizes` : {window_sizes}"
             )
         
         # min_periods
@@ -1790,8 +1790,8 @@ class RollingFeaturesClassification():
         if len(set(zip(stats, window_sizes))) != n_stats:
             raise ValueError(
                 f"Duplicate (stat, window_size) pairs are not allowed.\n"
-                f"    `stats`       : {stats}\n"
-                f"    `window_sizes : {window_sizes}"
+                f"    `stats`        : {stats}\n"
+                f"    `window_sizes` : {window_sizes}"
             )
         
         # min_periods
