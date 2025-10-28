@@ -32,9 +32,9 @@ from ..utils import (
 
 class ForecasterStats():
     """
-    This class turns statistical model into a Forecaster compatible with the skforecast API. Supported
-    statistical models are: skforecast.stats.Sarimax, skforecast.stats.ARAR, aeon.forecasting.stats.ARIMA and
-    aeon.forecasting.stats.ETS.
+    This class turns statistical model into a Forecaster compatible with the skforecast API.
+    Supported statistical models are: skforecast.stats.Sarimax, skforecast.stats.ARAR,
+    aeon.forecasting.stats.ARIMA and aeon.forecasting.stats.ETS.
     
     Parameters
     ----------
@@ -81,14 +81,9 @@ class ForecasterStats():
     last_window_ : pandas Series
         Last window the forecaster has seen during training. It stores the
         values needed to predict the next `step` immediately after the training data. In the
-        statistical models from skforecast, it stores all the training data.
+        statistical models it stores all the training data.
     extended_index_ : pandas Index
-        When predicting using `last_window` and `last_window_exog`, the internal
-        statsmodels SARIMAX will be updated using its append method. To do this,
-        `last_window` data must start at the end of the index seen by the 
-        forecaster, this is stored in forecaster.extended_index_.
-        Check https://www.statsmodels.org/dev/generated/statsmodels.tsa.arima.model.ARIMAResults.append.html
-        to know more about statsmodels append method.
+        Index the forecaster has seen during training.
     index_type_ : type
         Type of index of the input used in training.
     index_freq_ : str
@@ -594,13 +589,9 @@ class ForecasterStats():
         exogenous variables were used in the model fit, they will be expected 
         for the predict procedure and will fail otherwise.
         
-        When predicting using `last_window` and `last_window_exog`, the internal
-        statsmodels SARIMAX will be updated using its append method. To do this,
-        `last_window` data must start at the end of the index seen by the 
-        forecaster, this is stored in forecaster.extended_index_.
-
-        Check https://www.statsmodels.org/dev/generated/statsmodels.tsa.arima.model.ARIMAResults.append.html
-        to know more about statsmodels append method.
+        When predicting using `last_window` and `last_window_exog`, they must
+        start right after the end of the index seen by the forecaster during
+        training.
         
         Parameters
         ----------
@@ -633,16 +624,21 @@ class ForecasterStats():
                                                   exog             = exog,
                                               )
         
+        # TODO: last_window only for sarimax?
         if last_window is not None:
-            self.regressor.append(
-                y     = last_window,
-                exog  = last_window_exog,
-                refit = False
-            )
             if self.regressor_type == 'skforecast.stats._sarimax.Sarimax':
+                self.regressor.append(
+                    y     = last_window,
+                    exog  = last_window_exog,
+                    refit = False
+                )
                 self.extended_index_ = self.regressor.sarimax_res.fittedvalues.index
             else:
-                self.extended_index_ = self.regressor.fitted_index_
+                raise ValueError(
+                    "`last_window` is only supported for the Sarimax model. For other "
+                    "models, predictions must follow directly after the end of the "
+                    "training data."
+                )
 
         if self.regressor_type == 'skforecast.stats._sarimax.Sarimax':
             predictions = self.regressor.predict(
@@ -871,9 +867,19 @@ class ForecasterStats():
                 "This forecaster is not fitted yet. Call `fit` with appropriate "
                 "arguments before using `get_feature_importances()`."
             )
-
-        feature_importances = self.regressor.params().to_frame().reset_index()
-        feature_importances.columns = ['feature', 'importance']
+        if self.regressor_type != 'skforecast.stats._sarimax.Sarimax':
+            feature_importances = self.regressor.params().to_frame().reset_index()
+            feature_importances.columns = ['feature', 'importance']
+        elif self.regressor_type == 'skforecast.stats._arar.Arar':
+            # TODO get feature importances for ARAR
+            raise NotImplementedError(
+                "Feature importances are not implemented for ARAR model yet."
+            )
+        elif self.regressor_type in ['aeon.forecasting.stats._arima.ARIMA', 'aeon.forecasting.stats._ets.ETS']:
+            # TODO get feature importances for AEON models
+            raise NotImplementedError(
+                "Feature importances are not implemented for AEON models yet."
+            )
 
         if sort_importance:
             feature_importances = feature_importances.sort_values(
@@ -910,19 +916,32 @@ class ForecasterStats():
 
         """
 
-        if criteria not in ['aic', 'bic', 'hqic']:
-            raise ValueError(
-                "Invalid value for `criteria`. Valid options are 'aic', 'bic', "
-                "and 'hqic'."
+        if self.regressor_type == 'skforecast.stats._sarimax.Sarimax':
+            if criteria not in ['aic', 'bic', 'hqic']:
+                raise ValueError(
+                    "Invalid value for `criteria`. Valid options are 'aic', 'bic', "
+                    "and 'hqic'."
+                )
+            
+            if method not in ['standard', 'lutkepohl']:
+                raise ValueError(
+                    "Invalid value for `method`. Valid options are 'standard' and "
+                    "'lutkepohl'."
+                )
+            
+            metric = self.regressor.get_info_criteria(criteria=criteria, method=method)
+        elif self.regressor_type == 'skforecast.stats._arar.Arar':
+            # TODO get info criteria for ARAR
+            raise NotImplementedError(
+                "Information criteria is not implemented for ARAR model yet."
             )
-        
-        if method not in ['standard', 'lutkepohl']:
-            raise ValueError(
-                "Invalid value for `method`. Valid options are 'standard' and "
-                "'lutkepohl'."
-            )
-        
-        metric = self.regressor.get_info_criteria(criteria=criteria, method=method)
+        elif self.regressor_type in ['aeon.forecasting.stats._arima.ARIMA', 'aeon.forecasting.stats._ets.ETS']:
+            if criteria != 'aic':
+                raise ValueError(
+                    "Invalid value for `criteria`. Only 'aic' is supported for "
+                    "AEON models."
+                )
+            metric = self.regressor.aic_
         
         return metric
 
