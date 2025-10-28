@@ -98,7 +98,9 @@ nav:
       - ForecasterDirectMultiVariate: api/ForecasterDirectMultiVariate.md
     - deep_learning:
       - ForecasterRnn: api/ForecasterRnn.md
-    - sarimax: api/Sarimax.md
+    - stats:
+      - Sarimax: api/Sarimax.md
+      - ARAR: api/Arar.md
     - model_selection: api/model_selection.md
     - feature_selection: api/feature_selection.md
     - preprocessing: api/preprocessing.md
@@ -120,6 +122,7 @@ nav:
     - Continuous Ranked Probability Score (CRPS): faq/probabilistic-forecasting-crps-score.ipynb
     - Calibration of probabilistic forecasting intervals: faq/probabilistic-forecasting-calibrate-intervals.ipynb
     - Benchmarking skforecast: faq/skforecast-benchmark.ipynb
+    - Benchmarking statistical models: faq/benchmarking-statistical-models.ipynb
     - Parallelization in skforecast: faq/parallelization-skforecast.ipynb
     - Profiling skforecast: faq/profiling-skforecast.ipynb
 
