@@ -41,6 +41,7 @@ from ..utils import (
     align_series_and_exog_multiseries,
     prepare_levels_multiseries,
     preprocess_levels_self_last_window_multiseries,
+    check_exog,
     get_exog_dtypes,
     check_exog_dtypes,
     check_predict_input,
@@ -2146,14 +2147,20 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     index=prediction_index,
                 )
             else:
-                exog = input_to_frame(data=exog, input_name='exog')                
+                exog = input_to_frame(data=exog, input_name='exog')
+                if exog.columns.tolist() != self.exog_names_in_:
+                    exog = exog[self.exog_names_in_]
                 exog = transform_dataframe(
                            df                = exog,
                            transformer       = self.transformer_exog,
                            fit               = False,
                            inverse_transform = False
                        )
-                check_exog_dtypes(exog=exog)
+                # NOTE: Only check dtypes if they are not the same as seen in training
+                if not exog.dtypes.to_dict() == self.exog_dtypes_out_:
+                    check_exog_dtypes(exog=exog)
+                else:
+                    check_exog(exog=exog, allow_nan=False)
                 exog_values = exog.iloc[:steps, :]
         else:
             exog_values = None
@@ -2214,8 +2221,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                              fit               = False,
                                              inverse_transform = False
                                          )
-                
-                check_exog_dtypes(exog=exog_values_all_levels)
+            
+                # NOTE: Only check dtypes if they are not the same as seen in training
+                if not exog_values_all_levels.dtypes.to_dict() == self.exog_dtypes_out_:
+                    check_exog_dtypes(exog=exog_values_all_levels)
+                else:
+                    check_exog(exog=exog_values_all_levels, allow_nan=False)
             
             exog_values_all_levels = exog_values_all_levels.to_numpy()
             exog_values_dict = {

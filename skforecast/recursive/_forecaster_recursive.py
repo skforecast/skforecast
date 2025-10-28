@@ -1255,23 +1255,24 @@ class ForecasterRecursive(ForecasterBase):
             last_window_values = self.differentiator.fit_transform(last_window_values)
 
         if exog is not None:
+
             exog = input_to_frame(data=exog, input_name='exog')
-            # TODO: only do the selections if columns are not already selected
-            # if not exog.columns.equals(pd.Index(self.exog_names_in_)):
-            #     exog = exog[self.exog_names_in_]
-            exog = exog[self.exog_names_in_]
+            if exog.columns.tolist() != self.exog_names_in_:
+                exog = exog[self.exog_names_in_]
+
             exog = transform_dataframe(
                        df                = exog,
                        transformer       = self.transformer_exog,
                        fit               = False,
                        inverse_transform = False
                    )
-            # TODO: only check dtypes if they are not the same as seen in training
-            # if not exog.dtypes.to_dict() == self.exog_dtypes_out_:
-            #   check_exog_dtypes(exog=exog)
-            # else:
-            #     check_exog(exog=exog, allow_nan=False, series_id=series_id)
-            check_exog_dtypes(exog=exog)
+            
+            # NOTE: Only check dtypes if they are not the same as seen in training
+            if not exog.dtypes.to_dict() == self.exog_dtypes_out_:
+                check_exog_dtypes(exog=exog)
+            else:
+                check_exog(exog=exog, allow_nan=False)
+            
             exog_values = exog.to_numpy()[:steps]
         else:
             exog_values = None
@@ -1282,7 +1283,6 @@ class ForecasterRecursive(ForecasterBase):
                            )
 
         return last_window_values, exog_values, prediction_index, steps
-
 
     def _recursive_predict(
         self,

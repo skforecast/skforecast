@@ -937,9 +937,11 @@ def check_predict_input(
             "to retrain the Forecaster, provide `last_window` as argument."
         )
 
-    if forecaster_name in ['ForecasterRecursiveMultiSeries', 
-                           'ForecasterDirectMultiVariate',
-                           'ForecasterRnn']:
+    if forecaster_name in [
+        'ForecasterRecursiveMultiSeries', 
+        'ForecasterDirectMultiVariate',
+        'ForecasterRnn'
+    ]:
         if not isinstance(last_window, pd.DataFrame):
             raise TypeError(
                 f"`last_window` must be a pandas DataFrame. Got {type(last_window)}."

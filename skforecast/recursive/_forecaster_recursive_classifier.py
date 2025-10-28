@@ -31,7 +31,6 @@ from ..utils import (
     get_exog_dtypes,
     check_exog_dtypes,
     check_predict_input,
-    check_residuals_input,
     check_interval,
     check_extract_values_and_index,
     input_to_frame,
@@ -1189,41 +1188,78 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             last_window.iloc[-self.window_size:].to_numpy(copy=True).ravel()
         )
 
-        # TODO: Check last_window is a subsett of encoding_mapping_.keys() y 
-        # no contienen nans.
-        invalid_values = set(last_window_values) - set(self.encoding_mapping_.keys())
-        if invalid_values:
-            raise ValueError(
-                f"The `last_window` contains class labels not seen during training "
-                f"({invalid_values}).\n"
-                f"All class labels seen during training: {set(self.encoding_mapping_.keys())}."
-            )
+        # NOTE: NaNs are checked in check_predict_input, it creates a warning if found.
 
-        # last_window_values = transform_numpy(
-        #                          array             = last_window_values,
-        #                          transformer       = self.transformer_y,
-        #                          fit               = False,
-        #                          inverse_transform = False
-        #                      )
+        valid_classes = set(self.encoding_mapping_.keys())
+        unique_values = set(last_window_values)
+        invalid_values = unique_values - valid_classes
+        
+        if invalid_values:
+            # Format the error message nicely
+            invalid_list = sorted(list(invalid_values))[:5]  # Show max 5 examples
+            valid_list = sorted(list(valid_classes))[:10]  # Show max 10 examples
+            
+            raise ValueError(
+                f"The `last_window` contains {len(invalid_values)} class label(s) "
+                f"not seen during training: {invalid_list}{'...' if len(invalid_values) > 5 else ''}.\n"
+                f"Valid class labels (seen during training): {valid_list}"
+                f"{'...' if len(valid_classes) > 10 else ''}.\n"
+                f"Total valid classes: {len(valid_classes)}."
+            )
+        
+        last_window_dtype = last_window_values.dtype
+        
+        # Check if we're mixing numeric and non-numeric types
+        is_numeric_original = np.issubdtype(self.series_dtype_, np.number)
+        is_numeric_current = np.issubdtype(last_window_dtype, np.number)
+        
+        if is_numeric_original != is_numeric_current:
+            raise TypeError(
+                f"Dtype mismatch in `last_window`. Training data had dtype "
+                f"'{self.series_dtype_}' ({'numeric' if is_numeric_original else 'non-numeric'}), "
+                f"but `last_window` has dtype '{last_window_dtype}' "
+                f"({'numeric' if is_numeric_current else 'non-numeric'})."
+            )
+        
+        # For numeric types, check if they're proper discrete values
+        if is_numeric_current and np.issubdtype(last_window_dtype, np.floating):
+            has_decimals = np.mod(last_window_values, 1) != 0
+            if np.any(has_decimals):
+                decimal_examples = last_window_values[has_decimals][:3]
+                raise ValueError(
+                    f"The `last_window` contains float values with decimals, but "
+                    f"classification requires discrete class labels. "
+                    f"Examples: {decimal_examples.tolist()}."
+                )
+
+        # Transform class labels to encoded values (same encoding used in training)
+        # This ensures that lag features will have the same numerical representation
+        # as during training
+        last_window_values = self.encoder.transform(
+            last_window_values.reshape(-1, 1)
+        ).ravel()
+
+        # TODO: La conversión a categorical tiene que ser en el recursive_predict
 
         if exog is not None:
+
             exog = input_to_frame(data=exog, input_name='exog')
-            # TODO: only do the selections if columns are not already selected
-            # if not exog.columns.equals(pd.Index(self.exog_names_in_)):
-            #     exog = exog[self.exog_names_in_]
-            exog = exog[self.exog_names_in_]
+            if exog.columns.tolist() != self.exog_names_in_:
+                exog = exog[self.exog_names_in_]
+
             exog = transform_dataframe(
                        df                = exog,
                        transformer       = self.transformer_exog,
                        fit               = False,
                        inverse_transform = False
                    )
-            # TODO: only check dtypes if they are not the same as seen in training
-            # if not exog.dtypes.to_dict() == self.exog_dtypes_out_:
-            #   check_exog_dtypes(exog=exog)
-            # else:
-            #     check_exog(exog=exog, allow_nan=False, series_id=series_id)
-            check_exog_dtypes(exog=exog)
+            
+            # NOTE: Only check dtypes if they are not the same as seen in training
+            if not exog.dtypes.to_dict() == self.exog_dtypes_out_:
+                check_exog_dtypes(exog=exog)
+            else:
+                check_exog(exog=exog, allow_nan=False)
+            
             exog_values = exog.to_numpy()[:steps]
         else:
             exog_values = None

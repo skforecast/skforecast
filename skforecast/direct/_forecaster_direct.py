@@ -1499,15 +1499,24 @@ class ForecasterDirect(ForecasterBase):
 
         X_autoreg = np.concatenate(X_autoreg).reshape(1, -1)
         if exog is not None:
+            
             exog = input_to_frame(data=exog, input_name='exog')
-            exog = exog[self.exog_names_in_]
+            if exog.columns.tolist() != self.exog_names_in_:
+                exog = exog[self.exog_names_in_]
+
             exog = transform_dataframe(
                        df                = exog,
                        transformer       = self.transformer_exog,
                        fit               = False,
                        inverse_transform = False
                    )
-            check_exog_dtypes(exog=exog)
+            
+            # NOTE: Only check dtypes if they are not the same as seen in training
+            if not exog.dtypes.to_dict() == self.exog_dtypes_out_:
+                check_exog_dtypes(exog=exog)
+            else:
+                check_exog(exog=exog, allow_nan=False)
+            
             exog_values, _ = exog_to_direct_numpy(
                                  exog  = exog.to_numpy()[:max(steps)],
                                  steps = max(steps)
