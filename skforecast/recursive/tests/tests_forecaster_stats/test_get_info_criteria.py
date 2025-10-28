@@ -6,7 +6,7 @@ from skforecast.stats import Sarimax
 from skforecast.recursive import ForecasterStats
 
 # Fixtures
-from .fixtures_forecaster_sarimax import y
+from .fixtures_forecaster_stats import y
 
 
 def test_ForecasterStats_get_info_criteria_ValueError_criteria_invalid_value():

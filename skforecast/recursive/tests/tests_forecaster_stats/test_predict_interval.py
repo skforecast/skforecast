@@ -5,7 +5,7 @@ import pytest
 import numpy as np
 import pandas as pd
 from sklearn.exceptions import NotFittedError
-from skforecast.stats import Sarimax
+from skforecast.stats import Sarimax, Arar
 from skforecast.recursive import ForecasterStats
 from skforecast.utils import expand_index
 from sklearn.compose import ColumnTransformer
@@ -13,26 +13,26 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
 
 # Fixtures
-from .fixtures_forecaster_sarimax import y
-from .fixtures_forecaster_sarimax import y_lw
-from .fixtures_forecaster_sarimax import exog
-from .fixtures_forecaster_sarimax import exog_lw
-from .fixtures_forecaster_sarimax import exog_predict
-from .fixtures_forecaster_sarimax import exog_lw_predict
-from .fixtures_forecaster_sarimax import y_datetime
-from .fixtures_forecaster_sarimax import y_lw_datetime
-from .fixtures_forecaster_sarimax import exog_datetime
-from .fixtures_forecaster_sarimax import exog_lw_datetime
-from .fixtures_forecaster_sarimax import exog_predict_datetime
-from .fixtures_forecaster_sarimax import exog_lw_predict_datetime
-from .fixtures_forecaster_sarimax import df_exog
-from .fixtures_forecaster_sarimax import df_exog_lw
-from .fixtures_forecaster_sarimax import df_exog_predict
-from .fixtures_forecaster_sarimax import df_exog_lw_predict
-from .fixtures_forecaster_sarimax import df_exog_datetime
-from .fixtures_forecaster_sarimax import df_exog_lw_datetime
-from .fixtures_forecaster_sarimax import df_exog_predict_datetime
-from .fixtures_forecaster_sarimax import df_exog_lw_predict_datetime
+from .fixtures_forecaster_stats import y
+from .fixtures_forecaster_stats import y_lw
+from .fixtures_forecaster_stats import exog
+from .fixtures_forecaster_stats import exog_lw
+from .fixtures_forecaster_stats import exog_predict
+from .fixtures_forecaster_stats import exog_lw_predict
+from .fixtures_forecaster_stats import y_datetime
+from .fixtures_forecaster_stats import y_lw_datetime
+from .fixtures_forecaster_stats import exog_datetime
+from .fixtures_forecaster_stats import exog_lw_datetime
+from .fixtures_forecaster_stats import exog_predict_datetime
+from .fixtures_forecaster_stats import exog_lw_predict_datetime
+from .fixtures_forecaster_stats import df_exog
+from .fixtures_forecaster_stats import df_exog_lw
+from .fixtures_forecaster_stats import df_exog_predict
+from .fixtures_forecaster_stats import df_exog_lw_predict
+from .fixtures_forecaster_stats import df_exog_datetime
+from .fixtures_forecaster_stats import df_exog_lw_datetime
+from .fixtures_forecaster_stats import df_exog_predict_datetime
+from .fixtures_forecaster_stats import df_exog_lw_predict_datetime
 
 
 def test_predict_NotFittedError_when_fitted_is_False():
@@ -433,3 +433,37 @@ def test_predict_interval_ForecasterStats_updates_extended_index_twice(y, idx):
 
     pd.testing.assert_index_equal(result_1, expected_1)
     pd.testing.assert_index_equal(forecaster.extended_index_, idx)
+
+
+def test_predict_interval_output_ForecasterStats_Arar_regressor(y=y):
+    """
+    Test output of predict_interval when using Arar as regressor in ForecasterStats
+    """
+    y = y.copy()
+    y.index = pd.date_range(start='2000-01-01', periods=len(y), freq='D')
+    regressor = Arar(max_ar_depth=26, max_lag=40)
+    forecaster = ForecasterStats(
+        regressor = regressor
+    )
+    forecaster.fit(y=y)
+    predictions = forecaster.predict_interval(steps=10, alpha=0.05)
+
+    expected_results = pd.DataFrame(
+        data = np.array([[0.65451694, 0.56798138, 0.7410525 ],
+        [0.69369274, 0.60112468, 0.78626081],
+        [0.8018875 , 0.70848121, 0.8952938 ],
+        [0.82157326, 0.72804665, 0.91509988],
+        [0.87868702, 0.78514306, 0.97223098],
+        [0.88798496, 0.79443849, 0.98153142],
+        [1.01739572, 0.92384889, 1.11094254],
+        [1.02221717, 0.92867029, 1.11576405],
+        [0.5688093 , 0.47526242, 0.66235619],
+        [0.63365663, 0.54010974, 0.72720352]],
+        dtype=float),
+        columns = ['pred', 'lower_bound', 'upper_bound'],
+        index = pd.date_range(start="2000-02-20", periods=10, freq='D')
+        
+    )
+
+    pd.testing.assert_frame_equal(predictions, expected_results)
+

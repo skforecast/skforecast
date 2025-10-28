@@ -91,8 +91,9 @@ nav:
     - recursive:
       - ForecasterRecursive: api/ForecasterRecursive.md
       - ForecasterRecursiveMultiSeries: api/ForecasterRecursiveMultiSeries.md
-      - ForecasterSarimax: api/ForecasterSarimax.md
+      - ForecasterStats: api/ForecasterStats.md
       - ForecasterEquivalentDate: api/ForecasterEquivalentDate.md
+      - ForecasterSarimax: api/ForecasterSarimax.md
     - direct:
       - ForecasterDirect: api/ForecasterDirect.md
       - ForecasterDirectMultiVariate: api/ForecasterDirectMultiVariate.md

@@ -8,8 +8,8 @@ from skforecast.stats import Sarimax
 from skforecast.recursive import ForecasterStats
 
 # Fixtures
-from .fixtures_forecaster_sarimax import y
-from .fixtures_forecaster_sarimax import y_datetime
+from .fixtures_forecaster_stats import y
+from .fixtures_forecaster_stats import y_datetime
 
 
 def test_fit_ValueError_when_len_exog_is_not_the_same_as_len_y():

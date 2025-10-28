@@ -9,8 +9,8 @@ from skforecast.recursive import ForecasterStats
 from sklearn.exceptions import NotFittedError
 
 # Fixtures
-from .fixtures_forecaster_sarimax import y
-from .fixtures_forecaster_sarimax import exog
+from .fixtures_forecaster_stats import y
+from .fixtures_forecaster_stats import exog
 
 
 def test_NotFittedError_is_raised_when_forecaster_is_not_fitted():
