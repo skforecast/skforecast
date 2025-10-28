@@ -14,9 +14,7 @@ import textwrap
 from sklearn.base import clone
 from sklearn.exceptions import NotFittedError
 
-import skforecast
-from ..sarimax import Sarimax
-from ..stats import Arar
+from .. import __version__
 from ..exceptions import IgnoredArgumentWarning
 from ..utils import (
     check_y,
@@ -34,13 +32,19 @@ from ..utils import (
 
 class ForecasterStats():
     """
-    This class turns statistical model from the skforecast library (ARAR, Sarimax)
-    into a Forecaster compatible with the skforecast API.
+    This class turns statistical model into a Forecaster compatible with the skforecast API. Supported
+    statistical models are: skforecast.stats.Sarimax, skforecast.stats.ARAR, aeon.forecasting.stats.ARIMA and
+    aeon.forecasting.stats.ETS.
     
     Parameters
     ----------
-    regressor : skforecast.sarimax.Sarimax, skforecast.stats.ARAR, skforecast.stats.ARIMA
-        A statistical model instance from skforecast.
+    regressor : object
+        A statistical model instance. Supported models are:
+        
+        - skforecast.stats.Sarimax
+        - skforecast.stats.ARAR
+        - aeon.forecasting.stats.ARIMA
+        - aeon.forecasting.stats.ETS
     transformer_y : object transformer (preprocessor), default None
         An instance of a transformer (preprocessor) compatible with the scikit-learn
         preprocessing API with methods: fit, transform, fit_transform and inverse_transform.
@@ -59,8 +63,8 @@ class ForecasterStats():
     
     Attributes
     ----------
-    regressor : skforecast.sarimax.Sarimax
-        A Sarimax model instance from skforecast.
+    regressor : object
+        A statistical model instance.
     params: dict
         Parameters of the sarimax model.
     transformer_y : object transformer (preprocessor)
@@ -119,6 +123,8 @@ class ForecasterStats():
         Tag to identify if the regressor has been fitted (trained).
     fit_date : str
         Date of last fit.
+    valid_regressor_types : list
+        List of valid regressor types.
     skforecast_version : str
         Version of skforecast library used to create the forecaster.
     python_version : str
@@ -157,11 +163,11 @@ class ForecasterStats():
         self.creation_date           = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
         self.is_fitted               = False
         self.fit_date                = None
-        self.skforecast_version      = skforecast.__version__
+        self.skforecast_version      = __version__
         self.python_version          = sys.version.split(" ")[0]
         self.forecaster_id           = forecaster_id
         self.valid_regressor_types   = [
-            'skforecast.sarimax._sarimax.Sarimax',
+            'skforecast.stats._sarimax.Sarimax',
             'skforecast.stats._arar.Arar',
             'aeon.forecasting.stats._arima.ARIMA',
             'aeon.forecasting.stats._ets.ETS'
@@ -218,7 +224,7 @@ class ForecasterStats():
         self
     ) -> str:
         """
-        Information displayed when a ForecasterSarimax object is printed.
+        Information displayed when a ForecasterStats object is printed.
         """
 
         params, exog_names_in_ = self._preprocess_repr()
@@ -310,9 +316,9 @@ class ForecasterStats():
                 </ul>
             </details>
             <p>
-                <a href="https://skforecast.org/{skforecast.__version__}/api/forecastersarimax.html">&#128712 <strong>API Reference</strong></a>
+                <a href="https://skforecast.org/{__version__}/api/forecasterstats.html">&#128712 <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
-                <a href="https://skforecast.org/{skforecast.__version__}/user_guides/forecasting-sarimax-arima.html">&#128462 <strong>User Guide</strong></a>
+                <a href="https://skforecast.org/{__version__}/user_guides/forecasting-sarimax-arima.html">&#128462 <strong>User Guide</strong></a>
             </p>
         </div>
         """
@@ -426,7 +432,7 @@ class ForecasterStats():
         if store_last_window:
             self.last_window_ = y.copy()
 
-        if self.regressor_type == 'skforecast.sarimax.Sarimax':
+        if self.regressor_type == 'skforecast.stats._sarimax.Sarimax':
             self.extended_index_ = self.regressor.sarimax_res.fittedvalues.index.copy()
         else:
             self.extended_index_ = y.index
@@ -633,12 +639,12 @@ class ForecasterStats():
                 exog  = last_window_exog,
                 refit = False
             )
-            if self.regressor_type == 'skforecast.sarimax._sarimax.Sarimax':
+            if self.regressor_type == 'skforecast.stats._sarimax.Sarimax':
                 self.extended_index_ = self.regressor.sarimax_res.fittedvalues.index
             else:
                 self.extended_index_ = self.regressor.fitted_index_
 
-        if self.regressor_type == 'skforecast.sarimax._sarimax.Sarimax':
+        if self.regressor_type == 'skforecast.stats._sarimax.Sarimax':
             predictions = self.regressor.predict(
                               steps = steps,
                               exog  = exog
@@ -743,7 +749,7 @@ class ForecasterStats():
         if alpha is None:
             if 100 - interval[1] != interval[0]:
                 raise ValueError(
-                    f"When using `interval` in ForecasterSarimax, it must be symmetrical. "
+                    f"When using `interval` in ForecasterStats, it must be symmetrical. "
                     f"For example, interval of 95% should be as `interval = [2.5, 97.5]`. "
                     f"Got {interval}."
                 )
@@ -765,7 +771,7 @@ class ForecasterStats():
             self.extended_index_ = self.regressor.sarimax_res.fittedvalues.index
 
         # Get following n steps predictions with intervals
-        if self.regressor_type == 'skforecast.sarimax.Sarimax':
+        if self.regressor_type == 'skforecast.stats._sarimax.Sarimax':
             predictions = self.regressor.predict(
                             steps           = steps,
                             exog            = exog,

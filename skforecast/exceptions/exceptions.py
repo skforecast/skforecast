@@ -10,11 +10,73 @@ The skforecast.exceptions module contains all the custom warnings and error
 classes used across skforecast.
 """
 import warnings
+import inspect
+from functools import wraps
 import textwrap
 from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 
+
+def runtime_deprecated(replacement=None, version=None, removal=None, category=FutureWarning):
+    """
+    Decorator to mark functions or classes as deprecated.
+
+    Parameters
+    ----------
+    replacement : str, optional
+        Name of the replacement function or class.
+    version : str, optional
+        Version where this was deprecated.
+    removal : str, optional
+        Version where this will be removed.
+    category : Warning, optional
+        Type of warning to issue (default: FutureWarning).
+    """
+    def decorator(obj):
+        message = f"{obj.__name__} is deprecated"
+        if version:
+            message += f" since version {version}"
+        if replacement:
+            message += f"; use {replacement} instead"
+        if removal:
+            message += f". It will be removed in version {removal}."
+        else:
+            message += "."
+
+        # --- Case 1: Decorating a function or method ---
+        if inspect.isfunction(obj) or inspect.ismethod(obj):
+            @wraps(obj)
+            def wrapper(*args, **kwargs):
+                warnings.warn(message, category, stacklevel=2)
+                return obj(*args, **kwargs)
+            wrapper.__deprecated__ = True
+            wrapper.__replacement__ = replacement
+            wrapper.__version__ = version
+            wrapper.__removal__ = removal
+            return wrapper
+
+        # --- Case 2: Decorating a class ---
+        elif inspect.isclass(obj):
+            orig_init = obj.__init__
+
+            @wraps(orig_init)
+            def new_init(self, *args, **kwargs):
+                warnings.warn(message, category, stacklevel=2)
+                orig_init(self, *args, **kwargs)
+
+            obj.__init__ = new_init
+            obj.__deprecated__ = True
+            obj.__replacement__ = replacement
+            obj.__version__ = version
+            obj.__removal__ = removal
+            return obj
+
+        # --- Fallback: Not supported type ---
+        else:
+            raise TypeError("@deprecated can only be used on functions or classes")
+
+    return decorator
 
 class DataTypeWarning(UserWarning):
     """
@@ -382,3 +444,86 @@ def set_warnings_style(style: str = 'skforecast') -> None:
 
 
 set_warnings_style(style='skforecast')
+
+
+# def runtime_deprecated_function(replacement=None, version=None, removal=None, category=FutureWarning):
+#     """
+#     Marks a function as deprecated. Emits a FutureWarning when the function is called.
+
+#     Parameters
+#     ----------
+#     replacement : str, optional
+#         The name of the function or API that should be used instead.
+#     version : str, optional
+#         The version in which this function was deprecated.
+#     removal : str, optional
+#         The version in which this function will be removed.
+#     category : Warning, default=FutureWarning
+#         The category of the warning to be emitted.
+#     """
+#     def decorator(func):
+#         @wraps(func)
+#         def wrapper(*args, **kwargs):
+#             message = f"{func.__name__}() is deprecated"
+#             if version:
+#                 message += f" since version {version}"
+#             if replacement:
+#                 message += f"; use {replacement}() instead"
+#             if removal:
+#                 message += f". It will be removed in version {removal}."
+#             else:
+#                 message += "."
+
+#             warnings.warn(message, category, stacklevel=2)
+#             return func(*args, **kwargs)
+
+#         wrapper.__deprecated__ = True
+#         wrapper.__replacement__ = replacement
+#         wrapper.__version__ = version
+#         wrapper.__removal__ = removal
+#         return wrapper
+
+#     return decorator
+
+
+# def runtime_deprecated_class(replacement=None, version=None, removal=None, category=FutureWarning):
+#     """
+#     Marks a class as deprecated. Emits a FutureWarning when the class is instantiated.
+
+#     Parameters
+#     ----------
+#     replacement : str, optional
+#         The name of the class or API that should be used instead.
+#     version : str, optional
+#         The version in which this class was deprecated.
+#     removal : str, optional
+#         The version in which this class will be removed.
+#     category : Warning, default=FutureWarning
+#         The category of the warning to be emitted.
+#     """
+#     def decorator(cls):
+#         original_init = cls.__init__
+
+#         @wraps(original_init)
+#         def new_init(self, *args, **kwargs):
+#             message = f"{cls.__name__} class is deprecated"
+#             if version:
+#                 message += f" since version {version}"
+#             if replacement:
+#                 message += f"; use {replacement} instead"
+#             if removal:
+#                 message += f". It will be removed in version {removal}."
+#             else:
+#                 message += "."
+
+#             warnings.warn(message, category, stacklevel=2)
+#             original_init(self, *args, **kwargs)
+
+#         cls.__init__ = new_init
+#         cls.__deprecated__ = True
+#         cls.__replacement__ = replacement
+#         cls.__version__ = version
+#         cls.__removal__ = removal
+#         return cls
+
+#     return decorator

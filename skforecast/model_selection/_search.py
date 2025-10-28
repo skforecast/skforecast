@@ -6,6 +6,7 @@
 # coding=utf-8
 
 from __future__ import annotations
+from typing_extensions import deprecated
 import os
 import logging
 from typing import Callable
@@ -17,12 +18,12 @@ from tqdm.auto import tqdm
 import optuna
 from optuna.samplers import TPESampler
 from sklearn.model_selection import ParameterGrid, ParameterSampler
-from ..exceptions import warn_skforecast_categories
+from ..exceptions import warn_skforecast_categories, runtime_deprecated
 from ..model_selection._split import TimeSeriesFold, OneStepAheadFold
 from ..model_selection._validation import (
     backtesting_forecaster, 
     backtesting_forecaster_multiseries,
-    backtesting_sarimax
+    backtesting_stats
 )
 from ..metrics import add_y_train_argument, _get_metric
 from ..model_selection._utils import (
@@ -2136,8 +2137,124 @@ def _bayesian_search_optuna_multiseries(
             
     return results, best_trial
 
-
+# TODO: Remove in version 0.20.0
+@runtime_deprecated(replacement="grid_search_stats", version="0.19.0", removal="0.20.0")
+@deprecated("`grid_search_sarimax` is deprecated since version 0.19.0; use `grid_search_stats` instead. It will be removed in version 0.20.0.")
 def grid_search_sarimax(
+    forecaster: object,
+    y: pd.Series,
+    cv: TimeSeriesFold,
+    param_grid: dict,
+    metric: str | Callable | list[str | Callable],
+    exog: pd.Series | pd.DataFrame | None = None,
+    return_best: bool = True,
+    n_jobs: int | str = 'auto',
+    verbose: bool = False,
+    suppress_warnings_fit: bool = False,
+    show_progress: bool = True,
+    output_file: str | None = None
+) -> pd.DataFrame:
+    """
+    !!! warning "Deprecated"
+        This function is deprecated since skforecast 0.19. Please use `grid_search_stats` instead.
+
+    """
+
+    return grid_search_stats(
+        forecaster            = forecaster,
+        y                     = y,
+        cv                    = cv,
+        param_grid            = param_grid,
+        metric                = metric,
+        exog                  = exog,
+        return_best           = return_best,
+        n_jobs                = n_jobs,
+        verbose               = verbose,
+        suppress_warnings_fit = suppress_warnings_fit,
+        show_progress         = show_progress,
+        output_file           = output_file
+    )
+
+# TODO: Remove in version 0.20.0
+@runtime_deprecated(replacement="random_search_stats", version="0.19.0", removal="0.20.0")
+@deprecated("`random_search_sarimax` is deprecated since version 0.19.0; use `random_search_stats` instead. It will be removed in version 0.20.0.")
+def random_search_sarimax(
+    forecaster: object,
+    y: pd.Series,
+    cv: TimeSeriesFold,
+    param_distributions: dict,
+    metric: str | Callable | list[str | Callable],
+    exog: pd.Series | pd.DataFrame | None = None,
+    n_iter: int = 10,
+    random_state: int = 123,
+    return_best: bool = True,
+    n_jobs: int | str = 'auto',
+    verbose: bool = False,
+    suppress_warnings_fit: bool = False,
+    show_progress: bool = True,
+    output_file: str | None = None
+) -> pd.DataFrame:
+    """
+    !!! warning "Deprecated"
+        This function is deprecated since skforecast 0.19. Please use `random_search_stats` instead.
+    """
+    
+    return random_search_stats(
+        forecaster            = forecaster,
+        y                     = y,
+        cv                    = cv,
+        param_distributions   = param_distributions,
+        metric                = metric,
+        exog                  = exog,
+        n_iter                = n_iter,
+        random_state          = random_state,
+        return_best           = return_best,
+        n_jobs                = n_jobs,
+        verbose               = verbose,
+        suppress_warnings_fit = suppress_warnings_fit,
+        show_progress         = show_progress,
+        output_file           = output_file
+    )
+
+# TODO: Remove in version 0.20.0
+@runtime_deprecated(replacement="_evaluate_grid_hyperparameters_stats", version="0.19.0", removal="0.20.0")
+@deprecated("`_evaluate_grid_hyperparameters_sarimax` is deprecated since version 0.19.0; use `_evaluate_grid_hyperparameters_stats` instead. It will be removed in version 0.20.0.")
+def _evaluate_grid_hyperparameters_sarimax(
+    forecaster: object,
+    y: pd.Series,
+    cv: TimeSeriesFold,
+    param_grid: dict,
+    metric: str | Callable | list[str | Callable],
+    exog: pd.Series | pd.DataFrame | None = None,
+    return_best: bool = True,
+    n_jobs: int | str = 'auto',
+    verbose: bool = False,
+    suppress_warnings_fit: bool = False,
+    show_progress: bool = True,
+    output_file: str | None = None
+) -> pd.DataFrame:
+    """
+    !!! warning "Deprecated"
+        This function is deprecated since skforecast 0.19. Please use `_evaluate_grid_hyperparameters_stats` instead.
+    """
+
+    return _evaluate_grid_hyperparameters_stats(
+        forecaster            = forecaster,
+        y                     = y,
+        cv                    = cv,
+        param_grid            = param_grid,
+        metric                = metric,
+        exog                  = exog,
+        return_best           = return_best,
+        n_jobs                = n_jobs,
+        verbose               = verbose,
+        suppress_warnings_fit = suppress_warnings_fit,
+        show_progress         = show_progress,
+        output_file           = output_file
+    )
+
+
+def grid_search_stats(
     forecaster: object,
     y: pd.Series,
     cv: TimeSeriesFold,
@@ -2196,7 +2313,6 @@ def grid_search_sarimax(
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
         `None`, the results will not be saved to a file.
-        **New in version 0.12.0**
 
     Returns
     -------
@@ -2211,7 +2327,7 @@ def grid_search_sarimax(
 
     param_grid = list(ParameterGrid(param_grid))
 
-    results = _evaluate_grid_hyperparameters_sarimax(
+    results = _evaluate_grid_hyperparameters_stats(
         forecaster            = forecaster,
         y                     = y,
         cv                    = cv,
@@ -2229,7 +2345,7 @@ def grid_search_sarimax(
     return results
 
 
-def random_search_sarimax(
+def random_search_stats(
     forecaster: object,
     y: pd.Series,
     cv: TimeSeriesFold,
@@ -2295,7 +2411,6 @@ def random_search_sarimax(
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
         `None`, the results will not be saved to a file.
-        **New in version 0.12.0**
 
     Returns
     -------
@@ -2310,7 +2425,7 @@ def random_search_sarimax(
 
     param_grid = list(ParameterSampler(param_distributions, n_iter=n_iter, random_state=random_state))
 
-    results = _evaluate_grid_hyperparameters_sarimax(
+    results = _evaluate_grid_hyperparameters_stats(
         forecaster            = forecaster,
         y                     = y,
         cv                    = cv,
@@ -2328,7 +2443,7 @@ def random_search_sarimax(
     return results
 
 
-def _evaluate_grid_hyperparameters_sarimax(
+def _evaluate_grid_hyperparameters_stats(
     forecaster: object,
     y: pd.Series,
     cv: TimeSeriesFold,
@@ -2386,7 +2501,6 @@ def _evaluate_grid_hyperparameters_sarimax(
         Specifies the filename or full path where the results should be saved. 
         The results will be saved in a tab-separated values (TSV) format. If 
         `None`, the results will not be saved to a file.
-        **New in version 0.12.0**
 
     Returns
     -------
@@ -2426,29 +2540,37 @@ def _evaluate_grid_hyperparameters_sarimax(
     params_list = []
     for params in param_grid:
 
-        forecaster.set_params(params)
-        metric_values = backtesting_sarimax(
-                            forecaster            = forecaster,
-                            y                     = y,
-                            cv                    = cv,
-                            metric                = metric,
-                            exog                  = exog,
-                            alpha                 = None,
-                            interval              = None,
-                            n_jobs                = n_jobs,
-                            verbose               = verbose,
-                            suppress_warnings_fit = suppress_warnings_fit,
-                            show_progress         = False
-                        )[0]
-        metric_values = metric_values.iloc[0, :].to_list()
-        warnings.filterwarnings(
-            'ignore', category=RuntimeWarning, message= "The forecaster will be fit.*"
-        )
-        
-        params_list.append(params)
-        for m, m_value in zip(metric, metric_values):
-            m_name = m if isinstance(m, str) else m.__name__
-            metric_dict[m_name].append(m_value)
+        try:
+            forecaster.set_params(params)
+            metric_values = backtesting_stats(
+                                forecaster            = forecaster,
+                                y                     = y,
+                                cv                    = cv,
+                                metric                = metric,
+                                exog                  = exog,
+                                alpha                 = None,
+                                interval              = None,
+                                n_jobs                = n_jobs,
+                                verbose               = verbose,
+                                suppress_warnings_fit = suppress_warnings_fit,
+                                show_progress         = False
+                            )[0]
+            metric_values = metric_values.iloc[0, :].to_list()
+            warnings.filterwarnings(
+                'ignore', category=RuntimeWarning, message= "The forecaster will be fit.*"
+            )
+            
+            params_list.append(params)
+            for m, m_value in zip(metric, metric_values):
+                m_name = m if isinstance(m, str) else m.__name__
+                metric_dict[m_name].append(m_value)
+        except Exception as e:
+            warnings.warn(
+                f"Exception raised for parameters {params}.\n"
+                f"Parameters skipped. Exception: {e}",
+                RuntimeWarning
+            )
+            continue
         
         if output_file is not None:
             header = ['params', *metric_dict.keys(), *params.keys()]

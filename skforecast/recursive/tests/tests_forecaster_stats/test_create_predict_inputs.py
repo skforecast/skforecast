@@ -1,12 +1,12 @@
-# Unit test _create_predict_inputs ForecasterSarimax
+# Unit test _create_predict_inputs ForecasterStats
 # ==============================================================================
 import re
 import pytest
 import numpy as np
 import pandas as pd
 from sklearn.exceptions import NotFittedError
-from skforecast.sarimax import Sarimax
-from skforecast.recursive import ForecasterSarimax
+from skforecast.stats import Sarimax
+from skforecast.recursive import ForecasterStats
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
@@ -38,7 +38,7 @@ def test_create_predict_inputs_NotFittedError_when_fitted_is_False():
     """
     Test NotFittedError is raised when fitted is False.
     """
-    forecaster = ForecasterSarimax(regressor=Sarimax(order=(1, 1, 1)))
+    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 1, 1)))
 
     err_msg = re.escape(
         ("This Forecaster instance is not fitted yet. Call `fit` with "
@@ -48,12 +48,12 @@ def test_create_predict_inputs_NotFittedError_when_fitted_is_False():
         forecaster._create_predict_inputs(steps=5)
 
 
-def test_create_predict_inputs_ValueError_when_ForecasterSarimax_last_window_exog_is_not_None_and_last_window_is_not_provided():
+def test_create_predict_inputs_ValueError_when_ForecasterStats_last_window_exog_is_not_None_and_last_window_is_not_provided():
     """
     Check ValueError is raised when last_window_exog is not None, but 
     last_window is not provided.
     """
-    forecaster = ForecasterSarimax(regressor=Sarimax(order=(1, 1, 1)))
+    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 1, 1)))
     forecaster.fit(y=y, exog=exog)
     
     err_msg = re.escape(
@@ -69,12 +69,12 @@ def test_create_predict_inputs_ValueError_when_ForecasterSarimax_last_window_exo
         )
 
 
-def test_create_predict_inputs_ValueError_when_ForecasterSarimax_last_window_exog_is_None_and_included_exog_is_true():
+def test_create_predict_inputs_ValueError_when_ForecasterStats_last_window_exog_is_None_and_included_exog_is_true():
     """
     Check ValueError is raised when last_window_exog is None, but included_exog
     is True and last_window is provided.
     """
-    forecaster = ForecasterSarimax(regressor=Sarimax(order=(1, 1, 1)))
+    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 1, 1)))
     forecaster.fit(y=y, exog=exog)
     
     err_msg = re.escape(
@@ -91,11 +91,11 @@ def test_create_predict_inputs_ValueError_when_ForecasterSarimax_last_window_exo
         )
 
 
-def test_create_predict_inputs_output_ForecasterSarimax():
+def test_create_predict_inputs_output_ForecasterStats():
     """
-    Test _create_predict_inputs output of ForecasterSarimax.
+    Test _create_predict_inputs output of ForecasterStats.
     """
-    forecaster = ForecasterSarimax(regressor = Sarimax())
+    forecaster = ForecasterStats(regressor = Sarimax())
     forecaster.fit(y=y)
     results = forecaster._create_predict_inputs(steps=5)
 
@@ -108,11 +108,11 @@ def test_create_predict_inputs_output_ForecasterSarimax():
     assert results == expected
 
 
-def test_create_predict_inputs_output_ForecasterSarimax_with_exog():
+def test_create_predict_inputs_output_ForecasterStats_with_exog():
     """
-    Test _create_predict_inputs output of ForecasterSarimax with exogenous variables.
+    Test _create_predict_inputs output of ForecasterStats with exogenous variables.
     """
-    forecaster = ForecasterSarimax(regressor = Sarimax())
+    forecaster = ForecasterStats(regressor = Sarimax())
     forecaster.fit(y=y, exog=exog)
     results = forecaster._create_predict_inputs(steps=5, exog=exog_predict)
 
@@ -130,12 +130,12 @@ def test_create_predict_inputs_output_ForecasterSarimax_with_exog():
     pd.testing.assert_frame_equal(results[2], expected[2])
 
 
-def test_create_predict_inputs_output_ForecasterSarimax_with_transform_y():
+def test_create_predict_inputs_output_ForecasterStats_with_transform_y():
     """
-    Test _create_predict_inputs output of ForecasterSarimax with a 
+    Test _create_predict_inputs output of ForecasterStats with a 
     StandardScaler() as transformer_y.
     """        
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
                      regressor     = Sarimax(),
                      transformer_y = StandardScaler()
                  )
@@ -151,9 +151,9 @@ def test_create_predict_inputs_output_ForecasterSarimax_with_transform_y():
     assert results == expected
 
 
-def test_create_predict_inputs_output_ForecasterSarimax_with_transform_y_and_transform_exog():
+def test_create_predict_inputs_output_ForecasterStats_with_transform_y_and_transform_exog():
     """
-    Test _create_predict_inputs output of ForecasterSarimax, StandardScaler
+    Test _create_predict_inputs output of ForecasterStats, StandardScaler
     as transformer_y and transformer_exog as transformer_exog.
     """    
     transformer_exog = ColumnTransformer(
@@ -163,7 +163,7 @@ def test_create_predict_inputs_output_ForecasterSarimax_with_transform_y_and_tra
                            verbose_feature_names_out = False
                        )
 
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
                      regressor        = Sarimax(),
                      transformer_y    = StandardScaler(),
                      transformer_exog = transformer_exog
@@ -197,7 +197,7 @@ def test_create_predict_inputs_ValueError_when_last_window_index_does_not_follow
     lw_test = pd.Series(data=y_lw_datetime.to_numpy())
     lw_test.index = pd.date_range(start='2022-03-01', periods=50, freq='D')
 
-    forecaster = ForecasterSarimax(regressor=Sarimax(order=(1, 0, 1)))
+    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 0, 1)))
     forecaster.fit(y=y_test)
 
     err_msg = re.escape(
@@ -228,7 +228,7 @@ def test_create_predict_inputs_ValueError_when_last_window_exog_index_does_not_f
     lw_exog_test = pd.Series(data=exog_lw_datetime.to_numpy(), name='exog')
     lw_exog_test.index = pd.date_range(start='2022-03-01', periods=50, freq='D', name='exog')
 
-    forecaster = ForecasterSarimax(regressor=Sarimax(order=(1, 0, 1)))
+    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 0, 1)))
     forecaster.fit(y=y_test, exog=exog_test)
 
     err_msg = re.escape(
@@ -247,11 +247,11 @@ def test_create_predict_inputs_ValueError_when_last_window_exog_index_does_not_f
         )
 
 
-def test_create_predict_inputs_output_ForecasterSarimax_with_last_window():
+def test_create_predict_inputs_output_ForecasterStats_with_last_window():
     """
-    Test _create_predict_inputs output of ForecasterSarimax with `last_window`.
+    Test _create_predict_inputs output of ForecasterStats with `last_window`.
     """    
-    forecaster = ForecasterSarimax(regressor = Sarimax())
+    forecaster = ForecasterStats(regressor = Sarimax())
     forecaster.fit(y=y_datetime)
     results = forecaster._create_predict_inputs(steps=5, last_window=y_lw_datetime)
 
@@ -279,12 +279,12 @@ def test_create_predict_inputs_output_ForecasterSarimax_with_last_window():
     assert results[2] == expected[2]
 
 
-def test_create_predict_inputs_output_ForecasterSarimax_with_last_window_and_exog():
+def test_create_predict_inputs_output_ForecasterStats_with_last_window_and_exog():
     """
-    Test _create_predict_inputs output of ForecasterSarimax with exogenous 
+    Test _create_predict_inputs output of ForecasterStats with exogenous 
     variables and `last_window`.
     """
-    forecaster = ForecasterSarimax(regressor = Sarimax())
+    forecaster = ForecasterStats(regressor = Sarimax())
     forecaster.fit(y=y_datetime, exog=exog_datetime)
     results = forecaster._create_predict_inputs(
                   steps            = 5, 
@@ -332,9 +332,9 @@ def test_create_predict_inputs_output_ForecasterSarimax_with_last_window_and_exo
     pd.testing.assert_frame_equal(results[2], expected[2])
 
 
-def test_create_predict_inputs_output_ForecasterSarimax_with_last_window_and_exog_and_transformers():
+def test_create_predict_inputs_output_ForecasterStats_with_last_window_and_exog_and_transformers():
     """
-    Test _create_predict_inputs output of ForecasterSarimax with exogenous 
+    Test _create_predict_inputs output of ForecasterStats with exogenous 
     variables, `last_window` and transformers.
     """
     transformer_exog = ColumnTransformer(
@@ -344,7 +344,7 @@ def test_create_predict_inputs_output_ForecasterSarimax_with_last_window_and_exo
                            verbose_feature_names_out = False
                        )
 
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
                      regressor        = Sarimax(), 
                      transformer_y    = StandardScaler(),
                      transformer_exog = transformer_exog

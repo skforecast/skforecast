@@ -1,11 +1,11 @@
-# Unit test get_feature_importances ForecasterSarimax
+# Unit test get_feature_importances ForecasterStats
 # ==============================================================================
 import re
 import pytest
 import numpy as np
 import pandas as pd
-from skforecast.sarimax import Sarimax
-from skforecast.recursive import ForecasterSarimax
+from skforecast.stats import Sarimax
+from skforecast.recursive import ForecasterStats
 from sklearn.exceptions import NotFittedError
 
 # Fixtures
@@ -18,7 +18,7 @@ def test_NotFittedError_is_raised_when_forecaster_is_not_fitted():
     Test NotFittedError is raised when calling get_feature_importances() and 
     forecaster is not fitted.
     """
-    forecaster = ForecasterSarimax(regressor=Sarimax(order=(1, 0, 0)))
+    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 0, 0)))
 
     err_msg = re.escape(
         ("This forecaster is not fitted yet. Call `fit` with appropriate "
@@ -28,11 +28,11 @@ def test_NotFittedError_is_raised_when_forecaster_is_not_fitted():
         forecaster.get_feature_importances()
 
 
-def test_output_get_feature_importances_ForecasterSarimax_skforecast():
+def test_output_get_feature_importances_ForecasterStats_skforecast():
     """
-    Test output of get_feature_importances ForecasterSarimax skforecast.
+    Test output of get_feature_importances ForecasterStats skforecast.
     """
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
                      regressor = Sarimax(order= (1, 1, 1), maxiter=1000, method='cg', disp=False)
                  )
     forecaster.fit(y=y, exog=exog)

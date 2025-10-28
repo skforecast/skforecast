@@ -1,12 +1,12 @@
-# Unit test predict ForecasterSarimax
+# Unit test predict ForecasterStats
 # ==============================================================================
 import re
 import pytest
 import platform
 import pandas as pd
 from sklearn.exceptions import NotFittedError
-from skforecast.sarimax import Sarimax
-from skforecast.recursive import ForecasterSarimax
+from skforecast.stats import Sarimax
+from skforecast.recursive import ForecasterStats
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
@@ -38,7 +38,7 @@ def test_predict_NotFittedError_when_fitted_is_False():
     """
     Test NotFittedError is raised when fitted is False.
     """
-    forecaster = ForecasterSarimax(regressor=Sarimax(order=(1, 1, 1)))
+    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 1, 1)))
 
     err_msg = re.escape(
         ("This Forecaster instance is not fitted yet. Call `fit` with "
@@ -48,12 +48,12 @@ def test_predict_NotFittedError_when_fitted_is_False():
         forecaster.predict(steps=5)
 
 
-def test_predict_ValueError_when_ForecasterSarimax_last_window_exog_is_not_None_and_last_window_is_not_provided():
+def test_predict_ValueError_when_ForecasterStats_last_window_exog_is_not_None_and_last_window_is_not_provided():
     """
     Check ValueError is raised when last_window_exog is not None, but 
     last_window is not provided.
     """
-    forecaster = ForecasterSarimax(regressor=Sarimax(order=(1, 1, 1)))
+    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 1, 1)))
     forecaster.fit(y=y, exog=exog)
     
     err_msg = re.escape(
@@ -69,12 +69,12 @@ def test_predict_ValueError_when_ForecasterSarimax_last_window_exog_is_not_None_
         )
 
 
-def test_predict_ValueError_when_ForecasterSarimax_last_window_exog_is_None_and_included_exog_is_true():
+def test_predict_ValueError_when_ForecasterStats_last_window_exog_is_None_and_included_exog_is_true():
     """
     Check ValueError is raised when last_window_exog is None, but included_exog
     is True and last_window is provided.
     """
-    forecaster = ForecasterSarimax(regressor=Sarimax(order=(1, 1, 1)))
+    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 1, 1)))
     forecaster.fit(y=y, exog=exog)
     
     err_msg = re.escape(
@@ -100,13 +100,13 @@ def test_predict_ValueError_when_ForecasterSarimax_last_window_exog_is_None_and_
                             'seasonal_order': (1, 1, 1, 2)}, 
                            {'win': [0.5366165, 0.55819701, 0.49539926, 0.51944837, 0.45417575],
                             'linux': [0.5366165 , 0.55819701, 0.49539926, 0.51944837, 0.45417575]})])
-def test_predict_output_ForecasterSarimax_skforecast_Sarimax(kwargs, data):
+def test_predict_output_ForecasterStats_skforecast_Sarimax(kwargs, data):
     """
-    Test predict output of ForecasterSarimax using Sarimax from skforecast.
+    Test predict output of ForecasterStats using Sarimax from skforecast.
     """
     system = "win" if platform.system() == "Windows" else 'linux'
 
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
                      regressor = Sarimax(maxiter=1000, method='cg', disp=False, **kwargs)
                  )
     forecaster.fit(y=y)
@@ -127,11 +127,11 @@ def test_predict_output_ForecasterSarimax_skforecast_Sarimax(kwargs, data):
                           ({'order': (1, 1, 1), 
                             'seasonal_order': (1, 1, 1, 2)}, 
                             [0.47217517, 0.57747478, 0.58655865, 0.69219403, 0.71031467])])
-def test_predict_output_ForecasterSarimax_with_exog(kwargs, data):
+def test_predict_output_ForecasterStats_with_exog(kwargs, data):
     """
-    Test predict output of ForecasterSarimax with exogenous variables.
+    Test predict output of ForecasterStats with exogenous variables.
     """
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
                      regressor = Sarimax(maxiter=1000, method='cg', disp=False, **kwargs)
                  )
     forecaster.fit(y=y, exog=exog)
@@ -151,13 +151,13 @@ def test_predict_output_ForecasterSarimax_with_exog(kwargs, data):
                             {'win': [0.60290703, 0.60568721, 0.60451413, 0.6050091, 0.60480025],
                             'linux': [0.60290703, 0.60568721, 0.60451413, 0.6050091 , 0.60480025]}
                         )])
-def test_predict_output_ForecasterSarimax_with_transform_y(kwargs, data):
+def test_predict_output_ForecasterStats_with_transform_y(kwargs, data):
     """
-    Test predict output of ForecasterSarimax with a StandardScaler() as transformer_y.
+    Test predict output of ForecasterStats with a StandardScaler() as transformer_y.
     """
     system = "win" if platform.system() == "Windows" else 'linux'
         
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
                      regressor     = Sarimax(maxiter=1000, method='cg', disp=False, **kwargs),
                      transformer_y = StandardScaler()
                  )
@@ -178,9 +178,9 @@ def test_predict_output_ForecasterSarimax_with_transform_y(kwargs, data):
                             {'win': [0.60687311, 0.62484493, 0.63515416, 0.67730912, 0.69458838],
                             'linux': [0.60687186, 0.62484336, 0.63515295, 0.67730812, 0.69458769]}
                             )])
-def test_predict_output_ForecasterSarimax_with_transform_y_and_transform_exog(kwargs, data):
+def test_predict_output_ForecasterStats_with_transform_y_and_transform_exog(kwargs, data):
     """
-    Test predict output of ForecasterSarimax, StandardScaler
+    Test predict output of ForecasterStats, StandardScaler
     as transformer_y and transformer_exog as transformer_exog.
     """
     system = "win" if platform.system() == "Windows" else 'linux'
@@ -192,7 +192,7 @@ def test_predict_output_ForecasterSarimax_with_transform_y_and_transform_exog(kw
                            verbose_feature_names_out = False
                        )
 
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
                      regressor        = Sarimax(maxiter=1000, method='cg', disp=False, **kwargs),
                      transformer_y    = StandardScaler(),
                      transformer_exog = transformer_exog
@@ -218,7 +218,7 @@ def test_predict_ValueError_when_last_window_index_does_not_follow_training_set(
     lw_test = pd.Series(data=y_lw_datetime.to_numpy())
     lw_test.index = pd.date_range(start='2022-03-01', periods=50, freq='D')
 
-    forecaster = ForecasterSarimax(regressor=Sarimax(order=(1, 0, 1)))
+    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 0, 1)))
     forecaster.fit(y=y_test)
 
     err_msg = re.escape(
@@ -249,7 +249,7 @@ def test_predict_ValueError_when_last_window_exog_index_does_not_follow_training
     lw_exog_test = pd.Series(data=exog_lw_datetime.to_numpy(), name='exog')
     lw_exog_test.index = pd.date_range(start='2022-03-01', periods=50, freq='D', name='exog')
 
-    forecaster = ForecasterSarimax(regressor=Sarimax(order=(1, 0, 1)))
+    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 0, 1)))
     forecaster.fit(y=y_test, exog=exog_test)
 
     err_msg = re.escape(
@@ -278,13 +278,13 @@ def test_predict_ValueError_when_last_window_exog_index_does_not_follow_training
                             {'win': [0.8079287 , 0.8570154 , 0.82680235, 0.88869186, 0.85565138],
                             'linux': [0.8079287 , 0.8570154 , 0.82680235, 0.88869186, 0.85565138]}
                             )])
-def test_predict_output_ForecasterSarimax_with_last_window(kwargs, data):
+def test_predict_output_ForecasterStats_with_last_window(kwargs, data):
     """
-    Test predict output of ForecasterSarimax with `last_window`.
+    Test predict output of ForecasterStats with `last_window`.
     """
     system = "win" if platform.system() == "Windows" else 'linux'
     
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
                      regressor = Sarimax(maxiter=1000, method='cg', disp=False, **kwargs)
                  )
     forecaster.fit(y=y_datetime)
@@ -305,11 +305,11 @@ def test_predict_output_ForecasterSarimax_with_last_window(kwargs, data):
                           ({'order': (1, 1, 1), 
                             'seasonal_order': (1, 1, 1, 2)}, 
                             [0.94305077, 1.06784624, 1.17677373, 1.30237101, 1.37057143])])
-def test_predict_output_ForecasterSarimax_with_last_window_and_exog(kwargs, data):
+def test_predict_output_ForecasterStats_with_last_window_and_exog(kwargs, data):
     """
-    Test predict output of ForecasterSarimax with exogenous variables and `last_window`.
+    Test predict output of ForecasterStats with exogenous variables and `last_window`.
     """
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
                      regressor = Sarimax(maxiter=1000, method='cg', disp=False, **kwargs)
                  )
     forecaster.fit(y=y_datetime, exog=exog_datetime)
@@ -334,9 +334,9 @@ def test_predict_output_ForecasterSarimax_with_last_window_and_exog(kwargs, data
                             'seasonal_order': (0, 0, 0, 0)}, 
                             [0.81663903, 0.77783205, 0.80523981, 0.85467197, 0.86644466])
                         ])
-def test_predict_output_ForecasterSarimax_with_last_window_and_exog_and_transformers(kwargs, data):
+def test_predict_output_ForecasterStats_with_last_window_and_exog_and_transformers(kwargs, data):
     """
-    Test predict output of ForecasterSarimax with exogenous variables, `last_window`
+    Test predict output of ForecasterStats with exogenous variables, `last_window`
     and transformers.
     """
     transformer_exog = ColumnTransformer(
@@ -346,7 +346,7 @@ def test_predict_output_ForecasterSarimax_with_last_window_and_exog_and_transfor
                            verbose_feature_names_out = False
                        )
 
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
                      regressor        = Sarimax(maxiter=1000, method='cg', disp=False, **kwargs), 
                      transformer_y    = StandardScaler(),
                      transformer_exog = transformer_exog
@@ -372,13 +372,13 @@ def test_predict_output_ForecasterSarimax_with_last_window_and_exog_and_transfor
                          [(y         , pd.RangeIndex(start=0, stop=50)), 
                           (y_datetime, pd.date_range(start='2000', periods=50, freq='YE'))], 
                          ids = lambda values: f'y, index: {type(values)}')
-def test_predict_ForecasterSarimax_updates_extended_index_twice(y, idx):
+def test_predict_ForecasterStats_updates_extended_index_twice(y, idx):
     """
     Test forecaster.extended_index_ is updated when using predict twice.
     """
     y_fit = y.iloc[:30].copy()
 
-    forecaster = ForecasterSarimax(regressor=Sarimax(order=(1, 0, 0)))
+    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 0, 0)))
     forecaster.fit(y=y_fit)
 
     lw_1 = y.iloc[30:40].copy()

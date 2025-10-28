@@ -13,5 +13,6 @@ from .exceptions import (
     SaveLoadSkforecastWarning,
     SkforecastVersionWarning,
     warn_skforecast_categories,
-    set_warnings_style
+    set_warnings_style,
+    runtime_deprecated
 )
