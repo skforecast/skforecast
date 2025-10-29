@@ -2036,6 +2036,8 @@ class RollingFeaturesClassification():
         if array_ndim == 1:
             X = X[:, np.newaxis]
 
+        # TODO: If more than one columns 2d Array, maybe the classes doesn't come
+        # from the same column. Col 1 has classes [0, 1], col 2 has classes [3, 4].
         n_classes = len(self.classes)
         n_output_features = 0
         for stat in self.stats:

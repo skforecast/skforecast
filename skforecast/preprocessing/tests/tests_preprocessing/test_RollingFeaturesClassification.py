@@ -261,163 +261,114 @@ def test_RollingFeaturesClassification_transform_batch():
     rolling_features = rolling.transform_batch(X_datetime).head(10)
 
     expected = pd.DataFrame(
-        data = {
-            "roll_mean_4": [
-                0.440193685,
-                0.44594363000000004,
-                0.48018541249999996,
-                0.6686636,
-                0.7020423425000001,
-                0.642408075,
-                0.63466084,
-                0.475264295,
-                0.4863192875,
-                0.4757293725,
+        data={
+            "roll_proportion_4_class_1": [
+                0.25,
+                0.25,
+                0.25,
+                0.25,
+                0.25,
+                0.5,
+                0.5,
+                0.5,
+                0.5,
+                0.25,
             ],
-            "roll_std_4": [
-                0.2215646508537583,
-                0.2305486112172858,
-                0.20796803421252608,
-                0.24087135366452725,
-                0.22810163043780196,
-                0.25196045881621093,
-                0.2612561344738438,
-                0.15089728042696288,
-                0.1715716346143639,
-                0.17331344323200243,
+            "roll_proportion_4_class_2": [
+                0.5,
+                0.5,
+                0.5,
+                0.75,
+                0.75,
+                0.5,
+                0.5,
+                0.5,
+                0.25,
+                0.5,
             ],
-            "roll_min_4": [
-                0.22685145,
-                0.22685145,
-                0.22685145,
-                0.42310646,
-                0.42310646,
-                0.42310646,
-                0.39211752,
-                0.34317802,
-                0.34317802,
-                0.34317802,
+            "roll_proportion_4_class_3": [
+                0.25,
+                0.25,
+                0.25,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.25,
+                0.25,
             ],
-            "roll_max_4": [
-                0.69646919,
-                0.71946897,
-                0.71946897,
-                0.9807642,
-                0.9807642,
-                0.9807642,
-                0.9807642,
-                0.68482974,
-                0.72904971,
-                0.72904971,
+            "roll_mode_4": [2.0, 2.0, 2.0, 2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 2.0],
+            "roll_entropy_4": [
+                1.5,
+                1.5,
+                1.5,
+                0.8112781244591328,
+                0.8112781244591328,
+                1.0,
+                1.0,
+                1.0,
+                1.5,
+                1.5,
             ],
-            "roll_sum_4": [
-                1.76077474,
-                1.7837745200000001,
-                1.9207416499999999,
-                2.6746544,
-                2.8081693700000003,
-                2.5696323,
-                2.53864336,
-                1.90105718,
-                1.94527715,
-                1.90291749,
-            ],
-            "roll_median_4": [
-                0.41872705,
-                0.41872705,
-                0.48721061499999996,
-                0.63539187,
-                0.702149355,
-                0.58288082,
-                0.58288082,
-                0.43652471000000004,
-                0.43652471000000004,
-                0.41534488,
-            ],
-            "roll_ratio_min_max_4": [
-                0.3257164182668296,
-                0.3153040081770309,
-                0.3153040081770309,
-                0.43140487795129556,
-                0.43140487795129556,
-                0.43140487795129556,
-                0.3998081496041556,
-                0.5011143645718423,
-                0.4707196440692638,
-                0.4707196440692638,
-            ],
-            "roll_coef_variation_4": [
-                0.5033344602700475,
-                0.5169904797547747,
-                0.4330994420046571,
-                0.3602280035350021,
-                0.3249114998185482,
-                0.3922124715138597,
-                0.4116468482187176,
-                0.31750182375253516,
-                0.35279627813314707,
-                0.3643109995946328,
-            ],
-            "roll_ewm_4_alpha_0.3": [
-                0.43000710180418467,
-                0.5190257835333596,
-                0.5032329347216739,
-                0.7179547901342281,
-                0.7206729972799052,
-                0.6261400283379392,
-                0.5529958717726017,
-                0.42961449499407806,
-                0.5236366168574812,
-                0.4941020829688117,
-            ],
+            "roll_n_changes_4": [3.0, 2.0, 2.0, 2.0, 2.0, 2.0, 1.0, 2.0, 2.0, 3.0],
+            "roll_n_unique_4": [3.0, 3.0, 3.0, 2.0, 2.0, 2.0, 2.0, 2.0, 3.0, 3.0],
         },
-        index = pd.date_range(start='1990-01-05', periods=10, freq='D')
+        index=pd.date_range(start="1990-01-05", periods=10, freq="D"),
     )
 
     pd.testing.assert_frame_equal(rolling_features, expected)
 
 
-def test_RollingFeaturesClassification_transform_batch_different_rolling_and_fillna():
+def test_RollingFeaturesClassification_transform_batch_different_rolling():
     """
-    Test RollingFeaturesClassification transform_batch method with different rolling windows 
-    and fillna.
+    Test RollingFeaturesClassification transform_batch method with different rolling windows.
     """
     X_datetime = X_classification.copy()
     X_datetime.index = pd.date_range(
         start='1990-01-01', periods=len(X_classification), freq='D'
     )
-    X_datetime.iloc[9] = np.nan
 
     stats = ['proportion', 'mode', 'entropy', 'entropy']
     window_sizes = [4, 5, 6, 4]
     min_periods = [3, 5, 6, 3]
     features_names = ['my_proportion', 'my_mode', 'my_entropy', 'my_entropy_2']
-    
+
     rolling = RollingFeaturesClassification(
         stats=stats, window_sizes=window_sizes, min_periods=min_periods,
         features_names=features_names, fillna='bfill'
     )
     rolling_features = rolling.transform_batch(X_datetime).head(15)
-    
+
     expected = pd.DataFrame(
-        data = np.array([
-                   [0.48018541, 0.19992199, 0.4838917 , 0.71946897],
-                   [0.6686636 , 0.28732186, 0.5312742 , 0.9807642 ],
-                   [0.70204234, 0.20872596, 0.5977226 , 0.9807642 ],
-                   [0.64240807, 0.22090887, 0.64006934, 0.9807642 ],
-                   [0.71550861, 0.23906853, 0.45108626, 0.9807642 ],
-                   [0.50297989, 0.23906853, 0.45108626, 0.68482974],
-                   [0.51771988, 0.23906853, 0.45108626, 0.72904971],
-                   [0.50359999, 0.23906853, 0.45108626, 0.72904971],
-                   [0.39261947, 0.23906853, 0.45108626, 0.72904971],
-                   [0.40633603, 0.23906853, 0.45108626, 0.72904971],
-                   [0.40857245, 0.27992064, 0.45108626, 0.73799541],
-                   [0.34455232, 0.2608389 , 0.42430521, 0.73799541],
-                   [0.37349579, 0.26830576, 0.33203888, 0.73799541],
-                   [0.40687257, 0.23934903, 0.3475354 , 0.73799541],
-                   [0.35533061, 0.24575419, 0.42622702, 0.53182759]]),
-        columns = ['my_mean', 'my_std', 'my_mean_2', 'my_max'],
-        index = pd.date_range(start='1990-01-07', periods=15, freq='D')
+        data=np.array(
+            [
+                [0.25, 0.5, 0.25, 1.0, 1.45914792, 1.5],
+                [0.25, 0.75, 0.0, 2.0, 1.45914792, 0.81127812],
+                [0.25, 0.75, 0.0, 2.0, 1.25162917, 0.81127812],
+                [0.5, 0.5, 0.0, 2.0, 0.91829583, 1.0],
+                [0.5, 0.5, 0.0, 1.0, 1.0, 1.0],
+                [0.5, 0.5, 0.0, 2.0, 1.0, 1.0],
+                [0.5, 0.25, 0.25, 1.0, 1.45914792, 1.5],
+                [0.25, 0.5, 0.25, 1.0, 1.45914792, 1.5],
+                [0.0, 0.75, 0.25, 2.0, 1.45914792, 0.81127812],
+                [0.0, 0.75, 0.25, 2.0, 1.25162917, 0.81127812],
+                [0.0, 0.75, 0.25, 2.0, 0.91829583, 0.81127812],
+                [0.25, 0.5, 0.25, 2.0, 1.45914792, 1.5],
+                [0.25, 0.25, 0.5, 2.0, 1.45914792, 1.5],
+                [0.25, 0.0, 0.75, 3.0, 1.45914792, 0.81127812],
+                [0.25, 0.25, 0.5, 3.0, 1.45914792, 1.5],
+            ]
+        ),
+        columns=[
+            "my_proportion_class_1",
+            "my_proportion_class_2",
+            "my_proportion_class_3",
+            "my_mode",
+            "my_entropy",
+            "my_entropy_2",
+        ],
+        index=pd.date_range(start="1990-01-07", periods=15, freq="D"),
     )
 
     pd.testing.assert_frame_equal(rolling_features, expected)
@@ -435,25 +386,21 @@ def test_RollingFeaturesClassification_transform_batch_fillna_all_methods(fillna
     X_datetime.index = pd.date_range(start='1990-01-01', periods=len(X_datetime), freq='D')
     X_datetime.iloc[5] = np.nan
 
-    base_array = np.array([0.40315332, 0.35476852, 0.49921173, 
-                           np.nan, np.nan, np.nan, 0.715509])
     expected_dict = {
-        'mean': np.array([0.49316055, 0.49316055, 0.49316055]),
-        'median': np.array([0.45118253, 0.45118253, 0.45118253]),
-        'ffill': np.array([0.49921173, 0.49921173, 0.49921173]),
-        'bfill': np.array([0.71550861, 0.71550861, 0.71550861]),
-        5.: np.array([5., 5., 5.]),
-        0: np.array([0, 0, 0]),
+        'mean': np.array([1., 1., 2., 1.5, 1.5, 1.5, 2.]),
+        'median': np.array([1., 1., 2., 1.5, 1.5, 1.5, 2.]),
+        'ffill': np.array([1., 1., 2., 2., 2., 2., 2.]),
+        'bfill': np.array([1., 1., 2., 2., 2., 2., 2.]),
+        'None': np.array([1.,  1.,  2., np.nan, np.nan, np.nan,  2.]),
+        '5.0': np.array([1., 1., 2., 5., 5., 5., 2.]),
+        '0': np.array([1., 1., 2., 0., 0., 0., 2.]),
     } 
 
-    rolling = RollingFeaturesClassification(stats=['mean'], window_sizes=3, fillna=fillna)
+    rolling = RollingFeaturesClassification(stats=['mode'], window_sizes=3, fillna=fillna)
     rolling_features = rolling.transform_batch(X_datetime)
 
-    expected_array = base_array
-    if fillna is not None:
-        expected_array[-4:-1] = expected_dict[fillna]
     expected = pd.DataFrame(
-        data=expected_array, columns=['roll_mean_3'], 
+        data=expected_dict[f'{fillna}'], columns=['roll_mode_3'], 
         index=pd.date_range(start='1990-01-04', periods=7, freq='D')
     )
 
@@ -468,21 +415,10 @@ def test_RollingFeaturesClassification_transform():
         'proportion', 'mode', 'entropy', 'n_changes', 'n_unique'
     ]
     rolling = RollingFeaturesClassification(stats=stats, window_sizes=4)
+    rolling.classes = list(np.sort(X_classification.unique()))
     rolling_features = rolling.transform(X_classification.to_numpy(copy=True))
 
-    expected = np.array(
-        [
-            0.65024343,
-            0.23013666,
-            0.48303426,
-            0.98555979,
-            2.6009737,
-            0.56618983,
-            0.49011157,
-            0.35392385,
-            0.64158672,
-        ]
-    )
+    expected = np.array([0.25, 0.5, 0.25, 2., 1.5, 3., 3.])
 
     np.testing.assert_array_almost_equal(rolling_features, expected)
 
@@ -499,21 +435,10 @@ def test_RollingFeaturesClassification_transform_2d():
         'proportion', 'mode', 'entropy', 'n_changes', 'n_unique'
     ]
     rolling = RollingFeaturesClassification(stats=stats, window_sizes=4)
+    rolling.classes = list(np.sort(X_classification.unique()))
     rolling_features = rolling.transform(X_2d)
 
-    expected = np.array(
-        [
-            0.65024343,
-            0.23013666,
-            0.48303426,
-            0.98555979,
-            2.6009737,
-            0.56618983,
-            0.49011157,
-            0.35392385,
-            0.64158672,
-        ]
-    )
+    expected = np.array([0.25, 0.5, 0.25, 2., 1.5, 3., 3.])
     expected = np.array([expected, expected])
 
     np.testing.assert_array_almost_equal(rolling_features, expected)
@@ -523,8 +448,8 @@ def test_RollingFeaturesClassification_transform_with_nans():
     """
     Test RollingFeaturesClassification transform method with nans.
     """
-    
-    X_nans = X_classification.to_numpy(copy=True)
+
+    X_nans = X_classification.to_numpy(copy=True).astype(float)
     X_nans[-7] = np.nan
 
     stats = [
@@ -532,21 +457,10 @@ def test_RollingFeaturesClassification_transform_with_nans():
     ]
     window_sizes = [10, 10, 15, 4, 15]
     rolling = RollingFeaturesClassification(stats=stats, window_sizes=window_sizes)
+    rolling.classes = list(np.sort(X_classification.unique()))
     rolling_features = rolling.transform(X_nans)
 
-    expected = np.array(
-        [
-            0.53051056,
-            0.28145959,
-            0.11561840,
-            0.98555979,
-            7.85259345,
-            0.56618983,
-            0.49011157,
-            0.35392385,
-            0.64158672,
-        ]
-    )
+    expected = np.array([0.33333333, 0.55555556, 0.11111111, 2.0, 1.49261407, 3.0, 3.0])
 
     np.testing.assert_array_almost_equal(rolling_features, expected)
 
@@ -555,8 +469,8 @@ def test_RollingFeaturesClassification_transform_with_nans_2d():
     """
     Test RollingFeaturesClassification transform method with nans and 2 dimensions.
     """
-    
-    X_2d_nans = X_classification.to_numpy(copy=True)
+
+    X_2d_nans = X_classification.to_numpy(copy=True).astype(float)
     X_2d_nans = np.tile(X_2d_nans, (2, 1)).T
     X_2d_nans[-7, 0] = np.nan
     X_2d_nans[-5, 1] = np.nan
@@ -564,74 +478,15 @@ def test_RollingFeaturesClassification_transform_with_nans_2d():
     stats = ['proportion', 'mode', 'entropy', 'n_changes', 'n_unique']
     window_sizes = [10, 10, 15, 4, 15]
     rolling = RollingFeaturesClassification(stats=stats, window_sizes=window_sizes)
+    rolling.classes = list(np.sort(X_classification.unique()))
     rolling_features = rolling.transform(X_2d_nans)
-    
-    expected_0 = np.array([0.53051056, 0.28145959, 0.11561840, 0.98555979, 
-                           7.85259345, 0.56618983, 0.49011157, 0.35392385])
-    expected_1 = np.array([0.548774, 0.26592, 0.115618, 0.98556, 
-                           8.016964, 0.56618983, 0.49011157, 0.35392385])
+
+    expected_0 = np.array(
+        [0.33333333, 0.55555556, 0.11111111, 2.0, 1.49261407, 3.0, 3.0]
+    )
+    expected_1 = np.array(
+        [0.33333333, 0.55555556, 0.11111111, 2.0, 1.49261407, 3.0, 3.0]
+    )
     expected = np.array([expected_0, expected_1])
 
     np.testing.assert_array_almost_equal(rolling_features, expected)
-
-
-def test_equivalence_results_RollingFeaturesClassification_and_custom_class():
-    """
-    Test equivalence of results between RollingFeaturesClassification and custom class that
-    calculates rolling mean and std.
-    """
-        
-    y = pd.Series([1, 2, 3, 1, 1, 3, 2, 2, 1, 3])
-    x = np.array([1, 2, 3])
-
-    class RollingMeanStd():
-        """
-        Custom class to create rolling skewness features.
-        """
-
-        def __init__(self, window_sizes, features_names=['roll_mean_3', 'roll_std_3']):
-            
-            if not isinstance(window_sizes, list):
-                window_sizes = [window_sizes]
-            self.window_sizes = window_sizes
-            self.features_names = features_names
-
-        def transform_batch(self, X: pd.Series) -> pd.DataFrame:
-            
-            rolling_obj = X.rolling(window=self.window_sizes[0], center=False, closed='left')
-            rolling_mean = rolling_obj.mean()
-            rolling_std = rolling_obj.std()
-            rolling_skewness = pd.DataFrame({
-                                    'roll_mean_3': rolling_mean,
-                                    'roll_std_3': rolling_std
-                                }).dropna()
-
-            return rolling_skewness
-
-        def transform(self, X: np.ndarray) -> np.ndarray:
-            
-            X = X[~np.isnan(X)]
-            if len(X) > 0:
-                rolling_mean = np.mean(X)
-                rolling_std = np.std(X, ddof=1)
-                results = np.array([rolling_mean, rolling_std])
-            else:
-                results = np.nan
-            
-            return results
-        
-    window_features_1 = RollingFeaturesClassification(
-                stats        = ['mean', 'std'],
-                window_sizes = [3, 3]
-                )
-    window_features_2 = RollingMeanStd(window_sizes=3, features_names=['roll_mean_3', 'roll_std_3'])
-
-    pd.testing.assert_frame_equal(
-        window_features_1.transform_batch(y),
-        window_features_2.transform_batch(y)
-    )
-
-    np.testing.assert_array_almost_equal(
-        window_features_1.transform(x),
-        window_features_2.transform(x)
-    )
