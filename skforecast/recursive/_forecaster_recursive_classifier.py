@@ -43,6 +43,8 @@ from ..utils import (
 )
 
 
+# TODO: Calibrate?
+# TODO: TunedThresholdClassifierCV? It is only for binary classification
 class ForecasterRecursiveClassifier(ForecasterBase):
     """
     This class turns any regressor compatible with the scikit-learn API into a
@@ -258,7 +260,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
         # ======================================================================
 
-        # TODO: Checks that stats are the ones allowed for this forecaster
         self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
         self.window_features, self.window_features_names, self.max_size_window_features = (
             initialize_window_features(window_features)
@@ -1315,6 +1316,14 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         predictions = np.full(shape=steps, fill_value=np.nan, dtype=float)
         last_window = np.concatenate((last_window_values, predictions))
 
+        # TODO: Problem, we don't convert in any Forecaster exog to categorical during
+        # the recursive predict.
+
+        # TODO: Do we need them to convert this to categorical?
+
+        # TODO: Store which cols are categorical during fit? So do all as numpy and the transform
+        # only those needed?
+
         for i in range(steps):
 
             if self.lags is not None:
@@ -1518,12 +1527,10 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                               exog_values        = exog_values
                           )
 
-        # predictions = transform_numpy(
-        #                   array             = predictions,
-        #                   transformer       = self.transformer_y,
-        #                   fit               = False,
-        #                   inverse_transform = True
-        #               )
+        # TODO: See if we can delete ravel from recursive_predict and dont do reshape here
+        predictions = self.encoder.inverse_transform(
+            predictions.reshape(-1, 1)
+        ).ravel()
 
         predictions = pd.Series(
                           data  = predictions,
