@@ -181,6 +181,38 @@ class ForecasterRecursiveClassifier(ForecasterBase):
     _probabilistic_mode: str, bool
         Private attribute used to indicate whether the forecaster should perform 
         some calculations during backtesting.
+
+    Notes
+    -----
+    Categorical features are transformed using an `OrdinalEncoder` (self.encoder).
+    The encoder's learned mappings (self.encoding_mapping_) are stored so that 
+    later, when creating lag (autoregressive) features, the same category-to-integer 
+    relationships can be applied consistently.
+
+    The goal is to ensure that the lag features — which are recreated as 
+    categorical variables — use the exact same integer codes as the original encoding.
+    In other words, the numerical values in the lagged features should 
+    exactly match the integer codes that the `OrdinalEncoder` assigned.
+    Formally, this means the following should hold true:
+
+    `(X_train['lag_1'].cat.codes == X_train['lag_1']).all()`
+
+    This consistency is guaranteed because:
+
+    - `OrdinalEncoder` assigns integer codes starting from 0, in the alphabetical 
+    order of category labels.
+
+    - When autoregressive (lag) features are created later, they are converted 
+    to pandas Categorical types using the same category ordering 
+    (`categories = y_categories_codes`).
+
+    As a result, the categorical codes used in lag features remain aligned
+    with the original encoding from the `OrdinalEncoder`.
+
+    During prediction, we can work directly with NumPy arrays because the 
+    `OrdinalEncoder` transforms new observations into the same integer codes 
+    used by pandas Categorical during training. This eliminates the need to 
+    convert data to pandas categorical types at inference time.
     
     """
 
@@ -664,15 +696,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             applied by `transformer_exog`. If `transformer_exog` is not used, it 
             is equal to `exog_dtypes_in_`.
 
-        Notes
-        -----
-        Categorical features are encoded using an `OrdinalEncoder` (`self.encoder`).  
-        The encoder's mapping (`self.encoding_mapping_`) is stored and later used 
-        to ensure that lag features are converted to categorical variables consistently.  
-        The goal is that the numerical values of the lag features match exactly the integer
-        codes produced by the `OrdinalEncoder`, i.e.:
-        `(X_train['lag_1'].cat.codes == X_train['lag_1']).all()` evaluates to `True`.
-
         """
 
         check_y(y=y)
@@ -871,6 +894,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         self,
         y: pd.Series,
         exog: pd.Series | pd.DataFrame | None = None,
+        encoded: bool = True
     ) -> tuple[pd.DataFrame, pd.Series]:
         """
         Create training matrices from univariate time series and exogenous
@@ -893,12 +917,35 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
         Notes
         -----
-        Categorical features are encoded using an `OrdinalEncoder` (`self.encoder`).  
-        The encoder's mapping (`self.encoding_mapping_`) is stored and later used 
-        to ensure that lag features are converted to categorical variables consistently.  
-        The goal is that the numerical values of the lag features match exactly the integer
-        codes produced by the `OrdinalEncoder`, i.e.:
-        `(X_train['lag_1'].cat.codes == X_train['lag_1']).all()` evaluates to `True`.
+        Categorical features are transformed using an `OrdinalEncoder` (self.encoder).
+        The encoder's learned mappings (self.encoding_mapping_) are stored so that 
+        later, when creating lag (autoregressive) features, the same category-to-integer 
+        relationships can be applied consistently.
+
+        The goal is to ensure that the lag features — which are recreated as 
+        categorical variables — use the exact same integer codes as the original encoding.
+        In other words, the numerical values in the lagged features should 
+        exactly match the integer codes that the `OrdinalEncoder` assigned.
+        Formally, this means the following should hold true:
+
+        `(X_train['lag_1'].cat.codes == X_train['lag_1']).all()`
+
+        This consistency is guaranteed because:
+
+        - `OrdinalEncoder` assigns integer codes starting from 0, in the alphabetical 
+        order of category labels.
+
+        - When autoregressive (lag) features are created later, they are converted 
+        to pandas Categorical types using the same category ordering 
+        (`categories = y_categories_codes`).
+
+        As a result, the categorical codes used in lag features remain aligned
+        with the original encoding from the `OrdinalEncoder`.
+
+        During prediction, we can work directly with NumPy arrays because the 
+        `OrdinalEncoder` transforms new observations into the same integer codes 
+        used by pandas Categorical during training. This eliminates the need to 
+        convert data to pandas categorical types at inference time.
         
         """
 
@@ -906,6 +953,19 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
         X_train = output[0]
         y_train = output[1]
+
+        if not encoded:
+            
+            for col in self.lags_names:
+                X_train[col] = self.encoder.inverse_transform(
+                    X_train[col].to_numpy().reshape(-1, 1)
+                ).ravel()
+
+            y_train = pd.Series(
+                          data  = self.encoder.inverse_transform(y_train.to_numpy().reshape(-1, 1)).ravel(),
+                          index = y_train.index,
+                          name  = y_train.name
+                      )
 
         return X_train, y_train
 
@@ -1034,12 +1094,35 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
         Notes
         -----
-        Categorical features are encoded using an `OrdinalEncoder` (`self.encoder`).  
-        The encoder's mapping (`self.encoding_mapping_`) is stored and later used 
-        to ensure that lag features are converted to categorical variables consistently.  
-        The goal is that the numerical values of the lag features match exactly the integer
-        codes produced by the `OrdinalEncoder`, i.e.:
-        `(X_train['lag_1'].cat.codes == X_train['lag_1']).all()` evaluates to `True`.
+        Categorical features are transformed using an `OrdinalEncoder` (self.encoder).
+        The encoder's learned mappings (self.encoding_mapping_) are stored so that 
+        later, when creating lag (autoregressive) features, the same category-to-integer 
+        relationships can be applied consistently.
+
+        The goal is to ensure that the lag features — which are recreated as 
+        categorical variables — use the exact same integer codes as the original encoding.
+        In other words, the numerical values in the lagged features should 
+        exactly match the integer codes that the `OrdinalEncoder` assigned.
+        Formally, this means the following should hold true:
+
+        `(X_train['lag_1'].cat.codes == X_train['lag_1']).all()`
+
+        This consistency is guaranteed because:
+
+        - `OrdinalEncoder` assigns integer codes starting from 0, in the alphabetical 
+        order of category labels.
+
+        - When autoregressive (lag) features are created later, they are converted 
+        to pandas Categorical types using the same category ordering 
+        (`categories = y_categories_codes`).
+
+        As a result, the categorical codes used in lag features remain aligned
+        with the original encoding from the `OrdinalEncoder`.
+
+        During prediction, we can work directly with NumPy arrays because the 
+        `OrdinalEncoder` transforms new observations into the same integer codes 
+        used by pandas Categorical during training. This eliminates the need to 
+        convert data to pandas categorical types at inference time.
         
         """
 
@@ -1196,9 +1279,8 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         invalid_values = unique_values - valid_classes
         
         if invalid_values:
-            # Format the error message nicely
-            invalid_list = sorted(list(invalid_values))[:5]  # Show max 5 examples
-            valid_list = sorted(list(valid_classes))[:10]  # Show max 10 examples
+            invalid_list = sorted(list(invalid_values))[:5]
+            valid_list = sorted(list(valid_classes))[:10]
             
             raise ValueError(
                 f"The `last_window` contains {len(invalid_values)} class label(s) "
@@ -1207,40 +1289,13 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                 f"{'...' if len(valid_classes) > 10 else ''}.\n"
                 f"Total valid classes: {len(valid_classes)}."
             )
-        
-        last_window_dtype = last_window_values.dtype
-        
-        # Check if we're mixing numeric and non-numeric types
-        is_numeric_original = np.issubdtype(self.series_dtype_, np.number)
-        is_numeric_current = np.issubdtype(last_window_dtype, np.number)
-        
-        if is_numeric_original != is_numeric_current:
-            raise TypeError(
-                f"Dtype mismatch in `last_window`. Training data had dtype "
-                f"'{self.series_dtype_}' ({'numeric' if is_numeric_original else 'non-numeric'}), "
-                f"but `last_window` has dtype '{last_window_dtype}' "
-                f"({'numeric' if is_numeric_current else 'non-numeric'})."
-            )
-        
-        # For numeric types, check if they're proper discrete values
-        if is_numeric_current and np.issubdtype(last_window_dtype, np.floating):
-            has_decimals = np.mod(last_window_values, 1) != 0
-            if np.any(has_decimals):
-                decimal_examples = last_window_values[has_decimals][:3]
-                raise ValueError(
-                    f"The `last_window` contains float values with decimals, but "
-                    f"classification requires discrete class labels. "
-                    f"Examples: {decimal_examples.tolist()}."
-                )
 
-        # Transform class labels to encoded values (same encoding used in training)
-        # This ensures that lag features will have the same numerical representation
-        # as during training
+        # NOTE: Transform class labels to encoded values (same encoding used in 
+        # training). This ensures that lag features will have the same numerical 
+        # representation as during training.
         last_window_values = self.encoder.transform(
             last_window_values.reshape(-1, 1)
         ).ravel()
-
-        # TODO: La conversión a categorical tiene que ser en el recursive_predict
 
         if exog is not None:
 
@@ -1316,14 +1371,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         predictions = np.full(shape=steps, fill_value=np.nan, dtype=float)
         last_window = np.concatenate((last_window_values, predictions))
 
-        # TODO: Problem, we don't convert in any Forecaster exog to categorical during
-        # the recursive predict.
-
-        # TODO: Do we need them to convert this to categorical?
-
-        # TODO: Store which cols are categorical during fit? So do all as numpy and the transform
-        # only those needed?
-
         for i in range(steps):
 
             if self.lags is not None:
@@ -1340,6 +1387,9 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         
             pred = self.regressor.predict(X.reshape(1, -1)).ravel()            
             predictions[i] = pred[0]
+
+            # TODO: Change predict for predict_proba but in the last_window need to
+            # pass only the predicted class (the one with highest prob)
 
             # Update `last_window` values. The first position is discarded and 
             # the new prediction is added at the end.
@@ -1527,7 +1577,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                               exog_values        = exog_values
                           )
 
-        # TODO: See if we can delete ravel from recursive_predict and dont do reshape here
         predictions = self.encoder.inverse_transform(
             predictions.reshape(-1, 1)
         ).ravel()
