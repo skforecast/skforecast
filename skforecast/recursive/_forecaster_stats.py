@@ -773,7 +773,7 @@ class ForecasterStats():
                             return_conf_int = True,
                             alpha           = alpha
                         )
-        else:
+        elif self.regressor_type == 'skforecast.stats._arar.Arar':
             predictions = self.regressor.predict_interval(
                             steps           = steps,
                             exog            = exog,
@@ -783,6 +783,10 @@ class ForecasterStats():
             predictions_index = expand_index(index=self.extended_index_, steps=steps)
             predictions.index = predictions_index
             predictions.columns = ['pred', 'lower_bound', 'upper_bound']
+        elif self.regressor_type in ['aeon.forecasting.stats._arima.ARIMA', 'aeon.forecasting.stats._ets.ETS']:
+            raise NotImplementedError(
+                "Prediction intervals is not implemented for AEON ARIMA and ETS models yet."
+            )
 
         if self.transformer_y:
             predictions = predictions.apply(lambda col: transform_series(
@@ -866,14 +870,17 @@ class ForecasterStats():
                 "This forecaster is not fitted yet. Call `fit` with appropriate "
                 "arguments before using `get_feature_importances()`."
             )
+        
         if self.regressor_type == 'skforecast.stats._sarimax.Sarimax':
             feature_importances = self.regressor.params().to_frame().reset_index()
             feature_importances.columns = ['feature', 'importance']
+
         elif self.regressor_type == 'skforecast.stats._arar.Arar':
             feature_importances = pd.DataFrame({
                                       'feature'   : [f'lag_{lag}' for lag in self.regressor.lags_],
                                       'importance': self.regressor.coef_
                                   })
+            
         elif self.regressor_type == 'aeon.forecasting.stats._arima.ARIMA':
             lags_coef = pd.DataFrame({
                             'feature'   : [f'lag_{lag}' for lag in range(1, self.regressor.p +1)],
@@ -887,12 +894,16 @@ class ForecasterStats():
                             'feature'   : ["intercept"],
                             'importance': self.regressor.c_
                         })
-            feature_importances = pd.concat([lags_coef, ma_coef, intercept], axis=0).reset_index(drop=True)
+            feature_importances = pd.concat(
+                                    [lags_coef, ma_coef, intercept],
+                                    axis=0
+                                  ).reset_index(drop=True)
+
         elif self.regressor_type == 'aeon.forecasting.stats._ets.ETS':
-            # TODO get feature importances for ETS
-            raise NotImplementedError(
-                "Feature importances is not implemented for ETS model yet."
+            warnings.warn(
+                "Feature importances is not available for the AEON ETS model."
             )
+            feature_importances = pd.DataFrame(columns=['feature', 'importance'])
 
         if sort_importance:
             feature_importances = feature_importances.sort_values(
@@ -945,7 +956,6 @@ class ForecasterStats():
             metric = self.regressor.get_info_criteria(criteria=criteria, method=method)
 
         elif self.regressor_type == 'skforecast.stats._arar.Arar':
-            # TODO get info criteria for ARAR
             raise NotImplementedError(
                 "Information criteria is not implemented for ARAR model yet."
             )

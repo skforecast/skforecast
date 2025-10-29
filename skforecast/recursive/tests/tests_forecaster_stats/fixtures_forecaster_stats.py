@@ -1,4 +1,4 @@
-# Fixtures Sarimax
+# Fixtures ForecasterStats
 # ==============================================================================
 import numpy as np
 import pandas as pd

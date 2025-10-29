@@ -10,6 +10,7 @@ from skforecast.recursive import ForecasterStats
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
+from aeon.forecasting.stats import ARIMA
 
 # Fixtures
 from .fixtures_forecaster_stats import y
@@ -417,6 +418,38 @@ def test_predict_output_ForecasterStats_with_Arar_regressor(y=y):
             1.022217168929162,
             0.5688093026635382,
             0.6336566288056642,
+        ],
+        name="pred",
+        index=pd.date_range(start="2000-02-20", periods=10, freq="D"),
+    )
+
+    pd.testing.assert_series_equal(predictions, expected_results)
+
+
+def test_predict_output_ForecasterStats_with_aeon_ARIMA_regressor(y=y):
+    """
+    Test output of predict when using ARIMA from aeon as regressor in ForecasterStats
+    """
+    y = y.copy()
+    y.index = pd.date_range(start="2000-01-01", periods=len(y), freq="D")
+    regressor = ARIMA(p=4, d=1, q=1)
+    forecaster = ForecasterStats(regressor=regressor)
+    forecaster.fit(y=y)
+    predictions = forecaster.predict(steps=10)
+    print(predictions)
+
+    expected_results = pd.Series(
+        data=[
+            0.68329597,
+            0.7153698,
+            0.72118068,
+            0.71875056,
+            0.70465789,
+            0.68932917,
+            0.68087982,
+            0.67748653,
+            0.67828572,
+            0.68193945,
         ],
         name="pred",
         index=pd.date_range(start="2000-02-20", periods=10, freq="D"),
