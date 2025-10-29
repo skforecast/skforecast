@@ -21,20 +21,19 @@ from rich.text import Text
 def runtime_deprecated(replacement=None, version=None, removal=None, category=FutureWarning):
     """
     Decorator to mark functions or classes as deprecated.
-
-    Parameters
-    ----------
-    replacement : str, optional
-        Name of the replacement function or class.
-    version : str, optional
-        Version where this was deprecated.
-    removal : str, optional
-        Version where this will be removed.
-    category : Warning, optional
-        Type of warning to issue (default: FutureWarning).
+    Works for both function and class targets, and ensures warnings are visible
+    even inside Jupyter notebooks.
     """
     def decorator(obj):
-        message = f"{obj.__name__} is deprecated"
+        is_function = inspect.isfunction(obj) or inspect.ismethod(obj)
+        is_class = inspect.isclass(obj)
+
+        if not (is_function or is_class):
+            raise TypeError("@runtime_deprecated can only be used on functions or classes")
+
+        # ----- Build warning message -----
+        name = obj.__name__
+        message = f"{name}() is deprecated" if is_function else f"{name} class is deprecated"
         if version:
             message += f" since version {version}"
         if replacement:
@@ -44,39 +43,56 @@ def runtime_deprecated(replacement=None, version=None, removal=None, category=Fu
         else:
             message += "."
 
-        # --- Case 1: Decorating a function or method ---
-        if inspect.isfunction(obj) or inspect.ismethod(obj):
+        def issue_warning():
+            """Emit warning in a way that always shows in notebooks."""
+            with warnings.catch_warnings():
+                warnings.simplefilter("always", category)
+                warnings.warn(message, category, stacklevel=3)
+
+        # ----- Case 1: decorating a function -----
+        if is_function:
             @wraps(obj)
             def wrapper(*args, **kwargs):
-                warnings.warn(message, category, stacklevel=2)
+                issue_warning()
                 return obj(*args, **kwargs)
+
+            # Add metadata
             wrapper.__deprecated__ = True
             wrapper.__replacement__ = replacement
             wrapper.__version__ = version
             wrapper.__removal__ = removal
             return wrapper
 
-        # --- Case 2: Decorating a class ---
-        elif inspect.isclass(obj):
-            orig_init = obj.__init__
+        # ----- Case 2: decorating a class -----
+        elif is_class:
+            orig_init = getattr(obj, "__init__", None)
+            orig_new = getattr(obj, "__new__", None)
 
-            @wraps(orig_init)
-            def new_init(self, *args, **kwargs):
-                warnings.warn(message, category, stacklevel=2)
-                orig_init(self, *args, **kwargs)
+            # Only wrap whichever exists (some classes use __new__, others __init__)
+            if orig_new and (orig_new is not object.__new__):
+                @wraps(orig_new)
+                def wrapped_new(cls, *args, **kwargs):
+                    issue_warning()
+                    return orig_new(cls, *args, **kwargs)
+                obj.__new__ = staticmethod(wrapped_new)
 
-            obj.__init__ = new_init
+            elif orig_init:
+                @wraps(orig_init)
+                def wrapped_init(self, *args, **kwargs):
+                    issue_warning()
+                    return orig_init(self, *args, **kwargs)
+                obj.__init__ = wrapped_init
+
+            # Add metadata
             obj.__deprecated__ = True
             obj.__replacement__ = replacement
             obj.__version__ = version
             obj.__removal__ = removal
+
             return obj
 
-        # --- Fallback: Not supported type ---
-        else:
-            raise TypeError("@deprecated can only be used on functions or classes")
-
     return decorator
+
 
 class DataTypeWarning(UserWarning):
     """

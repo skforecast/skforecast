@@ -17,7 +17,8 @@ from ._forecaster_stats import ForecasterStats
 class ForecasterSarimax():
     """
    !!! warning "Deprecated"
-        This class is deprecated since skforecast 0.19. Please use `ForecasterStats` instead.
+        This class is deprecated since skforecast 0.19. Please use
+        `skforecast.recursive.ForecasterStats` instead.
     
     """
     

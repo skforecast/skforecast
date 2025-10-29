@@ -624,7 +624,6 @@ class ForecasterStats():
                                                   exog             = exog,
                                               )
         
-        # TODO: last_window only for sarimax?
         if last_window is not None:
             if self.regressor_type == 'skforecast.stats._sarimax.Sarimax':
                 self.regressor.append(
@@ -635,8 +634,8 @@ class ForecasterStats():
                 self.extended_index_ = self.regressor.sarimax_res.fittedvalues.index
             else:
                 raise ValueError(
-                    "`last_window` is only supported for the Sarimax model. For other "
-                    "models, predictions must follow directly after the end of the "
+                    "`last_window` is only supported for the skforecast.Sarimax regressor (statsmodels)."
+                    "For other models, predictions must follow directly after the end of the "
                     "training data."
                 )
 
@@ -867,24 +866,38 @@ class ForecasterStats():
                 "This forecaster is not fitted yet. Call `fit` with appropriate "
                 "arguments before using `get_feature_importances()`."
             )
-        if self.regressor_type != 'skforecast.stats._sarimax.Sarimax':
+        if self.regressor_type == 'skforecast.stats._sarimax.Sarimax':
             feature_importances = self.regressor.params().to_frame().reset_index()
             feature_importances.columns = ['feature', 'importance']
         elif self.regressor_type == 'skforecast.stats._arar.Arar':
-            # TODO get feature importances for ARAR
+            feature_importances = pd.DataFrame({
+                                      'feature'   : [f'lag_{lag}' for lag in self.regressor.lags_],
+                                      'importance': self.regressor.coef_
+                                  })
+        elif self.regressor_type == 'aeon.forecasting.stats._arima.ARIMA':
+            lags_coef = pd.DataFrame({
+                            'feature'   : [f'lag_{lag}' for lag in range(1, self.regressor.p +1)],
+                            'importance': self.regressor.phi_
+                        })
+            ma_coef = pd.DataFrame({
+                        'feature'   : ["ma"],
+                        'importance': self.regressor.theta_
+                      })
+            intercept = pd.DataFrame({
+                            'feature'   : ["intercept"],
+                            'importance': self.regressor.c_
+                        })
+            feature_importances = pd.concat([lags_coef, ma_coef, intercept], axis=0).reset_index(drop=True)
+        elif self.regressor_type == 'aeon.forecasting.stats._ets.ETS':
+            # TODO get feature importances for ETS
             raise NotImplementedError(
-                "Feature importances are not implemented for ARAR model yet."
-            )
-        elif self.regressor_type in ['aeon.forecasting.stats._arima.ARIMA', 'aeon.forecasting.stats._ets.ETS']:
-            # TODO get feature importances for AEON models
-            raise NotImplementedError(
-                "Feature importances are not implemented for AEON models yet."
+                "Feature importances is not implemented for ETS model yet."
             )
 
         if sort_importance:
             feature_importances = feature_importances.sort_values(
                                       by='importance', ascending=False
-                                  )
+                                  ).reset_index(drop=True)
 
         return feature_importances
 
@@ -930,11 +943,13 @@ class ForecasterStats():
                 )
             
             metric = self.regressor.get_info_criteria(criteria=criteria, method=method)
+
         elif self.regressor_type == 'skforecast.stats._arar.Arar':
             # TODO get info criteria for ARAR
             raise NotImplementedError(
                 "Information criteria is not implemented for ARAR model yet."
             )
+        
         elif self.regressor_type in ['aeon.forecasting.stats._arima.ARIMA', 'aeon.forecasting.stats._ets.ETS']:
             if criteria != 'aic':
                 raise ValueError(
