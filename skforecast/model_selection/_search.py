@@ -2555,22 +2555,18 @@ def _evaluate_grid_hyperparameters_stats(
                                 suppress_warnings_fit = suppress_warnings_fit,
                                 show_progress         = False
                             )[0]
-            metric_values = metric_values.iloc[0, :].to_list()
-            warnings.filterwarnings(
-                'ignore', category=RuntimeWarning, message= "The forecaster will be fit.*"
-            )
-            
-            params_list.append(params)
-            for m, m_value in zip(metric, metric_values):
-                m_name = m if isinstance(m, str) else m.__name__
-                metric_dict[m_name].append(m_value)
         except Exception as e:
-            warnings.warn(
-                f"Exception raised for parameters {params}.\n"
-                f"Parameters skipped. Exception: {e}",
-                RuntimeWarning
-            )
+            warnings.warn(f"Parameters skipped: {params}. {e}", RuntimeWarning)
             continue
+        metric_values = metric_values.iloc[0, :].to_list()
+        warnings.filterwarnings(
+            'ignore', category=RuntimeWarning, message= "The forecaster will be fit.*"
+        )
+        
+        params_list.append(params)
+        for m, m_value in zip(metric, metric_values):
+            m_name = m if isinstance(m, str) else m.__name__
+            metric_dict[m_name].append(m_value)
         
         if output_file is not None:
             header = ['params', *metric_dict.keys(), *params.keys()]
