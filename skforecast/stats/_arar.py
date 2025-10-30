@@ -377,7 +377,7 @@ class Arar(BaseEstimator, RegressorMixin):
         self.max_lag = max_lag
         self.safe = safe
 
-    def fit(self, y: pd.Series | np.ndarray, exog: None = NotImplementedError) -> "Arar":
+    def fit(self, y: pd.Series | np.ndarray, exog: None = None) -> "Arar":
         """
         Fit the ARAR model to a univariate time series.
 
@@ -451,7 +451,7 @@ class Arar(BaseEstimator, RegressorMixin):
 
         Parameters
         ----------
-        h : int, default=1
+        steps : int, default=1
             Forecast horizon.
         level : iterable of int, default=(80, 95)
             Confidence levels in percent.

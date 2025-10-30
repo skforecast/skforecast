@@ -1,6 +1,7 @@
+# Unit test fit Arar
+# ==============================================================================
 import math
 import numpy as np
-import pandas as pd
 import pytest
 
 from skforecast.stats._arar import (
