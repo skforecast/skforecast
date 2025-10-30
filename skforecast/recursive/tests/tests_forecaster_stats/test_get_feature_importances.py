@@ -79,26 +79,23 @@ def test_output_get_feature_importances_ForecasterStats_with_ARIMA_regressor():
     """
     forecaster = ForecasterStats(regressor = ARIMA(p=4, d=1, q=1))
     forecaster.fit(y=y)
-    results = forecaster.get_feature_importances(sort_importance=False)
+    results = forecaster.get_feature_importances(sort_importance=True)
 
     expected = pd.DataFrame(
-                    {
-                        "feature": {
-                            0: "lag_4",
-                            1: "ma",
-                            2: "intercept",
-                            3: "lag_1",
-                            4: "lag_2",
-                            5: "lag_3",
+                {'feature': {0: 'lag_1',
+                            1: 'lag_3',
+                            2: 'intercept',
+                            3: 'lag_4',
+                            4: 'lag_2',
+                            5: 'ma'
                         },
-                        "importance": {
-                            0: 0.116337642028748,
-                            1: 0.04151153757723995,
-                            2: 0.0,
-                            3: -0.11677318737163173,
-                            4: -0.136165213396726,
-                            5: -0.1464070747250299,
-                        },
-                    }
-                )
+                'importance': {0: 0.6648894126315568,
+                                1: 0.1478647645869075,
+                                2: 0.0,
+                                3: -0.23108776151763405,
+                                4: -0.2444320861918562,
+                                5: -0.8696258072896246
+                        }
+                }
+            )
     pd.testing.assert_frame_equal(expected, results)
