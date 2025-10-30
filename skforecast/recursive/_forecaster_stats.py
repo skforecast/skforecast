@@ -11,6 +11,7 @@ import sys
 import pandas as pd
 from copy import copy
 import textwrap
+import numpy as np
 from sklearn.base import clone
 from sklearn.exceptions import NotFittedError
 
@@ -882,22 +883,10 @@ class ForecasterStats():
                                   })
             
         elif self.regressor_type == 'aeon.forecasting.stats._arima.ARIMA':
-            lags_coef = pd.DataFrame({
-                            'feature'   : [f'lag_{lag}' for lag in range(1, self.regressor.p +1)],
-                            'importance': self.regressor.phi_
-                        })
-            ma_coef = pd.DataFrame({
-                        'feature'   : ["ma"],
-                        'importance': self.regressor.theta_
-                      })
-            intercept = pd.DataFrame({
-                            'feature'   : ["intercept"],
-                            'importance': self.regressor.c_
-                        })
-            feature_importances = pd.concat(
-                                    [lags_coef, ma_coef, intercept],
-                                    axis=0
-                                  ).reset_index(drop=True)
+            feature_importances = pd.DataFrame({
+                'feature': [f'lag_{lag}' for lag in range(1, self.regressor.p + 1)] + ["ma", "intercept"],
+                'importance': np.concatenate([self.regressor.phi_, self.regressor.theta_, [self.regressor.c_]])
+            })
 
         elif self.regressor_type == 'aeon.forecasting.stats._ets.ETS':
             warnings.warn(
