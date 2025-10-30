@@ -1192,8 +1192,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             encoded_values = self.encoder.transform(X_train[['_level_skforecast']])
         else:
             encoded_values = self.encoder.fit_transform(X_train[['_level_skforecast']])
-            for i, code in enumerate(self.encoder.categories_[0]):
-                self.encoding_mapping_[code] = i
+            for i, level in enumerate(self.encoder.categories_[0]):
+                self.encoding_mapping_[level] = i
 
         if self.encoding == 'onehot': 
             encoded_values.columns = encoded_values.columns.str.replace('_level_skforecast_', '')
@@ -1806,6 +1806,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self.X_train_window_features_names_out_ = None
         self.X_train_exog_names_out_            = None
         self.X_train_features_names_out_        = None
+        self.encoding_mapping_                  = {}
         self.in_sample_residuals_               = None
         self.in_sample_residuals_by_bin_        = None
         self.binner                             = {}

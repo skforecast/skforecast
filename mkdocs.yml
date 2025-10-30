@@ -90,6 +90,7 @@ nav:
   - API Reference:
     - recursive:
       - ForecasterRecursive: api/ForecasterRecursive.md
+      - ForecasterRecursiveClassifier: api/ForecasterRecursiveClassifier.md
       - ForecasterRecursiveMultiSeries: api/ForecasterRecursiveMultiSeries.md
       - ForecasterSarimax: api/ForecasterSarimax.md
       - ForecasterEquivalentDate: api/ForecasterEquivalentDate.md

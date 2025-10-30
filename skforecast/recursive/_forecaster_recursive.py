@@ -1360,11 +1360,12 @@ class ForecasterRecursive(ForecasterBase):
                 
                 pred += step_residual
             
-            predictions[i] = pred[0]
+            pred = pred.item()
+            predictions[i] = pred
 
             # Update `last_window` values. The first position is discarded and 
             # the new prediction is added at the end.
-            last_window[-(steps - i)] = pred[0]
+            last_window[-(steps - i)] = pred
 
         set_cpu_gpu_device(regressor=self.regressor, device=original_device)
 

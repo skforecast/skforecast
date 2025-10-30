@@ -2075,7 +2075,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 category=UserWarning
             )
             predictions = np.array([
-                regressor.predict(X).ravel()[0] 
+                regressor.predict(X).ravel().item()
                 for regressor, X in zip(regressors, Xs)
             ])
 
@@ -2212,7 +2212,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 category=UserWarning
             )
             predictions = np.array([
-                regressor.predict(X).ravel()[0] 
+                regressor.predict(X).ravel().item()
                 for regressor, X in zip(regressors, Xs)
             ])
         
@@ -2359,7 +2359,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 category=UserWarning
             )
             predictions = np.array([
-                regressor.predict(X).ravel()[0] 
+                regressor.predict(X).ravel().item()
                 for regressor, X in zip(regressors, Xs)
             ])
         

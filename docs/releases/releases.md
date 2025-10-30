@@ -1257,6 +1257,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 <!-- Links to API Reference -->
 <!-- Forecasters -->
 [ForecasterRecursive]: ../api/forecasterrecursive.html
+[ForecasterRecursiveClassifier]: ../api/forecasterrecursiveclassifier.html
 [ForecasterDirect]: ../api/forecasterdirect.html
 [ForecasterRecursiveMultiSeries]: ../api/forecasterrecursivemultiseries.html
 [ForecasterDirectMultiVariate]: ../api/forecasterdirectmultivariate.html
