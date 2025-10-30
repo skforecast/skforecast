@@ -68,10 +68,12 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         - 'auto': Use categorical dtype if classifier supports native categorical
           features (LightGBM, CatBoost, XGBoost), otherwise numeric encoding
         - 'categorical': Force categorical dtype (requires compatible classifier)
-        - 'numeric': Treat as numeric features (assumes ordinal relationship)
+        - 'numeric': Use ordinal encoding (0, 1, 2, ...). The classifier will 
+          treat class codes as numeric values, assuming an ordinal relationship 
+          between classes (e.g., 'low' < 'medium' < 'high').
         
-        Note: This only affects features derived from the target series (y). 
-        Exogenous variables maintain their original dtypes.
+        Note: This only affects features derived from the target series (y) not 
+        exogenous variables.
     transformer_exog : object transformer (preprocessor), default None
         An instance of a transformer (preprocessor) compatible with the scikit-learn
         preprocessing API. The transformation is applied to `exog` before training the
@@ -107,11 +109,19 @@ class ForecasterRecursiveClassifier(ForecasterBase):
     window_size : int
         The window size needed to create the predictors. It is calculated as the 
         maximum value between `max_lag` and `max_size_window_features`.
-    transformer_y : object transformer (preprocessor)
-        An instance of a transformer (preprocessor) compatible with the scikit-learn
-        preprocessing API with methods: fit, transform, fit_transform and inverse_transform.
-        ColumnTransformers are not allowed since they do not have inverse_transform method.
-        The transformation is applied to `y` before training the forecaster.
+    features_encoding : str
+        Encoding method for features derived from the time series (lags and 
+        window features that return class values).
+    use_native_categoricals : bool
+        Indicates whether the classifier supports native categorical features.
+    encoder : OrdinalEncoder
+        Instance of `OrdinalEncoder` used to encode target variable class labels.
+    encoding_mapping_ : dict
+        Mapping of original class labels to encoded values.
+    classes_ : list
+        List of class labels seen during training.
+    n_classes_ : int
+        Number of classes seen during training.
     transformer_exog : object transformer (preprocessor)
         An instance of a transformer (preprocessor) compatible with the scikit-learn
         preprocessing API. The transformation is applied to `exog` before training the
@@ -226,7 +236,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
     ) -> None:
         
         self.regressor                          = copy(regressor)
-        # self.transformer_y               = transformer_y
         self.transformer_exog                   = transformer_exog
         self.weight_func                        = weight_func
         self.source_code_weight_func            = None
@@ -251,16 +260,13 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         self.forecaster_id                      = forecaster_id
         self._probabilistic_mode                = "binned"  # TODO: Check
 
-        # TODO: New attributes for classification
-        # ======================================================================
         self.features_encoding                  = features_encoding
         self.use_native_categoricals            = False
         self.encoding_mapping_                  = None
-        self.classes_                           = None  # Array of class labels
-        self.n_classes_                         = None  # Number of classes
-        self.series_dtype_                      = None  # Original dtype of y
-        self.label_encoder_                     = None  # LabelEncoder if needed
-        
+        self.classes_                           = None
+        self.n_classes_                         = None
+
+        # TODO: valid_encodings = ['auto', 'category', 'ordinal']?
         valid_encodings = ['auto', 'categorical', 'numeric']
         if features_encoding not in valid_encodings:
             raise ValueError(
@@ -286,8 +292,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                            categories = 'auto',
                            dtype      = float if features_encoding == 'numeric' else int
                        )
-
-        # ======================================================================
 
         self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
         self.window_features, self.window_features_names, self.max_size_window_features = (
@@ -383,9 +387,11 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             f"Window features: {self.window_features_names} \n"
             f"Window size: {self.window_size} \n"
             f"Series name: {self.series_name_in_} \n"
+            f"Classes: {self.classes_} \n"
+            f"Number of classes: {self.n_classes_} \n"
             f"Exogenous included: {self.exog_in_} \n"
             f"Exogenous names: {exog_names_in_} \n"
-            f"Transformer for y: {self.transformer_y} \n"
+            f"Feature encoding: {self.features_encoding} \n"
             f"Transformer for exog: {self.transformer_exog} \n"
             f"Weight function included: {True if self.weight_func is not None else False} \n"
             f"Training range: {self.training_range_.to_list() if self.is_fitted else None} \n"
@@ -715,7 +721,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         
         y_values, y_index = check_extract_values_and_index(data=y, data_label='`y`')
 
-        # TODO: additional checks for classification if numeric?
         if np.issubdtype(y_values.dtype, np.floating):
             not_allowed = np.mod(y_values, 1) != 0
             if np.any(not_allowed):
