@@ -298,8 +298,17 @@ def residuals_arar(model_tuple):
 def summary_arar(model_tuple):
     """
     Print a simple summary of ARAR model tuple.
+
+    Parameters
+    ----------
+    model_tuple : (Y, best_phi, best_lag, sigma2, psi, sbar)
+
+    Returns
+    -------
+    None
+    
     """
-    Y, best_phi, best_lag, sigma2, psi, sbar , _, _= model_tuple
+    Y, best_phi, best_lag, sigma2, psi, sbar, _, _= model_tuple
     Y = np.asarray(Y, dtype=float)
 
     print("ARAR Model Summary")
