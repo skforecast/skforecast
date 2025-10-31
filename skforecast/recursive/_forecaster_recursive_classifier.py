@@ -66,11 +66,11 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         window features that return class values):
         
         - 'auto': Use categorical dtype if classifier supports native categorical
-          features (LightGBM, CatBoost, XGBoost), otherwise numeric encoding
-        - 'categorical': Force categorical dtype (requires compatible classifier)
-        - 'numeric': Use ordinal encoding (0, 1, 2, ...). The classifier will 
-          treat class codes as numeric values, assuming an ordinal relationship 
-          between classes (e.g., 'low' < 'medium' < 'high').
+        features (LightGBM, CatBoost, XGBoost), otherwise numeric encoding.
+        - 'categorical': Force categorical dtype (requires compatible classifier).
+        - 'ordinal': Use ordinal encoding (0, 1, 2, ...). The classifier will 
+        treat class codes as numeric values, assuming an ordinal relationship 
+        between classes (e.g., 'low' < 'medium' < 'high').
         
         Note: This only affects features derived from the target series (y) not 
         exogenous variables.
@@ -114,14 +114,18 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         window features that return class values).
     use_native_categoricals : bool
         Indicates whether the classifier supports native categorical features.
+    classes_ : list
+        List of class labels seen during training.
+    class_codes_ : list
+        List of class codes assigned by the `OrdinalEncoder` during training.
+    n_classes_ : int
+        Number of classes seen during training.
     encoder : OrdinalEncoder
         Instance of `OrdinalEncoder` used to encode target variable class labels.
     encoding_mapping_ : dict
         Mapping of original class labels to encoded values.
-    classes_ : list
-        List of class labels seen during training.
-    n_classes_ : int
-        Number of classes seen during training.
+    code_to_class_mapping_ : dict
+        Mapping of encoded values to original class labels.
     transformer_exog : object transformer (preprocessor)
         An instance of a transformer (preprocessor) compatible with the scikit-learn
         preprocessing API. The transformation is applied to `exog` before training the
@@ -211,7 +215,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
     - When autoregressive (lag) features are created later, they are converted 
     to pandas Categorical types using the same category ordering 
-    (`categories = y_categories_codes`).
+    (`categories = forecaster.class_codes_`).
 
     As a result, the categorical codes used in lag features remain aligned
     with the original encoding from the `OrdinalEncoder`.
@@ -262,12 +266,13 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
         self.features_encoding                  = features_encoding
         self.use_native_categoricals            = False
-        self.encoding_mapping_                  = None
         self.classes_                           = None
+        self.class_codes_                       = None
         self.n_classes_                         = None
+        self.encoding_mapping_                  = None
+        self.code_to_class_mapping_             = None
 
-        # TODO: valid_encodings = ['auto', 'category', 'ordinal']?
-        valid_encodings = ['auto', 'categorical', 'numeric']
+        valid_encodings = ['auto', 'categorical', 'ordinal']
         if features_encoding not in valid_encodings:
             raise ValueError(
                 f"`features_encoding` must be one of {valid_encodings}. "
@@ -282,7 +287,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                 raise ValueError(
                     f"`features_encoding='categorical'` requires a classifier that "
                     f"supports native categorical features (LightGBM, CatBoost, XGBoost). "
-                    f"Got {type(regressor).__name__}. Use 'auto' or 'numeric' instead."
+                    f"Got {type(regressor).__name__}. Use 'auto' or 'ordinal' instead."
                 )
         elif features_encoding == 'auto':
             if supports_categorical:
@@ -290,7 +295,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
         self.encoder = OrdinalEncoder(
                            categories = 'auto',
-                           dtype      = float if features_encoding == 'numeric' else int
+                           dtype      = float if features_encoding == 'ordinal' else int
                        )
 
         self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
@@ -326,7 +331,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                               fit_kwargs = fit_kwargs
                           )
         
-        # TODO: Adapt
         self.__skforecast_tags__ = {
             "library": "skforecast",
             "estimator_type": "forecaster",
@@ -350,10 +354,10 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             "supports_weight_func": True,
             "supports_differentiation": False,
 
-            "prediction_types": ["point", "interval", "bootstrapping", "quantiles", "distribution"],
+            "prediction_types": ["point", "probabilities"],
             "supports_probabilistic": True,
-            "probabilistic_methods": ["bootstrapping", "conformal"],
-            "handles_binned_residuals": True
+            "probabilistic_methods": ["class-probabilities"],
+            "handles_binned_residuals": False
         }
 
 
@@ -449,15 +453,16 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                 </ul>
             </details>
             <details>
-                <summary>Exogenous Variables</summary>
+                <summary>Classification Information</summary>
                 <ul>
-                    {exog_names_in_}
+                    <li><strong>Classes:</strong> {self.classes_}</li>
+                    <li><strong>Class encoding:</strong> {self.encoding_mapping_}</li>
                 </ul>
             </details>
             <details>
-                <summary>Data Transformations</summary>
+                <summary>Exogenous Variables</summary>
                 <ul>
-                    <li><strong>Transformer for y:</strong> {self.transformer_y}</li>
+                    <li><strong>Exogenous names:</strong> {exog_names_in_}</li>
                     <li><strong>Transformer for exog:</strong> {self.transformer_exog}</li>
                 </ul>
             </details>
@@ -484,7 +489,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             <p>
                 <a href="https://skforecast.org/{skforecast.__version__}/api/forecasterrecursiveclassifier.html">&#128712 <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
-                <a href="https://skforecast.org/{skforecast.__version__}/user_guides/autoregresive-forecaster.html">&#128462 <strong>User Guide</strong></a>
+                <a href="https://skforecast.org/{skforecast.__version__}/user_guides/forecasting-classification.html">&#128462 <strong>User Guide</strong></a>
             </p>
         </div>
         """
@@ -529,7 +534,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         y: np.ndarray,
         X_as_pandas: bool = False,
         train_index: pd.Index | None = None,
-        y_categories_codes: list[int | float] | None = None
+        class_codes: list[int | float] | None = None
     ) -> tuple[np.ndarray | pd.DataFrame | None, np.ndarray]:
         """
         Create the lagged values and their target variable from a time series.
@@ -546,7 +551,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         train_index : pandas Index, default None
             Index of the training data. It is used to create the pandas DataFrame
             `X_data` when `X_as_pandas` is `True`.
-        y_categories_codes : list, default None
+        class_codes : list, default None
             List of category codes to be used when converting lagged values to
             pandas Categorical. Only used when `self.use_native_categoricals` is 
             `True`.
@@ -580,7 +585,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                     for col in X_data.columns:
                         X_data[col] = pd.Categorical(
                                           values     = X_data[col],
-                                          categories = y_categories_codes,
+                                          categories = class_codes,
                                           ordered    = False
                                       )
 
@@ -738,12 +743,13 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             encoding_mapping_ = {}
             y_encoded = self.encoder.fit_transform(y_values.reshape(-1, 1)).ravel()
             for i, cat in enumerate(self.encoder.categories_[0]):
-                encoding_mapping_[cat] = i if self.features_encoding != 'numeric' else float(i)
+                encoding_mapping_[cat] = i if self.features_encoding != 'ordinal' else float(i)
         else:
             encoding_mapping_ = self.encoding_mapping_
             y_encoded = self.encoder.transform(y_values.reshape(-1, 1)).ravel()
 
         classes = list(encoding_mapping_.keys())
+        class_codes = list(encoding_mapping_.values())
         n_classes = len(classes)
         if n_classes < 2:
             raise ValueError(
@@ -751,9 +757,10 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                 f"Found {classes} class."
             )
         
-        y_encoding_info = {
-            'classes': classes,
-            'n_classes': n_classes,
+        y_encoding_info_ = {
+            'classes_': classes,
+            'class_codes_': class_codes,
+            'n_classes_': n_classes,
             'encoding_mapping_': encoding_mapping_
         }
         train_index = y_index[self.window_size:]
@@ -823,10 +830,10 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         X_train_features_names_out_ = []
 
         X_train_lags, y_train = self._create_lags(
-                                    y                  = y_encoded, 
-                                    X_as_pandas        = X_as_pandas, 
-                                    train_index        = train_index,
-                                    y_categories_codes = encoding_mapping_.values()
+                                    y           = y_encoded, 
+                                    X_as_pandas = X_as_pandas, 
+                                    train_index = train_index,
+                                    class_codes = class_codes
                                 )
         if X_train_lags is not None:
             X_train.append(X_train_lags)
@@ -889,7 +896,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         return (
             X_train,
             y_train,
-            y_encoding_info,
+            y_encoding_info_,
             exog_names_in_,
             X_train_window_features_names_out_,
             X_train_exog_names_out_,
@@ -949,7 +956,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
         - When autoregressive (lag) features are created later, they are converted 
         to pandas Categorical types using the same category ordering 
-        (`categories = y_categories_codes`).
+        (`categories = forecaster.class_codes_`).
 
         As a result, the categorical codes used in lag features remain aligned
         with the original encoding from the `OrdinalEncoder`.
@@ -1126,7 +1133,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
         - When autoregressive (lag) features are created later, they are converted 
         to pandas Categorical types using the same category ordering 
-        (`categories = y_categories_codes`).
+        (`categories = forecaster.class_codes_`).
 
         As a result, the categorical codes used in lag features remain aligned
         with the original encoding from the `OrdinalEncoder`.
@@ -1156,13 +1163,15 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         self.fit_date                           = None
 
         self.classes_ = None
+        self.class_codes_                       = None
         self.n_classes_ = None
         self.encoding_mapping_ = None
+        self.code_to_class_mapping_ = None
 
         (
             X_train,
             y_train,
-            y_encoding_info,
+            y_encoding_info_,
             exog_names_in_,
             X_train_window_features_names_out_,
             X_train_exog_names_out_,
@@ -1186,11 +1195,13 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         else:
             self.regressor.fit(X=X_train, y=y_train, **self.fit_kwargs)
 
-        self.classes_ = y_encoding_info['classes']
-        self.n_classes_ = y_encoding_info['n_classes']
-        self.encoding_mapping_ = y_encoding_info['encoding_mapping_']
-        # TODO: Merece la pena hacer un code to class?
-        # code_to_class = {code: cls for cls, code in self.encoding_mapping_.items()}
+        self.classes_ = y_encoding_info_['classes_']
+        self.class_codes_ = y_encoding_info_['class_codes_']
+        self.n_classes_ = y_encoding_info_['n_classes_']
+        self.encoding_mapping_ = y_encoding_info_['encoding_mapping_']
+        self.code_to_class_mapping_ = {
+            code: cls for cls, code in self.encoding_mapping_.items()
+        }
 
         self.X_train_window_features_names_out_ = X_train_window_features_names_out_
         self.X_train_features_names_out_ = X_train_features_names_out_
@@ -1417,16 +1428,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             if predict_proba:
                 proba = self.regressor.predict_proba(X.reshape(1, -1)).ravel()
                 predictions[i, :] = proba
-
-                # TODO: Creo que self.regressor.classes_ es equivalente a self.classes_
-                # En el argumento están ordenadas alfabéticamente dado que vienen
-                # del OrdinalEncoder
-                pred_class_idx = np.argmax(proba)
-                if hasattr(self.regressor, 'classes_'):
-                    pred = self.regressor.classes_[pred_class_idx]
-                else:
-                    pred = pred_class_idx
-
+                pred = self.class_codes_[np.argmax(proba)]
             else:
                 pred = self.regressor.predict(X.reshape(1, -1)).ravel().item()
                 predictions[i] = pred
@@ -1540,7 +1542,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             for col in self.lags_names:
                 X_predict[col] = pd.Categorical(
                                      values     = X_predict[col],
-                                     categories = self.encoding_mapping_.values(),
+                                     categories = self.class_codes_,
                                      ordered    = False
                                  )
         
@@ -1715,7 +1717,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         probabilities = pd.DataFrame(
                             data    = probabilities,
                             index   = prediction_index,
-                            columns = self.classes_
+                            columns = [f"{cls}_proba" for cls in self.classes_]
                         )
         
         return probabilities

@@ -14,7 +14,7 @@ def test_init_ValueError_when_features_encoding_not_valid():
     Test ValueError is raised when `features_encoding` is not valid.
     """
     err_msg = re.escape(
-        "`features_encoding` must be one of ['auto', 'categorical', 'numeric']. "
+        "`features_encoding` must be one of ['auto', 'categorical', 'ordinal']. "
         "Got 'not_valid'."
     )
     with pytest.raises(ValueError, match = err_msg):
@@ -33,7 +33,7 @@ def test_init_ValueError_when_classifier_does_not_support_categorical_features()
     err_msg = re.escape(
         f"`features_encoding='categorical'` requires a classifier that "
         f"supports native categorical features (LightGBM, CatBoost, XGBoost). "
-        f"Got {type(LogisticRegression()).__name__}. Use 'auto' or 'numeric' instead."
+        f"Got {type(LogisticRegression()).__name__}. Use 'auto' or 'ordinal' instead."
     )
     with pytest.raises(ValueError, match = err_msg):
         ForecasterRecursiveClassifier(
@@ -64,7 +64,7 @@ def test_init_ValueError_when_no_lags_or_window_features():
                          [('auto', LogisticRegression(), False), 
                           ('auto', LGBMClassifier(), True), 
                           ('categorical', LGBMClassifier(), True), 
-                          ('numeric', LGBMClassifier(), False)], 
+                          ('ordinal', LGBMClassifier(), False)], 
                          ids = lambda dt: f'features_encoding, estimator, expected: {dt}')
 def test_init_use_native_categoricals_set(features_encoding, estimator, expected):
     """
