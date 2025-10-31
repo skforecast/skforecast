@@ -18,6 +18,11 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 - [Dependent multivariate series forecasting](../user_guides/dependent-multi-series-multivariate-forecasting.html)
 - [Deep learning Recurrent Neural Networks](../user_guides/forecasting-with-deep-learning-rnn-lstm.html)
 
+<span style="font-size: 1.3em;">Statistical models</span>
+
+- [ARIMA and SARIMAX](../user_guides/forecasting-sarimax-arima.html)
+- [ARAR](../user_guides/forecasting-arar.html)
+
 <span style="font-size: 1.3em;">Feature Engineering</span>
 
 - [Exogenous variables](../user_guides/exogenous-variables.html)

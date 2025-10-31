@@ -26,14 +26,15 @@ nav:
     - Single series Forecasters:
       - Recursive multi-step forecasting: user_guides/autoregressive-forecaster.ipynb
       - Direct multi-step forecasting: user_guides/direct-multi-step-forecasting.ipynb
-      - ARIMA and SARIMAX: user_guides/forecasting-sarimax-arima.ipynb
-      - ARAR: user_guides/forecasting-arar.ipynb
       - Forecasting baseline: user_guides/forecasting-baseline.ipynb
     - Global Forecasters (multiple series):
       - Independent multi-time series forecasting: user_guides/independent-multi-time-series-forecasting.ipynb
       - Series with different lengths and different exogenous variables: user_guides/multi-series-with-different-length-and-different_exog.ipynb
       - Dependent multivariate series forecasting: user_guides/dependent-multi-series-multivariate-forecasting.ipynb
       - Deep learning Recurrent Neural Networks: user_guides/forecasting-with-deep-learning-rnn-lstm.ipynb
+    - Statistical models:
+      - ARIMA and SARIMAX: user_guides/forecasting-sarimax-arima.ipynb
+      - ARAR: user_guides/forecasting-arar.ipynb
     - Feature Engineering:
       - Exogenous variables: user_guides/exogenous-variables.ipynb
       - Window and custom features: user_guides/window-features-and-custom-features.ipynb
