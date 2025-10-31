@@ -1,20 +1,17 @@
-# Unit test _create_train_X_y ForecasterRecursive
+# Unit test _create_train_X_y ForecasterRecursiveClassifier
 # ==============================================================================
 import re
 import pytest
 import numpy as np
 import pandas as pd
-from sklearn.linear_model import LinearRegression
+from lightgbm import LGBMClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
 from skforecast.exceptions import MissingValuesWarning
-from skforecast.preprocessing import TimeSeriesDifferentiator
-from skforecast.preprocessing import RollingFeatures
-from skforecast.recursive import ForecasterRecursive
-
-# Fixtures
-from .fixtures_forecaster_recursive_classifier import data  # to test results when using differentiation
+from skforecast.preprocessing import RollingFeaturesClassification
+from skforecast.recursive import ForecasterRecursiveClassifier
 
 
 def test_create_train_X_y_ValueError_when_len_y_less_than_window_size():
@@ -23,7 +20,7 @@ def test_create_train_X_y_ValueError_when_len_y_less_than_window_size():
     """
     y = pd.Series(np.arange(5))
 
-    forecaster = ForecasterRecursive(LinearRegression(), lags=5)
+    forecaster = ForecasterRecursiveClassifier(LogisticRegression(), lags=5)
     err_msg = re.escape(
         "Length of `y` must be greater than the maximum window size "
         "needed by the forecaster.\n"
@@ -35,8 +32,8 @@ def test_create_train_X_y_ValueError_when_len_y_less_than_window_size():
     with pytest.raises(ValueError, match = err_msg):
         forecaster._create_train_X_y(y=y)
 
-    rolling = RollingFeatures(stats=['mean', 'median'], window_sizes=6)
-    forecaster = ForecasterRecursive(LinearRegression(), lags=2, window_features=rolling)
+    rolling = RollingFeaturesClassification(stats=['mean', 'median'], window_sizes=6)
+    forecaster = ForecasterRecursiveClassifier(LogisticRegression(), lags=2, window_features=rolling)
     err_msg = re.escape(
         "Length of `y` must be greater than the maximum window size "
         "needed by the forecaster.\n"
@@ -55,7 +52,7 @@ def test_create_train_X_y_TypeError_when_exog_is_categorical_of_no_int():
     """
     y = pd.Series(np.arange(3))
     exog = pd.Series(['A', 'B', 'C'], name='exog', dtype='category')
-    forecaster = ForecasterRecursive(LinearRegression(), lags=2)
+    forecaster = ForecasterRecursiveClassifier(LogisticRegression(), lags=2)
 
     err_msg = re.escape(
         "Categorical dtypes in exog must contain only integer values. "
@@ -73,7 +70,7 @@ def test_create_train_X_y_MissingValuesWarning_when_exog_has_missing_values():
     """
     y = pd.Series(np.arange(4))
     exog = pd.Series([1, 2, 3, np.nan], name='exog')
-    forecaster = ForecasterRecursive(LinearRegression(), lags=2)
+    forecaster = ForecasterRecursiveClassifier(LogisticRegression(), lags=2)
 
     warn_msg = re.escape(
         "`exog` has missing values. Most machine learning models do "
@@ -96,7 +93,7 @@ def test_create_train_X_y_ValueError_when_len_y_or_len_train_index_is_different_
     Test ValueError is raised when length of y is not equal to length exog or
     length of y - window_size is not equal to length exog.
     """
-    forecaster = ForecasterRecursive(LinearRegression(), lags=5)
+    forecaster = ForecasterRecursiveClassifier(LogisticRegression(), lags=5)
 
     len_exog = len(exog)
     len_y = len(y)
@@ -118,7 +115,7 @@ def test_create_train_X_y_ValueError_when_y_and_exog_have_different_index_but_sa
     """
     Test ValueError is raised when y and exog have different index but same length.
     """
-    forecaster = ForecasterRecursive(LinearRegression(), lags=5)
+    forecaster = ForecasterRecursiveClassifier(LogisticRegression(), lags=5)
 
     err_msg = re.escape(
         "When `exog` has the same length as `y`, the index of "
@@ -137,7 +134,7 @@ def test_create_train_X_y_ValueError_when_y_and_exog_have_different_index_and_le
     Test ValueError is raised when y and exog have different index and
     length exog no window_size.
     """
-    forecaster = ForecasterRecursive(LinearRegression(), lags=5)
+    forecaster = ForecasterRecursiveClassifier(LogisticRegression(), lags=5)
 
     err_msg = re.escape(
         "When `exog` doesn't contain the first `window_size` observations, "
@@ -159,7 +156,7 @@ def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_None():
     """
     y = pd.Series(np.arange(10), dtype=float)
     exog = None
-    forecaster = ForecasterRecursive(LinearRegression(), lags=5)
+    forecaster = ForecasterRecursiveClassifier(LogisticRegression(), lags=5)
     results = forecaster._create_train_X_y(y=y, exog=exog)
 
     expected = (
@@ -206,7 +203,7 @@ def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_series_of_float
     """
     y = pd.Series(np.arange(10), dtype=float)
     exog = pd.Series(np.arange(100, 110), name='exog', dtype=dtype)
-    forecaster = ForecasterRecursive(LinearRegression(), lags=5)
+    forecaster = ForecasterRecursiveClassifier(LogisticRegression(), lags=5)
     results = forecaster._create_train_X_y(y=y, exog=exog)
     expected = (
         pd.DataFrame(
@@ -268,7 +265,7 @@ def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_series_of_float
         exog.index = pd.date_range(start='2022-01-06', periods=5, freq='D')
         expected_index = pd.date_range(start='2022-01-06', periods=5, freq='D')
 
-    forecaster = ForecasterRecursive(LinearRegression(), lags=5)
+    forecaster = ForecasterRecursiveClassifier(LogisticRegression(), lags=5)
     results = forecaster._create_train_X_y(y=y, exog=exog)
     expected = (
         pd.DataFrame(
@@ -318,7 +315,7 @@ def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_dataframe_of_fl
     exog = pd.DataFrame({'exog_1': np.arange(100, 110, dtype=dtype),
                          'exog_2': np.arange(1000, 1010, dtype=dtype)})
     
-    forecaster = ForecasterRecursive(LinearRegression(), lags=5)
+    forecaster = ForecasterRecursiveClassifier(LogisticRegression(), lags=5)
     results = forecaster._create_train_X_y(y=y, exog=exog)        
     expected = (
         pd.DataFrame(
@@ -367,7 +364,7 @@ def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_series_of_bool_
     """
     y = pd.Series(np.arange(10), dtype=float)
     exog = pd.Series(exog_values * 10, name='exog', dtype=dtype)
-    forecaster = ForecasterRecursive(LinearRegression(), lags=5)
+    forecaster = ForecasterRecursiveClassifier(LogisticRegression(), lags=5)
     results = forecaster._create_train_X_y(y=y, exog=exog)
     expected = (
         pd.DataFrame(
@@ -419,7 +416,7 @@ def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_dataframe_of_bo
                'exog_1': v_exog_1 * 10,
                'exog_2': v_exog_2 * 10,
            })
-    forecaster = ForecasterRecursive(LinearRegression(), lags=5)
+    forecaster = ForecasterRecursiveClassifier(LogisticRegression(), lags=5)
     results = forecaster._create_train_X_y(y=y, exog=exog)
     expected = (
         pd.DataFrame(
@@ -464,7 +461,7 @@ def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_series_of_categ
     """
     y = pd.Series(np.arange(10), dtype=float)
     exog = pd.Series(range(10), name='exog', dtype='category')
-    forecaster = ForecasterRecursive(LinearRegression(), lags=5)
+    forecaster = ForecasterRecursiveClassifier(LogisticRegression(), lags=5)
     results = forecaster._create_train_X_y(y=y, exog=exog)
     expected = (
         pd.DataFrame(
@@ -511,7 +508,7 @@ def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_dataframe_of_ca
     exog = pd.DataFrame({'exog_1': pd.Categorical(range(10)),
                          'exog_2': pd.Categorical(range(100, 110))})
     
-    forecaster = ForecasterRecursive(LinearRegression(), lags=5)
+    forecaster = ForecasterRecursiveClassifier(LogisticRegression(), lags=5)
     results = forecaster._create_train_X_y(y=y, exog=exog)        
     expected = (
         pd.DataFrame(
@@ -562,7 +559,7 @@ def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_dataframe_of_fl
                          'exog_2': pd.Series(np.arange(1000, 1010), dtype=int),
                          'exog_3': pd.Categorical(range(100, 110))})
     
-    forecaster = ForecasterRecursive(LinearRegression(), lags=5)
+    forecaster = ForecasterRecursiveClassifier(LogisticRegression(), lags=5)
     results = forecaster._create_train_X_y(y=y, exog=exog)        
     expected = (
         pd.DataFrame(
@@ -609,8 +606,8 @@ def test_create_train_X_y_output_when_y_is_series_10_and_transformer_y_is_Standa
     Test the output of _create_train_X_y when exog is None and transformer_y
     is StandardScaler.
     """
-    forecaster = ForecasterRecursive(
-                     regressor = LinearRegression(),
+    forecaster = ForecasterRecursiveClassifier(
+                     regressor = LogisticRegression(),
                      lags = 5,
                      transformer_y = StandardScaler()
                  )
@@ -655,8 +652,8 @@ def test_create_train_X_y_output_when_exog_is_None_and_transformer_exog_is_not_N
     Test the output of _create_train_X_y when exog is None and transformer_exog
     is not None.
     """
-    forecaster = ForecasterRecursive(
-                     regressor        = LinearRegression(),
+    forecaster = ForecasterRecursiveClassifier(
+                     regressor        = LogisticRegression(),
                      lags             = 5,
                      transformer_exog = StandardScaler()
                  )
@@ -716,8 +713,8 @@ def test_create_train_X_y_output_when_transformer_y_and_transformer_exog():
                             verbose_feature_names_out = False
                         )
 
-    forecaster = ForecasterRecursive(
-                    regressor        = LinearRegression(),
+    forecaster = ForecasterRecursiveClassifier(
+                    regressor        = LogisticRegression(),
                     lags             = 5,
                     transformer_y    = transformer_y,
                     transformer_exog = transformer_exog
@@ -762,97 +759,6 @@ def test_create_train_X_y_output_when_transformer_y_and_transformer_exog():
         assert results[7][k] == expected[7][k]
 
 
-@pytest.mark.parametrize("fit_forecaster", 
-                         [True, False], 
-                         ids = lambda fitted: f'fit_forecaster: {fitted}')
-def test_create_train_X_y_output_when_y_is_series_exog_is_series_and_differentiation_is_1(fit_forecaster):
-    """
-    Test the output of _create_train_X_y when using differentiation=1. Comparing 
-    the matrix created with and without differentiating the series.
-    """
-    # Data differentiated
-    differentiator = TimeSeriesDifferentiator(order=1)
-    data_diff = differentiator.fit_transform(data.to_numpy())
-    data_diff = pd.Series(data_diff, index=data.index).dropna()
-
-    # Simulated exogenous variable
-    rng = np.random.default_rng(9876)
-    exog = pd.Series(
-        rng.normal(loc=0, scale=1, size=len(data)), index=data.index, name='exog'
-    )
-    exog_diff = exog.iloc[1:]
-    end_train = '2003-03-01 23:59:00'
-
-    forecaster_1 = ForecasterRecursive(LinearRegression(), lags=5)
-    forecaster_2 = ForecasterRecursive(LinearRegression(), lags=5, differentiation=1)
-    
-    if fit_forecaster:
-        forecaster_2.fit(y=data.loc[:end_train], exog=exog.loc[:end_train])
-
-    output_1 = forecaster_1._create_train_X_y(
-                   y    = data_diff.loc[:end_train],
-                   exog = exog_diff.loc[:end_train]
-               )
-    output_2 = forecaster_2._create_train_X_y(
-                   y    = data.loc[:end_train],
-                   exog = exog.loc[:end_train]
-               )
-    
-    pd.testing.assert_frame_equal(output_1[0], output_2[0], check_names=True)
-    pd.testing.assert_series_equal(output_1[1], output_2[1], check_names=True)
-    assert output_1[2] == output_2[2]
-    assert output_1[3] == output_2[3]
-    assert output_1[4] == output_2[4]
-    assert output_1[5] == output_2[5]
-    for k in output_1[6].keys():
-        assert output_1[6][k] == output_2[6][k]
-    for k in output_1[7].keys():
-        assert output_1[7][k] == output_2[7][k]
-
-
-def test_create_train_X_y_output_when_y_is_series_exog_is_series_and_differentiation_is_2():
-    """
-    Test the output of _create_train_X_y when using differentiation=2. Comparing 
-    the matrix created with and without differentiating the series.
-    """
-
-    # Data differentiated
-    differentiator = TimeSeriesDifferentiator(order=2)
-    data_diff_2 = differentiator.fit_transform(data.to_numpy())
-    data_diff_2 = pd.Series(data_diff_2, index=data.index).dropna()
-
-    # Simulated exogenous variable
-    rng = np.random.default_rng(9876)
-    exog = pd.Series(
-        rng.normal(loc=0, scale=1, size=len(data)), index=data.index, name='exog'
-    )
-    exog_diff_2 = exog.iloc[2:]
-    end_train = '2003-03-01 23:59:00'
-
-    forecaster_1 = ForecasterRecursive(LinearRegression(), lags=5)
-    forecaster_2 = ForecasterRecursive(LinearRegression(), lags=5, differentiation=2)
-
-    output_1 = forecaster_1._create_train_X_y(
-                   y    = data_diff_2.loc[:end_train],
-                   exog = exog_diff_2.loc[:end_train]
-               )
-    output_2 = forecaster_2._create_train_X_y(
-                   y    = data.loc[:end_train],
-                   exog = exog.loc[:end_train]
-               )
-    
-    pd.testing.assert_frame_equal(output_1[0], output_2[0], check_names=True)
-    pd.testing.assert_series_equal(output_1[1], output_2[1], check_names=True)
-    assert output_1[2] == output_2[2]
-    assert output_1[3] == output_2[3]
-    assert output_1[4] == output_2[4]
-    assert output_1[5] == output_2[5]
-    for k in output_1[6].keys():
-        assert output_1[6][k] == output_2[6][k]
-    for k in output_1[7].keys():
-        assert output_1[7][k] == output_2[7][k]
-
-
 def test_create_train_X_y_output_when_window_features_and_exog():
     """
     Test the output of _create_train_X_y when using window_features and exog 
@@ -866,11 +772,11 @@ def test_create_train_X_y_output_when_window_features_and_exog():
         np.arange(100, 115), index=pd.date_range('2000-01-01', periods=15, freq='D'),
         name='exog', dtype=float
     )
-    rolling = RollingFeatures(
+    rolling = RollingFeaturesClassification(
         stats=['mean', 'median', 'sum'], window_sizes=[5, 5, 6]
     )
 
-    forecaster = ForecasterRecursive(LinearRegression(), lags=5, window_features=rolling)
+    forecaster = ForecasterRecursiveClassifier(LogisticRegression(), lags=5, window_features=rolling)
     results = forecaster._create_train_X_y(y=y_datetime, exog=exog_datetime)
     
     expected = (
@@ -928,11 +834,11 @@ def test_create_train_X_y_output_when_two_window_features_and_exog():
         np.arange(100, 115), index=pd.date_range('2000-01-01', periods=15, freq='D'),
         name='exog', dtype=float
     )
-    rolling = RollingFeatures(stats=['mean', 'median'], window_sizes=[5, 5])
-    rolling_2 = RollingFeatures(stats='sum', window_sizes=[6])
+    rolling = RollingFeaturesClassification(stats=['mean', 'median'], window_sizes=[5, 5])
+    rolling_2 = RollingFeaturesClassification(stats='sum', window_sizes=[6])
 
-    forecaster = ForecasterRecursive(
-        LinearRegression(), lags=5, window_features=[rolling, rolling_2]
+    forecaster = ForecasterRecursiveClassifier(
+        LogisticRegression(), lags=5, window_features=[rolling, rolling_2]
     )
     results = forecaster._create_train_X_y(y=y_datetime, exog=exog_datetime)
 
@@ -991,11 +897,11 @@ def test_create_train_X_y_output_when_window_features_lags_None_and_exog():
         np.arange(100, 115), index=pd.date_range('2000-01-01', periods=15, freq='D'),
         name='exog', dtype=float
     )
-    rolling = RollingFeatures(
+    rolling = RollingFeaturesClassification(
         stats=['mean', 'median', 'sum'], window_sizes=[5, 5, 6]
     )
 
-    forecaster = ForecasterRecursive(LinearRegression(), lags=None, window_features=rolling)
+    forecaster = ForecasterRecursiveClassifier(LogisticRegression(), lags=None, window_features=rolling)
     results = forecaster._create_train_X_y(y=y_datetime, exog=exog_datetime)
     
     expected = (
@@ -1061,12 +967,12 @@ def test_create_train_X_y_output_when_window_features_and_exog_transformers_diff
                             remainder = 'passthrough',
                             verbose_feature_names_out = False
                         )
-    rolling = RollingFeatures(
+    rolling = RollingFeaturesClassification(
         stats=['ratio_min_max', 'median'], window_sizes=4
     )
 
-    forecaster = ForecasterRecursive(
-                     LinearRegression(), 
+    forecaster = ForecasterRecursiveClassifier(
+                     LogisticRegression(), 
                      lags             = [1, 5], 
                      window_features  = rolling,
                      transformer_y    = transformer_y,

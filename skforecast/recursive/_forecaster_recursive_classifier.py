@@ -1161,12 +1161,11 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         self.X_train_features_names_out_        = None
         self.is_fitted                          = False
         self.fit_date                           = None
-
-        self.classes_ = None
+        self.classes_                           = None
         self.class_codes_                       = None
-        self.n_classes_ = None
-        self.encoding_mapping_ = None
-        self.code_to_class_mapping_ = None
+        self.n_classes_                         = None
+        self.encoding_mapping_                  = None
+        self.code_to_class_mapping_             = None
 
         (
             X_train,

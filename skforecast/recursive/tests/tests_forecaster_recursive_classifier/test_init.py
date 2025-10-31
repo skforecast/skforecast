@@ -3,8 +3,8 @@
 import re
 import pytest
 import numpy as np
-from sklearn.linear_model import LogisticRegression
 from lightgbm import LGBMClassifier
+from sklearn.linear_model import LogisticRegression
 from skforecast.preprocessing import RollingFeaturesClassification
 from skforecast.recursive import ForecasterRecursiveClassifier
 
@@ -62,9 +62,9 @@ def test_init_ValueError_when_no_lags_or_window_features():
 
 @pytest.mark.parametrize("features_encoding, estimator, expected", 
                          [('auto', LogisticRegression(), False), 
-                          ('auto', LGBMClassifier(), True), 
-                          ('categorical', LGBMClassifier(), True), 
-                          ('ordinal', LGBMClassifier(), False)], 
+                          ('auto', LGBMClassifier(verbose=-1), True), 
+                          ('categorical', LGBMClassifier(verbose=-1), True), 
+                          ('ordinal', LGBMClassifier(verbose=-1), False)], 
                          ids = lambda dt: f'features_encoding, estimator, expected: {dt}')
 def test_init_use_native_categoricals_set(features_encoding, estimator, expected):
     """
