@@ -20,7 +20,7 @@ from joblib import Parallel, delayed, cpu_count
 from sklearn.preprocessing import StandardScaler
 from itertools import chain
 
-import skforecast
+from .. import __version__
 from ..base import ForecasterBase
 from ..exceptions import DataTransformationWarning, ResidualsUsageWarning
 from ..utils import (
@@ -296,6 +296,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         skforecast.utils.select_n_jobs_fit_forecaster.
     forecaster_id : str, int
         Name used as an identifier of the forecaster.
+    __skforecast_tags__ : dict
+        Tags associated with the forecaster.
     _probabilistic_mode: str, bool
         Private attribute used to indicate whether the forecaster should perform 
         some calculations during backtesting.
@@ -362,7 +364,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         self.creation_date                      = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
         self.is_fitted                          = False
         self.fit_date                           = None
-        self.skforecast_version                 = skforecast.__version__
+        self.skforecast_version                 = __version__
         self.python_version                     = sys.version.split(" ")[0]
         self.forecaster_id                      = forecaster_id
         self._probabilistic_mode                = "binned"
@@ -483,6 +485,36 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                     f"`n_jobs` must be an integer or `'auto'`. Got {type(n_jobs)}."
                 )
             self.n_jobs = n_jobs if n_jobs > 0 else cpu_count()
+        
+        self.__skforecast_tags__ = {
+            "library": "skforecast",
+            "estimator_type": "forecaster",
+            "estimator_name": "ForecasterDirectMultiVariate",
+            "estimator_task": "regression",
+            "forecasting_scope": "global",  # single-series | global
+            "forecasting_strategy": "direct",  # recursive | direct | deep_learning
+            "index_types_supported": ["pandas.RangeIndex", "pandas.DatetimeIndex"],
+            "requires_index_frequency": True,
+
+            "allowed_input_types_series": ["pandas.DataFrame"],
+            "supports_exog": True,
+            "allowed_input_types_exog": ["pandas.Series", "pandas.DataFrame"],
+            "handles_missing_values_series": False, 
+            "handles_missing_values_exog": True, 
+
+            "supports_lags": True,
+            "supports_window_features": True,
+            "supports_transformer_series": True,
+            "supports_transformer_exog": True,
+            "supports_weight_func": True,
+            "supports_series_weights": False,
+            "supports_differentiation": True,
+
+            "prediction_types": ["point", "interval", "bootstrapping", "quantiles", "distribution"],
+            "supports_probabilistic": True,
+            "probabilistic_methods": ["bootstrapping", "conformal"],
+            "handles_binned_residuals": True
+        }
 
     def __repr__(
         self
@@ -617,9 +649,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 </ul>
             </details>
             <p>
-                <a href="https://skforecast.org/{skforecast.__version__}/api/forecasterdirectmultivariate.html">&#128712 <strong>API Reference</strong></a>
+                <a href="https://skforecast.org/{__version__}/api/forecasterdirectmultivariate.html">&#128712 <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
-                <a href="https://skforecast.org/{skforecast.__version__}/user_guides/dependent-multi-series-multivariate-forecasting.html">&#128462 <strong>User Guide</strong></a>
+                <a href="https://skforecast.org/{__version__}/user_guides/dependent-multi-series-multivariate-forecasting.html">&#128462 <strong>User Guide</strong></a>
             </p>
         </div>
         """
@@ -710,10 +742,13 @@ class ForecasterDirectMultiVariate(ForecasterBase):
     ) -> tuple[np.ndarray | None, np.ndarray | None]:
         """
         Create the lagged values and their target variable from a time series.
-        
+
         Note that the returned matrix `X_data` contains the lag 1 in the first 
         column, the lag 2 in the in the second column and so on.
-        
+
+        The returned matrices are views into the original `y` so care must be taken
+        when modifying them.
+
         Parameters
         ----------
         y : numpy ndarray
@@ -729,33 +764,30 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             Lagged values (predictors).
         y_data : numpy ndarray, None
             Values of the time series related to each row of `X_data`.
-        
+
+        Notes
+        -----
+        Returned matrices are views into the original `y` so care must be taken
+        when modifying them.
+
         """
 
         X_data = None
         y_data = None
         if data_to_return is not None:
-
             n_rows = len(y) - self.window_size - (self.max_step - 1)
+            windows = np.lib.stride_tricks.sliding_window_view(y, self.window_size + self.max_step)
 
             if data_to_return != 'y':
                 # If `data_to_return` is not 'y', it means is 'X' or 'both', X_data is created
-                X_data = np.full(
-                    shape=(n_rows, len(lags)), fill_value=np.nan, order='F', dtype=float
-                )
-                for i, lag in enumerate(lags):
-                    X_data[:, i] = y[self.window_size - lag : -(lag + self.max_step - 1)]
+                lag_indices = [self.window_size - lag for lag in lags]
+                X_data = windows[:n_rows, lag_indices]
 
             if data_to_return != 'X':
                 # If `data_to_return` is not 'X', it means is 'y' or 'both', y_data is created
-                y_data = np.full(
-                    shape=(n_rows, self.max_step), fill_value=np.nan, order='F', dtype=float
-                )
-                for step in range(self.max_step):
-                    y_data[:, step] = y[self.window_size + step : self.window_size + step + n_rows]
-        
-        return X_data, y_data
+                y_data = windows[:n_rows, self.window_size:self.window_size + self.max_step]
 
+        return X_data, y_data
 
     def _create_window_features(
         self, 
@@ -1586,7 +1618,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         self.training_range_ = series.index[[0, -1]]
         self.index_type_ = type(series.index)
         if isinstance(series.index, pd.DatetimeIndex):
-            self.index_freq_ = series.index.freqstr
+            self.index_freq_ = series.index.freq
         else: 
             self.index_freq_ = series.index.step
         

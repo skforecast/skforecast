@@ -126,7 +126,7 @@ def test_fit_y_index_DatetimeIndex():
     )
     forecaster.fit(y)
 
-    assert forecaster.index_freq_ == y.index.freqstr
+    assert forecaster.index_freq_ == y.index.freq
 
 
 def test_fit_y_index_not_DatetimeIndex():

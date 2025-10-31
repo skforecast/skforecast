@@ -63,7 +63,7 @@ def test_forecaster_y_exog_features_stored():
 
 def test_forecaster_DatetimeIndex_index_freq_stored():
     """
-    Test serie_with_DatetimeIndex.index.freqstr is stored in forecaster.index_freq.
+    Test serie_with_DatetimeIndex.index.freq is stored in forecaster.index_freq.
     """
     serie_with_DatetimeIndex = pd.Series(
         data  = [1, 2, 3, 4, 5],
@@ -71,7 +71,7 @@ def test_forecaster_DatetimeIndex_index_freq_stored():
     )
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
     forecaster.fit(y=serie_with_DatetimeIndex)
-    expected = serie_with_DatetimeIndex.index.freqstr
+    expected = serie_with_DatetimeIndex.index.freq
     results = forecaster.index_freq_
 
     assert results == expected

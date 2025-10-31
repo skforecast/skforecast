@@ -24,7 +24,7 @@ nav:
     - Skforecast 0.14 Migration guide: user_guides/migration-guide.ipynb
     - Input data: user_guides/input-data.ipynb
     - Single series Forecasters:
-      - Recursive multi-step forecasting: user_guides/autoregresive-forecaster.ipynb
+      - Recursive multi-step forecasting: user_guides/autoregressive-forecaster.ipynb
       - Direct multi-step forecasting: user_guides/direct-multi-step-forecasting.ipynb
       - ARIMA and SARIMAX: user_guides/forecasting-sarimax-arima.ipynb
       - ARAR: user_guides/forecasting-arar.ipynb
@@ -58,7 +58,8 @@ nav:
       - Metrics in probabilistic forecasting: user_guides/probabilistic-forecasting-metrics.ipynb
       - Continuous Ranked Probability Score (CRPS): faq/probabilistic-forecasting-crps-score.ipynb
     - Model Explainability: user_guides/explainability.ipynb
-    - Model deployment:
+    - Drift Detection: user_guides/drift-detection.ipynb
+    - Model Deployment:
       - Save and load forecaster: user_guides/save-load-forecaster.ipynb
       - Forecaster in production: user_guides/forecaster-in-production.ipynb
     - Plotting: user_guides/plotting.ipynb
@@ -105,6 +106,7 @@ nav:
     - model_selection: api/model_selection.md
     - feature_selection: api/feature_selection.md
     - preprocessing: api/preprocessing.md
+    - drift_detection: api/drift_detection.md
     - metrics: api/metrics.md
     - plot: api/plot.md
     - utils: api/utils.md

@@ -17,13 +17,13 @@ from sklearn.exceptions import NotFittedError
 from sklearn.pipeline import Pipeline
 from sklearn.base import clone
 
-import skforecast
+from .. import __version__
 from ..base import ForecasterBase
 from ..exceptions import DataTransformationWarning, ResidualsUsageWarning
 from ..utils import (
     initialize_lags,
     initialize_window_features,
-    initialize_weights,
+    initialize_weights,    
     check_select_fit_kwargs,
     check_y,
     check_exog,
@@ -229,6 +229,8 @@ class ForecasterRecursive(ForecasterBase):
         Version of python used to create the forecaster.
     forecaster_id : str, int
         Name used as an identifier of the forecaster.
+    __skforecast_tags__ : dict
+        Tags associated with the forecaster.
     _probabilistic_mode: str, bool
         Private attribute used to indicate whether the forecaster should perform 
         some calculations during backtesting.
@@ -277,7 +279,7 @@ class ForecasterRecursive(ForecasterBase):
         self.creation_date                      = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
         self.is_fitted                          = False
         self.fit_date                           = None
-        self.skforecast_version                 = skforecast.__version__
+        self.skforecast_version                 = __version__
         self.python_version                     = sys.version.split(" ")[0]
         self.forecaster_id                      = forecaster_id
         self._probabilistic_mode                = "binned"
@@ -336,6 +338,36 @@ class ForecasterRecursive(ForecasterBase):
             }
         self.binner = QuantileBinner(**self.binner_kwargs)
         self.binner_intervals_ = None
+        
+        self.__skforecast_tags__ = {
+            "library": "skforecast",
+            "estimator_type": "forecaster",
+            "estimator_name": "ForecasterRecursive",
+            "estimator_task": "regression",
+            "forecasting_scope": "single-series",  # single-series | global
+            "forecasting_strategy": "recursive",   # recursive | direct | deep_learning
+            "index_types_supported": ["pandas.RangeIndex", "pandas.DatetimeIndex"],
+            "requires_index_frequency": True,
+
+            "allowed_input_types_series": ["pandas.Series"],
+            "supports_exog": True,
+            "allowed_input_types_exog": ["pandas.Series", "pandas.DataFrame"],
+            "handles_missing_values_series": False, 
+            "handles_missing_values_exog": True, 
+
+            "supports_lags": True,
+            "supports_window_features": True,
+            "supports_transformer_series": True,
+            "supports_transformer_exog": True,
+            "supports_weight_func": True,
+            "supports_differentiation": True,
+
+            "prediction_types": ["point", "interval", "bootstrapping", "quantiles", "distribution"],
+            "supports_probabilistic": True,
+            "probabilistic_methods": ["bootstrapping", "conformal"],
+            "handles_binned_residuals": True
+        }
+
 
     def __repr__(
         self
@@ -461,15 +493,14 @@ class ForecasterRecursive(ForecasterBase):
                 </ul>
             </details>
             <p>
-                <a href="https://skforecast.org/{skforecast.__version__}/api/forecasterrecursive.html">&#128712 <strong>API Reference</strong></a>
+                <a href="https://skforecast.org/{__version__}/api/forecasterrecursive.html">&#128712 <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
-                <a href="https://skforecast.org/{skforecast.__version__}/user_guides/autoregresive-forecaster.html">&#128462 <strong>User Guide</strong></a>
+                <a href="https://skforecast.org/{__version__}/user_guides/autoregressive-forecaster.html">&#128462 <strong>User Guide</strong></a>
             </p>
         </div>
         """
 
         return style + content
-
 
     def _create_lags(
         self,
@@ -500,16 +531,18 @@ class ForecasterRecursive(ForecasterBase):
         y_data : numpy ndarray
             Values of the time series related to each row of `X_data`.
         
-        """
+        Notes
+        -----
+        Returned matrices are views into the original `y` so care must be taken
+        when modifying them.
 
+        """
+        
         X_data = None
         if self.lags is not None:
-            n_rows = len(y) - self.window_size
-            X_data = np.full(
-                shape=(n_rows, len(self.lags)), fill_value=np.nan, order='F', dtype=float
-            )
-            for i, lag in enumerate(self.lags):
-                X_data[:, i] = y[self.window_size - lag: -lag]
+            y_strided = np.lib.stride_tricks.sliding_window_view(y, self.window_size)[:-1]
+            cols = self.window_size - np.array(self.lags)
+            X_data = y_strided[:, cols]
 
             if X_as_pandas:
                 X_data = pd.DataFrame(
@@ -521,7 +554,6 @@ class ForecasterRecursive(ForecasterBase):
         y_data = y[self.window_size:]
 
         return X_data, y_data
-
 
     def _create_window_features(
         self, 
@@ -990,6 +1022,7 @@ class ForecasterRecursive(ForecasterBase):
             exog_dtypes_in_,
             exog_dtypes_out_
         ) = self._create_train_X_y(y=y, exog=exog)
+        
         sample_weight = self.create_sample_weights(X_train=X_train)
 
         if sample_weight is not None:
@@ -1011,7 +1044,7 @@ class ForecasterRecursive(ForecasterBase):
         self.training_range_ = y.index[[0, -1]]
         self.index_type_ = type(y.index)
         if isinstance(y.index, pd.DatetimeIndex):
-            self.index_freq_ = y.index.freqstr
+            self.index_freq_ = y.index.freq
         else: 
             self.index_freq_ = y.index.step
 
@@ -1452,7 +1485,6 @@ class ForecasterRecursive(ForecasterBase):
             )
 
         return X_predict
-
 
     def predict(
         self,

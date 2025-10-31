@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 from abc import ABC, abstractmethod
+from typing import Any
 import textwrap
 import numpy as np
 import pandas as pd
@@ -295,6 +296,19 @@ class ForecasterBase(ABC):
         """
 
         pass
+
+    def get_tags(self) -> dict[str, Any]:
+        """
+        Return the tags that characterize the behavior of the forecaster.
+
+        Returns
+        -------
+        skforecast_tags : dict
+            Dictionary with forecaster tags.
+
+        """
+
+        return self.__skforecast_tags__
 
     def summary(self) -> None:
         """

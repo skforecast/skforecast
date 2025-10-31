@@ -303,6 +303,20 @@ class SkforecastVersionWarning(UserWarning):
         )
         return self.message + "\n" + extra_message
 
+class FeatureOutOfRangeWarning(UserWarning):
+    """
+    Warning used to notify that a feature is out of the range seen during training.
+    """
+    def __init__(self, message):
+        self.message = message
+
+    def __str__(self):
+        extra_message = (
+            "You can suppress this warning using: "
+            "warnings.simplefilter('ignore', category=FeatureOutOfRangeWarning)"
+        )
+        return self.message + "\n" + extra_message
+
 
 warn_skforecast_categories = [
     DataTypeWarning,
@@ -317,7 +331,8 @@ warn_skforecast_categories = [
     ResidualsUsageWarning,
     UnknownLevelWarning,
     SaveLoadSkforecastWarning,
-    SkforecastVersionWarning
+    SkforecastVersionWarning,
+    FeatureOutOfRangeWarning
 ]
 
 

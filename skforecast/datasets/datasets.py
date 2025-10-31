@@ -6,6 +6,7 @@
 ################################################################################
 # coding=utf-8
 
+from __future__ import annotations
 import pandas as pd
 import textwrap
 from urllib.parse import urlparse
@@ -697,7 +698,8 @@ def _print_dataset_info(
     info = datasets.get(dataset_name, None)
     if info is None:
         raise ValueError(
-            f"Dataset '{dataset_name}' not found. Available datasets are: {list(datasets.keys())}"
+            f"Dataset '{dataset_name}' not found. "
+            f"Available datasets are: {sorted(datasets.keys())}"
         )
     
     console = Console()
@@ -761,7 +763,8 @@ def fetch_dataset(
     
     if name not in datasets.keys():
         raise ValueError(
-            f"Dataset '{name}' not found. Available datasets are: {sorted(datasets.keys())}"
+            f"Dataset '{name}' not found. "
+            f"Available datasets are: {sorted(datasets.keys())}"
         )
     
     url = datasets[name]['url']

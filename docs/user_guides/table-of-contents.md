@@ -5,7 +5,7 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 <span style="font-size: 1.3em;">Single series Forecasters</span>
 
 - [Input data](../user_guides/input-data.html)
-- [Recursive multi-step forecasting](../user_guides/autoregresive-forecaster.html)
+- [Recursive multi-step forecasting](../user_guides/autoregressive-forecaster.html)
 - [Direct multi-step forecasting](../user_guides/direct-multi-step-forecasting.html)
 - [ARIMA and SARIMAX](../user_guides/forecasting-sarimax-arima.html)
 - [ARAR](../user_guides/forecasting-arar.html)
@@ -51,7 +51,11 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 
 - [Model Explainability](../user_guides/explainability.html)
 
-<span style="font-size: 1.3em;">Model deployment</span>
+<span style="font-size: 1.3em;">Drift Detection</span>
+
+- [Drift Detection](../user_guides/drift-detection.html)
+
+<span style="font-size: 1.3em;">Model Deployment</span>
 
 - [Save and load forecaster](../user_guides/save-load-forecaster.html)
 - [Forecaster in production](../user_guides/forecaster-in-production.html)

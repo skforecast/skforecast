@@ -1,0 +1,43 @@
+name: 📖 Documentation improvement
+description: Suggest an update, fix, or addition to the documentation
+title: "[DOCS]: "
+labels: ["documentation"]
+
+body:
+  - type: markdown
+    attributes:
+      value: "## Documentation request"
+
+  - type: textarea
+    id: description
+    attributes:
+      label: "Describe the documentation issue"
+      description: "What part of the documentation needs improvement?"
+      placeholder: "The installation guide is outdated..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: improvement
+    attributes:
+      label: "Suggested improvement"
+      description: "How would you improve it?"
+      placeholder: "Update the example to use the latest API syntax..."
+    validations:
+      required: true
+
+  - type: input
+    id: location
+    attributes:
+      label: Documentation Location
+      description: Provide a link or path to the documentation that needs improvement
+      placeholder: e.g., https://skforecast.org/latest/user_guides/autoregressive-forecaster.html
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: "Additional context"
+      description: "Any other information or references that could help?"
+      placeholder: "Link to similar docs, screenshots, etc."

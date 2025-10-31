@@ -15,7 +15,8 @@ import pandas as pd
 from sklearn.base import BaseEstimator
 from sklearn.base import TransformerMixin
 from sklearn.exceptions import NotFittedError
-import skforecast
+
+from .. import __version__
 from ..exceptions import MissingValuesWarning
 from ..metrics import calculate_coverage
 from ..utils import get_style_repr_html
@@ -418,7 +419,7 @@ def reshape_series_wide_to_long(
     if not isinstance(data.index, pd.DatetimeIndex):
         raise TypeError("`data` index must be a pandas DatetimeIndex.")
     
-    freq = data.index.freqstr
+    freq = data.index.freq
     data.index.name = "datetime"
     data = data.reset_index()
     data = pd.melt(data, id_vars="datetime", var_name="series_id", value_name="value")
@@ -628,6 +629,105 @@ def reshape_exog_long_to_dict(
         exog_dict = {k: v.dropna(how="all", axis=1) for k, v in exog_dict.items()}
 
     return exog_dict
+
+
+def reshape_series_exog_dict_to_long(
+    series: dict[str, pd.Series] | None,
+    exog: dict[str, pd.Series | pd.DataFrame] | None,
+    series_col_name: str = 'series_value',
+    index_names: list[str] = ['series_id', 'datetime'],
+    merge_how: str = 'left'
+) -> pd.DataFrame:
+    """
+    Convert dictionaries of series and exogenous variables to a long-format
+    pandas DataFrame with MultiIndex. The first level of the MultiIndex contains the
+    series identifiers, and the second level contains the temporal index. If both
+    series and exog are provided, they are merged into a single DataFrame.
+
+    Parameters
+    ----------
+    series: dict, None
+        Dictionary with multiple time series (expected: dict[str, pd.Series]).
+    exog: dict, None
+        Dictionary with exogenous variables (expected: dict[str, pd.Series or pd.DataFrame]).
+    series_col_name: str, default 'series_value'
+        Column name for the series values in the resulting DataFrame.
+    index_names: list[str], default ['series_id', 'datetime']
+        Names for the levels of the MultiIndex in the resulting DataFrame. The first
+        name corresponds to the series identifier, and the second name corresponds
+        to the temporal index.
+    merge_how: str, default 'left'
+        Type of merge to perform when combining `series` and `exog`. Options are:
+
+        - 'left': Keep only indices from `series` (default)
+        - 'right': Keep only indices from `exog`
+        - 'outer': Keep all indices from both `series` and `exog`
+        - 'inner': Keep only indices present in both
+    
+    Returns
+    -------
+    long_df : pandas.DataFrame
+        Long-format DataFrame with a MultiIndex of two levels:
+        - First level: series identifier (named by `index_names[0]`, default 'series_id')
+        - Second level: temporal index (named by `index_names[1]`, default 'datetime')
+        Columns include:
+        - Series values (named by `series_col_name`, default 'series_value') if `series` is provided.
+        - Exogenous variable columns (from `exog`) if `exog` is provided.
+        If both `series` and `exog` are provided, columns from both are present.
+        If only one is provided, only its columns are present.
+
+    """
+
+    if series is None and exog is None:
+        raise ValueError("Both `series` and `exog` cannot be None.")
+
+    if series is not None:
+        if not isinstance(series, dict):
+            raise TypeError(f"`series` must be a dictionary. Got {type(series)}.")
+        for k, v in series.items():
+            if not isinstance(v, pd.Series):
+                raise TypeError(f"series['{k}'] must be a pandas Series.")
+        series = pd.concat(series, names=index_names).to_frame(series_col_name)
+
+    if exog is not None:
+        if not isinstance(exog, dict):
+            raise TypeError(f"`exog` must be a dictionary. Got {type(exog)}.")
+        for k, v in exog.items():
+            if not isinstance(v, (pd.Series, pd.DataFrame)):
+                raise TypeError(
+                    f"exog['{k}'] must be a pandas Series or a pandas DataFrame."
+                )
+        exog = pd.concat(exog, names=index_names)
+        if isinstance(exog, pd.Series):
+            exog = exog.to_frame(name='exog_value')
+
+    if series is not None and exog is not None:
+        series_idx_type = type(series.index.get_level_values(1))
+        exog_idx_type = type(exog.index.get_level_values(1))
+
+        if series_idx_type != exog_idx_type:
+            raise TypeError(
+                f"Index type mismatch: series has index of type "
+                f"{series_idx_type}, but exog has {exog_idx_type}. "
+                f"Ensure all indices are compatible."
+            )
+        
+        if series_col_name in exog.columns:
+            raise ValueError(
+                f"Column name conflict: '{series_col_name}' already exists in exog. "
+                f"Please choose a different `series_col_name` value."
+            )
+
+    if series is None:
+        long_df = exog
+    elif exog is None:
+        long_df = series
+    else:
+        long_df = pd.merge(
+            series, exog, left_index=True, right_index=True, how=merge_how
+        )
+
+    return long_df
 
 
 def create_datetime_features(
@@ -1149,9 +1249,9 @@ class RollingFeatures():
                 </ul>
             </details>
             <p>
-                <a href="https://skforecast.org/{skforecast.__version__}/api/preprocessing.html#skforecast.preprocessing.preprocessing.RollingFeatures">&#128712 <strong>API Reference</strong></a>
+                <a href="https://skforecast.org/{__version__}/api/preprocessing.html#skforecast.preprocessing.preprocessing.RollingFeatures">&#128712 <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
-                <a href="https://skforecast.org/{skforecast.__version__}/user_guides/window-features-and-custom-features.html">&#128462 <strong>User Guide</strong></a>
+                <a href="https://skforecast.org/{__version__}/user_guides/window-features-and-custom-features.html">&#128462 <strong>User Guide</strong></a>
             </p>
         </div>
         """
@@ -1965,9 +2065,9 @@ class ConformalIntervalCalibrator:
                 </ul>
             </details>
             <p>
-                <a href="https://skforecast.org/{skforecast.__version__}/api/preprocessing#skforecast.preprocessing.preprocessing.ConformalIntervalCalibrator">&#128712 <strong>API Reference</strong></a>
+                <a href="https://skforecast.org/{__version__}/api/preprocessing#skforecast.preprocessing.preprocessing.ConformalIntervalCalibrator">&#128712 <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
-                <a href="https://skforecast.org/{skforecast.__version__}/user_guides/probabilistic-forecasting-conformal-calibration.html">&#128462 <strong>User Guide</strong></a>
+                <a href="https://skforecast.org/{__version__}/user_guides/probabilistic-forecasting-conformal-calibration.html">&#128462 <strong>User Guide</strong></a>
             </p>
         </div>
         """
@@ -2232,3 +2332,4 @@ class ConformalIntervalCalibrator:
         conformalized_intervals = pd.concat(conformalized_intervals)
 
         return conformalized_intervals
+

@@ -20,7 +20,7 @@ from sklearn.exceptions import NotFittedError
 from sklearn.base import clone
 from sklearn.preprocessing import MinMaxScaler
 
-import skforecast
+from .. import __version__
 from ..base import ForecasterBase
 from ..exceptions import DataTransformationWarning
 from ..utils import (
@@ -211,6 +211,8 @@ class ForecasterRnn(ForecasterBase):
         Version of python used to create the forecaster.
     forecaster_id : str, int
         Name used as an identifier of the forecaster.
+    __skforecast_tags__ : dict
+        Tags associated with the forecaster.
     _probabilistic_mode: str, bool
         Private attribute used to indicate whether the forecaster should perform 
         some calculations during backtesting.
@@ -264,7 +266,7 @@ class ForecasterRnn(ForecasterBase):
         self.creation_date = pd.Timestamp.today().strftime("%Y-%m-%d %H:%M:%S")
         self.fit_date = None
         self.keras_backend_ = None
-        self.skforecast_version = skforecast.__version__
+        self.skforecast_version = __version__
         self.python_version = sys.version.split(" ")[0]
         self.forecaster_id = forecaster_id
         self._probabilistic_mode = "no_binned"
@@ -357,6 +359,36 @@ class ForecasterRnn(ForecasterBase):
         self.fit_kwargs = check_select_fit_kwargs(
             regressor=self.regressor, fit_kwargs=fit_kwargs
         )
+        
+        self.__skforecast_tags__ = {
+            "library": "skforecast",
+            "estimator_type": "forecaster",
+            "estimator_name": "ForecasterRNN",
+            "estimator_task": "regression",
+            "forecasting_scope": "global",  # single-series | global
+            "forecasting_strategy": "deep_learning",  # recursive | direct | deep_learning
+            "index_types_supported": ["pandas.RangeIndex", "pandas.DatetimeIndex"],
+            "requires_index_frequency": True,
+
+            "allowed_input_types_series": ["pandas.DataFrame"],
+            "supports_exog": True,
+            "allowed_input_types_exog": ["pandas.Series", "pandas.DataFrame"],
+            "handles_missing_values_series": False, 
+            "handles_missing_values_exog": False, 
+
+            "supports_lags": True,
+            "supports_window_features": False,
+            "supports_transformer_series": True,
+            "supports_transformer_exog": True,
+            "supports_weight_func": False,
+            "supports_series_weights": False,
+            "supports_differentiation": False,
+
+            "prediction_types": ["point", "interval"],
+            "supports_probabilistic": True,
+            "probabilistic_methods": ["conformal"],
+            "handles_binned_residuals": False
+        }
 
     def __repr__(self) -> str:
         """
@@ -499,9 +531,9 @@ class ForecasterRnn(ForecasterBase):
                 </ul>
             </details>
             <p>
-                <a href="https://skforecast.org/{skforecast.__version__}/api/forecasterrnn.html">&#128712 <strong>API Reference</strong></a>
+                <a href="https://skforecast.org/{__version__}/api/forecasterrnn.html">&#128712 <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
-                <a href="https://skforecast.org/{skforecast.__version__}/user_guides/forecasting-with-deep-learning-rnn-lstm.html">&#128462 <strong>User Guide</strong></a>
+                <a href="https://skforecast.org/{__version__}/user_guides/forecasting-with-deep-learning-rnn-lstm.html">&#128462 <strong>User Guide</strong></a>
             </p>
         </div>
         """
@@ -1038,7 +1070,7 @@ class ForecasterRnn(ForecasterBase):
         self.training_range_ = series.index[[0, -1]]
         self.index_type_ = type(series.index)
         if isinstance(series.index, pd.DatetimeIndex):
-            self.index_freq_ = series.index.freqstr
+            self.index_freq_ = series.index.freq
         else:
             self.index_freq_ = series.index.step
 

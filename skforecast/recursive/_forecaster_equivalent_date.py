@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 from sklearn.exceptions import NotFittedError
 
-import skforecast
+from .. import __version__
 from ..exceptions import MissingValuesWarning, ResidualsUsageWarning
 from ..utils import (
     check_y,
@@ -163,6 +163,8 @@ class ForecasterEquivalentDate():
         Version of python used to create the forecaster.
     forecaster_id : str, int
         Name used as an identifier of the forecaster.
+    __skforecast_tags__ : dict
+        Tags associated with the forecaster.
     _probabilistic_mode: str, bool
         Private attribute used to indicate whether the forecaster should perform 
         some calculations during backtesting.
@@ -199,7 +201,7 @@ class ForecasterEquivalentDate():
         self.creation_date                = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
         self.is_fitted                    = False
         self.fit_date                     = None
-        self.skforecast_version           = skforecast.__version__
+        self.skforecast_version           = __version__
         self.python_version               = sys.version.split(" ")[0]
         self.forecaster_id                = forecaster_id
         self._probabilistic_mode          = "binned"
@@ -224,6 +226,35 @@ class ForecasterEquivalentDate():
             }
         self.binner = QuantileBinner(**self.binner_kwargs)
         self.binner_intervals_ = None
+        
+        self.__skforecast_tags__ = {
+            "library": "skforecast",
+            "estimator_type": "forecaster",
+            "estimator_name": "ForecasterEquivalentDate",
+            "estimator_task": "regression",
+            "forecasting_scope": "single-series",  # single-series | global
+            "forecasting_strategy": "recursive",   # recursive | direct | deep_learning
+            "index_types_supported": ["pandas.RangeIndex", "pandas.DatetimeIndex"],
+            "requires_index_frequency": True,
+
+            "allowed_input_types_series": ["pandas.Series"],
+            "supports_exog": False,
+            "allowed_input_types_exog": [],
+            "handles_missing_values_series": False, 
+            "handles_missing_values_exog": False, 
+
+            "supports_lags": False,
+            "supports_window_features": False,
+            "supports_transformer_series": False,
+            "supports_transformer_exog": False,
+            "supports_weight_func": False,
+            "supports_differentiation": False,
+
+            "prediction_types": ["point", "interval"],
+            "supports_probabilistic": True,
+            "probabilistic_methods": ["conformal"],
+            "handles_binned_residuals": True
+        }
 
     def __repr__(
         self
@@ -288,9 +319,9 @@ class ForecasterEquivalentDate():
                 </ul>
             </details>
             <p>
-                <a href="https://skforecast.org/{skforecast.__version__}/api/forecasterequivalentdate.html">&#128712 <strong>API Reference</strong></a>
+                <a href="https://skforecast.org/{__version__}/api/forecasterequivalentdate.html">&#128712 <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
-                <a href="https://skforecast.org/{skforecast.__version__}/user_guides/forecasting-baseline.html">&#128462 <strong>User Guide</strong></a>
+                <a href="https://skforecast.org/{__version__}/user_guides/forecasting-baseline.html">&#128462 <strong>User Guide</strong></a>
             </p>
         </div>
         """
@@ -397,7 +428,7 @@ class ForecasterEquivalentDate():
         self.training_range_ = y_index[[0, -1]]
         self.index_type_ = type(y_index)
         self.index_freq_ = (
-            y_index.freqstr if isinstance(y_index, pd.DatetimeIndex) else y_index.step
+            y_index.freq if isinstance(y_index, pd.DatetimeIndex) else y_index.step
         )
 
         # NOTE: This is done to save time during fit in functions such as backtesting()
@@ -1128,6 +1159,19 @@ class ForecasterEquivalentDate():
 
         self.out_sample_residuals_ = out_sample_residuals
         self.out_sample_residuals_by_bin_ = out_sample_residuals_by_bin
+
+    def get_tags(self) -> dict[str, Any]:
+        """
+        Return the tags that characterize the behavior of the forecaster.
+
+        Returns
+        -------
+        skforecast_tags : dict
+            Dictionary with forecaster tags.
+
+        """
+
+        return self.__skforecast_tags__
 
     def summary(self) -> None:
         """

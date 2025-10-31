@@ -10,28 +10,62 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
 
-## 0.18.0 <small>Under Development</small> { id="0.18.0" }
+## 0.19.0 <small>In development</small> { id="0.19.0" }
 
 The main changes in this release are:
 
-+ <span class="badge text-bg-feature">Feature</span> New parameter `fold_stride` in <code>[TimeSeriesFold]</code>. This parameter controls how the start of the test set advances between consecutive folds during the <code>[backtesting_forecaster]</code>, <code>[backtesting_forecaster_multiseries]</code> and <code>[backtesting_sarimax]</code> functions. By default, `fold_stride` is equal to `steps`, which means that the test sets do not overlap and there are no gaps between them. However, if `fold_stride` is set to a value less than `steps`, the test sets will overlap, resulting in multiple forecasts for the same observations. Conversely, if `fold_stride` is set to a value greater than `steps`, gaps will be left between consecutive test sets. ([#764](https://github.com/skforecast/skforecast/issues/764))
++ <span class="badge text-bg-feature">Feature</span> New class <code>[PopulationDriftDetector]</code> in the <code>[drift_detection]</code> module to detect population drift between reference and new data. Suitable to detect when forecasting models need to be retrained due to changes in the data distribution. It supports both target and exogenous variables, in single and multiseries forecasting.
 
-+ <span class="badge text-bg-feature">Feature</span> New function <code>[backtesting_gif_creator]</code> in the <code>[plot]</code> module to create a gif that visualizes the backtesting process. 
-
-+ <span class="badge text-bg-feature">Feature</span> New function <code>[show_datasets_info]</code> to display information about all available datasets.
-
-+ <span class="badge text-bg-feature">API Change</span> Backtesting functions output DataFrame now includes a `fold` column to identify the fold number of each prediction.
-
-+ <span class="badge text-bg-danger">Fix</span> Fixed a bug that caused the gap to not be applied correctly in the <code>[backtesting_forecaster_multiseries]</code> function. ([#1028](https://github.com/skforecast/skforecast/issues/1028))
++ <span class="badge text-bg-danger">Fix</span> Fixed an issue that prevented using indices with frequencies containing metadata (e.g., `CustomBusinessDay`, `CustomBusinessHour`, or holiday/weekmask variants). The library now preserves full frequency metadata by using `freq` instead of `freqstr`, ensuring correct alignment and compatibility with custom date offsets. ([#1051](https://github.com/skforecast/skforecast/issues/1051))
 
 
 **Added**
 
-+ New parameter `fold_stride` in <code>[TimeSeriesFold]</code>. This parameter controls how the start of the test set advances between consecutive folds during the <code>[backtesting_forecaster]</code>, <code>[backtesting_forecaster_multiseries]</code> and <code>[backtesting_sarimax]</code> functions. By default, `fold_stride` is equal to `steps`, which means that the test sets do not overlap and there are no gaps between them. However, if `fold_stride` is set to a value less than `steps`, the test sets will overlap, resulting in multiple forecasts for the same observations. Conversely, if `fold_stride` is set to a value greater than `steps`, gaps will be left between consecutive test sets. ([#764](https://github.com/skforecast/skforecast/issues/764))
++ New class <code>[PopulationDriftDetector]</code> in the <code>[drift_detection]</code> module to detect population drift between reference and new data. Suitable to detect when forecasting models need to be retrained due to changes in the data distribution. It supports both target and exogenous variables, in single and multiseries forecasting.
 
-+ New function <code>[backtesting_gif_creator]</code> in the <code>[plot]</code> module to create a gif that visualizes the backtesting process.
++ New function <code>[reshape_series_exog_dict_to_long]</code> in the <code>[preprocessing]</code> module to reshape series and exogenous variables from a dictionary format into a long-format pandas DataFrame with a MultiIndex. The first level of the index is the series name, and the second level is the time index.
 
-+ New function <code>[show_datasets_info]</code> to display information about all available datasets.
+
+**Changed**
+
+
+**Fixed**
+
++ Fixed an issue that prevented using indices with frequencies containing metadata (e.g., `CustomBusinessDay`, `CustomBusinessHour`, or holiday/weekmask variants). The library now preserves full frequency metadata by using `freq` instead of `freqstr`, ensuring correct alignment and compatibility with custom date offsets. ([#1051](https://github.com/skforecast/skforecast/issues/1051))
+
+
+## 0.18.0 <small>Sep 22, 2025</small> { id="0.18.0" }
+
+The main changes in this release are:
+
++ <span class="badge text-bg-feature">Feature</span> New parameter `fold_stride` in <code>[TimeSeriesFold]</code>. This parameter controls how the start of the test set [advances between consecutive folds](../user_guides/backtesting.html#backtesting-with-fold-stride) during the <code>[backtesting_forecaster]</code>, <code>[backtesting_forecaster_multiseries]</code> and <code>[backtesting_sarimax]</code> functions. By default, `fold_stride` is equal to `steps`, which means that the test sets do not overlap and there are no gaps between them. However, if `fold_stride` is set to a value less than `steps`, the test sets will overlap, resulting in multiple forecasts for the same observations. Conversely, if `fold_stride` is set to a value greater than `steps`, gaps will be left between consecutive test sets. ([#764](https://github.com/skforecast/skforecast/issues/764))
+
++ <span class="badge text-bg-feature">Feature</span> Added module <code>[drift_detection]</code> with class <code>[RangeDriftDetector]</code> to [detect out-of-range values](../user_guides/drift-detection.html) in both target and exogenous variables during prediction. This lightweight detector checks whether new observations fall outside the ranges seen during training, making it suitable for real-time and production environments. It supports both global exogenous variables and series-specific exogenous variables in multiseries forecasting.
+
++ <span class="badge text-bg-feature">Feature</span> New function <code>[backtesting_gif_creator]</code> in the <code>[plot]</code> module to [create a gif](../user_guides/backtesting.html#create-your-own-backtesting-gif) that visualizes the backtesting process. 
+
++ <span class="badge text-bg-feature">Feature</span> New function <code>[show_datasets_info]</code> to display information about all [available datasets](../user_guides/datasets.html).
+
++ <span class="badge text-bg-feature">Feature</span> New attribute `__skforecast_tags__` and public method `get_tags()` in all forecasters which provide metadata about the forecaster, such as its capabilities and limitations. This attribute can be useful for [introspection and understanding the behavior](../quick-start/forecaster-attributes.html#skforecast-tags) of different forecasters.
+
++ <span class="badge text-bg-api-change">API Change</span> Backtesting functions output DataFrame now includes a `fold` column to identify the fold number of each prediction.
+
++ <span class="badge text-bg-danger">Fix</span> Fixed a bug that caused the gap to not be applied correctly in the <code>[backtesting_forecaster_multiseries]</code> function. ([#1028](https://github.com/skforecast/skforecast/issues/1028))
+
++ <span class="badge text-bg-danger">Fix</span> Fixed a bug that prevented the `CatBoostRegressor` from working with the <code>[ForecasterRecursiveMultiSeries]</code>. ([#1039](https://github.com/skforecast/skforecast/issues/1039))
+
+
+**Added**
+
++ New parameter `fold_stride` in <code>[TimeSeriesFold]</code>. This parameter controls how the start of the test set [advances between consecutive folds](../user_guides/backtesting.html#backtesting-with-fold-stride) during the <code>[backtesting_forecaster]</code>, <code>[backtesting_forecaster_multiseries]</code> and <code>[backtesting_sarimax]</code> functions. By default, `fold_stride` is equal to `steps`, which means that the test sets do not overlap and there are no gaps between them. However, if `fold_stride` is set to a value less than `steps`, the test sets will overlap, resulting in multiple forecasts for the same observations. Conversely, if `fold_stride` is set to a value greater than `steps`, gaps will be left between consecutive test sets. ([#764](https://github.com/skforecast/skforecast/issues/764))
+
++ Added module <code>[drift_detection]</code> with class <code>[RangeDriftDetector]</code> to [detect out-of-range values](../user_guides/drift-detection.html) in both target and exogenous variables during prediction. This lightweight detector checks whether new observations fall outside the ranges seen during training, making it suitable for real-time and production environments. It supports both global exogenous variables and series-specific exogenous variables in multiseries forecasting.
+
++ New function <code>[backtesting_gif_creator]</code> in the <code>[plot]</code> module to [create a gif](../user_guides/backtesting.html#create-your-own-backtesting-gif) that visualizes the backtesting process.
+
++ New function <code>[show_datasets_info]</code> to display information about all [available datasets](../user_guides/datasets.html).
+
++ New attribute `__skforecast_tags__` and public method `get_tags()` in all forecasters which provide metadata about the forecaster, such as its capabilities and limitations. This attribute can be useful for [introspection and understanding the behavior](../quick-start/forecaster-attributes.html#skforecast-tags) of different forecasters.
 
 
 **Changed**
@@ -42,6 +76,8 @@ The main changes in this release are:
 **Fixed**
 
 + Fixed a bug that caused the gap to not be applied correctly in the <code>[backtesting_forecaster_multiseries]</code> function. ([#1028](https://github.com/skforecast/skforecast/issues/1028))
+
++ Fixed a bug that prevented the `CatBoostRegressor` from working with the <code>[ForecasterRecursiveMultiSeries]</code>. ([#1039](https://github.com/skforecast/skforecast/issues/1039))
 
 
 ## 0.17.0 <small>Aug 11, 2025</small> { id="0.17.0" }
@@ -1272,9 +1308,15 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [reshape_series_wide_to_long]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.reshape_series_wide_to_long
 [reshape_series_long_to_dict]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.reshape_series_long_to_dict
 [reshape_exog_long_to_dict]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.reshape_exog_long_to_dict
+[reshape_series_exog_dict_to_long]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.reshape_series_exog_dict_to_long
 [TimeSeriesDifferentiator]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.TimeSeriesDifferentiator
 [QuantileBinner]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.QuantileBinner
 [ConformalIntervalCalibrator]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.ConformalIntervalCalibrator
+
+<!-- drift_detection -->
+[drift_detection]: ../api/drift_detection.html
+[RangeDriftDetector]: ../api/drift_detection.html#skforecast.drift_detection._range_drift.RangeDriftDetector
+[PopulationDriftDetector]: ../api/drift_detection.html#skforecast.drift_detection._population_drift.PopulationDriftDetector
 
 <!-- metrics -->
 [metrics]: ../api/metrics.html

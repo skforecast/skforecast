@@ -18,7 +18,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.base import clone
 from joblib import Parallel, delayed, cpu_count
 
-import skforecast
+from .. import __version__
 from ..base import ForecasterBase
 from ..exceptions import DataTransformationWarning, ResidualsUsageWarning
 from ..utils import (
@@ -265,6 +265,8 @@ class ForecasterDirect(ForecasterBase):
         skforecast.utils.select_n_jobs_fit_forecaster.
     forecaster_id : str, int
         Name used as an identifier of the forecaster.
+    __skforecast_tags__ : dict
+        Tags associated with the forecaster.
     _probabilistic_mode: str, bool
         Private attribute used to indicate whether the forecaster should perform 
         some calculations during backtesting.
@@ -321,7 +323,7 @@ class ForecasterDirect(ForecasterBase):
         self.creation_date                      = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
         self.is_fitted                          = False
         self.fit_date                           = None
-        self.skforecast_version                 = skforecast.__version__
+        self.skforecast_version                 = __version__
         self.python_version                     = sys.version.split(" ")[0]
         self.forecaster_id                      = forecaster_id
         self._probabilistic_mode                = "binned"
@@ -407,6 +409,35 @@ class ForecasterDirect(ForecasterBase):
                     f"`n_jobs` must be an integer or `'auto'`. Got {type(n_jobs)}."
                 )
             self.n_jobs = n_jobs if n_jobs > 0 else cpu_count()
+        
+        self.__skforecast_tags__ = {
+            "library": "skforecast",
+            "estimator_type": "forecaster",
+            "estimator_name": "ForecasterDirect",
+            "estimator_task": "regression",
+            "forecasting_scope": "single-series",  # single-series | global
+            "forecasting_strategy": "direct",   # recursive | direct | deep_learning
+            "index_types_supported": ["pandas.RangeIndex", "pandas.DatetimeIndex"],
+            "requires_index_frequency": True,
+
+            "allowed_input_types_series": ["pandas.Series"],
+            "supports_exog": True,
+            "allowed_input_types_exog": ["pandas.Series", "pandas.DataFrame"],
+            "handles_missing_values_series": False, 
+            "handles_missing_values_exog": True, 
+
+            "supports_lags": True,
+            "supports_window_features": True,
+            "supports_transformer_series": True,
+            "supports_transformer_exog": True,
+            "supports_weight_func": True,
+            "supports_differentiation": True,
+
+            "prediction_types": ["point", "interval", "bootstrapping", "quantiles", "distribution"],
+            "supports_probabilistic": True,
+            "probabilistic_methods": ["bootstrapping", "conformal"],
+            "handles_binned_residuals": True
+        }
 
     def __repr__(
         self
@@ -534,9 +565,9 @@ class ForecasterDirect(ForecasterBase):
                 </ul>
             </details>
             <p>
-                <a href="https://skforecast.org/{skforecast.__version__}/api/forecasterdirect.html">&#128712 <strong>API Reference</strong></a>
+                <a href="https://skforecast.org/{__version__}/api/forecasterdirect.html">&#128712 <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
-                <a href="https://skforecast.org/{skforecast.__version__}/user_guides/direct-multi-step-forecasting.html">&#128462 <strong>User Guide</strong></a>
+                <a href="https://skforecast.org/{__version__}/user_guides/direct-multi-step-forecasting.html">&#128462 <strong>User Guide</strong></a>
             </p>
         </div>
         """
@@ -545,7 +576,7 @@ class ForecasterDirect(ForecasterBase):
         return style + content
 
     def _create_lags(
-        self, 
+        self,
         y: np.ndarray,
         X_as_pandas: bool = False,
         train_index: pd.Index | None = None
@@ -555,7 +586,10 @@ class ForecasterDirect(ForecasterBase):
         
         Note that the returned matrix `X_data` contains the lag 1 in the first 
         column, the lag 2 in the in the second column and so on.
-        
+
+        The returned matrices are views into the original `y` so care must be taken
+        when modifying them.
+
         Parameters
         ----------
         y : numpy ndarray
@@ -572,18 +606,20 @@ class ForecasterDirect(ForecasterBase):
             Lagged values (predictors).
         y_data : numpy ndarray
             Values of the time series related to each row of `X_data`.
-        
+
+        Notes
+        -----
+        Returned matrices are views into the original `y` so care must be taken
+        when modifying them.
+
         """
-        
-        n_rows = len(y) - self.window_size - (self.max_step - 1)
-        
+
+        windows = np.lib.stride_tricks.sliding_window_view(y, self.window_size + self.max_step)
+
         X_data = None
         if self.lags is not None:
-            X_data = np.full(
-                shape=(n_rows, len(self.lags)), fill_value=np.nan, order='F', dtype=float
-            )
-            for i, lag in enumerate(self.lags):
-                X_data[:, i] = y[self.window_size - lag : -(lag + self.max_step - 1)] 
+            lag_indices = [self.window_size - lag for lag in self.lags]
+            X_data = windows[:, lag_indices]
 
             if X_as_pandas:
                 X_data = pd.DataFrame(
@@ -592,12 +628,8 @@ class ForecasterDirect(ForecasterBase):
                              index   = train_index
                          )
 
-        y_data = np.full(
-            shape=(n_rows, self.max_step), fill_value=np.nan, order='F', dtype=float
-        )
-        for step in range(self.max_step):
-            y_data[:, step] = y[self.window_size + step : self.window_size + step + n_rows]
-        
+        y_data = windows[:, self.window_size : self.window_size + self.max_step]
+
         return X_data, y_data
 
     def _create_window_features(
@@ -1246,7 +1278,7 @@ class ForecasterDirect(ForecasterBase):
         self.training_range_ = y.index[[0, -1]]
         self.index_type_ = type(y.index)
         if isinstance(y.index, pd.DatetimeIndex):
-            self.index_freq_ = y.index.freqstr
+            self.index_freq_ = y.index.freq
         else: 
             self.index_freq_ = y.index.step
 

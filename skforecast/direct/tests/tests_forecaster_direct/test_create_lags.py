@@ -47,7 +47,7 @@ def test_create_lags_output_pandas():
     """
     forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=1)
     results = forecaster._create_lags(
-        y=np.arange(10), X_as_pandas=True, 
+        y=np.arange(10, dtype=float), X_as_pandas=True, 
         train_index=pd.date_range('2020-01-03', periods=7, freq='D')
     )
     expected = (

@@ -79,7 +79,7 @@ The **skforecast** library offers a **variety of forecaster** types, each tailor
 |[ForecasterRNN]                  |✔️|✔️||✔️|✔️||✔️||
 |[ForecasterSarimax]              |✔️||✔️||✔️|✔️|✔️||
 
-[ForecasterRecursive]: ./user_guides/autoregresive-forecaster.html
+[ForecasterRecursive]: ./user_guides/autoregressive-forecaster.html
 [ForecasterDirect]: ./user_guides/direct-multi-step-forecasting.html
 [ForecasterRecursiveMultiSeries]: ./user_guides/independent-multi-time-series-forecasting.html
 [ForecasterDirectMultiVariate]: ./user_guides/dependent-multi-series-multivariate-forecasting.html
@@ -120,12 +120,12 @@ If you use skforecast for a scientific publication, we would appreciate citation
 **Zenodo**
 
 ```
-Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2025). skforecast (v0.17.0). Zenodo. https://doi.org/10.5281/zenodo.8382788
+Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2025). skforecast (v0.18.0). Zenodo. https://doi.org/10.5281/zenodo.8382788
 ```
 
 **APA**:
 ```
-Amat Rodrigo, J., & Escobar Ortiz, J. (2025). skforecast (Version 0.17.0) [Computer software]. https://doi.org/10.5281/zenodo.8382788
+Amat Rodrigo, J., & Escobar Ortiz, J. (2025). skforecast (Version 0.18.0) [Computer software]. https://doi.org/10.5281/zenodo.8382788
 ```
 
 **BibTeX**:
@@ -133,8 +133,8 @@ Amat Rodrigo, J., & Escobar Ortiz, J. (2025). skforecast (Version 0.17.0) [Compu
 @software{skforecast,
   author  = {Amat Rodrigo, Joaquin and Escobar Ortiz, Javier},
   title   = {skforecast},
-  version = {0.17.0},
-  month   = {8},
+  version = {0.18.0},
+  month   = {9},
   year    = {2025},
   license = {BSD-3-Clause},
   url     = {https://skforecast.org/},
