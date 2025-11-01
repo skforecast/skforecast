@@ -72,8 +72,11 @@ class PopulationDriftDetector:
     from the reference data and uses quantile thresholds to determine drift in
     new data.
     
-    This implementation focuses on computational efficiency by precomputing necessary
-    information during fitting without storing the raw reference data.
+    This implementation is inspired by NannyML's DriftDetector. See Notes for
+    details.
+
+    For an in-depth explanation of the underlying calculations, see 
+    https://skforecast.org/0.18.0/user_guides/drift-detection.html#deep-dive-into-temporal-drift-detection-in-time-series
 
     Parameters
     ----------
@@ -149,8 +152,14 @@ class PopulationDriftDetector:
     information to calculate the statistics efficiently during prediction.
     - All empirical thresholds are calculated using the specified quantile from
     the empirical distributions obtained from the reference data chunks.
-    - It also check out of range values in numeric features and new categories in
-    categorical features.
+    - It includes checks for out of range values in numeric features and new
+    categories in categorical features.
+    - It supports multiple time series by fitting separate detectors for each
+    series ID when provided with a MultiIndex DataFrame.
+
+    If user requires more advanced features, such as multivariate drift detection
+    or data quality checks, consider using https://nannyml.readthedocs.io/en/stable/
+    directly.
 
     References
     ----------
