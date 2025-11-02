@@ -17,7 +17,13 @@ from sklearn.metrics import (
     mean_absolute_percentage_error,
     mean_squared_log_error,
     median_absolute_error,
-    mean_pinball_loss
+    mean_pinball_loss,
+    accuracy_score,
+    balanced_accuracy_score,
+    f1_score,
+    precision_score,
+    recall_score,
+    roc_auc_score
 )
 
 
@@ -45,7 +51,13 @@ def _get_metric(metric: str) -> Callable:
         "mean_absolute_scaled_error",
         "root_mean_squared_scaled_error",
         "median_absolute_error",
-        "symmetric_mean_absolute_percentage_error"
+        "symmetric_mean_absolute_percentage_error",
+        "accuracy_score",
+        "balanced_accuracy_score",
+        "f1_score",
+        "precision_score",
+        "recall_score",
+        "roc_auc_score"
     ]
 
     if metric not in allowed_metrics:
@@ -53,13 +65,19 @@ def _get_metric(metric: str) -> Callable:
 
     metrics = {
         "mean_squared_error": mean_squared_error,
-        "mean_absolute_error": mean_absolute_error,
-        "mean_absolute_percentage_error": mean_absolute_percentage_error,
-        "mean_squared_log_error": mean_squared_log_error,
-        "mean_absolute_scaled_error": mean_absolute_scaled_error,
-        "root_mean_squared_scaled_error": root_mean_squared_scaled_error,
-        "median_absolute_error": median_absolute_error,
-        "symmetric_mean_absolute_percentage_error": symmetric_mean_absolute_percentage_error
+        "mean_absolute_error":  mean_absolute_error,
+        "mean_absolute_percentage_error":  mean_absolute_percentage_error,
+        "mean_squared_log_error":  mean_squared_log_error,
+        "mean_absolute_scaled_error":  mean_absolute_scaled_error,
+        "root_mean_squared_scaled_error":  root_mean_squared_scaled_error,
+        "median_absolute_error":  median_absolute_error,
+        "symmetric_mean_absolute_percentage_error": symmetric_mean_absolute_percentage_error,
+        "accuracy_score": accuracy_score,
+        "balanced_accuracy_score": balanced_accuracy_score,
+        "f1_score": f1_score,
+        "precision_score": precision_score,
+        "recall_score": recall_score,
+        "roc_auc_score": roc_auc_score
     }
 
     metric = add_y_train_argument(metrics[metric])

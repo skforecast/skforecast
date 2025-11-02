@@ -183,10 +183,10 @@ def _backtesting_forecaster(
     forecaster = deepcopy(forecaster)
     cv = deepcopy(cv)
 
-    is_regression = forecaster.__skforecast_task__['estimator_task'] == 'regression'
+    is_regression = forecaster.__skforecast_tags__['estimator_task'] == 'regression'
     cv.set_params({
         'window_size': forecaster.window_size,
-        'differentiation': forecaster.differentiation_max,
+        'differentiation': forecaster.differentiation_max if is_regression else None,
         'return_all_indexes': False,
         'verbose': verbose
     })
@@ -364,6 +364,7 @@ def _backtesting_forecaster(
                        exog         = next_window_exog,
                        check_inputs = True
                    )
+            preds.append(pred)
 
         if return_predictors:
             pred = forecaster.create_predict_X(
@@ -609,7 +610,8 @@ def backtesting_forecaster(
     forecaters_allowed = [
         'ForecasterRecursive', 
         'ForecasterDirect',
-        'ForecasterEquivalentDate'
+        'ForecasterEquivalentDate',
+        'ForecasterRecursiveClassifier'
     ]
     
     if type(forecaster).__name__ not in forecaters_allowed:
