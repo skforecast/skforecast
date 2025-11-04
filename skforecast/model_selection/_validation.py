@@ -269,7 +269,7 @@ def _backtesting_forecaster(
     def _fit_predict_forecaster(
         fold, forecaster, y, exog, store_in_sample_residuals, gap, interval, 
         interval_method, n_boot, use_in_sample_residuals, use_binned_residuals, 
-        random_state, return_predictors
+        random_state, return_predictors, is_regression
     ) -> pd.DataFrame:
         """
         Fit the forecaster and predict `steps` ahead. This is an auxiliary 
@@ -397,7 +397,8 @@ def _backtesting_forecaster(
         "use_in_sample_residuals": use_in_sample_residuals,
         "use_binned_residuals": use_binned_residuals,
         "random_state": random_state,
-        "return_predictors": return_predictors
+        "return_predictors": return_predictors,
+        'is_regression': is_regression
     }
     backtest_predictions = Parallel(n_jobs=n_jobs)(
         delayed(_fit_predict_forecaster)(

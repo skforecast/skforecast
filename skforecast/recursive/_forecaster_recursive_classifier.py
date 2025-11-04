@@ -6,7 +6,7 @@
 # coding=utf-8
 
 from __future__ import annotations
-from typing import Callable
+from typing import Callable, Any
 import warnings
 import sys
 import numpy as np
@@ -1089,7 +1089,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         y: pd.Series,
         exog: pd.Series | pd.DataFrame | None = None,
         store_last_window: bool = True,
-        store_in_sample_residuals: any = None
+        store_in_sample_residuals: Any = None
     ) -> None:
         """
         Training Forecaster.
