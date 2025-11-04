@@ -28,6 +28,7 @@ nav:
       - Direct multi-step forecasting: user_guides/direct-multi-step-forecasting.ipynb
       - ARIMA and SARIMAX forecasting: user_guides/forecasting-sarimax-arima.ipynb
       - Forecasting baseline: user_guides/forecasting-baseline.ipynb
+      - Autoregressive classification: user_guides/autoregressive-classification.ipynb
     - Global Forecasters (multiple series):
       - Independent multi-time series forecasting: user_guides/independent-multi-time-series-forecasting.ipynb
       - Series with different lengths and different exogenous variables: user_guides/multi-series-with-different-length-and-different_exog.ipynb

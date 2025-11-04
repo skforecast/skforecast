@@ -1,5 +1,5 @@
 ################################################################################
-#                           ForecasterRecursive                                #
+#                           ForecasterRecursiveClassifier                      #
 #                                                                              #
 # This work by skforecast team is licensed under the BSD 3-Clause License.     #
 ################################################################################
@@ -1088,7 +1088,8 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         self,
         y: pd.Series,
         exog: pd.Series | pd.DataFrame | None = None,
-        store_last_window: bool = True
+        store_last_window: bool = True,
+        store_in_sample_residuals: any = None
     ) -> None:
         """
         Training Forecaster.
@@ -1106,6 +1107,8 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             that y[i] is regressed on exog[i].
         store_last_window : bool, default True
             Whether or not to store the last window (`last_window_`) of training data.
+        store_in_sample_residuals : Ignored
+            Not used, present here for API consistency by convention.
 
         Returns
         -------
