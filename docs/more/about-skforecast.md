@@ -50,6 +50,7 @@ Special mention to the main contributors who have significantly impacted the lib
 | Name                 | GitHub                                                       |
 |:--------------------:|:------------------------------------------------------------:|
 | Fernando Carazo Melo | [@FernandoCarazoMelo](https://github.com/FernandoCarazoMelo) |
+| Resul Akay           | [@Akai01](https://github.com/Akai01) |
 
 
 ## Contributors
