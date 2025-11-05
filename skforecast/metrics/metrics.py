@@ -44,6 +44,7 @@ def _get_metric(metric: str) -> Callable:
     """
 
     allowed_metrics = [
+        # Regression metrics
         "mean_squared_error",
         "mean_absolute_error",
         "mean_absolute_percentage_error",
@@ -52,6 +53,8 @@ def _get_metric(metric: str) -> Callable:
         "root_mean_squared_scaled_error",
         "median_absolute_error",
         "symmetric_mean_absolute_percentage_error",
+
+        # Classification metrics
         "accuracy_score",
         "balanced_accuracy_score",
         "f1_score",
@@ -61,7 +64,7 @@ def _get_metric(metric: str) -> Callable:
     ]
 
     if metric not in allowed_metrics:
-        raise ValueError((f"Allowed metrics are: {allowed_metrics}. Got {metric}."))
+        raise ValueError(f"Allowed metrics are: {allowed_metrics}. Got {metric}.")
 
     metrics = {
         "mean_squared_error": mean_squared_error,
@@ -236,8 +239,8 @@ def root_mean_squared_scaled_error(
         for x in y_train:
             if not isinstance(x, (pd.Series, np.ndarray)):
                 raise TypeError(
-                    ("When `y_train` is a list, each element must be a pandas Series "
-                     "or numpy ndarray.")
+                    "When `y_train` is a list, each element must be a pandas Series "
+                    "or numpy ndarray."
                 )
     if len(y_true) != len(y_pred):
         raise ValueError("`y_true` and `y_pred` must have the same length.")
