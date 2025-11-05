@@ -68,7 +68,9 @@ def initialize_lags_grid(
 
     return lags_grid, lags_label
 
-
+# TODO: Review table of contents user guides
+# TODO: Poner en la API como en la docu los 2 modelos bajo stats?
+# TODO: Review ForecasterSarimax
 def check_backtesting_input(
     forecaster: object,
     cv: object,
@@ -133,7 +135,7 @@ def check_backtesting_input(
         + 'conformal': Employs the conformal prediction split method for 
         interval estimation.
     alpha : float, default None
-        The confidence intervals used in ForecasterSarimax are (1 - alpha) %. 
+        The confidence intervals used in ForecasterStats are (1 - alpha) %. 
     n_boot : int, default `250`
         Number of bootstrapping iterations to perform when estimating prediction
             intervals.
@@ -161,7 +163,7 @@ def check_backtesting_input(
         information.
     suppress_warnings_fit : bool, default False
         If `True`, warnings generated during fitting will be ignored. Only 
-        `ForecasterSarimax`.
+        `ForecasterStats`.
 
     Returns
     -------
@@ -200,7 +202,7 @@ def check_backtesting_input(
     forecasters_multi_dict = [
         "ForecasterRecursiveMultiSeries"
     ]
-    # NOTE: ForecasterSarimax has interval but not with bootstrapping or conformal
+    # NOTE: ForecasterStats has interval but not with bootstrapping or conformal
     forecasters_boot_conformal = [
         "ForecasterRecursive",
         "ForecasterDirect",

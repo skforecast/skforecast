@@ -2265,12 +2265,12 @@ def grid_search_stats(
     output_file: str | None = None
 ) -> pd.DataFrame:
     """
-    Exhaustive search over specified parameter values for a ForecasterSarimax object.
+    Exhaustive search over specified parameter values for a ForecasterStats object.
     Validation is done using time series backtesting.
     
     Parameters
     ----------
-    forecaster : ForecasterSarimax
+    forecaster : ForecasterStats
         Forecaster model.
     y : pandas Series
         Training time series. 
@@ -2358,12 +2358,12 @@ def random_search_stats(
     output_file: str | None = None
 ) -> pd.DataFrame:
     """
-    Random search over specified parameter values or distributions for a Forecaster 
+    Random search over specified parameter values or distributions for a ForecasterStats 
     object. Validation is done using time series backtesting.
     
     Parameters
     ----------
-    forecaster : ForecasterSarimax
+    forecaster : ForecasterStats
         Forecaster model.
     y : pandas Series
         Training time series. 
@@ -2458,7 +2458,7 @@ def _evaluate_grid_hyperparameters_stats(
     
     Parameters
     ----------
-    forecaster : ForecasterSarimax
+    forecaster : ForecasterStats
         Forecaster model.
     y : pandas Series
         Training time series. 

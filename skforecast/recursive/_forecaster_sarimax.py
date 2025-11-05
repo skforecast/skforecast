@@ -6,18 +6,17 @@
 # coding=utf-8
 
 from __future__ import annotations
-from typing import Any
-import warnings
 from typing_extensions import deprecated
 from ..exceptions import runtime_deprecated
 from ._forecaster_stats import ForecasterStats
+
 
 # TODO: Remove in version 0.20.0
 @runtime_deprecated(replacement="ForecasterStats", version="0.19.0", removal="0.20.0")
 @deprecated("`ForecasterSarimax` is deprecated since version 0.19.0; use `ForecasterStats` instead. It will be removed in version 0.20.0.")
 class ForecasterSarimax():
     """
-   !!! warning "Deprecated"
+    !!! warning "Deprecated"
         This class is deprecated since skforecast 0.19. Please use
         `skforecast.recursive.ForecasterStats` instead.
     
@@ -33,9 +32,9 @@ class ForecasterSarimax():
     ) -> None:
         
         return ForecasterStats(
-                regressor=regressor,
-                transformer_y=transformer_y,
-                transformer_exog=transformer_exog,
-                fit_kwargs=fit_kwargs,
-                forecaster_id=forecaster_id
-            )
+            regressor=regressor,
+            transformer_y=transformer_y,
+            transformer_exog=transformer_exog,
+            fit_kwargs=fit_kwargs,
+            forecaster_id=forecaster_id
+        )

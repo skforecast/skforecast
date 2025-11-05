@@ -192,7 +192,7 @@ class ForecasterStats():
         self.__skforecast_tags__ = {
             "library": "skforecast",
             "estimator_type": "forecaster",
-            "estimator_name": "ForecasterSarimax",
+            "estimator_name": "ForecasterStats",
             "estimator_task": "regression",
             "forecasting_scope": "single-series",  # single-series | global
             "forecasting_strategy": "recursive",   # recursive | direct | deep_learning
@@ -909,7 +909,7 @@ class ForecasterStats():
 
         elif self.regressor_type == 'skforecast.stats._arar.Arar':
             feature_importances = pd.DataFrame({
-                                      'feature'   : [f'lag_{lag}' for lag in self.regressor.lags_],
+                                      'feature': [f'lag_{lag}' for lag in self.regressor.lags_],
                                       'importance': self.regressor.coef_
                                   })
             

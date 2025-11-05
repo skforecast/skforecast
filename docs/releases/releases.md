@@ -1272,8 +1272,9 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [ForecasterDirectMultiVariate]: ../api/forecasterdirectmultivariate.html
 [ForecasterRNN]: ../api/forecasterrnn.html
 [create_and_compile_model]: ../api/forecasterrnn.html#skforecast.deep_learning.utils.create_and_compile_model
-[ForecasterSarimax]: ../api/forecastersarimax.html
+[ForecasterStats]: ../api/forecasterstats.html
 [Sarimax]: ../api/sarimax.html
+[Arar]: ../api/arar.html
 [ForecasterEquivalentDate]: ../api/forecasterequivalentdate.html
 
 <!-- model_selection -->
@@ -1364,3 +1365,4 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [create_datetime_features]: https://skforecast.org/0.13.0/api/preprocessing#skforecast.preprocessing.create_datetime_features
 [series_long_to_dict]: https://skforecast.org/0.16.0/api/preprocessing.html#skforecast.preprocessing.preprocessing.series_long_to_dict
 [exog_long_to_dict]: https://skforecast.org/0.16.0/api/preprocessing.html#skforecast.preprocessing.preprocessing.exog_long_to_dict
+[ForecasterSarimax]: https://skforecast.org/0.19.0/api/forecastersarimax.html

@@ -13,6 +13,7 @@ import numpy as np
 from ..exceptions import runtime_deprecated
 from ..stats import Sarimax as SarimaxNew
 
+
 # TODO: Remove in version 0.20.0
 @runtime_deprecated(replacement="skforecast.stats.Sarimax", version="0.19.0", removal="0.20.0")
 @deprecated("`skforecast.sarimax.Sarimax` is deprecated since version 0.19.0; use `skforecast.stats.Sarimax` instead. It will be removed in version 0.20.0.")

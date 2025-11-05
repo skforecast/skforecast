@@ -43,6 +43,7 @@ def setup_params(y_in, max_ar_depth: int | None = None, max_lag: int | None = No
         )
     return max_ar_depth, max_lag
 
+
 def arar(y_in, max_ar_depth: int | None = None, max_lag: int | None = None, safe: bool = True):
     """
     Fit ARAR to a 1D series.
@@ -256,6 +257,7 @@ def forecast(model_tuple, h: int, level=(80, 95)):
 
     return {"mean": mean_fc, "upper": upper, "lower": lower, "level": list(level)}
 
+
 def fitted_arar(model_tuple):
     """
     Compute in-sample fitted values from ARAR model tuple.
@@ -295,6 +297,7 @@ def residuals_arar(model_tuple):
     fits = fitted_arar(model_tuple)["fitted"]
     return Y - fits
 
+
 def summary_arar(model_tuple):
     """
     Print a simple summary of ARAR model tuple.
@@ -308,7 +311,7 @@ def summary_arar(model_tuple):
     None
     
     """
-    Y, best_phi, best_lag, sigma2, psi, sbar, _, _= model_tuple
+    Y, best_phi, best_lag, sigma2, psi, sbar, _, _ = model_tuple
     Y = np.asarray(Y, dtype=float)
 
     print("ARAR Model Summary")
@@ -324,9 +327,9 @@ def summary_arar(model_tuple):
     print(f"Mean: {np.mean(Y):.4f}")
     print(f"Std Dev: {np.std(Y, ddof=1):.4f}")
     print(f"Min: {np.min(Y):.4f}")
-    print(f"25%: {np.percentile(Y,25):.4f}")
+    print(f"25%: {np.percentile(Y, 25):.4f}")
     print(f"Median: {np.median(Y):.4f}")
-    print(f"75%: {np.percentile(Y,75):.4f}")
+    print(f"75%: {np.percentile(Y, 75):.4f}")
     print(f"Max: {np.max(Y):.4f}")
 
 
