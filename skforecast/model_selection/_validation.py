@@ -1828,11 +1828,10 @@ def backtesting_stats(
     
     """
     
-    # TODO: remove ForecasterSarimax in future versions
-    if type(forecaster).__name__ not in ['ForecasterSarimax', 'ForecasterStats']:
+    if type(forecaster).__name__ not in ['ForecasterStats']:
         raise TypeError(
-            "`forecaster` must be of type `ForecasterSarimax` or `ForecasterStats`, "
-            "for all other types of forecasters use the functions available in the other "
+            "`forecaster` must be of type `ForecasterStats`, for all other "
+            "types of forecasters use the functions available in the other "
             "`model_selection` modules."
         )
     

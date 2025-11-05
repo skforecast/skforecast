@@ -11,8 +11,8 @@ from skforecast.model_selection._utils import select_n_jobs_backtesting
 from skforecast.recursive import ForecasterRecursive
 from skforecast.direct import ForecasterDirect
 from skforecast.recursive import ForecasterRecursiveMultiSeries
-from skforecast.sarimax import Sarimax
-from skforecast.recursive import ForecasterSarimax
+from skforecast.stats import Sarimax
+from skforecast.recursive import ForecasterStats
 from skforecast.recursive import ForecasterEquivalentDate
 
 
@@ -46,9 +46,9 @@ from skforecast.recursive import ForecasterEquivalentDate
      (ForecasterRecursiveMultiSeries(LGBMRegressor(n_jobs=1), lags=2), False, cpu_count() - 1),
      (ForecasterRecursiveMultiSeries(LGBMRegressor(), lags=2), True, 1),
      (ForecasterRecursiveMultiSeries(LGBMRegressor(), lags=2), False, 1),
-     (ForecasterSarimax(Sarimax((1, 0, 1))), True, 1),
-     (ForecasterSarimax(Sarimax((1, 0, 1))), 2, 1),
-     (ForecasterSarimax(Sarimax((1, 0, 1))), False, 1),
+     (ForecasterStats(Sarimax((1, 0, 1))), True, 1),
+     (ForecasterStats(Sarimax((1, 0, 1))), 2, 1),
+     (ForecasterStats(Sarimax((1, 0, 1))), False, 1),
      (ForecasterEquivalentDate(2), True, 1),
      (ForecasterEquivalentDate(2), 2, 1),
      (ForecasterEquivalentDate(2), False, 1)

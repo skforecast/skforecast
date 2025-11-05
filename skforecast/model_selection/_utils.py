@@ -68,9 +68,7 @@ def initialize_lags_grid(
 
     return lags_grid, lags_label
 
-# TODO: Review table of contents user guides
-# TODO: Poner en la API como en la docu los 2 modelos bajo stats?
-# TODO: Review ForecasterSarimax
+
 def check_backtesting_input(
     forecaster: object,
     cv: object,
@@ -186,7 +184,6 @@ def check_backtesting_input(
     forecasters_uni = [
         "ForecasterRecursive",
         "ForecasterDirect",
-        "ForecasterSarimax",
         "ForecasterStats",
         "ForecasterEquivalentDate",
     ]
@@ -333,7 +330,7 @@ def check_backtesting_input(
                     f"    steps: {steps}\n"
                 )
     else:
-        if forecaster_name in ['ForecasterSarimax', 'ForecasterEquivalentDate']:
+        if forecaster_name in ['ForecasterStats', 'ForecasterEquivalentDate']:
             raise ValueError(
                 f"`initial_train_size` must be an integer smaller than the "
                 f"length of `{data_name}` ({data_length})."
@@ -349,9 +346,9 @@ def check_backtesting_input(
                     "`refit` is only allowed when `initial_train_size` is not `None`."
                 )
 
-    if forecaster_name == 'ForecasterSarimax' and cv.skip_folds is not None:
+    if forecaster_name == 'ForecasterStats' and cv.skip_folds is not None:
         raise ValueError(
-            "`skip_folds` is not allowed for ForecasterSarimax. Set it to `None`."
+            "`skip_folds` is not allowed for ForecasterStats. Set it to `None`."
         )
 
     if not isinstance(add_aggregated_metric, bool):
@@ -626,7 +623,7 @@ def select_n_jobs_backtesting(
     - If forecaster is 'ForecasterDirect' or 'ForecasterDirectMultiVariate'
     and `refit = False`, then `n_jobs = 1`.
     - If forecaster is 'ForecasterRecursiveMultiSeries', then `n_jobs = cpu_count() - 1`.
-    - If forecaster is 'ForecasterSarimax' or 'ForecasterEquivalentDate', 
+    - If forecaster is 'ForecasterStats' or 'ForecasterEquivalentDate', 
     then `n_jobs = 1`.
     - If regressor is a `LGBMRegressor(n_jobs=1)`, then `n_jobs = cpu_count() - 1`.
     - If regressor is a `LGBMRegressor` with internal n_jobs != 1, then `n_jobs = 1`.
@@ -682,7 +679,7 @@ def select_n_jobs_backtesting(
                 n_jobs = cpu_count() - 1 if regressor.n_jobs == 1 else 1
             else:
                 n_jobs = cpu_count() - 1
-        elif forecaster_name in ['ForecasterSarimax', 'ForecasterEquivalentDate']:
+        elif forecaster_name in ['ForecasterStats', 'ForecasterEquivalentDate']:
             n_jobs = 1
         else:
             n_jobs = 1

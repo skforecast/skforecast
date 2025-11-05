@@ -9,7 +9,7 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-api-change">API Change</span>   | Changes in the API                    |
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
-
+# TODO: Include ForecasterStats and Arar
 ## 0.19.0 <small>In development</small> { id="0.19.0" }
 
 The main changes in this release are:
@@ -1273,8 +1273,8 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [ForecasterRNN]: ../api/forecasterrnn.html
 [create_and_compile_model]: ../api/forecasterrnn.html#skforecast.deep_learning.utils.create_and_compile_model
 [ForecasterStats]: ../api/forecasterstats.html
-[Sarimax]: ../api/sarimax.html
-[Arar]: ../api/arar.html
+[Sarimax]: ../api/stats.html#skforecast.stats._sarimax.Sarimax
+[Arar]: ../api/stats.html#skforecast.stats._arar.Arar
 [ForecasterEquivalentDate]: ../api/forecasterequivalentdate.html
 
 <!-- model_selection -->
@@ -1335,6 +1335,9 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [plot_prediction_intervals]: ../api/plot.html#skforecast.plot.plot.plot_prediction_intervals
 [backtesting_gif_creator]: ../api/plot.html#skforecast.plot.plot.backtesting_gif_creator
 [plot_multivariate_time_series_corr]: ../api/plot.html#skforecast.plot.plot.plot_multivariate_time_series_corr
+
+<!-- stats -->
+[stats]: ../api/stats.html
 
 <!-- utils -->
 [utils]: ../api/utils.html

@@ -6,10 +6,10 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import Ridge
 from sklearn.exceptions import NotFittedError
-from skforecast.sarimax import Sarimax
+from skforecast.stats import Sarimax
 from skforecast.recursive import ForecasterRecursive
 from skforecast.direct import ForecasterDirect
-from skforecast.recursive import ForecasterSarimax
+from skforecast.recursive import ForecasterStats
 from skforecast.recursive import ForecasterEquivalentDate
 from skforecast.recursive import ForecasterRecursiveMultiSeries
 from skforecast.direct import ForecasterDirectMultiVariate
@@ -58,7 +58,7 @@ def test_check_backtesting_input_TypeError_when_cv_not_TimeSeriesFold():
 @pytest.mark.parametrize("forecaster", 
                          [ForecasterRecursive(regressor=Ridge(), lags=2),
                           ForecasterDirect(regressor=Ridge(), lags=2, steps=3),
-                          ForecasterSarimax(regressor=Sarimax(order=(1, 1, 1)))], 
+                          ForecasterStats(regressor=Sarimax(order=(1, 1, 1)))], 
                          ids = lambda fr: f'forecaster: {type(fr).__name__}')
 def test_check_backtesting_input_TypeError_when_y_is_not_pandas_Series(forecaster):
     """
@@ -538,13 +538,13 @@ def test_check_backtesting_input_ValueError_when_not_enough_data_to_create_a_fol
 
 
 @pytest.mark.parametrize("forecaster", 
-                         [ForecasterSarimax(regressor=Sarimax(order=(1, 1, 1))),
+                         [ForecasterStats(regressor=Sarimax(order=(1, 1, 1))),
                           ForecasterEquivalentDate(offset=1, n_offsets=1)], 
                          ids = lambda fr: f'{type(fr).__name__}')
 def test_check_backtesting_input_ValueError_Sarimax_Equivalent_when_initial_train_size_is_None(forecaster):
     """
     Test ValueError is raised in check_backtesting_input when initial_train_size 
-    is None with a ForecasterSarimax or ForecasterEquivalentDate.
+    is None with a ForecasterStats or ForecasterEquivalentDate.
     """
     
     cv = TimeSeriesFold(
@@ -654,12 +654,12 @@ def test_check_backtesting_input_ValueError_when_initial_train_size_None_and_ref
         )
 
 
-def test_check_backtesting_input_ValueError_when_skip_folds_in_ForecasterSarimax():
+def test_check_backtesting_input_ValueError_when_skip_folds_in_ForecasterStats():
     """
     Test ValueError is raised in check_backtesting_input if `skip_folds` is
-    used in ForecasterSarimax.
+    used in ForecasterStats.
     """
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
                      regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
@@ -674,7 +674,7 @@ def test_check_backtesting_input_ValueError_when_skip_folds_in_ForecasterSarimax
          )
     
     err_msg = re.escape(
-        "`skip_folds` is not allowed for ForecasterSarimax. Set it to `None`."
+        "`skip_folds` is not allowed for ForecasterStats. Set it to `None`."
     )
     with pytest.raises(ValueError, match = err_msg):
         check_backtesting_input(
@@ -919,7 +919,7 @@ def test_check_backtesting_input_ValueError_when_return_predictors_and_forecaste
     Test ValueError is raised in check_backtesting_input when `return_predictors` is True
     and the forecaster is not an allowed type.
     """
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
         regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
     )
     

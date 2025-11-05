@@ -32,7 +32,7 @@ nav:
       - Series with different lengths and different exogenous variables: user_guides/multi-series-with-different-length-and-different_exog.ipynb
       - Dependent multivariate series forecasting: user_guides/dependent-multi-series-multivariate-forecasting.ipynb
       - Deep learning Recurrent Neural Networks: user_guides/forecasting-with-deep-learning-rnn-lstm.ipynb
-    - Statistical models:
+    - Statistical Models:
       - ARIMA and SARIMAX: user_guides/forecasting-sarimax-arima.ipynb
       - ARAR: user_guides/forecasting-arar.ipynb
     - Feature Engineering:
@@ -101,9 +101,7 @@ nav:
       - ForecasterDirectMultiVariate: api/ForecasterDirectMultiVariate.md
     - deep_learning:
       - ForecasterRnn: api/ForecasterRnn.md
-    - stats:
-      - Sarimax: api/Sarimax.md
-      - ARAR: api/Arar.md
+    - stats: api/stats.md
     - model_selection: api/model_selection.md
     - feature_selection: api/feature_selection.md
     - preprocessing: api/preprocessing.md

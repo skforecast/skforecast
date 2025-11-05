@@ -703,7 +703,7 @@ def check_interval(
         inclusive. For example, quantiles of 0.05, 0.5 and 0.95 should be as 
         `quantiles = [0.05, 0.5, 0.95]`.
     alpha : float, default None
-        The confidence intervals used in ForecasterSarimax are (1 - alpha) %.
+        The confidence intervals used in ForecasterStats are (1 - alpha) %.
     alpha_literal : str, default 'alpha'
         Literal used in the exception message when `alpha` is provided.
 
@@ -823,7 +823,7 @@ def check_predict_input(
         first iteration of prediction (t + 1).
     last_window_exog : pandas Series, pandas DataFrame, default None
         Values of the exogenous variables aligned with `last_window` in 
-        ForecasterSarimax predictions.
+        ForecasterStats predictions.
     exog : pandas Series, pandas DataFrame, dict, default None
         Exogenous variable/s included as predictor/s.
     exog_names_in_ : list, default None
@@ -833,7 +833,7 @@ def check_predict_input(
         to compute, which must be between 0 and 100 inclusive. For example, 
         interval of 95% should be as `interval = [2.5, 97.5]`.
     alpha : float, default None
-        The confidence intervals used in ForecasterSarimax are (1 - alpha) %.
+        The confidence intervals used in ForecasterStats are (1 - alpha) %.
     max_step: int, default None
         Maximum number of steps allowed (`ForecasterDirect` and 
         `ForecasterDirectMultiVariate`).
@@ -1139,8 +1139,8 @@ def check_predict_input(
                         f"    Expected index : {expected_index}."
                     )
 
-    # Checks ForecasterSarimax
-    if forecaster_name == 'ForecasterSarimax':
+    # Checks ForecasterStats
+    if forecaster_name == 'ForecasterStats':
         # Check last_window_exog type, len, nulls and index (type and freq)
         if last_window_exog is not None:
             if not exog_in_:
