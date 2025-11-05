@@ -5,20 +5,20 @@ import pytest
 import numpy as np
 import pandas as pd
 from sklearn.exceptions import NotFittedError
-from skforecast.sarimax import Sarimax
+from skforecast.stats import Sarimax
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 from statsmodels.tsa.statespace.sarimax import SARIMAXResultsWrapper
 
 # Fixtures
-from .fixtures_Sarimax import y
-from .fixtures_Sarimax import y_lw
-from .fixtures_Sarimax import exog
-from .fixtures_Sarimax import exog_lw
-from .fixtures_Sarimax import exog_predict
-from .fixtures_Sarimax import exog_lw_predict
-from .fixtures_Sarimax import y_datetime
-from .fixtures_Sarimax import exog_datetime
-from .fixtures_Sarimax import exog_predict_datetime
+from .fixtures_sarimax import y
+from .fixtures_sarimax import y_lw
+from .fixtures_sarimax import exog
+from .fixtures_sarimax import exog_lw
+from .fixtures_sarimax import exog_predict
+from .fixtures_sarimax import exog_lw_predict
+from .fixtures_sarimax import y_datetime
+from .fixtures_sarimax import exog_datetime
+from .fixtures_sarimax import exog_predict_datetime
 
 # Fixtures numpy
 y_numpy = y.to_numpy()

@@ -26,13 +26,15 @@ nav:
     - Single series Forecasters:
       - Recursive multi-step forecasting: user_guides/autoregressive-forecaster.ipynb
       - Direct multi-step forecasting: user_guides/direct-multi-step-forecasting.ipynb
-      - ARIMA and SARIMAX forecasting: user_guides/forecasting-sarimax-arima.ipynb
       - Forecasting baseline: user_guides/forecasting-baseline.ipynb
     - Global Forecasters (multiple series):
       - Independent multi-time series forecasting: user_guides/independent-multi-time-series-forecasting.ipynb
       - Series with different lengths and different exogenous variables: user_guides/multi-series-with-different-length-and-different_exog.ipynb
       - Dependent multivariate series forecasting: user_guides/dependent-multi-series-multivariate-forecasting.ipynb
       - Deep learning Recurrent Neural Networks: user_guides/forecasting-with-deep-learning-rnn-lstm.ipynb
+    - Statistical Models:
+      - ARIMA and SARIMAX: user_guides/forecasting-sarimax-arima.ipynb
+      - ARAR: user_guides/forecasting-arar.ipynb
     - Feature Engineering:
       - Exogenous variables: user_guides/exogenous-variables.ipynb
       - Window and custom features: user_guides/window-features-and-custom-features.ipynb
@@ -91,14 +93,15 @@ nav:
     - recursive:
       - ForecasterRecursive: api/ForecasterRecursive.md
       - ForecasterRecursiveMultiSeries: api/ForecasterRecursiveMultiSeries.md
-      - ForecasterSarimax: api/ForecasterSarimax.md
+      - ForecasterStats: api/ForecasterStats.md
       - ForecasterEquivalentDate: api/ForecasterEquivalentDate.md
+      - ForecasterSarimax: api/ForecasterSarimax.md
     - direct:
       - ForecasterDirect: api/ForecasterDirect.md
       - ForecasterDirectMultiVariate: api/ForecasterDirectMultiVariate.md
     - deep_learning:
       - ForecasterRnn: api/ForecasterRnn.md
-    - sarimax: api/Sarimax.md
+    - stats: api/stats.md
     - model_selection: api/model_selection.md
     - feature_selection: api/feature_selection.md
     - preprocessing: api/preprocessing.md
@@ -121,6 +124,7 @@ nav:
     - Continuous Ranked Probability Score (CRPS): faq/probabilistic-forecasting-crps-score.ipynb
     - Calibration of probabilistic forecasting intervals: faq/probabilistic-forecasting-calibrate-intervals.ipynb
     - Benchmarking skforecast: faq/skforecast-benchmark.ipynb
+    - Benchmarking statistical models: faq/benchmarking-statistical-models.ipynb
     - Parallelization in skforecast: faq/parallelization-skforecast.ipynb
     - Profiling skforecast: faq/profiling-skforecast.ipynb
 

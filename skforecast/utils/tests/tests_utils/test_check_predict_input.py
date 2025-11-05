@@ -1165,7 +1165,7 @@ def test_check_predict_input_ValueError_when_exog_index_does_not_follow_last_win
         )
 
 
-def test_check_predict_input_ValueError_when_ForecasterSarimax_last_window_exog_is_not_None_and_exog_in_is_false():
+def test_check_predict_input_ValueError_when_ForecasterStats_last_window_exog_is_not_None_and_exog_in_is_false():
     """
     Check ValueError is raised when last_window_exog is not None, but exog_in_     
     is False.
@@ -1176,7 +1176,7 @@ def test_check_predict_input_ValueError_when_ForecasterSarimax_last_window_exog_
     )   
     with pytest.raises(ValueError, match = err_msg):
         check_predict_input(
-            forecaster_name  = 'ForecasterSarimax',
+            forecaster_name  = 'ForecasterStats',
             steps            = 3,
             is_fitted        = True,
             exog_in_         = False,
@@ -1195,7 +1195,7 @@ def test_check_predict_input_ValueError_when_ForecasterSarimax_last_window_exog_
         )
 
 
-def test_check_predict_input_TypeError_when_ForecasterSarimax_last_window_exog_is_not_pandas_Series_or_DataFrame():
+def test_check_predict_input_TypeError_when_ForecasterStats_last_window_exog_is_not_pandas_Series_or_DataFrame():
     """
     """
     last_window_exog = np.arange(5)
@@ -1205,7 +1205,7 @@ def test_check_predict_input_TypeError_when_ForecasterSarimax_last_window_exog_i
     )
     with pytest.raises(TypeError, match = err_msg):
         check_predict_input(
-            forecaster_name  = 'ForecasterSarimax',
+            forecaster_name  = 'ForecasterStats',
             steps            = 10,
             is_fitted        = True,
             exog_in_         = True,
@@ -1224,7 +1224,7 @@ def test_check_predict_input_TypeError_when_ForecasterSarimax_last_window_exog_i
         )
 
 
-def test_check_predict_input_ValueError_when_ForecasterSarimax_length_last_window_exog_is_lower_than_window_size():
+def test_check_predict_input_ValueError_when_ForecasterStats_length_last_window_exog_is_lower_than_window_size():
     """
     """
     window_size = 10
@@ -1235,7 +1235,7 @@ def test_check_predict_input_ValueError_when_ForecasterSarimax_length_last_windo
     )
     with pytest.raises(ValueError, match = err_msg):
         check_predict_input(
-            forecaster_name  = 'ForecasterSarimax',
+            forecaster_name  = 'ForecasterStats',
             steps            = 10,
             is_fitted        = True,
             exog_in_         = True,
@@ -1254,7 +1254,7 @@ def test_check_predict_input_ValueError_when_ForecasterSarimax_length_last_windo
         )
 
 
-def test_check_predict_input_MissingValuesWarning_when_ForecasterSarimax_last_window_exog_has_missing_values():
+def test_check_predict_input_MissingValuesWarning_when_ForecasterStats_last_window_exog_has_missing_values():
     """
     """
     warn_msg = re.escape(
@@ -1263,7 +1263,7 @@ def test_check_predict_input_MissingValuesWarning_when_ForecasterSarimax_last_wi
     )
     with pytest.warns(MissingValuesWarning, match = warn_msg):
         check_predict_input(
-            forecaster_name  = 'ForecasterSarimax',
+            forecaster_name  = 'ForecasterStats',
             steps            = 10,
             is_fitted        = True,
             exog_in_         = True,
@@ -1282,7 +1282,7 @@ def test_check_predict_input_MissingValuesWarning_when_ForecasterSarimax_last_wi
         )
 
 
-def test_check_predict_input_TypeError_when_ForecasterSarimax_last_window_exog_index_is_not_of_index_type():
+def test_check_predict_input_TypeError_when_ForecasterStats_last_window_exog_index_is_not_of_index_type():
     """
     """
     last_window_exog = pd.Series(np.arange(10), name='exog1')
@@ -1297,7 +1297,7 @@ def test_check_predict_input_TypeError_when_ForecasterSarimax_last_window_exog_i
     )
     with pytest.raises(TypeError, match = err_msg):
         check_predict_input(
-            forecaster_name  = 'ForecasterSarimax',
+            forecaster_name  = 'ForecasterStats',
             steps            = 10,
             is_fitted        = True,
             exog_in_         = True,
@@ -1316,7 +1316,7 @@ def test_check_predict_input_TypeError_when_ForecasterSarimax_last_window_exog_i
         )
 
 
-def test_check_predict_input_TypeError_when_ForecasterSarimax_last_window_exog_index_frequency_is_not_index_freq():
+def test_check_predict_input_TypeError_when_ForecasterStats_last_window_exog_index_frequency_is_not_index_freq():
     """
     """
     
@@ -1332,7 +1332,7 @@ def test_check_predict_input_TypeError_when_ForecasterSarimax_last_window_exog_i
     )
     with pytest.raises(TypeError, match = err_msg):
         check_predict_input(
-            forecaster_name  = 'ForecasterSarimax',
+            forecaster_name  = 'ForecasterStats',
             steps            = 10,
             is_fitted        = True,
             exog_in_         = True,
@@ -1353,7 +1353,7 @@ def test_check_predict_input_TypeError_when_ForecasterSarimax_last_window_exog_i
 
 def test_check_predict_input_ValueError_when_last_window_exog_is_DataFrame_without_columns_in_exog_names_in_():
     """
-    Raise ValueError when there are missing columns in `last_window_exog`, ForecasterSarimax.
+    Raise ValueError when there are missing columns in `last_window_exog`, ForecasterStats.
     """
     
     exog = pd.DataFrame(np.arange(10).reshape(5, 2), columns=['col1', 'col3'])
@@ -1369,7 +1369,7 @@ def test_check_predict_input_ValueError_when_last_window_exog_is_DataFrame_witho
     )
     with pytest.raises(ValueError, match = err_msg):
         check_predict_input(
-            forecaster_name  = 'ForecasterSarimax',
+            forecaster_name  = 'ForecasterStats',
             steps            = 2,
             is_fitted        = True,
             exog_in_         = True,
@@ -1391,7 +1391,7 @@ def test_check_predict_input_ValueError_when_last_window_exog_is_DataFrame_witho
 # @pytest.mark.skipif(pd.__version__ > '2.2.0', reason="requires pandas < 2.2.0")
 def test_check_predict_input_ValueError_when_last_window_exog_is_Series_with_no_name():
     """
-    Raise ValueError when `last_window_exog` has no name, ForecasterSarimax.
+    Raise ValueError when `last_window_exog` has no name, ForecasterStats.
     """
     
     exog = pd.Series(np.arange(5), name='exog1')
@@ -1406,7 +1406,7 @@ def test_check_predict_input_ValueError_when_last_window_exog_is_Series_with_no_
     )
     with pytest.raises(ValueError, match = err_msg):
         check_predict_input(
-            forecaster_name  = 'ForecasterSarimax',
+            forecaster_name  = 'ForecasterStats',
             steps            = 2,
             is_fitted        = True,
             exog_in_         = True,
@@ -1427,7 +1427,7 @@ def test_check_predict_input_ValueError_when_last_window_exog_is_Series_with_no_
 
 def test_check_predict_input_ValueError_when_last_window_exog_is_Series_without_name_in_exog_names_in_():
     """
-    Raise ValueError when `last_window_exog` name is not in `exog_names_in_`, ForecasterSarimax.
+    Raise ValueError when `last_window_exog` name is not in `exog_names_in_`, ForecasterStats.
     """
     exog = pd.Series(np.arange(5), name='exog1')
     exog.index = pd.date_range(start='6/1/2018', periods=5, freq=freq)
@@ -1442,7 +1442,7 @@ def test_check_predict_input_ValueError_when_last_window_exog_is_Series_without_
     )
     with pytest.raises(ValueError, match = err_msg):
         check_predict_input(
-            forecaster_name  = 'ForecasterSarimax',
+            forecaster_name  = 'ForecasterStats',
             steps            = 2,
             is_fitted        = True,
             exog_in_         = True,

@@ -9,7 +9,7 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-api-change">API Change</span>   | Changes in the API                    |
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
-
+# TODO: Include ForecasterStats and Arar
 ## 0.19.0 <small>In development</small> { id="0.19.0" }
 
 The main changes in this release are:
@@ -1272,8 +1272,9 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [ForecasterDirectMultiVariate]: ../api/forecasterdirectmultivariate.html
 [ForecasterRNN]: ../api/forecasterrnn.html
 [create_and_compile_model]: ../api/forecasterrnn.html#skforecast.deep_learning.utils.create_and_compile_model
-[ForecasterSarimax]: ../api/forecastersarimax.html
-[Sarimax]: ../api/sarimax.html
+[ForecasterStats]: ../api/forecasterstats.html
+[Sarimax]: ../api/stats.html#skforecast.stats._sarimax.Sarimax
+[Arar]: ../api/stats.html#skforecast.stats._arar.Arar
 [ForecasterEquivalentDate]: ../api/forecasterequivalentdate.html
 
 <!-- model_selection -->
@@ -1335,6 +1336,9 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [backtesting_gif_creator]: ../api/plot.html#skforecast.plot.plot.backtesting_gif_creator
 [plot_multivariate_time_series_corr]: ../api/plot.html#skforecast.plot.plot.plot_multivariate_time_series_corr
 
+<!-- stats -->
+[stats]: ../api/stats.html
+
 <!-- utils -->
 [utils]: ../api/utils.html
 
@@ -1364,3 +1368,4 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [create_datetime_features]: https://skforecast.org/0.13.0/api/preprocessing#skforecast.preprocessing.create_datetime_features
 [series_long_to_dict]: https://skforecast.org/0.16.0/api/preprocessing.html#skforecast.preprocessing.preprocessing.series_long_to_dict
 [exog_long_to_dict]: https://skforecast.org/0.16.0/api/preprocessing.html#skforecast.preprocessing.preprocessing.exog_long_to_dict
+[ForecasterSarimax]: https://skforecast.org/0.19.0/api/forecastersarimax.html

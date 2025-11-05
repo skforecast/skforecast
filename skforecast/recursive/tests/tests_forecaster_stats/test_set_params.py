@@ -1,14 +1,14 @@
-# Unit test set_params ForecasterSarimax
+# Unit test set_params ForecasterStats
 # ==============================================================================
-from skforecast.sarimax import Sarimax
-from skforecast.recursive import ForecasterSarimax
+from skforecast.stats import Sarimax
+from skforecast.recursive import ForecasterStats
 
 
-def test_ForecasterSarimax_set_params_skforecast():
+def test_ForecasterStats_set_params_skforecast():
     """
     Test set_params() method skforecast.
     """
-    forecaster = ForecasterSarimax(regressor = Sarimax(order=(1, 1, 1)))
+    forecaster = ForecasterStats(regressor = Sarimax(order=(1, 1, 1)))
     new_params = {'order': (2, 2, 2), 'seasonal_order': (1, 1, 1, 2)}
     forecaster.set_params(new_params)
     results = forecaster.regressor.get_params()

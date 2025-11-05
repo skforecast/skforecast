@@ -22,5 +22,6 @@ Thank you for choosing skforecast and visiting our Frequently Asked Questions (F
 <span style="font-size: 1.3em;">Performance Optimization</span>
 
 + [Benchmarking skforecast](../faq/skforecast-benchmark.html)
++ [Benchmarking statistical models](../faq/benchmarking-statistical-models.html)
 + [Parallelization in skforecast](../faq/parallelization-skforecast.html)
 + [Profiling skforecast](../faq/profiling-skforecast.html)

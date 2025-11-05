@@ -7,7 +7,6 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 - [Input data](../user_guides/input-data.html)
 - [Recursive multi-step forecasting](../user_guides/autoregressive-forecaster.html)
 - [Direct multi-step forecasting](../user_guides/direct-multi-step-forecasting.html)
-- [ARIMA and SARIMAX forecasting](../user_guides/forecasting-sarimax-arima.html)
 - [Forecasting baseline](../user_guides/forecasting-baseline.html)
 
 <span style="font-size: 1.3em;">Global Forecasters (multiple series)</span>
@@ -16,6 +15,11 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 - [Series with different lengths and different exogenous variables](../user_guides/multi-series-with-different-length-and-different_exog.html)
 - [Dependent multivariate series forecasting](../user_guides/dependent-multi-series-multivariate-forecasting.html)
 - [Deep learning Recurrent Neural Networks](../user_guides/forecasting-with-deep-learning-rnn-lstm.html)
+
+<span style="font-size: 1.3em;">Statistical Models</span>
+
+- [ARIMA and SARIMAX](../user_guides/forecasting-sarimax-arima.html)
+- [ARAR](../user_guides/forecasting-arar.html)
 
 <span style="font-size: 1.3em;">Feature Engineering</span>
 

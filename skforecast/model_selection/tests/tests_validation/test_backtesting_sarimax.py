@@ -5,9 +5,9 @@ import pytest
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import Ridge
-from skforecast.sarimax import Sarimax
+from skforecast.stats import Sarimax
 from skforecast.recursive import ForecasterRecursive
-from skforecast.recursive import ForecasterSarimax
+from skforecast.recursive import ForecasterStats
 from skforecast.model_selection._split import TimeSeriesFold
 from skforecast.model_selection import backtesting_sarimax
 
@@ -36,7 +36,7 @@ def test_backtesting_forecaster_TypeError_when_forecaster_not_supported_types():
          )
 
     err_msg = re.escape(
-        "`forecaster` must be of type `ForecasterSarimax`, for all other "
+        "`forecaster` must be of type `ForecasterStats`, for all other "
         "types of forecasters use the functions available in the other "
         "`model_selection` modules."
     )
@@ -62,7 +62,7 @@ def test_output_backtesting_sarimax_no_refit_no_exog_no_remainder_with_mocked(n_
     no refit, 12 observations to backtest, steps=3 (no remainder), metric='mean_squared_error'. 
     Mocked done with skforecast 0.7.0.
     """
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
                      regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
@@ -109,7 +109,7 @@ def test_output_backtesting_sarimax_no_refit_no_exog_remainder_with_mocked(initi
     yes refit, 12 observations to backtest, steps=5 (remainder), metric='mean_squared_error'. 
     Mocked done with skforecast 0.7.0.
     """
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
                      regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
@@ -154,7 +154,7 @@ def test_output_backtesting_sarimax_yes_refit_no_exog_no_remainder_with_mocked(n
     no exog, yes refit, 12 observations to backtest, steps=3 (no remainder), 
     metric='mean_squared_error'. (Mocked done with skforecast 0.7.0.)
     """
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
                      regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
@@ -200,7 +200,7 @@ def test_output_backtesting_sarimax_yes_refit_no_exog_remainder_with_mocked(n_jo
     no exog, yes refit, 12 observations to backtest, steps=5 (remainder), 
     metric='mean_squared_error'. (Mocked done with skforecast 0.7.0.)
     """
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
                      regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
@@ -244,7 +244,7 @@ def test_output_backtesting_sarimax_yes_refit_fixed_train_size_no_exog_no_remain
     yes refit, fixed_train_size yes, 12 observations to backtest, steps=3 (no remainder), 
     metric='mean_squared_error'. Mocked done with skforecast 0.7.0.
     """
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
                      regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
@@ -287,7 +287,7 @@ def test_output_backtesting_sarimax_yes_refit_fixed_train_size_no_exog_remainder
     yes refit, fixed_train_size yes, 12 observations to backtest, steps=5 (remainder), 
     metric='mean_squared_error'. Mocked done with skforecast 0.7.0.
     """
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
                      regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
@@ -330,7 +330,7 @@ def test_output_backtesting_sarimax_no_refit_yes_exog_with_mocked():
     no refit, 12 observations to backtest, steps=3 (no remainder), metric='mean_squared_error'. 
     Mocked done with skforecast 0.7.0.
     """
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
                      regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
@@ -374,7 +374,7 @@ def test_output_backtesting_sarimax_yes_refit_yes_exog_with_mocked():
     yes refit, 12 observations to backtest, steps=3 (no remainder), metric='mean_squared_error'. 
     Mocked done with skforecast 0.7.0.
     """
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
                      regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
@@ -418,7 +418,7 @@ def test_output_backtesting_sarimax_yes_refit_fixed_train_size_yes_exog_with_moc
     yes refit, fixed_train_size, 12 observations to backtest, steps=5 (remainder), 
     metric='mean_squared_error'. Mocked done with skforecast 0.7.0.
     """
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
                      regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
@@ -471,7 +471,7 @@ def test_output_backtesting_sarimax_no_refit_yes_exog_callable_metric_with_mocke
     no refit, 12 observations to backtest, steps=3 (no remainder), callable metric. 
     Mocked done with skforecast 0.7.0.
     """
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
                      regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
@@ -515,7 +515,7 @@ def test_output_backtesting_sarimax_no_refit_no_exog_list_of_metrics_with_mocked
     no refit, 12 observations to backtest, steps=3 (no remainder), list of metrics. 
     Mocked done with skforecast 0.7.0.
     """
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
                      regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
@@ -559,7 +559,7 @@ def test_output_backtesting_sarimax_yes_refit_no_exog_callable_metric_with_mocke
     yes refit, 12 observations to backtest, steps=3 (no remainder), callable metric. 
     Mocked done with skforecast 0.7.0.
     """
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
                      regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
@@ -602,7 +602,7 @@ def test_output_backtesting_sarimax_yes_refit_fixed_train_size_yes_exog_list_of_
     yes refit, fixed_train_size, 12 observations to backtest, steps=3 (no remainder), 
     list of metrics. Mocked done with skforecast 0.7.0.
     """
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
                      regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
@@ -651,7 +651,7 @@ def test_output_backtesting_sarimax_no_refit_yes_exog_interval_with_mocked(alpha
     no refit, 12 observations to backtest, steps=3 (no remainder), metric='mean_absolute_error',
     interval. Mocked done with skforecast 0.7.0.
     """
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
                      regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
@@ -710,7 +710,7 @@ def test_output_backtesting_sarimax_yes_refit_yes_exog_interval_with_mocked(alph
     yes refit, 12 observations to backtest, steps=3 (no remainder), 
     metric='mean_absolute_error', interval. Mocked done with skforecast 0.7.0.
     """
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
                      regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
@@ -769,7 +769,7 @@ def test_output_backtesting_sarimax_yes_refit_fixed_train_size_yes_exog_interval
     yes refit, fixed_train_size, 12 observations to backtest, steps=3 (no remainder), 
     metric='mean_absolute_error', interval. Mocked done with skforecast 0.7.0.
     """
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
                      regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
@@ -824,7 +824,7 @@ def test_output_backtesting_sarimax_fold_stride_with_mocked():
     yes refit, fixed_train_size, 12 observations to backtest, steps=3 (no remainder), 
     fold stride. Mocked done with skforecast 0.18.0.
     """
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
                      regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
@@ -894,7 +894,7 @@ def test_output_backtesting_sarimax_fold_stride_greater_than_steps_with_mocked()
     yes refit, fixed_train_size, 12 observations to backtest, steps=3 (no remainder), 
     fold stride greater than steps. Mocked done with skforecast 0.18.0.
     """
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
                      regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     

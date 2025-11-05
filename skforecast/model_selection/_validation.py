@@ -6,6 +6,7 @@
 # coding=utf-8
 
 from __future__ import annotations
+from typing_extensions import deprecated
 from typing import Callable
 from copy import deepcopy
 from itertools import chain
@@ -14,8 +15,9 @@ import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed, cpu_count
 from tqdm.auto import tqdm
+from ..stats import Sarimax
 from ..metrics import add_y_train_argument, _get_metric
-from ..exceptions import LongTrainingWarning, IgnoredArgumentWarning
+from ..exceptions import LongTrainingWarning, IgnoredArgumentWarning, runtime_deprecated
 from ..model_selection._split import TimeSeriesFold
 from ..model_selection._utils import (
     _initialize_levels_model_selection_multiseries,
@@ -1349,7 +1351,9 @@ def backtesting_forecaster_multiseries(
 
     return metrics_levels, backtest_predictions
 
-
+# TODO: Remove in version 0.20.0
+@runtime_deprecated(replacement="_backtesting_stats", version="0.19.0", removal="0.20.0")
+@deprecated("`_backtesting_sarimax` is deprecated since version 0.19.0; use `_backtesting_stats` instead. It will be removed in version 0.20.0.")
 def _backtesting_sarimax(
     forecaster: object,
     y: pd.Series,
@@ -1364,14 +1368,84 @@ def _backtesting_sarimax(
     show_progress: bool = True,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
-    Backtesting of ForecasterSarimax.
+    !!! warning "Deprecated"
+        This function is deprecated since skforecast 0.19. Please use `_backtesting_stats` instead.
+
+    """
+
+    return _backtesting_stats(
+        forecaster             = forecaster,
+        y                      = y,
+        metric                 = metric,
+        cv                     = cv,
+        exog                   = exog,
+        alpha                  = alpha,
+        interval               = interval,
+        n_jobs                 = n_jobs,
+        suppress_warnings_fit  = suppress_warnings_fit,
+        verbose                = verbose,
+        show_progress          = show_progress
+    )
+
+# TODO: Remove in version 0.20.0
+@runtime_deprecated(replacement="backtesting_stats", version="0.19.0", removal="0.20.0")
+@deprecated("`backtesting_sarimax` is deprecated since version 0.19.0; use `backtesting_stats` instead. It will be removed in version 0.20.0.")
+def backtesting_sarimax(
+    forecaster: object,
+    y: pd.Series,
+    cv: TimeSeriesFold,
+    metric: str | Callable | list[str | Callable],
+    exog: pd.Series | pd.DataFrame | None = None,
+    alpha: float | None = None,
+    interval: list[float] | tuple[float] | None = None,
+    n_jobs: int | str = 'auto',
+    verbose: bool = False,
+    suppress_warnings_fit: bool = False,
+    show_progress: bool = True
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    !!! warning "Deprecated"
+        This function is deprecated since skforecast 0.19. Please use `backtesting_stats` instead.
+    
+    """
+
+    return backtesting_stats(
+        forecaster             = forecaster,
+        y                      = y,
+        cv                     = cv,
+        metric                 = metric,
+        exog                   = exog,
+        alpha                  = alpha,
+        interval               = interval,
+        n_jobs                 = n_jobs,
+        verbose                = verbose,
+        suppress_warnings_fit  = suppress_warnings_fit,
+        show_progress          = show_progress
+    )
+    
+
+def _backtesting_stats(
+    forecaster: object,
+    y: pd.Series,
+    metric: str | Callable | list[str | Callable],
+    cv: TimeSeriesFold,
+    exog: pd.Series | pd.DataFrame | None = None,
+    alpha: float | None = None,
+    interval: list[float] | tuple[float] | None = None,
+    n_jobs: int | str = 'auto',
+    suppress_warnings_fit: bool = False,
+    verbose: bool = False,
+    show_progress: bool = True,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Backtesting of ForecasterStats.
     
     A copy of the original forecaster is created so that it is not modified during 
     the process.
     
     Parameters
     ----------
-    forecaster : ForecasterSarimax
+    forecaster : ForecasterStats
         Forecaster model.
     y : pandas Series
         Training time series.
@@ -1447,6 +1521,16 @@ def _backtesting_sarimax(
 
     forecaster = deepcopy(forecaster)
     cv = deepcopy(cv)
+
+    if not isinstance(forecaster.regressor, Sarimax) and cv.refit is False:
+        warnings.warn(
+            "If `ForecasterStats` uses a regressor different from "
+            "`skforecast.stats.Sarimax`, `cv.refit` must be `True` since "
+            "predictions must start from the end of the training set."
+            " Setting `cv.refit = True`.",
+            IgnoredArgumentWarning
+        )
+        cv.refit = True
 
     cv.set_params({
         'window_size': forecaster.window_size,
@@ -1649,7 +1733,7 @@ def _backtesting_sarimax(
     return metric_values, backtest_predictions
 
 
-def backtesting_sarimax(
+def backtesting_stats(
     forecaster: object,
     y: pd.Series,
     cv: TimeSeriesFold,
@@ -1663,14 +1747,14 @@ def backtesting_sarimax(
     show_progress: bool = True
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
-    Backtesting of ForecasterSarimax.
+    Backtesting of ForecasterStats.
     
     A copy of the original forecaster is created so that it is not modified during 
     the process.
 
     Parameters
     ----------
-    forecaster : ForecasterSarimax
+    forecaster : ForecasterStats
         Forecaster model.
     y : pandas Series
         Training time series.
@@ -1744,9 +1828,9 @@ def backtesting_sarimax(
     
     """
     
-    if type(forecaster).__name__ not in ['ForecasterSarimax']:
+    if type(forecaster).__name__ not in ['ForecasterStats']:
         raise TypeError(
-            "`forecaster` must be of type `ForecasterSarimax`, for all other "
+            "`forecaster` must be of type `ForecasterStats`, for all other "
             "types of forecasters use the functions available in the other "
             "`model_selection` modules."
         )
@@ -1763,7 +1847,7 @@ def backtesting_sarimax(
         suppress_warnings_fit = suppress_warnings_fit
     )
     
-    metric_values, backtest_predictions = _backtesting_sarimax(
+    metric_values, backtest_predictions = _backtesting_stats(
         forecaster            = forecaster,
         y                     = y,
         cv                    = cv,
