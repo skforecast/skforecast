@@ -541,8 +541,7 @@ class ForecasterRecursive(ForecasterBase):
         X_data = None
         if self.lags is not None:
             y_strided = np.lib.stride_tricks.sliding_window_view(y, self.window_size)[:-1]
-            cols = self.window_size - np.array(self.lags)
-            X_data = y_strided[:, cols]
+            X_data = y_strided[:, self.window_size - self.lags]
 
             if X_as_pandas:
                 X_data = pd.DataFrame(
@@ -562,6 +561,7 @@ class ForecasterRecursive(ForecasterBase):
         X_as_pandas: bool = False,
     ) -> tuple[list[np.ndarray | pd.DataFrame], list[str]]:
         """
+        Create window features from a time series.
         
         Parameters
         ----------
@@ -1255,23 +1255,24 @@ class ForecasterRecursive(ForecasterBase):
             last_window_values = self.differentiator.fit_transform(last_window_values)
 
         if exog is not None:
+
             exog = input_to_frame(data=exog, input_name='exog')
-            # TODO: only do the selections if columns are not already selected
-            # if not exog.columns.equals(pd.Index(self.exog_names_in_)):
-            #     exog = exog[self.exog_names_in_]
-            exog = exog[self.exog_names_in_]
+            if exog.columns.tolist() != self.exog_names_in_:
+                exog = exog[self.exog_names_in_]
+
             exog = transform_dataframe(
                        df                = exog,
                        transformer       = self.transformer_exog,
                        fit               = False,
                        inverse_transform = False
                    )
-            # TODO: only check dtypes if they are not the same as seen in training
-            # if not exog.dtypes.to_dict() == self.exog_dtypes_out_:
-            #   check_exog_dtypes(exog=exog)
-            # else:
-            #     check_exog(exog=exog, allow_nan=False, series_id=series_id)
-            check_exog_dtypes(exog=exog)
+            
+            # NOTE: Only check dtypes if they are not the same as seen in training
+            if not exog.dtypes.to_dict() == self.exog_dtypes_out_:
+                check_exog_dtypes(exog=exog)
+            else:
+                check_exog(exog=exog, allow_nan=False)
+            
             exog_values = exog.to_numpy()[:steps]
         else:
             exog_values = None
@@ -1282,7 +1283,6 @@ class ForecasterRecursive(ForecasterBase):
                            )
 
         return last_window_values, exog_values, prediction_index, steps
-
 
     def _recursive_predict(
         self,
@@ -1360,11 +1360,12 @@ class ForecasterRecursive(ForecasterBase):
                 
                 pred += step_residual
             
-            predictions[i] = pred[0]
+            pred = pred.item()
+            predictions[i] = pred
 
             # Update `last_window` values. The first position is discarded and 
             # the new prediction is added at the end.
-            last_window[-(steps - i)] = pred[0]
+            last_window[-(steps - i)] = pred
 
         set_cpu_gpu_device(regressor=self.regressor, device=original_device)
 
@@ -1468,7 +1469,7 @@ class ForecasterRecursive(ForecasterBase):
         if self.exog_in_:
             categorical_features = any(
                 not pd.api.types.is_numeric_dtype(dtype) or pd.api.types.is_bool_dtype(dtype) 
-                for dtype in set(self.exog_dtypes_out_)
+                for dtype in set(self.exog_dtypes_out_.values())
             )
             if categorical_features:
                 X_predict = X_predict.astype(self.exog_dtypes_out_)

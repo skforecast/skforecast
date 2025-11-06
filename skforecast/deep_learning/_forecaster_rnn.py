@@ -1360,7 +1360,7 @@ class ForecasterRnn(ForecasterBase):
             # NOTE: not needed in this forecaster
             # categorical_features = any(
             #     not pd.api.types.is_numeric_dtype(dtype) or pd.api.types.is_bool_dtype(dtype) 
-            #     for dtype in set(self.exog_dtypes_out_)
+            #     for dtype in set(self.exog_dtypes_out_.values())
             # )
             # if categorical_features:
             #     X_predict = X_predict.astype(self.exog_dtypes_out_)

@@ -185,9 +185,10 @@ def _backtesting_forecaster(
     forecaster = deepcopy(forecaster)
     cv = deepcopy(cv)
 
+    is_regression = forecaster.__skforecast_tags__['estimator_task'] == 'regression'
     cv.set_params({
         'window_size': forecaster.window_size,
-        'differentiation': forecaster.differentiation_max,
+        'differentiation': forecaster.differentiation_max if is_regression else None,
         'return_all_indexes': False,
         'verbose': verbose
     })
@@ -270,7 +271,7 @@ def _backtesting_forecaster(
     def _fit_predict_forecaster(
         fold, forecaster, y, exog, store_in_sample_residuals, gap, interval, 
         interval_method, n_boot, use_in_sample_residuals, use_binned_residuals, 
-        random_state, return_predictors
+        random_state, return_predictors, is_regression
     ) -> pd.DataFrame:
         """
         Fit the forecaster and predict `steps` ahead. This is an auxiliary 
@@ -317,46 +318,55 @@ def _backtesting_forecaster(
             )
 
         preds = []
-        if interval is not None:
-            kwargs_interval = {
-                'steps': steps,
-                'last_window': last_window_y,
-                'exog': next_window_exog,
-                'n_boot': n_boot,
-                'use_in_sample_residuals': use_in_sample_residuals,
-                'use_binned_residuals': use_binned_residuals,
-                'random_state': random_state
-            }
-            if interval_method == 'bootstrapping':
-                if interval == 'bootstrapping':
-                    pred = forecaster.predict_bootstrapping(**kwargs_interval)
-                elif isinstance(interval, (list, tuple)):
-                    quantiles = [q / 100 for q in interval]
-                    pred = forecaster.predict_quantiles(quantiles=quantiles, **kwargs_interval)
-                    if len(interval) == 2:
-                        pred.columns = ['lower_bound', 'upper_bound']
+        if is_regression:
+            if interval is not None:
+                kwargs_interval = {
+                    'steps': steps,
+                    'last_window': last_window_y,
+                    'exog': next_window_exog,
+                    'n_boot': n_boot,
+                    'use_in_sample_residuals': use_in_sample_residuals,
+                    'use_binned_residuals': use_binned_residuals,
+                    'random_state': random_state
+                }
+                if interval_method == 'bootstrapping':
+                    if interval == 'bootstrapping':
+                        pred = forecaster.predict_bootstrapping(**kwargs_interval)
+                    elif isinstance(interval, (list, tuple)):
+                        quantiles = [q / 100 for q in interval]
+                        pred = forecaster.predict_quantiles(quantiles=quantiles, **kwargs_interval)
+                        if len(interval) == 2:
+                            pred.columns = ['lower_bound', 'upper_bound']
+                        else:
+                            pred.columns = [f'p_{p}' for p in interval]
                     else:
-                        pred.columns = [f'p_{p}' for p in interval]
+                        pred = forecaster.predict_dist(distribution=interval, **kwargs_interval)
+                    
+                    preds.append(pred)
                 else:
-                    pred = forecaster.predict_dist(distribution=interval, **kwargs_interval)
-                 
-                preds.append(pred)
-            else:
-                pred = forecaster.predict_interval(
-                    method='conformal', interval=interval, **kwargs_interval
-                )
-                preds.append(pred)
+                    pred = forecaster.predict_interval(
+                        method='conformal', interval=interval, **kwargs_interval
+                    )
+                    preds.append(pred)
 
-        # NOTE: This is done after probabilistic predictions to avoid repeating 
-        # the same checks.
-        if interval is None or interval_method != 'conformal':
-            pred = forecaster.predict(
+            # NOTE: This is done after probabilistic predictions to avoid repeating 
+            # the same checks.
+            if interval is None or interval_method != 'conformal':
+                pred = forecaster.predict(
+                        steps        = steps,
+                        last_window  = last_window_y,
+                        exog         = next_window_exog,
+                        check_inputs = True if interval is None else False
+                    )
+                preds.insert(0, pred)
+        else:
+            pred = forecaster.predict_proba(
                        steps        = steps,
                        last_window  = last_window_y,
                        exog         = next_window_exog,
-                       check_inputs = True if interval is None else False
+                       check_inputs = True
                    )
-            preds.insert(0, pred)
+            preds.append(pred)
 
         if return_predictors:
             pred = forecaster.create_predict_X(
@@ -389,7 +399,8 @@ def _backtesting_forecaster(
         "use_in_sample_residuals": use_in_sample_residuals,
         "use_binned_residuals": use_binned_residuals,
         "random_state": random_state,
-        "return_predictors": return_predictors
+        "return_predictors": return_predictors,
+        'is_regression': is_regression
     }
     backtest_predictions = Parallel(n_jobs=n_jobs)(
         delayed(_fit_predict_forecaster)(
@@ -404,6 +415,12 @@ def _backtesting_forecaster(
     backtest_predictions = pd.concat(backtest_predictions)
     if isinstance(backtest_predictions, pd.Series):
         backtest_predictions = backtest_predictions.to_frame()
+
+    if not is_regression:
+        proba_cols = [f"{cls}_proba" for cls in forecaster.classes_]
+        idx_max = backtest_predictions[proba_cols].to_numpy().argmax(axis=1)
+        backtest_predictions.insert(0, "pred", np.array(forecaster.classes_)[idx_max])
+
     backtest_predictions.insert(0, 'fold', np.concatenate(fold_labels))
 
     train_indexes = []
@@ -596,7 +613,8 @@ def backtesting_forecaster(
     forecaters_allowed = [
         'ForecasterRecursive', 
         'ForecasterDirect',
-        'ForecasterEquivalentDate'
+        'ForecasterEquivalentDate',
+        'ForecasterRecursiveClassifier'
     ]
     
     if type(forecaster).__name__ not in forecaters_allowed:

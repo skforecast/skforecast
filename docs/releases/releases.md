@@ -9,12 +9,22 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-api-change">API Change</span>   | Changes in the API                    |
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
-# TODO: Include ForecasterStats and Arar
+
 ## 0.19.0 <small>In development</small> { id="0.19.0" }
 
 The main changes in this release are:
 
++ <span class="badge text-bg-feature">Feature</span> New class <code>[ForecasterRecursiveClassifier]</code> in the <code>[recursive]</code> module. This forecaster is designed to handle time series data where the target variable is categorical, enabling the prediction of future class labels based on historical patterns.
+
 + <span class="badge text-bg-feature">Feature</span> New class <code>[PopulationDriftDetector]</code> in the <code>[drift_detection]</code> module to detect population drift between reference and new data. Suitable to detect when forecasting models need to be retrained due to changes in the data distribution. It supports both target and exogenous variables, in single and multiseries forecasting.
+
++ <span class="badge text-bg-feature">Feature</span> New module <code>[stats]</code>. This module contains statistical models for time series forecasting that follows the scikit-learn interface.
+
++ <span class="badge text-bg-feature">Feature</span> New class <code>[Arar]</code> in the <code>[stats]</code> module. This class implements ARAR algorithm, a forecasting method that combines a "memory shortening" transformation with an autoregressive (AR) model.
+
++ <span class="badge text-bg-api-change">API Change</span> Class <code>[Sarimax]</code> has been moved to the new <code>[stats]</code> module.
+
++ <span class="badge text-bg-api-change">API Change</span> Class <code>[ForecasterSarimax]</code> has been deprecated in favor of the new <code>[ForecasterStats]</code> model in the <code>[recursive]</code> module. The new forecaster is compatible with a broader range of statistical models such as: sarimax, arima, arar and ets.
 
 + <span class="badge text-bg-danger">Fix</span> Fixed an issue that prevented using indices with frequencies containing metadata (e.g., `CustomBusinessDay`, `CustomBusinessHour`, or holiday/weekmask variants). The library now preserves full frequency metadata by using `freq` instead of `freqstr`, ensuring correct alignment and compatibility with custom date offsets. ([#1051](https://github.com/skforecast/skforecast/issues/1051))
 
@@ -23,13 +33,22 @@ The main changes in this release are:
 
 + Support for `Python 3.14`.
 
++ <span class="badge text-bg-feature">Feature</span> New class <code>[ForecasterRecursiveClassifier]</code> in the <code>[recursive]</code> module. This forecaster is designed to handle time series data where the target variable is categorical, enabling the prediction of future class labels based on historical patterns.
+
 + New class <code>[PopulationDriftDetector]</code> in the <code>[drift_detection]</code> module to detect population drift between reference and new data. Suitable to detect when forecasting models need to be retrained due to changes in the data distribution. It supports both target and exogenous variables, in single and multiseries forecasting.
+
++ <span class="badge text-bg-feature">Feature</span> New module <code>[stats]</code>. This module contains statistical models for time series forecasting that follows the scikit-learn interface.
+
++ <span class="badge text-bg-feature">Feature</span> New class <code>[Arar]</code> in the <code>[stats]</code> module. This class implements ARAR algorithm, a forecasting method that combines a "memory shortening" transformation with an autoregressive (AR) model.
 
 + New function <code>[reshape_series_exog_dict_to_long]</code> in the <code>[preprocessing]</code> module to reshape series and exogenous variables from a dictionary format into a long-format pandas DataFrame with a MultiIndex. The first level of the index is the series name, and the second level is the time index.
 
 
 **Changed**
 
++ <span class="badge text-bg-api-change">API Change</span> Class <code>[Sarimax]</code> has been moved to the new <code>[stats]</code> module.
+
++ <span class="badge text-bg-api-change">API Change</span> Class <code>[ForecasterSarimax]</code> has been deprecated in favor of the new <code>[ForecasterStats]</code> model in the <code>[recursive]</code> module. The new forecaster is compatible with a broader range of statistical models such as: sarimax, arima, arar and ets.
 
 **Fixed**
 
@@ -1268,16 +1287,22 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 
 <!-- Links to API Reference -->
 <!-- Forecasters -->
+[recursive]: ../api/forecasterrecursive.html
 [ForecasterRecursive]: ../api/forecasterrecursive.html
+[ForecasterRecursiveClassifier]: ../api/forecasterrecursiveclassifier.html
 [ForecasterDirect]: ../api/forecasterdirect.html
 [ForecasterRecursiveMultiSeries]: ../api/forecasterrecursivemultiseries.html
 [ForecasterDirectMultiVariate]: ../api/forecasterdirectmultivariate.html
 [ForecasterRNN]: ../api/forecasterrnn.html
 [create_and_compile_model]: ../api/forecasterrnn.html#skforecast.deep_learning.utils.create_and_compile_model
 [ForecasterStats]: ../api/forecasterstats.html
+[ForecasterEquivalentDate]: ../api/forecasterequivalentdate.html
+[ForecasterRecursiveClassifier]: ../api/forecasterrecursiveclassifier.html
+
+<!-- stats -->
+[stats]: ../api/stats.html
 [Sarimax]: ../api/stats.html#skforecast.stats._sarimax.Sarimax
 [Arar]: ../api/stats.html#skforecast.stats._arar.Arar
-[ForecasterEquivalentDate]: ../api/forecasterequivalentdate.html
 
 <!-- model_selection -->
 [model_selection]: ../api/model_selection.html
@@ -1337,9 +1362,6 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [plot_prediction_intervals]: ../api/plot.html#skforecast.plot.plot.plot_prediction_intervals
 [backtesting_gif_creator]: ../api/plot.html#skforecast.plot.plot.backtesting_gif_creator
 [plot_multivariate_time_series_corr]: ../api/plot.html#skforecast.plot.plot.plot_multivariate_time_series_corr
-
-<!-- stats -->
-[stats]: ../api/stats.html
 
 <!-- utils -->
 [utils]: ../api/utils.html

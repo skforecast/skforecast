@@ -8,6 +8,7 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 - [Recursive multi-step forecasting](../user_guides/autoregressive-forecaster.html)
 - [Direct multi-step forecasting](../user_guides/direct-multi-step-forecasting.html)
 - [Forecasting baseline](../user_guides/forecasting-baseline.html)
+- [Autoregressive classification](../user_guides/autoregressive-classification-forecasting.html)
 
 <span style="font-size: 1.3em;">Global Forecasters (multiple series)</span>
 

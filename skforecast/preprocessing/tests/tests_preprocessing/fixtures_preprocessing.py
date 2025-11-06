@@ -85,6 +85,7 @@ exog_long = pd.concat([exog_A, exog_B, exog_C], axis=0)
 
 # np.random.seed(123)
 # X = np.random.rand(50)
+# X_classification = np.random.choice([1, 2, 3], size=50)
 X = pd.Series(
     data = np.array(
                 [0.69646919, 0.28613933, 0.22685145, 0.55131477, 0.71946897,
@@ -98,5 +99,14 @@ X = pd.Series(
                  0.62395295, 0.1156184 , 0.31728548, 0.41482621, 0.86630916,
                  0.25045537, 0.48303426, 0.98555979, 0.51948512, 0.61289453
            ]),
+    name = 'X'
+)
+X_classification = pd.Series(
+    data = np.array(
+                [2, 1, 3, 2, 2, 1, 2, 2, 1, 1, 2, 3, 2, 2, 2, 3, 1, 3, 3, 2, 3, 3,
+                 2, 3, 1, 3, 3, 2, 2, 3, 3, 1, 2, 2, 1, 2, 1, 2, 3, 3, 1, 2, 2, 2,
+                 1, 2, 2, 1, 3, 2],
+                 dtype=int
+           ),
     name = 'X'
 )

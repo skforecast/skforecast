@@ -186,6 +186,7 @@ def check_backtesting_input(
         "ForecasterDirect",
         "ForecasterStats",
         "ForecasterEquivalentDate",
+        "ForecasterRecursiveClassifier"
     ]
     forecasters_direct = [
         "ForecasterDirect",
@@ -211,7 +212,8 @@ def check_backtesting_input(
         "ForecasterRecursive",
         "ForecasterDirect",
         "ForecasterRecursiveMultiSeries",
-        "ForecasterDirectMultiVariate"
+        "ForecasterDirectMultiVariate",
+        "ForecasterRecursiveClassifier"
     ]
 
     if forecaster_name in forecasters_uni:
@@ -1097,12 +1099,21 @@ def _calculate_metrics_backtesting_multiseries(
 
     # TODO: review list of metric that do not need y_train
     metrics_no_y_train = [
+        # Regression metrics
         "mean_squared_error",
         "mean_absolute_error",
         "mean_absolute_percentage_error",
         "mean_squared_log_error",
         "median_absolute_error",
-        "symmetric_mean_absolute_percentage_error"
+        "symmetric_mean_absolute_percentage_error",
+
+        # Classification metrics
+        "accuracy_score",
+        "balanced_accuracy_score",
+        "f1_score",
+        "precision_score",
+        "recall_score",
+        "roc_auc_score"
     ]
 
     train_indexes = []

@@ -41,6 +41,7 @@ from ..utils import (
     align_series_and_exog_multiseries,
     prepare_levels_multiseries,
     preprocess_levels_self_last_window_multiseries,
+    check_exog,
     get_exog_dtypes,
     check_exog_dtypes,
     check_predict_input,
@@ -801,8 +802,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         X_data = None
         if self.lags is not None:
             y_strided = np.lib.stride_tricks.sliding_window_view(y, self.window_size)[:-1]
-            cols = self.window_size - np.array(self.lags)
-            X_data = y_strided[:, cols]
+            X_data = y_strided[:, self.window_size - self.lags]
 
             if X_as_pandas:
                 X_data = pd.DataFrame(
@@ -822,6 +822,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         X_as_pandas: bool = False,
     ) -> tuple[list[np.ndarray | pd.DataFrame], list[str]]:
         """
+        Create window features from a time series.
         
         Parameters
         ----------
@@ -1191,8 +1192,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             encoded_values = self.encoder.transform(X_train[['_level_skforecast']])
         else:
             encoded_values = self.encoder.fit_transform(X_train[['_level_skforecast']])
-            for i, code in enumerate(self.encoder.categories_[0]):
-                self.encoding_mapping_[code] = i
+            for i, level in enumerate(self.encoder.categories_[0]):
+                self.encoding_mapping_[level] = i
 
         if self.encoding == 'onehot': 
             encoded_values.columns = encoded_values.columns.str.replace('_level_skforecast_', '')
@@ -1802,6 +1803,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self.X_train_window_features_names_out_ = None
         self.X_train_exog_names_out_            = None
         self.X_train_features_names_out_        = None
+        self.encoding_mapping_                  = {}
         self.in_sample_residuals_               = None
         self.in_sample_residuals_by_bin_        = None
         self.binner                             = {}
@@ -2143,14 +2145,20 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     index=prediction_index,
                 )
             else:
-                exog = input_to_frame(data=exog, input_name='exog')                
+                exog = input_to_frame(data=exog, input_name='exog')
+                if exog.columns.tolist() != self.exog_names_in_:
+                    exog = exog[self.exog_names_in_]
                 exog = transform_dataframe(
                            df                = exog,
                            transformer       = self.transformer_exog,
                            fit               = False,
                            inverse_transform = False
                        )
-                check_exog_dtypes(exog=exog)
+                # NOTE: Only check dtypes if they are not the same as seen in training
+                if not exog.dtypes.to_dict() == self.exog_dtypes_out_:
+                    check_exog_dtypes(exog=exog)
+                else:
+                    check_exog(exog=exog, allow_nan=False)
                 exog_values = exog.iloc[:steps, :]
         else:
             exog_values = None
@@ -2211,8 +2219,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                              fit               = False,
                                              inverse_transform = False
                                          )
-                
-                check_exog_dtypes(exog=exog_values_all_levels)
+            
+                # NOTE: Only check dtypes if they are not the same as seen in training
+                if not exog_values_all_levels.dtypes.to_dict() == self.exog_dtypes_out_:
+                    check_exog_dtypes(exog=exog_values_all_levels)
+                else:
+                    check_exog(exog=exog_values_all_levels, allow_nan=False)
             
             exog_values_all_levels = exog_values_all_levels.to_numpy()
             exog_values_dict = {
@@ -2516,7 +2528,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         if self.exog_in_:
             categorical_features = any(
                 not pd.api.types.is_numeric_dtype(dtype) or pd.api.types.is_bool_dtype(dtype) 
-                for dtype in set(self.exog_dtypes_out_)
+                for dtype in set(self.exog_dtypes_out_.values())
             )
             if categorical_features:
                 X_predict = X_predict.astype(self.exog_dtypes_out_)

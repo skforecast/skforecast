@@ -17,7 +17,13 @@ from sklearn.metrics import (
     mean_absolute_percentage_error,
     mean_squared_log_error,
     median_absolute_error,
-    mean_pinball_loss
+    mean_pinball_loss,
+    accuracy_score,
+    balanced_accuracy_score,
+    f1_score,
+    precision_score,
+    recall_score,
+    roc_auc_score
 )
 
 
@@ -38,6 +44,7 @@ def _get_metric(metric: str) -> Callable:
     """
 
     allowed_metrics = [
+        # Regression metrics
         "mean_squared_error",
         "mean_absolute_error",
         "mean_absolute_percentage_error",
@@ -45,21 +52,35 @@ def _get_metric(metric: str) -> Callable:
         "mean_absolute_scaled_error",
         "root_mean_squared_scaled_error",
         "median_absolute_error",
-        "symmetric_mean_absolute_percentage_error"
+        "symmetric_mean_absolute_percentage_error",
+
+        # Classification metrics
+        "accuracy_score",
+        "balanced_accuracy_score",
+        "f1_score",
+        "precision_score",
+        "recall_score",
+        "roc_auc_score"
     ]
 
     if metric not in allowed_metrics:
-        raise ValueError((f"Allowed metrics are: {allowed_metrics}. Got {metric}."))
+        raise ValueError(f"Allowed metrics are: {allowed_metrics}. Got {metric}.")
 
     metrics = {
         "mean_squared_error": mean_squared_error,
-        "mean_absolute_error": mean_absolute_error,
-        "mean_absolute_percentage_error": mean_absolute_percentage_error,
-        "mean_squared_log_error": mean_squared_log_error,
-        "mean_absolute_scaled_error": mean_absolute_scaled_error,
-        "root_mean_squared_scaled_error": root_mean_squared_scaled_error,
-        "median_absolute_error": median_absolute_error,
-        "symmetric_mean_absolute_percentage_error": symmetric_mean_absolute_percentage_error
+        "mean_absolute_error":  mean_absolute_error,
+        "mean_absolute_percentage_error":  mean_absolute_percentage_error,
+        "mean_squared_log_error":  mean_squared_log_error,
+        "mean_absolute_scaled_error":  mean_absolute_scaled_error,
+        "root_mean_squared_scaled_error":  root_mean_squared_scaled_error,
+        "median_absolute_error":  median_absolute_error,
+        "symmetric_mean_absolute_percentage_error": symmetric_mean_absolute_percentage_error,
+        "accuracy_score": accuracy_score,
+        "balanced_accuracy_score": balanced_accuracy_score,
+        "f1_score": f1_score,
+        "precision_score": precision_score,
+        "recall_score": recall_score,
+        "roc_auc_score": roc_auc_score
     }
 
     metric = add_y_train_argument(metrics[metric])
@@ -218,8 +239,8 @@ def root_mean_squared_scaled_error(
         for x in y_train:
             if not isinstance(x, (pd.Series, np.ndarray)):
                 raise TypeError(
-                    ("When `y_train` is a list, each element must be a pandas Series "
-                     "or numpy ndarray.")
+                    "When `y_train` is a list, each element must be a pandas Series "
+                    "or numpy ndarray."
                 )
     if len(y_true) != len(y_pred):
         raise ValueError("`y_true` and `y_pred` must have the same length.")

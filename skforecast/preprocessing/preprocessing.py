@@ -12,6 +12,8 @@ import warnings
 from numba import njit
 import numpy as np
 import pandas as pd
+from scipy.stats import mode as scipy_mode
+from scipy.stats import entropy as scipy_entropy
 from sklearn.base import BaseEstimator
 from sklearn.base import TransformerMixin
 from sklearn.exceptions import NotFittedError
@@ -1070,6 +1072,41 @@ def _ewm_jit(x: np.ndarray, alpha: float = 0.3) -> float:  # pragma: no cover
     return ewm
 
 
+@njit
+def _n_unique_jit(x):  # pragma: no cover
+    """
+    Count number of unique classes using numba JIT.
+    """
+    return len(np.unique(x))
+
+
+@njit
+def _n_changes_jit(x):  # pragma: no cover
+    """
+    Count number of class changes using numba JIT.
+    """
+    if len(x) <= 1:
+        return 0
+    changes = 0
+    for i in range(1, len(x)):
+        if x[i] != x[i - 1]:
+            changes += 1
+
+    return changes
+
+
+def _entropy(x):  # pragma: no cover
+    """
+    Calculate entropy of class distribution.
+    """
+    if len(x) == 0:
+        return np.nan
+    _, counts = np.unique(x, return_counts=True)
+    probabilities = counts / len(x)
+
+    return scipy_entropy(probabilities, base=2)
+
+
 class RollingFeatures():
     """
     This class computes rolling features. To avoid data leakage, the last point 
@@ -1091,7 +1128,7 @@ class RollingFeatures():
         {'ewm': {'alpha': 0.3}}.
     window_sizes : int, list
         Size of the rolling window for each statistic. If an `int`, all stats share 
-        the same window size. If a `list`, it should have the same length as stats.
+        the same window size. If a `list`, it should have the same length as `stats`.
     min_periods : int, list, default None
         Minimum number of observations in window required to have a value. 
         Same as the `min_periods` argument of pandas rolling. If `None`, 
@@ -1142,12 +1179,12 @@ class RollingFeatures():
     ) -> None:
         
         self._validate_params(
-            stats,
-            window_sizes,
-            min_periods,
-            features_names,
-            fillna,
-            kwargs_stats
+            stats          = stats,
+            window_sizes   = window_sizes,
+            min_periods    = min_periods,
+            features_names = features_names,
+            fillna         = fillna,
+            kwargs_stats   = kwargs_stats
         )
 
         if isinstance(stats, str):
@@ -1340,8 +1377,8 @@ class RollingFeatures():
         if len(set(zip(stats, window_sizes))) != n_stats:
             raise ValueError(
                 f"Duplicate (stat, window_size) pairs are not allowed.\n"
-                f"    `stats`       : {stats}\n"
-                f"    `window_sizes : {window_sizes}"
+                f"    `stats`        : {stats}\n"
+                f"    `window_sizes` : {window_sizes}"
             )
         
         # min_periods
@@ -1454,7 +1491,7 @@ class RollingFeatures():
             return rolling_obj.std() / rolling_obj.mean()
         elif stat == 'ewm':
             kwargs = self.kwargs_stats.get(stat, {})
-            return rolling_obj.apply(lambda x: _ewm_jit(x.to_numpy(), **kwargs))
+            return rolling_obj.apply(lambda x: _ewm_jit(x, **kwargs), raw=True)
         else:
             raise ValueError(f"Statistic '{stat}' is not implemented.")
 
@@ -1598,7 +1635,550 @@ class RollingFeatures():
             rolling_features = rolling_features.ravel()
         
         return rolling_features
+
+
+class RollingFeaturesClassification():
+    """
+    This class computes rolling features for classification problems. To avoid data 
+    leakage, the last point in the window is excluded from calculations, 
+    ('closed': 'left' and 'center': False).
+
+    Currently, the following statistics are supported: 'proportion', 'mode', 
+    'entropy', 'n_changes', 'n_unique'.
+
+    Parameters
+    ----------
+    stats : str, list
+        Statistics to compute over the rolling window. Can be a `string` or a `list`,
+        and can have repeats. Available statistics are: 'proportion', 'mode', 
+        'entropy', 'n_changes', 'n_unique'.
+    window_sizes : int, list
+        Size of the rolling window for each statistic. If an `int`, all stats share 
+        the same window size. If a `list`, it should have the same length as `stats`.
+    min_periods : int, list, default None
+        Minimum number of observations in window required to have a value. 
+        Same as the `min_periods` argument of pandas rolling. If `None`, 
+        defaults to `window_sizes`.
+    features_names : list, default None
+        Names of the output features. If `None`, default names will be used in the 
+        format 'roll_stat_window_size', for example 'roll_mode_7'. For 'proportion',
+        class-specific names are appended, e.g., 'roll_proportion_7_class_0'.
+    fillna : str, float, default None
+        Fill missing values in `transform_batch` method. Available 
+        methods are: 'mean', 'median', 'ffill', 'bfill', or a float value.
     
+    Attributes
+    ----------
+    stats : list
+        Statistics to compute over the rolling window.
+    n_stats : int
+        Number of statistics to compute.
+    window_sizes : list
+        Size of the rolling window for each statistic.
+    max_window_size : int
+        Maximum window size.
+    min_periods : list
+        Minimum number of observations in window required to have a value.
+    classes : list
+        Unique classes found in the data. Inferred during `transform_batch`.
+    features_names : list
+        Names of the output features.
+    fillna : str, float
+        Method to fill missing values in `transform_batch` method.
+    unique_rolling_windows : dict
+        Dictionary containing unique rolling window parameters and the corresponding
+        statistics.
+        
+    """
+
+    def __init__(
+        self, 
+        stats: str | list[str],
+        window_sizes: int | list[int],
+        min_periods: int | list[int] | None = None,
+        features_names: list[str] | None = None, 
+        fillna: str | float | None = None
+    ) -> None:
+        
+        self._validate_params(
+            stats          = stats,
+            window_sizes   = window_sizes,
+            min_periods    = min_periods,
+            features_names = features_names,
+            fillna         = fillna
+        )
+
+        if isinstance(stats, str):
+            stats = [stats]
+        self.stats = stats
+        self.n_stats = len(stats)
+
+        if isinstance(window_sizes, int):
+            window_sizes = [window_sizes] * self.n_stats
+        self.window_sizes = window_sizes
+        self.max_window_size = max(window_sizes)
+        
+        if min_periods is None:
+            min_periods = self.window_sizes
+        elif isinstance(min_periods, int):
+            min_periods = [min_periods] * self.n_stats
+        self.min_periods = min_periods
+
+        self.classes = None
+        if features_names is None:
+            features_names = []
+            for stat, window_size in zip(self.stats, self.window_sizes):
+                features_names.append(f"roll_{stat}_{window_size}")
+        self.features_names = features_names
+
+        self.fillna = fillna
+
+        window_params_list = []
+        for i in range(len(self.stats)):
+            window_params = (self.window_sizes[i], self.min_periods[i])
+            window_params_list.append(window_params)
+
+        # Find unique window parameter combinations
+        unique_rolling_windows = {}
+        for i, params in enumerate(window_params_list):
+            key = f"{params[0]}_{params[1]}"
+            if key not in unique_rolling_windows:
+                unique_rolling_windows[key] = {
+                    'params': {
+                        'window': params[0], 
+                        'min_periods': params[1], 
+                        'center': False,
+                        'closed': 'left'
+                    },
+                    'stats_idx': [], 
+                    'stats_names': [], 
+                    'rolling_obj': None
+                }
+            unique_rolling_windows[key]['stats_idx'].append(i)
+            unique_rolling_windows[key]['stats_names'].append(self.features_names[i])
+
+        self.unique_rolling_windows = unique_rolling_windows
+
+    def __repr__(
+        self
+    ) -> str:
+        """
+        Information displayed when printed.
+        """
+
+        info = (
+            f"RollingFeaturesClassifier(\n"
+            f"    stats           = {self.stats},\n"
+            f"    window_sizes    = {self.window_sizes},\n"
+            f"    Max window size = {self.max_window_size},\n"
+            f"    min_periods     = {self.min_periods},\n"
+            f"    classes         = {self.classes},\n"
+            f"    features_names  = {self.features_names},\n"
+            f"    fillna          = {self.fillna}\n"
+            f")"
+        )
+
+        return info
+    
+    # TODO: Change link to user guide
+    def _repr_html_(self) -> str:
+        """
+        HTML representation of the object.
+        The "General Information" section is expanded by default.
+        """
+
+        style, unique_id = get_style_repr_html()
+        content = f"""
+        <div class="container-{unique_id}">
+            <h2>{type(self).__name__}</h2>
+            <details open>
+                <summary>General Information</summary>
+                <ul>
+                    <li><strong>Stats:</strong> {self.stats}</li>
+                    <li><strong>Window size:</strong> {self.window_sizes}</li>
+                    <li><strong>Maximum window size:</strong> {self.max_window_size}</li>
+                    <li><strong>Minimum periods:</strong> {self.min_periods}</li>
+                    <li><strong>Classes:</strong> {self.classes}</li>
+                    <li><strong>Features names:</strong> {self.features_names}</li>
+                    <li><strong>Fill na strategy:</strong> {self.fillna}</li>
+                </ul>
+            </details>
+            <p>
+                <a href="https://skforecast.org/{skforecast.__version__}/api/preprocessing.html#skforecast.preprocessing.preprocessing.RollingFeaturesClassification">&#128712 <strong>API Reference</strong></a>
+                &nbsp;&nbsp;
+                <a href="https://skforecast.org/{skforecast.__version__}/user_guides/window-features-and-custom-features.html">&#128462 <strong>User Guide</strong></a>
+            </p>
+        </div>
+        """
+        
+        return style + content
+
+    def _validate_params(
+        self, 
+        stats: str | list[str], 
+        window_sizes: int | list[int],
+        min_periods: int | list[int] | None = None,
+        features_names: list[str] | None = None, 
+        fillna: str | float | None = None
+    ) -> None:
+        """
+        Validate the parameters of the RollingFeaturesClassification class.
+
+        Parameters
+        ----------
+        stats : str, list
+            Statistics to compute over the rolling window. Can be a `string` or a `list`,
+            and can have repeats. Available statistics are: 'proportion', 'mode', 
+            'entropy', 'n_changes', 'n_unique'.
+        window_sizes : int, list
+            Size of the rolling window for each statistic. If an `int`, all stats share 
+            the same window size. If a `list`, it should have the same length as `stats`.
+        min_periods : int, list, default None
+            Minimum number of observations in window required to have a value. 
+            Same as the `min_periods` argument of pandas rolling. If `None`, 
+            defaults to `window_sizes`.
+        features_names : list, default None
+            Names of the output features. If `None`, default names will be used in the 
+            format 'roll_stat_window_size', for example 'roll_mode_7'. For 'proportion',
+            class-specific names are appended, e.g., 'roll_proportion_7_class_0'.
+        fillna : str, float, default None
+            Fill missing values in `transform_batch` method. Available 
+            methods are: 'mean', 'median', 'ffill', 'bfill', or a float value.
+
+        Returns
+        -------
+        None
+
+        """
+
+        # stats
+        allowed_stats = [
+            'proportion', 'mode', 'entropy', 'n_changes', 'n_unique'
+        ]
+
+        if not isinstance(stats, (str, list)):
+            raise TypeError(
+                f"`stats` must be a string or a list of strings. Got {type(stats)}."
+            )        
+        if isinstance(stats, str):
+            stats = [stats]
+
+        for stat in set(stats):
+            if stat not in allowed_stats:
+                raise ValueError(
+                    f"Statistic '{stat}' is not allowed. Allowed stats are: {allowed_stats}."
+                )
+        n_stats = len(stats)
+        
+        # window_sizes
+        if not isinstance(window_sizes, (int, list)):
+            raise TypeError(
+                f"`window_sizes` must be an int or a list of ints. Got {type(window_sizes)}."
+            )
+        
+        if isinstance(window_sizes, list):
+            n_window_sizes = len(window_sizes)
+            if n_window_sizes != n_stats:
+                raise ValueError(
+                    f"Length of `window_sizes` list ({n_window_sizes}) "
+                    f"must match length of `stats` list ({n_stats})."
+                )
+            
+        # Check duplicates (stats, window_sizes)
+        if isinstance(window_sizes, int):
+            window_sizes = [window_sizes] * n_stats
+        if len(set(zip(stats, window_sizes))) != n_stats:
+            raise ValueError(
+                f"Duplicate (stat, window_size) pairs are not allowed.\n"
+                f"    `stats`        : {stats}\n"
+                f"    `window_sizes` : {window_sizes}"
+            )
+        
+        # min_periods
+        if not isinstance(min_periods, (int, list, type(None))):
+            raise TypeError(
+                f"`min_periods` must be an int, list of ints, or None. Got {type(min_periods)}."
+            )
+        
+        if min_periods is not None:
+            if isinstance(min_periods, int):
+                min_periods = [min_periods] * n_stats
+            elif isinstance(min_periods, list):
+                n_min_periods = len(min_periods)
+                if n_min_periods != n_stats:
+                    raise ValueError(
+                        f"Length of `min_periods` list ({n_min_periods}) "
+                        f"must match length of `stats` list ({n_stats})."
+                    )
+            
+            for i, min_period in enumerate(min_periods):
+                if min_period > window_sizes[i]:
+                    raise ValueError(
+                        "Each `min_period` must be less than or equal to its "
+                        "corresponding `window_size`."
+                    )
+        
+        # features_names
+        if not isinstance(features_names, (list, type(None))):
+            raise TypeError(
+                f"`features_names` must be a list of strings or None. Got {type(features_names)}."
+            )
+        
+        if isinstance(features_names, list):
+            n_features_names = len(features_names)
+            if n_features_names != n_stats:
+                raise ValueError(
+                    f"Length of `features_names` list ({n_features_names}) "
+                    f"must match length of `stats` list ({n_stats})."
+                )
+        
+        # TODO: Not used as ForecasterRecursiveClassifier doesn't allow NaNs. Check
+        # when creating ForecasterRecursiveMultiSeriesClassifier
+        # fillna
+        if fillna is not None:
+            if not isinstance(fillna, (int, float, str)):
+                raise TypeError(
+                    f"`fillna` must be a float, string, or None. Got {type(fillna)}."
+                )
+            
+            if isinstance(fillna, str):
+                allowed_fill_strategy = ['mean', 'median', 'ffill', 'bfill']
+                if fillna not in allowed_fill_strategy:
+                    raise ValueError(
+                        f"'{fillna}' is not allowed. Allowed `fillna` "
+                        f"values are: {allowed_fill_strategy} or a float value."
+                    )
+
+    def _apply_stat_pandas(
+        self, 
+        X: pd.Series,
+        rolling_obj: pd.core.window.rolling.Rolling, 
+        stat: str
+    ) -> pd.Series:
+        """
+        Apply the specified statistic to a pandas rolling object.
+
+        Parameters
+        ----------
+        rolling_obj : pandas Rolling
+            Rolling object to apply the statistic.
+        stat : str
+            Statistic to compute.
+        
+        Returns
+        -------
+        stat_series : pandas Series
+            Series with the computed statistic.
+        
+        """
+
+        if stat == 'proportion':
+            rolling_params = {
+                'window': rolling_obj.window, 
+                'min_periods': rolling_obj.min_periods, 
+                'center': rolling_obj.center,
+                'closed': rolling_obj.closed
+            }
+            dummies = pd.get_dummies(X, prefix='class')
+            proportions = dummies.rolling(**rolling_params).sum() / rolling_obj.window
+
+            return proportions
+            
+        elif stat == 'mode':
+            return rolling_obj.apply(lambda x: scipy_mode(x)[0], raw=True)
+        elif stat == 'entropy':
+            return rolling_obj.apply(_entropy, raw=True)
+        elif stat == 'n_changes':
+            return rolling_obj.apply(_n_changes_jit, raw=True)
+        elif stat == 'n_unique':
+            return rolling_obj.apply(_n_unique_jit, raw=True)
+        else:
+            raise ValueError(f"Statistic '{stat}' is not implemented.")
+
+    def transform_batch(
+        self, 
+        X: pd.Series
+    ) -> pd.DataFrame:
+        """
+        Transform an entire pandas Series using rolling windows and compute the 
+        specified statistics.
+
+        Parameters
+        ----------
+        X : pandas Series
+            The input data series to transform.
+
+        Returns
+        -------
+        rolling_features : pandas DataFrame
+            A DataFrame containing the rolling features.
+        
+        """
+
+        if self.classes is None:
+            self.classes = list(np.sort(X.unique()))
+
+            features_names = []
+            for stat, feature_name in zip(self.stats, self.features_names):
+                if stat != 'proportion':
+                    features_names.append(feature_name)
+                else:
+                    for cls in self.classes:
+                        feature_name_class = f"{feature_name}_class_{cls}"
+                        features_names.append(feature_name_class)
+            
+            self.features_names = features_names
+
+        for k in self.unique_rolling_windows.keys():
+            rolling_obj = X.rolling(**self.unique_rolling_windows[k]['params'])
+            self.unique_rolling_windows[k]['rolling_obj'] = rolling_obj
+        
+        rolling_features = []
+        for i, stat in enumerate(self.stats):
+            window_size = self.window_sizes[i]
+            min_periods = self.min_periods[i]
+
+            key = f"{window_size}_{min_periods}"
+            rolling_obj = self.unique_rolling_windows[key]['rolling_obj']
+
+            stat_series = self._apply_stat_pandas(X=X, rolling_obj=rolling_obj, stat=stat)     
+            rolling_features.append(stat_series)
+
+        rolling_features = pd.concat(rolling_features, axis=1)
+        rolling_features.columns = self.features_names
+        rolling_features = rolling_features.iloc[self.max_window_size:]
+
+        if self.fillna is not None:
+            if self.fillna == 'mean':
+                rolling_features = rolling_features.fillna(rolling_features.mean())
+            elif self.fillna == 'median':
+                rolling_features = rolling_features.fillna(rolling_features.median())
+            elif self.fillna == 'ffill':
+                rolling_features = rolling_features.ffill()
+            elif self.fillna == 'bfill':
+                rolling_features = rolling_features.bfill()
+            else:
+                rolling_features = rolling_features.fillna(self.fillna)
+        
+        return rolling_features
+
+    def _apply_stat_numpy_jit(
+        self, 
+        X_window: np.ndarray, 
+        stat: str
+    ) -> float:
+        """
+        Apply the specified statistic to a numpy array using Numba JIT.
+
+        Parameters
+        ----------
+        X_window : numpy array
+            Array with the rolling window.
+        stat : str
+            Statistic to compute.
+
+        Returns
+        -------
+        stat_value : float
+            Value of the computed statistic.
+        
+        """
+
+        if stat == 'proportion':
+            # Calculate proportions for each class
+            proportions = np.zeros(len(self.classes))
+            len_window = len(X_window)
+            for i, cls in enumerate(self.classes):
+                proportions[i] = np.sum(X_window == cls) / len_window
+            return proportions
+            
+        elif stat == 'mode':
+            return scipy_mode(X_window)[0]
+        elif stat == 'entropy':
+            return _entropy(X_window)
+        elif stat == 'n_changes':
+            return _n_changes_jit(X_window)
+        elif stat == 'n_unique':
+            return _n_unique_jit(X_window)
+        else:
+            raise ValueError(f"Statistic '{stat}' is not implemented.")
+
+    def transform(
+        self, 
+        X: np.ndarray
+    ) -> np.ndarray:
+        """
+        Transform a numpy array using rolling windows and compute the 
+        specified statistics. The returned array will have the shape 
+        (X.shape[1] if exists, n_stats). For example, if X is a flat
+        array, the output will have shape (n_stats,). If X is a 2D array,
+        the output will have shape (X.shape[1], n_stats).
+
+        Parameters
+        ----------
+        X : numpy ndarray
+            The input data array to transform.
+
+        Returns
+        -------
+        rolling_features : numpy ndarray
+            An array containing the computed statistics.
+        
+        """
+
+        if self.classes is None:
+            raise ValueError(
+                "Classes must be specified before calling transform. "
+                "Call `transform_batch` first to infer classes from data."
+            )
+
+        array_ndim = X.ndim
+        if array_ndim == 1:
+            X = X[:, np.newaxis]
+
+        # TODO: If more than one columns 2d Array, maybe the classes doesn't come
+        # from the same column. Col 1 has classes [0, 1], col 2 has classes [3, 4].
+        n_classes = len(self.classes)
+        n_output_features = 0
+        for stat in self.stats:
+            if stat == 'proportion':
+                n_output_features += n_classes
+            else:
+                n_output_features += 1
+            
+        rolling_features = np.full(
+            shape=(X.shape[1], n_output_features), fill_value=np.nan, dtype=float
+        )
+        for i in range(X.shape[1]):
+            feature_idx = 0
+            for j, stat in enumerate(self.stats):
+                X_window = X[-self.window_sizes[j]:, i]
+                X_window = X_window[~np.isnan(X_window)]
+                
+                if len(X_window) >= 0:
+                    result = self._apply_stat_numpy_jit(X_window, stat)
+                    
+                    if stat == 'proportion':
+                        # Result is an array with one value per class
+                        rolling_features[i, feature_idx:feature_idx + n_classes] = result
+                        feature_idx += n_classes
+                    else:
+                        # Result is a single value
+                        rolling_features[i, feature_idx] = result
+                        feature_idx += 1
+                else:
+                    if stat == 'proportion':
+                        rolling_features[i, feature_idx:feature_idx + n_classes] = np.nan
+                        feature_idx += n_classes
+                    else:
+                        rolling_features[i, feature_idx] = np.nan
+                        feature_idx += 1
+
+        if array_ndim == 1:
+            rolling_features = rolling_features.ravel()
+        
+        return rolling_features
+
 
 class QuantileBinner:
     """
@@ -1848,7 +2428,8 @@ class QuantileBinner:
             setattr(self, param, value)
 
 
-class FastOrdinalEncoder: # pragma: no cover
+# TODO: Move to experimental?
+class FastOrdinalEncoder:  # pragma: no cover
     """
     Encode categorical values as an integer array, with integer values
     from 0 to n_categories - 1.

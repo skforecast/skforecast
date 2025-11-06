@@ -639,6 +639,7 @@ class ForecasterDirect(ForecasterBase):
         X_as_pandas: bool = False,
     ) -> tuple[list[np.ndarray | pd.DataFrame], list[str]]:
         """
+        Create window features from a time series.
         
         Parameters
         ----------
@@ -1498,15 +1499,24 @@ class ForecasterDirect(ForecasterBase):
 
         X_autoreg = np.concatenate(X_autoreg).reshape(1, -1)
         if exog is not None:
+            
             exog = input_to_frame(data=exog, input_name='exog')
-            exog = exog[self.exog_names_in_]
+            if exog.columns.tolist() != self.exog_names_in_:
+                exog = exog[self.exog_names_in_]
+
             exog = transform_dataframe(
                        df                = exog,
                        transformer       = self.transformer_exog,
                        fit               = False,
                        inverse_transform = False
                    )
-            check_exog_dtypes(exog=exog)
+            
+            # NOTE: Only check dtypes if they are not the same as seen in training
+            if not exog.dtypes.to_dict() == self.exog_dtypes_out_:
+                check_exog_dtypes(exog=exog)
+            else:
+                check_exog(exog=exog, allow_nan=False)
+            
             exog_values, _ = exog_to_direct_numpy(
                                  exog  = exog.to_numpy()[:max(steps)],
                                  steps = max(steps)
@@ -1606,7 +1616,7 @@ class ForecasterDirect(ForecasterBase):
         if self.exog_in_:
             categorical_features = any(
                 not pd.api.types.is_numeric_dtype(dtype) or pd.api.types.is_bool_dtype(dtype) 
-                for dtype in set(self.exog_dtypes_out_)
+                for dtype in set(self.exog_dtypes_out_.values())
             )
             if categorical_features:
                 X_predict = X_predict.astype(self.exog_dtypes_out_)
@@ -1685,7 +1695,7 @@ class ForecasterDirect(ForecasterBase):
                 category=UserWarning
             )
             predictions = np.array([
-                regressor.predict(X).ravel()[0] 
+                regressor.predict(X).ravel().item()
                 for regressor, X in zip(regressors, Xs)
             ])
 
@@ -1801,7 +1811,7 @@ class ForecasterDirect(ForecasterBase):
                 category=UserWarning
             )
             predictions = np.array([
-                regressor.predict(X).ravel()[0] 
+                regressor.predict(X).ravel().item()
                 for regressor, X in zip(regressors, Xs)
             ])
         
@@ -1942,7 +1952,7 @@ class ForecasterDirect(ForecasterBase):
                 category=UserWarning
             )
             predictions = np.array([
-                regressor.predict(X).ravel()[0] 
+                regressor.predict(X).ravel().item()
                 for regressor, X in zip(regressors, Xs)
             ])
         
