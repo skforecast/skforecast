@@ -31,6 +31,8 @@ The main changes in this release are:
 
 **Added**
 
++ Support for `Python 3.14`.
+
 + <span class="badge text-bg-feature">Feature</span> New class <code>[ForecasterRecursiveClassifier]</code> in the <code>[recursive]</code> module. This forecaster is designed to handle time series data where the target variable is categorical, enabling the prediction of future class labels based on historical patterns.
 
 + New class <code>[PopulationDriftDetector]</code> in the <code>[drift_detection]</code> module to detect population drift between reference and new data. Suitable to detect when forecasting models need to be retrained due to changes in the data distribution. It supports both target and exogenous variables, in single and multiseries forecasting.
@@ -67,7 +69,7 @@ The main changes in this release are:
 
 + <span class="badge text-bg-feature">Feature</span> New attribute `__skforecast_tags__` and public method `get_tags()` in all forecasters which provide metadata about the forecaster, such as its capabilities and limitations. This attribute can be useful for [introspection and understanding the behavior](../quick-start/forecaster-attributes.html#skforecast-tags) of different forecasters.
 
-+ <span class="badge text-bg-feature">API Change</span> Backtesting functions output DataFrame now includes a `fold` column to identify the fold number of each prediction.
++ <span class="badge text-bg-api-change">API Change</span> Backtesting functions output DataFrame now includes a `fold` column to identify the fold number of each prediction.
 
 + <span class="badge text-bg-danger">Fix</span> Fixed a bug that caused the gap to not be applied correctly in the <code>[backtesting_forecaster_multiseries]</code> function. ([#1028](https://github.com/skforecast/skforecast/issues/1028))
 
@@ -1293,16 +1295,14 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [ForecasterDirectMultiVariate]: ../api/forecasterdirectmultivariate.html
 [ForecasterRNN]: ../api/forecasterrnn.html
 [create_and_compile_model]: ../api/forecasterrnn.html#skforecast.deep_learning.utils.create_and_compile_model
-[ForecasterSarimax]: ../api/forecastersarimax.html
 [ForecasterStats]: ../api/forecasterstats.html
 [ForecasterEquivalentDate]: ../api/forecasterequivalentdate.html
 [ForecasterRecursiveClassifier]: ../api/forecasterrecursiveclassifier.html
 
-
 <!-- stats -->
 [stats]: ../api/stats.html
-[Sarimax]: ../api/sarimax.html
-[Arar]: ../api/arar.html
+[Sarimax]: ../api/stats.html#skforecast.stats._sarimax.Sarimax
+[Arar]: ../api/stats.html#skforecast.stats._arar.Arar
 
 <!-- model_selection -->
 [model_selection]: ../api/model_selection.html
@@ -1392,3 +1392,4 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [create_datetime_features]: https://skforecast.org/0.13.0/api/preprocessing#skforecast.preprocessing.create_datetime_features
 [series_long_to_dict]: https://skforecast.org/0.16.0/api/preprocessing.html#skforecast.preprocessing.preprocessing.series_long_to_dict
 [exog_long_to_dict]: https://skforecast.org/0.16.0/api/preprocessing.html#skforecast.preprocessing.preprocessing.exog_long_to_dict
+[ForecasterSarimax]: https://skforecast.org/0.19.0/api/forecastersarimax.html

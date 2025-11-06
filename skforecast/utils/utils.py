@@ -7,9 +7,12 @@
 
 from __future__ import annotations
 from copy import copy, deepcopy
-import importlib
+from importlib.metadata import PackageNotFoundError, version
+from importlib.util import find_spec
 import inspect
 from pathlib import Path
+import platform
+import sys
 from typing import Any, Callable
 import uuid
 import warnings
@@ -21,7 +24,7 @@ from sklearn.base import clone
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.exceptions import NotFittedError
-import skforecast
+from .. import __version__
 from ..exceptions import warn_skforecast_categories
 from ..exceptions import (
     DataTypeWarning,
@@ -700,7 +703,7 @@ def check_interval(
         inclusive. For example, quantiles of 0.05, 0.5 and 0.95 should be as 
         `quantiles = [0.05, 0.5, 0.95]`.
     alpha : float, default None
-        The confidence intervals used in ForecasterSarimax are (1 - alpha) %.
+        The confidence intervals used in ForecasterStats are (1 - alpha) %.
     alpha_literal : str, default 'alpha'
         Literal used in the exception message when `alpha` is provided.
 
@@ -820,7 +823,7 @@ def check_predict_input(
         first iteration of prediction (t + 1).
     last_window_exog : pandas Series, pandas DataFrame, default None
         Values of the exogenous variables aligned with `last_window` in 
-        ForecasterSarimax predictions.
+        ForecasterStats predictions.
     exog : pandas Series, pandas DataFrame, dict, default None
         Exogenous variable/s included as predictor/s.
     exog_names_in_ : list, default None
@@ -830,7 +833,7 @@ def check_predict_input(
         to compute, which must be between 0 and 100 inclusive. For example, 
         interval of 95% should be as `interval = [2.5, 97.5]`.
     alpha : float, default None
-        The confidence intervals used in ForecasterSarimax are (1 - alpha) %.
+        The confidence intervals used in ForecasterStats are (1 - alpha) %.
     max_step: int, default None
         Maximum number of steps allowed (`ForecasterDirect` and 
         `ForecasterDirectMultiVariate`).
@@ -1002,10 +1005,10 @@ def check_predict_input(
             f"Got {type(last_window_index)}."
         )
     if isinstance(last_window_index, pd.DatetimeIndex):
-        if not last_window_index.freqstr == index_freq_:
+        if not last_window_index.freq == index_freq_:
             raise TypeError(
                 f"Expected frequency of type {index_freq_} for `last_window`. "
-                f"Got {last_window_index.freqstr}."
+                f"Got {last_window_index.freq}."
             )
 
     # Checks exog
@@ -1138,8 +1141,8 @@ def check_predict_input(
                         f"    Expected index : {expected_index}."
                     )
 
-    # Checks ForecasterSarimax
-    if forecaster_name == 'ForecasterSarimax':
+    # Checks ForecasterStats
+    if forecaster_name == 'ForecasterStats':
         # Check last_window_exog type, len, nulls and index (type and freq)
         if last_window_exog is not None:
             if not exog_in_:
@@ -1173,10 +1176,10 @@ def check_predict_input(
                     f"Got {type(last_window_exog_index)}."
                 )
             if isinstance(last_window_exog_index, pd.DatetimeIndex):
-                if not last_window_exog_index.freqstr == index_freq_:
+                if not last_window_exog_index.freq == index_freq_:
                     raise TypeError(
                         f"Expected frequency of type {index_freq_} for "
-                        f"`last_window_exog`. Got {last_window_exog_index.freqstr}."
+                        f"`last_window_exog`. Got {last_window_exog_index.freq}."
                     )
 
             # Check all columns are in the pd.DataFrame, last_window_exog
@@ -2035,15 +2038,13 @@ def load_forecaster(
     """
 
     forecaster = joblib.load(filename=Path(file_name))
-
-    skforecast_v = skforecast.__version__
     forecaster_v = forecaster.skforecast_version
 
-    if forecaster_v != skforecast_v:
+    if forecaster_v != __version__:
         warnings.warn(
             f"The skforecast version installed in the environment differs "
             f"from the version used to create the forecaster.\n"
-            f"    Installed Version  : {skforecast_v}\n"
+            f"    Installed Version  : {__version__}\n"
             f"    Forecaster Version : {forecaster_v}\n"
             f"This may create incompatibilities when using the library.",
              SkforecastVersionWarning
@@ -2103,7 +2104,7 @@ def check_optional_dependency(
     
     """
 
-    if importlib.util.find_spec(package_name) is None:
+    if find_spec(package_name) is None:
         try:
             extra, package_version = _find_optional_dependency(package_name=package_name)
             msg = (
@@ -2391,17 +2392,18 @@ def check_preprocess_series(
             series_dict[k] = v.iloc[:, 0]
 
         series_dict[k].name = k
-        if isinstance(v.index, pd.DatetimeIndex):
-            indexes_freq.add(v.index.freqstr)
-        elif isinstance(v.index, pd.RangeIndex):
-            indexes_freq.add(v.index.step)
+        idx = v.index
+        if isinstance(idx, pd.DatetimeIndex):
+            indexes_freq.add(idx.freq)
+        elif isinstance(idx, pd.RangeIndex):
+            indexes_freq.add(idx.step)
         else:
             not_valid_index.append(k)
 
         if v.isna().to_numpy().all():
             raise ValueError(f"All values of series '{k}' are NaN.")
 
-        series_indexes[k] = v.index
+        series_indexes[k] = idx
 
     if not_valid_index:
         raise TypeError(
@@ -2958,3 +2960,76 @@ def get_style_repr_html(
     """
 
     return style, unique_id
+
+
+def show_versions(
+    as_str: bool = False
+) -> str | None:
+    """
+    Print useful debugging information.
+
+    Parameters
+    ----------
+    as_str : bool, default False
+        If True, return the output as a string instead of printing.
+
+    Returns
+    -------
+    vers_info : str
+        The output string if `as_str` is True, otherwise None.
+
+    Notes
+    -----
+    Adapted from the scikit-learn 1.7.2 show_versions function.
+    https://github.com/scikit-learn/scikit-learn/
+    Copyright (c) 2007-2025 The scikit-learn developers, BSD-3
+
+    Examples
+    --------
+    >>> from skforecast.utils import show_versions
+    >>> vers_info = show_versions(as_str=True)
+
+    """
+
+    deps = [
+        "pip",
+        "setuptools",
+        "numpy",
+        "pandas",
+        "tqdm",
+        "scikit-learn",
+        "optuna",
+        "joblib",
+        "numba",
+        "rich",
+        "keras",
+    ]
+    
+    sys_info = {
+        "python": sys.version.replace("\n", " "),
+        "executable": sys.executable,
+        "machine": platform.platform(),
+    }
+    
+    lines = ["\nSystem:"]
+    for k, stat in sys_info.items():
+        lines.append(f"{k:<11}: {stat}")
+
+    deps_info = {"skforecast": __version__}
+    for mod_name in deps:
+        try:
+            deps_info[mod_name] = version(mod_name)
+        except PackageNotFoundError:
+            deps_info[mod_name] = None
+
+    lines.append("\nPython dependencies:")
+    for k, stat in deps_info.items():
+        lines.append(f"{k:<13}: {stat}")
+
+    vers_info = "\n".join(lines)
+
+    if as_str:
+        return vers_info
+    else:
+        print(vers_info)
+        return None

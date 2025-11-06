@@ -133,7 +133,7 @@ def check_backtesting_input(
         + 'conformal': Employs the conformal prediction split method for 
         interval estimation.
     alpha : float, default None
-        The confidence intervals used in ForecasterSarimax are (1 - alpha) %. 
+        The confidence intervals used in ForecasterStats are (1 - alpha) %. 
     n_boot : int, default `250`
         Number of bootstrapping iterations to perform when estimating prediction
             intervals.
@@ -161,7 +161,7 @@ def check_backtesting_input(
         information.
     suppress_warnings_fit : bool, default False
         If `True`, warnings generated during fitting will be ignored. Only 
-        `ForecasterSarimax`.
+        `ForecasterStats`.
 
     Returns
     -------
@@ -184,7 +184,7 @@ def check_backtesting_input(
     forecasters_uni = [
         "ForecasterRecursive",
         "ForecasterDirect",
-        "ForecasterSarimax",
+        "ForecasterStats",
         "ForecasterEquivalentDate",
         "ForecasterRecursiveClassifier"
     ]
@@ -200,7 +200,7 @@ def check_backtesting_input(
     forecasters_multi_dict = [
         "ForecasterRecursiveMultiSeries"
     ]
-    # NOTE: ForecasterSarimax has interval but not with bootstrapping or conformal
+    # NOTE: ForecasterStats has interval but not with bootstrapping or conformal
     forecasters_boot_conformal = [
         "ForecasterRecursive",
         "ForecasterDirect",
@@ -332,7 +332,7 @@ def check_backtesting_input(
                     f"    steps: {steps}\n"
                 )
     else:
-        if forecaster_name in ['ForecasterSarimax', 'ForecasterEquivalentDate']:
+        if forecaster_name in ['ForecasterStats', 'ForecasterEquivalentDate']:
             raise ValueError(
                 f"`initial_train_size` must be an integer smaller than the "
                 f"length of `{data_name}` ({data_length})."
@@ -348,9 +348,9 @@ def check_backtesting_input(
                     "`refit` is only allowed when `initial_train_size` is not `None`."
                 )
 
-    if forecaster_name == 'ForecasterSarimax' and cv.skip_folds is not None:
+    if forecaster_name == 'ForecasterStats' and cv.skip_folds is not None:
         raise ValueError(
-            "`skip_folds` is not allowed for ForecasterSarimax. Set it to `None`."
+            "`skip_folds` is not allowed for ForecasterStats. Set it to `None`."
         )
 
     if not isinstance(add_aggregated_metric, bool):
@@ -625,7 +625,7 @@ def select_n_jobs_backtesting(
     - If forecaster is 'ForecasterDirect' or 'ForecasterDirectMultiVariate'
     and `refit = False`, then `n_jobs = 1`.
     - If forecaster is 'ForecasterRecursiveMultiSeries', then `n_jobs = cpu_count() - 1`.
-    - If forecaster is 'ForecasterSarimax' or 'ForecasterEquivalentDate', 
+    - If forecaster is 'ForecasterStats' or 'ForecasterEquivalentDate', 
     then `n_jobs = 1`.
     - If regressor is a `LGBMRegressor(n_jobs=1)`, then `n_jobs = cpu_count() - 1`.
     - If regressor is a `LGBMRegressor` with internal n_jobs != 1, then `n_jobs = 1`.
@@ -681,7 +681,7 @@ def select_n_jobs_backtesting(
                 n_jobs = cpu_count() - 1 if regressor.n_jobs == 1 else 1
             else:
                 n_jobs = cpu_count() - 1
-        elif forecaster_name in ['ForecasterSarimax', 'ForecasterEquivalentDate']:
+        elif forecaster_name in ['ForecasterStats', 'ForecasterEquivalentDate']:
             n_jobs = 1
         else:
             n_jobs = 1

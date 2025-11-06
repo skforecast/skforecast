@@ -1,26 +1,26 @@
-# Unit test grid_search_sarimax
+# Unit test grid_search_stats
 # ==============================================================================
 import numpy as np
 import pandas as pd
-from skforecast.sarimax import Sarimax
-from skforecast.recursive import ForecasterSarimax
+from skforecast.stats import Sarimax
+from skforecast.recursive import ForecasterStats
 from skforecast.model_selection._split import TimeSeriesFold
-from skforecast.model_selection._search import grid_search_sarimax
+from skforecast.model_selection._search import grid_search_stats
 
 # Fixtures
-from ....recursive.tests.tests_forecaster_sarimax.fixtures_forecaster_sarimax import y_datetime
+from ....recursive.tests.tests_forecaster_stats.fixtures_forecaster_stats import y_datetime
 
 from tqdm import tqdm
 from functools import partialmethod
 tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)  # hide progress bar
 
 
-def test_output_grid_search_sarimax_sarimax_with_mocked():
+def test_output_grid_search_stats_sarimax_with_mocked():
     """
-    Test output of grid_search_sarimax in ForecasterSarimax with mocked
+    Test output of grid_search_stats in ForecasterStats with mocked
     (mocked done in Skforecast v0.7.0).
     """
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
                      regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
@@ -36,7 +36,7 @@ def test_output_grid_search_sarimax_sarimax_with_mocked():
     param_grid = [{'order': [(2, 2, 0), (3, 2, 0)],
                    'trend': [None, 'c']}]
 
-    results = grid_search_sarimax(
+    results = grid_search_stats(
                   forecaster  = forecaster,
                   y           = y_datetime,
                   cv          = cv,

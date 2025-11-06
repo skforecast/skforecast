@@ -14,5 +14,6 @@ from .exceptions import (
     SkforecastVersionWarning,
     FeatureOutOfRangeWarning,
     warn_skforecast_categories,
-    set_warnings_style
+    set_warnings_style,
+    runtime_deprecated
 )

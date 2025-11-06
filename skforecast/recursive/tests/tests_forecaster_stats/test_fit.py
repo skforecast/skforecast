@@ -1,15 +1,15 @@
-# Unit test fit ForecasterSarimax
+# Unit test fit ForecasterStats
 # ==============================================================================
 import re
 import pytest
 import numpy as np
 import pandas as pd
-from skforecast.sarimax import Sarimax
-from skforecast.recursive import ForecasterSarimax
+from skforecast.stats import Sarimax
+from skforecast.recursive import ForecasterStats
 
 # Fixtures
-from .fixtures_forecaster_sarimax import y
-from .fixtures_forecaster_sarimax import y_datetime
+from .fixtures_forecaster_stats import y
+from .fixtures_forecaster_stats import y_datetime
 
 
 def test_fit_ValueError_when_len_exog_is_not_the_same_as_len_y():
@@ -18,7 +18,7 @@ def test_fit_ValueError_when_len_exog_is_not_the_same_as_len_y():
     """
     y = pd.Series(data=np.arange(10))
     exog = pd.Series(data=np.arange(11))
-    forecaster = ForecasterSarimax(regressor=Sarimax(order=(1, 1, 1)))
+    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 1, 1)))
 
     err_msg = re.escape(
         f"`exog` must have same number of samples as `y`. "
@@ -35,7 +35,7 @@ def test_forecaster_y_exog_features_stored():
     
     y = pd.Series(data=np.arange(10), name='y_sarimax')
     exog = pd.Series(data=np.arange(10), name='exog')
-    forecaster = ForecasterSarimax(regressor=Sarimax(order=(1, 1, 1)))
+    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 1, 1)))
     forecaster.fit(y=y, exog=exog)
 
     series_name_in_ = 'y_sarimax'
@@ -57,15 +57,15 @@ def test_forecaster_y_exog_features_stored():
 
 def test_forecaster_DatetimeIndex_index_freq_stored():
     """
-    Test serie_with_DatetimeIndex.index.freqstr is stored in forecaster.index_freq_.
+    Test serie_with_DatetimeIndex.index.freq is stored in forecaster.index_freq_.
     """
     serie_with_DatetimeIndex = pd.Series(
         data  = [1, 2, 3, 4, 5],
         index = pd.date_range(start='2022-01-01', periods=5)
     )
-    forecaster = ForecasterSarimax(regressor=Sarimax(order=(1, 0, 0)))
+    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 0, 0)))
     forecaster.fit(y=serie_with_DatetimeIndex)
-    expected = serie_with_DatetimeIndex.index.freqstr
+    expected = serie_with_DatetimeIndex.index.freq
     results = forecaster.index_freq_
 
     assert results == expected
@@ -79,7 +79,7 @@ def test_forecaster_index_step_stored_with_suppress_warnings(suppress_warnings):
     Test serie without DatetimeIndex, step is stored in forecaster.index_freq_.
     """
     y = pd.Series(data=np.arange(10))
-    forecaster = ForecasterSarimax(regressor=Sarimax(order=(1, 0, 0)))
+    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 0, 0)))
     forecaster.fit(y=y, suppress_warnings=suppress_warnings)
     expected = y.index.step
     results = forecaster.index_freq_
@@ -94,7 +94,7 @@ def test_fit_last_window_stored(store_last_window):
     """
     Test that values of last window are stored after fitting.
     """
-    forecaster = ForecasterSarimax(regressor=Sarimax(order=(1, 0, 0)))
+    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 0, 0)))
     forecaster.fit(y=pd.Series(np.arange(50)), 
                    store_last_window=store_last_window)
     expected = pd.Series(np.arange(50))
@@ -114,7 +114,7 @@ def test_fit_extended_index_stored(y, idx):
     Test that values of self.regressor.arima_res_.fittedvalues.index are 
     stored after fitting in forecaster.extended_index_.
     """
-    forecaster = ForecasterSarimax(regressor=Sarimax(order=(1, 0, 0)))
+    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 0, 0)))
     forecaster.fit(y=y)
 
     pd.testing.assert_index_equal(forecaster.extended_index_, idx)

@@ -108,7 +108,7 @@ def test_fit_correct_dict_create_transformer_series():
 
 def test_forecaster_DatetimeIndex_index_freq_stored():
     """
-    Test series.index.freqstr is stored in forecaster.index_freq.
+    Test series.index.freq is stored in forecaster.index_freq.
     """
     series = pd.DataFrame({'l1': pd.Series(np.arange(10)), 
                            'l2': pd.Series(np.arange(10))})
@@ -119,7 +119,7 @@ def test_forecaster_DatetimeIndex_index_freq_stored():
         LinearRegression(), level='l1', lags=3, steps=1
     )
     forecaster.fit(series=series)
-    expected = series.index.freqstr
+    expected = series.index.freq
     results = forecaster.index_freq_
 
     assert results == expected

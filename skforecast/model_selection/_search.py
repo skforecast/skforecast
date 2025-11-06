@@ -6,6 +6,7 @@
 # coding=utf-8
 
 from __future__ import annotations
+from typing_extensions import deprecated
 import os
 import logging
 from typing import Callable
@@ -17,12 +18,12 @@ from tqdm.auto import tqdm
 import optuna
 from optuna.samplers import TPESampler
 from sklearn.model_selection import ParameterGrid, ParameterSampler
-from ..exceptions import warn_skforecast_categories
+from ..exceptions import warn_skforecast_categories, runtime_deprecated
 from ..model_selection._split import TimeSeriesFold, OneStepAheadFold
 from ..model_selection._validation import (
     backtesting_forecaster, 
     backtesting_forecaster_multiseries,
-    backtesting_sarimax
+    backtesting_stats
 )
 from ..metrics import add_y_train_argument, _get_metric
 from ..model_selection._utils import (
@@ -2132,7 +2133,9 @@ def _bayesian_search_optuna_multiseries(
             
     return results, best_trial
 
-
+# TODO: Remove in version 0.20.0
+@runtime_deprecated(replacement="grid_search_stats", version="0.19.0", removal="0.20.0")
+@deprecated("`grid_search_sarimax` is deprecated since version 0.19.0; use `grid_search_stats` instead. It will be removed in version 0.20.0.")
 def grid_search_sarimax(
     forecaster: object,
     y: pd.Series,
@@ -2148,12 +2151,126 @@ def grid_search_sarimax(
     output_file: str | None = None
 ) -> pd.DataFrame:
     """
-    Exhaustive search over specified parameter values for a ForecasterSarimax object.
+    !!! warning "Deprecated"
+        This function is deprecated since skforecast 0.19. Please use `grid_search_stats` instead.
+
+    """
+
+    return grid_search_stats(
+        forecaster            = forecaster,
+        y                     = y,
+        cv                    = cv,
+        param_grid            = param_grid,
+        metric                = metric,
+        exog                  = exog,
+        return_best           = return_best,
+        n_jobs                = n_jobs,
+        verbose               = verbose,
+        suppress_warnings_fit = suppress_warnings_fit,
+        show_progress         = show_progress,
+        output_file           = output_file
+    )
+
+# TODO: Remove in version 0.20.0
+@runtime_deprecated(replacement="random_search_stats", version="0.19.0", removal="0.20.0")
+@deprecated("`random_search_sarimax` is deprecated since version 0.19.0; use `random_search_stats` instead. It will be removed in version 0.20.0.")
+def random_search_sarimax(
+    forecaster: object,
+    y: pd.Series,
+    cv: TimeSeriesFold,
+    param_distributions: dict,
+    metric: str | Callable | list[str | Callable],
+    exog: pd.Series | pd.DataFrame | None = None,
+    n_iter: int = 10,
+    random_state: int = 123,
+    return_best: bool = True,
+    n_jobs: int | str = 'auto',
+    verbose: bool = False,
+    suppress_warnings_fit: bool = False,
+    show_progress: bool = True,
+    output_file: str | None = None
+) -> pd.DataFrame:
+    """
+    !!! warning "Deprecated"
+        This function is deprecated since skforecast 0.19. Please use `random_search_stats` instead.
+    """
+    
+    return random_search_stats(
+        forecaster            = forecaster,
+        y                     = y,
+        cv                    = cv,
+        param_distributions   = param_distributions,
+        metric                = metric,
+        exog                  = exog,
+        n_iter                = n_iter,
+        random_state          = random_state,
+        return_best           = return_best,
+        n_jobs                = n_jobs,
+        verbose               = verbose,
+        suppress_warnings_fit = suppress_warnings_fit,
+        show_progress         = show_progress,
+        output_file           = output_file
+    )
+
+# TODO: Remove in version 0.20.0
+@runtime_deprecated(replacement="_evaluate_grid_hyperparameters_stats", version="0.19.0", removal="0.20.0")
+@deprecated("`_evaluate_grid_hyperparameters_sarimax` is deprecated since version 0.19.0; use `_evaluate_grid_hyperparameters_stats` instead. It will be removed in version 0.20.0.")
+def _evaluate_grid_hyperparameters_sarimax(
+    forecaster: object,
+    y: pd.Series,
+    cv: TimeSeriesFold,
+    param_grid: dict,
+    metric: str | Callable | list[str | Callable],
+    exog: pd.Series | pd.DataFrame | None = None,
+    return_best: bool = True,
+    n_jobs: int | str = 'auto',
+    verbose: bool = False,
+    suppress_warnings_fit: bool = False,
+    show_progress: bool = True,
+    output_file: str | None = None
+) -> pd.DataFrame:
+    """
+    !!! warning "Deprecated"
+        This function is deprecated since skforecast 0.19. Please use `_evaluate_grid_hyperparameters_stats` instead.
+    """
+
+    return _evaluate_grid_hyperparameters_stats(
+        forecaster            = forecaster,
+        y                     = y,
+        cv                    = cv,
+        param_grid            = param_grid,
+        metric                = metric,
+        exog                  = exog,
+        return_best           = return_best,
+        n_jobs                = n_jobs,
+        verbose               = verbose,
+        suppress_warnings_fit = suppress_warnings_fit,
+        show_progress         = show_progress,
+        output_file           = output_file
+    )
+
+
+def grid_search_stats(
+    forecaster: object,
+    y: pd.Series,
+    cv: TimeSeriesFold,
+    param_grid: dict,
+    metric: str | Callable | list[str | Callable],
+    exog: pd.Series | pd.DataFrame | None = None,
+    return_best: bool = True,
+    n_jobs: int | str = 'auto',
+    verbose: bool = False,
+    suppress_warnings_fit: bool = False,
+    show_progress: bool = True,
+    output_file: str | None = None
+) -> pd.DataFrame:
+    """
+    Exhaustive search over specified parameter values for a ForecasterStats object.
     Validation is done using time series backtesting.
     
     Parameters
     ----------
-    forecaster : ForecasterSarimax
+    forecaster : ForecasterStats
         Forecaster model.
     y : pandas Series
         Training time series. 
@@ -2206,7 +2323,7 @@ def grid_search_sarimax(
 
     param_grid = list(ParameterGrid(param_grid))
 
-    results = _evaluate_grid_hyperparameters_sarimax(
+    results = _evaluate_grid_hyperparameters_stats(
         forecaster            = forecaster,
         y                     = y,
         cv                    = cv,
@@ -2224,7 +2341,7 @@ def grid_search_sarimax(
     return results
 
 
-def random_search_sarimax(
+def random_search_stats(
     forecaster: object,
     y: pd.Series,
     cv: TimeSeriesFold,
@@ -2241,12 +2358,12 @@ def random_search_sarimax(
     output_file: str | None = None
 ) -> pd.DataFrame:
     """
-    Random search over specified parameter values or distributions for a Forecaster 
+    Random search over specified parameter values or distributions for a ForecasterStats 
     object. Validation is done using time series backtesting.
     
     Parameters
     ----------
-    forecaster : ForecasterSarimax
+    forecaster : ForecasterStats
         Forecaster model.
     y : pandas Series
         Training time series. 
@@ -2304,7 +2421,7 @@ def random_search_sarimax(
 
     param_grid = list(ParameterSampler(param_distributions, n_iter=n_iter, random_state=random_state))
 
-    results = _evaluate_grid_hyperparameters_sarimax(
+    results = _evaluate_grid_hyperparameters_stats(
         forecaster            = forecaster,
         y                     = y,
         cv                    = cv,
@@ -2322,7 +2439,7 @@ def random_search_sarimax(
     return results
 
 
-def _evaluate_grid_hyperparameters_sarimax(
+def _evaluate_grid_hyperparameters_stats(
     forecaster: object,
     y: pd.Series,
     cv: TimeSeriesFold,
@@ -2341,7 +2458,7 @@ def _evaluate_grid_hyperparameters_sarimax(
     
     Parameters
     ----------
-    forecaster : ForecasterSarimax
+    forecaster : ForecasterStats
         Forecaster model.
     y : pandas Series
         Training time series. 
@@ -2421,7 +2538,7 @@ def _evaluate_grid_hyperparameters_sarimax(
 
         try:
             forecaster.set_params(params)
-            metric_values = backtesting_sarimax(
+            metric_values = backtesting_stats(
                                 forecaster            = forecaster,
                                 y                     = y,
                                 cv                    = cv,
@@ -2435,8 +2552,8 @@ def _evaluate_grid_hyperparameters_sarimax(
                                 show_progress         = False
                             )[0]
         except Exception as e:
-                warnings.warn(f"Parameters skipped: {params}. {e}", RuntimeWarning)
-                continue
+            warnings.warn(f"Parameters skipped: {params}. {e}", RuntimeWarning)
+            continue
         metric_values = metric_values.iloc[0, :].to_list()
         warnings.filterwarnings(
             'ignore', category=RuntimeWarning, message= "The forecaster will be fit.*"

@@ -24,9 +24,8 @@ nav:
     - Skforecast 0.14 Migration guide: user_guides/migration-guide.ipynb
     - Input data: user_guides/input-data.ipynb
     - Single series Forecasters:
-      - Recursive multi-step forecasting: user_guides/autoregresive-forecaster.ipynb
+      - Recursive multi-step forecasting: user_guides/autoregressive-forecaster.ipynb
       - Direct multi-step forecasting: user_guides/direct-multi-step-forecasting.ipynb
-      - ARIMA and SARIMAX forecasting: user_guides/forecasting-sarimax-arima.ipynb
       - Forecasting baseline: user_guides/forecasting-baseline.ipynb
       - Autoregressive classification: user_guides/autoregressive-classification-forecasting.ipynb
     - Global Forecasters (multiple series):
@@ -34,6 +33,9 @@ nav:
       - Series with different lengths and different exogenous variables: user_guides/multi-series-with-different-length-and-different_exog.ipynb
       - Dependent multivariate series forecasting: user_guides/dependent-multi-series-multivariate-forecasting.ipynb
       - Deep learning Recurrent Neural Networks: user_guides/forecasting-with-deep-learning-rnn-lstm.ipynb
+    - Statistical Models:
+      - ARIMA and SARIMAX: user_guides/forecasting-sarimax-arima.ipynb
+      - ARAR: user_guides/forecasting-arar.ipynb
     - Feature Engineering:
       - Exogenous variables: user_guides/exogenous-variables.ipynb
       - Window and custom features: user_guides/window-features-and-custom-features.ipynb
@@ -58,10 +60,10 @@ nav:
       - Metrics in probabilistic forecasting: user_guides/probabilistic-forecasting-metrics.ipynb
       - Continuous Ranked Probability Score (CRPS): faq/probabilistic-forecasting-crps-score.ipynb
     - Model Explainability: user_guides/explainability.ipynb
-    - Model deployment:
+    - Drift Detection: user_guides/drift-detection.ipynb
+    - Model Deployment:
       - Save and load forecaster: user_guides/save-load-forecaster.ipynb
       - Forecaster in production: user_guides/forecaster-in-production.ipynb
-      - Drift detection: user_guides/drift-detection.ipynb
     - Plotting: user_guides/plotting.ipynb
     - Datasets: user_guides/datasets.ipynb
     - Additional Resources:
@@ -93,14 +95,15 @@ nav:
       - ForecasterRecursive: api/ForecasterRecursive.md
       - ForecasterRecursiveClassifier: api/ForecasterRecursiveClassifier.md
       - ForecasterRecursiveMultiSeries: api/ForecasterRecursiveMultiSeries.md
-      - ForecasterSarimax: api/ForecasterSarimax.md
+      - ForecasterStats: api/ForecasterStats.md
       - ForecasterEquivalentDate: api/ForecasterEquivalentDate.md
+      - ForecasterSarimax: api/ForecasterSarimax.md
     - direct:
       - ForecasterDirect: api/ForecasterDirect.md
       - ForecasterDirectMultiVariate: api/ForecasterDirectMultiVariate.md
     - deep_learning:
       - ForecasterRnn: api/ForecasterRnn.md
-    - sarimax: api/Sarimax.md
+    - stats: api/stats.md
     - model_selection: api/model_selection.md
     - feature_selection: api/feature_selection.md
     - preprocessing: api/preprocessing.md
@@ -123,6 +126,7 @@ nav:
     - Continuous Ranked Probability Score (CRPS): faq/probabilistic-forecasting-crps-score.ipynb
     - Calibration of probabilistic forecasting intervals: faq/probabilistic-forecasting-calibrate-intervals.ipynb
     - Benchmarking skforecast: faq/skforecast-benchmark.ipynb
+    - Benchmarking statistical models: faq/benchmarking-statistical-models.ipynb
     - Parallelization in skforecast: faq/parallelization-skforecast.ipynb
     - Profiling skforecast: faq/profiling-skforecast.ipynb
 
