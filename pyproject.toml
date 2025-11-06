@@ -25,6 +25,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 
 license = "BSD-3-Clause"
@@ -74,8 +75,8 @@ all = [
     "seaborn>=0.11, <0.14",
     "statsmodels>=0.12, <0.15",
     "keras>=3.0, <4.0",
-    'tensorflow>=2.18, <2.20; python_version < "3.13"',
-    'torch>=2.4, <2.8; python_version < "3.13"'
+    'tensorflow>=2.18, <2.21; python_version < "3.14"',
+    'torch>=2.4, <2.10; python_version < "3.14"'
 ]
 
 full = [
@@ -106,8 +107,8 @@ test = [
     "lightgbm>=4.0, <5.0",
     "xgboost>=2.1, <4.0",
     "keras>=3.0, <4.0",
-    'tensorflow>=2.18, <2.20; python_version < "3.13"',
-    "torch>=2.4, <2.9",
+    'tensorflow>=2.18, <2.21; python_version < "3.14"',
+    "torch>=2.4, <2.10",
     "tomli>=2.0",
     "pandas[parquet]>=1.5",
     "aeon >=1.3, <1.4"
