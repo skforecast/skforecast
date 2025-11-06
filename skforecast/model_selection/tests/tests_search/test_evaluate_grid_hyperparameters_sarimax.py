@@ -1,4 +1,4 @@
-# Unit test _evaluate_grid_hyperparameters_sarimax
+# Unit test _evaluate_grid_hyperparameters_stats
 # ==============================================================================
 import os
 import re
@@ -7,27 +7,27 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_absolute_error
 from sklearn.model_selection import ParameterGrid
-from skforecast.sarimax import Sarimax
-from skforecast.recursive import ForecasterSarimax
+from skforecast.stats import Sarimax
+from skforecast.recursive import ForecasterStats
 from skforecast.model_selection._split import TimeSeriesFold
-from skforecast.model_selection._search import _evaluate_grid_hyperparameters_sarimax
+from skforecast.model_selection._search import _evaluate_grid_hyperparameters_stats
 
 # Fixtures
-# from skforecast.recursive.tests.tests_forecaster_sarimax.fixtures_forecaster_sarimax import y_datetime
-from ....recursive.tests.tests_forecaster_sarimax.fixtures_forecaster_sarimax import y_datetime
-from ....recursive.tests.tests_forecaster_sarimax.fixtures_forecaster_sarimax import exog_datetime
+# from skforecast.recursive.tests.tests_forecaster_stats.fixtures_forecaster_stats import y_datetime
+from ....recursive.tests.tests_forecaster_stats.fixtures_forecaster_stats import y_datetime
+from ....recursive.tests.tests_forecaster_stats.fixtures_forecaster_stats import exog_datetime
 
 from tqdm import tqdm
 from functools import partialmethod
 tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)  # hide progress bar
 
 
-def test_ValueError_evaluate_grid_hyperparameters_sarimax_when_return_best_and_len_y_exog_different():
+def test_ValueError_evaluate_grid_hyperparameters_stats_when_return_best_and_len_y_exog_different():
     """
-    Test ValueError is raised in _evaluate_grid_hyperparameters_sarimax when return_best 
+    Test ValueError is raised in _evaluate_grid_hyperparameters_stats when return_best 
     and length of `y` and `exog` do not match.
     """
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
                      regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     exog_test = exog_datetime[:30].copy()
@@ -46,7 +46,7 @@ def test_ValueError_evaluate_grid_hyperparameters_sarimax_when_return_best_and_l
          f'length `exog`: ({len(exog_test)}), length `y`: ({len(y_datetime)})')
     )
     with pytest.raises(ValueError, match = err_msg):
-        _evaluate_grid_hyperparameters_sarimax(
+        _evaluate_grid_hyperparameters_stats(
             forecaster  = forecaster,
             y           = y_datetime,
             cv          = cv,
@@ -57,7 +57,7 @@ def test_ValueError_evaluate_grid_hyperparameters_sarimax_when_return_best_and_l
             verbose     = False
         )
 
-def test_evaluate_grid_hyperparameters_sarimax_warn_when_non_valid_params():
+def test_evaluate_grid_hyperparameters_stats_warn_when_non_valid_params():
     """
     Test that a warning is raised when non valid params are included in param_grid.
     """
@@ -68,7 +68,7 @@ def test_evaluate_grid_hyperparameters_sarimax_warn_when_non_valid_params():
         "trend": [None, "no-valid-value"],
     }
     param_grid = list(ParameterGrid(param_grid))
-    forecaster = ForecasterSarimax(regressor=Sarimax(order=(1, 1, 1), maxiter=500))
+    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 1, 1), maxiter=500))
     cv = TimeSeriesFold(steps=12, initial_train_size=20)
 
     msg = re.escape(
@@ -78,7 +78,7 @@ def test_evaluate_grid_hyperparameters_sarimax_warn_when_non_valid_params():
         "[1, 1, 0, 1] is `a + b*t + ct**3`. Received no-valid-value"
     )
     with pytest.warns(RuntimeWarning, match=msg):
-        results = _evaluate_grid_hyperparameters_sarimax(
+        results = _evaluate_grid_hyperparameters_stats(
             forecaster=forecaster,
             y=y_datetime,
             cv=cv,
@@ -102,12 +102,12 @@ def test_evaluate_grid_hyperparameters_sarimax_warn_when_non_valid_params():
     pd.testing.assert_frame_equal(results, expected_results)
 
 
-def test_exception_evaluate_grid_hyperparameters_sarimax_metric_list_duplicate_names():
+def test_exception_evaluate_grid_hyperparameters_stats_metric_list_duplicate_names():
     """
-    Test exception is raised in _evaluate_grid_hyperparameters_sarimax when a `list` of 
+    Test exception is raised in _evaluate_grid_hyperparameters_stats when a `list` of 
     metrics is used with duplicate names.
     """
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
                      regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
@@ -122,7 +122,7 @@ def test_exception_evaluate_grid_hyperparameters_sarimax_metric_list_duplicate_n
     
     err_msg = re.escape('When `metric` is a `list`, each metric name must be unique.')
     with pytest.raises(ValueError, match = err_msg):
-        _evaluate_grid_hyperparameters_sarimax(
+        _evaluate_grid_hyperparameters_stats(
             forecaster  = forecaster,
             y           = y_datetime,
             cv          = cv,
@@ -134,12 +134,12 @@ def test_exception_evaluate_grid_hyperparameters_sarimax_metric_list_duplicate_n
         )
 
 
-def test_output_evaluate_grid_hyperparameters_sarimax_with_mocked():
+def test_output_evaluate_grid_hyperparameters_stats_with_mocked():
     """
-    Test output of _evaluate_grid_hyperparameters_sarimax in ForecasterSarimax with mocked
+    Test output of _evaluate_grid_hyperparameters_stats in ForecasterStats with mocked
     (mocked done in Skforecast v0.7.0).
     """
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
                      regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
@@ -155,7 +155,7 @@ def test_output_evaluate_grid_hyperparameters_sarimax_with_mocked():
     param_grid = [{'order': (3, 2, 0), 'trend': None}, 
                   {'order': (3, 2, 0), 'trend': 'c'}]
 
-    results = _evaluate_grid_hyperparameters_sarimax(
+    results = _evaluate_grid_hyperparameters_stats(
                   forecaster  = forecaster,
                   y           = y_datetime,
                   cv          = cv,
@@ -177,12 +177,12 @@ def test_output_evaluate_grid_hyperparameters_sarimax_with_mocked():
     pd.testing.assert_frame_equal(results, expected_results, atol=0.0001)
 
 
-def test_output_evaluate_grid_hyperparameters_sarimax_exog_with_mocked():
+def test_output_evaluate_grid_hyperparameters_stats_exog_with_mocked():
     """
-    Test output of _evaluate_grid_hyperparameters_sarimax in ForecasterSarimax 
+    Test output of _evaluate_grid_hyperparameters_stats in ForecasterStats 
     with exog with mocked (mocked done in Skforecast v0.7.0).
     """
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
                      regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
@@ -198,7 +198,7 @@ def test_output_evaluate_grid_hyperparameters_sarimax_exog_with_mocked():
     param_grid = [{'order': (3, 2, 0), 'trend': None}, 
                   {'order': (3, 2, 0), 'trend': 'c'}]
 
-    results = _evaluate_grid_hyperparameters_sarimax(
+    results = _evaluate_grid_hyperparameters_stats(
                   forecaster  = forecaster,
                   y           = y_datetime,
                   cv          = cv,
@@ -221,12 +221,12 @@ def test_output_evaluate_grid_hyperparameters_sarimax_exog_with_mocked():
     pd.testing.assert_frame_equal(results, expected_results, atol=0.0001)
 
 
-def test_output_evaluate_grid_hyperparameters_sarimax_metric_list_with_mocked():
+def test_output_evaluate_grid_hyperparameters_stats_metric_list_with_mocked():
     """
-    Test output of _evaluate_grid_hyperparameters_sarimax in ForecasterSarimax 
+    Test output of _evaluate_grid_hyperparameters_stats in ForecasterStats 
     with multiple metrics with mocked (mocked done in Skforecast v0.7.0).
     """
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
                      regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
@@ -242,7 +242,7 @@ def test_output_evaluate_grid_hyperparameters_sarimax_metric_list_with_mocked():
     param_grid = [{'order': (3, 2, 0), 'trend': None}, 
                   {'order': (3, 2, 0), 'trend': 'c'}]
 
-    results = _evaluate_grid_hyperparameters_sarimax(
+    results = _evaluate_grid_hyperparameters_stats(
                   forecaster  = forecaster,
                   y           = y_datetime,
                   cv          = cv,
@@ -265,12 +265,12 @@ def test_output_evaluate_grid_hyperparameters_sarimax_metric_list_with_mocked():
     pd.testing.assert_frame_equal(results, expected_results, atol=0.0001)
     
 
-def test_evaluate_grid_hyperparameters_sarimax_when_return_best():
+def test_evaluate_grid_hyperparameters_stats_when_return_best():
     """
     Test forecaster is refitted when return_best=True in 
-    _evaluate_grid_hyperparameters_sarimax.
+    _evaluate_grid_hyperparameters_stats.
     """
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
                      regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
@@ -286,7 +286,7 @@ def test_evaluate_grid_hyperparameters_sarimax_when_return_best():
     param_grid = [{'order': (3, 2, 0), 'trend': None}, 
                   {'order': (3, 2, 0), 'trend': 'c'}]
 
-    _evaluate_grid_hyperparameters_sarimax(
+    _evaluate_grid_hyperparameters_stats(
         forecaster            = forecaster,
         y                     = y_datetime,
         cv                    = cv,
@@ -327,12 +327,12 @@ def test_evaluate_grid_hyperparameters_sarimax_when_return_best():
     assert expected_params == forecaster.params
 
 
-def test_evaluate_grid_hyperparameters_sarimax_output_file_when_single_metric():
+def test_evaluate_grid_hyperparameters_stats_output_file_when_single_metric():
     """
     Test output file is created when output_file is passed to
-    _evaluate_grid_hyperparameters_sarimax and single metric.
+    _evaluate_grid_hyperparameters_stats and single metric.
     """
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
                      regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
@@ -347,9 +347,9 @@ def test_evaluate_grid_hyperparameters_sarimax_output_file_when_single_metric():
     
     param_grid = [{'order': (3, 2, 0), 'trend': None}, 
                   {'order': (1, 1, 0), 'trend': 'c'}]
-    output_file = 'test_evaluate_grid_hyperparameters_sarimax_output_file.txt'
+    output_file = 'test_evaluate_grid_hyperparameters_stats_output_file.txt'
 
-    results = _evaluate_grid_hyperparameters_sarimax(
+    results = _evaluate_grid_hyperparameters_stats(
                   forecaster  = forecaster,
                   y           = y_datetime,
                   cv          = cv,
@@ -374,12 +374,12 @@ def test_evaluate_grid_hyperparameters_sarimax_output_file_when_single_metric():
     os.remove(output_file)
 
 
-def test_evaluate_grid_hyperparameters_sarimax_output_file_when_metric_list():
+def test_evaluate_grid_hyperparameters_stats_output_file_when_metric_list():
     """
     Test output file is created when output_file is passed to
-    _evaluate_grid_hyperparameters_sarimax and metric as list.
+    _evaluate_grid_hyperparameters_stats and metric as list.
     """
-    forecaster = ForecasterSarimax(
+    forecaster = ForecasterStats(
                      regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
@@ -394,9 +394,9 @@ def test_evaluate_grid_hyperparameters_sarimax_output_file_when_metric_list():
     
     param_grid = [{'order': (3, 2, 0), 'trend': None}, 
                   {'order': (1, 1, 0), 'trend': 'c'}]
-    output_file = 'test_evaluate_grid_hyperparameters_sarimax_output_file.txt'
+    output_file = 'test_evaluate_grid_hyperparameters_stats_output_file.txt'
 
-    results = _evaluate_grid_hyperparameters_sarimax(
+    results = _evaluate_grid_hyperparameters_stats(
                   forecaster  = forecaster,
                   y           = y_datetime,
                   cv          = cv,

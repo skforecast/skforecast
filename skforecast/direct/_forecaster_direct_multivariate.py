@@ -20,7 +20,7 @@ from joblib import Parallel, delayed, cpu_count
 from sklearn.preprocessing import StandardScaler
 from itertools import chain
 
-import skforecast
+from .. import __version__
 from ..base import ForecasterBase
 from ..exceptions import DataTransformationWarning, ResidualsUsageWarning
 from ..utils import (
@@ -364,7 +364,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         self.creation_date                      = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
         self.is_fitted                          = False
         self.fit_date                           = None
-        self.skforecast_version                 = skforecast.__version__
+        self.skforecast_version                 = __version__
         self.python_version                     = sys.version.split(" ")[0]
         self.forecaster_id                      = forecaster_id
         self._probabilistic_mode                = "binned"
@@ -649,9 +649,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 </ul>
             </details>
             <p>
-                <a href="https://skforecast.org/{skforecast.__version__}/api/forecasterdirectmultivariate.html">&#128712 <strong>API Reference</strong></a>
+                <a href="https://skforecast.org/{__version__}/api/forecasterdirectmultivariate.html">&#128712 <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
-                <a href="https://skforecast.org/{skforecast.__version__}/user_guides/dependent-multi-series-multivariate-forecasting.html">&#128462 <strong>User Guide</strong></a>
+                <a href="https://skforecast.org/{__version__}/user_guides/dependent-multi-series-multivariate-forecasting.html">&#128462 <strong>User Guide</strong></a>
             </p>
         </div>
         """
@@ -1619,7 +1619,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         self.training_range_ = series.index[[0, -1]]
         self.index_type_ = type(series.index)
         if isinstance(series.index, pd.DatetimeIndex):
-            self.index_freq_ = series.index.freqstr
+            self.index_freq_ = series.index.freq
         else: 
             self.index_freq_ = series.index.step
         

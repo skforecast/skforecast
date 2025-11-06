@@ -4,7 +4,7 @@ import sys
 import re
 import pytest
 import numpy as np
-import skforecast
+from .... import __version__
 from skforecast.recursive import ForecasterEquivalentDate
 
 
@@ -14,9 +14,9 @@ def test_init_TypeError_offset_not_int_or_DateOffset():
     """
 
     err_msg = re.escape(
-        ("`offset` must be an integer greater than 0 or a "
-         "pandas.tseries.offsets. Find more information about offsets in "
-         "https://pandas.pydata.org/docs/reference/offset_frequency.html")
+        "`offset` must be an integer greater than 0 or a "
+        "pandas.tseries.offsets. Find more information about offsets in "
+        "https://pandas.pydata.org/docs/reference/offset_frequency.html"
     )
     with pytest.raises(TypeError, match=err_msg):
         ForecasterEquivalentDate(
@@ -57,7 +57,7 @@ def test_init_skforecast_version():
     forecaster = ForecasterEquivalentDate(
         offset=5, n_offsets=2, agg_func=np.mean, forecaster_id=None
     )
-    assert forecaster.skforecast_version == skforecast.__version__
+    assert forecaster.skforecast_version == __version__
 
 
 def test_init_python_version():

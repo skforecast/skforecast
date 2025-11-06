@@ -201,7 +201,7 @@ def test_fit_correct_dict_create_series_weights_weight_func_transformer_series()
 
 def test_forecaster_DatetimeIndex_index_freq_stored():
     """
-    Test serie_with_DatetimeIndex.index.freqstr is stored in forecaster.index_freq_.
+    Test serie_with_DatetimeIndex.index.freq is stored in forecaster.index_freq_.
     """
     series = {
         '1': pd.Series(np.arange(5)), 
@@ -214,7 +214,7 @@ def test_forecaster_DatetimeIndex_index_freq_stored():
     forecaster.fit(series=series)
     results = forecaster.index_freq_
 
-    expected = series['1'].index.freqstr
+    expected = series['1'].index.freq
 
     assert results == expected
 
