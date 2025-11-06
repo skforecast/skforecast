@@ -412,7 +412,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
         return info
 
-    # TODO: update user guide
     def _repr_html_(self):
         """
         HTML representation of the object.
@@ -489,7 +488,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             <p>
                 <a href="https://skforecast.org/{skforecast.__version__}/api/forecasterrecursiveclassifier.html">&#128712 <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
-                <a href="https://skforecast.org/{skforecast.__version__}/user_guides/forecasting-classification.html">&#128462 <strong>User Guide</strong></a>
+                <a href="https://skforecast.org/{skforecast.__version__}/user_guides/autoregressive-classification-forecasting.html">&#128462 <strong>User Guide</strong></a>
             </p>
         </div>
         """
