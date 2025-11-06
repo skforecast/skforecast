@@ -14,14 +14,43 @@ All significant changes to this project are documented in this release file.
 
 The main changes in this release are:
 
++ <span class="badge text-bg-feature">Feature</span> New class <code>[ForecasterRecursiveClassifier]</code> in the <code>[recursive]</code> module. This forecaster is designed to handle time series data where the target variable is categorical, enabling the prediction of future class labels based on historical patterns.
+
++ <span class="badge text-bg-feature">Feature</span> New class <code>[PopulationDriftDetector]</code> in the <code>[drift_detection]</code> module to detect population drift between reference and new data. Suitable to detect when forecasting models need to be retrained due to changes in the data distribution. It supports both target and exogenous variables, in single and multiseries forecasting.
+
++ <span class="badge text-bg-feature">Feature</span> New module <code>[stats]</code>. This module contains statistical models for time series forecasting that follows the scikit-learn interface.
+
++ <span class="badge text-bg-feature">Feature</span> New class <code>[Arar]</code> in the <code>[stats]</code> module. This class implements ARAR algorithm, a forecasting method that combines a "memory shortening" transformation with an autoregressive (AR) model.
+
++ <span class="badge text-bg-api-change">API Change</span> Class <code>[Sarimax]</code> has been moved to the new <code>[stats]</code> module.
+
++ <span class="badge text-bg-api-change">API Change</span> Class <code>[ForecasterSarimax]</code> has been deprecated in favor of the new <code>[ForecasterStats]</code> model in the <code>[recursive]</code> module. The new forecaster is compatible with a broader range of statistical models such as: sarimax, arima, arar and ets.
+
++ <span class="badge text-bg-danger">Fix</span> Fixed an issue that prevented using indices with frequencies containing metadata (e.g., `CustomBusinessDay`, `CustomBusinessHour`, or holiday/weekmask variants). The library now preserves full frequency metadata by using `freq` instead of `freqstr`, ensuring correct alignment and compatibility with custom date offsets. ([#1051](https://github.com/skforecast/skforecast/issues/1051))
+
 
 **Added**
+
++ <span class="badge text-bg-feature">Feature</span> New class <code>[ForecasterRecursiveClassifier]</code> in the <code>[recursive]</code> module. This forecaster is designed to handle time series data where the target variable is categorical, enabling the prediction of future class labels based on historical patterns.
+
++ New class <code>[PopulationDriftDetector]</code> in the <code>[drift_detection]</code> module to detect population drift between reference and new data. Suitable to detect when forecasting models need to be retrained due to changes in the data distribution. It supports both target and exogenous variables, in single and multiseries forecasting.
+
++ <span class="badge text-bg-feature">Feature</span> New module <code>[stats]</code>. This module contains statistical models for time series forecasting that follows the scikit-learn interface.
+
++ <span class="badge text-bg-feature">Feature</span> New class <code>[Arar]</code> in the <code>[stats]</code> module. This class implements ARAR algorithm, a forecasting method that combines a "memory shortening" transformation with an autoregressive (AR) model.
+
++ New function <code>[reshape_series_exog_dict_to_long]</code> in the <code>[preprocessing]</code> module to reshape series and exogenous variables from a dictionary format into a long-format pandas DataFrame with a MultiIndex. The first level of the index is the series name, and the second level is the time index.
 
 
 **Changed**
 
++ <span class="badge text-bg-api-change">API Change</span> Class <code>[Sarimax]</code> has been moved to the new <code>[stats]</code> module.
+
++ <span class="badge text-bg-api-change">API Change</span> Class <code>[ForecasterSarimax]</code> has been deprecated in favor of the new <code>[ForecasterStats]</code> model in the <code>[recursive]</code> module. The new forecaster is compatible with a broader range of statistical models such as: sarimax, arima, arar and ets.
 
 **Fixed**
+
++ Fixed an issue that prevented using indices with frequencies containing metadata (e.g., `CustomBusinessDay`, `CustomBusinessHour`, or holiday/weekmask variants). The library now preserves full frequency metadata by using `freq` instead of `freqstr`, ensuring correct alignment and compatibility with custom date offsets. ([#1051](https://github.com/skforecast/skforecast/issues/1051))
 
 
 ## 0.18.0 <small>Sep 22, 2025</small> { id="0.18.0" }
@@ -1256,6 +1285,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 
 <!-- Links to API Reference -->
 <!-- Forecasters -->
+[recursive]: ../api/forecasterrecursive.html
 [ForecasterRecursive]: ../api/forecasterrecursive.html
 [ForecasterRecursiveClassifier]: ../api/forecasterrecursiveclassifier.html
 [ForecasterDirect]: ../api/forecasterdirect.html
@@ -1264,8 +1294,15 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [ForecasterRNN]: ../api/forecasterrnn.html
 [create_and_compile_model]: ../api/forecasterrnn.html#skforecast.deep_learning.utils.create_and_compile_model
 [ForecasterSarimax]: ../api/forecastersarimax.html
-[Sarimax]: ../api/sarimax.html
+[ForecasterStats]: ../api/forecasterstats.html
 [ForecasterEquivalentDate]: ../api/forecasterequivalentdate.html
+[ForecasterRecursiveClassifier]: ../api/forecasterrecursiveclassifier.html
+
+
+<!-- stats -->
+[stats]: ../api/stats.html
+[Sarimax]: ../api/sarimax.html
+[Arar]: ../api/arar.html
 
 <!-- model_selection -->
 [model_selection]: ../api/model_selection.html
@@ -1299,6 +1336,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [reshape_series_wide_to_long]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.reshape_series_wide_to_long
 [reshape_series_long_to_dict]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.reshape_series_long_to_dict
 [reshape_exog_long_to_dict]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.reshape_exog_long_to_dict
+[reshape_series_exog_dict_to_long]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.reshape_series_exog_dict_to_long
 [TimeSeriesDifferentiator]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.TimeSeriesDifferentiator
 [QuantileBinner]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.QuantileBinner
 [ConformalIntervalCalibrator]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.ConformalIntervalCalibrator
@@ -1306,6 +1344,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 <!-- drift_detection -->
 [drift_detection]: ../api/drift_detection.html
 [RangeDriftDetector]: ../api/drift_detection.html#skforecast.drift_detection._range_drift.RangeDriftDetector
+[PopulationDriftDetector]: ../api/drift_detection.html#skforecast.drift_detection._population_drift.PopulationDriftDetector
 
 <!-- metrics -->
 [metrics]: ../api/metrics.html
