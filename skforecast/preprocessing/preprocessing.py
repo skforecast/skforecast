@@ -1887,11 +1887,11 @@ class RollingFeaturesClassification():
         elif stat == 'mode':
             return rolling_obj.apply(lambda x: scipy_mode(x)[0], raw=True)
         elif stat == 'entropy':
-            return rolling_obj.apply(lambda x: _entropy(x), raw=True)
+            return rolling_obj.apply(_entropy, raw=True)
         elif stat == 'n_changes':
-            return rolling_obj.apply(lambda x: _n_changes_jit(x), raw=True)
+            return rolling_obj.apply(_n_changes_jit, raw=True)
         elif stat == 'n_unique':
-            return rolling_obj.apply(lambda x: _n_unique_jit(x), raw=True)
+            return rolling_obj.apply(_n_unique_jit, raw=True)
         else:
             raise ValueError(f"Statistic '{stat}' is not implemented.")
 

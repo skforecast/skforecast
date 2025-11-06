@@ -1105,7 +1105,7 @@ def _calculate_metrics_backtesting_multiseries(
         "mean_absolute_percentage_error",
         "mean_squared_log_error",
         "median_absolute_error",
-        "symmetric_mean_absolute_percentage_error"
+        "symmetric_mean_absolute_percentage_error",
 
         # Classification metrics
         "accuracy_score",
