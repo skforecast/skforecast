@@ -15,10 +15,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Set up Python 3.12
+      - name: Set up Python 3.13
         uses: actions/setup-python@v6
         with:
-          python-version: '3.12'
+          python-version: '3.13'
 
       - name: Install dependencies
         run: |

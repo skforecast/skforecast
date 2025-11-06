@@ -21,6 +21,8 @@ The main changes in this release are:
 
 **Added**
 
++ Support for `Python 3.14`.
+
 + New class <code>[PopulationDriftDetector]</code> in the <code>[drift_detection]</code> module to detect population drift between reference and new data. Suitable to detect when forecasting models need to be retrained due to changes in the data distribution. It supports both target and exogenous variables, in single and multiseries forecasting.
 
 + New function <code>[reshape_series_exog_dict_to_long]</code> in the <code>[preprocessing]</code> module to reshape series and exogenous variables from a dictionary format into a long-format pandas DataFrame with a MultiIndex. The first level of the index is the series name, and the second level is the time index.
