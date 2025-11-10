@@ -295,7 +295,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
         self.encoder = OrdinalEncoder(
                            categories = 'auto',
-                           dtype      = float if features_encoding == 'ordinal' else int
+                           dtype      = int if self.use_native_categoricals else float
                        )
 
         self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
@@ -652,7 +652,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
         return X_train_window_features, X_train_window_features_names_out_
 
-
     def _create_train_X_y(
         self,
         y: pd.Series,
@@ -661,12 +660,14 @@ class ForecasterRecursiveClassifier(ForecasterBase):
     ) -> tuple[
         pd.DataFrame, 
         pd.Series, 
+        dict[str, Any],
         list[str], 
         list[str], 
         list[str], 
         list[str], 
         dict[str, type],
-        dict[str, type]
+        dict[str, type],
+        pd.DataFrame
     ]:
         """
         Create training matrices from univariate time series and exogenous
@@ -688,6 +689,8 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             Training values (predictors).
         y_train : pandas Series
             Values of the time series related to each row of `X_train`.
+        y_encoding_info_ : dict
+            Information related to the encoding of the target variable.
         exog_names_in_ : list
             Names of the exogenous variables used during training.
         X_train_window_features_names_out_ : list
@@ -707,6 +710,11 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             Type of each exogenous variable/s used in training after the transformation
             applied by `transformer_exog`. If `transformer_exog` is not used, it 
             is equal to `exog_dtypes_in_`.
+        last_window_ : pandas DataFrame
+            This window represents the most recent data observed by the predictor
+            during its training phase. It contains the values needed to predict the
+            next step immediately after the training data. These values are stored
+            in the original scale of the time series before undergoing any transformation.
 
         """
 
@@ -742,7 +750,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             encoding_mapping_ = {}
             y_encoded = self.encoder.fit_transform(y_values.reshape(-1, 1)).ravel()
             for i, cat in enumerate(self.encoder.categories_[0]):
-                encoding_mapping_[cat] = i if self.features_encoding != 'ordinal' else float(i)
+                encoding_mapping_[cat] = i if self.use_native_categoricals else float(i)
         else:
             encoding_mapping_ = self.encoding_mapping_
             y_encoded = self.encoder.transform(y_values.reshape(-1, 1)).ravel()
