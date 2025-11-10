@@ -1297,71 +1297,90 @@ def test_create_train_X_y_output_when_transformer_exog():
     pd.testing.assert_frame_equal(results[9], expected[9])
 
 
-# =========================================================================
-# TODO: Continue from here
-# =========================================================================
-
-
 def test_create_train_X_y_output_when_window_features_and_exog():
     """
     Test the output of _create_train_X_y when using window_features and exog 
     with datetime index.
     """
     y_datetime = pd.Series(
-        np.arange(15), index=pd.date_range('2000-01-01', periods=15, freq='D'),
-        name='y', dtype=float
+        np.array(['a', 'b', 'c', 'a', 'b', 'c', 'a', 'b', 'c', 'c', 'b', 'a', 'b', 'b', 'c']), 
+        index=pd.date_range('2000-01-01', periods=15, freq='D'),
+        name='y'
     )
     exog_datetime = pd.Series(
         np.arange(100, 115), index=pd.date_range('2000-01-01', periods=15, freq='D'),
         name='exog', dtype=float
     )
     rolling = RollingFeaturesClassification(
-        stats=['mean', 'median', 'sum'], window_sizes=[5, 5, 6]
+        stats=['proportion', 'mode'], window_sizes=[5, 6]
     )
 
-    forecaster = ForecasterRecursiveClassifier(LogisticRegression(), lags=5, window_features=rolling)
+    forecaster = ForecasterRecursiveClassifier(
+        LogisticRegression(), lags=5, window_features=rolling
+    )
     results = forecaster._create_train_X_y(y=y_datetime, exog=exog_datetime)
     
     expected = (
         pd.DataFrame(
-            data = np.array([[5., 4., 3., 2., 1., 3., 3., 15., 106.],
-                             [6., 5., 4., 3., 2., 4., 4., 21., 107.],
-                             [7., 6., 5., 4., 3., 5., 5., 27., 108.],
-                             [8., 7., 6., 5., 4., 6., 6., 33., 109.],
-                             [9., 8., 7., 6., 5., 7., 7., 39., 110.],
-                             [10., 9., 8., 7., 6., 8., 8., 45., 111.],
-                             [11., 10., 9., 8., 7., 9., 9., 51., 112.],
-                             [12., 11., 10., 9., 8., 10., 10., 57., 113.],
-                             [13., 12., 11., 10., 9., 11., 11., 63., 114.]]),
+            data=np.array(
+                [
+                    [2.0, 1.0, 0.0, 2.0, 1.0, 0.2, 0.4, 0.4, 0.0, 106.0],
+                    [0.0, 2.0, 1.0, 0.0, 2.0, 0.4, 0.2, 0.4, 0.0, 107.0],
+                    [1.0, 0.0, 2.0, 1.0, 0.0, 0.4, 0.4, 0.2, 0.0, 108.0],
+                    [2.0, 1.0, 0.0, 2.0, 1.0, 0.2, 0.4, 0.4, 0.0, 109.0],
+                    [2.0, 2.0, 1.0, 0.0, 2.0, 0.2, 0.2, 0.6, 2.0, 110.0],
+                    [1.0, 2.0, 2.0, 1.0, 0.0, 0.2, 0.4, 0.4, 2.0, 111.0],
+                    [0.0, 1.0, 2.0, 2.0, 1.0, 0.2, 0.4, 0.4, 0.0, 112.0],
+                    [1.0, 0.0, 1.0, 2.0, 2.0, 0.2, 0.4, 0.4, 1.0, 113.0],
+                    [1.0, 1.0, 0.0, 1.0, 2.0, 0.2, 0.6, 0.2, 1.0, 114.0],
+                ]
+            ),
             index   = pd.date_range('2000-01-07', periods=9, freq='D'),
-            columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
-                       'roll_mean_5', 'roll_median_5', 'roll_sum_6', 'exog']
+            columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5',
+                       'roll_proportion_5_class_0.0', 'roll_proportion_5_class_1.0',
+                       'roll_proportion_5_class_2.0', 'roll_mode_6', 'exog']
         ),
         pd.Series(
-            data  = np.array([6, 7, 8, 9, 10, 11, 12, 13, 14]),
+            data  = np.array([0., 1., 2., 2., 1., 0., 1., 1., 2.]),
             index = pd.date_range('2000-01-07', periods=9, freq='D'),
             name  = 'y',
             dtype = float
         ),
+        {
+            'classes_': ['a', 'b', 'c'],
+            'class_codes_': [0, 1, 2],
+            'n_classes_': 3,
+            'encoding_mapping_': {'a': 0, 'b': 1, 'c': 2}
+        },
         ['exog'],
-        ['roll_mean_5', 'roll_median_5', 'roll_sum_6'],
+        ['roll_proportion_5_class_0.0', 'roll_proportion_5_class_1.0',
+         'roll_proportion_5_class_2.0', 'roll_mode_6'],
         ['exog'],
-        ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
-         'roll_mean_5', 'roll_median_5', 'roll_sum_6', 'exog'],
+        ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5',
+         'roll_proportion_5_class_0.0', 'roll_proportion_5_class_1.0',
+         'roll_proportion_5_class_2.0', 'roll_mode_6', 'exog'],
         {'exog': exog_datetime.dtypes},
-        {'exog': exog_datetime.dtypes}
+        {'exog': exog_datetime.dtypes},
+        pd.DataFrame(
+            data = np.array(['c', 'b', 'a', 'b', 'b', 'c']),
+            index   = pd.date_range('2000-01-10', periods=6, freq='D'),
+            columns = ['y']
+        )
     )
 
     pd.testing.assert_frame_equal(results[0], expected[0])
     pd.testing.assert_series_equal(results[1], expected[1])
-    assert results[2] == expected[2]
+    for k in results[2].keys():
+        assert results[2][k] == expected[2][k]
     assert results[3] == expected[3]
     assert results[4] == expected[4]
     assert results[5] == expected[5]
-    for k in results[6].keys():
-        assert results[6][k] == expected[6][k]
+    assert results[6] == expected[6]
     for k in results[7].keys():
         assert results[7][k] == expected[7][k]
+    for k in results[8].keys():
+        assert results[8][k] == expected[8][k]
+    pd.testing.assert_frame_equal(results[9], expected[9])
 
 
 def test_create_train_X_y_output_when_two_window_features_and_exog():
@@ -1370,194 +1389,161 @@ def test_create_train_X_y_output_when_two_window_features_and_exog():
     with datetime index.
     """
     y_datetime = pd.Series(
-        np.arange(15), index=pd.date_range('2000-01-01', periods=15, freq='D'),
-        name='y', dtype=float
+        np.array(['a', 'b', 'c', 'a', 'b', 'c', 'a', 'b', 'c', 'c', 'b', 'a', 'b', 'b', 'c']), 
+        index=pd.date_range('2000-01-01', periods=15, freq='D'),
+        name='y'
     )
     exog_datetime = pd.Series(
         np.arange(100, 115), index=pd.date_range('2000-01-01', periods=15, freq='D'),
         name='exog', dtype=float
     )
-    rolling = RollingFeaturesClassification(stats=['mean', 'median'], window_sizes=[5, 5])
-    rolling_2 = RollingFeaturesClassification(stats='sum', window_sizes=[6])
+    rolling = RollingFeaturesClassification(stats='proportion', window_sizes=[5])
+    rolling_2 = RollingFeaturesClassification(stats='mode', window_sizes=6)
 
     forecaster = ForecasterRecursiveClassifier(
         LogisticRegression(), lags=5, window_features=[rolling, rolling_2]
     )
     results = forecaster._create_train_X_y(y=y_datetime, exog=exog_datetime)
-
+    
     expected = (
         pd.DataFrame(
-            data = np.array([[5., 4., 3., 2., 1., 3., 3., 15., 106.],
-                             [6., 5., 4., 3., 2., 4., 4., 21., 107.],
-                             [7., 6., 5., 4., 3., 5., 5., 27., 108.],
-                             [8., 7., 6., 5., 4., 6., 6., 33., 109.],
-                             [9., 8., 7., 6., 5., 7., 7., 39., 110.],
-                             [10., 9., 8., 7., 6., 8., 8., 45., 111.],
-                             [11., 10., 9., 8., 7., 9., 9., 51., 112.],
-                             [12., 11., 10., 9., 8., 10., 10., 57., 113.],
-                             [13., 12., 11., 10., 9., 11., 11., 63., 114.]]),
+            data=np.array(
+                [
+                    [2.0, 1.0, 0.0, 2.0, 1.0, 0.2, 0.4, 0.4, 0.0, 106.0],
+                    [0.0, 2.0, 1.0, 0.0, 2.0, 0.4, 0.2, 0.4, 0.0, 107.0],
+                    [1.0, 0.0, 2.0, 1.0, 0.0, 0.4, 0.4, 0.2, 0.0, 108.0],
+                    [2.0, 1.0, 0.0, 2.0, 1.0, 0.2, 0.4, 0.4, 0.0, 109.0],
+                    [2.0, 2.0, 1.0, 0.0, 2.0, 0.2, 0.2, 0.6, 2.0, 110.0],
+                    [1.0, 2.0, 2.0, 1.0, 0.0, 0.2, 0.4, 0.4, 2.0, 111.0],
+                    [0.0, 1.0, 2.0, 2.0, 1.0, 0.2, 0.4, 0.4, 0.0, 112.0],
+                    [1.0, 0.0, 1.0, 2.0, 2.0, 0.2, 0.4, 0.4, 1.0, 113.0],
+                    [1.0, 1.0, 0.0, 1.0, 2.0, 0.2, 0.6, 0.2, 1.0, 114.0],
+                ]
+            ),
             index   = pd.date_range('2000-01-07', periods=9, freq='D'),
-            columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
-                       'roll_mean_5', 'roll_median_5', 'roll_sum_6', 'exog']
+            columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5',
+                       'roll_proportion_5_class_0.0', 'roll_proportion_5_class_1.0',
+                       'roll_proportion_5_class_2.0', 'roll_mode_6', 'exog']
         ),
         pd.Series(
-            data  = np.array([6, 7, 8, 9, 10, 11, 12, 13, 14]),
+            data  = np.array([0., 1., 2., 2., 1., 0., 1., 1., 2.]),
             index = pd.date_range('2000-01-07', periods=9, freq='D'),
             name  = 'y',
             dtype = float
         ),
+        {
+            'classes_': ['a', 'b', 'c'],
+            'class_codes_': [0, 1, 2],
+            'n_classes_': 3,
+            'encoding_mapping_': {'a': 0, 'b': 1, 'c': 2}
+        },
         ['exog'],
-        ['roll_mean_5', 'roll_median_5', 'roll_sum_6'],
+        ['roll_proportion_5_class_0.0', 'roll_proportion_5_class_1.0',
+         'roll_proportion_5_class_2.0', 'roll_mode_6'],
         ['exog'],
-        ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
-         'roll_mean_5', 'roll_median_5', 'roll_sum_6', 'exog'],
+        ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5',
+         'roll_proportion_5_class_0.0', 'roll_proportion_5_class_1.0',
+         'roll_proportion_5_class_2.0', 'roll_mode_6', 'exog'],
         {'exog': exog_datetime.dtypes},
-        {'exog': exog_datetime.dtypes}
+        {'exog': exog_datetime.dtypes},
+        pd.DataFrame(
+            data = np.array(['c', 'b', 'a', 'b', 'b', 'c']),
+            index   = pd.date_range('2000-01-10', periods=6, freq='D'),
+            columns = ['y']
+        )
     )
 
     pd.testing.assert_frame_equal(results[0], expected[0])
     pd.testing.assert_series_equal(results[1], expected[1])
-    assert results[2] == expected[2]
+    for k in results[2].keys():
+        assert results[2][k] == expected[2][k]
     assert results[3] == expected[3]
     assert results[4] == expected[4]
     assert results[5] == expected[5]
-    for k in results[6].keys():
-        assert results[6][k] == expected[6][k]
+    assert results[6] == expected[6]
     for k in results[7].keys():
         assert results[7][k] == expected[7][k]
+    for k in results[8].keys():
+        assert results[8][k] == expected[8][k]
+    pd.testing.assert_frame_equal(results[9], expected[9])
 
 
-def test_create_train_X_y_output_when_window_features_lags_None_and_exog():
+def test_create_train_X_y_output_when_window_features_lags_None_and_exog_store_last_window_False():
     """
     Test the output of _create_train_X_y when using window_features and exog 
-    with datetime index and lags=None.
+    with datetime index, lags=None and store_last_window is False.
     """
     y_datetime = pd.Series(
-        np.arange(15), index=pd.date_range('2000-01-01', periods=15, freq='D'),
-        name='y', dtype=float
+        np.array(['a', 'b', 'c', 'a', 'b', 'c', 'a', 'b', 'c', 'c', 'b', 'a', 'b', 'b', 'c']), 
+        index=pd.date_range('2000-01-01', periods=15, freq='D'),
+        name='y'
     )
     exog_datetime = pd.Series(
         np.arange(100, 115), index=pd.date_range('2000-01-01', periods=15, freq='D'),
         name='exog', dtype=float
     )
-    rolling = RollingFeaturesClassification(
-        stats=['mean', 'median', 'sum'], window_sizes=[5, 5, 6]
-    )
+    rolling = RollingFeaturesClassification(stats='proportion', window_sizes=[5])
+    rolling_2 = RollingFeaturesClassification(stats='mode', window_sizes=6)
 
-    forecaster = ForecasterRecursiveClassifier(LogisticRegression(), lags=None, window_features=rolling)
-    results = forecaster._create_train_X_y(y=y_datetime, exog=exog_datetime)
+    forecaster = ForecasterRecursiveClassifier(
+        LogisticRegression(), lags=None, window_features=[rolling, rolling_2]
+    )
+    results = forecaster._create_train_X_y(
+        y=y_datetime, exog=exog_datetime, store_last_window=False
+    )
     
     expected = (
         pd.DataFrame(
-            data = np.array([[3., 3., 15., 106.],
-                             [4., 4., 21., 107.],
-                             [5., 5., 27., 108.],
-                             [6., 6., 33., 109.],
-                             [7., 7., 39., 110.],
-                             [8., 8., 45., 111.],
-                             [9., 9., 51., 112.],
-                             [10., 10., 57., 113.],
-                             [11., 11., 63., 114.]]),
+            data=np.array(
+                [
+                    [0.2, 0.4, 0.4, 0.0, 106.0],
+                    [0.4, 0.2, 0.4, 0.0, 107.0],
+                    [0.4, 0.4, 0.2, 0.0, 108.0],
+                    [0.2, 0.4, 0.4, 0.0, 109.0],
+                    [0.2, 0.2, 0.6, 2.0, 110.0],
+                    [0.2, 0.4, 0.4, 2.0, 111.0],
+                    [0.2, 0.4, 0.4, 0.0, 112.0],
+                    [0.2, 0.4, 0.4, 1.0, 113.0],
+                    [0.2, 0.6, 0.2, 1.0, 114.0],
+                ]
+            ),
             index   = pd.date_range('2000-01-07', periods=9, freq='D'),
-            columns = ['roll_mean_5', 'roll_median_5', 'roll_sum_6', 'exog']
+            columns = ['roll_proportion_5_class_0.0', 'roll_proportion_5_class_1.0',
+                       'roll_proportion_5_class_2.0', 'roll_mode_6', 'exog']
         ),
         pd.Series(
-            data  = np.array([6, 7, 8, 9, 10, 11, 12, 13, 14]),
+            data  = np.array([0., 1., 2., 2., 1., 0., 1., 1., 2.]),
             index = pd.date_range('2000-01-07', periods=9, freq='D'),
             name  = 'y',
             dtype = float
         ),
+        {
+            'classes_': ['a', 'b', 'c'],
+            'class_codes_': [0, 1, 2],
+            'n_classes_': 3,
+            'encoding_mapping_': {'a': 0, 'b': 1, 'c': 2}
+        },
         ['exog'],
-        ['roll_mean_5', 'roll_median_5', 'roll_sum_6'],
+        ['roll_proportion_5_class_0.0', 'roll_proportion_5_class_1.0',
+         'roll_proportion_5_class_2.0', 'roll_mode_6'],
         ['exog'],
-        ['roll_mean_5', 'roll_median_5', 'roll_sum_6', 'exog'],
+        ['roll_proportion_5_class_0.0', 'roll_proportion_5_class_1.0',
+         'roll_proportion_5_class_2.0', 'roll_mode_6', 'exog'],
         {'exog': exog_datetime.dtypes},
-        {'exog': exog_datetime.dtypes}
+        {'exog': exog_datetime.dtypes},
+        None
     )
 
     pd.testing.assert_frame_equal(results[0], expected[0])
     pd.testing.assert_series_equal(results[1], expected[1])
-    assert results[2] == expected[2]
+    for k in results[2].keys():
+        assert results[2][k] == expected[2][k]
     assert results[3] == expected[3]
     assert results[4] == expected[4]
     assert results[5] == expected[5]
-    for k in results[6].keys():
-        assert results[6][k] == expected[6][k]
+    assert results[6] == expected[6]
     for k in results[7].keys():
         assert results[7][k] == expected[7][k]
-
-
-def test_create_train_X_y_output_when_window_features_and_exog_transformers_diff():
-    """
-    Test the output of _create_train_X_y when using window_features, exog, 
-    transformers and differentiation.
-    """
-    y_datetime = pd.Series(
-        [25.3, 29.1, 27.5, 24.3, 2.1, 46.5, 31.3, 87.1, 133.5, 4.3],
-        index=pd.date_range('2000-01-01', periods=10, freq='D'),
-        name='y', dtype=float
-    )
-    exog = pd.DataFrame({
-               'col_1': [7.5, 24.4, 60.3, 57.3, 50.7, 41.4, 87.2, 47.4, 14.6, 73.5],
-               'col_2': ['a', 'a', 'a', 'a', 'a', 'b', 'b', 'b', 'b', 'b']},
-               index = pd.date_range('2000-01-01', periods=10, freq='D')
-           )
-
-    transformer_y = StandardScaler()
-    transformer_exog = ColumnTransformer(
-                            [('scale', StandardScaler(), ['col_1']),
-                             ('onehot', OneHotEncoder(), ['col_2'])],
-                            remainder = 'passthrough',
-                            verbose_feature_names_out = False
-                        )
-    rolling = RollingFeaturesClassification(
-        stats=['ratio_min_max', 'median'], window_sizes=4
-    )
-
-    forecaster = ForecasterRecursiveClassifier(
-                     LogisticRegression(), 
-                     lags             = [1, 5], 
-                     window_features  = rolling,
-                     transformer_y    = transformer_y,
-                     transformer_exog = transformer_exog,
-                     differentiation  = 2
-                 )
-    results = forecaster._create_train_X_y(y=y_datetime, exog=exog)
-    
-    expected = (
-        pd.DataFrame(
-            data = np.array([[-1.56436158, -0.14173746, -0.89489489, -0.27035108,  0.04040264,
-                               0.        ,  1.        ],
-                             [ 1.8635851 , -0.04199628, -0.83943662,  0.62469472, -1.32578962,
-                               0.        ,  1.        ],
-                             [-0.24672817, -0.49870587, -0.83943662,  0.75068358,  1.12752513,
-                               0.        ,  1.        ]]),
-            index   = pd.date_range('2000-01-08', periods=3, freq='D'),
-            columns = ['lag_1', 'lag_5', 'roll_ratio_min_max_4', 'roll_median_4',
-                       'col_1', 'col_2_a', 'col_2_b']
-        ),
-        pd.Series(
-            data  = np.array([1.8635851, -0.24672817, -4.60909217]),
-            index = pd.date_range('2000-01-08', periods=3, freq='D'),
-            name  = 'y',
-            dtype = float
-        ),
-        ['col_1', 'col_2'],
-        ['roll_ratio_min_max_4', 'roll_median_4'],
-        ['col_1', 'col_2_a', 'col_2_b'],
-        ['lag_1', 'lag_5', 'roll_ratio_min_max_4', 'roll_median_4',
-         'col_1', 'col_2_a', 'col_2_b'],
-        {'col_1': exog['col_1'].dtypes, 'col_2': exog['col_2'].dtypes},
-        {'col_1': exog['col_1'].dtypes, 'col_2_a': float, 'col_2_b': float}
-    )
-
-    pd.testing.assert_frame_equal(results[0], expected[0])
-    pd.testing.assert_series_equal(results[1], expected[1])
-    assert results[2] == expected[2]
-    assert results[3] == expected[3]
-    assert results[4] == expected[4]
-    assert results[5] == expected[5]
-    for k in results[6].keys():
-        assert results[6][k] == expected[6][k]
-    for k in results[7].keys():
-        assert results[7][k] == expected[7][k]
+    for k in results[8].keys():
+        assert results[8][k] == expected[8][k]
+    assert results[9] == expected[9]

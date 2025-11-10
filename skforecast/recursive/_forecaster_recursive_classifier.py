@@ -987,6 +987,8 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                     X_train[col].to_numpy().reshape(-1, 1)
                 ).ravel()
 
+                # TODO: Deberíamos convertir los lags a categorical?
+
             y_train = pd.Series(
                           data  = self.encoder.inverse_transform(y_train.to_numpy().reshape(-1, 1)).ravel(),
                           index = y_train.index,
