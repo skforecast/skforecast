@@ -885,16 +885,16 @@ def _bayesian_search_optuna(
             message  = "Choices for a categorical distribution should be*"
         )
         study.optimize(_objective, n_trials=n_trials, **kwargs_study_optimize)
-
-    best_trial = study.best_trial
+        best_trial = study.best_trial
+        search_space_best = search_space(best_trial)
 
     if output_file is not None:
         handler.close()
 
-    if search_space(best_trial).keys() != best_trial.params.keys():
+    if search_space_best.keys() != best_trial.params.keys():
         raise ValueError(
             f"Some of the key values do not match the search_space key names.\n"
-            f"  Search Space keys  : {list(search_space(best_trial).keys())}\n"
+            f"  Search Space keys  : {list(search_space_best.keys())}\n"
             f"  Trial objects keys : {list(best_trial.params.keys())}."
         )
     
@@ -2038,16 +2038,16 @@ def _bayesian_search_optuna_multiseries(
             message="Choices for a categorical distribution should be*"
         )
         study.optimize(_objective, n_trials=n_trials, **kwargs_study_optimize)
-
-    best_trial = study.best_trial
+        best_trial = study.best_trial
+        search_space_best = search_space(best_trial)
 
     if output_file is not None:
         handler.close()
        
-    if search_space(best_trial).keys() != best_trial.params.keys():
+    if search_space_best.keys() != best_trial.params.keys():
         raise ValueError(
             f"Some of the key values do not match the search_space key names.\n"
-            f"  Search Space keys  : {list(search_space(best_trial).keys())}\n"
+            f"  Search Space keys  : {list(search_space_best.keys())}\n"
             f"  Trial objects keys : {list(best_trial.params.keys())}"
         )
     
