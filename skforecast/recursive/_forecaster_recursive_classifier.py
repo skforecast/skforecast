@@ -495,6 +495,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
         return style + content
     
+    # TODO: Add test with CalibratedClassifierCV
     def _check_categorical_support(
         self, 
         regressor: object
@@ -504,10 +505,11 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         Checks by class name to avoid importing optional dependencies.
         """
 
-        if isinstance(regressor, Pipeline):
-            estimator = regressor[-1]
-        else:
-            estimator = regressor
+        estimator = regressor
+        if isinstance(estimator, Pipeline):
+            estimator = estimator[-1]
+        if type(estimator).__name__ == 'CalibratedClassifierCV':
+            estimator = estimator.estimator            
         
         class_name = type(estimator).__name__
         module_name = type(estimator).__module__
@@ -986,8 +988,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                 X_train[col] = self.encoder.inverse_transform(
                     X_train[col].to_numpy().reshape(-1, 1)
                 ).ravel()
-
-                # TODO: Deberíamos convertir los lags a categorical?
 
             y_train = pd.Series(
                           data  = self.encoder.inverse_transform(y_train.to_numpy().reshape(-1, 1)).ravel(),
@@ -1854,6 +1854,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
              if ws is not None]
         )
 
+    # TODO: Add support when regressor is a wrapper with CalibratedClassifierCV.
     def get_feature_importances(
         self,
         sort_importance: bool = True
