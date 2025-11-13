@@ -38,7 +38,7 @@ from ..exceptions import (
 )
 
 optional_dependencies = {
-    'sarimax': [
+    'stats': [
         'statsmodels>=0.12, <0.15'
     ],
     'deeplearning': [
