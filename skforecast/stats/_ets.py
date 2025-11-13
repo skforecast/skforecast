@@ -1,4 +1,11 @@
 
+################################################################################
+#                                 ETS                                          #
+#                                                                              #
+# This work by skforecast team is licensed under the BSD 3-Clause License.     #
+################################################################################
+# coding=utf-8
+
 from dataclasses import dataclass, field
 from typing import Optional, Tuple, Dict, Literal, List
 import numpy as np
