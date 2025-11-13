@@ -764,6 +764,11 @@ def _bayesian_search_optuna(
         (m if isinstance(m, str) else m.__name__): [] 
         for m in metric
     }
+
+    # TODO: Include direction maximize si es metrica de classification. SI no 
+    # tenemos la metrica identificada, lanzamos warning. Otra opción, si todas nuestras métricas
+    # son de maximizar, ponemos direction maximize para classi y minimize para regresión.
+    # y lanzamos warning si no está dentro de esa lista.
     
     if len(metric_dict) != len(metric):
         raise ValueError(
@@ -923,6 +928,7 @@ def _bayesian_search_optuna(
                   **metric_dict
               })
     
+    # TODO: Sort by maximize or minimize depending on metric.
     results = (
         results
         .sort_values(by=list(metric_dict.keys())[0], ascending=True)
