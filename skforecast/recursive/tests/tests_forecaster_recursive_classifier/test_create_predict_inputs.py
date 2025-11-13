@@ -1,48 +1,47 @@
-# Unit test _create_predict_inputs ForecasterRecursive
+# Unit test _create_predict_inputs ForecasterRecursiveClassifier
 # ==============================================================================
 import re
 import pytest
 import numpy as np
 import pandas as pd
 from sklearn.exceptions import NotFittedError
-from skforecast.recursive import ForecasterRecursive
+from skforecast.recursive import ForecasterRecursiveClassifier
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import OrdinalEncoder
 from sklearn.compose import make_column_transformer
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import HistGradientBoostingRegressor
 
 # Fixtures
 from .fixtures_forecaster_recursive_classifier import y as y_categorical
 from .fixtures_forecaster_recursive_classifier import exog as exog_categorical
-from .fixtures_forecaster_recursive_classifier import data  # to test results when using differentiation
 
 
 def test_create_predict_inputs_NotFittedError_when_fitted_is_False():
     """
     Test NotFittedError is raised when fitted is False.
     """
-    forecaster = ForecasterRecursive(
-                     regressor = LinearRegression(),
+    forecaster = ForecasterRecursiveClassifier(
+                     regressor = LogisticRegression(),
                      lags      = 5
                  )
 
     err_msg = re.escape(
-        ("This Forecaster instance is not fitted yet. Call `fit` with "
-         "appropriate arguments before using predict.")
+        "This Forecaster instance is not fitted yet. Call `fit` with "
+        "appropriate arguments before using predict."
     )
     with pytest.raises(NotFittedError, match = err_msg):
         forecaster._create_predict_inputs(steps=5)
 
 
-def test_create_predict_inputs_when_regressor_is_LinearRegression():
+def test_create_predict_inputs_when_regressor_is_LogisticRegression():
     """
-    Test _create_predict_inputs when using LinearRegression as regressor.
+    Test _create_predict_inputs when using LogisticRegression as regressor.
     """
-    forecaster = ForecasterRecursive(
-                     regressor = LinearRegression(),
+    forecaster = ForecasterRecursiveClassifier(
+                     regressor = LogisticRegression(),
                      lags      = 5
                  )
     forecaster.fit(y=pd.Series(np.arange(50, dtype=float), name='y'))
@@ -63,7 +62,7 @@ def test_create_predict_inputs_when_regressor_is_LinearRegression():
 
 def test_create_predict_inputs_when_with_transform_y():
     """
-    Test _create_predict_inputs when using LinearRegression as regressor and StandardScaler.
+    Test _create_predict_inputs when using LogisticRegression as regressor and StandardScaler.
     """
     y = pd.Series(
             np.array([-0.59,  0.02, -0.9,  1.09, -3.61,  0.72, -0.11, -0.4,  0.49,
@@ -72,8 +71,8 @@ def test_create_predict_inputs_when_with_transform_y():
             name = 'y'
         )
 
-    forecaster = ForecasterRecursive(
-                     regressor     = LinearRegression(),
+    forecaster = ForecasterRecursiveClassifier(
+                     regressor     = LogisticRegression(),
                      lags          = 5,
                      transformer_y = StandardScaler()
                  )
@@ -95,7 +94,7 @@ def test_create_predict_inputs_when_with_transform_y():
 
 def test_create_predict_inputs_when_with_transform_y_and_transform_exog_series():
     """
-    Test _create_predict_inputs when using LinearRegression as regressor, StandardScaler
+    Test _create_predict_inputs when using LogisticRegression as regressor, StandardScaler
     as transformer_y and StandardScaler as transformer_exog.
     """
     y = pd.Series(np.array([-0.59,  0.02, -0.9,  1.09, -3.61,  0.72, -0.11, -0.4]))
@@ -103,8 +102,8 @@ def test_create_predict_inputs_when_with_transform_y_and_transform_exog_series()
     exog_predict = exog.copy()
     exog_predict.index = pd.RangeIndex(start=8, stop=16)
 
-    forecaster = ForecasterRecursive(
-                     regressor        = LinearRegression(),
+    forecaster = ForecasterRecursiveClassifier(
+                     regressor        = LogisticRegression(),
                      lags             = 5,
                      transformer_y    = StandardScaler(),
                      transformer_exog = StandardScaler()
@@ -127,7 +126,7 @@ def test_create_predict_inputs_when_with_transform_y_and_transform_exog_series()
 
 def test_create_predict_inputs_when_with_transform_y_and_transform_exog_df():
     """
-    Test _create_predict_inputs when using LinearRegression as regressor, StandardScaler
+    Test _create_predict_inputs when using LogisticRegression as regressor, StandardScaler
     as transformer_y and transformer_exog as transformer_exog.
     """
     y = pd.Series(
@@ -148,8 +147,8 @@ def test_create_predict_inputs_when_with_transform_y_and_transform_exog_df():
                             verbose_feature_names_out = False
                        )
     
-    forecaster = ForecasterRecursive(
-                     regressor        = LinearRegression(),
+    forecaster = ForecasterRecursiveClassifier(
+                     regressor        = LogisticRegression(),
                      lags             = 5,
                      transformer_y    = transformer_y,
                      transformer_exog = transformer_exog
@@ -202,7 +201,7 @@ def test_create_predict_inputs_when_categorical_features_native_implementation_H
                            verbose_feature_names_out=False,
                        ).set_output(transform="pandas")
     
-    forecaster = ForecasterRecursive(
+    forecaster = ForecasterRecursiveClassifier(
                      regressor        = HistGradientBoostingRegressor(
                                             categorical_features = categorical_features,
                                             random_state         = 123
@@ -238,7 +237,7 @@ def test_create_predict_inputs_when_categorical_features_native_implementation_H
 
 def test_create_predict_inputs_when_with_exog_differentiation_is_1():
     """
-    Test _create_predict_inputs when using LinearRegression as regressor 
+    Test _create_predict_inputs when using LogisticRegression as regressor 
     and differentiation=1.
     """
 
@@ -251,8 +250,8 @@ def test_create_predict_inputs_when_with_exog_differentiation_is_1():
     )
     steps = data.index[-1]
 
-    forecaster = ForecasterRecursive(
-                     regressor       = LinearRegression(),
+    forecaster = ForecasterRecursiveClassifier(
+                     regressor       = LogisticRegression(),
                      lags            = 15,
                      differentiation = 1
                 )
