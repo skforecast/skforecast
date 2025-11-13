@@ -493,7 +493,8 @@ def check_one_step_ahead_input(
         "ForecasterRecursive",
         "ForecasterDirect",
         'ForecasterRecursiveMultiSeries',
-        'ForecasterDirectMultiVariate'
+        'ForecasterDirectMultiVariate',
+        'ForecasterRecursiveClassifier'
     ]
     if forecaster_name not in forecasters_one_step_ahead:
         raise TypeError(
@@ -504,6 +505,7 @@ def check_one_step_ahead_input(
     forecasters_uni = [
         "ForecasterRecursive",
         "ForecasterDirect",
+        "ForecasterRecursiveClassifier"
     ]
     forecasters_multi_no_dict = [
         "ForecasterDirectMultiVariate",
