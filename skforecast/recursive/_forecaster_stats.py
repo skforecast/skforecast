@@ -170,6 +170,9 @@ class ForecasterStats():
             'aeon.forecasting.stats._arima.ARIMA',
             'aeon.forecasting.stats._ets.ETS'
         ]
+        self.regressors_support_exog  = [
+            'skforecast.stats._sarimax.Sarimax',
+        ]
 
         regressor_type = f"{type(regressor).__module__}.{type(regressor).__name__}"
         if regressor_type not in self.valid_regressor_types:
@@ -386,6 +389,12 @@ class ForecasterStats():
 
         check_y(y=y)
         if exog is not None:
+            if self.regressor_type not in self.regressors_support_exog:
+                warnings.warn(
+                    f"The regressor {self.regressor_type} does not support exogenous variables, "
+                    f"they will be ignored during fit.",
+                    IgnoredArgumentWarning
+                )
             if len(exog) != len(y):
                 raise ValueError(
                     f"`exog` must have same number of samples as `y`. "
@@ -510,6 +519,13 @@ class ForecasterStats():
         # Needs to be a new variable to avoid arima_res_.append when using 
         # self.last_window. It already has it stored.
         last_window_check = last_window if last_window is not None else self.last_window_
+
+        if exog is not None and (self.regressor_type not in self.regressors_support_exog):
+            warnings.warn(
+                f"The regressor {self.regressor_type} does not support exogenous variables, "
+                f"they will be ignored during fit.",
+                IgnoredArgumentWarning
+            )
 
         check_predict_input(
             forecaster_name  = type(self).__name__,
