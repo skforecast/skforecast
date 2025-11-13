@@ -545,6 +545,7 @@ class PopulationDriftDetector:
                         )
                     else:
                         ref_categories = self.ref_categories_[feature]
+                        # TODO: ref_probs is reasigned here, look line 501
                         ref_probs = self.ref_probs_[feature].reindex(ref_categories, fill_value=0).values
                         # Map new data to reference categories
                         new_counts_dict = new.value_counts().to_dict()
