@@ -192,6 +192,12 @@ class ForecasterRecursiveClassifier(ForecasterBase):
     _probabilistic_mode: str, bool
         Private attribute used to indicate whether the forecaster should perform 
         some calculations during backtesting.
+    transformer_y : Ignored
+        Not used, present here for API consistency by convention.
+    differentiation : Ignored
+        Not used, present here for API consistency by convention.
+    differentiation_max : Ignored
+        Not used, present here for API consistency by convention.
 
     Notes
     -----
@@ -263,6 +269,9 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         self.python_version                     = sys.version.split(" ")[0]
         self.forecaster_id                      = forecaster_id
         self._probabilistic_mode                = "binned"  # TODO: Check
+        self.transformer_y                      = None  # NOTE: Ignored in this forecaster
+        self.differentiation                    = None  # NOTE: Ignored in this forecaster
+        self.differentiation_max                = None  # NOTE: Ignored in this forecaster
 
         self.features_encoding                  = features_encoding
         self.use_native_categoricals            = False
