@@ -268,7 +268,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         self.skforecast_version                 = skforecast.__version__
         self.python_version                     = sys.version.split(" ")[0]
         self.forecaster_id                      = forecaster_id
-        self._probabilistic_mode                = "binned"  # TODO: Check
+        self._probabilistic_mode                = False  # NOTE: Ignored in this forecaster
         self.transformer_y                      = None  # NOTE: Ignored in this forecaster
         self.differentiation                    = None  # NOTE: Ignored in this forecaster
         self.differentiation_max                = None  # NOTE: Ignored in this forecaster
@@ -504,17 +504,15 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
         return style + content
     
-    # TODO: Add test with CalibratedClassifierCV
     def _check_categorical_support(
         self, 
-        regressor: object
+        estimator: object
     ) -> bool:
         """
         Check if classifier supports native categorical features.
         Checks by class name to avoid importing optional dependencies.
         """
 
-        estimator = regressor
         if isinstance(estimator, Pipeline):
             estimator = estimator[-1]
         if type(estimator).__name__ == 'CalibratedClassifierCV':
@@ -1006,7 +1004,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
         return X_train, y_train
 
-    # TODO: Do this method
     def _train_test_split_one_step_ahead(
         self,
         y: pd.Series,

@@ -195,11 +195,11 @@ def test_create_train_X_y_output_when_y_is_series_of_int_and_exog_is_None():
 
     expected = (
         pd.DataFrame(
-            data = np.array([[1, 0, 2, 1, 0],
-                             [2, 1, 0, 2, 1],
-                             [0, 2, 1, 0, 2],
-                             [1, 0, 2, 1, 0],
-                             [2, 1, 0, 2, 1]]),
+            data = np.array([[1., 0., 2., 1., 0.],
+                             [2., 1., 0., 2., 1.],
+                             [0., 2., 1., 0., 2.],
+                             [1., 0., 2., 1., 0.],
+                             [2., 1., 0., 2., 1.]]),
             index   = pd.RangeIndex(start=5, stop=10, step=1),
             columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5']
         ),
@@ -207,7 +207,7 @@ def test_create_train_X_y_output_when_y_is_series_of_int_and_exog_is_None():
             data  = np.array([2, 0, 1, 2, 0]),
             index = pd.RangeIndex(start=5, stop=10, step=1),
             name  = 'y',
-            dtype = int
+            dtype = float
         ),
         {
             'classes_': [np.int64(1), np.int64(2), np.int64(3)],
@@ -253,11 +253,11 @@ def test_create_train_X_y_output_when_y_is_series_of_str_and_exog_is_None():
 
     expected = (
         pd.DataFrame(
-            data = np.array([[1, 0, 2, 1, 0],
-                             [2, 1, 0, 2, 1],
-                             [0, 2, 1, 0, 2],
-                             [1, 0, 2, 1, 0],
-                             [2, 1, 0, 2, 1]]),
+            data = np.array([[1., 0., 2., 1., 0.],
+                             [2., 1., 0., 2., 1.],
+                             [0., 2., 1., 0., 2.],
+                             [1., 0., 2., 1., 0.],
+                             [2., 1., 0., 2., 1.]]),
             index   = pd.RangeIndex(start=5, stop=10, step=1),
             columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5']
         ),
@@ -265,7 +265,7 @@ def test_create_train_X_y_output_when_y_is_series_of_str_and_exog_is_None():
             data  = np.array([2, 0, 1, 2, 0]),
             index = pd.RangeIndex(start=5, stop=10, step=1),
             name  = 'y',
-            dtype = int
+            dtype = float
         ),
         {
             'classes_': ['a', 'b', 'c'],

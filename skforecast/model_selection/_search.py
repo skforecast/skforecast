@@ -328,6 +328,8 @@ def _evaluate_grid_hyperparameters(
 
     """
 
+    forecaster_search = deepcopy(forecaster)
+    is_regression = forecaster_search.__skforecast_tags__['estimator_task'] == 'regression'
     cv_name = type(cv).__name__
     if cv_name not in ['TimeSeriesFold', 'OneStepAheadFold']:
         raise TypeError(
@@ -338,7 +340,7 @@ def _evaluate_grid_hyperparameters(
     if cv_name == 'OneStepAheadFold':
 
         check_one_step_ahead_input(
-            forecaster        = forecaster,
+            forecaster        = forecaster_search,
             cv                = cv,
             metric            = metric,
             y                 = y,
@@ -356,8 +358,8 @@ def _evaluate_grid_hyperparameters(
                              )
         cv.set_params({
             'initial_train_size': initial_train_size,
-            'window_size': forecaster.window_size,
-            'differentiation': forecaster.differentiation_max,
+            'window_size': forecaster_search.window_size,
+            'differentiation': forecaster_search.differentiation_max,
             'verbose': verbose
         })
 
@@ -385,7 +387,7 @@ def _evaluate_grid_hyperparameters(
             "When `metric` is a `list`, each metric name must be unique."
         )
 
-    lags_grid, lags_label = initialize_lags_grid(forecaster, lags_grid)
+    lags_grid, lags_label = initialize_lags_grid(forecaster_search, lags_grid)
     if verbose:
         print(f"Number of models compared: {len(param_grid) * len(lags_grid)}.")
 
@@ -403,8 +405,8 @@ def _evaluate_grid_hyperparameters(
     params_list = []
     for lags_k, lags_v in lags_grid_tqdm:
         
-        forecaster.set_lags(lags_v)
-        lags_v = forecaster.lags.copy()
+        forecaster_search.set_lags(lags_v)
+        lags_v = forecaster_search.lags.copy()
         if lags_label == 'values':
             lags_k = lags_v
 
@@ -415,17 +417,17 @@ def _evaluate_grid_hyperparameters(
                 y_train,
                 X_test,
                 y_test
-            ) = forecaster._train_test_split_one_step_ahead(
+            ) = forecaster_search._train_test_split_one_step_ahead(
                 y=y, initial_train_size=cv.initial_train_size, exog=exog
             )
 
         for params in param_grid:
             try:
-                forecaster.set_params(params)
+                forecaster_search.set_params(params)
                 if cv_name == 'TimeSeriesFold':
 
                     metric_values = backtesting_forecaster(
-                                        forecaster    = forecaster,
+                                        forecaster    = forecaster_search,
                                         y             = y,
                                         cv            = cv,
                                         metric        = metric,
@@ -440,7 +442,7 @@ def _evaluate_grid_hyperparameters(
                 else:
 
                     metric_values = _calculate_metrics_one_step_ahead(
-                                        forecaster = forecaster,
+                                        forecaster = forecaster_search,
                                         metrics    = metric,
                                         X_train    = X_train,
                                         y_train    = y_train,
@@ -486,7 +488,7 @@ def _evaluate_grid_hyperparameters(
     
     results = (
         results
-        .sort_values(by=list(metric_dict.keys())[0], ascending=True)
+        .sort_values(by=list(metric_dict.keys())[0], ascending=True if is_regression else False)
         .reset_index(drop=True)
     )
     results = pd.concat([results, results['params'].apply(pd.Series)], axis=1)
@@ -497,6 +499,7 @@ def _evaluate_grid_hyperparameters(
         best_params = results.loc[0, 'params']
         best_metric = results.loc[0, list(metric_dict.keys())[0]]
         
+        # NOTE: Here we use the actual forecaster passed by the user
         forecaster.set_lags(best_lags)
         forecaster.set_params(best_params)
 
@@ -510,7 +513,7 @@ def _evaluate_grid_hyperparameters(
             f"  {'Backtesting' if cv_name == 'TimeSeriesFold' else 'One-step-ahead'} "
             f"metric: {best_metric}"
         )
-            
+    
     return results
 
 
@@ -716,8 +719,10 @@ def _bayesian_search_optuna(
         The best optimization result returned as an optuna FrozenTrial object.
 
     """
-    
-    forecaster_name = type(forecaster).__name__
+
+    forecaster_search = deepcopy(forecaster)
+    forecaster_name = type(forecaster_search).__name__
+    is_regression = forecaster_search.__skforecast_tags__['estimator_task'] == 'regression'
     cv_name = type(cv).__name__
 
     if cv_name not in ['TimeSeriesFold', 'OneStepAheadFold']:
@@ -729,7 +734,7 @@ def _bayesian_search_optuna(
     if cv_name == 'OneStepAheadFold':
 
         check_one_step_ahead_input(
-            forecaster        = forecaster,
+            forecaster        = forecaster_search,
             cv                = cv,
             metric            = metric,
             y                 = y,
@@ -747,8 +752,8 @@ def _bayesian_search_optuna(
                              )
         cv.set_params({
             'initial_train_size': initial_train_size,
-            'window_size': forecaster.window_size,
-            'differentiation': forecaster.differentiation_max,
+            'window_size': forecaster_search.window_size,
+            'differentiation': forecaster_search.differentiation_max,
             'verbose': verbose
         })
     
@@ -764,11 +769,6 @@ def _bayesian_search_optuna(
         (m if isinstance(m, str) else m.__name__): [] 
         for m in metric
     }
-
-    # TODO: Include direction maximize si es metrica de classification. SI no 
-    # tenemos la metrica identificada, lanzamos warning. Otra opción, si todas nuestras métricas
-    # son de maximizar, ponemos direction maximize para classi y minimize para regresión.
-    # y lanzamos warning si no está dentro de esa lista.
     
     if len(metric_dict) != len(metric):
         raise ValueError(
@@ -780,24 +780,24 @@ def _bayesian_search_optuna(
 
         def _objective(
             trial,
-            search_space = search_space,
-            forecaster   = forecaster,
-            y            = y,
-            cv           = cv,
-            exog         = exog,
-            metric       = metric,
-            n_jobs       = n_jobs,
-            verbose      = verbose,
+            search_space      = search_space,
+            forecaster_search = forecaster_search,
+            y                 = y,
+            cv                = cv,
+            exog              = exog,
+            metric            = metric,
+            n_jobs            = n_jobs,
+            verbose           = verbose,
         ) -> float:
             
             sample = search_space(trial)
             sample_params = {k: v for k, v in sample.items() if k != 'lags'}
-            forecaster.set_params(sample_params)
+            forecaster_search.set_params(sample_params)
             if "lags" in sample:
-                forecaster.set_lags(sample['lags'])
+                forecaster_search.set_lags(sample['lags'])
             
             metrics, _ = backtesting_forecaster(
-                             forecaster    = forecaster,
+                             forecaster    = forecaster_search,
                              y             = y,
                              cv            = cv,
                              exog          = exog,
@@ -818,31 +818,31 @@ def _bayesian_search_optuna(
 
         def _objective(
             trial,
-            search_space = search_space,
-            forecaster   = forecaster,
-            y            = y,
-            cv           = cv,
-            exog         = exog,
-            metric       = metric
+            search_space      = search_space,
+            forecaster_search = forecaster_search,
+            y                 = y,
+            cv                = cv,
+            exog              = exog,
+            metric            = metric
         ) -> float:
             
             sample = search_space(trial)
             sample_params = {k: v for k, v in sample.items() if k != 'lags'}
-            forecaster.set_params(sample_params)
+            forecaster_search.set_params(sample_params)
             if "lags" in sample:
-                forecaster.set_lags(sample['lags'])
+                forecaster_search.set_lags(sample['lags'])
 
             (
                 X_train,
                 y_train,
                 X_test,
                 y_test
-            ) = forecaster._train_test_split_one_step_ahead(
+            ) = forecaster_search._train_test_split_one_step_ahead(
                 y=y, initial_train_size=cv.initial_train_size, exog=exog
             )
 
             metrics = _calculate_metrics_one_step_ahead(
-                          forecaster = forecaster,
+                          forecaster = forecaster_search,
                           metrics    = metric,
                           X_train    = X_train,
                           y_train    = y_train,
@@ -855,6 +855,13 @@ def _bayesian_search_optuna(
             metric_values.append(metrics)
 
             return metrics[0]
+    
+    # TODO: Include direction maximize si es metrica de classification. SI no 
+    # tenemos la metrica identificada, lanzamos warning. Otra opción, si todas nuestras métricas
+    # son de maximizar, ponemos direction maximize para classi y minimize para regresión.
+    # y lanzamos warning si no está dentro de esa lista.
+    if 'direction' not in kwargs_create_study.keys():
+        kwargs_create_study['direction'] = 'minimize' if is_regression else 'maximize'
 
     if show_progress:
         kwargs_study_optimize['show_progress_bar'] = True
@@ -908,9 +915,9 @@ def _bayesian_search_optuna(
     for i, trial in enumerate(study.get_trials()):
         regressor_params = {k: v for k, v in trial.params.items() if k != 'lags'}
         lags = trial.params.get(
-                   'lags',
-                   forecaster.lags if hasattr(forecaster, 'lags') else None
-               )
+            'lags',
+            forecaster_search.lags if hasattr(forecaster_search, 'lags') else None
+        )
         params_list.append(regressor_params)
         lags_list.append(lags)
         for m, m_values in zip(metric, metric_values[i]):
@@ -928,10 +935,9 @@ def _bayesian_search_optuna(
                   **metric_dict
               })
     
-    # TODO: Sort by maximize or minimize depending on metric.
     results = (
         results
-        .sort_values(by=list(metric_dict.keys())[0], ascending=True)
+        .sort_values(by=list(metric_dict.keys())[0], ascending=True if is_regression else False)
         .reset_index(drop=True)
     )
     results = pd.concat([results, results['params'].apply(pd.Series)], axis=1)
@@ -942,6 +948,7 @@ def _bayesian_search_optuna(
         best_params = results.loc[0, 'params']
         best_metric = results.loc[0, list(metric_dict.keys())[0]]
         
+        # NOTE: Here we use the actual forecaster passed by the user
         forecaster.set_lags(best_lags)
         forecaster.set_params(best_params)
 
@@ -1314,7 +1321,8 @@ def _evaluate_grid_hyperparameters_multiseries(
 
     set_skforecast_warnings(suppress_warnings, action='ignore')
 
-    if type(forecaster).__name__ == 'ForecasterRecursiveMultiSeries':
+    forecaster_search = deepcopy(forecaster)
+    if type(forecaster_search).__name__ == 'ForecasterRecursiveMultiSeries':
         series, series_indexes = check_preprocess_series(series)
         if exog is not None:
             series_names_in_ = list(series.keys())
@@ -1344,7 +1352,7 @@ def _evaluate_grid_hyperparameters_multiseries(
     if cv_name == 'OneStepAheadFold':
 
         check_one_step_ahead_input(
-            forecaster        = forecaster,
+            forecaster        = forecaster_search,
             cv                = cv,
             metric            = metric,
             series            = series,
@@ -1362,8 +1370,8 @@ def _evaluate_grid_hyperparameters_multiseries(
                              )
         cv.set_params({
             'initial_train_size': initial_train_size,
-            'window_size': forecaster.window_size,
-            'differentiation': forecaster.differentiation_max,
+            'window_size': forecaster_search.window_size,
+            'differentiation': forecaster_search.differentiation_max,
             'verbose': verbose
         })
     
@@ -1390,7 +1398,7 @@ def _evaluate_grid_hyperparameters_multiseries(
         )
     
     levels = _initialize_levels_model_selection_multiseries(
-                 forecaster = forecaster,
+                 forecaster = forecaster_search,
                  series     = series,
                  levels     = levels
              )
@@ -1403,7 +1411,7 @@ def _evaluate_grid_hyperparameters_multiseries(
             for aggregation in aggregate_metric
         ]
 
-    lags_grid, lags_label = initialize_lags_grid(forecaster, lags_grid)
+    lags_grid, lags_label = initialize_lags_grid(forecaster_search, lags_grid)
     if verbose:
         print(
             f"{len(param_grid) * len(lags_grid)} models compared for {len(levels)} "
@@ -1425,8 +1433,8 @@ def _evaluate_grid_hyperparameters_multiseries(
     metrics_list = []
     for lags_k, lags_v in lags_grid_tqdm:
 
-        forecaster.set_lags(lags_v)
-        lags_v = forecaster.lags.copy()
+        forecaster_search.set_lags(lags_v)
+        lags_v = forecaster_search.lags.copy()
         if lags_label == 'values':
             lags_k = lags_v
 
@@ -1439,19 +1447,19 @@ def _evaluate_grid_hyperparameters_multiseries(
                 y_test,
                 X_train_encoding,
                 X_test_encoding
-            ) = forecaster._train_test_split_one_step_ahead(
+            ) = forecaster_search._train_test_split_one_step_ahead(
                 series=series, exog=exog, initial_train_size=cv.initial_train_size
             )
         
         for params in param_grid:
             
             try:
-                forecaster.set_params(params)
+                forecaster_search.set_params(params)
             
                 if cv_name == 'TimeSeriesFold':
 
                     metrics, _ = backtesting_forecaster_multiseries(
-                        forecaster            = forecaster,
+                        forecaster            = forecaster_search,
                         series                = series,
                         cv                    = cv,
                         exog                  = exog,
@@ -1468,7 +1476,7 @@ def _evaluate_grid_hyperparameters_multiseries(
                 else:
 
                     metrics, _ = _predict_and_calculate_metrics_one_step_ahead_multiseries(
-                        forecaster            = forecaster,
+                        forecaster            = forecaster_search,
                         series                = series,
                         X_train               = X_train,
                         y_train               = y_train,
@@ -1538,6 +1546,7 @@ def _evaluate_grid_hyperparameters_multiseries(
         best_params = results.loc[0, 'params']
         best_metric = results.loc[0, metric_names[0]]
         
+        # NOTE: Here we use the actual forecaster passed by the user
         forecaster.set_lags(best_lags)
         forecaster.set_params(best_params)
 
@@ -1802,7 +1811,8 @@ def _bayesian_search_optuna_multiseries(
     
     set_skforecast_warnings(suppress_warnings, action='ignore')
 
-    forecaster_name = type(forecaster).__name__
+    forecaster_search = deepcopy(forecaster)
+    forecaster_name = type(forecaster_search).__name__
     cv_name = type(cv).__name__
 
     if forecaster_name == 'ForecasterRecursiveMultiSeries':
@@ -1834,7 +1844,7 @@ def _bayesian_search_optuna_multiseries(
     if cv_name == 'OneStepAheadFold':
 
         check_one_step_ahead_input(
-            forecaster        = forecaster,
+            forecaster        = forecaster_search,
             cv                = cv,
             metric            = metric,
             series            = series,
@@ -1852,8 +1862,8 @@ def _bayesian_search_optuna_multiseries(
                              )
         cv.set_params({
             'initial_train_size': initial_train_size,
-            'window_size': forecaster.window_size,
-            'differentiation': forecaster.differentiation_max,
+            'window_size': forecaster_search.window_size,
+            'differentiation': forecaster_search.differentiation_max,
             'verbose': verbose
         })
     
@@ -1881,7 +1891,7 @@ def _bayesian_search_optuna_multiseries(
         )
     
     levels = _initialize_levels_model_selection_multiseries(
-                 forecaster = forecaster,
+                 forecaster = forecaster_search,
                  series     = series,
                  levels     = levels
              )
@@ -1899,7 +1909,7 @@ def _bayesian_search_optuna_multiseries(
         def _objective(
             trial,
             search_space          = search_space,
-            forecaster            = forecaster,
+            forecaster_search     = forecaster_search,
             series                = series,
             cv                    = cv,
             exog                  = exog,
@@ -1915,12 +1925,12 @@ def _bayesian_search_optuna_multiseries(
             
             sample = search_space(trial)
             sample_params = {k: v for k, v in sample.items() if k != 'lags'}
-            forecaster.set_params(sample_params)
+            forecaster_search.set_params(sample_params)
             if "lags" in sample:
-                forecaster.set_lags(sample['lags'])
+                forecaster_search.set_lags(sample['lags'])
             
             metrics, _ = backtesting_forecaster_multiseries(
-                             forecaster            = forecaster,
+                             forecaster            = forecaster_search,
                              series                = series,
                              cv                    = cv,
                              exog                  = exog,
@@ -1953,7 +1963,7 @@ def _bayesian_search_optuna_multiseries(
         def _objective(
             trial,
             search_space          = search_space,
-            forecaster            = forecaster,
+            forecaster_search     = forecaster_search,
             series                = series,
             cv                    = cv,
             exog                  = exog,
@@ -1966,9 +1976,9 @@ def _bayesian_search_optuna_multiseries(
             
             sample = search_space(trial)
             sample_params = {k: v for k, v in sample.items() if k != 'lags'}
-            forecaster.set_params(sample_params)
+            forecaster_search.set_params(sample_params)
             if "lags" in sample:
-                forecaster.set_lags(sample['lags'])
+                forecaster_search.set_lags(sample['lags'])
             
             (
                 X_train,
@@ -1977,12 +1987,12 @@ def _bayesian_search_optuna_multiseries(
                 y_test,
                 X_train_encoding,
                 X_test_encoding
-            ) = forecaster._train_test_split_one_step_ahead(
+            ) = forecaster_search._train_test_split_one_step_ahead(
                 series=series, exog=exog, initial_train_size=cv.initial_train_size,
             )
 
             metrics, _ = _predict_and_calculate_metrics_one_step_ahead_multiseries(
-                             forecaster            = forecaster,
+                             forecaster            = forecaster_search,
                              series                = series,
                              X_train               = X_train,
                              y_train               = y_train,
@@ -2062,9 +2072,9 @@ def _bayesian_search_optuna_multiseries(
     for trial in study.get_trials():
         regressor_params = {k: v for k, v in trial.params.items() if k != 'lags'}
         lags = trial.params.get(
-                   'lags',
-                   forecaster.lags if hasattr(forecaster, 'lags') else None
-               )
+            'lags',
+            forecaster_search.lags if hasattr(forecaster_search, 'lags') else None
+        )
         params_list.append(regressor_params)
         lags_list.append(lags)
     
@@ -2111,6 +2121,7 @@ def _bayesian_search_optuna_multiseries(
         best_params = results.loc[0, 'params']
         best_metric = results.loc[0, metric_names[0]]
         
+        # NOTE: Here we use the actual forecaster passed by the user
         forecaster.set_lags(best_lags)
         forecaster.set_params(best_params)
 

@@ -1,15 +1,15 @@
-# Unit test set_fit_kwargs ForecasterRecursive
+# Unit test set_fit_kwargs ForecasterRecursiveClassifier
 # ==============================================================================
-from skforecast.recursive import ForecasterRecursive
-from lightgbm import LGBMRegressor
+from lightgbm import LGBMClassifier
+from skforecast.recursive import ForecasterRecursiveClassifier
 
 
 def test_set_fit_kwargs():
     """
     Test set_fit_kwargs method.
     """
-    forecaster = ForecasterRecursive(
-                     regressor  = LGBMRegressor(),
+    forecaster = ForecasterRecursiveClassifier(
+                     regressor  = LGBMClassifier(verbose=-1),
                      lags       = 3,
                      fit_kwargs = {'categorical_feature': 'auto'}
                  )

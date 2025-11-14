@@ -183,12 +183,12 @@ def _backtesting_forecaster(
     """
 
     forecaster = deepcopy(forecaster)
+    is_regression = forecaster.__skforecast_tags__['estimator_task'] == 'regression'
     cv = deepcopy(cv)
 
-    is_regression = forecaster.__skforecast_tags__['estimator_task'] == 'regression'
     cv.set_params({
         'window_size': forecaster.window_size,
-        'differentiation': forecaster.differentiation_max if is_regression else None,
+        'differentiation': forecaster.differentiation_max,
         'return_all_indexes': False,
         'verbose': verbose
     })

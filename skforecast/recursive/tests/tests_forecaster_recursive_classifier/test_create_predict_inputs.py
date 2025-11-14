@@ -12,11 +12,11 @@ from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import OrdinalEncoder
 from sklearn.compose import make_column_transformer
 from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import HistGradientBoostingRegressor
+from sklearn.ensemble import HistGradientBoostingClassifier
 
 # Fixtures
-from .fixtures_forecaster_recursive_classifier import y as y_categorical
-from .fixtures_forecaster_recursive_classifier import exog as exog_categorical
+from .fixtures_forecaster_recursive_classifier import y, y_dt
+from .fixtures_forecaster_recursive_classifier import exog
 
 
 def test_create_predict_inputs_NotFittedError_when_fitted_is_False():
@@ -34,6 +34,39 @@ def test_create_predict_inputs_NotFittedError_when_fitted_is_False():
     )
     with pytest.raises(NotFittedError, match = err_msg):
         forecaster._create_predict_inputs(steps=5)
+
+
+def test_create_predict_inputs_ValueError_when_last_window_contains_invalid_classes():
+    """
+    Test ValueError is raised when last_window contains classes not present in training y.
+    """
+    forecaster = ForecasterRecursiveClassifier(
+                     regressor = LogisticRegression(),
+                     lags      = 5
+                 )
+    forecaster.fit(y=y)
+
+    last_window = pd.Series(
+        np.array([1, 2, 3, 4, 5]),
+        index = pd.RangeIndex(start=45, stop=50),
+        name='y'
+    )
+
+    valid_classes = set(forecaster.encoding_mapping_.keys())
+    unique_values = set(last_window.to_numpy())
+    invalid_values = unique_values - valid_classes
+    invalid_list = sorted(list(invalid_values))[:5]
+    valid_list = sorted(list(valid_classes))[:10]
+
+    err_msg = re.escape(
+        f"The `last_window` contains {len(invalid_values)} class label(s) "
+        f"not seen during training: {invalid_list}{'...' if len(invalid_values) > 5 else ''}.\n"
+        f"Valid class labels (seen during training): {valid_list}"
+        f"{'...' if len(valid_classes) > 10 else ''}.\n"
+        f"Total valid classes: {len(valid_classes)}."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        forecaster._create_predict_inputs(steps=5, last_window=last_window)
 
 
 def test_create_predict_inputs_when_regressor_is_LogisticRegression():
@@ -60,29 +93,21 @@ def test_create_predict_inputs_when_regressor_is_LogisticRegression():
     assert results[3] == expected[3]
 
 
-def test_create_predict_inputs_when_with_transform_y():
+def test_create_predict_inputs_when_regressor_is_HistGradientBoostingClassifier():
     """
-    Test _create_predict_inputs when using LogisticRegression as regressor and StandardScaler.
+    Test _create_predict_inputs when using HistGradientBoostingClassifier as regressor.
     """
-    y = pd.Series(
-            np.array([-0.59,  0.02, -0.9,  1.09, -3.61,  0.72, -0.11, -0.4,  0.49,
-                       0.67,  0.54, -0.17,  0.54,  1.49, -2.26, -0.41, -0.64, -0.8,
-                      -0.61, -0.88]),
-            name = 'y'
-        )
-
     forecaster = ForecasterRecursiveClassifier(
-                     regressor     = LogisticRegression(),
-                     lags          = 5,
-                     transformer_y = StandardScaler()
+                     regressor = HistGradientBoostingClassifier(),
+                     lags      = 5
                  )
-    forecaster.fit(y=y)
+    forecaster.fit(y=y_dt)
     results = forecaster._create_predict_inputs(steps=5)
 
     expected = (
-        np.array([-0.1056608, -0.30987914, -0.45194408, -0.28324197, -0.52297655]),
+        np.array([1, 1, 0, 2, 1]),
         None,
-        pd.RangeIndex(start=20, stop=25, step=1),
+        pd.date_range(start='2020-02-20', periods=5, freq='D'),
         5
     )
     
@@ -92,27 +117,25 @@ def test_create_predict_inputs_when_with_transform_y():
     assert results[3] == expected[3]
 
 
-def test_create_predict_inputs_when_with_transform_y_and_transform_exog_series():
+def test_create_predict_inputs_when_with_transform_exog():
     """
-    Test _create_predict_inputs when using LogisticRegression as regressor, StandardScaler
-    as transformer_y and StandardScaler as transformer_exog.
+    Test _create_predict_inputs when using LogisticRegression as regressor and
+    StandardScaler as transformer_exog.
     """
-    y = pd.Series(np.array([-0.59,  0.02, -0.9,  1.09, -3.61,  0.72, -0.11, -0.4]))
-    exog = pd.Series(np.array([7.5, 24.4, 60.3, 57.3, 50.7, 41.4, 87.2, 47.4]), name='exog')
-    exog_predict = exog.copy()
+    exog_dummy = pd.Series(np.array([7.5, 24.4, 60.3, 57.3, 50.7, 41.4, 87.2, 47.4]), name='exog')
+    exog_predict = exog_dummy.copy()
     exog_predict.index = pd.RangeIndex(start=8, stop=16)
 
     forecaster = ForecasterRecursiveClassifier(
                      regressor        = LogisticRegression(),
                      lags             = 5,
-                     transformer_y    = StandardScaler(),
                      transformer_exog = StandardScaler()
                  )
-    forecaster.fit(y=y, exog=exog)
+    forecaster.fit(y=y.iloc[:8], exog=exog_dummy)
     results = forecaster._create_predict_inputs(steps=5, exog=exog_predict)
 
     expected = (
-        np.array([1.16937289, -2.34810076, 0.89246539, 0.27129451, 0.0542589]),
+        np.array([1., 1., 0., 1., 1.]),
         np.array([[-1.76425513], [-1.00989936], [0.59254869], [0.45863938], [0.1640389]]),
         pd.RangeIndex(start=8, stop=13, step=1),
         5
@@ -124,61 +147,12 @@ def test_create_predict_inputs_when_with_transform_y_and_transform_exog_series()
     assert results[3] == expected[3]
 
 
-def test_create_predict_inputs_when_with_transform_y_and_transform_exog_df():
+def test_create_predict_inputs_when_categorical_features_native_implementation_HistGradientBoostingClassifier():
     """
-    Test _create_predict_inputs when using LogisticRegression as regressor, StandardScaler
-    as transformer_y and transformer_exog as transformer_exog.
-    """
-    y = pd.Series(
-            np.array([-0.59,  0.02, -0.9 ,  1.09, -3.61,  0.72, -0.11, -0.4])
-        )
-    exog = pd.DataFrame({
-               'col_1': [7.5, 24.4, 60.3, 57.3, 50.7, 41.4, 87.2, 47.4],
-               'col_2': ['a', 'a', 'a', 'a', 'b', 'b', 'b', 'b']}
-           )
-    exog_predict = exog.copy()
-    exog_predict.index = pd.RangeIndex(start=8, stop=16)
-
-    transformer_y = StandardScaler()
-    transformer_exog = ColumnTransformer(
-                            [('scale', StandardScaler(), ['col_1']),
-                             ('onehot', OneHotEncoder(), ['col_2'])],
-                            remainder = 'passthrough',
-                            verbose_feature_names_out = False
-                       )
-    
-    forecaster = ForecasterRecursiveClassifier(
-                     regressor        = LogisticRegression(),
-                     lags             = 5,
-                     transformer_y    = transformer_y,
-                     transformer_exog = transformer_exog
-                 )
-    forecaster.fit(y=y, exog=exog)
-    results = forecaster._create_predict_inputs(steps=5, exog=exog_predict)
-    
-    expected = (
-        np.array([1.16937289, -2.34810076, 0.89246539,  0.27129451,  0.0542589]),
-        np.array([[-1.76425513,  1.        ,  0.        ],
-                  [-1.00989936,  1.        ,  0.        ],
-                  [ 0.59254869,  1.        ,  0.        ],
-                  [ 0.45863938,  1.        ,  0.        ],
-                  [ 0.1640389 ,  0.        ,  1.        ]]),
-        pd.RangeIndex(start=8, stop=13, step=1),
-        5
-    )
-    
-    np.testing.assert_array_almost_equal(results[0], expected[0])
-    np.testing.assert_array_almost_equal(results[1], expected[1])
-    pd.testing.assert_index_equal(results[2], expected[2])
-    assert results[3] == expected[3]
-
-
-def test_create_predict_inputs_when_categorical_features_native_implementation_HistGradientBoostingRegressor():
-    """
-    Test _create_predict_inputs when using HistGradientBoostingRegressor and categorical variables.
+    Test _create_predict_inputs when using HistGradientBoostingClassifier and categorical variables.
     """
     df_exog = pd.DataFrame(
-        {'exog_1': exog_categorical,
+        {'exog_1': exog.to_numpy(),
          'exog_2': ['a', 'b', 'c', 'd', 'e'] * 10,
          'exog_3': pd.Categorical(['F', 'G', 'H', 'I', 'J'] * 10)}
     )
@@ -202,19 +176,18 @@ def test_create_predict_inputs_when_categorical_features_native_implementation_H
                        ).set_output(transform="pandas")
     
     forecaster = ForecasterRecursiveClassifier(
-                     regressor        = HistGradientBoostingRegressor(
+                     regressor        = HistGradientBoostingClassifier(
                                             categorical_features = categorical_features,
                                             random_state         = 123
                                         ),
                      lags             = 5,
-                     transformer_y    = None,
                      transformer_exog = transformer_exog
                  )
-    forecaster.fit(y=y_categorical, exog=df_exog)
+    forecaster.fit(y=y, exog=df_exog)
     results = forecaster._create_predict_inputs(steps=10, exog=exog_predict)
     
     expected = (
-        np.array([0.25045537, 0.48303426, 0.98555979, 0.51948512, 0.61289453]),
+        np.array([1, 1, 0, 2, 1]),
         np.array([[0.        , 0.        , 0.12062867],
                   [1.        , 1.        , 0.8263408 ],
                   [2.        , 2.        , 0.60306013],
@@ -227,63 +200,6 @@ def test_create_predict_inputs_when_categorical_features_native_implementation_H
                   [4.        , 4.        , 0.51042234]]),
         pd.RangeIndex(start=50, stop=60, step=1),
         10
-    )
-    
-    np.testing.assert_array_almost_equal(results[0], expected[0])
-    np.testing.assert_array_almost_equal(results[1], expected[1])
-    pd.testing.assert_index_equal(results[2], expected[2])
-    assert results[3] == expected[3]
-
-
-def test_create_predict_inputs_when_with_exog_differentiation_is_1():
-    """
-    Test _create_predict_inputs when using LogisticRegression as regressor 
-    and differentiation=1.
-    """
-
-    end_train = '2003-03-01 23:59:00'
-
-    # Simulated exogenous variable
-    rng = np.random.default_rng(9876)
-    exog = pd.Series(
-        rng.normal(loc=0, scale=1, size=len(data)), index=data.index, name='exog'
-    )
-    steps = data.index[-1]
-
-    forecaster = ForecasterRecursiveClassifier(
-                     regressor       = LogisticRegression(),
-                     lags            = 15,
-                     differentiation = 1
-                )
-    forecaster.fit(y=data.loc[:end_train], exog=exog.loc[:end_train])
-    results = forecaster._create_predict_inputs(steps=steps, exog=exog.loc[end_train:])
-    
-    expected = (
-        np.array(
-            [np.nan, 0.14355438, -0.56028323,  0.07558021, 0.04869748,
-             0.09807633, -0.00584249,  0.17596768,  0.01630394,  0.09883014,
-             0.02377842, -0.01018012,  0.10597971, -0.01463081, -0.48984868,
-             0.07503713]
-        ),
-        np.array([[ 1.16172882], [ 0.29468848], [-0.4399757 ], [ 1.25008389],
-                  [ 1.37496887], [-0.41673182], [ 0.32732157], [ 1.57848827],
-                  [ 0.40402941], [ 1.34466867], [-1.0724777 ], [ 0.14619469],
-                  [-0.78475177], [-2.97987806], [-1.46735738], [ 0.84295053],
-                  [ 0.37485   ], [ 0.03500746], [-1.37307705], [ 1.43220391],
-                  [ 0.76682773], [ 0.50114842], [ 0.839902  ], [-1.0012572 ],
-                  [-1.67885896], [-0.81587204], [-1.33508966], [-0.42014975], 
-                  [ 0.98579761], [-0.17262001], [-0.02161134], [-0.62664312],
-                  [-0.91997057], [-1.14759504], [ 0.18661806], [ 0.15897422], 
-                  [-3.20047182], [-0.5236335 ], [-1.00620967], [ 0.12763016], 
-                  [-0.54508051], [ 0.13153937], [-0.14105938], [-0.16935134], 
-                  [ 0.06279071], [-0.55075912], [-0.22425219], [ 2.00991015], 
-                  [ 0.79230622], [-0.55605221], [-0.27088044], [-0.39179496], 
-                  [-1.34347494], [-0.07230096], [-1.51146602], [-0.66840335], 
-                  [-0.78148407], [-0.27354003], [-0.27128144], [-0.6389055 ], 
-                  [ 0.19573233], [-0.67321672], [ 1.1559056 ]]
-        ),
-        pd.date_range(start='2003-04-01', periods=63, freq='MS'),
-        63
     )
     
     np.testing.assert_array_almost_equal(results[0], expected[0])

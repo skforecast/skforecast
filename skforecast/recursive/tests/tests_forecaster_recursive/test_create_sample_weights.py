@@ -132,8 +132,8 @@ def test_create_sample_weights_exceptions_when_weights_all_zeros():
                  )
     
     err_msg = re.escape(
-                    ("The resulting `sample_weight` cannot be normalized because "
-                     "the sum of the weights is zero.")
-                )
+        "The resulting `sample_weight` cannot be normalized because "
+        "the sum of the weights is zero."
+    )
     with pytest.raises(ValueError, match=err_msg):
         forecaster.create_sample_weights(X_train=X_train)
