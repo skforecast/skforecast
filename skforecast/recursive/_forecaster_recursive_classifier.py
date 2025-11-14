@@ -997,6 +997,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
         return X_train, y_train
 
+    # TODO: Do this method
     def _train_test_split_one_step_ahead(
         self,
         y: pd.Series,
@@ -1032,20 +1033,24 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         """
 
         is_fitted = self.is_fitted
+        encoding_mapping_ = self.encoding_mapping_
+
         self.is_fitted = False
-        X_train, y_train, *_ = self._create_train_X_y(
+        X_train, y_train, y_encoding_info_, *_ = self._create_train_X_y(
             y    = y.iloc[: initial_train_size],
             exog = exog.iloc[: initial_train_size] if exog is not None else None
         )
 
         test_init = initial_train_size - self.window_size
         self.is_fitted = True
+        self.encoding_mapping_ = y_encoding_info_['encoding_mapping_']
         X_test, y_test, *_ = self._create_train_X_y(
             y    = y.iloc[test_init:],
             exog = exog.iloc[test_init:] if exog is not None else None
         )
 
         self.is_fitted = is_fitted
+        self.encoding_mapping_ = encoding_mapping_
 
         return X_train, y_train, X_test, y_test
 
