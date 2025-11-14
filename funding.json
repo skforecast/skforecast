@@ -68,19 +68,9 @@
                 "name": "Developer compensation",
                 "description": "This will cover the cost of one developer working part-time on the projects.",
                 "amount": 1000,
-                "currency": "USD",
+                "currency": "EUR",
                 "frequency": "monthly",
                 "channels": ["mybank", "paypal"]
-            },
-            {
-                "guid": "angel-plan",
-                "status": "active",
-                "name": "Goodwill plan",
-                "description": "Pay anything you wish to show your goodwill for the project.",
-                "amount": 0,
-                "currency": "USD",
-                "frequency": "one-time",
-                "channels": ["mybank", "mypay"]
             }
         ]
     }
