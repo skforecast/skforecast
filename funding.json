@@ -1,0 +1,87 @@
+{
+    "$schema": "https://fundingjson.org/schema/v1.1.0.json",
+    "version": "v1.0.0",
+    "entity": {
+        "type": "individual",
+        "role": "maintainer",
+        "name": "Joaquin Amat Rodrigo",
+        "email": "j.amatrodrigo@gmail.com",
+        "phone": "",
+        "description": "Creator and maintainer of the skforecast project and https://cienciadedatos.net/en/, a data science blog with free educational resources.",
+            "url": "https://skforecast.org"
+        }
+    },
+    "projects": [{
+        "guid": "skforecast",
+        "name": "Skforecast",
+        "description": "Skforecast is a Python library for time series forecasting using machine learning models. It works with any regressor compatible with the scikit-learn API, including popular options like LightGBM, XGBoost, CatBoost, Keras, and many others.",
+        "webpageUrl": {
+            "url": "https://skforecast.org"
+        },
+        "repositoryUrl": {
+            "url": "https://github.com/skforecast/skforecast"
+        },
+        "licenses": ["spdx:BSD-3-Clause"],
+        "tags": [
+            "ai",
+            "data-science",
+            "machine-learning",
+            "time-series",
+            "forecasting",
+            "time-series-classification",
+            "sktime",
+            "benchmarking",
+            "scikit-learn",
+            "changepoint-detection"
+        ]
+    }],
+
+    "funding": {
+        "channels": [
+            {
+                "guid": "mybank",
+                "type": "bank",
+                "address": "",
+                "description": "Will accept direct bank transfers. Please e-mail me for details."
+            },
+            {
+                "guid": "paypal",
+                "type": "payment-provider",
+                "address": "https://example.com/payme/@myid",
+                "description": "Pay with your debit/credit card through this gateway and setup recurring subscriptions."
+            }
+        ],
+        "plans": [
+            {
+                "guid": "hosting-monthly",
+                "status": "active",
+                "name": "Hosting support",
+                "description": "This will cover the monthly server hosting costs for the projects.",
+                "amount": 250,
+                "currency": "EUR",
+                "frequency": "monthly",
+                "channels": ["mybank", "paypal"]
+            },
+            {
+                "guid": "developer-time",
+                "status": "active",
+                "name": "Developer compensation",
+                "description": "This will cover the cost of one developer working part-time on the projects.",
+                "amount": 1000,
+                "currency": "USD",
+                "frequency": "monthly",
+                "channels": ["mybank", "paypal"]
+            },
+            {
+                "guid": "angel-plan",
+                "status": "active",
+                "name": "Goodwill plan",
+                "description": "Pay anything you wish to show your goodwill for the project.",
+                "amount": 0,
+                "currency": "USD",
+                "frequency": "one-time",
+                "channels": ["mybank", "mypay"]
+            }
+        ]
+    }
+}
