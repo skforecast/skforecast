@@ -43,6 +43,8 @@ The main changes in this release are:
 
 + New function <code>[reshape_series_exog_dict_to_long]</code> in the <code>[preprocessing]</code> module to reshape series and exogenous variables from a dictionary format into a long-format pandas DataFrame with a MultiIndex. The first level of the index is the series name, and the second level is the time index.
 
++ Added dataset `vic_electricity_classification` to the <code>[datasets]</code> module. It contains hourly electricity consumption data for households in Victoria, Australia, classified into three categories: 'low', 'medium' and 'high' according to the 20th and 80th percentiles.
+
 
 **Changed**
 
