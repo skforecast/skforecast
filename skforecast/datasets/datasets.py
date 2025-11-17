@@ -287,7 +287,7 @@ datasets = {
         ),
         'sep': ',',
         'index_col': 'Time',
-        'date_format': '%Y-%m-%dT%H:%M:%SZ',
+        'date_format': '%Y-%m-%d %H:%M:%S',
         'freq': 'h',
         'file_type': 'csv',
         'description': (
