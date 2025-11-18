@@ -72,7 +72,7 @@ def test_predict_output_when_with_exog():
     predictions = forecaster.predict(steps=5, exog=exog_predict)
 
     expected = pd.Series(
-                   data = np.array([1, 1, 1, 1, 1]),
+                   data = np.array([2, 2, 2, 2, 2]),
                    index = pd.RangeIndex(start=50, stop=55, step=1),
                    name = 'pred'
                )

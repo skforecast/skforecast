@@ -97,14 +97,14 @@ def test_forecaster_y_exog_features_stored_lgbm_as_categorical():
     exog_dtypes_in_ = {'exog': exog_dt.dtype}
     exog_dtypes_out_ = {'exog': exog_dt.dtype}
     X_train_window_features_names_out_ = [
-        'roll_proportion_4_class_0.0', 'roll_proportion_4_class_1.0',
-        'roll_proportion_4_class_2.0', 'roll_mode_4'
+        'roll_proportion_4_class_0', 'roll_proportion_4_class_1',
+        'roll_proportion_4_class_2', 'roll_mode_4'
     ]
     X_train_exog_names_out_ = ['exog']
     X_train_features_names_out_ = [
         'lag_1', 'lag_2', 'lag_3', 
-        'roll_proportion_4_class_0.0', 'roll_proportion_4_class_1.0',
-        'roll_proportion_4_class_2.0', 'roll_mode_4', 'exog'
+        'roll_proportion_4_class_0', 'roll_proportion_4_class_1',
+        'roll_proportion_4_class_2', 'roll_mode_4', 'exog'
     ]
 
     classes_ = [np.int64(1), np.int64(2), np.int64(3)]

@@ -32,7 +32,7 @@ def test_create_train_X_y_ValueError_when_len_y_less_than_window_size():
     with pytest.raises(ValueError, match = err_msg):
         forecaster._create_train_X_y(y=y)
 
-    rolling = RollingFeaturesClassification(stats=['mean', 'median'], window_sizes=6)
+    rolling = RollingFeaturesClassification(stats=['entropy', 'mode'], window_sizes=6)
     forecaster = ForecasterRecursiveClassifier(LogisticRegression(), lags=2, window_features=rolling)
     err_msg = re.escape(
         "Length of `y` must be greater than the maximum window size "
