@@ -5,10 +5,10 @@
     "entity": {
         "type": "individual",
         "role": "maintainer",
-        "name": "Joaquin Amat Rodrigo",
-        "email": "j.amatrodrigo@gmail.com",
+        "name": "Javier Escobar Ortiz",
+        "email": "javier.escobar.ortiz@gmail.com",
         "phone": "",
-        "description": "Creator and maintainer of the skforecast project and the data-science blog https://cienciadedatos.net/en/, which provides free educational resources.",
+        "description": "Creator and maintainer of the skforecast project and free educational resources.",
         "webpageUrl": {
             "url": "https://github.com/skforecast/skforecast"
         }
@@ -18,7 +18,7 @@
         {
             "guid": "skforecast",
             "name": "Skforecast",
-            "description": "Skforecast is a Python library for time series forecasting using machine learning models. It works with any regressor compatible with the scikit-learn API, including popular options like LightGBM, XGBoost, CatBoost, Keras, and many others. It aims to make state-of-the-art forecasting accessible through simple, unified, and production-ready tools.",
+            "description": "Skforecast is a Python library for time series forecasting using statistical and machine learning models. It aims to make state-of-the-art forecasting accessible through simple, unified, and production-ready tools.",
             "webpageUrl": {
                 "url": "https://skforecast.org"
             },
@@ -45,13 +45,13 @@
             {
                 "guid": "bank",
                 "type": "bank",
-                "address": "IBAN: DE08630910100601674006 (Address: Talstraße 14, 89584 Ehingen, Germany)",
-                "description": "BIC: GENODES1EHI. Please include \"skforecast\" in the purpose."
+                "address": "IBAN: ES5001825322260000238540",
+                "description": "BIC: BBVAESMM. Please include \"skforecast\" in the purpose."
             },
             {
                 "guid": "github",
                 "type": "other",
-                "address": "xxxxxxxx",
+                "address": "https://github.com/sponsors/JavierEscobarOrtiz",
                 "description": "Github Sponsor"
             }
         ],
