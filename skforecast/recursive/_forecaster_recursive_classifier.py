@@ -1895,6 +1895,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             estimator = estimator.estimator
 
         # TODO: forecaster.regressor.calibrated_classifiers_[0].estimator.coef_
+        # devolver un df largo con una columna cv con la enumarición del cv del calibrator
 
         if hasattr(estimator, 'feature_importances_'):
             feature_importances = pd.DataFrame({
