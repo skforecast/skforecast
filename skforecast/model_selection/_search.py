@@ -856,10 +856,6 @@ def _bayesian_search_optuna(
 
             return metrics[0]
     
-    # TODO: Include direction maximize si es metrica de classification. SI no 
-    # tenemos la metrica identificada, lanzamos warning. Otra opción, si todas nuestras métricas
-    # son de maximizar, ponemos direction maximize para classi y minimize para regresión.
-    # y lanzamos warning si no está dentro de esa lista.
     if 'direction' not in kwargs_create_study.keys():
         kwargs_create_study['direction'] = 'minimize' if is_regression else 'maximize'
 
