@@ -1,76 +1,78 @@
 {
     "$schema": "https://fundingjson.org/schema/v1.1.0.json",
     "version": "v1.0.0",
+
     "entity": {
         "type": "individual",
         "role": "maintainer",
         "name": "Joaquin Amat Rodrigo",
         "email": "j.amatrodrigo@gmail.com",
         "phone": "",
-        "description": "Creator and maintainer of the skforecast project and https://cienciadedatos.net/en/, a data science blog with free educational resources.",
-            "url": "https://skforecast.org"
-        }
+        "description": "Creator and maintainer of the skforecast project and the data-science blog https://cienciadedatos.net/en/, which provides free educational resources.",
+        "url": "https://skforecast.org"
     },
-    "projects": [{
-        "guid": "skforecast",
-        "name": "Skforecast",
-        "description": "Skforecast is a Python library for time series forecasting using machine learning models. It works with any regressor compatible with the scikit-learn API, including popular options like LightGBM, XGBoost, CatBoost, Keras, and many others.",
-        "webpageUrl": {
-            "url": "https://skforecast.org"
-        },
-        "repositoryUrl": {
-            "url": "https://github.com/skforecast/skforecast"
-        },
-        "licenses": ["spdx:BSD-3-Clause"],
-        "tags": [
-            "ai",
-            "data-science",
-            "machine-learning",
-            "time-series",
-            "forecasting",
-            "time-series-classification",
-            "sktime",
-            "benchmarking",
-            "scikit-learn",
-            "changepoint-detection"
-        ]
-    }],
+
+    "projects": [
+        {
+            "guid": "skforecast",
+            "name": "Skforecast",
+            "description": "Skforecast is a Python library for time series forecasting using machine learning models. It works with any regressor compatible with the scikit-learn API, including popular options like LightGBM, XGBoost, CatBoost, Keras, and many others. It aims to make state-of-the-art forecasting accessible through simple, unified, and production-ready tools.",
+            "webpageUrl": {
+                "url": "https://skforecast.org"
+            },
+            "repositoryUrl": {
+                "url": "https://github.com/skforecast/skforecast"
+            },
+            "licenses": ["spdx:BSD-3-Clause"],
+            "tags": [
+                "ai",
+                "data-science",
+                "machine-learning",
+                "time-series",
+                "forecasting",
+                "time-series-classification",
+                "skforecast",
+                "scikit-learn",
+                "python"
+            ]
+        }
+    ],
 
     "funding": {
         "channels": [
             {
-                "guid": "mybank",
+                "guid": "bank",
                 "type": "bank",
-                "address": "",
-                "description": "Will accept direct bank transfers. Please e-mail me for details."
+                "address": "IBAN: DE08630910100601674006 (Address: Talstraße 14, 89584 Ehingen, Germany)", # replace with actual IBAN
+                "description": "BIC: GENODES1EHI. Please include \"skforecast\" in the transfer purpose."
             },
             {
-                "guid": "paypal",
-                "type": "payment-provider",
-                "address": "https://example.com/payme/@myid",
-                "description": "Pay with your debit/credit card through this gateway and setup recurring subscriptions."
+                "guid": "github-sponsors",
+                "type": "platform",
+                "url": "https://github.com/sponsors/example", # Replace with actual GitHub Sponsors URL
+                "description": "Support the project through GitHub Sponsors."
             }
         ],
         "plans": [
             {
+                "guid": "developer-time",
+                "status": "active",
+                "name": "Part-time Developer Support",
+                "description": "Support to fund developers working part-time on maintenance, new features, documentation improvements, and long-term project sustainability.",
+                "amount": 25000,
+                "currency": "EUR",
+                "frequency": "yearly",
+                "channels": ["bank"]
+            },
+            {
                 "guid": "hosting-monthly",
                 "status": "active",
-                "name": "Hosting support",
-                "description": "This will cover the monthly server hosting costs for the projects.",
+                "name": "Hosting Support",
+                "description": "Covers monthly server hosting costs for the project infrastructure, documentation, benchmarking environment, and automated testing.",
                 "amount": 250,
                 "currency": "EUR",
                 "frequency": "monthly",
-                "channels": ["mybank", "paypal"]
-            },
-            {
-                "guid": "developer-time",
-                "status": "active",
-                "name": "Developer compensation",
-                "description": "This will cover the cost of one developer working part-time on the projects.",
-                "amount": 1000,
-                "currency": "EUR",
-                "frequency": "monthly",
-                "channels": ["mybank", "paypal"]
+                "channels": ["bank"]
             }
         ]
     }
