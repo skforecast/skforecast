@@ -9,7 +9,9 @@
         "email": "j.amatrodrigo@gmail.com",
         "phone": "",
         "description": "Creator and maintainer of the skforecast project and the data-science blog https://cienciadedatos.net/en/, which provides free educational resources.",
-        "url": "https://skforecast.org"
+        "webpageUrl": {
+            "url": "https://github.com/skforecast/skforecast"
+        }
     },
 
     "projects": [
@@ -30,7 +32,7 @@
                 "machine-learning",
                 "time-series",
                 "forecasting",
-                "time-series-classification",
+                "statistics",
                 "skforecast",
                 "scikit-learn",
                 "python"
@@ -43,14 +45,14 @@
             {
                 "guid": "bank",
                 "type": "bank",
-                "address": "IBAN: DE08630910100601674006 (Address: Talstraße 14, 89584 Ehingen, Germany)", # replace with actual IBAN
-                "description": "BIC: GENODES1EHI. Please include \"skforecast\" in the transfer purpose."
+                "address": "IBAN: DE08630910100601674006 (Address: Talstraße 14, 89584 Ehingen, Germany)",
+                "description": "BIC: GENODES1EHI. Please include \"skforecast\" in the purpose."
             },
             {
-                "guid": "github-sponsors",
-                "type": "platform",
-                "url": "https://github.com/sponsors/example", # Replace with actual GitHub Sponsors URL
-                "description": "Support the project through GitHub Sponsors."
+                "guid": "github",
+                "type": "other",
+                "address": "xxxxxxxx",
+                "description": "Github Sponsor"
             }
         ],
         "plans": [
