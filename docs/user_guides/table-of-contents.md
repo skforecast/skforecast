@@ -7,7 +7,8 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 - [Input data](../user_guides/input-data.html)
 - [Recursive multi-step forecasting](../user_guides/autoregresive-forecaster.html)
 - [Direct multi-step forecasting](../user_guides/direct-multi-step-forecasting.html)
-- [ARIMA and SARIMAX forecasting](../user_guides/forecasting-sarimax-arima.html)
+- [ARIMA and SARIMAX](../user_guides/forecasting-sarimax-arima.html)
+- [ARAR](../user_guides/forecasting-arar.html)
 - [Forecasting baseline](../user_guides/forecasting-baseline.html)
 
 <span style="font-size: 1.3em;">Global Forecasters (multiple series)</span>

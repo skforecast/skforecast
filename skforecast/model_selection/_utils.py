@@ -185,6 +185,7 @@ def check_backtesting_input(
         "ForecasterRecursive",
         "ForecasterDirect",
         "ForecasterSarimax",
+        "ForecasterStats",
         "ForecasterEquivalentDate",
     ]
     forecasters_direct = [

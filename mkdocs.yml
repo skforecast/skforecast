@@ -26,7 +26,8 @@ nav:
     - Single series Forecasters:
       - Recursive multi-step forecasting: user_guides/autoregresive-forecaster.ipynb
       - Direct multi-step forecasting: user_guides/direct-multi-step-forecasting.ipynb
-      - ARIMA and SARIMAX forecasting: user_guides/forecasting-sarimax-arima.ipynb
+      - ARIMA and SARIMAX: user_guides/forecasting-sarimax-arima.ipynb
+      - ARAR: user_guides/forecasting-arar.ipynb
       - Forecasting baseline: user_guides/forecasting-baseline.ipynb
     - Global Forecasters (multiple series):
       - Independent multi-time series forecasting: user_guides/independent-multi-time-series-forecasting.ipynb
