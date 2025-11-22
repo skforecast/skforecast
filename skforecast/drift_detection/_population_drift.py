@@ -238,7 +238,7 @@ class PopulationDriftDetector:
         style, unique_id = get_style_repr_html(self.is_fitted_)
         content = f"""
         <div class="container-{unique_id}">
-            <h2>{type(self).__name__}</h2>
+            <p style="font-size: 1.5em; font-weight: bold; margin-block-start: 0.83em; margin-block-end: 0.83em;">{type(self).__name__}</p>
             <details>
                 <summary>General Information</summary>
                 <ul>

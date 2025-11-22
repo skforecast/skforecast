@@ -1,0 +1,81 @@
+{
+    "$schema": "https://fundingjson.org/schema/v1.1.0.json",
+    "version": "v1.0.0",
+
+    "entity": {
+        "type": "individual",
+        "role": "maintainer",
+        "name": "Javier Escobar Ortiz",
+        "email": "javier.escobar.ortiz@gmail.com",
+        "phone": "",
+        "description": "Creator and maintainer of the skforecast project and free educational resources.",
+        "webpageUrl": {
+            "url": "https://github.com/skforecast/skforecast"
+        }
+    },
+
+    "projects": [
+        {
+            "guid": "skforecast",
+            "name": "Skforecast",
+            "description": "Skforecast is a Python library for time series forecasting using statistical and machine learning models. It aims to make state-of-the-art forecasting accessible through simple, unified, and production-ready tools.",
+            "webpageUrl": {
+                "url": "https://skforecast.org"
+            },
+            "repositoryUrl": {
+                "url": "https://github.com/skforecast/skforecast"
+            },
+            "licenses": ["spdx:BSD-3-Clause"],
+            "tags": [
+                "ai",
+                "data-science",
+                "machine-learning",
+                "time-series",
+                "forecasting",
+                "statistics",
+                "skforecast",
+                "scikit-learn",
+                "python"
+            ]
+        }
+    ],
+
+    "funding": {
+        "channels": [
+            {
+                "guid": "bank",
+                "type": "bank",
+                "address": "IBAN: ES5001825322260000238540",
+                "description": "BIC: BBVAESMM. Please include \"skforecast\" in the purpose."
+            },
+            {
+                "guid": "github",
+                "type": "other",
+                "address": "https://github.com/sponsors/JavierEscobarOrtiz",
+                "description": "Github Sponsor"
+            }
+        ],
+        "plans": [
+            {
+                "guid": "developer-time",
+                "status": "active",
+                "name": "Part-time Developer Support",
+                "description": "Support to fund developers working part-time on maintenance, new features, documentation improvements, and long-term project sustainability.",
+                "amount": 25000,
+                "currency": "EUR",
+                "frequency": "yearly",
+                "channels": ["bank"]
+            },
+            {
+                "guid": "hosting-monthly",
+                "status": "active",
+                "name": "Hosting Support",
+                "description": "Covers monthly server hosting costs for the project infrastructure, documentation, benchmarking environment, and automated testing.",
+                "amount": 250,
+                "currency": "EUR",
+                "frequency": "monthly",
+                "channels": ["bank"]
+            }
+        ]
+    }
+}

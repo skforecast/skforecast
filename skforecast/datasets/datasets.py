@@ -280,6 +280,28 @@ datasets = {
             "https://tsibbledata.tidyverts.org/reference/vic_elec.html"
         )
     },
+    'vic_electricity_classification': {
+        'url': (
+            'https://raw.githubusercontent.com/skforecast/'
+            'skforecast-datasets/{version}/data/vic_electricity_classification.csv'
+        ),
+        'sep': ',',
+        'index_col': 'Time',
+        'date_format': '%Y-%m-%d %H:%M:%S',
+        'freq': 'h',
+        'file_type': 'csv',
+        'description': (
+            "Hourly electricity demand for Victoria, Australia classified into three categories: "
+            "'low', 'medium' and 'high' according to the 20th and 80th percentiles. "
+            "The dataset also includes temperature, holiday indicator and hour of the day as features."
+        ),
+        'source': (
+            "O'Hara-Wild M, Hyndman R, Wang E, Godahewa R (2022).tsibbledata: Diverse "
+            "Datasets for 'tsibble'. https://tsibbledata.tidyverts.org/, "
+            "https://github.com/tidyverts/tsibbledata/. "
+            "https://tsibbledata.tidyverts.org/reference/vic_elec.html"
+        )
+    },
     'store_sales': {
         'url': (
             'https://raw.githubusercontent.com/skforecast/'
