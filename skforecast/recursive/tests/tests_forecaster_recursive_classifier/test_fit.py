@@ -1,21 +1,21 @@
-# Unit test fit ForecasterRecursive
+# Unit test fit ForecasterRecursiveClassifier
 # ==============================================================================
 import pytest
-from pytest import approx
 import numpy as np
 import pandas as pd
-from sklearn.linear_model import LinearRegression
-from skforecast.preprocessing import RollingFeatures
-from skforecast.recursive import ForecasterRecursive
+from lightgbm import LGBMClassifier
+from sklearn.linear_model import LogisticRegression
+from skforecast.preprocessing import RollingFeaturesClassification
+from skforecast.recursive import ForecasterRecursiveClassifier
 
 # Fixtures
-from .fixtures_forecaster_recursive_classifier import y
-from .fixtures_forecaster_recursive_classifier import exog
+from .fixtures_forecaster_recursive_classifier import y, y_dt
+from .fixtures_forecaster_recursive_classifier import exog, exog_dt
 
 
 def custom_weights(index):  # pragma: no cover
     """
-    Return 0 if index is one of '2022-01-05', '2022-01-06', 1 otherwise.
+    Return 0 if index is between 20 and 40 else 1.
     """
     weights = np.where(
                 (index >= 20) & (index <= 40),
@@ -30,11 +30,11 @@ def test_forecaster_y_exog_features_stored():
     """
     Test forecaster stores y and exog features after fitting.
     """
-    rolling = RollingFeatures(
-        stats=['ratio_min_max', 'median'], window_sizes=4
+    rolling = RollingFeaturesClassification(
+        stats=['proportion', 'mode'], window_sizes=4
     )
-    forecaster = ForecasterRecursive(
-        LinearRegression(), lags=3, window_features=rolling
+    forecaster = ForecasterRecursiveClassifier(
+        LogisticRegression(), lags=3, window_features=rolling
     )
     forecaster.fit(y=y, exog=exog)
 
@@ -44,11 +44,22 @@ def test_forecaster_y_exog_features_stored():
     exog_names_in_ = ['exog']
     exog_dtypes_in_ = {'exog': exog.dtype}
     exog_dtypes_out_ = {'exog': exog.dtype}
-    X_train_window_features_names_out_ = ['roll_ratio_min_max_4', 'roll_median_4']
+    X_train_window_features_names_out_ = [
+        'roll_proportion_4_class_0.0', 'roll_proportion_4_class_1.0',
+        'roll_proportion_4_class_2.0', 'roll_mode_4'
+    ]
     X_train_exog_names_out_ = ['exog']
     X_train_features_names_out_ = [
-        'lag_1', 'lag_2', 'lag_3', 'roll_ratio_min_max_4', 'roll_median_4', 'exog'
+        'lag_1', 'lag_2', 'lag_3', 
+        'roll_proportion_4_class_0.0', 'roll_proportion_4_class_1.0',
+        'roll_proportion_4_class_2.0', 'roll_mode_4', 'exog'
     ]
+
+    classes_ = [np.int64(1), np.int64(2), np.int64(3)]
+    class_codes_ = [0.0, 1.0, 2.0]
+    n_classes_ = 3
+    encoding_mapping_ = {np.int64(1): 0.0, np.int64(2): 1.0, np.int64(3): 2.0}
+    code_to_class_mapping_ = {0.0: np.int64(1), 1.0: np.int64(2), 2.0: np.int64(3)}
     
     assert forecaster.series_name_in_ == series_name_in_
     assert forecaster.exog_in_ == exog_in_
@@ -59,19 +70,72 @@ def test_forecaster_y_exog_features_stored():
     assert forecaster.X_train_window_features_names_out_ == X_train_window_features_names_out_
     assert forecaster.X_train_exog_names_out_ == X_train_exog_names_out_
     assert forecaster.X_train_features_names_out_ == X_train_features_names_out_
+    assert forecaster.classes_ == classes_
+    assert forecaster.class_codes_ == class_codes_
+    assert forecaster.n_classes_ == n_classes_
+    assert forecaster.encoding_mapping_ == encoding_mapping_
+    assert forecaster.code_to_class_mapping_ == code_to_class_mapping_
+
+
+def test_forecaster_y_exog_features_stored_lgbm_as_categorical():
+    """
+    Test forecaster stores y and exog features after fitting when using 
+    LGBMClassifier.
+    """
+    rolling = RollingFeaturesClassification(
+        stats=['proportion', 'mode'], window_sizes=4
+    )
+    forecaster = ForecasterRecursiveClassifier(
+        LGBMClassifier(verbose=-1), lags=3, window_features=rolling
+    )
+    forecaster.fit(y=y_dt, exog=exog_dt)
+
+    series_name_in_ = 'y'
+    exog_in_ = True
+    exog_type_in_ = type(exog_dt)
+    exog_names_in_ = ['exog']
+    exog_dtypes_in_ = {'exog': exog_dt.dtype}
+    exog_dtypes_out_ = {'exog': exog_dt.dtype}
+    X_train_window_features_names_out_ = [
+        'roll_proportion_4_class_0', 'roll_proportion_4_class_1',
+        'roll_proportion_4_class_2', 'roll_mode_4'
+    ]
+    X_train_exog_names_out_ = ['exog']
+    X_train_features_names_out_ = [
+        'lag_1', 'lag_2', 'lag_3', 
+        'roll_proportion_4_class_0', 'roll_proportion_4_class_1',
+        'roll_proportion_4_class_2', 'roll_mode_4', 'exog'
+    ]
+
+    classes_ = [np.int64(1), np.int64(2), np.int64(3)]
+    class_codes_ = [0, 1, 2]
+    n_classes_ = 3
+    encoding_mapping_ = {np.int64(1): 0, np.int64(2): 1, np.int64(3): 2}
+    code_to_class_mapping_ = {0: np.int64(1), 1: np.int64(2), 2: np.int64(3)}
+    
+    assert forecaster.series_name_in_ == series_name_in_
+    assert forecaster.exog_in_ == exog_in_
+    assert forecaster.exog_type_in_ == exog_type_in_
+    assert forecaster.exog_names_in_ == exog_names_in_
+    assert forecaster.exog_dtypes_in_ == exog_dtypes_in_
+    assert forecaster.exog_dtypes_out_ == exog_dtypes_out_
+    assert forecaster.X_train_window_features_names_out_ == X_train_window_features_names_out_
+    assert forecaster.X_train_exog_names_out_ == X_train_exog_names_out_
+    assert forecaster.X_train_features_names_out_ == X_train_features_names_out_
+    assert forecaster.classes_ == classes_
+    assert forecaster.class_codes_ == class_codes_
+    assert forecaster.n_classes_ == n_classes_
+    assert forecaster.encoding_mapping_ == encoding_mapping_
+    assert forecaster.code_to_class_mapping_ == code_to_class_mapping_
 
 
 def test_forecaster_DatetimeIndex_index_freq_stored():
     """
-    Test serie_with_DatetimeIndex.index.freqstr is stored in forecaster.index_freq.
+    Test y_dt.index.freq is stored in forecaster.index_freq.
     """
-    serie_with_DatetimeIndex = pd.Series(
-        data  = [1, 2, 3, 4, 5],
-        index = pd.date_range(start='2022-01-01', periods=5)
-    )
-    forecaster = ForecasterRecursive(LinearRegression(), lags=3)
-    forecaster.fit(y=serie_with_DatetimeIndex)
-    expected = serie_with_DatetimeIndex.index.freqstr
+    forecaster = ForecasterRecursiveClassifier(LogisticRegression(), lags=3)
+    forecaster.fit(y=y_dt)
+    expected = y_dt.index.freq
     results = forecaster.index_freq_
 
     assert results == expected
@@ -81,136 +145,12 @@ def test_forecaster_index_step_stored():
     """
     Test serie without DatetimeIndex, step is stored in forecaster.index_freq.
     """
-    y = pd.Series(data=np.arange(10))
-    forecaster = ForecasterRecursive(LinearRegression(), lags=3)
+    forecaster = ForecasterRecursiveClassifier(LogisticRegression(), lags=3)
     forecaster.fit(y=y)
     expected = y.index.step
     results = forecaster.index_freq_
 
     assert results == expected
-
-
-def test_fit_in_sample_residuals_stored():
-    """
-    Test that values of in_sample_residuals_ are stored after fitting.
-    """
-    forecaster = ForecasterRecursive(LinearRegression(), lags=3)
-    forecaster.fit(y=pd.Series(np.arange(5)), store_in_sample_residuals=True)
-    results = forecaster.in_sample_residuals_
-    expected = np.array([0., 0.])
-
-    assert isinstance(results, np.ndarray)
-    np.testing.assert_array_almost_equal(results, expected)
-
-
-def test_fit_same_residuals_when_residuals_greater_than_10000():
-    """
-    Test fit return same residuals when residuals len is greater than 10_000.
-    Testing with two different forecaster.
-    """
-    forecaster = ForecasterRecursive(LinearRegression(), lags=3)
-    forecaster.fit(y=pd.Series(np.arange(12_000)), store_in_sample_residuals=True)
-    results_1 = forecaster.in_sample_residuals_
-    forecaster = ForecasterRecursive(LinearRegression(), lags=3)
-    forecaster.fit(y=pd.Series(np.arange(12_000)), store_in_sample_residuals=True)
-    results_2 = forecaster.in_sample_residuals_
-    
-    assert isinstance(results_1, np.ndarray)
-    assert isinstance(results_2, np.ndarray)
-    assert len(results_1) == 10_000
-    assert len(results_2) == 10_000
-    np.testing.assert_array_almost_equal(results_1, results_2)
-
-
-def test_fit_in_sample_residuals_by_bin_stored():
-    """
-    Test that values of in_sample_residuals_by_bin are stored after fitting.
-    """
-    forecaster = ForecasterRecursive(
-                     regressor     = LinearRegression(),
-                     lags          = 5,
-                     binner_kwargs = {'n_bins': 3}
-                 )
-    forecaster.fit(y, store_in_sample_residuals=True)
-
-    X_train, y_train = forecaster.create_train_X_y(y)
-    forecaster.regressor.fit(X_train, y_train)
-    predictions_regressor = forecaster.regressor.predict(X_train)
-    expected_1 = y_train - predictions_regressor
-
-    expected_2 = {
-        0: np.array([
-                0.0334789 , -0.12428472,  0.34053202, -0.40668544, -0.29246428,
-                0.16990408, -0.02118736, -0.24234062, -0.11745596,  0.1697826 ,
-                -0.01432662, -0.00063421, -0.03462192,  0.41322689,  0.19077889
-            ]),
-        1: np.array([
-                -0.07235524, -0.10880301, -0.07773704, -0.09070227,  0.21559424,
-                -0.29380582,  0.03359274,  0.10109702,  0.2080735 , -0.17086244,
-                0.01929597, -0.09396861, -0.0670198 ,  0.38248168, -0.01100463
-            ]),
-        2: np.array([
-                0.44780048,  0.03560524, -0.04960603,  0.24323339,  0.12651656,
-                -0.46533293, -0.17532266, -0.24111645,  0.3805961 , -0.05842153,
-                0.08927473, -0.42295249, -0.32047616,  0.38902396, -0.01640072
-            ])
-    }
-
-    expected_3 = {
-        0: (0.31791969404305154, 0.47312737276420375),
-        1: (0.47312737276420375, 0.5259220171775293),
-        2: (0.5259220171775293, 0.6492244994657664)
-    }
-
-    np.testing.assert_array_almost_equal(
-        np.sort(forecaster.in_sample_residuals_),
-        np.sort(expected_1)
-    )
-    for k in expected_2.keys():
-        np.testing.assert_array_almost_equal(forecaster.in_sample_residuals_by_bin_[k], expected_2[k])
-    for k in expected_3.keys():
-        assert forecaster.binner_intervals_[k][0] == approx(expected_3[k][0])
-        assert forecaster.binner_intervals_[k][1] == approx(expected_3[k][1])
-
-
-def test_fit_in_sample_residuals_not_stored_probabilistic_mode_binned():
-    """
-    Test that values of in_sample_residuals_ are not stored after fitting
-    when `store_in_sample_residuals=False`. Binner intervals are stored.
-    """
-    forecaster = ForecasterRecursive(
-                     regressor     = LinearRegression(),
-                     lags          = 5,
-                     binner_kwargs = {'n_bins': 3}
-                 )
-    forecaster.fit(y, store_in_sample_residuals=False)
-
-    expected_binner_intervals_ = {
-        0: (0.31791969404305154, 0.47312737276420375),
-        1: (0.47312737276420375, 0.5259220171775293),
-        2: (0.5259220171775293, 0.6492244994657664)
-    }
-
-    assert forecaster.in_sample_residuals_ is None
-    assert forecaster.in_sample_residuals_by_bin_ is None
-    assert forecaster.binner_intervals_.keys() == expected_binner_intervals_.keys()
-    for k in expected_binner_intervals_.keys():
-        assert forecaster.binner_intervals_[k][0] == approx(expected_binner_intervals_[k][0])
-        assert forecaster.binner_intervals_[k][1] == approx(expected_binner_intervals_[k][1])
-
-
-def test_fit_in_sample_residuals_not_stored_probabilistic_mode_False():
-    """
-    Test that values of in_sample_residuals_ are not stored after fitting
-    when `store_in_sample_residuals=False` and _probabilistic_mode=False.
-    """
-    forecaster = ForecasterRecursive(LinearRegression(), lags=3)
-    forecaster._probabilistic_mode = False
-    forecaster.fit(y=pd.Series(np.arange(10), name='y'), store_in_sample_residuals=False)
-
-    assert forecaster.in_sample_residuals_ is None
-    assert forecaster.in_sample_residuals_by_bin_ is None
-    assert forecaster.binner_intervals_ is None
 
 
 @pytest.mark.parametrize("store_last_window", 
@@ -220,9 +160,13 @@ def test_fit_last_window_stored(store_last_window):
     """
     Test that values of last window are stored after fitting.
     """
-    forecaster = ForecasterRecursive(LinearRegression(), lags=3)
-    forecaster.fit(y=pd.Series(np.arange(50)), store_last_window=store_last_window)
-    expected = pd.DataFrame(np.array([47, 48, 49]), index=[47, 48, 49], columns=['y'])
+    forecaster = ForecasterRecursiveClassifier(LogisticRegression(), lags=3)
+    forecaster.fit(y=pd.Series(
+        np.arange(50)), store_last_window=store_last_window
+    )
+    expected = pd.DataFrame(
+        np.array([47, 48, 49]), index=[47, 48, 49], columns=['y']
+    )
 
     if store_last_window:
         pd.testing.assert_frame_equal(forecaster.last_window_, expected)
@@ -234,14 +178,20 @@ def test_fit_model_coef_when_using_weight_func():
     """
     Check the value of the regressor coefs when using a `weight_func`.
     """
-    forecaster = ForecasterRecursive(
-                     regressor   = LinearRegression(),
+    forecaster = ForecasterRecursiveClassifier(
+                     regressor   = LogisticRegression(),
                      lags        = 5,
                      weight_func = custom_weights
                  )
     forecaster.fit(y=y)
     results = forecaster.regressor.coef_
-    expected = np.array([0.01211677, -0.20981367,  0.04214442, -0.0369663, -0.18796105])
+    expected = np.array(
+        [
+            [0.07295195, 0.26058532, -0.12877723, -0.70811789, 0.71544608],
+            [0.16912783, -0.11071792, -0.00131558, 0.53663323, -0.83335583],
+            [-0.24207979, -0.1498674, 0.13009281, 0.17148466, 0.11790975],
+        ]
+    )
 
     np.testing.assert_almost_equal(results, expected)
 
@@ -250,9 +200,17 @@ def test_fit_model_coef_when_not_using_weight_func():
     """
     Check the value of the regressor coefs when not using a `weight_func`.
     """
-    forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=5)
+    forecaster = ForecasterRecursiveClassifier(
+        regressor=LogisticRegression(), lags=5
+    )
     forecaster.fit(y=y)
     results = forecaster.regressor.coef_
-    expected = np.array([0.16773502, -0.09712939,  0.10046413, -0.09971515, -0.15849756])
+    expected = np.array(
+        [
+            [0.33080368, 0.01291936, -0.31347922, -0.43600223, 0.25260526],
+            [-0.3486165, 0.05728672, -0.06652468, 0.25286034, -0.33176274],
+            [0.01781282, -0.07020608, 0.38000389, 0.18314188, 0.07915748],
+        ]
+    )
 
     np.testing.assert_almost_equal(results, expected)

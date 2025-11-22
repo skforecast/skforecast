@@ -1,18 +1,20 @@
-# Unit test set_lags ForecasterRecursive
+# Unit test set_lags ForecasterRecursiveClassifier
 # ==============================================================================
 import re
 import pytest
 import numpy as np
-from sklearn.linear_model import LinearRegression 
-from skforecast.preprocessing import RollingFeatures
-from skforecast.recursive import ForecasterRecursive
+from sklearn.linear_model import LogisticRegression 
+from skforecast.preprocessing import RollingFeaturesClassification
+from skforecast.recursive import ForecasterRecursiveClassifier
 
 
 def test_set_lags_ValueError_when_lags_set_to_None_and_window_features_is_None():
     """
     Test ValueError is raised when lags is set to None and window_features is None.
     """
-    forecaster = ForecasterRecursive(LinearRegression(), lags=3, window_features=None)
+    forecaster = ForecasterRecursiveClassifier(
+        LogisticRegression(), lags=3, window_features=None
+    )
 
     err_msg = re.escape(
         "At least one of the arguments `lags` or `window_features` "
@@ -30,7 +32,7 @@ def test_set_lags_with_different_inputs(lags):
     """
     Test how lags and max_lag attributes change with lags argument of different types.
     """
-    forecaster = ForecasterRecursive(LinearRegression(), lags=5)
+    forecaster = ForecasterRecursiveClassifier(LogisticRegression(), lags=5)
     forecaster.set_lags(lags=lags)
 
     np.testing.assert_array_almost_equal(forecaster.lags, np.array([1, 2, 3]))
@@ -39,40 +41,14 @@ def test_set_lags_with_different_inputs(lags):
     assert forecaster.window_size == 3
 
 
-def test_set_lags_when_differentiation_is_not_None():
-    """
-    Test how `window_size` is also updated when the forecaster includes 
-    differentiation.
-    """
-    forecaster = ForecasterRecursive(
-                     regressor       = LinearRegression(),
-                     lags            = 3,
-                     differentiation = 1
-                 )
-    
-    np.testing.assert_array_almost_equal(forecaster.lags, np.array([1, 2, 3]))
-    assert forecaster.lags_names == ['lag_1', 'lag_2', 'lag_3']
-    assert forecaster.max_lag == 3
-    assert forecaster.window_size == 3 + 1
-    assert forecaster.differentiator.window_size == 3 + 1
-    
-    forecaster.set_lags(lags=5)
-
-    np.testing.assert_array_almost_equal(forecaster.lags, np.array([1, 2, 3, 4, 5]))
-    assert forecaster.lags_names == ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5']
-    assert forecaster.max_lag == 5
-    assert forecaster.window_size == 5 + 1
-    assert forecaster.differentiator.window_size == 5 + 1
-
-
 def test_set_lags_when_window_features():
     """
     Test how `window_size` is also updated when the forecaster includes
     window_features.
     """
-    rolling = RollingFeatures(stats='mean', window_sizes=6)
-    forecaster = ForecasterRecursive(
-                     regressor       = LinearRegression(),
+    rolling = RollingFeaturesClassification(stats='mode', window_sizes=6)
+    forecaster = ForecasterRecursiveClassifier(
+                     regressor       = LogisticRegression(),
                      lags            = 9,
                      window_features = rolling
                  )
@@ -93,9 +69,9 @@ def test_set_lags_to_None(lags):
     """
     Test how lags and max_lag attributes change when lags is set to None.
     """
-    rolling = RollingFeatures(stats='mean', window_sizes=3)
-    forecaster = ForecasterRecursive(
-                     regressor       = LinearRegression(),
+    rolling = RollingFeaturesClassification(stats='mode', window_sizes=3)
+    forecaster = ForecasterRecursiveClassifier(
+                     regressor       = LogisticRegression(),
                      lags            = 5,
                      window_features = rolling
                  )

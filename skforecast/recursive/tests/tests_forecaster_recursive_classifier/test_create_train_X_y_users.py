@@ -1,32 +1,63 @@
-# Unit test create_train_X_y ForecasterRecursive
+# Unit test create_train_X_y ForecasterRecursiveClassifier
 # ==============================================================================
 import numpy as np
 import pandas as pd
-from skforecast.recursive import ForecasterRecursive
-from sklearn.linear_model import LinearRegression
+from lightgbm import LGBMClassifier
+from sklearn.linear_model import LogisticRegression
+from skforecast.recursive import ForecasterRecursiveClassifier
 
 
-def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_series_of_float():
+def test_create_train_X_y_output_when_encoded_False():
     """
-    Test the output of create_train_X_y when y=pd.Series(np.arange(10)) and 
-    exog is a pandas series of floats.
+    Test the output of create_train_X_y when encoded is False.
     """
-    y = pd.Series(np.arange(10), dtype=float)
-    exog = pd.Series(np.arange(100, 110), name='exog', dtype=float)
-    forecaster = ForecasterRecursive(LinearRegression(), lags=5)
-    results = forecaster.create_train_X_y(y=y, exog=exog)
+    y = pd.Series(np.array(['a', 'b', 'c', 'a', 'b', 'c', 'a', 'b', 'c', 'a']), name='y')
+    exog = None
+    forecaster = ForecasterRecursiveClassifier(LogisticRegression(), lags=5)
+    results = forecaster.create_train_X_y(y=y, exog=exog, encoded=False)
+
     expected = (
         pd.DataFrame(
-            data = np.array([[4., 3., 2., 1., 0., 105.],
-                             [5., 4., 3., 2., 1., 106.],
-                             [6., 5., 4., 3., 2., 107.],
-                             [7., 6., 5., 4., 3., 108.],
-                             [8., 7., 6., 5., 4., 109.]]),
+            data = np.array([['b', 'a', 'c', 'b', 'a'],
+                             ['c', 'b', 'a', 'c', 'b'],
+                             ['a', 'c', 'b', 'a', 'c'],
+                             ['b', 'a', 'c', 'b', 'a'],
+                             ['c', 'b', 'a', 'c', 'b']]),
             index   = pd.RangeIndex(start=5, stop=10, step=1),
-            columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog']
-        ).astype({'exog': float}),
+            columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5']
+        ),
         pd.Series(
-            data  = np.array([5, 6, 7, 8, 9]),
+            data  = np.array(['c', 'a', 'b', 'c', 'a']),
+            index = pd.RangeIndex(start=5, stop=10, step=1),
+            name  = 'y'
+        )
+    )
+
+    pd.testing.assert_frame_equal(results[0], expected[0])
+    pd.testing.assert_series_equal(results[1], expected[1])
+
+
+def test_create_train_X_y_output_when_encoded_True():
+    """
+    Test the output of create_train_X_y when encoded is True.
+    """
+    y = pd.Series(np.array(['a', 'b', 'c', 'a', 'b', 'c', 'a', 'b', 'c', 'a']), name='y')
+    exog = None
+    forecaster = ForecasterRecursiveClassifier(LogisticRegression(), lags=5)
+    results = forecaster.create_train_X_y(y=y, exog=exog, encoded=True)
+
+    expected = (
+        pd.DataFrame(
+            data = np.array([[1., 0., 2., 1., 0.],
+                             [2., 1., 0., 2., 1.],
+                             [0., 2., 1., 0., 2.],
+                             [1., 0., 2., 1., 0.],
+                             [2., 1., 0., 2., 1.]]),
+            index   = pd.RangeIndex(start=5, stop=10, step=1),
+            columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5']
+        ),
+        pd.Series(
+            data  = np.array([2, 0, 1, 2, 0]),
             index = pd.RangeIndex(start=5, stop=10, step=1),
             name  = 'y',
             dtype = float
@@ -35,3 +66,82 @@ def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_series_of_float
 
     pd.testing.assert_frame_equal(results[0], expected[0])
     pd.testing.assert_series_equal(results[1], expected[1])
+
+
+def test_create_train_X_y_output_when_encoded_True_as_categorical():
+    """
+    Test the output of create_train_X_y when encoded is True and lags are categorical.
+    """
+    y = pd.Series(np.array(['a', 'b', 'c', 'a', 'b', 'c', 'a', 'b', 'c', 'a']), name='y')
+    exog = None
+    forecaster = ForecasterRecursiveClassifier(LGBMClassifier(verbose=-1), lags=5)
+    results = forecaster.create_train_X_y(y=y, exog=exog, encoded=True)
+
+    expected = (
+        pd.DataFrame(
+            data = np.array([[1., 0., 2., 1., 0.],
+                             [2., 1., 0., 2., 1.],
+                             [0., 2., 1., 0., 2.],
+                             [1., 0., 2., 1., 0.],
+                             [2., 1., 0., 2., 1.]]),
+            index   = pd.RangeIndex(start=5, stop=10, step=1),
+            columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5']
+        ),
+        pd.Series(
+            data  = np.array([2, 0, 1, 2, 0]),
+            index = pd.RangeIndex(start=5, stop=10, step=1),
+            name  = 'y',
+            dtype = int
+        )
+    )
+
+    for col in expected[0].columns:
+        expected[0][col] = pd.Categorical(
+                               values     = expected[0][col],
+                               categories = [0, 1, 2],
+                               ordered    = False
+                           )
+
+    pd.testing.assert_frame_equal(results[0], expected[0])
+    pd.testing.assert_series_equal(results[1], expected[1])
+
+
+def test_create_train_X_y_output_when_encoded_True_as_categorical_after_fit():
+    """
+    Test the output of create_train_X_y when encoded is True and lags are 
+    categorical and after fitting the forecaster.
+    """
+    y = pd.Series(np.array(['a', 'b', 'c', 'a', 'b', 'c', 'a', 'b', 'c', 'a']), name='y')
+    exog = None
+    forecaster = ForecasterRecursiveClassifier(LGBMClassifier(verbose=-1), lags=5)
+    forecaster.fit(y=y)
+    results = forecaster.create_train_X_y(y=y, exog=exog, encoded=True)
+
+    expected = (
+        pd.DataFrame(
+            data = np.array([[1., 0., 2., 1., 0.],
+                             [2., 1., 0., 2., 1.],
+                             [0., 2., 1., 0., 2.],
+                             [1., 0., 2., 1., 0.],
+                             [2., 1., 0., 2., 1.]]),
+            index   = pd.RangeIndex(start=5, stop=10, step=1),
+            columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5']
+        ),
+        pd.Series(
+            data  = np.array([2, 0, 1, 2, 0]),
+            index = pd.RangeIndex(start=5, stop=10, step=1),
+            name  = 'y',
+            dtype = int
+        )
+    )
+
+    for col in expected[0].columns:
+        expected[0][col] = pd.Categorical(
+                               values     = expected[0][col],
+                               categories = [0, 1, 2],
+                               ordered    = False
+                           )
+
+    pd.testing.assert_frame_equal(results[0], expected[0])
+    pd.testing.assert_series_equal(results[1], expected[1])
+

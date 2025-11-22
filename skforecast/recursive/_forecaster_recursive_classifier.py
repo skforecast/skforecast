@@ -40,17 +40,15 @@ from ..utils import (
 )
 
 
-# TODO: Calibrate?
-# TODO: TunedThresholdClassifierCV? It is only for binary classification
 class ForecasterRecursiveClassifier(ForecasterBase):
     """
-    This class turns any classifier compatible with the scikit-learn API into a
-    recursive autoregressive (multi-step) forecaster.
+    This class turns any classification estimator compatible with the scikit-learn 
+    API into a recursive autoregressive (multi-step) forecaster.
     
     Parameters
     ----------
-    regressor : classifier or pipeline compatible with the scikit-learn API
-        An instance of a classifier or pipeline compatible with the scikit-learn API.
+    regressor : estimator or pipeline compatible with the scikit-learn API
+        An instance of a estimator or pipeline compatible with the scikit-learn API.
     lags : int, list, numpy ndarray, range, default None
         Lags used as predictors. Index starts at 1, so lag 1 is equal to t-1.
     
@@ -65,10 +63,10 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         Encoding method for features derived from the time series (lags and 
         window features that return class values):
         
-        - 'auto': Use categorical dtype if classifier supports native categorical
+        - 'auto': Use categorical dtype if estimator supports native categorical
         features (LightGBM, CatBoost, XGBoost), otherwise numeric encoding.
-        - 'categorical': Force categorical dtype (requires compatible classifier).
-        - 'ordinal': Use ordinal encoding (0, 1, 2, ...). The classifier will 
+        - 'categorical': Force categorical dtype (requires compatible estimator).
+        - 'ordinal': Use ordinal encoding (0, 1, 2, ...). The estimator will 
         treat class codes as numeric values, assuming an ordinal relationship 
         between classes (e.g., 'low' < 'medium' < 'high').
         
@@ -84,14 +82,14 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         Ignored if `regressor` does not have the argument `sample_weight` in its `fit`
         method. The resulting `sample_weight` cannot have negative values.
     fit_kwargs : dict, default None
-        Additional arguments to be passed to the `fit` method of the classifier.
+        Additional arguments to be passed to the `fit` method of the estimator.
     forecaster_id : str, int, default None
         Name used as an identifier of the forecaster.
     
     Attributes
     ----------
-    regressor : classifier or pipeline compatible with the scikit-learn API
-        An instance of a classifier or pipeline compatible with the scikit-learn API.
+    regressor : estimator or pipeline compatible with the scikit-learn API
+        An instance of a estimator or pipeline compatible with the scikit-learn API.
     lags : numpy ndarray
         Lags used as predictors.
     lags_names : list
@@ -113,7 +111,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         Encoding method for features derived from the time series (lags and 
         window features that return class values).
     use_native_categoricals : bool
-        Indicates whether the classifier supports native categorical features.
+        Indicates whether the estimator supports native categorical features.
     classes_ : list
         List of class labels seen during training.
     class_codes_ : list
@@ -133,7 +131,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
     weight_func : Callable
         Function that defines the individual weights for each sample based on the
         index. For example, a function that assigns a lower weight to certain dates.
-        Ignored if `classifier` does not have the argument `sample_weight` in its `fit`
+        Ignored if `estimator` does not have the argument `sample_weight` in its `fit`
         method. The resulting `sample_weight` cannot have negative values.
     source_code_weight_func : str
         Source code of the custom function used to create weights.
@@ -174,11 +172,11 @@ class ForecasterRecursiveClassifier(ForecasterBase):
     X_train_features_names_out_ : list
         Names of columns of the matrix created internally for training.
     fit_kwargs : dict
-        Additional arguments to be passed to the `fit` method of the classifier.
+        Additional arguments to be passed to the `fit` method of the estimator.
     creation_date : str
         Date of creation.
     is_fitted : bool
-        Tag to identify if the classifier has been fitted (trained).
+        Tag to identify if the estimator has been fitted (trained).
     fit_date : str
         Date of last fit.
     skforecast_version : str
@@ -192,6 +190,12 @@ class ForecasterRecursiveClassifier(ForecasterBase):
     _probabilistic_mode: str, bool
         Private attribute used to indicate whether the forecaster should perform 
         some calculations during backtesting.
+    transformer_y : Ignored
+        Not used, present here for API consistency by convention.
+    differentiation : Ignored
+        Not used, present here for API consistency by convention.
+    differentiation_max : Ignored
+        Not used, present here for API consistency by convention.
 
     Notes
     -----
@@ -262,7 +266,10 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         self.skforecast_version                 = skforecast.__version__
         self.python_version                     = sys.version.split(" ")[0]
         self.forecaster_id                      = forecaster_id
-        self._probabilistic_mode                = "binned"  # TODO: Check
+        self._probabilistic_mode                = False  # NOTE: Ignored in this forecaster
+        self.transformer_y                      = None  # NOTE: Ignored in this forecaster
+        self.differentiation                    = None  # NOTE: Ignored in this forecaster
+        self.differentiation_max                = None  # NOTE: Ignored in this forecaster
 
         self.features_encoding                  = features_encoding
         self.use_native_categoricals            = False
@@ -285,7 +292,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                 self.use_native_categoricals = True
             else:
                 raise ValueError(
-                    f"`features_encoding='categorical'` requires a classifier that "
+                    f"`features_encoding='categorical'` requires a estimator that "
                     f"supports native categorical features (LightGBM, CatBoost, XGBoost). "
                     f"Got {type(regressor).__name__}. Use 'auto' or 'ordinal' instead."
                 )
@@ -295,7 +302,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
         self.encoder = OrdinalEncoder(
                            categories = 'auto',
-                           dtype      = float if features_encoding == 'ordinal' else int
+                           dtype      = int if self.use_native_categoricals else float
                        )
 
         self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
@@ -360,7 +367,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             "handles_binned_residuals": False
         }
 
-
     def __repr__(
         self
     ) -> str:
@@ -386,7 +392,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             f"{'=' * len(type(self).__name__)} \n"
             f"{type(self).__name__} \n"
             f"{'=' * len(type(self).__name__)} \n"
-            f"Classifier: {type(self.regressor).__name__} \n"
+            f"Estimator: {type(self.regressor).__name__} \n"
             f"Lags: {self.lags} \n"
             f"Window features: {self.window_features_names} \n"
             f"Window size: {self.window_size} \n"
@@ -401,7 +407,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             f"Training range: {self.training_range_.to_list() if self.is_fitted else None} \n"
             f"Training index type: {str(self.index_type_).split('.')[-1][:-2] if self.is_fitted else None} \n"
             f"Training index frequency: {self.index_freq_ if self.is_fitted else None} \n"
-            f"Classifier parameters: {params} \n"
+            f"Estimator parameters: {params} \n"
             f"fit_kwargs: {self.fit_kwargs} \n"
             f"Creation date: {self.creation_date} \n"
             f"Last fit date: {self.fit_date} \n"
@@ -437,7 +443,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             <details open>
                 <summary>General Information</summary>
                 <ul>
-                    <li><strong>Classifier:</strong> {type(self.regressor).__name__}</li>
+                    <li><strong>Estimator:</strong> {type(self.regressor).__name__}</li>
                     <li><strong>Lags:</strong> {self.lags}</li>
                     <li><strong>Window features:</strong> {self.window_features_names}</li>
                     <li><strong>Window size:</strong> {self.window_size}</li>
@@ -474,7 +480,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                 </ul>
             </details>
             <details>
-                <summary>Classifier Parameters</summary>
+                <summary>Estimator Parameters</summary>
                 <ul>
                     {params}
                 </ul>
@@ -497,17 +503,17 @@ class ForecasterRecursiveClassifier(ForecasterBase):
     
     def _check_categorical_support(
         self, 
-        regressor: object
+        estimator: object
     ) -> bool:
         """
-        Check if classifier supports native categorical features.
+        Check if estimator supports native categorical features.
         Checks by class name to avoid importing optional dependencies.
         """
 
-        if isinstance(regressor, Pipeline):
-            estimator = regressor[-1]
-        else:
-            estimator = regressor
+        if isinstance(estimator, Pipeline):
+            estimator = estimator[-1]
+        if type(estimator).__name__ == 'CalibratedClassifierCV':
+            estimator = estimator.estimator         
         
         class_name = type(estimator).__name__
         module_name = type(estimator).__module__
@@ -652,7 +658,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
         return X_train_window_features, X_train_window_features_names_out_
 
-
     def _create_train_X_y(
         self,
         y: pd.Series,
@@ -661,12 +666,14 @@ class ForecasterRecursiveClassifier(ForecasterBase):
     ) -> tuple[
         pd.DataFrame, 
         pd.Series, 
+        dict[str, Any],
         list[str], 
         list[str], 
         list[str], 
         list[str], 
         dict[str, type],
-        dict[str, type]
+        dict[str, type],
+        pd.DataFrame
     ]:
         """
         Create training matrices from univariate time series and exogenous
@@ -688,6 +695,8 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             Training values (predictors).
         y_train : pandas Series
             Values of the time series related to each row of `X_train`.
+        y_encoding_info_ : dict
+            Information related to the encoding of the target variable.
         exog_names_in_ : list
             Names of the exogenous variables used during training.
         X_train_window_features_names_out_ : list
@@ -707,6 +716,11 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             Type of each exogenous variable/s used in training after the transformation
             applied by `transformer_exog`. If `transformer_exog` is not used, it 
             is equal to `exog_dtypes_in_`.
+        last_window_ : pandas DataFrame
+            This window represents the most recent data observed by the predictor
+            during its training phase. It contains the values needed to predict the
+            next step immediately after the training data. These values are stored
+            in the original scale of the time series before undergoing any transformation.
 
         """
 
@@ -742,7 +756,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             encoding_mapping_ = {}
             y_encoded = self.encoder.fit_transform(y_values.reshape(-1, 1)).ravel()
             for i, cat in enumerate(self.encoder.categories_[0]):
-                encoding_mapping_[cat] = i if self.features_encoding != 'ordinal' else float(i)
+                encoding_mapping_[cat] = i if self.use_native_categoricals else float(i)
         else:
             encoding_mapping_ = self.encoding_mapping_
             y_encoded = self.encoder.transform(y_values.reshape(-1, 1)).ravel()
@@ -1022,20 +1036,24 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         """
 
         is_fitted = self.is_fitted
+        encoding_mapping_ = self.encoding_mapping_
+
         self.is_fitted = False
-        X_train, y_train, *_ = self._create_train_X_y(
+        X_train, y_train, y_encoding_info_, *_ = self._create_train_X_y(
             y    = y.iloc[: initial_train_size],
             exog = exog.iloc[: initial_train_size] if exog is not None else None
         )
 
         test_init = initial_train_size - self.window_size
         self.is_fitted = True
+        self.encoding_mapping_ = y_encoding_info_['encoding_mapping_']
         X_test, y_test, *_ = self._create_train_X_y(
             y    = y.iloc[test_init:],
             exog = exog.iloc[test_init:] if exog is not None else None
         )
 
         self.is_fitted = is_fitted
+        self.encoding_mapping_ = encoding_mapping_
 
         return X_train, y_train, X_test, y_test
 
@@ -1093,7 +1111,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         """
         Training Forecaster.
 
-        Additional arguments to be passed to the `fit` method of the classifier 
+        Additional arguments to be passed to the `fit` method of the estimator 
         can be added with the `fit_kwargs` argument when initializing the forecaster.
         
         Parameters
@@ -1442,7 +1460,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
         return predictions
 
-    # TODO: Adapt
     def create_predict_X(
         self,
         steps: int,
@@ -1685,8 +1702,8 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
         if not hasattr(self.regressor, 'predict_proba'):
             raise AttributeError(
-                f"The classifier {type(self.regressor).__name__} does not have a "
-                f"`predict_proba` method. Use a classifier that supports probability "
+                f"The estimator {type(self.regressor).__name__} does not have a "
+                f"`predict_proba` method. Use a estimator that supports probability "
                 f"predictions (e.g., XGBClassifier, HistGradientBoostingClassifier, etc.)."
             )
         
@@ -1751,7 +1768,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
     ) -> None:
         """
         Set new values for the additional keyword arguments passed to the `fit` 
-        method of the classifier.
+        method of the estimator.
         
         Parameters
         ----------
@@ -1849,8 +1866,8 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         sort_importance: bool = True
     ) -> pd.DataFrame:
         """
-        Return feature importances of the classifier stored in the forecaster.
-        Only valid when classifier stores internally the feature importances in the
+        Return feature importances of the estimator stored in the forecaster.
+        Only valid when estimator stores internally the feature importances in the
         attribute `feature_importances_` or `coef_`. Otherwise, returns `None`.
 
         Parameters
@@ -1870,33 +1887,38 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                 "This forecaster is not fitted yet. Call `fit` with appropriate "
                 "arguments before using `get_feature_importances()`."
             )
+        
+        estimator = self.regressor
+        if isinstance(estimator, Pipeline):
+            estimator = estimator[-1]
+        if type(estimator).__name__ == 'CalibratedClassifierCV':
+            estimator = estimator.estimator
 
-        if isinstance(self.regressor, Pipeline):
-            estimator = self.regressor[-1]
-        else:
-            estimator = self.regressor
+        # TODO: forecaster.regressor.calibrated_classifiers_[0].estimator.coef_
+        # devolver un df largo con una columna cv con la enumarición del cv del calibrator
 
         if hasattr(estimator, 'feature_importances_'):
-            feature_importances = estimator.feature_importances_
-        elif hasattr(estimator, 'coef_'):
-            feature_importances = estimator.coef_
-        else:
-            warnings.warn(
-                f"Impossible to access feature importances for classifier of type "
-                f"{type(estimator)}. This method is only valid when the "
-                f"classifier stores internally the feature importances in the "
-                f"attribute `feature_importances_` or `coef_`."
-            )
-            feature_importances = None
-
-        if feature_importances is not None:
             feature_importances = pd.DataFrame({
                                       'feature': self.X_train_features_names_out_,
-                                      'importance': feature_importances
+                                      'importance': estimator.feature_importances_
                                   })
             if sort_importance:
                 feature_importances = feature_importances.sort_values(
                                           by='importance', ascending=False
                                       )
+        elif hasattr(estimator, 'coef_'):
+            feature_importances = pd.DataFrame(
+                                      data    = estimator.coef_,
+                                      columns = self.X_train_features_names_out_
+                                  )
+            feature_importances.insert(0, 'classes', self.classes_)
+        else:
+            warnings.warn(
+                f"Impossible to access feature importances for estimator of type "
+                f"{type(estimator)}. This method is only valid when the "
+                f"estimator stores internally the feature importances in the "
+                f"attribute `feature_importances_` or `coef_`."
+            )
+            feature_importances = None
 
         return feature_importances

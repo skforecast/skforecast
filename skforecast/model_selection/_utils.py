@@ -424,6 +424,12 @@ def check_backtesting_input(
                     f"Got {interval_method}."
                 )
         else:
+            if forecaster_name == 'ForecasterRecursiveClassifier':
+                raise ValueError(
+                    f"`interval` is not supported for {forecaster_name}. Class "
+                    f"probabilities are returned by default during backtesting, "
+                    f"set `interval=None`."
+                )
             check_interval(interval=interval, alpha=alpha)
 
     if return_predictors and forecaster_name not in forecasters_return_predictors:
@@ -492,6 +498,7 @@ def check_one_step_ahead_input(
     forecasters_one_step_ahead = [
         "ForecasterRecursive",
         "ForecasterDirect",
+        "ForecasterRecursiveClassifier",
         'ForecasterRecursiveMultiSeries',
         'ForecasterDirectMultiVariate',
         'ForecasterRecursiveClassifier'

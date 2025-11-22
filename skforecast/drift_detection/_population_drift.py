@@ -386,11 +386,11 @@ class PopulationDriftDetector:
                     all_cats = ref_probs.index.union(new_probs.index)
                     ref_probs = ref_probs.reindex(all_cats, fill_value=0)
                     new_probs = new_probs.reindex(all_cats, fill_value=0)
-                    js_distance = jensenshannon(ref_probs.values, new_probs.values)
+                    js_distance = jensenshannon(ref_probs.to_numpy(), new_probs.to_numpy())
 
                     # Align categories and fill missing with 0
-                    new_counts = new.value_counts().reindex(all_cats, fill_value=0).values
-                    ref_counts = self.ref_counts_.get(feature).reindex(all_cats, fill_value=0).values
+                    new_counts = new.value_counts().reindex(all_cats, fill_value=0).to_numpy()
+                    ref_counts = self.ref_counts_.get(feature).reindex(all_cats, fill_value=0).to_numpy()
                     if new_counts.sum() > 0 and ref_counts.sum() > 0:
                         # Create contingency table with rows = [reference, new], columns = categories
                         contingency_table = np.array([ref_counts, new_counts])
@@ -545,7 +545,7 @@ class PopulationDriftDetector:
                         )
                     else:
                         ref_categories = self.ref_categories_[feature]
-                        ref_probs = self.ref_probs_[feature].reindex(ref_categories, fill_value=0).values
+                        ref_probs = ref_probs.reindex(ref_categories, fill_value=0).to_numpy()
                         # Map new data to reference categories
                         new_counts_dict = new.value_counts().to_dict()
                         new_counts_on_ref = [new_counts_dict.get(cat, 0) for cat in ref_categories]
@@ -567,8 +567,8 @@ class PopulationDriftDetector:
                             js_distance = jensenshannon(ref_probs, new_probs, base=2)
 
                         all_cats = set(self.ref_categories_[feature]).union(set(new_counts_dict.keys()))
-                        new_counts = new.value_counts().reindex(all_cats, fill_value=0).values
-                        ref_counts_aligned = ref_counts.reindex(all_cats, fill_value=0).values
+                        new_counts = new.value_counts().reindex(all_cats, fill_value=0).to_numpy()
+                        ref_counts_aligned = ref_counts.reindex(all_cats, fill_value=0).to_numpy()
                         if new_counts.sum() > 0 and ref_counts_aligned.sum() > 0:
                             # Create contingency table: rows = [reference, new], columns = categories
                             contingency_table = np.array([ref_counts_aligned, new_counts])

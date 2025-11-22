@@ -25,13 +25,13 @@ def test_init_ValueError_when_features_encoding_not_valid():
         )
 
 
-def test_init_ValueError_when_classifier_does_not_support_categorical_features():
+def test_init_ValueError_when_estimator_does_not_support_categorical_features():
     """
     Test ValueError is raised when `features_encoding='categorical'` and
-    the classifier does not support categorical features natively.
+    the estimator does not support categorical features natively.
     """
     err_msg = re.escape(
-        f"`features_encoding='categorical'` requires a classifier that "
+        f"`features_encoding='categorical'` requires a estimator that "
         f"supports native categorical features (LightGBM, CatBoost, XGBoost). "
         f"Got {type(LogisticRegression()).__name__}. Use 'auto' or 'ordinal' instead."
     )

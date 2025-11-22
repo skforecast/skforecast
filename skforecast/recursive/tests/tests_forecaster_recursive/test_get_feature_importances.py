@@ -31,9 +31,9 @@ def test_NotFittedError_is_raised_when_forecaster_is_not_fitted():
                  )
 
     err_msg = re.escape(
-                ("This forecaster is not fitted yet. Call `fit` with appropriate "
-                 "arguments before using `get_feature_importances()`.")
-              )
+        "This forecaster is not fitted yet. Call `fit` with appropriate "
+        "arguments before using `get_feature_importances()`."
+    )
     with pytest.raises(NotFittedError, match = err_msg):         
         forecaster.get_feature_importances()
 
@@ -121,11 +121,11 @@ def test_output_and_UserWarning_get_feature_importances_when_regressor_no_attrib
     expected = None
 
     warn_msg = re.escape(
-                (f"Impossible to access feature importances for regressor of type "
-                 f"{type(estimator)}. This method is only valid when the "
-                 f"regressor stores internally the feature importances in the "
-                 f"attribute `feature_importances_` or `coef_`.")
-            )
+        f"Impossible to access feature importances for regressor of type "
+        f"{type(estimator)}. This method is only valid when the "
+        f"regressor stores internally the feature importances in the "
+        f"attribute `feature_importances_` or `coef_`."
+    )
     with pytest.warns(UserWarning, match = warn_msg):
         results = forecaster.get_feature_importances()
         assert results is expected

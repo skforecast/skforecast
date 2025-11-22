@@ -4,10 +4,11 @@ import re
 import pytest
 import numpy as np
 import pandas as pd
-from sklearn.linear_model import Ridge
+from sklearn.linear_model import Ridge, LogisticRegression
 from sklearn.exceptions import NotFittedError
 from skforecast.stats import Sarimax
 from skforecast.recursive import ForecasterRecursive
+from skforecast.recursive import ForecasterRecursiveClassifier
 from skforecast.direct import ForecasterDirect
 from skforecast.recursive import ForecasterStats
 from skforecast.recursive import ForecasterEquivalentDate
@@ -912,6 +913,37 @@ def test_check_backtesting_input_raises_when_interval_not_None_and_interval_meth
     )
     with pytest.raises(ValueError, match = err_msg):
         check_backtesting_input(**kwargs)
+
+
+def test_check_backtesting_input_ValueError_when_interval_and_ForecasterRecursiveClassifier():
+    """
+    Test ValueError is raised in check_backtesting_input when `interval` is not None
+    and the forecaster is a ForecasterRecursiveClassifier.
+    """
+    forecaster = ForecasterRecursiveClassifier(
+        regressor=LogisticRegression(), lags=2
+    )
+    
+    cv = TimeSeriesFold(
+             steps              = 3,
+             initial_train_size = len(y) - 12,
+         )
+    
+    err_msg = re.escape(
+        "`interval` is not supported for ForecasterRecursiveClassifier. Class "
+        "probabilities are returned by default during backtesting, "
+        "set `interval=None`."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        check_backtesting_input(
+            forecaster        = forecaster,
+            cv                = cv,
+            metric            = 'mean_absolute_error',
+            y                 = y,
+            interval         = [10, 90],
+            show_progress     = False,
+            suppress_warnings = False
+        )
 
 
 def test_check_backtesting_input_ValueError_when_return_predictors_and_forecaster_not_return_predictors():

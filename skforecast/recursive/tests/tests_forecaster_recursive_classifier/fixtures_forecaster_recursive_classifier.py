@@ -41,5 +41,5 @@ exog_predict = pd.Series(
     name = 'exog',
     index = pd.RangeIndex(start=50, stop=60)
 )
-exog_dt_predict = exog_dt.copy()
+exog_dt_predict = exog_predict.copy()
 exog_dt_predict.index = pd.date_range(start='2020-02-20', periods=len(exog_predict), freq='D')

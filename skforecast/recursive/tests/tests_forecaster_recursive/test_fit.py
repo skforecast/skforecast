@@ -15,7 +15,7 @@ from .fixtures_forecaster_recursive import exog
 
 def custom_weights(index):  # pragma: no cover
     """
-    Return 0 if index is one of '2022-01-05', '2022-01-06', 1 otherwise.
+    Return 0 if index is between 20 and 40 else 1.
     """
     weights = np.where(
                 (index >= 20) & (index <= 40),

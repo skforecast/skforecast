@@ -1,27 +1,34 @@
-# Unit test set_params ForecasterRecursive
+# Unit test set_params ForecasterRecursiveClassifier
 # ==============================================================================
-import sklearn
-from packaging import version
-from skforecast.recursive import ForecasterRecursive
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LogisticRegression
+from skforecast.recursive import ForecasterRecursiveClassifier
 
 
 def test_set_params():
     """
     """
-    forecaster = ForecasterRecursive(
-        LinearRegression(fit_intercept=True), lags=3
+    forecaster = ForecasterRecursiveClassifier(
+        LogisticRegression(penalty='l1'), lags=3
     )
-    new_params = {'fit_intercept': False}
+    new_params = {'penalty': 'elasticnet'}
     forecaster.set_params(new_params)
     expected = {
-        'copy_X': True,
-        'fit_intercept': False,
+        'C': 1.0,
+        'class_weight': None,
+        'dual': False,
+        'fit_intercept': True,
+        'intercept_scaling': 1,
+        'l1_ratio': None,
+        'max_iter': 100,
+        'multi_class': 'deprecated',
         'n_jobs': None,
-        'positive': False
+        'penalty': 'elasticnet',
+        'random_state': None,
+        'solver': 'lbfgs',
+        'tol': 0.0001,
+        'verbose': 0,
+        'warm_start': False
     }
-    if version.parse(sklearn.__version__) >= version.parse("1.7.0"):
-        expected.update({'tol': 1e-06})
 
     results = forecaster.regressor.get_params()
     

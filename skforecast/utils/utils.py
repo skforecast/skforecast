@@ -340,11 +340,7 @@ def initialize_transformer_series(
     
     """
 
-    multiseries_forecasters = [
-        'ForecasterRecursiveMultiSeries',
-    ]
-
-    if forecaster_name in multiseries_forecasters:
+    if forecaster_name == 'ForecasterRecursiveMultiSeries':
         if encoding is None:
             series_names_in_ = ['_unknown_level']
         else:

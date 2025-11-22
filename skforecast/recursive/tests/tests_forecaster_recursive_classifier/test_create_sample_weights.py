@@ -1,11 +1,11 @@
-# Unit test create_sample_weights ForecasterRecursive
+# Unit test create_sample_weights ForecasterRecursiveClassifier
 # ==============================================================================
 import re
 import pytest
 import numpy as np
 import pandas as pd
-from skforecast.recursive import ForecasterRecursive
-from sklearn.linear_model import LinearRegression
+from skforecast.recursive import ForecasterRecursiveClassifier
+from sklearn.linear_model import LogisticRegression
 
 
 def custom_weights(index):  # pragma: no cover
@@ -79,9 +79,9 @@ def test_create_sample_weights_output():
     """
     Test sample_weights creation.
     """
-    forecaster = ForecasterRecursive(
+    forecaster = ForecasterRecursiveClassifier(
                      lags        = 3,
-                     regressor   = LinearRegression(),
+                     regressor   = LogisticRegression(),
                      weight_func = custom_weights
                  )
 
@@ -95,9 +95,9 @@ def test_create_sample_weights_exceptions_when_weights_has_nan():
     """
     Test sample_weights exception when weights contains NaNs.
     """
-    forecaster = ForecasterRecursive(
+    forecaster = ForecasterRecursiveClassifier(
                      lags        = 3,
-                     regressor   = LinearRegression(),
+                     regressor   = LogisticRegression(),
                      weight_func = custom_weights_nan
                  )
 
@@ -110,9 +110,9 @@ def test_create_sample_weights_exceptions_when_weights_has_negative_values():
     """
     Test sample_weights exception when sample_weight contains negative values.
     """
-    forecaster = ForecasterRecursive(
+    forecaster = ForecasterRecursiveClassifier(
                      lags        = 3,
-                     regressor   = LinearRegression(),
+                     regressor   = LogisticRegression(),
                      weight_func = custom_weights_negative
                  )
 
@@ -125,15 +125,15 @@ def test_create_sample_weights_exceptions_when_weights_all_zeros():
     """
     Test sample_weights exception when all weights are zeros.
     """
-    forecaster = ForecasterRecursive(
+    forecaster = ForecasterRecursiveClassifier(
                      lags        = 3,
-                     regressor   = LinearRegression(),
+                     regressor   = LogisticRegression(),
                      weight_func = custom_weights_zeros
                  )
     
     err_msg = re.escape(
-                    ("The resulting `sample_weight` cannot be normalized because "
-                     "the sum of the weights is zero.")
-                )
+        "The resulting `sample_weight` cannot be normalized because "
+        "the sum of the weights is zero."
+    )
     with pytest.raises(ValueError, match=err_msg):
         forecaster.create_sample_weights(X_train=X_train)
