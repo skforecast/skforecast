@@ -1,3 +1,3 @@
 # `ForecasterRecursiveClassifier`
 
-::: skforecast.recursive._forecaster_recursive.ForecasterRecursiveClassifier
+::: skforecast.recursive._forecaster_recursive_classifier.ForecasterRecursiveClassifier
