@@ -29,9 +29,9 @@ summary_multiseries = joblib.load(THIS_DIR/'fixture_summary_multiseries.joblib')
 # results_nannyml = results_nannyml.filter(period='analysis').to_df(multilevel=False)
 
 
-def test_predict_exception_when_detector_not_fitted():
+def test_predict_NotFittedError_when_detector_not_fitted():
     """
-    Test exception is raised when trying to predict before fitting the detector.
+    Test NotFittedError is raised when trying to predict before fitting the detector.
     """
     detector = PopulationDriftDetector(
         chunk_size='ME',            
@@ -46,9 +46,9 @@ def test_predict_exception_when_detector_not_fitted():
         detector.predict(X=X)
 
 
-def test_predict_exception_when_X_not_dataframe():
+def test_predict_ValueError_when_X_not_dataframe():
     """
-    Test exception is raised when X is not a pandas DataFrame.
+    Test ValueError is raised when X is not a pandas DataFrame.
     """
     detector = PopulationDriftDetector(
         chunk_size='ME',            
@@ -61,9 +61,10 @@ def test_predict_exception_when_X_not_dataframe():
         detector.predict(X=X)
 
 
-def test_predict_exception_when_chunk_size_is_DateOffset_but_X_index_not_datetimeindex():
+def test_predict_ValueError_when_chunk_size_is_DateOffset_but_X_index_not_datetimeindex():
     """
-    Test exception is raised when chunk_size is a pandas DateOffset but X does not have a DatetimeIndex.
+    Test ValueError is raised when chunk_size is a pandas DateOffset but X does 
+    not have a DatetimeIndex.
     """
     detector = PopulationDriftDetector(
         chunk_size='ME',            

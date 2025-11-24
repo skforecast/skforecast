@@ -500,8 +500,7 @@ def check_one_step_ahead_input(
         "ForecasterDirect",
         "ForecasterRecursiveClassifier",
         'ForecasterRecursiveMultiSeries',
-        'ForecasterDirectMultiVariate',
-        'ForecasterRecursiveClassifier'
+        'ForecasterDirectMultiVariate'
     ]
     if forecaster_name not in forecasters_one_step_ahead:
         raise TypeError(

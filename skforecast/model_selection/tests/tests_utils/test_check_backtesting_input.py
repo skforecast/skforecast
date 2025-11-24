@@ -965,7 +965,8 @@ def test_check_backtesting_input_ValueError_when_return_predictors_and_forecaste
         "ForecasterRecursive",
         "ForecasterDirect",
         "ForecasterRecursiveMultiSeries",
-        "ForecasterDirectMultiVariate"
+        "ForecasterDirectMultiVariate",
+        "ForecasterRecursiveClassifier"
     ]
     
     err_msg = re.escape(

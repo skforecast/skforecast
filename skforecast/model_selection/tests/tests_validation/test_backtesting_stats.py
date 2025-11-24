@@ -1,4 +1,4 @@
-# Unit test backtesting_sarimax
+# Unit test backtesting_stats
 # ==============================================================================
 import re
 import pytest
@@ -9,11 +9,11 @@ from skforecast.stats import Sarimax
 from skforecast.recursive import ForecasterRecursive
 from skforecast.recursive import ForecasterStats
 from skforecast.model_selection._split import TimeSeriesFold
-from skforecast.model_selection import backtesting_sarimax
+from skforecast.model_selection import backtesting_stats
 
 # Fixtures
-from ....recursive.tests.tests_forecaster_sarimax.fixtures_forecaster_sarimax import y_datetime
-from ....recursive.tests.tests_forecaster_sarimax.fixtures_forecaster_sarimax import exog_datetime
+from ....recursive.tests.tests_forecaster_stats.fixtures_forecaster_stats import y_datetime
+from ....recursive.tests.tests_forecaster_stats.fixtures_forecaster_stats import exog_datetime
 
 
 def test_backtesting_forecaster_TypeError_when_forecaster_not_supported_types():
@@ -41,7 +41,7 @@ def test_backtesting_forecaster_TypeError_when_forecaster_not_supported_types():
         "`model_selection` modules."
     )
     with pytest.raises(TypeError, match = err_msg):
-        backtesting_sarimax(
+        backtesting_stats(
             forecaster    = forecaster,
             y             = y_datetime,
             cv            = cv,
@@ -56,9 +56,9 @@ def test_backtesting_forecaster_TypeError_when_forecaster_not_supported_types():
 
 @pytest.mark.parametrize("n_jobs", [1, -1, 'auto'],
                          ids=lambda n: f'n_jobs: {n}')
-def test_output_backtesting_sarimax_no_refit_no_exog_no_remainder_with_mocked(n_jobs):
+def test_output_backtesting_stats_no_refit_no_exog_no_remainder_with_mocked(n_jobs):
     """
-    Test output of backtesting_sarimax with backtesting mocked, Series y is mocked, no exog, 
+    Test output of backtesting_stats with backtesting mocked, Series y is mocked, no exog, 
     no refit, 12 observations to backtest, steps=3 (no remainder), metric='mean_squared_error'. 
     Mocked done with skforecast 0.7.0.
     """
@@ -75,7 +75,7 @@ def test_output_backtesting_sarimax_no_refit_no_exog_no_remainder_with_mocked(n_
              allow_incomplete_fold = True
          )
     
-    metric, backtest_predictions = backtesting_sarimax(
+    metric, backtest_predictions = backtesting_stats(
                                        forecaster = forecaster,
                                        y          = y_datetime,
                                        cv         = cv,
@@ -103,9 +103,9 @@ def test_output_backtesting_sarimax_no_refit_no_exog_no_remainder_with_mocked(n_
 @pytest.mark.parametrize("initial_train_size", 
                          [len(y_datetime) - 12, "2037-12-31"],
                          ids=lambda init: f'initial_train_size: {init}')
-def test_output_backtesting_sarimax_no_refit_no_exog_remainder_with_mocked(initial_train_size):
+def test_output_backtesting_stats_no_refit_no_exog_remainder_with_mocked(initial_train_size):
     """
-    Test output of backtesting_sarimax with backtesting mocked, Series y is mocked, no exog, 
+    Test output of backtesting_stats with backtesting mocked, Series y is mocked, no exog, 
     yes refit, 12 observations to backtest, steps=5 (remainder), metric='mean_squared_error'. 
     Mocked done with skforecast 0.7.0.
     """
@@ -122,7 +122,7 @@ def test_output_backtesting_sarimax_no_refit_no_exog_remainder_with_mocked(initi
              allow_incomplete_fold = True
          )
     
-    metric, backtest_predictions = backtesting_sarimax(
+    metric, backtest_predictions = backtesting_stats(
                                        forecaster = forecaster,
                                        y          = y_datetime,
                                        cv         = cv,
@@ -148,9 +148,9 @@ def test_output_backtesting_sarimax_no_refit_no_exog_remainder_with_mocked(initi
 
 @pytest.mark.parametrize("n_jobs", [1, -1, 'auto'],
                          ids=lambda n: f'n_jobs: {n}')
-def test_output_backtesting_sarimax_yes_refit_no_exog_no_remainder_with_mocked(n_jobs):
+def test_output_backtesting_stats_yes_refit_no_exog_no_remainder_with_mocked(n_jobs):
     """
-    Test output of backtesting_sarimax with backtesting mocked, Series y is mocked, 
+    Test output of backtesting_stats with backtesting mocked, Series y is mocked, 
     no exog, yes refit, 12 observations to backtest, steps=3 (no remainder), 
     metric='mean_squared_error'. (Mocked done with skforecast 0.7.0.)
     """
@@ -167,7 +167,7 @@ def test_output_backtesting_sarimax_yes_refit_no_exog_no_remainder_with_mocked(n
              allow_incomplete_fold = True
          )
     
-    metric, backtest_predictions = backtesting_sarimax(
+    metric, backtest_predictions = backtesting_stats(
                                        forecaster = forecaster,
                                        y          = y_datetime,
                                        cv         = cv,
@@ -194,9 +194,9 @@ def test_output_backtesting_sarimax_yes_refit_no_exog_no_remainder_with_mocked(n
 
 @pytest.mark.parametrize("n_jobs", [1, -1, "auto"],
                          ids=lambda n: f'n_jobs: {n}')
-def test_output_backtesting_sarimax_yes_refit_no_exog_remainder_with_mocked(n_jobs):
+def test_output_backtesting_stats_yes_refit_no_exog_remainder_with_mocked(n_jobs):
     """
-    Test output of backtesting_sarimax with backtesting mocked, Series y is mocked, 
+    Test output of backtesting_stats with backtesting mocked, Series y is mocked, 
     no exog, yes refit, 12 observations to backtest, steps=5 (remainder), 
     metric='mean_squared_error'. (Mocked done with skforecast 0.7.0.)
     """
@@ -213,7 +213,7 @@ def test_output_backtesting_sarimax_yes_refit_no_exog_remainder_with_mocked(n_jo
              allow_incomplete_fold = True
          )
     
-    metric, backtest_predictions = backtesting_sarimax(
+    metric, backtest_predictions = backtesting_stats(
                                         forecaster = forecaster,
                                         y          = y_datetime,
                                         cv         = cv,
@@ -238,9 +238,9 @@ def test_output_backtesting_sarimax_yes_refit_no_exog_remainder_with_mocked(n_jo
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
 
 
-def test_output_backtesting_sarimax_yes_refit_fixed_train_size_no_exog_no_remainder_with_mocked():
+def test_output_backtesting_stats_yes_refit_fixed_train_size_no_exog_no_remainder_with_mocked():
     """
-    Test output of backtesting_sarimax with backtesting mocked, Series y is mocked, no exog, 
+    Test output of backtesting_stats with backtesting mocked, Series y is mocked, no exog, 
     yes refit, fixed_train_size yes, 12 observations to backtest, steps=3 (no remainder), 
     metric='mean_squared_error'. Mocked done with skforecast 0.7.0.
     """
@@ -257,7 +257,7 @@ def test_output_backtesting_sarimax_yes_refit_fixed_train_size_no_exog_no_remain
              allow_incomplete_fold = True
          )
     
-    metric, backtest_predictions = backtesting_sarimax(
+    metric, backtest_predictions = backtesting_stats(
                                         forecaster = forecaster,
                                         y          = y_datetime,
                                         cv         = cv,
@@ -281,9 +281,9 @@ def test_output_backtesting_sarimax_yes_refit_fixed_train_size_no_exog_no_remain
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
 
 
-def test_output_backtesting_sarimax_yes_refit_fixed_train_size_no_exog_remainder_with_mocked():
+def test_output_backtesting_stats_yes_refit_fixed_train_size_no_exog_remainder_with_mocked():
     """
-    Test output of backtesting_sarimax with backtesting mocked, Series y is mocked, no exog, 
+    Test output of backtesting_stats with backtesting mocked, Series y is mocked, no exog, 
     yes refit, fixed_train_size yes, 12 observations to backtest, steps=5 (remainder), 
     metric='mean_squared_error'. Mocked done with skforecast 0.7.0.
     """
@@ -300,7 +300,7 @@ def test_output_backtesting_sarimax_yes_refit_fixed_train_size_no_exog_remainder
              allow_incomplete_fold = True
          )
     
-    metric, backtest_predictions = backtesting_sarimax(
+    metric, backtest_predictions = backtesting_stats(
                                         forecaster = forecaster,
                                         y          = y_datetime,
                                         cv         = cv,
@@ -324,9 +324,9 @@ def test_output_backtesting_sarimax_yes_refit_fixed_train_size_no_exog_remainder
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
     
 
-def test_output_backtesting_sarimax_no_refit_yes_exog_with_mocked():
+def test_output_backtesting_stats_no_refit_yes_exog_with_mocked():
     """
-    Test output of backtesting_sarimax with backtesting mocked, Series y is mocked, yes exog, 
+    Test output of backtesting_stats with backtesting mocked, Series y is mocked, yes exog, 
     no refit, 12 observations to backtest, steps=3 (no remainder), metric='mean_squared_error'. 
     Mocked done with skforecast 0.7.0.
     """
@@ -343,7 +343,7 @@ def test_output_backtesting_sarimax_no_refit_yes_exog_with_mocked():
              allow_incomplete_fold = True
          )
     
-    metric, backtest_predictions = backtesting_sarimax(
+    metric, backtest_predictions = backtesting_stats(
                                         forecaster = forecaster,
                                         y          = y_datetime,
                                         cv         = cv,
@@ -368,9 +368,9 @@ def test_output_backtesting_sarimax_no_refit_yes_exog_with_mocked():
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
 
 
-def test_output_backtesting_sarimax_yes_refit_yes_exog_with_mocked():
+def test_output_backtesting_stats_yes_refit_yes_exog_with_mocked():
     """
-    Test output of backtesting_sarimax with backtesting mocked, Series y is mocked, yes exog, 
+    Test output of backtesting_stats with backtesting mocked, Series y is mocked, yes exog, 
     yes refit, 12 observations to backtest, steps=3 (no remainder), metric='mean_squared_error'. 
     Mocked done with skforecast 0.7.0.
     """
@@ -387,7 +387,7 @@ def test_output_backtesting_sarimax_yes_refit_yes_exog_with_mocked():
              allow_incomplete_fold = True
          )
     
-    metric, backtest_predictions = backtesting_sarimax(
+    metric, backtest_predictions = backtesting_stats(
                                         forecaster = forecaster,
                                         y          = y_datetime,
                                         cv         = cv,
@@ -412,9 +412,9 @@ def test_output_backtesting_sarimax_yes_refit_yes_exog_with_mocked():
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
 
 
-def test_output_backtesting_sarimax_yes_refit_fixed_train_size_yes_exog_with_mocked():
+def test_output_backtesting_stats_yes_refit_fixed_train_size_yes_exog_with_mocked():
     """
-    Test output of backtesting_sarimax with backtesting mocked, Series y is mocked, yes exog, 
+    Test output of backtesting_stats with backtesting mocked, Series y is mocked, yes exog, 
     yes refit, fixed_train_size, 12 observations to backtest, steps=5 (remainder), 
     metric='mean_squared_error'. Mocked done with skforecast 0.7.0.
     """
@@ -431,7 +431,7 @@ def test_output_backtesting_sarimax_yes_refit_fixed_train_size_yes_exog_with_moc
              allow_incomplete_fold = True
          )
     
-    metric, backtest_predictions = backtesting_sarimax(
+    metric, backtest_predictions = backtesting_stats(
                                         forecaster = forecaster,
                                         y          = y_datetime,
                                         cv         = cv,
@@ -465,9 +465,9 @@ def my_metric(y_true, y_pred):  # pragma: no cover
     return metric
 
 
-def test_output_backtesting_sarimax_no_refit_yes_exog_callable_metric_with_mocked():
+def test_output_backtesting_stats_no_refit_yes_exog_callable_metric_with_mocked():
     """
-    Test output of backtesting_sarimax with backtesting mocked, Series y is mocked, yes exog, 
+    Test output of backtesting_stats with backtesting mocked, Series y is mocked, yes exog, 
     no refit, 12 observations to backtest, steps=3 (no remainder), callable metric. 
     Mocked done with skforecast 0.7.0.
     """
@@ -484,7 +484,7 @@ def test_output_backtesting_sarimax_no_refit_yes_exog_callable_metric_with_mocke
              allow_incomplete_fold = True
          )
     
-    metric, backtest_predictions = backtesting_sarimax(
+    metric, backtest_predictions = backtesting_stats(
                                         forecaster = forecaster,
                                         y          = y_datetime,
                                         cv         = cv,
@@ -509,9 +509,9 @@ def test_output_backtesting_sarimax_no_refit_yes_exog_callable_metric_with_mocke
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
 
 
-def test_output_backtesting_sarimax_no_refit_no_exog_list_of_metrics_with_mocked():
+def test_output_backtesting_stats_no_refit_no_exog_list_of_metrics_with_mocked():
     """
-    Test output of backtesting_sarimax with backtesting mocked, Series y is mocked, yes exog, 
+    Test output of backtesting_stats with backtesting mocked, Series y is mocked, yes exog, 
     no refit, 12 observations to backtest, steps=3 (no remainder), list of metrics. 
     Mocked done with skforecast 0.7.0.
     """
@@ -528,7 +528,7 @@ def test_output_backtesting_sarimax_no_refit_no_exog_list_of_metrics_with_mocked
              allow_incomplete_fold = True
          )
     
-    metric, backtest_predictions = backtesting_sarimax(
+    metric, backtest_predictions = backtesting_stats(
                                         forecaster = forecaster,
                                         y          = y_datetime,
                                         cv         = cv,
@@ -553,9 +553,9 @@ def test_output_backtesting_sarimax_no_refit_no_exog_list_of_metrics_with_mocked
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
 
 
-def test_output_backtesting_sarimax_yes_refit_no_exog_callable_metric_with_mocked():
+def test_output_backtesting_stats_yes_refit_no_exog_callable_metric_with_mocked():
     """
-    Test output of backtesting_sarimax with backtesting mocked, Series y is mocked, no exog, 
+    Test output of backtesting_stats with backtesting mocked, Series y is mocked, no exog, 
     yes refit, 12 observations to backtest, steps=3 (no remainder), callable metric. 
     Mocked done with skforecast 0.7.0.
     """
@@ -572,7 +572,7 @@ def test_output_backtesting_sarimax_yes_refit_no_exog_callable_metric_with_mocke
              allow_incomplete_fold = True
          )
     
-    metric, backtest_predictions = backtesting_sarimax(
+    metric, backtest_predictions = backtesting_stats(
                                         forecaster = forecaster,
                                         y          = y_datetime,
                                         cv         = cv,
@@ -596,9 +596,9 @@ def test_output_backtesting_sarimax_yes_refit_no_exog_callable_metric_with_mocke
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
 
 
-def test_output_backtesting_sarimax_yes_refit_fixed_train_size_yes_exog_list_of_metrics_with_mocked():
+def test_output_backtesting_stats_yes_refit_fixed_train_size_yes_exog_list_of_metrics_with_mocked():
     """
-    Test output of backtesting_sarimax with backtesting mocked, Series y is mocked, yes exog, 
+    Test output of backtesting_stats with backtesting mocked, Series y is mocked, yes exog, 
     yes refit, fixed_train_size, 12 observations to backtest, steps=3 (no remainder), 
     list of metrics. Mocked done with skforecast 0.7.0.
     """
@@ -615,7 +615,7 @@ def test_output_backtesting_sarimax_yes_refit_fixed_train_size_yes_exog_list_of_
              allow_incomplete_fold = True
          )
     
-    metric, backtest_predictions = backtesting_sarimax(
+    metric, backtest_predictions = backtesting_stats(
                                         forecaster = forecaster,
                                         y          = y_datetime,
                                         cv         = cv,
@@ -645,9 +645,9 @@ def test_output_backtesting_sarimax_yes_refit_fixed_train_size_yes_exog_list_of_
                          [(0.05, [1, 99]), 
                           (None, [2.5, 97.5])], 
                          ids = lambda values: f'alpha, interval: {values}')
-def test_output_backtesting_sarimax_no_refit_yes_exog_interval_with_mocked(alpha, interval):
+def test_output_backtesting_stats_no_refit_yes_exog_interval_with_mocked(alpha, interval):
     """
-    Test output of backtesting_sarimax with backtesting mocked, Series y is mocked, yes exog, 
+    Test output of backtesting_stats with backtesting mocked, Series y is mocked, yes exog, 
     no refit, 12 observations to backtest, steps=3 (no remainder), metric='mean_absolute_error',
     interval. Mocked done with skforecast 0.7.0.
     """
@@ -664,7 +664,7 @@ def test_output_backtesting_sarimax_no_refit_yes_exog_interval_with_mocked(alpha
              allow_incomplete_fold = True
          )
     
-    metric, backtest_predictions = backtesting_sarimax(
+    metric, backtest_predictions = backtesting_stats(
                                         forecaster = forecaster,
                                         y          = y_datetime,
                                         cv         = cv,
@@ -704,9 +704,9 @@ def test_output_backtesting_sarimax_no_refit_yes_exog_interval_with_mocked(alpha
                          [(0.05, [1, 99]), 
                           (None, [2.5, 97.5])], 
                          ids = lambda values: f'alpha, interval: {values}')
-def test_output_backtesting_sarimax_yes_refit_yes_exog_interval_with_mocked(alpha, interval):
+def test_output_backtesting_stats_yes_refit_yes_exog_interval_with_mocked(alpha, interval):
     """
-    Test output of backtesting_sarimax with backtesting mocked, Series y is mocked, yes exog, 
+    Test output of backtesting_stats with backtesting mocked, Series y is mocked, yes exog, 
     yes refit, 12 observations to backtest, steps=3 (no remainder), 
     metric='mean_absolute_error', interval. Mocked done with skforecast 0.7.0.
     """
@@ -723,7 +723,7 @@ def test_output_backtesting_sarimax_yes_refit_yes_exog_interval_with_mocked(alph
              allow_incomplete_fold = True
          )
     
-    metric, backtest_predictions = backtesting_sarimax(
+    metric, backtest_predictions = backtesting_stats(
                                         forecaster = forecaster,
                                         y          = y_datetime,
                                         cv         = cv,
@@ -763,9 +763,9 @@ def test_output_backtesting_sarimax_yes_refit_yes_exog_interval_with_mocked(alph
                          [(0.05, [1, 99]), 
                           (None, [2.5, 97.5])], 
                          ids = lambda values: f'alpha, interval: {values}')
-def test_output_backtesting_sarimax_yes_refit_fixed_train_size_yes_exog_interval_with_mocked(alpha, interval):
+def test_output_backtesting_stats_yes_refit_fixed_train_size_yes_exog_interval_with_mocked(alpha, interval):
     """
-    Test output of backtesting_sarimax with backtesting mocked, Series y is mocked, yes exog, 
+    Test output of backtesting_stats with backtesting mocked, Series y is mocked, yes exog, 
     yes refit, fixed_train_size, 12 observations to backtest, steps=3 (no remainder), 
     metric='mean_absolute_error', interval. Mocked done with skforecast 0.7.0.
     """
@@ -782,7 +782,7 @@ def test_output_backtesting_sarimax_yes_refit_fixed_train_size_yes_exog_interval
              allow_incomplete_fold = True
          )
     
-    metric, backtest_predictions = backtesting_sarimax(
+    metric, backtest_predictions = backtesting_stats(
                                        forecaster = forecaster,
                                        y          = y_datetime,
                                        cv         = cv,
@@ -818,9 +818,9 @@ def test_output_backtesting_sarimax_yes_refit_fixed_train_size_yes_exog_interval
     pd.testing.assert_frame_equal(expected_backtest_predictions, backtest_predictions, atol=0.0001)
 
 
-def test_output_backtesting_sarimax_fold_stride_with_mocked():
+def test_output_backtesting_stats_fold_stride_with_mocked():
     """
-    Test output of backtesting_sarimax with backtesting mocked, Series y is mocked, yes exog, 
+    Test output of backtesting_stats with backtesting mocked, Series y is mocked, yes exog, 
     yes refit, fixed_train_size, 12 observations to backtest, steps=3 (no remainder), 
     fold stride. Mocked done with skforecast 0.18.0.
     """
@@ -838,7 +838,7 @@ def test_output_backtesting_sarimax_fold_stride_with_mocked():
              allow_incomplete_fold = True
          )
     
-    metric, backtest_predictions = backtesting_sarimax(
+    metric, backtest_predictions = backtesting_stats(
                                         forecaster = forecaster,
                                         y          = y_datetime,
                                         cv         = cv,
@@ -888,9 +888,9 @@ def test_output_backtesting_sarimax_fold_stride_with_mocked():
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
 
 
-def test_output_backtesting_sarimax_fold_stride_greater_than_steps_with_mocked():
+def test_output_backtesting_stats_fold_stride_greater_than_steps_with_mocked():
     """
-    Test output of backtesting_sarimax with backtesting mocked, Series y is mocked, yes exog, 
+    Test output of backtesting_stats with backtesting mocked, Series y is mocked, yes exog, 
     yes refit, fixed_train_size, 12 observations to backtest, steps=3 (no remainder), 
     fold stride greater than steps. Mocked done with skforecast 0.18.0.
     """
@@ -908,7 +908,7 @@ def test_output_backtesting_sarimax_fold_stride_greater_than_steps_with_mocked()
              allow_incomplete_fold = True
          )
     
-    metric, backtest_predictions = backtesting_sarimax(
+    metric, backtest_predictions = backtesting_stats(
                                         forecaster = forecaster,
                                         y          = y_datetime,
                                         cv         = cv,

@@ -688,7 +688,7 @@ def reshape_series_exog_dict_to_long(
             raise TypeError(f"`series` must be a dictionary. Got {type(series)}.")
         for k, v in series.items():
             if not isinstance(v, pd.Series):
-                raise TypeError(f"series['{k}'] must be a pandas Series.")
+                raise TypeError(f"`series['{k}']` must be a pandas Series.")
         series = pd.concat(series, names=index_names).to_frame(series_col_name)
 
     if exog is not None:
@@ -697,7 +697,7 @@ def reshape_series_exog_dict_to_long(
         for k, v in exog.items():
             if not isinstance(v, (pd.Series, pd.DataFrame)):
                 raise TypeError(
-                    f"exog['{k}'] must be a pandas Series or a pandas DataFrame."
+                    f"`exog['{k}']` must be a pandas Series or a pandas DataFrame."
                 )
         exog = pd.concat(exog, names=index_names)
         if isinstance(exog, pd.Series):
@@ -710,13 +710,13 @@ def reshape_series_exog_dict_to_long(
         if series_idx_type != exog_idx_type:
             raise TypeError(
                 f"Index type mismatch: series has index of type "
-                f"{series_idx_type}, but exog has {exog_idx_type}. "
+                f"{series_idx_type}, but `exog` has {exog_idx_type}. "
                 f"Ensure all indices are compatible."
             )
         
         if series_col_name in exog.columns:
             raise ValueError(
-                f"Column name conflict: '{series_col_name}' already exists in exog. "
+                f"Column name conflict: '{series_col_name}' already exists in `exog`. "
                 f"Please choose a different `series_col_name` value."
             )
 
@@ -1637,6 +1637,7 @@ class RollingFeatures():
         return rolling_features
 
 
+# TODO: Redirect to correct user guide when ready
 class RollingFeaturesClassification():
     """
     This class computes rolling features for classification problems. To avoid data 
@@ -1804,9 +1805,9 @@ class RollingFeaturesClassification():
                 </ul>
             </details>
             <p>
-                <a href="https://skforecast.org/{skforecast.__version__}/api/preprocessing.html#skforecast.preprocessing.preprocessing.RollingFeaturesClassification">&#128712 <strong>API Reference</strong></a>
+                <a href="https://skforecast.org/{__version__}/api/preprocessing.html#skforecast.preprocessing.preprocessing.RollingFeaturesClassification">&#128712 <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
-                <a href="https://skforecast.org/{skforecast.__version__}/user_guides/window-features-and-custom-features.html">&#128462 <strong>User Guide</strong></a>
+                <a href="https://skforecast.org/{__version__}/user_guides/window-features-and-custom-features.html">&#128462 <strong>User Guide</strong></a>
             </p>
         </div>
         """

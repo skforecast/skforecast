@@ -4,10 +4,11 @@ import re
 import pytest
 import numpy as np
 import pandas as pd
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_squared_error
 from skforecast.recursive import ForecasterRecursive
+from skforecast.recursive import ForecasterRecursiveClassifier
 from skforecast.direct import ForecasterDirect
 from skforecast.model_selection._split import TimeSeriesFold
 from skforecast.model_selection._validation import _backtesting_forecaster
@@ -15,7 +16,7 @@ from skforecast.preprocessing import RollingFeatures
 
 # Fixtures
 from skforecast.exceptions import IgnoredArgumentWarning
-from ..fixtures_model_selection import y
+from ..fixtures_model_selection import y, y_clf
 from ..fixtures_model_selection import exog
 from ..fixtures_model_selection import out_sample_residuals
 
@@ -69,6 +70,108 @@ def test_output_backtesting_forecaster_no_exog_no_remainder_ForecasterRecursive_
                                    )
                                    
     pd.testing.assert_frame_equal(expected_metric, metric)
+    pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+
+
+@pytest.mark.parametrize("n_jobs", [-1, 1, 'auto'],
+                         ids=lambda n: f'n_jobs: {n}')
+def test_output_backtesting_forecaster_ForecasterRecursiveClassifier_with_mocked(n_jobs):
+    """
+    Test output of _backtesting_forecaster with ForecasterRecursiveClassifier.
+    """
+    expected_metrics = pd.DataFrame(
+        data=[[0.5, 0.45]],
+        columns=['accuracy_score', 'balanced_accuracy_score']
+    )
+    expected_predictions = pd.DataFrame(
+        {
+            "fold": [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2],
+            "pred": [
+                "bus",
+                "train",
+                "bus",
+                "train",
+                "bus",
+                "train",
+                "bus",
+                "train",
+                "train",
+                "bus",
+                "bus",
+                "bus",
+            ],
+            "bus_proba": [
+                0.6559317845826198,
+                0.3304083470592666,
+                0.6559317845826198,
+                0.3304083470592666,
+                0.763135541754904,
+                0.2350409556831433,
+                0.763135541754904,
+                0.2350409556831433,
+                0.3681159967071788,
+                0.5967207152844268,
+                0.5458169684882528,
+                0.5392794662359854,
+            ],
+            "car_proba": [
+                0.30328326075516504,
+                0.06028875855870285,
+                0.30328326075516504,
+                0.06028875855870285,
+                0.2098200372652447,
+                0.0555164631400065,
+                0.2098200372652447,
+                0.0555164631400065,
+                0.03769250888413279,
+                0.09736864130547827,
+                0.12853702119356106,
+                0.37362423261547634,
+            ],
+            "train_proba": [
+                0.04078495466221505,
+                0.6093028943820306,
+                0.04078495466221505,
+                0.6093028943820306,
+                0.02704442097985128,
+                0.7094425811768502,
+                0.02704442097985128,
+                0.7094425811768502,
+                0.5941914944086883,
+                0.30591064341009494,
+                0.32564601031818624,
+                0.08709630114853824,
+            ],
+        },
+        index=pd.RangeIndex(start=38, stop=50, step=1)
+    )
+
+    forecaster = ForecasterRecursiveClassifier(
+        regressor=LogisticRegression(), lags=3
+    )
+
+    cv = TimeSeriesFold(
+            steps                 = 4,
+            initial_train_size    = len(y_clf) - 12,
+            refit                 = True,
+            fixed_train_size      = False,
+            gap                   = 0,
+            skip_folds            = None,
+            allow_incomplete_fold = True,
+            return_all_indexes    = False,
+        )
+
+    metric, backtest_predictions = _backtesting_forecaster(
+                                        forecaster = forecaster,
+                                        y          = y_clf,
+                                        exog       = None,
+                                        cv         = cv,
+                                        metric     = ['accuracy_score', 'balanced_accuracy_score'],
+                                        n_jobs     = n_jobs,
+                                        verbose    = False
+                                   )
+
+    pd.testing.assert_frame_equal(expected_metrics, metric)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 

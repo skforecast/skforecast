@@ -303,7 +303,7 @@ def test_create_predict_X_output_when_categorical_features_native_implementation
                        0.30412079, 0.41702221, 0.68130077, 0.87545684, 0.51042234]
         },
         index = pd.RangeIndex(start=50, stop=60, step=1)
-    ).astype({'exog_2': int, 'exog_3': int})
+    )
     
     pd.testing.assert_frame_equal(results, expected)
 
