@@ -463,7 +463,7 @@ def test_create_predict_X_output_when_categorical_features_native_implementation
                        0.66156434, 0.84650623, 0.55325734, 0.85445249, 0.38483781]
         },
         index = pd.RangeIndex(start=50, stop=60, step=1)
-    ).astype({'exog_2': int, 'exog_3': int})
+    )
     expected.insert(0, 'level', np.tile([forecaster.level], 10))
     
     pd.testing.assert_frame_equal(results, expected)

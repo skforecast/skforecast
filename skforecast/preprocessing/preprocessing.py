@@ -1637,7 +1637,6 @@ class RollingFeatures():
         return rolling_features
 
 
-# TODO: Redirect to correct user guide when ready
 class RollingFeaturesClassification():
     """
     This class computes rolling features for classification problems. To avoid data 
@@ -1781,7 +1780,7 @@ class RollingFeaturesClassification():
 
         return info
     
-    # TODO: Change link to user guide
+    # TODO: Redirect to correct user guide when ready
     def _repr_html_(self) -> str:
         """
         HTML representation of the object.
