@@ -520,13 +520,6 @@ class ForecasterStats():
         # self.last_window. It already has it stored.
         last_window_check = last_window if last_window is not None else self.last_window_
 
-        if exog is not None and (self.regressor_type not in self.regressors_support_exog):
-            warnings.warn(
-                f"The regressor {self.regressor_type} does not support exogenous variables, "
-                f"they will be ignored during fit.",
-                IgnoredArgumentWarning
-            )
-
         check_predict_input(
             forecaster_name  = type(self).__name__,
             steps            = steps,

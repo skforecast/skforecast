@@ -361,10 +361,9 @@ def _backtesting_forecaster(
                 preds.insert(0, pred)
         else:
             pred = forecaster.predict_proba(
-                       steps        = steps,
-                       last_window  = last_window_y,
-                       exog         = next_window_exog,
-                       check_inputs = True
+                       steps       = steps,
+                       last_window = last_window_y,
+                       exog        = next_window_exog
                    )
             preds.append(pred)
 

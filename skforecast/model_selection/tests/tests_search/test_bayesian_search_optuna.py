@@ -1090,7 +1090,7 @@ def test_bayesian_search_optuna_output_file():
 
 
 @pytest.mark.parametrize("initial_train_size", 
-                         [100, '2020-01-05 03:00:00', pd.to_datetime('2020-01-05 03:00:00')], 
+                         [450, '2020-01-19 17:00:00', pd.to_datetime('2020-01-19 17:00:00')], 
                          ids=lambda initial_train_size: f'initial_train_size: {initial_train_size}')
 @pytest.mark.parametrize(
         "forecaster",

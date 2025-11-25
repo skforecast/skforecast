@@ -58,7 +58,9 @@ def ks_2samp_from_ecdf(
     elif alternative == "less":
         distance = np.max(cdf2 - cdf1)
     else:
-        raise ValueError("Invalid alternative")
+        raise ValueError(
+            "Invalid `alternative`. Must be 'two-sided', 'less', or 'greater'."
+        )
 
     return distance
 
@@ -203,12 +205,14 @@ class PopulationDriftDetector:
             "pandas DateOffset (e.g., 'D', 'W', 'M'), a pandas DateOffset object, or None."
         )
         if not (isinstance(chunk_size, (int, str, pd.DateOffset, type(None)))):
-            raise ValueError(f"{error_msg} Got {type(chunk_size)}.")
+            raise TypeError(f"{error_msg} Got {type(chunk_size)}.")
+        
         if isinstance(chunk_size, str):
             try:
                 chunk_size = pd.tseries.frequencies.to_offset(chunk_size)
             except ValueError:
                 raise ValueError(f"{error_msg} Got {type(chunk_size)}.")
+        
         if isinstance(chunk_size, int) and chunk_size <= 0:
             raise ValueError(f"{error_msg} Got {chunk_size}.")
         

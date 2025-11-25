@@ -3,13 +3,15 @@
 import re
 import pytest
 import pandas as pd
-from skforecast.datasets import datasets, fetch_dataset
+from skforecast.datasets import datasets, show_datasets_info, fetch_dataset
 
 
 def test_fetch_dataset():
     """
     Test function `fetch_dataset`.
     """
+
+    show_datasets_info()
     
     # Test fetching the 'h2o' dataset
     df = fetch_dataset('h2o', version='latest', raw=False, verbose=False)

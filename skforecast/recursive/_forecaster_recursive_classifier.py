@@ -1589,8 +1589,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         self,
         steps: int | str | pd.Timestamp,
         last_window: pd.Series | pd.DataFrame | None = None,
-        exog: pd.Series | pd.DataFrame | None = None,
-        check_inputs: bool = True
+        exog: pd.Series | pd.DataFrame | None = None
     ) -> pd.Series:
         """
         Predict n steps ahead. It is an recursive process in which, each prediction,
@@ -1611,10 +1610,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             right after training data.
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
-        check_inputs : bool, default True
-            If `True`, the input is checked for possible warnings and errors 
-            with the `check_predict_input` function. This argument is created 
-            for internal use and is not recommended to be changed.
 
         Returns
         -------
@@ -1629,10 +1624,9 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             prediction_index,
             steps
         ) = self._create_predict_inputs(
-                steps        = steps,
-                last_window  = last_window,
-                exog         = exog,
-                check_inputs = check_inputs
+                steps       = steps,
+                last_window = last_window,
+                exog        = exog
             )
 
         with warnings.catch_warnings():
@@ -1664,8 +1658,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         self,
         steps: int | str | pd.Timestamp,
         last_window: pd.Series | pd.DataFrame | None = None,
-        exog: pd.Series | pd.DataFrame | None = None,
-        check_inputs: bool = True
+        exog: pd.Series | pd.DataFrame | None = None
     ) -> pd.DataFrame:
         """
         Predict class probabilities n steps ahead. It is a recursive process in 
@@ -1687,10 +1680,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             right after training data.
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
-        check_inputs : bool, default True
-            If `True`, the input is checked for possible warnings and errors 
-            with the `check_predict_input` function. This argument is created 
-            for internal use and is not recommended to be changed.
         
         Returns
         -------
@@ -1713,10 +1702,9 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             prediction_index,
             steps
         ) = self._create_predict_inputs(
-                steps        = steps,
-                last_window  = last_window,
-                exog         = exog,
-                check_inputs = check_inputs
+                steps       = steps,
+                last_window = last_window,
+                exog        = exog
             )
         
         with warnings.catch_warnings():
