@@ -10,6 +10,7 @@ import numpy as np
 from skforecast import __version__ as skforecast_version
 from benchmarks import (
     run_benchmark_ForecasterRecursive,
+    run_benchmark_ForecasterRecursiveClassifier,
     run_benchmark_ForecasterRecursiveMultiSeries,
     run_benchmark_ForecasterDirect,
     run_benchmark_ForecasterDirectMultiVariate
@@ -40,6 +41,7 @@ def main():
     )
     
     run_benchmark_ForecasterRecursive(output_dir)
+    run_benchmark_ForecasterRecursiveClassifier(output_dir)
     run_benchmark_ForecasterRecursiveMultiSeries(output_dir)
     run_benchmark_ForecasterDirect(output_dir)
     run_benchmark_ForecasterDirectMultiVariate(output_dir)
