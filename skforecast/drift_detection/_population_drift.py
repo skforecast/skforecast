@@ -545,7 +545,7 @@ class PopulationDriftDetector:
                         )
                     else:
                         ref_categories = self.ref_categories_[feature]
-                        ref_probs = ref_probs.reindex(ref_categories, fill_value=0).to_numpy()
+                        ref_probs_ = ref_probs.reindex(ref_categories, fill_value=0).to_numpy()
                         # Map new data to reference categories
                         new_counts_dict = new.value_counts().to_dict()
                         new_counts_on_ref = [new_counts_dict.get(cat, 0) for cat in ref_categories]
@@ -561,10 +561,10 @@ class PopulationDriftDetector:
                         leftover = 1 - np.sum(new_probs)
                         if leftover > 0:
                             new_probs = np.append(new_probs, leftover)
-                            ref_probs_appended = np.append(ref_probs, 0)
+                            ref_probs_appended = np.append(ref_probs_, 0)
                             js_distance = jensenshannon(ref_probs_appended, new_probs, base=2)
                         else:
-                            js_distance = jensenshannon(ref_probs, new_probs, base=2)
+                            js_distance = jensenshannon(ref_probs_, new_probs, base=2)
 
                         all_cats = set(self.ref_categories_[feature]).union(set(new_counts_dict.keys()))
                         new_counts = new.value_counts().reindex(all_cats, fill_value=0).to_numpy()
