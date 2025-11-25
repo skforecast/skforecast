@@ -1120,8 +1120,7 @@ def _calculate_metrics_backtesting_multiseries(
         "balanced_accuracy_score",
         "f1_score",
         "precision_score",
-        "recall_score",
-        "roc_auc_score"
+        "recall_score"
     ]
 
     train_indexes = []

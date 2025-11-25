@@ -47,8 +47,7 @@ def test_get_metric_ValueError_when_metric_not_in_metrics_allowed():
         "balanced_accuracy_score",
         "f1_score",
         "precision_score",
-        "recall_score",
-        "roc_auc_score"
+        "recall_score"
     ]
     
     err_msg = re.escape(f"Allowed metrics are: {allowed_metrics}. Got {metric}.")
@@ -82,8 +81,7 @@ def test_get_metric_output_for_all_metrics(metric_str, metric_callable):
                           ('balanced_accuracy_score', balanced_accuracy_score),
                           ('f1_score', f1_score),
                           ('precision_score', precision_score),
-                          ('recall_score', recall_score),
-                          ('roc_auc_score', roc_auc_score)], 
+                          ('recall_score', recall_score)], 
                          ids = lambda dt: f'mertic_str, metric_callable: {dt}')
 def test_get_metric_output_for_all_metrics_classification(metric_str, metric_callable):
     """

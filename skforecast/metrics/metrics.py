@@ -43,8 +43,6 @@ def _get_metric(metric: str) -> Callable:
 
     """
 
-    # TODO: Review metrics, f1_score dont work for multiclass classification
-    # in this way, roc_auc_score needs y_score argument,
     allowed_metrics = [
         # Regression metrics
         "mean_squared_error",
@@ -61,8 +59,7 @@ def _get_metric(metric: str) -> Callable:
         "balanced_accuracy_score",
         "f1_score",
         "precision_score",
-        "recall_score",
-        "roc_auc_score"
+        "recall_score"
     ]
 
     if metric not in allowed_metrics:
