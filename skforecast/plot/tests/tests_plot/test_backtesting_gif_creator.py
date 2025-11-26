@@ -5,6 +5,7 @@ import re
 import pytest
 import numpy as np
 import pandas as pd
+import matplotlib
 from skforecast.model_selection import TimeSeriesFold
 from ... import backtesting_gif_creator
 
@@ -14,6 +15,9 @@ def test_backtesting_gif_creator_raise_error_invalid_arguments():
     Test that backtesting_gif_creator raises an error when invalid 
     arguments are passed.
     """
+
+    # Don't use interactive backends during testing
+    matplotlib.use("Agg")
 
     data = pd.Series([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
     cv = TimeSeriesFold(
