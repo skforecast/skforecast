@@ -16,7 +16,7 @@ def test_set_lags_ValueError_when_lags_set_to_None_and_window_features_is_None(l
     Test ValueError is raised when lags is set to None and window_features is None.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      level           = 'l1',
                      steps           = 3,
                      lags            = 3,
@@ -110,7 +110,7 @@ def test_set_lags_when_differentiation_is_not_None():
     differentiation.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      level           = 'l1',
                      lags            = 3,
                      steps           = 2,

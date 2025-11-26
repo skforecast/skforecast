@@ -13,7 +13,7 @@ def test_ForecasterStats_get_info_criteria_ValueError_criteria_invalid_value():
     """
     Test ForecasterStats get_info_criteria ValueError when `criteria` is an invalid value.
     """
-    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 1, 1)))
+    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 1, 1)))
     forecaster.fit(y=y)
 
     criteria = 'not_valid'
@@ -30,7 +30,7 @@ def test_ForecasterStats_get_info_criteria_ValueError_method_invalid_value():
     """
     Test ForecasterStats get_info_criteria ValueError when `method` is an invalid value.
     """
-    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 1, 1)))
+    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 1, 1)))
     forecaster.fit(y=y)
 
     method = 'not_valid'
@@ -47,7 +47,7 @@ def test_Sarimax_get_info_criteria_skforecast():
     """
     Test ForecasterStats get_info_criteria after fit `y` with skforecast.
     """
-    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 0, 1)))
+    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 0, 1)))
     forecaster.fit(y=y)
     results = forecaster.get_info_criteria(criteria='aic', method='standard')
     expected = -56.80222086732

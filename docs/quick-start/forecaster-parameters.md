@@ -10,7 +10,7 @@ We will explore the arguments that can be included in a [`ForecasterRecursive`](
 from skforecast.recursive import ForecasterRecursive
 
 forecaster = ForecasterRecursive(
-                 regressor        = None,
+                 estimator        = None,
                  lags             = None,
                  window_features  = None,
                  transformer_y    = None,
@@ -25,14 +25,14 @@ forecaster = ForecasterRecursive(
 
 !!! tip
 
-    To be able to create and train a forecaster, at least `regressor` and `lags` and/or `window_features` must be specified.
+    To be able to create and train a forecaster, at least `estimator` and `lags` and/or `window_features` must be specified.
 
 
 ## General parameters
 
-### Regressor
+### Estimator
 
-Skforecast is a Python library that facilitates using scikit-learn regressors as multi-step forecasters and also works with any regressor compatible with the scikit-learn API. Therefore, any of these regressors can be used to create a forecaster:
+Skforecast is a Python library that facilitates using scikit-learn estimators as multi-step forecasters and also works with any estimator compatible with the scikit-learn API. Therefore, any of these estimators can be used to create a forecaster:
 
 + [HistGradientBoostingRegressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.HistGradientBoostingRegressor.html)
 
@@ -40,7 +40,7 @@ Skforecast is a Python library that facilitates using scikit-learn regressors as
 
 + [XGBoost](https://xgboost.readthedocs.io/en/stable/python/python_api.html#module-xgboost.sklearn)
 
-+ [CatBoost](https://catboost.ai/en/docs/concepts/python-reference_catboostregressor)
++ [CatBoost](https://catboost.ai/en/docs/concepts/python-reference_catboostestimator)
 
 ```python
 # Create a forecaster
@@ -49,7 +49,7 @@ from lightgbm import LGBMRegressor
 from skforecast.recursive import ForecasterRecursive
 
 forecaster = ForecasterRecursive(
-                 regressor = LGBMRegressor(random_state=123, verbose=-1),
+                 estimator = LGBMRegressor(random_state=123, verbose=-1),
                  lags      = None
              )
 ```
@@ -75,7 +75,7 @@ from lightgbm import LGBMRegressor
 from skforecast.recursive import ForecasterRecursive
 
 forecaster = ForecasterRecursive(
-                 regressor = LGBMRegressor(random_state=123, verbose=-1),
+                 estimator = LGBMRegressor(random_state=123, verbose=-1),
                  lags      = 5
              )
 ```
@@ -100,7 +100,7 @@ window_features = RollingFeatures(
                   )
 
 forecaster = ForecasterRecursive(
-                 regressor       = LGBMRegressor(random_state=123, verbose=-1),
+                 estimator       = LGBMRegressor(random_state=123, verbose=-1),
                  lags            = 5,
                  window_features = window_features
              )
@@ -126,7 +126,7 @@ from lightgbm import LGBMRegressor
 from skforecast.recursive import ForecasterRecursive
 
 forecaster = ForecasterRecursive(
-                 regressor        = LGBMRegressor(random_state=123, verbose=-1),
+                 estimator        = LGBMRegressor(random_state=123, verbose=-1),
                  lags             = 5,
                  window_features  = None,
                  transformer_y    = StandardScaler(),
@@ -163,7 +163,7 @@ def custom_weights(index):
     return weights
 
 forecaster = ForecasterRecursive(
-                 regressor        = LGBMRegressor(random_state=123, verbose=-1),
+                 estimator        = LGBMRegressor(random_state=123, verbose=-1),
                  lags             = 5,
                  window_features  = None,
                  transformer_y    = None,
@@ -187,7 +187,7 @@ from lightgbm import LGBMRegressor
 from skforecast.recursive import ForecasterRecursive
 
 forecaster = ForecasterRecursive(
-                 regressor        = LGBMRegressor(random_state=123, verbose=-1),
+                 estimator        = LGBMRegressor(random_state=123, verbose=-1),
                  lags             = 5,
                  window_features  = None,
                  transformer_y    = None,
@@ -198,9 +198,9 @@ forecaster = ForecasterRecursive(
 ```
 
 
-### Inclusion of kwargs in the regressor fit method
+### Inclusion of kwargs in the estimator fit method
 
-Some regressors include the possibility to add some additional configuration during the fitting method. The predictor parameter `fit_kwargs` allows these arguments to be set when the forecaster is declared.
+Some estimators include the possibility to add some additional configuration during the fitting method. The predictor parameter `fit_kwargs` allows these arguments to be set when the forecaster is declared.
 
 !!! danger
 
@@ -208,7 +208,7 @@ Some regressors include the possibility to add some additional configuration dur
 
 !!! example
 
-    The following example demonstrates the inclusion of categorical features in an LGBM regressor. This must be done during the `LGBMRegressor` fit method. [Fit parameters lightgbm](https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html#lightgbm.LGBMRegressor.fit)
+    The following example demonstrates the inclusion of categorical features in an LGBM estimator. This must be done during the `LGBMRegressor` fit method. [Fit parameters lightgbm](https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html#lightgbm.LGBMRegressor.fit)
 
 More information: [Categorical features]../user_guides/categorical-features.html#native-implementation-for-categorical-features).
 
@@ -219,7 +219,7 @@ from skforecast.recursive import ForecasterRecursive
 from lightgbm import LGBMRegressor
 
 forecaster = ForecasterRecursive(
-                 regressor        = LGBMRegressor(),
+                 estimator        = LGBMRegressor(),
                  lags             = 5,
                  window_features  = None,
                  transformer_y    = None,
@@ -244,7 +244,7 @@ from skforecast.recursive import ForecasterRecursive
 from lightgbm import LGBMRegressor
 
 forecaster = ForecasterRecursive(
-                 regressor        = LGBMRegressor(),
+                 estimator        = LGBMRegressor(),
                  lags             = 5,
                  window_features  = None,
                  transformer_y    = None,
@@ -268,7 +268,7 @@ from lightgbm import LGBMRegressor
 from skforecast.recursive import ForecasterRecursive
 
 forecaster = ForecasterRecursive(
-                 regressor        = LGBMRegressor(random_state=123, verbose=-1),
+                 estimator        = LGBMRegressor(random_state=123, verbose=-1),
                  lags             = 5,
                  window_features  = None,
                  transformer_y    = None,
@@ -299,7 +299,7 @@ from lightgbm import LGBMRegressor
 from skforecast.direct import ForecasterDirect
 
 forecaster = ForecasterDirect(
-                 regressor        = LGBMRegressor(random_state=123, verbose=-1),
+                 estimator        = LGBMRegressor(random_state=123, verbose=-1),
                  steps            = 5,
                  lags             = 5,
                  window_features  = None,
@@ -314,9 +314,9 @@ forecaster = ForecasterDirect(
 
 ### Number of jobs
 
-The `n_jobs` parameter allows multi-process parallelization to train regressors for all `steps` simultaneously. 
+The `n_jobs` parameter allows multi-process parallelization to train estimators for all `steps` simultaneously. 
 
-The benefits of parallelization depend on several factors, including the regressor used, the number of fits to be performed, and the volume of data involved. When the `n_jobs` parameter is set to `'auto'`, the level of parallelization is automatically selected based on heuristic rules that aim to choose the best option for each scenario.
+The benefits of parallelization depend on several factors, including the estimator used, the number of fits to be performed, and the volume of data involved. When the `n_jobs` parameter is set to `'auto'`, the level of parallelization is automatically selected based on heuristic rules that aim to choose the best option for each scenario.
 
 For a more detailed look at parallelization, visit [Parallelization in skforecast](../faq/parallelization-skforecast.html).
 
@@ -327,7 +327,7 @@ from lightgbm import LGBMRegressor
 from skforecast.direct import ForecasterDirect
 
 forecaster = ForecasterDirect(
-                 regressor        = LGBMRegressor(random_state=123, verbose=-1),
+                 estimator        = LGBMRegressor(random_state=123, verbose=-1),
                  steps            = 5,
                  lags             = 5,
                  window_features  = None,

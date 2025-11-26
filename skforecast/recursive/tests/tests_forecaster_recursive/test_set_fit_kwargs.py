@@ -9,7 +9,7 @@ def test_set_fit_kwargs():
     Test set_fit_kwargs method.
     """
     forecaster = ForecasterRecursive(
-                     regressor  = LGBMRegressor(),
+                     estimator  = LGBMRegressor(),
                      lags       = 3,
                      fit_kwargs = {'categorical_feature': 'auto'}
                  )

@@ -14,7 +14,7 @@ from .fixtures_forecaster_direct import y
 
 def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_steps_is_1_in_sample_residuals_is_True():
     """
-    Test output when regressor is LinearRegression and one step ahead is predicted
+    Test output when estimator is LinearRegression and one step ahead is predicted
     using in sample residuals.
     """
     forecaster = ForecasterDirect(LinearRegression(), steps=2, lags=3)
@@ -35,7 +35,7 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
     
 def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_is_True():
     """
-    Test output when regressor is LinearRegression and two step ahead is predicted
+    Test output when estimator is LinearRegression and two step ahead is predicted
     using in sample residuals.
     """
     forecaster = ForecasterDirect(LinearRegression(), steps=2, lags=3)
@@ -57,7 +57,7 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
     
 def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_steps_is_1_in_sample_residuals_is_False():
     """
-    Test output when regressor is LinearRegression and one step ahead is predicted
+    Test output when estimator is LinearRegression and one step ahead is predicted
     using out sample residuals.
     """
     forecaster = ForecasterDirect(LinearRegression(), steps=2, lags=3)
@@ -78,7 +78,7 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
     
 def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_is_False():
     """
-    Test output when regressor is LinearRegression and two step ahead is predicted
+    Test output when estimator is LinearRegression and two step ahead is predicted
     using out sample residuals.
     """
     forecaster = ForecasterDirect(LinearRegression(), steps=2, lags=3)
@@ -100,7 +100,7 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
 
 def test_predict_interval_conformal_output_when_with_transform_y():
     """
-    Test predict output when using LinearRegression as regressor and StandardScaler.
+    Test predict output when using LinearRegression as estimator and StandardScaler.
     """
     y = pd.Series(
             np.array([-0.59,  0.02, -0.9 ,  1.09, -3.61,  0.72, -0.11, -0.4 ,  0.49,
@@ -108,7 +108,7 @@ def test_predict_interval_conformal_output_when_with_transform_y():
                       -0.61, -0.88])
         )
     forecaster = ForecasterDirect(
-                     regressor     = LinearRegression(),
+                     estimator     = LinearRegression(),
                      steps         = 3,
                      lags          = 3,
                      transformer_y = StandardScaler(),
@@ -133,7 +133,7 @@ def test_predict_interval_conformal_output_when_with_transform_y():
 
 def test_predict_interval_conformal_output_when_with_transform_y_and_transform_exog():
     """
-    Test predict output when using LinearRegression as regressor, StandardScaler
+    Test predict output when using LinearRegression as estimator, StandardScaler
     as transformer_y and transformer_exog as transformer_exog.
     """
     y = pd.Series(
@@ -158,7 +158,7 @@ def test_predict_interval_conformal_output_when_with_transform_y_and_transform_e
                            verbose_feature_names_out = False
                        )
     forecaster = ForecasterDirect(
-                     regressor        = LinearRegression(),
+                     estimator        = LinearRegression(),
                      steps            = 5,
                      lags             = 3,
                      transformer_y    = StandardScaler(),
@@ -186,7 +186,7 @@ def test_predict_interval_conformal_output_when_with_transform_y_and_transform_e
 
 def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_steps_is_5_in_sample_residuals_is_True_binned_residuals_is_True():
     """
-    Test output when regressor is LinearRegression 5 step ahead is predicted
+    Test output when estimator is LinearRegression 5 step ahead is predicted
     using in sample residuals.
     """
     forecaster = ForecasterDirect(LinearRegression(), steps=5, lags=3)
@@ -212,7 +212,7 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
 
 def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_steps_is_5_in_sample_residuals_is_False_binned_residuals_is_True():
     """
-    Test output when regressor is LinearRegression, steps=5, use_in_sample_residuals=False,
+    Test output when estimator is LinearRegression, steps=5, use_in_sample_residuals=False,
     binned_residuals=True.
     """
     forecaster = ForecasterDirect(LinearRegression(), steps=5, lags=3)

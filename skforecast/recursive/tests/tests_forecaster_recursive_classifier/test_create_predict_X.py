@@ -31,7 +31,7 @@ def test_create_predict_X_NotFittedError_when_fitted_is_False():
     Test NotFittedError is raised when fitted is False.
     """
     forecaster = ForecasterRecursiveClassifier(
-                     regressor = LogisticRegression(),
+                     estimator = LogisticRegression(),
                      lags      = 5
                  )
 
@@ -43,9 +43,9 @@ def test_create_predict_X_NotFittedError_when_fitted_is_False():
         forecaster.create_predict_X(steps=5)
 
 
-def test_create_predict_X_output_when_regressor_is_LogisticRegression():
+def test_create_predict_X_output_when_estimator_is_LogisticRegression():
     """
-    Test create_predict_X output when using LogisticRegression as regressor.
+    Test create_predict_X output when using LogisticRegression as estimator.
     """
     y_dummy = pd.Series(
         np.array(['a', 'b', 'c', 'a', 'b', 'c', 'a', 'b', 'c', 'a', 'b', 'c', 'a', 'b', 'c']), 
@@ -72,7 +72,7 @@ def test_create_predict_X_output_when_regressor_is_LogisticRegression():
 
 def test_create_predict_X_output_when_with_exog():
     """
-    Test create_predict_X output when using LogisticRegression as regressor.
+    Test create_predict_X output when using LogisticRegression as estimator.
     """
     forecaster = ForecasterRecursiveClassifier(LogisticRegression(), lags=3)
     forecaster.fit(y=y, exog=exog)
@@ -98,7 +98,7 @@ def test_create_predict_X_output_when_with_exog():
 
 def test_create_predict_X_output_with_transform_exog():
     """
-    Test create_predict_X output when using LogisticRegression as regressor and 
+    Test create_predict_X output when using LogisticRegression as estimator and 
     transformer_exog.
     """
 
@@ -116,7 +116,7 @@ def test_create_predict_X_output_with_transform_exog():
                             verbose_feature_names_out = False
                        )
     forecaster = ForecasterRecursiveClassifier(
-                     regressor        = LogisticRegression(),
+                     estimator        = LogisticRegression(),
                      lags             = 5,
                      transformer_exog = transformer_exog,
                  )
@@ -186,7 +186,7 @@ def test_create_predict_X_output_when_categorical_features_native_implementation
                        ).set_output(transform="pandas")
 
     forecaster = ForecasterRecursiveClassifier(
-                     regressor        = HistGradientBoostingClassifier(
+                     estimator        = HistGradientBoostingClassifier(
                                             categorical_features = categorical_features,
                                             random_state         = 123
                                         ),
@@ -270,7 +270,7 @@ def test_create_predict_X_output_when_categorical_features_native_implementation
                        ).set_output(transform="pandas")
     
     forecaster = ForecasterRecursiveClassifier(
-                     regressor        = LGBMClassifier(verbose=-1, random_state=123),
+                     estimator        = LGBMClassifier(verbose=-1, random_state=123),
                      lags             = 5,
                      transformer_exog = transformer_exog,
                      fit_kwargs       = {'categorical_feature': categorical_features}
@@ -359,7 +359,7 @@ def test_create_predict_X_output_when_categorical_features_native_implementation
                        ).set_output(transform="pandas")
 
     forecaster = ForecasterRecursiveClassifier(
-                     regressor        = LGBMClassifier(verbose=-1, random_state=123),
+                     estimator        = LGBMClassifier(verbose=-1, random_state=123),
                      lags             = 5,
                      transformer_exog = transformer_exog,
                      fit_kwargs       = {'categorical_feature': 'auto'}
@@ -429,7 +429,7 @@ def test_create_predict_X_output_when_categorical_features_native_implementation
                          ids=lambda steps: f'steps: {steps}')
 def test_create_predict_X_output_when_window_features(steps):
     """
-    Test output of create_predict_X when regressor is LGBMClassifier and window features.
+    Test output of create_predict_X when estimator is LGBMClassifier and window features.
     """
 
     rolling = RollingFeaturesClassification(stats=['proportion', 'entropy'], window_sizes=[3, 5])

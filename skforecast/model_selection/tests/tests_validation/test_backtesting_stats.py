@@ -22,7 +22,7 @@ def test_backtesting_forecaster_TypeError_when_forecaster_not_supported_types():
     of the types supported by the function.
     """
     forecaster = ForecasterRecursive(
-                    regressor = Ridge(random_state=123),
+                    estimator = Ridge(random_state=123),
                     lags      = 2
                  )
     
@@ -63,7 +63,7 @@ def test_output_backtesting_stats_no_refit_no_exog_no_remainder_with_mocked(n_jo
     Mocked done with skforecast 0.7.0.
     """
     forecaster = ForecasterStats(
-                     regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
+                     estimator = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
     cv = TimeSeriesFold(
@@ -110,7 +110,7 @@ def test_output_backtesting_stats_no_refit_no_exog_remainder_with_mocked(initial
     Mocked done with skforecast 0.7.0.
     """
     forecaster = ForecasterStats(
-                     regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
+                     estimator = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
     cv = TimeSeriesFold(
@@ -155,7 +155,7 @@ def test_output_backtesting_stats_yes_refit_no_exog_no_remainder_with_mocked(n_j
     metric='mean_squared_error'. (Mocked done with skforecast 0.7.0.)
     """
     forecaster = ForecasterStats(
-                     regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
+                     estimator = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
     cv = TimeSeriesFold(
@@ -201,7 +201,7 @@ def test_output_backtesting_stats_yes_refit_no_exog_remainder_with_mocked(n_jobs
     metric='mean_squared_error'. (Mocked done with skforecast 0.7.0.)
     """
     forecaster = ForecasterStats(
-                     regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
+                     estimator = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
     cv = TimeSeriesFold(
@@ -245,7 +245,7 @@ def test_output_backtesting_stats_yes_refit_fixed_train_size_no_exog_no_remainde
     metric='mean_squared_error'. Mocked done with skforecast 0.7.0.
     """
     forecaster = ForecasterStats(
-                     regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
+                     estimator = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
     cv = TimeSeriesFold(
@@ -288,7 +288,7 @@ def test_output_backtesting_stats_yes_refit_fixed_train_size_no_exog_remainder_w
     metric='mean_squared_error'. Mocked done with skforecast 0.7.0.
     """
     forecaster = ForecasterStats(
-                     regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
+                     estimator = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
     cv = TimeSeriesFold(
@@ -331,7 +331,7 @@ def test_output_backtesting_stats_no_refit_yes_exog_with_mocked():
     Mocked done with skforecast 0.7.0.
     """
     forecaster = ForecasterStats(
-                     regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
+                     estimator = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
     cv = TimeSeriesFold(
@@ -375,7 +375,7 @@ def test_output_backtesting_stats_yes_refit_yes_exog_with_mocked():
     Mocked done with skforecast 0.7.0.
     """
     forecaster = ForecasterStats(
-                     regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
+                     estimator = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
     cv = TimeSeriesFold(
@@ -419,7 +419,7 @@ def test_output_backtesting_stats_yes_refit_fixed_train_size_yes_exog_with_mocke
     metric='mean_squared_error'. Mocked done with skforecast 0.7.0.
     """
     forecaster = ForecasterStats(
-                     regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
+                     estimator = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
     cv = TimeSeriesFold(
@@ -472,7 +472,7 @@ def test_output_backtesting_stats_no_refit_yes_exog_callable_metric_with_mocked(
     Mocked done with skforecast 0.7.0.
     """
     forecaster = ForecasterStats(
-                     regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
+                     estimator = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
     cv = TimeSeriesFold(
@@ -516,7 +516,7 @@ def test_output_backtesting_stats_no_refit_no_exog_list_of_metrics_with_mocked()
     Mocked done with skforecast 0.7.0.
     """
     forecaster = ForecasterStats(
-                     regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
+                     estimator = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
     cv = TimeSeriesFold(
@@ -560,7 +560,7 @@ def test_output_backtesting_stats_yes_refit_no_exog_callable_metric_with_mocked(
     Mocked done with skforecast 0.7.0.
     """
     forecaster = ForecasterStats(
-                     regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
+                     estimator = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
     cv = TimeSeriesFold(
@@ -603,7 +603,7 @@ def test_output_backtesting_stats_yes_refit_fixed_train_size_yes_exog_list_of_me
     list of metrics. Mocked done with skforecast 0.7.0.
     """
     forecaster = ForecasterStats(
-                     regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
+                     estimator = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
     cv = TimeSeriesFold(
@@ -652,7 +652,7 @@ def test_output_backtesting_stats_no_refit_yes_exog_interval_with_mocked(alpha, 
     interval. Mocked done with skforecast 0.7.0.
     """
     forecaster = ForecasterStats(
-                     regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
+                     estimator = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
     cv = TimeSeriesFold(
@@ -711,7 +711,7 @@ def test_output_backtesting_stats_yes_refit_yes_exog_interval_with_mocked(alpha,
     metric='mean_absolute_error', interval. Mocked done with skforecast 0.7.0.
     """
     forecaster = ForecasterStats(
-                     regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
+                     estimator = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
     cv = TimeSeriesFold(
@@ -770,7 +770,7 @@ def test_output_backtesting_stats_yes_refit_fixed_train_size_yes_exog_interval_w
     metric='mean_absolute_error', interval. Mocked done with skforecast 0.7.0.
     """
     forecaster = ForecasterStats(
-                     regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
+                     estimator = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
     cv = TimeSeriesFold(
@@ -825,7 +825,7 @@ def test_output_backtesting_stats_fold_stride_with_mocked():
     fold stride. Mocked done with skforecast 0.18.0.
     """
     forecaster = ForecasterStats(
-                     regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
+                     estimator = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
     cv = TimeSeriesFold(
@@ -895,7 +895,7 @@ def test_output_backtesting_stats_fold_stride_greater_than_steps_with_mocked():
     fold stride greater than steps. Mocked done with skforecast 0.18.0.
     """
     forecaster = ForecasterStats(
-                     regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
+                     estimator = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
     cv = TimeSeriesFold(

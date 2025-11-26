@@ -12,7 +12,7 @@ def test_set_fit_kwargs_skforecast():
     Test set_fit_kwargs method using skforecast.
     """
     forecaster = ForecasterStats(
-                     regressor  = Sarimax(order=(1, 0, 1))
+                     estimator  = Sarimax(order=(1, 0, 1))
                  )
     new_fit_kwargs = {'warning': 1}
     

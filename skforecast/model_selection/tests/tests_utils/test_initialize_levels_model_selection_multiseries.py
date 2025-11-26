@@ -18,7 +18,7 @@ def test_initialize_levels_model_selection_multiseries_TypeError_when_levels_not
     `levels` is not a `list`, `str` or `None`.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor = Ridge(random_state=123), lags = 4
+        estimator = Ridge(random_state=123), lags = 4
     )
     levels = 5
 
@@ -42,7 +42,7 @@ def test_initialize_levels_model_selection_multiseries_IgnoredArgumentWarning_fo
     None in ForecasterDirectMultiVariate.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor = Ridge(random_state=123),
+                     estimator = Ridge(random_state=123),
                      level     = 'l1',
                      lags      = 2,
                      steps     = 3
@@ -76,7 +76,7 @@ def test_initialize_levels_model_selection_multiseries_ValueError_when_levels_no
     """
 
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor = Ridge(random_state=123), lags = 4
+        estimator = Ridge(random_state=123), lags = 4
     )
     levels = ['l3']
 
@@ -105,7 +105,7 @@ def test_initialize_levels_model_selection_multiseries_for_all_inputs(series_as_
     str or list.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor = Ridge(random_state=123),
+                     estimator = Ridge(random_state=123),
                      lags      = 2
                  )
     

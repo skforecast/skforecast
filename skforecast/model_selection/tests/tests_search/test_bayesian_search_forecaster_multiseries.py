@@ -39,7 +39,7 @@ def test_ValueError_bayesian_search_forecaster_multiseries_when_return_best_and_
     return_best and length of `series` and `exog` do not match.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor = Ridge(random_state=123),
+                     estimator = Ridge(random_state=123),
                      level     = 'l1',
                      steps     = 3,
                      lags      = 2
@@ -90,7 +90,7 @@ def test_bayesian_search_forecaster_multiseries_ForecasterRecursiveMultiSeries(s
         series = series.rename(columns={'1': 'l1', '2': 'l2'})
     
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor = Ridge(random_state=123),
+                     estimator = Ridge(random_state=123),
                      lags      = 2,
                      encoding  = 'onehot',
                      transformer_series = StandardScaler()
@@ -171,7 +171,7 @@ def test_results_output_bayesian_search_forecaster_multiseries_ForecasterRecursi
     )
 
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor = Ridge(random_state=123),
+                     estimator = Ridge(random_state=123),
                      lags      = 2,
                      window_features = window_features,
                      encoding  = 'onehot',
@@ -278,7 +278,7 @@ def test_output_bayesian_search_forecaster_multiseries_series_and_exog_dict_with
     """
 
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=LGBMRegressor(
+        estimator=LGBMRegressor(
             n_estimators=2, random_state=123, verbose=-1, max_depth=2
         ),
         lags=14,
@@ -390,11 +390,11 @@ def test_output_bayesian_search_forecaster_multiseries_series_and_exog_dict_wind
         stats = ['mean', 'std', 'min', 'max', 'sum', 'median', 'ratio_min_max', 'coef_variation'],
         window_sizes = 3,
     )
-    regressor = LGBMRegressor(
+    estimator = LGBMRegressor(
         n_estimators=2, random_state=123, verbose=-1, max_depth=2
     )
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor          = regressor,
+        estimator          = estimator,
         lags               = 14,
         window_features    = window_features,
         encoding           = "ordinal",
@@ -469,7 +469,7 @@ def test_output_bayesian_search_forecaster_multiseries_series_and_exog_dict_mult
     """
 
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=LGBMRegressor(
+        estimator=LGBMRegressor(
             n_estimators=2, random_state=123, verbose=-1, max_depth=2
         ),
         lags=14,
@@ -571,7 +571,7 @@ def test_output_bayesian_search_forecaster_multiseries_series_and_exog_dict_with
     """
 
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=LGBMRegressor(
+        estimator=LGBMRegressor(
             n_estimators=2, random_state=123, verbose=-1, max_depth=2
         ),
         lags=14,
@@ -659,7 +659,7 @@ def test_results_output_bayesian_search_forecaster_multivariate_ForecasterDirect
         window_sizes = 3,
     )
     forecaster = ForecasterDirectMultiVariate(
-                     regressor       = Ridge(random_state=123),
+                     estimator       = Ridge(random_state=123),
                      level           = 'l1',
                      steps           = 3,
                      lags            = 2,
@@ -746,7 +746,7 @@ def test_results_output_bayesian_search_forecaster_multivariate_ForecasterDirect
     ForecasterDirectMultiVariate with mocked (mocked done in Skforecast v0.12.0).
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor = Ridge(random_state=123),
+                     estimator = Ridge(random_state=123),
                      level     = 'l1',
                      lags      = 2,
                      steps     = 3
@@ -824,7 +824,7 @@ def test_bayesian_search_forecaster_multiseries_ForecasterDirectMultiVariate_one
     """
     metrics = ['mean_absolute_error', mean_absolute_percentage_error, mean_absolute_scaled_error]
     forecaster = ForecasterDirectMultiVariate(
-                    regressor          = Ridge(random_state=123),
+                    estimator          = Ridge(random_state=123),
                     lags               = 10,
                     steps              = 10,
                     level              = 'item_1',
@@ -924,7 +924,7 @@ def test_bayesian_search_forecaster_multiseries_ForecasterRecursiveMultiSeries_o
     """
     metrics = ['mean_absolute_error', mean_absolute_percentage_error, mean_absolute_scaled_error]
     forecaster = ForecasterRecursiveMultiSeries(
-            regressor          = Ridge(random_state=123),
+            estimator          = Ridge(random_state=123),
             lags               = 3,
             encoding           = 'ordinal',
             transformer_series = StandardScaler(),
@@ -1079,7 +1079,7 @@ def test_bayesian_search_forecaster_multiseries_ForecasterRecursiveMultiSeries_o
     """
     metrics = ['mean_absolute_error', mean_absolute_percentage_error, mean_absolute_scaled_error]
     forecaster = ForecasterRecursiveMultiSeries(
-            regressor          = Ridge(random_state=123),
+            estimator          = Ridge(random_state=123),
             lags               = 3,
             encoding           = 'ordinal',
             transformer_series = StandardScaler(),

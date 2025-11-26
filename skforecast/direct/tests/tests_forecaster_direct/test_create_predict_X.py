@@ -167,7 +167,7 @@ def test_create_predict_X_output_with_transform_y():
     transformer_y = StandardScaler()
 
     forecaster = ForecasterDirect(
-                     regressor     = LinearRegression(),
+                     estimator     = LinearRegression(),
                      lags          = 5,
                      steps         = 5,
                      transformer_y = transformer_y,
@@ -218,7 +218,7 @@ def test_create_predict_X_output_with_transform_y_and_transform_exog(n_jobs):
                        )
     
     forecaster = ForecasterDirect(
-                     regressor        = LinearRegression(),
+                     estimator        = LinearRegression(),
                      lags             = 5,
                      steps            = 5,
                      transformer_y    = transformer_y,
@@ -273,7 +273,7 @@ def test_create_predict_X_output_when_categorical_features_native_implementation
                        ).set_output(transform="pandas")
     
     forecaster = ForecasterDirect(
-                     regressor        = HistGradientBoostingRegressor(
+                     estimator        = HistGradientBoostingRegressor(
                                             categorical_features = categorical_features,
                                             random_state         = 123
                                         ),
@@ -342,7 +342,7 @@ def test_create_predict_X_when_categorical_features_auto_detect_LGBMRegressor():
                        ).set_output(transform="pandas")
     
     forecaster = ForecasterDirect(
-                     regressor        = LGBMRegressor(verbose=-1, random_state=123),
+                     estimator        = LGBMRegressor(verbose=-1, random_state=123),
                      lags             = 5,
                      steps            = 10, 
                      transformer_y    = None,
@@ -377,7 +377,7 @@ def test_create_predict_X_when_categorical_features_auto_detect_LGBMRegressor():
 
 def test_create_predict_X_when_with_exog_differentiation_is_1_and_transformer_y_steps_1():
     """
-    Test create_predict_X when using LinearRegression as regressor and differentiation=1,
+    Test create_predict_X when using LinearRegression as estimator and differentiation=1,
     and transformer_y is StandardScaler, steps=1.
     """
 
@@ -390,7 +390,7 @@ def test_create_predict_X_when_with_exog_differentiation_is_1_and_transformer_y_
     )
 
     forecaster = ForecasterDirect(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      lags            = [1, 5],
                      steps           = 1,
                      differentiation = 1
@@ -411,7 +411,7 @@ def test_create_predict_X_when_with_exog_differentiation_is_1_and_transformer_y_
 
 def test_create_predict_X_when_with_exog_differentiation_is_1_and_transformer_y_steps_5():
     """
-    Test create_predict_X when using LinearRegression as regressor and differentiation=1,
+    Test create_predict_X when using LinearRegression as estimator and differentiation=1,
     and transformer_y is StandardScaler, steps=5.
     """
 
@@ -424,7 +424,7 @@ def test_create_predict_X_when_with_exog_differentiation_is_1_and_transformer_y_
     )
 
     forecaster = ForecasterDirect(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      lags            = [1, 5],
                      steps           = 5,
                      differentiation = 1
@@ -582,7 +582,7 @@ def test_create_predict_X_when_window_features_and_lags_None_steps_10():
 def test_create_predict_X_same_predictions_as_predict():
     """
     Test create_predict_X matrix returns the same predictions as predict method
-    when passing to the regressor predict method.
+    when passing to the estimator predict method.
     """
 
     end_train = '2003-03-01 23:59:00'
@@ -596,7 +596,7 @@ def test_create_predict_X_same_predictions_as_predict():
     rolling_2 = RollingFeatures(stats='sum', window_sizes=[6])
 
     forecaster = ForecasterDirect(
-                     regressor        = LinearRegression(),
+                     estimator        = LinearRegression(),
                      lags             = [1, 5],
                      window_features  = [rolling, rolling_2],
                      steps            = 6,
@@ -608,7 +608,7 @@ def test_create_predict_X_same_predictions_as_predict():
     X_predict = forecaster.create_predict_X(exog=exog.loc[end_train:])
 
     for i, step in enumerate(forecaster.steps):
-        results = forecaster.regressors_[step].predict(X_predict.iloc[[i]])
+        results = forecaster.estimators_[step].predict(X_predict.iloc[[i]])
         expected = forecaster.predict(steps=[step], exog=exog.loc[end_train:]).to_numpy()
         np.testing.assert_array_almost_equal(results, expected, decimal=7)
 
@@ -616,7 +616,7 @@ def test_create_predict_X_same_predictions_as_predict():
 def test_create_predict_X_same_predictions_as_predict_transformers():
     """
     Test create_predict_X matrix returns the same predictions as predict method
-    when passing to the regressor predict method with transformation.
+    when passing to the estimator predict method with transformation.
     """
 
     end_train = '2003-03-01 23:59:00'
@@ -630,7 +630,7 @@ def test_create_predict_X_same_predictions_as_predict_transformers():
     rolling_2 = RollingFeatures(stats='sum', window_sizes=[6])
 
     forecaster = ForecasterDirect(
-                     regressor        = LinearRegression(),
+                     estimator        = LinearRegression(),
                      lags             = [1, 5],
                      window_features  = [rolling, rolling_2],
                      steps            = 6,
@@ -652,7 +652,7 @@ def test_create_predict_X_same_predictions_as_predict_transformers():
         X_predict = forecaster.create_predict_X(exog=exog.loc[end_train:])
 
     for i, step in enumerate(forecaster.steps):
-        results = forecaster.regressors_[step].predict(X_predict.iloc[[i]])
+        results = forecaster.estimators_[step].predict(X_predict.iloc[[i]])
         results = transform_numpy(
                       array             = results,
                       transformer       = forecaster.transformer_y,
@@ -666,7 +666,7 @@ def test_create_predict_X_same_predictions_as_predict_transformers():
 def test_create_predict_X_same_predictions_as_predict_transformers_diff():
     """
     Test create_predict_X matrix returns the same predictions as predict method
-    when passing to the regressor predict method with transformation and differentiation.
+    when passing to the estimator predict method with transformation and differentiation.
     """
 
     end_train = '2003-03-01 23:59:00'
@@ -680,7 +680,7 @@ def test_create_predict_X_same_predictions_as_predict_transformers_diff():
     rolling_2 = RollingFeatures(stats='sum', window_sizes=[6])
 
     forecaster = ForecasterDirect(
-                     regressor        = LinearRegression(),
+                     estimator        = LinearRegression(),
                      lags             = [1, 5],
                      window_features  = [rolling, rolling_2],
                      steps            = 6,
@@ -702,7 +702,7 @@ def test_create_predict_X_same_predictions_as_predict_transformers_diff():
         X_predict = forecaster.create_predict_X(exog=exog.loc[end_train:])
 
     for i, step in enumerate(forecaster.steps):
-        results = forecaster.regressors_[step].predict(X_predict.iloc[[i]])
+        results = forecaster.estimators_[step].predict(X_predict.iloc[[i]])
         results = forecaster.differentiator.inverse_transform_next_window(results)
         results = transform_numpy(
                       array             = results,

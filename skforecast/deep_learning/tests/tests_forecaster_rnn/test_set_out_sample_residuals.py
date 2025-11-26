@@ -327,7 +327,7 @@ def test_out_sample_residuals_and_in_sample_residuals_equivalence():
     )
     forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
     X_train, exog_train, y_train, _ = forecaster.create_train_X_y(series=series, exog=exog)
-    y_pred_train = forecaster.regressor.predict(
+    y_pred_train = forecaster.estimator.predict(
         x=X_train if exog_train is None else [X_train, exog_train], verbose=0
     )
 

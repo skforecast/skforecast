@@ -12,7 +12,7 @@ def test_TypeError_initialize_lags__rid_when_not_list_dict_or_None():
     """
     Test TypeError is raised when lags_grid is not a list, dict or None.
     """
-    forecaster = ForecasterRecursive(regressor=Ridge(random_state=123), lags=2)
+    forecaster = ForecasterRecursive(estimator=Ridge(random_state=123), lags=2)
     lags_grid = 'not_valid_type'
 
     err_msg = re.escape(
@@ -27,7 +27,7 @@ def test_initialize_lags_grid_when_lags_grid_is_a_list():
     """
     Test initialize_lags_grid when lags_grid is a list.
     """
-    forecaster = ForecasterRecursive(regressor=Ridge(random_state=123), lags=2)
+    forecaster = ForecasterRecursive(estimator=Ridge(random_state=123), lags=2)
     lags_grid = [1, [2, 4], range(3, 5), np.array([3, 7])]
     lags_grid, lags_label = initialize_lags_grid(forecaster, lags_grid)
 
@@ -59,7 +59,7 @@ def test_initialize_lags_grid_when_lags_grid_is_None(lags, lags_grid_expected):
     """
     Test initialize_lags_grid when lags_grid is None.
     """
-    forecaster = ForecasterRecursive(regressor=Ridge(random_state=123), lags=lags)
+    forecaster = ForecasterRecursive(estimator=Ridge(random_state=123), lags=lags)
     lags_grid = None
     lags_grid, lags_label = initialize_lags_grid(forecaster, lags_grid)
 
@@ -73,7 +73,7 @@ def test_initialize_lags_grid_when_lags_grid_is_a_dict():
     """
     Test initialize_lags_grid when lags_grid is a dict.
     """
-    forecaster = ForecasterRecursive(regressor=Ridge(random_state=123), lags=2)
+    forecaster = ForecasterRecursive(estimator=Ridge(random_state=123), lags=2)
     lags_grid = {'1': 1, '[2, 4]': [2, 4], 'range(3, 5)': range(3, 5), '[3 7]': np.array([3, 7])}
     lags_grid, lags_label = initialize_lags_grid(forecaster, lags_grid)
 

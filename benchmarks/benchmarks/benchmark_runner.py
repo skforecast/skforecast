@@ -75,9 +75,9 @@ class BenchmarkRunner:
         """
         forecaster_name = type(forecaster).__name__ if forecaster else np.nan
         if forecaster_name == 'ForecasterRnn':
-            regressor_name = forecaster.regressor.name if forecaster else np.nan
+            estimator_name = forecaster.estimator.name if forecaster else np.nan
         else:
-            regressor_name = type(forecaster.regressor).__name__ if forecaster else np.nan
+            estimator_name = type(forecaster.estimator).__name__ if forecaster else np.nan
         
         func_name = func.__name__
         hash_code = self.hash_function_code(func)
@@ -88,7 +88,7 @@ class BenchmarkRunner:
         print(f"Benchmarking function: {func_name}")
         entry = {
             'forecaster_name': forecaster_name,
-            'regressor_name': regressor_name,
+            'estimator_name': estimator_name,
             'function_name': func_name,
             'function_hash': hash_code,
             'method_name': method_name,

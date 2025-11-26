@@ -297,7 +297,7 @@ def test_forecaster_binning_out_sample_residuals_when_transformer_series_and_dif
     }
     
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 5,
                      transformer_series = StandardScaler(),
                      differentiation    = differentiation

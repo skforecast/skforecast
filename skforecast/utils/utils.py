@@ -224,7 +224,7 @@ def initialize_window_features(
 
 def initialize_weights(
     forecaster_name: str,
-    regressor: object,
+    estimator: object,
     weight_func: Callable | dict[str, Callable],
     series_weights: dict[str, float]
 ) -> tuple[Callable | dict[str, Callable] | None, str | dict[str, str] | None, dict[str, float] | None]:
@@ -237,8 +237,8 @@ def initialize_weights(
     ----------
     forecaster_name : str
         Forecaster name.
-    regressor : regressor or pipeline compatible with the scikit-learn API
-        Regressor of the forecaster.
+    estimator : estimator or pipeline compatible with the scikit-learn API
+        Estimator of the forecaster.
     weight_func : Callable, dict
         Argument `weight_func` of the forecaster.
     series_weights : dict
@@ -277,9 +277,9 @@ def initialize_weights(
         else:
             source_code_weight_func = inspect.getsource(weight_func)
 
-        if 'sample_weight' not in inspect.signature(regressor.fit).parameters:
+        if 'sample_weight' not in inspect.signature(estimator.fit).parameters:
             warnings.warn(
-                f"Argument `weight_func` is ignored since regressor {regressor} "
+                f"Argument `weight_func` is ignored since estimator {estimator} "
                 f"does not accept `sample_weight` in its `fit` method.",
                 IgnoredArgumentWarning
             )
@@ -292,9 +292,9 @@ def initialize_weights(
                 f"Argument `series_weights` must be a dict of floats or ints."
                 f"Got {type(series_weights)}."
             )
-        if 'sample_weight' not in inspect.signature(regressor.fit).parameters:
+        if 'sample_weight' not in inspect.signature(estimator.fit).parameters:
             warnings.warn(
-                f"Argument `series_weights` is ignored since regressor {regressor} "
+                f"Argument `series_weights` is ignored since estimator {estimator} "
                 f"does not accept `sample_weight` in its `fit` method.",
                 IgnoredArgumentWarning
             )
@@ -438,17 +438,17 @@ def initialize_differentiator_multiseries(
 
 
 def check_select_fit_kwargs(
-    regressor: object,
+    estimator: object,
     fit_kwargs: dict[str, object] | None = None
 ) -> dict[str, object]:
     """
     Check if `fit_kwargs` is a dict and select only the keys that are used by
-    the `fit` method of the regressor.
+    the `fit` method of the estimator.
 
     Parameters
     ----------
-    regressor : object
-        Regressor object.
+    estimator : object
+        Estimator object.
     fit_kwargs : dict, default None
         Dictionary with the arguments to pass to the `fit' method of the forecaster.
 
@@ -456,7 +456,7 @@ def check_select_fit_kwargs(
     -------
     fit_kwargs : dict
         Dictionary with the arguments to be passed to the `fit` method of the 
-        regressor after removing the unused keys.
+        estimator after removing the unused keys.
     
     """
 
@@ -468,7 +468,7 @@ def check_select_fit_kwargs(
                 f"Argument `fit_kwargs` must be a dict. Got {type(fit_kwargs)}."
             )
         
-        fit_params = inspect.signature(regressor.fit).parameters
+        fit_params = inspect.signature(estimator.fit).parameters
 
         # Non used keys
         non_used_keys = [
@@ -477,7 +477,7 @@ def check_select_fit_kwargs(
         if non_used_keys:
             warnings.warn(
                 f"Argument/s {non_used_keys} ignored since they are not used by the "
-                f"regressor's `fit` method.",
+                f"estimator's `fit` method.",
                 IgnoredArgumentWarning
             )
 
@@ -490,7 +490,7 @@ def check_select_fit_kwargs(
             )
             del fit_kwargs['sample_weight']
 
-        # Select only the keyword arguments allowed by the regressor's `fit` method.
+        # Select only the keyword arguments allowed by the estimator's `fit` method.
         fit_kwargs = {
             k: v for k, v in fit_kwargs.items() if k in fit_params
         }
@@ -608,7 +608,7 @@ def check_exog_dtypes(
 ) -> None:
     """
     Raise Exception if `exog` has categorical columns with non integer values.
-    This is needed when using machine learning regressors that allow categorical
+    This is needed when using machine learning estimators that allow categorical
     features.
     Issue a Warning if `exog` has columns that are not `init`, `float`, or `category`.
     
@@ -804,7 +804,7 @@ def check_predict_input(
     steps : int, list
         Number of future steps predicted.
     is_fitted: bool
-        Tag to identify if the regressor has been fitted (trained).
+        Tag to identify if the estimator has been fitted (trained).
     exog_in_ : bool
         If the forecaster has been trained using exogenous variable/s.
     index_type_ : type
@@ -909,7 +909,7 @@ def check_predict_input(
                     warnings.warn(
                         f"`levels` {unknown_levels} were not included in training. "
                         f"Unknown levels are encoded as NaN, which may cause the "
-                        f"prediction to fail if the regressor does not accept NaN values.",
+                        f"prediction to fail if the estimator does not accept NaN values.",
                         UnknownLevelWarning
                     )
 
@@ -2172,7 +2172,7 @@ def multivariate_time_series_corr(
 
 def select_n_jobs_fit_forecaster(
     forecaster_name: str,
-    regressor: object
+    estimator: object
 ) -> int:
     """
     Select the optimal number of jobs to use in the fitting process. This
@@ -2181,10 +2181,10 @@ def select_n_jobs_fit_forecaster(
     The number of jobs is chosen as follows:
     
     - If forecaster_name is 'ForecasterDirect' or 'ForecasterDirectMultiVariate'
-    and regressor_name is a linear regressor then `n_jobs = 1`, 
+    and estimator_name is a linear estimator then `n_jobs = 1`, 
     otherwise `n_jobs = cpu_count() - 1`.
-    - If regressor is a `LGBMRegressor(n_jobs=1)`, then `n_jobs = cpu_count() - 1`.
-    - If regressor is a `LGBMRegressor` with internal n_jobs != 1, then `n_jobs = 1`.
+    - If estimator is a `LGBMRegressor(n_jobs=1)`, then `n_jobs = cpu_count() - 1`.
+    - If estimator is a `LGBMRegressor` with internal n_jobs != 1, then `n_jobs = 1`.
     This is because `lightgbm` is highly optimized for gradient boosting and
     parallelizes operations at a very fine-grained level, making additional
     parallelization unnecessary and potentially harmful due to resource contention.
@@ -2193,8 +2193,8 @@ def select_n_jobs_fit_forecaster(
     ----------
     forecaster_name : str
         Forecaster name.
-    regressor : regressor or pipeline compatible with the scikit-learn API
-        An instance of a regressor or pipeline compatible with the scikit-learn API.
+    estimator : estimator or pipeline compatible with the scikit-learn API
+        An instance of a estimator or pipeline compatible with the scikit-learn API.
 
     Returns
     -------
@@ -2203,23 +2203,23 @@ def select_n_jobs_fit_forecaster(
     
     """
 
-    if isinstance(regressor, Pipeline):
-        regressor = regressor[-1]
-        regressor_name = type(regressor).__name__
+    if isinstance(estimator, Pipeline):
+        estimator = estimator[-1]
+        estimator_name = type(estimator).__name__
     else:
-        regressor_name = type(regressor).__name__
+        estimator_name = type(estimator).__name__
 
-    linear_regressors = [
-        regressor_name
-        for regressor_name in dir(sklearn.linear_model)
-        if not regressor_name.startswith('_')
+    linear_estimators = [
+        estimator_name
+        for estimator_name in dir(sklearn.linear_model)
+        if not estimator_name.startswith('_')
     ]
 
     if forecaster_name in ['ForecasterDirect', 'ForecasterDirectMultiVariate']:
-        if regressor_name in linear_regressors:
+        if estimator_name in linear_estimators:
             n_jobs = 1
-        elif regressor_name == 'LGBMRegressor':
-            n_jobs = joblib.cpu_count() - 1 if regressor.n_jobs == 1 else 1
+        elif estimator_name == 'LGBMRegressor':
+            n_jobs = joblib.cpu_count() - 1 if estimator.n_jobs == 1 else 1
         else:
             n_jobs = joblib.cpu_count() - 1
     else:
@@ -2229,19 +2229,19 @@ def select_n_jobs_fit_forecaster(
 
 
 def set_cpu_gpu_device(
-    regressor: object, 
+    estimator: object, 
     device: str | None = 'cpu'
 ) -> str | None:
     """
-    Set the device for the regressor to either 'cpu', 'gpu', 'cuda', or None.
+    Set the device for the estimator to either 'cpu', 'gpu', 'cuda', or None.
     """
 
     if device not in {'gpu', 'cpu', 'cuda', 'GPU', 'CPU', None}:
         raise ValueError("`device` must be 'gpu', 'cpu', 'cuda', or None.")
     
-    regressor_name = type(regressor).__name__
+    estimator_name = type(estimator).__name__
 
-    if regressor_name not in ['XGBRegressor', 'LGBMRegressor', 'CatBoostRegressor']:
+    if estimator_name not in ['XGBRegressor', 'LGBMRegressor', 'CatBoostRegressor']:
         return None
     
     device_names = {
@@ -2255,17 +2255,17 @@ def set_cpu_gpu_device(
         'CatBoostRegressor': {'gpu': 'GPU', 'cpu': 'CPU', 'cuda': 'GPU', 'GPU': 'GPU', 'CPU': 'CPU'},
     }
 
-    param_name = device_names[regressor_name]
-    original_device = getattr(regressor, param_name, None)
+    param_name = device_names[estimator_name]
+    original_device = getattr(estimator, param_name, None)
 
     if device is None:
         return original_device
 
-    new_device = device_values[regressor_name][device]
+    new_device = device_values[estimator_name][device]
 
     if original_device != new_device:
         try:
-            regressor.set_params(**{param_name: new_device})
+            estimator.set_params(**{param_name: new_device})
         except Exception:
             pass
 
@@ -3029,3 +3029,46 @@ def show_versions(
     else:
         print(vers_info)
         return None
+
+
+# TODO: Remove regressor in 0.20.0
+def initialize_estimator(
+    estimator: object | None = None,
+    regressor: object | None = None
+) -> None:
+    """
+    Helper to handle the deprecation of 'regressor' in favor of 'estimator'.
+    Returns the valid estimator object.
+
+    Parameters
+    ----------
+    estimator : estimator or pipeline compatible with the scikit-learn API, default None
+        An instance of a estimator or pipeline compatible with the scikit-learn API.
+    regressor : estimator or pipeline compatible with the scikit-learn API, default None
+        Deprecated. An instance of a estimator or pipeline compatible with the
+        scikit-learn API.
+
+    Returns
+    -------
+    estimator : estimator or pipeline compatible with the scikit-learn API
+        The valid estimator object.
+    
+    """
+    
+    if regressor is not None:
+        warnings.warn(
+            "The `regressor` argument is deprecated and will be removed in a future "
+            "version. Please use `estimator` instead.",
+            FutureWarning,
+            stacklevel=3  # Important: to point to the user's code
+        )
+        if estimator is not None:
+            raise ValueError(
+                "Both `estimator` and `regressor` were provided. Use only `estimator`."
+            )
+        return regressor
+    
+    if estimator is None:
+        raise TypeError("__init__() missing 1 required positional argument: 'estimator'")
+    
+    return estimator

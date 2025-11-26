@@ -37,7 +37,7 @@ def test_TypeError_evaluate_grid_hyperparameters_when_cv_not_valid():
 
     cv = DummyCV()
     forecaster = ForecasterRecursive(
-                     regressor = Ridge(random_state=123),
+                     estimator = Ridge(random_state=123),
                      lags      = 2
                  )
     
@@ -64,7 +64,7 @@ def test_ValueError_evaluate_grid_hyperparameters_when_return_best_and_len_y_exo
     and length of `y` and `exog` do not match.
     """
     forecaster = ForecasterRecursive(
-                     regressor = Ridge(random_state=123),
+                     estimator = Ridge(random_state=123),
                      lags      = 2
                  )
     exog = y[:30]
@@ -104,7 +104,7 @@ def test_ValueError_evaluate_grid_hyperparameters_metric_list_duplicate_names():
     metrics is used with duplicate names.
     """
     forecaster = ForecasterRecursive(
-                     regressor = Ridge(random_state=123),
+                     estimator = Ridge(random_state=123),
                      lags      = 2
                  )
     cv = TimeSeriesFold(
@@ -143,7 +143,7 @@ def test_grid_hyperparameters_results_warn_when_non_valid_params():
     }
     param_grid = list(ParameterGrid(param_grid))
     cv = TimeSeriesFold(steps=12, initial_train_size=30, refit=False)
-    forecaster = ForecasterRecursive(regressor=ElasticNet(), lags=5)
+    forecaster = ForecasterRecursive(estimator=ElasticNet(), lags=5)
     msg = re.escape(
         "Parameters skipped: {'alpha': 0.1, 'l1_ratio': 10}. The 'l1_ratio' "
         "parameter of ElasticNet must be a float in the range [0.0, 1.0]. "
@@ -181,7 +181,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterRecursive_with_mocked():
     (mocked done in Skforecast v0.4.3).
     """
     forecaster = ForecasterRecursive(
-                     regressor = Ridge(random_state=123),
+                     estimator = Ridge(random_state=123),
                      lags      = 2 
                  )
     n_validation = 12
@@ -253,7 +253,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterRecursive_with_window_fe
         window_sizes = 3,
     )
     forecaster = ForecasterRecursive(
-                     regressor       = Ridge(random_state=123),
+                     estimator       = Ridge(random_state=123),
                      lags            = 2, 
                      window_features = window_features,
                  )
@@ -323,7 +323,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterRecursive_with_different
     (mocked done in Skforecast v0.10.0) when differentiation is used.
     """
     forecaster = ForecasterRecursive(
-                     regressor       = Ridge(random_state=123),
+                     estimator       = Ridge(random_state=123),
                      lags            = 2,
                      differentiation = 1
                  )
@@ -393,7 +393,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterRecursive_lags_grid_dict
     `lags_grid` is a dict with mocked (mocked done in Skforecast v0.4.3).
     """
     forecaster = ForecasterRecursive(
-                     regressor = Ridge(random_state=123),
+                     estimator = Ridge(random_state=123),
                      lags      = 2
                  )
     n_validation = 12
@@ -455,7 +455,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterRecursive_lags_grid_is_N
     should use forecaster.lags as lags_grid.
     """
     forecaster = ForecasterRecursive(
-                     regressor = Ridge(random_state=123),
+                     estimator = Ridge(random_state=123),
                      lags      = 2
                  )
     n_validation = 12
@@ -506,7 +506,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterRecursive_metric_list_wi
     and multiple metrics (mocked done in Skforecast v0.4.3).
     """
     forecaster = ForecasterRecursive(
-                     regressor = Ridge(random_state=123),
+                     estimator = Ridge(random_state=123),
                      lags      = 2
                  )
     n_validation = 12
@@ -580,7 +580,7 @@ def test_evaluate_grid_hyperparameters_when_return_best_ForecasterRecursive(lags
     _evaluate_grid_hyperparameters with ForecasterRecursive.
     """
     forecaster = ForecasterRecursive(
-                     regressor = Ridge(random_state=123),
+                     estimator = Ridge(random_state=123),
                      lags      = 2
                  )
     n_validation = 12
@@ -614,7 +614,7 @@ def test_evaluate_grid_hyperparameters_when_return_best_ForecasterRecursive(lags
     expected_alpha = 0.01
     
     assert (expected_lags == forecaster.lags).all()
-    assert expected_alpha == forecaster.regressor.alpha
+    assert expected_alpha == forecaster.estimator.alpha
 
 
 @pytest.mark.parametrize("lags_grid", 
@@ -626,7 +626,7 @@ def test_evaluate_grid_hyperparameters_when_return_best_and_list_metrics(lags_gr
     and multiple metrics.
     """
     forecaster = ForecasterRecursive(
-                     regressor = Ridge(random_state=123),
+                     estimator = Ridge(random_state=123),
                      lags      = 2
                  )
     n_validation = 12
@@ -661,7 +661,7 @@ def test_evaluate_grid_hyperparameters_when_return_best_and_list_metrics(lags_gr
     expected_alpha = 1.
     
     assert (expected_lags == forecaster.lags).all()
-    assert expected_alpha == forecaster.regressor.alpha
+    assert expected_alpha == forecaster.estimator.alpha
 
 
 def test_evaluate_grid_hyperparameters_output_file_when_single_metric():
@@ -670,7 +670,7 @@ def test_evaluate_grid_hyperparameters_output_file_when_single_metric():
     _evaluate_grid_hyperparameters and single metric.
     """
     forecaster = ForecasterRecursive(
-                     regressor = Ridge(random_state=123),
+                     estimator = Ridge(random_state=123),
                      lags      = 2 
                  )
     n_validation = 12
@@ -719,7 +719,7 @@ def test_evaluate_grid_hyperparameters_output_file_when_single_metric_as_list():
     _evaluate_grid_hyperparameters and single metric as list.
     """
     forecaster = ForecasterRecursive(
-                     regressor = Ridge(random_state=123),
+                     estimator = Ridge(random_state=123),
                      lags      = 2 
                  )
 
@@ -769,7 +769,7 @@ def test_evaluate_grid_hyperparameters_output_file_when_2_metrics_as_list():
     _evaluate_grid_hyperparameters and 2 metrics as list.
     """
     forecaster = ForecasterRecursive(
-                     regressor = Ridge(random_state=123),
+                     estimator = Ridge(random_state=123),
                      lags      = 2 
                  )
 
@@ -824,7 +824,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterDirect_with_window_featu
         window_sizes = 3,
     )
     forecaster = ForecasterDirect(
-                     regressor       = Ridge(random_state=123),
+                     estimator       = Ridge(random_state=123),
                      steps           = 3,
                      lags            = 2, 
                      window_features = window_features,
@@ -896,27 +896,27 @@ def test_output_evaluate_grid_hyperparameters_ForecasterDirect_with_window_featu
         "forecaster",
         [
             ForecasterRecursive(
-                regressor=Ridge(random_state=678),
+                estimator=Ridge(random_state=678),
                 lags=3,
                 transformer_y=None,
                 forecaster_id='Recursive_no_transformer'
             ),
             ForecasterDirect(
-                regressor=Ridge(random_state=678),
+                estimator=Ridge(random_state=678),
                 steps=1,
                 lags=3,
                 transformer_y=None,
                 forecaster_id='Direct_no_transformer'
             ),
             ForecasterRecursive(
-                regressor=Ridge(random_state=678),
+                estimator=Ridge(random_state=678),
                 lags=3,
                 transformer_y=StandardScaler(),
                 transformer_exog=StandardScaler(),
                 forecaster_id='Recursive_transformers'
             ),
             ForecasterDirect(
-                regressor=Ridge(random_state=678),
+                estimator=Ridge(random_state=678),
                 steps=1,
                 lags=3,
                 transformer_y=StandardScaler(),

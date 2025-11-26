@@ -24,17 +24,19 @@ class ForecasterSarimax():
     
     def __new__(
         self,
-        regressor: object,
+        estimator: object = None,
         transformer_y: object | None = None,
         transformer_exog: object | None = None,
         fit_kwargs: dict[str, object] | None = None,
-        forecaster_id: str | int | None = None
+        forecaster_id: str | int | None = None,
+        regressor: object = None
     ) -> None:
         
         return ForecasterStats(
-            regressor=regressor,
+            estimator=estimator,
             transformer_y=transformer_y,
             transformer_exog=transformer_exog,
             fit_kwargs=fit_kwargs,
-            forecaster_id=forecaster_id
+            forecaster_id=forecaster_id,
+            regressor=regressor
         )

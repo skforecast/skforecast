@@ -42,7 +42,7 @@ def test_init_ValueError_when_no_lags_or_window_features():
     )
     with pytest.raises(ValueError, match = err_msg):
         ForecasterDirect(
-            regressor       = LinearRegression(),
+            estimator       = LinearRegression(),
             steps           = 3,
             lags            = None,
             window_features = None
@@ -65,7 +65,7 @@ def test_init_window_size_correctly_stored(lags, window_features, expected):
         )
 
     forecaster = ForecasterDirect(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      steps           = 3,
                      lags            = lags,
                      window_features = window_features
@@ -101,7 +101,7 @@ def test_init_ValueError_when_differentiation_is_not_int_or_greater_than_0(dif):
     )
     with pytest.raises(ValueError, match = err_msg):
         ForecasterDirect(
-            regressor       = LinearRegression(),
+            estimator       = LinearRegression(),
             steps           = 3,
             lags            = 5,
             differentiation = dif
@@ -116,7 +116,7 @@ def test_init_window_size_is_increased_when_differentiation(dif):
     Test window_size is increased when including differentiation.
     """
     forecaster = ForecasterDirect(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      steps           = 3,
                      lags            = 5,
                      differentiation = dif

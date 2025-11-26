@@ -72,9 +72,9 @@ def test_predict_NotFittedError_when_fitted_is_False():
 
 @pytest.mark.parametrize("steps", [3, [1, 2, 3], None], 
                          ids=lambda steps: f'steps: {steps}')
-def test_predict_output_when_regressor_is_LinearRegression(steps):
+def test_predict_output_when_estimator_is_LinearRegression(steps):
     """
-    Test predict output when using LinearRegression as regressor.
+    Test predict output when using LinearRegression as estimator.
     """
     forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1',
                                                lags=3, steps=3)
@@ -92,7 +92,7 @@ def test_predict_output_when_regressor_is_LinearRegression(steps):
 
 def test_predict_output_when_with_list_interspersed():
     """
-    Test predict output when using LinearRegression as regressor and steps is
+    Test predict output when using LinearRegression as estimator and steps is
     a list with interspersed steps.
     """
     forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l2',
@@ -111,7 +111,7 @@ def test_predict_output_when_with_list_interspersed():
 
 def test_predict_output_when_with_different_lags():
     """
-    Test predict output when using LinearRegression as regressor and different
+    Test predict output when using LinearRegression as estimator and different
     lags configuration for each series.
     """
     forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l2',
@@ -130,7 +130,7 @@ def test_predict_output_when_with_different_lags():
 
 def test_predict_output_when_with_lags_dict_with_None_in_level_lags():
     """
-    Test predict output when using LinearRegression as regressor when lags is a 
+    Test predict output when using LinearRegression as estimator when lags is a 
     dict and level has None lags configuration.
     """
     forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l2',
@@ -149,7 +149,7 @@ def test_predict_output_when_with_lags_dict_with_None_in_level_lags():
 
 def test_predict_output_when_with_lags_dict_with_None_but_no_in_level():
     """
-    Test predict output when using LinearRegression as regressor when lags is a 
+    Test predict output when using LinearRegression as estimator when lags is a 
     dict with None values.
     """
     forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1',
@@ -168,7 +168,7 @@ def test_predict_output_when_with_lags_dict_with_None_but_no_in_level():
 
 def test_predict_output_when_using_last_window():
     """
-    Test predict output when using LinearRegression as regressor and last_window.
+    Test predict output when using LinearRegression as estimator and last_window.
     """
     forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1',
                                                lags=3, steps=3)
@@ -193,7 +193,7 @@ def test_predict_output_when_using_last_window():
 
 def test_predict_output_when_using_exog():
     """
-    Test predict output when using LinearRegression as regressor and exog.
+    Test predict output when using LinearRegression as estimator and exog.
     """
     forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1',
                                                lags=3, steps=3)
@@ -211,10 +211,10 @@ def test_predict_output_when_using_exog():
 
 def test_predict_output_when_with_transform_series():
     """
-    Test predict output when using LinearRegression as regressor and StandardScaler.
+    Test predict output when using LinearRegression as estimator and StandardScaler.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      level              = 'l1',
                      lags               = 5,
                      steps              = 5,
@@ -234,11 +234,11 @@ def test_predict_output_when_with_transform_series():
 
 def test_predict_output_when_with_transform_series_as_dict():
     """
-    Test predict output when using LinearRegression as regressor and transformer_series
+    Test predict output when using LinearRegression as estimator and transformer_series
     is a dict with 2 different transformers.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      level              = 'l2',
                      lags               = 5,
                      steps              = 5,
@@ -260,11 +260,11 @@ def test_predict_output_when_with_transform_series_as_dict():
                          ids=lambda n_jobs: f'n_jobs: {n_jobs}')
 def test_predict_output_when_transform_series_and_transform_exog(n_jobs):
     """
-    Test predict output when using LinearRegression as regressor, StandardScaler
+    Test predict output when using LinearRegression as estimator, StandardScaler
     as transformer_series and transformer_exog as transformer_exog.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      level              = 'l1',
                      lags               = 5,
                      steps              = 5,
@@ -286,7 +286,7 @@ def test_predict_output_when_transform_series_and_transform_exog(n_jobs):
 
 def test_predict_output_when_and_weight_func():
     """
-    Test predict output when using LinearRegression as regressor and custom_weights.
+    Test predict output when using LinearRegression as estimator and custom_weights.
     """
     def custom_weights(index):
         """
@@ -337,7 +337,7 @@ def test_predict_output_when_categorical_features_native_implementation_HistGrad
                        ).set_output(transform="pandas")
     
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = HistGradientBoostingRegressor(
+                     estimator          = HistGradientBoostingRegressor(
                                               categorical_features = categorical_features,
                                               random_state         = 123
                                           ),
@@ -389,7 +389,7 @@ def test_predict_output_when_categorical_features_native_implementation_LGBMRegr
                        ).set_output(transform="pandas")
     
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = LGBMRegressor(random_state=123),
+                     estimator          = LGBMRegressor(random_state=123),
                      level              = 'l1',
                      lags               = 5,
                      steps              = 10,
@@ -446,7 +446,7 @@ def test_predict_output_when_categorical_features_native_implementation_LGBMRegr
                        ).set_output(transform="pandas")
     
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = LGBMRegressor(random_state=123),
+                     estimator          = LGBMRegressor(random_state=123),
                      level              = 'l1',
                      lags               = 5,
                      steps              = 10,
@@ -471,7 +471,7 @@ def test_predict_output_when_categorical_features_native_implementation_LGBMRegr
 
 def test_predict_output_when_with_exog_and_differentiation_is_1_steps_1():
     """
-    Test predict output when using LinearRegression as regressor and 
+    Test predict output when using LinearRegression as estimator and 
     differentiation=1 and steps=1.
     """
 
@@ -499,7 +499,7 @@ def test_predict_output_when_with_exog_and_differentiation_is_1_steps_1():
     end_train = '2003-03-01 23:59:00'
 
     forecaster_1 = ForecasterDirectMultiVariate(
-        regressor=LinearRegression(), level='l1', steps=1, lags=15, transformer_series=None
+        estimator=LinearRegression(), level='l1', steps=1, lags=15, transformer_series=None
     )
     forecaster_1.fit(series=series_diff.loc[:end_train], exog=exog_diff.loc[:end_train])
     predictions_diff = forecaster_1.predict(exog=exog_diff.loc[end_train:])
@@ -512,7 +512,7 @@ def test_predict_output_when_with_exog_and_differentiation_is_1_steps_1():
     predictions_1 = expected_df_to_long_format(predictions_1)
 
     forecaster_2 = ForecasterDirectMultiVariate(
-        regressor=LinearRegression(), level='l1', steps=1, lags=15, transformer_series=None, differentiation=1
+        estimator=LinearRegression(), level='l1', steps=1, lags=15, transformer_series=None, differentiation=1
     )
     forecaster_2.fit(series=series_2.loc[:end_train], exog=exog.loc[:end_train])
     predictions_2 = forecaster_2.predict(exog=exog.loc[end_train:])
@@ -522,7 +522,7 @@ def test_predict_output_when_with_exog_and_differentiation_is_1_steps_1():
 
 def test_predict_output_when_with_exog_and_differentiation_is_1_steps_10():
     """
-    Test predict output when using LinearRegression as regressor and 
+    Test predict output when using LinearRegression as estimator and 
     differentiation=1 and steps=10.
     """
 
@@ -550,7 +550,7 @@ def test_predict_output_when_with_exog_and_differentiation_is_1_steps_10():
     end_train = '2003-03-01 23:59:00'
 
     forecaster_1 = ForecasterDirectMultiVariate(
-        regressor=LinearRegression(), level='l1', steps=10, lags=15, transformer_series=None
+        estimator=LinearRegression(), level='l1', steps=10, lags=15, transformer_series=None
     )
     forecaster_1.fit(series=series_diff.loc[:end_train], exog=exog_diff.loc[:end_train])
     predictions_diff = forecaster_1.predict(exog=exog_diff.loc[end_train:])
@@ -563,7 +563,7 @@ def test_predict_output_when_with_exog_and_differentiation_is_1_steps_10():
     predictions_1 = expected_df_to_long_format(predictions_1)
 
     forecaster_2 = ForecasterDirectMultiVariate(
-        regressor=LinearRegression(), level='l1', steps=10, lags=15, transformer_series=None, differentiation=1
+        estimator=LinearRegression(), level='l1', steps=10, lags=15, transformer_series=None, differentiation=1
     )
     forecaster_2.fit(series=series_dt.loc[:end_train], exog=exog_dt.loc[:end_train])
     predictions_2 = forecaster_2.predict(exog=exog_dt.loc[end_train:])
@@ -573,7 +573,7 @@ def test_predict_output_when_with_exog_and_differentiation_is_1_steps_10():
 
 def test_predict_output_when_with_exog_and_differentiation_is_2():
     """
-    Test predict output when using LinearRegression as regressor and differentiation=2.
+    Test predict output when using LinearRegression as estimator and differentiation=2.
     """
 
     arr = data.to_numpy(copy=True)
@@ -611,7 +611,7 @@ def test_predict_output_when_with_exog_and_differentiation_is_2():
     end_train = '2003-03-01 23:59:00'
 
     forecaster_1 = ForecasterDirectMultiVariate(
-        regressor=LinearRegression(), level='l1', steps=1, lags=15, transformer_series=None
+        estimator=LinearRegression(), level='l1', steps=1, lags=15, transformer_series=None
     )
     forecaster_1.fit(series=df_diff_2.loc[:end_train], exog=exog_diff_2.loc[:end_train])
     predictions_diff_2 = forecaster_1.predict(exog=exog_diff_2.loc[end_train:])
@@ -627,7 +627,7 @@ def test_predict_output_when_with_exog_and_differentiation_is_2():
     predictions_1 = expected_df_to_long_format(predictions_1)
 
     forecaster_2 = ForecasterDirectMultiVariate(
-        regressor=LinearRegression(), level='l1', steps=1, lags=15, 
+        estimator=LinearRegression(), level='l1', steps=1, lags=15, 
         transformer_series=None, differentiation=2
     )
     forecaster_2.fit(series=series_dt.loc[:end_train], exog=exog.loc[:end_train])
@@ -638,7 +638,7 @@ def test_predict_output_when_with_exog_and_differentiation_is_2():
 
 def test_predict_output_when_with_exog_and_differentiation_is_2_steps_10():
     """
-    Test predict output when using LinearRegression as regressor and 
+    Test predict output when using LinearRegression as estimator and 
     differentiation=2 and steps=10.
     """
 
@@ -677,7 +677,7 @@ def test_predict_output_when_with_exog_and_differentiation_is_2_steps_10():
     end_train = '2003-03-01 23:59:00'
 
     forecaster_1 = ForecasterDirectMultiVariate(
-        regressor=LinearRegression(), level='l1', steps=10, lags=15, transformer_series=None
+        estimator=LinearRegression(), level='l1', steps=10, lags=15, transformer_series=None
     )
     forecaster_1.fit(series=df_diff_2.loc[:end_train], exog=exog_diff_2.loc[:end_train])
     predictions_diff_2 = forecaster_1.predict(exog=exog_diff_2.loc[end_train:])
@@ -693,7 +693,7 @@ def test_predict_output_when_with_exog_and_differentiation_is_2_steps_10():
     predictions_1 = expected_df_to_long_format(predictions_1)
 
     forecaster_2 = ForecasterDirectMultiVariate(
-        regressor=LinearRegression(), level='l1', steps=10, lags=15, 
+        estimator=LinearRegression(), level='l1', steps=10, lags=15, 
         transformer_series=None, differentiation=2
     )
     forecaster_2.fit(series=series_dt.loc[:end_train], exog=exog.loc[:end_train])
@@ -704,13 +704,13 @@ def test_predict_output_when_with_exog_and_differentiation_is_2_steps_10():
 
 def test_predict_output_when_window_features_steps_1():
     """
-    Test output of predict when regressor is LGBMRegressor and window features
+    Test output of predict when estimator is LGBMRegressor and window features
     with steps=1.
     """
 
     rolling = RollingFeatures(stats=['mean', 'sum'], window_sizes=[3, 5])
     forecaster = ForecasterDirectMultiVariate(
-        regressor=LGBMRegressor(verbose=-1, random_state=123), level='l1', 
+        estimator=LGBMRegressor(verbose=-1, random_state=123), level='l1', 
         steps=1, lags=5, window_features=rolling
     )
     forecaster.fit(series=series, exog=exog['exog_1'])
@@ -728,13 +728,13 @@ def test_predict_output_when_window_features_steps_1():
 
 def test_predict_output_when_window_features_steps_10():
     """
-    Test output of predict when regressor is LGBMRegressor and window features
+    Test output of predict when estimator is LGBMRegressor and window features
     with steps=10.
     """
 
     rolling = RollingFeatures(stats=['mean', 'sum'], window_sizes=[3, 5])
     forecaster = ForecasterDirectMultiVariate(
-        regressor=LGBMRegressor(verbose=-1, random_state=123), level='l1', 
+        estimator=LGBMRegressor(verbose=-1, random_state=123), level='l1', 
         steps=10, lags=15, window_features=rolling
     )
     forecaster.fit(series=series, exog=exog['exog_1'])

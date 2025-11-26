@@ -610,7 +610,7 @@ def test_create_train_X_y_output_when_y_is_series_10_and_transformer_y_is_Standa
     is StandardScaler.
     """
     forecaster = ForecasterRecursive(
-                     regressor = LinearRegression(),
+                     estimator = LinearRegression(),
                      lags = 5,
                      transformer_y = StandardScaler()
                  )
@@ -656,7 +656,7 @@ def test_create_train_X_y_output_when_exog_is_None_and_transformer_exog_is_not_N
     is not None.
     """
     forecaster = ForecasterRecursive(
-                     regressor        = LinearRegression(),
+                     estimator        = LinearRegression(),
                      lags             = 5,
                      transformer_exog = StandardScaler()
                  )
@@ -717,7 +717,7 @@ def test_create_train_X_y_output_when_transformer_y_and_transformer_exog():
                         )
 
     forecaster = ForecasterRecursive(
-                    regressor        = LinearRegression(),
+                    estimator        = LinearRegression(),
                     lags             = 5,
                     transformer_y    = transformer_y,
                     transformer_exog = transformer_exog

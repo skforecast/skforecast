@@ -9,6 +9,5 @@ from .preprocessing import (
     RollingFeatures,
     RollingFeaturesClassification,
     QuantileBinner,
-    FastOrdinalEncoder,
     ConformalIntervalCalibrator,
 )

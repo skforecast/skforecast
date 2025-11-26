@@ -102,7 +102,7 @@ def test_create_sample_weights_output():
                      level       = 'series_1',
                      lags        = 3,
                      steps       = 3,    
-                     regressor   = LinearRegression(),
+                     estimator   = LinearRegression(),
                      weight_func = custom_weights
                  )
 
@@ -120,7 +120,7 @@ def test_create_sample_weights_exceptions_when_weights_has_nan():
                      level       = 'series_1',
                      lags        = 3,
                      steps       = 3,  
-                     regressor   = LinearRegression(),
+                     estimator   = LinearRegression(),
                      weight_func = custom_weights_nan
                  )
 
@@ -137,7 +137,7 @@ def test_create_sample_weights_exceptions_when_weights_has_negative_values():
                      level       = 'series_1',
                      lags        = 3,
                      steps       = 3,     
-                     regressor   = LinearRegression(),
+                     estimator   = LinearRegression(),
                      weight_func = custom_weights_negative
                  )
 
@@ -154,7 +154,7 @@ def test_create_sample_weights_exceptions_when_weights_all_zeros():
                      level       = 'series_1',
                      lags        = 3,
                      steps       = 3,    
-                     regressor   = LinearRegression(),
+                     estimator   = LinearRegression(),
                      weight_func = custom_weights_zeros
                  )
     

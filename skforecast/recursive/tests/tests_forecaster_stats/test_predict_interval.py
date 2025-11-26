@@ -39,7 +39,7 @@ def test_predict_NotFittedError_when_fitted_is_False():
     """
     Test NotFittedError is raised when fitted is False.
     """
-    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 1, 1)))
+    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 1, 1)))
 
     err_msg = re.escape(
         ("This Forecaster instance is not fitted yet. Call `fit` with "
@@ -57,7 +57,7 @@ def test_predict_interval_ValueError_when_ForecasterStats_last_window_exog_is_no
     Check ValueError is raised when last_window_exog is not None, but 
     last_window is not provided.
     """
-    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 1, 1)))
+    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 1, 1)))
     forecaster.fit(y=y, exog=exog)
     
     err_msg = re.escape(
@@ -79,7 +79,7 @@ def test_predict_interval_ValueError_when_ForecasterStats_last_window_exog_is_No
     Check ValueError is raised when last_window_exog is None, but included_exog
     is True and last_window is provided.
     """
-    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 1, 1)))
+    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 1, 1)))
     forecaster.fit(y=y, exog=exog)
     
     err_msg = re.escape(
@@ -101,7 +101,7 @@ def test_predict_interval_ValueError_when_interval_is_not_symmetrical():
     """
     Raise ValueError if `interval` is not symmetrical.
     """
-    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 1, 1)))
+    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 1, 1)))
     forecaster.fit(y=y)
     alpha = None
     interval_not_symmetrical = [5, 97.5] 
@@ -128,7 +128,7 @@ def test_predict_interval_output_ForecasterStats_skforecast_Sarimax(alpha, inter
     Test predict_interval output of ForecasterStats using Sarimax from skforecast.
     """
     forecaster = ForecasterStats(
-                     regressor = Sarimax(maxiter=2000, method='cg', disp=False, order=(3, 2, 0))
+                     estimator = Sarimax(maxiter=2000, method='cg', disp=False, order=(3, 2, 0))
                  )
     forecaster.fit(y=y)
     predictions = forecaster.predict_interval(steps=5, alpha=alpha, interval=interval)
@@ -154,7 +154,7 @@ def test_predict_interval_output_ForecasterStats_with_exog(alpha, interval):
     Test predict_interval output of ForecasterStats with exogenous variables.
     """
     forecaster = ForecasterStats(
-                     regressor = Sarimax(maxiter=1000, method='cg', disp=False, order=(1, 0, 1))
+                     estimator = Sarimax(maxiter=1000, method='cg', disp=False, order=(1, 0, 1))
                  )
     forecaster.fit(y=y, exog=exog)
     predictions = forecaster.predict_interval(steps=5, exog=exog_predict, alpha=alpha, interval=interval)
@@ -180,7 +180,7 @@ def test_predict_interval_output_ForecasterStats_with_transform_y(alpha, interva
     Test predict_interval output of ForecasterStats with a StandardScaler() as transformer_y.
     """
     forecaster = ForecasterStats(
-                     regressor     = Sarimax(maxiter=1000, method='cg', disp=False, order=(1, 1, 1)),
+                     estimator     = Sarimax(maxiter=1000, method='cg', disp=False, order=(1, 1, 1)),
                      transformer_y = StandardScaler()
                  )
     forecaster.fit(y=y)
@@ -215,7 +215,7 @@ def test_predict_interval_output_ForecasterStats_with_transform_y_and_transform_
                        )
 
     forecaster = ForecasterStats(
-                     regressor        = Sarimax(maxiter=1000, method='cg', disp=False, order=(1, 0, 1)),
+                     estimator        = Sarimax(maxiter=1000, method='cg', disp=False, order=(1, 0, 1)),
                      transformer_y    = StandardScaler(),
                      transformer_exog = transformer_exog
                  )
@@ -244,7 +244,7 @@ def test_predict_interval_ValueError_when_last_window_index_does_not_follow_trai
     lw_test = pd.Series(data=y_lw_datetime.to_numpy())
     lw_test.index = pd.date_range(start='2022-03-01', periods=50, freq='D')
 
-    forecaster = ForecasterStats(regressor = Sarimax(order=(1, 0, 0)))
+    forecaster = ForecasterStats(estimator = Sarimax(order=(1, 0, 0)))
     forecaster.fit(y=y_test)
     expected_index = expand_index(forecaster.extended_index_, 1)[0]
 
@@ -280,7 +280,7 @@ def test_predict_interval_ValueError_when_last_window_exog_index_does_not_follow
     lw_exog_test = pd.Series(data=exog_lw_datetime.to_numpy(), name='exog')
     lw_exog_test.index = pd.date_range(start='2022-03-01', periods=50, freq='D')
 
-    forecaster = ForecasterStats(regressor = Sarimax(order=(1, 0, 0)))
+    forecaster = ForecasterStats(estimator = Sarimax(order=(1, 0, 0)))
     forecaster.fit(y=y_test, exog=exog_test)
     expected_index = expand_index(forecaster.extended_index_, 1)[0]
 
@@ -310,7 +310,7 @@ def test_predict_interval_output_ForecasterStats_with_last_window(alpha, interva
     Test predict_interval output of ForecasterStats with `last_window`.
     """
     forecaster = ForecasterStats(
-                     regressor = Sarimax(maxiter=1000, method='cg', disp=False, order=(3, 2, 0))
+                     estimator = Sarimax(maxiter=1000, method='cg', disp=False, order=(3, 2, 0))
                  )
     forecaster.fit(y=y_datetime)
     predictions = forecaster.predict_interval(
@@ -342,7 +342,7 @@ def test_predict_interval_output_ForecasterStats_with_last_window_and_exog(alpha
     Test predict_interval output of ForecasterStats with exogenous variables and `last_window`.
     """
     forecaster = ForecasterStats(
-                     regressor = Sarimax(maxiter=1000, method='cg', disp=False, order=(1, 1, 1))
+                     estimator = Sarimax(maxiter=1000, method='cg', disp=False, order=(1, 1, 1))
                  )
     forecaster.fit(y=y_datetime, exog=exog_datetime)
     predictions = forecaster.predict_interval(
@@ -383,7 +383,7 @@ def test_predict_interval_output_ForecasterStats_with_last_window_and_exog_and_t
                        )
 
     forecaster = ForecasterStats(
-                     regressor = Sarimax(maxiter=1000, method='cg', disp=False, order=(1, 1, 1)),
+                     estimator = Sarimax(maxiter=1000, method='cg', disp=False, order=(1, 1, 1)),
                      transformer_y    = StandardScaler(),
                      transformer_exog = transformer_exog
                  )
@@ -420,7 +420,7 @@ def test_predict_interval_ForecasterStats_updates_extended_index_twice(y, idx):
     """
     y_fit = y.iloc[:30].copy()
 
-    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 0, 0)))
+    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 0, 0)))
     forecaster.fit(y=y_fit)
 
     lw_1 = y.iloc[30:40].copy()
@@ -435,15 +435,15 @@ def test_predict_interval_ForecasterStats_updates_extended_index_twice(y, idx):
     pd.testing.assert_index_equal(forecaster.extended_index_, idx)
 
 
-def test_predict_interval_output_ForecasterStats_Arar_regressor(y=y):
+def test_predict_interval_output_ForecasterStats_Arar_estimator(y=y):
     """
-    Test output of predict_interval when using Arar as regressor in ForecasterStats
+    Test output of predict_interval when using Arar as estimator in ForecasterStats
     """
     y = y.copy()
     y.index = pd.date_range(start='2000-01-01', periods=len(y), freq='D')
-    regressor = Arar(max_ar_depth=26, max_lag=40)
+    estimator = Arar(max_ar_depth=26, max_lag=40)
     forecaster = ForecasterStats(
-        regressor = regressor
+        estimator = estimator
     )
     forecaster.fit(y=y)
     predictions = forecaster.predict_interval(steps=10, alpha=0.05)

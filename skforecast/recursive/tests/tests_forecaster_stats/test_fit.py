@@ -19,7 +19,7 @@ def test_fit_ValueError_when_len_exog_is_not_the_same_as_len_y():
     """
     y = pd.Series(data=np.arange(10))
     exog = pd.Series(data=np.arange(11))
-    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 1, 1)))
+    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 1, 1)))
 
     err_msg = re.escape(
         f"`exog` must have same number of samples as `y`. "
@@ -29,16 +29,16 @@ def test_fit_ValueError_when_len_exog_is_not_the_same_as_len_y():
         forecaster.fit(y=y, exog=exog)
 
 
-def test_IgnoredArgumentWarning_when_regressor_does_not_support_exog():
+def test_IgnoredArgumentWarning_when_estimator_does_not_support_exog():
     """
-    Test IgnoredArgumentWarning is raised when regressor does not support exog.
+    Test IgnoredArgumentWarning is raised when estimator does not support exog.
     """
     y = pd.Series(data=np.arange(10), name='y')
     exog = pd.Series(data=np.arange(10), name='exog')
-    forecaster = ForecasterStats(regressor=Arar())
+    forecaster = ForecasterStats(estimator=Arar())
 
     warn_msg = re.escape(
-        f"The regressor {forecaster.regressor_type} does not support exogenous variables, "
+        f"The estimator {forecaster.estimator_type} does not support exogenous variables, "
         f"they will be ignored during fit."
     )
     with pytest.warns(IgnoredArgumentWarning, match = warn_msg):
@@ -52,7 +52,7 @@ def test_forecaster_y_exog_features_stored():
     
     y = pd.Series(data=np.arange(10), name='y_sarimax')
     exog = pd.Series(data=np.arange(10), name='exog')
-    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 1, 1)))
+    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 1, 1)))
     forecaster.fit(y=y, exog=exog)
 
     series_name_in_ = 'y_sarimax'
@@ -80,7 +80,7 @@ def test_forecaster_DatetimeIndex_index_freq_stored():
         data  = [1, 2, 3, 4, 5],
         index = pd.date_range(start='2022-01-01', periods=5)
     )
-    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 0, 0)))
+    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 0, 0)))
     forecaster.fit(y=serie_with_DatetimeIndex)
     expected = serie_with_DatetimeIndex.index.freq
     results = forecaster.index_freq_
@@ -96,7 +96,7 @@ def test_forecaster_index_step_stored_with_suppress_warnings(suppress_warnings):
     Test serie without DatetimeIndex, step is stored in forecaster.index_freq_.
     """
     y = pd.Series(data=np.arange(10))
-    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 0, 0)))
+    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 0, 0)))
     forecaster.fit(y=y, suppress_warnings=suppress_warnings)
     expected = y.index.step
     results = forecaster.index_freq_
@@ -111,7 +111,7 @@ def test_fit_last_window_stored(store_last_window):
     """
     Test that values of last window are stored after fitting.
     """
-    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 0, 0)))
+    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 0, 0)))
     forecaster.fit(y=pd.Series(np.arange(50)), 
                    store_last_window=store_last_window)
     expected = pd.Series(np.arange(50))
@@ -128,10 +128,10 @@ def test_fit_last_window_stored(store_last_window):
                          ids = lambda values: f'y, index: {type(values)}')
 def test_fit_extended_index_stored(y, idx):
     """
-    Test that values of self.regressor.arima_res_.fittedvalues.index are 
+    Test that values of self.estimator.arima_res_.fittedvalues.index are 
     stored after fitting in forecaster.extended_index_.
     """
-    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 0, 0)))
+    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 0, 0)))
     forecaster.fit(y=y)
 
     pd.testing.assert_index_equal(forecaster.extended_index_, idx)

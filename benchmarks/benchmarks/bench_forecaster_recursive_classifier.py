@@ -87,7 +87,7 @@ def run_benchmark_ForecasterRecursiveClassifier(output_dir):
     y_values = y.to_numpy()
 
     forecaster = ForecasterRecursiveClassifier(
-        regressor=DummyClassifier(strategy='constant', constant=1.),
+        estimator=DummyClassifier(strategy='constant', constant=1.),
         lags=50,
         transformer_exog=StandardScaler(),
     )

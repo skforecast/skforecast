@@ -144,9 +144,9 @@ def test_create_train_X_y_ValueError_when_exog_not_included_but_model_requires_e
     forecaster = ForecasterRnn(model, lags=3, levels="l1")
 
     err_msg = re.escape(
-        "The regressor architecture expects exogenous variables during "
+        "The estimator architecture expects exogenous variables during "
         "training. Please provide the `exog` argument. If this is "
-        "unexpected, check your regressor architecture or the "
+        "unexpected, check your estimator architecture or the "
         "initialization parameters of the forecaster."
     )
     with pytest.raises(ValueError, match=err_msg):

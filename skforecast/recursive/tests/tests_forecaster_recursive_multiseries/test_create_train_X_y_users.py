@@ -19,7 +19,7 @@ def test_create_train_X_y_output_when_series_and_exog_is_None():
     series = reshape_series_wide_to_long(series)
 
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor = LinearRegression(),
+        estimator = LinearRegression(),
         lags      = 3,
         transformer_series=StandardScaler(),
         encoding  = "onehot"

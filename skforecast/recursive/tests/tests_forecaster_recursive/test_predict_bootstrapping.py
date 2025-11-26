@@ -62,7 +62,7 @@ def test_predict_bootstrapping_ValueError_when_out_sample_residuals_is_None(use_
 
 def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_steps_is_1_in_sample_residuals_is_True():
     """
-    Test output of predict_bootstrapping when regressor is LinearRegression and
+    Test output of predict_bootstrapping when estimator is LinearRegression and
     1 step ahead is predicted with exog using in-sample residuals.
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
@@ -82,7 +82,7 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_s
 
 def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_steps_is_2_in_sample_residuals_is_True():
     """
-    Test output of predict_bootstrapping when regressor is LinearRegression and
+    Test output of predict_bootstrapping when estimator is LinearRegression and
     2 steps ahead are predicted with exog using in-sample residuals.
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
@@ -105,7 +105,7 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_s
 
 def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_steps_is_1_in_sample_residuals_is_False():
     """
-    Test output of predict_bootstrapping when regressor is LinearRegression and
+    Test output of predict_bootstrapping when estimator is LinearRegression and
     1 step ahead is predicted with exog using out-sample residuals.
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
@@ -126,7 +126,7 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_s
 
 def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_steps_is_2_in_sample_residuals_is_False():
     """
-    Test output of predict_bootstrapping when regressor is LinearRegression and
+    Test output of predict_bootstrapping when estimator is LinearRegression and
     2 steps ahead are predicted with exog using out-sample residuals.
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
@@ -150,12 +150,12 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_s
 
 def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_True_exog_and_transformer_fixed_to_zero():
     """
-    Test output of predict_bootstrapping when regressor is LinearRegression,
+    Test output of predict_bootstrapping when estimator is LinearRegression,
     2 steps are predicted, using in-sample residuals, exog is included, both
     inputs are transformed and in-sample residuals are fixed to 0.
     """
     forecaster = ForecasterRecursive(
-                     regressor        = LinearRegression(),
+                     estimator        = LinearRegression(),
                      lags             = 3,
                      transformer_y    = StandardScaler(),
                      transformer_exog = StandardScaler(),
@@ -178,12 +178,12 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_
 
 def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_True_exog_and_transformer():
     """
-    Test output of predict_bootstrapping when regressor is LinearRegression,
+    Test output of predict_bootstrapping when estimator is LinearRegression,
     2 steps are predicted, using in-sample residuals, exog is included and both
     inputs are transformed.
     """
     forecaster = ForecasterRecursive(
-                     regressor        = LinearRegression(),
+                     estimator        = LinearRegression(),
                      lags             = 3,
                      transformer_y    = StandardScaler(),
                      transformer_exog = StandardScaler()
@@ -207,7 +207,7 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_
 
 def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_and_differentiation_is_1():
     """
-    Test output of predict_bootstrapping when regressor is LinearRegression and
+    Test output of predict_bootstrapping when estimator is LinearRegression and
     differentiation is 1.
     """
     # Data differentiated
@@ -224,7 +224,7 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_and_di
     end_train = '2003-03-01 23:59:00'
     steps = len(data.loc[end_train:])
 
-    forecaster_1 = ForecasterRecursive(regressor=LinearRegression(), lags=15)
+    forecaster_1 = ForecasterRecursive(estimator=LinearRegression(), lags=15)
     forecaster_1.fit(
         y=data_diff.loc[:end_train], exog=exog_diff.loc[:end_train], store_in_sample_residuals=True
     )
@@ -242,7 +242,7 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_and_di
     boot_predictions_1 = boot_predictions_1.cumsum(axis=0).iloc[1:,]
     boot_predictions_1 = boot_predictions_1.asfreq('MS')
 
-    forecaster_2 = ForecasterRecursive(regressor=LinearRegression(), lags=15, differentiation=1)
+    forecaster_2 = ForecasterRecursive(estimator=LinearRegression(), lags=15, differentiation=1)
     forecaster_2.fit(
         y=data.loc[:end_train], exog=exog.loc[:end_train], store_in_sample_residuals=True
     )
@@ -259,7 +259,7 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_and_di
 
 def test_predict_bootstrapping_output_when_window_features():
     """
-    Test output of predict_bootstrapping when regressor is LGBMRegressor and
+    Test output of predict_bootstrapping when estimator is LGBMRegressor and
     4 steps ahead are predicted with exog and window features using in-sample residuals.
     """
     y_datetime = y.copy()

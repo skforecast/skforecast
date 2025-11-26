@@ -28,7 +28,7 @@ def test_ValueError_evaluate_grid_hyperparameters_stats_when_return_best_and_len
     and length of `y` and `exog` do not match.
     """
     forecaster = ForecasterStats(
-                     regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
+                     estimator = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     exog_test = exog_datetime[:30].copy()
     
@@ -68,7 +68,7 @@ def test_evaluate_grid_hyperparameters_stats_warn_when_non_valid_params():
         "trend": [None, "no-valid-value"],
     }
     param_grid = list(ParameterGrid(param_grid))
-    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 1, 1), maxiter=500))
+    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 1, 1), maxiter=500))
     cv = TimeSeriesFold(steps=12, initial_train_size=20)
 
     msg = re.escape(
@@ -108,7 +108,7 @@ def test_exception_evaluate_grid_hyperparameters_stats_metric_list_duplicate_nam
     metrics is used with duplicate names.
     """
     forecaster = ForecasterStats(
-                     regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
+                     estimator = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
     cv = TimeSeriesFold(
@@ -140,7 +140,7 @@ def test_output_evaluate_grid_hyperparameters_stats_with_mocked():
     (mocked done in Skforecast v0.7.0).
     """
     forecaster = ForecasterStats(
-                     regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
+                     estimator = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
     cv = TimeSeriesFold(
@@ -183,7 +183,7 @@ def test_output_evaluate_grid_hyperparameters_stats_exog_with_mocked():
     with exog with mocked (mocked done in Skforecast v0.7.0).
     """
     forecaster = ForecasterStats(
-                     regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
+                     estimator = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
     cv = TimeSeriesFold(
@@ -227,7 +227,7 @@ def test_output_evaluate_grid_hyperparameters_stats_metric_list_with_mocked():
     with multiple metrics with mocked (mocked done in Skforecast v0.7.0).
     """
     forecaster = ForecasterStats(
-                     regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
+                     estimator = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
     cv = TimeSeriesFold(
@@ -271,7 +271,7 @@ def test_evaluate_grid_hyperparameters_stats_when_return_best():
     _evaluate_grid_hyperparameters_stats.
     """
     forecaster = ForecasterStats(
-                     regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
+                     estimator = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
     cv = TimeSeriesFold(
@@ -333,7 +333,7 @@ def test_evaluate_grid_hyperparameters_stats_output_file_when_single_metric():
     _evaluate_grid_hyperparameters_stats and single metric.
     """
     forecaster = ForecasterStats(
-                     regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
+                     estimator = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
     cv = TimeSeriesFold(
@@ -380,7 +380,7 @@ def test_evaluate_grid_hyperparameters_stats_output_file_when_metric_list():
     _evaluate_grid_hyperparameters_stats and metric as list.
     """
     forecaster = ForecasterStats(
-                     regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
+                     estimator = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
     cv = TimeSeriesFold(

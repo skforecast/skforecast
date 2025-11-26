@@ -95,7 +95,7 @@ def test_create_lags_several_configurations(lags, steps, expected):
                 recurrent_units=128,
                 dense_units=64,
             )
-    forecaster = ForecasterRnn(regressor=model, levels='l1', lags=lags)
+    forecaster = ForecasterRnn(estimator=model, levels='l1', lags=lags)
     results = forecaster._create_lags(y=np.arange(10))
 
     np.testing.assert_array_almost_equal(results[0], expected[0])

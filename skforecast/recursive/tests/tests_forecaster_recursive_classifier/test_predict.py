@@ -39,9 +39,9 @@ def test_predict_NotFittedError_when_fitted_is_False():
         forecaster.predict(steps=5)
 
 
-def test_predict_output_when_regressor_is_LogisticRegression():
+def test_predict_output_when_estimator_is_LogisticRegression():
     """
-    Test predict output when using LogisticRegression as regressor.
+    Test predict output when using LogisticRegression as estimator.
     """
     y_dummy = pd.Series(
         np.array(['a', 'b', 'c', 'a', 'b', 'c', 'a', 'b', 'c', 'a', 'b', 'c', 'a', 'b', 'c']), 
@@ -64,7 +64,7 @@ def test_predict_output_when_regressor_is_LogisticRegression():
         
 def test_predict_output_when_with_exog():
     """
-    Test predict output when using LogisticRegression as regressor.
+    Test predict output when using LogisticRegression as estimator.
     """
     forecaster = ForecasterRecursiveClassifier(LogisticRegression(), lags=3)
     forecaster.fit(y=y, exog=exog)
@@ -82,7 +82,7 @@ def test_predict_output_when_with_exog():
 
 def test_predict_output_with_transform_exog():
     """
-    Test predict output when using LogisticRegression as regressor and 
+    Test predict output when using LogisticRegression as estimator and 
     transformer_exog.
     """
 
@@ -100,7 +100,7 @@ def test_predict_output_with_transform_exog():
                             verbose_feature_names_out = False
                        )
     forecaster = ForecasterRecursiveClassifier(
-                     regressor        = LogisticRegression(),
+                     estimator        = LogisticRegression(),
                      lags             = 5,
                      transformer_exog = transformer_exog,
                  )
@@ -143,7 +143,7 @@ def test_predict_output_when_categorical_features_native_implementation_HistGrad
                        ).set_output(transform="pandas")
     
     forecaster = ForecasterRecursiveClassifier(
-                     regressor        = HistGradientBoostingClassifier(
+                     estimator        = HistGradientBoostingClassifier(
                                             categorical_features = categorical_features,
                                             random_state         = 123
                                         ),
@@ -189,7 +189,7 @@ def test_predict_output_when_categorical_features_native_implementation_LGBMClas
                        ).set_output(transform="pandas")
     
     forecaster = ForecasterRecursiveClassifier(
-                     regressor        = LGBMClassifier(verbose=-1, random_state=123),
+                     estimator        = LGBMClassifier(verbose=-1, random_state=123),
                      lags             = 5,
                      transformer_exog = transformer_exog,
                      fit_kwargs       = {'categorical_feature': categorical_features}
@@ -240,7 +240,7 @@ def test_predict_output_when_categorical_features_native_implementation_LGBMClas
                        ).set_output(transform="pandas")
     
     forecaster = ForecasterRecursiveClassifier(
-                     regressor        = LGBMClassifier(verbose=-1, random_state=123),
+                     estimator        = LGBMClassifier(verbose=-1, random_state=123),
                      lags             = 5,
                      transformer_exog = transformer_exog,
                      fit_kwargs       = {'categorical_feature': 'auto'}
@@ -262,7 +262,7 @@ def test_predict_output_when_categorical_features_native_implementation_LGBMClas
                          ids=lambda steps: f'steps: {steps}')
 def test_predict_output_when_window_features(steps):
     """
-    Test output of predict when regressor is LGBMClassifier and window features.
+    Test output of predict when estimator is LGBMClassifier and window features.
     """
     
     rolling = RollingFeaturesClassification(stats=['proportion', 'entropy'], window_sizes=[3, 5])

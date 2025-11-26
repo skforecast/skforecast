@@ -32,7 +32,7 @@ exog_lw_predict_numpy = exog_lw_predict.to_numpy()
 
 def test_decorator_check_fitted():
     """
-    Test Sarimax decorator check if regressor is fitted.
+    Test Sarimax decorator check if estimator is fitted.
     """
 
     sarimax = Sarimax(order=(1, 1, 1))

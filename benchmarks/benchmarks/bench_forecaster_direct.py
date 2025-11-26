@@ -89,7 +89,7 @@ def run_benchmark_ForecasterDirect(output_dir):
     y_values = y.to_numpy()
 
     forecaster = ForecasterDirect(
-        regressor=DummyRegressor(strategy='constant', constant=1.),
+        estimator=DummyRegressor(strategy='constant', constant=1.),
         steps=STEPS,
         lags=20,
         transformer_y=StandardScaler(),

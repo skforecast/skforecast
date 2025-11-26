@@ -25,7 +25,7 @@ def test_create_predict_inputs_NotFittedError_when_fitted_is_False():
     Test NotFittedError is raised when fitted is False.
     """
     forecaster = ForecasterRecursive(
-                     regressor = LinearRegression(),
+                     estimator = LinearRegression(),
                      lags      = 5
                  )
 
@@ -37,12 +37,12 @@ def test_create_predict_inputs_NotFittedError_when_fitted_is_False():
         forecaster._create_predict_inputs(steps=5)
 
 
-def test_create_predict_inputs_when_regressor_is_LinearRegression():
+def test_create_predict_inputs_when_estimator_is_LinearRegression():
     """
-    Test _create_predict_inputs when using LinearRegression as regressor.
+    Test _create_predict_inputs when using LinearRegression as estimator.
     """
     forecaster = ForecasterRecursive(
-                     regressor = LinearRegression(),
+                     estimator = LinearRegression(),
                      lags      = 5
                  )
     forecaster.fit(y=pd.Series(np.arange(50, dtype=float), name='y'))
@@ -63,7 +63,7 @@ def test_create_predict_inputs_when_regressor_is_LinearRegression():
 
 def test_create_predict_inputs_when_with_transform_y():
     """
-    Test _create_predict_inputs when using LinearRegression as regressor and StandardScaler.
+    Test _create_predict_inputs when using LinearRegression as estimator and StandardScaler.
     """
     y = pd.Series(
             np.array([-0.59,  0.02, -0.9,  1.09, -3.61,  0.72, -0.11, -0.4,  0.49,
@@ -73,7 +73,7 @@ def test_create_predict_inputs_when_with_transform_y():
         )
 
     forecaster = ForecasterRecursive(
-                     regressor     = LinearRegression(),
+                     estimator     = LinearRegression(),
                      lags          = 5,
                      transformer_y = StandardScaler()
                  )
@@ -95,7 +95,7 @@ def test_create_predict_inputs_when_with_transform_y():
 
 def test_create_predict_inputs_when_with_transform_y_and_transform_exog_series():
     """
-    Test _create_predict_inputs when using LinearRegression as regressor, StandardScaler
+    Test _create_predict_inputs when using LinearRegression as estimator, StandardScaler
     as transformer_y and StandardScaler as transformer_exog.
     """
     y = pd.Series(np.array([-0.59,  0.02, -0.9,  1.09, -3.61,  0.72, -0.11, -0.4]))
@@ -104,7 +104,7 @@ def test_create_predict_inputs_when_with_transform_y_and_transform_exog_series()
     exog_predict.index = pd.RangeIndex(start=8, stop=16)
 
     forecaster = ForecasterRecursive(
-                     regressor        = LinearRegression(),
+                     estimator        = LinearRegression(),
                      lags             = 5,
                      transformer_y    = StandardScaler(),
                      transformer_exog = StandardScaler()
@@ -127,7 +127,7 @@ def test_create_predict_inputs_when_with_transform_y_and_transform_exog_series()
 
 def test_create_predict_inputs_when_with_transform_y_and_transform_exog_df():
     """
-    Test _create_predict_inputs when using LinearRegression as regressor, StandardScaler
+    Test _create_predict_inputs when using LinearRegression as estimator, StandardScaler
     as transformer_y and transformer_exog as transformer_exog.
     """
     y = pd.Series(
@@ -149,7 +149,7 @@ def test_create_predict_inputs_when_with_transform_y_and_transform_exog_df():
                        )
     
     forecaster = ForecasterRecursive(
-                     regressor        = LinearRegression(),
+                     estimator        = LinearRegression(),
                      lags             = 5,
                      transformer_y    = transformer_y,
                      transformer_exog = transformer_exog
@@ -203,7 +203,7 @@ def test_create_predict_inputs_when_categorical_features_native_implementation_H
                        ).set_output(transform="pandas")
     
     forecaster = ForecasterRecursive(
-                     regressor        = HistGradientBoostingRegressor(
+                     estimator        = HistGradientBoostingRegressor(
                                             categorical_features = categorical_features,
                                             random_state         = 123
                                         ),
@@ -238,7 +238,7 @@ def test_create_predict_inputs_when_categorical_features_native_implementation_H
 
 def test_create_predict_inputs_when_with_exog_differentiation_is_1():
     """
-    Test _create_predict_inputs when using LinearRegression as regressor 
+    Test _create_predict_inputs when using LinearRegression as estimator 
     and differentiation=1.
     """
 
@@ -252,7 +252,7 @@ def test_create_predict_inputs_when_with_exog_differentiation_is_1():
     steps = data.index[-1]
 
     forecaster = ForecasterRecursive(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      lags            = 15,
                      differentiation = 1
                 )

@@ -42,9 +42,9 @@ def test_predict_NotFittedError_when_fitted_is_False():
         forecaster.predict(steps=5)
 
 
-def test_predict_output_when_regressor_is_LinearRegression():
+def test_predict_output_when_estimator_is_LinearRegression():
     """
-    Test predict output when using LinearRegression as regressor.
+    Test predict output when using LinearRegression as estimator.
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
     forecaster.fit(y=pd.Series(np.arange(50)))
@@ -60,7 +60,7 @@ def test_predict_output_when_regressor_is_LinearRegression():
         
 def test_predict_output_when_with_exog():
     """
-    Test predict output when using LinearRegression as regressor.
+    Test predict output when using LinearRegression as estimator.
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
     forecaster.fit(y=pd.Series(np.arange(50), name='y'), exog=pd.Series(np.arange(50, 150, 2), name='exog'))
@@ -79,7 +79,7 @@ def test_predict_output_when_with_exog():
 
 def test_predict_output_when_with_transform_y():
     """
-    Test predict output when using LinearRegression as regressor and StandardScaler.
+    Test predict output when using LinearRegression as estimator and StandardScaler.
     """
     y = pd.Series(
             np.array([-0.59,  0.02, -0.9 ,  1.09, -3.61,  0.72, -0.11, -0.4 ,  0.49,
@@ -88,7 +88,7 @@ def test_predict_output_when_with_transform_y():
         )
     transformer_y = StandardScaler()
     forecaster = ForecasterRecursive(
-                    regressor = LinearRegression(),
+                    estimator = LinearRegression(),
                     lags = 5,
                     transformer_y = transformer_y,
                 )
@@ -106,7 +106,7 @@ def test_predict_output_when_with_transform_y():
 
 def test_predict_output_when_with_transform_y_and_transform_exog():
     """
-    Test predict output when using LinearRegression as regressor, StandardScaler
+    Test predict output when using LinearRegression as estimator, StandardScaler
     as transformer_y and transformer_exog as transformer_exog.
     """
     y = pd.Series(
@@ -127,7 +127,7 @@ def test_predict_output_when_with_transform_y_and_transform_exog():
                             verbose_feature_names_out = False
                        )
     forecaster = ForecasterRecursive(
-                     regressor        = LinearRegression(),
+                     estimator        = LinearRegression(),
                      lags             = 5,
                      transformer_y    = transformer_y,
                      transformer_exog = transformer_exog,
@@ -146,7 +146,7 @@ def test_predict_output_when_with_transform_y_and_transform_exog():
 
 def test_predict_output_when_and_weight_func():
     """
-    Test predict output when using LinearRegression as regressor and custom_weights.
+    Test predict output when using LinearRegression as estimator and custom_weights.
     """
     def custom_weights(index):
         """
@@ -196,7 +196,7 @@ def test_predict_output_when_categorical_features_native_implementation_HistGrad
                        ).set_output(transform="pandas")
     
     forecaster = ForecasterRecursive(
-                     regressor        = HistGradientBoostingRegressor(
+                     estimator        = HistGradientBoostingRegressor(
                                             categorical_features = categorical_features,
                                             random_state         = 123
                                         ),
@@ -245,7 +245,7 @@ def test_predict_output_when_categorical_features_native_implementation_LGBMRegr
                        ).set_output(transform="pandas")
     
     forecaster = ForecasterRecursive(
-                     regressor        = LGBMRegressor(random_state=123),
+                     estimator        = LGBMRegressor(random_state=123),
                      lags             = 5,
                      transformer_y    = None,
                      transformer_exog = transformer_exog,
@@ -299,7 +299,7 @@ def test_predict_output_when_categorical_features_native_implementation_LGBMRegr
                        ).set_output(transform="pandas")
     
     forecaster = ForecasterRecursive(
-                     regressor        = LGBMRegressor(random_state=123),
+                     estimator        = LGBMRegressor(random_state=123),
                      lags             = 5,
                      transformer_y    = None,
                      transformer_exog = transformer_exog,
@@ -321,7 +321,7 @@ def test_predict_output_when_categorical_features_native_implementation_LGBMRegr
 
 def test_predict_output_when_with_exog_and_differentiation_is_1():
     """
-    Test predict output when using LinearRegression as regressor and differentiation=1.
+    Test predict output when using LinearRegression as estimator and differentiation=1.
     """
 
     # Data differentiated
@@ -337,14 +337,14 @@ def test_predict_output_when_with_exog_and_differentiation_is_1():
     end_train = '2003-03-01 23:59:00'
     steps = len(data.loc[end_train:])
 
-    forecaster_1 = ForecasterRecursive(regressor=LinearRegression(), lags=15)
+    forecaster_1 = ForecasterRecursive(estimator=LinearRegression(), lags=15)
     forecaster_1.fit(y=data_diff.loc[:end_train], exog=exog_diff.loc[:end_train])
     predictions_diff = forecaster_1.predict(steps=steps, exog=exog_diff.loc[end_train:])
     # Revert the differentiation
     last_value_train = data.loc[:end_train].iloc[[-1]]
     predictions_1 = pd.concat([last_value_train, predictions_diff]).cumsum()[1:]
 
-    forecaster_2 = ForecasterRecursive(regressor=LinearRegression(), lags=15, differentiation=1)
+    forecaster_2 = ForecasterRecursive(estimator=LinearRegression(), lags=15, differentiation=1)
     forecaster_2.fit(y=data.loc[:end_train], exog=exog.loc[:end_train])
     predictions_2 = forecaster_2.predict(steps=steps, exog=exog.loc[end_train:])
 
@@ -353,7 +353,7 @@ def test_predict_output_when_with_exog_and_differentiation_is_1():
 
 def test_predict_output_when_with_exog_differentiation_is_1_and_transformer_y():
     """
-    Test predict output when using LinearRegression as regressor and differentiation=1,
+    Test predict output when using LinearRegression as estimator and differentiation=1,
     and transformer_y is StandardScaler.
     """
 
@@ -373,7 +373,7 @@ def test_predict_output_when_with_exog_differentiation_is_1_and_transformer_y():
     exog_diff = exog.iloc[1:]
     steps = len(data.loc[end_train:])
 
-    forecaster_1 = ForecasterRecursive(regressor=LinearRegression(), lags=15)
+    forecaster_1 = ForecasterRecursive(estimator=LinearRegression(), lags=15)
     forecaster_1.fit(y=data_scaled_diff.loc[:end_train], exog=exog_diff.loc[:end_train])
     predictions_diff = forecaster_1.predict(steps=steps, exog=exog_diff.loc[end_train:])
     # Revert the differentiation
@@ -383,7 +383,7 @@ def test_predict_output_when_with_exog_differentiation_is_1_and_transformer_y():
     predictions_1 = scaler.inverse_transform(predictions_1.to_numpy().reshape(-1, 1))
     predictions_1 = pd.Series(predictions_1.ravel(), index=data.loc[end_train:].index)
 
-    forecaster_2 = ForecasterRecursive(regressor=LinearRegression(), lags=15, differentiation=1)
+    forecaster_2 = ForecasterRecursive(estimator=LinearRegression(), lags=15, differentiation=1)
     forecaster_2.fit(y=data.loc[:end_train], exog=exog.loc[:end_train])
     predictions_2 = forecaster_2.predict(steps=steps, exog=exog.loc[end_train:])
 
@@ -392,7 +392,7 @@ def test_predict_output_when_with_exog_differentiation_is_1_and_transformer_y():
 
 def test_predict_output_when_with_exog_and_differentiation_is_2():
     """
-    Test predict output when using LinearRegression as regressor and differentiation=2.
+    Test predict output when using LinearRegression as estimator and differentiation=2.
     """
 
     # Data differentiated
@@ -412,7 +412,7 @@ def test_predict_output_when_with_exog_and_differentiation_is_2():
     end_train = '2003-03-01 23:59:00'
     steps = len(data.loc[end_train:])
 
-    forecaster_1 = ForecasterRecursive(regressor=LinearRegression(), lags=15)
+    forecaster_1 = ForecasterRecursive(estimator=LinearRegression(), lags=15)
     forecaster_1.fit(y=data_diff_2.loc[:end_train], exog=exog_diff_2.loc[:end_train])
     predictions_diff_2 = forecaster_1.predict(steps=steps, exog=exog_diff_2.loc[end_train:])
     
@@ -422,7 +422,7 @@ def test_predict_output_when_with_exog_and_differentiation_is_2():
     last_value_train = data.loc[:end_train].iloc[[-1]]
     predictions_1 = pd.concat([last_value_train, predictions_diff_1]).cumsum()[1:]
 
-    forecaster_2 = ForecasterRecursive(regressor=LinearRegression(), lags=15, differentiation=2)
+    forecaster_2 = ForecasterRecursive(estimator=LinearRegression(), lags=15, differentiation=2)
     forecaster_2.fit(y=data.loc[:end_train], exog=exog.loc[:end_train])
     predictions_2 = forecaster_2.predict(steps=steps, exog=exog.loc[end_train:])
 
@@ -434,7 +434,7 @@ def test_predict_output_when_with_exog_and_differentiation_is_2():
                          ids=lambda steps: f'steps: {steps}')
 def test_predict_output_when_window_features(steps):
     """
-    Test output of predict when regressor is LGBMRegressor and window features.
+    Test output of predict when estimator is LGBMRegressor and window features.
     """
     y_datetime = y_categorical.copy()
     y_datetime.index = pd.date_range(start='2001-01-01', periods=len(y_datetime), freq='D')

@@ -174,7 +174,7 @@ def test_create_train_X_y_ValueError_when_y_and_exog_have_different_index_and_le
 
 def test_create_train_X_y_output_when_lags_3_steps_1_and_exog_is_None():
     """
-    Test output of _create_train_X_y when regressor is LinearRegression, 
+    Test output of _create_train_X_y when estimator is LinearRegression, 
     lags is 3 and steps is 1.
     """
     y = pd.Series(np.arange(10), name='y', dtype=float)
@@ -227,7 +227,7 @@ def test_create_train_X_y_output_when_lags_3_steps_1_and_exog_is_None():
 
 def test_create_train_X_y_output_when_interspersed_lags_steps_2_and_exog_is_None():
     """
-    Test output of _create_train_X_y when regressor is LinearRegression, 
+    Test output of _create_train_X_y when estimator is LinearRegression, 
     interspersed_lags and steps is 2.
     """
     y = pd.Series(np.arange(10), name='y', dtype=float)
@@ -1334,7 +1334,7 @@ def test_create_train_X_y_output_when_y_is_series_10_and_transformer_y_is_Standa
     is StandardScaler with steps=1.
     """
     forecaster = ForecasterDirect(
-                     regressor     = LinearRegression(),
+                     estimator     = LinearRegression(),
                      lags          = 5,
                      steps         = 1,
                      transformer_y = StandardScaler()
@@ -1383,13 +1383,13 @@ def test_create_train_X_y_output_when_y_is_series_10_and_transformer_y_is_Standa
 
 def test_create_train_X_y_output_when_lags_3_steps_1_and_exog_is_None_and_transformer_exog_is_not_None():
     """
-    Test output of _create_train_X_y when regressor is LinearRegression, lags is 3
+    Test output of _create_train_X_y when estimator is LinearRegression, lags is 3
     and steps is 1 and transformer_exog is not None.
     """
     y = pd.Series(np.arange(10), name='y', dtype=float)
 
     forecaster = ForecasterDirect(
-                     regressor        = LinearRegression(),
+                     estimator        = LinearRegression(),
                      lags             = 3,
                      steps            = 1,
                      transformer_exog = StandardScaler()
@@ -1460,7 +1460,7 @@ def test_create_train_X_y_output_when_transformer_y_and_transformer_exog_steps_2
                        )
 
     forecaster = ForecasterDirect(
-                     regressor        = LinearRegression(),
+                     estimator        = LinearRegression(),
                      lags             = 5,
                      steps            = 2,
                      transformer_y    = transformer_y,

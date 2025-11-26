@@ -9,6 +9,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any
 import textwrap
+import warnings
 import numpy as np
 import pandas as pd
 from sklearn.pipeline import Pipeline
@@ -22,7 +23,7 @@ class ForecasterBase(ABC):
 
     def _preprocess_repr(
         self,
-        regressor: object | None = None,
+        estimator: object | None = None,
         training_range_: dict[str, str] | None = None,
         series_names_in_: list[str] | None = None,
         exog_names_in_: list[str] | None = None,
@@ -33,8 +34,8 @@ class ForecasterBase(ABC):
 
         Parameters
         ----------
-        regressor : object, default None
-            Regressor object.
+        estimator : object, default None
+            Estimator object.
         training_range_ : dict, default None
             Training range. Only used for `ForecasterRecursiveMultiSeries`.
         series_names_in_ : list, default None
@@ -47,7 +48,7 @@ class ForecasterBase(ABC):
         Returns
         -------
         params : str, None
-            Parameters of the regressor.
+            Parameters of the estimator.
         training_range_ : str, None
             Training range. Only used for `ForecasterRecursiveMultiSeries`.
         series_names_in_ : str, None
@@ -59,15 +60,15 @@ class ForecasterBase(ABC):
         
         """
 
-        if regressor is not None:
-            if isinstance(regressor, Pipeline):
-                name_pipe_steps = tuple(name + "__" for name in regressor.named_steps.keys())
+        if estimator is not None:
+            if isinstance(estimator, Pipeline):
+                name_pipe_steps = tuple(name + "__" for name in estimator.named_steps.keys())
                 params = {
-                    key: value for key, value in regressor.get_params().items() 
+                    key: value for key, value in estimator.get_params().items() 
                     if key.startswith(name_pipe_steps)
                 }
             else:
-                params = regressor.get_params()
+                params = estimator.get_params()
             params = str(params)
         else:
             params = None
@@ -325,3 +326,12 @@ class ForecasterBase(ABC):
         """
         
         print(self.__repr__())
+
+    @property
+    def regressor(self):
+        warnings.warn(
+            "The `regressor` attribute is deprecated and will be removed in future "
+            "versions. Use `estimator` instead.",
+            FutureWarning
+        )
+        return self.estimator

@@ -43,7 +43,7 @@ def test_backtesting_forecaster_multiseries_TypeError_when_forecaster_not_a_fore
     'ForecasterRnn' or 'ForecasterDirectMultiVariate'.
     """
     forecaster = ForecasterRecursive(
-                     regressor = Ridge(random_state=123),
+                     estimator = Ridge(random_state=123),
                      lags      = 2
                  )
     cv = TimeSeriesFold(
@@ -75,13 +75,13 @@ def test_backtesting_forecaster_multiseries_TypeError_when_forecaster_not_a_fore
 # ForecasterRecursiveMultiSeries
 # ======================================================================================================================
 @pytest.mark.parametrize("forecaster, n_jobs", 
-                         [(ForecasterRecursiveMultiSeries(regressor=Ridge(random_state=123), 
+                         [(ForecasterRecursiveMultiSeries(estimator=Ridge(random_state=123), 
                                                           lags=2, transformer_series=None,
                                                           encoding='onehot'), -1),
-                          (ForecasterRecursiveMultiSeries(regressor=Ridge(random_state=123), 
+                          (ForecasterRecursiveMultiSeries(estimator=Ridge(random_state=123), 
                                                           lags=2, transformer_series=None,
                                                           encoding='onehot'), 1),
-                          (ForecasterRecursiveMultiSeries(regressor=Ridge(random_state=123), 
+                          (ForecasterRecursiveMultiSeries(estimator=Ridge(random_state=123), 
                                                           lags=2, transformer_series=None,
                                                           encoding='onehot'), 'auto')], 
                          ids=lambda fc: f'forecaster, n_jobs: {fc}')
@@ -136,7 +136,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     """
 
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor          = Ridge(random_state=123),
+        estimator          = Ridge(random_state=123),
         lags               = 2,
         transformer_series = None,
         encoding           = "onehot",
@@ -186,13 +186,13 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
 
 
 @pytest.mark.parametrize("forecaster, n_jobs", 
-                         [(ForecasterRecursiveMultiSeries(regressor=Ridge(random_state=123), 
+                         [(ForecasterRecursiveMultiSeries(estimator=Ridge(random_state=123), 
                                                         lags=2, transformer_series=None,
                                                         encoding='onehot'), -1),
-                          (ForecasterRecursiveMultiSeries(regressor=Ridge(random_state=123), 
+                          (ForecasterRecursiveMultiSeries(estimator=Ridge(random_state=123), 
                                                         lags=2, transformer_series=None,
                                                         encoding='onehot'), 1),
-                          (ForecasterRecursiveMultiSeries(regressor=Ridge(random_state=123), 
+                          (ForecasterRecursiveMultiSeries(estimator=Ridge(random_state=123), 
                                                         lags=2, transformer_series=None,
                                                         encoding='onehot'), 'auto')], 
                          ids=lambda fc: f'forecaster, n_jobs: {fc}')
@@ -239,13 +239,13 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
 
 
 @pytest.mark.parametrize("forecaster, n_jobs", 
-                         [(ForecasterRecursiveMultiSeries(regressor=Ridge(random_state=123), 
+                         [(ForecasterRecursiveMultiSeries(estimator=Ridge(random_state=123), 
                                                         lags=2, transformer_series=None,
                                                         encoding='onehot'), -1),
-                          (ForecasterRecursiveMultiSeries(regressor=Ridge(random_state=123), 
+                          (ForecasterRecursiveMultiSeries(estimator=Ridge(random_state=123), 
                                                         lags=2, transformer_series=None,
                                                         encoding='onehot'), 1),
-                          (ForecasterRecursiveMultiSeries(regressor=Ridge(random_state=123), 
+                          (ForecasterRecursiveMultiSeries(estimator=Ridge(random_state=123), 
                                                         lags=2, transformer_series=None,
                                                         encoding='onehot'), 'auto')], 
                          ids=lambda fc: f'forecaster, n_jobs: {fc}')
@@ -304,7 +304,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
         series = series.rename(columns={'1': 'l1', '2': 'l2'})
     
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=Ridge(random_state=123), lags=2, transformer_series=None, encoding='onehot'
+        estimator=Ridge(random_state=123), lags=2, transformer_series=None, encoding='onehot'
     )
     cv = TimeSeriesFold(
             initial_train_size = len(series['l1']) - 12,
@@ -351,7 +351,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     (mocked done in Skforecast v0.5.0).
     """
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=Ridge(random_state=123), lags=2, transformer_series=None, encoding='onehot'
+        estimator=Ridge(random_state=123), lags=2, transformer_series=None, encoding='onehot'
     )
 
     cv = TimeSeriesFold(
@@ -402,7 +402,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     (mocked done in Skforecast v0.5.0).
     """
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=Ridge(random_state=123), lags=2, transformer_series=None, encoding='onehot'
+        estimator=Ridge(random_state=123), lags=2, transformer_series=None, encoding='onehot'
     )
 
     cv = TimeSeriesFold(
@@ -452,7 +452,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     without refit with mocked using exog and intervals (mocked done in Skforecast v0.5.0).
     """
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=Ridge(random_state=123), lags=2, transformer_series=None, encoding='onehot'
+        estimator=Ridge(random_state=123), lags=2, transformer_series=None, encoding='onehot'
     )
 
     cv = TimeSeriesFold(
@@ -513,7 +513,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     (mocked done in Skforecast v0.5.0).
     """
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=Ridge(random_state=123), lags=2, transformer_series=None, encoding='onehot'
+        estimator=Ridge(random_state=123), lags=2, transformer_series=None, encoding='onehot'
     )
 
     cv = TimeSeriesFold(
@@ -574,7 +574,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     (mocked done in Skforecast v0.5.0).
     """
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=Ridge(random_state=123), lags=2, transformer_series=None, encoding='onehot'
+        estimator=Ridge(random_state=123), lags=2, transformer_series=None, encoding='onehot'
     )
 
     cv = TimeSeriesFold(
@@ -841,7 +841,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     (mocked done in Skforecast v0.5.0).
     """
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=Ridge(random_state=123), lags=2, transformer_series=None, encoding='onehot'
+        estimator=Ridge(random_state=123), lags=2, transformer_series=None, encoding='onehot'
     )
 
     cv = TimeSeriesFold(
@@ -907,7 +907,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     (mocked done in Skforecast v0.5.0).
     """
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=Ridge(random_state=123), lags=2, transformer_series=None, encoding='onehot'
+        estimator=Ridge(random_state=123), lags=2, transformer_series=None, encoding='onehot'
     )
 
     cv = TimeSeriesFold(
@@ -973,7 +973,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     with different lengths (mocked done in Skforecast v0.5.0).
     """
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=Ridge(random_state=123), lags=2, transformer_series=None, encoding='onehot'
+        estimator=Ridge(random_state=123), lags=2, transformer_series=None, encoding='onehot'
     )
 
     exog_long_dt = series_wide_dt['l1'].copy().rename('exog_1').to_frame()
@@ -1047,7 +1047,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     (mocked done in Skforecast v0.5.0).
     """
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=Ridge(random_state=123), lags=2, transformer_series=None, encoding='onehot'
+        estimator=Ridge(random_state=123), lags=2, transformer_series=None, encoding='onehot'
     )
     exog_wide_dt_nans = series_wide_dt_nans['l1'].copy().rename('exog_1')
 
@@ -1114,7 +1114,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     (mocked done in Skforecast v0.5.0).
     """
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=Ridge(random_state=123), lags=2, transformer_series=None, encoding='onehot'
+        estimator=Ridge(random_state=123), lags=2, transformer_series=None, encoding='onehot'
     )
     exog_wide_dt_nans = series_wide_dt_nans['l1'].copy().rename('exog_1')
 
@@ -1181,7 +1181,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     (mocked done in Skforecast v0.9.0).
     """
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=Ridge(random_state=123), lags=2, transformer_series=None, encoding='onehot'
+        estimator=Ridge(random_state=123), lags=2, transformer_series=None, encoding='onehot'
     )
 
     cv = TimeSeriesFold(
@@ -1279,7 +1279,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     (mocked done in Skforecast v0.9.0).
     """
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=Ridge(random_state=123), lags=2, transformer_series=None, encoding='onehot'
+        estimator=Ridge(random_state=123), lags=2, transformer_series=None, encoding='onehot'
     )
 
     cv = TimeSeriesFold(
@@ -1347,7 +1347,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     when series and exog are dictionaries (mocked done in Skforecast v0.12.0).
     """
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=LGBMRegressor(
+        estimator=LGBMRegressor(
             n_estimators=2, random_state=123, verbose=-1, max_depth=2
         ),
         lags=14,
@@ -1424,7 +1424,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
         window_sizes = 10,
     )
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=LGBMRegressor(
+        estimator=LGBMRegressor(
             n_estimators=20, random_state=123, verbose=-1
         ),
         lags=14,
@@ -1494,7 +1494,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     with no refit, remainder, multiple levels and add_aggregated_metric.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=Ridge(random_state=123), lags=2, transformer_series=None, encoding='onehot'
+        estimator=Ridge(random_state=123), lags=2, transformer_series=None, encoding='onehot'
     )
 
     cv = TimeSeriesFold(
@@ -1583,7 +1583,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     (mocked done in Skforecast v0.12.0).
     """
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=LGBMRegressor(
+        estimator=LGBMRegressor(
             n_estimators=2, random_state=123, verbose=-1, max_depth=2
         ),
         lags=14,
@@ -1668,7 +1668,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     when series and exog are dictionaries (mocked done in Skforecast v0.12.0).
     """
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=LGBMRegressor(
+        estimator=LGBMRegressor(
             n_estimators=2, random_state=123, verbose=-1, max_depth=2
         ),
         lags=14,
@@ -1743,7 +1743,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     (mocked done in Skforecast v0.13.0).
     """
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=LGBMRegressor(
+        estimator=LGBMRegressor(
             n_estimators=30, random_state=123, verbose=-1, max_depth=4
         ),
         lags=[1, 7, 14],
@@ -1826,7 +1826,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     }
 
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=LGBMRegressor(
+        estimator=LGBMRegressor(
             n_estimators=30, random_state=123, verbose=-1, max_depth=4
         ),
         lags=[1, 7, 14],
@@ -1923,7 +1923,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     bootstrapping iterations (mocked done in Skforecast v0.15.0).
     """
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=LGBMRegressor(
+        estimator=LGBMRegressor(
             n_estimators=30, random_state=123, verbose=-1, max_depth=4
         ),
         lags=[1, 7, 14],
@@ -2120,7 +2120,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     (mocked done in Skforecast v0.15.0).
     """
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=LGBMRegressor(
+        estimator=LGBMRegressor(
             n_estimators=30, random_state=123, verbose=-1, max_depth=4
         ),
         lags=[1, 7, 14],
@@ -2291,7 +2291,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     scipy.stats norm distribution. (mocked done in Skforecast v0.15.0).
     """
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=LGBMRegressor(
+        estimator=LGBMRegressor(
             n_estimators=30, random_state=123, verbose=-1, max_depth=4
         ),
         lags=[1, 7, 14],
@@ -2453,7 +2453,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     conformal with binned residuals (mocked done in Skforecast v0.15.0).
     """
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=LGBMRegressor(
+        estimator=LGBMRegressor(
             n_estimators=30, random_state=123, verbose=-1, max_depth=4
         ),
         lags=[1, 7, 14],
@@ -2612,7 +2612,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     predict method.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=LGBMRegressor(
+        estimator=LGBMRegressor(
             n_estimators=30, random_state=123, verbose=-1, max_depth=4
         ),
         lags=[1, 7, 14],
@@ -2677,7 +2677,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     )
 
     forecaster.fit(series=series_dict_nans_train, exog=exog_dict_nans_train)
-    expected_predictions = forecaster.regressor.predict(
+    expected_predictions = forecaster.estimator.predict(
         predictions[forecaster.X_train_features_names_out_]
     )
     nan_predictions_index = predictions['pred'].isna()
@@ -2696,7 +2696,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     when series and exog are dictionaries, encoding='ordinal', and fold_stride is used.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=LGBMRegressor(
+        estimator=LGBMRegressor(
             n_estimators=100, random_state=123, verbose=-1, max_depth=4
         ),
         lags=[1, 7, 14],
@@ -3027,7 +3027,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     and greater than steps.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=LGBMRegressor(
+        estimator=LGBMRegressor(
             n_estimators=100, random_state=123, verbose=-1, max_depth=4
         ),
         lags=[1, 7, 14],
@@ -3367,7 +3367,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
     """
 
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = Ridge(random_state=123),
+                     estimator          = Ridge(random_state=123),
                      level              = 'l1',
                      lags               = 2,
                      steps              = 3,
@@ -3418,7 +3418,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
     """
 
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = Ridge(random_state=123),
+                     estimator          = Ridge(random_state=123),
                      level              = 'l1',
                      lags               = 2,
                      steps              = 3,
@@ -3475,7 +3475,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
     """
 
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = Ridge(random_state=123),
+                     estimator          = Ridge(random_state=123),
                      level              = 'l2',
                      lags               = 2,
                      steps              = 3,
@@ -3533,7 +3533,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
         window_sizes = 3,
     )
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = Ridge(random_state=123),
+                     estimator          = Ridge(random_state=123),
                      steps              = 3,
                      level              = 'l2',
                      lags               = 2,
@@ -3589,7 +3589,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
     """
 
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = Ridge(random_state=123),
+                     estimator          = Ridge(random_state=123),
                      level              = 'l1',
                      lags               = 2,
                      steps              = 3,
@@ -3640,7 +3640,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
     """
 
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = Ridge(random_state=123),
+                     estimator          = Ridge(random_state=123),
                      level              = 'l1',
                      lags               = 2,
                      steps              = 3,
@@ -3692,7 +3692,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
     """
 
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = Ridge(random_state=123),
+                     estimator          = Ridge(random_state=123),
                      level              = 'l1',
                      lags               = {'l1': 3, 'l2': None},
                      steps              = 3,
@@ -3758,7 +3758,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
     """
 
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = Ridge(random_state=123),
+                     estimator          = Ridge(random_state=123),
                      level              = 'l1',
                      lags               = {'l1': None, 'l2': [1, 3]},
                      steps              = 3,
@@ -3822,7 +3822,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
     (mocked done in Skforecast v0.5.0).
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = Ridge(random_state=123),
+                     estimator          = Ridge(random_state=123),
                      level              = 'l1',
                      lags               = {'l1': 2, 'l2': [1, 3]},
                      steps              = 8,
@@ -3893,7 +3893,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
     intervals (mocked done in Skforecast v0.5.0).
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = Ridge(random_state=123),
+                     estimator          = Ridge(random_state=123),
                      level              = 'l1',
                      lags               = 2,
                      steps              = 8,
@@ -3962,7 +3962,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
     (mocked done in Skforecast v0.5.0).
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = Ridge(random_state=123),
+                     estimator          = Ridge(random_state=123),
                      level              = 'l1',
                      lags               = 2,
                      steps              = 10,
@@ -4032,7 +4032,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
     (mocked done in Skforecast v0.9.0).
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = Ridge(random_state=123),
+                     estimator          = Ridge(random_state=123),
                      level              = 'l1',
                      lags               = 2,
                      steps              = 2,
@@ -4116,7 +4116,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
     (mocked done in Skforecast v0.9.0).
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = Ridge(random_state=123),
+                     estimator          = Ridge(random_state=123),
                      level              = 'l1',
                      lags               = 2,
                      steps              = 7,
@@ -4198,7 +4198,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
     (mocked done in Skforecast v0.15.0).
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = Ridge(random_state=123),
+                     estimator          = Ridge(random_state=123),
                      level              = 'l1',
                      lags               = {'l1': 2, 'l2': [1, 3]},
                      steps              = 8,
@@ -4266,7 +4266,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
     distribution (mocked done in Skforecast v0.15.0).
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = Ridge(random_state=123),
+                     estimator          = Ridge(random_state=123),
                      level              = 'l1',
                      lags               = {'l1': 2, 'l2': [1, 3]},
                      steps              = 8,
@@ -4337,7 +4337,7 @@ def test_output_backtesting_forecaster_interval_conformal_and_binned_with_mocked
     (mocked done in Skforecast v0.15.0).
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = Ridge(random_state=123),
+                     estimator          = Ridge(random_state=123),
                      level              = 'l1',
                      lags               = 3,
                      steps              = 5,
@@ -4408,7 +4408,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
     predict method.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = Ridge(random_state=123),
+                     estimator          = Ridge(random_state=123),
                      level              = 'l1',
                      lags               = 2,
                      steps              = 3,
@@ -4439,11 +4439,11 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
         series = series_wide_range.iloc[:len(series_wide_range) - 12],
         exog   = series_wide_range.iloc[:len(series_wide_range) - 12]['l1'].rename('exog_1')
     )
-    regressors = [1, 2, 3] * 4
+    estimators = [1, 2, 3] * 4
     len_predictions = len(backtest_predictions)
     results = np.full(shape=len_predictions, fill_value=np.nan, dtype=float)
-    for i, step in enumerate(regressors):
-        results[i] = forecaster.regressors_[step].predict(
+    for i, step in enumerate(estimators):
+        results[i] = forecaster.estimators_[step].predict(
             backtest_predictions.iloc[[i]][
                 ['l1_lag_1', 'l1_lag_2', 'l2_lag_1', 'l2_lag_2', 'exog_1']
             ]
@@ -4460,7 +4460,7 @@ def test_output_backtesting_forecaster_ForecasterDirectMultiVariate_fold_stride(
     (mocked done in Skforecast v0.18.0).
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = Ridge(random_state=123),
+                     estimator          = Ridge(random_state=123),
                      level              = 'l1',
                      lags               = 3,
                      steps              = 5,
@@ -4541,7 +4541,7 @@ def test_output_backtesting_forecaster_ForecasterDirectMultiVariate_fold_stride_
     (mocked done in Skforecast v0.18.0).
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = Ridge(random_state=123),
+                     estimator          = Ridge(random_state=123),
                      level              = 'l1',
                      lags               = 3,
                      steps              = 5,

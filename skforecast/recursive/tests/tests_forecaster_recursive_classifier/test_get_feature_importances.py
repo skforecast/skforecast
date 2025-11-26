@@ -24,7 +24,7 @@ def test_NotFittedError_is_raised_when_forecaster_is_not_fitted():
     forecaster is not fitted.
     """
     forecaster = ForecasterRecursiveClassifier(
-                     regressor = LogisticRegression(),
+                     estimator = LogisticRegression(),
                      lags = 3,
                  )
 
@@ -54,7 +54,7 @@ def test_output_and_UserWarning_get_feature_importances_when_CalibratedClassifie
         assert forecaster.get_feature_importances() is None
 
 
-def test_output_and_UserWarning_get_feature_importances_when_regressor_no_attributes():
+def test_output_and_UserWarning_get_feature_importances_when_estimator_no_attributes():
     """
     Test output of get_feature_importances when estimator is HistGradientBoostingClassifier.
     Since HistGradientBoostingClassifier hasn't attributes `feature_importances_` 
@@ -65,7 +65,7 @@ def test_output_and_UserWarning_get_feature_importances_when_regressor_no_attrib
     )
     forecaster.fit(y=y)
 
-    estimator = forecaster.regressor
+    estimator = forecaster.estimator
 
     warn_msg = re.escape(
         f"Impossible to access feature importances for estimator of type "
@@ -77,9 +77,9 @@ def test_output_and_UserWarning_get_feature_importances_when_regressor_no_attrib
         assert forecaster.get_feature_importances() is None
 
 
-def test_output_get_feature_importances_when_regressor_is_RandomForestClassifier():
+def test_output_get_feature_importances_when_estimator_is_RandomForestClassifier():
     """
-    Test output of get_feature_importances when regressor is RandomForestClassifier with lags=3
+    Test output of get_feature_importances when estimator is RandomForestClassifier with lags=3
     and it is trained with y.
     """
     forecaster = ForecasterRecursiveClassifier(
@@ -97,9 +97,9 @@ def test_output_get_feature_importances_when_regressor_is_RandomForestClassifier
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_output_get_feature_importances_when_regressor_is_RandomForest_with_exog():
+def test_output_get_feature_importances_when_estimator_is_RandomForest_with_exog():
     """
-    Test output of get_feature_importances when regressor is RandomForestClassifier 
+    Test output of get_feature_importances when estimator is RandomForestClassifier 
     with exog.
     """
     forecaster = ForecasterRecursiveClassifier(
@@ -117,9 +117,9 @@ def test_output_get_feature_importances_when_regressor_is_RandomForest_with_exog
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_output_get_feature_importances_when_regressor_is_LogisticRegression():
+def test_output_get_feature_importances_when_estimator_is_LogisticRegression():
     """
-    Test output of get_feature_importances when regressor is LogisticRegression.
+    Test output of get_feature_importances when estimator is LogisticRegression.
     """
     forecaster = ForecasterRecursiveClassifier(LogisticRegression(), lags=3)
     forecaster.fit(y=y)
@@ -139,7 +139,7 @@ def test_output_get_feature_importances_when_regressor_is_LogisticRegression():
 
 def test_output_get_feature_importances_with_exog():
     """
-    Test output of get_feature_importances when regressor is LogisticRegression 
+    Test output of get_feature_importances when estimator is LogisticRegression 
     using exog.
     """
     forecaster = ForecasterRecursiveClassifier(LogisticRegression(), lags=3)
@@ -169,7 +169,7 @@ def test_output_get_feature_importances_when_CalibratedClassifierCV_LogisticRegr
     LogisticRegression as base estimator.
     """
     forecaster = ForecasterRecursiveClassifier(
-                     regressor = CalibratedClassifierCV(LogisticRegression()),
+                     estimator = CalibratedClassifierCV(LogisticRegression()),
                      lags      = 3
                  )
     forecaster.fit(y=y)
@@ -242,7 +242,7 @@ def test_output_get_feature_importances_when_CalibratedClassifierCV_LGBMClassifi
     LGBMClassifier as base estimator, min_child_samples=5 due to small sample size.
     """
     forecaster = ForecasterRecursiveClassifier(
-                     regressor = CalibratedClassifierCV(LGBMClassifier(
+                     estimator = CalibratedClassifierCV(LGBMClassifier(
                          min_child_samples=5, verbose=-1, random_state=123
                      ), cv=3),
                      lags      = 3
@@ -274,7 +274,7 @@ def test_output_get_feature_importances_when_CalibratedClassifierCV_LGBMClassifi
 
 def test_output_get_feature_importances_when_window_features():
     """
-    Test output of get_feature_importances when regressor is LGMBRegressor with 
+    Test output of get_feature_importances when estimator is LGMBRegressor with 
     lags=3 and window features.
     """
 

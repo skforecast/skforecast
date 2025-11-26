@@ -104,7 +104,7 @@ def test_fit_with_validation_data():
 
     # Create an instance of ForecasterRnn
     forecaster = ForecasterRnn(
-        regressor=model,
+        estimator=model,
         levels=levels,
         fit_kwargs={
             "epochs": 10,  # Number of epochs to train the model.
@@ -141,7 +141,7 @@ def test_fit_with_exog_and_validation_data():
         {"exog1": pd.Series(np.arange(5)), "exog2": pd.Series(np.arange(5))}
     )
     forecaster = ForecasterRnn(
-        regressor=model_exog,
+        estimator=model_exog,
         levels=levels,
         fit_kwargs={
             "epochs": 10,  # Number of epochs to train the model.

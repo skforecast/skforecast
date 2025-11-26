@@ -21,7 +21,7 @@ def test_output_random_search_stats_sarimax_with_mocked():
     (mocked done in Skforecast v0.7.0).
     """
     forecaster = ForecasterStats(
-                     regressor = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
+                     estimator = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
                  )
     
     cv = TimeSeriesFold(

@@ -19,7 +19,7 @@ def test_NotFittedError_is_raised_when_forecaster_is_not_fitted():
     Test NotFittedError is raised when calling get_feature_importances() and 
     forecaster is not fitted.
     """
-    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 0, 0)))
+    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 0, 0)))
 
     err_msg = re.escape(
         ("This forecaster is not fitted yet. Call `fit` with appropriate "
@@ -29,13 +29,13 @@ def test_NotFittedError_is_raised_when_forecaster_is_not_fitted():
         forecaster.get_feature_importances()
 
 
-def test_output_get_feature_importances_ForecasterStats_with_Sarimax_regressor():
+def test_output_get_feature_importances_ForecasterStats_with_Sarimax_estimator():
     """
     Test output of get_feature_importances ForecasterStats using Sarimax as
-    regressor.
+    estimator.
     """
     forecaster = ForecasterStats(
-                     regressor = Sarimax(order= (1, 1, 1), maxiter=1000, method='cg', disp=False)
+                     estimator = Sarimax(order= (1, 1, 1), maxiter=1000, method='cg', disp=False)
                  )
     forecaster.fit(y=y, exog=exog)
     results = forecaster.get_feature_importances(sort_importance=False)
@@ -49,12 +49,12 @@ def test_output_get_feature_importances_ForecasterStats_with_Sarimax_regressor()
     pd.testing.assert_frame_equal(expected, results)
 
 
-def test_output_get_feature_importances_ForecasterStats_with_Arar_regressor():
+def test_output_get_feature_importances_ForecasterStats_with_Arar_estimator():
     """
     Test output of get_feature_importances ForecasterStats using Arar as
-    regressor.
+    estimator.
     """
-    forecaster = ForecasterStats(regressor = Arar(max_ar_depth=26, max_lag=40)) 
+    forecaster = ForecasterStats(estimator = Arar(max_ar_depth=26, max_lag=40)) 
     forecaster.fit(y=y)
     results = forecaster.get_feature_importances(sort_importance=False)
 
@@ -72,12 +72,12 @@ def test_output_get_feature_importances_ForecasterStats_with_Arar_regressor():
     pd.testing.assert_frame_equal(expected, results)
 
 
-def test_output_get_feature_importances_ForecasterStats_with_ARIMA_regressor():
+def test_output_get_feature_importances_ForecasterStats_with_ARIMA_estimator():
     """
     Test output of get_feature_importances ForecasterStats using ARIMA as
-    regressor.
+    estimator.
     """
-    forecaster = ForecasterStats(regressor = ARIMA(p=4, d=1, q=1))
+    forecaster = ForecasterStats(estimator = ARIMA(p=4, d=1, q=1))
     forecaster.fit(y=y)
     results = forecaster.get_feature_importances(sort_importance=True)
 

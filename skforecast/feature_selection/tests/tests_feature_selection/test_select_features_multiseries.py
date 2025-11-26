@@ -46,10 +46,10 @@ def test_ValueError_select_features_multiseries_when_select_only_not_autoreg_exo
     is not 'autoreg', 'exog' or None.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor = LinearRegression(),
+                     estimator = LinearRegression(),
                      lags      = 5,
                  )
-    selector = RFE(estimator=forecaster.regressor, n_features_to_select=3)
+    selector = RFE(estimator=forecaster.estimator, n_features_to_select=3)
 
     err_msg = re.escape(
         "`select_only` must be one of the following values: 'autoreg', 'exog', None."
@@ -73,10 +73,10 @@ def test_ValueError_select_features_multiseries_when_subsample_not_greater_0_les
     is not in (0, 1].
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor = LinearRegression(),
+                     estimator = LinearRegression(),
                      lags      = 5,
                  )
-    selector = RFE(estimator=forecaster.regressor, n_features_to_select=3)
+    selector = RFE(estimator=forecaster.estimator, n_features_to_select=3)
     err_msg = re.escape(
         "`subsample` must be a number greater than 0 and less than or equal to 1."
     )
@@ -90,14 +90,14 @@ def test_ValueError_select_features_multiseries_when_subsample_not_greater_0_les
         )
 
 
-def test_select_features_multiseries_when_selector_is_RFE_and_select_only_is_exog_regressor():
+def test_select_features_multiseries_when_selector_is_RFE_and_select_only_is_exog_estimator():
     """
     Test that select_features_multiseries returns the expected values when selector is RFE
-    and select_only is 'exog' and regressor is passed to the selector instead
-    of forecaster.regressor.
+    and select_only is 'exog' and estimator is passed to the selector instead
+    of forecaster.estimator.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor = LinearRegression(),
+                     estimator = LinearRegression(),
                      lags      = 5,
                      encoding  = 'onehot'
                  )
@@ -124,11 +124,11 @@ def test_select_features_multiseries_when_selector_is_RFE_and_select_only_is_exo
     no window features are included.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor = LinearRegression(),
+                     estimator = LinearRegression(),
                      lags      = 5,
                      encoding  = 'ordinal'
                  )
-    selector = RFE(estimator=forecaster.regressor, n_features_to_select=2)
+    selector = RFE(estimator=forecaster.estimator, n_features_to_select=2)
 
     selected_lags, selected_window_features, selected_exog = select_features_multiseries(
         selector    = selector,
@@ -155,12 +155,12 @@ def test_select_features_multiseries_when_selector_is_RFE_and_select_only_is_exo
                         window_sizes=[3, 5],
                     )
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      lags            = 5,
                      window_features = roll_features,
                      encoding        = 'ordinal'
                  )
-    selector = RFE(estimator=forecaster.regressor, n_features_to_select=2)
+    selector = RFE(estimator=forecaster.estimator, n_features_to_select=2)
 
     selected_lags, selected_window_features, selected_exog = select_features_multiseries(
         selector    = selector,
@@ -183,11 +183,11 @@ def test_select_features_multiseries_when_selector_is_RFE_and_select_only_is_aut
     no window features are included.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor = LinearRegression(),
+                     estimator = LinearRegression(),
                      lags      = 5,
                      encoding  = 'ordinal'
                  )
-    selector = RFE(estimator=forecaster.regressor, n_features_to_select=2)
+    selector = RFE(estimator=forecaster.estimator, n_features_to_select=2)
 
     selected_lags, selected_window_features, selected_exog = select_features_multiseries(
         selector    = selector,
@@ -214,12 +214,12 @@ def test_select_features_multiseries_when_selector_is_RFE_and_select_only_is_aut
                         window_sizes=[3, 5],
                     )
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor       = Ridge(alpha=0.1, random_state=123),
+                     estimator       = Ridge(alpha=0.1, random_state=123),
                      lags            = 5,
                      window_features = roll_features,
                      encoding        = 'ordinal'
                  )
-    selector = RFE(estimator=forecaster.regressor, n_features_to_select=4)
+    selector = RFE(estimator=forecaster.estimator, n_features_to_select=4)
 
     selected_lags, selected_window_features, selected_exog = select_features_multiseries(
         selector    = selector,
@@ -243,12 +243,12 @@ def test_select_features_multiseries_when_selector_is_RFE_and_select_only_is_Non
     no window features are included.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 5,
                      encoding           = 'onehot',
                      transformer_series = StandardScaler()
                  )
-    selector = RFE(estimator=forecaster.regressor, n_features_to_select=2)
+    selector = RFE(estimator=forecaster.estimator, n_features_to_select=2)
 
     warn_msg = re.escape(
         "No autoregressive features have been selected. Since a Forecaster "
@@ -281,13 +281,13 @@ def test_select_features_multiseries_when_selector_is_RFE_and_select_only_is_Non
                         window_sizes=[3, 5],
                     )
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 5,
                      window_features    = roll_features,
                      encoding           = 'onehot',
                      transformer_series = StandardScaler()
                  )
-    selector = RFE(estimator=forecaster.regressor, n_features_to_select=3)
+    selector = RFE(estimator=forecaster.estimator, n_features_to_select=3)
 
     selected_lags, selected_window_features, selected_exog = select_features_multiseries(
         selector    = selector,
@@ -313,12 +313,12 @@ def test_select_features_multiseries_when_selector_is_RFE_select_only_exog_is_Tr
                         window_sizes=[3, 5],
                     )
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      lags            = 5,
                      window_features = roll_features,
                      encoding        = 'ordinal'
                  )
-    selector = RFE(estimator=forecaster.regressor, n_features_to_select=3)
+    selector = RFE(estimator=forecaster.estimator, n_features_to_select=3)
 
     selected_lags, selected_window_features, selected_exog = select_features_multiseries(
         selector        = selector,
@@ -341,12 +341,12 @@ def test_select_features_multiseries_when_selector_is_RFE_select_only_exog_is_Fa
     select_only_exog is False and force_inclusion is list.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor = LinearRegression(),
+                     estimator = LinearRegression(),
                      lags      = 5,
                      encoding  = 'onehot',
                      transformer_series = StandardScaler()
                  )
-    selector = RFE(estimator=forecaster.regressor, n_features_to_select=3)
+    selector = RFE(estimator=forecaster.estimator, n_features_to_select=3)
 
     selected_lags, selected_window_features, selected_exog = select_features_multiseries(
         selector        = selector,
@@ -373,12 +373,12 @@ def test_select_features_when_RFE_select_only_exog_ForecasterDirectMultiVariate_
     and lags is a dictionary.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor = LinearRegression(),
+                     estimator = LinearRegression(),
                      level     = 'l1',
                      steps     = 3,
                      lags      = lags
                  )
-    selector = RFE(estimator=forecaster.regressor, n_features_to_select=3)
+    selector = RFE(estimator=forecaster.estimator, n_features_to_select=3)
 
     selected_lags, selected_window_features, selected_exog = select_features_multiseries(
         selector    = selector,
@@ -401,12 +401,12 @@ def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterDire
     no window features are included.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor = LinearRegression(),
+                     estimator = LinearRegression(),
                      level     = 'l1',
                      steps     = 3,
                      lags      = 5
                  )
-    selector = RFE(estimator=forecaster.regressor, n_features_to_select=3)
+    selector = RFE(estimator=forecaster.estimator, n_features_to_select=3)
 
     selected_lags, selected_window_features, selected_exog = select_features_multiseries(
         selector    = selector,
@@ -433,13 +433,13 @@ def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterDire
                         window_sizes=[3, 5],
                     )
     forecaster = ForecasterDirectMultiVariate(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      level           = 'l1',
                      steps           = 3,
                      lags            = 5,
                      window_features = roll_features
                  )
-    selector = RFE(estimator=forecaster.regressor, n_features_to_select=3)
+    selector = RFE(estimator=forecaster.estimator, n_features_to_select=3)
 
     selected_lags, selected_window_features, selected_exog = select_features_multiseries(
         selector    = selector,

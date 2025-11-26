@@ -31,7 +31,7 @@ def test_predict_dist_TypeError_when_distribution_object_is_not_valid():
     probability distribution object from scipy.stats.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 3,
                      transformer_series = StandardScaler(),
                      transformer_exog   = transformer_exog,
@@ -63,12 +63,12 @@ def test_predict_dist_TypeError_when_distribution_object_is_not_valid():
                          ids=lambda lvl: f'level: {lvl}')
 def test_predict_dist_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_True_exog_and_transformer(level):
     """
-    Test output of predict_dist when regressor is LinearRegression,
+    Test output of predict_dist when estimator is LinearRegression,
     2 steps are predicted, using in-sample residuals, exog is included and both
     inputs are transformed. Single level.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 3,
                      transformer_series = StandardScaler(),
                      transformer_exog   = transformer_exog,
@@ -105,12 +105,12 @@ def test_predict_dist_output_when_forecaster_is_LinearRegression_steps_is_2_in_s
                          ids=lambda lvl: f'levels: {lvl}')
 def test_predict_dist_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_False_exog_and_transformer(levels):
     """
-    Test output of predict_dist when regressor is LinearRegression,
+    Test output of predict_dist when estimator is LinearRegression,
     2 steps are predicted, using out-sample residuals, exog is included and both
     inputs are transformed. Multiple levels.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 3,
                      transformer_series = StandardScaler(),
                      transformer_exog   = transformer_exog,

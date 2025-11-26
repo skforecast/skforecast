@@ -53,12 +53,12 @@ Docstring documentation must be included in every class and function. Skforecast
 ```python
 class ForecasterRecursive(ForecasterBase):
     """
-    This class turns any regressor compatible with the scikit-learn API into a recursive autoregressive (multi-step) forecaster.
+    This class turns any estimator compatible with the scikit-learn API into a recursive autoregressive (multi-step) forecaster.
     
     Parameters
     ----------
-    regressor : regressor or pipeline compatible with the scikit-learn API
-        An instance of a regressor or pipeline compatible with the scikit-learn API.
+    estimator : estimator or pipeline compatible with the scikit-learn API
+        An instance of a estimator or pipeline compatible with the scikit-learn API.
     lags : int, list, numpy ndarray, range, default None
         Lags used as predictors. Index starts at 1, so lag 1 is equal to t-1.
     
@@ -72,7 +72,7 @@ class ForecasterRecursive(ForecasterBase):
     transformer_exog : object transformer (preprocessor), default None
         An instance of a transformer (preprocessor) compatible with the scikit-learn preprocessing API. The transformation is applied to `exog` before training the forecaster. `inverse_transform` is not available when using ColumnTransformers.
     weight_func : Callable, default None
-        Function that defines the individual weights for each sample based on the index. For example, a function that assigns a lower weight to certain dates. Ignored if `regressor` does not have the argument `sample_weight` in its `fit` method. The resulting `sample_weight` cannot have negative values.
+        Function that defines the individual weights for each sample based on the index. For example, a function that assigns a lower weight to certain dates. Ignored if `estimator` does not have the argument `sample_weight` in its `fit` method. The resulting `sample_weight` cannot have negative values.
     differentiation : int, default None
         Order of differencing applied to the time series before training the forecaster.
         If `None`, no differencing is applied. The order of differentiation is the number
@@ -82,7 +82,7 @@ class ForecasterRecursive(ForecasterBase):
         **WARNING: This argument is newly introduced and requires special attention. It
         is still experimental and may undergo changes.**
     fit_kwargs : dict, default None
-        Additional arguments to be passed to the `fit` method of the regressor.
+        Additional arguments to be passed to the `fit` method of the estimator.
     binner_kwargs : dict, default None
         Additional arguments to pass to the `QuantileBinner` used to discretize 
         the residuals into k bins according to the predicted values associated 
@@ -95,8 +95,8 @@ class ForecasterRecursive(ForecasterBase):
     
     Attributes
     ----------
-    regressor : regressor or pipeline compatible with the scikit-learn API
-        An instance of a regressor or pipeline compatible with the scikit-learn API.
+    estimator : estimator or pipeline compatible with the scikit-learn API
+        An instance of a estimator or pipeline compatible with the scikit-learn API.
     lags : numpy ndarray
         Lags used as predictors.
     lags_names : list
@@ -128,7 +128,7 @@ class ForecasterRecursive(ForecasterBase):
     weight_func : Callable
         Function that defines the individual weights for each sample based on the
         index. For example, a function that assigns a lower weight to certain dates.
-        Ignored if `regressor` does not have the argument `sample_weight` in its `fit`
+        Ignored if `estimator` does not have the argument `sample_weight` in its `fit`
         method. The resulting `sample_weight` cannot have negative values.
     differentiation : int
         Order of differencing applied to the time series before training the forecaster.
@@ -198,7 +198,7 @@ class ForecasterRecursive(ForecasterBase):
     X_train_features_names_out_ : list
         Names of columns of the matrix created internally for training.
     fit_kwargs : dict
-        Additional arguments to be passed to the `fit` method of the regressor.
+        Additional arguments to be passed to the `fit` method of the estimator.
     in_sample_residuals_ : numpy ndarray
         Residuals of the model when predicting training data. Only stored up to
         10_000 values. If `transformer_y` is not `None`, residuals are stored in
@@ -226,7 +226,7 @@ class ForecasterRecursive(ForecasterBase):
     creation_date : str
         Date of creation.
     is_fitted : bool
-        Tag to identify if the regressor has been fitted (trained).
+        Tag to identify if the estimator has been fitted (trained).
     fit_date : str
         Date of last fit.
     skforecast_version : str

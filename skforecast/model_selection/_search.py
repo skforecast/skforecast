@@ -329,7 +329,7 @@ def _evaluate_grid_hyperparameters(
     """
 
     forecaster_search = deepcopy(forecaster)
-    is_regression = forecaster_search.__skforecast_tags__['estimator_task'] == 'regression'
+    is_regression = forecaster_search.__skforecast_tags__['forecaster_task'] == 'regression'
     cv_name = type(cv).__name__
     if cv_name not in ['TimeSeriesFold', 'OneStepAheadFold']:
         raise TypeError(
@@ -722,7 +722,7 @@ def _bayesian_search_optuna(
 
     forecaster_search = deepcopy(forecaster)
     forecaster_name = type(forecaster_search).__name__
-    is_regression = forecaster_search.__skforecast_tags__['estimator_task'] == 'regression'
+    is_regression = forecaster_search.__skforecast_tags__['forecaster_task'] == 'regression'
     cv_name = type(cv).__name__
 
     if cv_name not in ['TimeSeriesFold', 'OneStepAheadFold']:
@@ -909,12 +909,12 @@ def _bayesian_search_optuna(
     lags_list = []
     params_list = []
     for i, trial in enumerate(study.get_trials()):
-        regressor_params = {k: v for k, v in trial.params.items() if k != 'lags'}
+        estimator_params = {k: v for k, v in trial.params.items() if k != 'lags'}
         lags = trial.params.get(
             'lags',
             forecaster_search.lags if hasattr(forecaster_search, 'lags') else None
         )
-        params_list.append(regressor_params)
+        params_list.append(estimator_params)
         lags_list.append(lags)
         for m, m_values in zip(metric, metric_values[i]):
             m_name = m if isinstance(m, str) else m.__name__
@@ -2066,12 +2066,12 @@ def _bayesian_search_optuna_multiseries(
     lags_list = []
     params_list = []
     for trial in study.get_trials():
-        regressor_params = {k: v for k, v in trial.params.items() if k != 'lags'}
+        estimator_params = {k: v for k, v in trial.params.items() if k != 'lags'}
         lags = trial.params.get(
             'lags',
             forecaster_search.lags if hasattr(forecaster_search, 'lags') else None
         )
-        params_list.append(regressor_params)
+        params_list.append(estimator_params)
         lags_list.append(lags)
     
     if forecaster_name not in ['ForecasterDirectMultiVariate']:

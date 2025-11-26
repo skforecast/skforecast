@@ -26,7 +26,7 @@ def test_TypeError_initialize_weights_when_weight_func_is_not_a_Callable(forecas
     with pytest.raises(TypeError, match = err_msg):
         initialize_weights(
             forecaster_name = forecaster_name, 
-            regressor       = LinearRegression(), 
+            estimator       = LinearRegression(), 
             weight_func     = weight_func, 
             series_weights  = None
         )
@@ -43,7 +43,7 @@ def test_TypeError_initialize_weights_when_weight_func_is_not_a_Callable_or_dict
     with pytest.raises(TypeError, match = err_msg):
         initialize_weights(
             forecaster_name = 'ForecasterRecursiveMultiSeries', 
-            regressor       = LinearRegression(), 
+            estimator       = LinearRegression(), 
             weight_func     = weight_func, 
             series_weights  = None
         )
@@ -61,28 +61,28 @@ def test_TypeError_initialize_weights_when_series_weights_is_not_a_dict():
     with pytest.raises(TypeError, match = err_msg):
         initialize_weights(
             forecaster_name = 'ForecasterRecursiveMultiSeries', 
-            regressor       = LinearRegression(), 
+            estimator       = LinearRegression(), 
             weight_func     = None, 
             series_weights  = series_weights
         )
 
 
-def test_IgnoredArgumentWarning_initialize_weights_when_weight_func_is_provided_and_regressor_has_not_sample_weights():
+def test_IgnoredArgumentWarning_initialize_weights_when_weight_func_is_provided_and_estimator_has_not_sample_weights():
     """
-    Test IgnoredArgumentWarning is created when weight_func is provided but the regressor 
+    Test IgnoredArgumentWarning is created when weight_func is provided but the estimator 
     has no argument sample_weights in his fit method.
     """
     def weight_func():  # pragma: no cover
         pass
 
     warn_msg = re.escape(
-        ("Argument `weight_func` is ignored since regressor KNeighborsRegressor() "
+        ("Argument `weight_func` is ignored since estimator KNeighborsRegressor() "
          "does not accept `sample_weight` in its `fit` method.")
     )
     with pytest.warns(IgnoredArgumentWarning, match = warn_msg):
         weight_func, source_code_weight_func, _ = initialize_weights(
             forecaster_name = 'ForecasterRecursive', 
-            regressor       = KNeighborsRegressor(), 
+            estimator       = KNeighborsRegressor(), 
             weight_func     = weight_func, 
             series_weights  = None
         )
@@ -91,21 +91,21 @@ def test_IgnoredArgumentWarning_initialize_weights_when_weight_func_is_provided_
     assert source_code_weight_func is None
 
 
-def test_IgnoredArgumentWarning_initialize_weights_when_series_weights_is_provided_and_regressor_has_not_sample_weights():
+def test_IgnoredArgumentWarning_initialize_weights_when_series_weights_is_provided_and_estimator_has_not_sample_weights():
     """
-    Test IgnoredArgumentWarning is created when series_weights is provided but the regressor 
+    Test IgnoredArgumentWarning is created when series_weights is provided but the estimator 
     has no argument sample_weights in his fit method.
     """
     series_weights = {'series_1': 1., 'series_2': 2.}
 
     warn_msg = re.escape(
-                ("Argument `series_weights` is ignored since regressor KNeighborsRegressor() "
+                ("Argument `series_weights` is ignored since estimator KNeighborsRegressor() "
                  "does not accept `sample_weight` in its `fit` method.")
             )
     with pytest.warns(IgnoredArgumentWarning, match = warn_msg):
         weight_func, source_code_weight_func, series_weights = initialize_weights(
             forecaster_name = 'ForecasterRecursiveMultiSeries', 
-            regressor       = KNeighborsRegressor(), 
+            estimator       = KNeighborsRegressor(), 
             weight_func     = None, 
             series_weights  = series_weights
         )
@@ -113,20 +113,20 @@ def test_IgnoredArgumentWarning_initialize_weights_when_series_weights_is_provid
     assert series_weights is None
 
 
-@pytest.mark.parametrize("regressor", 
+@pytest.mark.parametrize("estimator", 
                          [LinearRegression(), RandomForestRegressor()], 
-                         ids=lambda regressor: f'{type(regressor).__name__}')
-def test_initialize_weights_finds_sample_weight_in_different_regressors_when_weight_func(recwarn, regressor):
+                         ids=lambda estimator: f'{type(estimator).__name__}')
+def test_initialize_weights_finds_sample_weight_in_different_estimators_when_weight_func(recwarn, estimator):
     """
     Test initialize weights finds `sample_weight` attribute in different
-    regressors when `weight_func`.
+    estimators when `weight_func`.
     """
     def weight_func():  # pragma: no cover
         pass
 
     weight_func, source_code_weight_func, _ = initialize_weights(
         forecaster_name = 'ForecasterRecursive', 
-        regressor       = regressor, 
+        estimator       = estimator, 
         weight_func     = weight_func, 
         series_weights  = None
     )
@@ -135,19 +135,19 @@ def test_initialize_weights_finds_sample_weight_in_different_regressors_when_wei
     assert len(recwarn) == 0
 
 
-@pytest.mark.parametrize("regressor", 
+@pytest.mark.parametrize("estimator", 
                          [LinearRegression(), RandomForestRegressor()], 
-                         ids=lambda regressor: f'{type(regressor).__name__}')
-def test_initialize_weights_finds_sample_weight_in_different_regressors_when_series_weights(recwarn, regressor):
+                         ids=lambda estimator: f'{type(estimator).__name__}')
+def test_initialize_weights_finds_sample_weight_in_different_estimators_when_series_weights(recwarn, estimator):
     """
     Test initialize weights finds `sample_weight` attribute in different
-    regressors when `series_weights`.
+    estimators when `series_weights`.
     """
     series_weights = {'series_1': 1., 'series_2': 2.}
 
     weight_func, source_code_weight_func, series_weights = initialize_weights(
         forecaster_name = 'ForecasterRecursiveMultiSeries', 
-        regressor       = regressor, 
+        estimator       = estimator, 
         weight_func     = None, 
         series_weights  = series_weights
     )
@@ -169,7 +169,7 @@ def test_output_initialize_weights_source_code_weight_func_when_weight_func_not_
 
     weight_func, source_code_weight_func, series_weights = initialize_weights(
         forecaster_name = 'ForecasterRecursiveMultiSeries', 
-        regressor       = LinearRegression(), 
+        estimator       = LinearRegression(), 
         weight_func     = test_weight_func, 
         series_weights  = None
     )
@@ -198,7 +198,7 @@ def test_output_initialize_weights_source_code_weight_func_when_weight_func_dict
 
     weight_func, source_code_weight_func, series_weights = initialize_weights(
         forecaster_name = 'ForecasterRecursiveMultiSeries', 
-        regressor       = LinearRegression(), 
+        estimator       = LinearRegression(), 
         weight_func     = weight_func, 
         series_weights  = None
     )

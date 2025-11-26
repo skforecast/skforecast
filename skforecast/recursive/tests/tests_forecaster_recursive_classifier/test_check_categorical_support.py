@@ -16,12 +16,12 @@ def test_check_categorical_support_LogisticRegression(estimator):
     Test _check_categorical_support method with LogisticRegression.
     """
     forecaster = ForecasterRecursiveClassifier(
-        regressor         = estimator,
+        estimator         = estimator,
         lags              = 3,
         features_encoding = 'auto'
     )
 
-    results = forecaster._check_categorical_support(estimator=forecaster.regressor)
+    results = forecaster._check_categorical_support(estimator=forecaster.estimator)
     assert results is False
 
 
@@ -34,10 +34,10 @@ def test_check_categorical_support_LGBMClassifier(estimator):
     Test _check_categorical_support method with LGBMClassifier.
     """
     forecaster = ForecasterRecursiveClassifier(
-        regressor         = estimator,
+        estimator         = estimator,
         lags              = 3,
         features_encoding = 'auto'
     )
 
-    results = forecaster._check_categorical_support(estimator=forecaster.regressor)
+    results = forecaster._check_categorical_support(estimator=forecaster.estimator)
     assert results is True

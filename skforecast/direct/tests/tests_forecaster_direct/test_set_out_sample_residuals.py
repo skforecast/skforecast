@@ -151,7 +151,7 @@ def test_set_out_sample_residuals_when_residuals_length_is_greater_than_10000():
     )
 
     y_true = y_train_step_1
-    y_pred = forecaster.regressors_[1].predict(X_train_step_1)
+    y_pred = forecaster.estimators_[1].predict(X_train_step_1)
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
 
     assert len(forecaster.out_sample_residuals_) == 10_000
@@ -165,7 +165,7 @@ def test_out_sample_residuals_by_bin_and_in_sample_residuals_by_bin_equivalence(
     when training data and training predictions are passed.
     """
     forecaster = ForecasterDirect(
-                    regressor     = LinearRegression(),
+                    estimator     = LinearRegression(),
                     steps         = 3,
                     lags          = 5,
                     binner_kwargs = {'n_bins': 3}
@@ -177,7 +177,7 @@ def test_out_sample_residuals_by_bin_and_in_sample_residuals_by_bin_equivalence(
             step=step, X_train=X_train, y_train=y_train
         )
         y_true = y_train_step
-        y_pred = forecaster.regressors_[step].predict(X_train_step)
+        y_pred = forecaster.estimators_[step].predict(X_train_step)
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred, append=True)
 
     assert (set(forecaster.out_sample_residuals_) == set(forecaster.in_sample_residuals_))
@@ -210,7 +210,7 @@ def test_set_out_sample_residuals_append_new_residuals_per_bin():
     )
 
     y_true = y_train_step_1
-    y_pred = forecaster.regressors_[1].predict(X_train_step_1)
+    y_pred = forecaster.estimators_[1].predict(X_train_step_1)
     for i in range(1, 20):
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred, append=True)
         for v in forecaster.out_sample_residuals_by_bin_.values():
@@ -228,7 +228,7 @@ def test_set_out_sample_residuals_when_there_are_no_residuals_for_some_bins():
         )
 
     forecaster = ForecasterDirect(
-        regressor=LinearRegression(), steps=1, lags=5, binner_kwargs={"n_bins": 3}
+        estimator=LinearRegression(), steps=1, lags=5, binner_kwargs={"n_bins": 3}
     )
     forecaster.fit(y)
     y_pred = y.loc[y > 10]
@@ -257,7 +257,7 @@ def test_forecaster_set_out_sample_residuals_when_transformer_y_and_differentiat
     y_true  = rng.normal(loc=0, scale=1, size=5)
     y_pred = rng.normal(loc=0, scale=1, size=5)
     forecaster = ForecasterDirect(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      steps           = 2, 
                      lags            = 5,
                      transformer_y   = StandardScaler(),

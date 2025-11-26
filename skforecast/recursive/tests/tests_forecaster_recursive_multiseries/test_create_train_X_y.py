@@ -1097,7 +1097,7 @@ def test_create_train_X_y_output_when_series_10_and_transformer_series_is_Standa
         'l2': pd.Series(np.arange(10, dtype=float))
     }
     forecaster = ForecasterRecursiveMultiSeries(
-                    regressor          = LinearRegression(),
+                    estimator          = LinearRegression(),
                     lags               = 5,
                     encoding           = 'onehot',
                     transformer_series = StandardScaler()
@@ -1177,7 +1177,7 @@ def test_create_train_X_y_output_when_exog_is_None_and_transformer_exog_is_not_N
         '2': pd.Series(np.arange(7, dtype=float))
     }
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 3,
                      encoding           = 'onehot',
                      transformer_series = None,
@@ -1263,7 +1263,7 @@ def test_create_train_X_y_output_when_transformer_series_and_transformer_exog(tr
                        )
 
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 3,
                      encoding           = 'onehot',
                      transformer_series = transformer_series,
@@ -1492,7 +1492,7 @@ def test_create_train_X_y_output_when_transformer_series_and_transformer_exog_wi
                        )
 
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 3,
                      encoding           = 'onehot',
                      transformer_series = transformer_series,
@@ -1977,7 +1977,7 @@ def test_create_train_X_y_output_series_DataFrame_and_NaNs_in_X_train_drop_nan_F
     )
     
     warn_msg = re.escape(
-        "NaNs detected in `X_train`. Some regressors do not allow "
+        "NaNs detected in `X_train`. Some estimators do not allow "
         "NaN values during training. If you want to drop them, "
         "set `forecaster.dropna_from_series = True`."
     )
@@ -2070,7 +2070,7 @@ def test_create_train_X_y_output_series_DataFrame_and_NaNs_in_X_train_drop_nan_F
     )
     
     warn_msg = re.escape(
-        "NaNs detected in `X_train`. Some regressors do not allow "
+        "NaNs detected in `X_train`. Some estimators do not allow "
         "NaN values during training. If you want to drop them, "
         "set `forecaster.dropna_from_series = True`."
     )

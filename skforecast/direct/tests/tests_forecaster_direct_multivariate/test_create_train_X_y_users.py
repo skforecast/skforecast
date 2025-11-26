@@ -12,7 +12,7 @@ from sklearn.linear_model import LinearRegression
                           ('l2', [-0.52223297, -0.17407766,  0.17407766,  0.52223297,  0.87038828, 1.21854359,  1.5666989 ])])
 def test_create_train_X_y_output_when_lags_3_steps_1_and_exog_is_None(level, expected_y_values):
     """
-    Test output of _create_train_X_y when regressor is LinearRegression, 
+    Test output of _create_train_X_y when estimator is LinearRegression, 
     lags is 3 and steps is 1.
     """
     series = pd.DataFrame({'l1': pd.Series(np.arange(10), dtype=float), 

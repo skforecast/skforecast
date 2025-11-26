@@ -119,7 +119,7 @@ def test_create_train_X_y_IgnoredArgumentWarning_when_levels_of_transformer_seri
                          'l3': StandardScaler()}
     
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = LinearRegression(), 
+                     estimator          = LinearRegression(), 
                      level              = 'l1',
                      lags               = 3,
                      steps              = 3,
@@ -302,7 +302,7 @@ def test_create_train_X_y_ValueError_when_series_and_exog_have_different_index_a
                           ('l2', [-0.52223297, -0.17407766,  0.17407766,  0.52223297,  0.87038828, 1.21854359,  1.5666989 ])])
 def test_create_train_X_y_output_when_lags_3_steps_1_and_exog_is_None(level, expected_y_values):
     """
-    Test output of _create_train_X_y when regressor is LinearRegression, 
+    Test output of _create_train_X_y when estimator is LinearRegression, 
     lags is 3 and steps is 1.
     """
     series = pd.DataFrame({'l1': pd.Series(np.arange(10), dtype=float), 
@@ -368,7 +368,7 @@ def test_create_train_X_y_output_when_lags_3_steps_1_and_exog_is_None(level, exp
                                   [104., 105., 106., 107., 108., 109.]))])
 def test_create_train_X_y_output_when_interspersed_lags_steps_2_and_exog_None(level, expected_y_values):
     """
-    Test output of _create_train_X_y when regressor is LinearRegression, 
+    Test output of _create_train_X_y when estimator is LinearRegression, 
     interspersed lags and steps is 2.
     """
     series = pd.DataFrame({'l1': pd.Series(np.arange(10), dtype=float), 
@@ -437,7 +437,7 @@ def test_create_train_X_y_output_when_interspersed_lags_steps_2_and_exog_None(le
                                   [106., 107., 108., 109.]))])
 def test_create_train_X_y_output_when_lags_dict_steps_2_and_exog_None(level, expected_y_values):
     """
-    Test output of _create_train_X_y when regressor is LinearRegression, 
+    Test output of _create_train_X_y when estimator is LinearRegression, 
     different lags and steps is 2.
     """
     series = pd.DataFrame({'l1': pd.Series(np.arange(10, dtype=float)), 
@@ -505,7 +505,7 @@ def test_create_train_X_y_output_when_lags_dict_steps_2_and_exog_None(level, exp
                                   [104., 105., 106., 107., 108., 109.]))])
 def test_create_train_X_y_output_when_lags_dict_with_None_steps_2_and_exog_None(level, expected_y_values):
     """
-    Test output of _create_train_X_y when regressor is LinearRegression, 
+    Test output of _create_train_X_y when estimator is LinearRegression, 
     lags is a dict with None and steps is 2.
     """
     series = pd.DataFrame({'l1': pd.Series(np.arange(10, dtype=float)), 
@@ -572,7 +572,7 @@ def test_create_train_X_y_output_when_lags_dict_with_None_steps_2_and_exog_None(
                          ids = lambda dt: f'dtype: {dt}')
 def test_create_train_X_y_output_when_lags_5_steps_1_and_exog_series_of_float_int(dtype):
     """
-    Test output of _create_train_X_y when regressor is LinearRegression, 
+    Test output of _create_train_X_y when estimator is LinearRegression, 
     lags is 5, steps is 1 and exog is pandas Series of floats or ints.
     """
     series = pd.DataFrame({'l1': pd.Series(np.arange(10), dtype=float), 
@@ -639,7 +639,7 @@ def test_create_train_X_y_output_when_lags_5_steps_1_and_exog_series_of_float_in
                          ids = lambda dt: f'dtype: {dt}')
 def test_create_train_X_y_output_when_lags_5_steps_2_and_exog_series_of_float_int(dtype):
     """
-    Test output of _create_train_X_y when regressor is LinearRegression, 
+    Test output of _create_train_X_y when estimator is LinearRegression, 
     lags is 5, steps is 2 and exog is pandas Series of floats or ints.
     """
     series = pd.DataFrame({'l1': pd.Series(np.arange(10), dtype=float), 
@@ -713,7 +713,7 @@ def test_create_train_X_y_output_when_lags_5_steps_2_and_exog_series_of_float_in
                          ids = lambda dt: f'dtype: {dt}')
 def test_create_train_X_y_when_steps_1_and_exog_series_float_int_no_window_size(datetime_index, dtype):
     """
-    Test output of _create_train_X_y when regressor is LinearRegression, 
+    Test output of _create_train_X_y when estimator is LinearRegression, 
     lags is 5, steps is 1 and exog is pandas Series of floats or ints and 
     no initial window_size observations.
     """
@@ -794,7 +794,7 @@ def test_create_train_X_y_when_steps_1_and_exog_series_float_int_no_window_size(
                          ids = lambda dt: f'dtype: {dt}')
 def test_create_train_X_y_when_steps_2_and_exog_series_float_int_no_window_size(datetime_index, dtype):
     """
-    Test output of _create_train_X_y when regressor is LinearRegression, 
+    Test output of _create_train_X_y when estimator is LinearRegression, 
     lags is 5, steps is 2 and exog is pandas Series of floats or ints and no 
     initial window_size observations.
     """
@@ -878,7 +878,7 @@ def test_create_train_X_y_when_steps_2_and_exog_series_float_int_no_window_size(
                          ids = lambda dt: f'dtype: {dt}')
 def test_create_train_X_y_output_when_steps_1_and_exog_is_df_of_float_int(dtype):
     """
-    Test output of _create_train_X_y when regressor is LinearRegression, 
+    Test output of _create_train_X_y when estimator is LinearRegression, 
     lags is 5, steps is 1 and exog is pandas DataFrame of floats or ints.
     """
     series = pd.DataFrame({'l1': pd.Series(np.arange(10), dtype=float), 
@@ -946,7 +946,7 @@ def test_create_train_X_y_output_when_steps_1_and_exog_is_df_of_float_int(dtype)
                          ids = lambda dt: f'dtype: {dt}')
 def test_create_train_X_y_output_when_steps_3_and_exog_is_df_of_float_int(dtype):
     """
-    Test output of _create_train_X_y when regressor is LinearRegression, 
+    Test output of _create_train_X_y when estimator is LinearRegression, 
     lags is 5, steps is 3 and exog is pandas DataFrame of floats or ints.
     """
     series = pd.DataFrame({'l1': pd.Series(np.arange(10), dtype=float), 
@@ -1033,7 +1033,7 @@ def test_create_train_X_y_output_when_steps_3_and_exog_is_df_of_float_int(dtype)
                          ids = lambda dt: f'values, dtype: {dt}')
 def test_create_train_X_y_output_when_steps_1_and_exog_series_of_bool_str(exog_values, dtype):
     """
-    Test output of _create_train_X_y when regressor is LinearRegression, 
+    Test output of _create_train_X_y when estimator is LinearRegression, 
     lags is 5, steps is 1 and exog is pandas Series of bool or str.
     """
     series = pd.DataFrame({'l1': pd.Series(np.arange(10), dtype=float), 
@@ -1100,7 +1100,7 @@ def test_create_train_X_y_output_when_steps_1_and_exog_series_of_bool_str(exog_v
                          ids = lambda dt: f'values, dtype: {dt}')
 def test_create_train_X_y_output_when_steps_2_and_exog_series_of_bool_str(exog_values, dtype):
     """
-    Test output of _create_train_X_y when regressor is LinearRegression, 
+    Test output of _create_train_X_y when estimator is LinearRegression, 
     lags is 5, steps is 2 and exog is pandas Series of bool or str.
     """
     series = pd.DataFrame({'l1': pd.Series(np.arange(10), dtype=float), 
@@ -1173,7 +1173,7 @@ def test_create_train_X_y_output_when_steps_2_and_exog_series_of_bool_str(exog_v
                          ids = lambda dt: f'values, dtype: {dt}')
 def test_create_train_X_y_output_when_steps_1_and_exog_is_df_of_bool_str(v_exog_1, v_exog_2, dtype):
     """
-    Test output of _create_train_X_y when regressor is LinearRegression, 
+    Test output of _create_train_X_y when estimator is LinearRegression, 
     lags is 5, steps is 1 and exog is pandas DataFrame of bool or str.
     """
     series = pd.DataFrame({'l1': pd.Series(np.arange(10), dtype=float), 
@@ -1243,7 +1243,7 @@ def test_create_train_X_y_output_when_steps_1_and_exog_is_df_of_bool_str(v_exog_
                          ids = lambda dt: f'values, dtype: {dt}')
 def test_create_train_X_y_output_when_steps_3_and_exog_is_df_of_bool_str(v_exog_1, v_exog_2, dtype):
     """
-    Test output of _create_train_X_y when regressor is LinearRegression, 
+    Test output of _create_train_X_y when estimator is LinearRegression, 
     lags is 5, steps is 3 and exog is pandas DataFrame of bool or str.
     """
     series = pd.DataFrame({'l1': pd.Series(np.arange(10), dtype=float), 
@@ -1330,7 +1330,7 @@ def test_create_train_X_y_output_when_steps_3_and_exog_is_df_of_bool_str(v_exog_
 
 def test_create_train_X_y_output_when_lags_5_steps_1_and_exog_is_series_of_category():
     """
-    Test output of _create_train_X_y when regressor is LinearRegression, 
+    Test output of _create_train_X_y when estimator is LinearRegression, 
     lags is 5, steps is 1 and exog is pandas Series of category.
     """
     series = pd.DataFrame({'l1': pd.Series(np.arange(10), dtype=float), 
@@ -1393,7 +1393,7 @@ def test_create_train_X_y_output_when_lags_5_steps_1_and_exog_is_series_of_categ
 
 def test_create_train_X_y_output_when_lags_5_steps_2_and_exog_is_series_of_category():
     """
-    Test output of _create_train_X_y when regressor is LinearRegression, 
+    Test output of _create_train_X_y when estimator is LinearRegression, 
     lags is 5, steps is 2 and exog is pandas Series of category.
     """
     series = pd.DataFrame({'l1': pd.Series(np.arange(10), dtype=float), 
@@ -1461,7 +1461,7 @@ def test_create_train_X_y_output_when_lags_5_steps_2_and_exog_is_series_of_categ
 
 def test_create_train_X_y_output_when_lags_5_steps_1_and_exog_is_dataframe_of_category():
     """
-    Test output of _create_train_X_y when regressor is LinearRegression, 
+    Test output of _create_train_X_y when estimator is LinearRegression, 
     lags is 5, steps is 1 and exog is pandas DataFrame of category.
     """
     series = pd.DataFrame({'l1': pd.Series(np.arange(10), dtype=float), 
@@ -1528,7 +1528,7 @@ def test_create_train_X_y_output_when_lags_5_steps_1_and_exog_is_dataframe_of_ca
 
 def test_create_train_X_y_output_when_lags_5_steps_3_and_exog_is_dataframe_of_category():
     """
-    Test output of _create_train_X_y when regressor is LinearRegression, 
+    Test output of _create_train_X_y when estimator is LinearRegression, 
     lags is 5, steps is 3 and exog is pandas DataFrame of category.
     """
     series = pd.DataFrame({'l1': pd.Series(np.arange(10), dtype=float), 
@@ -1613,7 +1613,7 @@ def test_create_train_X_y_output_when_lags_5_steps_3_and_exog_is_dataframe_of_ca
 
 def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_dataframe_of_float_int_category_steps_1():
     """
-    Test output of _create_train_X_y when regressor is LinearRegression, 
+    Test output of _create_train_X_y when estimator is LinearRegression, 
     lags is 5, steps is 1 and exog is pandas DataFrame of float, int and category.
     """
     series = pd.DataFrame({'l1': pd.Series(np.arange(10), dtype=float), 
@@ -1681,7 +1681,7 @@ def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_dataframe_of_fl
 
 def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_dataframe_of_float_int_category_steps_3():
     """
-    Test output of _create_train_X_y when regressor is LinearRegression, 
+    Test output of _create_train_X_y when estimator is LinearRegression, 
     lags is 5, steps is 3 and exog is pandas DataFrame of float, int and category.
     """
     series = pd.DataFrame({'l1': pd.Series(np.arange(10), dtype=float), 
@@ -1779,7 +1779,7 @@ def test_create_train_X_y_output_when_steps_1_and_transformer_series(transformer
                            'l2': pd.Series(np.arange(50, 60), dtype=float)})
     
     forecaster = ForecasterDirectMultiVariate(
-                    regressor          = LinearRegression(),
+                    estimator          = LinearRegression(),
                     lags               = 5,
                     level              = 'l1',
                     steps              = 1,
@@ -1844,7 +1844,7 @@ def test_create_train_X_y_output_when_steps_1_and_transformer_series(transformer
                           ('l2', [103., 104., 105., 106., 107., 108., 109.])])
 def test_create_train_X_y_when_exog_None_and_transformer_exog_is_not_None(level, expected_y_values):
     """
-    Test output of _create_train_X_y when regressor is LinearRegression, 
+    Test output of _create_train_X_y when estimator is LinearRegression, 
     lags is 3 and steps is 1 and transformer_exog is not None.
     """
     series = pd.DataFrame({'l1': pd.Series(np.arange(10), dtype=float), 
@@ -1928,7 +1928,7 @@ def test_create_train_X_y_when_transformer_series_and_transformer_exog(transform
                        )
 
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 5,
                      level              = 'l1',
                      steps              = 2,

@@ -27,7 +27,8 @@ from ..utils import (
     transform_series,
     transform_numpy,
     transform_dataframe,
-    get_style_repr_html
+    get_style_repr_html,
+    initialize_estimator
 )
 
 
@@ -39,7 +40,7 @@ class ForecasterStats():
     
     Parameters
     ----------
-    regressor : object
+    estimator : object
         A statistical model instance. Supported models are:
         
         - skforecast.stats.Sarimax
@@ -56,15 +57,17 @@ class ForecasterStats():
         preprocessing API. The transformation is applied to `exog` before training the
         forecaster. `inverse_transform` is not available when using ColumnTransformers.
     fit_kwargs : dict, default None
-        Additional arguments to be passed to the `fit` method of the regressor. 
+        Additional arguments to be passed to the `fit` method of the estimator. 
         When using the skforecast Sarimax model, the fit kwargs should be passed 
         using the model parameter `sm_fit_kwargs` and not this one.
     forecaster_id : str, int, default None
         Name used as an identifier of the forecaster.
+    regressor : estimator or pipeline compatible with the Keras API
+        **Deprecated**, alias for `estimator`.
     
     Attributes
     ----------
-    regressor : object
+    estimator : object
         A statistical model instance.
     params: dict
         Parameters of the sarimax model.
@@ -112,15 +115,15 @@ class ForecasterStats():
         internally for training. It can be different from `exog_names_in_` if
         some exogenous variables are transformed during the training process.
     fit_kwargs : dict
-        Additional arguments to be passed to the `fit` method of the regressor.
+        Additional arguments to be passed to the `fit` method of the estimator.
     creation_date : str
         Date of creation.
     is_fitted : bool
-        Tag to identify if the regressor has been fitted (trained).
+        Tag to identify if the estimator has been fitted (trained).
     fit_date : str
         Date of last fit.
-    valid_regressor_types : list
-        List of valid regressor types.
+    valid_estimator_types : list
+        List of valid estimator types.
     skforecast_version : str
         Version of skforecast library used to create the forecaster.
     python_version : str
@@ -134,15 +137,16 @@ class ForecasterStats():
     
     def __init__(
         self,
-        regressor: object,
+        estimator: object = None,
         transformer_y: object | None = None,
         transformer_exog: object | None = None,
         fit_kwargs: dict[str, object] | None = None,
-        forecaster_id: str | int | None = None
+        forecaster_id: str | int | None = None,
+        regressor: object = None
     ) -> None:
         
-        self.regressor               = copy(regressor)
-        self.regressor_type          = None
+        self.estimator               = copy(initialize_estimator(estimator, regressor))
+        self.estimator_type          = None
         self.transformer_y           = transformer_y
         self.transformer_exog        = transformer_exog
         self.window_size             = 1
@@ -164,25 +168,25 @@ class ForecasterStats():
         self.skforecast_version      = __version__
         self.python_version          = sys.version.split(" ")[0]
         self.forecaster_id           = forecaster_id
-        self.valid_regressor_types   = [
+        self.valid_estimator_types   = [
             'skforecast.stats._sarimax.Sarimax',
             'skforecast.stats._arar.Arar',
             'aeon.forecasting.stats._arima.ARIMA',
             'aeon.forecasting.stats._ets.ETS'
         ]
-        self.regressors_support_exog  = [
+        self.estimators_support_exog  = [
             'skforecast.stats._sarimax.Sarimax',
         ]
 
-        regressor_type = f"{type(regressor).__module__}.{type(regressor).__name__}"
-        if regressor_type not in self.valid_regressor_types:
+        estimator_type = f"{type(estimator).__module__}.{type(estimator).__name__}"
+        if estimator_type not in self.valid_estimator_types:
             raise TypeError(
-                f"`regressor` must be an instance of type {self.valid_regressor_types}. "
-                f"Got '{type(regressor)}'."
+                f"`estimator` must be an instance of type {self.valid_estimator_types}. "
+                f"Got '{type(estimator)}'."
             )
-        self.regressor_type = regressor_type
+        self.estimator_type = estimator_type
 
-        self.params = self.regressor.get_params(deep=True)
+        self.params = self.estimator.get_params(deep=True)
 
         if fit_kwargs:
             warnings.warn(
@@ -194,9 +198,8 @@ class ForecasterStats():
 
         self.__skforecast_tags__ = {
             "library": "skforecast",
-            "estimator_type": "forecaster",
-            "estimator_name": "ForecasterStats",
-            "estimator_task": "regression",
+            "forecaster_name": "ForecasterStats",
+            "forecaster_task": "regression",
             "forecasting_scope": "single-series",  # single-series | global
             "forecasting_strategy": "recursive",   # recursive | direct | deep_learning
             "index_types_supported": ["pandas.RangeIndex", "pandas.DatetimeIndex"],
@@ -220,6 +223,15 @@ class ForecasterStats():
             "probabilistic_methods": ["distribution"],
             "handles_binned_residuals": False
         }
+
+    @property
+    def regressor(self):
+        warnings.warn(
+            "The `regressor` attribute is deprecated and will be removed in future "
+            "versions. Use `estimator` instead.",
+            FutureWarning
+        )
+        return self.estimator
     
     def _preprocess_repr(self) -> tuple[str, str]:
         """
@@ -263,7 +275,7 @@ class ForecasterStats():
             f"{'=' * len(type(self).__name__)} \n"
             f"{type(self).__name__} \n"
             f"{'=' * len(type(self).__name__)} \n"
-            f"Regressor: {self.regressor} \n"
+            f"Estimator: {self.estimator} \n"
             f"Series name: {self.series_name_in_} \n"
             f"Exogenous included: {self.exog_in_} \n"
             f"Exogenous names: {exog_names_in_} \n"
@@ -272,7 +284,7 @@ class ForecasterStats():
             f"Training range: {self.training_range_.to_list() if self.is_fitted else None} \n"
             f"Training index type: {str(self.index_type_).split('.')[-1][:-2] if self.is_fitted else None} \n"
             f"Training index frequency: {self.index_freq_ if self.is_fitted else None} \n"
-            f"Regressor parameters: {params} \n"
+            f"Estimator parameters: {params} \n"
             f"fit_kwargs: {self.fit_kwargs} \n"
             f"Creation date: {self.creation_date} \n"
             f"Last fit date: {self.fit_date} \n"
@@ -301,7 +313,7 @@ class ForecasterStats():
             <details open>
                 <summary>General Information</summary>
                 <ul>
-                    <li><strong>Regressor:</strong> {type(self.regressor).__name__}</li>
+                    <li><strong>Estimator:</strong> {type(self.estimator).__name__}</li>
                     <li><strong>Window size:</strong> {self.window_size}</li>
                     <li><strong>Series name:</strong> {self.series_name_in_}</li>
                     <li><strong>Exogenous included:</strong> {self.exog_in_}</li>
@@ -334,7 +346,7 @@ class ForecasterStats():
                 </ul>
             </details>
             <details>
-                <summary>Regressor Parameters</summary>
+                <summary>Estimator Parameters</summary>
                 <ul>
                     {params}
                 </ul>
@@ -365,7 +377,7 @@ class ForecasterStats():
         """
         Training Forecaster.
 
-        Additional arguments to be passed to the `fit` method of the regressor 
+        Additional arguments to be passed to the `fit` method of the estimator 
         can be added with the `fit_kwargs` argument when initializing the forecaster.
         
         Parameters
@@ -389,9 +401,9 @@ class ForecasterStats():
 
         check_y(y=y)
         if exog is not None:
-            if self.regressor_type not in self.regressors_support_exog:
+            if self.estimator_type not in self.estimators_support_exog:
                 warnings.warn(
-                    f"The regressor {self.regressor_type} does not support exogenous variables, "
+                    f"The estimator {self.estimator_type} does not support exogenous variables, "
                     f"they will be ignored during fit.",
                     IgnoredArgumentWarning
                 )
@@ -451,9 +463,9 @@ class ForecasterStats():
         if suppress_warnings:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                self.regressor.fit(y=y, exog=exog)
+                self.estimator.fit(y=y, exog=exog)
         else:
-            self.regressor.fit(y=y, exog=exog)
+            self.estimator.fit(y=y, exog=exog)
 
         self.is_fitted = True
         self.series_name_in_ = y.name if y.name is not None else 'y'
@@ -468,11 +480,11 @@ class ForecasterStats():
         if store_last_window:
             self.last_window_ = y.copy()
 
-        if self.regressor_type == 'skforecast.stats._sarimax.Sarimax':
-            self.extended_index_ = self.regressor.sarimax_res.fittedvalues.index.copy()
+        if self.estimator_type == 'skforecast.stats._sarimax.Sarimax':
+            self.extended_index_ = self.estimator.sarimax_res.fittedvalues.index.copy()
         else:
             self.extended_index_ = y.index
-        self.params = self.regressor.get_params(deep=True)
+        self.params = self.estimator.get_params(deep=True)
 
     def _create_predict_inputs(
         self,
@@ -666,22 +678,22 @@ class ForecasterStats():
                                               )
         
         if last_window is not None:
-            if self.regressor_type == 'skforecast.stats._sarimax.Sarimax':
-                self.regressor.append(
+            if self.estimator_type == 'skforecast.stats._sarimax.Sarimax':
+                self.estimator.append(
                     y     = last_window,
                     exog  = last_window_exog,
                     refit = False
                 )
-                self.extended_index_ = self.regressor.sarimax_res.fittedvalues.index
+                self.extended_index_ = self.estimator.sarimax_res.fittedvalues.index
             else:
                 raise ValueError(
-                    "`last_window` is only supported for the skforecast.Sarimax regressor (statsmodels)."
+                    "`last_window` is only supported for the skforecast.Sarimax estimator (statsmodels)."
                     "For other models, predictions must follow directly after the end of the "
                     "training data."
                 )
 
-        if self.regressor_type == 'skforecast.stats._sarimax.Sarimax':
-            predictions = self.regressor.predict(
+        if self.estimator_type == 'skforecast.stats._sarimax.Sarimax':
+            predictions = self.estimator.predict(
                               steps = steps,
                               exog  = exog
                           ).iloc[:, 0]
@@ -692,8 +704,8 @@ class ForecasterStats():
                           inverse_transform = True
                       )
             predictions.name = 'pred'
-        elif self.regressor_type == 'skforecast.stats._arar.Arar':
-            predictions = self.regressor.predict(
+        elif self.estimator_type == 'skforecast.stats._arar.Arar':
+            predictions = self.estimator.predict(
                               steps = steps,
                               exog  = exog
                           )
@@ -705,8 +717,8 @@ class ForecasterStats():
                       )
             predictions_index = expand_index(index=self.extended_index_, steps=steps)
             predictions = pd.Series(predictions, index=predictions_index, name='pred')
-        elif self.regressor_type in ['aeon.forecasting.stats._arima.ARIMA', 'aeon.forecasting.stats._ets.ETS']:
-            predictions = self.regressor.iterative_forecast(
+        elif self.estimator_type in ['aeon.forecasting.stats._arima.ARIMA', 'aeon.forecasting.stats._ets.ETS']:
+            predictions = self.estimator.iterative_forecast(
                               y                  = self.last_window_.to_numpy(),
                               prediction_horizon = steps,
 
@@ -799,23 +811,23 @@ class ForecasterStats():
                                               )
 
         if last_window is not None:
-            self.regressor.append(
+            self.estimator.append(
                 y     = last_window,
                 exog  = last_window_exog,
                 refit = False
             )
-            self.extended_index_ = self.regressor.sarimax_res.fittedvalues.index
+            self.extended_index_ = self.estimator.sarimax_res.fittedvalues.index
 
         # Get following n steps predictions with intervals
-        if self.regressor_type == 'skforecast.stats._sarimax.Sarimax':
-            predictions = self.regressor.predict(
+        if self.estimator_type == 'skforecast.stats._sarimax.Sarimax':
+            predictions = self.estimator.predict(
                             steps           = steps,
                             exog            = exog,
                             return_conf_int = True,
                             alpha           = alpha
                         )
-        elif self.regressor_type == 'skforecast.stats._arar.Arar':
-            predictions = self.regressor.predict_interval(
+        elif self.estimator_type == 'skforecast.stats._arar.Arar':
+            predictions = self.estimator.predict_interval(
                             steps           = steps,
                             exog            = exog,
                             level           = [100 * (1 - alpha)],
@@ -824,7 +836,7 @@ class ForecasterStats():
             predictions_index = expand_index(index=self.extended_index_, steps=steps)
             predictions.index = predictions_index
             predictions.columns = ['pred', 'lower_bound', 'upper_bound']
-        elif self.regressor_type in ['aeon.forecasting.stats._arima.ARIMA', 'aeon.forecasting.stats._ets.ETS']:
+        elif self.estimator_type in ['aeon.forecasting.stats._arima.ARIMA', 'aeon.forecasting.stats._ets.ETS']:
             raise NotImplementedError(
                 "Prediction intervals is not implemented for AEON ARIMA and ETS models yet."
             )
@@ -857,9 +869,9 @@ class ForecasterStats():
         
         """
 
-        self.regressor = clone(self.regressor)
-        self.regressor.set_params(**params)
-        self.params = self.regressor.get_params(deep=True)
+        self.estimator = clone(self.estimator)
+        self.estimator.set_params(**params)
+        self.params = self.estimator.get_params(deep=True)
 
     def set_fit_kwargs(
         self, 
@@ -867,7 +879,7 @@ class ForecasterStats():
     ) -> None:
         """
         Set new values for the additional keyword arguments passed to the `fit` 
-        method of the regressor.
+        method of the estimator.
         
         Parameters
         ----------
@@ -892,7 +904,7 @@ class ForecasterStats():
         sort_importance: bool = True
     ) -> pd.DataFrame:
         """
-        Return feature importances of the regressor stored in the forecaster.
+        Return feature importances of the estimator stored in the forecaster.
 
         Parameters
         ----------
@@ -912,23 +924,23 @@ class ForecasterStats():
                 "arguments before using `get_feature_importances()`."
             )
         
-        if self.regressor_type == 'skforecast.stats._sarimax.Sarimax':
-            feature_importances = self.regressor.params().to_frame().reset_index()
+        if self.estimator_type == 'skforecast.stats._sarimax.Sarimax':
+            feature_importances = self.estimator.params().to_frame().reset_index()
             feature_importances.columns = ['feature', 'importance']
 
-        elif self.regressor_type == 'skforecast.stats._arar.Arar':
+        elif self.estimator_type == 'skforecast.stats._arar.Arar':
             feature_importances = pd.DataFrame({
-                                      'feature': [f'lag_{lag}' for lag in self.regressor.lags_],
-                                      'importance': self.regressor.coef_
+                                      'feature': [f'lag_{lag}' for lag in self.estimator.lags_],
+                                      'importance': self.estimator.coef_
                                   })
             
-        elif self.regressor_type == 'aeon.forecasting.stats._arima.ARIMA':
+        elif self.estimator_type == 'aeon.forecasting.stats._arima.ARIMA':
             feature_importances = pd.DataFrame({
-                'feature': [f'lag_{lag}' for lag in range(1, self.regressor.p + 1)] + ["ma", "intercept"],
-                'importance': np.concatenate([self.regressor.phi_, self.regressor.theta_, [self.regressor.c_]])
+                'feature': [f'lag_{lag}' for lag in range(1, self.estimator.p + 1)] + ["ma", "intercept"],
+                'importance': np.concatenate([self.estimator.phi_, self.estimator.theta_, [self.estimator.c_]])
             })
 
-        elif self.regressor_type == 'aeon.forecasting.stats._ets.ETS':
+        elif self.estimator_type == 'aeon.forecasting.stats._ets.ETS':
             warnings.warn(
                 "Feature importances is not available for the AEON ETS model."
             )
@@ -969,7 +981,7 @@ class ForecasterStats():
 
         """
 
-        if self.regressor_type == 'skforecast.stats._sarimax.Sarimax':
+        if self.estimator_type == 'skforecast.stats._sarimax.Sarimax':
             if criteria not in ['aic', 'bic', 'hqic']:
                 raise ValueError(
                     "Invalid value for `criteria`. Valid options are 'aic', 'bic', "
@@ -982,20 +994,20 @@ class ForecasterStats():
                     "'lutkepohl'."
                 )
             
-            metric = self.regressor.get_info_criteria(criteria=criteria, method=method)
+            metric = self.estimator.get_info_criteria(criteria=criteria, method=method)
 
-        elif self.regressor_type == 'skforecast.stats._arar.Arar':
+        elif self.estimator_type == 'skforecast.stats._arar.Arar':
             raise NotImplementedError(
                 "Information criteria is not implemented for ARAR model yet."
             )
         
-        elif self.regressor_type in ['aeon.forecasting.stats._arima.ARIMA', 'aeon.forecasting.stats._ets.ETS']:
+        elif self.estimator_type in ['aeon.forecasting.stats._arima.ARIMA', 'aeon.forecasting.stats._ets.ETS']:
             if criteria != 'aic':
                 raise ValueError(
                     "Invalid value for `criteria`. Only 'aic' is supported for "
                     "AEON models."
                 )
-            metric = self.regressor.aic_
+            metric = self.estimator.aic_
         
         return metric
 
