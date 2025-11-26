@@ -7,7 +7,7 @@
 
 import numpy as np
 import pandas as pd
-from sklearn.dummy import DummyRegressor
+from sklearn.dummy import DummyClassifier
 from sklearn.preprocessing import StandardScaler
 from skforecast.recursive import ForecasterRecursiveClassifier
 from skforecast.model_selection import TimeSeriesFold, backtesting_forecaster
@@ -50,7 +50,7 @@ def _make_data(
 
     rng = np.random.default_rng(random_state)
     y = pd.Series(
-        data=rng.random.choice(a=['a', 'b', 'c'], size=len_series),
+        data=rng.choice(a=['a', 'b', 'c'], size=len_series),
         index=pd.date_range(start='2010-01-01', periods=len_series, freq='h'),
         name='y'
     )
@@ -87,7 +87,7 @@ def run_benchmark_ForecasterRecursiveClassifier(output_dir):
     y_values = y.to_numpy()
 
     forecaster = ForecasterRecursiveClassifier(
-        regressor=DummyRegressor(strategy='constant', constant=1.),
+        regressor=DummyClassifier(strategy='constant', constant=1.),
         lags=50,
         transformer_exog=StandardScaler(),
     )

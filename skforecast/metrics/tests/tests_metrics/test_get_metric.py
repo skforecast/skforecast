@@ -13,8 +13,7 @@ from sklearn.metrics import (
     balanced_accuracy_score,
     f1_score,
     precision_score,
-    recall_score,
-    roc_auc_score
+    recall_score
 )
 
 from skforecast.metrics import _get_metric
