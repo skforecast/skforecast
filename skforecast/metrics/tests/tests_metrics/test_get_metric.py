@@ -87,8 +87,8 @@ def test_get_metric_output_for_all_metrics_classification(metric_str, metric_cal
     """
     Test output for all metrics allowed.
     """
-    y_true = np.array([0, 1, 2, 0, 1, 2])
-    y_pred = np.array([0, 2, 1, 0, 0, 1])
+    y_true = np.array([0, 1, 1, 0, 1, 0])
+    y_pred = np.array([0, 0, 1, 0, 0, 1])
 
     metric = _get_metric(metric_str)
     expected = metric_callable(y_true=y_true, y_pred=y_pred)

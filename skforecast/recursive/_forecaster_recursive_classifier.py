@@ -1165,7 +1165,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         
         """
 
-        # TODO: View which arguments to reset
         self.last_window_                       = None
         self.index_type_                        = None
         self.index_freq_                        = None
