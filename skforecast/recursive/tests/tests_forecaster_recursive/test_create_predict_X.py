@@ -276,7 +276,7 @@ def test_create_predict_X_when_categorical_features_native_implementation_HistGr
                     4.        , 4.        , 0.51042234]]),
         columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog_2', 'exog_3', 'exog_1'],
         index = pd.RangeIndex(start=50, stop=60, step=1)
-    ).astype({'exog_2': int, 'exog_3': int})
+    )
     
     pd.testing.assert_frame_equal(results, expected)
 

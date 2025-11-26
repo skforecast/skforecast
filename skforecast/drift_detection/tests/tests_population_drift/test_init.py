@@ -11,9 +11,13 @@ def test_init_exception_when_chunk_size_not_valid():
     """
 
     error_msg = re.escape(
-            "`chunk_size` must be a positive integer, a string compatible with "
-            "pandas DateOffset (e.g., 'D', 'W', 'M'), a pandas DateOffset object, or None."
-        )
+        "`chunk_size` must be a positive integer, a string compatible with "
+        "pandas DateOffset (e.g., 'D', 'W', 'M'), a pandas DateOffset object, or None."
+    )
+
+    chunk_size = ['a']
+    with pytest.raises(TypeError, match=f"{error_msg} Got {type(chunk_size)}."):
+        PopulationDriftDetector(chunk_size=chunk_size, threshold=0.95)
 
     chunk_size = 0
     with pytest.raises(ValueError, match=f"{error_msg} Got {chunk_size}."):

@@ -4,8 +4,9 @@ import re
 import pytest
 import numpy as np
 import pandas as pd
-from skforecast.stats import Sarimax
+from skforecast.stats import Sarimax, Arar
 from skforecast.recursive import ForecasterStats
+from skforecast.exceptions import IgnoredArgumentWarning
 
 # Fixtures
 from .fixtures_forecaster_stats import y
@@ -25,6 +26,22 @@ def test_fit_ValueError_when_len_exog_is_not_the_same_as_len_y():
         f"length `exog`: ({len(exog)}), length `y`: ({len(y)})"
     )
     with pytest.raises(ValueError, match = err_msg):
+        forecaster.fit(y=y, exog=exog)
+
+
+def test_IgnoredArgumentWarning_when_regressor_does_not_support_exog():
+    """
+    Test IgnoredArgumentWarning is raised when regressor does not support exog.
+    """
+    y = pd.Series(data=np.arange(10), name='y')
+    exog = pd.Series(data=np.arange(10), name='exog')
+    forecaster = ForecasterStats(regressor=Arar())
+
+    warn_msg = re.escape(
+        f"The regressor {forecaster.regressor_type} does not support exogenous variables, "
+        f"they will be ignored during fit."
+    )
+    with pytest.warns(IgnoredArgumentWarning, match = warn_msg):
         forecaster.fit(y=y, exog=exog)
 
 

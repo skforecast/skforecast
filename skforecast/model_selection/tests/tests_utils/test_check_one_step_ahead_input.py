@@ -16,7 +16,6 @@ from skforecast.model_selection._utils import check_one_step_ahead_input
 # Fixtures
 from skforecast.model_selection.tests.fixtures_model_selection import y
 from skforecast.model_selection.tests.fixtures_model_selection_multiseries import (
-    series_wide_range,
     series_dict_range,
     series_dict_dt
 )
@@ -57,6 +56,7 @@ def test_check_one_step_ahead_input_TypeError_when_forecaster_not_allowed():
     forecasters_one_step_ahead = [
         "ForecasterRecursive",
         "ForecasterDirect",
+        'ForecasterRecursiveClassifier',
         'ForecasterRecursiveMultiSeries',
         'ForecasterDirectMultiVariate'
     ]

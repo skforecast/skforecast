@@ -1165,7 +1165,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         
         """
 
-        # TODO: View which arguments to reset
         self.last_window_                       = None
         self.index_type_                        = None
         self.index_freq_                        = None
@@ -1589,8 +1588,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         self,
         steps: int | str | pd.Timestamp,
         last_window: pd.Series | pd.DataFrame | None = None,
-        exog: pd.Series | pd.DataFrame | None = None,
-        check_inputs: bool = True
+        exog: pd.Series | pd.DataFrame | None = None
     ) -> pd.Series:
         """
         Predict n steps ahead. It is an recursive process in which, each prediction,
@@ -1611,10 +1609,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             right after training data.
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
-        check_inputs : bool, default True
-            If `True`, the input is checked for possible warnings and errors 
-            with the `check_predict_input` function. This argument is created 
-            for internal use and is not recommended to be changed.
 
         Returns
         -------
@@ -1629,10 +1623,9 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             prediction_index,
             steps
         ) = self._create_predict_inputs(
-                steps        = steps,
-                last_window  = last_window,
-                exog         = exog,
-                check_inputs = check_inputs
+                steps       = steps,
+                last_window = last_window,
+                exog        = exog
             )
 
         with warnings.catch_warnings():
@@ -1664,8 +1657,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         self,
         steps: int | str | pd.Timestamp,
         last_window: pd.Series | pd.DataFrame | None = None,
-        exog: pd.Series | pd.DataFrame | None = None,
-        check_inputs: bool = True
+        exog: pd.Series | pd.DataFrame | None = None
     ) -> pd.DataFrame:
         """
         Predict class probabilities n steps ahead. It is a recursive process in 
@@ -1687,10 +1679,6 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             right after training data.
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
-        check_inputs : bool, default True
-            If `True`, the input is checked for possible warnings and errors 
-            with the `check_predict_input` function. This argument is created 
-            for internal use and is not recommended to be changed.
         
         Returns
         -------
@@ -1713,10 +1701,9 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             prediction_index,
             steps
         ) = self._create_predict_inputs(
-                steps        = steps,
-                last_window  = last_window,
-                exog         = exog,
-                check_inputs = check_inputs
+                steps       = steps,
+                last_window = last_window,
+                exog        = exog
             )
         
         with warnings.catch_warnings():
@@ -1860,7 +1847,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             [ws for ws in [self.max_lag, self.max_size_window_features] 
              if ws is not None]
         )
-
+    
     def get_feature_importances(
         self,
         sort_importance: bool = True
@@ -1879,7 +1866,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         -------
         feature_importances : pandas DataFrame
             Feature importances associated with each predictor.
-
+        
         """
 
         if not self.is_fitted:
@@ -1887,38 +1874,73 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                 "This forecaster is not fitted yet. Call `fit` with appropriate "
                 "arguments before using `get_feature_importances()`."
             )
-        
+
         estimator = self.regressor
         if isinstance(estimator, Pipeline):
             estimator = estimator[-1]
+
+        # Unify the estimators into a list of tuples: (sub_estimator, cv_fold_index)
+        # If it's a single estimator, fold_index is None.
         if type(estimator).__name__ == 'CalibratedClassifierCV':
-            estimator = estimator.estimator
-
-        # TODO: forecaster.regressor.calibrated_classifiers_[0].estimator.coef_
-        # devolver un df largo con una columna cv con la enumarición del cv del calibrator
-
-        if hasattr(estimator, 'feature_importances_'):
-            feature_importances = pd.DataFrame({
-                                      'feature': self.X_train_features_names_out_,
-                                      'importance': estimator.feature_importances_
-                                  })
-            if sort_importance:
-                feature_importances = feature_importances.sort_values(
-                                          by='importance', ascending=False
-                                      )
-        elif hasattr(estimator, 'coef_'):
-            feature_importances = pd.DataFrame(
-                                      data    = estimator.coef_,
-                                      columns = self.X_train_features_names_out_
-                                  )
-            feature_importances.insert(0, 'classes', self.classes_)
+            if not hasattr(estimator, 'calibrated_classifiers_'):
+                warnings.warn(
+                    "The CalibratedClassifierCV instance is not fitted or does not "
+                    "expose 'calibrated_classifiers_'. Unable to retrieve importances."
+                )
+                return None
+            
+            estimators_list = [
+                (clf.estimator, i) 
+                for i, clf in enumerate(estimator.calibrated_classifiers_)
+            ]
         else:
+            estimators_list = [(estimator, None)]
+
+        dfs_to_concat = []
+        for sub_est, fold_idx in estimators_list:
+            
+            if hasattr(sub_est, 'feature_importances_'):
+                df_fold = pd.DataFrame({
+                    'feature': self.X_train_features_names_out_,
+                    'importance': sub_est.feature_importances_
+                })
+            elif hasattr(sub_est, 'coef_'):
+                df_fold = pd.DataFrame(
+                    data=sub_est.coef_,
+                    columns=self.X_train_features_names_out_
+                )
+                df_fold.insert(0, 'classes', self.classes_)
+            else:
+                continue
+
+            if fold_idx is not None:
+                df_fold.insert(0, 'cv_fold', fold_idx)
+
+            dfs_to_concat.append(df_fold)
+
+        # Handle cases where no importances could be extracted
+        if not dfs_to_concat:
             warnings.warn(
                 f"Impossible to access feature importances for estimator of type "
                 f"{type(estimator)}. This method is only valid when the "
                 f"estimator stores internally the feature importances in the "
                 f"attribute `feature_importances_` or `coef_`."
             )
-            feature_importances = None
+            return None
+
+        feature_importances = pd.concat(dfs_to_concat, axis=0, ignore_index=True)
+
+        if sort_importance and 'importance' in feature_importances.columns:
+            # If it has folds, sort by importance but keep folds grouped nicely? 
+            # Usually, just sorting by importance globally is expected, 
+            # or (Fold, -Importance). Here we prioritize global importance.
+            if 'cv_fold' in feature_importances.columns:
+                feature_importances = feature_importances.sort_values(
+                    by=['cv_fold', 'importance'], ascending=[True, False]
+                )
+            else:
+                feature_importances = feature_importances.sort_values(
+                    by='importance', ascending=False
+                )
 
         return feature_importances

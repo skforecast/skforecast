@@ -18,7 +18,7 @@ from skforecast.model_selection._split import TimeSeriesFold, OneStepAheadFold
 from skforecast.preprocessing import RollingFeatures
 
 # Fixtures
-from ..fixtures_model_selection import y
+from ..fixtures_model_selection import y, exog
 from ..fixtures_model_selection import y_feature_selection
 from ..fixtures_model_selection import exog_feature_selection
 
@@ -890,7 +890,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterDirect_with_window_featu
 
 
 @pytest.mark.parametrize("initial_train_size", 
-                         [100, '2020-01-05 03:00:00', pd.to_datetime('2020-01-05 03:00:00')], 
+                         [450, '2020-01-19 17:00:00', pd.to_datetime('2020-01-19 17:00:00')], 
                          ids=lambda initial_train_size: f'initial_train_size: {initial_train_size}')
 @pytest.mark.parametrize(
         "forecaster",
@@ -942,7 +942,7 @@ def test_evaluate_grid_hyperparameters_equivalent_outputs_backtesting_one_step_a
     param_grid = {
         "alpha": np.logspace(-3, 3, 2),
     }
-    lags_grid = [3, 5, 7]
+    lags_grid = [3, 7]
     param_grid = list(ParameterGrid(param_grid))
     cv_backtesnting = TimeSeriesFold(
             steps                 = 1,

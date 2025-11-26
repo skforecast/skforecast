@@ -5,17 +5,17 @@ import pytest
 import numpy as np
 import pandas as pd
 from sklearn.exceptions import NotFittedError
-from skforecast.stats import Sarimax
-from skforecast.recursive import ForecasterStats
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
+
+from skforecast.stats import Sarimax
+from skforecast.recursive import ForecasterStats
 
 # Fixtures
 from .fixtures_forecaster_stats import y
 from .fixtures_forecaster_stats import y_lw
 from .fixtures_forecaster_stats import exog
-from .fixtures_forecaster_stats import exog_lw
 from .fixtures_forecaster_stats import exog_predict
 from .fixtures_forecaster_stats import exog_lw_predict
 from .fixtures_forecaster_stats import y_datetime
@@ -25,12 +25,9 @@ from .fixtures_forecaster_stats import exog_lw_datetime
 from .fixtures_forecaster_stats import exog_predict_datetime
 from .fixtures_forecaster_stats import exog_lw_predict_datetime
 from .fixtures_forecaster_stats import df_exog
-from .fixtures_forecaster_stats import df_exog_lw
 from .fixtures_forecaster_stats import df_exog_predict
-from .fixtures_forecaster_stats import df_exog_lw_predict
 from .fixtures_forecaster_stats import df_exog_datetime
 from .fixtures_forecaster_stats import df_exog_lw_datetime
-from .fixtures_forecaster_stats import df_exog_predict_datetime
 from .fixtures_forecaster_stats import df_exog_lw_predict_datetime
 
 
@@ -41,8 +38,8 @@ def test_create_predict_inputs_NotFittedError_when_fitted_is_False():
     forecaster = ForecasterStats(regressor=Sarimax(order=(1, 1, 1)))
 
     err_msg = re.escape(
-        ("This Forecaster instance is not fitted yet. Call `fit` with "
-         "appropriate arguments before using predict.")
+        "This Forecaster instance is not fitted yet. Call `fit` with "
+        "appropriate arguments before using predict."
     )
     with pytest.raises(NotFittedError, match = err_msg):
         forecaster._create_predict_inputs(steps=5)
@@ -57,8 +54,8 @@ def test_create_predict_inputs_ValueError_when_ForecasterStats_last_window_exog_
     forecaster.fit(y=y, exog=exog)
     
     err_msg = re.escape(
-        ("To make predictions unrelated to the original data, both "
-         "`last_window` and `last_window_exog` must be provided.")
+        "To make predictions unrelated to the original data, both "
+        "`last_window` and `last_window_exog` must be provided."
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster._create_predict_inputs(
@@ -78,9 +75,9 @@ def test_create_predict_inputs_ValueError_when_ForecasterStats_last_window_exog_
     forecaster.fit(y=y, exog=exog)
     
     err_msg = re.escape(
-        ("Forecaster trained with exogenous variable/s. To make predictions "
-         "unrelated to the original data, same variable/s must be provided "
-         "using `last_window_exog`.")
+        "Forecaster trained with exogenous variable/s. To make predictions "
+        "unrelated to the original data, same variable/s must be provided "
+        "using `last_window_exog`."
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster._create_predict_inputs(

@@ -31,7 +31,7 @@ def test_TypeError_is_raised_when_step_is_not_int():
     not an int.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor = RandomForestRegressor(random_state=123),
+                     regressor = LinearRegression(),
                      level     = 'l1',
                      lags      = 3,
                      steps     = 1
@@ -51,16 +51,16 @@ def test_NotFittedError_is_raised_when_forecaster_is_not_fitted():
     forecaster is not fitted.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor = RandomForestRegressor(random_state=123),
+                     regressor = LinearRegression(),
                      level     = 'l1',
                      lags      = 3,
                      steps     = 1
                  )
 
     err_msg = re.escape(
-                ("This forecaster is not fitted yet. Call `fit` with appropriate "
-                 "arguments before using `get_feature_importances()`.")
-              )
+        "This forecaster is not fitted yet. Call `fit` with appropriate "
+        "arguments before using `get_feature_importances()`."
+    )
     with pytest.raises(NotFittedError, match = err_msg):         
         forecaster.get_feature_importances(step=1)
 
@@ -72,7 +72,7 @@ def test_ValueError_is_raised_when_step_is_greater_than_forecaster_max_step(step
     less than 1 or greater than the forecaster.max_step.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor = RandomForestRegressor(random_state=123),
+                     regressor = LinearRegression(),
                      level     = 'l1',
                      lags      = 3,
                      steps     = 1
@@ -80,9 +80,9 @@ def test_ValueError_is_raised_when_step_is_greater_than_forecaster_max_step(step
     forecaster.fit(series=series)
 
     err_msg = re.escape(
-                (f"The step must have a value from 1 to the maximum number of steps "
-                 f"({forecaster.max_step}). Got {step}.")
-            )
+        f"The step must have a value from 1 to the maximum number of steps "
+        f"({forecaster.max_step}). Got {step}."
+    )
     with pytest.raises(ValueError, match = err_msg):         
         forecaster.get_feature_importances(step=step)
 
@@ -205,11 +205,11 @@ def test_output_get_feature_importances_when_regressor_no_attributes():
     expected = None
 
     warn_msg = re.escape(
-            (f"Impossible to access feature importances for regressor of type "
-             f"{type(estimator)}. This method is only valid when the "
-             f"regressor stores internally the feature importances in the "
-             f"attribute `feature_importances_` or `coef_`.")
-        )
+        f"Impossible to access feature importances for regressor of type "
+        f"{type(estimator)}. This method is only valid when the "
+        f"regressor stores internally the feature importances in the "
+        f"attribute `feature_importances_` or `coef_`."
+    )
     with pytest.warns(UserWarning, match = warn_msg):
         results = forecaster.get_feature_importances(step=1)
         assert results is expected

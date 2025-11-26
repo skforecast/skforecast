@@ -407,6 +407,21 @@ def test_RollingFeaturesClassification_transform_batch_fillna_all_methods(fillna
     pd.testing.assert_frame_equal(rolling_features, expected)
 
 
+def test_RollingFeaturesClassification_ValueError_transform_without_classes():
+    """
+    Test RollingFeaturesClassification ValueError is raised when calling transform before
+    transform_batch to infer classes.
+    """
+    rolling = RollingFeaturesClassification(stats='proportion', window_sizes=4)
+
+    err_msg = re.escape(
+        "Classes must be specified before calling transform. "
+        "Call `transform_batch` first to infer classes from data."
+    ) 
+    with pytest.raises(ValueError, match = err_msg):
+        rolling.transform(X_classification.to_numpy(copy=True))
+
+
 def test_RollingFeaturesClassification_transform():
     """
     Test RollingFeaturesClassification transform method.

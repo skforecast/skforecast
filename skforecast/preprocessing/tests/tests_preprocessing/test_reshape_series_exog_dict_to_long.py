@@ -32,7 +32,7 @@ def test_reshape_series_exog_dict_to_long_raises_TypeError_when_series_value_not
         'series_2': [4, 5, 6]  # Not a Series
     }
     
-    error_msg = re.escape("series['series_2'] must be a pandas Series.")
+    error_msg = re.escape("`series['series_2']` must be a pandas Series.")
     with pytest.raises(TypeError, match=error_msg):
         reshape_series_exog_dict_to_long(series=series, exog=None)
 
@@ -54,7 +54,9 @@ def test_reshape_series_exog_dict_to_long_raises_TypeError_when_exog_value_inval
         'series_2': [4, 5, 6]  # Not a Series or DataFrame
     }
 
-    error_msg = re.escape("exog['series_2'] must be a pandas Series or a pandas DataFrame.")
+    error_msg = re.escape(
+        "`exog['series_2']` must be a pandas Series or a pandas DataFrame."
+    )
     with pytest.raises(TypeError, match=error_msg):
         reshape_series_exog_dict_to_long(series=None, exog=exog)
 
@@ -77,7 +79,7 @@ def test_TypeError_series_exog_dict_to_long_different_index_type():
 
     error_msg = re.escape(
         f"Index type mismatch: series has index of type "
-        f"{series_idx_type}, but exog has {exog_idx_type}. "
+        f"{series_idx_type}, but `exog` has {exog_idx_type}. "
         f"Ensure all indices are compatible."
     )
     with pytest.raises(TypeError, match=error_msg):
@@ -93,17 +95,23 @@ def test_ValueError_when_series_col_name_in_exog_columns():
         'series_2': pd.Series([4, 5, 6], index=pd.date_range('2020-01-01', periods=3))
     }
     exog = {
-        'series_1': pd.Series([1, 2, 3], index=pd.date_range('2020-01-01', periods=3), name='exog_1'),
-        'series_2': pd.Series([4, 5, 6], index=pd.date_range('2020-01-01', periods=3), name='exog_2')
+        'series_1': pd.DataFrame(
+            {'exog1': [1, 2, 3], 'exog2': [7, 8, 9]},
+            index=pd.date_range('2020-01-01', periods=3)
+        ),
+        'series_2': pd.DataFrame(
+            {'exog1': [4, 5, 6], 'exog2': [10, 11, 12]},
+            index=pd.date_range('2020-01-01', periods=3)
+        )
     }
 
     error_msg = re.escape(
-        "Column name conflict: 'exog' already exists in exog. "
+        "Column name conflict: 'exog1' already exists in `exog`. "
         "Please choose a different `series_col_name` value."
     )
     with pytest.raises(ValueError, match=error_msg):
         reshape_series_exog_dict_to_long(
-            series=series, exog=exog, series_col_name='exog'
+            series=series, exog=exog, series_col_name='exog1'
         )
 
 
@@ -139,7 +147,7 @@ def test_reshape_series_exog_dict_to_long_only_exog_Series():
     
     result = reshape_series_exog_dict_to_long(series=None, exog=exog)
     expected_result = pd.DataFrame(
-        data={"exog1": [1, 2, 3, 4, 5, 6]},
+        data={"exog_value": [1, 2, 3, 4, 5, 6]},
         index=pd.MultiIndex.from_product(
             [["series_1", "series_2"], pd.date_range("2020-01-01", periods=3)],
             names=["series_id", "datetime"],

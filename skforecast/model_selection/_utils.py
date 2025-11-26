@@ -500,8 +500,7 @@ def check_one_step_ahead_input(
         "ForecasterDirect",
         "ForecasterRecursiveClassifier",
         'ForecasterRecursiveMultiSeries',
-        'ForecasterDirectMultiVariate',
-        'ForecasterRecursiveClassifier'
+        'ForecasterDirectMultiVariate'
     ]
     if forecaster_name not in forecasters_one_step_ahead:
         raise TypeError(
@@ -1121,8 +1120,7 @@ def _calculate_metrics_backtesting_multiseries(
         "balanced_accuracy_score",
         "f1_score",
         "precision_score",
-        "recall_score",
-        "roc_auc_score"
+        "recall_score"
     ]
 
     train_indexes = []

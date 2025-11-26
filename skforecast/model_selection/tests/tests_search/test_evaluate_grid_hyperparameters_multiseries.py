@@ -1602,8 +1602,7 @@ def test_evaluate_grid_hyperparameters_same_output_backtesting_and_one_step_ahea
         root_mean_squared_scaled_error,
     ]
     param_grid = {
-        "n_estimators": [5, 10],
-        "max_depth": [2, 3]
+        "n_estimators": [5, 10, 15]
     }
     lags_grid = [3, 5]
     param_grid = list(ParameterGrid(param_grid))

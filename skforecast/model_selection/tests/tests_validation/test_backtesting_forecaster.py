@@ -23,7 +23,8 @@ def test_backtesting_forecaster_TypeError_when_forecaster_not_supported_types():
     forecaters_allowed = [
         'ForecasterRecursive', 
         'ForecasterDirect',
-        'ForecasterEquivalentDate'
+        'ForecasterEquivalentDate',
+        'ForecasterRecursiveClassifier'
     ]
     cv = TimeSeriesFold(
             steps                 = 3,

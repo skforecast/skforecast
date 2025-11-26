@@ -1,9 +1,24 @@
 # Unit test ks_2samp_from_ecdf
 # ==============================================================================
-
+import re
+import pytest
 import numpy as np
 from scipy.stats import ecdf, ks_2samp
 from ..._population_drift import ks_2samp_from_ecdf
+
+
+def test_ks_2samp_ValueError_when_alternative_not_allowed():
+    """
+    Test ks_2samp_from_ecdf raises ValueError when alternative is not one of 
+    the allowed values.
+    """
+
+    error_msg = re.escape(
+        "Invalid `alternative`. Must be 'two-sided', 'less', or 'greater'."
+    )
+    with pytest.raises(ValueError, match=error_msg):
+        ks_2samp_from_ecdf(None, None, alternative="invalid")
+
 
 def test_ks_2samp_from_ecdf_output():
     """

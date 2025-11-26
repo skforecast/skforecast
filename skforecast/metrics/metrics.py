@@ -22,8 +22,7 @@ from sklearn.metrics import (
     balanced_accuracy_score,
     f1_score,
     precision_score,
-    recall_score,
-    roc_auc_score
+    recall_score
 )
 
 
@@ -59,8 +58,7 @@ def _get_metric(metric: str) -> Callable:
         "balanced_accuracy_score",
         "f1_score",
         "precision_score",
-        "recall_score",
-        "roc_auc_score"
+        "recall_score"
     ]
 
     if metric not in allowed_metrics:
@@ -79,8 +77,7 @@ def _get_metric(metric: str) -> Callable:
         "balanced_accuracy_score": balanced_accuracy_score,
         "f1_score": f1_score,
         "precision_score": precision_score,
-        "recall_score": recall_score,
-        "roc_auc_score": roc_auc_score
+        "recall_score": recall_score
     }
 
     metric = add_y_train_argument(metrics[metric])
