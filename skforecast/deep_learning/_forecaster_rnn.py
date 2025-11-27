@@ -47,6 +47,7 @@ from ..utils import (
     initialize_estimator
 )
 
+# TODO: Review in skforecast 0.20.0
 try:
     import keras
 except ImportError as e:
@@ -274,10 +275,15 @@ class ForecasterRnn(ForecasterBase):
         self.python_version = sys.version.split(" ")[0]
         self.forecaster_id = forecaster_id
         self._probabilistic_mode = "no_binned"
+
         self.weight_func = None  # Ignored in this forecaster
         self.source_code_weight_func = None  # Ignored in this forecaster
         self.dropna_from_series = False  # Ignored in this forecaster
         self.encoding = None  # Ignored in this forecaster
+        self.in_sample_residuals_ = None  # Ignored in this forecaster
+        self.in_sample_residuals_by_bin_ = None  # Ignored in this forecaster
+        self.out_sample_residuals_ = None  # Ignored in this forecaster
+        self.out_sample_residuals_by_bin_ = None  # Ignored in this forecaster
         self.differentiation = None  # Ignored in this forecaster
         self.differentiation_max = None  # Ignored in this forecaster
         self.differentiator = None  # Ignored in this forecaster
@@ -336,7 +342,7 @@ class ForecasterRnn(ForecasterBase):
                     f"`series_val` must be a pandas DataFrame. "
                     f"Got {type(fit_kwargs['series_val'])}."
                 )
-            self.series_val = fit_kwargs.pop("series_val")            
+            self.series_val = fit_kwargs.pop("series_val")
 
             if self.exog_in_:
                 if "exog_val" not in fit_kwargs.keys():
@@ -354,11 +360,6 @@ class ForecasterRnn(ForecasterBase):
                     self.exog_val = input_to_frame(
                         data=fit_kwargs.pop("exog_val"), input_name='exog_val'
                     )
-
-        self.in_sample_residuals_ = None
-        self.in_sample_residuals_by_bin_ = None  # Ignored in this forecaster
-        self.out_sample_residuals_ = None
-        self.out_sample_residuals_by_bin_ = None  # Ignored in this forecaster
 
         self.fit_kwargs = check_select_fit_kwargs(
             estimator=self.estimator, fit_kwargs=fit_kwargs
@@ -1844,7 +1845,36 @@ class ForecasterRnn(ForecasterBase):
 
         """
 
-        self.fit_kwargs = check_select_fit_kwargs(self.estimator, fit_kwargs=fit_kwargs)
+        self.series_val = None
+        self.exog_val = None
+        if "series_val" in fit_kwargs:
+            if not isinstance(fit_kwargs["series_val"], pd.DataFrame):
+                raise TypeError(
+                    f"`series_val` must be a pandas DataFrame. "
+                    f"Got {type(fit_kwargs['series_val'])}."
+                )
+            self.series_val = fit_kwargs.pop("series_val")
+
+            if self.exog_in_:
+                if "exog_val" not in fit_kwargs.keys():
+                    raise ValueError(
+                        "If `series_val` is provided, `exog_val` must also be "
+                        "provided using the `fit_kwargs` argument when the "
+                        "estimator has exogenous variables."
+                    )
+                else:
+                    if not isinstance(fit_kwargs["exog_val"], (pd.Series, pd.DataFrame)):
+                        raise TypeError(
+                            f"`exog_val` must be a pandas Series or DataFrame. "
+                            f"Got {type(fit_kwargs['exog_val'])}."
+                        )
+                    self.exog_val = input_to_frame(
+                        data=fit_kwargs.pop("exog_val"), input_name='exog_val'
+                    )
+
+        self.fit_kwargs = check_select_fit_kwargs(
+            self.estimator, fit_kwargs=fit_kwargs
+        )
 
     def set_lags(self, lags: Any) -> None:  # pragma: no cover
         """
