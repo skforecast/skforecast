@@ -17,7 +17,7 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
     using in sample residuals.
     """
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', steps=2, lags=3, transformer_series=None
+        estimator=LinearRegression(), level='l1', steps=2, lags=3, transformer_series=None
     )
     forecaster.fit(series=series_2, store_in_sample_residuals=True)
     forecaster.in_sample_residuals_ = {
@@ -43,7 +43,7 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
     using in sample residuals.
     """
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', steps=2, lags=3, transformer_series=None
+        estimator=LinearRegression(), level='l1', steps=2, lags=3, transformer_series=None
     )
     forecaster.fit(series=series_2, store_in_sample_residuals=True)
     forecaster.in_sample_residuals_ = {
@@ -70,7 +70,7 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
     using out sample residuals.
     """
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', steps=2, lags=3, transformer_series=None
+        estimator=LinearRegression(), level='l1', steps=2, lags=3, transformer_series=None
     )
     forecaster.fit(series=series_2, store_in_sample_residuals=True)
     forecaster.out_sample_residuals_ = {
@@ -97,7 +97,7 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
     using out sample residuals.
     """
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', steps=2, lags=3, transformer_series=None
+        estimator=LinearRegression(), level='l1', steps=2, lags=3, transformer_series=None
     )
     forecaster.fit(series=series_2, store_in_sample_residuals=True)
     forecaster.out_sample_residuals_ = {

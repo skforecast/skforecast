@@ -221,8 +221,7 @@ def test_output_get_feature_importances_when_pipeline_LinearRegression():
     (StandardScaler() + LinearRegression with lags=3).
     """
     forecaster = ForecasterDirectMultiVariate(
-                     estimator          = make_pipeline(StandardScaler(), 
-                                                        LinearRegression()),
+                     estimator          = make_pipeline(StandardScaler(), LinearRegression()),
                      level              = 'l1',
                      lags               = 3,
                      steps              = 1,
@@ -246,8 +245,7 @@ def test_output_get_feature_importances_when_pipeline_RandomForestRegressor():
     (StandardScaler() + RandomForestRegressor with lags=3).
     """
     forecaster = ForecasterDirectMultiVariate(
-                     estimator          = make_pipeline(StandardScaler(), 
-                                                        RandomForestRegressor(random_state=123)),
+                     estimator          = make_pipeline(StandardScaler(), RandomForestRegressor(random_state=123)),
                      level              = 'l1',
                      lags               = 3,
                      steps              = 1,

@@ -24,7 +24,9 @@ def test_predict_NotFittedError_when_fitted_is_False():
     """
     Test NotFittedError is raised when fitted is False.
     """
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=5)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=3, steps=5
+    )
 
     err_msg = re.escape(
         "This Forecaster instance is not fitted yet. Call `fit` with "
@@ -41,7 +43,9 @@ def test_predict_bootstrapping_ValueError_when_out_sample_residuals_is_None(use_
     Test ValueError is raised when use_in_sample_residuals=False and
     out sample residuals is None.
     """
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=2)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=3, steps=2
+    )
     forecaster.fit(y=pd.Series(np.arange(10)), store_in_sample_residuals=True)
 
     if use_binned_residuals:
@@ -227,7 +231,9 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_and_di
     boot_predictions_1 = boot_predictions_1.cumsum(axis=0).iloc[1:,]
     boot_predictions_1 = boot_predictions_1.asfreq('MS')
     
-    forecaster_2 = ForecasterDirect(estimator=LinearRegression(), steps=10, lags=15, differentiation=1)
+    forecaster_2 = ForecasterDirect(
+        estimator=LinearRegression(), steps=10, lags=15, differentiation=1
+    )
     forecaster_2.fit(
         y=data.loc[:end_train], exog=exog.loc[:end_train], store_in_sample_residuals=True
     )
@@ -253,7 +259,7 @@ def test_predict_bootstrapping_output_when_window_features_steps_1():
     
     rolling = RollingFeatures(stats=['mean', 'sum'], window_sizes=[3, 5])
     forecaster = ForecasterDirect(
-        LGBMRegressor(verbose=-1, random_state=123), steps=1, lags=3, window_features=rolling
+        estimator=LGBMRegressor(verbose=-1, random_state=123), steps=1, lags=3, window_features=rolling
     )
     forecaster.fit(y=y_datetime, exog=exog_datetime, store_in_sample_residuals=True)
     results = forecaster.predict_bootstrapping(
@@ -288,7 +294,7 @@ def test_predict_bootstrapping_output_when_window_features_steps_10():
     
     rolling = RollingFeatures(stats=['mean', 'sum'], window_sizes=[3, 5])
     forecaster = ForecasterDirect(
-        LGBMRegressor(verbose=-1, random_state=123), steps=10, lags=3, window_features=rolling
+        estimator=LGBMRegressor(verbose=-1, random_state=123), steps=10, lags=3, window_features=rolling
     )
     forecaster.fit(y=y_datetime, exog=exog_datetime, store_in_sample_residuals=True)
     results = forecaster.predict_bootstrapping(

@@ -17,7 +17,9 @@ def test_set_in_sample_residuals_NotFittedError_when_forecaster_not_fitted():
     """
     Test NotFittedError is raised when forecaster is not fitted.
     """
-    forecaster = ForecasterDirect(LinearRegression(), steps=2, lags=3)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), steps=2, lags=3
+    )
 
     err_msg = re.escape(
         "This forecaster is not fitted yet. Call `fit` with appropriate "
@@ -35,7 +37,9 @@ def test_set_in_sample_residuals_IndexError_when_different_index_than_training(d
     """
     Test IndexError is raised when y has different index than training.
     """
-    forecaster = ForecasterDirect(LinearRegression(), steps=2, lags=3)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), steps=2, lags=3
+    )
     forecaster.fit(y=y, exog=exog)
 
     y_diff_index = y.copy()
@@ -58,7 +62,9 @@ def test_set_in_sample_residuals_ValueError_when_X_train_features_names_out_not_
     Test ValueError is raised when X_train_features_names_out are different from 
     the ones used in training.
     """
-    forecaster = ForecasterDirect(LinearRegression(), steps=2, lags=3)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), steps=2, lags=3
+    )
     forecaster.fit(y=y, exog=exog)
     original_exog_in_ = forecaster.exog_in_
     original_X_train_window_features_names_out_ = forecaster.X_train_window_features_names_out_
@@ -85,13 +91,13 @@ def test_set_in_sample_residuals_store_same_residuals_as_fit():
     Test that set_in_sample_residuals stores same residuals as fit.
     """
     forecaster_1 = ForecasterDirect(
-        LinearRegression(), steps=3, lags=3, transformer_y=StandardScaler(), 
+        estimator=LinearRegression(), steps=3, lags=3, transformer_y=StandardScaler(), 
         differentiation=1, binner_kwargs={'n_bins': 3}
     )
     forecaster_1.fit(y=y, exog=exog, store_in_sample_residuals=True)
 
     forecaster_2 = ForecasterDirect(
-        LinearRegression(), steps=3, lags=3, transformer_y=StandardScaler(), 
+        estimator=LinearRegression(), steps=3, lags=3, transformer_y=StandardScaler(), 
         differentiation=1, binner_kwargs={'n_bins': 3}
     )
     forecaster_2.fit(y=y, exog=exog, store_in_sample_residuals=False)

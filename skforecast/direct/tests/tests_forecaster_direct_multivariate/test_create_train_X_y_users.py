@@ -19,8 +19,9 @@ def test_create_train_X_y_output_when_lags_3_steps_1_and_exog_is_None(level, exp
                            'l2': pd.Series(np.arange(100, 110), dtype=float)})
     exog = None
 
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level=level,
-                                               lags=3, steps=1)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level=level, lags=3, steps=1
+    )
     results = forecaster.create_train_X_y(series=series, exog=exog)
 
     expected = (

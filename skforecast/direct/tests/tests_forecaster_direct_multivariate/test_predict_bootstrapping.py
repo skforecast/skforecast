@@ -34,7 +34,7 @@ def test_predict_NotFittedError_when_fitted_is_False():
     Test NotFittedError is raised when fitted is False.
     """
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', lags=3, steps=3
+        estimator=LinearRegression(), level='l1', lags=3, steps=3
     )
 
     err_msg = re.escape(
@@ -53,7 +53,7 @@ def test_predict_bootstrapping_ValueError_when_out_sample_residuals_is_None(use_
     forecaster.out_sample_residuals_ is None.
     """
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', lags=3, steps=2
+        estimator=LinearRegression(), level='l1', lags=3, steps=2
     )
     forecaster.fit(series=series, store_in_sample_residuals=True)
 

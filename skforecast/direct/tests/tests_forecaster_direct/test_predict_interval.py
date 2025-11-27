@@ -18,7 +18,9 @@ def test_check_interval_ValueError_when_method_is_not_valid_method():
     """
     Check ValueError is raised when `method` is not 'bootstrapping' or 'conformal'.
     """
-    forecaster = ForecasterDirect(LinearRegression(), steps=2, lags=3)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=2, steps=3
+    )
     forecaster.fit(y=pd.Series(np.arange(10)), store_in_sample_residuals=True)
 
     method = 'not_valid_method'

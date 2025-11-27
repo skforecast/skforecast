@@ -34,12 +34,14 @@ def test_predict_TypeError_when_steps_list_contain_floats(steps):
     """
     Test predict TypeError when steps is a list with floats.
     """
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=5)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=3, steps=5
+    )
     forecaster.fit(y=pd.Series(np.arange(10)))
 
     err_msg = re.escape(
-        (f"`steps` argument must be an int, a list of ints or `None`. "
-         f"Got {type(steps)}.")
+        f"`steps` argument must be an int, a list of ints or `None`. "
+        f"Got {type(steps)}."
     )
     with pytest.raises(TypeError, match = err_msg):
         forecaster.predict(steps=steps)
@@ -49,7 +51,9 @@ def test_predict_NotFittedError_when_fitted_is_False():
     """
     Test NotFittedError is raised when fitted is False.
     """
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=5)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=3, steps=5
+    )
 
     err_msg = re.escape(
         "This Forecaster instance is not fitted yet. Call `fit` with "
@@ -65,7 +69,9 @@ def test_predict_output_when_estimator_is_LinearRegression(steps):
     """
     Test predict output when using LinearRegression as estimator.
     """
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=3)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=3, steps=3
+    )
     forecaster.fit(
         y=pd.Series(np.arange(50), index=pd.date_range(start='2020-01-01', periods=50, freq='D'))
     )
@@ -85,7 +91,9 @@ def test_predict_output_when_with_list_interspersed():
     Test predict output when using LinearRegression as estimator and steps is
     a list with interspersed steps.
     """
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=5)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=3, steps=5
+    )
     forecaster.fit(y=pd.Series(np.arange(50)))
     results = forecaster.predict(steps=[1, 4])
     
@@ -102,7 +110,9 @@ def test_predict_output_when_using_last_window():
     """
     Test predict output when using LinearRegression as estimator and last_window.
     """
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=5)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=3, steps=5
+    )
     forecaster.fit(y=pd.Series(np.arange(50)))
     last_window = pd.Series(data  = [47, 48, 49], 
                             index = pd.RangeIndex(start=47, stop=50, step=1))
@@ -121,7 +131,9 @@ def test_predict_output_when_using_exog():
     """
     Test predict output when using LinearRegression as estimator and exog.
     """
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=5)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=3, steps=5
+    )
     forecaster.fit(
         y=pd.Series(np.arange(50)),
         exog=pd.Series(np.arange(start=100, stop=150, step=1), name="exog")
@@ -459,7 +471,9 @@ def test_predict_output_when_with_exog_and_differentiation_is_1_steps_10():
     last_value_train = data.loc[:end_train].iloc[[-1]]
     predictions_1 = pd.concat([last_value_train, predictions_diff]).cumsum()[1:]
 
-    forecaster_2 = ForecasterDirect(estimator=LinearRegression(), steps=10, lags=15, differentiation=1)
+    forecaster_2 = ForecasterDirect(
+        estimator=LinearRegression(), steps=10, lags=15, differentiation=1
+    )
     forecaster_2.fit(y=data.loc[:end_train], exog=exog.loc[:end_train])
     predictions_2 = forecaster_2.predict(exog=exog.loc[end_train:])
 
@@ -497,7 +511,9 @@ def test_predict_output_when_with_exog_and_differentiation_is_2():
     last_value_train = data.loc[:end_train].iloc[[-1]]
     predictions_1 = pd.concat([last_value_train, predictions_diff_1]).cumsum()[1:]
 
-    forecaster_2 = ForecasterDirect(estimator=LinearRegression(), steps=1, lags=15, differentiation=2)
+    forecaster_2 = ForecasterDirect(
+        estimator=LinearRegression(), steps=1, lags=15, differentiation=2
+    )
     forecaster_2.fit(y=data.loc[:end_train], exog=exog.loc[:end_train])
     predictions_2 = forecaster_2.predict(exog=exog.loc[end_train:])
 
@@ -557,7 +573,7 @@ def test_predict_output_when_window_features_steps_1():
     
     rolling = RollingFeatures(stats=['mean', 'sum'], window_sizes=[3, 5])
     forecaster = ForecasterDirect(
-        LGBMRegressor(verbose=-1, random_state=123), steps=1, lags=3, window_features=rolling
+        estimator=LGBMRegressor(verbose=-1, random_state=123), steps=1, lags=3, window_features=rolling
     )
     forecaster.fit(y=y_datetime, exog=exog_datetime)
     predictions = forecaster.predict(exog=exog_predict_datetime)
@@ -585,7 +601,7 @@ def test_predict_output_when_window_features_steps_10():
     
     rolling = RollingFeatures(stats=['mean', 'sum'], window_sizes=[3, 5])
     forecaster = ForecasterDirect(
-        LGBMRegressor(verbose=-1, random_state=123), steps=10, lags=3, window_features=rolling
+        estimator=LGBMRegressor(verbose=-1, random_state=123), steps=10, lags=3, window_features=rolling
     )
     forecaster.fit(y=y_datetime, exog=exog_datetime)
     predictions = forecaster.predict(exog=exog_predict_datetime)

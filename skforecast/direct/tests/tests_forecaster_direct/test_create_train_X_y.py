@@ -24,7 +24,9 @@ def test_create_train_X_y_ValueError_when_len_y_is_lower_than_maximum_window_siz
     """
     y = pd.Series(np.arange(5), name='y')
 
-    forecaster = ForecasterDirect(LinearRegression(), steps=3, lags=3)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=3, steps=3
+    )
     err_msg = re.escape(
         "Minimum length of `y` for training this forecaster is "
         "6. Reduce the number of "
@@ -41,7 +43,7 @@ def test_create_train_X_y_ValueError_when_len_y_is_lower_than_maximum_window_siz
 
     rolling = RollingFeatures(stats=['mean', 'median'], window_sizes=3)
     forecaster = ForecasterDirect(
-        LinearRegression(),  steps=3, lags=2, window_features=rolling
+        estimator=LinearRegression(),  steps=3, lags=2, window_features=rolling
     )
     err_msg = re.escape(
         "Minimum length of `y` for training this forecaster is "
@@ -64,7 +66,9 @@ def test_create_train_X_y_TypeError_when_exog_is_categorical_of_no_int():
     """
     y = pd.Series(np.arange(6))
     exog = pd.Series(['A', 'B', 'C', 'A', 'B', 'C'], name='exog', dtype='category')
-    forecaster = ForecasterDirect(LinearRegression(), lags=2, steps=2)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=2, steps=2
+    )
 
     err_msg = re.escape(
         "Categorical dtypes in exog must contain only integer values. "
@@ -82,7 +86,9 @@ def test_create_train_X_y_MissingValuesWarning_when_exog_has_missing_values():
     """
     y = pd.Series(np.arange(6))
     exog = pd.Series([1, 2, 3, np.nan, 5, 6], name='exog')
-    forecaster = ForecasterDirect(LinearRegression(), lags=2, steps=2)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=2, steps=2
+    )
 
     warn_msg = re.escape(
         "`exog` has missing values. Most machine learning models do "
@@ -104,7 +110,9 @@ def test_create_train_X_y_ValueError_when_len_y_is_different_from_len_exog(y, ex
     """
     Test ValueError is raised when length of y is not equal to length exog.
     """
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=3)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=3, steps=3
+    )
 
     len_exog = len(exog)
     len_y = len(y)
@@ -128,7 +136,9 @@ def test_create_train_X_y_ValueError_when_y_and_exog_have_different_index_but_sa
     """
     y = pd.Series(np.arange(10), name='y')
     y.index = pd.date_range(start='2022-01-01', periods=10, freq='1D')
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=3)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=3, steps=3
+    )
 
     err_msg = re.escape(
         "When `exog` has the same length as `y`, the index of "
@@ -153,7 +163,9 @@ def test_create_train_X_y_ValueError_when_y_and_exog_have_different_index_and_le
     """
     y = pd.Series(np.arange(10), name='y')
     y.index = pd.date_range(start='2022-01-01', periods=10, freq='1D')
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=3)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=3, steps=3
+    )
 
     err_msg = re.escape(
         "When `exog` doesn't contain the first `window_size` observations, "
@@ -180,7 +192,9 @@ def test_create_train_X_y_output_when_lags_3_steps_1_and_exog_is_None():
     y = pd.Series(np.arange(10), name='y', dtype=float)
     exog = None
 
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=1)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=3, steps=1
+    )
     results = forecaster._create_train_X_y(y=y, exog=exog)
 
     expected = (
@@ -233,7 +247,9 @@ def test_create_train_X_y_output_when_interspersed_lags_steps_2_and_exog_is_None
     y = pd.Series(np.arange(10), name='y', dtype=float)
     exog = None
 
-    forecaster = ForecasterDirect(LinearRegression(), lags=[1, 3], steps=2)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=[1, 3], steps=2
+    )
     results = forecaster._create_train_X_y(y=y, exog=exog)
 
     expected = (
@@ -293,7 +309,9 @@ def test_create_train_X_y_output_when_y_is_series_10_steps_1_and_exog_is_series_
     y = pd.Series(np.arange(10), name='y', dtype=float)
     exog = pd.Series(np.arange(100, 110), name='exog', dtype=dtype)
 
-    forecaster = ForecasterDirect(LinearRegression(), lags=5, steps=1)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=5, steps=1
+    )
     results = forecaster._create_train_X_y(y=y, exog=exog)
 
     expected = (
@@ -349,7 +367,9 @@ def test_create_train_X_y_output_when_y_is_series_10_steps_2_and_exog_is_series_
     """
     y = pd.Series(np.arange(10), name='y', dtype=float)
     exog = pd.Series(np.arange(100, 110), name='exog', dtype=dtype)
-    forecaster = ForecasterDirect(LinearRegression(), lags=5, steps=2)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=5, steps=2
+    )
     results = forecaster._create_train_X_y(y=y, exog=exog)
     expected = (
         pd.DataFrame(
@@ -422,7 +442,9 @@ def test_create_train_X_y_output_when_exog_as_float_int_with_no_window_size(date
         exog.index = pd.date_range(start='2022-01-06', periods=5, freq='D')
         expected_index = pd.date_range(start='2022-01-06', periods=5, freq='D')
 
-    forecaster = ForecasterDirect(LinearRegression(), lags=5, steps=1)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=5, steps=1
+    )
     results = forecaster._create_train_X_y(y=y, exog=exog)
 
     expected = (
@@ -494,7 +516,9 @@ def test_create_train_X_y_output_when_steps_2_and_exog_as_float_int_with_no_wind
         expected_index_1 = pd.date_range(start='2022-01-06', periods=4, freq='D')
         expected_index_2 = pd.date_range(start='2022-01-07', periods=4, freq='D')
 
-    forecaster = ForecasterDirect(LinearRegression(), lags=5, steps=2)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=5, steps=2
+    )
     results = forecaster._create_train_X_y(y=y, exog=exog)
     expected = (
         pd.DataFrame(
@@ -555,7 +579,9 @@ def test_create_train_X_y_output_when_steps_1_and_exog_is_df_of_float_int(dtype)
     exog = pd.DataFrame({'exog_1': np.arange(100, 110, dtype=dtype),
                          'exog_2': np.arange(1000, 1010, dtype=dtype)})
     
-    forecaster = ForecasterDirect(LinearRegression(), lags=5, steps=1)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=5, steps=1
+    )
     results = forecaster._create_train_X_y(y=y, exog=exog)
 
     expected = (
@@ -613,7 +639,9 @@ def test_create_train_X_y_output_when_steps_3_and_exog_is_df_of_float_int(dtype)
     exog = pd.DataFrame({'exog_1': np.arange(100, 110, dtype=dtype),
                          'exog_2': np.arange(1000, 1010, dtype=dtype)})
     
-    forecaster = ForecasterDirect(LinearRegression(), lags=5, steps=3)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=5, steps=3
+    )
     results = forecaster._create_train_X_y(y=y, exog=exog)
 
     expected = (
@@ -691,7 +719,9 @@ def test_create_train_X_y_output_when_steps_1_and_exog_is_series_of_bool_str(exo
     y = pd.Series(np.arange(10), name='y', dtype=float)
     exog = pd.Series(exog_values * 10, name='exog', dtype=dtype)
 
-    forecaster = ForecasterDirect(LinearRegression(), lags=5, steps=1)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=5, steps=1
+    )
     results = forecaster._create_train_X_y(y=y, exog=exog)
 
     expected = (
@@ -748,7 +778,9 @@ def test_create_train_X_y_output_when_steps_2_and_exog_is_series_of_bool_str(exo
     y = pd.Series(np.arange(10), name='y', dtype=float)
     exog = pd.Series(exog_values * 10, name='exog', dtype=dtype)
 
-    forecaster = ForecasterDirect(LinearRegression(), lags=5, steps=2)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=5, steps=2
+    )
     results = forecaster._create_train_X_y(y=y, exog=exog)
 
     expected = (
@@ -812,7 +844,9 @@ def test_create_train_X_y_output_when_steps_1_and_exog_is_df_of_bool_str(v_exog_
     exog = pd.DataFrame({'exog_1': v_exog_1 * 10,
                          'exog_2': v_exog_2 * 10})
     
-    forecaster = ForecasterDirect(LinearRegression(), lags=5, steps=1)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=5, steps=1
+    )
     results = forecaster._create_train_X_y(y=y, exog=exog)
 
     expected = (
@@ -872,7 +906,9 @@ def test_create_train_X_y_output_when_steps_3_and_exog_is_df_of_bool_str(v_exog_
     exog = pd.DataFrame({'exog_1': v_exog_1 * 10,
                          'exog_2': v_exog_2 * 10})
     
-    forecaster = ForecasterDirect(LinearRegression(), lags=5, steps=3)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=5, steps=3
+    )
     results = forecaster._create_train_X_y(y=y, exog=exog)
 
     expected = (
@@ -953,7 +989,9 @@ def test_create_train_X_y_output_when_y_is_series_10_steps_1_and_exog_is_series_
     y = pd.Series(np.arange(10), name='y', dtype=float)
     exog = pd.Series(range(10), name='exog', dtype='category')
 
-    forecaster = ForecasterDirect(LinearRegression(), lags=5, steps=1)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=5, steps=1
+    )
     results = forecaster._create_train_X_y(y=y, exog=exog)
 
     expected = (
@@ -1006,7 +1044,9 @@ def test_create_train_X_y_output_when_y_is_series_10_steps_2_and_exog_is_series_
     y = pd.Series(np.arange(10), name='y', dtype=float)
     exog = pd.Series(range(10), name='exog', dtype='category')
 
-    forecaster = ForecasterDirect(LinearRegression(), lags=5, steps=2)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=5, steps=2
+    )
     results = forecaster._create_train_X_y(y=y, exog=exog)
 
     expected = (
@@ -1065,7 +1105,9 @@ def test_create_train_X_y_output_when_y_is_series_10_steps_1_and_exog_is_datafra
     exog = pd.DataFrame({'exog_1': pd.Categorical(range(10)),
                          'exog_2': pd.Categorical(range(100, 110))})
     
-    forecaster = ForecasterDirect(LinearRegression(), lags=5, steps=1)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=5, steps=1
+    )
     results = forecaster._create_train_X_y(y=y, exog=exog)
 
     expected = (
@@ -1122,7 +1164,9 @@ def test_create_train_X_y_output_when_y_is_series_10_steps_3_and_exog_is_datafra
     exog = pd.DataFrame({'exog_1': pd.Categorical(range(10)),
                          'exog_2': pd.Categorical(range(100, 110))})
     
-    forecaster = ForecasterDirect(LinearRegression(), lags=5, steps=3)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=5, steps=3
+    )
     results = forecaster._create_train_X_y(y=y, exog=exog)
 
     expected = (
@@ -1200,7 +1244,9 @@ def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_dataframe_of_fl
                          'exog_2': pd.Series(np.arange(1000, 1010), dtype=int),
                          'exog_3': pd.Categorical(range(100, 110))})
     
-    forecaster = ForecasterDirect(LinearRegression(), lags=5, steps=1)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=5, steps=1
+    )
     results = forecaster._create_train_X_y(y=y, exog=exog)        
     expected = (
         pd.DataFrame(
@@ -1259,7 +1305,9 @@ def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_dataframe_of_fl
                          'exog_2': pd.Series(np.arange(1000, 1010), dtype=int),
                          'exog_3': pd.Categorical(range(100, 110))})
     
-    forecaster = ForecasterDirect(LinearRegression(), lags=5, steps=3)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=5, steps=3
+    )
     results = forecaster._create_train_X_y(y=y, exog=exog)        
     expected = (
         pd.DataFrame(
@@ -1546,8 +1594,12 @@ def test_create_train_X_y_output_when_pandas_series_and_differentiation_is_1(fit
     exog_diff = exog.iloc[1:]
     end_train = '2003-03-01 23:59:00'
 
-    forecaster_1 = ForecasterDirect(LinearRegression(), steps=1, lags=5)
-    forecaster_2 = ForecasterDirect(LinearRegression(), steps=1, lags=5, differentiation=1)
+    forecaster_1 = ForecasterDirect(
+        estimator=LinearRegression(), steps=1, lags=5
+    )
+    forecaster_2 = ForecasterDirect(
+        estimator=LinearRegression(), steps=1, lags=5, differentiation=1
+    )
     
     if fit_forecaster:
         forecaster_2.fit(y=data.loc[:end_train], exog=exog.loc[:end_train])
@@ -1602,8 +1654,12 @@ def test_create_train_X_y_output_when_pandas_series_and_differentiation_is_1_ste
     exog_diff = exog.iloc[1:]
     end_train = '2003-03-01 23:59:00'
 
-    forecaster_1 = ForecasterDirect(LinearRegression(), steps=3, lags=5)
-    forecaster_2 = ForecasterDirect(LinearRegression(), steps=3, lags=5, differentiation=1)
+    forecaster_1 = ForecasterDirect(
+        estimator=LinearRegression(), steps=3, lags=5
+    )
+    forecaster_2 = ForecasterDirect(
+        estimator=LinearRegression(), steps=3, lags=5, differentiation=1
+    )
     
     if fit_forecaster:
         forecaster_2.fit(y=data.loc[:end_train], exog=exog.loc[:end_train])
@@ -1656,9 +1712,11 @@ def test_create_train_X_y_output_when_y_is_series_exog_is_series_and_differentia
     exog_diff_2 = exog.iloc[2:]
     end_train = '2003-03-01 23:59:00'
 
-    forecaster_1 = ForecasterDirect(LinearRegression(), steps=1, lags=5)
+    forecaster_1 = ForecasterDirect(
+        estimator=LinearRegression(), steps=1, lags=5
+    )
     forecaster_2 = ForecasterDirect(
-        LinearRegression(), steps=1, lags=5, differentiation=2
+        estimator=LinearRegression(), steps=1, lags=5, differentiation=2
     )
 
     output_1 = forecaster_1._create_train_X_y(
@@ -1708,7 +1766,7 @@ def test_create_train_X_y_output_when_window_features_and_exog_steps_1():
     )
 
     forecaster = ForecasterDirect(
-        LinearRegression(), steps=1, lags=5, window_features=rolling
+        estimator=LinearRegression(), steps=1, lags=5, window_features=rolling
     )
     results = forecaster._create_train_X_y(y=y_datetime, exog=exog_datetime)
     
@@ -1780,7 +1838,7 @@ def test_create_train_X_y_output_when_window_features_and_exog_steps_2():
     )
 
     forecaster = ForecasterDirect(
-        LinearRegression(), steps=2, lags=5, window_features=rolling
+        estimator=LinearRegression(), steps=2, lags=5, window_features=rolling
     )
     results = forecaster._create_train_X_y(y=y_datetime, exog=exog_datetime)
     
@@ -1858,7 +1916,7 @@ def test_create_train_X_y_output_when_two_window_features_and_exog_steps_2():
     rolling_2 = RollingFeatures(stats='sum', window_sizes=[6])
 
     forecaster = ForecasterDirect(
-        LinearRegression(), steps=2, lags=5, window_features=[rolling, rolling_2]
+        estimator=LinearRegression(), steps=2, lags=5, window_features=[rolling, rolling_2]
     )
     results = forecaster._create_train_X_y(y=y_datetime, exog=exog_datetime)
     
@@ -1937,7 +1995,7 @@ def test_create_train_X_y_output_when_window_features_lags_None_and_exog():
     )
 
     forecaster = ForecasterDirect(
-        LinearRegression(), steps=1, lags=None, window_features=rolling
+        estimator=LinearRegression(), steps=1, lags=None, window_features=rolling
     )
     results = forecaster._create_train_X_y(y=y_datetime, exog=exog_datetime)
     
@@ -2018,7 +2076,7 @@ def test_create_train_X_y_output_when_window_features_and_exog_transformers_diff
     )
 
     forecaster = ForecasterDirect(
-                     LinearRegression(), 
+                     estimator        = LinearRegression(), 
                      steps            = 1,
                      lags             = [1, 5], 
                      window_features  = rolling,
@@ -2103,7 +2161,7 @@ def test_create_train_X_y_output_when_window_features_and_exog_transformers_diff
     )
 
     forecaster = ForecasterDirect(
-                     LinearRegression(), 
+                     estimator        = LinearRegression(), 
                      steps            = 2,
                      lags             = [1, 5], 
                      window_features  = rolling,

@@ -1539,7 +1539,7 @@ def _backtesting_stats(
     cv = deepcopy(cv)
 
     estimator_type = f"{type(forecaster.estimator).__module__}.{type(forecaster.estimator).__name__}"
-    if estimator_type != "skforecast.stats.Sarimax" and cv.refit is False:
+    if estimator_type != "skforecast.stats._sarimax.Sarimax" and cv.refit is False:
         warnings.warn(
             "If `ForecasterStats` uses a estimator different from "
             "`skforecast.stats.Sarimax`, `cv.refit` must be `True` since "

@@ -10,7 +10,7 @@ def test_set_params():
     """
     """
     forecaster = ForecasterDirect(
-        LinearRegression(fit_intercept=True), lags=3, steps=3
+        estimator=LinearRegression(fit_intercept=True), lags=3, steps=3
     )
     new_params = {'fit_intercept': False}
     forecaster.set_params(new_params)

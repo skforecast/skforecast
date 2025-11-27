@@ -23,7 +23,9 @@ def test_train_test_split_one_step_ahead_when_y_is_series_15_and_exog_is_datafra
         index=pd.date_range("2020-01-01", periods=15),
     )
 
-    forecaster = ForecasterDirect(LinearRegression(), lags=5, steps=1)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=5, steps=1
+    )
 
     X_train, y_train, X_test, y_test = forecaster._train_test_split_one_step_ahead(
         y=y, exog=exog, initial_train_size=10

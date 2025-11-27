@@ -16,7 +16,7 @@ def test_set_window_features_ValueError_when_set_to_None_and_lags_is_None(lags):
     """
     rolling = RollingFeatures(stats='mean', window_sizes=6)
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', steps=2, lags=lags, window_features=rolling
+        estimator=LinearRegression(), level='l1', steps=2, lags=lags, window_features=rolling
     )
 
     err_msg = re.escape(
@@ -37,7 +37,7 @@ def test_set_window_features_with_different_inputs(wf):
     Test how attributes change with window_features argument.
     """
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', steps=2, lags=5
+        estimator=LinearRegression(), level='l1', steps=2, lags=5
     )
     forecaster.set_window_features(window_features=wf)
 
