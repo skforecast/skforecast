@@ -59,7 +59,7 @@ def test_predict_3_steps_ahead():
     """
     Test case for predicting 3 steps ahead
     """
-    forecaster = ForecasterRnn(model, levels=["1", "2"], lags=3)
+    forecaster = ForecasterRnn(estimator=model, levels=["1", "2"], lags=3)
     forecaster.fit(series=series)
     predictions = forecaster.predict(steps=3)
 
@@ -70,7 +70,7 @@ def test_predict_specific_levels():
     """
     Test case for predicting with specific levels
     """
-    forecaster = ForecasterRnn(model, levels=["1", "2"], lags=3)
+    forecaster = ForecasterRnn(estimator=model, levels=["1", "2"], lags=3)
     forecaster.fit(series=series)
     predictions = forecaster.predict(steps=None, levels=["1"])
 
@@ -81,7 +81,9 @@ def test_predict_exog():
     """
     Test case for predicting with exogenous variables
     """
-    forecaster = ForecasterRnn(model_exog, levels=["1", "2", "3"], lags=10)
+    forecaster = ForecasterRnn(
+        estimator=model_exog, levels=["1", "2", "3"], lags=10
+    )
     forecaster.fit(series=series, exog=exog)
     predictions = forecaster.predict(steps=None, exog=exog_pred)
 
@@ -92,7 +94,9 @@ def test_predict_specific_levels_with_exog():
     """
     Test case for predicting with specific levels
     """
-    forecaster = ForecasterRnn(model_exog, levels=["1", "2", "3"], lags=10)
+    forecaster = ForecasterRnn(
+        estimator=model_exog, levels=["1", "2", "3"], lags=10
+    )
     forecaster.fit(series=series, exog=exog)
     predictions = forecaster.predict(steps=5, exog=exog_pred, levels=["1", "2"])
 

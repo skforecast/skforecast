@@ -31,7 +31,7 @@ def test_forecaster_series_exog_features_stored():
         stats=['ratio_min_max', 'median'], window_sizes=4
     )
     forecaster = ForecasterDirectMultiVariate(
-                     regressor        = LinearRegression(), 
+                     estimator        = LinearRegression(), 
                      level            = 'l1',
                      steps            = 2,
                      lags             = 3,
@@ -88,7 +88,7 @@ def test_fit_correct_dict_create_transformer_series():
     transformer_series = {'l1': StandardScaler(), 'l3': StandardScaler(), 'l4': StandardScaler()}
 
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = LinearRegression(), 
+                     estimator          = LinearRegression(), 
                      level              = 'l1',
                      lags               = 3,
                      steps              = 2,

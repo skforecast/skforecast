@@ -50,7 +50,7 @@ def test_set_window_features_when_differentiation_is_integer():
     differentiation as integer.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      lags            = 3,
                      window_features = RollingFeatures(stats='median', window_sizes=2),
                      differentiation = 1
@@ -82,7 +82,7 @@ def test_set_window_features_when_differentiation_is_dict():
     differentiation as dict.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      lags            = 3,
                      window_features = RollingFeatures(stats='median', window_sizes=2),
                      differentiation = {'l1': 1, 'l2': 2, 'l3': None, '_unknown_level': 1}
@@ -121,7 +121,7 @@ def test_set_window_features_when_lags():
     """
     rolling = RollingFeatures(stats='mean', window_sizes=10)
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      lags            = 9,
                      window_features = rolling
                  )
@@ -144,7 +144,7 @@ def test_set_window_features_to_None():
     """
     rolling = RollingFeatures(stats='mean', window_sizes=6)
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      lags            = 5,
                      window_features = rolling
                  )

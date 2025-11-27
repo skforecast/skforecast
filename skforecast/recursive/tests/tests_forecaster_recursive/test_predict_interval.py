@@ -31,7 +31,7 @@ def test_check_interval_ValueError_when_method_is_not_valid_method():
 
 def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_1_in_sample_residuals_is_True():
     """
-    Test output when regressor is LinearRegression and one step ahead is predicted
+    Test output when estimator is LinearRegression and one step ahead is predicted
     using in sample residuals.
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
@@ -52,7 +52,7 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_1_
     
 def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_is_True():
     """
-    Test output when regressor is LinearRegression and two step ahead is predicted
+    Test output when estimator is LinearRegression and two step ahead is predicted
     using in sample residuals.
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
@@ -74,7 +74,7 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_2_
     
 def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_1_in_sample_residuals_is_False():
     """
-    Test output when regressor is LinearRegression and one step ahead is predicted
+    Test output when estimator is LinearRegression and one step ahead is predicted
     using out sample residuals.
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
@@ -95,7 +95,7 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_1_
     
 def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_is_False():
     """
-    Test output when regressor is LinearRegression and two step ahead is predicted
+    Test output when estimator is LinearRegression and two step ahead is predicted
     using out sample residuals.
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
@@ -120,7 +120,7 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_2_
                          ids = lambda value: f'interval: {value}')
 def test_predict_interval_output_when_with_transform_y(interval):
     """
-    Test predict output when using LinearRegression as regressor and StandardScaler.
+    Test predict output when using LinearRegression as estimator and StandardScaler.
     """
     y = pd.Series(
             np.array([-0.59,  0.02, -0.9 ,  1.09, -3.61,  0.72, -0.11, -0.4 ,  0.49,
@@ -129,7 +129,7 @@ def test_predict_interval_output_when_with_transform_y(interval):
         )
     transformer_y = StandardScaler()
     forecaster = ForecasterRecursive(
-                     regressor     = LinearRegression(),
+                     estimator     = LinearRegression(),
                      lags          = 5,
                      transformer_y = transformer_y
                  )
@@ -154,7 +154,7 @@ def test_predict_interval_output_when_with_transform_y(interval):
 
 def test_predict_interval_output_when_with_transform_y_and_transform_exog():
     """
-    Test predict output when using LinearRegression as regressor, StandardScaler
+    Test predict output when using LinearRegression as estimator, StandardScaler
     as transformer_y and transformer_exog as transformer_exog.
     """
     y = pd.Series(
@@ -175,7 +175,7 @@ def test_predict_interval_output_when_with_transform_y_and_transform_exog():
                             verbose_feature_names_out = False
                         )
     forecaster = ForecasterRecursive(
-                     regressor        = LinearRegression(),
+                     estimator        = LinearRegression(),
                      lags             = 5,
                      transformer_y    = transformer_y,
                      transformer_exog = transformer_exog
@@ -202,7 +202,7 @@ def test_predict_interval_output_when_with_transform_y_and_transform_exog():
 
 def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_5_in_sample_residuals_is_True_binned_residuals_is_True():
     """
-    Test output when regressor is LinearRegression 5 step ahead is predicted
+    Test output when estimator is LinearRegression 5 step ahead is predicted
     using in sample binned residuals.
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=3, binner_kwargs={'n_bins': 15})
@@ -228,7 +228,7 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_5_
 
 def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_5_in_sample_residuals_is_False_binned_residuals_is_True():
     """
-    Test output when regressor is LinearRegression, steps=5, use_in_sample_residuals=False,
+    Test output when estimator is LinearRegression, steps=5, use_in_sample_residuals=False,
     binned_residuals=True.
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=3, binner_kwargs={'n_bins': 15})
@@ -258,7 +258,7 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_5_
                          ids = lambda value: f'interval: {value}')
 def test_predict_interval_conformal_output_when_with_transform_y(interval):
     """
-    Test predict output when using LinearRegression as regressor and StandardScaler
+    Test predict output when using LinearRegression as estimator and StandardScaler
     and conformal prediction.
     """
     y = pd.Series(
@@ -267,7 +267,7 @@ def test_predict_interval_conformal_output_when_with_transform_y(interval):
                       -0.61, -0.88])
         )
     forecaster = ForecasterRecursive(
-                     regressor     = LinearRegression(),
+                     estimator     = LinearRegression(),
                      lags          = 5,
                      transformer_y = StandardScaler()
                  )
@@ -296,7 +296,7 @@ def test_predict_interval_conformal_output_when_with_transform_y(interval):
                          ids = lambda value: f'interval: {value}')
 def test_predict_interval_conformal_output_when_binned_residuals(interval):
     """
-    Test predict output when using LinearRegression as regressor and StandardScaler
+    Test predict output when using LinearRegression as estimator and StandardScaler
     and conformal prediction with binned residuals.
     """
     y = pd.Series(
@@ -305,7 +305,7 @@ def test_predict_interval_conformal_output_when_binned_residuals(interval):
                       -0.61, -0.88])
         )
     forecaster = ForecasterRecursive(
-                     regressor     = LinearRegression(),
+                     estimator     = LinearRegression(),
                      lags          = 5,
                      transformer_y = StandardScaler(),
                      binner_kwargs = {'n_bins': 3}

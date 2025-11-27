@@ -64,12 +64,12 @@ def test_predict_bootstrapping_ValueError_when_out_sample_residuals_is_None(use_
                          ids=lambda steps: f'steps: {steps}')
 def test_predict_bootstrapping_output_when_in_sample_residuals_exog_and_transformer(steps):
     """
-    Test output of predict_bootstrapping when regressor is LinearRegression,
+    Test output of predict_bootstrapping when estimator is LinearRegression,
     2 steps are predicted, using in-sample residuals, exog is included and both
     inputs are transformed.
     """
     forecaster = ForecasterDirect(
-                     regressor        = LinearRegression(),
+                     estimator        = LinearRegression(),
                      steps            = 2,
                      lags             = 3,
                      transformer_y    = StandardScaler(),
@@ -93,12 +93,12 @@ def test_predict_bootstrapping_output_when_in_sample_residuals_exog_and_transfor
 
 def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_False_exog_and_transformer():
     """
-    Test output of predict_bootstrapping when regressor is LinearRegression,
+    Test output of predict_bootstrapping when estimator is LinearRegression,
     2 steps are predicted, using in-sample residuals, exog is included and both
     inputs are transformed.
     """
     forecaster = ForecasterDirect(
-                     regressor        = LinearRegression(),
+                     estimator        = LinearRegression(),
                      steps            = 2,
                      lags             = 3,
                      transformer_y    = StandardScaler(),
@@ -123,11 +123,11 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_
 
 def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_fixed():
     """
-    Test output of predict_bootstrapping when regressor is LinearRegression,
+    Test output of predict_bootstrapping when estimator is LinearRegression,
     2 steps are predicted, using in-sample residuals that are fixed.
     """
     forecaster = ForecasterDirect(
-                     regressor = LinearRegression(),
+                     estimator = LinearRegression(),
                      steps     = 2,
                      lags      = 3
                  )
@@ -152,7 +152,7 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_
 
 def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_and_differentiation_is_1_steps_1():
     """
-    Test output of predict_bootstrapping when regressor is LinearRegression and
+    Test output of predict_bootstrapping when estimator is LinearRegression and
     differentiation=1 and steps=1.
     """
     # Data differentiated
@@ -168,7 +168,7 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_and_di
     exog_diff = exog.iloc[1:]
     end_train = '2003-03-01 23:59:00'
 
-    forecaster_1 = ForecasterDirect(regressor=LinearRegression(), steps=1, lags=15)
+    forecaster_1 = ForecasterDirect(estimator=LinearRegression(), steps=1, lags=15)
     forecaster_1.fit(
         y=data_diff.loc[:end_train], exog=exog_diff.loc[:end_train], store_in_sample_residuals=True
     )
@@ -184,7 +184,7 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_and_di
     boot_predictions_1 = boot_predictions_1.cumsum(axis=0).iloc[1:,]
     boot_predictions_1 = boot_predictions_1.asfreq('MS')
     
-    forecaster_2 = ForecasterDirect(regressor=LinearRegression(), steps=1, lags=15, differentiation=1)
+    forecaster_2 = ForecasterDirect(estimator=LinearRegression(), steps=1, lags=15, differentiation=1)
     forecaster_2.fit(
         y=data.loc[:end_train], exog=exog.loc[:end_train], store_in_sample_residuals=True
     )
@@ -197,7 +197,7 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_and_di
 
 def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_and_differentiation_is_1_steps_10():
     """
-    Test output of predict_bootstrapping when regressor is LinearRegression and
+    Test output of predict_bootstrapping when estimator is LinearRegression and
     differentiation=1 and steps=10.
     """
     # Data differentiated
@@ -213,7 +213,7 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_and_di
     exog_diff = exog.iloc[1:]
     end_train = '2003-03-01 23:59:00'
 
-    forecaster_1 = ForecasterDirect(regressor=LinearRegression(), steps=10, lags=15)
+    forecaster_1 = ForecasterDirect(estimator=LinearRegression(), steps=10, lags=15)
     forecaster_1.fit(
         y=data_diff.loc[:end_train], exog=exog_diff.loc[:end_train], store_in_sample_residuals=True
     )
@@ -227,7 +227,7 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_and_di
     boot_predictions_1 = boot_predictions_1.cumsum(axis=0).iloc[1:,]
     boot_predictions_1 = boot_predictions_1.asfreq('MS')
     
-    forecaster_2 = ForecasterDirect(regressor=LinearRegression(), steps=10, lags=15, differentiation=1)
+    forecaster_2 = ForecasterDirect(estimator=LinearRegression(), steps=10, lags=15, differentiation=1)
     forecaster_2.fit(
         y=data.loc[:end_train], exog=exog.loc[:end_train], store_in_sample_residuals=True
     )
@@ -240,7 +240,7 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_and_di
 
 def test_predict_bootstrapping_output_when_window_features_steps_1():
     """
-    Test output of predict_bootstrapping when regressor is LGBMRegressor and
+    Test output of predict_bootstrapping when estimator is LGBMRegressor and
     4 steps ahead are predicted with exog and window features using in-sample residuals
     with steps=1.
     """
@@ -275,7 +275,7 @@ def test_predict_bootstrapping_output_when_window_features_steps_1():
 
 def test_predict_bootstrapping_output_when_window_features_steps_10():
     """
-    Test output of predict_bootstrapping when regressor is LGBMRegressor and
+    Test output of predict_bootstrapping when estimator is LGBMRegressor and
     4 steps ahead are predicted with exog and window features using in-sample residuals
     with steps=10.
     """

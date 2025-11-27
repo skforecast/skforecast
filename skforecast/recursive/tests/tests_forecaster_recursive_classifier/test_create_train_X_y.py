@@ -1220,7 +1220,7 @@ def test_create_train_X_y_output_when_transformer_exog():
                         )
 
     forecaster = ForecasterRecursiveClassifier(
-                    regressor        = LogisticRegression(),
+                    estimator        = LogisticRegression(),
                     lags             = 5,
                     transformer_exog = transformer_exog
                 )

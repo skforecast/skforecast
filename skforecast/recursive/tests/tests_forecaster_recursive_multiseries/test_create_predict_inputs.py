@@ -103,9 +103,9 @@ def test_create_predict_inputs_TypeError_when_exog_MultiIndex_no_DatetimeIndex()
         forecaster._create_predict_inputs(steps=5, exog=exog_long_no_index)
 
 
-def test_output_create_predict_inputs_when_regressor_is_LinearRegression():
+def test_output_create_predict_inputs_when_estimator_is_LinearRegression():
     """
-    Test output _create_predict_inputs when using LinearRegression as regressor.
+    Test output _create_predict_inputs when using LinearRegression as estimator.
     """
     series = {
         '1': pd.Series(np.arange(start=0, stop=50, dtype=float)), 
@@ -137,11 +137,11 @@ def test_output_create_predict_inputs_when_regressor_is_LinearRegression():
 
 def test_create_predict_inputs_output_when_with_transform_series():
     """
-    Test _create_predict_inputs output when using LinearRegression as regressor 
+    Test _create_predict_inputs output when using LinearRegression as estimator 
     and StandardScaler.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 5,
                      transformer_series = StandardScaler()
                  )
@@ -172,7 +172,7 @@ def test_create_predict_inputs_output_when_with_transform_series():
                          ids = lambda tr: f'transformer_series: {type(tr)}')
 def test_create_predict_inputs_when_transform_series_and_transform_exog(transformer_series):
     """
-    Test _create_predict_inputs output when using LinearRegression as regressor, 
+    Test _create_predict_inputs output when using LinearRegression as estimator, 
     StandardScaler as transformer_series and transformer_exog as transformer_exog.
     """
     transformer_exog = ColumnTransformer(
@@ -182,7 +182,7 @@ def test_create_predict_inputs_when_transform_series_and_transform_exog(transfor
                            verbose_feature_names_out = False
                        )
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 5,
                      transformer_series = transformer_series,
                      transformer_exog   = transformer_exog,
@@ -222,7 +222,7 @@ def test_create_predict_inputs_when_transform_series_and_transform_exog(transfor
                          ids = lambda tr: f'transformer_series: {type(tr)}')
 def test_create_predict_inputs_when_transform_series_and_transform_exog_different_length_series(transformer_series):
     """
-    Test _create_predict_inputs output when using LinearRegression as regressor, StandardScaler
+    Test _create_predict_inputs output when using LinearRegression as estimator, StandardScaler
     as transformer_series and transformer_exog as transformer_exog with series 
     of different lengths.
     """
@@ -239,7 +239,7 @@ def test_create_predict_inputs_when_transform_series_and_transform_exog_differen
                            verbose_feature_names_out = False
                        )
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 5,
                      transformer_series = transformer_series,
                      transformer_exog   = transformer_exog,
@@ -304,7 +304,7 @@ def test_create_predict_inputs_output_when_categorical_features_native_implement
                        ).set_output(transform="pandas")
     
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = HistGradientBoostingRegressor(
+                     estimator          = HistGradientBoostingRegressor(
                                               categorical_features = categorical_features,
                                               random_state         = 123
                                           ),
@@ -360,7 +360,7 @@ def test_create_predict_inputs_output_when_series_and_exog_dict():
     series and exog are dictionaries.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor          = LGBMRegressor(
+        estimator          = LGBMRegressor(
             n_estimators=2, random_state=123, verbose=-1, max_depth=2
         ),
         lags               = 5,
@@ -419,7 +419,7 @@ def test_create_predict_inputs_output_when_series_and_exog_dict():
                          ids = lambda diff: f'differentiation: {diff}')
 def test_create_predict_inputs_when_exog_differentiation_1_and_transformer_series(differentiation):
     """
-    Test _create_predict_inputs output when using LinearRegression as regressor and differentiation=1,
+    Test _create_predict_inputs output when using LinearRegression as estimator and differentiation=1,
     and transformer_series is StandardScaler.
     """
     end_train = '2003-01-30 23:59:00'
@@ -452,7 +452,7 @@ def test_create_predict_inputs_when_exog_differentiation_1_and_transformer_serie
     steps = len(series_datetime.loc[end_train:])
 
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(), 
+                     estimator          = LinearRegression(), 
                      lags               = 15, 
                      transformer_series = StandardScaler(),    
                      differentiation    = differentiation
@@ -541,7 +541,7 @@ def test_create_predict_inputs_when_series_and_exog_dict_unknown_level(levels):
     series and exog are dictionaries and unknown level.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor          = LGBMRegressor(
+        estimator          = LGBMRegressor(
             n_estimators=2, random_state=123, verbose=-1, max_depth=2
         ),
         lags               = 5,
@@ -620,7 +620,7 @@ def test_create_predict_inputs_when_series_and_exog_dict_unknown_level_encoding_
     series and exog are dictionaries and unknown level with encoding=None.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor          = LGBMRegressor(
+        estimator          = LGBMRegressor(
             n_estimators=2, random_state=123, verbose=-1, max_depth=2
         ),
         lags               = 5,

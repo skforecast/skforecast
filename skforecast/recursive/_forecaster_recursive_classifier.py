@@ -47,7 +47,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
     
     Parameters
     ----------
-    regressor : estimator or pipeline compatible with the scikit-learn API
+    estimator : estimator or pipeline compatible with the scikit-learn API
         An instance of a estimator or pipeline compatible with the scikit-learn API.
     lags : int, list, numpy ndarray, range, default None
         Lags used as predictors. Index starts at 1, so lag 1 is equal to t-1.
@@ -79,7 +79,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
     weight_func : Callable, default None
         Function that defines the individual weights for each sample based on the
         index. For example, a function that assigns a lower weight to certain dates.
-        Ignored if `regressor` does not have the argument `sample_weight` in its `fit`
+        Ignored if `estimator` does not have the argument `sample_weight` in its `fit`
         method. The resulting `sample_weight` cannot have negative values.
     fit_kwargs : dict, default None
         Additional arguments to be passed to the `fit` method of the estimator.
@@ -88,7 +88,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
     
     Attributes
     ----------
-    regressor : estimator or pipeline compatible with the scikit-learn API
+    estimator : estimator or pipeline compatible with the scikit-learn API
         An instance of a estimator or pipeline compatible with the scikit-learn API.
     lags : numpy ndarray
         Lags used as predictors.
@@ -233,7 +233,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
     def __init__(
         self,
-        regressor: object,
+        estimator: object,
         lags: int | list[int] | np.ndarray[int] | range[int] | None = None,
         window_features: object | list[object] | None = None,
         features_encoding: str = 'auto',
@@ -243,7 +243,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         forecaster_id: str | int | None = None
     ) -> None:
         
-        self.regressor                          = copy(regressor)
+        self.estimator                          = copy(estimator)
         self.transformer_exog                   = transformer_exog
         self.weight_func                        = weight_func
         self.source_code_weight_func            = None
@@ -286,7 +286,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                 f"Got '{features_encoding}'."
             )
         
-        supports_categorical = self._check_categorical_support(regressor)
+        supports_categorical = self._check_categorical_support(estimator)
         if features_encoding == 'categorical':
             if supports_categorical:
                 self.use_native_categoricals = True
@@ -294,7 +294,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                 raise ValueError(
                     f"`features_encoding='categorical'` requires a estimator that "
                     f"supports native categorical features (LightGBM, CatBoost, XGBoost). "
-                    f"Got {type(regressor).__name__}. Use 'auto' or 'ordinal' instead."
+                    f"Got {type(estimator).__name__}. Use 'auto' or 'ordinal' instead."
                 )
         elif features_encoding == 'auto':
             if supports_categorical:
@@ -328,21 +328,20 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
         self.weight_func, self.source_code_weight_func, _ = initialize_weights(
             forecaster_name = type(self).__name__, 
-            regressor       = regressor, 
+            estimator       = estimator, 
             weight_func     = weight_func, 
             series_weights  = None
         )
 
         self.fit_kwargs = check_select_fit_kwargs(
-                              regressor  = regressor,
+                              estimator  = estimator,
                               fit_kwargs = fit_kwargs
                           )
         
         self.__skforecast_tags__ = {
             "library": "skforecast",
-            "estimator_type": "forecaster",
-            "estimator_name": "ForecasterRecursiveClassifier",
-            "estimator_task": "classification",
+            "forecaster_name": "ForecasterRecursiveClassifier",
+            "forecaster_task": "classification",
             "forecasting_scope": "single-series",  # single-series | global
             "forecasting_strategy": "recursive",   # recursive | direct | deep_learning
             "index_types_supported": ["pandas.RangeIndex", "pandas.DatetimeIndex"],
@@ -381,7 +380,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             exog_names_in_,
             _,
         ) = self._preprocess_repr(
-                regressor      = self.regressor,
+                estimator      = self.estimator,
                 exog_names_in_ = self.exog_names_in_
             )
         
@@ -392,7 +391,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             f"{'=' * len(type(self).__name__)} \n"
             f"{type(self).__name__} \n"
             f"{'=' * len(type(self).__name__)} \n"
-            f"Estimator: {type(self.regressor).__name__} \n"
+            f"Estimator: {type(self.estimator).__name__} \n"
             f"Lags: {self.lags} \n"
             f"Window features: {self.window_features_names} \n"
             f"Window size: {self.window_size} \n"
@@ -431,7 +430,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             exog_names_in_,
             _,
         ) = self._preprocess_repr(
-                regressor      = self.regressor,
+                estimator      = self.estimator,
                 exog_names_in_ = self.exog_names_in_
             )
 
@@ -443,7 +442,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             <details open>
                 <summary>General Information</summary>
                 <ul>
-                    <li><strong>Estimator:</strong> {type(self.regressor).__name__}</li>
+                    <li><strong>Estimator:</strong> {type(self.estimator).__name__}</li>
                     <li><strong>Lags:</strong> {self.lags}</li>
                     <li><strong>Window features:</strong> {self.window_features_names}</li>
                     <li><strong>Window size:</strong> {self.window_size}</li>
@@ -1204,14 +1203,14 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         sample_weight = self.create_sample_weights(X_train=X_train)
 
         if sample_weight is not None:
-            self.regressor.fit(
+            self.estimator.fit(
                 X             = X_train,
                 y             = y_train,
                 sample_weight = sample_weight,
                 **self.fit_kwargs
             )
         else:
-            self.regressor.fit(X=X_train, y=y_train, **self.fit_kwargs)
+            self.estimator.fit(X=X_train, y=y_train, **self.fit_kwargs)
 
         self.classes_ = y_encoding_info_['classes_']
         self.class_codes_ = y_encoding_info_['class_codes_']
@@ -1408,7 +1407,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
         """
 
-        original_device = set_cpu_gpu_device(regressor=self.regressor, device='cpu')
+        original_device = set_cpu_gpu_device(estimator=self.estimator, device='cpu')
 
         n_lags = len(self.lags) if self.lags is not None else 0
         n_window_features = (
@@ -1444,18 +1443,18 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                 X[n_lags + n_window_features:] = exog_values[i]
 
             if predict_proba:
-                proba = self.regressor.predict_proba(X.reshape(1, -1)).ravel()
+                proba = self.estimator.predict_proba(X.reshape(1, -1)).ravel()
                 predictions[i, :] = proba
                 pred = self.class_codes_[np.argmax(proba)]
             else:
-                pred = self.regressor.predict(X.reshape(1, -1)).ravel().item()
+                pred = self.estimator.predict(X.reshape(1, -1)).ravel().item()
                 predictions[i] = pred
 
             # Update `last_window` values. The first position is discarded and 
             # the new prediction is added at the end.
             last_window[-(steps - i)] = pred
 
-        set_cpu_gpu_device(regressor=self.regressor, device=original_device)
+        set_cpu_gpu_device(estimator=self.estimator, device=original_device)
 
         return predictions
 
@@ -1688,9 +1687,9 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         
         """
 
-        if not hasattr(self.regressor, 'predict_proba'):
+        if not hasattr(self.estimator, 'predict_proba'):
             raise AttributeError(
-                f"The estimator {type(self.regressor).__name__} does not have a "
+                f"The estimator {type(self.estimator).__name__} does not have a "
                 f"`predict_proba` method. Use a estimator that supports probability "
                 f"predictions (e.g., XGBClassifier, HistGradientBoostingClassifier, etc.)."
             )
@@ -1746,8 +1745,8 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         
         """
 
-        self.regressor = clone(self.regressor)
-        self.regressor.set_params(**params)
+        self.estimator = clone(self.estimator)
+        self.estimator.set_params(**params)
 
     def set_fit_kwargs(
         self, 
@@ -1768,7 +1767,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         
         """
 
-        self.fit_kwargs = check_select_fit_kwargs(self.regressor, fit_kwargs=fit_kwargs)
+        self.fit_kwargs = check_select_fit_kwargs(self.estimator, fit_kwargs=fit_kwargs)
 
     def set_lags(
         self, 
@@ -1875,7 +1874,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                 "arguments before using `get_feature_importances()`."
             )
 
-        estimator = self.regressor
+        estimator = self.estimator
         if isinstance(estimator, Pipeline):
             estimator = estimator[-1]
 

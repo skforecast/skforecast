@@ -30,7 +30,7 @@ def test_predict_dist_TypeError_when_distribution_object_is_not_valid():
     probability distribution object from scipy.stats.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      steps              = 2,
                      level              = 'l1',
                      lags               = 3,
@@ -59,12 +59,12 @@ def test_predict_dist_TypeError_when_distribution_object_is_not_valid():
 
 def test_predict_dist_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_True_exog_and_transformer():
     """
-    Test output of predict_dist when regressor is LinearRegression,
+    Test output of predict_dist when estimator is LinearRegression,
     2 steps are predicted, using in-sample residuals, exog is included and both
     inputs are transformed.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      steps              = 2,
                      level              = 'l1',
                      lags               = 3,
@@ -95,12 +95,12 @@ def test_predict_dist_output_when_forecaster_is_LinearRegression_steps_is_2_in_s
 
 def test_predict_dist_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_False_exog_and_transformer():
     """
-    Test output of predict_dist when regressor is LinearRegression,
+    Test output of predict_dist when estimator is LinearRegression,
     2 steps are predicted, using out-sample residuals, exog is included and both
     inputs are transformed.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      steps              = 2,
                      level              = 'l1',
                      lags               = 3,

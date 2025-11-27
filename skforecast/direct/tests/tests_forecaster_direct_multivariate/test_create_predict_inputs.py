@@ -279,7 +279,7 @@ def test_create_predict_inputs_output_with_transform_series():
     Test _create_predict_inputs output when StandardScaler.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      level              = 'l1',
                      lags               = 5,
                      steps              = 5,
@@ -318,7 +318,7 @@ def test_create_predict_inputs_output_with_transform_series_as_dict():
     is a dict with 2 different transformers.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      level              = 'l2',
                      lags               = 5,
                      steps              = 5,
@@ -359,7 +359,7 @@ def test_create_predict_inputs_output_with_transform_series_and_transform_exog(n
     as transformer_series and transformer_exog as transformer_exog.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      level              = 'l1',
                      lags               = 5,
                      steps              = 5,
@@ -430,7 +430,7 @@ def test_create_predict_inputs_output_when_categorical_features_native_implement
                        ).set_output(transform="pandas")
     
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = HistGradientBoostingRegressor(
+                     estimator          = HistGradientBoostingRegressor(
                                               categorical_features = categorical_features,
                                               random_state         = 123
                                           ),
@@ -490,7 +490,7 @@ def test_create_predict_inputs_output_when_categorical_features_native_implement
 
 def test_create_predict_inputs_when_with_exog_differentiation_is_1():
     """
-    Test _create_predict_inputs when using LinearRegression as regressor 
+    Test _create_predict_inputs when using LinearRegression as estimator 
     and differentiation=1.
     """
 
@@ -509,7 +509,7 @@ def test_create_predict_inputs_when_with_exog_differentiation_is_1():
     )
 
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      level              = 'l1',
                      steps              = 5,
                      lags               = 15,
@@ -588,7 +588,7 @@ def test_create_predict_inputs_output_window_features():
     )
 
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      level              = 'l1',
                      steps              = 3,
                      lags               = 3,
@@ -631,7 +631,7 @@ def test_create_predict_inputs_output_with_2_window_features():
     rolling_2 = RollingFeatures(stats=['sum'], window_sizes=6)
 
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      level              = 'l1',
                      steps              = 3,
                      lags               = 3,
@@ -675,7 +675,7 @@ def test_create_predict_inputs_output_window_features_and_no_lags():
     )
 
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      level              = 'l1',
                      steps              = 3,
                      lags               = None,

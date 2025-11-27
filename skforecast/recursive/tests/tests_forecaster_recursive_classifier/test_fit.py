@@ -176,15 +176,15 @@ def test_fit_last_window_stored(store_last_window):
 
 def test_fit_model_coef_when_using_weight_func():
     """
-    Check the value of the regressor coefs when using a `weight_func`.
+    Check the value of the estimator coefs when using a `weight_func`.
     """
     forecaster = ForecasterRecursiveClassifier(
-                     regressor   = LogisticRegression(),
+                     estimator   = LogisticRegression(),
                      lags        = 5,
                      weight_func = custom_weights
                  )
     forecaster.fit(y=y)
-    results = forecaster.regressor.coef_
+    results = forecaster.estimator.coef_
     expected = np.array(
         [
             [0.07295195, 0.26058532, -0.12877723, -0.70811789, 0.71544608],
@@ -198,13 +198,13 @@ def test_fit_model_coef_when_using_weight_func():
 
 def test_fit_model_coef_when_not_using_weight_func():
     """
-    Check the value of the regressor coefs when not using a `weight_func`.
+    Check the value of the estimator coefs when not using a `weight_func`.
     """
     forecaster = ForecasterRecursiveClassifier(
-        regressor=LogisticRegression(), lags=5
+        estimator=LogisticRegression(), lags=5
     )
     forecaster.fit(y=y)
-    results = forecaster.regressor.coef_
+    results = forecaster.estimator.coef_
     expected = np.array(
         [
             [0.33080368, 0.01291936, -0.31347922, -0.43600223, 0.25260526],

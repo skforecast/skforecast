@@ -30,6 +30,6 @@ def test_set_params():
         'warm_start': False
     }
 
-    results = forecaster.regressor.get_params()
+    results = forecaster.estimator.get_params()
     
     assert results == expected

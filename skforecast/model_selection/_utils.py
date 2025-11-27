@@ -624,10 +624,10 @@ def select_n_jobs_backtesting(
 
     - If `refit` is an integer, then `n_jobs = 1`. This is because parallelization doesn't 
     work with intermittent refit.
-    - If forecaster is 'ForecasterRecursive' and regressor is a linear regressor, 
+    - If forecaster is 'ForecasterRecursive' and estimator is a linear estimator, 
     then `n_jobs = 1`.
-    - If forecaster is 'ForecasterRecursive' and regressor is not a linear 
-    regressor then `n_jobs = cpu_count() - 1`.
+    - If forecaster is 'ForecasterRecursive' and estimator is not a linear 
+    estimator then `n_jobs = cpu_count() - 1`.
     - If forecaster is 'ForecasterDirect' or 'ForecasterDirectMultiVariate'
     and `refit = True`, then `n_jobs = cpu_count() - 1`.
     - If forecaster is 'ForecasterDirect' or 'ForecasterDirectMultiVariate'
@@ -635,8 +635,8 @@ def select_n_jobs_backtesting(
     - If forecaster is 'ForecasterRecursiveMultiSeries', then `n_jobs = cpu_count() - 1`.
     - If forecaster is 'ForecasterStats' or 'ForecasterEquivalentDate', 
     then `n_jobs = 1`.
-    - If regressor is a `LGBMRegressor(n_jobs=1)`, then `n_jobs = cpu_count() - 1`.
-    - If regressor is a `LGBMRegressor` with internal n_jobs != 1, then `n_jobs = 1`.
+    - If estimator is a `LGBMRegressor(n_jobs=1)`, then `n_jobs = cpu_count() - 1`.
+    - If estimator is a `LGBMRegressor` with internal n_jobs != 1, then `n_jobs = 1`.
     This is because `lightgbm` is highly optimized for gradient boosting and
     parallelizes operations at a very fine-grained level, making additional
     parallelization unnecessary and potentially harmful due to resource contention.
@@ -657,17 +657,17 @@ def select_n_jobs_backtesting(
 
     forecaster_name = type(forecaster).__name__
 
-    if isinstance(forecaster.regressor, Pipeline):
-        regressor = forecaster.regressor[-1]
-        regressor_name = type(regressor).__name__
+    if isinstance(forecaster.estimator, Pipeline):
+        estimator = forecaster.estimator[-1]
+        estimator_name = type(estimator).__name__
     else:
-        regressor = forecaster.regressor
-        regressor_name = type(regressor).__name__
+        estimator = forecaster.estimator
+        estimator_name = type(estimator).__name__
 
-    linear_regressors = [
-        regressor_name
-        for regressor_name in dir(sklearn.linear_model)
-        if not regressor_name.startswith('_')
+    linear_estimators = [
+        estimator_name
+        for estimator_name in dir(sklearn.linear_model)
+        if not estimator_name.startswith('_')
     ]
 
     refit = False if refit == 0 else refit
@@ -675,18 +675,18 @@ def select_n_jobs_backtesting(
         n_jobs = 1
     else:
         if forecaster_name in ['ForecasterRecursive']:
-            if regressor_name in linear_regressors:
+            if estimator_name in linear_estimators:
                 n_jobs = 1
-            elif regressor_name == 'LGBMRegressor':
-                n_jobs = cpu_count() - 1 if regressor.n_jobs == 1 else 1
+            elif estimator_name == 'LGBMRegressor':
+                n_jobs = cpu_count() - 1 if estimator.n_jobs == 1 else 1
             else:
                 n_jobs = cpu_count() - 1
         elif forecaster_name in ['ForecasterDirect', 'ForecasterDirectMultiVariate']:
             # Parallelization is applied during the fitting process.
             n_jobs = 1
         elif forecaster_name in ['ForecasterRecursiveMultiSeries']:
-            if regressor_name == 'LGBMRegressor':
-                n_jobs = cpu_count() - 1 if regressor.n_jobs == 1 else 1
+            if estimator_name == 'LGBMRegressor':
+                n_jobs = cpu_count() - 1 if estimator.n_jobs == 1 else 1
             else:
                 n_jobs = cpu_count() - 1
         elif forecaster_name in ['ForecasterStats', 'ForecasterEquivalentDate']:
@@ -707,7 +707,7 @@ def _calculate_metrics_one_step_ahead(
 ) -> list:
     """
     Calculate metrics when predictions are one-step-ahead. When forecaster is
-    of type ForecasterDirect only the regressor for step 1 is used.
+    of type ForecasterDirect only the estimator for step 1 is used.
 
     Parameters
     ----------
@@ -744,12 +744,12 @@ def _calculate_metrics_one_step_ahead(
                              X_train = X_test,
                              y_train = y_test
                          )
-        forecaster.regressors_[step].fit(X_train, y_train)
-        y_pred = forecaster.regressors_[step].predict(X_test)
+        forecaster.estimators_[step].fit(X_train, y_train)
+        y_pred = forecaster.estimators_[step].predict(X_test)
 
     else:
-        forecaster.regressor.fit(X_train, y_train)
-        y_pred = forecaster.regressor.predict(X_test)
+        forecaster.estimator.fit(X_train, y_train)
+        y_pred = forecaster.estimator.predict(X_test)
 
     y_true = y_test.to_numpy()
     y_pred = y_pred.ravel()
@@ -1366,11 +1366,11 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
                              X_train = X_test,
                              y_train = y_test
                          )                 
-        forecaster.regressors_[step].fit(X_train, y_train)
-        pred = forecaster.regressors_[step].predict(X_test)
+        forecaster.estimators_[step].fit(X_train, y_train)
+        pred = forecaster.estimators_[step].predict(X_test)
     else:
-        forecaster.regressor.fit(X_train, y_train)
-        pred = forecaster.regressor.predict(X_test)
+        forecaster.estimator.fit(X_train, y_train)
+        pred = forecaster.estimator.predict(X_test)
 
     predictions_per_level = pd.DataFrame(
         {

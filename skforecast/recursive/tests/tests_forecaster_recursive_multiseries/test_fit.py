@@ -141,7 +141,7 @@ def test_fit_correct_dict_create_series_weights_weight_func_transformer_series()
     series_weights = {'l1': 3., 'l3': 0.5, 'l4': 2.}
 
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(), 
+                     estimator          = LinearRegression(), 
                      lags               = 3,
                      transformer_series = transformer_series,
                      weight_func        = weight_func,

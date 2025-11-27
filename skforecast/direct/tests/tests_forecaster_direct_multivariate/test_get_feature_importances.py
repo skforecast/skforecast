@@ -31,7 +31,7 @@ def test_TypeError_is_raised_when_step_is_not_int():
     not an int.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor = LinearRegression(),
+                     estimator = LinearRegression(),
                      level     = 'l1',
                      lags      = 3,
                      steps     = 1
@@ -51,7 +51,7 @@ def test_NotFittedError_is_raised_when_forecaster_is_not_fitted():
     forecaster is not fitted.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor = LinearRegression(),
+                     estimator = LinearRegression(),
                      level     = 'l1',
                      lags      = 3,
                      steps     = 1
@@ -72,7 +72,7 @@ def test_ValueError_is_raised_when_step_is_greater_than_forecaster_max_step(step
     less than 1 or greater than the forecaster.max_step.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor = LinearRegression(),
+                     estimator = LinearRegression(),
                      level     = 'l1',
                      lags      = 3,
                      steps     = 1
@@ -87,13 +87,13 @@ def test_ValueError_is_raised_when_step_is_greater_than_forecaster_max_step(step
         forecaster.get_feature_importances(step=step)
 
 
-def test_output_get_feature_importances_when_regressor_is_RandomForestRegressor_lags_3_step_1():
+def test_output_get_feature_importances_when_estimator_is_RandomForestRegressor_lags_3_step_1():
     """
-    Test output of get_feature_importances for step 1, when regressor is 
+    Test output of get_feature_importances for step 1, when estimator is 
     RandomForestRegressor with lags=3.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor = RandomForestRegressor(random_state=123),
+                     estimator = RandomForestRegressor(random_state=123),
                      level     = 'l1',
                      lags      = 3,
                      steps     = 1
@@ -111,13 +111,13 @@ def test_output_get_feature_importances_when_regressor_is_RandomForestRegressor_
     pd.testing.assert_frame_equal(results, expected)
   
     
-def test_output_get_feature_importances_when_regressor_is_RandomForestRegressor_lags_3_step_2_exog_included():
+def test_output_get_feature_importances_when_estimator_is_RandomForestRegressor_lags_3_step_2_exog_included():
     """
-    Test output of get_feature_importances for step 2, when regressor is 
+    Test output of get_feature_importances for step 2, when estimator is 
     RandomForestRegressor with lags=3 and exog.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor = RandomForestRegressor(random_state=123),
+                     estimator = RandomForestRegressor(random_state=123),
                      level     = 'l2',
                      lags      = 3,
                      steps     = 2
@@ -139,11 +139,11 @@ def test_output_get_feature_importances_when_regressor_is_RandomForestRegressor_
     
 def test_output_get_feature_importances_when_lags_3_step_1():
     """
-    Test output of get_feature_importances for step 1, when regressor is 
+    Test output of get_feature_importances for step 1, when estimator is 
     LinearRegression with lags=3.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor = LinearRegression(),
+                     estimator = LinearRegression(),
                      level     = 'l2',
                      lags      = 3,
                      steps     = 1
@@ -163,11 +163,11 @@ def test_output_get_feature_importances_when_lags_3_step_1():
 
 def test_output_get_feature_importances_when_lags_3_step_2_exog_included():
     """
-    Test output of get_feature_importances for step 2, when regressor is 
+    Test output of get_feature_importances for step 2, when estimator is 
     LinearRegression with lags=3 and exog.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor = LinearRegression(),
+                     estimator = LinearRegression(),
                      level     = 'l1',
                      lags      = 3,
                      steps     = 2
@@ -187,27 +187,27 @@ def test_output_get_feature_importances_when_lags_3_step_2_exog_included():
     pd.testing.assert_frame_equal(results, expected)
     
 
-def test_output_get_feature_importances_when_regressor_no_attributes():
+def test_output_get_feature_importances_when_estimator_no_attributes():
     """
-    Test output of get_feature_importances when regressor is MLPRegressor with lags=5
+    Test output of get_feature_importances when estimator is MLPRegressor with lags=5
     and it is trained with y=pd.Series(np.arange(10)). Since MLPRegressor hasn't attributes
     `feature_importances_` or `coef_, results = None and a warning is raised`
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor = MLPRegressor(solver='lbfgs', max_iter=50, random_state=123),
+                     estimator = MLPRegressor(solver='lbfgs', max_iter=50, random_state=123),
                      level     = 'l1',
                      lags      = 5,
                      steps     = 1
                  )
     forecaster.fit(series=series)
 
-    estimator = forecaster.regressor
+    estimator = forecaster.estimator
     expected = None
 
     warn_msg = re.escape(
-        f"Impossible to access feature importances for regressor of type "
+        f"Impossible to access feature importances for estimator of type "
         f"{type(estimator)}. This method is only valid when the "
-        f"regressor stores internally the feature importances in the "
+        f"estimator stores internally the feature importances in the "
         f"attribute `feature_importances_` or `coef_`."
     )
     with pytest.warns(UserWarning, match = warn_msg):
@@ -217,11 +217,11 @@ def test_output_get_feature_importances_when_regressor_no_attributes():
 
 def test_output_get_feature_importances_when_pipeline_LinearRegression():
     """
-    Test output of get_feature_importances when regressor is pipeline,
+    Test output of get_feature_importances when estimator is pipeline,
     (StandardScaler() + LinearRegression with lags=3).
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = make_pipeline(StandardScaler(), 
+                     estimator          = make_pipeline(StandardScaler(), 
                                                         LinearRegression()),
                      level              = 'l1',
                      lags               = 3,
@@ -242,11 +242,11 @@ def test_output_get_feature_importances_when_pipeline_LinearRegression():
 
 def test_output_get_feature_importances_when_pipeline_RandomForestRegressor():
     """
-    Test output of get_feature_importances when regressor is pipeline,
+    Test output of get_feature_importances when estimator is pipeline,
     (StandardScaler() + RandomForestRegressor with lags=3).
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = make_pipeline(StandardScaler(), 
+                     estimator          = make_pipeline(StandardScaler(), 
                                                         RandomForestRegressor(random_state=123)),
                      level              = 'l1',
                      lags               = 3,
@@ -267,11 +267,11 @@ def test_output_get_feature_importances_when_pipeline_RandomForestRegressor():
 
 def test_output_get_feature_importances_when_lags_dict_step_2_exog_included():
     """
-    Test output of get_feature_importances for step 2, when regressor is 
+    Test output of get_feature_importances for step 2, when estimator is 
     LinearRegression with lags as dict and exog.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor = LinearRegression(),
+                     estimator = LinearRegression(),
                      level     = 'l1',
                      lags      = {'l1': None, 'l2': 3},
                      steps     = 2
@@ -291,11 +291,11 @@ def test_output_get_feature_importances_when_lags_dict_step_2_exog_included():
 
 def test_output_get_feature_importances_when_lags_dict_None_step_2_exog_included():
     """
-    Test output of get_feature_importances for step 2, when regressor is 
+    Test output of get_feature_importances for step 2, when estimator is 
     LinearRegression with lags as dict with None and exog.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor = LinearRegression(),
+                     estimator = LinearRegression(),
                      level     = 'l1',
                      lags      = {'l1': 3, 'l2': None},
                      steps     = 2
@@ -315,13 +315,13 @@ def test_output_get_feature_importances_when_lags_dict_None_step_2_exog_included
 
 def test_output_get_feature_importances_when_window_features():
     """
-    Test output of get_feature_importances when regressor is LGMBRegressor with 
+    Test output of get_feature_importances when estimator is LGMBRegressor with 
     lags=3 and window features.
     """
 
     rolling = RollingFeatures(stats=['mean', 'sum'], window_sizes=[3, 5])
     forecaster = ForecasterDirectMultiVariate(
-                     regressor       = LGBMRegressor(verbose=-1, random_state=123),
+                     estimator       = LGBMRegressor(verbose=-1, random_state=123),
                      level           = 'l1',
                      steps           = 2,
                      lags            = 3,

@@ -55,7 +55,7 @@ def test_init_ValueError_when_no_lags_or_window_features(lags):
     )
     with pytest.raises(ValueError, match = err_msg):
         ForecasterDirectMultiVariate(
-            regressor       = LinearRegression(),
+            estimator       = LinearRegression(),
             level           = 'l1',
             steps           = 3,
             lags            = lags,
@@ -79,7 +79,7 @@ def test_init_window_size_correctly_stored(lags, window_features, expected):
         )
 
     forecaster = ForecasterDirectMultiVariate(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      level           = 'l1',
                      steps           = 3,
                      lags            = lags,
@@ -140,7 +140,7 @@ def test_init_when_lags_dict_with_all_None(lags):
     )
 
     forecaster = ForecasterDirectMultiVariate(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      level           = 'l1',
                      steps           = 3,
                      lags            = lags,
@@ -168,7 +168,7 @@ def test_init_ValueError_when_differentiation_is_not_int_or_greater_than_0(dif):
     )
     with pytest.raises(ValueError, match = err_msg):
         ForecasterDirectMultiVariate(
-            regressor       = LinearRegression(),
+            estimator       = LinearRegression(),
             level           = 'l1',
             steps           = 3,
             lags            = 5,
@@ -184,7 +184,7 @@ def test_init_window_size_is_increased_when_differentiation(dif):
     Test window_size is increased when including differentiation.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      level           = 'l1',
                      steps           = 3,
                      lags            = 5,

@@ -9,7 +9,7 @@ def test_set_fit_kwargs():
     Test set_fit_kwargs method.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor  = LGBMRegressor(),
+                     estimator  = LGBMRegressor(),
                      steps      = 3,
                      level      = 'l1',
                      lags       = 3,

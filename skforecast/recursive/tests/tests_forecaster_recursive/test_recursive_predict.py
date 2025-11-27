@@ -15,9 +15,9 @@ from .fixtures_forecaster_recursive import exog
 from .fixtures_forecaster_recursive import exog_predict
 
 
-def test_recursive_predict_output_when_regressor_is_LinearRegression():
+def test_recursive_predict_output_when_estimator_is_LinearRegression():
     """
-    Test _recursive_predict output when using LinearRegression as regressor.
+    Test _recursive_predict output when using LinearRegression as estimator.
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
     forecaster.fit(y=pd.Series(np.arange(50)))
@@ -36,13 +36,13 @@ def test_recursive_predict_output_when_regressor_is_LinearRegression():
     np.testing.assert_array_almost_equal(predictions, expected)
 
 
-def test_recursive_predict_output_when_regressor_is_Ridge_StandardScaler():
+def test_recursive_predict_output_when_estimator_is_Ridge_StandardScaler():
     """
-    Test _recursive_predict output when using Ridge as regressor and
+    Test _recursive_predict output when using Ridge as estimator and
     StandardScaler.
     """
     forecaster = ForecasterRecursive(
-                     regressor     = Ridge(random_state=123),
+                     estimator     = Ridge(random_state=123),
                      lags          = [1, 5],
                      transformer_y = StandardScaler()
                  )

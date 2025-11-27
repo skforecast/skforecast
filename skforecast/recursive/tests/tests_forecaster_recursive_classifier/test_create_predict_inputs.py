@@ -24,7 +24,7 @@ def test_create_predict_inputs_NotFittedError_when_fitted_is_False():
     Test NotFittedError is raised when fitted is False.
     """
     forecaster = ForecasterRecursiveClassifier(
-                     regressor = LogisticRegression(),
+                     estimator = LogisticRegression(),
                      lags      = 5
                  )
 
@@ -41,7 +41,7 @@ def test_create_predict_inputs_ValueError_when_last_window_contains_invalid_clas
     Test ValueError is raised when last_window contains classes not present in training y.
     """
     forecaster = ForecasterRecursiveClassifier(
-                     regressor = LogisticRegression(),
+                     estimator = LogisticRegression(),
                      lags      = 5
                  )
     forecaster.fit(y=y)
@@ -69,12 +69,12 @@ def test_create_predict_inputs_ValueError_when_last_window_contains_invalid_clas
         forecaster._create_predict_inputs(steps=5, last_window=last_window)
 
 
-def test_create_predict_inputs_when_regressor_is_LogisticRegression():
+def test_create_predict_inputs_when_estimator_is_LogisticRegression():
     """
-    Test _create_predict_inputs when using LogisticRegression as regressor.
+    Test _create_predict_inputs when using LogisticRegression as estimator.
     """
     forecaster = ForecasterRecursiveClassifier(
-                     regressor = LogisticRegression(),
+                     estimator = LogisticRegression(),
                      lags      = 5
                  )
     forecaster.fit(y=pd.Series(np.arange(50, dtype=float), name='y'))
@@ -93,12 +93,12 @@ def test_create_predict_inputs_when_regressor_is_LogisticRegression():
     assert results[3] == expected[3]
 
 
-def test_create_predict_inputs_when_regressor_is_HistGradientBoostingClassifier():
+def test_create_predict_inputs_when_estimator_is_HistGradientBoostingClassifier():
     """
-    Test _create_predict_inputs when using HistGradientBoostingClassifier as regressor.
+    Test _create_predict_inputs when using HistGradientBoostingClassifier as estimator.
     """
     forecaster = ForecasterRecursiveClassifier(
-                     regressor = HistGradientBoostingClassifier(),
+                     estimator = HistGradientBoostingClassifier(),
                      lags      = 5
                  )
     forecaster.fit(y=y_dt)
@@ -119,7 +119,7 @@ def test_create_predict_inputs_when_regressor_is_HistGradientBoostingClassifier(
 
 def test_create_predict_inputs_when_with_transform_exog():
     """
-    Test _create_predict_inputs when using LogisticRegression as regressor and
+    Test _create_predict_inputs when using LogisticRegression as estimator and
     StandardScaler as transformer_exog.
     """
     exog_dummy = pd.Series(np.array([7.5, 24.4, 60.3, 57.3, 50.7, 41.4, 87.2, 47.4]), name='exog')
@@ -127,7 +127,7 @@ def test_create_predict_inputs_when_with_transform_exog():
     exog_predict.index = pd.RangeIndex(start=8, stop=16)
 
     forecaster = ForecasterRecursiveClassifier(
-                     regressor        = LogisticRegression(),
+                     estimator        = LogisticRegression(),
                      lags             = 5,
                      transformer_exog = StandardScaler()
                  )
@@ -176,7 +176,7 @@ def test_create_predict_inputs_when_categorical_features_native_implementation_H
                        ).set_output(transform="pandas")
     
     forecaster = ForecasterRecursiveClassifier(
-                     regressor        = HistGradientBoostingClassifier(
+                     estimator        = HistGradientBoostingClassifier(
                                             categorical_features = categorical_features,
                                             random_state         = 123
                                         ),

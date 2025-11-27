@@ -47,7 +47,7 @@ def test_set_lags_when_differentiation_is_not_None():
     differentiation.
     """
     forecaster = ForecasterDirect(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      lags            = 3,
                      steps           = 2,
                      differentiation = 1
@@ -75,7 +75,7 @@ def test_set_lags_when_window_features():
     """
     rolling = RollingFeatures(stats='mean', window_sizes=6)
     forecaster = ForecasterDirect(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      lags            = 9,
                      steps           = 2,
                      window_features = rolling
@@ -99,7 +99,7 @@ def test_set_lags_to_None(lags):
     """
     rolling = RollingFeatures(stats='mean', window_sizes=3)
     forecaster = ForecasterDirect(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      lags            = 5,
                      steps           = 3,
                      window_features = rolling

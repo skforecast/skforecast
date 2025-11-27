@@ -90,7 +90,7 @@ class Sarimax(BaseEstimator, RegressorMixin):
         with error.
     time_varying_regression : bool, default False
         Used when an explanatory variables, `exog`, are provided to select whether 
-        or not coefficients on the exogenous regressors are allowed to vary over time.
+        or not coefficients on the exogenous estimators are allowed to vary over time.
     mle_regression : bool, default True
         Whether or not to use estimate the regression coefficients for the
         exogenous variables as part of maximum likelihood estimation or through
@@ -143,7 +143,7 @@ class Sarimax(BaseEstimator, RegressorMixin):
         The maximum number of iterations to perform.
     start_params : numpy ndarray, default None
         Initial guess of the solution for the loglikelihood maximization. 
-        If `None`, the default is given by regressor.start_params.
+        If `None`, the default is given by estimator.start_params.
     disp : bool, default False
         Set to `True` to print convergence messages.
     sm_init_kwargs : dict, default {}
@@ -174,7 +174,7 @@ class Sarimax(BaseEstimator, RegressorMixin):
         with error.
     time_varying_regression : bool
         Used when an explanatory variables, `exog`, are provided to select whether 
-        or not coefficients on the exogenous regressors are allowed to vary over time.
+        or not coefficients on the exogenous estimators are allowed to vary over time.
     mle_regression : bool
         Whether or not to use estimate the regression coefficients for the
         exogenous variables as part of maximum likelihood estimation or through
@@ -228,7 +228,7 @@ class Sarimax(BaseEstimator, RegressorMixin):
     sarimax : object
         The statsmodels.tsa.statespace.sarimax.SARIMAX object created.
     fitted : bool
-        Tag to identify if the regressor has been fitted (trained).
+        Tag to identify if the estimator has been fitted (trained).
     sarimax_res : object
         The resulting statsmodels.tsa.statespace.sarimax.SARIMAXResults object 
         created by statsmodels after fitting the SARIMAX model.
@@ -555,7 +555,7 @@ class Sarimax(BaseEstimator, RegressorMixin):
         y : numpy ndarray, pandas Series, pandas DataFrame
             New observations from the modeled time-series process.
         exog : numpy ndarray, pandas Series, pandas DataFrame, default None
-            New observations of exogenous regressors, if applicable. Must have 
+            New observations of exogenous estimators, if applicable. Must have 
             the same number of observations as `y` and their indexes must be 
             aligned so that y[i] is regressed on exog[i].
         refit : bool, default False
@@ -624,7 +624,7 @@ class Sarimax(BaseEstimator, RegressorMixin):
         y : numpy ndarray, pandas Series, pandas DataFrame
             New observations from the modeled time-series process.
         exog : numpy ndarray, pandas Series, pandas DataFrame, default None
-            New observations of exogenous regressors, if applicable. Must have 
+            New observations of exogenous estimators, if applicable. Must have 
             the same number of observations as `y` and their indexes must be 
             aligned so that y[i] is regressed on exog[i].
         refit : bool, default False
@@ -684,7 +684,7 @@ class Sarimax(BaseEstimator, RegressorMixin):
         y : numpy ndarray, pandas Series, pandas DataFrame
             New observations from the modeled time-series process.
         exog : numpy ndarray, pandas Series, pandas DataFrame, default None
-            New observations of exogenous regressors, if applicable. Must have 
+            New observations of exogenous estimators, if applicable. Must have 
             the same number of observations as `y` and their indexes must be 
             aligned so that y[i] is regressed on exog[i].
         **kwargs
@@ -725,7 +725,7 @@ class Sarimax(BaseEstimator, RegressorMixin):
         **params: dict[str, object]
     ) -> None:
         """
-        Set new values to the parameters of the regressor.
+        Set new values to the parameters of the estimator.
         
         Parameters
         ----------

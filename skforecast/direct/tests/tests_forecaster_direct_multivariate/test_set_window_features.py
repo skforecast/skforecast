@@ -55,7 +55,7 @@ def test_set_window_features_when_differentiation_is_not_None():
     differentiation.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      level           = 'l1',
                      steps           = 2,
                      lags            = 3,
@@ -88,7 +88,7 @@ def test_set_window_features_when_lags():
     """
     rolling = RollingFeatures(stats='mean', window_sizes=10)
     forecaster = ForecasterDirectMultiVariate(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      level           = 'l1',
                      lags            = 9,
                      steps           = 2,
@@ -113,7 +113,7 @@ def test_set_window_features_to_None():
     """
     rolling = RollingFeatures(stats='mean', window_sizes=6)
     forecaster = ForecasterDirectMultiVariate(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      level           = 'l1',
                      lags            = 5,
                      steps           = 3,

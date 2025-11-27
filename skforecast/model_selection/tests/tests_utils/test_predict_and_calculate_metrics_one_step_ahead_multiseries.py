@@ -33,7 +33,7 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_input_types():
     """
 
     # Mock inputs
-    forecaster = ForecasterRecursiveMultiSeries(regressor=Ridge(random_state=678), lags=3)
+    forecaster = ForecasterRecursiveMultiSeries(estimator=Ridge(random_state=678), lags=3)
     
     initial_train_size = 927
     metrics = ['mean_absolute_error']
@@ -169,21 +169,21 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_input_types():
     "forecaster",
     [
         ForecasterRecursiveMultiSeries(
-            regressor=Ridge(random_state=678), lags=3, forecaster_id='multiseries_no_transformer'
+            estimator=Ridge(random_state=678), lags=3, forecaster_id='multiseries_no_transformer'
         ),
         ForecasterDirectMultiVariate(
-            regressor=Ridge(random_state=678), steps=1, level='item_1', lags=3, transformer_series=None,
+            estimator=Ridge(random_state=678), steps=1, level='item_1', lags=3, transformer_series=None,
             forecaster_id='multivariate_no_transformer'
         ),
         ForecasterRecursiveMultiSeries(
-            regressor=Ridge(random_state=678),
+            estimator=Ridge(random_state=678),
             lags=3,
             transformer_series=StandardScaler(),
             transformer_exog=StandardScaler(),
             forecaster_id='multiseries_transformer'
         ),
         ForecasterDirectMultiVariate(
-            regressor=Ridge(random_state=678),
+            estimator=Ridge(random_state=678),
             level='item_1',
             lags=3,
             steps=1,
@@ -276,7 +276,7 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_ForecasterRecu
     when ForecasterRecursiveMultiSeries is used with differentiation.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = Ridge(random_state=678),
+                     estimator          = Ridge(random_state=678),
                      lags               = 3,
                      transformer_series = StandardScaler(),
                      transformer_exog   = StandardScaler(),
@@ -368,7 +368,7 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_Forecas
     when ForecasterRecursiveMultiSeries is used with differentiation as dict.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = Ridge(random_state=678),
+                     estimator          = Ridge(random_state=678),
                      lags               = 3,
                      transformer_series = StandardScaler(),
                      transformer_exog   = StandardScaler(),
@@ -470,7 +470,7 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_Forecas
     when ForecasterDirectMultiVariate is used with differentiation.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = Ridge(random_state=678),
+                     estimator          = Ridge(random_state=678),
                      level              = 'item_1',
                      lags               = 3,
                      steps              = 1,
@@ -542,7 +542,7 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_Forecas
     "forecaster",
     [
         ForecasterRecursiveMultiSeries(
-            regressor          = LGBMRegressor(random_state=123, verbose=-1),
+            estimator          = LGBMRegressor(random_state=123, verbose=-1),
             lags               = 24,
             encoding           = 'ordinal',
             transformer_series = StandardScaler(),
@@ -627,7 +627,7 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_equivalence_ba
     "forecaster",
     [
         ForecasterRecursiveMultiSeries(
-            regressor          = LGBMRegressor(random_state=123, verbose=-1),
+            estimator          = LGBMRegressor(random_state=123, verbose=-1),
             lags               = 24,
             encoding           = 'ordinal',
             transformer_series = StandardScaler(),

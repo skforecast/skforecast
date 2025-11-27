@@ -19,7 +19,7 @@ def test_init_ValueError_when_features_encoding_not_valid():
     )
     with pytest.raises(ValueError, match = err_msg):
         ForecasterRecursiveClassifier(
-            regressor         = LogisticRegression(),
+            estimator         = LogisticRegression(),
             lags              = 3,
             features_encoding = 'not_valid'
         )
@@ -37,7 +37,7 @@ def test_init_ValueError_when_estimator_does_not_support_categorical_features():
     )
     with pytest.raises(ValueError, match = err_msg):
         ForecasterRecursiveClassifier(
-            regressor         = LogisticRegression(),
+            estimator         = LogisticRegression(),
             lags              = 3,
             features_encoding = 'categorical'
         )
@@ -54,7 +54,7 @@ def test_init_ValueError_when_no_lags_or_window_features():
     )
     with pytest.raises(ValueError, match = err_msg):
         ForecasterRecursiveClassifier(
-            regressor       = LogisticRegression(),
+            estimator       = LogisticRegression(),
             lags            = None,
             window_features = None
         )
@@ -72,7 +72,7 @@ def test_init_use_native_categoricals_set(features_encoding, estimator, expected
     """
 
     forecaster = ForecasterRecursiveClassifier(
-                     regressor         = estimator,
+                     estimator         = estimator,
                      lags              = 3,
                      features_encoding = features_encoding
                  )
@@ -96,7 +96,7 @@ def test_init_window_size_correctly_stored(lags, window_features, expected):
         )
 
     forecaster = ForecasterRecursiveClassifier(
-                     regressor       = LogisticRegression(),
+                     estimator       = LogisticRegression(),
                      lags            = lags,
                      window_features = window_features
                  )

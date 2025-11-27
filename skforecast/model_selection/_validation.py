@@ -183,7 +183,7 @@ def _backtesting_forecaster(
     """
 
     forecaster = deepcopy(forecaster)
-    is_regression = forecaster.__skforecast_tags__['estimator_task'] == 'regression'
+    is_regression = forecaster.__skforecast_tags__['forecaster_task'] == 'regression'
     cv = deepcopy(cv)
 
     cv.set_params({
@@ -260,7 +260,7 @@ def _backtesting_forecaster(
         elif type(forecaster).__name__ == 'ForecasterDirect' and n_of_fits * forecaster.max_step > 50:
             warnings.warn(
                 f"The forecaster will be fit {n_of_fits * forecaster.max_step} times "
-                f"({n_of_fits} folds * {forecaster.max_step} regressors). This can take "
+                f"({n_of_fits} folds * {forecaster.max_step} estimators). This can take "
                 f"substantial amounts of time. If not feasible, try with `refit = False`.\n",
                 LongTrainingWarning
             )
@@ -921,7 +921,7 @@ def _backtesting_forecaster_multiseries(
         elif type(forecaster).__name__ == 'ForecasterDirectMultiVariate' and n_of_fits * forecaster.max_step > 50:
             warnings.warn(
                 f"The forecaster will be fit {n_of_fits * forecaster.max_step} times "
-                f"({n_of_fits} folds * {forecaster.max_step} regressors). This can take "
+                f"({n_of_fits} folds * {forecaster.max_step} estimators). This can take "
                 f"substantial amounts of time. If not feasible, try with `refit = False`.\n",
                 LongTrainingWarning
             )
@@ -1539,9 +1539,9 @@ def _backtesting_stats(
     forecaster = deepcopy(forecaster)
     cv = deepcopy(cv)
 
-    if not isinstance(forecaster.regressor, Sarimax) and cv.refit is False:
+    if not isinstance(forecaster.estimator, Sarimax) and cv.refit is False:
         warnings.warn(
-            "If `ForecasterStats` uses a regressor different from "
+            "If `ForecasterStats` uses a estimator different from "
             "`skforecast.stats.Sarimax`, `cv.refit` must be `True` since "
             "predictions must start from the end of the training set."
             " Setting `cv.refit = True`.",

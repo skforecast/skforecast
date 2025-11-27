@@ -248,7 +248,7 @@ def test_create_sample_weights_output_using_series_weights(encoding, X_train):
     Test `sample_weights` creation using `series_weights`.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=LinearRegression(),
+        estimator=LinearRegression(),
         lags=3,
         encoding=encoding,
         series_weights={"series_1": 1.0, "series_2": 2.0},
@@ -281,7 +281,7 @@ def test_create_sample_weights_output_using_weight_func(encoding, X_train):
     Test `sample_weights` creation using `weight_func`.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=LinearRegression(),
+        estimator=LinearRegression(),
         lags=3,
         encoding=encoding,
         weight_func=custom_weights,
@@ -323,7 +323,7 @@ def test_create_sample_weights_output_using_weight_func_dict(weight_func, expect
     Test `sample_weights` creation using `weight_func`.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 3,
                      encoding           = "ordinal",
                      transformer_series = StandardScaler(),
@@ -362,7 +362,7 @@ def test_create_sample_weights_output_using_weight_func_dict_different_series_le
     Test `sample_weights` creation using `weight_func` with series of different lengths.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 3,
                      encoding           = "ordinal",
                      transformer_series = StandardScaler(),
@@ -394,7 +394,7 @@ def test_create_sample_weights_output_using_series_weights_and_weight_func(
     Test `sample_weights` creation using `series_weights` and `weight_func`.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 3,
                      encoding           = encoding,
                      transformer_series = StandardScaler(),
@@ -429,7 +429,7 @@ def test_create_sample_weights_output_using_series_weights_and_weight_func_diffe
     with series of different lengths.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 3,
                      encoding           = encoding,
                      transformer_series = StandardScaler(),
@@ -461,7 +461,7 @@ def test_create_sample_weights_ValueError_when_weights_has_nan(encoding, X_train
     Test sample_weights ValueError when sample_weight contains NaNs.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 3,
                      encoding           = encoding,
                      transformer_series = StandardScaler(),
@@ -493,7 +493,7 @@ def test_create_sample_weights_ValueError_when_weights_has_negative_values(
     Test sample_weights ValueError when sample_weight contains negative values.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 3,
                      encoding           = encoding,
                      transformer_series = StandardScaler(),
@@ -523,7 +523,7 @@ def test_create_sample_weights_ValueError_when_weights_all_zeros(encoding, X_tra
     Test sample_weights ValueError when the sum of the weights is zero.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 3,
                      encoding           = encoding,
                      transformer_series = StandardScaler(),

@@ -14,7 +14,7 @@ def test_binning_in_sample_residuals_output():
     """
 
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=LinearRegression(), lags=5, binner_kwargs={"n_bins": 3}
+        estimator=LinearRegression(), lags=5, binner_kwargs={"n_bins": 3}
     )
 
     series = pd.DataFrame(
@@ -135,7 +135,7 @@ def test_binning_in_sample_residuals_store_in_sample_residuals_False():
     """
 
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=LinearRegression(), lags=5, binner_kwargs={"n_bins": 3}
+        estimator=LinearRegression(), lags=5, binner_kwargs={"n_bins": 3}
     )
 
     series = pd.DataFrame(
@@ -199,7 +199,7 @@ def test_binning_in_sample_residuals_probabilistic_mode_no_binned():
     """
 
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=LinearRegression(), lags=5, binner_kwargs={"n_bins": 3}
+        estimator=LinearRegression(), lags=5, binner_kwargs={"n_bins": 3}
     )
 
     series = pd.DataFrame(
@@ -272,7 +272,7 @@ def test_binning_in_sample_residuals_stores_maximum_10000_residuals_per_level():
     """
 
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=LinearRegression(), lags=5, binner_kwargs={"n_bins": 3}
+        estimator=LinearRegression(), lags=5, binner_kwargs={"n_bins": 3}
     )
 
     rng = np.random.default_rng(12345)

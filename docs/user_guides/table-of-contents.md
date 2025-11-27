@@ -74,7 +74,7 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 
 <span style="font-size: 1.3em;">Additional Resources</span>
 
-- [Skforecast 0.14 Migration guide](../user_guides/migration-guide.html)
+- [Skforecast Migration guide](../user_guides/migration-guide.html)
 - [Extract training and prediction matrices](../user_guides/training-and-prediction-matrices.html)
 - [Weighted time series forecasting](../user_guides/weighted-time-series-forecasting.html)
 - [Stacking multiple models](../user_guides/stacking-ensemble-models-forecasting.html)

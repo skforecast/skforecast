@@ -82,7 +82,7 @@ def test_create_sample_weights_output():
     forecaster = ForecasterDirect(
                      lags        = 3,
                      steps       = 1,    
-                     regressor   = LinearRegression(),
+                     estimator   = LinearRegression(),
                      weight_func = custom_weights
                  )
 
@@ -99,7 +99,7 @@ def test_create_sample_weights_exceptions_when_weights_has_nan():
     forecaster = ForecasterDirect(
                      lags        = 3,
                      steps       = 1,    
-                     regressor   = LinearRegression(),
+                     estimator   = LinearRegression(),
                      weight_func = custom_weights_nan
                  )
 
@@ -115,7 +115,7 @@ def test_create_sample_weights_exceptions_when_weights_has_negative_values():
     forecaster = ForecasterDirect(
                      lags        = 3,
                      steps       = 1,    
-                     regressor   = LinearRegression(),
+                     estimator   = LinearRegression(),
                      weight_func = custom_weights_negative
                  )
 
@@ -131,7 +131,7 @@ def test_create_sample_weights_exceptions_when_weights_all_zeros():
     forecaster = ForecasterDirect(
                      lags        = 3,
                      steps       = 1,    
-                     regressor   = LinearRegression(),
+                     estimator   = LinearRegression(),
                      weight_func = custom_weights_zeros
                  )
     

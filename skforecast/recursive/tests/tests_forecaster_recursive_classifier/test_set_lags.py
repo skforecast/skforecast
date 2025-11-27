@@ -48,7 +48,7 @@ def test_set_lags_when_window_features():
     """
     rolling = RollingFeaturesClassification(stats='mode', window_sizes=6)
     forecaster = ForecasterRecursiveClassifier(
-                     regressor       = LogisticRegression(),
+                     estimator       = LogisticRegression(),
                      lags            = 9,
                      window_features = rolling
                  )
@@ -71,7 +71,7 @@ def test_set_lags_to_None(lags):
     """
     rolling = RollingFeaturesClassification(stats='mode', window_sizes=3)
     forecaster = ForecasterRecursiveClassifier(
-                     regressor       = LogisticRegression(),
+                     estimator       = LogisticRegression(),
                      lags            = 5,
                      window_features = rolling
                  )

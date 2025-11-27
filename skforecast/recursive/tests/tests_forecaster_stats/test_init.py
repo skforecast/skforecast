@@ -8,27 +8,27 @@ from skforecast.exceptions import IgnoredArgumentWarning
 from sklearn.linear_model import LinearRegression
 
 
-def test_TypeError_when_regressor_is_not_Sarimax_when_initialization():
+def test_TypeError_when_estimator_is_not_Sarimax_when_initialization():
     """
-    Raise TypeError if regressor is not of type 
+    Raise TypeError if estimator is not of type 
     skforecast.sarimax.Sarimax when initializing the forecaster.
     """
-    regressor = LinearRegression()
+    estimator = LinearRegression()
 
     err_msg = re.escape(
-        (f"`regressor` must be an instance of type ['skforecast.stats._sarimax.Sarimax', "
+        (f"`estimator` must be an instance of type ['skforecast.stats._sarimax.Sarimax', "
          f"'skforecast.stats._arar.Arar', 'aeon.forecasting.stats._arima.ARIMA', "
-         f"'aeon.forecasting.stats._ets.ETS']. Got '{type(regressor)}'.")
+         f"'aeon.forecasting.stats._ets.ETS']. Got '{type(estimator)}'.")
     )
     with pytest.raises(TypeError, match = err_msg):
-        ForecasterStats(regressor = regressor)
+        ForecasterStats(estimator = estimator)
 
 
 def test_skforecast_Sarimax_params_are_stored_when_initialization():
     """
     Check `params` are stored in the forecaster.
     """
-    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 0, 1)))
+    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 0, 1)))
     expected_params = Sarimax(order=(1, 0, 1)).get_params(deep=True)
 
     assert forecaster.params == expected_params
@@ -45,7 +45,7 @@ def test_IgnoredArgumentWarning_when_skforecast_Sarimax_and_fit_kwargs():
     )
     with pytest.warns(IgnoredArgumentWarning, match = warn_msg):
         forecaster = ForecasterStats(
-                         regressor  = Sarimax(order=(1, 0, 1)),
+                         estimator  = Sarimax(order=(1, 0, 1)),
                          fit_kwargs = {'warning': 1}
                      )
     

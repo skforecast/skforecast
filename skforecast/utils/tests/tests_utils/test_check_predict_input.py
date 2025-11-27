@@ -233,7 +233,7 @@ def test_check_predict_input_UnknownLevelWarning_when_ForecasterRecursiveMultiSe
     warn_msg = re.escape(
         "`levels` {'1'} were not included in training. "
         "Unknown levels are encoded as NaN, which may cause the "
-        "prediction to fail if the regressor does not accept NaN values."
+        "prediction to fail if the estimator does not accept NaN values."
     )
     with pytest.warns(UnknownLevelWarning, match = warn_msg):
         check_predict_input(

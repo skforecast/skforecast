@@ -17,7 +17,7 @@ def test_backtesting_forecaster_TypeError_when_forecaster_not_supported_types():
     of the types supported by the function.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                    regressor = Ridge(random_state=123),
+                    estimator = Ridge(random_state=123),
                     lags      = 2
                  )
     forecaters_allowed = [

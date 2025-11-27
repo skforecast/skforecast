@@ -154,7 +154,7 @@ class ForecasterEquivalentDate():
     creation_date : str
         Date of creation.
     is_fitted : bool
-        Tag to identify if the regressor has been fitted (trained).
+        Tag to identify if the estimator has been fitted (trained).
     fit_date : str
         Date of last fit.
     skforecast_version : str
@@ -168,7 +168,7 @@ class ForecasterEquivalentDate():
     _probabilistic_mode: str, bool
         Private attribute used to indicate whether the forecaster should perform 
         some calculations during backtesting.
-    regressor : Ignored
+    estimator : Ignored
         Not used, present here for API consistency by convention.
     differentiation : Ignored
         Not used, present here for API consistency by convention.
@@ -205,7 +205,7 @@ class ForecasterEquivalentDate():
         self.python_version               = sys.version.split(" ")[0]
         self.forecaster_id                = forecaster_id
         self._probabilistic_mode          = "binned"
-        self.regressor                    = None
+        self.estimator                    = None
         self.differentiation              = None
         self.differentiation_max          = None
        
@@ -229,9 +229,8 @@ class ForecasterEquivalentDate():
         
         self.__skforecast_tags__ = {
             "library": "skforecast",
-            "estimator_type": "forecaster",
-            "estimator_name": "ForecasterEquivalentDate",
-            "estimator_task": "regression",
+            "forecaster_name": "ForecasterEquivalentDate",
+            "forecaster_task": "regression",
             "forecasting_scope": "single-series",  # single-series | global
             "forecasting_strategy": "recursive",   # recursive | direct | deep_learning
             "index_types_supported": ["pandas.RangeIndex", "pandas.DatetimeIndex"],
@@ -298,7 +297,7 @@ class ForecasterEquivalentDate():
             <details open>
                 <summary>General Information</summary>
                 <ul>
-                    <li><strong>Regressor:</strong> {type(self.regressor).__name__}</li>
+                    <li><strong>Estimator:</strong> {type(self.estimator).__name__}</li>
                     <li><strong>Offset:</strong> {self.offset}</li>
                     <li><strong>Number of offsets:</strong> {self.n_offsets}</li>
                     <li><strong>Aggregation function:</strong> {self.agg_func.__name__}</li>

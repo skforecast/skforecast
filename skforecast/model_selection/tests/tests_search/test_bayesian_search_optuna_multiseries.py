@@ -44,7 +44,7 @@ def test_TypeError_bayesian_search_optuna_multiseries_when_cv_not_valid():
 
     cv = DummyCV()
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor = Ridge(random_state=123),
+                     estimator = Ridge(random_state=123),
                      lags      = 2,
                      encoding  = 'onehot'
                  )
@@ -82,7 +82,7 @@ def test_ValueError_bayesian_search_optuna_multiseries_when_not_allowed_aggregat
     `aggregate_metric` has not a valid value.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor = Ridge(random_state=123),
+                     estimator = Ridge(random_state=123),
                      lags      = 2,
                      encoding  = 'onehot'
                  )
@@ -123,7 +123,7 @@ def test_ValueError_bayesian_search_optuna_multiseries_metric_list_duplicate_nam
     of metrics is used with duplicate names.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor = Ridge(random_state=123),
+                     estimator = Ridge(random_state=123),
                      lags      = 2,
                      encoding  = 'onehot'
                  )
@@ -161,7 +161,7 @@ def test_ValueError_bayesian_search_optuna_multiseries_when_search_space_names_d
     object name from optuna.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor = Ridge(random_state=123),
+                     estimator = Ridge(random_state=123),
                      lags      = 2,
                      encoding  = 'onehot'
                  )
@@ -209,7 +209,7 @@ def test_results_output_bayesian_search_optuna_multiseries_with_mocked_when_lags
     when `lags_grid` is a dict with mocked (mocked done in skforecast v0.12.0).
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor = RandomForestRegressor(random_state=123, n_jobs=1),
+                     estimator = RandomForestRegressor(random_state=123, n_jobs=1),
                      lags      = 2,
                      encoding  = 'onehot',
                      transformer_series = StandardScaler()
@@ -295,7 +295,7 @@ def test_results_output_bayesian_search_optuna_multiseries_ForecasterRecursiveMu
     (mocked done in skforecast v0.12.0).
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor = Ridge(random_state=123),
+                     estimator = Ridge(random_state=123),
                      lags      = 2,
                      encoding  = 'onehot',
                      transformer_series = StandardScaler()
@@ -368,7 +368,7 @@ def test_results_output_bayesian_search_optuna_multiseries_ForecasterRecursiveMu
     with multiple metrics and aggregated metrics (mocked done in skforecast v0.12.0).
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor = Ridge(random_state=123),
+                     estimator = Ridge(random_state=123),
                      lags      = 2,
                      encoding  = 'onehot',
                      transformer_series = StandardScaler()
@@ -540,7 +540,7 @@ def test_results_output_bayesian_search_optuna_multiseries_ForecasterRecursiveMu
         window_sizes=3,
     )
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor = Ridge(random_state=123),
+                     estimator = Ridge(random_state=123),
                      lags      = 2,
                      window_features = window_features,
                      encoding  = 'onehot',
@@ -706,7 +706,7 @@ def test_results_output_bayesian_search_optuna_multiseries_with_kwargs_create_st
     when `kwargs_create_study` with mocked (mocked done in skforecast v0.12.0).
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor = Ridge(random_state=123),
+                     estimator = Ridge(random_state=123),
                      lags      = 2,
                      encoding  = 'onehot',
                      transformer_series = StandardScaler()
@@ -787,7 +787,7 @@ def test_results_output_bayesian_search_optuna_multiseries_with_kwargs_study_opt
     when `kwargs_study_optimize` with mocked (mocked done in skforecast v0.12.0).
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor = RandomForestRegressor(random_state=123, n_jobs=1),
+                     estimator = RandomForestRegressor(random_state=123, n_jobs=1),
                      lags      = 2,
                      encoding  = 'onehot',
                      transformer_series = StandardScaler()
@@ -865,7 +865,7 @@ def test_results_output_bayesian_search_optuna_multiseries_when_lags_is_not_prov
     should use forecaster.lags.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor = Ridge(random_state=123),
+                     estimator = Ridge(random_state=123),
                      lags      = 4,
                      encoding  = 'onehot',
                      transformer_series = StandardScaler()
@@ -942,7 +942,7 @@ def test_results_output_bayesian_search_optuna_multiseries_ForecasterDirectMulti
     ForecasterDirectMultiVariate with mocked (mocked done in skforecast v0.12.0).
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = Ridge(random_state=123),
+                     estimator          = Ridge(random_state=123),
                      level              = 'l1',
                      lags               = 2,
                      steps              = 3,
@@ -1015,7 +1015,7 @@ def test_results_output_bayesian_search_optuna_multiseries_ForecasterDirectMulti
     with mocked (mocked done in skforecast v0.12.0).
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = Ridge(random_state=123),
+                     estimator          = Ridge(random_state=123),
                      level              = 'l1',
                      lags               = 2,
                      steps              = 3,
@@ -1100,7 +1100,7 @@ def test_evaluate_bayesian_search_optuna_multiseries_when_return_best_Forecaster
     (mocked done in skforecast v0.12.0).
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor = Ridge(random_state=123),
+                     estimator = Ridge(random_state=123),
                      lags      = 2,
                      encoding  = 'onehot',
                      transformer_series = StandardScaler()
@@ -1133,7 +1133,7 @@ def test_evaluate_bayesian_search_optuna_multiseries_when_return_best_Forecaster
     expected_alpha = 0.2345829390285611
     
     np.testing.assert_array_almost_equal(forecaster.lags, expected_lags)
-    assert expected_alpha == forecaster.regressor.alpha
+    assert expected_alpha == forecaster.estimator.alpha
 
 
 def test_results_opt_best_output__bayesian_search_optuna_multiseries_with_output_study_best_trial_optuna():
@@ -1142,7 +1142,7 @@ def test_results_opt_best_output__bayesian_search_optuna_multiseries_with_output
     study.best_trial optuna (mocked done in skforecast v0.12.0).
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor = Ridge(random_state=123),
+                     estimator = Ridge(random_state=123),
                      lags      = 2,
                      encoding  = 'onehot'
                  )
@@ -1171,7 +1171,7 @@ def test_results_opt_best_output__bayesian_search_optuna_multiseries_with_output
         
         alpha = trial.suggest_float('alpha', 1e-2, 1.0)
         forecaster = ForecasterRecursiveMultiSeries(
-                         regressor = Ridge(random_state=random_state, 
+                         estimator = Ridge(random_state=random_state, 
                                            alpha=alpha),
                          lags      = 2,
                          encoding  = 'onehot'
@@ -1222,7 +1222,7 @@ def test_bayesian_search_optuna_multiseries_ForecasterRecursiveMultiSeries_outpu
     ForecasterRecursiveMultiSeries.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor = RandomForestRegressor(random_state=123),
+                     estimator = RandomForestRegressor(random_state=123),
                      lags      = 2 
                  )
     cv = TimeSeriesFold(
@@ -1265,7 +1265,7 @@ def test_bayesian_search_optuna_multiseries_ForecasterDirectMultiVariate_output_
     ForecasterDirectMultiVariate.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor = RandomForestRegressor(random_state=123),
+                     estimator = RandomForestRegressor(random_state=123),
                      level     = 'l1',
                      lags      = 2,
                      steps     = 3

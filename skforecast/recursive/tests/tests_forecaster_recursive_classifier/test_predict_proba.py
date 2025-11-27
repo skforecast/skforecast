@@ -47,7 +47,7 @@ def test_predict_proba_AttributeError_when_estimator_does_not_support_predict_pr
     forecaster.fit(y=pd.Series(np.arange(10), name='y'))
 
     err_msg = re.escape(
-        f"The estimator {type(forecaster.regressor).__name__} does not have a "
+        f"The estimator {type(forecaster.estimator).__name__} does not have a "
         f"`predict_proba` method. Use a estimator that supports probability "
         f"predictions (e.g., XGBClassifier, HistGradientBoostingClassifier, etc.)."
     )
@@ -55,9 +55,9 @@ def test_predict_proba_AttributeError_when_estimator_does_not_support_predict_pr
         forecaster.predict_proba(steps=5)
 
 
-def test_predict_proba_output_when_regressor_is_LogisticRegression():
+def test_predict_proba_output_when_estimator_is_LogisticRegression():
     """
-    Test predict_proba output when using LogisticRegression as regressor.
+    Test predict_proba output when using LogisticRegression as estimator.
     """
     y_dummy = pd.Series(
         np.array(['a', 'b', 'c', 'a', 'b', 'c', 'a', 'b', 'c', 'a', 'b', 'c', 'a', 'b', 'c']), 
@@ -84,7 +84,7 @@ def test_predict_proba_output_when_regressor_is_LogisticRegression():
         
 def test_predict_proba_output_when_with_exog():
     """
-    Test predict_proba output when using LogisticRegression as regressor.
+    Test predict_proba output when using LogisticRegression as estimator.
     """
     forecaster = ForecasterRecursiveClassifier(LogisticRegression(), lags=3)
     forecaster.fit(y=y, exog=exog)
@@ -106,7 +106,7 @@ def test_predict_proba_output_when_with_exog():
 
 def test_predict_proba_output_with_transform_exog():
     """
-    Test predict_proba output when using LogisticRegression as regressor and 
+    Test predict_proba output when using LogisticRegression as estimator and 
     transformer_exog.
     """
 
@@ -124,7 +124,7 @@ def test_predict_proba_output_with_transform_exog():
                             verbose_feature_names_out = False
                        )
     forecaster = ForecasterRecursiveClassifier(
-                     regressor        = LogisticRegression(),
+                     estimator        = LogisticRegression(),
                      lags             = 5,
                      transformer_exog = transformer_exog,
                  )
@@ -171,7 +171,7 @@ def test_predict_proba_output_when_categorical_features_native_implementation_Hi
                        ).set_output(transform="pandas")
     
     forecaster = ForecasterRecursiveClassifier(
-                     regressor        = HistGradientBoostingClassifier(
+                     estimator        = HistGradientBoostingClassifier(
                                             categorical_features = categorical_features,
                                             random_state         = 123
                                         ),
@@ -226,7 +226,7 @@ def test_predict_proba_output_when_categorical_features_native_implementation_LG
                        ).set_output(transform="pandas")
     
     forecaster = ForecasterRecursiveClassifier(
-                     regressor        = LGBMClassifier(verbose=-1, random_state=123),
+                     estimator        = LGBMClassifier(verbose=-1, random_state=123),
                      lags             = 5,
                      transformer_exog = transformer_exog,
                      fit_kwargs       = {'categorical_feature': categorical_features}
@@ -286,7 +286,7 @@ def test_predict_proba_output_when_categorical_features_native_implementation_LG
                        ).set_output(transform="pandas")
     
     forecaster = ForecasterRecursiveClassifier(
-                     regressor        = LGBMClassifier(verbose=-1, random_state=123),
+                     estimator        = LGBMClassifier(verbose=-1, random_state=123),
                      lags             = 5,
                      transformer_exog = transformer_exog,
                      fit_kwargs       = {'categorical_feature': 'auto'}
@@ -317,7 +317,7 @@ def test_predict_proba_output_when_categorical_features_native_implementation_LG
                          ids=lambda steps: f'steps: {steps}')
 def test_predict_proba_output_when_window_features(steps):
     """
-    Test output of predict_proba when regressor is LGBMClassifier and window features.
+    Test output of predict_proba when estimator is LGBMClassifier and window features.
     """
     
     rolling = RollingFeaturesClassification(stats=['proportion', 'entropy'], window_sizes=[3, 5])

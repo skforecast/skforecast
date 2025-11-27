@@ -36,7 +36,7 @@ def test_output_grid_search_forecaster_multiseries_ForecasterRecursiveMultiSerie
     with mocked (mocked done in Skforecast v0.5.0)
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = Ridge(random_state=123),
+                     estimator          = Ridge(random_state=123),
                      lags               = 2, 
                      encoding           = 'onehot',
                      transformer_series = None
@@ -87,7 +87,7 @@ def test_output_grid_search_forecaster_multiseries_ForecasterRecursiveMultiSerie
     with mocked (mocked done in Skforecast v0.5.0)
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = Ridge(random_state=123),
+                     estimator          = Ridge(random_state=123),
                      lags               = 2, 
                      encoding           = 'onehot',
                      transformer_series = None
@@ -189,7 +189,7 @@ def test_output_grid_search_forecaster_multiseries_ForecasterDirectMultiVariate_
     with mocked (mocked done in Skforecast v0.6.0)
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = Ridge(random_state=123),
+                     estimator          = Ridge(random_state=123),
                      level              = 'l1',
                      lags               = 2,
                      steps              = 3, 
@@ -242,7 +242,7 @@ def test_output_grid_search_forecaster_multiseries_ForecasterRecursiveMultiSerie
     """
     metrics = ['mean_absolute_error', mean_absolute_percentage_error, mean_absolute_scaled_error]
     forecaster = ForecasterRecursiveMultiSeries(
-            regressor          = Ridge(random_state=123),
+            estimator          = Ridge(random_state=123),
             lags               = 10,
             encoding           = 'ordinal',
             transformer_series = StandardScaler(),
@@ -397,7 +397,7 @@ def test_output_grid_search_forecaster_multiseries_ForecasterDirectMultiVariate_
     """
     metrics = ['mean_absolute_error', mean_absolute_percentage_error, mean_absolute_scaled_error]
     forecaster = ForecasterDirectMultiVariate(
-                    regressor          = Ridge(random_state=123),
+                    estimator          = Ridge(random_state=123),
                     lags               = 10,
                     steps              = 10,
                     level              = 'item_1',
@@ -502,7 +502,7 @@ def test_output_grid_search_forecaster_multiseries_ForecasterRecursiveMultiSerie
     """
     metrics = ['mean_absolute_error', mean_absolute_percentage_error, mean_absolute_scaled_error]
     forecaster = ForecasterRecursiveMultiSeries(
-            regressor          = LGBMRegressor(random_state=678, verbose=-1),
+            estimator          = LGBMRegressor(random_state=678, verbose=-1),
             lags               = 3,
             encoding           = 'ordinal',
             transformer_series = StandardScaler(),

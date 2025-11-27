@@ -79,7 +79,7 @@ def expected_pandas_dataframe(request):
 
 def test_predict_output_when_steps_is_1_in_sample_residuals_is_True_with_fixture(expected_pandas_dataframe):
     """
-    Test output when regressor is LinearRegression and one step ahead is predicted
+    Test output when estimator is LinearRegression and one step ahead is predicted
     using in sample residuals. This test is equivalent to the next one.
     """
     forecaster = ForecasterRecursiveMultiSeries(
@@ -105,7 +105,7 @@ def test_predict_output_when_steps_is_1_in_sample_residuals_is_True_with_fixture
 
 def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_1_in_sample_residuals_is_True():
     """
-    Test output when regressor is LinearRegression and one step ahead is predicted
+    Test output when estimator is LinearRegression and one step ahead is predicted
     using in sample residuals.
     """
     forecaster = ForecasterRecursiveMultiSeries(
@@ -196,7 +196,7 @@ def expected_pandas_dataframe_2(request):
 
 def test_predict_output_when_steps_is_2_in_sample_residuals_is_True_with_fixture(expected_pandas_dataframe_2):
     """
-    Test output when regressor is LinearRegression and one step ahead is predicted
+    Test output when estimator is LinearRegression and one step ahead is predicted
     using in sample residuals. This test is equivalent to the next one.
     """
     forecaster = ForecasterRecursiveMultiSeries(
@@ -222,7 +222,7 @@ def test_predict_output_when_steps_is_2_in_sample_residuals_is_True_with_fixture
 
 def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_is_True():
     """
-    Test output when regressor is LinearRegression and two step ahead is predicted
+    Test output when estimator is LinearRegression and two step ahead is predicted
     using in sample residuals.
     """
     forecaster = ForecasterRecursiveMultiSeries(
@@ -282,7 +282,7 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_2_
 
 def test_predict_output_when_steps_is_1_in_sample_residuals_is_False_with_fixture(expected_pandas_dataframe):
     """
-    Test output when regressor is LinearRegression and one step ahead is predicted
+    Test output when estimator is LinearRegression and one step ahead is predicted
     using out sample residuals.
     """
     forecaster = ForecasterRecursiveMultiSeries(
@@ -307,7 +307,7 @@ def test_predict_output_when_steps_is_1_in_sample_residuals_is_False_with_fixtur
 
 def test_predict_output_when_steps_is_2_in_sample_residuals_is_False_with_fixture(expected_pandas_dataframe_2):
     """
-    Test output when regressor is LinearRegression and one step ahead is predicted
+    Test output when estimator is LinearRegression and one step ahead is predicted
     using in sample residuals. This test is equivalent to the next one.
     """
     forecaster = ForecasterRecursiveMultiSeries(
@@ -333,10 +333,10 @@ def test_predict_output_when_steps_is_2_in_sample_residuals_is_False_with_fixtur
                          ids = lambda value: f'interval: {value}')
 def test_predict_interval_output_when_with_transform_series(interval):
     """
-    Test predict_interval output when using LinearRegression as regressor and StandardScaler.
+    Test predict_interval output when using LinearRegression as estimator and StandardScaler.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 5,
                      transformer_series = StandardScaler()
                  )
@@ -363,14 +363,14 @@ def test_predict_interval_output_when_with_transform_series(interval):
 
 def test_predict_interval_output_when_with_transform_series_as_dict():
     """
-    Test predict_interval output when using LinearRegression as regressor and transformer_series
+    Test predict_interval output when using LinearRegression as estimator and transformer_series
     is a dict with 2 different transformers.
     """
     transformer_series = {
         'l1': StandardScaler(), 'l2': MinMaxScaler(), '_unknown_level': StandardScaler()
     }
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 5,
                      transformer_series = transformer_series
                  )
@@ -396,7 +396,7 @@ def test_predict_interval_output_when_with_transform_series_as_dict():
 
 def test_predict_interval_output_when_with_transform_series_and_transform_exog():
     """
-    Test predict_interval output when using LinearRegression as regressor, StandardScaler
+    Test predict_interval output when using LinearRegression as estimator, StandardScaler
     as transformer_series and transformer_exog as transformer_exog.
     """
     transformer_exog = ColumnTransformer(
@@ -406,7 +406,7 @@ def test_predict_interval_output_when_with_transform_series_and_transform_exog()
                            verbose_feature_names_out = False
                        )
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 5,
                      transformer_series = StandardScaler(),
                      transformer_exog   = transformer_exog,
@@ -441,7 +441,7 @@ def test_predict_interval_output_when_series_and_exog_dict():
     exog are dictionaries.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=LGBMRegressor(
+        estimator=LGBMRegressor(
             n_estimators=2, random_state=123, verbose=-1, max_depth=2
         ),
         lags=14,
@@ -505,7 +505,7 @@ def test_predict_interval_output_when_series_and_exog_dict_unknown_level():
     exog are dictionaries and unknown_level.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LGBMRegressor(
+                     estimator          = LGBMRegressor(
                          n_estimators=30, random_state=123, verbose=-1, max_depth=4
                      ),
                      lags               = 14,
@@ -584,7 +584,7 @@ def test_predict_interval_output_when_series_and_exog_dict_unknown_level_binned_
     exog are dictionaries, unknown_level and binned_residuals.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LGBMRegressor(
+                     estimator          = LGBMRegressor(
                          n_estimators=30, random_state=123, verbose=-1, max_depth=4
                      ),
                      lags               = 14,
@@ -762,7 +762,7 @@ def test_predict_interval_output_when_series_and_exog_dict_encoding_None_unknown
     exog are dictionaries, encoding is None and unknown_level.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LGBMRegressor(
+                     estimator          = LGBMRegressor(
                          n_estimators=30, random_state=123, verbose=-1, max_depth=4
                      ),
                      lags               = 14,
@@ -842,7 +842,7 @@ def test_predict_interval_output_when_series_and_exog_dict_encoding_None_unknown
     exog are dictionaries, encoding is None, unknown_level and binned_residuals.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LGBMRegressor(
+                     estimator          = LGBMRegressor(
                          n_estimators=30, random_state=123, verbose=-1, max_depth=4
                      ),
                      lags               = 14,
@@ -1024,7 +1024,7 @@ def test_predict_interval_conformal_output_when_series_and_exog_dict(interval):
     when series and exog are dictionaries.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=LGBMRegressor(
+        estimator=LGBMRegressor(
             n_estimators=2, random_state=123, verbose=-1, max_depth=2
         ),
         lags=14,

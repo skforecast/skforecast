@@ -41,7 +41,7 @@ def test_TypeError_bayesian_search_optuna_when_cv_not_valid():
 
     cv = DummyCV()
     forecaster = ForecasterRecursive(
-                     regressor = Ridge(random_state=123),
+                     estimator = Ridge(random_state=123),
                      lags      = 2
                  )
     
@@ -77,7 +77,7 @@ def test_ValueError_bayesian_search_optuna_metric_list_duplicate_names():
     metrics is used with duplicate names.
     """
     forecaster = ForecasterRecursive(
-                     regressor = Ridge(random_state=123),
+                     estimator = Ridge(random_state=123),
                      lags      = 2
                  )
     n_validation = 12
@@ -124,7 +124,7 @@ def test_ValueError_bayesian_search_optuna_when_search_space_names_do_not_match(
     object name from optuna.
     """
     forecaster = ForecasterRecursive(
-                     regressor = Ridge(random_state=123),
+                     estimator = Ridge(random_state=123),
                      lags      = 2 
                  )
     n_validation = 12
@@ -180,7 +180,7 @@ def test_results_output_bayesian_search_optuna_ForecasterRecursive():
     (mocked done in Skforecast v0.4.3).
     """
     forecaster = ForecasterRecursive(
-                     regressor = RandomForestRegressor(random_state=123),
+                     estimator = RandomForestRegressor(random_state=123),
                      lags      = 2
                  )
     n_validation = 12
@@ -269,7 +269,7 @@ def test_results_output_bayesian_search_optuna_window_features_ForecasterRecursi
         window_sizes = 3,
     )
     forecaster = ForecasterRecursive(
-                     regressor = RandomForestRegressor(random_state=123),
+                     estimator = RandomForestRegressor(random_state=123),
                      lags      = 2,
                      window_features = window_features,
                  )
@@ -423,7 +423,7 @@ def test_results_output_bayesian_search_optuna_ForecasterRecursive_with_kwargs_c
     kwargs_create_study with mocked (mocked done in Skforecast v0.4.3).
     """
     forecaster = ForecasterRecursive(
-                     regressor = Ridge(random_state=123),
+                     estimator = Ridge(random_state=123),
                      lags      = 2
                  )
     n_validation = 12
@@ -502,7 +502,7 @@ def test_results_output_bayesian_search_optuna_ForecasterRecursive_with_kwargs_s
     kwargs_study_optimize with mocked (mocked done in Skforecast v0.4.3).
     """
     forecaster = ForecasterRecursive(
-                     regressor = RandomForestRegressor(random_state=123),
+                     estimator = RandomForestRegressor(random_state=123),
                      lags      = 2 
                  )
     n_validation = 12
@@ -578,7 +578,7 @@ def test_results_output_bayesian_search_optuna_ForecasterRecursive_when_lags_not
     in search_space with mocked (mocked done in Skforecast v0.4.3).
     """
     forecaster = ForecasterRecursive(
-                     regressor = Ridge(random_state=123),
+                     estimator = Ridge(random_state=123),
                      lags      = 4
                  )
     n_validation = 12
@@ -650,7 +650,7 @@ def test_evaluate_bayesian_search_optuna_when_return_best_ForecasterRecursive():
     with a ForecasterRecursive.
     """
     forecaster = ForecasterRecursive(
-                     regressor = Ridge(random_state=123),
+                     estimator = Ridge(random_state=123),
                      lags      = 2
                  )
     n_validation = 12
@@ -691,7 +691,7 @@ def test_evaluate_bayesian_search_optuna_when_return_best_ForecasterRecursive():
     expected_alpha = 0.5558016213920624
 
     np.testing.assert_array_almost_equal(forecaster.lags, expected_lags)
-    assert expected_alpha == forecaster.regressor.alpha
+    assert expected_alpha == forecaster.estimator.alpha
 
 
 def test_results_opt_best_output_bayesian_search_optuna_with_output_study_best_trial_optuna():
@@ -700,7 +700,7 @@ def test_results_opt_best_output_bayesian_search_optuna_with_output_study_best_t
     study.best_trial optuna.
     """
     forecaster = ForecasterRecursive(
-                     regressor = Ridge(random_state=123),
+                     estimator = Ridge(random_state=123),
                      lags      = 2
                  )
 
@@ -736,7 +736,7 @@ def test_results_opt_best_output_bayesian_search_optuna_with_output_study_best_t
         lags  = trial.suggest_categorical('lags', [4, 2])
         
         forecaster = ForecasterRecursive(
-                        regressor = Ridge(random_state=random_state, 
+                        estimator = Ridge(random_state=random_state, 
                                           alpha=alpha),
                         lags      = lags
                      )
@@ -787,7 +787,7 @@ def test_results_output_bayesian_search_optuna_ForecasterDirect():
     (mocked done in Skforecast v0.4.3).
     """    
     forecaster = ForecasterDirect(
-                     regressor = RandomForestRegressor(random_state=123),
+                     estimator = RandomForestRegressor(random_state=123),
                      steps     = 3,
                      lags      = 4
                  )
@@ -886,7 +886,7 @@ def test_results_output_bayesian_search_optuna_window_features_ForecasterDirect(
         window_sizes = 3,
     )
     forecaster = ForecasterDirect(
-                     regressor = RandomForestRegressor(random_state=123),
+                     estimator = RandomForestRegressor(random_state=123),
                      steps     = 3,
                      lags      = 4,
                      window_features = window_features,
@@ -1043,7 +1043,7 @@ def test_bayesian_search_optuna_output_file():
     """
 
     forecaster = ForecasterRecursive(
-                     regressor = RandomForestRegressor(random_state=123),
+                     estimator = RandomForestRegressor(random_state=123),
                      lags      = 2 
                  )
     n_validation = 12
@@ -1096,27 +1096,27 @@ def test_bayesian_search_optuna_output_file():
         "forecaster",
         [
             ForecasterRecursive(
-                regressor=Ridge(random_state=678),
+                estimator=Ridge(random_state=678),
                 lags=3,
                 transformer_y=None,
                 forecaster_id='Recursive_no_transformer'
             ),
             ForecasterDirect(
-                regressor=Ridge(random_state=678),
+                estimator=Ridge(random_state=678),
                 steps=1,
                 lags=3,
                 transformer_y=None,
                 forecaster_id='Direct_no_transformer'
             ),
             ForecasterRecursive(
-                regressor=Ridge(random_state=678),
+                estimator=Ridge(random_state=678),
                 lags=3,
                 transformer_y=StandardScaler(),
                 transformer_exog=StandardScaler(),
                 forecaster_id='Recursive_transformers'
             ),
             ForecasterDirect(
-                regressor=Ridge(random_state=678),
+                estimator=Ridge(random_state=678),
                 steps=1,
                 lags=3,
                 transformer_y=StandardScaler(),

@@ -26,7 +26,7 @@ model = create_and_compile_model(
             recurrent_units=128,
             dense_units=64,
         )
-forecaster = ForecasterRnn(model, levels=["1", "2"], lags=3)
+forecaster = ForecasterRnn(estimator=model, levels=["1", "2"], lags=3)
 forecaster.fit(series)
 
 

@@ -8,10 +8,10 @@ def test_ForecasterStats_set_params_skforecast():
     """
     Test set_params() method skforecast.
     """
-    forecaster = ForecasterStats(regressor = Sarimax(order=(1, 1, 1)))
+    forecaster = ForecasterStats(estimator = Sarimax(order=(1, 1, 1)))
     new_params = {'order': (2, 2, 2), 'seasonal_order': (1, 1, 1, 2)}
     forecaster.set_params(new_params)
-    results = forecaster.regressor.get_params()
+    results = forecaster.estimator.get_params()
 
     expected = {
         'order': (2, 2, 2),

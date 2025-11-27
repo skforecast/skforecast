@@ -61,7 +61,7 @@ def test_predict_interval_ValueError_when_method_not_valid():
     """
     Test ValueError is raised when an invalid method is passed to predict_interval.
     """
-    forecaster = ForecasterRnn(model, levels=["1", "2"], lags=3)
+    forecaster = ForecasterRnn(estimator=model, levels=["1", "2"], lags=3)
     forecaster.fit(series, store_in_sample_residuals=True)
 
     err_msg = re.escape(
@@ -76,7 +76,7 @@ def test_predict_interval_output_size_with_steps_by_default():
     Test output sizes for predicting steps defined by default with intervals
     """
     # Create a ForecasterRnn object
-    forecaster = ForecasterRnn(model, levels=["1", "2"], lags=3)
+    forecaster = ForecasterRnn(estimator=model, levels=["1", "2"], lags=3)
     forecaster.fit(series, store_in_sample_residuals=True)
 
     # Call the predict method
@@ -91,7 +91,7 @@ def test_predict_interval_output_size_3_steps_ahead():
     Test output sizes for predicting 3 steps ahead with intervals
     """
     # Create a ForecasterRnn object
-    forecaster = ForecasterRnn(model, levels=["1", "2"], lags=3)
+    forecaster = ForecasterRnn(estimator=model, levels=["1", "2"], lags=3)
     forecaster.fit(series, store_in_sample_residuals=True)
 
     # Call the predict method
@@ -106,7 +106,7 @@ def test_predict_interval_output_size_2_steps_ahead_specific_levels():
     Test output sizes for predicting 2 steps ahead with intervals and specific levels
     """
     # Create a ForecasterRnn object
-    forecaster = ForecasterRnn(model, levels=["1", "2"], lags=3)
+    forecaster = ForecasterRnn(estimator=model, levels=["1", "2"], lags=3)
     forecaster.fit(series, store_in_sample_residuals=True)
 
     # Call the predict method
@@ -120,7 +120,9 @@ def test_predict_interval_exog_and_out_sample_residuals():
     """
     Test case for predicting with exogenous variables
     """
-    forecaster = ForecasterRnn(model_exog, levels=["1", "2", "3"], lags=10)
+    forecaster = ForecasterRnn(
+        estimator=model_exog, levels=["1", "2", "3"], lags=10
+    )
     forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
     forecaster.out_sample_residuals_ = forecaster.in_sample_residuals_
 
@@ -135,7 +137,9 @@ def test_predict_interval_specific_levels_with_exog():
     """
     Test case for predicting with specific levels
     """
-    forecaster = ForecasterRnn(model_exog, levels=["1", "2", "3"], lags=10)
+    forecaster = ForecasterRnn(
+        estimator=model_exog, levels=["1", "2", "3"], lags=10
+    )
     forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
     predictions = forecaster.predict_interval(steps=5, exog=exog_pred, levels=["1", "2"])
 

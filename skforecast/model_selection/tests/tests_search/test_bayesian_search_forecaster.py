@@ -21,7 +21,7 @@ def test_ValueError_bayesian_search_forecaster_when_return_best_and_len_y_exog_d
     and length of `y` and `exog` do not match.
     """
     forecaster = ForecasterRecursive(
-                    regressor = Ridge(random_state=123),
+                    estimator = Ridge(random_state=123),
                     lags      = 2
                  )
     exog = y[:30]
@@ -67,7 +67,7 @@ def test_results_output_bayesian_search_forecaster_optuna_ForecasterRecursive_wi
     mocked using optuna (mocked done in Skforecast v0.4.3).
     """    
     forecaster = ForecasterRecursive(
-                     regressor = Ridge(random_state=123),
+                     estimator = Ridge(random_state=123),
                      lags      = 4
                  )
 
@@ -141,7 +141,7 @@ def test_results_output_bayesian_search_forecaster_optuna_ForecasterRecursive_wi
         window_sizes = 3,
     )
     forecaster = ForecasterRecursive(
-                     regressor       = Ridge(random_state=123),
+                     estimator       = Ridge(random_state=123),
                      lags            = 4,
                      window_features = window_features,
                  )

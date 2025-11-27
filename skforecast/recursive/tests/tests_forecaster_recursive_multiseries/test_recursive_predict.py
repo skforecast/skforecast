@@ -28,13 +28,13 @@ series_2 = pd.DataFrame(
 @pytest.mark.parametrize("encoding",
                          ["ordinal", "ordinal_category", "onehot", None],
                          ids=lambda dt: f"encoding: {dt}")
-def test_recursive_predict_output_when_regressor_is_LinearRegression(encoding):
+def test_recursive_predict_output_when_estimator_is_LinearRegression(encoding):
     """
-    Test _recursive_predict output when using LinearRegression as regressor.
+    Test _recursive_predict output when using LinearRegression as estimator.
     """
 
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 5,
                      encoding           = encoding,
                      transformer_series = None
@@ -65,14 +65,14 @@ def test_recursive_predict_output_when_regressor_is_LinearRegression(encoding):
 @pytest.mark.parametrize("encoding",
                          ["ordinal", "ordinal_category", "onehot"],
                          ids=lambda dt: f"encoding: {dt}")
-def test_recursive_predict_output_when_regressor_is_Ridge_StandardScaler(encoding):
+def test_recursive_predict_output_when_estimator_is_Ridge_StandardScaler(encoding):
     """
-    Test _recursive_predict output when using Ridge as regressor and
+    Test _recursive_predict output when using Ridge as estimator and
     StandardScaler.
     """
 
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = Ridge(random_state=123),
+                     estimator          = Ridge(random_state=123),
                      lags               = [1, 5],
                      encoding           = encoding,
                      transformer_series = StandardScaler()
@@ -100,14 +100,14 @@ def test_recursive_predict_output_when_regressor_is_Ridge_StandardScaler(encodin
     np.testing.assert_array_almost_equal(predictions, expected)
 
 
-def test_recursive_predict_output_when_regressor_is_Ridge_StandardScaler_encoding_None():
+def test_recursive_predict_output_when_estimator_is_Ridge_StandardScaler_encoding_None():
     """
-    Test _recursive_predict output when using Ridge as regressor and
+    Test _recursive_predict output when using Ridge as estimator and
     StandardScaler with encoding=None.
     """
 
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = Ridge(random_state=123),
+                     estimator          = Ridge(random_state=123),
                      lags               = [1, 5],
                      encoding           = None,
                      transformer_series = StandardScaler()
@@ -141,7 +141,7 @@ def test_recursive_predict_output_when_regressor_is_Ridge_StandardScaler_encodin
                          ids = lambda tr: f'transformer_series type: {type(tr)}')
 def test_recursive_predict_output_when_with_transform_series_and_transform_exog_different_length_series(transformer_series):
     """
-    Test _recursive_predict output when using LinearRegression as regressor, StandardScaler
+    Test _recursive_predict output when using LinearRegression as estimator, StandardScaler
     as transformer_series and transformer_exog as transformer_exog with series 
     of different lengths.
     """
@@ -158,7 +158,7 @@ def test_recursive_predict_output_when_with_transform_series_and_transform_exog_
                            verbose_feature_names_out = False
                        )
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 5,
                      transformer_series = transformer_series,
                      transformer_exog   = transformer_exog,
@@ -199,7 +199,7 @@ def test_recursive_predict_output_with_window_features():
                            verbose_feature_names_out = False
                        )
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LGBMRegressor(verbose=-1),
+                     estimator          = LGBMRegressor(verbose=-1),
                      lags               = 5,
                      window_features    = rolling,
                      transformer_series = StandardScaler(),
@@ -241,7 +241,7 @@ def test_recursive_predict_output_with_two_window_features():
                            verbose_feature_names_out = False
                        )
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LGBMRegressor(verbose=-1),
+                     estimator          = LGBMRegressor(verbose=-1),
                      lags               = 5,
                      window_features    = [rolling, rolling_2],
                      transformer_series = StandardScaler(),
@@ -276,7 +276,7 @@ def test_recursive_predict_output_with_residuals_zero():
     """
 
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 5,
                      transformer_series = None
                  )
@@ -313,7 +313,7 @@ def test_recursive_predict_output_with_residuals_last_step():
     """
 
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 5,
                      transformer_series = None
                  )
@@ -349,7 +349,7 @@ def test_recursive_predict_output_with_residuals():
     """
 
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 5,
                      transformer_series = None
                  )
@@ -390,7 +390,7 @@ def test_recursive_predict_output_with_residuals_binned():
     Test _recursive_predict output with residuals when residuals are binned.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 5,
                      transformer_series = None,
                      binner_kwargs      = {'n_bins': 2}

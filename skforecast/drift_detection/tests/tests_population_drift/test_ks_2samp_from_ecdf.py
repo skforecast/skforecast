@@ -12,12 +12,19 @@ def test_ks_2samp_ValueError_when_alternative_not_allowed():
     Test ks_2samp_from_ecdf raises ValueError when alternative is not one of 
     the allowed values.
     """
+    
+    rng = np.random.default_rng(157839)
+    data1 = rng.normal(loc=0, scale=1, size=30)
+    data2 = rng.normal(loc=2, scale=3, size=30)
+
+    ecdf1 = ecdf(data1)
+    ecdf2 = ecdf(data2)
 
     error_msg = re.escape(
         "Invalid `alternative`. Must be 'two-sided', 'less', or 'greater'."
     )
     with pytest.raises(ValueError, match=error_msg):
-        ks_2samp_from_ecdf(None, None, alternative="invalid")
+        ks_2samp_from_ecdf(ecdf1, ecdf2, alternative="invalid")
 
 
 def test_ks_2samp_from_ecdf_output():

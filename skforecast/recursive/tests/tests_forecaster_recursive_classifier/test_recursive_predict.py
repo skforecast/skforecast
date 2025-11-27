@@ -13,9 +13,9 @@ from .fixtures_forecaster_recursive_classifier import exog
 from .fixtures_forecaster_recursive_classifier import exog_predict
 
 
-def test_recursive_predict_output_when_regressor_is_LogisticRegression():
+def test_recursive_predict_output_when_estimator_is_LogisticRegression():
     """
-    Test _recursive_predict output when using LogisticRegression as regressor.
+    Test _recursive_predict output when using LogisticRegression as estimator.
     """
     y_dummy = pd.Series(
         np.array(['a', 'b', 'c', 'a', 'b', 'c', 'a', 'b', 'c', 'a', 'b', 'c', 'a', 'b', 'c']), 
@@ -40,9 +40,9 @@ def test_recursive_predict_output_when_regressor_is_LogisticRegression():
     np.testing.assert_array_almost_equal(predictions, expected)
 
 
-def test_recursive_predict_output_when_regressor_is_LogisticRegression_and_exog():
+def test_recursive_predict_output_when_estimator_is_LogisticRegression_and_exog():
     """
-    Test _recursive_predict output when using LogisticRegression as regressor.
+    Test _recursive_predict output when using LogisticRegression as estimator.
     """
     forecaster = ForecasterRecursiveClassifier(LogisticRegression(), lags=3)
     forecaster.fit(y=y, exog=exog)

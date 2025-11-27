@@ -50,7 +50,7 @@ def test_set_window_features_when_differentiation_is_not_None():
     differentiation.
     """
     forecaster = ForecasterRecursive(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      lags            = 3,
                      window_features = RollingFeatures(stats='median', window_sizes=2),
                      differentiation = 1
@@ -81,7 +81,7 @@ def test_set_window_features_when_lags():
     """
     rolling = RollingFeatures(stats='mean', window_sizes=10)
     forecaster = ForecasterRecursive(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      lags            = 9,
                      window_features = rolling
                  )
@@ -104,7 +104,7 @@ def test_set_window_features_to_None():
     """
     rolling = RollingFeatures(stats='mean', window_sizes=6)
     forecaster = ForecasterRecursive(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      lags            = 5,
                      window_features = rolling
                  )

@@ -39,7 +39,7 @@ def test_predict_NotFittedError_when_fitted_is_False():
     """
     Test NotFittedError is raised when fitted is False.
     """
-    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 1, 1)))
+    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 1, 1)))
 
     err_msg = re.escape(
         ("This Forecaster instance is not fitted yet. Call `fit` with "
@@ -54,7 +54,7 @@ def test_predict_ValueError_when_ForecasterStats_last_window_exog_is_not_None_an
     Check ValueError is raised when last_window_exog is not None, but 
     last_window is not provided.
     """
-    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 1, 1)))
+    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 1, 1)))
     forecaster.fit(y=y, exog=exog)
     
     err_msg = re.escape(
@@ -75,7 +75,7 @@ def test_predict_ValueError_when_ForecasterStats_last_window_exog_is_None_and_in
     Check ValueError is raised when last_window_exog is None, but included_exog
     is True and last_window is provided.
     """
-    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 1, 1)))
+    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 1, 1)))
     forecaster.fit(y=y, exog=exog)
     
     err_msg = re.escape(
@@ -108,7 +108,7 @@ def test_predict_output_ForecasterStats_skforecast_Sarimax(kwargs, data):
     system = "win" if platform.system() == "Windows" else 'linux'
 
     forecaster = ForecasterStats(
-                     regressor = Sarimax(maxiter=1000, method='cg', disp=False, **kwargs)
+                     estimator = Sarimax(maxiter=1000, method='cg', disp=False, **kwargs)
                  )
     forecaster.fit(y=y)
     predictions = forecaster.predict(steps=5)
@@ -133,7 +133,7 @@ def test_predict_output_ForecasterStats_with_exog(kwargs, data):
     Test predict output of ForecasterStats with exogenous variables.
     """
     forecaster = ForecasterStats(
-                     regressor = Sarimax(maxiter=1000, method='cg', disp=False, **kwargs)
+                     estimator = Sarimax(maxiter=1000, method='cg', disp=False, **kwargs)
                  )
     forecaster.fit(y=y, exog=exog)
     predictions = forecaster.predict(steps=5, exog=exog_predict)
@@ -159,7 +159,7 @@ def test_predict_output_ForecasterStats_with_transform_y(kwargs, data):
     system = "win" if platform.system() == "Windows" else 'linux'
         
     forecaster = ForecasterStats(
-                     regressor     = Sarimax(maxiter=1000, method='cg', disp=False, **kwargs),
+                     estimator     = Sarimax(maxiter=1000, method='cg', disp=False, **kwargs),
                      transformer_y = StandardScaler()
                  )
     forecaster.fit(y=y)
@@ -194,7 +194,7 @@ def test_predict_output_ForecasterStats_with_transform_y_and_transform_exog(kwar
                        )
 
     forecaster = ForecasterStats(
-                     regressor        = Sarimax(maxiter=1000, method='cg', disp=False, **kwargs),
+                     estimator        = Sarimax(maxiter=1000, method='cg', disp=False, **kwargs),
                      transformer_y    = StandardScaler(),
                      transformer_exog = transformer_exog
                  )
@@ -219,7 +219,7 @@ def test_predict_ValueError_when_last_window_index_does_not_follow_training_set(
     lw_test = pd.Series(data=y_lw_datetime.to_numpy())
     lw_test.index = pd.date_range(start='2022-03-01', periods=50, freq='D')
 
-    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 0, 1)))
+    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 0, 1)))
     forecaster.fit(y=y_test)
 
     err_msg = re.escape(
@@ -250,7 +250,7 @@ def test_predict_ValueError_when_last_window_exog_index_does_not_follow_training
     lw_exog_test = pd.Series(data=exog_lw_datetime.to_numpy(), name='exog')
     lw_exog_test.index = pd.date_range(start='2022-03-01', periods=50, freq='D', name='exog')
 
-    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 0, 1)))
+    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 0, 1)))
     forecaster.fit(y=y_test, exog=exog_test)
 
     err_msg = re.escape(
@@ -286,7 +286,7 @@ def test_predict_output_ForecasterStats_with_last_window(kwargs, data):
     system = "win" if platform.system() == "Windows" else 'linux'
     
     forecaster = ForecasterStats(
-                     regressor = Sarimax(maxiter=1000, method='cg', disp=False, **kwargs)
+                     estimator = Sarimax(maxiter=1000, method='cg', disp=False, **kwargs)
                  )
     forecaster.fit(y=y_datetime)
     predictions = forecaster.predict(steps=5, last_window=y_lw_datetime)
@@ -311,7 +311,7 @@ def test_predict_output_ForecasterStats_with_last_window_and_exog(kwargs, data):
     Test predict output of ForecasterStats with exogenous variables and `last_window`.
     """
     forecaster = ForecasterStats(
-                     regressor = Sarimax(maxiter=1000, method='cg', disp=False, **kwargs)
+                     estimator = Sarimax(maxiter=1000, method='cg', disp=False, **kwargs)
                  )
     forecaster.fit(y=y_datetime, exog=exog_datetime)
     predictions = forecaster.predict(
@@ -348,7 +348,7 @@ def test_predict_output_ForecasterStats_with_last_window_and_exog_and_transforme
                        )
 
     forecaster = ForecasterStats(
-                     regressor        = Sarimax(maxiter=1000, method='cg', disp=False, **kwargs), 
+                     estimator        = Sarimax(maxiter=1000, method='cg', disp=False, **kwargs), 
                      transformer_y    = StandardScaler(),
                      transformer_exog = transformer_exog
                  )
@@ -379,7 +379,7 @@ def test_predict_ForecasterStats_updates_extended_index_twice(y, idx):
     """
     y_fit = y.iloc[:30].copy()
 
-    forecaster = ForecasterStats(regressor=Sarimax(order=(1, 0, 0)))
+    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 0, 0)))
     forecaster.fit(y=y_fit)
 
     lw_1 = y.iloc[30:40].copy()
@@ -394,14 +394,14 @@ def test_predict_ForecasterStats_updates_extended_index_twice(y, idx):
     pd.testing.assert_index_equal(forecaster.extended_index_, idx)
 
 
-def test_predict_output_ForecasterStats_with_Arar_regressor(y=y):
+def test_predict_output_ForecasterStats_with_Arar_estimator(y=y):
     """
-    Test output of predict when using Arar as regressor in ForecasterStats
+    Test output of predict when using Arar as estimator in ForecasterStats
     """
     y = y.copy()
     y.index = pd.date_range(start="2000-01-01", periods=len(y), freq="D")
-    regressor = Arar(max_ar_depth=26, max_lag=40)
-    forecaster = ForecasterStats(regressor=regressor)
+    estimator = Arar(max_ar_depth=26, max_lag=40)
+    forecaster = ForecasterStats(estimator=estimator)
     forecaster.fit(y=y)
     predictions = forecaster.predict(steps=10)
     print(predictions)
@@ -426,14 +426,14 @@ def test_predict_output_ForecasterStats_with_Arar_regressor(y=y):
     pd.testing.assert_series_equal(predictions, expected_results)
 
 
-def test_predict_output_ForecasterStats_with_aeon_ARIMA_regressor(y=y):
+def test_predict_output_ForecasterStats_with_aeon_ARIMA_estimator(y=y):
     """
-    Test output of predict when using ARIMA from aeon as regressor in ForecasterStats
+    Test output of predict when using ARIMA from aeon as estimator in ForecasterStats
     """
     y = y.copy()
     y.index = pd.date_range(start="2000-01-01", periods=len(y), freq="D")
-    regressor = ARIMA(p=4, d=1, q=1)
-    forecaster = ForecasterStats(regressor=regressor)
+    estimator = ARIMA(p=4, d=1, q=1)
+    forecaster = ForecasterStats(estimator=estimator)
     forecaster.fit(y=y)
     predictions = forecaster.predict(steps=10)
     print(predictions)

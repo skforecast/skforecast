@@ -31,7 +31,7 @@ def test_create_train_X_y_output_when_series_10_and_transformer_series_is_Standa
                 dense_units=64,
             )
     forecaster = ForecasterRnn(
-        model, levels="l1", transformer_series=StandardScaler(), lags=5
+        estimator=model, levels="l1", transformer_series=StandardScaler(), lags=5
     )
 
     results = forecaster.create_train_X_y(series=series)
@@ -123,7 +123,7 @@ def test_create_train_X_y_output_when_series_10_and_transformer_series_is_Standa
                 dense_units=64,
             )
     forecaster = ForecasterRnn(
-        model, levels="l1", transformer_series=StandardScaler(), lags=5
+        estimator=model, levels="l1", transformer_series=StandardScaler(), lags=5
     )
 
     (

@@ -29,7 +29,7 @@ def test_output_grid_search_forecaster_ForecasterRecursive_with_mocked():
     (mocked done in Skforecast v0.4.3)
     """
     forecaster = ForecasterRecursive(
-        regressor=Ridge(random_state=123),
+        estimator=Ridge(random_state=123),
         lags=2,  # Placeholder, the value will be overwritten
     )
     n_validation = 12
@@ -92,16 +92,16 @@ def test_output_grid_search_forecaster_ForecasterRecursive_with_mocked():
 
 
 forecasters = [
-    ForecasterRecursive(regressor=Ridge(random_state=678), lags=3),
-    ForecasterDirect(regressor=Ridge(random_state=678), lags=3, steps=1),
+    ForecasterRecursive(estimator=Ridge(random_state=678), lags=3),
+    ForecasterDirect(estimator=Ridge(random_state=678), lags=3, steps=1),
     ForecasterRecursive(
-        regressor=Ridge(random_state=678),
+        estimator=Ridge(random_state=678),
         lags=3,
         transformer_y=StandardScaler(),
         transformer_exog=StandardScaler(),
     ),
     ForecasterDirect(
-        regressor=Ridge(random_state=678),
+        estimator=Ridge(random_state=678),
         lags=3,
         steps=1,
         transformer_y=StandardScaler(),

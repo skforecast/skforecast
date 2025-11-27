@@ -21,7 +21,7 @@ def test_init_ValueError_when_no_lags_or_window_features():
     )
     with pytest.raises(ValueError, match = err_msg):
         ForecasterRecursiveMultiSeries(
-            regressor       = LinearRegression(),
+            estimator       = LinearRegression(),
             lags            = None,
             window_features = None
         )
@@ -43,7 +43,7 @@ def test_init_window_size_correctly_stored(lags, window_features, expected):
         )
 
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      lags            = lags,
                      window_features = window_features
                  )
@@ -76,7 +76,7 @@ def test_init_ValueError_invalid_encoding():
     )
     with pytest.raises(ValueError, match = err_msg):
         ForecasterRecursiveMultiSeries(
-            regressor = LinearRegression(),
+            estimator = LinearRegression(),
             lags      = [1, 2, 3],
             encoding  = 'invalid_encoding',
         )
@@ -95,7 +95,7 @@ def test_ForecasterRecursiveMultiSeries_init_not_scaling_with_linear_model():
     )
     with pytest.warns(DataTransformationWarning, match = warn_msg):
         ForecasterRecursiveMultiSeries(
-            regressor = LinearRegression(),
+            estimator = LinearRegression(),
             lags      = [1, 2, 3]
         )
 
@@ -112,7 +112,7 @@ def test_init_TypeError_transformer_series_dict_encoding_None():
     )
     with pytest.raises(TypeError, match = err_msg):
         ForecasterRecursiveMultiSeries(
-            regressor          = LinearRegression(),
+            estimator          = LinearRegression(),
             lags               = [1, 2, 3],
             encoding           = None,
             transformer_series = {'1': StandardScaler(), '_unknown_level': StandardScaler()}
@@ -133,7 +133,7 @@ def test_init_ValueError_transformer_series_dict_with_no_unknown_level():
     )
     with pytest.raises(ValueError, match = err_msg):
         ForecasterRecursiveMultiSeries(
-            regressor          = LinearRegression(),
+            estimator          = LinearRegression(),
             lags               = [1, 2, 3],
             encoding           = 'ordinal',
             transformer_series = {'1': StandardScaler()}
@@ -154,7 +154,7 @@ def test_init_TypeError_when_differentiation_argument_is_not_int_or_dict(diff):
     )
     with pytest.raises(TypeError, match = err_msg):
         ForecasterRecursiveMultiSeries(
-            regressor       = LinearRegression(),
+            estimator       = LinearRegression(),
             lags            = 5,
             differentiation = diff
         )
@@ -173,7 +173,7 @@ def test_init_ValueError_when_differentiation_is_int_but_not_greater_than_0(diff
     )
     with pytest.raises(ValueError, match = err_msg):
         ForecasterRecursiveMultiSeries(
-            regressor       = LinearRegression(),
+            estimator       = LinearRegression(),
             lags            = 5,
             differentiation = diff
         )
@@ -187,7 +187,7 @@ def test_init_when_differentiation_is_integer(diff):
     Test differentiation is correctly stored when it is an integer.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      lags            = 5,
                      differentiation = diff
                  )
@@ -209,7 +209,7 @@ def test_init_TypeError_when_differentiation_is_dict_with_encoding_None():
     )
     with pytest.raises(TypeError, match = err_msg):
         ForecasterRecursiveMultiSeries(
-            regressor       = LinearRegression(),
+            estimator       = LinearRegression(),
             lags            = 5,
             encoding        = None,
             differentiation = {'l1': 1, 'l2': 1, '_unknown_level': 1}
@@ -228,7 +228,7 @@ def test_init_ValueError_when_differentiation_is_dict_with_no_unknown_level():
     )
     with pytest.raises(ValueError, match = err_msg):
         ForecasterRecursiveMultiSeries(
-            regressor       = LinearRegression(),
+            estimator       = LinearRegression(),
             lags            = 5,
             encoding        = 'ordinal',
             differentiation = {'l1': 1, 'l2': 1}
@@ -251,7 +251,7 @@ def test_init_ValueError_when_differentiation_is_dict_with_int_not_greater_than_
     )
     with pytest.raises(ValueError, match = err_msg):
         ForecasterRecursiveMultiSeries(
-            regressor       = LinearRegression(),
+            estimator       = LinearRegression(),
             lags            = 5,
             differentiation = diff
         )
@@ -269,7 +269,7 @@ def test_init_ValueError_when_differentiation_is_dict_with_all_None():
     )
     with pytest.raises(ValueError, match = err_msg):
         ForecasterRecursiveMultiSeries(
-            regressor       = LinearRegression(),
+            estimator       = LinearRegression(),
             lags            = 5,
             differentiation = {'l1': None, 'l2': None, '_unknown_level': None}
         )
@@ -284,7 +284,7 @@ def test_init_when_differentiation_is_dict(diff):
     Test differentiation is correctly stored when it is a dict.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      lags            = 5,
                      differentiation = diff
                  )

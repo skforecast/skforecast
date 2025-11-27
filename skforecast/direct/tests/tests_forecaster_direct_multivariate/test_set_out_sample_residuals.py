@@ -20,7 +20,7 @@ def test_set_out_sample_residuals_NotFittedError_when_forecaster_not_fitted():
     Test NotFittedError is raised when forecaster is not fitted.
     """
     forecaster = ForecasterDirectMultiVariate(
-        regressor=LinearRegression(), level='l1', steps=2, lags=3
+        estimator=LinearRegression(), level='l1', steps=2, lags=3
     )
     y_true = {'l1': np.array([1, 2, 3, 4, 5]), 2: np.array([1, 2, 3, 4, 5])}
     y_pred = {'l1': np.array([1, 2, 3, 4, 5]), 2: np.array([1, 2, 3, 4, 5])}
@@ -38,7 +38,7 @@ def test_set_out_sample_residuals_TypeError_when_y_true_is_not_dict():
     Test TypeError is raised when y_true is not a dict.
     """
     forecaster = ForecasterDirectMultiVariate(
-        regressor=LinearRegression(), level='l1', steps=2, lags=3
+        estimator=LinearRegression(), level='l1', steps=2, lags=3
     )
     forecaster.is_fitted = True
     y_true = 'not_dict'
@@ -57,7 +57,7 @@ def test_set_out_sample_residuals_TypeError_when_y_pred_is_not_dict():
     Test TypeError is raised when y_pred is not a dict.
     """
     forecaster = ForecasterDirectMultiVariate(
-        regressor=LinearRegression(), level='l1', steps=2, lags=3
+        estimator=LinearRegression(), level='l1', steps=2, lags=3
     )
     forecaster.is_fitted = True
     y_true = {'l1': np.array([1, 2, 3, 4, 5]), 2: np.array([1, 2, 3, 4, 5])}
@@ -76,7 +76,7 @@ def test_set_out_sample_residuals_ValueError_when_y_pred_and_y_true_keys_do_not_
     Test TypeError is raised when y_pred and y_true keys do not match.
     """
     forecaster = ForecasterDirectMultiVariate(
-        regressor=LinearRegression(), level='l1', steps=2, lags=3
+        estimator=LinearRegression(), level='l1', steps=2, lags=3
     )
     forecaster.is_fitted = True
     y_true = {'l1': np.array([1, 2, 3, 4, 5]), 2: np.array([1, 2, 3, 4, 5])}
@@ -95,7 +95,7 @@ def test_set_out_sample_residuals_TypeError_when_y_true_contains_no_numpy_ndarra
     Test TypeError is raised when y_true contains no numpy ndarrays or pandas series.
     """
     forecaster = ForecasterDirectMultiVariate(
-        regressor=LinearRegression(), level='l1', steps=2, lags=3
+        estimator=LinearRegression(), level='l1', steps=2, lags=3
     )
     forecaster.is_fitted = True
     y_true = {'l1': 'not_ndarray'}
@@ -114,7 +114,7 @@ def test_set_out_sample_residuals_TypeError_when_y_pred_contains_no_numpy_ndarra
     Test TypeError is raised when y_pred contains no numpy ndarrays or pandas series.
     """
     forecaster = ForecasterDirectMultiVariate(
-        regressor=LinearRegression(), level='l1', steps=2, lags=3
+        estimator=LinearRegression(), level='l1', steps=2, lags=3
     )
     forecaster.is_fitted = True
     y_true = {'l1': np.array([1, 2, 3, 4, 5])}
@@ -133,7 +133,7 @@ def test_set_out_sample_residuals_ValueError_when_y_true_and_y_pred_have_element
     Test ValueError is raised when y_true and y_pred have elements with different lengths.
     """
     forecaster = ForecasterDirectMultiVariate(
-        regressor=LinearRegression(), level='l1', steps=2, lags=3
+        estimator=LinearRegression(), level='l1', steps=2, lags=3
     )
     forecaster.is_fitted = True
     y_true = {'l1': np.array([1, 2, 3, 4, 5]), 'l2': np.array([1, 2, 3, 4, 5])}
@@ -151,7 +151,7 @@ def test_set_out_sample_residuals_ValueError_when_y_true_and_y_pred_have_series_
     Test ValueError is raised when y_true and y_pred have series with different indexes.
     """
     forecaster = ForecasterDirectMultiVariate(
-        regressor=LinearRegression(), level='l1', steps=2, lags=3
+        estimator=LinearRegression(), level='l1', steps=2, lags=3
     )
     forecaster.is_fitted = True
     y_true = {'l1': pd.Series([1, 2, 3, 4, 5], index=[1, 2, 3, 4, 5])}
@@ -170,7 +170,7 @@ def test_set_out_sample_residuals_ValueError_when_inputs_does_not_match_the_targ
     Test ValueError is raised when inputs does not contain keys that match any step.
     """
     forecaster = ForecasterDirectMultiVariate(
-        regressor=LinearRegression(), level='l1', steps=2, lags=3
+        estimator=LinearRegression(), level='l1', steps=2, lags=3
     )
     forecaster.fit(series=series)
     y_true = {'l3': np.array([1, 2, 3])}
@@ -197,7 +197,7 @@ def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_and_n
     }
 
     forecaster = ForecasterDirectMultiVariate(
-        regressor=LinearRegression(), level='l1', steps=2, lags=3, transformer_series=None
+        estimator=LinearRegression(), level='l1', steps=2, lags=3, transformer_series=None
     )
     forecaster.fit(series=series)
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
@@ -229,7 +229,7 @@ def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_and_a
     }
 
     forecaster = ForecasterDirectMultiVariate(
-        regressor=LinearRegression(), level='l1', steps=2, lags=3, transformer_series=None
+        estimator=LinearRegression(), level='l1', steps=2, lags=3, transformer_series=None
     )
     forecaster.fit(series=series)
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
@@ -261,7 +261,7 @@ def test_set_out_sample_residuals_when_residuals_length_is_greater_than_10000():
     )
 
     forecaster = ForecasterDirectMultiVariate(
-        regressor=LinearRegression(), level='l1', steps=1, lags=1, 
+        estimator=LinearRegression(), level='l1', steps=1, lags=1, 
         transformer_series=None, binner_kwargs={"n_bins": 10}
     )
     forecaster.fit(series=series_fit)
@@ -271,7 +271,7 @@ def test_set_out_sample_residuals_when_residuals_length_is_greater_than_10000():
     )
 
     y_true = {'l1': y_train_step_1}
-    y_pred = {'l1': forecaster.regressors_[1].predict(X_train_step_1)}
+    y_pred = {'l1': forecaster.estimators_[1].predict(X_train_step_1)}
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
 
     assert list(forecaster.out_sample_residuals_.keys()) == ['l1']
@@ -286,7 +286,7 @@ def test_out_sample_residuals_by_bin_and_in_sample_residuals_by_bin_equivalence(
     when training data and training predictions are passed.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      level              = 'l1',
                      steps              = 3,
                      lags               = 5,
@@ -303,7 +303,7 @@ def test_out_sample_residuals_by_bin_and_in_sample_residuals_by_bin_equivalence(
             step=step, X_train=X_train, y_train=y_train
         )
         y_true.append(y_train_step.to_numpy())
-        y_pred.append(forecaster.regressors_[step].predict(X_train_step))
+        y_pred.append(forecaster.estimators_[step].predict(X_train_step))
 
     y_true = {'l1': np.concatenate(y_true)}
     y_pred = {'l1': np.concatenate(y_pred)}
@@ -334,7 +334,7 @@ def test_set_out_sample_residuals_append_new_residuals_per_bin():
     )
 
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      level              = 'l1',
                      steps              = 1,
                      lags               = 1,
@@ -348,7 +348,7 @@ def test_set_out_sample_residuals_append_new_residuals_per_bin():
     )
 
     y_true = {'l1': y_train_step_1}
-    y_pred = {'l1': forecaster.regressors_[1].predict(X_train_step_1)}
+    y_pred = {'l1': forecaster.estimators_[1].predict(X_train_step_1)}
     for i in range(1, 20):
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred, append=True)
         for v in forecaster.out_sample_residuals_by_bin_['l1'].values():
@@ -369,7 +369,7 @@ def test_set_out_sample_residuals_when_there_are_no_residuals_for_some_bins():
     )
 
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      level              = 'l1',
                      steps              = 1,
                      lags               = 5,
@@ -417,7 +417,7 @@ def test_forecaster_set_out_sample_residuals_when_transformer_y_and_differentiat
         'l1': rng.normal(loc=0, scale=1, size=5)
     }
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      level              = 'l1',
                      steps              = 2,
                      lags               = 3,
