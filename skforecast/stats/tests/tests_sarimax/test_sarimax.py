@@ -10,15 +10,15 @@ from statsmodels.tsa.statespace.sarimax import SARIMAX
 from statsmodels.tsa.statespace.sarimax import SARIMAXResultsWrapper
 
 # Fixtures
-from .fixtures_sarimax import y
-from .fixtures_sarimax import y_lw
-from .fixtures_sarimax import exog
-from .fixtures_sarimax import exog_lw
-from .fixtures_sarimax import exog_predict
-from .fixtures_sarimax import exog_lw_predict
-from .fixtures_sarimax import y_datetime
-from .fixtures_sarimax import exog_datetime
-from .fixtures_sarimax import exog_predict_datetime
+from skforecast.stats.tests.tests_sarimax.fixtures_sarimax import y
+from skforecast.stats.tests.tests_sarimax.fixtures_sarimax import y_lw
+from skforecast.stats.tests.tests_sarimax.fixtures_sarimax import exog
+from skforecast.stats.tests.tests_sarimax.fixtures_sarimax import exog_lw
+from skforecast.stats.tests.tests_sarimax.fixtures_sarimax import exog_predict
+from skforecast.stats.tests.tests_sarimax.fixtures_sarimax import exog_lw_predict
+from skforecast.stats.tests.tests_sarimax.fixtures_sarimax import y_datetime
+from skforecast.stats.tests.tests_sarimax.fixtures_sarimax import exog_datetime
+from skforecast.stats.tests.tests_sarimax.fixtures_sarimax import exog_predict_datetime
 
 # Fixtures numpy
 y_numpy = y.to_numpy()
