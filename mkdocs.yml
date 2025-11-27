@@ -21,7 +21,7 @@ nav:
 
   - User Guides:
     - Table of contents: user_guides/table-of-contents.md
-    - Skforecast 0.14 Migration guide: user_guides/migration-guide.ipynb
+    - Skforecast Migration guide: user_guides/migration-guide.ipynb
     - Input data: user_guides/input-data.ipynb
     - Single series Forecasters:
       - Recursive multi-step forecasting: user_guides/autoregressive-forecaster.ipynb

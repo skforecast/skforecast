@@ -40,7 +40,7 @@ Skforecast is a Python library that facilitates using scikit-learn estimators as
 
 + [XGBoost](https://xgboost.readthedocs.io/en/stable/python/python_api.html#module-xgboost.sklearn)
 
-+ [CatBoost](https://catboost.ai/en/docs/concepts/python-reference_catboostestimator)
++ [CatBoost](https://catboost.ai/en/docs/concepts/python-reference_catboostregressor)
 
 ```python
 # Create a forecaster
@@ -208,7 +208,7 @@ Some estimators include the possibility to add some additional configuration dur
 
 !!! example
 
-    The following example demonstrates the inclusion of categorical features in an LGBM estimator. This must be done during the `LGBMRegressor` fit method. [Fit parameters lightgbm](https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html#lightgbm.LGBMRegressor.fit)
+    The following example demonstrates the inclusion of categorical features in an `LGBMRegressor`. This must be done during the `LGBMRegressor` fit method. [Fit parameters lightgbm](https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html#lightgbm.LGBMRegressor.fit)
 
 More information: [Categorical features]../user_guides/categorical-features.html#native-implementation-for-categorical-features).
 

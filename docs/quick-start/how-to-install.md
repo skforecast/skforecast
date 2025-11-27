@@ -7,7 +7,7 @@ This guide will help you install `skforecast`, a powerful library for time serie
 
 ## **Basic installation**
 
-**Skforecast** requires Python 3.9 or higher. It is available on PyPI and can be installed using `pip`. You can also install it via conda from the conda-forge channel.
+**Skforecast** requires Python 3.10 or higher. It is available on PyPI and can be installed using `pip`. You can also install it via conda from the conda-forge channel.
 
 To install the basic version of `skforecast` with its core dependencies, run:
 
@@ -18,7 +18,7 @@ pip install skforecast
 Specific version:
 
 ```bash
-pip install skforecast==0.18.0
+pip install skforecast==0.19.0
 ```
 
 Latest (unstable):
@@ -49,10 +49,10 @@ pip install skforecast[full]
 
 For specific use cases, you can install these dependencies as needed:
 
-### Sarimax
+### Stats
 
 ```bash
-pip install skforecast[sarimax]
+pip install skforecast[stats]
 ```
 
 + statsmodels>=0.12, <0.15

@@ -14,19 +14,19 @@ All significant changes to this project are documented in this release file.
 
 The main changes in this release are:
 
-+ <span class="badge text-bg-api-change">API Change</span> Parameter and attribute `estimator` has been deprecated in favor of `estimator` in all Forecasters and will be removed in future releases to align with scikit-learn terminology.
++ <span class="badge text-bg-api-change">API Change</span> Parameter and attribute `regressor` has been deprecated in favor of `estimator` in all Forecasters and will be removed in future releases to align with scikit-learn terminology. Visit the [migration guide](../user_guides/migration-guide.html) section for more information.
 
-+ <span class="badge text-bg-feature">Feature</span> New class <code>[ForecasterRecursiveClassifier]</code> in the <code>[recursive]</code> module. This forecaster is designed to handle time series data where the target variable is categorical, enabling the prediction of future class labels based on historical patterns.
++ <span class="badge text-bg-feature">Feature</span> New class <code>[ForecasterRecursiveClassifier]</code> in the <code>[recursive]</code> module. This forecaster is designed to handle time series data where the target variable is categorical, enabling the prediction of future class labels based on historical patterns. [User guide](../user_guides/autoregressive-classification-forecasting.html)
 
-+ <span class="badge text-bg-feature">Feature</span> New class <code>[PopulationDriftDetector]</code> in the <code>[drift_detection]</code> module to detect population drift between reference and new data. Suitable to detect when forecasting models need to be retrained due to changes in the data distribution. It supports both target and exogenous variables, in single and multiseries forecasting.
++ <span class="badge text-bg-feature">Feature</span> New class <code>[PopulationDriftDetector]</code> in the <code>[drift_detection]</code> module to detect population drift between reference and new data. Suitable to detect when forecasting models need to be retrained due to changes in the data distribution. It supports both target and exogenous variables, in single and multiseries forecasting. [User guide](../user_guides/drift-detection.html)
 
-+ <span class="badge text-bg-feature">Feature</span> New module <code>[stats]</code>. This module contains statistical models for time series forecasting that follows the scikit-learn interface.
++ <span class="badge text-bg-feature">Feature</span> New module <code>[stats]</code>. This module contains statistical models for time series forecasting that follows the scikit-learn interface. [User guide](../user_guides/forecasting-sarimax-arima.html)
 
-+ <span class="badge text-bg-feature">Feature</span> New class <code>[Arar]</code> in the <code>[stats]</code> module. This class implements ARAR algorithm, a forecasting method that combines a "memory shortening" transformation with an autoregressive (AR) model.
++ <span class="badge text-bg-feature">Feature</span> New class <code>[Arar]</code> in the <code>[stats]</code> module. This class implements ARAR algorithm, a forecasting method that combines a "memory shortening" transformation with an autoregressive (AR) model. [User guide](../user_guides/forecasting-arar.html)
 
-+ <span class="badge text-bg-api-change">API Change</span> Class <code>[Sarimax]</code> has been moved to the new <code>[stats]</code> module.
++ <span class="badge text-bg-api-change">API Change</span> Class <code>[Sarimax]</code> has been moved to the new <code>[stats]</code> module. Visit the [migration guide](../user_guides/migration-guide.html) section for more information.
 
-+ <span class="badge text-bg-api-change">API Change</span> Class <code>[ForecasterSarimax]</code> has been deprecated in favor of the new <code>[ForecasterStats]</code> model in the <code>[recursive]</code> module. The new forecaster is compatible with a broader range of statistical models such as: sarimax, arima, arar and ets.
++ <span class="badge text-bg-api-change">API Change</span> Class <code>[ForecasterSarimax]</code> has been deprecated in favor of the new <code>[ForecasterStats]</code> model in the <code>[recursive]</code> module. The new forecaster is compatible with a broader range of statistical models such as: sarimax, arima, arar and ets. Visit the [migration guide](../user_guides/migration-guide.html) section for more information.
 
 + <span class="badge text-bg-danger">Fix</span> Fixed an issue that prevented using indices with frequencies containing metadata (e.g., `CustomBusinessDay`, `CustomBusinessHour`, or holiday/weekmask variants). The library now preserves full frequency metadata by using `freq` instead of `freqstr`, ensuring correct alignment and compatibility with custom date offsets. ([#1051](https://github.com/skforecast/skforecast/issues/1051))
 
@@ -50,12 +50,11 @@ The main changes in this release are:
 
 **Changed**
 
-+ Parameter `estimator` has been deprecated in favor of `estimator` in all Forecasters and will be removed in future releases to align with scikit-learn terminology.
++ Parameter `regressor` has been deprecated in favor of `estimator` in all Forecasters and will be removed in future releases to align with scikit-learn terminology. Visit the [migration guide](../user_guides/migration-guide.html) section for more information.
 
-+ Class <code>[Sarimax]</code> has been moved to the new <code>[stats]</code> module.
++ Class <code>[Sarimax]</code> has been moved to the new <code>[stats]</code> module. Visit the [migration guide](../user_guides/migration-guide.html) section for more information.
 
-+ Class <code>[ForecasterSarimax]</code> has been deprecated in favor of the new <code>[ForecasterStats]</code> model in the <code>[recursive]</code> module. The new forecaster is compatible with a broader range of statistical models such as: sarimax, arima, arar and ets.
-
++ Class <code>[ForecasterSarimax]</code> has been deprecated in favor of the new <code>[ForecasterStats]</code> model in the <code>[recursive]</code> module. The new forecaster is compatible with a broader range of statistical models such as: sarimax, arima, arar and ets. Visit the [migration guide](../user_guides/migration-guide.html) section for more information.
 
 **Fixed**
 
