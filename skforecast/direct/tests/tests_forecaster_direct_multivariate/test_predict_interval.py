@@ -8,7 +8,6 @@ from sklearn.linear_model import LinearRegression
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
-from skforecast.exceptions import ResidualsUsageWarning
 from skforecast.direct import ForecasterDirectMultiVariate
 
 # Fixtures
@@ -29,7 +28,7 @@ def test_check_interval_ValueError_when_method_is_not_valid_method():
     Check ValueError is raised when `method` is not 'bootstrapping' or 'conformal'.
     """
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', steps=2, lags=3
+        estimator=LinearRegression(), level='l1', steps=2, lags=3
     )
     forecaster.fit(series=series, store_in_sample_residuals=True)
 
@@ -96,7 +95,7 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_2_
                      transformer_exog   = transformer_exog
                  )
     forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
-    forecaster.out_sample_residuals_= forecaster.in_sample_residuals_
+    forecaster.out_sample_residuals_ = forecaster.in_sample_residuals_
     forecaster.out_sample_residuals_by_bin_ = forecaster.in_sample_residuals_by_bin_    
     n_boot = 250
     results = forecaster.predict_interval(
@@ -167,7 +166,7 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_5_
                      transformer_series = StandardScaler()
                  )
     forecaster.fit(series=series, store_in_sample_residuals=True)
-    forecaster.out_sample_residuals_= forecaster.in_sample_residuals_
+    forecaster.out_sample_residuals_ = forecaster.in_sample_residuals_
     forecaster.out_sample_residuals_by_bin_ = forecaster.in_sample_residuals_by_bin_
 
     results = forecaster.predict_interval(

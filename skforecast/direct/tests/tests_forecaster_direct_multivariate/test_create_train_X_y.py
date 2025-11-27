@@ -22,7 +22,9 @@ def test_create_train_X_y_TypeError_when_series_not_DataFrame():
     Test TypeError is raised when series is not a pandas DataFrame.
     """
     series = pd.Series(np.arange(7))
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1', lags=3, steps=2)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', lags=3, steps=2
+    )
 
     err_msg = re.escape(
         f"`series` must be a pandas DataFrame. Got {type(series)}."
@@ -40,7 +42,7 @@ def test_create_train_X_y_ValueError_when_len_series_is_lower_than_maximum_windo
                            'l2': pd.Series(np.arange(5))})
     
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', steps=3, lags=3
+        estimator=LinearRegression(), level='l1', steps=3, lags=3
     )
     err_msg = re.escape(
         "Minimum length of `series` for training this forecaster is "
@@ -58,7 +60,7 @@ def test_create_train_X_y_ValueError_when_len_series_is_lower_than_maximum_windo
     
     rolling = RollingFeatures(stats=['mean', 'median'], window_sizes=3)
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', steps=3, lags=2, window_features=rolling
+        estimator=LinearRegression(), level='l1', steps=3, lags=2, window_features=rolling
     )
     err_msg = re.escape(
         "Minimum length of `series` for training this forecaster is "
@@ -81,7 +83,9 @@ def test_create_train_X_y_ValueError_when_level_not_in_series():
     """
     series = pd.DataFrame({'1': pd.Series(np.arange(5)),  
                            'l2': pd.Series(np.arange(5))})
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1', lags=3, steps=2)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', lags=3, steps=2
+    )
 
     series_col_names = list(series.columns)
 
@@ -101,7 +105,9 @@ def test_create_train_X_y_ValueError_when_series_have_missing_values():
     series = pd.DataFrame({'l1': pd.Series(np.arange(5)),  
                            'l2': pd.Series(np.arange(5))})
     series.iloc[2, 0] = np.nan
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1', lags=3, steps=2)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', lags=3, steps=2
+    )
 
     err_msg = "Column 'l1' has missing values."
     with pytest.raises(ValueError, match = err_msg):
@@ -142,7 +148,9 @@ def test_create_train_X_y_TypeError_when_exog_is_categorical_of_no_int():
     series = pd.DataFrame({'l1': pd.Series(np.arange(6)),  
                            'l2': pd.Series(np.arange(6))})
     exog = pd.Series(['A', 'B', 'C', 'A', 'B', 'C'], name='exog', dtype='category')
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1', lags=2, steps=2)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', lags=2, steps=2
+    )
 
     err_msg = re.escape(
         "Categorical dtypes in exog must contain only integer values. "
@@ -161,7 +169,9 @@ def test_create_train_X_y_MissingValuesWarning_when_exog_has_missing_values():
     series = pd.DataFrame({'l1': pd.Series(np.arange(6)),  
                            'l2': pd.Series(np.arange(6))})
     exog = pd.Series([1, 2, 3, np.nan, 5, 6], name='exog')
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l2', lags=2, steps=2)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l2', lags=2, steps=2
+    )
 
     warn_msg = re.escape(
         "`exog` has missing values. Most machine learning models do "
@@ -178,8 +188,9 @@ def test_create_train_X_y_TypeError_when_exog_is_not_pandas_Series_or_DataFrame(
     series = pd.DataFrame({'l1': pd.Series(np.arange(10)), 
                            'l2': pd.Series(np.arange(10))})
     exog = np.arange(10)
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1', 
-                                               lags=3, steps=2)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', lags=3, steps=2
+    )
     
     err_msg = (
         f"`exog` must be a pandas Series or DataFrame. Got {type(exog)}."
@@ -203,7 +214,7 @@ def test_create_train_X_y_ValueError_when_series_and_exog_have_different_length(
         series.index = exog.index[:10]
     
     forecaster = forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', steps=3, lags=3
+        estimator=LinearRegression(), level='l1', steps=3, lags=3
     )
 
     len_exog = len(exog)
@@ -231,7 +242,9 @@ def test_create_train_X_y_ValueError_when_exog_columns_same_as_series_col_names(
     series = pd.DataFrame({'l1': pd.Series(np.arange(10)), 
                            'l2': pd.Series(np.arange(10))})
 
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1', lags=3, steps=2)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', lags=3, steps=2
+    )
     series_col_names = list(series.columns)
     exog_col_names = exog if isinstance(exog, list) else [exog]
 
@@ -254,7 +267,7 @@ def test_create_train_X_y_ValueError_when_series_and_exog_have_different_index_b
     )
     series.index = pd.date_range(start="2022-01-01", periods=10, freq="1D")
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level="l1", lags=3, steps=3
+        estimator=LinearRegression(), level="l1", lags=3, steps=3
     )
 
     exog = pd.Series(
@@ -280,7 +293,7 @@ def test_create_train_X_y_ValueError_when_series_and_exog_have_different_index_a
     )
     series.index = pd.date_range(start="2022-01-01", periods=10, freq="1D")
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level="l1", lags=3, steps=3
+        estimator=LinearRegression(), level="l1", lags=3, steps=3
     )
 
     exog = pd.Series(
@@ -309,8 +322,9 @@ def test_create_train_X_y_output_when_lags_3_steps_1_and_exog_is_None(level, exp
                            'l2': pd.Series(np.arange(100, 110), dtype=float)})
     exog = None
 
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level=level,
-                                               lags=3, steps=1)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level=level, lags=3, steps=1
+    )
     results = forecaster._create_train_X_y(series=series, exog=exog)
 
     expected = (
@@ -375,8 +389,9 @@ def test_create_train_X_y_output_when_interspersed_lags_steps_2_and_exog_None(le
                            'l2': pd.Series(np.arange(100, 110), dtype=float)})
     exog = None
 
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level=level,
-                                               lags=[1, 3], steps=2, transformer_series=None)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level=level, lags=[1, 3], steps=2, transformer_series=None
+    )
     results = forecaster._create_train_X_y(series=series, exog=exog)
 
     expected = (
@@ -444,9 +459,10 @@ def test_create_train_X_y_output_when_lags_dict_steps_2_and_exog_None(level, exp
                            'l2': pd.Series(np.arange(100, 110, dtype=float))})
     exog = None
 
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level=level,
-                                               lags={'l1': 3, 'l2': [1, 5]}, 
-                                               steps=2, transformer_series=None)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level=level, lags={'l1': 3, 'l2': [1, 5]}, 
+        steps=2, transformer_series=None
+    )
     results = forecaster._create_train_X_y(series=series, exog=exog)
 
     expected = (
@@ -512,9 +528,10 @@ def test_create_train_X_y_output_when_lags_dict_with_None_steps_2_and_exog_None(
                            'l2': pd.Series(np.arange(100, 110, dtype=float))})
     exog = None
 
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level=level,
-                                               lags={'l1': 3, 'l2': None}, 
-                                               steps=2, transformer_series=None)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level=level, lags={'l1': 3, 'l2': None}, 
+        steps=2, transformer_series=None
+    )
     results = forecaster._create_train_X_y(series=series, exog=exog)
 
     expected = (
@@ -579,8 +596,10 @@ def test_create_train_X_y_output_when_lags_5_steps_1_and_exog_series_of_float_in
                            'l2': pd.Series(np.arange(50, 60), dtype=float)})
     exog = pd.Series(np.arange(100, 110), name='exog', dtype=dtype)
 
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1',
-                                               lags=5, steps=1, transformer_series=None)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1',
+        lags=5, steps=1, transformer_series=None
+    )
     results = forecaster._create_train_X_y(series=series, exog=exog)
 
     expected = (
@@ -646,8 +665,9 @@ def test_create_train_X_y_output_when_lags_5_steps_2_and_exog_series_of_float_in
                            'l2': pd.Series(np.arange(50, 60), dtype=float)})
     exog = pd.Series(np.arange(100, 110), name='exog', dtype=dtype)
 
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1',
-                                               lags=5, steps=2, transformer_series=None)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', lags=5, steps=2, transformer_series=None
+    )
     results = forecaster._create_train_X_y(series=series, exog=exog)
  
     expected = (
@@ -731,7 +751,7 @@ def test_create_train_X_y_when_steps_1_and_exog_series_float_int_no_window_size(
         expected_index = pd.date_range(start='2022-01-06', periods=5, freq='D')
 
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', steps=1, lags=5, transformer_series=None
+        estimator=LinearRegression(), level='l1', steps=1, lags=5, transformer_series=None
     )
     results = forecaster._create_train_X_y(series=series, exog=exog)
 
@@ -814,7 +834,7 @@ def test_create_train_X_y_when_steps_2_and_exog_series_float_int_no_window_size(
         expected_index_2 = pd.date_range(start='2022-01-07', periods=4, freq='D')
 
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', steps=2, lags=5, transformer_series=None
+        estimator=LinearRegression(), level='l1', steps=2, lags=5, transformer_series=None
     )
     results = forecaster._create_train_X_y(series=series, exog=exog)
  
@@ -886,8 +906,10 @@ def test_create_train_X_y_output_when_steps_1_and_exog_is_df_of_float_int(dtype)
     exog   = pd.DataFrame({'exog_1': np.arange(100, 110, dtype=dtype),
                            'exog_2': np.arange(1000, 1010, dtype=dtype)})
     
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l2',
-                                               lags=5, steps=1, transformer_series=None)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l2',
+        lags=5, steps=1, transformer_series=None
+    )
     results = forecaster._create_train_X_y(series=series, exog=exog)
 
     expected = (
@@ -954,8 +976,9 @@ def test_create_train_X_y_output_when_steps_3_and_exog_is_df_of_float_int(dtype)
     exog = pd.DataFrame({'exog_1': np.arange(100, 110, dtype=dtype),
                          'exog_2': np.arange(1000, 1010, dtype=dtype)})
     
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l2',
-                                               lags=5, steps=3, transformer_series=None)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l2', lags=5, steps=3, transformer_series=None
+    )
     results = forecaster._create_train_X_y(series=series, exog=exog)
 
     expected = (
@@ -1040,8 +1063,9 @@ def test_create_train_X_y_output_when_steps_1_and_exog_series_of_bool_str(exog_v
                            'l2': pd.Series(np.arange(50, 60), dtype=float)})
     exog = pd.Series(exog_values * 10, name='exog', dtype=dtype)
 
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1',
-                                               lags=5, steps=1, transformer_series=None)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', lags=5, steps=1, transformer_series=None
+    )
     results = forecaster._create_train_X_y(series=series, exog=exog)
 
     expected = (
@@ -1107,8 +1131,9 @@ def test_create_train_X_y_output_when_steps_2_and_exog_series_of_bool_str(exog_v
                            'l2': pd.Series(np.arange(50, 60), dtype=float)})
     exog = pd.Series(exog_values * 10, name='exog', dtype=dtype)
 
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1',
-                                               lags=5, steps=2, transformer_series=None)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', lags=5, steps=2, transformer_series=None
+    )
     results = forecaster._create_train_X_y(series=series, exog=exog)
  
     expected = (
@@ -1181,8 +1206,9 @@ def test_create_train_X_y_output_when_steps_1_and_exog_is_df_of_bool_str(v_exog_
     exog = pd.DataFrame({'exog_1': v_exog_1 * 10,
                          'exog_2': v_exog_2 * 10})
     
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l2',
-                                               lags=5, steps=1, transformer_series=None)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l2', lags=5, steps=1, transformer_series=None
+    )
     results = forecaster._create_train_X_y(series=series, exog=exog)
 
     expected = (
@@ -1251,8 +1277,9 @@ def test_create_train_X_y_output_when_steps_3_and_exog_is_df_of_bool_str(v_exog_
     exog = pd.DataFrame({'exog_1': v_exog_1 * 10,
                          'exog_2': v_exog_2 * 10})
     
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l2',
-                                               lags=5, steps=3, transformer_series=None)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l2', lags=5, steps=3, transformer_series=None
+    )
     results = forecaster._create_train_X_y(series=series, exog=exog)
 
     expected = (
@@ -1337,8 +1364,9 @@ def test_create_train_X_y_output_when_lags_5_steps_1_and_exog_is_series_of_categ
                            'l2': pd.Series(np.arange(50, 60), dtype=float)})
     exog = pd.Series(range(10), name='exog', dtype='category')
 
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1',
-                                               lags=5, steps=1, transformer_series=None)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', lags=5, steps=1, transformer_series=None
+    )
     results = forecaster._create_train_X_y(series=series, exog=exog)
 
     expected = (
@@ -1400,8 +1428,9 @@ def test_create_train_X_y_output_when_lags_5_steps_2_and_exog_is_series_of_categ
                            'l2': pd.Series(np.arange(50, 60), dtype=float)})
     exog = pd.Series(range(10), name='exog', dtype='category')
 
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1',
-                                               lags=5, steps=2, transformer_series=None)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', lags=5, steps=2, transformer_series=None
+    )
     results = forecaster._create_train_X_y(series=series, exog=exog)
  
     expected = (
@@ -1469,8 +1498,9 @@ def test_create_train_X_y_output_when_lags_5_steps_1_and_exog_is_dataframe_of_ca
     exog = pd.DataFrame({'exog_1': pd.Categorical(range(10)),
                          'exog_2': pd.Categorical(range(100, 110))})
     
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l2',
-                                               lags=5, steps=1, transformer_series=None)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l2', lags=5, steps=1, transformer_series=None
+    )
     results = forecaster._create_train_X_y(series=series, exog=exog)
 
     expected = (
@@ -1536,8 +1566,10 @@ def test_create_train_X_y_output_when_lags_5_steps_3_and_exog_is_dataframe_of_ca
     exog = pd.DataFrame({'exog_1': pd.Categorical(range(10)),
                          'exog_2': pd.Categorical(range(100, 110))})
     
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l2',
-                                               lags=5, steps=3, transformer_series=None)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l2',
+        lags=5, steps=3, transformer_series=None
+    )
     results = forecaster._create_train_X_y(series=series, exog=exog)
 
     expected = (
@@ -1622,8 +1654,10 @@ def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_dataframe_of_fl
                          'exog_2': pd.Series(np.arange(1000, 1010), dtype=int),
                          'exog_3': pd.Categorical(range(100, 110))})
     
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1',
-                                               lags=5, steps=1, transformer_series=None)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1',
+        lags=5, steps=1, transformer_series=None
+    )
     results = forecaster._create_train_X_y(series=series, exog=exog)        
     expected = (
         pd.DataFrame(
@@ -1690,8 +1724,10 @@ def test_create_train_X_y_output_when_y_is_series_10_and_exog_is_dataframe_of_fl
                          'exog_2': pd.Series(np.arange(1000, 1010), dtype=int),
                          'exog_3': pd.Categorical(range(100, 110))})
     
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1',
-                                               lags=5, steps=3, transformer_series=None)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1',
+        lags=5, steps=3, transformer_series=None
+    )
     results = forecaster._create_train_X_y(series=series, exog=exog)        
     expected = (
         pd.DataFrame(
@@ -1851,9 +1887,11 @@ def test_create_train_X_y_when_exog_None_and_transformer_exog_is_not_None(level,
                            'l2': pd.Series(np.arange(100, 110), dtype=float)})
     exog = None
 
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level=level,
-                                               lags=3, steps=1, transformer_series=None, 
-                                               transformer_exog = StandardScaler())
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level=level,
+        lags=3, steps=1, transformer_series=None, 
+        transformer_exog = StandardScaler()
+    )
     results = forecaster._create_train_X_y(series=series, exog=exog)
 
     expected = (
@@ -2039,10 +2077,10 @@ def test_create_train_X_y_output_when_differentiation_is_1_steps_3(fit_forecaste
     end_train = '2003-03-01 23:59:00'
 
     forecaster_1 = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', steps=3, lags=5, transformer_series=None
+        estimator=LinearRegression(), level='l1', steps=3, lags=5, transformer_series=None
     )
     forecaster_2 = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', steps=3, lags=5, transformer_series=None, differentiation=1
+        estimator=LinearRegression(), level='l1', steps=3, lags=5, transformer_series=None, differentiation=1
     )
     
     if fit_forecaster:
@@ -2111,10 +2149,10 @@ def test_create_train_X_y_output_when_differentiation_is_2():
     end_train = '2003-03-01 23:59:00'
 
     forecaster_1 = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', steps=2, lags=5, transformer_series=None
+        estimator=LinearRegression(), level='l1', steps=2, lags=5, transformer_series=None
     )
     forecaster_2 = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', steps=2, lags=5, transformer_series=None, differentiation=2
+        estimator=LinearRegression(), level='l1', steps=2, lags=5, transformer_series=None, differentiation=2
     )
 
     output_1 = forecaster_1._create_train_X_y(
@@ -2168,7 +2206,8 @@ def test_create_train_X_y_output_when_window_features_and_exog_steps_1():
     )
 
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), steps=1, level='l1', lags=5, window_features=rolling, transformer_series=None
+        estimator=LinearRegression(), steps=1, level='l1', lags=5, 
+        window_features=rolling, transformer_series=None
     )
     results = forecaster._create_train_X_y(series=series, exog=exog)
 
@@ -2254,7 +2293,7 @@ def test_create_train_X_y_output_when_window_features_and_exog_steps_2():
     )
 
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), steps=2, level='l1', lags=5, 
+        estimator=LinearRegression(), steps=2, level='l1', lags=5, 
         window_features=rolling, transformer_series=None
     )
     results = forecaster._create_train_X_y(series=series, exog=exog)
@@ -2344,7 +2383,7 @@ def test_create_train_X_y_output_when_two_window_features_and_exog_steps_2():
     rolling_2 = RollingFeatures(stats='sum', window_sizes=[6])
 
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), steps=2, level='l1', lags=5, 
+        estimator=LinearRegression(), steps=2, level='l1', lags=5, 
         window_features=[rolling, rolling_2], transformer_series=None
     )
     results = forecaster._create_train_X_y(series=series, exog=exog)
@@ -2435,7 +2474,8 @@ def test_create_train_X_y_output_when_window_features_lags_None_and_exog():
     )
 
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), steps=1, level='l1', lags=None, window_features=rolling, transformer_series=None
+        estimator=LinearRegression(), steps=1, level='l1', lags=None, 
+        window_features=rolling, transformer_series=None
     )
     results = forecaster._create_train_X_y(series=series, exog=exog)
 
@@ -2527,7 +2567,7 @@ def test_create_train_X_y_output_when_window_features_and_exog_transformers_diff
     )
 
     forecaster = ForecasterDirectMultiVariate(
-                     LinearRegression(), 
+                     estimator          = LinearRegression(), 
                      level              = 'l1',
                      steps              = 1,
                      lags               = [1, 5], 
@@ -2626,7 +2666,7 @@ def test_create_train_X_y_output_when_window_features_and_exog_transformers_diff
     )
 
     forecaster = ForecasterDirectMultiVariate(
-                     LinearRegression(), 
+                     estimator          = LinearRegression(), 
                      level              = 'l1',
                      steps              = 2,
                      lags               = [1, 5], 

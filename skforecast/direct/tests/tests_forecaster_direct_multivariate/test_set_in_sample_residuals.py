@@ -18,7 +18,7 @@ def test_set_in_sample_residuals_NotFittedError_when_forecaster_not_fitted():
     Test NotFittedError is raised when forecaster is not fitted.
     """
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', steps=2, lags=3
+        estimator=LinearRegression(), level='l1', steps=2, lags=3
     )
 
     err_msg = re.escape(
@@ -38,7 +38,7 @@ def test_set_in_sample_residuals_IndexError_when_series_different_index_than_tra
     Test IndexError is raised when series has different index than training.
     """
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', steps=2, lags=3
+        estimator=LinearRegression(), level='l1', steps=2, lags=3
     )
     forecaster.fit(series=series, exog=exog["exog_1"])
 
@@ -63,7 +63,7 @@ def test_set_in_sample_residuals_ValueError_when_X_train_features_names_out_not_
     the ones used in training.
     """
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', steps=2, lags=3
+        estimator=LinearRegression(), level='l1', steps=2, lags=3
     )
     forecaster.fit(series=series, exog=exog["exog_1"])
     original_exog_in_ = forecaster.exog_in_
@@ -91,13 +91,13 @@ def test_set_in_sample_residuals_store_same_residuals_as_fit():
     Test that set_in_sample_residuals stores same residuals as fit.
     """
     forecaster_1 = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', steps=3, lags=3, transformer_series=StandardScaler(), 
+        estimator=LinearRegression(), level='l1', steps=3, lags=3, transformer_series=StandardScaler(), 
         differentiation=1, binner_kwargs={'n_bins': 3}
     )
     forecaster_1.fit(series=series, exog=exog["exog_1"], store_in_sample_residuals=True)
 
     forecaster_2 = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', steps=3, lags=3, transformer_series=StandardScaler(), 
+        estimator=LinearRegression(), level='l1', steps=3, lags=3, transformer_series=StandardScaler(), 
         differentiation=1, binner_kwargs={'n_bins': 3}
     )
     forecaster_2.fit(series=series, exog=exog["exog_1"], store_in_sample_residuals=False)

@@ -573,7 +573,7 @@ def test_predict_output_when_window_features_steps_1():
     
     rolling = RollingFeatures(stats=['mean', 'sum'], window_sizes=[3, 5])
     forecaster = ForecasterDirect(
-        LGBMRegressor(verbose=-1, random_state=123), steps=1, lags=3, window_features=rolling
+        estimator=LGBMRegressor(verbose=-1, random_state=123), steps=1, lags=3, window_features=rolling
     )
     forecaster.fit(y=y_datetime, exog=exog_datetime)
     predictions = forecaster.predict(exog=exog_predict_datetime)
@@ -601,7 +601,7 @@ def test_predict_output_when_window_features_steps_10():
     
     rolling = RollingFeatures(stats=['mean', 'sum'], window_sizes=[3, 5])
     forecaster = ForecasterDirect(
-        LGBMRegressor(verbose=-1, random_state=123), steps=10, lags=3, window_features=rolling
+        estimator=LGBMRegressor(verbose=-1, random_state=123), steps=10, lags=3, window_features=rolling
     )
     forecaster.fit(y=y_datetime, exog=exog_datetime)
     predictions = forecaster.predict(exog=exog_predict_datetime)

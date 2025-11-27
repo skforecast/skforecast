@@ -425,7 +425,7 @@ def test_create_predict_inputs_output_window_features():
         stats=['mean', 'median', 'sum'], window_sizes=[4, 5, 6]
     )
     forecaster = ForecasterDirect(
-        LinearRegression(), steps=3, lags=3, window_features=rolling
+        estimator=LinearRegression(), steps=3, lags=3, window_features=rolling
     )
     forecaster.fit(y=y_datetime)
     results = forecaster._create_predict_inputs()
@@ -457,7 +457,7 @@ def test_create_predict_inputs_output_with_2_window_features():
     rolling = RollingFeatures(stats=['mean', 'median'], window_sizes=[4, 5])
     rolling_2 = RollingFeatures(stats=['sum'], window_sizes=6)
     forecaster = ForecasterDirect(
-        LinearRegression(), steps=3, lags=3, window_features=[rolling, rolling_2]
+        estimator=LinearRegression(), steps=3, lags=3, window_features=[rolling, rolling_2]
     )
     forecaster.fit(y=y_datetime)
     results = forecaster._create_predict_inputs()
@@ -490,7 +490,7 @@ def test_create_predict_inputs_output_window_features_and_no_lags():
         stats=['mean', 'median', 'sum'], window_sizes=[4, 5, 6]
     )
     forecaster = ForecasterDirect(
-        LinearRegression(), steps=3, lags=None, window_features=rolling
+        estimator=LinearRegression(), steps=3, lags=None, window_features=rolling
     )
     forecaster.fit(y=y_datetime)
     results = forecaster._create_predict_inputs()

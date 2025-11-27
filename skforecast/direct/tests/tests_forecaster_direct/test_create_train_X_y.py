@@ -43,7 +43,7 @@ def test_create_train_X_y_ValueError_when_len_y_is_lower_than_maximum_window_siz
 
     rolling = RollingFeatures(stats=['mean', 'median'], window_sizes=3)
     forecaster = ForecasterDirect(
-        LinearRegression(),  steps=3, lags=2, window_features=rolling
+        estimator=LinearRegression(),  steps=3, lags=2, window_features=rolling
     )
     err_msg = re.escape(
         "Minimum length of `y` for training this forecaster is "

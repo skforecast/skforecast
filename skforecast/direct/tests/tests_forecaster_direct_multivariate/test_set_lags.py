@@ -39,7 +39,7 @@ def test_set_lags_with_different_inputs(lags):
     Test how lags and max_lag attributes change with lags argument of different types.
     """
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', lags=3, steps=2
+        estimator=LinearRegression(), level='l1', lags=3, steps=2
     )
     forecaster.set_lags(lags=lags)
 
@@ -53,8 +53,9 @@ def test_set_lags_when_lags_argument_is_a_dict():
     """
     Test how lags and max_lag attributes change when lags argument is a dict.
     """
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1', 
-                                               lags=3, steps=2)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', lags=3, steps=2
+    )
     forecaster.set_lags(lags={'l1': 3, 'l2': [1, 5]})
     
     np.testing.assert_array_almost_equal(forecaster.lags['l1'], np.array([1, 2, 3]))
@@ -73,8 +74,9 @@ def test_set_lags_when_lags_argument_is_a_dict_with_None(lags):
     Test how lags and max_lag attributes change when lags argument is a dict 
     containing None.
     """
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1', 
-                                               lags=3, steps=2)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', lags=3, steps=2
+    )
     forecaster.set_lags(lags=lags)
     
     np.testing.assert_array_almost_equal(forecaster.lags['l1'], np.array([1, 2, 3]))
@@ -96,7 +98,7 @@ def test_set_lags_max_lag_stored(lags, max_lag):
     Test max_lag is equal to the maximum lag.
     """
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', lags=1, steps=2
+        estimator=LinearRegression(), level='l1', lags=1, steps=2
     )
     forecaster.set_lags(lags=lags)
     
@@ -139,7 +141,7 @@ def test_set_lags_when_window_features():
     """
     rolling = RollingFeatures(stats='mean', window_sizes=6)
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', steps=2, lags=9, window_features=rolling
+        estimator=LinearRegression(), level='l1', steps=2, lags=9, window_features=rolling
     )
     
     forecaster.set_lags(lags=5)
@@ -160,7 +162,7 @@ def test_set_lags_to_None(lags):
     """
     rolling = RollingFeatures(stats='mean', window_sizes=3)
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', steps=3, lags=5, window_features=rolling
+        estimator=LinearRegression(), level='l1', steps=3, lags=5, window_features=rolling
     )
     
     forecaster.set_lags(lags=lags)
@@ -181,7 +183,7 @@ def test_set_lags_to_None_dict(lags):
     """
     rolling = RollingFeatures(stats='mean', window_sizes=3)
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', steps=3, lags=5, window_features=rolling
+        estimator=LinearRegression(), level='l1', steps=3, lags=5, window_features=rolling
     )
     
     forecaster.set_lags(lags=lags)

@@ -8,7 +8,7 @@ from skforecast.direct import ForecasterDirectMultiVariate
 from sklearn.linear_model import LinearRegression
 
 
-def custom_weights(index): # pragma: no cover
+def custom_weights(index):  # pragma: no cover
     """
     Return 0 if index is between '2022-01-10', '2022-01-12', 1 otherwise.
     """
@@ -21,7 +21,7 @@ def custom_weights(index): # pragma: no cover
     return weights
 
 
-def custom_weights_nan(index): # pragma: no cover
+def custom_weights_nan(index):  # pragma: no cover
     """
     Return np.nan f index is between '2022-01-10', '2022-01-12', 1 otherwise.
     """
@@ -34,7 +34,7 @@ def custom_weights_nan(index): # pragma: no cover
     return weights
 
 
-def custom_weights_negative(index): # pragma: no cover
+def custom_weights_negative(index):  # pragma: no cover
     """
     Return -1 f index is between '2022-01-10', '2022-01-12', 1 otherwise.
     """
@@ -47,7 +47,7 @@ def custom_weights_negative(index): # pragma: no cover
     return weights
 
 
-def custom_weights_zeros(index): # pragma: no cover
+def custom_weights_zeros(index):  # pragma: no cover
     """
     Return 0 for all elements in index
     """
@@ -99,10 +99,10 @@ def test_create_sample_weights_output():
     Test sample_weights creation.
     """
     forecaster = ForecasterDirectMultiVariate(
+                     estimator   = LinearRegression(),
                      level       = 'series_1',
                      lags        = 3,
-                     steps       = 3,    
-                     estimator   = LinearRegression(),
+                     steps       = 3,
                      weight_func = custom_weights
                  )
 
@@ -117,14 +117,16 @@ def test_create_sample_weights_exceptions_when_weights_has_nan():
     Test sample_weights exception when weights contains NaNs.
     """
     forecaster = ForecasterDirectMultiVariate(
+                     estimator   = LinearRegression(),
                      level       = 'series_1',
                      lags        = 3,
-                     steps       = 3,  
-                     estimator   = LinearRegression(),
+                     steps       = 3,
                      weight_func = custom_weights_nan
                  )
 
-    err_msg = re.escape("The resulting `sample_weight` cannot have NaN values.")
+    err_msg = re.escape(
+        "The resulting `sample_weight` cannot have NaN values."
+    )
     with pytest.raises(ValueError, match=err_msg):
         forecaster.create_sample_weights(X_train=X_train)
     
@@ -134,14 +136,16 @@ def test_create_sample_weights_exceptions_when_weights_has_negative_values():
     Test sample_weights exception when sample_weight contains negative values.
     """
     forecaster = ForecasterDirectMultiVariate(
+                     estimator   = LinearRegression(),
                      level       = 'series_1',
                      lags        = 3,
-                     steps       = 3,     
-                     estimator   = LinearRegression(),
+                     steps       = 3,
                      weight_func = custom_weights_negative
                  )
 
-    err_msg = re.escape("The resulting `sample_weight` cannot have negative values.")
+    err_msg = re.escape(
+        "The resulting `sample_weight` cannot have negative values."
+    )
     with pytest.raises(ValueError, match=err_msg):
         forecaster.create_sample_weights(X_train=X_train)
     
@@ -151,16 +155,16 @@ def test_create_sample_weights_exceptions_when_weights_all_zeros():
     Test sample_weights exception when all weights are zeros.
     """
     forecaster = ForecasterDirectMultiVariate(
+                     estimator   = LinearRegression(),
                      level       = 'series_1',
                      lags        = 3,
-                     steps       = 3,    
-                     estimator   = LinearRegression(),
+                     steps       = 3,
                      weight_func = custom_weights_zeros
                  )
     
     err_msg = re.escape(
-                    ("The resulting `sample_weight` cannot be normalized because "
-                     "the sum of the weights is zero.")
-                )
+        "The resulting `sample_weight` cannot be normalized because "
+        "the sum of the weights is zero."
+    )
     with pytest.raises(ValueError, match=err_msg):
         forecaster.create_sample_weights(X_train=X_train)

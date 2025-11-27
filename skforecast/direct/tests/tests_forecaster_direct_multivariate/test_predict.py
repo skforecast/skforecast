@@ -43,8 +43,9 @@ def test_predict_TypeError_when_steps_list_contain_floats(steps):
     """
     Test predict TypeError when steps is a list with floats.
     """
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1',
-                                               lags=3, steps=3)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', lags=3, steps=3
+    )
     forecaster.fit(series=series)
 
     err_msg = re.escape(
@@ -59,8 +60,9 @@ def test_predict_NotFittedError_when_fitted_is_False():
     """
     Test NotFittedError is raised when fitted is False.
     """
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1',
-                                               lags=3, steps=3)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', lags=3, steps=3
+    )
 
     err_msg = re.escape(
         "This Forecaster instance is not fitted yet. Call `fit` with "
@@ -76,8 +78,9 @@ def test_predict_output_when_estimator_is_LinearRegression(steps):
     """
     Test predict output when using LinearRegression as estimator.
     """
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1',
-                                               lags=3, steps=3)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', lags=3, steps=3
+    )
     forecaster.fit(series=series)
     results = forecaster.predict(steps=steps)
     expected = pd.DataFrame(
@@ -95,8 +98,9 @@ def test_predict_output_when_with_list_interspersed():
     Test predict output when using LinearRegression as estimator and steps is
     a list with interspersed steps.
     """
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l2',
-                                               lags=3, steps=5)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l2', lags=3, steps=5
+    )
     forecaster.fit(series=series)
     results = forecaster.predict(steps=[1, 4])
     expected = pd.DataFrame(
@@ -114,8 +118,9 @@ def test_predict_output_when_with_different_lags():
     Test predict output when using LinearRegression as estimator and different
     lags configuration for each series.
     """
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l2',
-                                               lags={'l1': 5, 'l2': [1, 7]}, steps=3)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l2', lags={'l1': 5, 'l2': [1, 7]}, steps=3
+    )
     forecaster.fit(series=series)
     results = forecaster.predict(steps=3)
     expected = pd.DataFrame(
@@ -133,8 +138,9 @@ def test_predict_output_when_with_lags_dict_with_None_in_level_lags():
     Test predict output when using LinearRegression as estimator when lags is a 
     dict and level has None lags configuration.
     """
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l2',
-                                               lags={'l1': 5, 'l2': None}, steps=3)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l2', lags={'l1': 5, 'l2': None}, steps=3
+    )
     forecaster.fit(series=series)
     results = forecaster.predict(steps=3)
     expected = pd.DataFrame(
@@ -152,8 +158,9 @@ def test_predict_output_when_with_lags_dict_with_None_but_no_in_level():
     Test predict output when using LinearRegression as estimator when lags is a 
     dict with None values.
     """
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1',
-                                               lags={'l1': 5, 'l2': None}, steps=3)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', lags={'l1': 5, 'l2': None}, steps=3
+    )
     forecaster.fit(series=series)
     results = forecaster.predict(steps=3)
     expected = pd.DataFrame(
@@ -170,8 +177,9 @@ def test_predict_output_when_using_last_window():
     """
     Test predict output when using LinearRegression as estimator and last_window.
     """
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1',
-                                               lags=3, steps=3)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', lags=3, steps=3
+    )
     forecaster.fit(series=series)
     last_window = pd.DataFrame(
                       data    = np.array([[0.98555979, 0.39887629],
@@ -195,8 +203,9 @@ def test_predict_output_when_using_exog():
     """
     Test predict output when using LinearRegression as estimator and exog.
     """
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1',
-                                               lags=3, steps=3)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', lags=3, steps=3
+    )
     forecaster.fit(series=series.iloc[:40,], exog=exog.iloc[:40, 0])
     results = forecaster.predict(steps=None, exog=exog.iloc[40:43, 0])
     expected = pd.DataFrame(
@@ -296,8 +305,9 @@ def test_predict_output_when_and_weight_func():
 
         return weights
     
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1',
-                                               lags=3, steps=3, weight_func=custom_weights)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', lags=3, steps=3, weight_func=custom_weights
+    )
     forecaster.fit(series=series)
     results = forecaster.predict(steps=3)
     expected = pd.DataFrame(

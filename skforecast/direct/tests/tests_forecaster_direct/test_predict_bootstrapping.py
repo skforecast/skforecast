@@ -231,7 +231,9 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_and_di
     boot_predictions_1 = boot_predictions_1.cumsum(axis=0).iloc[1:,]
     boot_predictions_1 = boot_predictions_1.asfreq('MS')
     
-    forecaster_2 = ForecasterDirect(estimator=LinearRegression(), steps=10, lags=15, differentiation=1)
+    forecaster_2 = ForecasterDirect(
+        estimator=LinearRegression(), steps=10, lags=15, differentiation=1
+    )
     forecaster_2.fit(
         y=data.loc[:end_train], exog=exog.loc[:end_train], store_in_sample_residuals=True
     )
@@ -257,7 +259,7 @@ def test_predict_bootstrapping_output_when_window_features_steps_1():
     
     rolling = RollingFeatures(stats=['mean', 'sum'], window_sizes=[3, 5])
     forecaster = ForecasterDirect(
-        LGBMRegressor(verbose=-1, random_state=123), steps=1, lags=3, window_features=rolling
+        estimator=LGBMRegressor(verbose=-1, random_state=123), steps=1, lags=3, window_features=rolling
     )
     forecaster.fit(y=y_datetime, exog=exog_datetime, store_in_sample_residuals=True)
     results = forecaster.predict_bootstrapping(
@@ -292,7 +294,7 @@ def test_predict_bootstrapping_output_when_window_features_steps_10():
     
     rolling = RollingFeatures(stats=['mean', 'sum'], window_sizes=[3, 5])
     forecaster = ForecasterDirect(
-        LGBMRegressor(verbose=-1, random_state=123), steps=10, lags=3, window_features=rolling
+        estimator=LGBMRegressor(verbose=-1, random_state=123), steps=10, lags=3, window_features=rolling
     )
     forecaster.fit(y=y_datetime, exog=exog_datetime, store_in_sample_residuals=True)
     results = forecaster.predict_bootstrapping(

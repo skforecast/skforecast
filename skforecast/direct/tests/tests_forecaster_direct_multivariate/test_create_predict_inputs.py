@@ -36,13 +36,14 @@ def test_create_predict_inputs_TypeError_when_steps_list_contain_floats(steps):
     """
     Test _create_predict_inputs TypeError when steps is a list with floats.
     """
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1',
-                                               lags=3, steps=3)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', lags=3, steps=3
+    )
     forecaster.fit(series=series)
 
     err_msg = re.escape(
-        (f"`steps` argument must be an int, a list of ints or `None`. "
-         f"Got {type(steps)}.")
+        f"`steps` argument must be an int, a list of ints or `None`. "
+        f"Got {type(steps)}."
     )
     with pytest.raises(TypeError, match = err_msg):
         forecaster._create_predict_inputs(steps=steps)
@@ -52,12 +53,13 @@ def test_create_predict_inputs_NotFittedError_when_fitted_is_False():
     """
     Test NotFittedError is raised when fitted is False.
     """
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1',
-                                               lags=3, steps=3)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', lags=3, steps=3
+    )
 
     err_msg = re.escape(
-        ("This Forecaster instance is not fitted yet. Call `fit` with "
-         "appropriate arguments before using predict.")
+        "This Forecaster instance is not fitted yet. Call `fit` with "
+        "appropriate arguments before using predict."
     )
     with pytest.raises(NotFittedError, match = err_msg):
         forecaster._create_predict_inputs(steps=5)
@@ -71,8 +73,9 @@ def test_create_predict_inputs_output(steps):
     """
     series_datetime = series.copy()
     series_datetime.index = pd.date_range(start='2020-01-01', periods=50, freq='D')
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1',
-                                               lags=3, steps=3, transformer_series=None)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', lags=3, steps=3, transformer_series=None
+    )
     forecaster.fit(series=series_datetime)
     results = forecaster._create_predict_inputs(steps=steps)
 
@@ -101,8 +104,9 @@ def test_create_predict_inputs_output_when_list_interspersed():
     Test _create_predict_inputs output when steps is
     a list with interspersed steps.
     """
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l2',
-                                               lags=3, steps=5, transformer_series=None)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l2', lags=3, steps=5, transformer_series=None
+    )
     forecaster.fit(series=series)
     results = forecaster._create_predict_inputs(steps=[1, 4])
 
@@ -129,9 +133,10 @@ def test_create_predict_inputs_output_when_different_lags():
     Test _create_predict_inputs output when different
     lags configuration for each series.
     """
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l2',
-                                               lags={'l1': 5, 'l2': [1, 7]}, 
-                                               steps=3, transformer_series=None)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l2', lags={'l1': 5, 'l2': [1, 7]}, 
+        steps=3, transformer_series=None
+    )
     forecaster.fit(series=series)
     results = forecaster._create_predict_inputs(steps=3)
 
@@ -160,9 +165,10 @@ def test_create_predict_inputs_output_when_lags_dict_with_None_in_level_lags():
     Test _create_predict_inputs output when lags is a 
     dict and level has None lags configuration.
     """
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l2',
-                                               lags={'l1': 5, 'l2': None}, steps=3,
-                                               transformer_series=None)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l2', lags={'l1': 5, 'l2': None}, 
+        steps=3, transformer_series=None
+    )
     forecaster.fit(series=series)
     results = forecaster._create_predict_inputs(steps=3)
 
@@ -187,9 +193,10 @@ def test_create_predict_inputs_output_when_lags_dict_with_None_but_no_in_level()
     Test _create_predict_inputs output when lags is a 
     dict with None values.
     """
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1',
-                                               lags={'l1': 5, 'l2': None}, steps=3,
-                                               transformer_series=None)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', lags={'l1': 5, 'l2': None}, steps=3,
+        transformer_series=None
+    )
     forecaster.fit(series=series)
     results = forecaster._create_predict_inputs(steps=3)
 
@@ -213,9 +220,10 @@ def test_create_predict_inputs_output_when_last_window():
     """
     Test _create_predict_inputs output when external last_window.
     """
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1',
-                                               lags=3, steps=3,
-                                               transformer_series=None)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', lags=3, steps=3,
+        transformer_series=None
+    )
     forecaster.fit(series=series)
     last_window = pd.DataFrame(
         data    = np.array([[0.98555979, 0.39887629],
@@ -248,9 +256,10 @@ def test_create_predict_inputs_output_when_exog():
     """
     Test _create_predict_inputs output when exog.
     """
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1',
-                                               lags=3, steps=3,
-                                               transformer_series=None)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', lags=3, steps=3,
+        transformer_series=None
+    )
     forecaster.fit(series=series.iloc[:40,], exog=exog.iloc[:40, 0])
     results = forecaster._create_predict_inputs(steps=None, exog=exog.iloc[40:43, 0])
 

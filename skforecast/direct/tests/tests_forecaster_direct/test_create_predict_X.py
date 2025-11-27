@@ -484,7 +484,7 @@ def test_create_predict_X_when_window_features_steps_1():
     rolling_2 = RollingFeatures(stats='sum', window_sizes=[6])
 
     forecaster = ForecasterDirect(
-        LinearRegression(), steps=1, lags=5, window_features=[rolling, rolling_2]
+        estimator=LinearRegression(), steps=1, lags=5, window_features=[rolling, rolling_2]
     )
     forecaster.fit(y=y_datetime, exog=exog_datetime)
     results = forecaster.create_predict_X(exog=exog_datetime_pred)
@@ -523,7 +523,7 @@ def test_create_predict_X_when_window_features_steps_10():
     rolling_2 = RollingFeatures(stats='sum', window_sizes=[6])
 
     forecaster = ForecasterDirect(
-        LinearRegression(), steps=10, lags=5, window_features=[rolling, rolling_2]
+        estimator=LinearRegression(), steps=10, lags=5, window_features=[rolling, rolling_2]
     )
     forecaster.fit(y=y_datetime, exog=exog_datetime)
     results = forecaster.create_predict_X(exog=exog_datetime_pred)
@@ -571,7 +571,7 @@ def test_create_predict_X_when_window_features_and_lags_None_steps_10():
     rolling_2 = RollingFeatures(stats='sum', window_sizes=[6])
 
     forecaster = ForecasterDirect(
-        LinearRegression(), steps=10, lags=None, window_features=[rolling, rolling_2]
+        estimator=LinearRegression(), steps=10, lags=None, window_features=[rolling, rolling_2]
     )
     forecaster.fit(y=y_datetime, exog=exog_datetime)
     results = forecaster.create_predict_X(exog=exog_datetime_pred)

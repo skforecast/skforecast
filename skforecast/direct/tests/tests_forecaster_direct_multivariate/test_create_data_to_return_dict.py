@@ -20,7 +20,7 @@ def test_create_data_to_return_dict_ValueError_when_lags_keys_not_in_series():
     series = pd.DataFrame({'l1': pd.Series(np.arange(10)),  
                            'l2': pd.Series(np.arange(10))})
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', steps=2, lags={'l1': 2, '2': 3}
+        estimator=LinearRegression(), level='l1', steps=2, lags={'l1': 2, '2': 3}
     )
     
     series_names_in_ = list(series.columns)
@@ -41,7 +41,7 @@ def test_create_data_to_return_dict_when_same_lags_all_series():
     Test _create_data_to_return_dict output when lags is the same for all series.
     """    
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', steps=1, lags=3
+        estimator=LinearRegression(), level='l1', steps=1, lags=3
     )
     
     results = forecaster._create_data_to_return_dict(series_names_in_=['l1', 'l2'])
@@ -64,7 +64,7 @@ def test_create_data_to_return_dict_when_interspersed_lags_all_series():
     Test _create_data_to_return_dict output when interspersed lags for all series.
     """    
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', steps=1, lags=[1, 5]
+        estimator=LinearRegression(), level='l1', steps=1, lags=[1, 5]
     )
     
     results = forecaster._create_data_to_return_dict(series_names_in_=['l1', 'l2'])
@@ -88,7 +88,7 @@ def test_create_data_to_return_dict_when_lags_dict_with_all_series():
     all series.
     """    
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l2', steps=1, lags={'l1': 3, 'l2': 4}
+        estimator=LinearRegression(), level='l2', steps=1, lags={'l1': 3, 'l2': 4}
     )
     
     results = forecaster._create_data_to_return_dict(series_names_in_=['l1', 'l2'])
@@ -115,7 +115,7 @@ def test_create_data_to_return_dict_when_lags_dict_with_no_lags_for_level():
     the level.
     """    
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l2', steps=1, lags={'l1': 3, 'l2': None}
+        estimator=LinearRegression(), level='l2', steps=1, lags={'l1': 3, 'l2': None}
     )
     
     results = forecaster._create_data_to_return_dict(series_names_in_=['l1', 'l2'])
@@ -145,7 +145,7 @@ def test_create_data_to_return_dict_when_lags_dict_with_lags_only_for_level():
     level.
     """    
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', steps=1, lags={'l1': 3, 'l2': None}
+        estimator=LinearRegression(), level='l1', steps=1, lags={'l1': 3, 'l2': None}
     )
     
     results = forecaster._create_data_to_return_dict(series_names_in_=['l1', 'l2'])
@@ -175,7 +175,7 @@ def test_create_data_to_return_dict_when_lags_dict_with_lags_only_for_level_and_
     level and window_features.
     """    
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', steps=1, lags={'l1': 3, 'l2': None}, window_features=rolling
+        estimator=LinearRegression(), level='l1', steps=1, lags={'l1': 3, 'l2': None}, window_features=rolling
     )
     
     results = forecaster._create_data_to_return_dict(series_names_in_=['l1', 'l2'])
@@ -204,7 +204,7 @@ def test_create_data_to_return_dict_when_lags_is_None():
     Test _create_data_to_return_dict output when lags is None.
     """    
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', steps=1, lags=None, window_features=rolling
+        estimator=LinearRegression(), level='l1', steps=1, lags=None, window_features=rolling
     )
     
     results = forecaster._create_data_to_return_dict(series_names_in_=['l1', 'l2'])

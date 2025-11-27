@@ -42,8 +42,9 @@ def test_create_predict_X_TypeError_when_steps_list_contain_floats(steps):
     """
     Test create_predict_X TypeError when steps is a list with floats.
     """
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1',
-                                               lags=3, steps=3)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', lags=3, steps=3
+    )
     forecaster.fit(series=series)
 
     err_msg = re.escape(
@@ -58,8 +59,9 @@ def test_create_predict_X_NotFittedError_when_fitted_is_False():
     """
     Test NotFittedError is raised when fitted is False.
     """
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1',
-                                               lags=3, steps=3)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', lags=3, steps=3
+    )
 
     err_msg = re.escape(
         "This Forecaster instance is not fitted yet. Call `fit` with "
@@ -76,7 +78,7 @@ def test_create_predict_X_output(steps):
     Test create_predict_X output.
     """
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', lags=3, steps=3, transformer_series=None
+        estimator=LinearRegression(), level='l1', lags=3, steps=3, transformer_series=None
     )
     forecaster.fit(series=series)
     results = forecaster.create_predict_X(steps=steps)
@@ -103,7 +105,7 @@ def test_create_predict_X_output_when_list_interspersed():
     a list with interspersed steps.
     """
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l2', lags=3, steps=5, transformer_series=None
+        estimator=LinearRegression(), level='l2', lags=3, steps=5, transformer_series=None
     )
     forecaster.fit(series=series)
     results = forecaster.create_predict_X(steps=[1, 4])
@@ -131,7 +133,7 @@ def test_create_predict_X_output_when_different_lags():
     lags configuration for each series.
     """
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l2', lags={'l1': 5, 'l2': [1, 7]}, 
+        estimator=LinearRegression(), level='l2', lags={'l1': 5, 'l2': [1, 7]}, 
         steps=3, transformer_series=None
     )
     forecaster.fit(series=series)
@@ -160,7 +162,7 @@ def test_create_predict_X_output_when_lags_dict_with_None_in_level_lags():
     dict and level has None lags configuration.
     """
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l2', lags={'l1': 5, 'l2': None}, 
+        estimator=LinearRegression(), level='l2', lags={'l1': 5, 'l2': None}, 
         steps=3, transformer_series=None
     )
     forecaster.fit(series=series)
@@ -187,7 +189,7 @@ def test_create_predict_X_output_when_lags_dict_with_None_but_no_in_level():
     dict with None values.
     """
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', lags={'l1': 5, 'l2': None}, 
+        estimator=LinearRegression(), level='l1', lags={'l1': 5, 'l2': None}, 
         steps=3, transformer_series=None
     )
     forecaster.fit(series=series)
@@ -213,7 +215,7 @@ def test_create_predict_X_output_when_last_window():
     Test create_predict_X output when external last_window.
     """
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', lags=3, steps=3, transformer_series=None
+        estimator=LinearRegression(), level='l1', lags=3, steps=3, transformer_series=None
     )
     forecaster.fit(series=series)
     last_window = pd.DataFrame(
@@ -246,7 +248,7 @@ def test_create_predict_X_output_when_exog():
     Test create_predict_X output when exog.
     """
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', lags=3, steps=3, transformer_series=None
+        estimator=LinearRegression(), level='l1', lags=3, steps=3, transformer_series=None
     )
     forecaster.fit(series=series.iloc[:40,], exog=exog.iloc[:40, 0])
     results = forecaster.create_predict_X(steps=None, exog=exog.iloc[40:43, 0])
