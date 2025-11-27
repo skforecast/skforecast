@@ -28,7 +28,7 @@ def test_create_train_X_y_TypeError_when_series_not_dataframe():
                 recurrent_units=100,
                 dense_units=[128, 64],
             )
-    forecaster = ForecasterRnn(model, lags=3, levels="l1")
+    forecaster = ForecasterRnn(estimator=model, lags=3, levels="l1")
     series = pd.Series(np.arange(7))
 
     err_msg = (
@@ -53,7 +53,7 @@ def test_create_train_X_y_ValueError_when_number_of_series_in_series_not_equal_t
                 recurrent_units=100,
                 dense_units=[128, 64],
             )
-    forecaster = ForecasterRnn(model, lags=3, levels="l1")
+    forecaster = ForecasterRnn(estimator=model, lags=3, levels="l1")
 
     err_msg = re.escape(
         "Number of series in `series` (3) "
@@ -79,7 +79,7 @@ def test_create_train_X_y_ValueError_when_series_not_include_levels():
                 recurrent_units=100,
                 dense_units=[128, 64],
             )
-    forecaster = ForecasterRnn(model, lags=3, levels="l1")
+    forecaster = ForecasterRnn(estimator=model, lags=3, levels="l1")
     
     series_not_levels = series.copy()
     series_not_levels.columns = ['l4', 'l5', 'l6']
@@ -109,7 +109,7 @@ def test_create_train_X_y_ValueError_when_len_series_is_lower_than_maximum_windo
                 recurrent_units=100,
                 dense_units=[128, 64],
             )
-    forecaster = ForecasterRnn(model, lags=3, levels="l1")
+    forecaster = ForecasterRnn(estimator=model, lags=3, levels="l1")
 
     err_msg = re.escape(
         "Minimum length of `series` for training this forecaster is "
@@ -141,7 +141,7 @@ def test_create_train_X_y_ValueError_when_exog_not_included_but_model_requires_e
                 recurrent_units=100,
                 dense_units=[128, 64],
             )
-    forecaster = ForecasterRnn(model, lags=3, levels="l1")
+    forecaster = ForecasterRnn(estimator=model, lags=3, levels="l1")
 
     err_msg = re.escape(
         "The estimator architecture expects exogenous variables during "
@@ -169,7 +169,7 @@ def test_create_train_X_y_ValueError_when_exog_included_but_model_no_exog():
                 recurrent_units=100,
                 dense_units=[128, 64],
             )
-    forecaster = ForecasterRnn(model, lags=3, levels="l1")
+    forecaster = ForecasterRnn(estimator=model, lags=3, levels="l1")
 
     err_msg = re.escape(
         "Exogenous variables (`exog`) were provided, but the model "
@@ -198,7 +198,7 @@ def test_create_train_X_y_ValueError_when_number_of_exog_columns_not_equal_to_mo
                 recurrent_units=100,
                 dense_units=[128, 64],
             )
-    forecaster = ForecasterRnn(model, lags=3, levels="l1")
+    forecaster = ForecasterRnn(estimator=model, lags=3, levels="l1")
 
     err_msg = re.escape(
         "Number of columns in `exog` (1) "
@@ -233,7 +233,7 @@ def test_create_train_X_y_ValueError_when_series_and_exog_have_different_length(
                 recurrent_units=100,
                 dense_units=[128, 64],
             )
-    forecaster = ForecasterRnn(model, lags=3, levels="l1")
+    forecaster = ForecasterRnn(estimator=model, lags=3, levels="l1")
 
     len_exog = len(exog)
     len_series = len(series)
@@ -271,7 +271,7 @@ def test_create_train_X_y_ValueError_when_exog_columns_same_as_series_col_names(
                 recurrent_units=100,
                 dense_units=[128, 64],
             )
-    forecaster = ForecasterRnn(model, lags=3, levels="l1")
+    forecaster = ForecasterRnn(estimator=model, lags=3, levels="l1")
 
     series_col_names = list(series.columns)
     exog_col_names = list(exog.columns)
@@ -325,7 +325,7 @@ def test_create_train_X_y_ValueError_when_transformer_exog_alter_shape_of_exog()
             return self.transform(X)
     
     forecaster = ForecasterRnn(
-        model, lags=3, levels="l1", transformer_exog=CustomTransformer()
+        estimator=model, lags=3, levels="l1", transformer_exog=CustomTransformer()
     )
 
     err_msg = re.escape(
@@ -361,7 +361,7 @@ def test_create_train_X_y_ValueError_when_series_and_exog_have_different_index_b
                 recurrent_units=100,
                 dense_units=[128, 64],
             )
-    forecaster = ForecasterRnn(model, lags=3, levels="l1")
+    forecaster = ForecasterRnn(estimator=model, lags=3, levels="l1")
 
     err_msg = re.escape(
         "When `exog` has the same length as `series`, the index "
@@ -395,7 +395,7 @@ def test_create_train_X_y_ValueError_when_series_and_exog_have_different_index_a
                 recurrent_units=100,
                 dense_units=[128, 64],
             )
-    forecaster = ForecasterRnn(model, lags=3, levels="l1")
+    forecaster = ForecasterRnn(estimator=model, lags=3, levels="l1")
 
     err_msg = re.escape(
         "When `exog` doesn't contain the first `window_size` "
@@ -424,7 +424,7 @@ def test_create_train_X_y_UserWarning_when_levels_of_transformer_series_not_equa
                 dense_units=[128, 64],
             )
     forecaster = ForecasterRnn(
-        model, levels="1", transformer_series=dict_transformers, lags=3
+        estimator=model, levels="1", transformer_series=dict_transformers, lags=3
     )
 
     series_not_in_transformer_series = set(series.columns) - set(
@@ -454,7 +454,7 @@ def test_create_train_X_y_ValueError_when_all_series_values_are_missing():
                 recurrent_units=100,
                 dense_units=[128, 64],
             )
-    forecaster = ForecasterRnn(model, levels="1", lags=3)
+    forecaster = ForecasterRnn(estimator=model, levels="1", lags=3)
 
     err_msg = re.escape("`y` has missing values.")
     with pytest.raises(ValueError, match=err_msg):
@@ -487,7 +487,7 @@ def test_create_train_X_y_ValueError_when_series_values_are_missing(values):
                 recurrent_units=100,
                 dense_units=[128, 64],
             )
-    forecaster = ForecasterRnn(model, levels="1", lags=3)
+    forecaster = ForecasterRnn(estimator=model, levels="1", lags=3)
 
     err_msg = re.escape("`y` has missing values.")
     with pytest.raises(ValueError, match=err_msg):
@@ -515,7 +515,7 @@ def test_create_train_X_y_output_when_series_10_and_transformer_series_is_Standa
                 dense_units=64,
             )
     forecaster = ForecasterRnn(
-        model, levels="l1", transformer_series=StandardScaler(), lags=5
+        estimator=model, levels="l1", transformer_series=StandardScaler(), lags=5
     )
 
     (
@@ -623,7 +623,7 @@ def test_create_train_X_y_output_when_series_10_and_transformer_series_is_Standa
                 dense_units=64,
             )
     forecaster = ForecasterRnn(
-        model, levels="l1", transformer_series=StandardScaler(), lags=5
+        estimator=model, levels="l1", transformer_series=StandardScaler(), lags=5
     )
 
     (

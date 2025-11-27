@@ -17,7 +17,9 @@ def test_ForecasterRnn_init_basic_and_attr_types():
     Basic initialization of ForecasterRnn with attributes types.
     """
     series = pd.DataFrame({'A': np.arange(10, dtype=float)})
-    model = create_and_compile_model(series=series, lags=3, steps=2, model_name="modelo")
+    model = create_and_compile_model(
+        series=series, lags=3, steps=2, model_name="modelo"
+    )
     forecaster = ForecasterRnn(
         estimator=model,
         levels='A',

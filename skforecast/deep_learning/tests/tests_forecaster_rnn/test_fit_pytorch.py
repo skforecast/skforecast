@@ -52,7 +52,7 @@ def test_fit_without_validation_data():
     Test case for fitting the forecaster without validation data
     """
 
-    forecaster = ForecasterRnn(model, levels, lags=lags)
+    forecaster = ForecasterRnn(estimator=model, levels=levels, lags=lags)
 
     assert forecaster.is_fitted is False
 
