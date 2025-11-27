@@ -17,7 +17,6 @@ classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: BSD License",
     "Operating System :: MacOS",
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX",
@@ -147,11 +146,11 @@ exclude = ["skforecast.*.tests", "skforecast.*.tests.*"]
 testpaths = ["skforecast"]
 python_files = "test_*.py"
 python_functions = "test_*"
-addopts = "-vv -s --tb=short"
-filterwarnings = [
-    "ignore::DeprecationWarning",
-    "ignore::FutureWarning",
-]
+addopts = "-vv --tb=short"
+# filterwarnings = [
+#     "ignore::DeprecationWarning",
+#     "ignore::FutureWarning",
+# ]
 
 [tool.coverage.run]
 omit = [

@@ -11,6 +11,7 @@ on:
 jobs:
   run:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -29,12 +30,13 @@ jobs:
       - name: Run tests and collect coverage
         env:
           KERAS_BACKEND: torch
-        run: pytest --cov --junitxml=junit.xml -o junit_family=legacy
+        run: pytest --cov skforecast --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with: 
           token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.xml
 
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}

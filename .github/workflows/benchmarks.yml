@@ -9,6 +9,7 @@ permissions:
 jobs:
   run-benchmarks:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
 
     env:
       OMP_NUM_THREADS: "1"         # Force OpenMP-based libraries to run single-threaded (e.g., NumPy, scikit-learn, LightGBM) to reduce variance and avoid oversubscription.
