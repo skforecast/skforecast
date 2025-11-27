@@ -127,24 +127,24 @@ exog_lw_predict_datetime.name = 'exog'
 # Pandas DataFrames
 df_exog = pd.DataFrame({
               'exog_1': exog.to_numpy(),
-              'exog_2': ['a', 'b']*25}
+              'exog_2': ['a', 'b'] * 25}
           )
 
 df_exog_lw = pd.DataFrame({
                  'exog_1': exog_lw.to_numpy(),
-                 'exog_2': ['a', 'b']*25}
+                 'exog_2': ['a', 'b'] * 25}
              )
 df_exog_lw.index = pd.RangeIndex(start=50, stop=100)
 
 df_exog_predict = pd.DataFrame({
                       'exog_1': exog_predict.to_numpy(),
-                      'exog_2': ['a', 'b']*5}
+                      'exog_2': ['a', 'b'] * 5}
                   )
 df_exog_predict.index = pd.RangeIndex(start=50, stop=60)
 
 df_exog_lw_predict = pd.DataFrame({
                          'exog_1': exog_lw_predict.to_numpy(),
-                         'exog_2': ['a', 'b']*5}
+                         'exog_2': ['a', 'b'] * 5}
                      )
 df_exog_lw_predict.index = pd.RangeIndex(start=100, stop=110)
 
