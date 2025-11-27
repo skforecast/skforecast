@@ -15,7 +15,6 @@ import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed, cpu_count
 from tqdm.auto import tqdm
-from ..stats import Sarimax
 from ..metrics import add_y_train_argument, _get_metric
 from ..exceptions import LongTrainingWarning, IgnoredArgumentWarning, runtime_deprecated
 from ..model_selection._split import TimeSeriesFold
@@ -1539,7 +1538,8 @@ def _backtesting_stats(
     forecaster = deepcopy(forecaster)
     cv = deepcopy(cv)
 
-    if not isinstance(forecaster.estimator, Sarimax) and cv.refit is False:
+    estimator_type = f"{type(forecaster.estimator).__module__}.{type(forecaster.estimator).__name__}"
+    if estimator_type != "skforecast.stats.Sarimax" and cv.refit is False:
         warnings.warn(
             "If `ForecasterStats` uses a estimator different from "
             "`skforecast.stats.Sarimax`, `cv.refit` must be `True` since "
