@@ -131,7 +131,9 @@ def test_output_get_feature_importances_when_lags_3_step_1():
     Test output of get_feature_importances for step 1, when estimator is LinearRegression with lags=3
     and it is trained with y=pd.Series(np.arange(5)).
     """
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=1)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=3, steps=1
+    )
     forecaster.fit(y=pd.Series(np.arange(5)))
 
     results = forecaster.get_feature_importances(step=1, sort_importance=False)

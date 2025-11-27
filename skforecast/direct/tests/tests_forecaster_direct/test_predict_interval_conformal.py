@@ -17,7 +17,9 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
     Test output when estimator is LinearRegression and one step ahead is predicted
     using in sample residuals.
     """
-    forecaster = ForecasterDirect(LinearRegression(), steps=2, lags=3)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=2, steps=3
+    )
     forecaster.fit(y=pd.Series(np.arange(10)), store_in_sample_residuals=True)
     forecaster.in_sample_residuals_ = np.array([10, 20])
     results = forecaster._predict_interval_conformal(
@@ -38,7 +40,9 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
     Test output when estimator is LinearRegression and two step ahead is predicted
     using in sample residuals.
     """
-    forecaster = ForecasterDirect(LinearRegression(), steps=2, lags=3)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=2, steps=3
+    )
     forecaster.fit(y=pd.Series(np.arange(10)), store_in_sample_residuals=True)
     forecaster.in_sample_residuals_ = np.array([10, 20])
     results = forecaster._predict_interval_conformal(
@@ -60,7 +64,9 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
     Test output when estimator is LinearRegression and one step ahead is predicted
     using out sample residuals.
     """
-    forecaster = ForecasterDirect(LinearRegression(), steps=2, lags=3)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=2, steps=3
+    )
     forecaster.fit(y=pd.Series(np.arange(10)), store_in_sample_residuals=True)
     forecaster.out_sample_residuals_ = np.array([10, 20])
     results = forecaster._predict_interval_conformal(
@@ -81,7 +87,9 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
     Test output when estimator is LinearRegression and two step ahead is predicted
     using out sample residuals.
     """
-    forecaster = ForecasterDirect(LinearRegression(), steps=2, lags=3)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=2, steps=3
+    )
     forecaster.fit(y=pd.Series(np.arange(10)), store_in_sample_residuals=True)
     forecaster.out_sample_residuals_ = np.array([10, 20])
     results = forecaster._predict_interval_conformal(
@@ -189,7 +197,9 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
     Test output when estimator is LinearRegression 5 step ahead is predicted
     using in sample residuals.
     """
-    forecaster = ForecasterDirect(LinearRegression(), steps=5, lags=3)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), steps=5, lags=3
+    )
     forecaster.fit(y=y, store_in_sample_residuals=True)
     results = forecaster._predict_interval_conformal(
         steps=5, nominal_coverage=0.95, use_in_sample_residuals=True, use_binned_residuals=True
@@ -215,7 +225,9 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
     Test output when estimator is LinearRegression, steps=5, use_in_sample_residuals=False,
     binned_residuals=True.
     """
-    forecaster = ForecasterDirect(LinearRegression(), steps=5, lags=3)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), steps=5, lags=3
+    )
     forecaster.fit(y=y, store_in_sample_residuals=True)
     forecaster.out_sample_residuals_by_bin_ = forecaster.in_sample_residuals_by_bin_
     results = forecaster._predict_interval_conformal(
@@ -242,7 +254,7 @@ def test_predict_interval_conformal_output_with_differentiation():
     Test predict output when using differentiation.
     """
     forecaster = ForecasterDirect(
-        LinearRegression(), steps=5, lags=3, differentiation=1
+        estimator=LinearRegression(), steps=5, lags=3, differentiation=1
     )
     forecaster.fit(y=y, store_in_sample_residuals=True)
     results = forecaster._predict_interval_conformal(

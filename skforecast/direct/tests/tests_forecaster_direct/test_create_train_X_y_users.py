@@ -14,7 +14,9 @@ def test_create_train_X_y_output_when_y_is_series_10_steps_1_and_exog_is_series_
     y = pd.Series(np.arange(10), name='y', dtype=float)
     exog = pd.Series(np.arange(100, 110), name='exog', dtype=float)
 
-    forecaster = ForecasterDirect(LinearRegression(), lags=5, steps=1)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=5, steps=1
+    )
     results = forecaster.create_train_X_y(y=y, exog=exog)
 
     expected = (

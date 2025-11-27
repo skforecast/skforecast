@@ -24,7 +24,9 @@ def test_predict_NotFittedError_when_fitted_is_False():
     """
     Test NotFittedError is raised when fitted is False.
     """
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=5)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=3, steps=5
+    )
 
     err_msg = re.escape(
         "This Forecaster instance is not fitted yet. Call `fit` with "
@@ -41,7 +43,9 @@ def test_predict_bootstrapping_ValueError_when_out_sample_residuals_is_None(use_
     Test ValueError is raised when use_in_sample_residuals=False and
     out sample residuals is None.
     """
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=2)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=3, steps=2
+    )
     forecaster.fit(y=pd.Series(np.arange(10)), store_in_sample_residuals=True)
 
     if use_binned_residuals:

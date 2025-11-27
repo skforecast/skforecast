@@ -13,7 +13,7 @@ def test_set_lags_ValueError_when_lags_set_to_None_and_window_features_is_None()
     Test ValueError is raised when lags is set to None and window_features is None.
     """
     forecaster = ForecasterDirect(
-        LinearRegression(), steps=2, lags=3, window_features=None
+        estimator=LinearRegression(), steps=2, lags=3, window_features=None
     )
 
     err_msg = re.escape(
@@ -32,7 +32,9 @@ def test_set_lags_with_different_inputs(lags):
     """
     Test how lags and max_lag attributes change with lags argument of different types.
     """
-    forecaster = ForecasterDirect(LinearRegression(), lags=5, steps=2)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=5, steps=2
+    )
     forecaster.set_lags(lags=lags)
 
     np.testing.assert_array_almost_equal(forecaster.lags, np.array([1, 2, 3]))

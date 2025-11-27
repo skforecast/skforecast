@@ -12,7 +12,7 @@ def test_binning_in_sample_residuals_output():
     Test that _binning_in_sample_residuals returns the expected output.
     """
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', steps=2, lags=3, binner_kwargs={'n_bins': 3}
+        estimator=LinearRegression(), level='l1', steps=2, lags=3, binner_kwargs={'n_bins': 3}
     )
 
     rng = np.random.default_rng(123)
@@ -84,7 +84,7 @@ def test_binning_in_sample_residuals_store_in_sample_residuals_False():
     Test that _binning_in_sample_residuals store_in_sample_residuals False.
     """
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', steps=2, lags=3, binner_kwargs={'n_bins': 3}
+        estimator=LinearRegression(), level='l1', steps=2, lags=3, binner_kwargs={'n_bins': 3}
     )
 
     rng = np.random.default_rng(123)
@@ -120,7 +120,7 @@ def test_binning_in_sample_residuals_probabilistic_mode_no_binned():
     """
 
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', steps=2, lags=3, binner_kwargs={'n_bins': 3}
+        estimator=LinearRegression(), level='l1', steps=2, lags=3, binner_kwargs={'n_bins': 3}
     )
 
     rng = np.random.default_rng(123)
@@ -173,7 +173,7 @@ def test_binning_in_sample_residuals_stores_maximum_10000_residuals():
     )
 
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', steps=2, lags=3, binner_kwargs={'n_bins': 3}
+        estimator=LinearRegression(), level='l1', steps=2, lags=3, binner_kwargs={'n_bins': 3}
     )
     forecaster.fit(series=series, store_in_sample_residuals=True)
     max_residuals_per_bin = int(10_000 // forecaster.binner['l1'].n_bins_)

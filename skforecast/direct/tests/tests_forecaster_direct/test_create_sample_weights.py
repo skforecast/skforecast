@@ -8,7 +8,7 @@ from skforecast.direct import ForecasterDirect
 from sklearn.linear_model import LinearRegression
 
 
-def custom_weights(index): # pragma: no cover
+def custom_weights(index):  # pragma: no cover
     """
     Return 0 if index is one of '2022-01-05', '2022-01-06', 1 otherwise.
     """
@@ -21,7 +21,7 @@ def custom_weights(index): # pragma: no cover
     return weights
 
 
-def custom_weights_nan(index): # pragma: no cover
+def custom_weights_nan(index):  # pragma: no cover
     """
     Return np.nan if index is one of '2022-01-05', '2022-01-06', 1 otherwise.
     """
@@ -34,7 +34,7 @@ def custom_weights_nan(index): # pragma: no cover
     return weights
 
 
-def custom_weights_negative(index): # pragma: no cover
+def custom_weights_negative(index):  # pragma: no cover
     """
     Return -1 if index is one of '2022-01-05', '2022-01-06', 1 otherwise.
     """
@@ -47,7 +47,7 @@ def custom_weights_negative(index): # pragma: no cover
     return weights
 
 
-def custom_weights_zeros(index): # pragma: no cover
+def custom_weights_zeros(index):  # pragma: no cover
     """
     Return 0 for all elements in index
     """
@@ -80,9 +80,9 @@ def test_create_sample_weights_output():
     Test sample_weights creation.
     """
     forecaster = ForecasterDirect(
-                     lags        = 3,
-                     steps       = 1,    
                      estimator   = LinearRegression(),
+                     lags        = 3,
+                     steps       = 1,
                      weight_func = custom_weights
                  )
 
@@ -97,9 +97,9 @@ def test_create_sample_weights_exceptions_when_weights_has_nan():
     Test sample_weights exception when weights contains NaNs.
     """
     forecaster = ForecasterDirect(
-                     lags        = 3,
-                     steps       = 1,    
                      estimator   = LinearRegression(),
+                     lags        = 3,
+                     steps       = 1,
                      weight_func = custom_weights_nan
                  )
 
@@ -113,9 +113,9 @@ def test_create_sample_weights_exceptions_when_weights_has_negative_values():
     Test sample_weights exception when sample_weight contains negative values.
     """
     forecaster = ForecasterDirect(
-                     lags        = 3,
-                     steps       = 1,    
                      estimator   = LinearRegression(),
+                     lags        = 3,
+                     steps       = 1,
                      weight_func = custom_weights_negative
                  )
 
@@ -129,15 +129,15 @@ def test_create_sample_weights_exceptions_when_weights_all_zeros():
     Test sample_weights exception when all weights are zeros.
     """
     forecaster = ForecasterDirect(
-                     lags        = 3,
-                     steps       = 1,    
                      estimator   = LinearRegression(),
+                     lags        = 3,
+                     steps       = 1,
                      weight_func = custom_weights_zeros
                  )
     
     err_msg = re.escape(
-                    ("The resulting `sample_weight` cannot be normalized because "
-                     "the sum of the weights is zero.")
-                )
+        "The resulting `sample_weight` cannot be normalized because "
+        "the sum of the weights is zero."
+    )
     with pytest.raises(ValueError, match=err_msg):
         forecaster.create_sample_weights(X_train=X_train)

@@ -13,7 +13,7 @@ def test_binning_in_sample_residuals_output():
     """
 
     forecaster = ForecasterDirect(
-        LinearRegression(), lags=3, steps=2, binner_kwargs={'n_bins': 3}
+        estimator=LinearRegression(), lags=3, steps=2, binner_kwargs={'n_bins': 3}
     )
 
     rng = np.random.default_rng(123)
@@ -72,7 +72,7 @@ def test_binning_in_sample_residuals_store_in_sample_residuals_False():
     """
 
     forecaster = ForecasterDirect(
-        LinearRegression(), lags=3, steps=2, binner_kwargs={'n_bins': 3}
+        estimator=LinearRegression(), lags=3, steps=2, binner_kwargs={'n_bins': 3}
     )
 
     rng = np.random.default_rng(123)
@@ -105,7 +105,7 @@ def test_binning_in_sample_residuals_probabilistic_mode_no_binned():
     """
 
     forecaster = ForecasterDirect(
-        LinearRegression(), lags=3, steps=2, binner_kwargs={'n_bins': 3}
+        estimator=LinearRegression(), lags=3, steps=2, binner_kwargs={'n_bins': 3}
     )
 
     rng = np.random.default_rng(123)
@@ -146,7 +146,7 @@ def test_binning_in_sample_residuals_stores_maximum_10000_residuals():
         )
 
     forecaster = ForecasterDirect(
-        LinearRegression(), lags=3, steps=2, binner_kwargs={'n_bins': 3}
+        estimator=LinearRegression(), lags=3, steps=2, binner_kwargs={'n_bins': 3}
     )
     forecaster.fit(y, store_in_sample_residuals=True)
     max_residuals_per_bin = int(10_000 // forecaster.binner.n_bins_)
