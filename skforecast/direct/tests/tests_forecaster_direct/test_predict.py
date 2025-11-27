@@ -513,7 +513,7 @@ def test_predict_output_when_with_exog_and_differentiation_is_2():
 
     forecaster_2 = ForecasterDirect(
         estimator=LinearRegression(), steps=1, lags=15, differentiation=2
-)
+    )
     forecaster_2.fit(y=data.loc[:end_train], exog=exog.loc[:end_train])
     predictions_2 = forecaster_2.predict(exog=exog.loc[end_train:])
 
