@@ -19,14 +19,7 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: '3.13'
-
-      # - name: Install dependencies
-      #   run: |
-      #     python -m pip install --upgrade pip
-      #     python -m pip install tomli
-      #     python tools/extract_dependencies.py
-      #     python -m pip install -r tools/requirements.txt
-      #     python -m pip install -e .
+          cache: 'pip'
 
       - name: Install dependencies
         run: |

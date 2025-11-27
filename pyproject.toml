@@ -14,6 +14,10 @@ maintainers = [
 ]
 
 classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: BSD License",
     "Operating System :: MacOS",
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX",
@@ -25,6 +29,9 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 
 license = "BSD-3-Clause"
@@ -39,6 +46,10 @@ keywords = [
     "forecasting",
     "time-series-analysis",
     "time-series-regression",
+    "autoregressive",
+    "deep-learning",
+    "lightgbm",
+    "xgboost",
 ]
 dependencies = [
     "numpy>=1.24",
@@ -75,15 +86,10 @@ all = [
     "statsmodels>=0.12, <0.15",
     "keras>=3.0, <4.0",
     'tensorflow>=2.18, <2.21; python_version < "3.14"',
-    'torch>=2.4, <2.10; python_version < "3.14"'
+    "torch>=2.4, <2.10",
 ]
 
-full = [
-    "matplotlib>=3.3, <3.11",
-    "seaborn>=0.11, <0.14",
-    "statsmodels>=0.12, <0.15",
-    "keras>=3.0, <4.0"
-]
+full = ["skforecast[all]"]
 
 docs = [
     "mike==2.1.3",
@@ -94,7 +100,7 @@ docs = [
     "mkdocstrings-python==1.16.12",
     "notebook==6.5.7",
     "jupyter-contrib-nbextensions==0.7.0",
-    "black==25.1.0"
+    "black==25.1.0",
     # Si está el enlace de abajo, al hacer pip install .[docs] falla
     #"https://github.com/ipython-contrib/jupyter_contrib_nbextensions/tarball/master"
 ]
@@ -118,7 +124,7 @@ test = [
     "torch>=2.4, <2.10",
     "tomli>=2.0",
     "pandas[parquet]>=1.5",
-    "aeon >=1.3, <1.4"
+    "aeon>=1.3, <1.4"
 ]
 
 [project.urls]
@@ -134,5 +140,30 @@ requires = ["setuptools>=61", "toml", "build"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["skforecast", "skforecast*"]
-exclude = ["skforecast/**/tests/*"]
+include = ["skforecast*"]
+exclude = ["skforecast.*.tests", "skforecast.*.tests.*"]
+
+[tool.pytest.ini_options]
+testpaths = ["skforecast"]
+python_files = "test_*.py"
+python_functions = "test_*"
+addopts = "-vv -s --tb=short"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::FutureWarning",
+]
+
+[tool.coverage.run]
+omit = [
+    "*/tests/*",
+    "*/tests_*/*",
+    "*/test_*.py",
+    "*/experimental/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+]
