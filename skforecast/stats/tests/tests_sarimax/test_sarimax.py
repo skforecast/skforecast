@@ -38,8 +38,8 @@ def test_decorator_check_fitted():
     sarimax = Sarimax(order=(1, 1, 1))
 
     err_msg = re.escape(
-        ("Sarimax instance is not fitted yet. Call `fit` with "
-         "appropriate arguments before using this method.")
+        "Sarimax instance is not fitted yet. Call `fit` with "
+        "appropriate arguments before using this method."
     )
     with pytest.raises(NotFittedError, match = err_msg): 
         sarimax.predict(steps=5)
