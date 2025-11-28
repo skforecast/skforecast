@@ -18,8 +18,9 @@ def check_incorrect_case_in_filenames():
     
     Returns
     -------
-    list
+    issues : list
         Lista de rutas relativas de archivos con problemas.
+    
     """
     # Obtener la ruta raíz del repositorio (padre del directorio tools/)
     repo_root = Path(__file__).resolve().parent.parent

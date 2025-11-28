@@ -86,6 +86,23 @@ Direct multi-step forecasting consists of **training a different model for each 
 Some machine learning models, such as long short-term memory (LSTM) neural networks, can **predict multiple values of a sequence simultaneously** (one-shot). This strategy implemented in the <code>ForecasterRnn</code> class.
 
 
+## Forecasting Classification
+
+While time series forecasting is predominantly treated as a regression problem, where the goal is to predict a continuous numerical value (e.g., temperature, sales units, price), there are scenarios where the objective is to predict a **categorical variable** or a discrete state. This approach is known as **Forecasting Classification**.
+
+In this context, the time series transformation into a matrix of lags remains exactly the same as in regression. The key difference lies in the target variable, which represents a class or label rather than a continuous number.
+
+Common use cases include:
+
+- **Directional prediction:** Predicting whether a stock price will go "Up" or "Down" (Binary classification).
+
+- **Event detection:** Predicting if a system will be in a "Normal", "Warning", or "Critical" state (Multi-class classification).
+
+- **Threshold crossing:** Forecasting if electricity demand will exceed a specific limit (Binary classification).
+
+The [`ForecasterRecursiveClassifier`](../user_guides/autoregressive-classification-forecasting.html) class in skforecast is designed specifically to handle these scenarios, allowing users to apply standard scikit-learn classifiers to time series problems.
+
+
 ## Global forecasting models
 
 **Univariate time series forecasting** focuses on modeling a single time series as a linear or nonlinear function of its own past values (lags), using historical observations to predict future ones. 
