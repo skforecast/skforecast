@@ -113,14 +113,16 @@ The **skforecast** library offers a **variety of forecaster** types, each tailor
 |[ForecasterRecursiveMultiSeries]||:heavy_check_mark:|:heavy_check_mark:||:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
 |[ForecasterDirectMultiVariate]||:heavy_check_mark:||:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
 |[ForecasterRNN]|:heavy_check_mark:|:heavy_check_mark:||:heavy_check_mark:|:heavy_check_mark:||:heavy_check_mark:||
-|[ForecasterSarimax]|:heavy_check_mark:||:heavy_check_mark:||:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:||
+|[ForecasterStats]|:heavy_check_mark:||:heavy_check_mark:||:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:||
+|[ForecasterRecursiveClassifier]|:heavy_check_mark:||:heavy_check_mark:||:heavy_check_mark:||:heavy_check_mark:|:heavy_check_mark:|
 
 [ForecasterRecursive]: https://skforecast.org/latest/user_guides/autoregressive-forecaster.html
 [ForecasterDirect]: https://skforecast.org/latest/user_guides/direct-multi-step-forecasting.html
 [ForecasterRecursiveMultiSeries]: https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting.html
 [ForecasterDirectMultiVariate]: https://skforecast.org/latest/user_guides/dependent-multi-series-multivariate-forecasting.html
 [ForecasterRNN]: https://skforecast.org/latest/user_guides/forecasting-with-deep-learning-rnn-lstm
-[ForecasterSarimax]: https://skforecast.org/latest/user_guides/forecasting-sarimax-arima.html
+[ForecasterStats]: https://skforecast.org/latest/user_guides/forecasting-sarimax-arima.html
+[ForecasterRecursiveClassifier]: ../user_guides/autoregressive-classification-forecasting.html
 
 
 # Examples and tutorials

@@ -141,19 +141,21 @@ The **skforecast** library offers a **variety of forecaster** types, each tailor
 
 | Forecaster                   | Single series | Multiple series | Recursive strategy | Direct strategy | Probabilistic prediction | Time series differentiation | Exogenous features | Window features |
 |:-----------------------------|:-------------:|:---------------:|:------------------:|:---------------:|:------------------------:|:---------------------------:|:------------------:|:---------------:|
-|[ForecasterRecursive]           |✔️||✔️||✔️|✔️|✔️|✔️|
-|[ForecasterDirect]     |✔️|||✔️|✔️|✔️|✔️|✔️|
-|[ForecasterRecursiveMultiSeries]       ||✔️|✔️||✔️|✔️|✔️|✔️|
-|[ForecasterDirectMultiVariate]      ||✔️||✔️|✔️|✔️|✔️|✔️|
-|[ForecasterRNN]               |✔️|✔️||✔️|✔️||✔️||
-|[ForecasterSarimax]           |✔️||✔️||✔️|✔️|✔️||
+|[ForecasterRecursive]            |✔️||✔️||✔️|✔️|✔️|✔️|
+|[ForecasterDirect]               |✔️|||✔️|✔️|✔️|✔️|✔️|
+|[ForecasterRecursiveMultiSeries] ||✔️|✔️||✔️|✔️|✔️|✔️|
+|[ForecasterDirectMultiVariate]   ||✔️||✔️|✔️|✔️|✔️|✔️|
+|[ForecasterRNN]                  |✔️|✔️||✔️|✔️||✔️||
+|[ForecasterStats]                |✔️||✔️||✔️|✔️|✔️||
+|[ForecasterRecursiveClassifier]  |✔️||✔️||✔️||✔️|✔️|
 
 [ForecasterRecursive]: ../user_guides/autoregressive-forecaster.html
 [ForecasterDirect]: ../user_guides/direct-multi-step-forecasting.html
 [ForecasterRecursiveMultiSeries]: ../user_guides/independent-multi-time-series-forecasting.html
 [ForecasterDirectMultiVariate]: ../user_guides/dependent-multi-series-multivariate-forecasting.html
 [ForecasterRNN]: ../user_guides/forecasting-with-deep-learning-rnn-lstm.html
-[ForecasterSarimax]: ../user_guides/forecasting-sarimax-arima.html
+[ForecasterStats]: ../user_guides/forecasting-sarimax-arima.html
+[ForecasterRecursiveClassifier]: ../user_guides/autoregressive-classification-forecasting.html
 
 To understand what can be done when initializing a forecaster with **skforecast** visit [Forecaster parameters](../quick-start/forecaster-parameters.html) and [Forecaster attributes](../quick-start/forecaster-attributes.html).
 

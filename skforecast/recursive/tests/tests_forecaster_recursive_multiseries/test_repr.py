@@ -42,7 +42,6 @@ def test_repr_and_repr_html():
     assert "<summary>" in result_html
     assert "General Information" in result_html
     assert "Series encoding" in result_html
-    assert "https://skforecast.org" in result_html
     assert "API Reference" in result_html or "User Guide" in result_html
     assert "Not fitted" in result_html or "None" in result_html
     

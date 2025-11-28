@@ -53,7 +53,8 @@ Docstring documentation must be included in every class and function. Skforecast
 ```python
 class ForecasterRecursive(ForecasterBase):
     """
-    This class turns any estimator compatible with the scikit-learn API into a recursive autoregressive (multi-step) forecaster.
+    This class turns any estimator compatible with the scikit-learn API into a
+    recursive autoregressive (multi-step) forecaster.
     
     Parameters
     ----------
@@ -63,24 +64,32 @@ class ForecasterRecursive(ForecasterBase):
         Lags used as predictors. Index starts at 1, so lag 1 is equal to t-1.
     
         - `int`: include lags from 1 to `lags` (included).
-        - `list`, `1d numpy ndarray` or `range`: include only lags present in `lags`, all elements must be int.
+        - `list`, `1d numpy ndarray` or `range`: include only lags present in 
+        `lags`, all elements must be int.
         - `None`: no lags are included as predictors. 
     window_features : object, list, default None
-        Instance or list of instances used to create window features. Window features are created from the original time series and are included as predictors.
+        Instance or list of instances used to create window features. Window features
+        are created from the original time series and are included as predictors.
     transformer_y : object transformer (preprocessor), default None
-        An instance of a transformer (preprocessor) compatible with the scikit-learn preprocessing API with methods: fit, transform, fit_transform and inverse_transform. ColumnTransformers are not allowed since they do not have inverse_transform method. The transformation is applied to `y` before training the forecaster. 
+        An instance of a transformer (preprocessor) compatible with the scikit-learn
+        preprocessing API with methods: fit, transform, fit_transform and inverse_transform.
+        ColumnTransformers are not allowed since they do not have inverse_transform method.
+        The transformation is applied to `y` before training the forecaster. 
     transformer_exog : object transformer (preprocessor), default None
-        An instance of a transformer (preprocessor) compatible with the scikit-learn preprocessing API. The transformation is applied to `exog` before training the forecaster. `inverse_transform` is not available when using ColumnTransformers.
+        An instance of a transformer (preprocessor) compatible with the scikit-learn
+        preprocessing API. The transformation is applied to `exog` before training the
+        forecaster. `inverse_transform` is not available when using ColumnTransformers.
     weight_func : Callable, default None
-        Function that defines the individual weights for each sample based on the index. For example, a function that assigns a lower weight to certain dates. Ignored if `estimator` does not have the argument `sample_weight` in its `fit` method. The resulting `sample_weight` cannot have negative values.
+        Function that defines the individual weights for each sample based on the
+        index. For example, a function that assigns a lower weight to certain dates.
+        Ignored if `estimator` does not have the argument `sample_weight` in its `fit`
+        method. The resulting `sample_weight` cannot have negative values.
     differentiation : int, default None
         Order of differencing applied to the time series before training the forecaster.
         If `None`, no differencing is applied. The order of differentiation is the number
         of times the differencing operation is applied to a time series. Differencing
         involves computing the differences between consecutive data points in the series.
-        Differentiation is reversed in the output of `predict()` and `predict_interval()`.
-        **WARNING: This argument is newly introduced and requires special attention. It
-        is still experimental and may undergo changes.**
+        Before returning a prediction, the differencing operation is reversed.
     fit_kwargs : dict, default None
         Additional arguments to be passed to the `fit` method of the estimator.
     binner_kwargs : dict, default None
@@ -92,6 +101,8 @@ class ForecasterRecursive(ForecasterBase):
         **New in version 0.14.0**
     forecaster_id : str, int, default None
         Name used as an identifier of the forecaster.
+    regressor : estimator or pipeline compatible with the Keras API
+        **Deprecated**, alias for `estimator`.
     
     Attributes
     ----------
@@ -130,30 +141,6 @@ class ForecasterRecursive(ForecasterBase):
         index. For example, a function that assigns a lower weight to certain dates.
         Ignored if `estimator` does not have the argument `sample_weight` in its `fit`
         method. The resulting `sample_weight` cannot have negative values.
-    differentiation : int
-        Order of differencing applied to the time series before training the forecaster.
-        If `None`, no differencing is applied. The order of differentiation is the number
-        of times the differencing operation is applied to a time series. Differencing
-        involves computing the differences between consecutive data points in the series.
-        Differentiation is reversed in the output of `predict()` and `predict_interval()`.
-        **WARNING: This argument is newly introduced and requires special attention. It
-        is still experimental and may undergo changes.**
-        **New in version 0.10.0**
-    binner : sklearn.preprocessing.KBinsDiscretizer
-        `KBinsDiscretizer` used to discretize residuals into k bins according 
-        to the predicted values associated with each residual.
-        **New in version 0.12.0**
-    binner_intervals_ : dict
-        Intervals used to discretize residuals into k bins according to the predicted
-        values associated with each residual.
-        **New in version 0.12.0**
-    binner_kwargs : dict
-        Additional arguments to pass to the `QuantileBinner` used to discretize 
-        the residuals into k bins according to the predicted values associated 
-        with each residual. Available arguments are: `n_bins`, `method`, `subsample`,
-        `random_state` and `dtype`. Argument `method` is passed internally to the
-        function `numpy.percentile`.
-        **New in version 0.14.0**
     source_code_weight_func : str
         Source code of the custom function used to create weights.
     differentiation : int
@@ -179,6 +166,8 @@ class ForecasterRecursive(ForecasterBase):
         Frequency of Index of the input used in training.
     training_range_ : pandas Index
         First and last values of index of the data used during training.
+    series_name_in_ : str
+        Names of the series provided by the user during training.
     exog_in_ : bool
         If the forecaster has been trained using exogenous variable/s.
     exog_names_in_ : list
@@ -186,8 +175,13 @@ class ForecasterRecursive(ForecasterBase):
     exog_type_in_ : type
         Type of exogenous data (pandas Series or DataFrame) used in training.
     exog_dtypes_in_ : dict
-        Type of each exogenous variable/s used in training. If `transformer_exog` 
-        is used, the dtypes are calculated before the transformation.
+        Type of each exogenous variable/s used in training before the transformation
+        applied by `transformer_exog`. If `transformer_exog` is not used, it
+        is equal to `exog_dtypes_out_`.
+    exog_dtypes_out_ : dict
+        Type of each exogenous variable/s used in training after the transformation 
+        applied by `transformer_exog`. If `transformer_exog` is not used, it 
+        is equal to `exog_dtypes_in_`.
     X_train_window_features_names_out_ : list
         Names of the window features included in the matrix `X_train` created
         internally for training.
@@ -206,23 +200,32 @@ class ForecasterRecursive(ForecasterBase):
         stored after differentiation.
     in_sample_residuals_by_bin_ : dict
         In sample residuals binned according to the predicted value each residual
-        is associated with. If `transformer_y` is not `None`, residuals are stored
-        in the transformed scale. If `differentiation` is not `None`, residuals are
-        stored after differentiation. The number of residuals stored per bin is
-        limited to `10_000 // self.binner.n_bins_`.
-        **New in version 0.14.0**
+        is associated with. The number of residuals stored per bin is limited to 
+        `10_000 // self.binner.n_bins_` in the form `{bin: residuals}`. If 
+        `transformer_y` is not `None`, residuals are stored in the transformed 
+        scale. If `differentiation` is not `None`, residuals are stored after 
+        differentiation. 
     out_sample_residuals_ : numpy ndarray
-        Residuals of the model when predicting non training data. Only stored up to
-        10_000 values. If `transformer_y` is not `None`, residuals are stored in
-        the transformed scale. If `differentiation` is not `None`, residuals are
-        stored after differentiation.
+        Residuals of the model when predicting non-training data. Only stored up to
+        10_000 values. Use `set_out_sample_residuals()` method to set values. If 
+        `transformer_y` is not `None`, residuals are stored in the transformed 
+        scale. If `differentiation` is not `None`, residuals are stored after 
+        differentiation.
     out_sample_residuals_by_bin_ : dict
         Out of sample residuals binned according to the predicted value each residual
-        is associated with. If `transformer_y` is not `None`, residuals are stored
-        in the transformed scale. If `differentiation` is not `None`, residuals are
-        stored after differentiation. The number of residuals stored per bin is
-        limited to `10_000 // self.binner.n_bins_`.
-        **New in version 0.12.0**
+        is associated with. The number of residuals stored per bin is limited to 
+        `10_000 // self.binner.n_bins_` in the form `{bin: residuals}`. If 
+        `transformer_y` is not `None`, residuals are stored in the transformed 
+        scale. If `differentiation` is not `None`, residuals are stored after 
+        differentiation. 
+    binner : skforecast.preprocessing.QuantileBinner
+        `QuantileBinner` used to discretize residuals into k bins according 
+        to the predicted values associated with each residual.
+    binner_intervals_ : dict
+        Intervals used to discretize residuals into k bins according to the predicted
+        values associated with each residual.
+    binner_kwargs : dict
+        Additional arguments to pass to the `QuantileBinner`.
     creation_date : str
         Date of creation.
     is_fitted : bool
@@ -235,6 +238,11 @@ class ForecasterRecursive(ForecasterBase):
         Version of python used to create the forecaster.
     forecaster_id : str, int
         Name used as an identifier of the forecaster.
+    __skforecast_tags__ : dict
+        Tags associated with the forecaster.
+    _probabilistic_mode: str, bool
+        Private attribute used to indicate whether the forecaster should perform 
+        some calculations during backtesting.
     
     """
 ```

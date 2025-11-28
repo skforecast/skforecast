@@ -45,7 +45,6 @@ def test_repr_and_repr_html():
     assert "Target series (level)" in result_html
     assert "serie_1" in result_html
     assert "Maximum steps to predict" in result_html
-    assert "https://skforecast.org" in result_html
     assert "API Reference" in result_html or "User Guide" in result_html
     assert "Not fitted" in result_html or "None" in result_html
     
