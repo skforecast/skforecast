@@ -4441,7 +4441,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <p><font size="6">ForecasterStats</font></p>
-<p>The <a href="..api/forecasterstats.html"><code>ForecasterStats</code></a> class allows training and validation of ARIMA and SARIMAX models using the skforecast API. <code>ForecasterStats</code> is compatible with the <a href="../api/stats.html#skforecast.stats._sarimax.Sarimax"><code>Sarimax</code> from skforecast</a> and the <a href="https://www.aeon-toolkit.org/en/stable/api_reference/auto_generated/aeon.forecasting.stats.ARIMA.html#arima"><code>ARIMA</code> from aeon</a> implementations.</p>
+<p>The <a href="../api/forecasterstats.html"><code>ForecasterStats</code></a> class allows training and validation of ARIMA and SARIMAX models using the skforecast API. <code>ForecasterStats</code> is compatible with the <a href="../api/stats.html#skforecast.stats._sarimax.Sarimax"><code>Sarimax</code> from skforecast</a> and the <a href="https://www.aeon-toolkit.org/en/stable/api_reference/auto_generated/aeon.forecasting.stats.ARIMA.html#arima"><code>ARIMA</code> from aeon</a> implementations.</p>
 </div>
 </div>
 </div>
@@ -4463,7 +4463,7 @@ To learn more about modeling time series with statistical models, visit our exam
 <ul>
 <li><a href="https://www.cienciadedatos.net/documentos/py51-arima-sarimax-models-python.html">ARIMA and SARIMAX models with Python</a></li>
 <li><a href="https://cienciadedatos.net/documentos/py73-arar-forecasting-models-python">ARAR models with Python</a></li>
-<li><a href="../faq/benchmarking-statistical-models.html">Benchmark of statistical models for forecasting</a></li>
+<li><a href="../faq/benchmark-statistical-models.html">Benchmark of statistical models for forecasting</a></li>
 </ul>
 </p>
 </div>
@@ -5092,7 +5092,7 @@ predictions.head(4)</div>
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>The previous section introduced the construction of ARIMA-SARIMAX models using three different implementations. In order to seamlessly integrate these models with the various functionalities provided by <strong>skforecast</strong>, the next step is to encapsulate the skforecast <a href="../api/stats.html#skforecast.stats._sarimax.Sarimax"><code>Sarimax</code></a> model within a <a href="..api/forecasterstats.html"><code>ForecasterStats</code></a> object. This encapsulation harmonizes the intricacies of the model and allows for the coherent use of skforecast's extensive capabilities.</p>
+<p>The previous section introduced the construction of ARIMA-SARIMAX models using three different implementations. In order to seamlessly integrate these models with the various functionalities provided by <strong>skforecast</strong>, the next step is to encapsulate the skforecast <a href="../api/stats.html#skforecast.stats._sarimax.Sarimax"><code>Sarimax</code></a> model within a <a href="../api/forecasterstats.html"><code>ForecasterStats</code></a> object. This encapsulation harmonizes the intricacies of the model and allows for the coherent use of skforecast's extensive capabilities.</p>
 </div>
 </div>
 </div>
@@ -6905,7 +6905,7 @@ results_grid.head(5)</div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <h2 id="prediction-on-training-data-in-sample-predictions">Prediction on training data (In-sample Predictions)<a class="anchor-link" href="#prediction-on-training-data-in-sample-predictions">¶</a></h2><p>Predictions on the training data are crucial for evaluating the accuracy and effectiveness of the model. By comparing the predicted values wtih the actual observed values in the training dataset, you can assess how well the model has learned the underlying patterns and trends in the data. This comparison helps in understanding the model's performance and identify areas where it may need improvement or adjustment. In essence, they act as a mirror, reflecting how the model interprets and reconstructs the historical data on which it was trained.</p>
-<p>The <a href="https://www.statsmodels.org/dev/generated/statsmodels.tsa.statespace.sarimax.SARIMAXResults.fittedvalues.html#statsmodels.tsa.statespace.sarimax.SARIMAXResults.fittedvalues">predictions of the fitted values</a> are stored in the <code>fittedvalues</code> attribute of the <code>SARIMAXResults</code> object. This object is stored within the <code>sarimax_res</code> attribute of the <a href="../api/sarimax">skforecast <code>Sarimax</code> model</a>:</p>
+<p>The <a href="https://www.statsmodels.org/dev/generated/statsmodels.tsa.statespace.sarimax.SARIMAXResults.fittedvalues.html#statsmodels.tsa.statespace.sarimax.SARIMAXResults.fittedvalues">predictions of the fitted values</a> are stored in the <code>fittedvalues</code> attribute of the <code>SARIMAXResults</code> object. This object is stored within the <code>sarimax_res</code> attribute of the <a href="../api/stats.html#skforecast.stats._sarimax.Sarimax">skforecast <code>Sarimax</code> model</a>:</p>
 </div>
 </div>
 </div>
