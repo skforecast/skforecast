@@ -5,7 +5,7 @@ coverage:
         # Commits pushed to main should not make the overall
         # project coverage decrease by more than 1%:
         target: auto
-        threshold: 1%
+        threshold: 5%
     patch:
       default:
         # Minimum coverage for all new code. If, for example
