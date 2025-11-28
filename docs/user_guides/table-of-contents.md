@@ -90,6 +90,7 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 - [Cyclical features in time series](../faq/cyclical-features-time-series.html)
 - [Time series aggregation](../faq/time-series-aggregation.html)
 - [Benchmarking skforecast](../faq/skforecast-benchmark.html)
+- [Benchmarking statistical models](../faq/benchmark-statistical-models.html)
 - [Parallelization in skforecast](../faq/parallelization-skforecast.html)
 - [Profiling skforecast](../faq/profiling-skforecast.html)
 

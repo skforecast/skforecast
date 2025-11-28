@@ -685,7 +685,7 @@ class PopulationDriftDetector:
 
         Parameters
         ----------
-        None
+        self
 
         Returns
         -------
