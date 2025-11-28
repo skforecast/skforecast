@@ -47,7 +47,7 @@ def test_set_lags_when_differentiation_is_integer():
     differentiation as integer.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      lags            = 3,
                      differentiation = 1
                  )
@@ -75,7 +75,7 @@ def test_set_lags_when_differentiation_is_dict():
     differentiation as dict.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      lags            = 3,
                      differentiation = {'l1': 1, 'l2': 2, 'l3': None, '_unknown_level': 1}
                  )
@@ -112,7 +112,7 @@ def test_set_lags_to_None(lags):
     """
     rolling = RollingFeatures(stats='mean', window_sizes=3)
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      lags            = 5,
                      window_features = rolling
                  )

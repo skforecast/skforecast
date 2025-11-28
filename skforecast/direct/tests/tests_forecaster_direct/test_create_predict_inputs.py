@@ -27,12 +27,14 @@ def test_create_predict_inputs_TypeError_when_steps_list_contain_floats(steps):
     """
     Test _create_predict_inputs TypeError when steps is a list with floats.
     """
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=5)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=3, steps=5
+    )
     forecaster.fit(y=pd.Series(np.arange(10)))
 
     err_msg = re.escape(
-        (f"`steps` argument must be an int, a list of ints or `None`. "
-         f"Got {type(steps)}.")
+        f"`steps` argument must be an int, a list of ints or `None`. "
+        f"Got {type(steps)}."
     )
     with pytest.raises(TypeError, match = err_msg):
         forecaster._create_predict_inputs(steps=steps)
@@ -42,11 +44,13 @@ def test_create_predict_inputs_NotFittedError_when_fitted_is_False():
     """
     Test NotFittedError is raised when fitted is False.
     """
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=5)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=3, steps=5
+    )
 
     err_msg = re.escape(
-        ("This Forecaster instance is not fitted yet. Call `fit` with "
-         "appropriate arguments before using predict.")
+        "This Forecaster instance is not fitted yet. Call `fit` with "
+        "appropriate arguments before using predict."
     )
     with pytest.raises(NotFittedError, match = err_msg):
         forecaster._create_predict_inputs(steps=5)
@@ -58,9 +62,14 @@ def test_create_predict_inputs_output(steps):
     """
     Test _create_predict_inputs output.
     """
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=3)
-    forecaster.fit(y=pd.Series(np.arange(50, dtype=float), 
-                   index=pd.date_range(start='2020-01-01', periods=50, freq='D')))
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=3, steps=3
+    )
+    forecaster.fit(
+        y=pd.Series(
+            np.arange(50, dtype=float), index=pd.date_range(start='2020-01-01', periods=50, freq='D')
+        )
+    )
     results = forecaster._create_predict_inputs(steps=steps)
 
     expected = (
@@ -84,7 +93,9 @@ def test_create_predict_inputs_output_when_with_list_interspersed():
     Test _create_predict_inputs output when steps is
     a list with interspersed steps.
     """
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=5)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=3, steps=5
+    )
     forecaster.fit(y=pd.Series(np.arange(50, dtype=float)))
     results = forecaster._create_predict_inputs(steps=[1, 4])
 
@@ -107,7 +118,9 @@ def test_create_predict_inputs_output_when_last_window():
     """
     Test _create_predict_inputs output when external last_window.
     """
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=5)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=3, steps=5
+    )
     forecaster.fit(y=pd.Series(np.arange(50, dtype=float)))
     last_window = pd.Series(
         data  = [47, 48, 49], 
@@ -136,7 +149,9 @@ def test_create_predict_inputs_output_when_exog():
     """
     Test _create_predict_inputs output when exog.
     """
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=5)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=3, steps=5
+    )
     forecaster.fit(
         y=pd.Series(np.arange(50, dtype=float)),
         exog=pd.Series(np.arange(start=100, stop=150, step=1), name="exog")
@@ -178,7 +193,7 @@ def test_create_predict_inputs_output_with_transform_y():
     transformer_y = StandardScaler()
 
     forecaster = ForecasterDirect(
-                     regressor     = LinearRegression(),
+                     estimator     = LinearRegression(),
                      lags          = 5,
                      steps         = 5,
                      transformer_y = transformer_y,
@@ -233,7 +248,7 @@ def test_create_predict_inputs_output_with_transform_y_and_transform_exog(n_jobs
                        )
     
     forecaster = ForecasterDirect(
-                     regressor        = LinearRegression(),
+                     estimator        = LinearRegression(),
                      lags             = 5,
                      steps            = 5,
                      transformer_y    = transformer_y,
@@ -296,7 +311,7 @@ def test_create_predict_inputs_output_when_categorical_features_native_implement
                        ).set_output(transform="pandas")
     
     forecaster = ForecasterDirect(
-                     regressor        = HistGradientBoostingRegressor(
+                     estimator        = HistGradientBoostingRegressor(
                                             categorical_features = categorical_features,
                                             random_state         = 123
                                         ),
@@ -343,7 +358,7 @@ def test_create_predict_inputs_output_when_categorical_features_native_implement
 
 def test_create_predict_inputs_when_with_exog_differentiation_is_1():
     """
-    Test _create_predict_inputs when using LinearRegression as regressor 
+    Test _create_predict_inputs when using LinearRegression as estimator 
     and differentiation=1.
     """
 
@@ -356,7 +371,7 @@ def test_create_predict_inputs_when_with_exog_differentiation_is_1():
     )
 
     forecaster = ForecasterDirect(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      steps           = 5,
                      lags            = 15,
                      differentiation = 1
@@ -410,7 +425,7 @@ def test_create_predict_inputs_output_window_features():
         stats=['mean', 'median', 'sum'], window_sizes=[4, 5, 6]
     )
     forecaster = ForecasterDirect(
-        LinearRegression(), steps=3, lags=3, window_features=rolling
+        estimator=LinearRegression(), steps=3, lags=3, window_features=rolling
     )
     forecaster.fit(y=y_datetime)
     results = forecaster._create_predict_inputs()
@@ -442,7 +457,7 @@ def test_create_predict_inputs_output_with_2_window_features():
     rolling = RollingFeatures(stats=['mean', 'median'], window_sizes=[4, 5])
     rolling_2 = RollingFeatures(stats=['sum'], window_sizes=6)
     forecaster = ForecasterDirect(
-        LinearRegression(), steps=3, lags=3, window_features=[rolling, rolling_2]
+        estimator=LinearRegression(), steps=3, lags=3, window_features=[rolling, rolling_2]
     )
     forecaster.fit(y=y_datetime)
     results = forecaster._create_predict_inputs()
@@ -475,7 +490,7 @@ def test_create_predict_inputs_output_window_features_and_no_lags():
         stats=['mean', 'median', 'sum'], window_sizes=[4, 5, 6]
     )
     forecaster = ForecasterDirect(
-        LinearRegression(), steps=3, lags=None, window_features=rolling
+        estimator=LinearRegression(), steps=3, lags=None, window_features=rolling
     )
     forecaster.fit(y=y_datetime)
     results = forecaster._create_predict_inputs()

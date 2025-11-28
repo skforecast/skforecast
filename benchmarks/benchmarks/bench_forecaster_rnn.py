@@ -121,14 +121,14 @@ def run_benchmark_ForecasterRnn(output_dir):
     )
 
     forecaster = ForecasterRnn(
-                     regressor  = model,
+                     estimator  = model,
                      levels     = list(series.columns),
                      lags       = 10,
                      fit_kwargs = {'epochs': 25, 'batch_size': 32}
                  )
     
     forecaster_exog = ForecasterRnn(
-                          regressor  = model_exog,
+                          estimator  = model_exog,
                           levels     = list(series.columns),
                           lags       = 10,
                           fit_kwargs = {'epochs': 25, 'batch_size': 32}

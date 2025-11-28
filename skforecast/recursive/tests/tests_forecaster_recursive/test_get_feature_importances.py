@@ -26,21 +26,21 @@ def test_NotFittedError_is_raised_when_forecaster_is_not_fitted():
     forecaster is not fitted.
     """
     forecaster = ForecasterRecursive(
-                     regressor = LinearRegression(),
+                     estimator = LinearRegression(),
                      lags = 3,
                  )
 
     err_msg = re.escape(
-                ("This forecaster is not fitted yet. Call `fit` with appropriate "
-                 "arguments before using `get_feature_importances()`.")
-              )
+        "This forecaster is not fitted yet. Call `fit` with appropriate "
+        "arguments before using `get_feature_importances()`."
+    )
     with pytest.raises(NotFittedError, match = err_msg):         
         forecaster.get_feature_importances()
 
 
-def test_output_get_feature_importances_when_regressor_is_RandomForest():
+def test_output_get_feature_importances_when_estimator_is_RandomForest():
     """
-    Test output of get_feature_importances when regressor is RandomForestRegressor with lags=3
+    Test output of get_feature_importances when estimator is RandomForestRegressor with lags=3
     and it is trained with y=pd.Series(np.arange(10)).
     """
     forecaster = ForecasterRecursive(RandomForestRegressor(n_estimators=1, max_depth=2, random_state=123), lags=3)
@@ -55,9 +55,9 @@ def test_output_get_feature_importances_when_regressor_is_RandomForest():
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_output_get_feature_importances_when_regressor_is_RandomForest_with_exog():
+def test_output_get_feature_importances_when_estimator_is_RandomForest_with_exog():
     """
-    Test output of get_feature_importances when regressor is RandomForestRegressor with lags=3
+    Test output of get_feature_importances when estimator is RandomForestRegressor with lags=3
     and it is trained with y=pd.Series(np.arange(10)) and a exogenous variable
     exog=pd.Series(np.arange(10, 20), name='exog').
     """
@@ -73,9 +73,9 @@ def test_output_get_feature_importances_when_regressor_is_RandomForest_with_exog
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_output_get_feature_importances_when_regressor_is_LinearRegression():
+def test_output_get_feature_importances_when_estimator_is_LinearRegression():
     """
-    Test output of get_feature_importances when regressor is LinearRegression with lags=3
+    Test output of get_feature_importances when estimator is LinearRegression with lags=3
     and it is trained with y=pd.Series(np.arange(5)).
     """
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
@@ -92,7 +92,7 @@ def test_output_get_feature_importances_when_regressor_is_LinearRegression():
 
 def test_output_get_feature_importances_when_with_exog():
     """
-    Test output of get_feature_importances when regressor is LinearRegression with lags=3
+    Test output of get_feature_importances when estimator is LinearRegression with lags=3
     and it is trained with y=pd.Series(np.arange(5)) and a exogenous variable
     exog=pd.Series(np.arange(10, 15), name='exog').
     """
@@ -108,24 +108,24 @@ def test_output_get_feature_importances_when_with_exog():
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_output_and_UserWarning_get_feature_importances_when_regressor_no_attributes():
+def test_output_and_UserWarning_get_feature_importances_when_estimator_no_attributes():
     """
-    Test output of get_feature_importances when regressor is MLPRegressor with lags=3
+    Test output of get_feature_importances when estimator is MLPRegressor with lags=3
     and it is trained with y=pd.Series(np.arange(10)). Since MLPRegressor hasn't attributes
     `feature_importances_` or `coef_, results = None and a UserWarning is issues.
     """
     forecaster = ForecasterRecursive(MLPRegressor(solver = 'lbfgs', max_iter= 50, random_state=123), lags=3)
     forecaster.fit(y=pd.Series(np.arange(10)))
 
-    estimator = forecaster.regressor
+    estimator = forecaster.estimator
     expected = None
 
     warn_msg = re.escape(
-                (f"Impossible to access feature importances for regressor of type "
-                 f"{type(estimator)}. This method is only valid when the "
-                 f"regressor stores internally the feature importances in the "
-                 f"attribute `feature_importances_` or `coef_`.")
-            )
+        f"Impossible to access feature importances for estimator of type "
+        f"{type(estimator)}. This method is only valid when the "
+        f"estimator stores internally the feature importances in the "
+        f"attribute `feature_importances_` or `coef_`."
+    )
     with pytest.warns(UserWarning, match = warn_msg):
         results = forecaster.get_feature_importances()
         assert results is expected
@@ -133,12 +133,12 @@ def test_output_and_UserWarning_get_feature_importances_when_regressor_no_attrib
 
 def test_output_get_feature_importances_when_pipeline_LinearRegression():
     """
-    Test output of get_feature_importances when regressor is pipeline,
+    Test output of get_feature_importances when estimator is pipeline,
     (StandardScaler() + LinearRegression with lags=3),
     it is trained with y=pd.Series(np.arange(5)).
     """
     forecaster = ForecasterRecursive(
-                     regressor = make_pipeline(StandardScaler(), LinearRegression()),
+                     estimator = make_pipeline(StandardScaler(), LinearRegression()),
                      lags      = 3
                  )
     forecaster.fit(y=pd.Series(np.arange(5)))
@@ -154,12 +154,12 @@ def test_output_get_feature_importances_when_pipeline_LinearRegression():
 
 def test_output_get_feature_importances_when_pipeline_RandomForestRegressor():
     """
-    Test output of get_feature_importances when regressor is pipeline,
+    Test output of get_feature_importances when estimator is pipeline,
     (StandardScaler() + RandomForestRegressor with lags=3),
     it is trained with y=pd.Series(np.arange(5)).
     """
     forecaster = ForecasterRecursive(
-                     regressor = make_pipeline(StandardScaler(), 
+                     estimator = make_pipeline(StandardScaler(), 
                                                RandomForestRegressor(n_estimators=1, max_depth=2, random_state=123)),
                      lags      = 3
                  )
@@ -176,7 +176,7 @@ def test_output_get_feature_importances_when_pipeline_RandomForestRegressor():
 
 def test_output_get_feature_importances_when_window_features():
     """
-    Test output of get_feature_importances when regressor is LGMBRegressor with 
+    Test output of get_feature_importances when estimator is LGMBRegressor with 
     lags=3 and window features.
     """
     y_datetime = y.copy()

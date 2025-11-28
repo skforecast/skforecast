@@ -19,7 +19,7 @@ def test_init_ValueError_when_no_lags_or_window_features():
     )
     with pytest.raises(ValueError, match = err_msg):
         ForecasterRecursive(
-            regressor       = LinearRegression(),
+            estimator       = LinearRegression(),
             lags            = None,
             window_features = None
         )
@@ -41,7 +41,7 @@ def test_init_window_size_correctly_stored(lags, window_features, expected):
         )
 
     forecaster = ForecasterRecursive(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      lags            = lags,
                      window_features = window_features
                  )
@@ -76,7 +76,7 @@ def test_init_ValueError_when_differentiation_argument_is_not_int_or_greater_tha
     )
     with pytest.raises(ValueError, match = err_msg):
         ForecasterRecursive(
-            regressor       = LinearRegression(),
+            estimator       = LinearRegression(),
             lags            = 5,
             differentiation = dif
         )
@@ -90,7 +90,7 @@ def test_init_window_size_is_increased_when_differentiation(dif):
     Test window_size is increased when including differentiation.
     """
     forecaster = ForecasterRecursive(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      lags            = 5,
                      differentiation = dif
                  )
@@ -105,7 +105,7 @@ def test_init_binner_is_created_when_binner_kwargs_is_None():
     Test binner is initialized with the default kwargs
     """
     forecaster = ForecasterRecursive(
-                     regressor = object(),
+                     estimator = object(),
                      lags      = 5,
                  )
     
@@ -126,7 +126,7 @@ def test_init_binner_is_created_when_binner_kwargs_is_not_None():
         'random_state': 1234, 'dtype': np.float64
     }
     forecaster = ForecasterRecursive(
-                     regressor     = object(),
+                     estimator     = object(),
                      lags          = 5,
                      binner_kwargs = binner_kwargs
                  )

@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 from sklearn.exceptions import NotFittedError
 
-import skforecast
+from .. import __version__
 from ..exceptions import MissingValuesWarning, ResidualsUsageWarning
 from ..utils import (
     check_y,
@@ -154,7 +154,7 @@ class ForecasterEquivalentDate():
     creation_date : str
         Date of creation.
     is_fitted : bool
-        Tag to identify if the regressor has been fitted (trained).
+        Tag to identify if the estimator has been fitted (trained).
     fit_date : str
         Date of last fit.
     skforecast_version : str
@@ -168,7 +168,7 @@ class ForecasterEquivalentDate():
     _probabilistic_mode: str, bool
         Private attribute used to indicate whether the forecaster should perform 
         some calculations during backtesting.
-    regressor : Ignored
+    estimator : Ignored
         Not used, present here for API consistency by convention.
     differentiation : Ignored
         Not used, present here for API consistency by convention.
@@ -201,11 +201,11 @@ class ForecasterEquivalentDate():
         self.creation_date                = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
         self.is_fitted                    = False
         self.fit_date                     = None
-        self.skforecast_version           = skforecast.__version__
+        self.skforecast_version           = __version__
         self.python_version               = sys.version.split(" ")[0]
         self.forecaster_id                = forecaster_id
         self._probabilistic_mode          = "binned"
-        self.regressor                    = None
+        self.estimator                    = None
         self.differentiation              = None
         self.differentiation_max          = None
        
@@ -229,9 +229,8 @@ class ForecasterEquivalentDate():
         
         self.__skforecast_tags__ = {
             "library": "skforecast",
-            "estimator_type": "forecaster",
-            "estimator_name": "ForecasterEquivalentDate",
-            "estimator_task": "regression",
+            "forecaster_name": "ForecasterEquivalentDate",
+            "forecaster_task": "regression",
             "forecasting_scope": "single-series",  # single-series | global
             "forecasting_strategy": "recursive",   # recursive | direct | deep_learning
             "index_types_supported": ["pandas.RangeIndex", "pandas.DatetimeIndex"],
@@ -294,11 +293,11 @@ class ForecasterEquivalentDate():
         
         content = f"""
         <div class="container-{unique_id}">
-            <h2>{type(self).__name__}</h2>
+            <p style="font-size: 1.5em; font-weight: bold; margin-block-start: 0.83em; margin-block-end: 0.83em;">{type(self).__name__}</p>
             <details open>
                 <summary>General Information</summary>
                 <ul>
-                    <li><strong>Regressor:</strong> {type(self.regressor).__name__}</li>
+                    <li><strong>Estimator:</strong> {type(self.estimator).__name__}</li>
                     <li><strong>Offset:</strong> {self.offset}</li>
                     <li><strong>Number of offsets:</strong> {self.n_offsets}</li>
                     <li><strong>Aggregation function:</strong> {self.agg_func.__name__}</li>
@@ -319,9 +318,9 @@ class ForecasterEquivalentDate():
                 </ul>
             </details>
             <p>
-                <a href="https://skforecast.org/{skforecast.__version__}/api/forecasterequivalentdate.html">&#128712 <strong>API Reference</strong></a>
+                <a href="https://skforecast.org/{__version__}/api/forecasterequivalentdate.html">&#128712 <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
-                <a href="https://skforecast.org/{skforecast.__version__}/user_guides/forecasting-baseline.html">&#128462 <strong>User Guide</strong></a>
+                <a href="https://skforecast.org/{__version__}/user_guides/forecasting-baseline.html">&#128462 <strong>User Guide</strong></a>
             </p>
         </div>
         """
@@ -428,7 +427,7 @@ class ForecasterEquivalentDate():
         self.training_range_ = y_index[[0, -1]]
         self.index_type_ = type(y_index)
         self.index_freq_ = (
-            y_index.freqstr if isinstance(y_index, pd.DatetimeIndex) else y_index.step
+            y_index.freq if isinstance(y_index, pd.DatetimeIndex) else y_index.step
         )
 
         # NOTE: This is done to save time during fit in functions such as backtesting()

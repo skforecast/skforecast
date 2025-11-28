@@ -4,15 +4,15 @@ import pytest
 import numpy as np
 import pandas as pd
 from scipy.stats import norm
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.metrics import mean_squared_error
-from skforecast.recursive import ForecasterRecursive
+from skforecast.recursive import ForecasterRecursive, ForecasterRecursiveClassifier
 from skforecast.direct import ForecasterDirect
 from skforecast.model_selection._validation import _backtesting_forecaster
 from skforecast.model_selection._split import TimeSeriesFold
 
 # Fixtures
-from ..fixtures_model_selection import y
+from ..fixtures_model_selection import y, y_clf
 from ..fixtures_model_selection import exog
 from ..fixtures_model_selection import out_sample_residuals
 
@@ -26,7 +26,7 @@ from ..fixtures_model_selection import out_sample_residuals
 def test_output_backtesting_forecaster_no_exog_no_remainder_ForecasterRecursive_with_mocked(n_jobs):
     """
     Test output of _backtesting_forecaster with backtesting mocked, interval no.
-    Regressor is LinearRegression with lags=3, Series y is mocked, no exog, 
+    Estimator is LinearRegression with lags=3, Series y is mocked, no exog, 
     12 observations to backtest, steps=4 (no remainder), metric='mean_squared_error'
     ForecasterRecursive.
     """
@@ -39,7 +39,7 @@ def test_output_backtesting_forecaster_no_exog_no_remainder_ForecasterRecursive_
     )
     expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2])
 
-    forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
+    forecaster = ForecasterRecursive(estimator=LinearRegression(), lags=3)
     n_backtest = 12
     y_train = y[:-n_backtest]
 
@@ -70,10 +70,110 @@ def test_output_backtesting_forecaster_no_exog_no_remainder_ForecasterRecursive_
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
+@pytest.mark.parametrize("n_jobs", [-1, 1, 'auto'],
+                         ids=lambda n: f'n_jobs: {n}')
+def test_output_backtesting_forecaster_ForecasterRecursiveClassifier_with_mocked(n_jobs):
+    """
+    Test output of _backtesting_forecaster with ForecasterRecursiveClassifier.
+    """
+    expected_metrics = pd.DataFrame(
+        data=[[0.5, 0.43333333]],
+        columns=['accuracy_score', 'balanced_accuracy_score']
+    )
+    expected_predictions = pd.DataFrame(
+        {
+            "fold": [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2],
+            "pred": [
+                "bus",
+                "train",
+                "bus",
+                "train",
+                "bus",
+                "train",
+                "bus",
+                "bus",
+                "bus",
+                "bus",
+                "bus",
+                "bus",
+            ],
+            "bus_proba": [
+                0.6559317845826198,
+                0.3304083470592666,
+                0.6559317845826198,
+                0.3304083470592666,
+                0.6559317845826198,
+                0.3208996705045411,
+                0.6969423986958484,
+                0.5247651958507925,
+                0.5982027247322297,
+                0.5470565367215161,
+                0.627955134919527,
+                0.4681797915786577,
+            ],
+            "car_proba": [
+                0.30328326075516504,
+                0.06028875855870285,
+                0.30328326075516504,
+                0.06028875855870285,
+                0.30328326075516504,
+                0.050707430670005535,
+                0.20964127258244775,
+                0.11450533050056924,
+                0.3688112367764138,
+                0.23585075389279955,
+                0.3352751590896197,
+                0.13131304066617613,
+            ],
+            "train_proba": [
+                0.04078495466221505,
+                0.6093028943820306,
+                0.04078495466221505,
+                0.6093028943820306,
+                0.04078495466221505,
+                0.6283928988254535,
+                0.0934163287217039,
+                0.3607294736486382,
+                0.03298603849135651,
+                0.21709270938568437,
+                0.03676970599085324,
+                0.40050716775516615,
+            ],
+        },
+        index=pd.RangeIndex(start=38, stop=50, step=1)
+    )
+
+    forecaster = ForecasterRecursiveClassifier(
+        estimator=LogisticRegression(), lags=3
+    )
+
+    cv = TimeSeriesFold(
+            steps                 = 5,
+            initial_train_size    = len(y_clf) - 12,
+            refit                 = False,
+            gap                   = 0,
+            skip_folds            = None,
+            allow_incomplete_fold = True,
+        )
+
+    metric, backtest_predictions = _backtesting_forecaster(
+                                        forecaster = forecaster,
+                                        y          = y_clf,
+                                        exog       = None,
+                                        cv         = cv,
+                                        metric     = ['accuracy_score', 'balanced_accuracy_score'],
+                                        n_jobs     = n_jobs,
+                                        verbose    = False
+                                   )
+
+    pd.testing.assert_frame_equal(expected_metrics, metric)
+    pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+
+
 def test_output_backtesting_forecaster_no_exog_no_remainder_ForecasterDirect_with_mocked():
     """
     Test output of _backtesting_forecaster with backtesting mocked, interval no.
-    Regressor is LinearRegression with lags=3, Series y is mocked, no exog, 
+    Estimator is LinearRegression with lags=3, Series y is mocked, no exog, 
     12 observations to backtest, steps=4 (no remainder), metric='mean_squared_error'
     ForecasterDirect.
     """
@@ -102,7 +202,7 @@ def test_output_backtesting_forecaster_no_exog_no_remainder_ForecasterDirect_wit
     expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2])
 
     forecaster = ForecasterDirect(
-                     regressor = LinearRegression(), 
+                     estimator = LinearRegression(), 
                      lags      = 3,
                      steps     = 4
                  )
@@ -136,7 +236,7 @@ def test_output_backtesting_forecaster_no_exog_no_remainder_ForecasterDirect_wit
 def test_output_backtesting_forecaster_no_exog_no_initial_train_size_with_mocked():
     """
     Test output of _backtesting_forecaster with backtesting mocked, interval no.
-    Regressor is LinearRegression with lags=3, Series y is mocked, no exog, 
+    Estimator is LinearRegression with lags=3, Series y is mocked, no exog, 
     no initial_train_size, steps=1, ForecasterRecursive.
     """
     expected_metric = pd.DataFrame({"mean_squared_error": [0.05194702533929101]})
@@ -158,7 +258,7 @@ def test_output_backtesting_forecaster_no_exog_no_initial_train_size_with_mocked
     )
     expected_predictions.insert(0, 'fold', np.arange(len(expected_predictions)))
 
-    forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
+    forecaster = ForecasterRecursive(estimator=LinearRegression(), lags=3)
     forecaster.fit(y=y)
     
     cv = TimeSeriesFold(
@@ -190,7 +290,7 @@ def test_output_backtesting_forecaster_no_exog_no_initial_train_size_with_mocked
 def test_output_backtesting_forecaster_no_exog_yes_remainder_with_mocked():
     """
     Test output of _backtesting_forecaster with backtesting mocked, interval no.
-    Regressor is LinearRegression with lags=3, Series y is mocked, no exog, 
+    Estimator is LinearRegression with lags=3, Series y is mocked, no exog, 
     12 observations to backtest, steps=5 (2 remainder), metric='mean_squared_error'
     """
     expected_metric = pd.DataFrame({"mean_squared_error": [0.07085869503962372]})
@@ -217,7 +317,7 @@ def test_output_backtesting_forecaster_no_exog_yes_remainder_with_mocked():
     )
     expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2])
 
-    forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
+    forecaster = ForecasterRecursive(estimator=LinearRegression(), lags=3)
     n_backtest = 12
     y_train = y[:-n_backtest]
     cv = TimeSeriesFold(
@@ -246,7 +346,7 @@ def test_output_backtesting_forecaster_no_exog_yes_remainder_with_mocked():
 def test_output_backtesting_forecaster_yes_exog_no_remainder_with_mocked():
     """
     Test output of _backtesting_forecaster with backtesting mocked, interval no.
-    Regressor is LinearRegression with lags=3, Series y is mocked, exog is mocked, 
+    Estimator is LinearRegression with lags=3, Series y is mocked, exog is mocked, 
     12 observations to backtest, steps=4 (no remainder), metric='mean_squared_error'
     """
     expected_metric = pd.DataFrame({"mean_squared_error": [0.05585411566592716]})
@@ -273,7 +373,7 @@ def test_output_backtesting_forecaster_yes_exog_no_remainder_with_mocked():
     )
     expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2])
 
-    forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
+    forecaster = ForecasterRecursive(estimator=LinearRegression(), lags=3)
     n_backtest = 12
     y_train = y[:-n_backtest]
     cv = TimeSeriesFold(
@@ -304,7 +404,7 @@ def test_output_backtesting_forecaster_yes_exog_no_remainder_with_mocked():
 def test_output_backtesting_forecaster_yes_exog_yes_remainder_with_mocked():
     """
     Test output of _backtesting_forecaster with backtesting mocked, interval no.
-    Regressor is LinearRegression with lags=3, Series y is mocked, exog is mocked, 
+    Estimator is LinearRegression with lags=3, Series y is mocked, exog is mocked, 
     12 observations to backtest, steps=5 (2 remainder), metric='mean_squared_error'
     """
     expected_metric = pd.DataFrame({"mean_squared_error": [0.06313056651237414]})
@@ -331,7 +431,7 @@ def test_output_backtesting_forecaster_yes_exog_yes_remainder_with_mocked():
     )
     expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2])
 
-    forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
+    forecaster = ForecasterRecursive(estimator=LinearRegression(), lags=3)
     n_backtest = 12
     y_train = y[:-n_backtest]
     cv = TimeSeriesFold(
@@ -361,7 +461,7 @@ def test_output_backtesting_forecaster_yes_exog_yes_remainder_with_mocked():
 def test_output_backtesting_forecaster_yes_exog_yes_remainder_skip_folds_with_mocked():
     """
     Test output of _backtesting_forecaster with backtesting mocked, interval no.
-    Regressor is LinearRegression with lags=3, Series y is mocked, exog is mocked,
+    Estimator is LinearRegression with lags=3, Series y is mocked, exog is mocked,
     12 observations to backtest, steps=5 (2 remainder), metric='mean_squared_error'
     """
     expected_metric = pd.DataFrame({"mean_squared_error": [0.044538146622722964]})
@@ -417,7 +517,7 @@ def test_output_backtesting_forecaster_yes_exog_yes_remainder_skip_folds_with_mo
         index=pd.Index([38, 39, 40, 41, 42, 48, 49], dtype="int64"),
     )
 
-    forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
+    forecaster = ForecasterRecursive(estimator=LinearRegression(), lags=3)
     n_backtest = 12
 
     y_train = y[:-n_backtest]
@@ -450,7 +550,7 @@ def test_output_backtesting_forecaster_yes_exog_yes_remainder_skip_folds_with_mo
 def test_output_backtesting_forecaster_yes_exog_yes_remainder_fold_stride_with_mocked():
     """
     Test output of _backtesting_forecaster with backtesting mocked, interval no.
-    Regressor is LinearRegression with lags=3, Series y is mocked, exog is mocked,
+    Estimator is LinearRegression with lags=3, Series y is mocked, exog is mocked,
     12 observations to backtest, steps=5 (2 remainder), metric='mean_squared_error'
     and fold_stride=3.
     """
@@ -481,7 +581,7 @@ def test_output_backtesting_forecaster_yes_exog_yes_remainder_fold_stride_with_m
         index = pd.Index([38, 39, 40, 41, 42, 44, 45, 46, 47, 48])
     ).astype({'fold': int})
 
-    forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
+    forecaster = ForecasterRecursive(estimator=LinearRegression(), lags=3)
     n_backtest = 12
 
     y_train = y[:-n_backtest]
@@ -519,7 +619,7 @@ def test_output_backtesting_forecaster_yes_exog_yes_remainder_fold_stride_with_m
 def test_output_backtesting_forecaster_interval_no_exog_no_remainder_with_mocked():
     """
     Test output of _backtesting_forecaster with backtesting mocked, interval yes.
-    Regressor is LinearRegression with lags=3, Series y is mocked, no exog, 
+    Estimator is LinearRegression with lags=3, Series y is mocked, no exog, 
     12 observations to backtest, steps=4 (no remainder), metric='mean_squared_error',
     'use_in_sample_residuals = True'
     """
@@ -543,7 +643,7 @@ def test_output_backtesting_forecaster_interval_no_exog_no_remainder_with_mocked
     )
     expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2])
     
-    forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
+    forecaster = ForecasterRecursive(estimator=LinearRegression(), lags=3)
     n_backtest = 12
     y_train = y[:-n_backtest]
     cv = TimeSeriesFold(
@@ -581,7 +681,7 @@ def test_output_backtesting_forecaster_interval_no_exog_no_remainder_with_mocked
 def test_output_backtesting_forecaster_interval_no_exog_yes_remainder_with_mocked():
     """
     Test output of _backtesting_forecaster with backtesting mocked, interval yes. 
-    Regressor is LinearRegression with lags=3, Series y is mocked, no exog, 
+    Estimator is LinearRegression with lags=3, Series y is mocked, no exog, 
     12 observations to backtest, steps=5 (2 remainder), metric='mean_squared_error',
     'use_in_sample_residuals = True'
     """
@@ -605,7 +705,7 @@ def test_output_backtesting_forecaster_interval_no_exog_yes_remainder_with_mocke
     )
     expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2])
 
-    forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
+    forecaster = ForecasterRecursive(estimator=LinearRegression(), lags=3)
     n_backtest = 12
     y_train = y[:-n_backtest]
     cv = TimeSeriesFold(
@@ -642,7 +742,7 @@ def test_output_backtesting_forecaster_interval_no_exog_yes_remainder_with_mocke
 def test_output_backtesting_forecaster_interval_yes_exog_no_remainder_with_mocked():
     """
     Test output of _backtesting_forecaster with backtesting mocked, interval yes.
-    Regressor is LinearRegression with lags=3, Series y is mocked, exog is mocked, 
+    Estimator is LinearRegression with lags=3, Series y is mocked, exog is mocked, 
     12 observations to backtest, steps=4 (no remainder), metric='mean_squared_error',
     'use_in_sample_residuals = True'
     """
@@ -667,7 +767,7 @@ def test_output_backtesting_forecaster_interval_yes_exog_no_remainder_with_mocke
     )
     expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2])
 
-    forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
+    forecaster = ForecasterRecursive(estimator=LinearRegression(), lags=3)
     n_backtest = 12
     y_train = y[:-n_backtest]
     cv = TimeSeriesFold(
@@ -704,7 +804,7 @@ def test_output_backtesting_forecaster_interval_yes_exog_no_remainder_with_mocke
 def test_output_backtesting_forecaster_interval_yes_exog_yes_remainder_with_mocked():
     """
     Test output of _backtesting_forecaster with backtesting mocked, interval yes. 
-    Regressor is LinearRegression with lags=3, Series y is mocked, exog is mocked, 
+    Estimator is LinearRegression with lags=3, Series y is mocked, exog is mocked, 
     12 observations to backtest, steps=5 (2 remainder), metric='mean_squared_error',
     'use_in_sample_residuals = True'
     """
@@ -728,7 +828,7 @@ def test_output_backtesting_forecaster_interval_yes_exog_yes_remainder_with_mock
     )
     expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2])
     
-    forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
+    forecaster = ForecasterRecursive(estimator=LinearRegression(), lags=3)
     n_backtest = 12
     y_train = y[:-n_backtest]
     cv = TimeSeriesFold(
@@ -843,7 +943,7 @@ def test_output_backtesting_forecaster_no_refit_interval_yes_exog_bootstrapping(
     )
     expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3])
 
-    forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
+    forecaster = ForecasterRecursive(estimator=LinearRegression(), lags=3)
     cv = TimeSeriesFold(
              steps              = 5,
              initial_train_size = initial_train_size,
@@ -905,7 +1005,7 @@ def test_output_backtesting_forecaster_no_refit_interval_distribution_yes_exog()
     )
     expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3])
 
-    forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
+    forecaster = ForecasterRecursive(estimator=LinearRegression(), lags=3)
     cv = TimeSeriesFold(
              steps              = 5,
              initial_train_size = len(y_with_index) - 20,
@@ -936,7 +1036,7 @@ def test_output_backtesting_forecaster_no_refit_interval_distribution_yes_exog()
 def test_output_backtesting_forecaster_interval_conformal_and_binned_with_mocked(interval):
     """
     Test output of _backtesting_forecaster with backtesting mocked, interval yes. 
-    Regressor is LinearRegression with lags=3, Series y is mocked, exog is mocked, 
+    Estimator is LinearRegression with lags=3, Series y is mocked, exog is mocked, 
     12 observations to backtest, steps=5 (2 remainder), conformal=True, binned=True.
     """
     expected_metric = pd.DataFrame({"mean_squared_error": [0.063130566512374]})
@@ -960,7 +1060,7 @@ def test_output_backtesting_forecaster_interval_conformal_and_binned_with_mocked
     expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2])
     
     forecaster = ForecasterRecursive(
-        regressor=LinearRegression(), lags=3, binner_kwargs={'n_bins': 10}
+        estimator=LinearRegression(), lags=3, binner_kwargs={'n_bins': 10}
     )
     n_backtest = 12
     y_train = y[:-n_backtest]
@@ -1001,7 +1101,7 @@ def test_output_backtesting_forecaster_interval_conformal_and_binned_with_mocked
 def test_output_backtesting_forecaster_interval_conformal_and_binned_with_mocked_ForecasterDirect(interval):
     """
     Test output of _backtesting_forecaster with backtesting mocked, interval yes. 
-    Regressor is LinearRegression with lags=3, Series y is mocked, exog is mocked, 
+    Estimator is LinearRegression with lags=3, Series y is mocked, exog is mocked, 
     12 observations to backtest, steps=5 (2 remainder), conformal=True, binned=True.
     """
     expected_metric = pd.DataFrame({"mean_squared_error": [0.061964730085838]})
@@ -1025,7 +1125,7 @@ def test_output_backtesting_forecaster_interval_conformal_and_binned_with_mocked
     expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2])
     
     forecaster = ForecasterDirect(
-        regressor=LinearRegression(), steps=5, lags=3, binner_kwargs={'n_bins': 10}
+        estimator=LinearRegression(), steps=5, lags=3, binner_kwargs={'n_bins': 10}
     )
     n_backtest = 12
     y_train = y[:-n_backtest]
@@ -1067,7 +1167,7 @@ def test_output_backtesting_forecaster_interval_conformal_and_binned_with_mocked
 def test_output_backtesting_forecaster_interval_out_sample_residuals_no_exog_no_remainder_with_mocked():
     """
     Test output of _backtesting_forecaster with backtesting mocked, interval yes.
-    Regressor is LinearRegression with lags=3, Series y is mocked, no exog, 
+    Estimator is LinearRegression with lags=3, Series y is mocked, no exog, 
     12 observations to backtest, steps=4 (no remainder), metric='mean_squared_error',
     'use_in_sample_residuals = False'
     """
@@ -1091,7 +1191,7 @@ def test_output_backtesting_forecaster_interval_out_sample_residuals_no_exog_no_
     )
     expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2])
 
-    forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)    
+    forecaster = ForecasterRecursive(estimator=LinearRegression(), lags=3)    
     forecaster.out_sample_residuals_ = out_sample_residuals
     n_backtest = 12
     y_train = y[:-n_backtest]
@@ -1142,7 +1242,7 @@ def my_metric(y_true, y_pred):  # pragma: no cover
 def test_callable_metric_backtesting_forecaster_no_exog_no_remainder_with_mocked():
     """
     Test callable metric in _backtesting_forecaster with backtesting mocked, interval no. 
-    Regressor is LinearRegression with lags=3, Series y is mocked, no exog, 
+    Estimator is LinearRegression with lags=3, Series y is mocked, no exog, 
     12 observations to backtest, steps=4 (no remainder), metric='mean_squared_error'
     """
     expected_metric = pd.DataFrame({"my_metric": [0.005603130564222017]})
@@ -1169,7 +1269,7 @@ def test_callable_metric_backtesting_forecaster_no_exog_no_remainder_with_mocked
     )
     expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2])
 
-    forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
+    forecaster = ForecasterRecursive(estimator=LinearRegression(), lags=3)
     n_backtest = 12
     y_train = y[:-n_backtest]
     cv = TimeSeriesFold(
@@ -1200,7 +1300,7 @@ def test_callable_metric_backtesting_forecaster_no_exog_no_remainder_with_mocked
 def test_list_metrics_backtesting_forecaster_no_exog_no_remainder_with_mocked():
     """
     Test list of metrics in _backtesting_forecaster with backtesting mocked, interval no. 
-    Regressor is LinearRegression with lags=3, Series y is mocked, no exog, 
+    Estimator is LinearRegression with lags=3, Series y is mocked, no exog, 
     12 observations to backtest, steps=4 (no remainder), metric='mean_squared_error'
     """
     expected_metrics = pd.DataFrame(
@@ -1232,7 +1332,7 @@ def test_list_metrics_backtesting_forecaster_no_exog_no_remainder_with_mocked():
     )
     expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2])
 
-    forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
+    forecaster = ForecasterRecursive(estimator=LinearRegression(), lags=3)
     n_backtest = 12
     y_train = y[:-n_backtest]
     cv = TimeSeriesFold(
@@ -1268,7 +1368,7 @@ def test_list_metrics_backtesting_forecaster_no_exog_no_remainder_with_mocked():
 def test_output_backtesting_forecaster_interval_yes_exog_yes_remainder_gap_with_mocked():
     """
     Test output of _backtesting_forecaster with backtesting mocked, interval yes. 
-    Regressor is LinearRegression with lags=3, Series y is mocked, exog is mocked, 
+    Estimator is LinearRegression with lags=3, Series y is mocked, exog is mocked, 
     20 observations to backtest, steps=5 and gap=3, metric='mean_squared_error',
     'use_in_sample_residuals = True'
     """
@@ -1298,7 +1398,7 @@ def test_output_backtesting_forecaster_interval_yes_exog_yes_remainder_gap_with_
     expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3])
 
     forecaster = ForecasterDirect(
-                     regressor = LinearRegression(), 
+                     estimator = LinearRegression(), 
                      lags      = 3,
                      steps     = 8
                  )
@@ -1338,7 +1438,7 @@ def test_output_backtesting_forecaster_interval_yes_exog_yes_remainder_gap_with_
 def test_output_backtesting_forecaster_interval_yes_exog_not_allow_remainder_gap_with_mocked():
     """
     Test output of _backtesting_forecaster with backtesting mocked, interval yes. 
-    Regressor is LinearRegression with lags=3, Series y is mocked, exog is mocked, 
+    Estimator is LinearRegression with lags=3, Series y is mocked, exog is mocked, 
     20 observations to backtest, steps=5 and gap=3, metric='mean_squared_error',
     'use_in_sample_residuals = True', allow_incomplete_fold = False
     """
@@ -1370,7 +1470,7 @@ def test_output_backtesting_forecaster_interval_yes_exog_not_allow_remainder_gap
     expected_predictions.insert(0, 'fold', [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2])
 
     forecaster = ForecasterDirect(
-                     regressor = LinearRegression(), 
+                     estimator = LinearRegression(), 
                      lags      = 3,
                      steps     = 8
                  )
@@ -1418,7 +1518,7 @@ def test_output_backtesting_forecaster_return_predictors_same_predictions_as_pre
     """
     expected_metric = pd.DataFrame({"mean_squared_error": [0.05585411566592716]})
     
-    forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
+    forecaster = ForecasterRecursive(estimator=LinearRegression(), lags=3)
     n_backtest = 12
     y_train = y[:-n_backtest]
     cv = TimeSeriesFold(
@@ -1437,7 +1537,7 @@ def test_output_backtesting_forecaster_return_predictors_same_predictions_as_pre
                                    )
     
     forecaster.fit(y=y_train, exog=exog[:len(y_train)])
-    expected_predictions = forecaster.regressor.predict(
+    expected_predictions = forecaster.estimator.predict(
         backtest_predictions[forecaster.X_train_features_names_out_]
     )
 
@@ -1455,7 +1555,7 @@ def test_output_backtesting_forecaster_return_predictors_same_predictions_as_pre
     """
     expected_metric = pd.DataFrame({"mean_squared_error": [0.061964730085838]})
     
-    forecaster = ForecasterDirect(regressor=LinearRegression(), steps=5, lags=3)
+    forecaster = ForecasterDirect(estimator=LinearRegression(), steps=5, lags=3)
     n_backtest = 12
     y_train = y[:-n_backtest]
 
@@ -1474,11 +1574,11 @@ def test_output_backtesting_forecaster_return_predictors_same_predictions_as_pre
                                    )
     
     forecaster.fit(y=y_train, exog=exog[:len(y_train)])
-    regressors = [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2]
+    estimators = [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2]
     len_predictions = len(backtest_predictions)
     results = np.full(shape=len_predictions, fill_value=np.nan, dtype=float)
-    for i, step in enumerate(regressors):
-        results[i] = forecaster.regressors_[step].predict(
+    for i, step in enumerate(estimators):
+        results[i] = forecaster.estimators_[step].predict(
             backtest_predictions.iloc[[i]][
                 ['lag_1', 'lag_2', 'lag_3', 'exog']
             ]

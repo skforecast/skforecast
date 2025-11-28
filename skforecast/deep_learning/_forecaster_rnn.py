@@ -20,7 +20,7 @@ from sklearn.exceptions import NotFittedError
 from sklearn.base import clone
 from sklearn.preprocessing import MinMaxScaler
 
-import skforecast
+from .. import __version__
 from ..base import ForecasterBase
 from ..exceptions import DataTransformationWarning
 from ..utils import (
@@ -43,9 +43,11 @@ from ..utils import (
     transform_dataframe,
     transform_numpy,
     transform_series,
-    check_optional_dependency
+    check_optional_dependency,
+    initialize_estimator
 )
 
+# TODO: Review in skforecast 0.20.0
 try:
     import keras
 except ImportError as e:
@@ -68,15 +70,15 @@ except ImportError as e:
 # TODO. Include binner residuals
 class ForecasterRnn(ForecasterBase):
     """
-    This class turns any regressor compatible with the Keras API into a
+    This class turns any estimator compatible with the Keras API into a
     Keras RNN multi-series multi-step forecaster. A unique model is created
     to forecast all time steps and series. Keras enables workflows on top of
     either JAX, TensorFlow, or PyTorch. See documentation for more details.
 
     Parameters
     ----------
-    regressor : regressor or pipeline compatible with the Keras API
-        An instance of a regressor or pipeline compatible with the Keras API.
+    estimator : estimator or pipeline compatible with the Keras API
+        An instance of a estimator or pipeline compatible with the Keras API.
     levels : str, list
         Name of one or more time series to be predicted. This determine the series
         the forecaster will be handling. If `None`, all series used during training
@@ -101,22 +103,24 @@ class ForecasterRnn(ForecasterBase):
         preprocessing API. The transformation is applied to `exog` before training the
         forecaster. `inverse_transform` is not available when using ColumnTransformers.
     fit_kwargs : dict, default `None`
-        Additional arguments to be passed to the `fit` method of the regressor.
+        Additional arguments to be passed to the `fit` method of the estimator.
     forecaster_id : str, int, default `None`
         Name used as an identifier of the forecaster.
-
+    regressor : estimator or pipeline compatible with the Keras API
+        **Deprecated**, alias for `estimator`.
+    
     Attributes
     ----------
-    regressor : regressor or pipeline compatible with the Keras API
-        An instance of a regressor or pipeline compatible with the Keras API.
-        An instance of this regressor is trained for each step. All of them
-        are stored in `self.regressors_`.
+    estimator : estimator or pipeline compatible with the Keras API
+        An instance of a estimator or pipeline compatible with the Keras API.
+        An instance of this estimator is trained for each step. All of them
+        are stored in `self.estimators_`.
     levels : str, list
         Name of one or more time series to be predicted. This determine the series
         the forecaster will be handling. If `None`, all series used during training
         will be available for prediction.
     layers_names : list
-        Names of the layers in the Keras model used as regressor.
+        Names of the layers in the Keras model used as estimator.
     steps : numpy ndarray
         Future steps the forecaster will predict when using prediction methods.
     max_step : int
@@ -185,7 +189,7 @@ class ForecasterRnn(ForecasterBase):
         Dictionary with the history of the training of each step. It is created
         internally to avoid overwriting.
     fit_kwargs : dict
-        Additional arguments to be passed to the `fit` method of the regressor.
+        Additional arguments to be passed to the `fit` method of the estimator.
     in_sample_residuals_ : dict
         Residuals of the model when predicting training data. Only stored up 
         to 10_000 values per step in the form `{step: residuals}`. If 
@@ -199,7 +203,7 @@ class ForecasterRnn(ForecasterBase):
     creation_date : str
         Date of creation.
     is_fitted : bool
-        Tag to identify if the regressor has been fitted (trained).
+        Tag to identify if the estimator has been fitted (trained).
     fit_date : str
         Date of last fit.
     keras_backend_ : str
@@ -233,18 +237,19 @@ class ForecasterRnn(ForecasterBase):
 
     def __init__(
         self,
-        regressor: object,
         levels: str | list[str],
         lags: int | list[int] | np.ndarray[int] | range[int],
+        estimator: object = None,
         transformer_series: object | dict[str, object] | None = MinMaxScaler(
             feature_range=(0, 1)
         ),
         transformer_exog: object | None = MinMaxScaler(feature_range=(0, 1)),
         fit_kwargs: dict[str, object] | None = {},
-        forecaster_id: str | int | None = None
+        forecaster_id: str | int | None = None,
+        regressor: object = None
     ) -> None:
         
-        self.regressor = deepcopy(regressor)
+        self.estimator = deepcopy(initialize_estimator(estimator, regressor))
         self.levels = None
         self.transformer_series = transformer_series
         self.transformer_series_ = None
@@ -266,31 +271,36 @@ class ForecasterRnn(ForecasterBase):
         self.creation_date = pd.Timestamp.today().strftime("%Y-%m-%d %H:%M:%S")
         self.fit_date = None
         self.keras_backend_ = None
-        self.skforecast_version = skforecast.__version__
+        self.skforecast_version = __version__
         self.python_version = sys.version.split(" ")[0]
         self.forecaster_id = forecaster_id
         self._probabilistic_mode = "no_binned"
+
         self.weight_func = None  # Ignored in this forecaster
         self.source_code_weight_func = None  # Ignored in this forecaster
         self.dropna_from_series = False  # Ignored in this forecaster
         self.encoding = None  # Ignored in this forecaster
+        self.in_sample_residuals_ = None  # Ignored in this forecaster
+        self.in_sample_residuals_by_bin_ = None  # Ignored in this forecaster
+        self.out_sample_residuals_ = None  # Ignored in this forecaster
+        self.out_sample_residuals_by_bin_ = None  # Ignored in this forecaster
         self.differentiation = None  # Ignored in this forecaster
         self.differentiation_max = None  # Ignored in this forecaster
         self.differentiator = None  # Ignored in this forecaster
         self.differentiator_ = None  # Ignored in this forecaster
 
-        layer_init = self.regressor.layers[0]
-        layer_end = self.regressor.layers[-1]
-        self.layers_names = [layer.name for layer in self.regressor.layers]
+        layer_init = self.estimator.layers[0]
+        layer_end = self.estimator.layers[-1]
+        self.layers_names = [layer.name for layer in self.estimator.layers]
         
         self.lags, self.lags_names, self.max_lag = initialize_lags(
             type(self).__name__, lags
         )
-        n_lags_regressor = layer_init.output.shape[1]
-        if len(self.lags) != n_lags_regressor:
+        n_lags_estimator = layer_init.output.shape[1]
+        if len(self.lags) != n_lags_estimator:
             raise ValueError(
                 f"Number of lags ({len(self.lags)}) does not match the number of "
-                f"lags expected by the regressor architecture ({n_lags_regressor})."
+                f"lags expected by the estimator architecture ({n_lags_estimator})."
             )
         
         self.window_size = self.max_lag
@@ -307,11 +317,11 @@ class ForecasterRnn(ForecasterBase):
                 f"`levels` argument must be a string or list. Got {type(levels)}."
             )
         
-        self.n_series_in = self.regressor.get_layer('series_input').output.shape[-1]
-        self.n_levels_out = self.regressor.get_layer('output_dense_td_layer').output.shape[-1]
+        self.n_series_in = self.estimator.get_layer('series_input').output.shape[-1]
+        self.n_levels_out = self.estimator.get_layer('output_dense_td_layer').output.shape[-1]
         self.exog_in_ = True if "exog_input" in self.layers_names else False
         if self.exog_in_:
-            self.n_exog_in = self.regressor.get_layer('exog_input').output.shape[-1]
+            self.n_exog_in = self.estimator.get_layer('exog_input').output.shape[-1]
         else:
             self.n_exog_in = None
             # NOTE: This is needed because the Reshape layer changes the output 
@@ -321,7 +331,7 @@ class ForecasterRnn(ForecasterBase):
         if not len(self.levels) == self.n_levels_out:
             raise ValueError(
                 f"Number of levels ({len(self.levels)}) does not match the number of "
-                f"levels expected by the regressor architecture ({self.n_levels_out})."
+                f"levels expected by the estimator architecture ({self.n_levels_out})."
             )
 
         self.series_val = None
@@ -332,14 +342,14 @@ class ForecasterRnn(ForecasterBase):
                     f"`series_val` must be a pandas DataFrame. "
                     f"Got {type(fit_kwargs['series_val'])}."
                 )
-            self.series_val = fit_kwargs.pop("series_val")            
+            self.series_val = fit_kwargs.pop("series_val")
 
             if self.exog_in_:
                 if "exog_val" not in fit_kwargs.keys():
                     raise ValueError(
                         "If `series_val` is provided, `exog_val` must also be "
                         "provided using the `fit_kwargs` argument when the "
-                        "regressor has exogenous variables."
+                        "estimator has exogenous variables."
                     )
                 else:
                     if not isinstance(fit_kwargs["exog_val"], (pd.Series, pd.DataFrame)):
@@ -351,20 +361,14 @@ class ForecasterRnn(ForecasterBase):
                         data=fit_kwargs.pop("exog_val"), input_name='exog_val'
                     )
 
-        self.in_sample_residuals_ = None
-        self.in_sample_residuals_by_bin_ = None  # Ignored in this forecaster
-        self.out_sample_residuals_ = None
-        self.out_sample_residuals_by_bin_ = None  # Ignored in this forecaster
-
         self.fit_kwargs = check_select_fit_kwargs(
-            regressor=self.regressor, fit_kwargs=fit_kwargs
+            estimator=self.estimator, fit_kwargs=fit_kwargs
         )
         
         self.__skforecast_tags__ = {
             "library": "skforecast",
-            "estimator_type": "forecaster",
-            "estimator_name": "ForecasterRNN",
-            "estimator_task": "regression",
+            "forecaster_name": "ForecasterRNN",
+            "forecaster_task": "regression",
             "forecasting_scope": "global",  # single-series | global
             "forecasting_strategy": "deep_learning",  # recursive | direct | deep_learning
             "index_types_supported": ["pandas.RangeIndex", "pandas.DatetimeIndex"],
@@ -395,8 +399,8 @@ class ForecasterRnn(ForecasterBase):
         Information displayed when a ForecasterRnn object is printed.
         """
 
-        params = str(self.regressor.get_config())
-        compile_config = str(self.regressor.get_compile_config())
+        params = str(self.estimator.get_config())
+        compile_config = str(self.estimator.get_compile_config())
         
         (
             _,
@@ -407,7 +411,7 @@ class ForecasterRnn(ForecasterBase):
         ) = [
             self._format_text_repr(value) 
             for value in self._preprocess_repr(
-                regressor          = None,
+                estimator          = None,
                 series_names_in_   = self.series_names_in_,
                 exog_names_in_     = self.exog_names_in_,
                 transformer_series = self.transformer_series,
@@ -418,7 +422,7 @@ class ForecasterRnn(ForecasterBase):
             f"{'=' * len(type(self).__name__)} \n"
             f"{type(self).__name__} \n"
             f"{'=' * len(type(self).__name__)} \n"
-            f"Regressor: {self.regressor} \n"
+            f"Estimator: {self.estimator} \n"
             f"Layers names: {self.layers_names} \n"
             f"Lags: {self.lags} \n"
             f"Window size: {self.window_size} \n"
@@ -432,7 +436,7 @@ class ForecasterRnn(ForecasterBase):
             f"Training range: {self.training_range_.to_list() if self.is_fitted else None} \n"
             f"Training index type: {str(self.index_type_).split('.')[-1][:-2] if self.is_fitted else None} \n"
             f"Training index frequency: {self.index_freq_ if self.is_fitted else None} \n"
-            f"Regressor parameters: {params} \n"
+            f"Estimator parameters: {params} \n"
             f"Compile parameters: {compile_config} \n"
             f"fit_kwargs: {self.fit_kwargs} \n"
             f"Creation date: {self.creation_date} \n"
@@ -451,8 +455,8 @@ class ForecasterRnn(ForecasterBase):
         The "General Information" section is expanded by default.
         """
 
-        params = str(self.regressor.get_config())
-        compile_config = str(self.regressor.get_compile_config())
+        params = str(self.estimator.get_config())
+        compile_config = str(self.estimator.get_compile_config())
 
         (
             _,
@@ -461,7 +465,7 @@ class ForecasterRnn(ForecasterBase):
             exog_names_in_,
             transformer_series,
         ) = self._preprocess_repr(
-                regressor          = None,
+                estimator          = None,
                 series_names_in_   = self.series_names_in_,
                 exog_names_in_     = self.exog_names_in_,
                 transformer_series = self.transformer_series,
@@ -471,11 +475,11 @@ class ForecasterRnn(ForecasterBase):
         
         content = f"""
         <div class="container-{unique_id}">
-            <h2>{type(self).__name__}</h2>
+            <p style="font-size: 1.5em; font-weight: bold; margin-block-start: 0.83em; margin-block-end: 0.83em;">{type(self).__name__}</p>
             <details open>
                 <summary>General Information</summary>
                 <ul>
-                    <li><strong>Regressor:</strong> {type(self.regressor).__name__}</li>
+                    <li><strong>Estimator:</strong> {type(self.estimator).__name__}</li>
                     <li><strong>Layers names:</strong> {self.layers_names}</li>
                     <li><strong>Lags:</strong> {self.lags}</li>
                     <li><strong>Window size:</strong> {self.window_size}</li>
@@ -513,7 +517,7 @@ class ForecasterRnn(ForecasterBase):
                 </ul>
             </details>
             <details>
-                <summary>Regressor Parameters</summary>
+                <summary>Estimator Parameters</summary>
                 <ul>
                     {params}
                 </ul>
@@ -531,9 +535,9 @@ class ForecasterRnn(ForecasterBase):
                 </ul>
             </details>
             <p>
-                <a href="https://skforecast.org/{skforecast.__version__}/api/forecasterrnn.html">&#128712 <strong>API Reference</strong></a>
+                <a href="https://skforecast.org/{__version__}/api/forecasterrnn.html">&#128712 <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
-                <a href="https://skforecast.org/{skforecast.__version__}/user_guides/forecasting-with-deep-learning-rnn-lstm.html">&#128462 <strong>User Guide</strong></a>
+                <a href="https://skforecast.org/{__version__}/user_guides/forecasting-with-deep-learning-rnn-lstm.html">&#128462 <strong>User Guide</strong></a>
             </p>
         </div>
         """
@@ -677,9 +681,9 @@ class ForecasterRnn(ForecasterBase):
         
         if exog is None and self.exog_in_:
             raise ValueError(
-                "The regressor architecture expects exogenous variables during "
+                "The estimator architecture expects exogenous variables during "
                 "training. Please provide the `exog` argument. If this is "
-                "unexpected, check your regressor architecture or the "
+                "unexpected, check your estimator architecture or the "
                 "initialization parameters of the forecaster."
             )
         if exog is not None and not self.exog_in_:
@@ -917,7 +921,7 @@ class ForecasterRnn(ForecasterBase):
         """
         Training Forecaster.
 
-        Additional arguments to be passed to the `fit` method of the regressor
+        Additional arguments to be passed to the `fit` method of the estimator
         can be added with the `fit_kwargs` argument when initializing the forecaster.
 
         Parameters
@@ -1011,14 +1015,14 @@ class ForecasterRnn(ForecasterBase):
                     exog_val = torch.tensor(exog_val).to(torch_device)
 
             if self.exog_val is not None:
-                history = self.regressor.fit(
+                history = self.estimator.fit(
                     x=[X_train, exog_train],
                     y=y_train,
                     validation_data=([X_val, exog_val], y_val),
                     **self.fit_kwargs,
                 )
             else:
-                history = self.regressor.fit(
+                history = self.estimator.fit(
                     x=X_train,
                     y=y_train,
                     validation_data=(X_val, y_val),
@@ -1026,7 +1030,7 @@ class ForecasterRnn(ForecasterBase):
                 )
 
         else:
-            history = self.regressor.fit(
+            history = self.estimator.fit(
                 x=X_train if exog_train is None else [X_train, exog_train],
                 y=y_train,
                 **self.fit_kwargs,
@@ -1040,7 +1044,7 @@ class ForecasterRnn(ForecasterBase):
             if self.keras_backend_ == "torch":
                 y_train = y_train.detach().cpu().numpy()
 
-            residuals = y_train - self.regressor.predict(
+            residuals = y_train - self.estimator.predict(
                 x=X_train if exog_train is None else [X_train, exog_train], verbose=0
             )
 
@@ -1070,12 +1074,12 @@ class ForecasterRnn(ForecasterBase):
         self.training_range_ = series.index[[0, -1]]
         self.index_type_ = type(series.index)
         if isinstance(series.index, pd.DatetimeIndex):
-            self.index_freq_ = series.index.freqstr
+            self.index_freq_ = series.index.freq
         else:
             self.index_freq_ = series.index.step
 
         if exog is not None:
-            # NOTE: self.exog_in_ is determined by the regressor architecture and
+            # NOTE: self.exog_in_ is determined by the estimator architecture and
             # set during initialization.
             self.exog_names_in_ = exog_names_in_
             self.exog_type_in_ = type(exog)
@@ -1109,12 +1113,12 @@ class ForecasterRnn(ForecasterBase):
         ----------
         steps : int, list, default None
             Predict n steps. The value of `steps` must be less than or equal to the 
-            value of steps defined in the regressor architecture.
+            value of steps defined in the estimator architecture.
         
             - If `int`: Only steps within the range of 1 to int are predicted.
             - If `list`: List of ints. Only the steps contained in the list 
             are predicted.
-            - If `None`: As many steps are predicted as defined in the regressor
+            - If `None`: As many steps are predicted as defined in the estimator
             architecture.
         levels : str, list, default None
             Name(s) of the time series to be predicted. It must be included
@@ -1293,12 +1297,12 @@ class ForecasterRnn(ForecasterBase):
         ----------
         steps : int, list, default None
             Predict n steps. The value of `steps` must be less than or equal to the 
-            value of steps defined in the regressor architecture.
+            value of steps defined in the estimator architecture.
         
             - If `int`: Only steps within the range of 1 to int are predicted.
             - If `list`: List of ints. Only the steps contained in the list 
             are predicted.
-            - If `None`: As many steps are predicted as defined in the regressor
+            - If `None`: As many steps are predicted as defined in the estimator
             architecture.
         levels : str, list, default None
             Name(s) of the time series to be predicted. It must be included
@@ -1360,7 +1364,7 @@ class ForecasterRnn(ForecasterBase):
             # NOTE: not needed in this forecaster
             # categorical_features = any(
             #     not pd.api.types.is_numeric_dtype(dtype) or pd.api.types.is_bool_dtype(dtype) 
-            #     for dtype in set(self.exog_dtypes_out_)
+            #     for dtype in set(self.exog_dtypes_out_.values())
             # )
             # if categorical_features:
             #     X_predict = X_predict.astype(self.exog_dtypes_out_)
@@ -1396,12 +1400,12 @@ class ForecasterRnn(ForecasterBase):
         ----------
         steps : int, list, default None
             Predict n steps. The value of `steps` must be less than or equal to the 
-            value of steps defined in the regressor architecture.
+            value of steps defined in the estimator architecture.
         
             - If `int`: Only steps within the range of 1 to int are predicted.
             - If `list`: List of ints. Only the steps contained in the list 
             are predicted.
-            - If `None`: As many steps are predicted as defined in the regressor
+            - If `None`: As many steps are predicted as defined in the estimator
             architecture.
         levels : str, list, default None
             Name(s) of the time series to be predicted. It must be included
@@ -1447,7 +1451,7 @@ class ForecasterRnn(ForecasterBase):
                 check_inputs = check_inputs
             )
 
-        predictions = self.regressor.predict(
+        predictions = self.estimator.predict(
             X[0] if not self.exog_in_ else X, verbose=0
         )
         predictions = np.reshape(
@@ -1493,12 +1497,12 @@ class ForecasterRnn(ForecasterBase):
         ----------
         steps : int, list, default None
             Predict n steps. The value of `steps` must be less than or equal to the 
-            value of steps defined in the regressor architecture.
+            value of steps defined in the estimator architecture.
         
             - If `int`: Only steps within the range of 1 to int are predicted.
             - If `list`: List of ints. Only the steps contained in the list 
             are predicted.
-            - If `None`: As many steps are predicted as defined in the regressor
+            - If `None`: As many steps are predicted as defined in the estimator
             architecture.
         levels : str, list, default None
             Name(s) of the time series to be predicted. It must be included
@@ -1558,7 +1562,7 @@ class ForecasterRnn(ForecasterBase):
         else:
             residuals = self.out_sample_residuals_
 
-        predictions = self.regressor.predict(
+        predictions = self.estimator.predict(
             X[0] if not self.exog_in_ else X, verbose=0
         )
         predictions = np.reshape(
@@ -1633,12 +1637,12 @@ class ForecasterRnn(ForecasterBase):
         ----------
         steps : int, list, default None
             Predict n steps. The value of `steps` must be less than or equal to the 
-            value of steps defined in the regressor architecture.
+            value of steps defined in the estimator architecture.
         
             - If `int`: Only steps within the range of 1 to int are predicted.
             - If `list`: List of ints. Only the steps contained in the list 
             are predicted.
-            - If `None`: As many steps are predicted as defined in the regressor
+            - If `None`: As many steps are predicted as defined in the estimator
             architecture.
         levels : str, list, default None
             Name(s) of the time series to be predicted. It must be included
@@ -1821,14 +1825,14 @@ class ForecasterRnn(ForecasterBase):
 
         """
 
-        self.regressor = clone(self.regressor)
-        self.regressor.reset_states()
-        self.regressor.compile(**params)
+        self.estimator = clone(self.estimator)
+        self.estimator.reset_states()
+        self.estimator.compile(**params)
 
     def set_fit_kwargs(self, fit_kwargs: dict) -> None:
         """
         Set new values for the additional keyword arguments passed to the `fit`
-        method of the regressor.
+        method of the estimator.
 
         Parameters
         ----------
@@ -1841,7 +1845,36 @@ class ForecasterRnn(ForecasterBase):
 
         """
 
-        self.fit_kwargs = check_select_fit_kwargs(self.regressor, fit_kwargs=fit_kwargs)
+        self.series_val = None
+        self.exog_val = None
+        if "series_val" in fit_kwargs:
+            if not isinstance(fit_kwargs["series_val"], pd.DataFrame):
+                raise TypeError(
+                    f"`series_val` must be a pandas DataFrame. "
+                    f"Got {type(fit_kwargs['series_val'])}."
+                )
+            self.series_val = fit_kwargs.pop("series_val")
+
+            if self.exog_in_:
+                if "exog_val" not in fit_kwargs.keys():
+                    raise ValueError(
+                        "If `series_val` is provided, `exog_val` must also be "
+                        "provided using the `fit_kwargs` argument when the "
+                        "estimator has exogenous variables."
+                    )
+                else:
+                    if not isinstance(fit_kwargs["exog_val"], (pd.Series, pd.DataFrame)):
+                        raise TypeError(
+                            f"`exog_val` must be a pandas Series or DataFrame. "
+                            f"Got {type(fit_kwargs['exog_val'])}."
+                        )
+                    self.exog_val = input_to_frame(
+                        data=fit_kwargs.pop("exog_val"), input_name='exog_val'
+                    )
+
+        self.fit_kwargs = check_select_fit_kwargs(
+            self.estimator, fit_kwargs=fit_kwargs
+        )
 
     def set_lags(self, lags: Any) -> None:  # pragma: no cover
         """
@@ -1947,7 +1980,7 @@ class ForecasterRnn(ForecasterBase):
         
         # TODO: Include binning in the forecaster
         self.in_sample_residuals_ = {}
-        residuals = y_train - self.regressor.predict(
+        residuals = y_train - self.estimator.predict(
             x=X_train if exog_train is None else [X_train, exog_train], verbose=0
         )
         residuals = np.concatenate(

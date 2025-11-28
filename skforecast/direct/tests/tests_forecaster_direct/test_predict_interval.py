@@ -18,7 +18,9 @@ def test_check_interval_ValueError_when_method_is_not_valid_method():
     """
     Check ValueError is raised when `method` is not 'bootstrapping' or 'conformal'.
     """
-    forecaster = ForecasterDirect(LinearRegression(), steps=2, lags=3)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=2, steps=3
+    )
     forecaster.fit(y=pd.Series(np.arange(10)), store_in_sample_residuals=True)
 
     method = 'not_valid_method'
@@ -34,13 +36,13 @@ def test_check_interval_ValueError_when_method_is_not_valid_method():
                          ids = lambda value: f'interval: {value}')
 def test_predict_interval_output_when_in_sample_residuals_exog_and_transformer(interval):
     """
-    Test output of predict_interval when regressor is LinearRegression,
+    Test output of predict_interval when estimator is LinearRegression,
     2 steps are predicted, using in-sample residuals, exog is included and both
     inputs are transformed.
     """
 
     forecaster = ForecasterDirect(
-                     regressor        = LinearRegression(),
+                     estimator        = LinearRegression(),
                      steps            = 2,
                      lags             = 3,
                      transformer_y    = StandardScaler(),
@@ -71,13 +73,13 @@ def test_predict_interval_output_when_in_sample_residuals_exog_and_transformer(i
 
 def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_False_exog_and_transformer():
     """
-    Test output of predict_interval when regressor is LinearRegression,
+    Test output of predict_interval when estimator is LinearRegression,
     2 steps are predicted, using out-sample residuals, exog is included and both
     inputs are transformed.
     """
 
     forecaster = ForecasterDirect(
-                     regressor        = LinearRegression(),
+                     estimator        = LinearRegression(),
                      steps            = 2,
                      lags             = 3,
                      transformer_y    = StandardScaler(),
@@ -106,11 +108,11 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_2_
 
 def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_5_in_sample_residuals_is_True_binned_residuals_is_True():
     """
-    Test output when regressor is LinearRegression 5 step ahead is predicted
+    Test output when estimator is LinearRegression 5 step ahead is predicted
     using in sample binned residuals.
     """
     forecaster = ForecasterDirect(
-                     regressor     = LinearRegression(),
+                     estimator     = LinearRegression(),
                      steps         = 5,
                      lags          = 3,
                      transformer_y = StandardScaler()
@@ -137,11 +139,11 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_5_
 
 def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_5_in_sample_residuals_is_False_binned_residuals_is_True():
     """
-    Test output when regressor is LinearRegression, steps=5, use_in_sample_residuals=False,
+    Test output when estimator is LinearRegression, steps=5, use_in_sample_residuals=False,
     binned_residuals=True.
     """
     forecaster = ForecasterDirect(
-                     regressor        = LinearRegression(),
+                     estimator        = LinearRegression(),
                      steps            = 5,
                      lags             = 3,
                      transformer_y    = StandardScaler(),
@@ -173,7 +175,7 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_5_
                          ids = lambda value: f'interval: {value}')
 def test_predict_interval_conformal_output_when_transform_y(interval):
     """
-    Test predict output when using LinearRegression as regressor and StandardScaler
+    Test predict output when using LinearRegression as estimator and StandardScaler
     and conformal prediction.
     """
     y = pd.Series(
@@ -182,7 +184,7 @@ def test_predict_interval_conformal_output_when_transform_y(interval):
                       -0.61, -0.88])
         )
     forecaster = ForecasterDirect(
-                     regressor     = LinearRegression(),
+                     estimator     = LinearRegression(),
                      steps         = 3,
                      lags          = 3,
                      transformer_y = StandardScaler()
@@ -211,7 +213,7 @@ def test_predict_interval_conformal_output_when_transform_y(interval):
                          ids = lambda value: f'interval: {value}')
 def test_predict_interval_conformal_output_when_binned_residuals(interval):
     """
-    Test predict output when using LinearRegression as regressor and StandardScaler
+    Test predict output when using LinearRegression as estimator and StandardScaler
     and conformal prediction with binned residuals.
     """
     y = pd.Series(
@@ -220,7 +222,7 @@ def test_predict_interval_conformal_output_when_binned_residuals(interval):
                       -0.61, -0.88])
         )
     forecaster = ForecasterDirect(
-                     regressor     = LinearRegression(),
+                     estimator     = LinearRegression(),
                      steps         = 3,
                      lags          = 3,
                      transformer_y = StandardScaler()

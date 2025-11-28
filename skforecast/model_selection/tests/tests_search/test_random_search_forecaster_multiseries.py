@@ -25,7 +25,7 @@ def test_output_random_search_forecaster_multiseries_ForecasterRecursiveMultiSer
     with mocked (mocked done in Skforecast v0.5.0)
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = Ridge(random_state=123),
+                     estimator          = Ridge(random_state=123),
                      lags               = 2, 
                      encoding           = 'onehot',
                      transformer_series = None
@@ -115,7 +115,7 @@ def test_output_random_search_forecaster_multiseries_ForecasterDirectMultiVariat
     with mocked (mocked done in Skforecast v0.6.0)
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = Ridge(random_state=123),
+                     estimator          = Ridge(random_state=123),
                      level              = 'l1',
                      lags               = 2,
                      steps              = 3, 

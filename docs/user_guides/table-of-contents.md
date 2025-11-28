@@ -5,10 +5,10 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 <span style="font-size: 1.3em;">Single series Forecasters</span>
 
 - [Input data](../user_guides/input-data.html)
-- [Recursive multi-step forecasting](../user_guides/autoregresive-forecaster.html)
+- [Recursive multi-step forecasting](../user_guides/autoregressive-forecaster.html)
 - [Direct multi-step forecasting](../user_guides/direct-multi-step-forecasting.html)
-- [ARIMA and SARIMAX forecasting](../user_guides/forecasting-sarimax-arima.html)
 - [Forecasting baseline](../user_guides/forecasting-baseline.html)
+- [Autoregressive classification](../user_guides/autoregressive-classification-forecasting.html)
 
 <span style="font-size: 1.3em;">Global Forecasters (multiple series)</span>
 
@@ -16,6 +16,11 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 - [Series with different lengths and different exogenous variables](../user_guides/multi-series-with-different-length-and-different_exog.html)
 - [Dependent multivariate series forecasting](../user_guides/dependent-multi-series-multivariate-forecasting.html)
 - [Deep learning Recurrent Neural Networks](../user_guides/forecasting-with-deep-learning-rnn-lstm.html)
+
+<span style="font-size: 1.3em;">Statistical Models</span>
+
+- [ARIMA and SARIMAX](../user_guides/forecasting-sarimax-arima.html)
+- [ARAR](../user_guides/forecasting-arar.html)
 
 <span style="font-size: 1.3em;">Feature Engineering</span>
 
@@ -50,11 +55,14 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 
 - [Model Explainability](../user_guides/explainability.html)
 
-<span style="font-size: 1.3em;">Model deployment</span>
+<span style="font-size: 1.3em;">Drift Detection</span>
+
+- [Drift Detection](../user_guides/drift-detection.html)
+
+<span style="font-size: 1.3em;">Model Deployment</span>
 
 - [Save and load forecaster](../user_guides/save-load-forecaster.html)
 - [Forecaster in production](../user_guides/forecaster-in-production.html)
-- [Drift detection](../user_guides/drift-detection.html)
 
 <span style="font-size: 1.3em;">Plotting</span>
 
@@ -66,7 +74,7 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 
 <span style="font-size: 1.3em;">Additional Resources</span>
 
-- [Skforecast 0.14 Migration guide](../user_guides/migration-guide.html)
+- [Skforecast Migration guide](../user_guides/migration-guide.html)
 - [Extract training and prediction matrices](../user_guides/training-and-prediction-matrices.html)
 - [Weighted time series forecasting](../user_guides/weighted-time-series-forecasting.html)
 - [Stacking multiple models](../user_guides/stacking-ensemble-models-forecasting.html)

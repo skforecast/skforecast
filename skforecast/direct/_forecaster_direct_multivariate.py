@@ -20,7 +20,7 @@ from joblib import Parallel, delayed, cpu_count
 from sklearn.preprocessing import StandardScaler
 from itertools import chain
 
-import skforecast
+from .. import __version__
 from ..base import ForecasterBase
 from ..exceptions import DataTransformationWarning, ResidualsUsageWarning
 from ..utils import (
@@ -46,7 +46,8 @@ from ..utils import (
     transform_dataframe,
     select_n_jobs_fit_forecaster,
     set_skforecast_warnings,
-    get_style_repr_html
+    get_style_repr_html,
+    initialize_estimator
 )
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
 from ..model_selection._utils import _extract_data_folds_multiseries
@@ -54,14 +55,14 @@ from ..model_selection._utils import _extract_data_folds_multiseries
 
 class ForecasterDirectMultiVariate(ForecasterBase):
     """
-    This class turns any regressor compatible with the scikit-learn API into a
+    This class turns any estimator compatible with the scikit-learn API into a
     autoregressive multivariate direct multi-step forecaster. A separate model 
     is created for each forecast time step. See documentation for more details.
 
     Parameters
     ----------
-    regressor : regressor or pipeline compatible with the scikit-learn API
-        An instance of a regressor or pipeline compatible with the scikit-learn API.
+    estimator : estimator or pipeline compatible with the scikit-learn API
+        An instance of a estimator or pipeline compatible with the scikit-learn API.
     level : str
         Name of the time series to be predicted.
     steps : int
@@ -95,7 +96,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
     weight_func : Callable, default None
         Function that defines the individual weights for each sample based on the
         index. For example, a function that assigns a lower weight to certain dates.
-        Ignored if `regressor` does not have the argument `sample_weight` in its `fit`
+        Ignored if `estimator` does not have the argument `sample_weight` in its `fit`
         method. The resulting `sample_weight` cannot have negative values.
     differentiation : int, default None
         Order of differencing applied to the time series before training the forecaster.
@@ -104,7 +105,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         involves computing the differences between consecutive data points in the series.
         Before returning a prediction, the differencing operation is reversed.
     fit_kwargs : dict, default None
-        Additional arguments to be passed to the `fit` method of the regressor.
+        Additional arguments to be passed to the `fit` method of the estimator.
     binner_kwargs : dict, default None
         Additional arguments to pass to the `QuantileBinner` used to discretize 
         the residuals into k bins according to the predicted values associated 
@@ -118,16 +119,18 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         skforecast.utils.select_n_jobs_fit_forecaster.
     forecaster_id : str, int, default None
         Name used as an identifier of the forecaster.
+    regressor : estimator or pipeline compatible with the Keras API
+        **Deprecated**, alias for `estimator`.
 
     Attributes
     ----------
-    regressor : regressor or pipeline compatible with the scikit-learn API
-        An instance of a regressor or pipeline compatible with the scikit-learn API.
-        An instance of this regressor is trained for each step. All of them 
-        are stored in `self.regressors_`.
-    regressors_ : dict
-        Dictionary with regressors trained for each step. They are initialized 
-        as a copy of `regressor`.
+    estimator : estimator or pipeline compatible with the scikit-learn API
+        An instance of a estimator or pipeline compatible with the scikit-learn API.
+        An instance of this estimator is trained for each step. All of them 
+        are stored in `self.estimators_`.
+    estimators_ : dict
+        Dictionary with estimators trained for each step. They are initialized 
+        as a copy of `estimator`.
     steps : numpy array
         Future steps the forecaster will predict when using method `predict()`. 
         Since a different model is created for each step, this value should be 
@@ -176,7 +179,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
     weight_func : Callable
         Function that defines the individual weights for each sample based on the
         index. For example, a function that assigns a lower weight to certain dates.
-        Ignored if `regressor` does not have the argument `sample_weight` in its
+        Ignored if `estimator` does not have the argument `sample_weight` in its
         `fit` method. The resulting `sample_weight` cannot have negative values.
     source_code_weight_func : str
         Source code of the custom function used to create weights.
@@ -239,7 +242,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
     X_train_features_names_out_ : list
         Names of columns of the matrix created internally for training.
     fit_kwargs : dict
-        Additional arguments to be passed to the `fit` method of the regressor.
+        Additional arguments to be passed to the `fit` method of the estimator.
     in_sample_residuals_ : dict
         Residuals of the model when predicting training data. Only stored up 
         to 10_000 values per series in the form `{series: residuals}`. If 
@@ -283,7 +286,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
     creation_date : str
         Date of creation.
     is_fitted : bool
-        Tag to identify if the regressor has been fitted (trained).
+        Tag to identify if the estimator has been fitted (trained).
     fit_date : str
         Date of last fit.
     skforecast_version : str
@@ -315,9 +318,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
     
     def __init__(
         self,
-        regressor: object,
         level: str,
         steps: int,
+        estimator: object = None,
         lags: int | list[int] | np.ndarray[int] | range[int] | dict[str, int | list] | None = None,
         window_features: object | list[object] | None = None,
         transformer_series: object | dict[str, object] | None = StandardScaler(),
@@ -327,10 +330,11 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         fit_kwargs: dict[str, object] | None = None,
         binner_kwargs: dict[str, object] | None = None,
         n_jobs: int | str = 'auto',
-        forecaster_id: str | int | None = None
+        forecaster_id: str | int | None = None,
+        regressor: object = None
     ) -> None:
         
-        self.regressor                          = copy(regressor)
+        self.estimator                          = copy(initialize_estimator(estimator, regressor))
         self.level                              = level
         self.lags_                              = None
         self.transformer_series                 = transformer_series
@@ -364,7 +368,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         self.creation_date                      = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
         self.is_fitted                          = False
         self.fit_date                           = None
-        self.skforecast_version                 = skforecast.__version__
+        self.skforecast_version                 = __version__
         self.python_version                     = sys.version.split(" ")[0]
         self.forecaster_id                      = forecaster_id
         self._probabilistic_mode                = "binned"
@@ -390,7 +394,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         self.steps    = np.arange(steps) + 1
         self.max_step = steps
         
-        self.regressors_ = {step: clone(self.regressor) for step in self.steps}
+        self.estimators_ = {step: clone(self.estimator) for step in self.steps}
 
         if isinstance(lags, dict):
             self.lags = {}
@@ -442,7 +446,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         
         self.weight_func, self.source_code_weight_func, _ = initialize_weights(
             forecaster_name = type(self).__name__, 
-            regressor       = regressor, 
+            estimator       = estimator, 
             weight_func     = weight_func, 
             series_weights  = None
         )
@@ -461,7 +465,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             )
 
         self.fit_kwargs = check_select_fit_kwargs(
-                              regressor  = regressor,
+                              estimator  = estimator,
                               fit_kwargs = fit_kwargs
                           )
         
@@ -477,7 +481,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         if n_jobs == 'auto':
             self.n_jobs = select_n_jobs_fit_forecaster(
                               forecaster_name = type(self).__name__,
-                              regressor       = self.regressor
+                              estimator       = self.estimator
                           )
         else:
             if not isinstance(n_jobs, int):
@@ -488,9 +492,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         
         self.__skforecast_tags__ = {
             "library": "skforecast",
-            "estimator_type": "forecaster",
-            "estimator_name": "ForecasterDirectMultiVariate",
-            "estimator_task": "regression",
+            "forecaster_name": "ForecasterDirectMultiVariate",
+            "forecaster_task": "regression",
             "forecasting_scope": "global",  # single-series | global
             "forecasting_strategy": "direct",  # recursive | direct | deep_learning
             "index_types_supported": ["pandas.RangeIndex", "pandas.DatetimeIndex"],
@@ -532,7 +535,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         ) = [
             self._format_text_repr(value) 
             for value in self._preprocess_repr(
-                regressor          = self.regressor,
+                estimator          = self.estimator,
                 series_names_in_   = self.series_names_in_,
                 exog_names_in_     = self.exog_names_in_,
                 transformer_series = self.transformer_series,
@@ -543,7 +546,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             f"{'=' * len(type(self).__name__)} \n"
             f"{type(self).__name__} \n"
             f"{'=' * len(type(self).__name__)} \n"
-            f"Regressor: {type(self.regressor).__name__} \n"
+            f"Estimator: {type(self.estimator).__name__} \n"
             f"Target series (level): {self.level} \n"
             f"Lags: {self.lags} \n"
             f"Window features: {self.window_features_names} \n"
@@ -559,7 +562,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             f"Training range: {self.training_range_.to_list() if self.is_fitted else None} \n"
             f"Training index type: {str(self.index_type_).split('.')[-1][:-2] if self.is_fitted else None} \n"
             f"Training index frequency: {self.index_freq_ if self.is_fitted else None} \n"
-            f"Regressor parameters: {params} \n"
+            f"Estimator parameters: {params} \n"
             f"fit_kwargs: {self.fit_kwargs} \n"
             f"Creation date: {self.creation_date} \n"
             f"Last fit date: {self.fit_date} \n"
@@ -583,7 +586,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             exog_names_in_,
             transformer_series,
         ) = self._preprocess_repr(
-                regressor          = self.regressor,
+                estimator          = self.estimator,
                 series_names_in_   = self.series_names_in_,
                 exog_names_in_     = self.exog_names_in_,
                 transformer_series = self.transformer_series,
@@ -593,11 +596,11 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         
         content = f"""
         <div class="container-{unique_id}">
-            <h2>{type(self).__name__}</h2>
+            <p style="font-size: 1.5em; font-weight: bold; margin-block-start: 0.83em; margin-block-end: 0.83em;">{type(self).__name__}</p>
             <details open>
                 <summary>General Information</summary>
                 <ul>
-                    <li><strong>Regressor:</strong> {type(self.regressor).__name__}</li>
+                    <li><strong>Estimator:</strong> {type(self.estimator).__name__}</li>
                     <li><strong>Target series (level):</strong> {self.level}</li>
                     <li><strong>Lags:</strong> {self.lags}</li>
                     <li><strong>Window features:</strong> {self.window_features_names}</li>
@@ -637,7 +640,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 </ul>
             </details>
             <details>
-                <summary>Regressor Parameters</summary>
+                <summary>Estimator Parameters</summary>
                 <ul>
                     {params}
                 </ul>
@@ -649,9 +652,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 </ul>
             </details>
             <p>
-                <a href="https://skforecast.org/{skforecast.__version__}/api/forecasterdirectmultivariate.html">&#128712 <strong>API Reference</strong></a>
+                <a href="https://skforecast.org/{__version__}/api/forecasterdirectmultivariate.html">&#128712 <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
-                <a href="https://skforecast.org/{skforecast.__version__}/user_guides/dependent-multi-series-multivariate-forecasting.html">&#128462 <strong>User Guide</strong></a>
+                <a href="https://skforecast.org/{__version__}/user_guides/dependent-multi-series-multivariate-forecasting.html">&#128462 <strong>User Guide</strong></a>
             </p>
         </div>
         """
@@ -785,7 +788,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
             if data_to_return != 'X':
                 # If `data_to_return` is not 'X', it means is 'y' or 'both', y_data is created
-                y_data = windows[:n_rows, self.window_size:self.window_size + self.max_step]
+                y_data = windows[:n_rows, self.window_size : self.window_size + self.max_step]
 
         return X_data, y_data
 
@@ -796,6 +799,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         X_as_pandas: bool = False,
     ) -> tuple[list[np.ndarray | pd.DataFrame], list[str]]:
         """
+        Create window features from a time series.
         
         Parameters
         ----------
@@ -863,7 +867,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         """
         Create training matrices from multiple time series and exogenous
         variables. The resulting matrices contain the target variable and predictors
-        needed to train all the regressors (one per step).
+        needed to train all the estimators (one per step).
         
         Parameters
         ----------
@@ -1182,7 +1186,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         """
         Create training matrices from multiple time series and exogenous
         variables. The resulting matrices contain the target variable and predictors
-        needed to train all the regressors (one per step).
+        needed to train all the estimators (one per step).
         
         Parameters
         ----------
@@ -1453,7 +1457,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         """
         Training Forecaster.
 
-        Additional arguments to be passed to the `fit` method of the regressor 
+        Additional arguments to be passed to the `fit` method of the estimator 
         can be added with the `fit_kwargs` argument when initializing the forecaster.
 
         Parameters
@@ -1523,14 +1527,14 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             exog_dtypes_out_
         ) = self._create_train_X_y(series=series, exog=exog)
 
-        def fit_forecaster(regressor, X_train, y_train, step):
+        def fit_forecaster(estimator, X_train, y_train, step):
             """
-            Auxiliary function to fit each of the forecaster's regressors in parallel.
+            Auxiliary function to fit each of the forecaster's estimators in parallel.
 
             Parameters
             ----------
-            regressor : object
-                Regressor to be fitted.
+            estimator : object
+                Estimator to be fitted.
             X_train : pandas DataFrame
                 Dataframe created with the `_create_train_X_y` method, first return.
             y_train : dict
@@ -1540,7 +1544,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             
             Returns
             -------
-            Tuple with the step, fitted regressor, in-sample residuals, true values
+            Tuple with the step, fitted estimator, in-sample residuals, true values
             and predicted values for the step.
 
             """
@@ -1553,14 +1557,14 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                                          )
             sample_weight = self.create_sample_weights(X_train=X_train_step)
             if sample_weight is not None:
-                regressor.fit(
+                estimator.fit(
                     X             = X_train_step,
                     y             = y_train_step,
                     sample_weight = sample_weight,
                     **self.fit_kwargs
                 )
             else:
-                regressor.fit(
+                estimator.fit(
                     X = X_train_step,
                     y = y_train_step,
                     **self.fit_kwargs
@@ -1571,15 +1575,15 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             y_pred_step = None
             if self._probabilistic_mode is not False:
                 y_true_step = y_train_step.to_numpy()
-                y_pred_step = regressor.predict(X_train_step)
+                y_pred_step = estimator.predict(X_train_step)
 
-            return step, regressor, y_true_step, y_pred_step
+            return step, estimator, y_true_step, y_pred_step
 
         results_fit = (
             Parallel(n_jobs=self.n_jobs)
             (delayed(fit_forecaster)
             (
-                regressor = copy(self.regressor),
+                estimator = copy(self.estimator),
                 X_train   = X_train,
                 y_train   = y_train,
                 step      = step
@@ -1587,7 +1591,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             for step in self.steps)
         )
 
-        self.regressors_ = {step: regressor for step, regressor, *_ in results_fit}
+        self.estimators_ = {step: estimator for step, estimator, *_ in results_fit}
 
         self.in_sample_residuals_ = {}
         self.in_sample_residuals_by_bin_ = {}
@@ -1618,7 +1622,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         self.training_range_ = series.index[[0, -1]]
         self.index_type_ = type(series.index)
         if isinstance(series.index, pd.DatetimeIndex):
-            self.index_freq_ = series.index.freqstr
+            self.index_freq_ = series.index.freq
         else: 
             self.index_freq_ = series.index.step
         
@@ -1853,15 +1857,24 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             
         X_autoreg = np.concatenate(X_autoreg).reshape(1, -1)
         if exog is not None:
+            
             exog = input_to_frame(data=exog, input_name='exog')
-            exog = exog[self.exog_names_in_]
+            if exog.columns.tolist() != self.exog_names_in_:
+                exog = exog[self.exog_names_in_]
+
             exog = transform_dataframe(
                        df                = exog,
                        transformer       = self.transformer_exog,
                        fit               = False,
                        inverse_transform = False
                    )
-            check_exog_dtypes(exog=exog)
+            
+            # NOTE: Only check dtypes if they are not the same as seen in training
+            if not exog.dtypes.to_dict() == self.exog_dtypes_out_:
+                check_exog_dtypes(exog=exog)
+            else:
+                check_exog(exog=exog, allow_nan=False)
+
             exog_values, _ = exog_to_direct_numpy(
                                  exog  = exog.to_numpy()[:max(steps)],
                                  steps = max(steps)
@@ -1972,7 +1985,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         if self.exog_in_:
             categorical_features = any(
                 not pd.api.types.is_numeric_dtype(dtype) or pd.api.types.is_bool_dtype(dtype) 
-                for dtype in set(self.exog_dtypes_out_)
+                for dtype in set(self.exog_dtypes_out_.values())
             )
             if categorical_features:
                 X_predict = X_predict.astype(self.exog_dtypes_out_)
@@ -2057,7 +2070,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 check_inputs = check_inputs,
             )
 
-        regressors = [self.regressors_[step] for step in steps]
+        estimators = [self.estimators_[step] for step in steps]
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 "ignore", 
@@ -2065,8 +2078,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 category=UserWarning
             )
             predictions = np.array([
-                regressor.predict(X).ravel()[0] 
-                for regressor, X in zip(regressors, Xs)
+                estimator.predict(X).ravel().item()
+                for estimator, X in zip(estimators, Xs)
             ])
 
         if self.differentiation is not None:
@@ -2194,7 +2207,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             residuals_by_bin = self.out_sample_residuals_by_bin_[self.level]
 
         # NOTE: Predictors and residuals are transformed and differentiated
-        regressors = [self.regressors_[step] for step in steps]
+        estimators = [self.estimators_[step] for step in steps]
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 "ignore", 
@@ -2202,8 +2215,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 category=UserWarning
             )
             predictions = np.array([
-                regressor.predict(X).ravel()[0] 
-                for regressor, X in zip(regressors, Xs)
+                estimator.predict(X).ravel().item()
+                for estimator, X in zip(estimators, Xs)
             ])
         
         rng = np.random.default_rng(seed=random_state)
@@ -2341,7 +2354,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             residuals_by_bin = self.out_sample_residuals_by_bin_[self.level]
 
         # NOTE: Predictors and residuals are transformed and differentiated  
-        regressors = [self.regressors_[step] for step in steps]
+        estimators = [self.estimators_[step] for step in steps]
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 "ignore", 
@@ -2349,8 +2362,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 category=UserWarning
             )
             predictions = np.array([
-                regressor.predict(X).ravel()[0] 
-                for regressor, X in zip(regressors, Xs)
+                estimator.predict(X).ravel().item()
+                for estimator, X in zip(estimators, Xs)
             ])
         
         if use_binned_residuals:
@@ -2777,10 +2790,10 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         
         """
 
-        self.regressor = clone(self.regressor)
-        self.regressor.set_params(**params)
-        self.regressors_ = {
-            step: clone(self.regressor)
+        self.estimator = clone(self.estimator)
+        self.estimator.set_params(**params)
+        self.estimators_ = {
+            step: clone(self.estimator)
             for step in self.steps
         }
 
@@ -2790,7 +2803,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
     ) -> None:
         """
         Set new values for the additional keyword arguments passed to the `fit` 
-        method of the regressor.
+        method of the estimator.
         
         Parameters
         ----------
@@ -2803,7 +2816,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         
         """
 
-        self.fit_kwargs = check_select_fit_kwargs(self.regressor, fit_kwargs=fit_kwargs)
+        self.fit_kwargs = check_select_fit_kwargs(self.estimator, fit_kwargs=fit_kwargs)
 
     def set_lags(
         self, 
@@ -3040,7 +3053,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                                          )
             
             y_true_steps.append(y_train_step.to_numpy())
-            y_pred_steps.append(self.regressors_[step].predict(X_train_step))
+            y_pred_steps.append(self.estimators_[step].predict(X_train_step))
 
         self._binning_in_sample_residuals(
             level                     = self.level,
@@ -3265,7 +3278,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         Return feature importance of the model stored in the forecaster for a
         specific step. Since a separate model is created for each forecast time
         step, it is necessary to select the model from which retrieve information.
-        Only valid when regressor stores internally the feature importances in
+        Only valid when estimator stores internally the feature importances in
         the attribute `feature_importances_` or `coef_`. Otherwise, it returns  
         `None`.
 
@@ -3301,10 +3314,10 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 f"({self.max_step}). Got {step}."
             )
 
-        if isinstance(self.regressor, Pipeline):
-            estimator = self.regressors_[step][-1]
+        if isinstance(self.estimator, Pipeline):
+            estimator = self.estimators_[step][-1]
         else:
-            estimator = self.regressors_[step]
+            estimator = self.estimators_[step]
                 
         n_lags = len(list(
             chain(*[v for v in self.lags_.values() if v is not None])
@@ -3333,9 +3346,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             feature_importances = estimator.coef_
         else:
             warnings.warn(
-                f"Impossible to access feature importances for regressor of type "
+                f"Impossible to access feature importances for estimator of type "
                 f"{type(estimator)}. This method is only valid when the "
-                f"regressor stores internally the feature importances in the "
+                f"estimator stores internally the feature importances in the "
                 f"attribute `feature_importances_` or `coef_`."
             )
             feature_importances = None

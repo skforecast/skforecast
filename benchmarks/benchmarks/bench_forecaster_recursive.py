@@ -87,7 +87,7 @@ def run_benchmark_ForecasterRecursive(output_dir):
     y_values = y.to_numpy()
 
     forecaster = ForecasterRecursive(
-        regressor=DummyRegressor(strategy='constant', constant=1.),
+        estimator=DummyRegressor(strategy='constant', constant=1.),
         lags=50,
         transformer_y=StandardScaler(),
         transformer_exog=StandardScaler(),

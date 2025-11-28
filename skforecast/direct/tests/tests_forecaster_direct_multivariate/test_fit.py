@@ -31,7 +31,7 @@ def test_forecaster_series_exog_features_stored():
         stats=['ratio_min_max', 'median'], window_sizes=4
     )
     forecaster = ForecasterDirectMultiVariate(
-                     regressor        = LinearRegression(), 
+                     estimator        = LinearRegression(), 
                      level            = 'l1',
                      steps            = 2,
                      lags             = 3,
@@ -88,7 +88,7 @@ def test_fit_correct_dict_create_transformer_series():
     transformer_series = {'l1': StandardScaler(), 'l3': StandardScaler(), 'l4': StandardScaler()}
 
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = LinearRegression(), 
+                     estimator          = LinearRegression(), 
                      level              = 'l1',
                      lags               = 3,
                      steps              = 2,
@@ -108,7 +108,7 @@ def test_fit_correct_dict_create_transformer_series():
 
 def test_forecaster_DatetimeIndex_index_freq_stored():
     """
-    Test series.index.freqstr is stored in forecaster.index_freq.
+    Test series.index.freq is stored in forecaster.index_freq.
     """
     series = pd.DataFrame({'l1': pd.Series(np.arange(10)), 
                            'l2': pd.Series(np.arange(10))})
@@ -116,10 +116,10 @@ def test_forecaster_DatetimeIndex_index_freq_stored():
     series.index = pd.date_range(start='2022-01-01', periods=10, freq='1D')
 
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', lags=3, steps=1
+        estimator=LinearRegression(), level='l1', lags=3, steps=1
     )
     forecaster.fit(series=series)
-    expected = series.index.freqstr
+    expected = series.index.freq
     results = forecaster.index_freq_
 
     assert results == expected
@@ -133,7 +133,7 @@ def test_forecaster_index_step_stored():
                            'l2': pd.Series(np.arange(10))})
     
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', lags=3, steps=2
+        estimator=LinearRegression(), level='l1', lags=3, steps=2
     )
     forecaster.fit(series=series)
     expected = series.index.step
@@ -152,7 +152,7 @@ def test_fit_in_sample_residuals_stored(n_jobs):
                            'l2': pd.Series(np.arange(10))})
     
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', lags=3, steps=2, n_jobs=n_jobs
+        estimator=LinearRegression(), level='l1', lags=3, steps=2, n_jobs=n_jobs
     )
     forecaster.fit(series=series, store_in_sample_residuals=True)
     expected = {
@@ -181,13 +181,13 @@ def test_fit_same_residuals_when_residuals_greater_than_10000(n_jobs):
                            'l2': pd.Series(np.arange(12_000))})
     
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', lags=3, steps=2, n_jobs=n_jobs
+        estimator=LinearRegression(), level='l1', lags=3, steps=2, n_jobs=n_jobs
     )
     forecaster.fit(series=series, store_in_sample_residuals=True)
     results_1 = forecaster.in_sample_residuals_
 
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', lags=3, steps=2, n_jobs=n_jobs
+        estimator=LinearRegression(), level='l1', lags=3, steps=2, n_jobs=n_jobs
     )
     forecaster.fit(series=series, store_in_sample_residuals=True)
     results_2 = forecaster.in_sample_residuals_
@@ -210,7 +210,7 @@ def test_fit_in_sample_residuals_by_bin_stored(n_jobs):
     Test that values of in_sample_residuals_by_bin are stored after fitting.
     """
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', lags=3, steps=2, binner_kwargs={'n_bins': 3}, n_jobs=n_jobs
+        estimator=LinearRegression(), level='l1', lags=3, steps=2, binner_kwargs={'n_bins': 3}, n_jobs=n_jobs
     )
     forecaster.fit(series=series_fixtures, store_in_sample_residuals=True)
 
@@ -289,7 +289,7 @@ def test_fit_in_sample_residuals_not_stored_probabilistic_mode_binned(n_jobs):
     when `store_in_sample_residuals=False`. Binner intervals are stored.
     """
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', lags=3, steps=2, binner_kwargs={'n_bins': 3}, n_jobs=n_jobs
+        estimator=LinearRegression(), level='l1', lags=3, steps=2, binner_kwargs={'n_bins': 3}, n_jobs=n_jobs
     )
     forecaster.fit(series=series_fixtures, store_in_sample_residuals=False)
 
@@ -325,7 +325,7 @@ def test_fit_in_sample_residuals_not_stored_probabilistic_mode_False(n_jobs):
     series = pd.DataFrame({'l1': pd.Series(np.arange(5)), 
                            'l2': pd.Series(np.arange(5))})
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', lags=3, steps=2, binner_kwargs={'n_bins': 3}, n_jobs=n_jobs
+        estimator=LinearRegression(), level='l1', lags=3, steps=2, binner_kwargs={'n_bins': 3}, n_jobs=n_jobs
     )
     forecaster._probabilistic_mode = False
     forecaster.fit(series=series, store_in_sample_residuals=False)
@@ -351,7 +351,7 @@ def test_fit_last_window_stored(store_last_window):
                            'l2': pd.Series(np.arange(50, 60))})
 
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', lags=3, steps=2
+        estimator=LinearRegression(), level='l1', lags=3, steps=2
     )
     forecaster.fit(series=series, store_last_window=store_last_window)
 
@@ -378,7 +378,7 @@ def test_fit_last_window_stored_when_different_lags():
                            'l2': pd.Series(np.arange(100, 110))})
 
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l2', steps = 2, lags = {'l1': 3, 'l2': [1, 5]}
+        estimator=LinearRegression(), level='l2', steps = 2, lags = {'l1': 3, 'l2': [1, 5]}
     )
     forecaster.fit(series=series)
 
@@ -405,7 +405,7 @@ def test_fit_last_window_stored_when_lags_dict_with_None(level):
                            'l2': pd.Series(np.arange(100, 110))})
 
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level=level, steps = 2, lags = {'l1': 3, 'l2': None}
+        estimator=LinearRegression(), level=level, steps = 2, lags = {'l1': 3, 'l2': None}
     )
     forecaster.fit(series=series)
 

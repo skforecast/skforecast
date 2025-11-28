@@ -21,7 +21,7 @@ def test_output_random_search_forecaster_ForecasterRecursive_with_mocked():
     (mocked done in Skforecast v0.4.3)
     """
     forecaster = ForecasterRecursive(
-                    regressor = Ridge(random_state=123),
+                    estimator = Ridge(random_state=123),
                     lags      = 2
                  )
     n_validation = 12

@@ -1,0 +1,137 @@
+# Unit test fit ForecasterStats
+# ==============================================================================
+import re
+import pytest
+import numpy as np
+import pandas as pd
+from skforecast.stats import Sarimax, Arar
+from skforecast.recursive import ForecasterStats
+from skforecast.exceptions import IgnoredArgumentWarning
+
+# Fixtures
+from .fixtures_forecaster_stats import y
+from .fixtures_forecaster_stats import y_datetime
+
+
+def test_fit_ValueError_when_len_exog_is_not_the_same_as_len_y():
+    """
+    Raise ValueError if the length of `exog` is different from the length of `y`.
+    """
+    y = pd.Series(data=np.arange(10))
+    exog = pd.Series(data=np.arange(11))
+    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 1, 1)))
+
+    err_msg = re.escape(
+        f"`exog` must have same number of samples as `y`. "
+        f"length `exog`: ({len(exog)}), length `y`: ({len(y)})"
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        forecaster.fit(y=y, exog=exog)
+
+
+def test_IgnoredArgumentWarning_when_estimator_does_not_support_exog():
+    """
+    Test IgnoredArgumentWarning is raised when estimator does not support exog.
+    """
+    y = pd.Series(data=np.arange(10), name='y')
+    exog = pd.Series(data=np.arange(10), name='exog')
+    forecaster = ForecasterStats(estimator=Arar())
+
+    warn_msg = re.escape(
+        f"The estimator {forecaster.estimator_type} does not support exogenous variables, "
+        f"they will be ignored during fit."
+    )
+    with pytest.warns(IgnoredArgumentWarning, match = warn_msg):
+        forecaster.fit(y=y, exog=exog)
+
+
+def test_forecaster_y_exog_features_stored():
+    """
+    Test forecaster stores y and exog features after fitting.
+    """
+    
+    y = pd.Series(data=np.arange(10), name='y_sarimax')
+    exog = pd.Series(data=np.arange(10), name='exog')
+    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 1, 1)))
+    forecaster.fit(y=y, exog=exog)
+
+    series_name_in_ = 'y_sarimax'
+    exog_in_ = True
+    exog_type_in_ = type(exog)
+    exog_names_in_ = ['exog']
+    exog_dtypes_in_ = {'exog': exog.dtype}
+    exog_dtypes_out_ = {'exog': exog.dtype}
+    X_train_exog_names_out_ = ['exog']
+    
+    assert forecaster.series_name_in_ == series_name_in_
+    assert forecaster.exog_in_ == exog_in_
+    assert forecaster.exog_type_in_ == exog_type_in_
+    assert forecaster.exog_names_in_ == exog_names_in_
+    assert forecaster.exog_dtypes_in_ == exog_dtypes_in_
+    assert forecaster.exog_dtypes_out_ == exog_dtypes_out_
+    assert forecaster.X_train_exog_names_out_ == X_train_exog_names_out_
+
+
+def test_forecaster_DatetimeIndex_index_freq_stored():
+    """
+    Test serie_with_DatetimeIndex.index.freq is stored in forecaster.index_freq_.
+    """
+    serie_with_DatetimeIndex = pd.Series(
+        data  = [1, 2, 3, 4, 5],
+        index = pd.date_range(start='2022-01-01', periods=5)
+    )
+    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 0, 0)))
+    forecaster.fit(y=serie_with_DatetimeIndex)
+    expected = serie_with_DatetimeIndex.index.freq
+    results = forecaster.index_freq_
+
+    assert results == expected
+
+
+@pytest.mark.parametrize("suppress_warnings", 
+                         [True, False], 
+                         ids = lambda v: f'suppress_warnings: {v}')
+def test_forecaster_index_step_stored_with_suppress_warnings(suppress_warnings):
+    """
+    Test serie without DatetimeIndex, step is stored in forecaster.index_freq_.
+    """
+    y = pd.Series(data=np.arange(10))
+    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 0, 0)))
+    forecaster.fit(y=y, suppress_warnings=suppress_warnings)
+    expected = y.index.step
+    results = forecaster.index_freq_
+
+    assert results == expected
+
+
+@pytest.mark.parametrize("store_last_window", 
+                         [True, False], 
+                         ids=lambda lw: f'store_last_window: {lw}')
+def test_fit_last_window_stored(store_last_window):
+    """
+    Test that values of last window are stored after fitting.
+    """
+    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 0, 0)))
+    forecaster.fit(y=pd.Series(np.arange(50)), 
+                   store_last_window=store_last_window)
+    expected = pd.Series(np.arange(50))
+
+    if store_last_window:
+        pd.testing.assert_series_equal(forecaster.last_window_, expected)
+    else:
+        assert forecaster.last_window_ is None
+
+
+@pytest.mark.parametrize("y          , idx", 
+                         [(y         , pd.RangeIndex(start=0, stop=50)), 
+                          (y_datetime, pd.date_range(start='2000', periods=50, freq='YE'))], 
+                         ids = lambda values: f'y, index: {type(values)}')
+def test_fit_extended_index_stored(y, idx):
+    """
+    Test that values of self.estimator.arima_res_.fittedvalues.index are 
+    stored after fitting in forecaster.extended_index_.
+    """
+    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 0, 0)))
+    forecaster.fit(y=y)
+
+    pd.testing.assert_index_equal(forecaster.extended_index_, idx)

@@ -62,7 +62,7 @@ def test_create_predict_X_3_steps_ahead():
     """
     Test case for create_predict_X 3 steps ahead
     """
-    forecaster = ForecasterRnn(model, levels=["1", "2"], lags=3)
+    forecaster = ForecasterRnn(estimator=model, levels=["1", "2"], lags=3)
     forecaster.fit(series=series)
 
     warn_msg = re.escape(
@@ -97,7 +97,7 @@ def test_create_predict_X_specific_levels():
     """
     Test case for create_predict_X with specific levels
     """
-    forecaster = ForecasterRnn(model, levels=["1", "2"], lags=3)
+    forecaster = ForecasterRnn(estimator=model, levels=["1", "2"], lags=3)
     forecaster.fit(series=series)
 
     warn_msg = re.escape(
@@ -132,7 +132,9 @@ def test_create_predict_X_exog():
     """
     Test case for create_predict_X with exogenous variables
     """
-    forecaster = ForecasterRnn(model_exog, levels=["1", "2", "3"], lags=10)
+    forecaster = ForecasterRnn(
+        estimator=model_exog, levels=["1", "2", "3"], lags=10
+    )
     forecaster.fit(series=series, exog=exog)
 
     warn_msg = re.escape(
@@ -187,7 +189,9 @@ def test_create_predict_X_specific_levels_with_exog():
     """
     Test case for create_predict_X with specific levels
     """
-    forecaster = ForecasterRnn(model_exog, levels=["1", "2", "3"], lags=10)
+    forecaster = ForecasterRnn(
+        estimator=model_exog, levels=["1", "2", "3"], lags=10
+    )
     forecaster.fit(series=series, exog=exog)
 
     warn_msg = re.escape(

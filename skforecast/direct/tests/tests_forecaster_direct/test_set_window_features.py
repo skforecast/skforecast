@@ -13,7 +13,7 @@ def test_set_window_features_ValueError_when_set_to_None_and_lags_is_None():
     """
     rolling = RollingFeatures(stats='mean', window_sizes=6)
     forecaster = ForecasterDirect(
-        LinearRegression(), steps=2, lags=None, window_features=rolling
+        estimator=LinearRegression(), steps=2, lags=None, window_features=rolling
     )
 
     err_msg = re.escape(
@@ -33,7 +33,9 @@ def test_set_window_features_with_different_inputs(wf):
     """
     Test how attributes change with window_features argument.
     """
-    forecaster = ForecasterDirect(LinearRegression(), lags=5, steps=2)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=5, steps=2
+    )
     forecaster.set_window_features(window_features=wf)
 
     assert forecaster.lags_names == ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5']
@@ -50,7 +52,7 @@ def test_set_window_features_when_differentiation_is_not_None():
     differentiation.
     """
     forecaster = ForecasterDirect(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      steps           = 2,
                      lags            = 3,
                      window_features = RollingFeatures(stats='median', window_sizes=2),
@@ -82,7 +84,7 @@ def test_set_window_features_when_lags():
     """
     rolling = RollingFeatures(stats='mean', window_sizes=10)
     forecaster = ForecasterDirect(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      lags            = 9,
                      steps           = 2,
                      window_features = rolling
@@ -106,7 +108,7 @@ def test_set_window_features_to_None():
     """
     rolling = RollingFeatures(stats='mean', window_sizes=6)
     forecaster = ForecasterDirect(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      lags            = 5,
                      steps           = 3,
                      window_features = rolling

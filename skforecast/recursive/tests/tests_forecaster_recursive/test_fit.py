@@ -15,7 +15,7 @@ from .fixtures_forecaster_recursive import exog
 
 def custom_weights(index):  # pragma: no cover
     """
-    Return 0 if index is one of '2022-01-05', '2022-01-06', 1 otherwise.
+    Return 0 if index is between 20 and 40 else 1.
     """
     weights = np.where(
                 (index >= 20) & (index <= 40),
@@ -63,7 +63,7 @@ def test_forecaster_y_exog_features_stored():
 
 def test_forecaster_DatetimeIndex_index_freq_stored():
     """
-    Test serie_with_DatetimeIndex.index.freqstr is stored in forecaster.index_freq.
+    Test serie_with_DatetimeIndex.index.freq is stored in forecaster.index_freq.
     """
     serie_with_DatetimeIndex = pd.Series(
         data  = [1, 2, 3, 4, 5],
@@ -71,7 +71,7 @@ def test_forecaster_DatetimeIndex_index_freq_stored():
     )
     forecaster = ForecasterRecursive(LinearRegression(), lags=3)
     forecaster.fit(y=serie_with_DatetimeIndex)
-    expected = serie_with_DatetimeIndex.index.freqstr
+    expected = serie_with_DatetimeIndex.index.freq
     results = forecaster.index_freq_
 
     assert results == expected
@@ -127,16 +127,16 @@ def test_fit_in_sample_residuals_by_bin_stored():
     Test that values of in_sample_residuals_by_bin are stored after fitting.
     """
     forecaster = ForecasterRecursive(
-                     regressor     = LinearRegression(),
+                     estimator     = LinearRegression(),
                      lags          = 5,
                      binner_kwargs = {'n_bins': 3}
                  )
     forecaster.fit(y, store_in_sample_residuals=True)
 
     X_train, y_train = forecaster.create_train_X_y(y)
-    forecaster.regressor.fit(X_train, y_train)
-    predictions_regressor = forecaster.regressor.predict(X_train)
-    expected_1 = y_train - predictions_regressor
+    forecaster.estimator.fit(X_train, y_train)
+    predictions_estimator = forecaster.estimator.predict(X_train)
+    expected_1 = y_train - predictions_estimator
 
     expected_2 = {
         0: np.array([
@@ -179,7 +179,7 @@ def test_fit_in_sample_residuals_not_stored_probabilistic_mode_binned():
     when `store_in_sample_residuals=False`. Binner intervals are stored.
     """
     forecaster = ForecasterRecursive(
-                     regressor     = LinearRegression(),
+                     estimator     = LinearRegression(),
                      lags          = 5,
                      binner_kwargs = {'n_bins': 3}
                  )
@@ -232,15 +232,15 @@ def test_fit_last_window_stored(store_last_window):
 
 def test_fit_model_coef_when_using_weight_func():
     """
-    Check the value of the regressor coefs when using a `weight_func`.
+    Check the value of the estimator coefs when using a `weight_func`.
     """
     forecaster = ForecasterRecursive(
-                     regressor   = LinearRegression(),
+                     estimator   = LinearRegression(),
                      lags        = 5,
                      weight_func = custom_weights
                  )
     forecaster.fit(y=y)
-    results = forecaster.regressor.coef_
+    results = forecaster.estimator.coef_
     expected = np.array([0.01211677, -0.20981367,  0.04214442, -0.0369663, -0.18796105])
 
     np.testing.assert_almost_equal(results, expected)
@@ -248,11 +248,11 @@ def test_fit_model_coef_when_using_weight_func():
 
 def test_fit_model_coef_when_not_using_weight_func():
     """
-    Check the value of the regressor coefs when not using a `weight_func`.
+    Check the value of the estimator coefs when not using a `weight_func`.
     """
-    forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=5)
+    forecaster = ForecasterRecursive(estimator=LinearRegression(), lags=5)
     forecaster.fit(y=y)
-    results = forecaster.regressor.coef_
+    results = forecaster.estimator.coef_
     expected = np.array([0.16773502, -0.09712939,  0.10046413, -0.09971515, -0.15849756])
 
     np.testing.assert_almost_equal(results, expected)

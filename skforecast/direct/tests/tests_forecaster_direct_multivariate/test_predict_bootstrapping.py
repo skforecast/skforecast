@@ -34,7 +34,7 @@ def test_predict_NotFittedError_when_fitted_is_False():
     Test NotFittedError is raised when fitted is False.
     """
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', lags=3, steps=3
+        estimator=LinearRegression(), level='l1', lags=3, steps=3
     )
 
     err_msg = re.escape(
@@ -53,7 +53,7 @@ def test_predict_bootstrapping_ValueError_when_out_sample_residuals_is_None(use_
     forecaster.out_sample_residuals_ is None.
     """
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', lags=3, steps=2
+        estimator=LinearRegression(), level='l1', lags=3, steps=2
     )
     forecaster.fit(series=series, store_in_sample_residuals=True)
 
@@ -77,12 +77,12 @@ def test_predict_bootstrapping_ValueError_when_out_sample_residuals_is_None(use_
                          ids=lambda steps: f'steps: {steps}')
 def test_predict_bootstrapping_output_when_in_sample_residuals_exog_and_transformer(steps):
     """
-    Test output of predict_bootstrapping when regressor is LinearRegression,
+    Test output of predict_bootstrapping when estimator is LinearRegression,
     2 steps are predicted, using in-sample residuals, exog is included and both
     inputs are transformed.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      steps              = 2,
                      level              = 'l1',
                      lags               = 3,
@@ -108,12 +108,12 @@ def test_predict_bootstrapping_output_when_in_sample_residuals_exog_and_transfor
 
 def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_False_exog_and_transformer():
     """
-    Test output of predict_bootstrapping when regressor is LinearRegression,
+    Test output of predict_bootstrapping when estimator is LinearRegression,
     2 steps are predicted, using in-sample residuals, exog is included and both
     inputs are transformed.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      steps              = 2,
                      level              = 'l1',
                      lags               = 3,
@@ -141,11 +141,11 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_
 
 def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_fixed():
     """
-    Test output of predict_bootstrapping when regressor is LinearRegression,
+    Test output of predict_bootstrapping when estimator is LinearRegression,
     2 steps are predicted, using in-sample residuals that are fixed.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      steps              = 2,
                      level              = 'l1',
                      lags               = 3,
@@ -171,7 +171,7 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_
 
 def test_predict_bootstrapping_output_when_with_exog_and_differentiation_is_1_steps_1():
     """
-    Test predict_bootstrapping output when using LinearRegression as regressor 
+    Test predict_bootstrapping output when using LinearRegression as estimator 
     and differentiation=1 and steps=1.
     """
 
@@ -199,7 +199,7 @@ def test_predict_bootstrapping_output_when_with_exog_and_differentiation_is_1_st
     end_train = '2003-03-01 23:59:00'
 
     forecaster_1 = ForecasterDirectMultiVariate(
-        regressor=LinearRegression(), level='l1', steps=1, lags=15, transformer_series=None
+        estimator=LinearRegression(), level='l1', steps=1, lags=15, transformer_series=None
     )
     forecaster_1.fit(
         series=series_diff.loc[:end_train], exog=exog_diff.loc[:end_train], store_in_sample_residuals=True
@@ -223,7 +223,7 @@ def test_predict_bootstrapping_output_when_with_exog_and_differentiation_is_1_st
     boot_predictions_1.insert(0, 'level', np.tile(['l1'], 1))
 
     forecaster_2 = ForecasterDirectMultiVariate(
-        regressor=LinearRegression(), level='l1', steps=1, lags=15, transformer_series=None, differentiation=1
+        estimator=LinearRegression(), level='l1', steps=1, lags=15, transformer_series=None, differentiation=1
     )
     forecaster_2.fit(
         series=series_2.loc[:end_train], exog=exog.loc[:end_train], store_in_sample_residuals=True
@@ -237,7 +237,7 @@ def test_predict_bootstrapping_output_when_with_exog_and_differentiation_is_1_st
 
 def test_predict_bootstrapping_output_when_with_exog_and_differentiation_is_1_steps_10():
     """
-    Test predict_bootstrapping output when using LinearRegression as regressor 
+    Test predict_bootstrapping output when using LinearRegression as estimator 
     and differentiation=1 and steps=10.
     """
 
@@ -265,7 +265,7 @@ def test_predict_bootstrapping_output_when_with_exog_and_differentiation_is_1_st
     end_train = '2003-03-01 23:59:00'
 
     forecaster_1 = ForecasterDirectMultiVariate(
-        regressor=LinearRegression(), level='l1', steps=10, lags=15, transformer_series=None
+        estimator=LinearRegression(), level='l1', steps=10, lags=15, transformer_series=None
     )
     forecaster_1.fit(
         series=series_diff.loc[:end_train], exog=exog_diff.loc[:end_train], store_in_sample_residuals=True
@@ -289,7 +289,7 @@ def test_predict_bootstrapping_output_when_with_exog_and_differentiation_is_1_st
     boot_predictions_1.insert(0, 'level', np.tile(['l1'], 10))
 
     forecaster_2 = ForecasterDirectMultiVariate(
-        regressor=LinearRegression(), level='l1', steps=10, lags=15, transformer_series=None, differentiation=1
+        estimator=LinearRegression(), level='l1', steps=10, lags=15, transformer_series=None, differentiation=1
     )
     forecaster_2.fit(
         series=series_2.loc[:end_train], exog=exog.loc[:end_train], store_in_sample_residuals=True
@@ -303,13 +303,13 @@ def test_predict_bootstrapping_output_when_with_exog_and_differentiation_is_1_st
 
 def test_predict_output_when_window_features_steps_1():
     """
-    Test output of predict when regressor is LGBMRegressor and window features
+    Test output of predict when estimator is LGBMRegressor and window features
     with steps=1.
     """
 
     rolling = RollingFeatures(stats=['mean', 'sum'], window_sizes=[3, 5])
     forecaster = ForecasterDirectMultiVariate(
-        regressor=LGBMRegressor(verbose=-1, random_state=123), level='l1', 
+        estimator=LGBMRegressor(verbose=-1, random_state=123), level='l1', 
         steps=1, lags=5, window_features=rolling
     )
     forecaster.fit(series=series, exog=exog['exog_1'], store_in_sample_residuals=True)
@@ -332,13 +332,13 @@ def test_predict_output_when_window_features_steps_1():
 
 def test_predict_output_when_window_features_steps_10():
     """
-    Test output of predict when regressor is LGBMRegressor and window features
+    Test output of predict when estimator is LGBMRegressor and window features
     with steps=10.
     """
 
     rolling = RollingFeatures(stats=['mean', 'sum'], window_sizes=[3, 5])
     forecaster = ForecasterDirectMultiVariate(
-        regressor=LGBMRegressor(verbose=-1, random_state=123), level='l1', 
+        estimator=LGBMRegressor(verbose=-1, random_state=123), level='l1', 
         steps=10, lags=5, window_features=rolling
     )
     forecaster.fit(series=series, exog=exog['exog_1'], store_in_sample_residuals=True)

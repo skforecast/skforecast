@@ -13,7 +13,7 @@ def test_set_lags_ValueError_when_lags_set_to_None_and_window_features_is_None()
     Test ValueError is raised when lags is set to None and window_features is None.
     """
     forecaster = ForecasterDirect(
-        LinearRegression(), steps=2, lags=3, window_features=None
+        estimator=LinearRegression(), steps=2, lags=3, window_features=None
     )
 
     err_msg = re.escape(
@@ -32,7 +32,9 @@ def test_set_lags_with_different_inputs(lags):
     """
     Test how lags and max_lag attributes change with lags argument of different types.
     """
-    forecaster = ForecasterDirect(LinearRegression(), lags=5, steps=2)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=5, steps=2
+    )
     forecaster.set_lags(lags=lags)
 
     np.testing.assert_array_almost_equal(forecaster.lags, np.array([1, 2, 3]))
@@ -47,7 +49,7 @@ def test_set_lags_when_differentiation_is_not_None():
     differentiation.
     """
     forecaster = ForecasterDirect(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      lags            = 3,
                      steps           = 2,
                      differentiation = 1
@@ -75,7 +77,7 @@ def test_set_lags_when_window_features():
     """
     rolling = RollingFeatures(stats='mean', window_sizes=6)
     forecaster = ForecasterDirect(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      lags            = 9,
                      steps           = 2,
                      window_features = rolling
@@ -99,7 +101,7 @@ def test_set_lags_to_None(lags):
     """
     rolling = RollingFeatures(stats='mean', window_sizes=3)
     forecaster = ForecasterDirect(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      lags            = 5,
                      steps           = 3,
                      window_features = rolling

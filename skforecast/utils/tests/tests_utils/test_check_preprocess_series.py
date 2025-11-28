@@ -130,7 +130,7 @@ def test_ValueError_check_preprocess_series_when_series_is_dict_with_different_f
         "RangeIndex or DatetimeIndex with the same step/frequency. "
         "If it a MultiIndex DataFrame, the second level must be a DatetimeIndex "
         "with the same frequency for each series. "
-        "Found frequencies: ['2D', 'D']"
+        "Found frequencies: [<Day>, <2 * Days>]"
     )
     with pytest.raises(ValueError, match = err_msg):
         check_preprocess_series(series = series_dict)
@@ -180,7 +180,7 @@ def test_ValueError_check_preprocess_series_when_series_is_DataFrame_MultiIndex_
         "RangeIndex or DatetimeIndex with the same step/frequency. "
         "If it a MultiIndex DataFrame, the second level must be a DatetimeIndex "
         "with the same frequency for each series. "
-        "Found frequencies: ['3D', 'D']"
+        "Found frequencies: [<Day>, <3 * Days>]"
     )
     with pytest.raises(ValueError, match = err_msg):
         check_preprocess_series(series=series)

@@ -7,7 +7,7 @@
 
 <div style="clear: both;"></div>
 
-![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)
+![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)
 [![PyPI](https://img.shields.io/pypi/v/skforecast)](https://pypi.org/project/skforecast/)
 [![Conda](https://img.shields.io/conda/v/conda-forge/skforecast?logo=Anaconda)](https://anaconda.org/conda-forge/skforecast)
 [![codecov](https://codecov.io/gh/skforecast/skforecast/branch/master/graph/badge.svg)](https://codecov.io/gh/skforecast/skforecast)
@@ -29,13 +29,13 @@
 
 ## About The Project
 
-**Skforecast** is a Python library for time series forecasting using machine learning models. It works with any regressor compatible with the scikit-learn API, including popular options like LightGBM, XGBoost, CatBoost, Keras, and many others.
+**Skforecast** is a Python library for time series forecasting using machine learning models. It works with any estimator compatible with the scikit-learn API, including popular options like LightGBM, XGBoost, CatBoost, Keras, and many others.
 
 ### Why use skforecast?
 
 Skforecast simplifies time series forecasting with machine learning by providing:
 
-- :jigsaw: **Seamless integration** with any scikit-learn compatible regressor (e.g., LightGBM, XGBoost, CatBoost, etc.).
+- :jigsaw: **Seamless integration** with any scikit-learn compatible estimator (e.g., LightGBM, XGBoost, CatBoost, etc.).
 - :repeat: **Flexible workflows** that allow for both single and multi-series forecasting.
 - :hammer_and_wrench: **Comprehensive tools** for feature engineering, model selection, hyperparameter tuning, and more.
 - :building_construction: **Production-ready models** with interpretability and validation methods for backtesting and realistic performance evaluation.
@@ -77,14 +77,16 @@ The **skforecast** library offers a **variety of forecaster** types, each tailor
 |[ForecasterRecursiveMultiSeries] ||✔️|✔️||✔️|✔️|✔️|✔️|
 |[ForecasterDirectMultiVariate]   ||✔️||✔️|✔️|✔️|✔️|✔️|
 |[ForecasterRNN]                  |✔️|✔️||✔️|✔️||✔️||
-|[ForecasterSarimax]              |✔️||✔️||✔️|✔️|✔️||
+|[ForecasterStats]                |✔️||✔️||✔️|✔️|✔️||
+|[ForecasterRecursiveClassifier]  |✔️||✔️||✔️||✔️|✔️|
 
-[ForecasterRecursive]: ./user_guides/autoregresive-forecaster.html
+[ForecasterRecursive]: ./user_guides/autoregressive-forecaster.html
 [ForecasterDirect]: ./user_guides/direct-multi-step-forecasting.html
 [ForecasterRecursiveMultiSeries]: ./user_guides/independent-multi-time-series-forecasting.html
 [ForecasterDirectMultiVariate]: ./user_guides/dependent-multi-series-multivariate-forecasting.html
 [ForecasterRNN]: ./user_guides/forecasting-with-deep-learning-rnn-lstm.html
-[ForecasterSarimax]: ./user_guides/forecasting-sarimax-arima.html
+[ForecasterStats]: ./user_guides/forecasting-sarimax-arima.html
+[ForecasterRecursiveClassifier]: ../user_guides/autoregressive-classification-forecasting.html
 
 
 ## Features
@@ -120,12 +122,12 @@ If you use skforecast for a scientific publication, we would appreciate citation
 **Zenodo**
 
 ```
-Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2025). skforecast (v0.18.0). Zenodo. https://doi.org/10.5281/zenodo.8382788
+Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2025). skforecast (v0.19.0). Zenodo. https://doi.org/10.5281/zenodo.8382788
 ```
 
 **APA**:
 ```
-Amat Rodrigo, J., & Escobar Ortiz, J. (2025). skforecast (Version 0.18.0) [Computer software]. https://doi.org/10.5281/zenodo.8382788
+Amat Rodrigo, J., & Escobar Ortiz, J. (2025). skforecast (Version 0.19.0) [Computer software]. https://doi.org/10.5281/zenodo.8382788
 ```
 
 **BibTeX**:
@@ -133,8 +135,8 @@ Amat Rodrigo, J., & Escobar Ortiz, J. (2025). skforecast (Version 0.18.0) [Compu
 @software{skforecast,
   author  = {Amat Rodrigo, Joaquin and Escobar Ortiz, Javier},
   title   = {skforecast},
-  version = {0.18.0},
-  month   = {9},
+  version = {0.19.0},
+  month   = {11},
   year    = {2025},
   license = {BSD-3-Clause},
   url     = {https://skforecast.org/},

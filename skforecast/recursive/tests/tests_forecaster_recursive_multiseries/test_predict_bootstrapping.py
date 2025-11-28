@@ -178,7 +178,7 @@ def test_predict_bootstrapping_UnknownLevelWarning_when_not_in_sample_residuals_
     warn_msg = re.escape(
         "`levels` {'l3'} were not included in training. "
         "Unknown levels are encoded as NaN, which may cause the "
-        "prediction to fail if the regressor does not accept NaN values."
+        "prediction to fail if the estimator does not accept NaN values."
     )
     with pytest.warns(UnknownLevelWarning, match = warn_msg):
         results = forecaster.predict_bootstrapping(
@@ -444,7 +444,7 @@ def test_predict_bootstrapping_ValueError_when_not_level_in_out_sample_residuals
 
 def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_steps_is_1_in_sample_residuals_is_True():
     """
-    Test output of predict_bootstrapping when regressor is LinearRegression and
+    Test output of predict_bootstrapping when estimator is LinearRegression and
     1 step ahead is predicted with exog using in-sample residuals.
     """
     forecaster = ForecasterRecursiveMultiSeries(
@@ -480,7 +480,7 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_s
 
 def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_steps_is_1_in_sample_residuals_is_True_binned_True():
     """
-    Test output of predict_bootstrapping when regressor is LinearRegression and
+    Test output of predict_bootstrapping when estimator is LinearRegression and
     1 step ahead is predicted with exog using in-sample residuals.
     """
     forecaster = ForecasterRecursiveMultiSeries(
@@ -516,7 +516,7 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_s
     
 def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_steps_is_2_in_sample_residuals_is_True():
     """
-    Test output of predict_bootstrapping when regressor is LinearRegression and
+    Test output of predict_bootstrapping when estimator is LinearRegression and
     2 steps ahead are predicted with exog using in-sample residuals.
     """
     forecaster = ForecasterRecursiveMultiSeries(
@@ -554,7 +554,7 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_s
 
 def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_steps_is_2_in_sample_residuals_is_True_binned_True():
     """
-    Test output of predict_bootstrapping when regressor is LinearRegression and
+    Test output of predict_bootstrapping when estimator is LinearRegression and
     2 steps ahead are predicted with exog using in-sample residuals.
     """
     forecaster = ForecasterRecursiveMultiSeries(
@@ -591,7 +591,7 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_s
     
 def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_steps_is_1_in_sample_residuals_is_False():
     """
-    Test output of predict_bootstrapping when regressor is LinearRegression and
+    Test output of predict_bootstrapping when estimator is LinearRegression and
     1 step ahead is predicted with exog using out-sample residuals.
     """
     forecaster = ForecasterRecursiveMultiSeries(
@@ -629,7 +629,7 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_s
     
 def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_steps_is_2_in_sample_residuals_is_False():
     """
-    Test output of predict_bootstrapping when regressor is LinearRegression and
+    Test output of predict_bootstrapping when estimator is LinearRegression and
     2 steps ahead are predicted with exog using out-sample residuals.
     """
     forecaster = ForecasterRecursiveMultiSeries(
@@ -668,7 +668,7 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_s
 
 def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_steps_is_2_in_sample_residuals_is_False_binned_True():
     """
-    Test output of predict_bootstrapping when regressor is LinearRegression and
+    Test output of predict_bootstrapping when estimator is LinearRegression and
     2 steps ahead are predicted with exog using out-sample residuals.
     """
     forecaster = ForecasterRecursiveMultiSeries(
@@ -707,12 +707,12 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_s
 
 def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_True_exog_and_transformer_fixed_to_zero():
     """
-    Test output of predict_bootstrapping when regressor is LinearRegression,
+    Test output of predict_bootstrapping when estimator is LinearRegression,
     2 steps are predicted, using in-sample residuals, exog is included, both
     inputs are transformed and in-sample residuals are fixed to 0.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 3,
                      transformer_series = StandardScaler(),
                      transformer_exog   = transformer_exog,
@@ -756,12 +756,12 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_
 
 def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_True_exog_and_transformer():
     """
-    Test output of predict_bootstrapping when regressor is LinearRegression,
+    Test output of predict_bootstrapping when estimator is LinearRegression,
     2 steps are predicted, using in-sample residuals, exog is included and both
     inputs are transformed.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 3,
                      transformer_series = StandardScaler(),
                      transformer_exog   = transformer_exog,
@@ -798,7 +798,7 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_
 
 def test_predict_bootstrapping_output_when_window_features():
     """
-    Test output of predict_bootstrapping when regressor is LGBMRegressor 
+    Test output of predict_bootstrapping when estimator is LGBMRegressor 
     and window features.
     """
 
@@ -811,7 +811,7 @@ def test_predict_bootstrapping_output_when_window_features():
                        )
     
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LGBMRegressor(verbose=-1),
+                     estimator          = LGBMRegressor(verbose=-1),
                      lags               = 5,
                      window_features    = rolling,
                      transformer_series = StandardScaler(),
@@ -871,7 +871,7 @@ def test_predict_bootstrapping_output_when_window_features():
 
 def test_predict_bootstrapping_output_when_window_features_in_sample_residuals_True_binned_True():
     """
-    Test output of predict_bootstrapping when regressor is LGBMRegressor 
+    Test output of predict_bootstrapping when estimator is LGBMRegressor 
     and window features.
     """
 
@@ -884,7 +884,7 @@ def test_predict_bootstrapping_output_when_window_features_in_sample_residuals_T
                        )
     
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LGBMRegressor(verbose=-1),
+                     estimator          = LGBMRegressor(verbose=-1),
                      lags               = 5,
                      window_features    = rolling,
                      transformer_series = StandardScaler(),
@@ -944,7 +944,7 @@ def test_predict_bootstrapping_output_when_window_features_in_sample_residuals_T
 
 def test_predict_bootstrapping_output_when_window_features_in_sample_residuals_False_binned_True():
     """
-    Test output of predict_bootstrapping when regressor is LGBMRegressor 
+    Test output of predict_bootstrapping when estimator is LGBMRegressor 
     and window features.
     """
 
@@ -957,7 +957,7 @@ def test_predict_bootstrapping_output_when_window_features_in_sample_residuals_F
                        )
     
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LGBMRegressor(verbose=-1),
+                     estimator          = LGBMRegressor(verbose=-1),
                      lags               = 5,
                      window_features    = rolling,
                      transformer_series = StandardScaler(),
@@ -1021,12 +1021,12 @@ def test_predict_bootstrapping_output_when_window_features_in_sample_residuals_F
                          ids = lambda diff: f'differentiation: {diff}')
 def test_predict_bootstrapping_output_when_differentiation(differentiation):
     """
-    Test output of predict_bootstrapping when regressor is LinearRegression,
+    Test output of predict_bootstrapping when estimator is LinearRegression,
     2 steps are predicted, using in-sample residuals, exog is included and both
     inputs are transformed and differentiation.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 3,
                      transformer_series = StandardScaler(),
                      transformer_exog   = transformer_exog,
@@ -1077,12 +1077,12 @@ def test_predict_bootstrapping_output_when_differentiation(differentiation):
                          ids = lambda diff: f'differentiation: {diff}')
 def test_predict_bootstrapping_output_when_differentiation_binned_residuals(differentiation):
     """
-    Test output of predict_bootstrapping when regressor is LinearRegression,
+    Test output of predict_bootstrapping when estimator is LinearRegression,
     2 steps are predicted, using in-sample residuals, exog is included and both
     inputs are transformed and differentiation.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 3,
                      transformer_series = StandardScaler(),
                      transformer_exog   = transformer_exog,

@@ -26,7 +26,7 @@ series_2 = pd.DataFrame(
 
 def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_steps_is_1_in_sample_residuals_is_True():
     """
-    Test output when regressor is LinearRegression and one step ahead is predicted
+    Test output when estimator is LinearRegression and one step ahead is predicted
     using in sample residuals.
     """
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
@@ -53,7 +53,7 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
 
 def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_is_True():
     """
-    Test output when regressor is LinearRegression and two step ahead is predicted
+    Test output when estimator is LinearRegression and two step ahead is predicted
     using in sample residuals.
     """
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
@@ -82,7 +82,7 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
 
 def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_is_False():
     """
-    Test output when regressor is LinearRegression and two step ahead is predicted
+    Test output when estimator is LinearRegression and two step ahead is predicted
     using out sample residuals.
     """
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
@@ -111,10 +111,10 @@ def test_predict_interval_conformal_output_when_forecaster_is_LinearRegression_s
 
 def test_predict_interval_conformal_output_when_with_transform_series():
     """
-    Test _predict_interval_conformal output when using LinearRegression as regressor and StandardScaler.
+    Test _predict_interval_conformal output when using LinearRegression as estimator and StandardScaler.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 5,
                      transformer_series = StandardScaler()
                  )
@@ -145,7 +145,7 @@ def test_predict_interval_conformal_output_when_with_transform_series():
 
 def test_predict_interval_conformal_output_when_with_transform_series_and_transform_exog():
     """
-    Test _predict_interval_conformal output when using LinearRegression as regressor, StandardScaler
+    Test _predict_interval_conformal output when using LinearRegression as estimator, StandardScaler
     as transformer_series and transformer_exog as transformer_exog.
     """
     transformer_exog = ColumnTransformer(
@@ -155,7 +155,7 @@ def test_predict_interval_conformal_output_when_with_transform_series_and_transf
                             verbose_feature_names_out = False
                        )
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 5,
                      transformer_series = StandardScaler(),
                      transformer_exog   = transformer_exog,
@@ -195,7 +195,7 @@ def test_predict_interval_conformal_output_when_series_and_exog_dict():
     exog are dictionaries.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=LGBMRegressor(
+        estimator=LGBMRegressor(
             n_estimators=2, random_state=123, verbose=-1, max_depth=2
         ),
         lags=14,
@@ -339,7 +339,7 @@ def test_predict_interval_conformal_output_when_series_and_exog_dict_unknown_lev
     exog are dictionaries and unknown_level.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LGBMRegressor(
+                     estimator          = LGBMRegressor(
                          n_estimators=30, random_state=123, verbose=-1, max_depth=4
                      ),
                      lags               = 14,
@@ -516,7 +516,7 @@ def test_predict_interval_conformal_output_when_series_and_exog_dict_unknown_lev
     exog are dictionaries, unknown_level and binned_residuals.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LGBMRegressor(
+                     estimator          = LGBMRegressor(
                          n_estimators=30, random_state=123, verbose=-1, max_depth=4
                      ),
                      lags               = 14,
@@ -693,7 +693,7 @@ def test_predict_interval_conformal_output_when_series_and_exog_dict_encoding_No
     exog are dictionaries, encoding is None and unknown_level.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LGBMRegressor(
+                     estimator          = LGBMRegressor(
                          n_estimators=30, random_state=123, verbose=-1, max_depth=4
                      ),
                      lags               = 14,
@@ -871,7 +871,7 @@ def test_predict_interval_conformal_output_when_series_and_exog_dict_encoding_No
     exog are dictionaries, encoding is None, unknown_level and binned_residuals.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LGBMRegressor(
+                     estimator          = LGBMRegressor(
                          n_estimators=30, random_state=123, verbose=-1, max_depth=4
                      ),
                      lags               = 14,

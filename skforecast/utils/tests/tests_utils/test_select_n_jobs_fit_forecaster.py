@@ -8,7 +8,7 @@ from lightgbm import LGBMRegressor
 from skforecast.utils.utils import select_n_jobs_fit_forecaster
 
 
-@pytest.mark.parametrize("forecaster_name, regressor, n_jobs_expected", 
+@pytest.mark.parametrize("forecaster_name, estimator, n_jobs_expected", 
     [('ForecasterDirect', LinearRegression(), 1),
      ('ForecasterDirect', HistGradientBoostingRegressor(), cpu_count() - 1),
      ('ForecasterDirect', LGBMRegressor(), 1),
@@ -23,13 +23,13 @@ from skforecast.utils.utils import select_n_jobs_fit_forecaster
      ('ForecasterRecursive', LGBMRegressor(n_jobs=1), 1)
 ], 
 ids=lambda info: f'info: {info}')
-def test_select_n_jobs_fit_forecaster(forecaster_name, regressor, n_jobs_expected):
+def test_select_n_jobs_fit_forecaster(forecaster_name, estimator, n_jobs_expected):
     """
     Test select_n_jobs_fit_forecaster
     """
     n_jobs = select_n_jobs_fit_forecaster(
                  forecaster_name = forecaster_name, 
-                 regressor       = regressor
+                 estimator       = estimator
              )
     
     assert n_jobs == n_jobs_expected

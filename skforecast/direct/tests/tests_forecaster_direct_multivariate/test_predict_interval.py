@@ -8,7 +8,6 @@ from sklearn.linear_model import LinearRegression
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
-from skforecast.exceptions import ResidualsUsageWarning
 from skforecast.direct import ForecasterDirectMultiVariate
 
 # Fixtures
@@ -29,7 +28,7 @@ def test_check_interval_ValueError_when_method_is_not_valid_method():
     Check ValueError is raised when `method` is not 'bootstrapping' or 'conformal'.
     """
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', steps=2, lags=3
+        estimator=LinearRegression(), level='l1', steps=2, lags=3
     )
     forecaster.fit(series=series, store_in_sample_residuals=True)
 
@@ -46,12 +45,12 @@ def test_check_interval_ValueError_when_method_is_not_valid_method():
                          ids = lambda value: f'interval: {value}')
 def test_predict_interval_output_when_in_sample_residuals_exog_and_transformer(interval):
     """
-    Test output of predict_interval when regressor is LinearRegression,
+    Test output of predict_interval when estimator is LinearRegression,
     2 steps are predicted, using in-sample residuals, exog is included and both
     inputs are transformed.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      level              = 'l1',
                      steps              = 2,
                      lags               = 3,
@@ -83,12 +82,12 @@ def test_predict_interval_output_when_in_sample_residuals_exog_and_transformer(i
 
 def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_False_exog_and_transformer():
     """
-    Test output of predict_interval when regressor is LinearRegression,
+    Test output of predict_interval when estimator is LinearRegression,
     2 steps are predicted, using out-sample residuals, exog is included and both
     inputs are transformed.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      level              = 'l1',
                      steps              = 2,
                      lags               = 3,
@@ -96,7 +95,7 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_2_
                      transformer_exog   = transformer_exog
                  )
     forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
-    forecaster.out_sample_residuals_= forecaster.in_sample_residuals_
+    forecaster.out_sample_residuals_ = forecaster.in_sample_residuals_
     forecaster.out_sample_residuals_by_bin_ = forecaster.in_sample_residuals_by_bin_    
     n_boot = 250
     results = forecaster.predict_interval(
@@ -122,11 +121,11 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_2_
 
 def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_5_in_sample_residuals_is_True_binned_residuals_is_True():
     """
-    Test output when regressor is LinearRegression 5 step ahead is predicted
+    Test output when estimator is LinearRegression 5 step ahead is predicted
     using in sample binned residuals.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      level              = 'l1',
                      steps              = 5,
                      lags               = 3,
@@ -156,18 +155,18 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_5_
 
 def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_5_in_sample_residuals_is_False_binned_residuals_is_True():
     """
-    Test output when regressor is LinearRegression, steps=5, use_in_sample_residuals=False,
+    Test output when estimator is LinearRegression, steps=5, use_in_sample_residuals=False,
     binned_residuals=True.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      level              = 'l1',
                      steps              = 5,
                      lags               = 3,
                      transformer_series = StandardScaler()
                  )
     forecaster.fit(series=series, store_in_sample_residuals=True)
-    forecaster.out_sample_residuals_= forecaster.in_sample_residuals_
+    forecaster.out_sample_residuals_ = forecaster.in_sample_residuals_
     forecaster.out_sample_residuals_by_bin_ = forecaster.in_sample_residuals_by_bin_
 
     results = forecaster.predict_interval(
@@ -194,13 +193,13 @@ def test_predict_interval_output_when_forecaster_is_LinearRegression_steps_is_5_
 @pytest.mark.parametrize("interval", 
                          [0.95, (2.5, 97.5)], 
                          ids = lambda value: f'interval: {value}')
-def test_predict_interval_conformal_output_when_regressor_is_LinearRegression(interval):
+def test_predict_interval_conformal_output_when_estimator_is_LinearRegression(interval):
     """
-    Test predict output when using LinearRegression as regressor and StandardScaler
+    Test predict output when using LinearRegression as estimator and StandardScaler
     and conformal prediction.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      level              = 'l1',
                      steps              = 3,
                      lags               = 3,
@@ -230,11 +229,11 @@ def test_predict_interval_conformal_output_when_regressor_is_LinearRegression(in
                          ids = lambda value: f'interval: {value}')
 def test_predict_interval_conformal_output_when_binned_residuals(interval):
     """
-    Test predict output when using LinearRegression as regressor and StandardScaler
+    Test predict output when using LinearRegression as estimator and StandardScaler
     and conformal prediction with binned residuals.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      level              = 'l1',
                      steps              = 3,
                      lags               = 3,

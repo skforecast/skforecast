@@ -16,7 +16,9 @@ def test_filter_train_X_y_for_step_ValueError_when_step_not_in_steps(step):
     """
     y = pd.Series(np.arange(10), name='y', dtype=float)
 
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=3)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=3, steps=3
+    )
     X_train, y_train = forecaster.create_train_X_y(y)
 
     err_msg = re.escape(
@@ -29,12 +31,14 @@ def test_filter_train_X_y_for_step_ValueError_when_step_not_in_steps(step):
 
 def test_filter_train_X_y_for_step_output_when_lags_3_steps_2_exog_is_None_for_step_1():
     """
-    Test output of filter_train_X_y_for_step when regressor is LinearRegression, 
+    Test output of filter_train_X_y_for_step when estimator is LinearRegression, 
     lags is 3 and steps is 2 for step 1.
     """
     y = pd.Series(np.arange(10), name='y', dtype=float)
 
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=2)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=3, steps=2
+    )
     X_train, y_train = forecaster.create_train_X_y(y=y)
     results = forecaster.filter_train_X_y_for_step(step=1, X_train=X_train, y_train=y_train)
 
@@ -62,13 +66,15 @@ def test_filter_train_X_y_for_step_output_when_lags_3_steps_2_exog_is_None_for_s
 
 def test_filter_train_X_y_for_step_output_when_lags_3_steps_2_and_exog_for_step_2():
     """
-    Test output of filter_train_X_y_for_step when regressor is LinearRegression, 
+    Test output of filter_train_X_y_for_step when estimator is LinearRegression, 
     lags is 3 and steps is 2 with exog for step 2.
     """
     y = pd.Series(np.arange(10), name='y', dtype=float)
     exog = pd.Series(np.arange(100, 110), name='exog', dtype=float)
 
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=2)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=3, steps=2
+    )
     X_train, y_train = forecaster.create_train_X_y(y=y, exog=exog)
     results = forecaster.filter_train_X_y_for_step(step=2, X_train=X_train, y_train=y_train)
 
@@ -97,13 +103,15 @@ def test_filter_train_X_y_for_step_output_when_lags_3_steps_2_and_exog_for_step_
 
 def test_filter_train_X_y_for_step_output_when_lags_3_steps_2_and_exog_for_step_2_remove_suffix():
     """
-    Test output of filter_train_X_y_for_step when regressor is LinearRegression, 
+    Test output of filter_train_X_y_for_step when estimator is LinearRegression, 
     lags is 3 and steps is 2 with exog for step 2 with remove_suffix=True.
     """
     y = pd.Series(np.arange(10), name='y', dtype=float)
     exog = pd.Series(np.arange(100, 110), name='exog', dtype=float)
 
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=2)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=3, steps=2
+    )
     X_train, y_train = forecaster.create_train_X_y(y=y, exog=exog)
     results = forecaster.filter_train_X_y_for_step(
                   step          = 2, 
@@ -153,7 +161,7 @@ def test_filter_train_X_y_for_step_output_when_window_features_and_exog_steps_1(
     )
 
     forecaster = ForecasterDirect(
-        LinearRegression(), steps=1, lags=5, window_features=rolling
+        estimator=LinearRegression(), steps=1, lags=5, window_features=rolling
     )
     X_train, y_train = forecaster.create_train_X_y(y=y_datetime, exog=exog_datetime)
     results = forecaster.filter_train_X_y_for_step(
@@ -208,7 +216,7 @@ def test_filter_train_X_y_for_step_output_when_window_features_and_exog_steps_2(
     )
 
     forecaster = ForecasterDirect(
-        LinearRegression(), steps=2, lags=5, window_features=rolling
+        estimator=LinearRegression(), steps=2, lags=5, window_features=rolling
     )
     X_train, y_train = forecaster.create_train_X_y(y=y_datetime, exog=exog_datetime)
     results = forecaster.filter_train_X_y_for_step(

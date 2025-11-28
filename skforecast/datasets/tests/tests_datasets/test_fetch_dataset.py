@@ -3,13 +3,17 @@
 import re
 import pytest
 import pandas as pd
-from skforecast.datasets import datasets, fetch_dataset
+from skforecast.datasets import datasets, show_datasets_info, fetch_dataset
+from skforecast.datasets.datasets import _print_dataset_info
 
 
 def test_fetch_dataset():
     """
     Test function `fetch_dataset`.
     """
+
+    show_datasets_info()
+    show_datasets_info(datasets_names=['not_existing_dataset'])
     
     # Test fetching the 'h2o' dataset
     df = fetch_dataset('h2o', version='latest', raw=False, verbose=False)
@@ -28,13 +32,22 @@ def test_fetch_dataset():
     assert df.index[-1] == pd.Timestamp('2015-01-01')
 
     # Test fetching a non-existent dataset
-
     err_msg = re.escape(
         f"Dataset 'non_existent_dataset' not found. "
         f"Available datasets are: {sorted(datasets.keys())}"
     )
     with pytest.raises(ValueError, match = err_msg):
-        fetch_dataset('non_existent_dataset', version='latest', raw=False, verbose=False)
+        _print_dataset_info(dataset_name='non_existent_dataset')
+
+    # Test fetching a non-existent dataset
+    err_msg = re.escape(
+        f"Dataset 'non_existent_dataset' not found. "
+        f"Available datasets are: {sorted(datasets.keys())}"
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        fetch_dataset(
+            'non_existent_dataset', version='latest', raw=False, verbose=False
+        )
 
     # Test fetching a dataset with a non-existent version
     bad_url = (
@@ -46,4 +59,6 @@ def test_fetch_dataset():
         f"Error reading dataset 'h2o' from {bad_url}: HTTP Error 404: Not Found."
     )
     with pytest.raises(ValueError, match = err_msg):
-        fetch_dataset('h2o', version='non_existent_version', raw=False, verbose=False)
+        fetch_dataset(
+            'h2o', version='non_existent_version', raw=False, verbose=False
+        )

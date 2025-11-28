@@ -187,7 +187,7 @@ def expected_pandas_dataframe(request):
 
 def test_predict_output_when_with_fixture(expected_pandas_dataframe):
     """
-    Test predict output when using LinearRegression as regressor with pytest fixture.
+    Test predict output when using LinearRegression as estimator with pytest fixture.
     This test is equivalent to the next one.
     """
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=5)
@@ -199,9 +199,9 @@ def test_predict_output_when_with_fixture(expected_pandas_dataframe):
     pd.testing.assert_frame_equal(predictions, expected)
 
 
-def test_predict_output_when_regressor_is_LinearRegression():
+def test_predict_output_when_estimator_is_LinearRegression():
     """
-    Test predict output when using LinearRegression as regressor.
+    Test predict output when using LinearRegression as estimator.
     """
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=5)
     forecaster.fit(series=series_2)
@@ -241,7 +241,7 @@ def test_predict_output_when_regressor_is_LinearRegression():
 
 def test_predict_output_when_with_last_window():
     """
-    Test predict output when using LinearRegression as regressor and last_window.
+    Test predict output when using LinearRegression as estimator and last_window.
     """
     last_window = pd.DataFrame(
                       {'1': [45, 46, 47, 48, 49], 
@@ -300,10 +300,10 @@ def test_predict_output_when_with_last_window():
 
 def test_predict_output_when_with_transform_series():
     """
-    Test predict output when using LinearRegression as regressor and StandardScaler.
+    Test predict output when using LinearRegression as estimator and StandardScaler.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 5,
                      transformer_series = StandardScaler()
                  )
@@ -323,14 +323,14 @@ def test_predict_output_when_with_transform_series():
 
 def test_predict_output_when_with_transform_series_as_dict():
     """
-    Test predict output when using LinearRegression as regressor and transformer_series
+    Test predict output when using LinearRegression as estimator and transformer_series
     is a dict with 2 different transformers.
     """
     transformer_series = {
         'l1': StandardScaler(), 'l2': MinMaxScaler(), '_unknown_level': StandardScaler()
     }
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 5,
                      transformer_series = transformer_series
                  )
@@ -354,7 +354,7 @@ def test_predict_output_when_with_transform_series_as_dict():
                          ids = lambda tr: f'transformer_series type: {type(tr)}')
 def test_predict_output_when_with_transform_series_and_transform_exog(transformer_series):
     """
-    Test predict output when using LinearRegression as regressor, StandardScaler
+    Test predict output when using LinearRegression as estimator, StandardScaler
     as transformer_series and transformer_exog as transformer_exog.
     """
     transformer_exog = ColumnTransformer(
@@ -364,7 +364,7 @@ def test_predict_output_when_with_transform_series_and_transform_exog(transforme
                            verbose_feature_names_out = False
                        )
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 5,
                      transformer_series = transformer_series,
                      transformer_exog   = transformer_exog,
@@ -389,7 +389,7 @@ def test_predict_output_when_with_transform_series_and_transform_exog(transforme
                          ids = lambda tr: f'transformer_series type: {type(tr)}')
 def test_predict_output_when_with_transform_series_and_transform_exog_different_length_series(transformer_series):
     """
-    Test predict output when using LinearRegression as regressor, StandardScaler
+    Test predict output when using LinearRegression as estimator, StandardScaler
     as transformer_series and transformer_exog as transformer_exog with series 
     of different lengths.
     """
@@ -406,7 +406,7 @@ def test_predict_output_when_with_transform_series_and_transform_exog_different_
                            verbose_feature_names_out = False
                        )
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 5,
                      transformer_series = transformer_series,
                      transformer_exog   = transformer_exog,
@@ -458,7 +458,7 @@ def test_predict_output_when_categorical_features_native_implementation_HistGrad
                        ).set_output(transform="pandas")
     
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = HistGradientBoostingRegressor(
+                     estimator          = HistGradientBoostingRegressor(
                                               categorical_features = categorical_features,
                                               random_state         = 123
                                           ),
@@ -518,7 +518,7 @@ def test_predict_output_when_categorical_features_native_implementation_LGBMRegr
                        ).set_output(transform="pandas")
 
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LGBMRegressor(random_state=123),
+                     estimator          = LGBMRegressor(random_state=123),
                      lags               = 5,
                      transformer_series = None,
                      transformer_exog   = transformer_exog,
@@ -583,7 +583,7 @@ def test_predict_output_when_categorical_features_native_implementation_LGBMRegr
                        ).set_output(transform="pandas")
     
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LGBMRegressor(random_state=123),
+                     estimator          = LGBMRegressor(random_state=123),
                      lags               = 5,
                      transformer_series = None,
                      transformer_exog   = transformer_exog,
@@ -614,7 +614,7 @@ def test_predict_output_when_categorical_features_native_implementation_LGBMRegr
 
 def test_predict_output_when_window_features():
     """
-    Test output of predict when regressor is LGBMRegressor and window features.
+    Test output of predict when estimator is LGBMRegressor and window features.
     """
 
     rolling = RollingFeatures(stats=['mean', 'median'], window_sizes=4)
@@ -626,7 +626,7 @@ def test_predict_output_when_window_features():
                        )
     
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LGBMRegressor(verbose=-1),
+                     estimator          = LGBMRegressor(verbose=-1),
                      lags               = 5,
                      window_features    = rolling,
                      transformer_series = StandardScaler(),
@@ -657,7 +657,7 @@ def test_predict_output_when_series_and_exog_dict():
     exog are dictionaries.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LGBMRegressor(
+                     estimator          = LGBMRegressor(
                          n_estimators=2, random_state=123, verbose=-1, max_depth=2
                      ),
                      lags               = 14,
@@ -696,7 +696,7 @@ def test_predict_output_when_series_and_exog_dict():
                          ids = lambda diff: f'differentiation: {diff}')
 def test_predict_output_when_with_exog_and_differentiation_is_1(differentiation):
     """
-    Test predict output when using LinearRegression as regressor and differentiation=1.
+    Test predict output when using LinearRegression as estimator and differentiation=1.
     """    
     series = series_wide_dt.copy()
     series.index = pd.RangeIndex(start=0, stop=len(series), step=1)
@@ -722,7 +722,7 @@ def test_predict_output_when_with_exog_and_differentiation_is_1(differentiation)
 
     series_dict_train_diff = data_diff.loc[:end_train].to_dict(orient='series')
     forecaster_1 = ForecasterRecursiveMultiSeries(
-        regressor=LinearRegression(), lags=15, transformer_series=None
+        estimator=LinearRegression(), lags=15, transformer_series=None
     )
     forecaster_1.fit(series=series_dict_train_diff, exog=exog_diff.loc[:end_train])
     predictions_diff = forecaster_1.predict(steps=steps, exog=exog_diff.loc[end_train + 1:])
@@ -736,7 +736,7 @@ def test_predict_output_when_with_exog_and_differentiation_is_1(differentiation)
 
     series_train_dict = series.loc[:end_train].to_dict(orient='series')
     forecaster_2 = ForecasterRecursiveMultiSeries(
-        regressor=LinearRegression(), lags=15, transformer_series=None, differentiation=differentiation, 
+        estimator=LinearRegression(), lags=15, transformer_series=None, differentiation=differentiation, 
     )
     forecaster_2.fit(series=series_train_dict, exog=exog.loc[:end_train])
     predictions_2 = forecaster_2.predict(steps=steps, exog=exog.loc[end_train + 1:])
@@ -749,7 +749,7 @@ def test_predict_output_when_with_exog_and_differentiation_is_1(differentiation)
                          ids = lambda diff: f'differentiation: {diff}')
 def test_predict_output_when_with_exog_differentiation_is_1_and_transformer_series(differentiation):
     """
-    Test predict output when using LinearRegression as regressor and differentiation=1,
+    Test predict output when using LinearRegression as estimator and differentiation=1,
     and transformer_series is StandardScaler.
     """
     end_train = '2003-01-30 23:59:00'
@@ -806,7 +806,7 @@ def test_predict_output_when_with_exog_differentiation_is_1_and_transformer_seri
     steps = len(series_datetime.loc[end_train:])
 
     forecaster_1 = ForecasterRecursiveMultiSeries(
-        regressor=LinearRegression(), lags=15, transformer_series=None
+        estimator=LinearRegression(), lags=15, transformer_series=None
     )
     forecaster_1.fit(series=series_dict_diff, exog=exog_diff)
     predictions_diff = forecaster_1.predict(steps=steps, exog=exog_pred)
@@ -821,7 +821,7 @@ def test_predict_output_when_with_exog_differentiation_is_1_and_transformer_seri
     predictions_1 = expected_df_to_long_format(predictions_1)
 
     forecaster_2 = ForecasterRecursiveMultiSeries(
-        regressor=LinearRegression(), lags=15, transformer_series=StandardScaler(), differentiation=differentiation
+        estimator=LinearRegression(), lags=15, transformer_series=StandardScaler(), differentiation=differentiation
     )
     forecaster_2.fit(series=series_dict_datetime, exog=exog_dict_datetime)
     predictions_2 = forecaster_2.predict(steps=steps, exog=exog_pred)
@@ -834,7 +834,7 @@ def test_predict_output_when_with_exog_differentiation_is_1_and_transformer_seri
                          ids = lambda diff: f'differentiation: {diff}')
 def test_predict_output_when_with_exog_and_differentiation_is_2(differentiation):
     """
-    Test predict output when using LinearRegression as regressor and differentiation=2.
+    Test predict output when using LinearRegression as estimator and differentiation=2.
     """
     series_dt = series_wide_dt.copy()
     series_dt.index = pd.date_range(start='2003-01-01', periods=len(series_dt), freq='D')
@@ -870,7 +870,7 @@ def test_predict_output_when_with_exog_and_differentiation_is_2(differentiation)
 
     series_dict_train_diff_2 = df_diff_2.loc[:end_train].to_dict(orient='series')
     forecaster_1 = ForecasterRecursiveMultiSeries(
-        regressor=LinearRegression(), lags=15, transformer_series=None
+        estimator=LinearRegression(), lags=15, transformer_series=None
     )
     forecaster_1.fit(series=series_dict_train_diff_2, exog=exog_diff_2.loc[:end_train])
     predictions_diff_2 = forecaster_1.predict(steps=steps, exog=exog_diff_2.loc[end_train:])
@@ -887,7 +887,7 @@ def test_predict_output_when_with_exog_and_differentiation_is_2(differentiation)
 
     series_train_dict = series_dt.loc[:end_train].to_dict(orient='series')
     forecaster_2 = ForecasterRecursiveMultiSeries(
-        regressor=LinearRegression(), lags=15, transformer_series=None, differentiation=differentiation
+        estimator=LinearRegression(), lags=15, transformer_series=None, differentiation=differentiation
     )
     forecaster_2.fit(series=series_train_dict, exog=exog.loc[:end_train])
     predictions_2 = forecaster_2.predict(steps=steps, exog=exog.loc[end_train:])
@@ -904,7 +904,7 @@ def test_predict_output_when_series_and_exog_dict_encoding_None_unknown_level(le
     exog are dictionaries and encoding is None and unknown level with no exog.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LGBMRegressor(
+                     estimator          = LGBMRegressor(
                          n_estimators=30, random_state=123, verbose=-1, max_depth=4
                      ),
                      lags               = [1, 7, 14],
@@ -953,7 +953,7 @@ def test_predict_output_when_series_and_exog_dict_encoding_None_transformer_seri
     exog are dictionaries and encoding is None and transformer_series is StandardScaler.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LGBMRegressor(
+                     estimator          = LGBMRegressor(
                          n_estimators=30, random_state=123, verbose=-1, max_depth=4
                      ),
                      lags               = 14,
@@ -1002,7 +1002,7 @@ def test_predict_output_when_series_and_exog_dict_unknown_level(levels):
     exog are dictionaries and unknown level.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LGBMRegressor(
+                     estimator          = LGBMRegressor(
                          n_estimators=30, random_state=123, verbose=-1, max_depth=4
                      ),
                      lags               = [1, 7, 14],

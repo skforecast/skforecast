@@ -32,7 +32,7 @@ def test_create_predict_X_NotFittedError_when_fitted_is_False():
     Test NotFittedError is raised when fitted is False.
     """
     forecaster = ForecasterRecursive(
-                     regressor = LinearRegression(),
+                     estimator = LinearRegression(),
                      lags      = 5
                  )
 
@@ -44,12 +44,12 @@ def test_create_predict_X_NotFittedError_when_fitted_is_False():
         forecaster.create_predict_X(steps=5)
 
 
-def test_create_predict_X_when_regressor_is_LinearRegression():
+def test_create_predict_X_when_estimator_is_LinearRegression():
     """
-    Test create_predict_X when using LinearRegression as regressor.
+    Test create_predict_X when using LinearRegression as estimator.
     """
     forecaster = ForecasterRecursive(
-                     regressor = LinearRegression(),
+                     estimator = LinearRegression(),
                      lags      = 5
                  )
     forecaster.fit(y=pd.Series(np.arange(50, dtype=float), name='y'))
@@ -71,10 +71,10 @@ def test_create_predict_X_when_regressor_is_LinearRegression():
 
 def test_create_predict_X_when_and_StandardScaler():
     """
-    Test create_predict_X when using LinearRegression as regressor and StandardScaler.
+    Test create_predict_X when using LinearRegression as estimator and StandardScaler.
     """
     forecaster = ForecasterRecursive(
-                     regressor     = LinearRegression(),
+                     estimator     = LinearRegression(),
                      lags          = 5,
                      transformer_y = StandardScaler()
                  )
@@ -97,7 +97,7 @@ def test_create_predict_X_when_and_StandardScaler():
 
 def test_create_predict_X_when_with_transform_y():
     """
-    Test create_predict_X when using LinearRegression as regressor and StandardScaler.
+    Test create_predict_X when using LinearRegression as estimator and StandardScaler.
     """
     y = pd.Series(
             np.array([-0.59,  0.02, -0.9 ,  1.09, -3.61,  0.72, -0.11, -0.4 ,  0.49,
@@ -107,7 +107,7 @@ def test_create_predict_X_when_with_transform_y():
         )
 
     forecaster = ForecasterRecursive(
-                     regressor     = LinearRegression(),
+                     estimator     = LinearRegression(),
                      lags          = 5,
                      transformer_y = StandardScaler()
                  )
@@ -130,7 +130,7 @@ def test_create_predict_X_when_with_transform_y():
 
 def test_create_predict_X_when_with_transform_y_and_transform_exog_series():
     """
-    Test create_predict_X when using LinearRegression as regressor, StandardScaler
+    Test create_predict_X when using LinearRegression as estimator, StandardScaler
     as transformer_y and StandardScaler as transformer_exog.
     """
     y = pd.Series(np.array([-0.59,  0.02, -0.9 ,  1.09, -3.61,  0.72, -0.11, -0.4]))
@@ -139,7 +139,7 @@ def test_create_predict_X_when_with_transform_y_and_transform_exog_series():
     exog_predict.index = pd.RangeIndex(start=8, stop=16)
 
     forecaster = ForecasterRecursive(
-                     regressor        = LinearRegression(),
+                     estimator        = LinearRegression(),
                      lags             = 5,
                      transformer_y    = StandardScaler(),
                      transformer_exog = StandardScaler()
@@ -164,7 +164,7 @@ def test_create_predict_X_when_with_transform_y_and_transform_exog_series():
 
 def test_create_predict_X_when_with_transform_y_and_transform_exog_df():
     """
-    Test create_predict_X when using LinearRegression as regressor, StandardScaler
+    Test create_predict_X when using LinearRegression as estimator, StandardScaler
     as transformer_y and transformer_exog as transformer_exog.
     """
     y = pd.Series(
@@ -186,7 +186,7 @@ def test_create_predict_X_when_with_transform_y_and_transform_exog_df():
                        )
     
     forecaster = ForecasterRecursive(
-                     regressor        = LinearRegression(),
+                     estimator        = LinearRegression(),
                      lags             = 5,
                      transformer_y    = transformer_y,
                      transformer_exog = transformer_exog
@@ -241,7 +241,7 @@ def test_create_predict_X_when_categorical_features_native_implementation_HistGr
                        ).set_output(transform="pandas")
     
     forecaster = ForecasterRecursive(
-                     regressor        = HistGradientBoostingRegressor(
+                     estimator        = HistGradientBoostingRegressor(
                                             categorical_features = categorical_features,
                                             random_state         = 123
                                         ),
@@ -276,7 +276,7 @@ def test_create_predict_X_when_categorical_features_native_implementation_HistGr
                     4.        , 4.        , 0.51042234]]),
         columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'exog_2', 'exog_3', 'exog_1'],
         index = pd.RangeIndex(start=50, stop=60, step=1)
-    ).astype({'exog_2': int, 'exog_3': int})
+    )
     
     pd.testing.assert_frame_equal(results, expected)
 
@@ -317,7 +317,7 @@ def test_create_predict_X_when_categorical_features_auto_detect_LGBMRegressor():
                        ).set_output(transform="pandas")
     
     forecaster = ForecasterRecursive(
-                     regressor        = LGBMRegressor(verbose=-1, random_state=123),
+                     estimator        = LGBMRegressor(verbose=-1, random_state=123),
                      lags             = 5,
                      transformer_y    = None,
                      transformer_exog = transformer_exog
@@ -357,7 +357,7 @@ def test_create_predict_X_when_categorical_features_auto_detect_LGBMRegressor():
 
 def test_create_predict_X_when_with_exog_differentiation_is_1_and_transformer_y():
     """
-    Test create_predict_X when using LinearRegression as regressor and differentiation=1,
+    Test create_predict_X when using LinearRegression as estimator and differentiation=1,
     and transformer_y is StandardScaler.
     """
 
@@ -371,7 +371,7 @@ def test_create_predict_X_when_with_exog_differentiation_is_1_and_transformer_y(
     steps = 4
 
     forecaster = ForecasterRecursive(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      lags            = [1, 5],
                      differentiation = 1
                 )
@@ -476,7 +476,7 @@ def test_create_predict_X_when_window_features_and_lags_None():
 def test_create_predict_X_same_predictions_as_predict():
     """
     Test create_predict_X matrix returns the same predictions as predict method
-    when passing to the regressor predict method.
+    when passing to the estimator predict method.
     """
 
     end_train = '2003-03-01 23:59:00'
@@ -491,7 +491,7 @@ def test_create_predict_X_same_predictions_as_predict():
     steps = 4
 
     forecaster = ForecasterRecursive(
-                     regressor        = LinearRegression(),
+                     estimator        = LinearRegression(),
                      lags             = [1, 5],
                      window_features  = [rolling, rolling_2],
                      transformer_y    = None,
@@ -500,7 +500,7 @@ def test_create_predict_X_same_predictions_as_predict():
                  )
     forecaster.fit(y=data.loc[:end_train], exog=exog.loc[:end_train])
     X_predict = forecaster.create_predict_X(steps=steps, exog=exog.loc[end_train:])
-    results = forecaster.regressor.predict(X_predict)
+    results = forecaster.estimator.predict(X_predict)
 
     expected = forecaster.predict(steps=steps, exog=exog.loc[end_train:]).to_numpy()
     
@@ -510,7 +510,7 @@ def test_create_predict_X_same_predictions_as_predict():
 def test_create_predict_X_same_predictions_as_predict_transformers():
     """
     Test create_predict_X matrix returns the same predictions as predict method
-    when passing to the regressor predict method with transformation.
+    when passing to the estimator predict method with transformation.
     """
 
     end_train = '2003-03-01 23:59:00'
@@ -525,7 +525,7 @@ def test_create_predict_X_same_predictions_as_predict_transformers():
     steps = 4
 
     forecaster = ForecasterRecursive(
-                     regressor        = LinearRegression(),
+                     estimator        = LinearRegression(),
                      lags             = [1, 5],
                      window_features  = [rolling, rolling_2],
                      transformer_y    = StandardScaler(),
@@ -544,7 +544,7 @@ def test_create_predict_X_same_predictions_as_predict_transformers():
     )
     with pytest.warns(DataTransformationWarning, match = warn_msg):
         X_predict = forecaster.create_predict_X(steps=steps, exog=exog.loc[end_train:])
-    results = forecaster.regressor.predict(X_predict)
+    results = forecaster.estimator.predict(X_predict)
 
     results = transform_numpy(
                   array             = results,
@@ -561,7 +561,7 @@ def test_create_predict_X_same_predictions_as_predict_transformers():
 def test_create_predict_X_same_predictions_as_predict_transformers_diff():
     """
     Test create_predict_X matrix returns the same predictions as predict method
-    when passing to the regressor predict method with transformation and differentiation.
+    when passing to the estimator predict method with transformation and differentiation.
     """
 
     end_train = '2003-03-01 23:59:00'
@@ -576,7 +576,7 @@ def test_create_predict_X_same_predictions_as_predict_transformers_diff():
     steps = 4
 
     forecaster = ForecasterRecursive(
-                     regressor        = LinearRegression(),
+                     estimator        = LinearRegression(),
                      lags             = [1, 5],
                      window_features  = [rolling, rolling_2],
                      transformer_y    = StandardScaler(),
@@ -595,7 +595,7 @@ def test_create_predict_X_same_predictions_as_predict_transformers_diff():
     )
     with pytest.warns(DataTransformationWarning, match = warn_msg):
         X_predict = forecaster.create_predict_X(steps=steps, exog=exog.loc[end_train:])
-    results = forecaster.regressor.predict(X_predict)
+    results = forecaster.estimator.predict(X_predict)
 
     results = forecaster.differentiator.inverse_transform_next_window(results)
     results = transform_numpy(

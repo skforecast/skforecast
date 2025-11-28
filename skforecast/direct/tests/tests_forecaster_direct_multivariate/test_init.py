@@ -15,7 +15,9 @@ def test_init_TypeError_when_level_is_not_a_str():
     level = 5
     err_msg = re.escape(f"`level` argument must be a str. Got {type(level)}.")
     with pytest.raises(TypeError, match = err_msg):
-        ForecasterDirectMultiVariate(LinearRegression(), level=level, lags=2, steps=3)
+        ForecasterDirectMultiVariate(
+            estimator=LinearRegression(), level=level, lags=2, steps=3
+        )
 
 
 def test_init_TypeError_when_steps_is_not_int():
@@ -28,7 +30,9 @@ def test_init_TypeError_when_steps_is_not_int():
         f"Got {type(steps)}."
     )
     with pytest.raises(TypeError, match = err_msg):
-        ForecasterDirectMultiVariate(LinearRegression(), level='l1', lags=2, steps=steps)
+        ForecasterDirectMultiVariate(
+            estimator=LinearRegression(), level='l1', lags=2, steps=steps
+        )
 
 
 def test_init_ValueError_when_steps_is_less_than_1():
@@ -38,7 +42,9 @@ def test_init_ValueError_when_steps_is_less_than_1():
     steps = 0
     err_msg = re.escape(f"`steps` argument must be greater than or equal to 1. Got {steps}.")
     with pytest.raises(ValueError, match = err_msg):
-        ForecasterDirectMultiVariate(LinearRegression(), level='l1', lags=2, steps=steps)
+        ForecasterDirectMultiVariate(
+            estimator=LinearRegression(), level='l1', lags=2, steps=steps
+        )
 
 
 @pytest.mark.parametrize("lags", 
@@ -55,7 +61,7 @@ def test_init_ValueError_when_no_lags_or_window_features(lags):
     )
     with pytest.raises(ValueError, match = err_msg):
         ForecasterDirectMultiVariate(
-            regressor       = LinearRegression(),
+            estimator       = LinearRegression(),
             level           = 'l1',
             steps           = 3,
             lags            = lags,
@@ -79,7 +85,7 @@ def test_init_window_size_correctly_stored(lags, window_features, expected):
         )
 
     forecaster = ForecasterDirectMultiVariate(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      level           = 'l1',
                      steps           = 3,
                      lags            = lags,
@@ -114,7 +120,7 @@ def test_init_max_lag_stored_when_dict(lags, expected):
     """
 
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), level='l1', lags=lags, steps=2
+        estimator=LinearRegression(), level='l1', lags=lags, steps=2
     )
     
     for k in forecaster.lags:
@@ -140,7 +146,7 @@ def test_init_when_lags_dict_with_all_None(lags):
     )
 
     forecaster = ForecasterDirectMultiVariate(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      level           = 'l1',
                      steps           = 3,
                      lags            = lags,
@@ -168,7 +174,7 @@ def test_init_ValueError_when_differentiation_is_not_int_or_greater_than_0(dif):
     )
     with pytest.raises(ValueError, match = err_msg):
         ForecasterDirectMultiVariate(
-            regressor       = LinearRegression(),
+            estimator       = LinearRegression(),
             level           = 'l1',
             steps           = 3,
             lags            = 5,
@@ -184,7 +190,7 @@ def test_init_window_size_is_increased_when_differentiation(dif):
     Test window_size is increased when including differentiation.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      level           = 'l1',
                      steps           = 3,
                      lags            = 5,
@@ -206,5 +212,5 @@ def test_init_TypeError_when_n_jobs_not_int_or_auto(n_jobs):
     err_msg = re.escape(f"`n_jobs` must be an integer or `'auto'`. Got {type(n_jobs)}.")
     with pytest.raises(TypeError, match = err_msg):
         ForecasterDirectMultiVariate(
-            LinearRegression(), level='l1', steps=2, lags=2, n_jobs=n_jobs
+            estimator=LinearRegression(), level='l1', steps=2, lags=2, n_jobs=n_jobs
         )

@@ -14,12 +14,12 @@ from .fixtures_forecaster_recursive import exog_predict
 
 def test_predict_quantiles_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_True_exog_and_transformer():
     """
-    Test output of predict_quantiles when regressor is LinearRegression,
+    Test output of predict_quantiles when estimator is LinearRegression,
     2 steps are predicted, using in-sample residuals, exog is included and both
     inputs are transformed.
     """
     forecaster = ForecasterRecursive(
-                     regressor        = LinearRegression(),
+                     estimator        = LinearRegression(),
                      lags             = 3,
                      transformer_y    = StandardScaler(),
                      transformer_exog = StandardScaler()
@@ -47,12 +47,12 @@ def test_predict_quantiles_output_when_forecaster_is_LinearRegression_steps_is_2
 
 def test_predict_quantiles_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_False_exog_and_transformer():
     """
-    Test output of predict_quantiles when regressor is LinearRegression,
+    Test output of predict_quantiles when estimator is LinearRegression,
     2 steps are predicted, using out-sample residuals, exog is included and both
     inputs are transformed.
     """
     forecaster = ForecasterRecursive(
-                     regressor        = LinearRegression(),
+                     estimator        = LinearRegression(),
                      lags             = 3,
                      transformer_y    = StandardScaler(),
                      transformer_exog = StandardScaler(),

@@ -53,7 +53,7 @@ def test_set_out_sample_residuals_NotFittedError_when_forecaster_not_fitted():
     Test NotFittedError is raised when forecaster is not fitted.
     """
     forecaster = ForecasterRnn(
-        model_no_exog, levels=["l1", "l2"], lags=3
+        estimator=model_no_exog, levels=["l1", "l2"], lags=3
     )
     y_true = {'l1': np.array([1, 2, 3, 4, 5]), 'l2': np.array([1, 2, 3, 4, 5])}
     y_pred = {'l1': np.array([1, 2, 3, 4, 5]), 'l2': np.array([1, 2, 3, 4, 5])}
@@ -71,7 +71,7 @@ def test_set_out_sample_residuals_TypeError_when_y_true_is_not_dict():
     Test TypeError is raised when y_true is not a dict.
     """
     forecaster = ForecasterRnn(
-        model_no_exog, levels=["l1", "l2"], lags=3
+        estimator=model_no_exog, levels=["l1", "l2"], lags=3
     )
     forecaster.is_fitted = True
     y_true = 'not_dict'
@@ -90,7 +90,7 @@ def test_set_out_sample_residuals_TypeError_when_y_pred_is_not_dict():
     Test TypeError is raised when y_pred is not a dict.
     """
     forecaster = ForecasterRnn(
-        model_no_exog, levels=["l1", "l2"], lags=3
+        estimator=model_no_exog, levels=["l1", "l2"], lags=3
     )
     forecaster.is_fitted = True
     y_true = {'l1': np.array([1, 2, 3, 4, 5]), 'l2': np.array([1, 2, 3, 4, 5])}
@@ -109,7 +109,7 @@ def test_set_out_sample_residuals_ValueError_when_y_pred_and_y_true_keys_do_not_
     Test TypeError is raised when y_pred and y_true keys do not match.
     """
     forecaster = ForecasterRnn(
-        model_no_exog, levels=["l1", "l2"], lags=3
+        estimator=model_no_exog, levels=["l1", "l2"], lags=3
     )
     forecaster.is_fitted = True
     y_true = {'l1': np.array([1, 2, 3, 4, 5]), 'l2': np.array([1, 2, 3, 4, 5])}
@@ -128,7 +128,7 @@ def test_set_out_sample_residuals_TypeError_when_y_true_contains_no_numpy_ndarra
     Test TypeError is raised when y_true contains no numpy ndarrays or pandas series.
     """
     forecaster = ForecasterRnn(
-        model_no_exog, levels=["l1", "l2"], lags=3
+        estimator=model_no_exog, levels=["l1", "l2"], lags=3
     )
     forecaster.is_fitted = True
     y_true = {'l1': 'not_ndarray'}
@@ -147,7 +147,7 @@ def test_set_out_sample_residuals_TypeError_when_y_pred_contains_no_numpy_ndarra
     Test TypeError is raised when y_pred contains no numpy ndarrays or pandas series.
     """
     forecaster = ForecasterRnn(
-        model_no_exog, levels=["l1", "l2"], lags=3
+        estimator=model_no_exog, levels=["l1", "l2"], lags=3
     )
     forecaster.is_fitted = True
     y_true = {'l1': np.array([1, 2, 3, 4, 5])}
@@ -166,7 +166,7 @@ def test_set_out_sample_residuals_ValueError_when_y_true_and_y_pred_have_element
     Test ValueError is raised when y_true and y_pred have elements with different lengths.
     """
     forecaster = ForecasterRnn(
-        model_no_exog, levels=["l1", "l2"], lags=3
+        estimator=model_no_exog, levels=["l1", "l2"], lags=3
     )
     forecaster.is_fitted = True
     y_true = {'l1': np.array([1, 2, 3, 4, 5]), 'l2': np.array([1, 2, 3, 4, 5])}
@@ -184,7 +184,7 @@ def test_set_out_sample_residuals_ValueError_when_y_true_and_y_pred_have_series_
     Test ValueError is raised when y_true and y_pred have series with different indexes.
     """
     forecaster = ForecasterRnn(
-        model_no_exog, levels=["l1", "l2"], lags=3
+        estimator=model_no_exog, levels=["l1", "l2"], lags=3
     )
     forecaster.is_fitted = True
     y_true = {'l1': pd.Series([1, 2, 3, 4, 5], index=[1, 2, 3, 4, 5])}
@@ -203,7 +203,7 @@ def test_set_out_sample_residuals_ValueError_when_inputs_does_not_match_the_targ
     Test ValueError is raised when inputs does not contain keys that match any level.
     """
     forecaster = ForecasterRnn(
-        model_no_exog, levels=["l1", "l2"], lags=3
+        estimator=model_no_exog, levels=["l1", "l2"], lags=3
     )
     forecaster.fit(series=series)
     y_true = {'l3': np.array([1, 2, 3])}
@@ -234,7 +234,7 @@ def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_and_n
     }
 
     forecaster = ForecasterRnn(
-        model_no_exog, levels=["l1", "l2"], lags=3, transformer_series=None
+        estimator=model_no_exog, levels=["l1", "l2"], lags=3, transformer_series=None
     )
     forecaster.fit(series=series)
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
@@ -270,7 +270,7 @@ def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_and_a
     }
     
     forecaster = ForecasterRnn(
-        model_no_exog, levels=["l1", "l2"], lags=3, transformer_series=None
+        estimator=model_no_exog, levels=["l1", "l2"], lags=3, transformer_series=None
     )
     forecaster.fit(series=series)
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
@@ -307,7 +307,7 @@ def test_set_out_sample_residuals_when_residuals_length_is_greater_than_10000():
     }
 
     forecaster = ForecasterRnn(
-        model_no_exog, levels=["l1", "l2"], lags=3
+        estimator=model_no_exog, levels=["l1", "l2"], lags=3
     )
     forecaster.fit(series=series)
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
@@ -323,11 +323,11 @@ def test_out_sample_residuals_and_in_sample_residuals_equivalence():
     when training data and training predictions are passed.
     """
     forecaster = ForecasterRnn(
-        model, levels=["l1", "l2"], lags=3
+        estimator=model, levels=["l1", "l2"], lags=3
     )
     forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
     X_train, exog_train, y_train, _ = forecaster.create_train_X_y(series=series, exog=exog)
-    y_pred_train = forecaster.regressor.predict(
+    y_pred_train = forecaster.estimator.predict(
         x=X_train if exog_train is None else [X_train, exog_train], verbose=0
     )
 

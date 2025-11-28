@@ -133,7 +133,7 @@ def check_backtesting_input(
         + 'conformal': Employs the conformal prediction split method for 
         interval estimation.
     alpha : float, default None
-        The confidence intervals used in ForecasterSarimax are (1 - alpha) %. 
+        The confidence intervals used in ForecasterStats are (1 - alpha) %. 
     n_boot : int, default `250`
         Number of bootstrapping iterations to perform when estimating prediction
             intervals.
@@ -161,7 +161,7 @@ def check_backtesting_input(
         information.
     suppress_warnings_fit : bool, default False
         If `True`, warnings generated during fitting will be ignored. Only 
-        `ForecasterSarimax`.
+        `ForecasterStats`.
 
     Returns
     -------
@@ -184,8 +184,9 @@ def check_backtesting_input(
     forecasters_uni = [
         "ForecasterRecursive",
         "ForecasterDirect",
-        "ForecasterSarimax",
+        "ForecasterStats",
         "ForecasterEquivalentDate",
+        "ForecasterRecursiveClassifier"
     ]
     forecasters_direct = [
         "ForecasterDirect",
@@ -199,7 +200,7 @@ def check_backtesting_input(
     forecasters_multi_dict = [
         "ForecasterRecursiveMultiSeries"
     ]
-    # NOTE: ForecasterSarimax has interval but not with bootstrapping or conformal
+    # NOTE: ForecasterStats has interval but not with bootstrapping or conformal
     forecasters_boot_conformal = [
         "ForecasterRecursive",
         "ForecasterDirect",
@@ -211,7 +212,8 @@ def check_backtesting_input(
         "ForecasterRecursive",
         "ForecasterDirect",
         "ForecasterRecursiveMultiSeries",
-        "ForecasterDirectMultiVariate"
+        "ForecasterDirectMultiVariate",
+        "ForecasterRecursiveClassifier"
     ]
 
     if forecaster_name in forecasters_uni:
@@ -330,7 +332,7 @@ def check_backtesting_input(
                     f"    steps: {steps}\n"
                 )
     else:
-        if forecaster_name in ['ForecasterSarimax', 'ForecasterEquivalentDate']:
+        if forecaster_name in ['ForecasterStats', 'ForecasterEquivalentDate']:
             raise ValueError(
                 f"`initial_train_size` must be an integer smaller than the "
                 f"length of `{data_name}` ({data_length})."
@@ -346,9 +348,9 @@ def check_backtesting_input(
                     "`refit` is only allowed when `initial_train_size` is not `None`."
                 )
 
-    if forecaster_name == 'ForecasterSarimax' and cv.skip_folds is not None:
+    if forecaster_name == 'ForecasterStats' and cv.skip_folds is not None:
         raise ValueError(
-            "`skip_folds` is not allowed for ForecasterSarimax. Set it to `None`."
+            "`skip_folds` is not allowed for ForecasterStats. Set it to `None`."
         )
 
     if not isinstance(add_aggregated_metric, bool):
@@ -422,6 +424,12 @@ def check_backtesting_input(
                     f"Got {interval_method}."
                 )
         else:
+            if forecaster_name == 'ForecasterRecursiveClassifier':
+                raise ValueError(
+                    f"`interval` is not supported for {forecaster_name}. Class "
+                    f"probabilities are returned by default during backtesting, "
+                    f"set `interval=None`."
+                )
             check_interval(interval=interval, alpha=alpha)
 
     if return_predictors and forecaster_name not in forecasters_return_predictors:
@@ -490,6 +498,7 @@ def check_one_step_ahead_input(
     forecasters_one_step_ahead = [
         "ForecasterRecursive",
         "ForecasterDirect",
+        "ForecasterRecursiveClassifier",
         'ForecasterRecursiveMultiSeries',
         'ForecasterDirectMultiVariate'
     ]
@@ -502,6 +511,7 @@ def check_one_step_ahead_input(
     forecasters_uni = [
         "ForecasterRecursive",
         "ForecasterDirect",
+        "ForecasterRecursiveClassifier"
     ]
     forecasters_multi_no_dict = [
         "ForecasterDirectMultiVariate",
@@ -614,19 +624,19 @@ def select_n_jobs_backtesting(
 
     - If `refit` is an integer, then `n_jobs = 1`. This is because parallelization doesn't 
     work with intermittent refit.
-    - If forecaster is 'ForecasterRecursive' and regressor is a linear regressor, 
+    - If forecaster is 'ForecasterRecursive' and estimator is a linear estimator, 
     then `n_jobs = 1`.
-    - If forecaster is 'ForecasterRecursive' and regressor is not a linear 
-    regressor then `n_jobs = cpu_count() - 1`.
+    - If forecaster is 'ForecasterRecursive' and estimator is not a linear 
+    estimator then `n_jobs = cpu_count() - 1`.
     - If forecaster is 'ForecasterDirect' or 'ForecasterDirectMultiVariate'
     and `refit = True`, then `n_jobs = cpu_count() - 1`.
     - If forecaster is 'ForecasterDirect' or 'ForecasterDirectMultiVariate'
     and `refit = False`, then `n_jobs = 1`.
     - If forecaster is 'ForecasterRecursiveMultiSeries', then `n_jobs = cpu_count() - 1`.
-    - If forecaster is 'ForecasterSarimax' or 'ForecasterEquivalentDate', 
+    - If forecaster is 'ForecasterStats' or 'ForecasterEquivalentDate', 
     then `n_jobs = 1`.
-    - If regressor is a `LGBMRegressor(n_jobs=1)`, then `n_jobs = cpu_count() - 1`.
-    - If regressor is a `LGBMRegressor` with internal n_jobs != 1, then `n_jobs = 1`.
+    - If estimator is a `LGBMRegressor(n_jobs=1)`, then `n_jobs = cpu_count() - 1`.
+    - If estimator is a `LGBMRegressor` with internal n_jobs != 1, then `n_jobs = 1`.
     This is because `lightgbm` is highly optimized for gradient boosting and
     parallelizes operations at a very fine-grained level, making additional
     parallelization unnecessary and potentially harmful due to resource contention.
@@ -647,17 +657,17 @@ def select_n_jobs_backtesting(
 
     forecaster_name = type(forecaster).__name__
 
-    if isinstance(forecaster.regressor, Pipeline):
-        regressor = forecaster.regressor[-1]
-        regressor_name = type(regressor).__name__
+    if isinstance(forecaster.estimator, Pipeline):
+        estimator = forecaster.estimator[-1]
+        estimator_name = type(estimator).__name__
     else:
-        regressor = forecaster.regressor
-        regressor_name = type(regressor).__name__
+        estimator = forecaster.estimator
+        estimator_name = type(estimator).__name__
 
-    linear_regressors = [
-        regressor_name
-        for regressor_name in dir(sklearn.linear_model)
-        if not regressor_name.startswith('_')
+    linear_estimators = [
+        estimator_name
+        for estimator_name in dir(sklearn.linear_model)
+        if not estimator_name.startswith('_')
     ]
 
     refit = False if refit == 0 else refit
@@ -665,21 +675,21 @@ def select_n_jobs_backtesting(
         n_jobs = 1
     else:
         if forecaster_name in ['ForecasterRecursive']:
-            if regressor_name in linear_regressors:
+            if estimator_name in linear_estimators:
                 n_jobs = 1
-            elif regressor_name == 'LGBMRegressor':
-                n_jobs = cpu_count() - 1 if regressor.n_jobs == 1 else 1
+            elif estimator_name == 'LGBMRegressor':
+                n_jobs = cpu_count() - 1 if estimator.n_jobs == 1 else 1
             else:
                 n_jobs = cpu_count() - 1
         elif forecaster_name in ['ForecasterDirect', 'ForecasterDirectMultiVariate']:
             # Parallelization is applied during the fitting process.
             n_jobs = 1
         elif forecaster_name in ['ForecasterRecursiveMultiSeries']:
-            if regressor_name == 'LGBMRegressor':
-                n_jobs = cpu_count() - 1 if regressor.n_jobs == 1 else 1
+            if estimator_name == 'LGBMRegressor':
+                n_jobs = cpu_count() - 1 if estimator.n_jobs == 1 else 1
             else:
                 n_jobs = cpu_count() - 1
-        elif forecaster_name in ['ForecasterSarimax', 'ForecasterEquivalentDate']:
+        elif forecaster_name in ['ForecasterStats', 'ForecasterEquivalentDate']:
             n_jobs = 1
         else:
             n_jobs = 1
@@ -697,7 +707,7 @@ def _calculate_metrics_one_step_ahead(
 ) -> list:
     """
     Calculate metrics when predictions are one-step-ahead. When forecaster is
-    of type ForecasterDirect only the regressor for step 1 is used.
+    of type ForecasterDirect only the estimator for step 1 is used.
 
     Parameters
     ----------
@@ -734,12 +744,12 @@ def _calculate_metrics_one_step_ahead(
                              X_train = X_test,
                              y_train = y_test
                          )
-        forecaster.regressors_[step].fit(X_train, y_train)
-        y_pred = forecaster.regressors_[step].predict(X_test)
+        forecaster.estimators_[step].fit(X_train, y_train)
+        y_pred = forecaster.estimators_[step].predict(X_test)
 
     else:
-        forecaster.regressor.fit(X_train, y_train)
-        y_pred = forecaster.regressor.predict(X_test)
+        forecaster.estimator.fit(X_train, y_train)
+        y_pred = forecaster.estimator.predict(X_test)
 
     y_true = y_test.to_numpy()
     y_pred = y_pred.ravel()
@@ -1097,12 +1107,20 @@ def _calculate_metrics_backtesting_multiseries(
 
     # TODO: review list of metric that do not need y_train
     metrics_no_y_train = [
+        # Regression metrics
         "mean_squared_error",
         "mean_absolute_error",
         "mean_absolute_percentage_error",
         "mean_squared_log_error",
         "median_absolute_error",
-        "symmetric_mean_absolute_percentage_error"
+        "symmetric_mean_absolute_percentage_error",
+
+        # Classification metrics
+        "accuracy_score",
+        "balanced_accuracy_score",
+        "f1_score",
+        "precision_score",
+        "recall_score"
     ]
 
     train_indexes = []
@@ -1348,11 +1366,11 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
                              X_train = X_test,
                              y_train = y_test
                          )                 
-        forecaster.regressors_[step].fit(X_train, y_train)
-        pred = forecaster.regressors_[step].predict(X_test)
+        forecaster.estimators_[step].fit(X_train, y_train)
+        pred = forecaster.estimators_[step].predict(X_test)
     else:
-        forecaster.regressor.fit(X_train, y_train)
-        pred = forecaster.regressor.predict(X_test)
+        forecaster.estimator.fit(X_train, y_train)
+        pred = forecaster.estimator.predict(X_test)
 
     predictions_per_level = pd.DataFrame(
         {

@@ -164,7 +164,7 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir):
     ) = _make_data()
 
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=DummyRegressor(strategy='constant', constant=1.),
+        estimator=DummyRegressor(strategy='constant', constant=1.),
         lags=50,
         transformer_series=StandardScaler(),
         transformer_exog=StandardScaler(),
@@ -353,7 +353,7 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir):
     # Create lags and train_X_y
     # ==========================================================================
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=DummyRegressor(strategy='constant', constant=1.),
+        estimator=DummyRegressor(strategy='constant', constant=1.),
         lags=50,
         transformer_series=StandardScaler(),
         transformer_exog=StandardScaler(),
@@ -424,7 +424,7 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir):
     # Fit
     # ==========================================================================
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=DummyRegressor(strategy='constant', constant=1.),
+        estimator=DummyRegressor(strategy='constant', constant=1.),
         lags=50,
         transformer_series=StandardScaler(),
         transformer_exog=StandardScaler(),
@@ -475,7 +475,7 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir):
     # Predict
     # ==========================================================================
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=DummyRegressor(strategy='constant', constant=1.),
+        estimator=DummyRegressor(strategy='constant', constant=1.),
         lags=50,
         transformer_series=StandardScaler(),
         transformer_exog=StandardScaler(),
@@ -534,7 +534,7 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir):
     # Backtesting
     # ==========================================================================
     forecaster = ForecasterRecursiveMultiSeries(
-        regressor=DummyRegressor(strategy='constant', constant=1.),
+        estimator=DummyRegressor(strategy='constant', constant=1.),
         lags=50,
         transformer_series=StandardScaler(),
         transformer_exog=StandardScaler(),

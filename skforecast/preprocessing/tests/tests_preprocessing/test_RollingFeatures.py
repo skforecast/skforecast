@@ -75,8 +75,8 @@ def test_RollingFeatures_validate_params():
     # Check duplicates (stats, window_sizes)
     err_msg = re.escape(
         "Duplicate (stat, window_size) pairs are not allowed.\n"
-        "    `stats`       : ['mean', 'median', 'mean']\n"
-        "    `window_sizes : [6, 5, 6]"
+        "    `stats`        : ['mean', 'median', 'mean']\n"
+        "    `window_sizes` : [6, 5, 6]"
     )
     with pytest.raises(ValueError, match = err_msg):
         RollingFeatures(**params[5])

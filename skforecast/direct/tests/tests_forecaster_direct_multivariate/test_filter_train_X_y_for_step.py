@@ -17,8 +17,9 @@ def test_filter_train_X_y_for_step_exception_when_step_not_in_steps(step):
     series = pd.DataFrame({'l1': pd.Series(np.arange(10), dtype=float), 
                            'l2': pd.Series(np.arange(100, 110), dtype=float)})
     
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1',
-                                               lags=3, steps=3)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', lags=3, steps=3
+    )
     X_train, y_train, *_ = forecaster._create_train_X_y(series=series)
 
     err_msg = re.escape(
@@ -31,14 +32,15 @@ def test_filter_train_X_y_for_step_exception_when_step_not_in_steps(step):
 
 def test_filter_train_X_y_for_step_output_when_lags_3_steps_2_exog_is_None_for_step_1():
     """
-    Test output of filter_train_X_y_for_step when regressor is LinearRegression, 
+    Test output of filter_train_X_y_for_step when estimator is LinearRegression, 
     lags is 3 and steps is 2 for step 1.
     """
     series = pd.DataFrame({'l1': pd.Series(np.arange(10), dtype=float), 
                            'l2': pd.Series(np.arange(100, 110), dtype=float)})
     
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l1',
-                                               lags=3, steps=2, transformer_series=None)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', lags=3, steps=2, transformer_series=None
+    )
     X_train, y_train, *_ = forecaster._create_train_X_y(series=series)
     results = forecaster.filter_train_X_y_for_step(step=1, X_train=X_train, y_train=y_train)
 
@@ -67,15 +69,16 @@ def test_filter_train_X_y_for_step_output_when_lags_3_steps_2_exog_is_None_for_s
 
 def test_filter_train_X_y_for_step_output_when_lags_3_steps_2_and_exog_for_step_2():
     """
-    Test output of filter_train_X_y_for_step when regressor is LinearRegression, 
+    Test output of filter_train_X_y_for_step when estimator is LinearRegression, 
     lags is 3 and steps is 2 with exog for step 2.
     """
     series = pd.DataFrame({'l1': pd.Series(np.arange(10), dtype=float), 
                            'l2': pd.Series(np.arange(50, 60), dtype=float)})
     exog = pd.Series(np.arange(100, 110), name='exog', dtype=float)
 
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l2',
-                                               lags=[1, 2, 3], steps=2, transformer_series=None)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l2', lags=[1, 2, 3], steps=2, transformer_series=None
+    )
     X_train, y_train, *_ = forecaster._create_train_X_y(series=series, exog=exog)
     results = forecaster.filter_train_X_y_for_step(step=2, X_train=X_train, y_train=y_train)
 
@@ -106,15 +109,16 @@ def test_filter_train_X_y_for_step_output_when_lags_3_steps_2_and_exog_for_step_
 
 def test_filter_train_X_y_for_step_output_when_lags_3_steps_2_and_exog_for_step_2_remove_suffix():
     """
-    Test output of filter_train_X_y_for_step when regressor is LinearRegression, 
+    Test output of filter_train_X_y_for_step when estimator is LinearRegression, 
     lags is 3 and steps is 2 with exog for step 2 with remove_suffix=True.
     """
     series = pd.DataFrame({'l1': pd.Series(np.arange(10), dtype=float), 
                            'l2': pd.Series(np.arange(50, 60), dtype=float)})
     exog = pd.Series(np.arange(100, 110), name='exog', dtype=float)
 
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l2',
-                                               lags=[1, 2, 3], steps=2, transformer_series=None)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l2', lags=[1, 2, 3], steps=2, transformer_series=None
+    )
     X_train, y_train, *_ = forecaster._create_train_X_y(series=series, exog=exog)
     results = forecaster.filter_train_X_y_for_step(
                   step          = 2, 
@@ -150,16 +154,17 @@ def test_filter_train_X_y_for_step_output_when_lags_3_steps_2_and_exog_for_step_
 
 def test_filter_train_X_y_for_step_output_when_lags_dict_with_None_steps_2_and_exog_for_step_2():
     """
-    Test output of filter_train_X_y_for_step when regressor is LinearRegression, 
+    Test output of filter_train_X_y_for_step when estimator is LinearRegression, 
     lags is 3 and steps is 2 with exog for step 2.
     """
     series = pd.DataFrame({'l1': pd.Series(np.arange(10), dtype=float), 
                            'l2': pd.Series(np.arange(50, 60), dtype=float)})
     exog = pd.Series(np.arange(100, 110), name='exog', dtype=float)
 
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l2',
-                                               lags={'l1': None, 'l2': 3}, 
-                                               steps=2, transformer_series=None)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l2', lags={'l1': None, 'l2': 3}, 
+        steps=2, transformer_series=None
+    )
     X_train, y_train, *_ = forecaster._create_train_X_y(series=series, exog=exog)
     results = forecaster.filter_train_X_y_for_step(step=2, X_train=X_train, y_train=y_train)
 
@@ -189,16 +194,17 @@ def test_filter_train_X_y_for_step_output_when_lags_dict_with_None_steps_2_and_e
 
 def test_filter_train_X_y_for_step_output_when_lags_dict_with_None_steps_2_and_exog_for_step_2_remove_suffix():
     """
-    Test output of filter_train_X_y_for_step when regressor is LinearRegression, 
+    Test output of filter_train_X_y_for_step when estimator is LinearRegression, 
     lags is 3 and steps is 2 with exog for step 2 with remove_suffix=True.
     """
     series = pd.DataFrame({'l1': pd.Series(np.arange(10), dtype=float), 
                            'l2': pd.Series(np.arange(50, 60), dtype=float)})
     exog = pd.Series(np.arange(100, 110), name='exog', dtype=float)
 
-    forecaster = ForecasterDirectMultiVariate(LinearRegression(), level='l2',
-                                               lags={'l1': 3, 'l2': None}, 
-                                               steps=2, transformer_series=None)
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l2', lags={'l1': 3, 'l2': None}, 
+        steps=2, transformer_series=None
+    )
     X_train, y_train, *_ = forecaster._create_train_X_y(series=series, exog=exog)
     results = forecaster.filter_train_X_y_for_step(
                   step          = 2, 
@@ -250,7 +256,8 @@ def test_filter_train_X_y_for_step_output_when_window_features_and_exog_steps_1(
     )
 
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), steps=1, level='l1', lags=5, window_features=rolling, transformer_series=None
+        estimator=LinearRegression(), steps=1, level='l1', lags=5, 
+        window_features=rolling, transformer_series=None
     )
     X_train, y_train, *_ = forecaster._create_train_X_y(series=series, exog=exog)
     results = forecaster.filter_train_X_y_for_step(
@@ -309,7 +316,7 @@ def test_create_train_X_y_output_when_window_features_and_exog_steps_2():
     )
 
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), steps=2, level='l1', lags=5, 
+        estimator=LinearRegression(), steps=2, level='l1', lags=5, 
         window_features=rolling, transformer_series=None
     )
     X_train, y_train, *_ = forecaster._create_train_X_y(series=series, exog=exog)

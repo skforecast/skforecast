@@ -10,7 +10,7 @@ import pandas as pd
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
 
-import skforecast
+from .... import __version__
 from ....recursive import ForecasterRecursive
 from ....recursive import ForecasterRecursiveMultiSeries
 from ...utils import save_forecaster
@@ -47,7 +47,7 @@ def test_save_and_load_forecaster_persistence():
     Test if a loaded forecaster is exactly the same as the original one.
     """
     forecaster = ForecasterRecursive(
-        regressor=LinearRegression(), lags=3, transformer_y=StandardScaler()
+        estimator=LinearRegression(), lags=3, transformer_y=StandardScaler()
     )
     rng = np.random.default_rng(12345)
     y = pd.Series(rng.normal(size=100))
@@ -61,7 +61,7 @@ def test_save_and_load_forecaster_persistence():
         attribute_forecaster = forecaster.__getattribute__(key)
         attribute_forecaster_loaded = forecaster_loaded.__getattribute__(key)
 
-        if key in ['regressor', 'binner', 'transformer_y', 'transformer_exog']:
+        if key in ['estimator', 'binner', 'transformer_y', 'transformer_exog']:
             assert joblib.hash(attribute_forecaster) == joblib.hash(attribute_forecaster_loaded)
         elif isinstance(attribute_forecaster, np.ndarray):
             np.testing.assert_array_almost_equal(attribute_forecaster, attribute_forecaster_loaded)
@@ -93,7 +93,7 @@ def test_save_and_load_forecaster_SkforecastVersionWarning():
     Test warning used to notify that the skforecast version installed in the 
     environment differs from the version used to create the forecaster.
     """
-    forecaster = ForecasterRecursive(regressor=LinearRegression(), lags=3)
+    forecaster = ForecasterRecursive(estimator=LinearRegression(), lags=3)
     rng = np.random.default_rng(123)
     y = pd.Series(rng.normal(size=100))
     forecaster.fit(y=y)
@@ -103,7 +103,7 @@ def test_save_and_load_forecaster_SkforecastVersionWarning():
     warn_msg = re.escape(
         f"The skforecast version installed in the environment differs "
         f"from the version used to create the forecaster.\n"
-        f"    Installed Version  : {skforecast.__version__}\n"
+        f"    Installed Version  : {__version__}\n"
         f"    Forecaster Version : 0.0.0\n"
         f"This may create incompatibilities when using the library."
     )
@@ -128,7 +128,7 @@ def test_save_forecaster_save_custom_functions(weight_func):
     ).to_dict(orient='series')
     
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 5,
                      weight_func        = weight_func,
                      transformer_series = StandardScaler()
@@ -159,7 +159,7 @@ def test_save_forecaster_warning_dont_save_custom_functions(weight_func):
     Test SaveLoadSkforecastWarning when custom functions are not saved.
     """
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor   = LinearRegression(),
+                     estimator   = LinearRegression(),
                      lags        = 5,
                      weight_func = weight_func
                  )
@@ -184,7 +184,7 @@ def test_save_forecaster_warning_when_user_defined_window_features():
         window_sizes=[1, 2], features_names=['feature_1', 'feature_2']
     )
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor       = LinearRegression(),
+                     estimator       = LinearRegression(),
                      lags            = 5,
                      window_features = window_features
                  )

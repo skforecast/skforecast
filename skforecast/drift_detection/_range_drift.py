@@ -6,13 +6,13 @@
 # coding=utf-8
 
 from __future__ import annotations
-import numpy as np
 import pandas as pd
 import warnings
 import textwrap
 from rich.console import Console
 from rich.panel import Panel
-import skforecast
+
+from .. import __version__
 from ..exceptions import (
     FeatureOutOfRangeWarning,
     IgnoredArgumentWarning,
@@ -35,7 +35,7 @@ class RangeDriftDetector:
 
     Parameters
     ----------
-    None
+    self
 
     Attributes
     ----------
@@ -125,7 +125,7 @@ class RangeDriftDetector:
         style, unique_id = get_style_repr_html(self.is_fitted)
         content = f"""
         <div class="container-{unique_id}">
-            <h2>{type(self).__name__}</h2>
+            <p style="font-size: 1.5em; font-weight: bold; margin-block-start: 0.83em; margin-block-end: 0.83em;">{type(self).__name__}</p>
             <details open>
                 <summary>General Information</summary>
                 <ul>
@@ -148,9 +148,9 @@ class RangeDriftDetector:
                 </ul>
             </details>
             <p>
-                <a href="https://skforecast.org/{skforecast.__version__}/api/drift_detection.html#skforecast.drift_detection._range_drift.RangeDriftDetector">&#128712 <strong>API Reference</strong></a>
+                <a href="https://skforecast.org/{__version__}/api/drift_detection.html#skforecast.drift_detection._range_drift.RangeDriftDetector">&#128712 <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
-                <a href="https://skforecast.org/{skforecast.__version__}/user_guides/drift-detection.html">&#128462 <strong>User Guide</strong></a>
+                <a href="https://skforecast.org/{__version__}/user_guides/drift-detection.html">&#128462 <strong>User Guide</strong></a>
             </p>
         </div>
         """
@@ -577,7 +577,7 @@ class RangeDriftDetector:
                     if key not in self.series_names_in_:
                         warnings.warn(
                             f"'{key}' was not seen during training. Its range is unknown.",
-                            UnknownLevelWarning,
+                            UnknownLevelWarning
                         )
                         continue
                     is_out_of_range = self._check_feature_range(

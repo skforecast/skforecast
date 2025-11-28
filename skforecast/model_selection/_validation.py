@@ -6,6 +6,7 @@
 # coding=utf-8
 
 from __future__ import annotations
+from typing_extensions import deprecated
 from typing import Callable
 from copy import deepcopy
 from itertools import chain
@@ -15,7 +16,7 @@ import pandas as pd
 from joblib import Parallel, delayed, cpu_count
 from tqdm.auto import tqdm
 from ..metrics import add_y_train_argument, _get_metric
-from ..exceptions import LongTrainingWarning, IgnoredArgumentWarning
+from ..exceptions import LongTrainingWarning, IgnoredArgumentWarning, runtime_deprecated
 from ..model_selection._split import TimeSeriesFold
 from ..model_selection._utils import (
     _initialize_levels_model_selection_multiseries,
@@ -181,6 +182,7 @@ def _backtesting_forecaster(
     """
 
     forecaster = deepcopy(forecaster)
+    is_regression = forecaster.__skforecast_tags__['forecaster_task'] == 'regression'
     cv = deepcopy(cv)
 
     cv.set_params({
@@ -257,7 +259,7 @@ def _backtesting_forecaster(
         elif type(forecaster).__name__ == 'ForecasterDirect' and n_of_fits * forecaster.max_step > 50:
             warnings.warn(
                 f"The forecaster will be fit {n_of_fits * forecaster.max_step} times "
-                f"({n_of_fits} folds * {forecaster.max_step} regressors). This can take "
+                f"({n_of_fits} folds * {forecaster.max_step} estimators). This can take "
                 f"substantial amounts of time. If not feasible, try with `refit = False`.\n",
                 LongTrainingWarning
             )
@@ -268,7 +270,7 @@ def _backtesting_forecaster(
     def _fit_predict_forecaster(
         fold, forecaster, y, exog, store_in_sample_residuals, gap, interval, 
         interval_method, n_boot, use_in_sample_residuals, use_binned_residuals, 
-        random_state, return_predictors
+        random_state, return_predictors, is_regression
     ) -> pd.DataFrame:
         """
         Fit the forecaster and predict `steps` ahead. This is an auxiliary 
@@ -315,46 +317,54 @@ def _backtesting_forecaster(
             )
 
         preds = []
-        if interval is not None:
-            kwargs_interval = {
-                'steps': steps,
-                'last_window': last_window_y,
-                'exog': next_window_exog,
-                'n_boot': n_boot,
-                'use_in_sample_residuals': use_in_sample_residuals,
-                'use_binned_residuals': use_binned_residuals,
-                'random_state': random_state
-            }
-            if interval_method == 'bootstrapping':
-                if interval == 'bootstrapping':
-                    pred = forecaster.predict_bootstrapping(**kwargs_interval)
-                elif isinstance(interval, (list, tuple)):
-                    quantiles = [q / 100 for q in interval]
-                    pred = forecaster.predict_quantiles(quantiles=quantiles, **kwargs_interval)
-                    if len(interval) == 2:
-                        pred.columns = ['lower_bound', 'upper_bound']
+        if is_regression:
+            if interval is not None:
+                kwargs_interval = {
+                    'steps': steps,
+                    'last_window': last_window_y,
+                    'exog': next_window_exog,
+                    'n_boot': n_boot,
+                    'use_in_sample_residuals': use_in_sample_residuals,
+                    'use_binned_residuals': use_binned_residuals,
+                    'random_state': random_state
+                }
+                if interval_method == 'bootstrapping':
+                    if interval == 'bootstrapping':
+                        pred = forecaster.predict_bootstrapping(**kwargs_interval)
+                    elif isinstance(interval, (list, tuple)):
+                        quantiles = [q / 100 for q in interval]
+                        pred = forecaster.predict_quantiles(quantiles=quantiles, **kwargs_interval)
+                        if len(interval) == 2:
+                            pred.columns = ['lower_bound', 'upper_bound']
+                        else:
+                            pred.columns = [f'p_{p}' for p in interval]
                     else:
-                        pred.columns = [f'p_{p}' for p in interval]
+                        pred = forecaster.predict_dist(distribution=interval, **kwargs_interval)
+                    
+                    preds.append(pred)
                 else:
-                    pred = forecaster.predict_dist(distribution=interval, **kwargs_interval)
-                 
-                preds.append(pred)
-            else:
-                pred = forecaster.predict_interval(
-                    method='conformal', interval=interval, **kwargs_interval
-                )
-                preds.append(pred)
+                    pred = forecaster.predict_interval(
+                        method='conformal', interval=interval, **kwargs_interval
+                    )
+                    preds.append(pred)
 
-        # NOTE: This is done after probabilistic predictions to avoid repeating 
-        # the same checks.
-        if interval is None or interval_method != 'conformal':
-            pred = forecaster.predict(
-                       steps        = steps,
-                       last_window  = last_window_y,
-                       exog         = next_window_exog,
-                       check_inputs = True if interval is None else False
+            # NOTE: This is done after probabilistic predictions to avoid repeating 
+            # the same checks.
+            if interval is None or interval_method != 'conformal':
+                pred = forecaster.predict(
+                        steps        = steps,
+                        last_window  = last_window_y,
+                        exog         = next_window_exog,
+                        check_inputs = True if interval is None else False
+                    )
+                preds.insert(0, pred)
+        else:
+            pred = forecaster.predict_proba(
+                       steps       = steps,
+                       last_window = last_window_y,
+                       exog        = next_window_exog
                    )
-            preds.insert(0, pred)
+            preds.append(pred)
 
         if return_predictors:
             pred = forecaster.create_predict_X(
@@ -387,7 +397,8 @@ def _backtesting_forecaster(
         "use_in_sample_residuals": use_in_sample_residuals,
         "use_binned_residuals": use_binned_residuals,
         "random_state": random_state,
-        "return_predictors": return_predictors
+        "return_predictors": return_predictors,
+        'is_regression': is_regression
     }
     backtest_predictions = Parallel(n_jobs=n_jobs)(
         delayed(_fit_predict_forecaster)(
@@ -402,6 +413,12 @@ def _backtesting_forecaster(
     backtest_predictions = pd.concat(backtest_predictions)
     if isinstance(backtest_predictions, pd.Series):
         backtest_predictions = backtest_predictions.to_frame()
+
+    if not is_regression:
+        proba_cols = [f"{cls}_proba" for cls in forecaster.classes_]
+        idx_max = backtest_predictions[proba_cols].to_numpy().argmax(axis=1)
+        backtest_predictions.insert(0, "pred", np.array(forecaster.classes_)[idx_max])
+
     backtest_predictions.insert(0, 'fold', np.concatenate(fold_labels))
 
     train_indexes = []
@@ -594,7 +611,8 @@ def backtesting_forecaster(
     forecaters_allowed = [
         'ForecasterRecursive', 
         'ForecasterDirect',
-        'ForecasterEquivalentDate'
+        'ForecasterEquivalentDate',
+        'ForecasterRecursiveClassifier'
     ]
     
     if type(forecaster).__name__ not in forecaters_allowed:
@@ -902,7 +920,7 @@ def _backtesting_forecaster_multiseries(
         elif type(forecaster).__name__ == 'ForecasterDirectMultiVariate' and n_of_fits * forecaster.max_step > 50:
             warnings.warn(
                 f"The forecaster will be fit {n_of_fits * forecaster.max_step} times "
-                f"({n_of_fits} folds * {forecaster.max_step} regressors). This can take "
+                f"({n_of_fits} folds * {forecaster.max_step} estimators). This can take "
                 f"substantial amounts of time. If not feasible, try with `refit = False`.\n",
                 LongTrainingWarning
             )
@@ -1349,7 +1367,9 @@ def backtesting_forecaster_multiseries(
 
     return metrics_levels, backtest_predictions
 
-
+# TODO: Remove in version 0.20.0
+@runtime_deprecated(replacement="_backtesting_stats", version="0.19.0", removal="0.20.0")
+@deprecated("`_backtesting_sarimax` is deprecated since version 0.19.0; use `_backtesting_stats` instead. It will be removed in version 0.20.0.")
 def _backtesting_sarimax(
     forecaster: object,
     y: pd.Series,
@@ -1364,14 +1384,84 @@ def _backtesting_sarimax(
     show_progress: bool = True,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
-    Backtesting of ForecasterSarimax.
+    !!! warning "Deprecated"
+        This function is deprecated since skforecast 0.19. Please use `_backtesting_stats` instead.
+
+    """
+
+    return _backtesting_stats(
+        forecaster             = forecaster,
+        y                      = y,
+        metric                 = metric,
+        cv                     = cv,
+        exog                   = exog,
+        alpha                  = alpha,
+        interval               = interval,
+        n_jobs                 = n_jobs,
+        suppress_warnings_fit  = suppress_warnings_fit,
+        verbose                = verbose,
+        show_progress          = show_progress
+    )
+
+# TODO: Remove in version 0.20.0
+@runtime_deprecated(replacement="backtesting_stats", version="0.19.0", removal="0.20.0")
+@deprecated("`backtesting_sarimax` is deprecated since version 0.19.0; use `backtesting_stats` instead. It will be removed in version 0.20.0.")
+def backtesting_sarimax(
+    forecaster: object,
+    y: pd.Series,
+    cv: TimeSeriesFold,
+    metric: str | Callable | list[str | Callable],
+    exog: pd.Series | pd.DataFrame | None = None,
+    alpha: float | None = None,
+    interval: list[float] | tuple[float] | None = None,
+    n_jobs: int | str = 'auto',
+    verbose: bool = False,
+    suppress_warnings_fit: bool = False,
+    show_progress: bool = True
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    !!! warning "Deprecated"
+        This function is deprecated since skforecast 0.19. Please use `backtesting_stats` instead.
+    
+    """
+
+    return backtesting_stats(
+        forecaster             = forecaster,
+        y                      = y,
+        cv                     = cv,
+        metric                 = metric,
+        exog                   = exog,
+        alpha                  = alpha,
+        interval               = interval,
+        n_jobs                 = n_jobs,
+        verbose                = verbose,
+        suppress_warnings_fit  = suppress_warnings_fit,
+        show_progress          = show_progress
+    )
+    
+
+def _backtesting_stats(
+    forecaster: object,
+    y: pd.Series,
+    metric: str | Callable | list[str | Callable],
+    cv: TimeSeriesFold,
+    exog: pd.Series | pd.DataFrame | None = None,
+    alpha: float | None = None,
+    interval: list[float] | tuple[float] | None = None,
+    n_jobs: int | str = 'auto',
+    suppress_warnings_fit: bool = False,
+    verbose: bool = False,
+    show_progress: bool = True,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Backtesting of ForecasterStats.
     
     A copy of the original forecaster is created so that it is not modified during 
     the process.
     
     Parameters
     ----------
-    forecaster : ForecasterSarimax
+    forecaster : ForecasterStats
         Forecaster model.
     y : pandas Series
         Training time series.
@@ -1447,6 +1537,17 @@ def _backtesting_sarimax(
 
     forecaster = deepcopy(forecaster)
     cv = deepcopy(cv)
+
+    estimator_type = f"{type(forecaster.estimator).__module__}.{type(forecaster.estimator).__name__}"
+    if estimator_type != "skforecast.stats._sarimax.Sarimax" and cv.refit is False:
+        warnings.warn(
+            "If `ForecasterStats` uses a estimator different from "
+            "`skforecast.stats.Sarimax`, `cv.refit` must be `True` since "
+            "predictions must start from the end of the training set."
+            " Setting `cv.refit = True`.",
+            IgnoredArgumentWarning
+        )
+        cv.refit = True
 
     cv.set_params({
         'window_size': forecaster.window_size,
@@ -1649,7 +1750,7 @@ def _backtesting_sarimax(
     return metric_values, backtest_predictions
 
 
-def backtesting_sarimax(
+def backtesting_stats(
     forecaster: object,
     y: pd.Series,
     cv: TimeSeriesFold,
@@ -1663,14 +1764,14 @@ def backtesting_sarimax(
     show_progress: bool = True
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
-    Backtesting of ForecasterSarimax.
+    Backtesting of ForecasterStats.
     
     A copy of the original forecaster is created so that it is not modified during 
     the process.
 
     Parameters
     ----------
-    forecaster : ForecasterSarimax
+    forecaster : ForecasterStats
         Forecaster model.
     y : pandas Series
         Training time series.
@@ -1744,9 +1845,9 @@ def backtesting_sarimax(
     
     """
     
-    if type(forecaster).__name__ not in ['ForecasterSarimax']:
+    if type(forecaster).__name__ not in ['ForecasterStats']:
         raise TypeError(
-            "`forecaster` must be of type `ForecasterSarimax`, for all other "
+            "`forecaster` must be of type `ForecasterStats`, for all other "
             "types of forecasters use the functions available in the other "
             "`model_selection` modules."
         )
@@ -1763,7 +1864,7 @@ def backtesting_sarimax(
         suppress_warnings_fit = suppress_warnings_fit
     )
     
-    metric_values, backtest_predictions = _backtesting_sarimax(
+    metric_values, backtest_predictions = _backtesting_stats(
         forecaster            = forecaster,
         y                     = y,
         cv                    = cv,

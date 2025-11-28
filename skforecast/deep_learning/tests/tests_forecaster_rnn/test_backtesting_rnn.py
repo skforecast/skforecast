@@ -61,7 +61,7 @@ def test_backtesting_forecaster_multiseries_ForecasterRnn():
     """
     Test case for backtesting ForecasterRnn with multiseries data.
     """
-    forecaster = ForecasterRnn(model, levels=["1", "2"], lags=3)
+    forecaster = ForecasterRnn(estimator=model, levels=["1", "2"], lags=3)
     cv = TimeSeriesFold(
             initial_train_size = len(series) - 15,
             steps              = forecaster.max_step,
@@ -86,7 +86,9 @@ def test_backtesting_forecaster_multiseries_ForecasterRnn_with_exog():
     Test case for backtesting ForecasterRnn with multiseries data with
     exogenous variables.
     """
-    forecaster = ForecasterRnn(model_exog, levels=["1", "2", "3"], lags=4)
+    forecaster = ForecasterRnn(
+        estimator=model_exog, levels=["1", "2", "3"], lags=4
+    )
     cv = TimeSeriesFold(
             initial_train_size = len(series) - 18,
             steps              = forecaster.max_step,
@@ -112,7 +114,9 @@ def test_backtesting_forecaster_multiseries_ForecasterRnn_with_exog_and_interval
     Test case for backtesting ForecasterRnn with multiseries data with 
     exogenous variables and interval predictions.
     """
-    forecaster = ForecasterRnn(model_exog, levels=["1", "2", "3"], lags=4)
+    forecaster = ForecasterRnn(
+        estimator=model_exog, levels=["1", "2", "3"], lags=4
+    )
     cv = TimeSeriesFold(
             initial_train_size = len(series) - 20,
             steps              = forecaster.max_step - 2,

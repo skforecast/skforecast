@@ -55,7 +55,7 @@ def test_set_in_sample_residuals_NotFittedError_when_forecaster_not_fitted():
     Test NotFittedError is raised when forecaster is not fitted.
     """
     forecaster = ForecasterRnn(
-        model, levels=["1", "2", "3"], lags=3
+        estimator=model, levels=["1", "2", "3"], lags=3
     )
 
     err_msg = re.escape(
@@ -71,7 +71,7 @@ def test_set_in_sample_residuals_TypeError_when_series_not_dataframe():
     Test TypeError is raised when series is not a DataFrame.
     """
     forecaster = ForecasterRnn(
-        model, levels=["1", "2", "3"], lags=3
+        estimator=model, levels=["1", "2", "3"], lags=3
     )
     forecaster.fit(series=series)
 
@@ -92,7 +92,7 @@ def test_set_in_sample_residuals_IndexError_when_series_has_different_index_than
     Test IndexError is raised when series has different index than training.
     """
     forecaster = ForecasterRnn(
-        model, levels=["1", "2", "3"], lags=3
+        estimator=model, levels=["1", "2", "3"], lags=3
     )
     forecaster.fit(series=series)
 
@@ -127,7 +127,7 @@ def test_set_in_sample_residuals_ValueError_when_X_train_features_names_out_not_
     )
     
     forecaster = ForecasterRnn(
-        model_2_exog, levels=["1", "2", "3"], lags=3, transformer_exog=None
+        estimator=model_2_exog, levels=["1", "2", "3"], lags=3, transformer_exog=None
     )
     forecaster.fit(series=series, exog=exog[['exog_1', 'exog_2']])
 
@@ -148,7 +148,7 @@ def test_set_in_sample_residuals_store_same_residuals_as_fit():
     Test that set_in_sample_residuals stores same residuals as fit.
     """
     forecaster = ForecasterRnn(
-        model, levels=["1", "2", "3"], lags=3
+        estimator=model, levels=["1", "2", "3"], lags=3
     )
     forecaster.fit(series=series, store_in_sample_residuals=True)
     scaler_id_after_fit = id(forecaster.transformer_series_["1"])
@@ -173,7 +173,7 @@ def test_set_in_sample_residuals_store_same_residuals_as_fit_exog():
     Test that set_in_sample_residuals stores same residuals as fit with exogenous variables.
     """
     forecaster = ForecasterRnn(
-        model_exog, levels=["1", "2", "3"], lags=3
+        estimator=model_exog, levels=["1", "2", "3"], lags=3
     )
     forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
     scaler_id_after_fit = id(forecaster.transformer_series_["1"])

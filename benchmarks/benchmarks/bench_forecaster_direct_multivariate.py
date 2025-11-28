@@ -101,7 +101,7 @@ def run_benchmark_ForecasterDirectMultiVariate(output_dir):
     y_values = series['series_0'].to_numpy()
 
     forecaster = ForecasterDirectMultiVariate(
-        regressor=DummyRegressor(strategy='constant', constant=1.),
+        estimator=DummyRegressor(strategy='constant', constant=1.),
         level='series_1',
         steps=STEPS,
         lags=20,

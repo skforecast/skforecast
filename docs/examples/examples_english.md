@@ -57,6 +57,8 @@ For experienced users looking to deepen their forecasting skills, this section p
 
 <i class="fa-solid fa-lock-open" style="font-size: 25px; color: #e70d44;"></i> [Data leakage in pre-trained forecasting models](https://cienciadedatos.net/documentos/py63-data-leakage-pre-trained-forecasting-models.html)
 
+<i class="fa-solid fa-bell" style="color: #f7931a;"></i> [Data drift detection in time series forecasting](https://dev.cienciadedatos.net/documentos/py70-drift-detection-forecasting-model.html)
+
 
 ## Real-World Challenges and Case Studies
 

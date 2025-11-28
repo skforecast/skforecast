@@ -81,7 +81,7 @@ def test_create_sample_weights_output():
     """
     forecaster = ForecasterRecursive(
                      lags        = 3,
-                     regressor   = LinearRegression(),
+                     estimator   = LinearRegression(),
                      weight_func = custom_weights
                  )
 
@@ -97,7 +97,7 @@ def test_create_sample_weights_exceptions_when_weights_has_nan():
     """
     forecaster = ForecasterRecursive(
                      lags        = 3,
-                     regressor   = LinearRegression(),
+                     estimator   = LinearRegression(),
                      weight_func = custom_weights_nan
                  )
 
@@ -112,7 +112,7 @@ def test_create_sample_weights_exceptions_when_weights_has_negative_values():
     """
     forecaster = ForecasterRecursive(
                      lags        = 3,
-                     regressor   = LinearRegression(),
+                     estimator   = LinearRegression(),
                      weight_func = custom_weights_negative
                  )
 
@@ -127,13 +127,13 @@ def test_create_sample_weights_exceptions_when_weights_all_zeros():
     """
     forecaster = ForecasterRecursive(
                      lags        = 3,
-                     regressor   = LinearRegression(),
+                     estimator   = LinearRegression(),
                      weight_func = custom_weights_zeros
                  )
     
     err_msg = re.escape(
-                    ("The resulting `sample_weight` cannot be normalized because "
-                     "the sum of the weights is zero.")
-                )
+        "The resulting `sample_weight` cannot be normalized because "
+        "the sum of the weights is zero."
+    )
     with pytest.raises(ValueError, match=err_msg):
         forecaster.create_sample_weights(X_train=X_train)

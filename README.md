@@ -5,7 +5,7 @@
 
 | | |
 | --- | --- |
-| Package | ![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue) [![PyPI](https://img.shields.io/pypi/v/skforecast)](https://pypi.org/project/skforecast/) [![Conda](https://img.shields.io/conda/v/conda-forge/skforecast?logo=Anaconda)](https://anaconda.org/conda-forge/skforecast) [![Downloads](https://static.pepy.tech/badge/skforecast)](https://pepy.tech/project/skforecast) [![Downloads](https://img.shields.io/pypi/dm/skforecast?style=flat-square&color=blue&label=downloads%2Fmonth)](https://pypistats.org/packages/skforecast) [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/skforecast/skforecast/graphs/commit-activity) [![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active) |
+| Package | ![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue) [![PyPI](https://img.shields.io/pypi/v/skforecast)](https://pypi.org/project/skforecast/) [![Conda](https://img.shields.io/conda/v/conda-forge/skforecast?logo=Anaconda)](https://anaconda.org/conda-forge/skforecast) [![Downloads](https://static.pepy.tech/badge/skforecast)](https://pepy.tech/project/skforecast) [![Downloads](https://img.shields.io/pypi/dm/skforecast?style=flat-square&color=blue&label=downloads%2Fmonth)](https://pypistats.org/packages/skforecast) [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/skforecast/skforecast/graphs/commit-activity) [![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active) |
 | Meta | [![License](https://img.shields.io/github/license/skforecast/skforecast)](https://github.com/skforecast/skforecast/blob/master/LICENSE) [![DOI](https://zenodo.org/badge/337705968.svg)](https://zenodo.org/doi/10.5281/zenodo.8382787) |
 | Testing | [![Build status](https://github.com/skforecast/skforecast/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/skforecast/skforecast/actions/workflows/unit-tests.yml/badge.svg) [![codecov](https://codecov.io/gh/skforecast/skforecast/branch/master/graph/badge.svg)](https://codecov.io/gh/skforecast/skforecast) |
 |Donation | [![paypal](https://img.shields.io/static/v1?style=social&amp;label=Donate&amp;message=%E2%9D%A4&amp;logo=Paypal&amp;color&amp;link=%3curl%3e)](https://www.paypal.com/donate/?hosted_button_id=D2JZSWRLTZDL6) [![buymeacoffee](https://img.shields.io/badge/-Buy_me_a%C2%A0coffee-gray?logo=buy-me-a-coffee)](https://www.buymeacoffee.com/skforecast) ![GitHub Sponsors](https://img.shields.io/github/sponsors/joaquinamatrodrigo?logo=github&label=Github%20sponsors&link=https%3A%2F%2Fgithub.com%2Fsponsors%2FJoaquinAmatRodrigo) |
@@ -18,7 +18,7 @@
 - :information_source: [About The Project](#about-the-project)
 - :books: [Documentation](#documentation)
 - :computer: [Installation & Dependencies](#installation--dependencies)
-- :sparkles: [What is new in skforecast 0.17?](#what-is-new-in-skforecast-017)
+- :sparkles: [What is new in skforecast 0.19?](#what-is-new-in-skforecast-019)
 - :crystal_ball: [Forecasters](#forecasters)
 - :mortar_board: [Examples and tutorials](#examples-and-tutorials)
 - :handshake: [How to contribute](#how-to-contribute)
@@ -29,13 +29,13 @@
 
 # About The Project
 
-**Skforecast** is a Python library for time series forecasting using machine learning models. It works with any regressor compatible with the scikit-learn API, including popular options like LightGBM, XGBoost, CatBoost, Keras, and many others.
+**Skforecast** is a Python library for time series forecasting using machine learning models. It works with any estimator compatible with the scikit-learn API, including popular options like LightGBM, XGBoost, CatBoost, Keras, and many others.
 
 ### Why use skforecast?
 
 Skforecast simplifies time series forecasting with machine learning by providing:
 
-- :jigsaw: **Seamless integration** with any scikit-learn compatible regressor (e.g., LightGBM, XGBoost, CatBoost, etc.).
+- :jigsaw: **Seamless integration** with any scikit-learn compatible estimator (e.g., LightGBM, XGBoost, CatBoost, etc.).
 - :repeat: **Flexible workflows** that allow for both single and multi-series forecasting.
 - :hammer_and_wrench: **Comprehensive tools** for feature engineering, model selection, hyperparameter tuning, and more.
 - :building_construction: **Production-ready models** with interpretability and validation methods for backtesting and realistic performance evaluation.
@@ -91,7 +91,7 @@ pip install skforecast
 For more installation options, including dependencies and additional features, check out our [Installation Guide](https://skforecast.org/latest/quick-start/how-to-install.html).
 
 
-# What is new in skforecast 0.17?
+# What is new in skforecast 0.19?
 
 All significant changes to this project are documented in the release file.
 
@@ -113,14 +113,16 @@ The **skforecast** library offers a **variety of forecaster** types, each tailor
 |[ForecasterRecursiveMultiSeries]||:heavy_check_mark:|:heavy_check_mark:||:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
 |[ForecasterDirectMultiVariate]||:heavy_check_mark:||:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
 |[ForecasterRNN]|:heavy_check_mark:|:heavy_check_mark:||:heavy_check_mark:|:heavy_check_mark:||:heavy_check_mark:||
-|[ForecasterSarimax]|:heavy_check_mark:||:heavy_check_mark:||:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:||
+|[ForecasterStats]|:heavy_check_mark:||:heavy_check_mark:||:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:||
+|[ForecasterRecursiveClassifier]|:heavy_check_mark:||:heavy_check_mark:||:heavy_check_mark:||:heavy_check_mark:|:heavy_check_mark:|
 
-[ForecasterRecursive]: https://skforecast.org/latest/user_guides/autoregresive-forecaster.html
+[ForecasterRecursive]: https://skforecast.org/latest/user_guides/autoregressive-forecaster.html
 [ForecasterDirect]: https://skforecast.org/latest/user_guides/direct-multi-step-forecasting.html
 [ForecasterRecursiveMultiSeries]: https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting.html
 [ForecasterDirectMultiVariate]: https://skforecast.org/latest/user_guides/dependent-multi-series-multivariate-forecasting.html
 [ForecasterRNN]: https://skforecast.org/latest/user_guides/forecasting-with-deep-learning-rnn-lstm
-[ForecasterSarimax]: https://skforecast.org/latest/user_guides/forecasting-sarimax-arima.html
+[ForecasterStats]: https://skforecast.org/latest/user_guides/forecasting-sarimax-arima.html
+[ForecasterRecursiveClassifier]: ../user_guides/autoregressive-classification-forecasting.html
 
 
 # Examples and tutorials
@@ -151,12 +153,12 @@ If you use skforecast for a scientific publication, we would appreciate citation
 **Zenodo**
 
 ```
-Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2025). skforecast (v0.18.0). Zenodo. https://doi.org/10.5281/zenodo.8382788
+Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2025). skforecast (v0.19.0). Zenodo. https://doi.org/10.5281/zenodo.8382788
 ```
 
 **APA**:
 ```
-Amat Rodrigo, J., & Escobar Ortiz, J. (2025). skforecast (Version 0.18.0) [Computer software]. https://doi.org/10.5281/zenodo.8382788
+Amat Rodrigo, J., & Escobar Ortiz, J. (2025). skforecast (Version 0.19.0) [Computer software]. https://doi.org/10.5281/zenodo.8382788
 ```
 
 **BibTeX**:
@@ -164,8 +166,8 @@ Amat Rodrigo, J., & Escobar Ortiz, J. (2025). skforecast (Version 0.18.0) [Compu
 @software{skforecast,
   author  = {Amat Rodrigo, Joaquin and Escobar Ortiz, Javier},
   title   = {skforecast},
-  version = {0.18.0},
-  month   = {9},
+  version = {0.19.0},
+  month   = {11},
   year    = {2025},
   license = {BSD-3-Clause},
   url     = {https://skforecast.org/},

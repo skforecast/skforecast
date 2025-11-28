@@ -10,7 +10,7 @@ def test_set_params():
     """
     """
     forecaster = ForecasterDirect(
-        LinearRegression(fit_intercept=True), lags=3, steps=3
+        estimator=LinearRegression(fit_intercept=True), lags=3, steps=3
     )
     new_params = {'fit_intercept': False}
     forecaster.set_params(new_params)
@@ -23,6 +23,6 @@ def test_set_params():
     if version.parse(sklearn.__version__) >= version.parse("1.7.0"):
         expected.update({'tol': 1e-06})
 
-    results = forecaster.regressor.get_params()
+    results = forecaster.estimator.get_params()
     
     assert results == expected

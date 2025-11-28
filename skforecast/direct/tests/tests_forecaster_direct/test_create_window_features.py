@@ -58,11 +58,11 @@ def test_create_window_features_TypeError_when_transform_batch_not_pandas():
     train_index = pd.RangeIndex(start=6, stop=10, step=1)
 
     forecaster = ForecasterDirect(
-        LinearRegression(), lags=5, steps=2, window_features=wf
+        estimator=LinearRegression(), lags=5, steps=2, window_features=wf
     )
     err_msg = re.escape(
-        ("The method `transform_batch` of WindowFeatureNoPandas "
-         "must return a pandas DataFrame.")
+        "The method `transform_batch` of WindowFeatureNoPandas "
+        "must return a pandas DataFrame."
     )
     with pytest.raises(TypeError, match = err_msg):
         forecaster._create_window_features(y=y, train_index=train_index)
@@ -78,12 +78,12 @@ def test_create_window_features_ValueError_when_transform_batch_not_correct_leng
     train_index = pd.RangeIndex(start=6, stop=10, step=1)
 
     forecaster = ForecasterDirect(
-        LinearRegression(), lags=5, steps=2, window_features=wf
+        estimator=LinearRegression(), lags=5, steps=2, window_features=wf
     )
     err_msg = re.escape(
-        ("The method `transform_batch` of WindowFeatureNoCorrectLength "
-         "must return a DataFrame with the same number of rows as "
-         "the input time series - (`window_size` + (`steps` - 1)): 4.")
+        "The method `transform_batch` of WindowFeatureNoCorrectLength "
+        "must return a DataFrame with the same number of rows as "
+        "the input time series - (`window_size` + (`steps` - 1)): 4."
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster._create_window_features(y=y, train_index=train_index)
@@ -100,7 +100,7 @@ def test_create_window_features_output():
     )
 
     forecaster = ForecasterDirect(
-        LinearRegression(), lags=5, steps=2, window_features=rolling
+        estimator=LinearRegression(), lags=5, steps=2, window_features=rolling
     )
     results = forecaster._create_window_features(
         y=y, train_index=train_index
@@ -133,7 +133,7 @@ def test_create_window_features_output_as_pandas():
     )
 
     forecaster = ForecasterDirect(
-        LinearRegression(), lags=3, steps=3, window_features=rolling
+        estimator=LinearRegression(), lags=3, steps=3, window_features=rolling
     )
     results = forecaster._create_window_features(
         y=y_datetime, train_index=train_index, X_as_pandas=True
@@ -171,7 +171,7 @@ def test_create_window_features_output_list():
     )
 
     forecaster = ForecasterDirect(
-        LinearRegression(), lags=3, steps=2, window_features=[rolling_1, rolling_2]
+        estimator=LinearRegression(), lags=3, steps=2, window_features=[rolling_1, rolling_2]
     )
     results = forecaster._create_window_features(y=y, train_index=train_index)
     expected = (

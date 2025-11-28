@@ -10,6 +10,58 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
 
+## 0.19.0 <small>In development</small> { id="0.19.0" }
+
+The main changes in this release are:
+
++ <span class="badge text-bg-api-change">API Change</span> Parameter and attribute `regressor` has been deprecated in favor of `estimator` in all Forecasters and will be removed in future releases to align with scikit-learn terminology. Visit the [migration guide](../user_guides/migration-guide.html) section for more information.
+
++ <span class="badge text-bg-feature">Feature</span> New class <code>[ForecasterRecursiveClassifier]</code> in the <code>[recursive]</code> module. This forecaster is designed to handle time series data where the target variable is categorical, enabling the prediction of future class labels based on historical patterns. [User guide](../user_guides/autoregressive-classification-forecasting.html)
+
++ <span class="badge text-bg-feature">Feature</span> New class <code>[PopulationDriftDetector]</code> in the <code>[drift_detection]</code> module to detect population drift between reference and new data. Suitable to detect when forecasting models need to be retrained due to changes in the data distribution. It supports both target and exogenous variables, in single and multiseries forecasting. [User guide](../user_guides/drift-detection.html)
+
++ <span class="badge text-bg-feature">Feature</span> New module <code>[stats]</code>. This module contains statistical models for time series forecasting that follows the scikit-learn interface. [User guide](../user_guides/forecasting-sarimax-arima.html)
+
++ <span class="badge text-bg-feature">Feature</span> New class <code>[Arar]</code> in the <code>[stats]</code> module. This class implements ARAR algorithm, a forecasting method that combines a "memory shortening" transformation with an autoregressive (AR) model. [User guide](../user_guides/forecasting-arar.html)
+
++ <span class="badge text-bg-api-change">API Change</span> Class <code>[Sarimax]</code> has been moved to the new <code>[stats]</code> module. Visit the [migration guide](../user_guides/migration-guide.html) section for more information.
+
++ <span class="badge text-bg-api-change">API Change</span> Class <code>[ForecasterSarimax]</code> has been deprecated in favor of the new <code>[ForecasterStats]</code> model in the <code>[recursive]</code> module. The new forecaster is compatible with a broader range of statistical models such as: sarimax, arima, arar and ets. Visit the [migration guide](../user_guides/migration-guide.html) section for more information.
+
++ <span class="badge text-bg-danger">Fix</span> Fixed an issue that prevented using indices with frequencies containing metadata (e.g., `CustomBusinessDay`, `CustomBusinessHour`, or holiday/weekmask variants). The library now preserves full frequency metadata by using `freq` instead of `freqstr`, ensuring correct alignment and compatibility with custom date offsets. ([#1051](https://github.com/skforecast/skforecast/issues/1051))
+
+
+**Added**
+
++ New class <code>[ForecasterRecursiveClassifier]</code> in the <code>[recursive]</code> module. This forecaster is designed to handle time series data where the target variable is categorical, enabling the prediction of future class labels based on historical patterns.
+
++ New class <code>[PopulationDriftDetector]</code> in the <code>[drift_detection]</code> module to detect population drift between reference and new data. Suitable to detect when forecasting models need to be retrained due to changes in the data distribution. It supports both target and exogenous variables, in single and multiseries forecasting.
+
++ New module <code>[stats]</code>. This module contains statistical models for time series forecasting that follows the scikit-learn interface.
+
++ New class <code>[Arar]</code> in the <code>[stats]</code> module. This class implements ARAR algorithm, a forecasting method that combines a "memory shortening" transformation with an autoregressive (AR) model.
+
++ New function <code>[reshape_series_exog_dict_to_long]</code> in the <code>[preprocessing]</code> module to reshape series and exogenous variables from a dictionary format into a long-format pandas DataFrame with a MultiIndex. The first level of the index is the series name, and the second level is the time index.
+
++ Added dataset `vic_electricity_classification` to the <code>[datasets]</code> module. It contains hourly electricity consumption data for households in Victoria, Australia, classified into three categories: 'low', 'medium' and 'high' according to the 20th and 80th percentiles.
+
+
+**Changed**
+
++ Deprecated support for `Python 3.9`.
+
++ Parameter `regressor` has been deprecated in favor of `estimator` in all Forecasters and will be removed in future releases to align with scikit-learn terminology. Visit the [migration guide](../user_guides/migration-guide.html) section for more information.
+
++ Class <code>[Sarimax]</code> has been moved to the new <code>[stats]</code> module. Visit the [migration guide](../user_guides/migration-guide.html) section for more information.
+
++ Class <code>[ForecasterSarimax]</code> has been deprecated in favor of the new <code>[ForecasterStats]</code> model in the <code>[recursive]</code> module. The new forecaster is compatible with a broader range of statistical models such as: sarimax, arima, arar and ets. Visit the [migration guide](../user_guides/migration-guide.html) section for more information.
+
+
+**Fixed**
+
++ Fixed an issue that prevented using indices with frequencies containing metadata (e.g., `CustomBusinessDay`, `CustomBusinessHour`, or holiday/weekmask variants). The library now preserves full frequency metadata by using `freq` instead of `freqstr`, ensuring correct alignment and compatibility with custom date offsets. ([#1051](https://github.com/skforecast/skforecast/issues/1051))
+
+
 ## 0.18.0 <small>Sep 22, 2025</small> { id="0.18.0" }
 
 The main changes in this release are:
@@ -24,7 +76,7 @@ The main changes in this release are:
 
 + <span class="badge text-bg-feature">Feature</span> New attribute `__skforecast_tags__` and public method `get_tags()` in all forecasters which provide metadata about the forecaster, such as its capabilities and limitations. This attribute can be useful for [introspection and understanding the behavior](../quick-start/forecaster-attributes.html#skforecast-tags) of different forecasters.
 
-+ <span class="badge text-bg-feature">API Change</span> Backtesting functions output DataFrame now includes a `fold` column to identify the fold number of each prediction.
++ <span class="badge text-bg-api-change">API Change</span> Backtesting functions output DataFrame now includes a `fold` column to identify the fold number of each prediction.
 
 + <span class="badge text-bg-danger">Fix</span> Fixed a bug that caused the gap to not be applied correctly in the <code>[backtesting_forecaster_multiseries]</code> function. ([#1028](https://github.com/skforecast/skforecast/issues/1028))
 
@@ -116,7 +168,7 @@ The main changes in this release are:
 
 + The <code>[create_and_compile_model]</code> function has been refactored. All arguments related with layers and compilation are now passed as a dictionary using the following arguments: `recurrent_layers_kwargs`, `dense_layers_kwargs`, `output_dense_layer_kwargs`, and `compile_kwargs`.
 
-+ The arguments `lags` and `steps` were removed from the <code>[ForecasterRNN]</code> initialization. These arguments are now inferred from the regressor architecture.
++ The arguments `lags` and `steps` were removed from the <code>[ForecasterRNN]</code> initialization. These arguments are now inferred from the estimator architecture.
 
 + Remove `preprocess_y`, `preprocess_last_window` and `preprocess_exog` in favor of `check_extract_values_and_index` in the <code>[utils]</code> module. This function checks if the index is a pandas `DatetimeIndex` or `RangeIndex` and extracts the values and index accordingly.
 
@@ -139,7 +191,7 @@ The main changes in this release are:
 
 **Added**
 
-+ Function `set_cpu_gpu_device()` in the <code>[utils]</code> module to set the device of the regressor to 'cpu' or 'gpu'. It is used to ensure that the recursive prediction is done in cpu even if the regressor is set to 'gpu'. This allows to avoid the bottleneck of the recursive prediction when using a gpu. Only applied to recursive forecasters when the regressor is a `XGBoost`, `LightGBM` or `CatBoost` model.
++ Function `set_cpu_gpu_device()` in the <code>[utils]</code> module to set the device of the estimator to 'cpu' or 'gpu'. It is used to ensure that the recursive prediction is done in cpu even if the estimator is set to 'gpu'. This allows to avoid the bottleneck of the recursive prediction when using a gpu. Only applied to recursive forecasters when the estimator is a `XGBoost`, `LightGBM` or `CatBoost` model.
 
 + Added `series_name_in_` attribute in single series forecasters to store the name of the series used to fit the forecaster.
 
@@ -286,7 +338,7 @@ This release has undergone a major refactoring to improve the performance of the
 
 + <span class="badge text-bg-api-change">API Change</span> Refactor the `set_out_sample_residuals` method in all forecasters, it now expects `y_true` and `y_pred` as arguments instead of `residuals`. This method is used to store the residuals of the out-of-sample predictions.
 
-+ <span class="badge text-bg-api-change">API Change</span> The `pmdarima.ARIMA` regressor is no longer supported by the <code>[ForecasterSarimax]</code>. You can use the skforecast <code>[Sarimax]</code> model or, to continue using it, use skforecast 0.13.0 or lower.
++ <span class="badge text-bg-api-change">API Change</span> The `pmdarima.ARIMA` estimator is no longer supported by the <code>[ForecasterSarimax]</code>. You can use the skforecast <code>[Sarimax]</code> model or, to continue using it, use skforecast 0.13.0 or lower.
 
 + <span class="badge text-bg-danger">Fix</span> Fixed a bug where the `create_predict_X` method in recursive Forecasters did not correctly generate the matrix correctly when using transformations and/or differentiations
 
@@ -324,11 +376,11 @@ This release has undergone a major refactoring to improve the performance of the
 
 + Refactor `predict_bootstrapping` in all Forecasters. The bootstrapping process has been optimized to improve performance. This may result in slightly different results when using the same seed as in previous versions.
 
-+ Change the default value of `encoding` to `ordinal` in <code>[ForecasterRecursiveMultiSeries]</code>. This will avoid conflicts if the regressor does not support categorical variables by default.
++ Change the default value of `encoding` to `ordinal` in <code>[ForecasterRecursiveMultiSeries]</code>. This will avoid conflicts if the estimator does not support categorical variables by default.
 
 + Removed argument `engine` from <code>[bayesian_search_forecaster]</code> and <code>[bayesian_search_forecaster_multiseries]</code>.
 
-+ The `pmdarima.ARIMA` regressor is no longer supported by the <code>[ForecasterSarimax]</code>. You can use the skforecast <code>[Sarimax]</code> model or, to continue using it, use skforecast 0.13.0 or lower.
++ The `pmdarima.ARIMA` estimator is no longer supported by the <code>[ForecasterSarimax]</code>. You can use the skforecast <code>[Sarimax]</code> model or, to continue using it, use skforecast 0.13.0 or lower.
 
 + `initialize_lags` in <code>[utils]</code> now returns the maximum lag, `max_lag`.
 
@@ -432,9 +484,9 @@ The main changes in this release are:
 
 + <span class="badge text-bg-feature">Feature</span> Global Forecasters <code>[ForecasterAutoregMultiSeries]</code> and <code>[ForecasterAutoregMultiSeriesCustom]</code> are able to [predict series not seen during training](https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting.html#forecasting-unknown-series). This is useful when the user wants to predict a new series that was not included in the training data.
 
-+ <span class="badge text-bg-feature">Feature</span> `encoding` can be set to `None` in Global Forecasters <code>[ForecasterAutoregMultiSeries]</code> and <code>[ForecasterAutoregMultiSeriesCustom]</code>. This option does [not add the encoded series ids](https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting#series-encoding-in-multi-series) to the regressor training matrix.
++ <span class="badge text-bg-feature">Feature</span> `encoding` can be set to `None` in Global Forecasters <code>[ForecasterAutoregMultiSeries]</code> and <code>[ForecasterAutoregMultiSeriesCustom]</code>. This option does [not add the encoded series ids](https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting#series-encoding-in-multi-series) to the estimator training matrix.
 
-+ <span class="badge text-bg-feature">Feature</span> New `create_predict_X` method in all recursive and direct Forecasters to allow the user to inspect the matrix passed to the predict method of the regressor.
++ <span class="badge text-bg-feature">Feature</span> New `create_predict_X` method in all recursive and direct Forecasters to allow the user to inspect the matrix passed to the predict method of the estimator.
 
 + <span class="badge text-bg-feature">Feature</span> New module <code>[metrics]</code> with functions to calculate metrics for time series forecasting such as <code>[mean_absolute_scaled_error]</code> and <code>[root_mean_squared_scaled_error]</code>. Visit [Time Series Forecasting Metrics](https://skforecast.org/latest/user_guides/metrics.html) for more information.
 
@@ -444,7 +496,7 @@ The main changes in this release are:
 
 + <span class="badge text-bg-api-change">API Change</span> backtesting procedures now pass the training series to the metric functions so it can be used to calculate metrics that depend on the training series.
 
-+ <span class="badge text-bg-api-change">API Change</span> Changed the default value of the `transformer_series` argument to `None` in the Global Forecasters <code>[ForecasterAutoregMultiSeries]</code> and <code>[ForecasterAutoregMultiSeriesCustom]</code>. In most cases, tree-based models are used as regressors in these forecasters, so no transformation is applied by default as it is not necessary.
++ <span class="badge text-bg-api-change">API Change</span> Changed the default value of the `transformer_series` argument to `None` in the Global Forecasters <code>[ForecasterAutoregMultiSeries]</code> and <code>[ForecasterAutoregMultiSeriesCustom]</code>. In most cases, tree-based models are used as estimators in these forecasters, so no transformation is applied by default as it is not necessary.
 
 **Added**
 
@@ -454,7 +506,7 @@ The main changes in this release are:
 
 + `PyTorch` backend for the <code>[ForecasterRnn]</code>.
 
-+ New `create_predict_X` method in all recursive and direct Forecasters to allow the user to inspect the matrix passed to the predict method of the regressor.
++ New `create_predict_X` method in all recursive and direct Forecasters to allow the user to inspect the matrix passed to the predict method of the estimator.
 
 + New `_create_predict_inputs` method in all Forecasters to unify the inputs of the predict methods.
 
@@ -468,7 +520,7 @@ The main changes in this release are:
 
 + Global Forecasters <code>[ForecasterAutoregMultiSeries]</code> and <code>[ForecasterAutoregMultiSeriesCustom]</code> are able to predict series not seen during training. This is useful when the user wants to predict a new series that was not included in the training data.
 
-+ `encoding` can be set to `None` in Global Forecasters <code>[ForecasterAutoregMultiSeries]</code> and <code>[ForecasterAutoregMultiSeriesCustom]</code>. This option does not add the encoded series ids to the regressor training matrix.
++ `encoding` can be set to `None` in Global Forecasters <code>[ForecasterAutoregMultiSeries]</code> and <code>[ForecasterAutoregMultiSeriesCustom]</code>. This option does not add the encoded series ids to the estimator training matrix.
 
 + New argument `add_aggregated_metric` in <code>[backtesting_forecaster_multiseries]</code> to include, in addition to the metrics for each level, the aggregated metric of all levels using the average (arithmetic mean), weighted average (weighted by the number of predicted values of each level) or pooling (the values of all levels are pooled and then the metric is calculated).
 
@@ -492,7 +544,7 @@ The main changes in this release are:
 
 + Change information message when `verbose` is `True` in <code>[backtesting_forecaster]</code> and <code>[backtesting_forecaster_multiseries]</code>.
 
-+ `select_n_jobs_backtesting` and `select_n_jobs_fit` in <code>[utils]</code> return `n_jobs = 1` if regressor is `LGBMRegressor`. This is because `lightgbm` is highly optimized for gradient boosting and parallelizes operations at a very fine-grained level, making additional parallelization unnecessary and potentially harmful due to resource contention.
++ `select_n_jobs_backtesting` and `select_n_jobs_fit` in <code>[utils]</code> return `n_jobs = 1` if estimator is `LGBMRegressor`. This is because `lightgbm` is highly optimized for gradient boosting and parallelizes operations at a very fine-grained level, making additional parallelization unnecessary and potentially harmful due to resource contention.
 
 + `metric_values` returned by <code>[backtesting_forecaster]</code> and <code>[backtesting_sarimax]</code> is a `pandas DataFrame` with one column per metric instead of a `list`.
 
@@ -572,13 +624,13 @@ The main changes in this release are:
 
 **Changed**
 
-+ Deprecated argument `lags_grid` in `bayesian_search_forecaster`. Use `search_space` to define the candidate values for the lags. This allows the lags to be optimized along with the other hyperparameters of the regressor in the bayesian search.
++ Deprecated argument `lags_grid` in `bayesian_search_forecaster`. Use `search_space` to define the candidate values for the lags. This allows the lags to be optimized along with the other hyperparameters of the estimator in the bayesian search.
 
 + `n_boot` argument in `predict_interval`changed from 500 to 250.
 
 + Changed the default value of the `transformer_series` argument to use a `StandardScaler()` in the Global Forecasters (`ForecasterAutoregMultiSeries`, `ForecasterAutoregMultiSeriesCustom` and `ForecasterAutoregMultiVariate`).
 
-+ Refactor `utils.select_n_jobs_backtesting` to use the forecaster directly instead of `forecaster_name` and `regressor_name`.
++ Refactor `utils.select_n_jobs_backtesting` to use the forecaster directly instead of `forecaster_name` and `estimator_name`.
 
 + Remove `_backtesting_forecaster_verbose` in model_selection in favor of `_create_backtesting_folds`, (deprecated since 0.8.0).
 
@@ -741,7 +793,7 @@ The main changes in this release are:
 
 **Added**
 
-+ Added the `fit_kwargs` argument to all forecasters to allow the inclusion of additional keyword arguments passed to the regressor's `fit` method.
++ Added the `fit_kwargs` argument to all forecasters to allow the inclusion of additional keyword arguments passed to the estimator's `fit` method.
 
 + Added the `set_fit_kwargs` method to set the `fit_kwargs` attribute.
   
@@ -755,7 +807,7 @@ The main changes in this release are:
 
 + Added function `utils.cast_exog_dtypes` to cast data types of the exogenous variables using a dictionary as a mapping.
 
-+ Added function `utils.check_select_fit_kwargs` to check if the argument `fit_kwargs` is a dictionary and select only the keys used by the `fit` method of the regressor.
++ Added function `utils.check_select_fit_kwargs` to check if the argument `fit_kwargs` is a dictionary and select only the keys used by the `fit` method of the estimator.
 
 + Added function `model_selection._create_backtesting_folds` to provide train/test indices (position) for backtesting functions.
 
@@ -1044,7 +1096,7 @@ The main changes in this release are:
 
 **Fixed**
 
-+ `fit` and `predict` transform pandas Series and DataFrames to numpy arrays if regressor is XGBoost.
++ `fit` and `predict` transform pandas Series and DataFrames to numpy arrays if estimator is XGBoost.
 
 
 ## 0.4.0 <small>Dec 10, 2021</small> { id="0.4.0" }
@@ -1063,7 +1115,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 
 + Output of `predict` is a pandas Series with index according to the steps predicted.
 
-+ Scikit-learn pipelines are allowed as regressors.
++ Scikit-learn pipelines are allowed as estimators.
 
 + `backtesting_forecaster` and `backtesting_forecaster_intervals` have been combined in a single function.
 
@@ -1178,7 +1230,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 
 + `backtesting_forecast` prints correctly the number of folds when remainder observations are cero.
 
-+ Removed named argument X in `self.regressor.predict(X)` to allow using XGBoost regressor.
++ Removed named argument X in `self.estimator.predict(X)` to allow using XGBoost estimator.
 
 + Values stored in `self.last_window` when training `ForecasterAutoregMultiOutput`. 
 
@@ -1242,15 +1294,22 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 
 <!-- Links to API Reference -->
 <!-- Forecasters -->
+[recursive]: ../api/forecasterrecursive.html
 [ForecasterRecursive]: ../api/forecasterrecursive.html
+[ForecasterRecursiveClassifier]: ../api/forecasterrecursiveclassifier.html
 [ForecasterDirect]: ../api/forecasterdirect.html
 [ForecasterRecursiveMultiSeries]: ../api/forecasterrecursivemultiseries.html
 [ForecasterDirectMultiVariate]: ../api/forecasterdirectmultivariate.html
 [ForecasterRNN]: ../api/forecasterrnn.html
 [create_and_compile_model]: ../api/forecasterrnn.html#skforecast.deep_learning.utils.create_and_compile_model
-[ForecasterSarimax]: ../api/forecastersarimax.html
-[Sarimax]: ../api/sarimax.html
+[ForecasterStats]: ../api/forecasterstats.html
 [ForecasterEquivalentDate]: ../api/forecasterequivalentdate.html
+[ForecasterRecursiveClassifier]: ../api/forecasterrecursiveclassifier.html
+
+<!-- stats -->
+[stats]: ../api/stats.html
+[Sarimax]: ../api/stats.html#skforecast.stats._sarimax.Sarimax
+[Arar]: ../api/stats.html#skforecast.stats._arar.Arar
 
 <!-- model_selection -->
 [model_selection]: ../api/model_selection.html
@@ -1281,9 +1340,11 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 <!-- preprocessing -->
 [preprocessing]: ../api/preprocessing.html
 [RollingFeatures]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.RollingFeatures
+[RollingFeaturesClassification]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.RollingFeaturesClassification
 [reshape_series_wide_to_long]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.reshape_series_wide_to_long
 [reshape_series_long_to_dict]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.reshape_series_long_to_dict
 [reshape_exog_long_to_dict]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.reshape_exog_long_to_dict
+[reshape_series_exog_dict_to_long]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.reshape_series_exog_dict_to_long
 [TimeSeriesDifferentiator]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.TimeSeriesDifferentiator
 [QuantileBinner]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.QuantileBinner
 [ConformalIntervalCalibrator]: ../api/preprocessing.html#skforecast.preprocessing.preprocessing.ConformalIntervalCalibrator
@@ -1291,6 +1352,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 <!-- drift_detection -->
 [drift_detection]: ../api/drift_detection.html
 [RangeDriftDetector]: ../api/drift_detection.html#skforecast.drift_detection._range_drift.RangeDriftDetector
+[PopulationDriftDetector]: ../api/drift_detection.html#skforecast.drift_detection._population_drift.PopulationDriftDetector
 
 <!-- metrics -->
 [metrics]: ../api/metrics.html
@@ -1338,3 +1400,4 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [create_datetime_features]: https://skforecast.org/0.13.0/api/preprocessing#skforecast.preprocessing.create_datetime_features
 [series_long_to_dict]: https://skforecast.org/0.16.0/api/preprocessing.html#skforecast.preprocessing.preprocessing.series_long_to_dict
 [exog_long_to_dict]: https://skforecast.org/0.16.0/api/preprocessing.html#skforecast.preprocessing.preprocessing.exog_long_to_dict
+[ForecasterSarimax]: https://skforecast.org/0.19.0/api/forecastersarimax.html

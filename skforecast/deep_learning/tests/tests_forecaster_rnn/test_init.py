@@ -17,9 +17,11 @@ def test_ForecasterRnn_init_basic_and_attr_types():
     Basic initialization of ForecasterRnn with attributes types.
     """
     series = pd.DataFrame({'A': np.arange(10, dtype=float)})
-    model = create_and_compile_model(series=series, lags=3, steps=2, model_name="modelo")
+    model = create_and_compile_model(
+        series=series, lags=3, steps=2, model_name="modelo"
+    )
     forecaster = ForecasterRnn(
-        regressor=model,
+        estimator=model,
         levels='A',
         lags=3,
         transformer_series=None,
@@ -28,7 +30,7 @@ def test_ForecasterRnn_init_basic_and_attr_types():
         forecaster_id="f-id"
     )
 
-    assert isinstance(forecaster.regressor, keras.Model)
+    assert isinstance(forecaster.estimator, keras.Model)
     assert forecaster.levels == ['A']
     assert forecaster.transformer_series is None
     assert forecaster.transformer_exog is None
@@ -66,7 +68,7 @@ def test_ForecasterRnn_init_levels_list_and_lags_list():
     series = pd.DataFrame({'A': np.arange(10), 'B': np.arange(10, 20)})
     model = create_and_compile_model(series=series, lags=[1, 2], steps=2)
     forecaster = ForecasterRnn(
-        regressor=model,
+        estimator=model,
         levels=['A', 'B'],
         lags=[1, 2]
     )
@@ -77,7 +79,7 @@ def test_ForecasterRnn_init_levels_list_and_lags_list():
     assert forecaster.n_levels_out == 2
 
 
-def test_ForecasterRnn_init_raises_ValueError_if_number_of_lags_not_matching_regressor():
+def test_ForecasterRnn_init_raises_ValueError_if_number_of_lags_not_matching_estimator():
     """
     Raise ValueError if number of lags does not match the model.
     """
@@ -85,11 +87,11 @@ def test_ForecasterRnn_init_raises_ValueError_if_number_of_lags_not_matching_reg
     model = create_and_compile_model(series=series, lags=2, steps=2)
     err_msg = re.escape(
         "Number of lags (3) does not match the number of "
-        "lags expected by the regressor architecture (2)."
+        "lags expected by the estimator architecture (2)."
     )
     with pytest.raises(ValueError, match=err_msg):
         ForecasterRnn(
-            regressor=model,
+            estimator=model,
             levels='A',
             lags=3
         )
@@ -106,13 +108,13 @@ def test_ForecasterRnn_init_raises_TypeError_if_levels_not_str_or_list():
     )
     with pytest.raises(TypeError, match=err_msg):
         ForecasterRnn(
-            regressor=model,
+            estimator=model,
             levels=7,
             lags=3
         )
 
 
-def test_ForecasterRnn_init_raises_ValueError_if_levels_list_length_not_matching_regressor():
+def test_ForecasterRnn_init_raises_ValueError_if_levels_list_length_not_matching_estimator():
     """
     Raise ValueError if levels list length does not match the model.
     """
@@ -120,11 +122,11 @@ def test_ForecasterRnn_init_raises_ValueError_if_levels_list_length_not_matching
     model = create_and_compile_model(series=series, lags=3, steps=2, levels=['A'])
     err_msg = re.escape(
         "Number of levels (3) does not match the number of "
-        "levels expected by the regressor architecture (1)."
+        "levels expected by the estimator architecture (1)."
     )
     with pytest.raises(ValueError, match=err_msg):
         ForecasterRnn(
-            regressor=model,
+            estimator=model,
             levels=['A', 'B', 'C'],
             lags=3
         )
@@ -138,7 +140,7 @@ def test_ForecasterRnn_init_with_exog_and_check_exog_attrs():
     exog = pd.DataFrame({'exog1': np.arange(10)})
     model = create_and_compile_model(series=series, lags=3, steps=2, exog=exog)
     forecaster = ForecasterRnn(
-        regressor=model,
+        estimator=model,
         levels='A',
         lags=3
     )
@@ -162,7 +164,7 @@ def test_ForecasterRnn_init_with_series_val_and_exog_val():
         "exog_val": exog_val
     }
     forecaster = ForecasterRnn(
-        regressor=model,
+        estimator=model,
         levels='A',
         lags=3,
         fit_kwargs=fit_kwargs
@@ -188,7 +190,7 @@ def test_ForecasterRnn_init_raises_TypeError_if_series_val_not_dataframe():
     )
     with pytest.raises(TypeError, match=err_msg):
         ForecasterRnn(
-            regressor=model,
+            estimator=model,
             levels='A',
             lags=3,
             fit_kwargs=fit_kwargs
@@ -209,11 +211,11 @@ def test_ForecasterRnn_init_raises_ValueError_if_exog_in_but_missing_exog_val():
     err_msg = re.escape(
         "If `series_val` is provided, `exog_val` must also be "
         "provided using the `fit_kwargs` argument when the "
-        "regressor has exogenous variables."
+        "estimator has exogenous variables."
     )
     with pytest.raises(ValueError, match=err_msg):
         ForecasterRnn(
-            regressor=model,
+            estimator=model,
             levels='A',
             lags=3,
             fit_kwargs=fit_kwargs
@@ -236,7 +238,7 @@ def test_ForecasterRnn_init_raises_TypeError_if_exog_val_wrong_type():
     )
     with pytest.raises(TypeError, match=err_msg):
         ForecasterRnn(
-            regressor=model,
+            estimator=model,
             levels='A',
             lags=3,
             fit_kwargs=fit_kwargs

@@ -22,7 +22,7 @@ def test_forecaster_y_exog_features_stored():
         stats=['ratio_min_max', 'median'], window_sizes=4
     )
     forecaster = ForecasterDirect(
-        LinearRegression(), lags=3, steps=2, window_features=rolling
+        estimator=LinearRegression(), lags=3, steps=2, window_features=rolling
     )
     forecaster.fit(y=y, exog=exog)
 
@@ -54,15 +54,17 @@ def test_forecaster_y_exog_features_stored():
 
 def test_forecaster_DatetimeIndex_index_freq_stored():
     """
-    Test serie_with_DatetimeIndex.index.freqstr is stored in forecaster.index_freq_.
+    Test serie_with_DatetimeIndex.index.freq is stored in forecaster.index_freq_.
     """
     serie_with_DatetimeIndex = pd.Series(
         data  = np.arange(10),
         index = pd.date_range(start='2022-01-01', periods=10)
     )
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=2)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=3, steps=2
+    )
     forecaster.fit(y=serie_with_DatetimeIndex)
-    expected = serie_with_DatetimeIndex.index.freqstr
+    expected = serie_with_DatetimeIndex.index.freq
     results = forecaster.index_freq_
 
     assert results == expected
@@ -73,7 +75,9 @@ def test_forecaster_index_step_stored():
     Test serie without DatetimeIndex, step is stored in forecaster.index_freq_.
     """
     y = pd.Series(data=np.arange(10))
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=2)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=3, steps=2
+    )
     forecaster.fit(y=y)
     expected = y.index.step
     results = forecaster.index_freq_
@@ -87,7 +91,9 @@ def test_fit_in_sample_residuals_stored(n_jobs):
     """
     Test that values of in_sample_residuals_ are stored after fitting.
     """
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=2, n_jobs=n_jobs)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=3, steps=2, n_jobs=n_jobs
+    )
     forecaster.fit(y=pd.Series(np.arange(5)), store_in_sample_residuals=True)
     results = forecaster.in_sample_residuals_
     expected = np.array([0., 0.])
@@ -103,11 +109,15 @@ def test_fit_same_residuals_when_residuals_greater_than_10000(n_jobs):
     Test fit return same residuals when residuals len is greater than 10_000.
     Testing with two different forecaster.
     """
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=2, n_jobs=n_jobs)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=3, steps=2, n_jobs=n_jobs
+    )
     forecaster.fit(y=pd.Series(np.arange(12_000)), store_in_sample_residuals=True)
     results_1 = forecaster.in_sample_residuals_
 
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=2, n_jobs=n_jobs)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=3, steps=2, n_jobs=n_jobs
+    )
     forecaster.fit(y=pd.Series(np.arange(12_000)), store_in_sample_residuals=True)
     results_2 = forecaster.in_sample_residuals_
 
@@ -125,7 +135,7 @@ def test_fit_in_sample_residuals_by_bin_stored(n_jobs):
     Test that values of in_sample_residuals_by_bin are stored after fitting.
     """
     forecaster = ForecasterDirect(
-        LinearRegression(), lags=3, steps=2, binner_kwargs={'n_bins': 3}, n_jobs=n_jobs
+        estimator=LinearRegression(), lags=3, steps=2, binner_kwargs={'n_bins': 3}, n_jobs=n_jobs
     )
     forecaster.fit(y, store_in_sample_residuals=True)
 
@@ -197,7 +207,7 @@ def test_fit_in_sample_residuals_not_stored_probabilistic_mode_binned(n_jobs):
     when `store_in_sample_residuals=False`. Binner intervals are stored.
     """
     forecaster = ForecasterDirect(
-        LinearRegression(), lags=3, steps=2, binner_kwargs={'n_bins': 3}, n_jobs=n_jobs
+        estimator=LinearRegression(), lags=3, steps=2, binner_kwargs={'n_bins': 3}, n_jobs=n_jobs
     )
     forecaster.fit(y, store_in_sample_residuals=False)
 
@@ -222,7 +232,9 @@ def test_fit_in_sample_residuals_not_stored_probabilistic_mode_False(n_jobs):
     Test that values of in_sample_residuals_ are not stored after fitting
     when `store_in_sample_residuals=False` and _probabilistic_mode=False.
     """
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=2, n_jobs=n_jobs)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=3, steps=2, n_jobs=n_jobs
+    )
     forecaster._probabilistic_mode = False
     forecaster.fit(y=pd.Series(np.arange(5)), store_in_sample_residuals=False)
 
@@ -239,7 +251,9 @@ def test_fit_last_window_stored(store_last_window):
     Test that values of last window are stored after fitting.
     """
     y = pd.Series(np.arange(20), name='y')
-    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=2)
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=3, steps=2
+    )
     forecaster.fit(y=y, store_last_window=store_last_window)
 
     expected = pd.Series(

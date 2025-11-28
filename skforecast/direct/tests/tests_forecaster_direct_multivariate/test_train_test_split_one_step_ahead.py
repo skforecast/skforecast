@@ -28,7 +28,7 @@ def test_train_test_split_one_step_ahead_when_y_is_series_and_exog_are_dataframe
     )
 
     forecaster = ForecasterDirectMultiVariate(
-        LinearRegression(), lags=5, level="series_1", steps=1, transformer_series=None
+        estimator=LinearRegression(), lags=5, level="series_1", steps=1, transformer_series=None
     )
 
     X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding = (

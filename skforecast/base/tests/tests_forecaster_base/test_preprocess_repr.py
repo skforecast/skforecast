@@ -35,7 +35,7 @@ def test_output_preprocess_repr(transformer_series):
     )
     forecaster.fit(series=series_dict, exog=exog)
     results = forecaster._preprocess_repr(
-                  regressor          = forecaster.regressor, 
+                  estimator          = forecaster.estimator, 
                   training_range_    = forecaster.training_range_, 
                   series_names_in_   = forecaster.series_names_in_, 
                   exog_names_in_     = forecaster.exog_names_in_, 

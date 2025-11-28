@@ -22,7 +22,7 @@ def test_calculate_metrics_one_step_ahead_when_ForecasterRecursive():
     """
 
     forecaster = ForecasterRecursive(
-        regressor=LinearRegression(),
+        estimator=LinearRegression(),
         lags=5,
         transformer_y=StandardScaler(),
         transformer_exog=StandardScaler(),
@@ -58,7 +58,7 @@ def test_calculate_metrics_one_step_ahead_when_ForecasterDirect():
     """
 
     forecaster = ForecasterDirect(
-        regressor=LinearRegression(),
+        estimator=LinearRegression(),
         lags=5,
         steps=3,
         transformer_y=StandardScaler(),

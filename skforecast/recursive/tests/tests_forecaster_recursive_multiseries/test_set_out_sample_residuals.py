@@ -556,7 +556,7 @@ def test_forecaster_set_out_sample_residuals_when_transformer_series_and_differe
     }
     
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 5,
                      transformer_series = StandardScaler(),
                      differentiation    = differentiation
@@ -620,7 +620,7 @@ def test_forecaster_set_out_sample_residuals_when_transformer_series_and_differe
         '_unknown_level': rng.normal(loc=0, scale=1, size=5)
     }
     forecaster = ForecasterRecursiveMultiSeries(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      lags               = 5,
                      differentiation    = {'l1': 1, 'l2': 2, 'l3': None, '_unknown_level': 1},
                      transformer_series = StandardScaler(),

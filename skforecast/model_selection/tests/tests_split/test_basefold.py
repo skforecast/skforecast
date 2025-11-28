@@ -434,7 +434,7 @@ def test_basefold_extract_index_raise_error_when_X_is_dict_with_series_with_diff
     msg = re.escape(
         "If `X` is a dictionary, all series must have a Pandas "
         "RangeIndex or DatetimeIndex with the same step/frequency. "
-        "Found frequencies: ['2D', 'D']"
+        "Found frequencies: [<Day>, <2 * Days>]"
     )
     with pytest.raises(ValueError, match=msg):
         cv._extract_index(X)

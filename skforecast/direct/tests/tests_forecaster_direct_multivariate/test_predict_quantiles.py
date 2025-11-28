@@ -23,12 +23,12 @@ transformer_exog = ColumnTransformer(
 
 def test_predict_quantiles_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_True_exog_and_transformer():
     """
-    Test output of predict_quantiles when regressor is LinearRegression,
+    Test output of predict_quantiles when estimator is LinearRegression,
     2 steps are predicted, using in-sample residuals, exog is included and both
     inputs are transformed.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      steps              = 2,
                      level              = 'l1',
                      lags               = 3,
@@ -59,12 +59,12 @@ def test_predict_quantiles_output_when_forecaster_is_LinearRegression_steps_is_2
 
 def test_predict_quantiles_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_False_exog_and_transformer():
     """
-    Test output of predict_quantiles when regressor is LinearRegression,
+    Test output of predict_quantiles when estimator is LinearRegression,
     2 steps are predicted, using out-sample residuals, exog is included and both
     inputs are transformed.
     """
     forecaster = ForecasterDirectMultiVariate(
-                     regressor          = LinearRegression(),
+                     estimator          = LinearRegression(),
                      steps              = 2,
                      level              = 'l1',
                      lags               = 3,

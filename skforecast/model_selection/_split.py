@@ -12,7 +12,8 @@ import warnings
 import numpy as np
 import pandas as pd
 import itertools
-import skforecast
+
+from .. import __version__
 from ..utils import date_to_index_position, get_style_repr_html
 from ..exceptions import IgnoredArgumentWarning
 
@@ -284,10 +285,10 @@ class BaseFold():
                     continue
 
                 idx = v.index
-                if isinstance(v.index, pd.DatetimeIndex):
-                    indexes_freq.add(v.index.freqstr)
-                elif isinstance(v.index, pd.RangeIndex):
-                    indexes_freq.add(v.index.step)
+                if isinstance(idx, pd.DatetimeIndex):
+                    indexes_freq.add(idx.freq)
+                elif isinstance(idx, pd.RangeIndex):
+                    indexes_freq.add(idx.step)
                 else:
                     not_valid_index.append(k)
 
@@ -452,7 +453,7 @@ class OneStepAheadFold(BaseFold):
         style, unique_id = get_style_repr_html()
         content = f"""
         <div class="container-{unique_id}">
-            <h2>{type(self).__name__}</h2>
+            <p style="font-size: 1.5em; font-weight: bold; margin-block-start: 0.83em; margin-block-end: 0.83em;">{type(self).__name__}</p>
             <details open>
                 <summary>General Information</summary>
                 <ul>
@@ -463,9 +464,9 @@ class OneStepAheadFold(BaseFold):
                 </ul>
             </details>
             <p>
-                <a href="https://skforecast.org/{skforecast.__version__}/api/model_selection.html#skforecast.model_selection._split.OneStepAheadFold">&#128712 <strong>API Reference</strong></a>
+                <a href="https://skforecast.org/{__version__}/api/model_selection.html#skforecast.model_selection._split.OneStepAheadFold">&#128712 <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
-                <a href="https://skforecast.org/{skforecast.__version__}/faq/parameters-search-backtesting-vs-one-step-ahead.html">&#128462 <strong>User Guide</strong></a>
+                <a href="https://skforecast.org/{__version__}/faq/parameters-search-backtesting-vs-one-step-ahead.html">&#128462 <strong>User Guide</strong></a>
             </p>
         </div>
         """
@@ -846,7 +847,7 @@ class TimeSeriesFold(BaseFold):
         style, unique_id = get_style_repr_html()
         content = f"""
         <div class="container-{unique_id}">
-            <h2>{type(self).__name__}</h2>
+            <p style="font-size: 1.5em; font-weight: bold; margin-block-start: 0.83em; margin-block-end: 0.83em;">{type(self).__name__}</p>
             <details open>
                 <summary>General Information</summary>
                 <ul>
@@ -865,9 +866,9 @@ class TimeSeriesFold(BaseFold):
                 </ul>
             </details>
             <p>
-                <a href="https://skforecast.org/{skforecast.__version__}/api/model_selection.html#skforecast.model_selection._split.TimeSeriesFold">&#128712 <strong>API Reference</strong></a>
+                <a href="https://skforecast.org/{__version__}/api/model_selection.html#skforecast.model_selection._split.TimeSeriesFold">&#128712 <strong>API Reference</strong></a>
                 &nbsp;&nbsp;
-                <a href="https://skforecast.org/{skforecast.__version__}/user_guides/backtesting.html#timeseriesfold">&#128462 <strong>User Guide</strong></a>
+                <a href="https://skforecast.org/{__version__}/user_guides/backtesting.html#timeseriesfold">&#128462 <strong>User Guide</strong></a>
             </p>
         </div>
         """
