@@ -122,7 +122,7 @@ The **skforecast** library offers a **variety of forecaster** types, each tailor
 [ForecasterDirectMultiVariate]: https://skforecast.org/latest/user_guides/dependent-multi-series-multivariate-forecasting.html
 [ForecasterRNN]: https://skforecast.org/latest/user_guides/forecasting-with-deep-learning-rnn-lstm
 [ForecasterStats]: https://skforecast.org/latest/user_guides/forecasting-sarimax-arima.html
-[ForecasterRecursiveClassifier]: ../user_guides/autoregressive-classification-forecasting.html
+[ForecasterRecursiveClassifier]: https://skforecast.org/latest/user_guides/autoregressive-classification-forecasting.html
 
 
 # Examples and tutorials
