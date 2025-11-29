@@ -61,9 +61,9 @@ For experienced users looking to deepen their forecasting skills, this section p
 
 <i class="fa-solid fa-lock-open" style="font-size: 25px; color: #e70d44;"></i> [Data leakage in pre-trained forecasting models](https://cienciadedatos.net/documentos/py63-data-leakage-pre-trained-forecasting-models.html)
 
-<i class="fa-solid fa-gauge-high" style="color: #ffee05ff;"></i> [Accelerate forecasting models with GPU](https://cienciadedatos.net/documentos/py65-accelerate-forecasting-models-gpu.html)
+<i class="fa-solid fa-gauge-high" style="font-size: 25px; color: #00eeffff;"></i> [Accelerate forecasting models with GPU](https://cienciadedatos.net/documentos/py65-accelerate-forecasting-models-gpu.html)
 
-<i class="fa-solid fa-gauge-high" style="color: #ffee05ff;"></i> [Accelerate forecasting models with Intel® scikit-learn-intelex](https://cienciadedatos.net/documentos/py75-accelerate-forecasting-with-scikit-learn-intelex.html)
+<i class="fa-solid fa-gauge-high" style="font-size: 25px; color: #00eeffff;"></i> [Accelerate forecasting models with Intel® scikit-learn-intelex](https://cienciadedatos.net/documentos/py75-accelerate-forecasting-with-scikit-learn-intelex.html)
 
 
 ## Real-World Challenges and Case Studies
