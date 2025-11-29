@@ -16,6 +16,8 @@ This section provides essential tutorials for users who are just getting started
 
 <i class="fa-solid fa-sitemap fa" style="font-size: 25px; color: #00cc99;"></i> [Forecasting with gradient boosting: XGBoost, LightGBM and CatBoost](https://www.cienciadedatos.net/documentos/py39-forecasting-time-series-with-skforecast-xgboost-lightgbm-catboost.html)
 
+<i class="fa-solid fa-table-list" style="font-size: 25px; color: #808080;"></i> [Forecasting of categorical time series](https://cienciadedatos.net/documentos/py72-classification-forecasting-categorical-series.html)
+
 <i class="fa-solid fa-diagram-project fa-rotate-90" style="font-size: 25px; color: #74C0FC;"></i> [Forecasting with XGBoost](https://www.cienciadedatos.net/documentos/py56-forecasting-time-series-with-xgboost.html)
 
 <i class="fa-solid fa-diagram-project fa-rotate-90" style="font-size: 25px; color: #76b644;"></i> [Forecasting with LightGBM](https://www.cienciadedatos.net/documentos/py58-forecasting-time-series-with-lightgbm.html)
