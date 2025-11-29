@@ -12,6 +12,8 @@ This section provides essential tutorials for users who are just getting started
 
 <i class="fa-solid fa-arrow-trend-up" style="font-size: 25px; color: #E60023;"></i> [ARIMA and SARIMAX models](https://www.cienciadedatos.net/documentos/py51-arima-sarimax-models-python.html)
 
+<i class="fa-solid fa-arrow-trend-up" style="font-size: 25px; color: #17fd02ff;"></i> [ARAR forecasting models](https://cienciadedatos.net/documentos/py73-arar-forecasting-models-python.html)
+
 <i class="fa-solid fa-sitemap fa" style="font-size: 25px; color: #00cc99;"></i> [Forecasting with gradient boosting: XGBoost, LightGBM and CatBoost](https://www.cienciadedatos.net/documentos/py39-forecasting-time-series-with-skforecast-xgboost-lightgbm-catboost.html)
 
 <i class="fa-solid fa-diagram-project fa-rotate-90" style="font-size: 25px; color: #74C0FC;"></i> [Forecasting with XGBoost](https://www.cienciadedatos.net/documentos/py56-forecasting-time-series-with-xgboost.html)
@@ -45,11 +47,13 @@ For experienced users looking to deepen their forecasting skills, this section p
 
 <i class="fa-light fa-chart-line fa" style="font-size: 25px; color:rgb(128, 29, 242);"></i>  [Probabilistic forecasting: prediction intervals for multi-step time series forecasting](https://cienciadedatos.net/documentos/py60-probabilistic-forecasting-prediction-intervals-multi-step-forecasting.html)
 
+<i class="fa-solid fa-chart-gantt" style="font-size: 25px; color: #ff004f;"></i> [Interpretable forecasting models](https://www.cienciadedatos.net/documentos/py57-interpretable-forecasting-models.html)
+
+<i class="fa-solid fa-bell" style="color: #f7931a;"></i> [Data drift detection in time series forecasting](https://dev.cienciadedatos.net/documentos/py70-drift-detection-forecasting-model.html)
+
 <i class="fa-solid fa-tree" style="font-size: 25px; color:rgb(7, 104, 84);"></i> [Modelling time series trend with tree based models](https://www.cienciadedatos.net/documentos/py49-modelling-time-series-trend-with-tree-based-models.html)
 
 <i class="fa-solid fa-magnifying-glass" style="font-size: 25px; color: purple;"></i> [Forecasting time series with missing values](https://www.cienciadedatos.net/documentos/py46-forecasting-time-series-missing-values.html)
-
-<i class="fa-solid fa-chart-gantt" style="font-size: 25px; color: #ff004f;"></i> [Interpretable forecasting models](https://www.cienciadedatos.net/documentos/py57-interpretable-forecasting-models.html)
 
 <i class="fa-solid fa-cubes-stacked fa-rotate-180" style="font-size: 25px; color: #c15d0b;"></i> [Stacking ensemble of machine learning models to improve forecasting](https://cienciadedatos.net/documentos/py52-stacking-ensemble-models-forecasting.html)
 
@@ -57,7 +61,9 @@ For experienced users looking to deepen their forecasting skills, this section p
 
 <i class="fa-solid fa-lock-open" style="font-size: 25px; color: #e70d44;"></i> [Data leakage in pre-trained forecasting models](https://cienciadedatos.net/documentos/py63-data-leakage-pre-trained-forecasting-models.html)
 
-<i class="fa-solid fa-bell" style="color: #f7931a;"></i> [Data drift detection in time series forecasting](https://dev.cienciadedatos.net/documentos/py70-drift-detection-forecasting-model.html)
+<i class="fa-solid fa-gauge-high" style="color: #ffee05ff;"></i> [Accelerate forecasting models with GPU](https://cienciadedatos.net/documentos/py65-accelerate-forecasting-models-gpu.html)
+
+<i class="fa-solid fa-gauge-high" style="color: #ffee05ff;"></i> [Accelerate forecasting models with Intel® scikit-learn-intelex](https://cienciadedatos.net/documentos/py75-accelerate-forecasting-with-scikit-learn-intelex.html)
 
 
 ## Real-World Challenges and Case Studies
