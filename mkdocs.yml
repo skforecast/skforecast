@@ -186,7 +186,9 @@ plugins:
       javascript_dir: js
       redirect_template: null
       version_selector: true
-  - search
+  - search:
+      lang: en
+      separator: '[\s\-\._]+'
 
 theme:
   name: material
@@ -198,12 +200,19 @@ theme:
     #- navigation.sections # To expand sections on the table of contents
     #- navigation.expand # To expand sections on the table of contents
     - navigation.top
+    - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.instant.progress
     - toc.integrate
     - navigation.breadcrumbs
+    - content.code.copy
+    - content.code.annotate
+    - search.suggest
+    - search.highlight
+    - search.share
   font:
     text: Open Sans
     code: Ubuntu Mono
-  highlightjs: true
   logo: img/logo-skforecast.png
   palette:
     # # Palette toggle for automatic mode
@@ -232,7 +241,6 @@ markdown_extensions:
   - abbr
   - admonition
   - attr_list
-  - codehilite
   - footnotes
   - pymdownx.details
   - md_in_html
