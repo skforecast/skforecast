@@ -5034,56 +5034,45 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=7f56bc7a">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=6644d3d1">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>In forecasting modeling, a baseline serves as a basic, often simplistic model that acts as a fundamental reference for evaluating the performance of more complex models. It provides a baseline forecast using simple techniques that do not rely on sophisticated algorithms or extensive data analysis. Common examples of baseline strategies include:</p>
+<p>In forecasting modeling, a <strong>baseline</strong> serves as a basic, often simplistic model that acts as a fundamental reference for evaluating the performance of more complex models. It provides a baseline forecast using simple techniques that do not rely on sophisticated algorithms or extensive data analysis. Common examples of baseline strategies include:</p>
 <ul>
-<li><p>Last Observed Value: Uses the last observed value as a forecast for all future periods.</p>
+<li><p><strong>Last Observed Value:</strong> Uses the last observed value as a forecast for all future periods.</p>
 </li>
-<li><p>Moving Average: In this technique, the average of the last few observations is calculated and used as a forecast for the next period. For example, a 3-period moving average would use the average of the last three observations.</p>
+<li><p><strong>Moving Average:</strong> In this technique, the average of the last few observations is calculated and used as a forecast for the next period. For example, a 3-period moving average would use the average of the last three observations.</p>
 </li>
-<li><p>Last Equivalent Date (Seasonal Naive Forecasting): Extends the concept of the last observed value by considering the corresponding period in the previous season (e.g., the same working day from the previous week) as the forecast for the current period.</p>
+<li><p><strong>Last Equivalent Date (Seasonal Naive Forecasting):</strong> Extends the concept of the last observed value by considering the corresponding period in the previous season (e.g., the same working day from the previous week) as the forecast for the current period.</p>
 </li>
 </ul>
-<p>The primary goal of establishing a baseline is to provide a benchmark against which the performance of more advanced predictive models can be evaluated. If the model does not outperform the baseline, it may indicate that there is a fundamental problem with the approach or that the added complexity is not justified by the available data. This underscores the importance of carefully evaluating the appropriateness of complex models relative to the simplicity and effectiveness of baseline models.</p>
+<p>The primary goal of establishing a baseline is to <strong>provide a benchmark</strong> against which the performance of more advanced predictive models can be evaluated. If the model does not outperform the baseline, it may indicate that there is a fundamental problem with the approach or that the added complexity is not justified by the available data. This underscores the importance of carefully evaluating the appropriateness of complex models relative to the simplicity and effectiveness of baseline models.</p>
 </div>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=9f0a9f12">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=97502d9d">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="forecasterequivalentdate">ForecasterEquivalentDate<a class="anchor-link" href="#forecasterequivalentdate">¶</a></h2>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=93aa8326">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>The <code>ForecasterEquivalentDate</code> class from <code>skforecast.recursive</code> allows the creation of a baseline forecast based on the concept of equivalent dates. In this context, an equivalent date is a historical date that has similar characteristics to the target date. The forecast for a given date is based on the value observed on the last <em>n</em> equivalent dates.</p>
+<h2 id="forecasterequivalentdate">ForecasterEquivalentDate<a class="anchor-link" href="#forecasterequivalentdate">¶</a></h2><p>The <code>ForecasterEquivalentDate</code> class from <code>skforecast.recursive</code> allows the creation of a baseline forecast based on the concept of equivalent dates. In this context, an equivalent date is a historical date that has similar characteristics to the target date. The forecast for a given date is based on the value observed on the last <em>n</em> equivalent dates.</p>
 <p>The behavior of the forecast is primarily controlled by two arguments:</p>
 <ul>
-<li><p><code>offset</code>: This parameter determines how many steps back in time to go to find the most recent equivalent date for the target period. When given as an integer, <code>offset</code> represents the number of steps to go back in time. For example, if the frequency of the time series is daily, <code>offset = 7</code> means that the most recent data similar to the target period is the value observed 7 days ago. Additionally, it is possible to use <a href="https://pandas.pydata.org/docs/reference/offset_frequency.html">Pandas DateOffsets</a> to move forward a given number of valid dates. For example, <code>Bday(2)</code> can be used to move back two business days.</p>
+<li><p><code>offset</code>: This parameter determines <strong>how many steps back</strong> in time to go to find the most recent equivalent date for the target period. When given as an integer, <code>offset</code> represents the number of steps to go back in time. For example, if the frequency of the time series is daily, <code>offset = 7</code> means that the most recent data similar to the target period is the value observed 7 days ago. Additionally, it is possible to use <a href="https://pandas.pydata.org/docs/reference/offset_frequency.html">Pandas DateOffsets</a> to move forward a given number of valid dates. For example, <code>Bday(2)</code> can be used to move back two business days.</p>
 </li>
-<li><p><code>n_offsets</code>: This parameter determines the number of equivalent dates to use in the prediction. If <code>n_offsets</code> is greater than 1, the values at the equivalent dates are aggregated using the specified aggregation function, <code>agg_func</code>. For example, if the frequency of the time series is daily, <code>offset = 7</code>, <code>n_offsets = 2</code>, and <code>agg_func = np.mean</code>, the predicted value will be the mean of the values observed 7 and 14 days ago.</p>
+<li><p><code>n_offsets</code>: This parameter determines the <strong>number of equivalent</strong> dates to use in the prediction. If <code>n_offsets</code> is greater than 1, the values at the equivalent dates are aggregated using the specified aggregation function, <code>agg_func</code>. For example, if the frequency of the time series is daily, <code>offset = 7</code>, <code>n_offsets = 2</code>, and <code>agg_func = np.mean</code>, the predicted value will be the mean of the values observed 7 and 14 days ago.</p>
 </li>
 </ul>
 </div>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=5b4cd92d">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=177c442f">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -5349,7 +5338,7 @@ forecaster</div>
 <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[3]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <style>
-        .container-c50822ec5bfc4b2bbdf6c8c4c6659695 {
+        .container-517878032d8b435a9bcf2af6f558bc99 {
             font-family: 'Arial', sans-serif;
             font-size: 0.9em;
             color: #333333;
@@ -5360,7 +5349,7 @@ forecaster</div>
             max-width: 600px;
             #margin: auto;
         }
-        .container-c50822ec5bfc4b2bbdf6c8c4c6659695 h2 {
+        .container-517878032d8b435a9bcf2af6f558bc99 h2 {
             font-size: 1.5em;
             color: #222222;
             border-bottom: 2px solid #ddd;
@@ -5368,10 +5357,10 @@ forecaster</div>
             margin-bottom: 15px;
             margin-top: 5px;
         }
-        .container-c50822ec5bfc4b2bbdf6c8c4c6659695 details {
+        .container-517878032d8b435a9bcf2af6f558bc99 details {
             margin: 10px 0;
         }
-        .container-c50822ec5bfc4b2bbdf6c8c4c6659695 summary {
+        .container-517878032d8b435a9bcf2af6f558bc99 summary {
             font-weight: bold;
             font-size: 1.1em;
             color: #000000;
@@ -5381,38 +5370,38 @@ forecaster</div>
             padding: 5px;
             border-radius: 5px;
         }
-        .container-c50822ec5bfc4b2bbdf6c8c4c6659695 summary:hover {
+        .container-517878032d8b435a9bcf2af6f558bc99 summary:hover {
             color: #000000;
             background-color: #e0e0e0;
         }
-        .container-c50822ec5bfc4b2bbdf6c8c4c6659695 ul {
+        .container-517878032d8b435a9bcf2af6f558bc99 ul {
             font-family: 'Courier New', monospace;
             list-style-type: none;
             padding-left: 20px;
             margin: 10px 0;
             line-height: normal;
         }
-        .container-c50822ec5bfc4b2bbdf6c8c4c6659695 li {
+        .container-517878032d8b435a9bcf2af6f558bc99 li {
             margin: 5px 0;
             font-family: 'Courier New', monospace;
         }
-        .container-c50822ec5bfc4b2bbdf6c8c4c6659695 li strong {
+        .container-517878032d8b435a9bcf2af6f558bc99 li strong {
             font-weight: bold;
             color: #444444;
         }
-        .container-c50822ec5bfc4b2bbdf6c8c4c6659695 li::before {
+        .container-517878032d8b435a9bcf2af6f558bc99 li::before {
             content: "- ";
             color: #666666;
         }
-        .container-c50822ec5bfc4b2bbdf6c8c4c6659695 a {
+        .container-517878032d8b435a9bcf2af6f558bc99 a {
             color: #001633;
             text-decoration: none;
         }
-        .container-c50822ec5bfc4b2bbdf6c8c4c6659695 a:hover {
+        .container-517878032d8b435a9bcf2af6f558bc99 a:hover {
             color: #359ccb; 
         }
     </style>
-<div class="container-c50822ec5bfc4b2bbdf6c8c4c6659695">
+<div class="container-517878032d8b435a9bcf2af6f558bc99">
 <p style="font-size: 1.5em; font-weight: bold; margin-block-start: 0.83em; margin-block-end: 0.83em;">ForecasterEquivalentDate</p>
 <details open="">
 <summary>General Information</summary>
@@ -5422,8 +5411,8 @@ forecaster</div>
 <li><strong>Number of offsets:</strong> 2</li>
 <li><strong>Aggregation function:</strong> mean</li>
 <li><strong>Window size:</strong> 24</li>
-<li><strong>Creation date:</strong> 2025-11-26 15:05:41</li>
-<li><strong>Last fit date:</strong> 2025-11-26 15:05:41</li>
+<li><strong>Creation date:</strong> 2025-11-30 12:16:19</li>
+<li><strong>Last fit date:</strong> 2025-11-30 12:16:19</li>
 <li><strong>Skforecast version:</strong> 0.19.0</li>
 <li><strong>Python version:</strong> 3.12.11</li>
 <li><strong>Forecaster id:</strong> None</li>
@@ -5818,7 +5807,7 @@ plot_prediction_intervals(
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=4ec465be">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=c339e29d">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -5829,7 +5818,7 @@ plot_prediction_intervals(
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=86194dff">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=2f2914e0">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -6029,7 +6018,7 @@ predictions.head(4)</div>
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
-<div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=77f7dab6">
+<div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=fd2dd078">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
