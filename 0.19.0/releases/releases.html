@@ -5041,7 +5041,7 @@
 <p><span class="badge text-bg-feature">Feature</span> Created module <code><a href="../api/experimental.html">experimental</a></code>, this module contains experimental features that are not yet fully tested or may change in future releases.</p>
 </li>
 <li>
-<p><span class="badge text-bg-enhancement">Enhancement</span> The <code><a href="../api/ForecasterRNN.md">ForecasterRNN</a></code> and the function <code><a href="../api/ForecasterRNN.md#skforecast.deep_learning.utils.create_and_compile_model">create_and_compile_model</a></code> have been refactored to allow for the inclusion of exogenous variables. The forecaster can also make interval predictions using the conformal prediction framework.</p>
+<p><span class="badge text-bg-enhancement">Enhancement</span> The <code><a href="../api/ForecasterRnn.html">ForecasterRnn</a></code> and the function <code><a href="../api/ForecasterRnn.html#skforecast.deep_learning.utils.create_and_compile_model">create_and_compile_model</a></code> have been refactored to allow for the inclusion of exogenous variables. The forecaster can also make interval predictions using the conformal prediction framework.</p>
 </li>
 <li>
 <p><span class="badge text-bg-api-change">API Change</span> Input data passed to all functions/classes must have either a pandas <code>RangeIndex</code> or <code>DatetimeIndex</code>. Previously, if the input did not meet this condition, a <code>RangeIndex</code> starting at 0 was automatically generated. This behavior has been removed to ensure consistent and explicit handling of input data.</p>
@@ -5074,7 +5074,7 @@
 <p>Added function <code><a href="../api/preprocessing.html#skforecast.preprocessing.preprocessing.reshape_series_wide_to_long">reshape_series_wide_to_long</a></code> in the <code><a href="../api/preprocessing.html">preprocessing</a></code> module. This function reshapes a wide-format DataFrame where each column corresponds to a series into a long-format DataFrame with with a MultiIndex. The first level of the index is the series name and the second level is the time index.</p>
 </li>
 <li>
-<p>Added metric <code><a href="../api/metrics.html#skforecast.metrics.metrics.symmetric_mean_absolute_percentage_error">symmetric_mean_absolute_percentage_error</a></code> in the <code><a href="../api/metrics.html">metrics</a></code> module. This metric calculates the symmetric mean absolute percentage error (SMAPE) between the true values and the predicted values.</p>
+<p>Added metric <code><a href="../api/metrics.html#skforecast.metrics.symmetric_mean_absolute_percentage_error">symmetric_mean_absolute_percentage_error</a></code> in the <code><a href="../api/metrics.html">metrics</a></code> module. This metric calculates the symmetric mean absolute percentage error (SMAPE) between the true values and the predicted values.</p>
 </li>
 <li>
 <p><code><a href="../api/ForecasterEquivalentDate.html">ForecasterEquivalentDate</a></code> can now predict intervals using the conformal prediction framework.</p>
@@ -5083,13 +5083,13 @@
 <p>Created module <code><a href="../api/experimental.html">experimental</a></code>, this module contains experimental features that are not yet fully tested or may change in future releases.</p>
 </li>
 <li>
-<p>Include function <code><a href="../api/experimental.html#skforecast.experimental.calculate_distance_from_holiday">calculate_distance_from_holiday</a></code> in the <code><a href="../api/experimental.html">experimental</a></code> module. It calculates the number of days to the next holiday and the number of days since the last holiday in a DataFrame with a date column.</p>
+<p>Include function <code><a href="../api/experimental.html#skforecast.experimental._experimental.calculate_distance_from_holiday">calculate_distance_from_holiday</a></code> in the <code><a href="../api/experimental.html">experimental</a></code> module. It calculates the number of days to the next holiday and the number of days since the last holiday in a DataFrame with a date column.</p>
 </li>
 <li>
-<p>The <code><a href="../api/ForecasterRNN.md">ForecasterRNN</a></code> and the function <code><a href="../api/ForecasterRNN.md#skforecast.deep_learning.utils.create_and_compile_model">create_and_compile_model</a></code> now support the inclusion of exogenous variables.</p>
+<p>The <code><a href="../api/ForecasterRnn.html">ForecasterRnn</a></code> and the function <code><a href="../api/ForecasterRnn.html#skforecast.deep_learning.utils.create_and_compile_model">create_and_compile_model</a></code> now support the inclusion of exogenous variables.</p>
 </li>
 <li>
-<p>Added method <code>predict_interval</code> to the <code><a href="../api/ForecasterRNN.md">ForecasterRNN</a></code> using the conformal prediction framework.</p>
+<p>Added method <code>predict_interval</code> to the <code><a href="../api/ForecasterRnn.html">ForecasterRnn</a></code> using the conformal prediction framework.</p>
 </li>
 </ul>
 <p><strong>Changed</strong></p>
@@ -5113,10 +5113,10 @@
 <p>Function <code>exog_long_to_dict</code> renamed to <code><a href="../api/preprocessing.html#skforecast.preprocessing.preprocessing.reshape_exog_long_to_dict">reshape_exog_long_to_dict</a></code> in the <code><a href="../api/preprocessing.html">preprocessing</a></code> module. This function reshapes a long-format DataFrame with exogenous variables into a dictionary format where each entry corresponds to the exogenous variables of a series.</p>
 </li>
 <li>
-<p>The <code><a href="../api/ForecasterRNN.md#skforecast.deep_learning.utils.create_and_compile_model">create_and_compile_model</a></code> function has been refactored. All arguments related with layers and compilation are now passed as a dictionary using the following arguments: <code>recurrent_layers_kwargs</code>, <code>dense_layers_kwargs</code>, <code>output_dense_layer_kwargs</code>, and <code>compile_kwargs</code>.</p>
+<p>The <code><a href="../api/ForecasterRnn.html#skforecast.deep_learning.utils.create_and_compile_model">create_and_compile_model</a></code> function has been refactored. All arguments related with layers and compilation are now passed as a dictionary using the following arguments: <code>recurrent_layers_kwargs</code>, <code>dense_layers_kwargs</code>, <code>output_dense_layer_kwargs</code>, and <code>compile_kwargs</code>.</p>
 </li>
 <li>
-<p>The arguments <code>lags</code> and <code>steps</code> were removed from the <code><a href="../api/ForecasterRNN.md">ForecasterRNN</a></code> initialization. These arguments are now inferred from the estimator architecture.</p>
+<p>The arguments <code>lags</code> and <code>steps</code> were removed from the <code><a href="../api/ForecasterRnn.html">ForecasterRnn</a></code> initialization. These arguments are now inferred from the estimator architecture.</p>
 </li>
 <li>
 <p>Remove <code>preprocess_y</code>, <code>preprocess_last_window</code> and <code>preprocess_exog</code> in favor of <code>check_extract_values_and_index</code> in the <code><a href="../api/utils.html">utils</a></code> module. This function checks if the index is a pandas <code>DatetimeIndex</code> or <code>RangeIndex</code> and extracts the values and index accordingly.</p>
@@ -5369,7 +5369,7 @@
 <p>Exogenous variables can be added to the training matrix if they do not contain the first window size observations. This is useful when exogenous variables are not available in early historical data.</p>
 </li>
 <li>
-<p>Added support for different activation functions in the <code><a href="../api/ForecasterRNN.md#skforecast.deep_learning.utils.create_and_compile_model">create_and_compile_model</a></code> function. (contribution by <a href="https://github.com/pablorodriper">@pablorodriper</a> <a href="https://github.com/skforecast/skforecast/pull/824">#824</a>).</p>
+<p>Added support for different activation functions in the <code><a href="../api/ForecasterRnn.html#skforecast.deep_learning.utils.create_and_compile_model">create_and_compile_model</a></code> function. (contribution by <a href="https://github.com/pablorodriper">@pablorodriper</a> <a href="https://github.com/skforecast/skforecast/pull/824">#824</a>).</p>
 </li>
 </ul>
 <p><strong>Changed</strong></p>
@@ -5551,7 +5551,7 @@
 <p><span class="badge text-bg-feature">Feature</span> New <code>create_predict_X</code> method in all recursive and direct Forecasters to allow the user to inspect the matrix passed to the predict method of the estimator.</p>
 </li>
 <li>
-<p><span class="badge text-bg-feature">Feature</span> New module <code><a href="../api/metrics.html">metrics</a></code> with functions to calculate metrics for time series forecasting such as <code><a href="../api/metrics.html#skforecast.metrics.metrics.mean_absolute_scaled_error">mean_absolute_scaled_error</a></code> and <code><a href="../api/metrics.html#skforecast.metrics.metrics.root_mean_squared_scaled_error">root_mean_squared_scaled_error</a></code>. Visit <a href="https://skforecast.org/latest/user_guides/metrics.ipynb">Time Series Forecasting Metrics</a> for more information.</p>
+<p><span class="badge text-bg-feature">Feature</span> New module <code><a href="../api/metrics.html">metrics</a></code> with functions to calculate metrics for time series forecasting such as <code><a href="../api/metrics.html#skforecast.metrics.mean_absolute_scaled_error">mean_absolute_scaled_error</a></code> and <code><a href="../api/metrics.html#skforecast.metrics.root_mean_squared_scaled_error">root_mean_squared_scaled_error</a></code>. Visit <a href="https://skforecast.org/latest/user_guides/metrics.ipynb">Time Series Forecasting Metrics</a> for more information.</p>
 </li>
 <li>
 <p><span class="badge text-bg-feature">Feature</span> New argument <code>add_aggregated_metric</code> in <code><a href="../api/model_selection.html#skforecast.model_selection._validation.backtesting_forecaster_multiseries">backtesting_forecaster_multiseries</a></code> to include, in addition to the metrics for each level, the aggregated metric of all levels using the average (arithmetic mean), weighted average (weighted by the number of predicted values of each level) or pooling (the values of all levels are pooled and then the metric is calculated).</p>
@@ -5572,10 +5572,10 @@
 <p>Support for <code>Python 3.12</code>.</p>
 </li>
 <li>
-<p><code>keras</code> has been added as an optional dependency, tag <code>deeplearning</code>, to use the <code><a href="../api/ForecasterRNN.md">ForecasterRnn</a></code>.</p>
+<p><code>keras</code> has been added as an optional dependency, tag <code>deeplearning</code>, to use the <code><a href="../api/ForecasterRnn.html">ForecasterRnn</a></code>.</p>
 </li>
 <li>
-<p><code>PyTorch</code> backend for the <code><a href="../api/ForecasterRNN.md">ForecasterRnn</a></code>.</p>
+<p><code>PyTorch</code> backend for the <code><a href="../api/ForecasterRnn.html">ForecasterRnn</a></code>.</p>
 </li>
 <li>
 <p>New <code>create_predict_X</code> method in all recursive and direct Forecasters to allow the user to inspect the matrix passed to the predict method of the estimator.</p>
