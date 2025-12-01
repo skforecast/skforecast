@@ -142,6 +142,8 @@ extra_css:
   - stylesheets/extra.css
 extra_javascript:
   - javascripts/version-switcher.js
+  - javascripts/mathjax.js
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
 
 plugins:
   # - git-revision-date-localized: Incluir última fecha de modificación al final de las páginas

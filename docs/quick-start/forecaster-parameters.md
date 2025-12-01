@@ -2,7 +2,7 @@
 
 Understanding what can be done when initializing a forecaster with skforecast can have a significant impact on the accuracy and effectiveness of the model. This guide highlights key considerations to keep in mind when initializing a forecaster and how these functionalities can be used to create more powerful and accurate forecasting models in Python.
 
-We will explore the arguments that can be included in a [`ForecasterRecursive`](../api/forecasterrecursive.html), but this can be extrapolated to any of the skforecast forecasters.
+We will explore the arguments that can be included in a [`ForecasterRecursive`](../api/ForecasterRecursive.md), but this can be extrapolated to any of the skforecast forecasters.
 
 ```python
 # Create a forecaster
@@ -59,7 +59,7 @@ forecaster = ForecasterRecursive(
 
 To apply machine learning models to forecasting problems, the time series needs to be transformed into a matrix where each value is associated with a specific time window (known as lags) that precedes it. In the context of time series, a lag with respect to a time step *t* is defined as the value of the series at previous time steps. For instance, lag 1 represents the value at time step *t-1*, while lag *m* represents the value at time step *t-m*.
 
-Learn more about [machine learning for forecasting](../introduction-forecasting/introduction-forecasting.html#machine-learning-for-forecasting).
+Learn more about [machine learning for forecasting](../introduction-forecasting/introduction-forecasting.md#machine-learning-for-forecasting).
 <br><br>
 
 <p style="text-align: center">
@@ -85,7 +85,7 @@ forecaster = ForecasterRecursive(
 
 When forecasting time series data, it may be useful to consider additional characteristics beyond just the lagged values. For example, the moving average of the previous *n* values may help to capture the trend in the series. The `window_features` argument allows the inclusion of additional predictors created with the previous values of the series.
 
-More information: [Window and custom features](../user_guides/window-features-and-custom-features.html).
+More information: [Window and custom features](../user_guides/window-features-and-custom-features.ipynb).
 
 ```python
 # Create a forecaster with window features
@@ -112,7 +112,7 @@ Skforecast has two arguments in all the forecasters that allow more detailed con
 
 Both arguments expect an instance of a transformer (preprocessor) compatible with the `scikit-learn` preprocessing API with the methods: `fit`, `transform`, `fit_transform` and, `inverse_transform`.
 
-More information: [Scikit-learn transformers and pipelines](../user_guides/sklearn-transformers-and-pipeline.html).
+More information: [Scikit-learn transformers and pipelines](../user_guides/sklearn-transformers-and-pipeline.ipynb).
 
 !!! example
 
@@ -139,7 +139,7 @@ forecaster = ForecasterRecursive(
 
 The `weight_func` parameter allows the user to define custom weights for each observation in the time series. These custom weights can be used to assign different levels of importance to different time periods. For example, assign higher weights to recent data points and lower weights to older data points to emphasize the importance of recent observations in the forecast model.
 
-More information: [Weighted time series forecasting](../user_guides/weighted-time-series-forecasting.html).
+More information: [Weighted time series forecasting](../user_guides/weighted-time-series-forecasting.ipynb).
 
 ```python
 # Create a forecaster
@@ -177,7 +177,7 @@ forecaster = ForecasterRecursive(
 
 Time series differentiation involves computing the differences between consecutive observations in the time series. When it comes to training forecasting models, differentiation offers the advantage of focusing on relative rates of change rather than directly attempting to model the absolute values. **Skforecast**, version 0.10.0 or higher, introduces a novel differentiation parameter within its Forecasters. 
 
-More information: [Time series differentiation](../user_guides/time-series-differentiation.html).
+More information: [Time series differentiation](../user_guides/time-series-differentiation.ipynb).
 
 ```python
 # Create a forecaster
@@ -210,7 +210,7 @@ Some estimators include the possibility to add some additional configuration dur
 
     The following example demonstrates the inclusion of categorical features in an `LGBMRegressor`. This must be done during the `LGBMRegressor` fit method. [Fit parameters lightgbm](https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html#lightgbm.LGBMRegressor.fit)
 
-More information: [Categorical features]../user_guides/categorical-features.html#native-implementation-for-categorical-features).
+More information: [Categorical features](../user_guides/categorical-features.ipynb#native-implementation-for-categorical-features).
 
 ```python
 # Create a forecaster
@@ -233,9 +233,9 @@ forecaster = ForecasterRecursive(
 
 ### Intervals conditioned on predicted values (binned residuals)
 
-When creating prediction intervals, skforecast uses a [`QuantileBinner`](../api/preprocessing.html#skforecast.preprocessing.preprocessing.QuantileBinner) class to bin data into quantile-based bins using `numpy.percentile`. This class is similar to [KBinsDiscretizer](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.KBinsDiscretizer.html) but faster for binning data into quantile-based bins. Bin intervals are defined following the convention: bins[i-1] <= x < bins[i].
+When creating prediction intervals, skforecast uses a [`QuantileBinner`](../api/preprocessing.md#skforecast.preprocessing.preprocessing.QuantileBinner) class to bin data into quantile-based bins using `numpy.percentile`. This class is similar to [KBinsDiscretizer](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.KBinsDiscretizer.html) but faster for binning data into quantile-based bins. Bin intervals are defined following the convention: bins[i-1] <= x < bins[i].
 
-More information: [Intervals conditioned on predicted values (binned residuals)](../user_guides/probabilistic-forecasting-bootstrapped-residuals.html#intervals-conditioned-on-predicted-values-binned-residuals).
+More information: [Intervals conditioned on predicted values (binned residuals)](../user_guides/probabilistic-forecasting-bootstrapped-residuals.ipynb#intervals-conditioned-on-predicted-values-binned-residuals).
 
 ```python
 # Create a forecaster
@@ -284,7 +284,7 @@ forecaster = ForecasterRecursive(
 
 ## Direct multi-step parameters
 
-For the Forecasters that follow a [direct multi-step strategy](../introduction-forecasting/introduction-forecasting.html#direct-multi-step-forecasting) ([`ForecasterDirect`](../api/forecasterdirect.html) and [`ForecasterDirectMultiVariate`](../api/forecasterdirectmultivariate.html)), there are two additional parameters in addition to those mentioned above.
+For the Forecasters that follow a [direct multi-step strategy](../introduction-forecasting/introduction-forecasting.md#direct-multi-step-forecasting) ([`ForecasterDirect`](../api/ForecasterDirect.md) and [`ForecasterDirectMultiVariate`](../api/ForecasterDirectMultiVariate.md)), there are two additional parameters in addition to those mentioned above.
 
 ### Steps
 
@@ -318,7 +318,7 @@ The `n_jobs` parameter allows multi-process parallelization to train estimators 
 
 The benefits of parallelization depend on several factors, including the estimator used, the number of fits to be performed, and the volume of data involved. When the `n_jobs` parameter is set to `'auto'`, the level of parallelization is automatically selected based on heuristic rules that aim to choose the best option for each scenario.
 
-For a more detailed look at parallelization, visit [Parallelization in skforecast](../faq/parallelization-skforecast.html).
+For a more detailed look at parallelization, visit [Parallelization in skforecast](../faq/parallelization-skforecast.ipynb).
 
 ```python
 # Create a forecaster
