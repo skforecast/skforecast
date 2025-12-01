@@ -5226,7 +5226,7 @@
 <p>The <code>differentiation</code> argument in <code><a href="../api/ForecasterRecursiveMultiSeries.html">ForecasterRecursiveMultiSeries</a></code> can now be a dict to <a href="../user_guides/independent-multi-time-series-forecasting.html#differentiation">differentiate each series independently</a>. This is useful if the user wants to differentiate each series with a different order or not differentiate some of them.</p>
 </li>
 <li>
-<p>Added statistic <code>ewm</code> (exponential weighted mean) in <code><a href="[skforecast.preprocessing.preprocessing.RollingFeatures]">RollingFeatures</a></code>. Alpha can be specified using the new argument <code>kwargs_stats</code>, default <code>{'ewm': {'alpha': 0.3}}</code>.</p>
+<p>Added statistic <code>ewm</code> (exponential weighted mean) in <code><a href="../api/preprocessing.html#skforecast.preprocessing.preprocessing.RollingFeatures">RollingFeatures</a></code>. Alpha can be specified using the new argument <code>kwargs_stats</code>, default <code>{'ewm': {'alpha': 0.3}}</code>.</p>
 </li>
 <li>
 <p>Added method <code>_repr_html_</code> to <code><a href="https://skforecast.org/0.19.0/api/forecastersarimax.html">ForecasterSarimax</a></code>, <code><a href="../api/model_selection.html#skforecast.model_selection._split.TimeSeriesFold">TimeSeriesFold</a></code> and <code><a href="../api/model_selection.html#skforecast.model_selection._split.OneStepAheadFold">OneStepAheadFold</a></code> to display the object in HTML format.</p>
@@ -5303,7 +5303,7 @@
 <p>This release has undergone a major refactoring to improve the performance of the library. Visit the <a href="../user_guides/migration-guide.html">migration guide</a> section for more information.</p>
 <ul>
 <li>
-<p><span class="badge text-bg-feature">Feature</span> Window features can be added to the training matrix using the <code>window_features</code> argument in all forecasters. You can use the <code><a href="[skforecast.preprocessing.preprocessing.RollingFeatures]">RollingFeatures</a></code> class to create these features or create your own object. <a href="../user_guides/window-features-and-custom-features.html">Create window and custom features</a>.</p>
+<p><span class="badge text-bg-feature">Feature</span> Window features can be added to the training matrix using the <code>window_features</code> argument in all forecasters. You can use the <code><a href="../api/preprocessing.html#skforecast.preprocessing.preprocessing.RollingFeatures">RollingFeatures</a></code> class to create these features or create your own object. <a href="../user_guides/window-features-and-custom-features.html">Create window and custom features</a>.</p>
 </li>
 <li>
 <p><span class="badge text-bg-feature">Feature</span> <code><a href="../api/model_selection.html">model_selection</a></code> functions now have a new argument <code>cv</code>. This argument expect an object of type <code><a href="../api/model_selection.html#skforecast.model_selection._split.TimeSeriesFold">TimeSeriesFold</a></code> (<a href="../user_guides/backtesting.html">backtesting</a>) or <code><a href="../api/model_selection.html#skforecast.model_selection._split.OneStepAheadFold">OneStepAheadFold</a></code> which allows to define the validation strategy using the arguments <code>initial_train_size</code>, <code>steps</code>, <code>gap</code>, <code>refit</code>, <code>fixed_train_size</code>, <code>skip_folds</code> and <code>allow_incomplete_folds</code>.</p>
@@ -5342,7 +5342,7 @@
 <p>Added <code>numba&gt;=0.59</code> as hard dependency.</p>
 </li>
 <li>
-<p>Added <code>window_features</code> argument to all forecasters. This argument allows the user to add window features to the training matrix. See <code><a href="[skforecast.preprocessing.preprocessing.RollingFeatures]">RollingFeatures</a></code>.</p>
+<p>Added <code>window_features</code> argument to all forecasters. This argument allows the user to add window features to the training matrix. See <code><a href="../api/preprocessing.html#skforecast.preprocessing.preprocessing.RollingFeatures">RollingFeatures</a></code>.</p>
 </li>
 <li>
 <p>Hyperparameter search now allows to follow a one-step-ahead validation strategy using a <code><a href="../api/model_selection.html#skforecast.model_selection._split.OneStepAheadFold">OneStepAheadFold</a></code> as <code>cv</code> argument in the <code><a href="../api/model_selection.html">model_selection</a></code> functions.</p>
@@ -5542,7 +5542,7 @@
 <p>The main changes in this release are:</p>
 <ul>
 <li>
-<p><span class="badge text-bg-feature">Feature</span> Global Forecasters <code><a href="https://skforecast.org/0.13.0/api/forecastermultiseries">ForecasterAutoregMultiSeries</a></code> and <code><a href="https://skforecast.org/0.13.0/api/forecastermultiseriescustom">ForecasterAutoregMultiSeriesCustom</a></code> are able to <a href="https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting.html#forecasting-unknown-series">predict series not seen during training</a>. This is useful when the user wants to predict a new series that was not included in the training data.</p>
+<p><span class="badge text-bg-feature">Feature</span> Global Forecasters <code><a href="https://skforecast.org/0.13.0/api/forecastermultiseries">ForecasterAutoregMultiSeries</a></code> and <code><a href="https://skforecast.org/0.13.0/api/forecastermultiseriescustom">ForecasterAutoregMultiSeriesCustom</a></code> are able to <a href="https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting.ipynb#forecasting-unknown-series">predict series not seen during training</a>. This is useful when the user wants to predict a new series that was not included in the training data.</p>
 </li>
 <li>
 <p><span class="badge text-bg-feature">Feature</span> <code>encoding</code> can be set to <code>None</code> in Global Forecasters <code><a href="https://skforecast.org/0.13.0/api/forecastermultiseries">ForecasterAutoregMultiSeries</a></code> and <code><a href="https://skforecast.org/0.13.0/api/forecastermultiseriescustom">ForecasterAutoregMultiSeriesCustom</a></code>. This option does <a href="https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting#series-encoding-in-multi-series">not add the encoded series ids</a> to the estimator training matrix.</p>
@@ -5551,7 +5551,7 @@
 <p><span class="badge text-bg-feature">Feature</span> New <code>create_predict_X</code> method in all recursive and direct Forecasters to allow the user to inspect the matrix passed to the predict method of the estimator.</p>
 </li>
 <li>
-<p><span class="badge text-bg-feature">Feature</span> New module <code><a href="../api/metrics.html">metrics</a></code> with functions to calculate metrics for time series forecasting such as <code><a href="../api/metrics.html#skforecast.metrics.metrics.mean_absolute_scaled_error">mean_absolute_scaled_error</a></code> and <code><a href="../api/metrics.html#skforecast.metrics.metrics.root_mean_squared_scaled_error">root_mean_squared_scaled_error</a></code>. Visit <a href="https://skforecast.org/latest/user_guides/metrics.html">Time Series Forecasting Metrics</a> for more information.</p>
+<p><span class="badge text-bg-feature">Feature</span> New module <code><a href="../api/metrics.html">metrics</a></code> with functions to calculate metrics for time series forecasting such as <code><a href="../api/metrics.html#skforecast.metrics.metrics.mean_absolute_scaled_error">mean_absolute_scaled_error</a></code> and <code><a href="../api/metrics.html#skforecast.metrics.metrics.root_mean_squared_scaled_error">root_mean_squared_scaled_error</a></code>. Visit <a href="https://skforecast.org/latest/user_guides/metrics.ipynb">Time Series Forecasting Metrics</a> for more information.</p>
 </li>
 <li>
 <p><span class="badge text-bg-feature">Feature</span> New argument <code>add_aggregated_metric</code> in <code><a href="../api/model_selection.html#skforecast.model_selection._validation.backtesting_forecaster_multiseries">backtesting_forecaster_multiseries</a></code> to include, in addition to the metrics for each level, the aggregated metric of all levels using the average (arithmetic mean), weighted average (weighted by the number of predicted values of each level) or pooling (the values of all levels are pooled and then the metric is calculated).</p>
@@ -6563,8 +6563,6 @@
 <!-- model_selection -->
 <!-- feature_selection -->
 <!-- preprocessing -->
-<!-- [RollingFeatures]: ../api/preprocessing.md#skforecast.preprocessing.preprocessing.RollingFeatures
- -->
 <!-- drift_detection -->
 <!-- metrics -->
 <!-- plot -->
