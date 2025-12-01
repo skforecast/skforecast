@@ -4675,7 +4675,7 @@
 
 <h1 id="understanding-the-forecaster-parameters">Understanding the forecaster parameters<a class="headerlink" href="#understanding-the-forecaster-parameters" title="Permanent link">&para;</a></h1>
 <p>Understanding what can be done when initializing a forecaster with skforecast can have a significant impact on the accuracy and effectiveness of the model. This guide highlights key considerations to keep in mind when initializing a forecaster and how these functionalities can be used to create more powerful and accurate forecasting models in Python.</p>
-<p>We will explore the arguments that can be included in a <a href="../api/forecasterrecursive.html"><code>ForecasterRecursive</code></a>, but this can be extrapolated to any of the skforecast forecasters.</p>
+<p>We will explore the arguments that can be included in a <a href="../api/ForecasterRecursive.html"><code>ForecasterRecursive</code></a>, but this can be extrapolated to any of the skforecast forecasters.</p>
 <div class="language-python highlight"><pre><span></span><code><span class="c1"># Create a forecaster</span>
 <span class="c1"># ==============================================================================</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">skforecast.recursive</span><span class="w"> </span><span class="kn">import</span> <span class="n">ForecasterRecursive</span>
@@ -4847,7 +4847,7 @@
 <p class="admonition-title">Example</p>
 <p>The following example demonstrates the inclusion of categorical features in an <code>LGBMRegressor</code>. This must be done during the <code>LGBMRegressor</code> fit method. <a href="https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html#lightgbm.LGBMRegressor.fit">Fit parameters lightgbm</a></p>
 </div>
-<p>More information: [Categorical features]../user_guides/categorical-features.html#native-implementation-for-categorical-features).</p>
+<p>More information: <a href="../user_guides/categorical-features.html#native-implementation-for-categorical-features">Categorical features</a>.</p>
 <div class="language-python highlight"><pre><span></span><code><span class="c1"># Create a forecaster</span>
 <span class="c1"># ==============================================================================</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">skforecast.recursive</span><span class="w"> </span><span class="kn">import</span> <span class="n">ForecasterRecursive</span>
@@ -4905,7 +4905,7 @@
              <span class="p">)</span>
 </code></pre></div>
 <h2 id="direct-multi-step-parameters">Direct multi-step parameters<a class="headerlink" href="#direct-multi-step-parameters" title="Permanent link">&para;</a></h2>
-<p>For the Forecasters that follow a <a href="../introduction-forecasting/introduction-forecasting.html#direct-multi-step-forecasting">direct multi-step strategy</a> (<a href="../api/forecasterdirect.html"><code>ForecasterDirect</code></a> and <a href="../api/forecasterdirectmultivariate.html"><code>ForecasterDirectMultiVariate</code></a>), there are two additional parameters in addition to those mentioned above.</p>
+<p>For the Forecasters that follow a <a href="../introduction-forecasting/introduction-forecasting.html#direct-multi-step-forecasting">direct multi-step strategy</a> (<a href="../api/ForecasterDirect.html"><code>ForecasterDirect</code></a> and <a href="../api/ForecasterDirectMultiVariate.html"><code>ForecasterDirectMultiVariate</code></a>), there are two additional parameters in addition to those mentioned above.</p>
 <h3 id="steps">Steps<a class="headerlink" href="#steps" title="Permanent link">&para;</a></h3>
 <p>Direct multi-step forecasting consists of training a different model for each step of the forecast horizon. For example, to predict the next 5 values of a time series, 5 different models are trained, one for each step. As a result, the predictions are independent of each other. </p>
 <p>The number of models to be trained is specified by the <code>steps</code> parameter.</p>

@@ -5545,7 +5545,7 @@
 <p><span class="badge text-bg-feature">Feature</span> Global Forecasters <code><a href="https://skforecast.org/0.13.0/api/forecastermultiseries">ForecasterAutoregMultiSeries</a></code> and <code><a href="https://skforecast.org/0.13.0/api/forecastermultiseriescustom">ForecasterAutoregMultiSeriesCustom</a></code> are able to <a href="../user_guides/independent-multi-time-series-forecasting.html#forecasting-unknown-series">predict series not seen during training</a>. This is useful when the user wants to predict a new series that was not included in the training data.</p>
 </li>
 <li>
-<p><span class="badge text-bg-feature">Feature</span> <code>encoding</code> can be set to <code>None</code> in Global Forecasters <code><a href="https://skforecast.org/0.13.0/api/forecastermultiseries">ForecasterAutoregMultiSeries</a></code> and <code><a href="https://skforecast.org/0.13.0/api/forecastermultiseriescustom">ForecasterAutoregMultiSeriesCustom</a></code>. This option does <a href="../user_guides/independent-multi-time-series-forecasting#series-encoding-in-multi-series">not add the encoded series ids</a> to the estimator training matrix.</p>
+<p><span class="badge text-bg-feature">Feature</span> <code>encoding</code> can be set to <code>None</code> in Global Forecasters <code><a href="https://skforecast.org/0.13.0/api/forecastermultiseries">ForecasterAutoregMultiSeries</a></code> and <code><a href="https://skforecast.org/0.13.0/api/forecastermultiseriescustom">ForecasterAutoregMultiSeriesCustom</a></code>. This option does <a href="../user_guides/independent-multi-time-series-forecasting.html#series-encoding-in-multi-series">not add the encoded series ids</a> to the estimator training matrix.</p>
 </li>
 <li>
 <p><span class="badge text-bg-feature">Feature</span> New <code>create_predict_X</code> method in all recursive and direct Forecasters to allow the user to inspect the matrix passed to the predict method of the estimator.</p>
@@ -5557,7 +5557,7 @@
 <p><span class="badge text-bg-feature">Feature</span> New argument <code>add_aggregated_metric</code> in <code><a href="../api/model_selection.html#skforecast.model_selection._validation.backtesting_forecaster_multiseries">backtesting_forecaster_multiseries</a></code> to include, in addition to the metrics for each level, the aggregated metric of all levels using the average (arithmetic mean), weighted average (weighted by the number of predicted values of each level) or pooling (the values of all levels are pooled and then the metric is calculated).</p>
 </li>
 <li>
-<p><span class="badge text-bg-feature">Feature</span> New argument <code>skip_folds</code> in <code><a href="../api/model_selection.html">model_selection</a></code> and <code><a href="https://skforecast.org/0.13.0/api/model_selection_multiseries">model_selection_multiseries</a></code> functions. It allows the user to <a href="../user_guides/backtesting#backtesting-with-skip-folds">skip some folds during backtesting</a>, which can be useful to speed up the backtesting process and thus the hyperparameter search.</p>
+<p><span class="badge text-bg-feature">Feature</span> New argument <code>skip_folds</code> in <code><a href="../api/model_selection.html">model_selection</a></code> and <code><a href="https://skforecast.org/0.13.0/api/model_selection_multiseries">model_selection_multiseries</a></code> functions. It allows the user to <a href="../user_guides/backtesting.html#backtesting-with-skip-folds">skip some folds during backtesting</a>, which can be useful to speed up the backtesting process and thus the hyperparameter search.</p>
 </li>
 <li>
 <p><span class="badge text-bg-api-change">API Change</span> backtesting procedures now pass the training series to the metric functions so it can be used to calculate metrics that depend on the training series.</p>
@@ -5617,7 +5617,7 @@
 <p>Deprecated <code>python 3.8</code> compatibility.</p>
 </li>
 <li>
-<p>Update <a href="../quick-start/how-to-install">project dependencies</a>.</p>
+<p>Update <a href="../quick-start/how-to-install.html">project dependencies</a>.</p>
 </li>
 <li>
 <p>Change default value of <code>n_bins</code> when initializing <code><a href="https://skforecast.org/0.13.0/api/forecasterautoreg">ForecasterAutoreg</a></code> from 15 to 10.</p>
