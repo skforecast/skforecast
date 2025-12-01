@@ -1404,6 +1404,18 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#arar-model-theory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ARAR model theory
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ARAR model theory">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#memory-shortening" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1413,8 +1425,8 @@
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#subset-autoregressive-model" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1424,8 +1436,8 @@
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#forecasting" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1433,6 +1445,11 @@
       
     </span>
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -5062,7 +5079,21 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>The ARAR model applies a memory-shortening transformation if the underlying process of a given time series ${Y_{t}, t = 1, 2, ..., n}$ is "long-memory" then it fits an autoregressive model.</p>
+<p>The <strong>ARAR</strong> algorithm is a specialized time-series forecasting method designed to handle data with long-memory components or complex trends. Unlike traditional models that rely on rigid structures to stationarize data, ARAR employs a dynamic, two-step process: transforming the data through "memory shortening" and then modeling the remaining signal. This approach allows ARAR to be highly automated, making it a powerful alternative for scenarios where manual model selection is impractical.</p>
+<p>The ARAR algorithm is defined by its unique workflow, which separates the data cleaning process from the prediction process.</p>
+<p><strong>Phase 1: The Memory Shortening Process</strong></p>
+<p>Before any forecasting occurs, ARAR applies a series of adaptive filters to the raw data.</p>
+<ul>
+<li>Goal: To decorrelate the data and remove long-term dependencies (trends and seasonality) that confuse standard models.</li>
+<li>Method: It uses "memory-shortening" filters. Rather than just looking at the immediately preceding time step, these filters can subtract a fraction of a value from a longer lag (e.g., a week or a year ago).</li>
+<li>Result: Transformed data that is "short-memory," making it easier to predict using simple autoregressive rules.</li>
+</ul>
+<p><strong>Phase 2: Fitting the Model</strong></p>
+<p>Once the data has been transformed, the algorithm fits a standard model to the residuals.</p>
+<ul>
+<li>Model Type: It utilizes an <strong>AR (Autoregressive)</strong> model.</li>
+<li>Simplicity: Because Phase 1 does the heavy lifting of removing complex patterns, Phase 2 only needs to look at past values (an "all-pole" model) rather than modeling random shocks (Moving Averages).</li>
+</ul>
 </div>
 </div>
 </div>
@@ -5073,7 +5104,56 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="memory-shortening">Memory Shortening<a class="anchor-link" href="#memory-shortening">¶</a></h2><p>The model follows five steps to classify ${Y_{t}}$ and take one of the following three actions:</p>
+<p><strong>ARAR vs. ARIMA</strong></p>
+<p>While both methods aim to predict future values based on history, they approach the problem from fundamentally different angles.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Feature</th>
+<th style="text-align:left">ARIMA (Auto-Regressive Integrated Moving Average)</th>
+<th style="text-align:left">ARAR (Memory Shortening + AR)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>Transformation</strong></td>
+<td style="text-align:left"><strong>Fixed Differencing.</strong> It removes trends by subtracting $t$ from $t-1$ (the "Integration" step).</td>
+<td style="text-align:left"><strong>Adaptive Filters.</strong> It uses memory-shortening filters to subtract fractions of values from various time lags.</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>Model Form</strong></td>
+<td style="text-align:left"><strong>ARMA.</strong> It fits a combination of Autoregressive (AR) and Moving Average (MA) terms.</td>
+<td style="text-align:left"><strong>AR Only.</strong> It fits a pure Autoregressive model to the transformed data.</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>Automation</strong></td>
+<td style="text-align:left"><strong>Semi-Manual.</strong> Often requires human judgment to select orders ($p, d, q$) or complex selection criteria.</td>
+<td style="text-align:left"><strong>Fully Automated.</strong> Designed to run with minimal human intervention, making it ideal for bulk processing.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="arar-model-theory">ARAR model theory<a class="anchor-link" href="#arar-model-theory">¶</a></h2><p>The ARAR model applies a memory-shortening transformation if the underlying process of a given time series ${Y_{t}, t = 1, 2, ..., n}$ is "long-memory" then it fits an autoregressive model.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h3 id="memory-shortening">Memory Shortening<a class="anchor-link" href="#memory-shortening">¶</a></h3><p>The model follows five steps to classify ${Y_{t}}$ and take one of the following three actions:</p>
 <ul>
 <li>L: declare ${Y_{t}}$ as long memory and form  ${Y_{t}}$ by ${\tilde{Y}_{t} = Y_{t} - \hat{\phi}Y_{t - \hat{\tau}}}$</li>
 <li>M: declare ${Y_{t}}$ as moderately long memory and form  ${Y_{t}}$ by ${\tilde{Y}_{t} = Y_{t} - \hat{\phi}_{1}Y_{t -1} - \hat{\phi}_{2}Y_{t -2}}$</li>
@@ -5102,7 +5182,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </ol>
 </li>
 </ul>
-<h2 id="subset-autoregressive-model">Subset Autoregressive Model:<a class="anchor-link" href="#subset-autoregressive-model">¶</a></h2><p>In the following we will describe how ARAR algorithm fits an autoregressive process to the mean-corrected series $X_{t} = S_{t}- {\bar{S}}$, $t = k+1, ..., n$ where ${S_{t}, t = k + 1, ..., n}$ is the memory-shortened version of  ${Y_{t}}$ which derived from the five steps we described above and $\bar{S}$ is the sample mean of $S_{k+1}, ..., S_{n}$.</p>
+<h3 id="subset-autoregressive-model">Subset Autoregressive Model:<a class="anchor-link" href="#subset-autoregressive-model">¶</a></h3><p>In the following we will describe how ARAR algorithm fits an autoregressive process to the mean-corrected series $X_{t} = S_{t}- {\bar{S}}$, $t = k+1, ..., n$ where ${S_{t}, t = k + 1, ..., n}$ is the memory-shortened version of  ${Y_{t}}$ which derived from the five steps we described above and $\bar{S}$ is the sample mean of $S_{k+1}, ..., S_{n}$.</p>
 <p>The fitted model has the following form:</p>
 <p>$X_{t} = \phi_{1}X_{t-1} + \phi_{1}X_{t-l_{1}} + \phi_{1}X_{t- l_{1}} + \phi_{1}X_{t-l_{1}} + Z$</p>
 <p>where $Z \sim WN(0, \sigma^{2})$. The coefficients $\phi_{j}$ and white noise variance $\sigma^2$ can be derived from the Yule-Walker equations for given lags $l_1, l_2,$ and $l_3$ :</p>
@@ -5130,7 +5210,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 $$</p>
 <p>and $\sigma^2 = \hat{\gamma}(0) [1-\phi_1\hat{\rho}(1)] - \phi_{l_1}\hat{\rho}(l_1)] - \phi_{l_2}\hat{\rho}(l_2)] - \phi_{l_3}\hat{\rho}(l_3)]$, where $\hat{\gamma}(j)$ and $\hat{\rho}(j), j = 0, 1, 2, ...,$ are the sample autocovariances and autocorelations of the series $X_{t}$.</p>
 <p>The algorithm computes the coefficients of $\phi(j)$ for each set of lags where $1&lt;l_1&lt;l_2&lt;l_3 \leq m$ where m chosen to be 13 or 26. The algorithm selects the model that the Yule-Walker estimate of $\sigma^2$ is minimal.</p>
-<h2 id="forecasting">Forecasting<a class="anchor-link" href="#forecasting">¶</a></h2><p>If short-memory filter found in first step it has coefficients $\Psi_0, \Psi_1, ..., \Psi_k (k \geq0)$ where $\Psi_0 = 1$. In this case the transforemed series can be expressed as
+<h3 id="forecasting">Forecasting<a class="anchor-link" href="#forecasting">¶</a></h3><p>If short-memory filter found in first step it has coefficients $\Psi_0, \Psi_1, ..., \Psi_k (k \geq0)$ where $\Psi_0 = 1$. In this case the transforemed series can be expressed as
 \begin{equation}
     S_t = \Psi(B)Y_t = Y_t + \Psi_1 Y_{t-1} + ...+ \Psi_k Y_{t-k},
 \end{equation}
