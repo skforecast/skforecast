@@ -5107,14 +5107,13 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <p>$X_{t} = \phi_{1}X_{t-1} + \phi_{1}X_{t-l_{1}} + \phi_{1}X_{t- l_{1}} + \phi_{1}X_{t-l_{1}} + Z$</p>
 <p>where $Z \sim WN(0, \sigma^{2})$. The coefficients $\phi_{j}$ and white noise variance $\sigma^2$ can be derived from the Yule-Walker equations for given lags $l_1, l_2,$ and $l_3$ :</p>
 <p>$$
-\small
 \begin{bmatrix}
 1 &amp; \hat{\rho}(l_1 - 1) &amp; \hat{\rho}(l_2 - 1) &amp; \hat{\rho}(l_3 - 1)\\
 \hat{\rho}(l_1 - 1) &amp;1 &amp; \hat{\rho}(l_2 - l_1) &amp; \hat{\rho}(l_3 - l_1)\\
 \hat{\rho}(l_2 - 1) &amp; \hat{\rho}(l_2 - l_1) &amp; 1 &amp; \hat{\rho}(l_2 - l_2)\\
 \hat{\rho}(l_3 - 1) &amp; \hat{\rho}(l_3 - l_1) &amp; \hat{\rho}(l_3 - l_1) &amp; 1
 \end{bmatrix}
-\; \ast \;
+\ast
 \begin{bmatrix}
 \phi_{1} \\
 \phi_{l_1} \\
