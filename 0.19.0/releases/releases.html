@@ -4911,7 +4911,7 @@
 <p><span class="badge text-bg-api-change">API Change</span> Parameter and attribute <code>regressor</code> has been deprecated in favor of <code>estimator</code> in all Forecasters and will be removed in future releases to align with scikit-learn terminology. Visit the <a href="../user_guides/migration-guide.html">migration guide</a> section for more information.</p>
 </li>
 <li>
-<p><span class="badge text-bg-feature">Feature</span> New class <code><a href="../api/forecasterrecursiveclassifier.html">ForecasterRecursiveClassifier</a></code> in the <code><a href="../api/forecasterrecursive.html">recursive</a></code> module. This forecaster is designed to handle time series data where the target variable is categorical, enabling the prediction of future class labels based on historical patterns. <a href="../user_guides/autoregressive-classification-forecasting.html">User guide</a></p>
+<p><span class="badge text-bg-feature">Feature</span> New class <code><a href="../api/ForecasterRecursiveClassifier.html">ForecasterRecursiveClassifier</a></code> in the <code><a href="../api/ForecasterRecursive.html">recursive</a></code> module. This forecaster is designed to handle time series data where the target variable is categorical, enabling the prediction of future class labels based on historical patterns. <a href="../user_guides/autoregressive-classification-forecasting.html">User guide</a></p>
 </li>
 <li>
 <p><span class="badge text-bg-feature">Feature</span> New class <code><a href="../api/drift_detection.html#skforecast.drift_detection._population_drift.PopulationDriftDetector">PopulationDriftDetector</a></code> in the <code><a href="../api/drift_detection.html">drift_detection</a></code> module to detect population drift between reference and new data. Suitable to detect when forecasting models need to be retrained due to changes in the data distribution. It supports both target and exogenous variables, in single and multiseries forecasting. <a href="../user_guides/drift-detection.html">User guide</a></p>
@@ -4926,7 +4926,7 @@
 <p><span class="badge text-bg-api-change">API Change</span> Class <code><a href="../api/stats.html#skforecast.stats._sarimax.Sarimax">Sarimax</a></code> has been moved to the new <code><a href="../api/stats.html">stats</a></code> module. Visit the <a href="../user_guides/migration-guide.html">migration guide</a> section for more information.</p>
 </li>
 <li>
-<p><span class="badge text-bg-api-change">API Change</span> Class <code><a href="https://skforecast.org/0.19.0/api/forecastersarimax.html">ForecasterSarimax</a></code> has been deprecated in favor of the new <code><a href="../api/forecasterstats.html">ForecasterStats</a></code> model in the <code><a href="../api/forecasterrecursive.html">recursive</a></code> module. The new forecaster is compatible with a broader range of statistical models such as: sarimax, arima, arar and ets. Visit the <a href="../user_guides/migration-guide.html">migration guide</a> section for more information.</p>
+<p><span class="badge text-bg-api-change">API Change</span> Class <code><a href="https://skforecast.org/0.19.0/api/forecastersarimax.html">ForecasterSarimax</a></code> has been deprecated in favor of the new <code><a href="../api/ForecasterStats.html">ForecasterStats</a></code> model in the <code><a href="../api/ForecasterRecursive.html">recursive</a></code> module. The new forecaster is compatible with a broader range of statistical models such as: sarimax, arima, arar and ets. Visit the <a href="../user_guides/migration-guide.html">migration guide</a> section for more information.</p>
 </li>
 <li>
 <p><span class="badge text-bg-danger">Fix</span> Fixed an issue that prevented using indices with frequencies containing metadata (e.g., <code>CustomBusinessDay</code>, <code>CustomBusinessHour</code>, or holiday/weekmask variants). The library now preserves full frequency metadata by using <code>freq</code> instead of <code>freqstr</code>, ensuring correct alignment and compatibility with custom date offsets. (<a href="https://github.com/skforecast/skforecast/issues/1051">#1051</a>)</p>
@@ -4935,7 +4935,7 @@
 <p><strong>Added</strong></p>
 <ul>
 <li>
-<p>New class <code><a href="../api/forecasterrecursiveclassifier.html">ForecasterRecursiveClassifier</a></code> in the <code><a href="../api/forecasterrecursive.html">recursive</a></code> module. This forecaster is designed to handle time series data where the target variable is categorical, enabling the prediction of future class labels based on historical patterns.</p>
+<p>New class <code><a href="../api/ForecasterRecursiveClassifier.html">ForecasterRecursiveClassifier</a></code> in the <code><a href="../api/ForecasterRecursive.html">recursive</a></code> module. This forecaster is designed to handle time series data where the target variable is categorical, enabling the prediction of future class labels based on historical patterns.</p>
 </li>
 <li>
 <p>New class <code><a href="../api/drift_detection.html#skforecast.drift_detection._population_drift.PopulationDriftDetector">PopulationDriftDetector</a></code> in the <code><a href="../api/drift_detection.html">drift_detection</a></code> module to detect population drift between reference and new data. Suitable to detect when forecasting models need to be retrained due to changes in the data distribution. It supports both target and exogenous variables, in single and multiseries forecasting.</p>
@@ -4965,7 +4965,7 @@
 <p>Class <code><a href="../api/stats.html#skforecast.stats._sarimax.Sarimax">Sarimax</a></code> has been moved to the new <code><a href="../api/stats.html">stats</a></code> module. Visit the <a href="../user_guides/migration-guide.html">migration guide</a> section for more information.</p>
 </li>
 <li>
-<p>Class <code><a href="https://skforecast.org/0.19.0/api/forecastersarimax.html">ForecasterSarimax</a></code> has been deprecated in favor of the new <code><a href="../api/forecasterstats.html">ForecasterStats</a></code> model in the <code><a href="../api/forecasterrecursive.html">recursive</a></code> module. The new forecaster is compatible with a broader range of statistical models such as: sarimax, arima, arar and ets. Visit the <a href="../user_guides/migration-guide.html">migration guide</a> section for more information.</p>
+<p>Class <code><a href="https://skforecast.org/0.19.0/api/forecastersarimax.html">ForecasterSarimax</a></code> has been deprecated in favor of the new <code><a href="../api/ForecasterStats.html">ForecasterStats</a></code> model in the <code><a href="../api/ForecasterRecursive.html">recursive</a></code> module. The new forecaster is compatible with a broader range of statistical models such as: sarimax, arima, arar and ets. Visit the <a href="../user_guides/migration-guide.html">migration guide</a> section for more information.</p>
 </li>
 </ul>
 <p><strong>Fixed</strong></p>
@@ -4997,7 +4997,7 @@
 <p><span class="badge text-bg-danger">Fix</span> Fixed a bug that caused the gap to not be applied correctly in the <code><a href="../api/model_selection.html#skforecast.model_selection._validation.backtesting_forecaster_multiseries">backtesting_forecaster_multiseries</a></code> function. (<a href="https://github.com/skforecast/skforecast/issues/1028">#1028</a>)</p>
 </li>
 <li>
-<p><span class="badge text-bg-danger">Fix</span> Fixed a bug that prevented the <code>CatBoostRegressor</code> from working with the <code><a href="../api/forecasterrecursivemultiseries.html">ForecasterRecursiveMultiSeries</a></code>. (<a href="https://github.com/skforecast/skforecast/issues/1039">#1039</a>)</p>
+<p><span class="badge text-bg-danger">Fix</span> Fixed a bug that prevented the <code>CatBoostRegressor</code> from working with the <code><a href="../api/ForecasterRecursiveMultiSeries.html">ForecasterRecursiveMultiSeries</a></code>. (<a href="https://github.com/skforecast/skforecast/issues/1039">#1039</a>)</p>
 </li>
 </ul>
 <p><strong>Added</strong></p>
@@ -5028,29 +5028,29 @@
 <p>Fixed a bug that caused the gap to not be applied correctly in the <code><a href="../api/model_selection.html#skforecast.model_selection._validation.backtesting_forecaster_multiseries">backtesting_forecaster_multiseries</a></code> function. (<a href="https://github.com/skforecast/skforecast/issues/1028">#1028</a>)</p>
 </li>
 <li>
-<p>Fixed a bug that prevented the <code>CatBoostRegressor</code> from working with the <code><a href="../api/forecasterrecursivemultiseries.html">ForecasterRecursiveMultiSeries</a></code>. (<a href="https://github.com/skforecast/skforecast/issues/1039">#1039</a>)</p>
+<p>Fixed a bug that prevented the <code>CatBoostRegressor</code> from working with the <code><a href="../api/ForecasterRecursiveMultiSeries.html">ForecasterRecursiveMultiSeries</a></code>. (<a href="https://github.com/skforecast/skforecast/issues/1039">#1039</a>)</p>
 </li>
 </ul>
 <h2 id="0.17.0">0.17.0 <small>Aug 11, 2025</small><a class="headerlink" href="#0.17.0" title="Permanent link">&para;</a></h2>
 <p>The main changes in this release are:</p>
 <ul>
 <li>
-<p><span class="badge text-bg-feature">Feature</span> <code><a href="../api/forecasterequivalentdate.html">ForecasterEquivalentDate</a></code> can now predict intervals using the conformal prediction framework.</p>
+<p><span class="badge text-bg-feature">Feature</span> <code><a href="../api/ForecasterEquivalentDate.html">ForecasterEquivalentDate</a></code> can now predict intervals using the conformal prediction framework.</p>
 </li>
 <li>
 <p><span class="badge text-bg-feature">Feature</span> Created module <code><a href="../api/experimental.html">experimental</a></code>, this module contains experimental features that are not yet fully tested or may change in future releases.</p>
 </li>
 <li>
-<p><span class="badge text-bg-enhancement">Enhancement</span> The <code><a href="../api/forecasterrnn.html">ForecasterRNN</a></code> and the function <code><a href="../api/forecasterrnn.html#skforecast.deep_learning.utils.create_and_compile_model">create_and_compile_model</a></code> have been refactored to allow for the inclusion of exogenous variables. The forecaster can also make interval predictions using the conformal prediction framework.</p>
+<p><span class="badge text-bg-enhancement">Enhancement</span> The <code><a href="../api/ForecasterRnn.html">ForecasterRnn</a></code> and the function <code><a href="../api/ForecasterRnn.html#skforecast.deep_learning.utils.create_and_compile_model">create_and_compile_model</a></code> have been refactored to allow for the inclusion of exogenous variables. The forecaster can also make interval predictions using the conformal prediction framework.</p>
 </li>
 <li>
 <p><span class="badge text-bg-api-change">API Change</span> Input data passed to all functions/classes must have either a pandas <code>RangeIndex</code> or <code>DatetimeIndex</code>. Previously, if the input did not meet this condition, a <code>RangeIndex</code> starting at 0 was automatically generated. This behavior has been removed to ensure consistent and explicit handling of input data.</p>
 </li>
 <li>
-<p><span class="badge text-bg-api-change">API Change</span> <code><a href="../api/forecasterrecursivemultiseries.html">ForecasterRecursiveMultiSeries</a></code> now accepts three input types for the <code>series</code> data: a wide-format DataFrame, where each column corresponds to a different time series; a long-format DataFrame with a MultiIndex, where the first level indicates the series name and the second level is the time index; or a dictionary with series names as keys and pandas <code>Series</code> as values.</p>
+<p><span class="badge text-bg-api-change">API Change</span> <code><a href="../api/ForecasterRecursiveMultiSeries.html">ForecasterRecursiveMultiSeries</a></code> now accepts three input types for the <code>series</code> data: a wide-format DataFrame, where each column corresponds to a different time series; a long-format DataFrame with a MultiIndex, where the first level indicates the series name and the second level is the time index; or a dictionary with series names as keys and pandas <code>Series</code> as values.</p>
 </li>
 <li>
-<p><span class="badge text-bg-api-change">API Change</span> <code><a href="../api/forecasterrecursivemultiseries.html">ForecasterRecursiveMultiSeries</a></code> now accepts <code>exog</code> input as a wide-format DataFrame, where each column corresponds to a different exogenous variable; a long-format DataFrame with a MultiIndex, where the first level indicates the series name to which it belongs and the second level is the time index; or a dictionary with series names as keys and pandas <code>Series</code> or <code>DataFrames</code> as values.</p>
+<p><span class="badge text-bg-api-change">API Change</span> <code><a href="../api/ForecasterRecursiveMultiSeries.html">ForecasterRecursiveMultiSeries</a></code> now accepts <code>exog</code> input as a wide-format DataFrame, where each column corresponds to a different exogenous variable; a long-format DataFrame with a MultiIndex, where the first level indicates the series name to which it belongs and the second level is the time index; or a dictionary with series names as keys and pandas <code>Series</code> or <code>DataFrames</code> as values.</p>
 </li>
 <li>
 <p><span class="badge text-bg-api-change">API Change</span> The functions <code>series_long_to_dict</code> and <code>exog_long_to_dict</code> have been renamed to <code><a href="../api/preprocessing.html#skforecast.preprocessing.preprocessing.reshape_series_long_to_dict">reshape_series_long_to_dict</a></code> and <code><a href="../api/preprocessing.html#skforecast.preprocessing.preprocessing.reshape_exog_long_to_dict">reshape_exog_long_to_dict</a></code> in the <code><a href="../api/preprocessing.html">preprocessing</a></code> module.</p>
@@ -5074,22 +5074,22 @@
 <p>Added function <code><a href="../api/preprocessing.html#skforecast.preprocessing.preprocessing.reshape_series_wide_to_long">reshape_series_wide_to_long</a></code> in the <code><a href="../api/preprocessing.html">preprocessing</a></code> module. This function reshapes a wide-format DataFrame where each column corresponds to a series into a long-format DataFrame with with a MultiIndex. The first level of the index is the series name and the second level is the time index.</p>
 </li>
 <li>
-<p>Added metric <code><a href="../api/metrics.html#skforecast.metrics.metrics.symmetric_mean_absolute_percentage_error">symmetric_mean_absolute_percentage_error</a></code> in the <code><a href="../api/metrics.html">metrics</a></code> module. This metric calculates the symmetric mean absolute percentage error (SMAPE) between the true values and the predicted values.</p>
+<p>Added metric <code><a href="../api/metrics.html#skforecast.metrics.symmetric_mean_absolute_percentage_error">symmetric_mean_absolute_percentage_error</a></code> in the <code><a href="../api/metrics.html">metrics</a></code> module. This metric calculates the symmetric mean absolute percentage error (SMAPE) between the true values and the predicted values.</p>
 </li>
 <li>
-<p><code><a href="../api/forecasterequivalentdate.html">ForecasterEquivalentDate</a></code> can now predict intervals using the conformal prediction framework.</p>
+<p><code><a href="../api/ForecasterEquivalentDate.html">ForecasterEquivalentDate</a></code> can now predict intervals using the conformal prediction framework.</p>
 </li>
 <li>
 <p>Created module <code><a href="../api/experimental.html">experimental</a></code>, this module contains experimental features that are not yet fully tested or may change in future releases.</p>
 </li>
 <li>
-<p>Include function <code><a href="../api/experimental.html#skforecast.experimental.calculate_distance_from_holiday">calculate_distance_from_holiday</a></code> in the <code><a href="../api/experimental.html">experimental</a></code> module. It calculates the number of days to the next holiday and the number of days since the last holiday in a DataFrame with a date column.</p>
+<p>Include function <code><a href="../api/experimental.html#skforecast.experimental._experimental.calculate_distance_from_holiday">calculate_distance_from_holiday</a></code> in the <code><a href="../api/experimental.html">experimental</a></code> module. It calculates the number of days to the next holiday and the number of days since the last holiday in a DataFrame with a date column.</p>
 </li>
 <li>
-<p>The <code><a href="../api/forecasterrnn.html">ForecasterRNN</a></code> and the function <code><a href="../api/forecasterrnn.html#skforecast.deep_learning.utils.create_and_compile_model">create_and_compile_model</a></code> now support the inclusion of exogenous variables.</p>
+<p>The <code><a href="../api/ForecasterRnn.html">ForecasterRnn</a></code> and the function <code><a href="../api/ForecasterRnn.html#skforecast.deep_learning.utils.create_and_compile_model">create_and_compile_model</a></code> now support the inclusion of exogenous variables.</p>
 </li>
 <li>
-<p>Added method <code>predict_interval</code> to the <code><a href="../api/forecasterrnn.html">ForecasterRNN</a></code> using the conformal prediction framework.</p>
+<p>Added method <code>predict_interval</code> to the <code><a href="../api/ForecasterRnn.html">ForecasterRnn</a></code> using the conformal prediction framework.</p>
 </li>
 </ul>
 <p><strong>Changed</strong></p>
@@ -5098,13 +5098,13 @@
 <p>Input data passed to all functions/classes must have either a pandas <code>RangeIndex</code> or <code>DatetimeIndex</code>. Previously, if the input did not meet this condition, a <code>RangeIndex</code> starting at 0 was automatically generated. This behavior has been removed to ensure consistent and explicit handling of input data.</p>
 </li>
 <li>
-<p><code><a href="../api/forecasterrecursivemultiseries.html">ForecasterRecursiveMultiSeries</a></code> now accepts three input types for the series data: a wide-format DataFrame, where each column corresponds to a different time series; a long-format DataFrame with a MultiIndex, where the first level indicates the series name and the second level is the time index; or a dictionary with series names as keys and pandas Series as values.</p>
+<p><code><a href="../api/ForecasterRecursiveMultiSeries.html">ForecasterRecursiveMultiSeries</a></code> now accepts three input types for the series data: a wide-format DataFrame, where each column corresponds to a different time series; a long-format DataFrame with a MultiIndex, where the first level indicates the series name and the second level is the time index; or a dictionary with series names as keys and pandas Series as values.</p>
 </li>
 <li>
-<p><code><a href="../api/forecasterrecursivemultiseries.html">ForecasterRecursiveMultiSeries</a></code> now accepts <code>exog</code> input as a wide-format DataFrame, where each column corresponds to a different exogenous variable; a long-format DataFrame with a MultiIndex, where the first level indicates the series name to which it belongs and the second level is the time index; or a dictionary with series names as keys and pandas <code>Series</code> or <code>DataFrames</code> as values.</p>
+<p><code><a href="../api/ForecasterRecursiveMultiSeries.html">ForecasterRecursiveMultiSeries</a></code> now accepts <code>exog</code> input as a wide-format DataFrame, where each column corresponds to a different exogenous variable; a long-format DataFrame with a MultiIndex, where the first level indicates the series name to which it belongs and the second level is the time index; or a dictionary with series names as keys and pandas <code>Series</code> or <code>DataFrames</code> as values.</p>
 </li>
 <li>
-<p>When predicting, <code><a href="../api/forecasterrecursivemultiseries.html">ForecasterRecursiveMultiSeries</a></code> does not require the exog input to have the same type as the one used during training.</p>
+<p>When predicting, <code><a href="../api/ForecasterRecursiveMultiSeries.html">ForecasterRecursiveMultiSeries</a></code> does not require the exog input to have the same type as the one used during training.</p>
 </li>
 <li>
 <p>Function <code>series_long_to_dict</code> renamed to <code><a href="../api/preprocessing.html#skforecast.preprocessing.preprocessing.reshape_series_long_to_dict">reshape_series_long_to_dict</a></code> in the <code><a href="../api/preprocessing.html">preprocessing</a></code> module. This function reshapes a long-format DataFrame with time series data into a dictionary format where each entry corresponds to a series.</p>
@@ -5113,10 +5113,10 @@
 <p>Function <code>exog_long_to_dict</code> renamed to <code><a href="../api/preprocessing.html#skforecast.preprocessing.preprocessing.reshape_exog_long_to_dict">reshape_exog_long_to_dict</a></code> in the <code><a href="../api/preprocessing.html">preprocessing</a></code> module. This function reshapes a long-format DataFrame with exogenous variables into a dictionary format where each entry corresponds to the exogenous variables of a series.</p>
 </li>
 <li>
-<p>The <code><a href="../api/forecasterrnn.html#skforecast.deep_learning.utils.create_and_compile_model">create_and_compile_model</a></code> function has been refactored. All arguments related with layers and compilation are now passed as a dictionary using the following arguments: <code>recurrent_layers_kwargs</code>, <code>dense_layers_kwargs</code>, <code>output_dense_layer_kwargs</code>, and <code>compile_kwargs</code>.</p>
+<p>The <code><a href="../api/ForecasterRnn.html#skforecast.deep_learning.utils.create_and_compile_model">create_and_compile_model</a></code> function has been refactored. All arguments related with layers and compilation are now passed as a dictionary using the following arguments: <code>recurrent_layers_kwargs</code>, <code>dense_layers_kwargs</code>, <code>output_dense_layer_kwargs</code>, and <code>compile_kwargs</code>.</p>
 </li>
 <li>
-<p>The arguments <code>lags</code> and <code>steps</code> were removed from the <code><a href="../api/forecasterrnn.html">ForecasterRNN</a></code> initialization. These arguments are now inferred from the estimator architecture.</p>
+<p>The arguments <code>lags</code> and <code>steps</code> were removed from the <code><a href="../api/ForecasterRnn.html">ForecasterRnn</a></code> initialization. These arguments are now inferred from the estimator architecture.</p>
 </li>
 <li>
 <p>Remove <code>preprocess_y</code>, <code>preprocess_last_window</code> and <code>preprocess_exog</code> in favor of <code>check_extract_values_and_index</code> in the <code><a href="../api/utils.html">utils</a></code> module. This function checks if the index is a pandas <code>DatetimeIndex</code> or <code>RangeIndex</code> and extracts the values and index accordingly.</p>
@@ -5160,10 +5160,10 @@
 <p>In-sample residuals in direct forecasters has been simplified.</p>
 </li>
 <li>
-<p>The method <code>create_predict_X</code> in the <code><a href="../api/forecasterrecursivemultiseries.html">ForecasterRecursiveMultiSeries</a></code> now returns a long-format DataFrame with the predictors. The columns are <code>level</code> and one column for each predictor. The index is the same as the prediction index.</p>
+<p>The method <code>create_predict_X</code> in the <code><a href="../api/ForecasterRecursiveMultiSeries.html">ForecasterRecursiveMultiSeries</a></code> now returns a long-format DataFrame with the predictors. The columns are <code>level</code> and one column for each predictor. The index is the same as the prediction index.</p>
 </li>
 <li>
-<p>The method <code>create_predict_X</code> in the <code><a href="../api/forecasterdirectmultivariate.html">ForecasterDirectMultiVariate</a></code> now includes the <code>level</code> column in the returned DataFrame. The columns are <code>level</code> and one column for each predictor. The index is the same as the prediction index.</p>
+<p>The method <code>create_predict_X</code> in the <code><a href="../api/ForecasterDirectMultiVariate.html">ForecasterDirectMultiVariate</a></code> now includes the <code>level</code> column in the returned DataFrame. The columns are <code>level</code> and one column for each predictor. The index is the same as the prediction index.</p>
 </li>
 </ul>
 <p><strong>Fixed</strong></p>
@@ -5184,13 +5184,13 @@
 <p><span class="badge text-bg-feature">Feature</span> Added <a href="../user_guides/probabilistic-forecasting-conformal-prediction.html">conformal framework for probabilistic forecasting</a>. Generate prediction intervals using the <a href="https://mapie.readthedocs.io/en/stable/theoretical_description_regression.html#the-split-method">conformal prediction split method</a>.</p>
 </li>
 <li>
-<p><span class="badge text-bg-feature">Feature</span> <a href="../user_guides/probabilistic-forecasting-bootstrapped-residuals.html#intervals-conditioned-on-predicted-values-binned-residuals">Binned residuals</a> are now available in the <code><a href="../api/forecasterrecursivemultiseries.html">ForecasterRecursiveMultiSeries</a></code>, <code><a href="../api/forecasterdirect.html">ForecasterDirect</a></code> and <code><a href="../api/forecasterdirectmultivariate.html">ForecasterDirectMultiVariate</a></code> forecasters. </p>
+<p><span class="badge text-bg-feature">Feature</span> <a href="../user_guides/probabilistic-forecasting-bootstrapped-residuals.html#intervals-conditioned-on-predicted-values-binned-residuals">Binned residuals</a> are now available in the <code><a href="../api/ForecasterRecursiveMultiSeries.html">ForecasterRecursiveMultiSeries</a></code>, <code><a href="../api/ForecasterDirect.html">ForecasterDirect</a></code> and <code><a href="../api/ForecasterDirectMultiVariate.html">ForecasterDirectMultiVariate</a></code> forecasters. </p>
 </li>
 <li>
 <p><span class="badge text-bg-feature">Feature</span> New class <code><a href="../api/preprocessing.html#skforecast.preprocessing.preprocessing.ConformalIntervalCalibrator">ConformalIntervalCalibrator</a></code> to perform <a href="../user_guides/probabilistic-forecasting-conformal-calibration.html">conformal calibration</a>. This class is used to calibrate the prediction intervals using the conformal prediction framework.</p>
 </li>
 <li>
-<p><span class="badge text-bg-api-change">API Change</span> Probabilistic predictions in <code><a href="../api/forecasterrecursivemultiseries.html">ForecasterRecursiveMultiSeries</a></code> and <code><a href="../api/forecasterdirectmultivariate.html">ForecasterDirectMultiVariate</a></code> are now returned as a long format DataFrame.</p>
+<p><span class="badge text-bg-api-change">API Change</span> Probabilistic predictions in <code><a href="../api/ForecasterRecursiveMultiSeries.html">ForecasterRecursiveMultiSeries</a></code> and <code><a href="../api/ForecasterDirectMultiVariate.html">ForecasterDirectMultiVariate</a></code> are now returned as a long format DataFrame.</p>
 </li>
 <li>
 <p><span class="badge text-bg-api-change">API Change</span> Fit argument <code>store_in_sample_residuals</code> has changed default value to <code>False</code>. This means in-sample residuals are not stored by default. To store them, call new method <code>set_in_sample_residuals</code> after fitting the forecaster using the same training data. </p>
@@ -5211,7 +5211,7 @@
 <p>New class <code><a href="../api/preprocessing.html#skforecast.preprocessing.preprocessing.ConformalIntervalCalibrator">ConformalIntervalCalibrator</a></code> to perform conformal calibration. This class is used to calibrate the prediction intervals using the conformal prediction framework.</p>
 </li>
 <li>
-<p>Binned residuals are now available in the <code><a href="../api/forecasterrecursivemultiseries.html">ForecasterRecursiveMultiSeries</a></code>, <code><a href="../api/forecasterdirect.html">ForecasterDirect</a></code> and <code><a href="../api/forecasterdirectmultivariate.html">ForecasterDirectMultiVariate</a></code> forecasters. </p>
+<p>Binned residuals are now available in the <code><a href="../api/ForecasterRecursiveMultiSeries.html">ForecasterRecursiveMultiSeries</a></code>, <code><a href="../api/ForecasterDirect.html">ForecasterDirect</a></code> and <code><a href="../api/ForecasterDirectMultiVariate.html">ForecasterDirectMultiVariate</a></code> forecasters. </p>
 </li>
 <li>
 <p>New method <code>set_in_sample_residuals</code> to store the in-sample residuals after fitting the forecaster using the same training data.</p>
@@ -5223,7 +5223,7 @@
 <p>Function <code>calculate_coverage</code> in module <code>metrics</code> to calculate the coverage of the predicted intervals.</p>
 </li>
 <li>
-<p>The <code>differentiation</code> argument in <code><a href="../api/forecasterrecursivemultiseries.html">ForecasterRecursiveMultiSeries</a></code> can now be a dict to <a href="../user_guides/independent-multi-time-series-forecasting.html#differentiation">differentiate each series independently</a>. This is useful if the user wants to differentiate each series with a different order or not differentiate some of them.</p>
+<p>The <code>differentiation</code> argument in <code><a href="../api/ForecasterRecursiveMultiSeries.html">ForecasterRecursiveMultiSeries</a></code> can now be a dict to <a href="../user_guides/independent-multi-time-series-forecasting.html#differentiation">differentiate each series independently</a>. This is useful if the user wants to differentiate each series with a different order or not differentiate some of them.</p>
 </li>
 <li>
 <p>Added statistic <code>ewm</code> (exponential weighted mean) in <code><a href="../api/preprocessing.html#skforecast.preprocessing.preprocessing.RollingFeatures">RollingFeatures</a></code>. Alpha can be specified using the new argument <code>kwargs_stats</code>, default <code>{'ewm': {'alpha': 0.3}}</code>.</p>
@@ -5253,7 +5253,7 @@
 <p><strong>Changed</strong></p>
 <ul>
 <li>
-<p><code><a href="../api/forecasterrecursivemultiseries.html">ForecasterRecursiveMultiSeries</a></code> and <code><a href="../api/forecasterdirectmultivariate.html">ForecasterDirectMultiVariate</a></code> forecasters use conformal prediction framework as default for probabilistic forecasting, <code>method = 'conformal'</code> in <code>predict_interval</code> method.</p>
+<p><code><a href="../api/ForecasterRecursiveMultiSeries.html">ForecasterRecursiveMultiSeries</a></code> and <code><a href="../api/ForecasterDirectMultiVariate.html">ForecasterDirectMultiVariate</a></code> forecasters use conformal prediction framework as default for probabilistic forecasting, <code>method = 'conformal'</code> in <code>predict_interval</code> method.</p>
 </li>
 <li>
 <p><code><a href="../api/model_selection.html#skforecast.model_selection._validation.backtesting_forecaster_multiseries">backtesting_forecaster_multiseries</a></code> uses conformal prediction framework as default for probabilistic forecasting, <code>interval_method = 'conformal'</code>.</p>
@@ -5265,19 +5265,19 @@
 <p>Fit argument <code>store_in_sample_residuals</code> has changed default value to <code>False</code>. This means in-sample residuals are not stored by default. To store them, call new method <code>set_in_sample_residuals</code> after fitting the forecaster using the same training data. </p>
 </li>
 <li>
-<p>Predictions from <code>predict_bootstrapping</code> in <code><a href="../api/forecasterrecursivemultiseries.html">ForecasterRecursiveMultiSeries</a></code> and <code><a href="../api/forecasterdirectmultivariate.html">ForecasterDirectMultiVariate</a></code> are now returned as a long format DataFrame with the bootstrapping predictions. The columns are <code>level</code>, <code>pred_boot_0</code>, <code>pred_boot_1</code>, ..., <code>pred_boot_n_boot</code>.</p>
+<p>Predictions from <code>predict_bootstrapping</code> in <code><a href="../api/ForecasterRecursiveMultiSeries.html">ForecasterRecursiveMultiSeries</a></code> and <code><a href="../api/ForecasterDirectMultiVariate.html">ForecasterDirectMultiVariate</a></code> are now returned as a long format DataFrame with the bootstrapping predictions. The columns are <code>level</code>, <code>pred_boot_0</code>, <code>pred_boot_1</code>, ..., <code>pred_boot_n_boot</code>.</p>
 </li>
 <li>
-<p>Predictions from <code>predict_interval</code> in <code><a href="../api/forecasterrecursivemultiseries.html">ForecasterRecursiveMultiSeries</a></code> and <code><a href="../api/forecasterdirectmultivariate.html">ForecasterDirectMultiVariate</a></code> are now returned as long format DataFrame with the predictions and the lower and upper bounds of the estimated interval. The columns are <code>level</code>, <code>pred</code>, <code>lower_bound</code>, <code>upper_bound</code>.</p>
+<p>Predictions from <code>predict_interval</code> in <code><a href="../api/ForecasterRecursiveMultiSeries.html">ForecasterRecursiveMultiSeries</a></code> and <code><a href="../api/ForecasterDirectMultiVariate.html">ForecasterDirectMultiVariate</a></code> are now returned as long format DataFrame with the predictions and the lower and upper bounds of the estimated interval. The columns are <code>level</code>, <code>pred</code>, <code>lower_bound</code>, <code>upper_bound</code>.</p>
 </li>
 <li>
-<p>Predictions from <code>predict_quantiles</code> in <code><a href="../api/forecasterrecursivemultiseries.html">ForecasterRecursiveMultiSeries</a></code> and <code><a href="../api/forecasterdirectmultivariate.html">ForecasterDirectMultiVariate</a></code> are now returned as long format DataFrame with the quantiles predicted by the forecaster. For example, if <code>quantiles = [0.05, 0.5, 0.95]</code>, the columns are <code>level</code>, <code>q_0.05</code>, <code>q_0.5</code>, <code>q_0.95</code>.</p>
+<p>Predictions from <code>predict_quantiles</code> in <code><a href="../api/ForecasterRecursiveMultiSeries.html">ForecasterRecursiveMultiSeries</a></code> and <code><a href="../api/ForecasterDirectMultiVariate.html">ForecasterDirectMultiVariate</a></code> are now returned as long format DataFrame with the quantiles predicted by the forecaster. For example, if <code>quantiles = [0.05, 0.5, 0.95]</code>, the columns are <code>level</code>, <code>q_0.05</code>, <code>q_0.5</code>, <code>q_0.95</code>.</p>
 </li>
 <li>
-<p>Predictions from <code>predict_dist</code> in <code><a href="../api/forecasterrecursivemultiseries.html">ForecasterRecursiveMultiSeries</a></code> and <code><a href="../api/forecasterdirectmultivariate.html">ForecasterDirectMultiVariate</a></code> are now returned as long format DataFrame with the parameters of the fitted distribution for each step. The columns are <code>level</code>, <code>param_0</code>, <code>param_1</code>, ..., <code>param_n</code>, where <code>param_i</code> are the parameters of the distribution.</p>
+<p>Predictions from <code>predict_dist</code> in <code><a href="../api/ForecasterRecursiveMultiSeries.html">ForecasterRecursiveMultiSeries</a></code> and <code><a href="../api/ForecasterDirectMultiVariate.html">ForecasterDirectMultiVariate</a></code> are now returned as long format DataFrame with the parameters of the fitted distribution for each step. The columns are <code>level</code>, <code>param_0</code>, <code>param_1</code>, ..., <code>param_n</code>, where <code>param_i</code> are the parameters of the distribution.</p>
 </li>
 <li>
-<p><code><a href="https://skforecast.org/0.13.0/api/forecasterautoregcustom">ForecasterAutoregCustom</a></code> and <code><a href="https://skforecast.org/0.13.0/api/forecastermultiseriescustom">ForecasterAutoregMultiSeriesCustom</a></code> has been deleted (deprecated since skforecast 0.14.0). Window features can be added using the <code>window_features</code> argument in the <code><a href="../api/forecasterrecursive.html">ForecasterRecursive</a></code>, <code><a href="../api/forecasterdirect.html">ForecasterDirect</a></code>, <code><a href="../api/forecasterdirectmultivariate.html">ForecasterDirectMultiVariate</a></code> and <code><a href="../api/forecasterrecursivemultiseries.html">ForecasterRecursiveMultiSeries</a></code>.</p>
+<p><code><a href="https://skforecast.org/0.13.0/api/forecasterautoregcustom">ForecasterAutoregCustom</a></code> and <code><a href="https://skforecast.org/0.13.0/api/forecastermultiseriescustom">ForecasterAutoregMultiSeriesCustom</a></code> has been deleted (deprecated since skforecast 0.14.0). Window features can be added using the <code>window_features</code> argument in the <code><a href="../api/ForecasterRecursive.html">ForecasterRecursive</a></code>, <code><a href="../api/ForecasterDirect.html">ForecasterDirect</a></code>, <code><a href="../api/ForecasterDirectMultiVariate.html">ForecasterDirectMultiVariate</a></code> and <code><a href="../api/ForecasterRecursiveMultiSeries.html">ForecasterRecursiveMultiSeries</a></code>.</p>
 </li>
 <li>
 <p>Argument <code>dropna</code> in <code><a href="https://skforecast.org/0.16.0/api/preprocessing.html#skforecast.preprocessing.preprocessing.exog_long_to_dict">exog_long_to_dict</a></code> function has been renamed to <code>drop_all_nan_cols</code>.</p>
@@ -5292,7 +5292,7 @@
 <p><strong>Fixed</strong></p>
 <ul>
 <li>
-<p>Now <code><a href="../api/forecasterrecursivemultiseries.html">ForecasterRecursiveMultiSeries</a></code> can be saved correctly when <code>weight_func</code> is a <code>dict</code> with <code>None</code> for any series. It now use the method <code>_weight_func_all_1</code> to create the weight function for these series.</p>
+<p>Now <code><a href="../api/ForecasterRecursiveMultiSeries.html">ForecasterRecursiveMultiSeries</a></code> can be saved correctly when <code>weight_func</code> is a <code>dict</code> with <code>None</code> for any series. It now use the method <code>_weight_func_all_1</code> to create the weight function for these series.</p>
 </li>
 <li>
 <p>Fix <code>transform_numpy</code> function in the <code><a href="../api/utils.html">utils</a></code> module to work when transformers output in <code>scikit-learn</code> is <code>set_output(transform='pandas')</code>.</p>
@@ -5312,7 +5312,7 @@
 <p><span class="badge text-bg-feature">Feature</span> Hyperparameter search now allows to follow a <a href="../user_guides/hyperparameter-tuning-and-lags-selection.html#one-step-ahead-validation">one-step-ahead validation strategy</a> using a <code><a href="../api/model_selection.html#skforecast.model_selection._split.OneStepAheadFold">OneStepAheadFold</a></code> as <code>cv</code> argument in the <code><a href="../api/model_selection.html">model_selection</a></code> functions.</p>
 </li>
 <li>
-<p><span class="badge text-bg-enhancement">Enhancement</span> Refactor the prediction process in <code><a href="../api/forecasterrecursivemultiseries.html">ForecasterRecursiveMultiSeries</a></code> to improve performance when predicting multiple series.</p>
+<p><span class="badge text-bg-enhancement">Enhancement</span> Refactor the prediction process in <code><a href="../api/ForecasterRecursiveMultiSeries.html">ForecasterRecursiveMultiSeries</a></code> to improve performance when predicting multiple series.</p>
 </li>
 <li>
 <p><span class="badge text-bg-enhancement">Enhancement</span> The bootstrapping process in the <code>predict_bootstrapping</code> method of all forecasters has been optimized to improve performance. This may result in slightly different results when using the same seed as in previous versions.</p>
@@ -5324,7 +5324,7 @@
 <p><span class="badge text-bg-api-change">API Change</span> Package structure has been changed to improve code organization. The forecasters have been grouped into the <code>recursive</code>, <code>direct</code> amd <code>deep_learning</code> modules. Visit the <a href="../user_guides/migration-guide.html">migration guide</a> section for more information.</p>
 </li>
 <li>
-<p><span class="badge text-bg-api-change">API Change</span> <code><a href="https://skforecast.org/0.13.0/api/forecasterautoregcustom">ForecasterAutoregCustom</a></code> has been deprecated. <a href="../user_guides/window-features-and-custom-features.html">Window features</a> can be added using the <code>window_features</code> argument in the <code><a href="../api/forecasterrecursive.html">ForecasterRecursive</a></code>.</p>
+<p><span class="badge text-bg-api-change">API Change</span> <code><a href="https://skforecast.org/0.13.0/api/forecasterautoregcustom">ForecasterAutoregCustom</a></code> has been deprecated. <a href="../user_guides/window-features-and-custom-features.html">Window features</a> can be added using the <code>window_features</code> argument in the <code><a href="../api/ForecasterRecursive.html">ForecasterRecursive</a></code>.</p>
 </li>
 <li>
 <p><span class="badge text-bg-api-change">API Change</span> Refactor the <code>set_out_sample_residuals</code> method in all forecasters, it now expects <code>y_true</code> and <code>y_pred</code> as arguments instead of <code>residuals</code>. This method is used to store the residuals of the out-of-sample predictions.</p>
@@ -5354,7 +5354,7 @@
 <p>Create <code>transform_numpy</code> function in the <code><a href="../api/utils.html">utils</a></code> module to carry out the transformation of the modeled time series and exogenous variables as numpy arrays.</p>
 </li>
 <li>
-<p><code>random_state</code> argument in the <code>fit</code> method of <code><a href="../api/forecasterrecursive.html">ForecasterRecursive</a></code> to set a seed for the random generator so that the stored sample residuals are always deterministic.</p>
+<p><code>random_state</code> argument in the <code>fit</code> method of <code><a href="../api/ForecasterRecursive.html">ForecasterRecursive</a></code> to set a seed for the random generator so that the stored sample residuals are always deterministic.</p>
 </li>
 <li>
 <p>New private method <code>_train_test_split_one_step_ahead</code> in all forecasters.</p>
@@ -5363,28 +5363,28 @@
 <p>New private function <code>_calculate_metrics_one_step_ahead</code> to <code><a href="../api/model_selection.html">model_selection</a></code> module to calculate the metrics when predicting one step ahead.</p>
 </li>
 <li>
-<p>The <code>steps</code> argument in the predict method of the <code><a href="../api/forecasterrecursive.html">ForecasterRecursive</a></code> can now be a str or a pandas datetime. If so, the method will predict up to the specified date. (contribution by <a href="https://github.com/imMoya">@imMoya</a> <a href="https://github.com/skforecast/skforecast/pull/811">#811</a>).</p>
+<p>The <code>steps</code> argument in the predict method of the <code><a href="../api/ForecasterRecursive.html">ForecasterRecursive</a></code> can now be a str or a pandas datetime. If so, the method will predict up to the specified date. (contribution by <a href="https://github.com/imMoya">@imMoya</a> <a href="https://github.com/skforecast/skforecast/pull/811">#811</a>).</p>
 </li>
 <li>
 <p>Exogenous variables can be added to the training matrix if they do not contain the first window size observations. This is useful when exogenous variables are not available in early historical data.</p>
 </li>
 <li>
-<p>Added support for different activation functions in the <code><a href="../api/forecasterrnn.html#skforecast.deep_learning.utils.create_and_compile_model">create_and_compile_model</a></code> function. (contribution by <a href="https://github.com/pablorodriper">@pablorodriper</a> <a href="https://github.com/skforecast/skforecast/pull/824">#824</a>).</p>
+<p>Added support for different activation functions in the <code><a href="../api/ForecasterRnn.html#skforecast.deep_learning.utils.create_and_compile_model">create_and_compile_model</a></code> function. (contribution by <a href="https://github.com/pablorodriper">@pablorodriper</a> <a href="https://github.com/skforecast/skforecast/pull/824">#824</a>).</p>
 </li>
 </ul>
 <p><strong>Changed</strong></p>
 <ul>
 <li>
-<p><code><a href="https://skforecast.org/0.13.0/api/forecasterautoregcustom">ForecasterAutoregCustom</a></code> and <code><a href="https://skforecast.org/0.13.0/api/forecastermultiseriescustom">ForecasterAutoregMultiSeriesCustom</a></code> has been deprecated. Window features can be added using the <code>window_features</code> argument in the <code><a href="../api/forecasterrecursive.html">ForecasterRecursive</a></code> and <code><a href="../api/forecasterrecursivemultiseries.html">ForecasterRecursiveMultiSeries</a></code>.</p>
+<p><code><a href="https://skforecast.org/0.13.0/api/forecasterautoregcustom">ForecasterAutoregCustom</a></code> and <code><a href="https://skforecast.org/0.13.0/api/forecastermultiseriescustom">ForecasterAutoregMultiSeriesCustom</a></code> has been deprecated. Window features can be added using the <code>window_features</code> argument in the <code><a href="../api/ForecasterRecursive.html">ForecasterRecursive</a></code> and <code><a href="../api/ForecasterRecursiveMultiSeries.html">ForecasterRecursiveMultiSeries</a></code>.</p>
 </li>
 <li>
-<p>Refactor <code>recursive_predict</code> in <code><a href="../api/forecasterrecursivemultiseries.html">ForecasterRecursiveMultiSeries</a></code> to predict all series at once and include option of adding residuals. This improves performance when predicting multiple series.</p>
+<p>Refactor <code>recursive_predict</code> in <code><a href="../api/ForecasterRecursiveMultiSeries.html">ForecasterRecursiveMultiSeries</a></code> to predict all series at once and include option of adding residuals. This improves performance when predicting multiple series.</p>
 </li>
 <li>
 <p>Refactor <code>predict_bootstrapping</code> in all Forecasters. The bootstrapping process has been optimized to improve performance. This may result in slightly different results when using the same seed as in previous versions.</p>
 </li>
 <li>
-<p>Change the default value of <code>encoding</code> to <code>ordinal</code> in <code><a href="../api/forecasterrecursivemultiseries.html">ForecasterRecursiveMultiSeries</a></code>. This will avoid conflicts if the estimator does not support categorical variables by default.</p>
+<p>Change the default value of <code>encoding</code> to <code>ordinal</code> in <code><a href="../api/ForecasterRecursiveMultiSeries.html">ForecasterRecursiveMultiSeries</a></code>. This will avoid conflicts if the estimator does not support categorical variables by default.</p>
 </li>
 <li>
 <p>Removed argument <code>engine</code> from <code><a href="../api/model_selection.html#skforecast.model_selection._search.bayesian_search_forecaster">bayesian_search_forecaster</a></code> and <code><a href="../api/model_selection.html#skforecast.model_selection._search.bayesian_search_forecaster_multiseries">bayesian_search_forecaster_multiseries</a></code>.</p>
@@ -5542,22 +5542,22 @@
 <p>The main changes in this release are:</p>
 <ul>
 <li>
-<p><span class="badge text-bg-feature">Feature</span> Global Forecasters <code><a href="https://skforecast.org/0.13.0/api/forecastermultiseries">ForecasterAutoregMultiSeries</a></code> and <code><a href="https://skforecast.org/0.13.0/api/forecastermultiseriescustom">ForecasterAutoregMultiSeriesCustom</a></code> are able to <a href="https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting.html#forecasting-unknown-series">predict series not seen during training</a>. This is useful when the user wants to predict a new series that was not included in the training data.</p>
+<p><span class="badge text-bg-feature">Feature</span> Global Forecasters <code><a href="https://skforecast.org/0.13.0/api/forecastermultiseries">ForecasterAutoregMultiSeries</a></code> and <code><a href="https://skforecast.org/0.13.0/api/forecastermultiseriescustom">ForecasterAutoregMultiSeriesCustom</a></code> are able to <a href="../user_guides/independent-multi-time-series-forecasting.html#forecasting-unknown-series">predict series not seen during training</a>. This is useful when the user wants to predict a new series that was not included in the training data.</p>
 </li>
 <li>
-<p><span class="badge text-bg-feature">Feature</span> <code>encoding</code> can be set to <code>None</code> in Global Forecasters <code><a href="https://skforecast.org/0.13.0/api/forecastermultiseries">ForecasterAutoregMultiSeries</a></code> and <code><a href="https://skforecast.org/0.13.0/api/forecastermultiseriescustom">ForecasterAutoregMultiSeriesCustom</a></code>. This option does <a href="https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting#series-encoding-in-multi-series">not add the encoded series ids</a> to the estimator training matrix.</p>
+<p><span class="badge text-bg-feature">Feature</span> <code>encoding</code> can be set to <code>None</code> in Global Forecasters <code><a href="https://skforecast.org/0.13.0/api/forecastermultiseries">ForecasterAutoregMultiSeries</a></code> and <code><a href="https://skforecast.org/0.13.0/api/forecastermultiseriescustom">ForecasterAutoregMultiSeriesCustom</a></code>. This option does <a href="../user_guides/independent-multi-time-series-forecasting.html#series-encoding-in-multi-series">not add the encoded series ids</a> to the estimator training matrix.</p>
 </li>
 <li>
 <p><span class="badge text-bg-feature">Feature</span> New <code>create_predict_X</code> method in all recursive and direct Forecasters to allow the user to inspect the matrix passed to the predict method of the estimator.</p>
 </li>
 <li>
-<p><span class="badge text-bg-feature">Feature</span> New module <code><a href="../api/metrics.html">metrics</a></code> with functions to calculate metrics for time series forecasting such as <code><a href="../api/metrics.html#skforecast.metrics.metrics.mean_absolute_scaled_error">mean_absolute_scaled_error</a></code> and <code><a href="../api/metrics.html#skforecast.metrics.metrics.root_mean_squared_scaled_error">root_mean_squared_scaled_error</a></code>. Visit <a href="https://skforecast.org/latest/user_guides/metrics.html">Time Series Forecasting Metrics</a> for more information.</p>
+<p><span class="badge text-bg-feature">Feature</span> New module <code><a href="../api/metrics.html">metrics</a></code> with functions to calculate metrics for time series forecasting such as <code><a href="../api/metrics.html#skforecast.metrics.mean_absolute_scaled_error">mean_absolute_scaled_error</a></code> and <code><a href="../api/metrics.html#skforecast.metrics.root_mean_squared_scaled_error">root_mean_squared_scaled_error</a></code>. Visit <a href="../user_guides/metrics.html">Time Series Forecasting Metrics</a> for more information.</p>
 </li>
 <li>
 <p><span class="badge text-bg-feature">Feature</span> New argument <code>add_aggregated_metric</code> in <code><a href="../api/model_selection.html#skforecast.model_selection._validation.backtesting_forecaster_multiseries">backtesting_forecaster_multiseries</a></code> to include, in addition to the metrics for each level, the aggregated metric of all levels using the average (arithmetic mean), weighted average (weighted by the number of predicted values of each level) or pooling (the values of all levels are pooled and then the metric is calculated).</p>
 </li>
 <li>
-<p><span class="badge text-bg-feature">Feature</span> New argument <code>skip_folds</code> in <code><a href="../api/model_selection.html">model_selection</a></code> and <code><a href="https://skforecast.org/0.13.0/api/model_selection_multiseries">model_selection_multiseries</a></code> functions. It allows the user to <a href="https://skforecast.org/latest/user_guides/backtesting#backtesting-with-skip-folds">skip some folds during backtesting</a>, which can be useful to speed up the backtesting process and thus the hyperparameter search.</p>
+<p><span class="badge text-bg-feature">Feature</span> New argument <code>skip_folds</code> in <code><a href="../api/model_selection.html">model_selection</a></code> and <code><a href="https://skforecast.org/0.13.0/api/model_selection_multiseries">model_selection_multiseries</a></code> functions. It allows the user to <a href="../user_guides/backtesting.html#backtesting-with-skip-folds">skip some folds during backtesting</a>, which can be useful to speed up the backtesting process and thus the hyperparameter search.</p>
 </li>
 <li>
 <p><span class="badge text-bg-api-change">API Change</span> backtesting procedures now pass the training series to the metric functions so it can be used to calculate metrics that depend on the training series.</p>
@@ -5572,10 +5572,10 @@
 <p>Support for <code>Python 3.12</code>.</p>
 </li>
 <li>
-<p><code>keras</code> has been added as an optional dependency, tag <code>deeplearning</code>, to use the <code><a href="../api/forecasterrnn.html">ForecasterRnn</a></code>.</p>
+<p><code>keras</code> has been added as an optional dependency, tag <code>deeplearning</code>, to use the <code><a href="../api/ForecasterRnn.html">ForecasterRnn</a></code>.</p>
 </li>
 <li>
-<p><code>PyTorch</code> backend for the <code><a href="../api/forecasterrnn.html">ForecasterRnn</a></code>.</p>
+<p><code>PyTorch</code> backend for the <code><a href="../api/ForecasterRnn.html">ForecasterRnn</a></code>.</p>
 </li>
 <li>
 <p>New <code>create_predict_X</code> method in all recursive and direct Forecasters to allow the user to inspect the matrix passed to the predict method of the estimator.</p>
@@ -5617,7 +5617,7 @@
 <p>Deprecated <code>python 3.8</code> compatibility.</p>
 </li>
 <li>
-<p>Update <a href="https://skforecast.org/latest/quick-start/how-to-install">project dependencies</a>.</p>
+<p>Update <a href="../quick-start/how-to-install.html">project dependencies</a>.</p>
 </li>
 <li>
 <p>Change default value of <code>n_bins</code> when initializing <code><a href="https://skforecast.org/0.13.0/api/forecasterautoreg">ForecasterAutoreg</a></code> from 15 to 10.</p>
@@ -6764,6 +6764,10 @@
       <script src="../assets/javascripts/bundle.e71a0d61.min.js"></script>
       
         <script src="../javascripts/version-switcher.js"></script>
+      
+        <script src="../javascripts/mathjax.js"></script>
+      
+        <script src="https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js"></script>
       
     
   </body>

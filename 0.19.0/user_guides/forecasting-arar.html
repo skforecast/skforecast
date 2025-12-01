@@ -5104,21 +5104,31 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </ul>
 <h2 id="subset-autoregressive-model">Subset Autoregressive Model:<a class="anchor-link" href="#subset-autoregressive-model">¶</a></h2><p>In the following we will describe how ARAR algorithm fits an autoregressive process to the mean-corrected series $X_{t} = S_{t}- {\bar{S}}$, $t = k+1, ..., n$ where ${S_{t}, t = k + 1, ..., n}$ is the memory-shortened version of  ${Y_{t}}$ which derived from the five steps we described above and $\bar{S}$ is the sample mean of $S_{k+1}, ..., S_{n}$.</p>
 <p>The fitted model has the following form:</p>
-<p>$X_{t} = \phi_{1}X{t-1} + \phi_{1}X_{t-l_{1}} + \phi_{1}X_{t- l_{1}} + \phi_{1}X_{t-l_{1}} + Z$</p>
+<p>$X_{t} = \phi_{1}X_{t-1} + \phi_{1}X_{t-l_{1}} + \phi_{1}X_{t- l_{1}} + \phi_{1}X_{t-l_{1}} + Z$</p>
 <p>where $Z \sim WN(0, \sigma^{2})$. The coefficients $\phi_{j}$ and white noise variance $\sigma^2$ can be derived from the Yule-Walker equations for given lags $l_1, l_2,$ and $l_3$ :</p>
-<p>\begin{equation}
+<p>$$
+\small
 \begin{bmatrix}
 1 &amp; \hat{\rho}(l_1 - 1) &amp; \hat{\rho}(l_2 - 1) &amp; \hat{\rho}(l_3 - 1)\\
 \hat{\rho}(l_1 - 1) &amp;1 &amp; \hat{\rho}(l_2 - l_1) &amp; \hat{\rho}(l_3 - l_1)\\
 \hat{\rho}(l_2 - 1) &amp; \hat{\rho}(l_2 - l_1) &amp; 1 &amp; \hat{\rho}(l_2 - l_2)\\
 \hat{\rho}(l_3 - 1) &amp; \hat{\rho}(l_3 - l_1) &amp; \hat{\rho}(l_3 - l_1) &amp; 1
-\end{bmatrix}*\begin{bmatrix}
+\end{bmatrix}
+\; \ast \;
+\begin{bmatrix}
 \phi_{1} \\
 \phi_{l_1} \\
 \phi_{l_2}\\
 \phi_{l_3}
-\end{bmatrix} = \begin{bmatrix} \hat{\rho}(1) \\ \hat{\rho}(l_1) \\ \hat{\rho}(l_2)\\ \hat{\rho}(l_3) \end{bmatrix}
-\end{equation}</p>
+\end{bmatrix} 
+= 
+\begin{bmatrix} 
+\hat{\rho}(1) \\ 
+\hat{\rho}(l_1) \\ 
+\hat{\rho}(l_2)\\ 
+\hat{\rho}(l_3) 
+\end{bmatrix}
+$$</p>
 <p>and $\sigma^2 = \hat{\gamma}(0) [1-\phi_1\hat{\rho}(1)] - \phi_{l_1}\hat{\rho}(l_1)] - \phi_{l_2}\hat{\rho}(l_2)] - \phi_{l_3}\hat{\rho}(l_3)]$, where $\hat{\gamma}(j)$ and $\hat{\rho}(j), j = 0, 1, 2, ...,$ are the sample autocovariances and autocorelations of the series $X_{t}$.</p>
 <p>The algorithm computes the coefficients of $\phi(j)$ for each set of lags where $1&lt;l_1&lt;l_2&lt;l_3 \leq m$ where m chosen to be 13 or 26. The algorithm selects the model that the Yule-Walker estimate of $\sigma^2$ is minimal.</p>
 <h2 id="forecasting">Forecasting<a class="anchor-link" href="#forecasting">¶</a></h2><p>If short-memory filter found in first step it has coefficients $\Psi_0, \Psi_1, ..., \Psi_k (k \geq0)$ where $\Psi_0 = 1$. In this case the transforemed series can be expressed as
@@ -6843,6 +6853,10 @@ plt.show()</div>
       <script src="../assets/javascripts/bundle.e71a0d61.min.js"></script>
       
         <script src="../javascripts/version-switcher.js"></script>
+      
+        <script src="../javascripts/mathjax.js"></script>
+      
+        <script src="https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js"></script>
       
     
   </body>
