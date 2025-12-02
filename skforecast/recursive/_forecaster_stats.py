@@ -176,6 +176,7 @@ class ForecasterStats():
         ]
         self.estimators_support_exog  = [
             'skforecast.stats._sarimax.Sarimax',
+            'skforecast.stats._arar.Arar'
         ]
 
         estimator_type = f"{type(estimator).__module__}.{type(estimator).__name__}"

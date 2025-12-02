@@ -13,6 +13,7 @@ import pandas as pd
 from scipy.stats import norm
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.utils.validation import check_is_fitted
+from sklearn.linear_model import LinearRegression, Ridge
 
 
 def setup_params(y_in, max_ar_depth: int | None = None, max_lag: int | None = None):
@@ -332,7 +333,6 @@ def summary_arar(model_tuple):
     print(f"75%: {np.percentile(Y, 75):.4f}")
     print(f"Max: {np.max(Y):.4f}")
 
-
 class Arar(BaseEstimator, RegressorMixin):
     """
     Scikit-learn style wrapper for the ARAR time-series model.
@@ -355,6 +355,8 @@ class Arar(BaseEstimator, RegressorMixin):
 
     Attributes
     ----------
+    exog_model_ : LinearRegression
+        The fitted regression model for the exogenous variables.
     max_ar_depth : int,
         Maximum AR depth considered for the (1, i, j, k) AR selection stage.
     max_lag : int
@@ -389,7 +391,7 @@ class Arar(BaseEstimator, RegressorMixin):
         self.max_lag = max_lag
         self.safe = safe
 
-    def fit(self, y: pd.Series | np.ndarray, exog: None = None) -> "Arar":
+    def fit(self, y: pd.Series | np.ndarray, exog: pd.DataFrame | np.ndarray | None = None) -> "Arar":
         """
         Fit the ARAR model to a univariate time series.
 
@@ -408,10 +410,27 @@ class Arar(BaseEstimator, RegressorMixin):
         y = np.asarray(y, dtype=float).ravel()
         if y.ndim != 1:
             raise ValueError("`y` must be a 1D array-like sequence.")
-        if y.size < 2 and not self.safe:
+        
+        series_to_fit = y
+        self.exog_model_ = None
+
+        if exog is not None:
+            exog = np.asarray(exog, dtype=float)
+            if exog.ndim == 1:
+                exog = exog.reshape(-1, 1)
+            
+            if len(exog) != len(y):
+                raise ValueError(f"Length of exog ({len(exog)}) must match length of y ({len(y)})")
+
+            self.exog_model_ = Ridge()
+            self.exog_model_.fit(exog, y)
+            
+            series_to_fit = y - self.exog_model_.predict(exog)
+
+        if series_to_fit.size < 2 and not self.safe:
             raise ValueError("Series too short to fit ARAR when safe=False.")
 
-        self.model_ = arar(y, max_ar_depth=self.max_ar_depth, max_lag=self.max_lag, safe=self.safe)
+        self.model_ = arar(series_to_fit, max_ar_depth=self.max_ar_depth, max_lag=self.max_lag, safe=self.safe)
 
         (Y, best_phi, best_lag, sigma2, psi, sbar, max_ar_depth, max_lag) = self.model_
 
@@ -423,14 +442,22 @@ class Arar(BaseEstimator, RegressorMixin):
         self.sbar_ = float(sbar)
         self.max_ar_depth = max_ar_depth
         self.max_lag = max_lag
-        self.n_features_in_ = 1
+        self.n_features_in_ = 1 if exog is None else exog.shape[1]
 
-        self.fitted_values_ = fitted_arar(self.model_)["fitted"]
-        self.residuals_in_ = residuals_arar(self.model_)
+        arar_fitted = fitted_arar(self.model_)["fitted"]
+        
+        if self.exog_model_ is not None:
+            exog_fitted = self.exog_model_.predict(exog)
+            self.fitted_values_ = exog_fitted + arar_fitted
+            # Residuals should be calculated against original Y
+            self.residuals_in_ = y - self.fitted_values_
+        else:
+            self.fitted_values_ = arar_fitted
+            self.residuals_in_ = residuals_arar(self.model_)
 
         return self
     
-    def predict(self, steps: int, exog: None = None) -> np.ndarray:
+    def predict(self, steps: int, exog: pd.DataFrame | np.ndarray | None = None) -> np.ndarray:
         """
         Generate mean forecasts steps ahead.
 
@@ -449,14 +476,36 @@ class Arar(BaseEstimator, RegressorMixin):
         check_is_fitted(self, "model_")
         if not isinstance(steps, (int, np.integer)) or steps <= 0:
             raise ValueError("`steps` must be a positive integer.")
-        return forecast(self.model_, h=steps)["mean"]
+
+        # Forecast ARAR component
+        arar_pred = forecast(self.model_, h=steps)["mean"]
+
+        if self.exog_model_ is not None:
+            if exog is None:
+                raise ValueError("Model was fitted with exog, so `exog` is required for prediction.")
+            exog = np.asarray(exog, dtype=float)
+            if exog.ndim == 1:
+                exog = exog.reshape(-1, 1)
+            
+            # Check feature consistency
+            if exog.shape[1] != self.n_features_in_:
+                raise ValueError(f"Mismatch in exogenous features: fitted with {self.n_features_in_}, got {exog.shape[1]}.")
+            
+            if len(exog) != steps:
+                raise ValueError(f"Length of exog ({len(exog)}) must match steps ({steps}).")
+
+            # Forecast Regression component
+            exog_pred = self.exog_model_.predict(exog)
+            return exog_pred + arar_pred
+        
+        return arar_pred
 
     def predict_interval(
         self,
         steps: int = 1,
         level=(80, 95),
         as_frame: bool = True,
-        exog: None = None
+        exog: pd.DataFrame | np.ndarray | None = None
     ) -> pd.DataFrame | dict:
         """
         Forecast with symmetric normal-theory prediction intervals.
@@ -480,7 +529,30 @@ class Arar(BaseEstimator, RegressorMixin):
             Else: the raw dict from `predict_arar`.
         """
         check_is_fitted(self, "model_")
+        
         out = forecast(self.model_, h=steps, level=level)
+        
+        if self.exog_model_ is not None:
+            if exog is None:
+                raise ValueError("Model was fitted with exog, so `exog` is required for prediction.")
+            exog = np.asarray(exog, dtype=float)
+            if exog.ndim == 1:
+                exog = exog.reshape(-1, 1)
+
+            # Check feature consistency
+            if exog.shape[1] != self.n_features_in_:
+                raise ValueError(f"Mismatch in exogenous features: fitted with {self.n_features_in_}, got {exog.shape[1]}.")
+            
+            if len(exog) != steps:
+                raise ValueError(f"Length of exog ({len(exog)}) must match steps ({steps}).")
+
+            exog_pred = self.exog_model_.predict(exog)
+            
+            out["mean"] = out["mean"] + exog_pred
+            # Broadcast the exog prediction across confidence columns
+            out["upper"] = out["upper"] + exog_pred[:, np.newaxis]
+            out["lower"] = out["lower"] + exog_pred[:, np.newaxis]
+
         if not as_frame:
             return out
 
@@ -518,7 +590,12 @@ class Arar(BaseEstimator, RegressorMixin):
         Print a simple textual summary of the fitted ARAR model.
         """
         check_is_fitted(self, "model_")
-        return summary_arar(self.model_)
+        summary_arar(self.model_)
+        if self.exog_model_ is not None:
+            print("\nExogenous Model (Linear Regression)")
+            print("-----------------------------------")
+            print(f"Intercept: {self.exog_model_.intercept_:.4f}")
+            print(f"Coefficients: {np.round(self.exog_model_.coef_, 4)}")
 
     def score(self, y=None) -> float:
         """
