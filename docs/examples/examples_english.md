@@ -37,7 +37,9 @@ These tutorials focus on global models and multi-series forecasting, where you c
 
 <i class="fa-solid fa-basket-shopping" style="font-size: 25px; color: #74C0FC;"></i> [Global Forecasting Models V: The M5 Accuracy competition: the success of global forecasting models](https://www.cienciadedatos.net/documentos/py61-m5-forecasting-competition.html)
 
-<i class="fa-solid fa-layer-group" style="font-size: 25px; color: #001633;"></i> [Forecasting with Deep Learning](https://cienciadedatos.net/documentos/py54-forecasting-with-deep-learning)
+<i class="fa-solid fa-layer-group" style="font-size: 25px; color: #808080;"></i> [Forecasting with Deep Learning](https://cienciadedatos.net/documentos/py54-forecasting-with-deep-learning)
+
+<i class="fa-solid fa-layer-group" style="font-size: 25px; color: #808080;"></i> [Forecasting at scale with Deep Learning](https://cienciadedatos.net/documentos/py68-forecasting-at-scale-with-deep-learning.html)
 
 <i class="fa-solid fa-circle-nodes" style="font-size: 25px; color: #2f5ee9;"></i> [Clustering time series to improve forecasting](https://cienciadedatos.net/documentos/py64-clustering-time-series-forecasting.html)
 
