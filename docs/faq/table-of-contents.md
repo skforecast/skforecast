@@ -4,24 +4,24 @@ Thank you for choosing skforecast and visiting our Frequently Asked Questions (F
 
 <span style="font-size: 1.3em;">General Forecasting Tips</span>
 
-+ [Avoid negative predictions when forecasting](../faq/non-negative-predictions.html)
-+ [Forecasting time series with missing values](../faq/forecasting-time-series-with-missing-values.html)
-+ [Forecasting time series with trend: differentiation](../user_guides/time-series-differentiation.html)
++ [Avoid negative predictions when forecasting](../faq/non-negative-predictions.ipynb)
++ [Forecasting time series with missing values](../faq/forecasting-time-series-with-missing-values.ipynb)
++ [Forecasting time series with trend: differentiation](../user_guides/time-series-differentiation.ipynb)
 + [Forecasting time series with trend: tree based models](https://cienciadedatos.net/documentos/py49-modelling-time-series-trend-with-tree-based-models.html)
-+ [Forecasting with delayed historical data](../faq/forecasting-with-delayed-historical-data.html)
-+ [Backtesting vs One-step-ahead](../faq/parameters-search-backtesting-vs-one-step-ahead.html)
-+ [Continuous Ranked Probability Score (CRPS)](../faq/probabilistic-forecasting-crps-score.html)
-+ [Calibration of probabilistic forecasting intervals](../faq/probabilistic-forecasting-calibrate-intervals.html)
++ [Forecasting with delayed historical data](../faq/forecasting-with-delayed-historical-data.ipynb)
++ [Backtesting vs One-step-ahead](../faq/parameters-search-backtesting-vs-one-step-ahead.ipynb)
++ [Continuous Ranked Probability Score (CRPS)](../faq/probabilistic-forecasting-crps-score.ipynb)
++ [Calibration of probabilistic forecasting intervals](../faq/probabilistic-forecasting-calibrate-intervals.ipynb)
 + [Avoid data leakage in pre-trained forecasting models](https://cienciadedatos.net/documentos/py63-data-leakage-pre-trained-forecasting-models.html)
 
 <span style="font-size: 1.3em;">Feature Engineering</span>
 
-+ [Cyclical features in time series](../faq/cyclical-features-time-series.html)
-+ [Time series aggregation](../faq/time-series-aggregation.html)
++ [Cyclical features in time series](../faq/cyclical-features-time-series.ipynb)
++ [Time series aggregation](../faq/time-series-aggregation.ipynb)
 
 <span style="font-size: 1.3em;">Performance Optimization</span>
 
-+ [Benchmarking skforecast](../faq/skforecast-benchmark.html)
-+ [Benchmarking statistical models](../faq/benchmarking-statistical-models.html)
-+ [Parallelization in skforecast](../faq/parallelization-skforecast.html)
-+ [Profiling skforecast](../faq/profiling-skforecast.html)
++ [Benchmarking skforecast](../faq/skforecast-benchmark.ipynb)
++ [Benchmarking statistical models](../faq/benchmark-statistical-models.ipynb)
++ [Parallelization in skforecast](../faq/parallelization-skforecast.ipynb)
++ [Profiling skforecast](../faq/profiling-skforecast.ipynb)

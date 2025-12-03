@@ -2,7 +2,7 @@
 
 # 示例与教程
 
-这里提供了实用案例与详细教程，帮助你快速上手并掌握 **skforecast** 在时间序列预测中的应用。你也可以在 [**Python 时间序列预测**](https://cienciadedatos.net/forecasting-python) 免费获取全部学习资料。
+这里提供了实用案例与详细教程，帮助你快速上手并掌握 **skforecast** 在时间序列预测中的应用。你也可以在 [**Python 时间序列预测**](https://cienciadedatos.net/cn/forecasting-python) 免费获取全部学习资料。
 
 ## 入门指南：基础预测方法
 
