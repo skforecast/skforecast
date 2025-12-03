@@ -4,7 +4,7 @@ scikit-learn==1.6.1
 tqdm==4.67.1
 optuna==4.5.0
 joblib==1.5.2
-numba==0.61.2
+numba==0.62.1
 rich==14.1.0
 lightgbm==4.6.0
 psutil
