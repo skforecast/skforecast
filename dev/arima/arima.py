@@ -5,7 +5,6 @@ Optimized with Numba JIT compilation for maximum performance.
 
 import numpy as np
 from scipy.optimize import minimize
-from scipy.stats import norm
 from numba import jit
 import warnings
 
@@ -89,6 +88,11 @@ class ARIMA:
         self.diff_initial_values_ = None
         self.exog_last_d_ = None
         self.is_fitted_ = False
+        
+        # Summary statistics (computed lazily)
+        self._summary_computed = False
+        self._aic = None
+        self._bic = None
         
     def fit(self, y, exog=None):
         """
@@ -430,6 +434,9 @@ class ARIMA:
                 options={'maxiter': 1000}
             )
         
+        # Invalidate summary cache if refitting
+        self._summary_computed = False
+        
         params = result.x
         
         self.ar_coef_ = params[:self.p] if self.p > 0 else np.array([])
@@ -715,6 +722,159 @@ class ARIMA:
         )
         
         return np.sqrt(forecast_var)
+    
+    def summary(self):
+        """
+        Display model summary with parameter estimates and fit metrics.
+        
+        Shows coefficient values, AIC, and BIC. Statistics are computed on-demand
+        (lazy evaluation) and cached for subsequent calls.
+        
+        Raises
+        ------
+        ValueError
+            If model has not been fitted yet.
+            
+        Notes
+        -----
+        **Model Information Provided:**
+        - Parameter estimates (AR, MA, exogenous, intercept)
+        - Log likelihood (approximate, based on CLS)
+        - AIC and BIC (CLS approximation)
+        - Residual variance
+        - Number of observations
+        
+        **Limitations:**
+        - This implementation uses Conditional Least Squares (CLS), not MLE
+        - AIC/BIC are approximate: AIC ≈ n*log(σ²) + 2*k, BIC ≈ n*log(σ²) + k*log(n)
+        - CLS estimates may differ slightly from MLE (statsmodels) estimates
+        - No standard errors, p-values, or confidence intervals are provided
+        
+        **Use Cases:**
+        - Quick model diagnostics and parameter inspection
+        - Model comparison using AIC/BIC
+        - Identifying parameter magnitudes
+        - Model development and exploration
+        
+        For statistical inference with standard errors and hypothesis tests,
+        use statsmodels with MLE estimation.
+        
+        Examples
+        --------
+        >>> model = ARIMA(order=(1, 1, 1))
+        >>> model.fit(y)
+        >>> model.summary()  # Prints formatted summary
+        >>> # Summary statistics computed on first call, cached for reuse
+        >>> model.summary()  # Instant (uses cached results)
+        """
+        if not self.is_fitted_:
+            raise ValueError("Model must be fitted before calling summary()")
+        
+        # Compute statistics if not already done (lazy evaluation)
+        if not self._summary_computed:
+            self._compute_summary_statistics()
+        
+        print(self._format_summary())
+    
+    def _compute_summary_statistics(self):
+        """
+        Compute summary statistics on-demand.
+        
+        Computes AIC and BIC. Results are cached in instance attributes.
+        """
+        n = len(self.residuals_)
+        k = len(self.coef_)  # Total parameters
+        
+        # Compute AIC and BIC
+        self._aic = n * np.log(self.sigma2_) + 2 * k
+        self._bic = n * np.log(self.sigma2_) + k * np.log(n)
+        
+        self._summary_computed = True
+    
+    def _format_summary(self):
+        """
+        Format summary statistics for display.
+        
+        Returns
+        -------
+        output : str
+            Formatted summary string.
+        """
+        output = []
+        output.append("=" * 83)
+        output.append(f"ARIMA{self.order} Model Results".center(78))
+        output.append("=" * 83)
+        
+        # Model info
+        n = len(self.y_diff_)
+        loglik = -0.5 * n * (np.log(2 * np.pi) + np.log(self.sigma2_) + 1)
+        
+        output.append(f"Dep. Variable:                      y   No. Observations:         {n:>5}")
+        output.append(f"Model:                ARIMA{self.order}   Log Likelihood:     {loglik:>10.2f}")
+        output.append(f"Method:         Conditional Least Sq.   AIC:                {self._aic:>10.2f}")
+        output.append(f"Date:                {self._get_current_date()}   BIC:                {self._bic:>10.2f}")
+        
+        if self.n_exog_ is not None and self.n_exog_ > 0:
+            exog_str = "True" if self.differentiate_exog else "False"
+            output.append(f"Exog variables:                 {self.n_exog_:>5}   Differentiate exog:  {exog_str:>10}")
+        
+        output.append(f"Residual variance:        {self.sigma2_:.6f}")
+        output.append("=" * 83)
+        
+        # Parameter table
+        output.append(f"{'':18s}{'coef':>10s}")
+        output.append("-" * 83)
+        
+        param_names = self._get_param_names()
+        for i, name in enumerate(param_names):
+            coef = self.coef_[i]
+            output.append(f"{name:<18s}{coef:10.4f}")
+        
+        output.append("=" * 83)
+        
+        return "\n".join(output)
+    
+    def _get_param_names(self):
+        """
+        Generate parameter names for display.
+        
+        Returns
+        -------
+        names : list of str
+            Parameter names in order matching self.coef_.
+        """
+        names = []
+        
+        # AR coefficients
+        for i in range(self.p):
+            names.append(f"ar.L{i+1}")
+        
+        # MA coefficients
+        for i in range(self.q):
+            names.append(f"ma.L{i+1}")
+        
+        # Exog coefficients
+        if self.n_exog_ is not None and self.n_exog_ > 0:
+            for i in range(self.n_exog_):
+                names.append(f"exog{i+1}")
+        
+        # Intercept (only for d=0)
+        if self.d == 0:
+            names.append("const")
+        
+        return names
+    
+    def _get_current_date(self):
+        """
+        Get current date for summary display.
+        
+        Returns
+        -------
+        date_str : str
+            Current date in format 'Mon, DD Mmm YYYY'.
+        """
+        from datetime import datetime
+        return datetime.now().strftime("%a, %d %b %Y")
 
 
 @jit(nopython=True, cache=True, fastmath=True)
