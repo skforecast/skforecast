@@ -76,7 +76,7 @@ class ARIMA:
         self.sigma2_ = None
         self.residuals_ = None
         self.y_diff_ = None
-        self.exog_trimmed_ = None  # Exog trimmed to match differenced y (NOT differenced)
+        self.n_exog_ = None  # Number of exog features (None if no exog)
         self.diff_initial_values_ = None
         self.is_fitted_ = False
         
@@ -121,14 +121,16 @@ class ARIMA:
         # Apply differencing and store only necessary initial values
         self.y_diff_, self.diff_initial_values_ = self._difference_with_initial(y, self.d)
         
-        # Trim exog to match differenced y length (don't difference it)
+        # Store number of exog features (don't store the data itself)
         if exog is not None:
-            self.exog_trimmed_ = exog[self.d:]
+            self.n_exog_ = exog.shape[1]
+            exog_trimmed = exog[self.d:]  # Trim to match differenced y length
         else:
-            self.exog_trimmed_ = None
+            self.n_exog_ = None
+            exog_trimmed = None
         
         # Estimate parameters using Conditional Least Squares
-        self._fit_cls()
+        self._fit_cls(exog_trimmed)
         
         self.is_fitted_ = True
         return self
@@ -157,9 +159,9 @@ class ARIMA:
             raise ValueError("steps must be at least 1")
         
         # Validate exog
-        if self.exog_trimmed_ is not None and exog is None:
+        if self.n_exog_ is not None and exog is None:
             raise ValueError("Model was fitted with exog, must provide exog for prediction")
-        if self.exog_trimmed_ is None and exog is not None:
+        if self.n_exog_ is None and exog is not None:
             raise ValueError("Model was fitted without exog, cannot use exog for prediction")
         
         # Process future exog
@@ -170,8 +172,8 @@ class ARIMA:
                 exog = exog.reshape(-1, 1)
             if len(exog) != steps:
                 raise ValueError(f"exog length {len(exog)} does not match steps {steps}")
-            if exog.shape[1] != self.exog_trimmed_.shape[1]:
-                raise ValueError(f"exog has {exog.shape[1]} features, expected {self.exog_trimmed_.shape[1]}")
+            if exog.shape[1] != self.n_exog_:
+                raise ValueError(f"exog has {exog.shape[1]} features, expected {self.n_exog_}")
             exog_future = exog
         
         # Generate forecasts on differenced scale
@@ -320,7 +322,7 @@ class ARIMA:
         
         return y
     
-    def _fit_cls(self):
+    def _fit_cls(self, exog_trimmed=None):
         """
         Fit model using Conditional Least Squares (CLS).
         
@@ -328,9 +330,13 @@ class ARIMA:
         the sum of squared residuals.
         For ARIMAX: Only AR/MA parameters are optimized.
         Beta coefficients are estimated in closed form (OLS) during each evaluation.
+        
+        Parameters
+        ----------
+        exog_trimmed : ndarray, optional
+            Exogenous variables trimmed to match differenced y length
         """
         y = self.y_diff_
-        n = len(y)
         
         # Remove mean for centered estimation
         y_mean = np.mean(y)
@@ -358,7 +364,7 @@ class ARIMA:
             result = minimize(
                 self._cls_val_and_grad,
                 initial_params,
-                args=(y_centered, self.exog_trimmed_),
+                args=(y_centered, exog_trimmed),
                 method='L-BFGS-B',
                 jac=True,
                 bounds=[(-0.99, 0.99)] * self.p + [(-0.99, 0.99)] * self.q,
@@ -372,12 +378,12 @@ class ARIMA:
         self.ma_coef_ = params[self.p:] if self.q > 0 else np.array([])
         
         # Compute residuals to get beta in closed form
-        self.residuals_ = self._compute_residuals(y_centered, params, self.exog_trimmed_)
+        self.residuals_ = self._compute_residuals(y_centered, params, exog_trimmed)
         
         # Beta was computed during residual calculation, extract it
-        if self.exog_trimmed_ is not None:
+        if exog_trimmed is not None:
             # Re-estimate beta one final time with optimal AR/MA
-            self.exog_coef_ = self._estimate_beta_closed_form(y_centered, params, self.exog_trimmed_)
+            self.exog_coef_ = self._estimate_beta_closed_form(y_centered, params, exog_trimmed)
         else:
             self.exog_coef_ = np.array([])
         
@@ -391,7 +397,7 @@ class ARIMA:
         self.coef_ = np.concatenate([self.ar_coef_, self.ma_coef_, self.exog_coef_, [self.intercept_]])
         
         # Compute final residuals and variance
-        self.residuals_ = self._compute_residuals(y_centered, params, self.exog_trimmed_)
+        self.residuals_ = self._compute_residuals(y_centered, params, exog_trimmed)
         self.sigma2_ = np.var(self.residuals_)
 
     def _cls_val_and_grad(self, params, y, exog=None):
@@ -425,7 +431,7 @@ class ARIMA:
         ar_ma_params : ndarray
             Current AR and MA parameters
         exog : ndarray
-            Centered exogenous variables
+            Exogenous variables (trimmed to match differenced y)
             
         Returns
         -------
@@ -532,7 +538,7 @@ class ARIMA:
         params : ndarray
             Parameters [AR coefficients, MA coefficients]
         exog : ndarray, optional
-            Centered exogenous variables
+            Exogenous variables (trimmed to match differenced y)
             
         Returns
         -------
