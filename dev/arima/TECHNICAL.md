@@ -340,12 +340,13 @@ Initialization Tests (3)
 | Aspect | This Implementation | statsmodels.ARIMA |
 |--------|---------------------|-------------------|
 | Dependencies | numpy, scipy, numba | numpy, scipy, pandas, patsy, ... |
-| Fitting Method | CLS | MLE (Kalman filter) |
+| Fitting Method | CLS with profile likelihood | MLE (Kalman filter) |
 | Speed (p,q ≤ 3) | Fast (~1-50ms) | Slower (~50-500ms) |
 | Accuracy | Good | Excellent |
-| Features | Basic ARIMA | SARIMA, exog, diagnostics |
-| Code Size | ~450 lines | ~5000+ lines |
-| Use Case | Fast, simple, educational | Production, full-featured |
+| Features | ARIMA, ARIMAX, two exog conventions | SARIMA, SARIMAX, diagnostics |
+| Exog Handling | Statsmodels & R/StatsForecast conventions | Statsmodels convention only |
+| Code Size | ~1300 lines | ~5000+ lines |
+| Use Case | Fast, flexible, educational | Production, full-featured |
 
 ## Conclusion
 
@@ -358,12 +359,13 @@ This implementation demonstrates:
 
 **When to Use This Implementation:**
 - Need speed over advanced features
-- Want to understand ARIMA internals  
+- Want to understand ARIMA/ARIMAX internals  
 - Require minimal dependencies
+- Need both Statsmodels and R/StatsForecast exog conventions
 - Need customization for research
 
 **When to Use statsmodels:**
 - Need seasonal ARIMA (SARIMA)
-- Require exogenous variables
-- Want diagnostic tools
+- Want comprehensive diagnostic tools
 - Need maximum statistical rigor
+- Only need Statsmodels exog convention
