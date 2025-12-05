@@ -31,15 +31,15 @@ def test_fit_exception_X_is_not_dataframe():
         detector.fit(X=X)
 
 
-def test_fit_exception_chunk_size_is_pandas_DateOffset_str_but_X_has_no_datetime_index():
+def test_fit_exception_chunk_size_is_pandas_frequency_str_but_X_has_no_datetime_index():
     """
     Test that fit raises an exception when chunk_size is a string compatible with
-    pandas DateOffset but X has no datetime index.
+    pandas frequency but X has no datetime index.
     """
     detector = PopulationDriftDetector(chunk_size="ME", threshold=0.95)
     X = pd.DataFrame({"A": np.random.rand(100), "B": np.random.rand(100)})
     err_msg = (
-        "`chunk_size` is a pandas DateOffset but `X` does not have a DatetimeIndex."
+        "`chunk_size` is a pandas frequency but `X` does not have a DatetimeIndex."
     )
     with pytest.raises(ValueError, match=err_msg):
         detector.fit(X=X)
@@ -82,7 +82,7 @@ def test_fit_stored_attributes():
             "hour",
             "weekday",
         ],
-        "is_fitted_": True,
+        "is_fitted": True,
         "empirical_threshold_ks_": {
             "holiday": 0.03659032405160117,
             "workingday": 0.05896694761925775,
@@ -182,7 +182,7 @@ def test_fit_stored_attributes_multiseries():
             "hour",
             "weekday",
         ],
-        "is_fitted_": True,
+        "is_fitted": True,
         "empirical_threshold_ks_": {
             "holiday": 0.03659032405160117,
             "workingday": 0.05896694761925775,

@@ -10,6 +10,28 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
 
+## 0.19.1 <small>Dec 08, 2025</small> { id="0.19.1" }
+
+The main changes in this release are:
+
++ <span class="badge text-bg-feature">Feature</span>
+
++ <span class="badge text-bg-danger">Fix</span> Fixed an issue that prevented using Forecasters created in past versions of the library after loading them with <code>[load_forecaster]</code>. The problem occurred with the introduction of the `estimator` parameter in version `0.19.0`, which replaced the previous `regressor` parameter. This fix ensures that Forecasters saved with versions prior to `0.19.0` can be loaded and used without any issues. ([#1079](https://github.com/skforecast/skforecast/issues/1079))
+
+
+**Added**
+
+
+**Changed**
+
++ Include argument `suppress_warnings` in <code>[save_forecaster]</code> and <code>[load_forecaster]</code> functions to control the display of skforecast warnings during the save and load processes. If `suppress_warnings` is set to `True`, skforecast warnings will be suppressed. See skforecast.exceptions.warn_skforecast_categories for more information.
+
+
+**Fixed**
+
++ Fixed an issue that prevented using Forecasters created in past versions of the library after loading them with <code>[load_forecaster]</code>. The problem occurred with the introduction of the `estimator` parameter in version `0.19.0`, which replaced the previous `regressor` parameter. This fix ensures that Forecasters saved with versions prior to `0.19.0` can be loaded and used without any issues. ([#1079](https://github.com/skforecast/skforecast/issues/1079))
+
+
 ## 0.19.0 <small>Nov 28, 2025</small> { id="0.19.0" }
 
 The main changes in this release are:
@@ -1372,6 +1394,8 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 
 <!-- utils -->
 [utils]: ../api/utils.md
+[save_forecaster]: ../api/utils.md#skforecast.utils.utils.save_forecaster
+[load_forecaster]: ../api/utils.md#skforecast.utils.utils.load_forecaster
 
 <!-- experimental -->
 [experimental]: ../api/experimental.md
