@@ -15,6 +15,16 @@ results_nannyml = joblib.load(THIS_DIR/'fixture_results_nannyml.joblib')
 results_multiseries = joblib.load(THIS_DIR/'fixture_results_multiseries.joblib')
 summary_multiseries = joblib.load(THIS_DIR/'fixture_summary_multiseries.joblib')
 
+#TODO: apply the following cahnges to fixture_results_multiseries
+results_multiseries = results_multiseries.rename(columns={
+    'statistic_ks': 'ks_statistic',
+    'statistic_chi2': 'chi2_statistic',
+    'jensen_shannon': 'js_statistic',
+    'threshold_ks': 'ks_threshold',
+    'threshold_chi2': 'chi2_threshold',
+    'threshold_js': 'js_threshold'
+})
+
 
 # NOTE: Code used to generate fixture_results_nannyml
 # detector = nml.UnivariateDriftCalculator(
@@ -238,5 +248,8 @@ def test_predict_output_when_multiple_series():
     )
     detector.fit(data_multiseries)
     results, summary = detector.predict(data_multiseries)
+
     pd.testing.assert_frame_equal(results, results_multiseries)
-    pd.testing.assert_frame_equal(summary, summary_multiseries)
+
+    #TODO: update summary_multiseries fixture to add 'chunks_with_drift' column
+    pd.testing.assert_frame_equal(summary.drop(columns=['chunks_with_drift']), summary_multiseries)

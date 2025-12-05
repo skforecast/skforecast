@@ -563,15 +563,19 @@ class PopulationDriftDetector:
                 chi2_values = self.empirical_dist_chi2_[feature]
                 js_values = self.empirical_dist_js_[feature]
                 
-                self.empirical_threshold_ks_[feature] = (
-                    np.nanmean(ks_values) + self.threshold * np.nanstd(ks_values, ddof=0)
-                )
-                self.empirical_threshold_chi2_[feature] = (
-                    np.nanmean(chi2_values) + self.threshold * np.nanstd(chi2_values, ddof=0)
-                )
-                self.empirical_threshold_js_[feature] = (
-                    np.nanmean(js_values) + self.threshold * np.nanstd(js_values, ddof=0)
-                )
+                # Suppress RuntimeWarnings when all values are NaN
+                with warnings.catch_warnings():
+                    warnings.filterwarnings('ignore', message='Mean of empty slice')
+                    warnings.filterwarnings('ignore', message='Degrees of freedom <= 0 for slice')
+                    self.empirical_threshold_ks_[feature] = (
+                        np.nanmean(ks_values) + self.threshold * np.nanstd(ks_values, ddof=0)
+                    )
+                    self.empirical_threshold_chi2_[feature] = (
+                        np.nanmean(chi2_values) + self.threshold * np.nanstd(chi2_values, ddof=0)
+                    )
+                    self.empirical_threshold_js_[feature] = (
+                        np.nanmean(js_values) + self.threshold * np.nanstd(js_values, ddof=0)
+                    )
 
         # TODO: maybe 5 is too low?
         if self.n_chunks_reference_data_ < 5:

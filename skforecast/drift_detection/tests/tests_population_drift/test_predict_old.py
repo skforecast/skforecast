@@ -15,6 +15,15 @@ results_nannyml = joblib.load(THIS_DIR/'fixture_results_nannyml.joblib')
 results_multiseries = joblib.load(THIS_DIR/'fixture_results_multiseries.joblib')
 summary_multiseries = joblib.load(THIS_DIR/'fixture_summary_multiseries.joblib')
 
+#TODO: apply the following cahnges to fixture_results_multiseries
+results_multiseries = results_multiseries.rename(columns={
+    'statistic_ks': 'ks_statistic',
+    'statistic_chi2': 'chi2_statistic',
+    'jensen_shannon': 'js_statistic',
+    'threshold_ks': 'ks_threshold',
+    'threshold_chi2': 'chi2_threshold',
+    'threshold_js': 'js_threshold'
+})
 
 # NOTE: Code used to generate fixture_results_nannyml
 # detector = nml.UnivariateDriftCalculator(
@@ -72,7 +81,7 @@ def test_predict_ValueError_when_chunk_size_is_DateOffset_but_X_index_not_dateti
     )
     detector.fit(data)
     X = data.reset_index()
-    err_msg = "`chunk_size` is a pandas DateOffset but `X` does not have a DatetimeIndex."
+    err_msg = "`chunk_size` is a pandas frequency but `X` does not have a DatetimeIndex."
     with pytest.raises(ValueError, match=err_msg):
         detector.predict(X=X)
 
@@ -114,7 +123,7 @@ def test_predict_output_equivalence_nannyml():
                 "chunk_start_date": "chunk_start",
                 "chunk_end_date": "chunk_end",
                 f"{feature}_kolmogorov_smirnov_value": "ks_statistic",
-                f"{feature}_jensen_shannon_value": "jensen_shannon",
+                f"{feature}_jensen_shannon_value": "js_statistic",
                 f"{feature}_chi2_value": "chi2_statistic",
             }
         )
@@ -123,8 +132,8 @@ def test_predict_output_equivalence_nannyml():
             df_nannyml["chi2_statistic"] = np.nan
         if "ks_statistic" not in df_nannyml.columns:
             df_nannyml["ks_statistic"] = np.nan
-        if "jensen_shannon" not in df_nannyml.columns:
-            df_nannyml["jensen_shannon"] = np.nan
+        if "js_statistic" not in df_nannyml.columns:
+            df_nannyml["js_statistic"] = np.nan
 
         df_nannyml = df_nannyml[
             [
@@ -134,7 +143,7 @@ def test_predict_output_equivalence_nannyml():
                 "feature",
                 "ks_statistic",
                 "chi2_statistic",
-                "jensen_shannon",
+                "js_statistic",
             ]
         ]
 
@@ -146,7 +155,7 @@ def test_predict_output_equivalence_nannyml():
                 "feature",
                 "ks_statistic",
                 "chi2_statistic",
-                "jensen_shannon",
+                "js_statistic",
             ]
         ]
 
@@ -167,8 +176,8 @@ def test_predict_output_equivalence_nannyml():
             check_names=False,
         )
         pd.testing.assert_series_equal(
-            df_all["jensen_shannon_nannyml"],
-            df_all["jensen_shannon_skforecast"],
+            df_all["js_statistic_nannyml"],
+            df_all["js_statistic_skforecast"],
             check_names=False,
         )
 
@@ -192,6 +201,9 @@ def test_predict_output_when_multiple_series():
     )
     detector.fit(data_multiseries)
     results, summary = detector.predict(data_multiseries)
+
     pd.testing.assert_frame_equal(results, results_multiseries)
-    pd.testing.assert_frame_equal(summary, summary_multiseries)
+
+    #TODO: update summary_multiseries fixture to add 'chunks_with_drift' column
+    pd.testing.assert_frame_equal(summary.drop(columns=['chunks_with_drift']), summary_multiseries)
     

@@ -12,7 +12,7 @@ def test_init_exception_when_chunk_size_not_valid():
 
     error_msg = re.escape(
         "`chunk_size` must be a positive integer, a string compatible with "
-        "pandas DateOffset (e.g., 'D', 'W', 'M'), a pandas DateOffset object, or None."
+        "pandas frequencies (e.g., 'D', 'W', 'M'), or None."
     )
 
     chunk_size = ['a']
