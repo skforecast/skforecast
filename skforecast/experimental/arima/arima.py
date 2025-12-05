@@ -1,10 +1,13 @@
-"""
-ARIMA Model Implementation from Scratch
-Optimized with Numba JIT compilation for maximum performance.
-"""
+################################################################################
+#                               experimental                                   #
+#                                                                              #
+# This work by skforecast team is licensed under the BSD 3-Clause License.     #
+################################################################################
+# coding=utf-8
 
 import numpy as np
 from scipy.optimize import minimize
+from scipy.stats import norm
 from numba import jit
 import warnings
 
