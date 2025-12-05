@@ -511,7 +511,7 @@ class Arar(BaseEstimator, RegressorMixin):
 
         (Y, best_phi, best_lag, sigma2, psi, sbar, max_ar_depth, max_lag) = self.model_
 
-        self.y_ = np.asarray(Y, dtype=float)
+        self.y_ = y  # This is the original input series
         self.coef_ = np.asarray(best_phi, dtype=float)
         self.lags_ = tuple(best_lag)
         self.sigma2_ = float(sigma2)
@@ -526,11 +526,11 @@ class Arar(BaseEstimator, RegressorMixin):
         if self.exog_model_ is not None:
             exog_fitted = self.exog_model_.predict(exog)
             self.fitted_values_ = exog_fitted + arar_fitted
-            # Residuals should be calculated against original Y
-            self.residuals_in_ = y - self.fitted_values_
         else:
             self.fitted_values_ = arar_fitted
-            self.residuals_in_ = residuals_arar(self.model_)
+        
+        # Residuals: original y minus fitted values
+        self.residuals_in_ = self.y_ - self.fitted_values_
 
         return self
     
