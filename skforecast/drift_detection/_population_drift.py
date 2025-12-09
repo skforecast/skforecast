@@ -530,7 +530,7 @@ class PopulationDriftDetector:
                     ref_probs_aligned = ref_stats_probs.reindex(all_cats, fill_value=0)
                     new_probs_aligned = new_probs.reindex(all_cats, fill_value=0)
                     js_distance = jensenshannon(
-                        ref_probs_aligned.to_numpy(), new_probs_aligned.to_numpy()
+                        ref_probs_aligned.to_numpy(), new_probs_aligned.to_numpy(), base=2
                     )
 
                     # Align categories and fill missing with 0

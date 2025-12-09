@@ -10,7 +10,9 @@ from ....drift_detection import PopulationDriftDetector
 
 # fixtures
 THIS_DIR = Path(__file__).parent
+nannyml_fitted_stats = joblib.load(THIS_DIR/'fixture_nannyml_fitted_stats.joblib')
 data = joblib.load(THIS_DIR/'fixture_data_population_drift.joblib')
+data['weather'] = data['weather'].astype('category')
 data_multiseries = pd.concat(
     [
         data.assign(series='series_1'),
@@ -259,3 +261,61 @@ def test_fit_stored_attributes_multiseries():
                 np.testing.assert_almost_equal(value, expected_value, decimal=5)
             else:
                 assert value == expected_value
+
+
+def test_empirical_distributions_match_nannyml():
+    """
+    Test that the empirical distributions computed by PopulationDriftDetector
+    during fit match the ones from NannyML implementation.
+
+    Warning: skforecast only matches NannyML when the threshold_method='std' is used.
+    
+    This test verifies that the Jensen-Shannon, Kolmogorov-Smirnov, and Chi2
+    statistics calculated during the fit phase match the reference values
+    computed by NannyML with the same configuration (chunk_size='MS', 
+    categorical_methods=['chi2', 'jensen_shannon'], 
+    continuous_methods=['kolmogorov_smirnov', 'jensen_shannon']).
+    
+    The reference values were generated using NannyML 0.13.1 and saved in
+    'fixture_nannyml_fitted_stats.joblib'.
+    """
+    # Fit the detector
+    detector_sk = PopulationDriftDetector(
+        chunk_size='MS',
+        threshold=3,
+        threshold_method='std'
+    )
+    detector_sk.fit(data)
+    
+    # Compare Jensen-Shannon statistics for all features
+    for feature in data.columns:
+        skforecast_values = np.array(detector_sk.empirical_dist_js_[feature])
+        nannyml_values = nannyml_fitted_stats['empirical_dist_js_'][feature]
+        np.testing.assert_array_almost_equal(
+            skforecast_values, 
+            nannyml_values, 
+            decimal=5,
+            err_msg=f"Jensen-Shannon statistics mismatch for feature '{feature}'"
+        )
+    
+    # Compare Kolmogorov-Smirnov statistics for numerical features
+    for feature in data.select_dtypes(include=['number']).columns:
+        skforecast_values = np.array(detector_sk.empirical_dist_ks_[feature])
+        nannyml_values = nannyml_fitted_stats['empirical_dist_ks_'][feature]
+        np.testing.assert_array_almost_equal(
+            skforecast_values, 
+            nannyml_values, 
+            decimal=5,
+            err_msg=f"Kolmogorov-Smirnov statistics mismatch for feature '{feature}'"
+        )
+    
+    # Compare Chi2 statistics for categorical features
+    for feature in data.select_dtypes(include=['category', 'object']).columns:
+        skforecast_values = np.array(detector_sk.empirical_dist_chi2_[feature])
+        nannyml_values = nannyml_fitted_stats['empirical_dist_chi2_'][feature]
+        np.testing.assert_array_almost_equal(
+            skforecast_values, 
+            nannyml_values, 
+            decimal=5,
+            err_msg=f"Chi2 statistics mismatch for feature '{feature}'"
+        )
