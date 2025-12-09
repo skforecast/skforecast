@@ -15,16 +15,6 @@ results_nannyml = joblib.load(THIS_DIR/'fixture_results_nannyml.joblib')
 results_multiseries = joblib.load(THIS_DIR/'fixture_results_multiseries.joblib')
 summary_multiseries = joblib.load(THIS_DIR/'fixture_summary_multiseries.joblib')
 
-#TODO: apply the following cahnges to fixture_results_multiseries
-results_multiseries = results_multiseries.rename(columns={
-    'statistic_ks': 'ks_statistic',
-    'statistic_chi2': 'chi2_statistic',
-    'jensen_shannon': 'js_statistic',
-    'threshold_ks': 'ks_threshold',
-    'threshold_chi2': 'chi2_threshold',
-    'threshold_js': 'js_threshold'
-})
-
 
 # NOTE: Code used to generate fixture_results_nannyml
 # detector = nml.UnivariateDriftCalculator(
@@ -167,13 +157,13 @@ def test_predict_output_equivalence_nannyml():
         df_nannyml = df_nannyml[
             [
                 "chunk",
-                # "chunk_start",
-                # "chunk_end",
+                # "chunk_start", # Different formatting in nannyml and skforecast
+                # "chunk_end",   # Different formatting in nannyml and skforecast
                 "feature",
                 "ks_statistic",
-                "ks_threshold",
+                # "ks_threshold", # Nanny usses the p-value as threshold
                 "chi2_statistic",
-                # "chi2_threshold",
+                # "chi2_threshold", # Nanny usses the p-value as threshold
                 "js_statistic",
                 "js_threshold",
             ]
@@ -186,9 +176,9 @@ def test_predict_output_equivalence_nannyml():
                 # "chunk_end",
                 "feature",
                 "ks_statistic",
-                "ks_threshold",
+                # "ks_threshold", # Nanny usses the p-value as threshold
                 "chi2_statistic",
-                # "chi2_threshold",
+                # "chi2_threshold", # Nanny usses the p-value as threshold
                 "js_statistic",
                 "js_threshold",
             ]
@@ -198,35 +188,6 @@ def test_predict_output_equivalence_nannyml():
             df_nannyml, 
             df_skforecast
         )
-
-        # df_all = pd.merge(
-        #     df_nannyml,
-        #     df_skforecast,
-        #     on=["chunk", "chunk_start", "feature"],
-        #     suffixes=("_nannyml", "_skforecast"),
-        # )
-
-        # df_all = pd.merge(
-        #     df_nannyml,
-        #     df_skforecast,
-        #     on=["chunk", "chunk_start", "feature"],
-        #     suffixes=("_nannyml", "_skforecast"),
-        # )
-        # pd.testing.assert_series_equal(
-        #     df_all["ks_statistic_nannyml"],
-        #     df_all["ks_statistic_skforecast"],
-        #     check_names=False,
-        # )
-        # pd.testing.assert_series_equal(
-        #     df_all["chi2_statistic_nannyml"],
-        #     df_all["chi2_statistic_skforecast"],
-        #     check_names=False,
-        # )
-        # pd.testing.assert_series_equal(
-        #     df_all["js_statistic_nannyml"],
-        #     df_all["js_statistic_skforecast"],
-        #     check_names=False,
-        # )
 
 
 def test_predict_output_when_multiple_series():
@@ -243,13 +204,12 @@ def test_predict_output_when_multiple_series():
     ).set_index('series', append=True).swaplevel(0, 1)
 
     detector = PopulationDriftDetector(
-        chunk_size='MS',
-        threshold=0.95
+        chunk_size="MS",
+        threshold=0.95,
+        threshold_method='quantile'
     )
     detector.fit(data_multiseries)
     results, summary = detector.predict(data_multiseries)
 
     pd.testing.assert_frame_equal(results, results_multiseries)
-
-    #TODO: update summary_multiseries fixture to add 'chunks_with_drift' column
-    pd.testing.assert_frame_equal(summary.drop(columns=['chunks_with_drift']), summary_multiseries)
+    pd.testing.assert_frame_equal(summary, summary_multiseries)
