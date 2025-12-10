@@ -97,8 +97,6 @@ All significant changes to this project are documented in the release file.
 
 - For updates to the **latest stable version**, see the [release notes here](https://skforecast.org/latest/releases/releases.html).
 
-- For updates on the **version in development** (unstable), see the [development release notes](https://skforecast.org/dev/releases/releases.html).
-
 
 # Forecasters
 
