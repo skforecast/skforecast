@@ -20,9 +20,82 @@ data_multiseries = pd.concat(
 ).set_index('series', append=True).swaplevel(0, 1)
 
 
-def test_get_attributes_after_fit_multiseries():
+
+def test_get_thresholds_single_series():
     """
-    Test 
+    Test get_thresholds output is as expected when single series data is used.
+    """
+
+    detector = PopulationDriftDetector(
+        chunk_size="MS",
+        threshold=3,
+        threshold_method='std'
+    )
+    detector.fit(data)
+
+    expected_results = pd.DataFrame(
+        {
+        "feature": [
+            "holiday",
+            "workingday",
+            "weather",
+            "temp",
+            "atemp",
+            "hum",
+            "windspeed",
+            "users",
+            "month",
+            "hour",
+            "weekday",
+        ],
+        "ks_threshold": [
+            0.05627896723378708,
+            0.08334072803920606,
+            np.nan,
+            0.8902912637399314,
+            0.8760990833305458,
+            0.3275333143260747,
+            0.22687537960149534,
+            0.46291724129599765,
+            1.0,
+            0.0,
+            0.07064395189884681,
+        ],
+        "chi2_threshold": [
+            np.nan,
+            np.nan,
+            147.57764082134906,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+        ],
+        "js_threshold": [
+            0.19310871119778586,
+            0.07692103039472485,
+            0.22845188099213032,
+            0.8082381037233715,
+            0.7994440621345089,
+            0.36606730574805435,
+            0.23165356399001857,
+            0.4760097183437864,
+            0.8941775207324707,
+            0.0,
+            0.07087005888035235,
+        ],
+    }
+    )
+    results = detector.get_thresholds()
+    pd.testing.assert_frame_equal(results.reset_index(drop=True), expected_results)
+
+
+def test_get_thresholds_multiseries():
+    """
+    Test get_thresholds output is as expected when multiseries data is used.
     """
 
     detector = PopulationDriftDetector(
