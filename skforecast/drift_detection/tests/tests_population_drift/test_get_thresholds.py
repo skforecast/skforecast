@@ -3,8 +3,10 @@
 import pandas as pd
 import numpy as np
 import joblib
+import pytest
 from pathlib import Path
 from ....drift_detection import PopulationDriftDetector
+from sklearn.exceptions import NotFittedError
 
 
 # fixtures
@@ -20,6 +22,22 @@ data_multiseries = pd.concat(
 ).set_index('series', append=True).swaplevel(0, 1)
 
 
+def test_get_thresholds_raises_error_when_not_fitted():
+    """
+    Test get_thresholds raises NotFittedError when the detector is not fitted.
+    """
+    detector = PopulationDriftDetector(
+        chunk_size="MS",
+        threshold=3,
+        threshold_method='std'
+    )
+    msg = (
+        "This PopulationDriftDetector instance is not fitted yet. "
+        "Call 'fit' with appropriate arguments before using this estimator."
+    )
+    with pytest.raises(NotFittedError, match=msg):
+        detector.get_thresholds()
+    
 
 def test_get_thresholds_single_series():
     """
