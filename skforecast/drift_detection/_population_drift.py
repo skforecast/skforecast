@@ -251,7 +251,7 @@ class PopulationDriftDetector:
         
         self.threshold = threshold
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str: # pragma: no cover
         """
         Information displayed when a PopulationDriftDetector object is printed.
         """
@@ -269,7 +269,7 @@ class PopulationDriftDetector:
 
         return info
     
-    def _repr_html_(self) -> str:
+    def _repr_html_(self) -> str: # pragma: no cover
         """
         HTML representation of the object.
         The "General Information" section is expanded by default.
