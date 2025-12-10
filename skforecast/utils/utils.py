@@ -1940,7 +1940,8 @@ def save_forecaster(
     forecaster: object, 
     file_name: str,
     save_custom_functions: bool = True, 
-    verbose: bool = True
+    verbose: bool = True,
+    suppress_warnings: bool = False
 ) -> None:
     """
     Save forecaster model using joblib. If custom functions are used to create
@@ -1958,12 +1959,17 @@ def save_forecaster(
         where the forecaster is going to be loaded.
     verbose : bool, default True
         Print summary about the forecaster saved.
+    suppress_warnings : bool, default False
+        If `True`, skforecast warnings will be suppressed. See 
+        skforecast.exceptions.warn_skforecast_categories for more information.
 
     Returns
     -------
     None
 
     """
+
+    set_skforecast_warnings(suppress_warnings, action='ignore')
     
     file_name = Path(file_name).with_suffix('.joblib')
 
@@ -2008,10 +2014,13 @@ def save_forecaster(
     if verbose:
         forecaster.summary()
 
+    set_skforecast_warnings(suppress_warnings, action='default')
+
 
 def load_forecaster(
     file_name: str,
-    verbose: bool = True
+    verbose: bool = True,
+    suppress_warnings: bool = False
 ) -> object:
     """
     Load forecaster model using joblib. If the forecaster was saved with 
@@ -2025,6 +2034,9 @@ def load_forecaster(
         Object file name.
     verbose: bool, default True
         Print summary about the forecaster loaded.
+    suppress_warnings : bool, default False
+        If `True`, skforecast warnings will be suppressed. See 
+        skforecast.exceptions.warn_skforecast_categories for more information.
 
     Returns
     -------
@@ -2032,6 +2044,8 @@ def load_forecaster(
         Forecaster created with skforecast library.
     
     """
+
+    set_skforecast_warnings(suppress_warnings, action='ignore')
 
     forecaster = joblib.load(filename=Path(file_name))
     forecaster_v = forecaster.skforecast_version
@@ -2043,11 +2057,13 @@ def load_forecaster(
             f"    Installed Version  : {__version__}\n"
             f"    Forecaster Version : {forecaster_v}\n"
             f"This may create incompatibilities when using the library.",
-             SkforecastVersionWarning
+            SkforecastVersionWarning
         )
 
     if verbose:
         forecaster.summary()
+        
+    set_skforecast_warnings(suppress_warnings, action='default')
 
     return forecaster
 

@@ -12,7 +12,7 @@ def test_init_exception_when_chunk_size_not_valid():
 
     error_msg = re.escape(
         "`chunk_size` must be a positive integer, a string compatible with "
-        "pandas DateOffset (e.g., 'D', 'W', 'M'), a pandas DateOffset object, or None."
+        "pandas frequencies (e.g., 'D', 'W', 'M'), or None."
     )
 
     chunk_size = ['a']
@@ -28,7 +28,7 @@ def test_init_exception_when_chunk_size_not_valid():
         PopulationDriftDetector(chunk_size=chunk_size, threshold=0.95)
 
 
-def test_init_exception_when_threshold_not_between_0_and_1():
+def test_init_exception_when_threshold_not_between_0_and_1_method_quantile():
     """
     Test that an exception is raised when threshold is not between 0 and 1.
     """
@@ -36,12 +36,12 @@ def test_init_exception_when_threshold_not_between_0_and_1():
     threshold = -0.1
     error_msg = re.escape(f"`threshold` must be between 0 and 1. Got {threshold}.")
     with pytest.raises(ValueError, match=error_msg):
-        PopulationDriftDetector(chunk_size='ME', threshold=threshold)
+        PopulationDriftDetector(chunk_size='MS', threshold=threshold, threshold_method='quantile')
 
     threshold = 1.1
     error_msg = re.escape(f"`threshold` must be between 0 and 1. Got {threshold}.")
     with pytest.raises(ValueError, match=error_msg):
-        PopulationDriftDetector(chunk_size='ME', threshold=threshold)
+        PopulationDriftDetector(chunk_size='MS', threshold=threshold, threshold_method='quantile')
 
 
 
