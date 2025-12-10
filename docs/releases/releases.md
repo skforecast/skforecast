@@ -10,16 +10,18 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
 
-## 0.19.1 <small>Dec 08, 2025</small> { id="0.19.1" }
+## 0.19.1 <small>Dec 10, 2025</small> { id="0.19.1" }
 
 The main changes in this release are:
 
-+ <span class="badge text-bg-feature">Feature</span>
++ <span class="badge text-bg-feature">Feature</span> Enabled thresholds based on standard deviations in the <code>[PopulationDriftDetector]</code> class. Now, users can specify thresholds using standard deviations from the mean, allowing for more flexible and statistically grounded drift detection. This is now the default behavior when thresholds are not explicitly provided.([#1080](https://github.com/skforecast/skforecast/issues/1080))
 
 + <span class="badge text-bg-danger">Fix</span> Fixed an issue that prevented using Forecasters created in past versions of the library after loading them with <code>[load_forecaster]</code>. The problem occurred with the introduction of the `estimator` parameter in version `0.19.0`, which replaced the previous `regressor` parameter. This fix ensures that Forecasters saved with versions prior to `0.19.0` can be loaded and used without any issues. ([#1079](https://github.com/skforecast/skforecast/issues/1079))
 
 
 **Added**
+
++ Enabled thresholds based on standard deviations in the <code>[PopulationDriftDetector]</code> class. Now, users can specify thresholds using standard deviations from the mean, allowing for more flexible and statistically grounded drift detection. This is now the default behavior when thresholds are not explicitly provided.([#1080](https://github.com/skforecast/skforecast/issues/1080))
 
 
 **Changed**

@@ -34,8 +34,9 @@ def test_predict_NotFittedError_when_detector_not_fitted():
     Test NotFittedError is raised when trying to predict before fitting the detector.
     """
     detector = PopulationDriftDetector(
-        chunk_size='ME',            
-        threshold=0.99
+        chunk_size='MS',            
+        threshold=0.99,
+        threshold_method='quantile'
     )
     X = data
     err_msg = (
@@ -51,8 +52,9 @@ def test_predict_ValueError_when_X_not_dataframe():
     Test ValueError is raised when X is not a pandas DataFrame.
     """
     detector = PopulationDriftDetector(
-        chunk_size='ME',            
-        threshold=0.99
+        chunk_size='MS',            
+        threshold=0.99,
+        threshold_method='quantile'
     )
     detector.fit(data)
     X = 'not a dataframe'
@@ -67,8 +69,9 @@ def test_predict_ValueError_when_chunk_size_is_frequency_but_X_index_not_datetim
     not have a DatetimeIndex.
     """
     detector = PopulationDriftDetector(
-        chunk_size='ME',            
-        threshold=0.99
+        chunk_size='MS',            
+        threshold=0.99,
+        threshold_method='quantile'
     )
     detector.fit(data)
     X = data.reset_index()
@@ -161,7 +164,7 @@ def test_predict_output_equivalence_nannyml():
                 # "chunk_end",   # Different formatting in nannyml and skforecast
                 "feature",
                 "ks_statistic",
-                # "ks_threshold", # Nanny usses the p-value as threshold
+                "ks_threshold",
                 "chi2_statistic",
                 # "chi2_threshold", # Nanny usses the p-value as threshold
                 "js_statistic",
@@ -176,7 +179,7 @@ def test_predict_output_equivalence_nannyml():
                 # "chunk_end",
                 "feature",
                 "ks_statistic",
-                # "ks_threshold", # Nanny usses the p-value as threshold
+                "ks_threshold",
                 "chi2_statistic",
                 # "chi2_threshold", # Nanny usses the p-value as threshold
                 "js_statistic",

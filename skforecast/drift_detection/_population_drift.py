@@ -82,30 +82,30 @@ class PopulationDriftDetector:
 
     Parameters
     ----------
-    chunk_size : int, string, default None
+    chunk_size : int, str, default None
         Size of chunks for sequential drift analysis. If int, number of rows per
         chunk. If str (e.g., 'D' for daily, 'W' for weekly), time-based chunks
         assuming a datetime index. If None, analyzes the full dataset as a single
         chunk.
-    threshold : float, default 0.95
+    threshold : int, float, default 3
         Threshold value for determining drift. Interpretation depends on
         `threshold_method`:
         
-        - If `threshold_method='quantile'`: quantile threshold (between 0 and 1).
         - If `threshold_method='std'`: number of standard deviations above the mean.
-    threshold_method : str, default 'quantile'
+        - If `threshold_method='quantile'`: quantile threshold (between 0 and 1).
+    threshold_method : str, default 'std'
         Method for calculating thresholds from empirical distributions:
         
-        - `'quantile'`: Uses the specified quantile of the empirical distribution.
-          Thresholds are computed using leave-one-chunk-out cross-validation to
-          avoid self-comparison bias. This is statistically more correct for
-          quantile-based thresholds but computationally more expensive.
         - `'std'`: Uses mean + threshold * std of the empirical distribution.
-          This is faster since it does not use leave-one-chunk-out.
+        This is faster since it does not use leave-one-chunk-out.
+        - `'quantile'`: Uses the specified quantile of the empirical distribution.
+        Thresholds are computed using leave-one-chunk-out cross-validation to
+        avoid self-comparison bias. This is statistically more correct for
+        quantile-based thresholds but computationally more expensive.
     
     Attributes
     ----------
-    chunk_size : int, string
+    chunk_size : int, str
         Size of chunks for sequential drift analysis. If int, number of rows per
         chunk. If str (e.g., 'D' for daily, 'W' for weekly), time-based chunks
         assuming a datetime index. If None, analyzes the full dataset as a single
@@ -186,13 +186,13 @@ class PopulationDriftDetector:
 
     def __init__(
         self, 
-        chunk_size=None, 
-        threshold=0.95,
-        threshold_method='quantile'
+        chunk_size: int | str | None = None,
+        threshold: int | float = 3,
+        threshold_method: str = 'std'
     ) -> None:
         
-        self.ref_features_             = None
-        self.is_fitted                = False
+        self.ref_features_             = []
+        self.is_fitted                 = False
         self.ref_ecdf_                 = {}
         self.ref_bins_edges_           = {}
         self.ref_hist_                 = {}
@@ -253,7 +253,7 @@ class PopulationDriftDetector:
 
     def __repr__(self) -> str:
         """
-        Information displayed when a RangeDriftDetector object is printed.
+        Information displayed when a PopulationDriftDetector object is printed.
         """
     
         info = (
@@ -402,7 +402,7 @@ class PopulationDriftDetector:
 
         return js_distance
         
-    def _fit(self, X) -> None:
+    def _fit(self, X: pd.DataFrame) -> None:
         """
         Fit the drift detector by calculating empirical distributions and thresholds
         from reference data. The empirical distributions are computed by chunking
@@ -577,8 +577,27 @@ class PopulationDriftDetector:
                         np.nanmean(js_values) + self.threshold * np.nanstd(js_values, ddof=0)
                     )
 
-        # TODO: maybe 5 is too low?
-        if self.n_chunks_reference_data_ < 5:
+            # NOTE: Clip thresholds to their theoretical bounds
+            # KS statistic is bounded in [0, 1]
+            if not np.isnan(self.empirical_threshold_ks_[feature]):
+                self.empirical_threshold_ks_[feature] = np.clip(
+                    self.empirical_threshold_ks_[feature], 0, 1
+                )
+            
+            # Jensen-Shannon distance is bounded in [0, 1]
+            if not np.isnan(self.empirical_threshold_js_[feature]):
+                self.empirical_threshold_js_[feature] = np.clip(
+                    self.empirical_threshold_js_[feature], 0, 1
+                )
+            
+            # Chi-square statistic is bounded in [0, inf), only clip lower bound
+            if not np.isnan(self.empirical_threshold_chi2_[feature]):
+                self.empirical_threshold_chi2_[feature] = np.clip(
+                    self.empirical_threshold_chi2_[feature], 0, None
+                )
+
+
+        if self.n_chunks_reference_data_ < 10:
             warnings.warn(
                 f"Only {self.n_chunks_reference_data_} chunks in reference data. "
                 f"Empirical thresholds may not be reliable. Consider using more "
@@ -598,6 +617,12 @@ class PopulationDriftDetector:
         ----------
         X : pandas DataFrame
             Reference data used as the baseline for drift detection.
+
+            - If `X` is a regular DataFrame, a single detector is fitted for all data.
+            The index is assumed to be the temporal index and each column a feature.
+            - If `X` has a MultiIndex, the first level is assumed to be the series ID
+            and the second level the temporal index. A separate detector is fitted for
+            each series.        
 
         """
 
@@ -628,7 +653,7 @@ class PopulationDriftDetector:
         self.series_names_in_ = list(self.detectors_.keys()) if self.detectors_ else None
         self._collect_attributes()
 
-    def _predict(self, X) -> pd.DataFrame:
+    def _predict(self, X: pd.DataFrame) -> pd.DataFrame:
         """
         Predict drift in new data by comparing the estimated statistics to
         reference thresholds.
@@ -807,7 +832,7 @@ class PopulationDriftDetector:
         else:
             groupby_cols = ['feature']
 
-        def get_drift_chunk_ids(group):
+        def _get_drift_chunk_ids(group):
             return group.loc[group['drift_detected'], 'chunk'].tolist()
 
         summary = (
@@ -815,7 +840,7 @@ class PopulationDriftDetector:
             .agg(
                 n_chunks_with_drift=('drift_detected', 'sum'),
                 pct_chunks_with_drift=('drift_detected', 'mean'),
-                chunks_with_drift=('drift_detected', lambda x: get_drift_chunk_ids(
+                chunks_with_drift=('drift_detected', lambda x: _get_drift_chunk_ids(
                     results.loc[x.index]
                 ))
             )
