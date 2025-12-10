@@ -79,7 +79,6 @@ def test_predict_ValueError_when_chunk_size_is_frequency_but_X_index_not_datetim
     with pytest.raises(ValueError, match=err_msg):
         detector.predict(X=X)
 
-# TODO: Add threshold columns to the test
 def test_predict_output_equivalence_nannyml():
     """
     Test that the output of PopulationDriftDetector.predict is equivalent to
