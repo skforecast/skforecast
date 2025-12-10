@@ -1,0 +1,306 @@
+# Unit test get_thresholds method of PopulationDriftDetector
+# ==============================================================================
+import pandas as pd
+import numpy as np
+import joblib
+import pytest
+from pathlib import Path
+from ....drift_detection import PopulationDriftDetector
+from sklearn.exceptions import NotFittedError
+
+
+# fixtures
+THIS_DIR = Path(__file__).parent
+data = joblib.load(THIS_DIR/'fixture_data_population_drift.joblib')
+data['weather'] = data['weather'].astype('category')
+data_multiseries = pd.concat(
+    [
+        data.assign(series='series_1'),
+        data.assign(series='series_2'),
+        data.assign(series='series_3')
+    ]
+).set_index('series', append=True).swaplevel(0, 1)
+
+
+def test_get_thresholds_raises_error_when_not_fitted():
+    """
+    Test get_thresholds raises NotFittedError when the detector is not fitted.
+    """
+    detector = PopulationDriftDetector(
+        chunk_size="MS",
+        threshold=3,
+        threshold_method='std'
+    )
+    msg = (
+        "This PopulationDriftDetector instance is not fitted yet. "
+        "Call 'fit' with appropriate arguments before using this estimator."
+    )
+    with pytest.raises(NotFittedError, match=msg):
+        detector.get_thresholds()
+    
+
+def test_get_thresholds_single_series():
+    """
+    Test get_thresholds output is as expected when single series data is used.
+    """
+
+    detector = PopulationDriftDetector(
+        chunk_size="MS",
+        threshold=3,
+        threshold_method='std'
+    )
+    detector.fit(data)
+
+    expected_results = pd.DataFrame(
+        {
+        "feature": [
+            "holiday",
+            "workingday",
+            "weather",
+            "temp",
+            "atemp",
+            "hum",
+            "windspeed",
+            "users",
+            "month",
+            "hour",
+            "weekday",
+        ],
+        "ks_threshold": [
+            0.05627896723378708,
+            0.08334072803920606,
+            np.nan,
+            0.8902912637399314,
+            0.8760990833305458,
+            0.3275333143260747,
+            0.22687537960149534,
+            0.46291724129599765,
+            1.0,
+            0.0,
+            0.07064395189884681,
+        ],
+        "chi2_threshold": [
+            np.nan,
+            np.nan,
+            147.57764082134906,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+        ],
+        "js_threshold": [
+            0.19310871119778586,
+            0.07692103039472485,
+            0.22845188099213032,
+            0.8082381037233715,
+            0.7994440621345089,
+            0.36606730574805435,
+            0.23165356399001857,
+            0.4760097183437864,
+            0.8941775207324707,
+            0.0,
+            0.07087005888035235,
+        ],
+    }
+    )
+    results = detector.get_thresholds()
+    pd.testing.assert_frame_equal(results.reset_index(drop=True), expected_results)
+
+
+def test_get_thresholds_multiseries():
+    """
+    Test get_thresholds output is as expected when multiseries data is used.
+    """
+
+    detector = PopulationDriftDetector(
+        chunk_size="MS",
+        threshold=3,
+        threshold_method='std'
+    )
+    detector.fit(data_multiseries)
+
+    expected_results = pd.DataFrame(
+        {
+        "series_id": [
+            "series_1",
+            "series_1",
+            "series_1",
+            "series_1",
+            "series_1",
+            "series_1",
+            "series_1",
+            "series_1",
+            "series_1",
+            "series_1",
+            "series_1",
+            "series_2",
+            "series_2",
+            "series_2",
+            "series_2",
+            "series_2",
+            "series_2",
+            "series_2",
+            "series_2",
+            "series_2",
+            "series_2",
+            "series_2",
+            "series_3",
+            "series_3",
+            "series_3",
+            "series_3",
+            "series_3",
+            "series_3",
+            "series_3",
+            "series_3",
+            "series_3",
+            "series_3",
+            "series_3",
+        ],
+        "feature": [
+            "holiday",
+            "workingday",
+            "weather",
+            "temp",
+            "atemp",
+            "hum",
+            "windspeed",
+            "users",
+            "month",
+            "hour",
+            "weekday",
+            "holiday",
+            "workingday",
+            "weather",
+            "temp",
+            "atemp",
+            "hum",
+            "windspeed",
+            "users",
+            "month",
+            "hour",
+            "weekday",
+            "holiday",
+            "workingday",
+            "weather",
+            "temp",
+            "atemp",
+            "hum",
+            "windspeed",
+            "users",
+            "month",
+            "hour",
+            "weekday",
+        ],
+        "ks_threshold": [
+            0.05627896723378708,
+            0.08334072803920606,
+            np.nan,
+            0.8902912637399314,
+            0.8760990833305458,
+            0.3275333143260747,
+            0.22687537960149534,
+            0.46291724129599765,
+            1.0,
+            0.0,
+            0.07064395189884681,
+            0.05627896723378708,
+            0.08334072803920606,
+            np.nan,
+            0.8902912637399314,
+            0.8760990833305458,
+            0.3275333143260747,
+            0.22687537960149534,
+            0.46291724129599765,
+            1.0,
+            0.0,
+            0.07064395189884681,
+            0.05627896723378708,
+            0.08334072803920606,
+            np.nan,
+            0.8902912637399314,
+            0.8760990833305458,
+            0.3275333143260747,
+            0.22687537960149534,
+            0.46291724129599765,
+            1.0,
+            0.0,
+            0.07064395189884681,
+        ],
+        "chi2_threshold": [
+            np.nan,
+            np.nan,
+            147.57764082134906,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            147.57764082134906,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            147.57764082134906,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+            np.nan,
+        ],
+        "js_threshold": [
+            0.19310871119778586,
+            0.07692103039472485,
+            0.22845188099213032,
+            0.8082381037233715,
+            0.7994440621345089,
+            0.36606730574805435,
+            0.23165356399001857,
+            0.4760097183437864,
+            0.8941775207324707,
+            0.0,
+            0.07087005888035235,
+            0.19310871119778586,
+            0.07692103039472485,
+            0.22845188099213032,
+            0.8082381037233715,
+            0.7994440621345089,
+            0.36606730574805435,
+            0.23165356399001857,
+            0.4760097183437864,
+            0.8941775207324707,
+            0.0,
+            0.07087005888035235,
+            0.19310871119778586,
+            0.07692103039472485,
+            0.22845188099213032,
+            0.8082381037233715,
+            0.7994440621345089,
+            0.36606730574805435,
+            0.23165356399001857,
+            0.4760097183437864,
+            0.8941775207324707,
+            0.0,
+            0.07087005888035235,
+        ],
+    }
+    )
+    results = detector.get_thresholds()
+    pd.testing.assert_frame_equal(results.reset_index(drop=True), expected_results)
