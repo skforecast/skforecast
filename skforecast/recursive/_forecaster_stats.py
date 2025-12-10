@@ -224,6 +224,28 @@ class ForecasterStats():
             "handles_binned_residuals": False
         }
 
+    def __setstate__(self, state: dict) -> None:
+        """
+        Custom __setstate__ to ensure backward compatibility when unpickling
+        Forecaster objects created with older versions of skforecast.
+
+        Parameters
+        ----------
+        state : dict
+            The state dictionary from the pickled object.
+
+        Returns
+        -------
+        None
+
+        """
+
+        # Migration: 'regressor' renamed to 'estimator' in version 0.18.0
+        if 'regressor' in state and 'estimator' not in state:
+            state['estimator'] = state.pop('regressor')
+
+        self.__dict__.update(state)
+
     @property
     def regressor(self):
         warnings.warn(

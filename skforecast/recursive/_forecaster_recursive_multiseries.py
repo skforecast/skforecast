@@ -675,7 +675,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         return info
 
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         """
         HTML representation of the object.
         The "General Information" section is expanded by default.
