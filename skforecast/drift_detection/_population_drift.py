@@ -210,6 +210,24 @@ class PopulationDriftDetector:
         self.detectors_                = {}    # NOTE: Only used for multiseries
         self.series_names_in_          = None  # NOTE: Only used for multiseries
 
+        error_msg = (
+            "`chunk_size` must be a positive integer, a string compatible with "
+            "pandas frequencies (e.g., 'D', 'W', 'MS'), or None."
+        )
+        if not (isinstance(chunk_size, (int, str, pd.DateOffset, type(None)))):
+            raise TypeError(f"{error_msg} Got {type(chunk_size)}.")
+        
+        if isinstance(chunk_size, str):
+            try:
+                chunk_size = pd.tseries.frequencies.to_offset(chunk_size)
+            except ValueError:
+                raise ValueError(f"{error_msg} Got {type(chunk_size)}.")
+        
+        if isinstance(chunk_size, int) and chunk_size <= 0:
+            raise ValueError(f"{error_msg} Got {chunk_size}.")
+        
+        self.chunk_size = chunk_size
+
         valid_threshold_methods = ['quantile', 'std']
         if threshold_method not in valid_threshold_methods:
             raise ValueError(
@@ -232,24 +250,6 @@ class PopulationDriftDetector:
                 )
         
         self.threshold = threshold
-
-        error_msg = (
-            "`chunk_size` must be a positive integer, a string compatible with "
-            "pandas frequencies (e.g., 'D', 'W', 'M'), or None."
-        )
-        if not (isinstance(chunk_size, (int, str, pd.DateOffset, type(None)))):
-            raise TypeError(f"{error_msg} Got {type(chunk_size)}.")
-        
-        if isinstance(chunk_size, str):
-            try:
-                chunk_size = pd.tseries.frequencies.to_offset(chunk_size)
-            except ValueError:
-                raise ValueError(f"{error_msg} Got {type(chunk_size)}.")
-        
-        if isinstance(chunk_size, int) and chunk_size <= 0:
-            raise ValueError(f"{error_msg} Got {chunk_size}.")
-        
-        self.chunk_size = chunk_size
 
     def __repr__(self) -> str:
         """
