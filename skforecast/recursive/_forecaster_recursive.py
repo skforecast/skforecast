@@ -1373,6 +1373,116 @@ class ForecasterRecursive(ForecasterBase):
 
         return predictions
 
+    def _recursive_predict_bootstrapping(
+        self,
+        steps: int,
+        last_window_values: np.ndarray,
+        exog_values: np.ndarray | None,
+        sampled_residuals: dict[int, np.ndarray] | np.ndarray,
+        use_binned_residuals: bool,
+        n_boot: int
+    ) -> np.ndarray:
+        """
+        Vectorized bootstrap prediction - predict all n_boot iterations per step.
+        Instead of running n_boot sequential predictions, this method predicts 
+        all bootstrap samples at once per step, significantly reducing overhead.
+        
+        Parameters
+        ----------
+        steps : int
+            Number of steps to predict. 
+        last_window_values : numpy ndarray
+            Series values used to create the predictors needed in the first 
+            iteration of the prediction (t + 1).
+        exog_values : numpy ndarray, default None
+            Exogenous variable/s included as predictor/s.
+        sampled_residuals : dict, numpy ndarray
+            Pre-sampled residuals for all bootstrap iterations.
+            If dict (binned): {bin_id: array of shape (steps, n_boot)}
+            If array (not binned): array of shape (steps, n_boot)
+        use_binned_residuals : bool
+            If `True`, residuals are selected based on the predicted values.
+            If `False`, residuals are selected randomly.
+        n_boot : int
+            Number of bootstrap iterations.
+
+        Returns
+        -------
+        predictions : numpy ndarray
+            Predicted values with shape (steps, n_boot).
+        
+        """
+
+        original_device = set_cpu_gpu_device(estimator=self.estimator, device='cpu')
+
+        n_lags = len(self.lags) if self.lags is not None else 0
+        n_window_features = (
+            len(self.X_train_window_features_names_out_)
+            if self.window_features is not None
+            else 0
+        )
+        n_exog = exog_values.shape[1] if exog_values is not None else 0
+        n_features = n_lags + n_window_features + n_exog
+
+        # Feature matrix for all n_boot samples: shape (n_boot, n_features)
+        X = np.full((n_boot, n_features), fill_value=np.nan, dtype=float)
+        
+        # Output predictions: shape (steps, n_boot)
+        predictions = np.full((steps, n_boot), fill_value=np.nan, dtype=float)
+        
+        # Expand last_window to 2D: (window_size + steps, n_boot)
+        # Each column represents a separate bootstrap trajectory
+        last_window = np.tile(last_window_values[:, np.newaxis], (1, n_boot))
+        last_window = np.vstack([last_window, np.full((steps, n_boot), np.nan)])
+
+        # Pre-stack residuals for binned case (avoids repeated stacking in loop)
+        if use_binned_residuals:
+            n_bins = len(sampled_residuals)
+            # Stack all bins into a 3D array: (n_bins, steps, n_boot)
+            residuals_stacked = np.stack(
+                [sampled_residuals[k] for k in range(n_bins)], axis=0
+            )
+            boot_indices = np.arange(n_boot)
+
+        for i in range(steps):
+            # === Build lag features ===
+            if self.lags is not None:
+                for j, lag in enumerate(self.lags):
+                    X[:, j] = last_window[-(lag + steps - i), :]
+            
+            # === Build window features (vectorized across all bootstrap samples) ===
+            if self.window_features is not None:
+                # window_data shape: (window_length, n_boot)
+                window_data = last_window[:-(steps - i), :]
+                wf_results = []
+                for wf in self.window_features:
+                    # transform accepts 2D: (window_length, n_boot) -> (n_boot, n_stats)
+                    wf_results.append(wf.transform(window_data))
+                # Concatenate along axis=1: (n_boot, total_window_features)
+                X[:, n_lags:n_lags + n_window_features] = np.concatenate(wf_results, axis=1)
+            
+            # === Build exog features ===
+            if exog_values is not None:
+                X[:, n_lags + n_window_features:] = exog_values[i]
+            
+            # === Predict all samples at once ===
+            pred = self.estimator.predict(X).ravel()
+            
+            # === Add residuals ===
+            if use_binned_residuals:
+                pred_bins = self.binner.transform(pred).astype(int)
+                # Vectorized residual lookup using advanced indexing
+                pred += residuals_stacked[pred_bins, i, boot_indices]
+            else:
+                pred += sampled_residuals[i, :]
+            
+            predictions[i, :] = pred
+            last_window[-(steps - i), :] = pred
+
+        set_cpu_gpu_device(estimator=self.estimator, device=original_device)
+
+        return predictions
+
     def create_predict_X(
         self,
         steps: int,
@@ -1662,37 +1772,20 @@ class ForecasterRecursive(ForecasterBase):
                 rng.integers(low=0, high=len(residuals), size=(steps, n_boot))
             ]
         
-        boot_columns = []
-        boot_predictions = np.full(
-                               shape      = (steps, n_boot),
-                               fill_value = np.nan,
-                               order      = 'F',
-                               dtype      = float
-                           )
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 "ignore", 
                 message="X does not have valid feature names", 
                 category=UserWarning
             )
-            for i in range(n_boot):
-
-                if use_binned_residuals:
-                    boot_sampled_residuals = {
-                        k: v[:, i]
-                        for k, v in sampled_residuals.items()
-                    }
-                else:
-                    boot_sampled_residuals = sampled_residuals[:, i]
-
-                boot_columns.append(f"pred_boot_{i}")
-                boot_predictions[:, i] = self._recursive_predict(
-                    steps                = steps,
-                    last_window_values   = last_window_values,
-                    exog_values          = exog_values,
-                    residuals            = boot_sampled_residuals,
-                    use_binned_residuals = use_binned_residuals,
-                )
+            boot_predictions = self._recursive_predict_bootstrapping(
+                steps                = steps,
+                last_window_values   = last_window_values,
+                exog_values          = exog_values,
+                sampled_residuals    = sampled_residuals,
+                use_binned_residuals = use_binned_residuals,
+                n_boot               = n_boot
+            )
 
         if self.differentiation is not None:
             boot_predictions = (
@@ -1709,6 +1802,7 @@ class ForecasterRecursive(ForecasterBase):
                                    inverse_transform = True
                                )
 
+        boot_columns = [f"pred_boot_{i}" for i in range(n_boot)]
         boot_predictions = pd.DataFrame(
                                data    = boot_predictions,
                                index   = prediction_index,

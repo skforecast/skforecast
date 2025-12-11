@@ -2239,6 +2239,189 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         return last_window, exog_values_dict, levels, prediction_index
 
+    def _recursive_predict_bootstrapping(
+        self,
+        steps: int,
+        levels: list,
+        last_window: pd.DataFrame,
+        n_boot: int,
+        sampled_residuals: dict,
+        use_binned_residuals: bool,
+        exog_values_dict: dict[str, np.ndarray] | None = None,
+    ) -> np.ndarray:
+        """
+        Vectorized bootstrap prediction for multiple series. Instead of looping
+        over n_boot iterations and calling `_recursive_predict` each time, this
+        method predicts all (n_boot x n_levels) samples at once per step. This
+        reduces the number of `estimator.predict()` calls from (n_boot x steps)
+        to just (steps), providing significant performance improvements.
+
+        Parameters
+        ----------
+        steps : int
+            Number of steps to predict.
+        levels : list
+            Names of the time series (levels) to be predicted.
+        last_window : pandas DataFrame
+            Series values used to create the predictors (lags) needed in the
+            first iteration of the prediction (t + 1). Shape: (window_size, n_levels).
+        n_boot : int
+            Number of bootstrap iterations used for prediction intervals.
+        sampled_residuals : dict
+            Pre-sampled residuals for all bootstrap iterations.
+
+            - If `use_binned_residuals=True`: dict with bin indices as keys (0 to n_bins-1),
+              each value is an array of shape (steps, n_boot, n_levels).
+            - If `use_binned_residuals=False`: dict with single key 'all',
+              value is an array of shape (steps, n_boot, n_levels).
+        use_binned_residuals : bool
+            If `True`, residuals are selected based on the predicted value bins.
+            If `False`, residuals are selected randomly without binning.
+        exog_values_dict : dict, default None
+            Exogenous variables indexed by step. Each key is a step (1 to steps),
+            and each value is a numpy array of shape (n_levels, n_exog).
+
+        Returns
+        -------
+        boot_predictions : numpy ndarray
+            Bootstrap predictions with shape (steps, n_levels, n_boot).
+
+        Notes
+        -----
+        The feature matrix is constructed with row ordering:
+        [level0_boot0, level1_boot0, ..., levelN_boot0, level0_boot1, level1_boot1, ...]
+        
+        This matches the pattern expected when tiling level encodings and ensures
+        correct alignment between predictions and residuals.
+
+        """
+
+        original_device = set_cpu_gpu_device(estimator=self.estimator, device='cpu')
+
+        n_levels = len(levels)
+        n_lags = len(self.lags) if self.lags is not None else 0
+        n_window_features = (
+            len(self.X_train_window_features_names_out_)
+            if self.window_features is not None
+            else 0
+        )
+        n_autoreg = n_lags + n_window_features
+        n_exog = len(self.X_train_exog_names_out_) if exog_values_dict is not None else 0
+
+        # Total samples per step: n_boot × n_levels
+        # Row ordering: [level0_boot0, level1_boot0, ..., levelN_boot0, level0_boot1, ...]
+        n_samples = n_boot * n_levels
+
+        # Build level encoding (repeated for all bootstrap samples)
+        if self.encoding is not None:
+            if self.encoding == "onehot":
+                levels_encoded = np.zeros(
+                    (n_levels, len(self.X_train_series_names_in_)), dtype=float
+                )
+                for i, level in enumerate(levels):
+                    if level in self.X_train_series_names_in_:
+                        levels_encoded[i, self.X_train_series_names_in_.index(level)] = 1.
+            else:
+                levels_encoded = np.array(
+                    [self.encoding_mapping_.get(level, np.nan) for level in levels],
+                    dtype="float64"
+                ).reshape(-1, 1)
+            levels_encoded_shape = levels_encoded.shape[1]
+            # Tile to (n_boot × n_levels, encoded_shape): pattern repeats n_boot times
+            levels_encoded_boot = np.tile(levels_encoded, (n_boot, 1))
+        else:
+            levels_encoded_shape = 0
+            levels_encoded_boot = None
+
+        # Pre-allocate feature matrix for all samples
+        features_shape = n_autoreg + levels_encoded_shape + n_exog
+        features = np.full(
+            shape=(n_samples, features_shape), fill_value=np.nan, order='C', dtype=float
+        )
+        if self.encoding is not None:
+            features[:, n_autoreg: n_autoreg + levels_encoded_shape] = levels_encoded_boot
+
+        # Initialize output array: (steps, n_levels, n_boot)
+        boot_predictions = np.full(
+            shape=(steps, n_levels, n_boot), fill_value=np.nan, order='F', dtype=float
+        )
+
+        # Expand last_window to 3D: (window_size + steps, n_levels, n_boot)
+        # All bootstrap samples start with identical last_window values
+        last_window_np = last_window.to_numpy()
+        window_size = last_window_np.shape[0]
+        last_window_boot = np.empty(
+            (window_size + steps, n_levels, n_boot), dtype=float, order='F'
+        )
+        last_window_boot[:window_size, :, :] = last_window_np[:, :, np.newaxis]
+        last_window_boot[window_size:, :, :] = np.nan
+
+        # Pre-stack residuals for binned case (avoids repeated stacking in loop)
+        if use_binned_residuals:
+            n_bins = len(sampled_residuals)
+            # Stack all bins: (n_bins, steps, n_boot, n_levels)
+            residuals_stacked = np.stack(
+                [sampled_residuals[k] for k in range(n_bins)], axis=0
+            )
+            boot_indices = np.arange(n_boot)
+
+        for step in range(steps):
+
+            # === Build lag features ===
+            if self.lags is not None:
+                lags_indices = window_size + step - self.lags
+                # lagged_values shape: (n_lags, n_levels, n_boot)
+                lagged_values = last_window_boot[lags_indices, :, :]
+                # Reshape to (n_boot × n_levels, n_lags) with correct row ordering
+                features[:, :n_lags] = lagged_values.transpose(2, 1, 0).reshape(n_samples, n_lags)
+
+            # === Build window features ===
+            if self.window_features is not None:
+                wf_values = []
+                for wf in self.window_features:
+                    current_window = last_window_boot[:window_size + step, :, :]
+                    # Reshape to (window_length, n_samples) with correct column ordering
+                    wf_input = current_window.transpose(0, 2, 1).reshape(window_size + step, n_samples)
+                    wf_out = wf.transform(wf_input)
+                    wf_values.append(wf_out)
+                features[:, n_lags:n_autoreg] = np.concatenate(wf_values, axis=1)
+
+            # === Build exog features ===
+            if exog_values_dict is not None:
+                exog_step = exog_values_dict[step + 1]  # (n_levels, n_exog)
+                features[:, -n_exog:] = np.tile(exog_step, (n_boot, 1))
+
+            # === Predict all samples at once ===
+            pred = self.estimator.predict(features)  # (n_boot × n_levels,)
+            
+            # Handle read-only arrays (e.g., CatBoost)
+            if not features.flags.writeable:
+                features.flags.writeable = True
+
+            # Reshape to (n_levels, n_boot)
+            pred = pred.reshape(n_boot, n_levels).T
+
+            # === Add residuals ===
+            if use_binned_residuals:
+                # Vectorized residual lookup for all levels and boots
+                # residuals_stacked shape: (n_bins, steps, n_boot, n_levels)
+                for j, level in enumerate(levels):
+                    binner = self.binner.get(level, self.binner['_unknown_level'])
+                    predicted_bins = binner.transform(pred[j, :].reshape(-1, 1)).ravel().astype(int)
+                    # Vectorized lookup: residuals_stacked[predicted_bins, step, boot_indices, j]
+                    pred[j, :] += residuals_stacked[predicted_bins, step, boot_indices, j]
+            else:
+                # sampled_residuals['all'] shape: (steps, n_boot, n_levels)
+                pred += sampled_residuals['all'][step, :, :].T
+
+            boot_predictions[step, :, :] = pred
+
+            # Update last_window_boot with new predictions for next step
+            last_window_boot[window_size + step, :, :] = pred
+
+        set_cpu_gpu_device(estimator=self.estimator, device=original_device)
+
+        return boot_predictions
 
     def _recursive_predict(
         self,
@@ -2771,13 +2954,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 )
             sampled_residuals = {'all': sampled_residuals_grid}
         
-        boot_columns = []
-        boot_predictions = np.full(
-                               shape      = (steps, n_levels, n_boot),
-                               fill_value = np.nan,
-                               order      = 'F',
-                               dtype      = float
-                           )
+        boot_columns = [f"pred_boot_{i}" for i in range(n_boot)]
         
         with warnings.catch_warnings():
             warnings.filterwarnings(
@@ -2785,25 +2962,15 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 message="X does not have valid feature names", 
                 category=UserWarning
             )
-            for i in range(n_boot):
-
-                if use_binned_residuals:
-                    boot_sampled_residuals = {
-                        k: v[:, i, :]
-                        for k, v in sampled_residuals.items()
-                    }
-                else:
-                    boot_sampled_residuals = sampled_residuals['all'][:, i, :]
-
-                boot_columns.append(f"pred_boot_{i}")
-                boot_predictions[:, :, i] = self._recursive_predict(
-                    steps                = steps,
-                    levels               = levels,
-                    last_window          = last_window,
-                    exog_values_dict     = exog_values_dict,
-                    residuals            = boot_sampled_residuals,
-                    use_binned_residuals = use_binned_residuals,
-                )
+            boot_predictions = self._recursive_predict_bootstrapping(
+                steps                = steps,
+                levels               = levels,
+                last_window          = last_window,
+                n_boot               = n_boot,
+                sampled_residuals    = sampled_residuals,
+                use_binned_residuals = use_binned_residuals,
+                exog_values_dict     = exog_values_dict,
+            )
 
         for i, level in enumerate(levels):
 
