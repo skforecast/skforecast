@@ -331,8 +331,11 @@ def _ets_step(l: float, b: float, s: NDArray[np.float64], y: float,
     elif trend == 2:
         r = l_new / max(l, TOL)
         b_new = phib + (beta / alpha) * (r - phib)
-    s_new = s.copy()
+    
+    # Only copy seasonal array if model has seasonality
+    # This avoids 10-15% overhead for non-seasonal models (*NN, *AN, etc.)
     if season > 0:
+        s_new = s.copy()
         if season == 1:
             t = y - q
         else:
@@ -340,6 +343,8 @@ def _ets_step(l: float, b: float, s: NDArray[np.float64], y: float,
         new_seasonal = s[m-1] + gamma * (t - s[m-1])
         s_new[0] = new_seasonal
         s_new[1:m] = s[0:m-1]
+    else:
+        s_new = s  # No copy needed for non-seasonal models
 
     return l_new, b_new, s_new, yhat, e
 
@@ -527,6 +532,130 @@ def get_bounds(config: ETSConfig) -> Tuple[NDArray[np.float64], NDArray[np.float
     return np.array(lower), np.array(upper)
 
 
+@njit(cache=True, fastmath=True)
+def _ets_objective_jit(x: NDArray[np.float64], 
+                       y: NDArray[np.float64], 
+                       lower: NDArray[np.float64], 
+                       upper: NDArray[np.float64],
+                       m: int, 
+                       error_code: int, 
+                       trend_code: int, 
+                       season_code: int,
+                       has_trend: bool, 
+                       has_season: bool, 
+                       is_damped: bool, 
+                       is_mult_season: bool,
+                       check_usual: bool, 
+                       check_admissible: bool) -> float:
+    """
+    Module-level JIT-compiled objective function for ETS optimization.
+    
+    This function is defined at module scope (not inside ets()) to enable
+    proper JIT caching. When defined inside a function, numba creates a new
+    cache key for each closure, causing recompilation on every call.
+    
+    Parameters
+    ----------
+    x : NDArray[np.float64]
+        Parameter vector [alpha, beta?, gamma?, phi?, init_states...]
+    y : NDArray[np.float64]
+        Time series observations
+    lower, upper : NDArray[np.float64]
+        Parameter bounds
+    m : int
+        Seasonal period
+    error_code, trend_code, season_code : int
+        Model component codes (0=N, 1=A, 2=M)
+    has_trend, has_season, is_damped : bool
+        Model component flags
+    is_mult_season : bool
+        True if multiplicative seasonality
+    check_usual, check_admissible : bool
+        Parameter constraint checking flags
+        
+    Returns
+    -------
+    float
+        Log-likelihood (or penalty if parameters invalid)
+    """
+    PENALTY = 1e10
+
+    # Bounds checking (redundant with L-BFGS-B but kept for safety)
+    for i in range(len(x)):
+        if x[i] < lower[i] or x[i] > upper[i]:
+            return PENALTY
+
+    # Extract smoothing parameters from x
+    idx = 0
+    alpha = x[idx]
+    idx += 1
+
+    if has_trend:
+        beta = x[idx]
+        idx += 1
+    else:
+        beta = 0.0
+
+    if has_season:
+        gamma = x[idx]
+        idx += 1
+    else:
+        gamma = np.nan
+
+    if is_damped:
+        phi = x[idx]
+        idx += 1
+    else:
+        phi = 1.0
+
+    init_states = x[idx:].copy()
+
+    # Check parameter constraints
+    beta_check = beta if has_trend else np.nan
+    phi_check = phi if is_damped else np.nan
+
+    if not _check_param_jit(alpha, beta_check, gamma, phi_check,
+                            lower, upper, check_usual, check_admissible, m):
+        return PENALTY
+
+    # Handle seasonal component normalization
+    if has_season:
+        trend_slots = 1 if has_trend else 0
+        seasonal_start = 1 + trend_slots
+        seasonal_sum = 0.0
+        for i in range(seasonal_start, len(init_states)):
+            seasonal_sum += init_states[i]
+
+        # Add extra seasonal component to ensure sum constraint
+        if is_mult_season:
+            extra = float(m) - seasonal_sum
+        else:
+            extra = -seasonal_sum
+
+        init_states_full = np.zeros(len(init_states) + 1, dtype=np.float64)
+        init_states_full[:len(init_states)] = init_states
+        init_states_full[len(init_states)] = extra
+
+        # Check non-negativity for multiplicative seasonality
+        if is_mult_season:
+            for i in range(seasonal_start, len(init_states_full)):
+                if init_states_full[i] < 0.0:
+                    return PENALTY
+    else:
+        init_states_full = init_states
+
+    # Compute log-likelihood
+    loglik, _, _, _ = _ets_likelihood(
+        y, init_states_full, m, error_code, trend_code, season_code,
+        alpha, beta, gamma, phi
+    )
+
+    if np.isnan(loglik) or np.isinf(loglik):
+        return PENALTY
+
+    return loglik
+
+
 def ets(y: NDArray[np.float64],
         m: int = 1,
         model: str = "ANN",
@@ -606,21 +735,26 @@ def ets(y: NDArray[np.float64],
     if len(model) != 3:
         raise ValueError(f"Model must be 3 characters (e.g., 'AAN', 'MAM'), got '{model}'")
 
+    # Handle ZZZ with high frequency by calling auto_ets
+    if model == "ZZZ" and m > 24:
+        warnings.warn(
+            f"Frequency too high (m={m} > 24). Using auto_ets to select non-seasonal model. "
+            f"Try stlf() if you need seasonal forecasts."
+        )
+        return auto_ets(
+            y_original, m=m, seasonal=False, trend=None, damped=damped,
+            ic="aicc", allow_multiplicative=True, 
+            allow_multiplicative_trend=False,
+            lambda_auto=lambda_auto, verbose=False
+        )
+
     season_type = model[2]
     if season_type != "N" and m > 24:
-        if season_type == "Z":
-            warnings.warn(
-                f"Frequency too high (m={m} > 24). Seasonality will be ignored. "
-                f"Try stlf() if you need seasonal forecasts."
-            )
-            model = model[:2] + "N"
-            season_type = "N"
-            m = 1
-        else:
-            raise ValueError(
-                f"Frequency too high (m={m} > 24). "
-                f"Seasonal models are not supported for m>24."
-            )
+        raise ValueError(
+            f"Frequency too high (m={m} > 24). "
+            f"Seasonal models are not supported for m>24. "
+            f"Use model='ZZZ' for automatic non-seasonal model selection."
+        )
 
     if season_type != "N" and m > 1 and n < m:
         raise ValueError(
@@ -722,92 +856,28 @@ def ets(y: NDArray[np.float64],
 
     lower, upper = get_bounds(config)
 
-    @njit(cache=True, fastmath=True)
-    def _objective_jit(x, y, lower, upper, m, error_code, trend_code, season_code,
-                       has_trend, has_season, is_damped, is_mult_season,
-                       check_usual, check_admissible, n_params, n_states):
-        """JIT-compiled objective function (internal)"""
-        PENALTY = 1e10
-
-        for i in range(len(x)):
-            if x[i] < lower[i] or x[i] > upper[i]:
-                return PENALTY
-
-        idx = 0
-        alpha = x[idx]
-        idx += 1
-
-        if has_trend:
-            beta = x[idx]
-            idx += 1
-        else:
-            beta = 0.0
-
-        if has_season:
-            gamma = x[idx]
-            idx += 1
-        else:
-            gamma = np.nan
-
-        if is_damped:
-            phi = x[idx]
-            idx += 1
-        else:
-            phi = 1.0
-
-        init_states = x[idx:].copy()
-
-        beta_check = beta if has_trend else np.nan
-        phi_check = phi if is_damped else np.nan
-
-        if not _check_param_jit(alpha, beta_check, gamma, phi_check,
-                                lower, upper, check_usual, check_admissible, m):
-            return PENALTY
-
-        if has_season:
-            trend_slots = 1 if has_trend else 0
-            seasonal_start = 1 + trend_slots
-            seasonal_sum = 0.0
-            for i in range(seasonal_start, len(init_states)):
-                seasonal_sum += init_states[i]
-
-            if is_mult_season:
-                extra = float(m) - seasonal_sum
-            else:
-                extra = -seasonal_sum
-
-            init_states_full = np.zeros(len(init_states) + 1, dtype=np.float64)
-            init_states_full[:len(init_states)] = init_states
-            init_states_full[len(init_states)] = extra
-
-            if is_mult_season:
-                for i in range(seasonal_start, len(init_states_full)):
-                    if init_states_full[i] < 0.0:
-                        return PENALTY
-        else:
-            init_states_full = init_states
-
-        loglik, _, _, _ = _ets_likelihood(
-            y, init_states_full, m, error_code, trend_code, season_code,
-            alpha, beta, gamma, phi
-        )
-
-        if np.isnan(loglik) or np.isinf(loglik):
-            return PENALTY
-
-        return loglik
-
+    # Pre-compute boolean flags for model structure
     check_usual = (bounds != "admissible")
     check_admissible = (bounds != "usual")
+    has_trend = config.trend != "N"
+    has_season = config.season != "N"
+    is_mult_season = config.season == "M"
 
+    # Wrapper function that calls the module-level JIT function
+    # This thin wrapper is not JIT-compiled, avoiding closure issues
     def objective(x):
-        return _objective_jit(
-            x, y, lower, upper, config.m,
-            config.error_code, config.trend_code, config.season_code,
-            config.trend != "N", config.season != "N", damped,
-            config.season == "M",
-            check_usual, check_admissible,
-            len(x) - config.n_states, config.n_states
+        return _ets_objective_jit(
+            x, y, lower, upper, 
+            config.m,
+            config.error_code, 
+            config.trend_code, 
+            config.season_code,
+            has_trend, 
+            has_season, 
+            damped,
+            is_mult_season,
+            check_usual, 
+            check_admissible
         )
 
     x0 = init_params.to_vector(config)
@@ -1171,6 +1241,10 @@ def auto_ets(y: NDArray[np.float64],
         season_types = ["N"]
     elif not seasonal:
         season_types = ["N"]
+    elif m > 24:
+        season_types = ["N"]
+        if verbose:
+            print(f"Frequency too high (m={m} > 24), trying non-seasonal models only")
     elif n < m:
         season_types = ["N"]
         if verbose:
