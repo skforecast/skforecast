@@ -171,6 +171,7 @@ class ForecasterStats():
         self.valid_estimator_types   = [
             'skforecast.stats._sarimax.Sarimax',
             'skforecast.stats._arar.Arar',
+            'skforecast.stats._ets.Ets',
             'aeon.forecasting.stats._arima.ARIMA',
             'aeon.forecasting.stats._ets.ETS'
         ]
@@ -726,7 +727,7 @@ class ForecasterStats():
                           inverse_transform = True
                       )
             predictions.name = 'pred'
-        elif self.estimator_type == 'skforecast.stats._arar.Arar':
+        elif self.estimator_type in ['skforecast.stats._arar.Arar', 'skforecast.stats._ets.Ets']:
             predictions = self.estimator.predict(
                               steps = steps,
                               exog  = exog
@@ -848,7 +849,7 @@ class ForecasterStats():
                             return_conf_int = True,
                             alpha           = alpha
                         )
-        elif self.estimator_type == 'skforecast.stats._arar.Arar':
+        elif self.estimator_type in ['skforecast.stats._arar.Arar', 'skforecast.stats._ets.Ets']:
             predictions = self.estimator.predict_interval(
                             steps           = steps,
                             exog            = exog,
