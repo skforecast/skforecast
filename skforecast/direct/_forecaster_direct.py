@@ -324,6 +324,8 @@ class ForecasterDirect(ForecasterBase):
         self.out_sample_residuals_              = None
         self.in_sample_residuals_by_bin_        = None
         self.out_sample_residuals_by_bin_       = None
+        self._filter_train_X_y_index_cache      = {}  # Cache for column indices
+        self._filter_train_X_y_columns_cache    = {}  # Cache for column names
         self.creation_date                      = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
         self.is_fitted                          = False
         self.fit_date                           = None
@@ -1009,25 +1011,37 @@ class ForecasterDirect(ForecasterBase):
         if not self.exog_in_:
             X_train_step = X_train
         else:
-            n_lags = len(self.lags) if self.lags is not None else 0
-            n_window_features = (
-                len(self.X_train_window_features_names_out_) if self.window_features is not None else 0
-            )
-            idx_columns_autoreg = np.arange(n_lags + n_window_features)
-            n_exog = len(self.X_train_direct_exog_names_out_) / self.max_step
-            idx_columns_exog = (
-                np.arange((step - 1) * n_exog, (step) * n_exog) + idx_columns_autoreg[-1] + 1
-            )
-            idx_columns = np.concatenate((idx_columns_autoreg, idx_columns_exog))
+            # Optimization: Cache column indices to avoid repeated calculations
+            cache_key_idx = (step, 'indices')
+            if cache_key_idx not in self._filter_train_X_y_index_cache:
+                n_lags = len(self.lags) if self.lags is not None else 0
+                n_window_features = (
+                    len(self.X_train_window_features_names_out_) if self.window_features is not None else 0
+                )
+                idx_columns_autoreg = np.arange(n_lags + n_window_features)
+                n_exog = len(self.X_train_direct_exog_names_out_) / self.max_step
+                idx_columns_exog = (
+                    np.arange((step - 1) * n_exog, (step) * n_exog) + idx_columns_autoreg[-1] + 1
+                )
+                idx_columns = np.concatenate((idx_columns_autoreg, idx_columns_exog))
+                self._filter_train_X_y_index_cache[cache_key_idx] = idx_columns
+            
+            idx_columns = self._filter_train_X_y_index_cache[cache_key_idx]
             X_train_step = X_train.iloc[:, idx_columns]
 
         X_train_step.index = y_train_step.index
 
         if remove_suffix:
-            X_train_step.columns = [
-                col_name.replace(f"_step_{step}", "")
-                for col_name in X_train_step.columns
-            ]
+            # Optimization: Cache column names after suffix removal
+            cache_key_cols = (step, 'columns', tuple(X_train_step.columns))
+            if cache_key_cols not in self._filter_train_X_y_columns_cache:
+                new_columns = [
+                    col_name.replace(f"_step_{step}", "")
+                    for col_name in X_train_step.columns
+                ]
+                self._filter_train_X_y_columns_cache[cache_key_cols] = new_columns
+            
+            X_train_step.columns = self._filter_train_X_y_columns_cache[cache_key_cols]
             y_train_step.name = y_train_step.name.replace(f"_step_{step}", "")
 
         return X_train_step, y_train_step
@@ -1186,6 +1200,8 @@ class ForecasterDirect(ForecasterBase):
         self.in_sample_residuals_               = None
         self.in_sample_residuals_by_bin_        = None
         self.binner_intervals_                  = None
+        self._filter_train_X_y_index_cache      = {}
+        self._filter_train_X_y_columns_cache    = {}
         self.is_fitted                          = False
         self.fit_date                           = None
 
@@ -1527,16 +1543,22 @@ class ForecasterDirect(ForecasterBase):
             exog_values = exog_values[0]
             
             n_exog = exog.shape[1]
-            Xs = [
-                np.concatenate(
-                    [
-                        X_autoreg,
-                        exog_values[(step - 1) * n_exog : step * n_exog].reshape(1, -1),
-                    ],
-                    axis=1
-                )
-                for step in steps
-            ]
+            n_features_autoreg = X_autoreg.shape[1]
+            
+            # Optimization: Pre-allocate array and fill efficiently instead of
+            # repeated concatenations. This avoids creating len(steps) separate
+            # arrays and their concatenations, reducing memory allocations and
+            # improving cache locality.
+            Xs_array = np.empty((len(steps), n_features_autoreg + n_exog), dtype=float)
+            # Broadcast autoregressive features once to all rows
+            Xs_array[:, :n_features_autoreg] = X_autoreg
+            # Fill exog values for each step
+            for i, step in enumerate(steps):
+                Xs_array[i, n_features_autoreg:] = exog_values[(step - 1) * n_exog : step * n_exog]
+            
+            # Convert to list of row arrays for compatibility with existing code
+            Xs = [Xs_array[i:i+1] for i in range(len(steps))]
+            
             # HACK: This is not the best way to do it. Can have any problem
             # if the exog_columns are not in the same order as the
             # self.window_features_names.
