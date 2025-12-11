@@ -814,12 +814,12 @@ def ets(y: NDArray[np.float64],
 
     result = minimize(
         objective, x0,
-        method='Nelder-Mead',
+        method='L-BFGS-B',
+        bounds=[(lower[i], upper[i]) for i in range(len(lower))],
         options={
             'maxiter': 2000,
-            'xatol': 1e-8,
-            'fatol': 1e-8,
-            'adaptive': True
+            'ftol': 1e-8,
+            'gtol': 1e-8
         }
     )
 
