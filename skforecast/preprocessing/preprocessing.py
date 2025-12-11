@@ -1618,12 +1618,23 @@ class RollingFeatures():
         array_ndim = X.ndim
         if array_ndim == 1:
             X = X[:, np.newaxis]
-            
+        
+        vectorizable_stats = {'mean', 'std', 'min', 'max', 'sum', 'median'}
+        has_vectorizable = bool(set(self.stats) & vectorizable_stats)
+        
         rolling_features = np.full(
             shape=(X.shape[1], self.n_stats), fill_value=np.nan, dtype=float
         )
+        
+        # Compute vectorized stats if any are requested
+        if has_vectorizable:
+            self._transform_vectorized(X, rolling_features)
+        
+        # Compute non-vectorizable stats
         for i in range(X.shape[1]):
             for j, stat in enumerate(self.stats):
+                if stat in vectorizable_stats:
+                    continue  # Already computed
                 X_window = X[-self.window_sizes[j]:, i]
                 X_window = X_window[~np.isnan(X_window)]
                 if len(X_window) > 0: 
@@ -1635,6 +1646,46 @@ class RollingFeatures():
             rolling_features = rolling_features.ravel()
         
         return rolling_features
+    
+    def _transform_vectorized(
+        self,
+        X: np.ndarray,
+        rolling_features: np.ndarray
+    ) -> np.ndarray:
+        """
+        Vectorized transform using NumPy axis operations for vectorizable stats.
+        Modifies rolling_features in place for the vectorizable statistics.
+        
+        Parameters
+        ----------
+        X : numpy ndarray
+            Input array of shape (window_length, n_samples).
+        rolling_features : numpy ndarray
+            Output array of shape (n_samples, n_stats) to fill in.
+            
+        Returns
+        -------
+        None
+            Modifies rolling_features in place.
+            
+        """
+        vectorizable_stats = {'mean', 'std', 'min', 'max', 'sum', 'median'}
+        for j, stat in enumerate(self.stats):
+            if stat not in vectorizable_stats:
+                continue
+            window = X[-self.window_sizes[j]:, :]  # (window_size, n_samples)
+            if stat == 'mean':
+                rolling_features[:, j] = np.nanmean(window, axis=0)
+            elif stat == 'std':
+                rolling_features[:, j] = np.nanstd(window, axis=0, ddof=1)
+            elif stat == 'min':
+                rolling_features[:, j] = np.nanmin(window, axis=0)
+            elif stat == 'max':
+                rolling_features[:, j] = np.nanmax(window, axis=0)
+            elif stat == 'sum':
+                rolling_features[:, j] = np.nansum(window, axis=0)
+            elif stat == 'median':
+                rolling_features[:, j] = np.nanmedian(window, axis=0)
 
 
 class RollingFeaturesClassification():
