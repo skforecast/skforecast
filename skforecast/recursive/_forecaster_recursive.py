@@ -1342,9 +1342,10 @@ class ForecasterRecursive(ForecasterBase):
             if self.lags is not None:
                 X[:n_lags] = last_window[-self.lags - (steps - i)]
             if self.window_features is not None:
+                window_data = last_window[i : -(steps - i)]
                 X[n_lags : n_lags + n_window_features] = np.concatenate(
                     [
-                        wf.transform(last_window[i : -(steps - i)])
+                        wf.transform(window_data)
                         for wf in self.window_features
                     ]
                 )
@@ -1454,12 +1455,12 @@ class ForecasterRecursive(ForecasterBase):
             if self.window_features is not None:
                 # window_data shape: (window_length, n_boot)
                 window_data = last_window[:-(steps - i), :]
-                wf_results = []
-                for wf in self.window_features:
-                    # transform accepts 2D: (window_length, n_boot) -> (n_boot, n_stats)
-                    wf_results.append(wf.transform(window_data))
-                # Concatenate along axis=1: (n_boot, total_window_features)
-                X[:, n_lags:n_lags + n_window_features] = np.concatenate(wf_results, axis=1)
+                # transform accepts 2D: (window_length, n_boot) -> (n_boot, n_stats)
+                # and concatenate along axis=1: (n_boot, total_window_features)
+                X[:, n_lags:n_lags + n_window_features] = np.concatenate(
+                    [wf.transform(window_data) for wf in self.window_features],
+                    axis=1
+                )
             
             # === Build exog features ===
             if exog_values is not None:
