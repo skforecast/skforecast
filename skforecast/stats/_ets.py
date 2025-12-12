@@ -580,7 +580,7 @@ def _ets_objective_jit(x: NDArray[np.float64],
     """
     PENALTY = 1e10
 
-    # Bounds checking (redundant with L-BFGS-B but kept for safety)
+    # Bounds checking for parameters
     for i in range(len(x)):
         if x[i] < lower[i] or x[i] > upper[i]:
             return PENALTY
@@ -884,12 +884,12 @@ def ets(y: NDArray[np.float64],
 
     result = minimize(
         objective, x0,
-        method='L-BFGS-B',
+        method='Nelder-Mead',
         bounds=[(lower[i], upper[i]) for i in range(len(lower))],
         options={
             'maxiter': 2000,
-            'ftol': 1e-8,
-            'gtol': 1e-8
+            'xatol': 1e-8,
+            'fatol': 1e-8
         }
     )
 
