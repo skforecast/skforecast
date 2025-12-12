@@ -1051,12 +1051,15 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             if np.isnan(y_values).any():
                 raise ValueError(f"Column '{col}' has missing values.")
 
-            y_values = transform_numpy(
-                           array             = y_values,
-                           transformer       = self.transformer_series_[col],
-                           fit               = fit_transformer,
-                           inverse_transform = False
-                       )
+            # Optimize: skip transform_numpy call when transformer is None
+            transformer = self.transformer_series_[col]
+            if transformer is not None:
+                y_values = transform_numpy(
+                               array             = y_values,
+                               transformer       = transformer,
+                               fit               = fit_transformer,
+                               inverse_transform = False
+                           )
 
             if self.differentiation is not None:
                 if not self.is_fitted:
@@ -1155,14 +1158,17 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                           columns = X_train_features_names_out_
                       )
 
-        y_train = {
-            step: pd.Series(
-                      data  = y_train[:, step - 1], 
-                      index = series_index[self.window_size + step - 1:][:len_train_index],
-                      name  = f"{self.level}_step_{step}"
-                  )
-            for step in self.steps
-        }
+        # Optimize: pre-compute indices to avoid repeated slicing
+        y_train_dict = {}
+        for step in self.steps:
+            step_idx_start = self.window_size + step - 1
+            step_index = series_index[step_idx_start:step_idx_start + len_train_index]
+            y_train_dict[step] = pd.Series(
+                data=y_train[:, step - 1],
+                index=step_index,
+                name=f"{self.level}_step_{step}"
+            )
+        y_train = y_train_dict
 
         return (
             X_train,
