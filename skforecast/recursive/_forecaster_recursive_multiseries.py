@@ -2270,10 +2270,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         sampled_residuals : dict
             Pre-sampled residuals for all bootstrap iterations.
 
-            - If `use_binned_residuals=True`: dict with bin indices as keys (0 to n_bins-1),
-              each value is an array of shape (steps, n_boot, n_levels).
+            - If `use_binned_residuals=True`: dict with single key 'stacked',
+              value is a 4D array of shape (n_bins, steps, n_boot, n_levels).
             - If `use_binned_residuals=False`: dict with single key 'all',
-              value is an array of shape (steps, n_boot, n_levels).
+              value is a 3D array of shape (steps, n_boot, n_levels).
         use_binned_residuals : bool
             If `True`, residuals are selected based on the predicted value bins.
             If `False`, residuals are selected randomly without binning.
@@ -2356,13 +2356,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         last_window_boot[:window_size, :, :] = last_window_np[:, :, np.newaxis]
         last_window_boot[window_size:, :, :] = np.nan
 
-        # Pre-stack residuals for binned case (avoids repeated stacking in loop)
+        # Get pre-stacked residuals for binned case
         if use_binned_residuals:
-            n_bins = len(sampled_residuals)
-            # Stack all bins: (n_bins, steps, n_boot, n_levels)
-            residuals_stacked = np.stack(
-                [sampled_residuals[k] for k in range(n_bins)], axis=0
-            )
+            # sampled_residuals['stacked'] is already a 4D array: (n_bins, steps, n_boot, n_levels)
+            residuals_stacked = sampled_residuals['stacked']
+            n_bins = residuals_stacked.shape[0]
             boot_indices = np.arange(n_boot)
 
         for step in range(steps):
@@ -2927,25 +2925,33 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         n_levels = len(levels)
         rng = np.random.default_rng(seed=random_state)
-        sampled_residuals_grid = np.full(
-                                     shape      = (steps, n_boot, n_levels),
-                                     fill_value = np.nan,
-                                     order      = 'F',
-                                     dtype      = float
-                                 )
+        
         if use_binned_residuals:
-            sampled_residuals = {
-                k: sampled_residuals_grid.copy() 
-                for k in range(self.binner_kwargs['n_bins'])
-            }
-            for bin in sampled_residuals.keys():
+            # Create separate arrays per bin (no unnecessary copies)
+            # Then stack into 4D array: (n_bins, steps, n_boot, n_levels)
+            n_bins = self.binner_kwargs['n_bins']
+            sampled_residuals_per_bin = {}
+            for bin in range(n_bins):
+                bin_array = np.empty((steps, n_boot, n_levels), order='F', dtype=float)
                 for i, level in enumerate(levels):
-                    sampled_residuals[bin][:, :, i] = rng.choice(
+                    bin_array[:, :, i] = rng.choice(
                         a       = residuals_by_bin.get(level, residuals_by_bin['_unknown_level'])[bin],
                         size    = (steps, n_boot),
                         replace = True
                     )
+                sampled_residuals_per_bin[bin] = bin_array
+
+            sampled_residuals_stacked = np.stack(
+                [sampled_residuals_per_bin[k] for k in range(n_bins)], axis=0
+            )
+            sampled_residuals = {'stacked': sampled_residuals_stacked}
         else:
+            sampled_residuals_grid = np.full(
+                shape      = (steps, n_boot, n_levels),
+                fill_value = np.nan,
+                order      = 'F',
+                dtype      = float
+            )
             for i, level in enumerate(levels):
                 sampled_residuals_grid[:, :, i] = rng.choice(
                     a       = residuals.get(level, residuals['_unknown_level']),

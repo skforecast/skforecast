@@ -1634,7 +1634,7 @@ class RollingFeatures():
         for i in range(X.shape[1]):
             for j, stat in enumerate(self.stats):
                 if stat in vectorizable_stats:
-                    continue  # Already computed
+                    continue
                 X_window = X[-self.window_sizes[j]:, i]
                 X_window = X_window[~np.isnan(X_window)]
                 if len(X_window) > 0: 
@@ -1655,6 +1655,8 @@ class RollingFeatures():
         """
         Vectorized transform using NumPy axis operations for vectorizable stats.
         Modifies rolling_features in place for the vectorizable statistics.
+        This method is specifically designed to speed up the computation of
+        statistics in `predict_bootstrap` method of forecasters.
         
         Parameters
         ----------
@@ -1673,7 +1675,7 @@ class RollingFeatures():
         for j, stat in enumerate(self.stats):
             if stat not in vectorizable_stats:
                 continue
-            window = X[-self.window_sizes[j]:, :]  # (window_size, n_samples)
+            window = X[-self.window_sizes[j]:, :]
             if stat == 'mean':
                 rolling_features[:, j] = np.nanmean(window, axis=0)
             elif stat == 'std':
