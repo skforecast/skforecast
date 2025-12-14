@@ -4,7 +4,7 @@ import re
 import pytest
 import numpy as np
 import pandas as pd
-from skforecast.stats import Sarimax, Arar
+from skforecast.stats import Sarimax, Arar, Ets
 from aeon.forecasting.stats import ARIMA
 from skforecast.recursive import ForecasterStats
 from sklearn.exceptions import NotFittedError
@@ -99,3 +99,59 @@ def test_output_get_feature_importances_ForecasterStats_with_ARIMA_estimator():
                 }
             )
     pd.testing.assert_frame_equal(expected, results)
+
+
+def test_output_get_feature_importances_ForecasterStats_with_Ets_estimator_ANN():
+    """
+    Test output of get_feature_importances ForecasterStats using Ets as
+    estimator with ANN model (Additive error, No trend, No seasonality).
+    """
+    forecaster = ForecasterStats(estimator=Ets(model='ANN', m=1))
+    forecaster.fit(y=y)
+    results = forecaster.get_feature_importances(sort_importance=False)
+
+    assert results.shape[0] == 1  # Only alpha for ANN model
+    assert results['feature'].iloc[0] == 'alpha (level)'
+    assert 0 < results['importance'].iloc[0] < 1  # Alpha should be between 0 and 1
+
+
+def test_output_get_feature_importances_ForecasterStats_with_Ets_estimator_AAA():
+    """
+    Test output of get_feature_importances ForecasterStats using Ets as
+    estimator with AAA model (Additive error, Additive trend, Additive seasonality).
+    """
+    forecaster = ForecasterStats(estimator=Ets(model='AAA', m=12))
+    forecaster.fit(y=y)
+    results = forecaster.get_feature_importances(sort_importance=False)
+
+    assert results.shape[0] == 3  # alpha, beta, gamma for AAA model
+    assert list(results['feature']) == ['alpha (level)', 'beta (trend)', 'gamma (seasonal)']
+    assert all(0 < imp < 1 for imp in results['importance'])  # All should be between 0 and 1
+
+
+def test_output_get_feature_importances_ForecasterStats_with_Ets_estimator_AAdA():
+    """
+    Test output of get_feature_importances ForecasterStats using Ets as
+    estimator with damped trend model.
+    """
+    forecaster = ForecasterStats(estimator=Ets(model='AAA', m=12, damped=True))
+    forecaster.fit(y=y)
+    results = forecaster.get_feature_importances(sort_importance=False)
+
+    assert results.shape[0] == 4  # alpha, beta, gamma, phi for damped model
+    assert list(results['feature']) == ['alpha (level)', 'beta (trend)', 'gamma (seasonal)', 'phi (damping)']
+    assert all(0 < imp < 1 for imp in results['importance'])  # All should be between 0 and 1
+
+
+def test_output_get_feature_importances_ForecasterStats_with_Ets_estimator_sorted():
+    """
+    Test output of get_feature_importances ForecasterStats using Ets with
+    sort_importance=True.
+    """
+    forecaster = ForecasterStats(estimator=Ets(model='AAA', m=12))
+    forecaster.fit(y=y)
+    results = forecaster.get_feature_importances(sort_importance=True)
+
+    # Check that results are sorted in descending order
+    assert all(results['importance'].iloc[i] >= results['importance'].iloc[i+1] 
+               for i in range(len(results)-1))
