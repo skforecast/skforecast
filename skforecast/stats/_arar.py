@@ -382,6 +382,10 @@ class Arar(BaseEstimator, RegressorMixin):
         In-sample fitted values (NaN for first k-1 terms).
     residuals_in_ : ndarray of shape (n_samples,)
         In-sample residuals (observed - fitted).
+    aic_ : float
+        Akaike Information Criterion.
+    bic_ : float
+        Bayesian Information Criterion.
     """
 
     def __init__(self, max_ar_depth: int | None = None, max_lag: int | None = None, safe: bool = True):
@@ -427,6 +431,16 @@ class Arar(BaseEstimator, RegressorMixin):
 
         self.fitted_values_ = fitted_arar(self.model_)["fitted"]
         self.residuals_in_ = residuals_arar(self.model_)
+
+        # Compute AIC and BIC
+        max_lag = max(self.lags_)
+        valid_residuals = self.residuals_in_[max_lag:]
+        n = len(valid_residuals)
+        k = len([lag for lag in self.lags_ if lag > 1]) + 1
+        sigma2 = np.sum(valid_residuals ** 2) / n # log-likelihood (assuming Gaussian errors)
+        loglik = -0.5 * n * (np.log(2 * np.pi) + np.log(sigma2) + 1)
+        self.aic_ = -2 * loglik + 2 * k
+        self.bic_ = -2 * loglik + k * np.log(n)
 
         return self
     
