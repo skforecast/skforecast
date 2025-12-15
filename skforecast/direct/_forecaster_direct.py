@@ -2427,6 +2427,9 @@ class ForecasterDirect(ForecasterBase):
         if self.differentiation is not None:
             self.window_size += self.differentiation
             self.differentiator.set_params(window_size=self.window_size)
+        
+        self._filter_train_X_y_index_cache = {}
+        self._filter_train_X_y_columns_cache = {}
 
     def set_window_features(
         self, 
@@ -2471,6 +2474,9 @@ class ForecasterDirect(ForecasterBase):
         if self.differentiation is not None:
             self.window_size += self.differentiation   
             self.differentiator.set_params(window_size=self.window_size)
+        
+        self._filter_train_X_y_index_cache = {}
+        self._filter_train_X_y_columns_cache = {}
 
     def set_in_sample_residuals(
         self,
