@@ -2245,7 +2245,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         levels: list,
         last_window: pd.DataFrame,
         n_boot: int,
-        sampled_residuals: dict,
+        sampled_residuals: np.ndarray,
         use_binned_residuals: bool,
         exog_values_dict: dict[str, np.ndarray] | None = None,
     ) -> np.ndarray:
@@ -2267,13 +2267,13 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             first iteration of the prediction (t + 1). Shape: (window_size, n_levels).
         n_boot : int
             Number of bootstrap iterations used for prediction intervals.
-        sampled_residuals : dict
+        sampled_residuals : numpy ndarray
             Pre-sampled residuals for all bootstrap iterations.
 
-            - If `use_binned_residuals=True`: dict with single key 'stacked',
-              value is a 4D array of shape (n_bins, steps, n_boot, n_levels).
-            - If `use_binned_residuals=False`: dict with single key 'all',
-              value is a 3D array of shape (steps, n_boot, n_levels).
+            - If `use_binned_residuals=True`: 4D array of shape 
+              (n_bins, steps, n_boot, n_levels).
+            - If `use_binned_residuals=False`: 3D array of shape 
+              (steps, n_boot, n_levels).
         use_binned_residuals : bool
             If `True`, residuals are selected based on the predicted value bins.
             If `False`, residuals are selected randomly without binning.
@@ -2288,11 +2288,80 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         Notes
         -----
-        The feature matrix is constructed with row ordering:
-        [level0_boot0, level1_boot0, ..., levelN_boot0, level0_boot1, level1_boot1, ...]
+        **Vectorization Strategy:**
         
-        This matches the pattern expected when tiling level encodings and ensures
-        correct alignment between predictions and residuals.
+        This method achieves significant performance gains by predicting all bootstrap
+        samples across all levels in a single batch per step, rather than iterating
+        over each bootstrap iteration separately. This reduces the number of 
+        `estimator.predict()` calls from `(n_boot x steps)` to just `steps`.
+        
+        **Data Structure and Row Ordering:**
+        
+        The feature matrix contains `n_samples = n_boot x n_levels` rows per step,
+        organized with the following row pattern:
+        
+        ```
+        Row Index | Level   | Bootstrap
+        ----------|---------|----------
+        0         | level_0 | boot_0
+        1         | level_1 | boot_0
+        2         | level_2 | boot_0
+        ...       | ...     | ...
+        n_levels  | level_0 | boot_1
+        n_levels+1| level_1 | boot_1
+        ...       | ...     | ...
+        ```
+        
+        This ordering ensures that:
+        
+        1. **Level encodings tile correctly**: When using categorical encoding for
+           levels, the encoding matrix `(n_levels, n_encoded)` is tiled `n_boot`
+           times to create a `(n_boot x n_levels, n_encoded)` matrix that aligns
+           perfectly with this row ordering.
+        
+        2. **Predictions reshape properly**: The 1D prediction array 
+           `(n_boot x n_levels,)` can be reshaped to `(n_boot, n_levels)` and
+           transposed to `(n_levels, n_boot)` for easy storage and residual addition.
+        
+        3. **Memory access is efficient**: Consecutive rows represent different levels
+           for the same bootstrap iteration, which matches the access pattern when
+           building lag features from the 3D `last_window_boot` array.
+        
+        **Recursive Prediction Flow:**
+        
+        For each step `t`:
+        
+        1. **Build features** for all `(n_boot x n_levels)` samples:
+           - Extract lag features from `last_window_boot[:, :, :]`
+           - Compute window features if configured
+           - Tile exogenous variables across all bootstrap samples
+           - Include level encodings (already set during initialization)
+        
+        2. **Batch prediction**: Call `estimator.predict()` once to get predictions
+           for all samples: `pred.shape = (n_boot x n_levels,)`
+        
+        3. **Add residuals**:
+           - Reshape predictions to `(n_levels, n_boot)`
+           - If binned: For each level, determine which bin each prediction falls into,
+             then lookup the corresponding pre-sampled residual for that 
+             (bin, step, boot) combination.
+           - If not binned: Directly add pre-sampled residuals from 
+             `sampled_residuals[step, :, :]`
+        
+        4. **Update state**: Store predictions in `boot_predictions[step, :, :]` and
+           update `last_window_boot` for the next iteration.
+        
+        **Memory Layout Optimization:**
+        
+        - `last_window_boot`: F-contiguous `(window_size+steps, n_levels, n_boot)` 
+          for efficient column-wise access when extracting lags.
+        - `boot_predictions`: F-contiguous `(steps, n_levels, n_boot)` for efficient
+          storage of results.
+        - `features`: C-contiguous `(n_boot x n_levels, n_features)` for row-wise
+          access during prediction.
+        - `sampled_residuals`: 
+          - Binned: C-contiguous `(n_bins, steps, n_boot, n_levels)`
+          - Not binned: F-contiguous `(steps, n_boot, n_levels)`
 
         """
 
@@ -2333,7 +2402,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             levels_encoded_shape = 0
             levels_encoded_boot = None
 
-        # Pre-allocate feature matrix for all samples
         features_shape = n_autoreg + levels_encoded_shape + n_exog
         features = np.full(
             shape=(n_samples, features_shape), fill_value=np.nan, order='C', dtype=float
@@ -2341,7 +2409,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         if self.encoding is not None:
             features[:, n_autoreg: n_autoreg + levels_encoded_shape] = levels_encoded_boot
 
-        # Initialize output array: (steps, n_levels, n_boot)
         boot_predictions = np.full(
             shape=(steps, n_levels, n_boot), fill_value=np.nan, order='F', dtype=float
         )
@@ -2356,16 +2423,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         last_window_boot[:window_size, :, :] = last_window_np[:, :, np.newaxis]
         last_window_boot[window_size:, :, :] = np.nan
 
-        # Get pre-stacked residuals for binned case
-        if use_binned_residuals:
-            # sampled_residuals['stacked'] is already a 4D array: (n_bins, steps, n_boot, n_levels)
-            residuals_stacked = sampled_residuals['stacked']
-            n_bins = residuals_stacked.shape[0]
-            boot_indices = np.arange(n_boot)
-
         for step in range(steps):
 
-            # === Build lag features ===
             if self.lags is not None:
                 lags_indices = window_size + step - self.lags
                 # lagged_values shape: (n_lags, n_levels, n_boot)
@@ -2373,44 +2432,42 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 # Reshape to (n_boot × n_levels, n_lags) with correct row ordering
                 features[:, :n_lags] = lagged_values.transpose(2, 1, 0).reshape(n_samples, n_lags)
 
-            # === Build window features ===
             if self.window_features is not None:
-                wf_values = []
+                wf_col_offset = n_lags
                 for wf in self.window_features:
                     current_window = last_window_boot[:window_size + step, :, :]
                     # Reshape to (window_length, n_samples) with correct column ordering
                     wf_input = current_window.transpose(0, 2, 1).reshape(window_size + step, n_samples)
                     wf_out = wf.transform(wf_input)
-                    wf_values.append(wf_out)
-                features[:, n_lags:n_autoreg] = np.concatenate(wf_values, axis=1)
+                    n_wf_cols = wf_out.shape[1]
+                    features[:, wf_col_offset:wf_col_offset + n_wf_cols] = wf_out
+                    wf_col_offset += n_wf_cols
 
-            # === Build exog features ===
             if exog_values_dict is not None:
                 exog_step = exog_values_dict[step + 1]  # (n_levels, n_exog)
                 features[:, -n_exog:] = np.tile(exog_step, (n_boot, 1))
 
-            # === Predict all samples at once ===
-            pred = self.estimator.predict(features)  # (n_boot × n_levels,)
+            pred = self.estimator.predict(features)
+            # Reshape from (n_boot × n_levels,) to (n_levels, n_boot)
+            pred = pred.reshape(n_boot, n_levels).T
             
-            # Handle read-only arrays (e.g., CatBoost)
+            # NOTE: CatBoost makes the input array read-only.
             if not features.flags.writeable:
                 features.flags.writeable = True
 
-            # Reshape to (n_levels, n_boot)
-            pred = pred.reshape(n_boot, n_levels).T
-
-            # === Add residuals ===
             if use_binned_residuals:
+                boot_indices = np.arange(n_boot)
                 # Vectorized residual lookup for all levels and boots
-                # residuals_stacked shape: (n_bins, steps, n_boot, n_levels)
+                # sampled_residuals shape: (n_bins, steps, n_boot, n_levels)
                 for j, level in enumerate(levels):
                     binner = self.binner.get(level, self.binner['_unknown_level'])
-                    predicted_bins = binner.transform(pred[j, :].reshape(-1, 1)).ravel().astype(int)
-                    # Vectorized lookup: residuals_stacked[predicted_bins, step, boot_indices, j]
-                    pred[j, :] += residuals_stacked[predicted_bins, step, boot_indices, j]
+                    # Transform all predictions for this level at once (n_boot predictions)
+                    predicted_bins = binner.transform(pred[j, :]).astype(int)
+                    # Vectorized lookup: sampled_residuals[predicted_bins, step, boot_indices, j]
+                    pred[j, :] += sampled_residuals[predicted_bins, step, boot_indices, j]
             else:
-                # sampled_residuals['all'] shape: (steps, n_boot, n_levels)
-                pred += sampled_residuals['all'][step, :, :].T
+                # sampled_residuals shape: (steps, n_boot, n_levels)
+                pred += sampled_residuals[step, :, :].T
 
             boot_predictions[step, :, :] = pred
 
@@ -2927,38 +2984,32 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         rng = np.random.default_rng(seed=random_state)
         
         if use_binned_residuals:
-            # Create separate arrays per bin (no unnecessary copies)
-            # Then stack into 4D array: (n_bins, steps, n_boot, n_levels)
+            # Pre-allocate 4D array directly: (n_bins, steps, n_boot, n_levels)
+            # Loop order must match original to preserve RNG sequence for reproducibility
             n_bins = self.binner_kwargs['n_bins']
-            sampled_residuals_per_bin = {}
-            for bin in range(n_bins):
-                bin_array = np.empty((steps, n_boot, n_levels), order='F', dtype=float)
+            sampled_residuals = np.empty(
+                (n_bins, steps, n_boot, n_levels), order='C', dtype=float
+            )
+            for bin_idx in range(n_bins):
                 for i, level in enumerate(levels):
-                    bin_array[:, :, i] = rng.choice(
-                        a       = residuals_by_bin.get(level, residuals_by_bin['_unknown_level'])[bin],
+                    sampled_residuals[bin_idx, :, :, i] = rng.choice(
+                        a       = residuals_by_bin.get(level, residuals_by_bin['_unknown_level'])[bin_idx],
                         size    = (steps, n_boot),
                         replace = True
                     )
-                sampled_residuals_per_bin[bin] = bin_array
-
-            sampled_residuals_stacked = np.stack(
-                [sampled_residuals_per_bin[k] for k in range(n_bins)], axis=0
-            )
-            sampled_residuals = {'stacked': sampled_residuals_stacked}
         else:
-            sampled_residuals_grid = np.full(
+            sampled_residuals = np.full(
                 shape      = (steps, n_boot, n_levels),
                 fill_value = np.nan,
                 order      = 'F',
                 dtype      = float
             )
             for i, level in enumerate(levels):
-                sampled_residuals_grid[:, :, i] = rng.choice(
+                sampled_residuals[:, :, i] = rng.choice(
                     a       = residuals.get(level, residuals['_unknown_level']),
                     size    = (steps, n_boot),
                     replace = True
                 )
-            sampled_residuals = {'all': sampled_residuals_grid}
         
         boot_columns = [f"pred_boot_{i}" for i in range(n_boot)]
         

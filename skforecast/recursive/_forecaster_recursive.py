@@ -1290,9 +1290,7 @@ class ForecasterRecursive(ForecasterBase):
         self,
         steps: int,
         last_window_values: np.ndarray,
-        exog_values: np.ndarray | None = None,
-        residuals: np.ndarray | dict[str, np.ndarray] | None = None,
-        use_binned_residuals: bool = True,
+        exog_values: np.ndarray | None = None
     ) -> np.ndarray:
         """
         Predict n steps ahead. It is an iterative process in which, each prediction,
@@ -1307,12 +1305,6 @@ class ForecasterRecursive(ForecasterBase):
             iteration of the prediction (t + 1).
         exog_values : numpy ndarray, default None
             Exogenous variable/s included as predictor/s.
-        residuals : numpy ndarray, dict, default None
-            Residuals used to generate bootstrapping predictions.
-        use_binned_residuals : bool, default True
-            If `True`, residuals are selected based on the predicted values 
-            (binned selection).
-            If `False`, residuals are selected randomly.
 
         Returns
         -------
@@ -1352,18 +1344,8 @@ class ForecasterRecursive(ForecasterBase):
             if exog_values is not None:
                 X[n_lags + n_window_features:] = exog_values[i]
         
-            pred = self.estimator.predict(X.reshape(1, -1)).ravel()
-            
-            if residuals is not None:
-                if use_binned_residuals:
-                    predicted_bin = self.binner.transform(pred).item()
-                    step_residual = residuals[predicted_bin][i]
-                else:
-                    step_residual = residuals[i]
-                
-                pred += step_residual
-            
-            pred = pred.item()
+            pred = self.estimator.predict(X.reshape(1, -1)).ravel().item()
+        
             predictions[i] = pred
 
             # Update `last_window` values. The first position is discarded and 
@@ -1379,7 +1361,7 @@ class ForecasterRecursive(ForecasterBase):
         steps: int,
         last_window_values: np.ndarray,
         exog_values: np.ndarray | None,
-        sampled_residuals: dict[int, np.ndarray] | np.ndarray,
+        sampled_residuals: np.ndarray,
         use_binned_residuals: bool,
         n_boot: int
     ) -> np.ndarray:
