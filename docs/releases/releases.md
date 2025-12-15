@@ -10,6 +10,28 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
 
+## 0.20.0 <small>Dec 10, 2025</small> { id="0.20.0" }
+
+The main changes in this release are:
+
++ <span class="badge text-bg-enhancement">Enhancement</span>  Refactored the bootstrapped residuals calculation in all recursive forecasters achieving 10x speedup in the interval prediction process. This improvement significantly reduces the time required to generate prediction intervals, enhancing overall performance and user experience.
+
+
+**Added**
+
++ 
+
+
+**Changed**
+
++ 
+
+
+**Fixed**
+
++ 
+
+
 ## 0.19.1 <small>Dec 10, 2025</small> { id="0.19.1" }
 
 The main changes in this release are:
