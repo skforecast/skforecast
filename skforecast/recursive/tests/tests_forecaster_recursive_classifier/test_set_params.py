@@ -7,11 +7,12 @@ from skforecast.recursive import ForecasterRecursiveClassifier
 from packaging import version
 
 
-@pytest.mark.skipif(version.parse(sklearn.__version__) >= version.parse("1.5"), 
-                    reason="Requires scikit-learn < 1.5")
-def test_set_params_sklearn_less_than_1_5():
+@pytest.mark.skipif(version.parse(sklearn.__version__) >= version.parse("1.8"), 
+                    reason="Requires scikit-learn < 1.8")
+def test_set_params_sklearn_less_than_1_8():
     """
-    Test set_params with scikit-learn < 1.5 (multi_class parameter present).
+    Test set_params with scikit-learn < 1.8 (multi_class parameter present, 
+    l1_ratio defaults to None for elasticnet penalty).
     """
     forecaster = ForecasterRecursiveClassifier(
         LogisticRegression(penalty='l1'), lags=3
@@ -41,11 +42,11 @@ def test_set_params_sklearn_less_than_1_5():
     assert results == expected
 
 
-@pytest.mark.skipif(version.parse(sklearn.__version__) < version.parse("1.5"), 
-                    reason="Requires scikit-learn >= 1.5")
-def test_set_params_sklearn_1_5_or_greater():
+@pytest.mark.skipif(version.parse(sklearn.__version__) < version.parse("1.8"), 
+                    reason="Requires scikit-learn >= 1.8")
+def test_set_params_sklearn_1_8_or_greater():
     """
-    Test set_params with scikit-learn >= 1.5 (multi_class parameter removed, 
+    Test set_params with scikit-learn >= 1.8 (multi_class parameter removed, 
     l1_ratio defaults to 0.0 when penalty='elasticnet').
     """
     forecaster = ForecasterRecursiveClassifier(
