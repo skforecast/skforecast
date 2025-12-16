@@ -10,16 +10,16 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
 
-## 0.20.0 <small>XX XX, 2025</small> { id="0.20.0" }
+## 0.20.0 <small>In development</small> { id="0.20.0" }
 
 The main changes in this release are:
 
-+ <span class="badge text-bg-enhancement">Enhancement</span>  Refactored the bootstrapped residuals calculation in all recursive forecasters achieving 10x speedup in the interval prediction process. This improvement significantly reduces the time required to generate prediction intervals, enhancing overall performance and user experience.
++ <span class="badge text-bg-enhancement">Enhancement</span> Refactored the bootstrapped residuals calculation in all recursive forecasters achieving 10x speedup in the interval prediction process. This improvement significantly reduces the time required to generate prediction intervals, enhancing overall performance and user experience.
 
 
 **Added**
 
-+ Introduced vectorized <code>_recursive_predict_bootstrapping</code> methods in <code>[ForecasterRecursive]</code> and <code>[ForecasterRecursiveMultiSeries]</code> that predict all bootstrap samples in a single batch per step instead of looping over bootstrap iterations. This achieves significant speedup in the interval prediction process.
++ Introduced vectorized `_recursive_predict_bootstrapping` methods in <code>[ForecasterRecursive]</code> and <code>[ForecasterRecursiveMultiSeries]</code> that predict all bootstrap samples in a single batch per step instead of looping over bootstrap iterations. This achieves significant speedup in the interval prediction process.
 
 + Added <code>_transform_vectorized</code> method to <code>[RollingFeatures]</code> for faster computation of vectorizable statistics.
   
@@ -30,7 +30,7 @@ The main changes in this release are:
 
 **Changed**
 
-+ Removed residual handling from <code>_recursive_predict</code> methods, separating bootstrap logic into dedicated methods.
++ Removed residual handling from `_recursive_predict` methods, separating bootstrap logic into dedicated methods.
 
 
 **Fixed**
