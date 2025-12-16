@@ -252,6 +252,12 @@ class ForecasterDirect(ForecasterBase):
     binner_kwargs : dict
         Additional arguments to pass to the `QuantileBinner`.
         **New in version 0.15.0**
+    filter_train_X_y_index_cache_ : dict
+        Cache to speed up the creation of training matrices during backtesting.
+        **New in version 0.20.0**
+    filter_train_X_y_columns_cache_ : dict
+        Cache to speed up the creation of training matrices during backtesting.
+        **New in version 0.20.0**
     creation_date : str
         Date of creation.
     is_fitted : bool
@@ -324,8 +330,8 @@ class ForecasterDirect(ForecasterBase):
         self.out_sample_residuals_              = None
         self.in_sample_residuals_by_bin_        = None
         self.out_sample_residuals_by_bin_       = None
-        self._filter_train_X_y_index_cache      = {}  # Cache for column indices
-        self._filter_train_X_y_columns_cache    = {}  # Cache for column names
+        self.filter_train_X_y_index_cache_      = {}
+        self.filter_train_X_y_columns_cache_    = {}
         self.creation_date                      = pd.Timestamp.today().strftime('%Y-%m-%d %H:%M:%S')
         self.is_fitted                          = False
         self.fit_date                           = None
@@ -1013,7 +1019,7 @@ class ForecasterDirect(ForecasterBase):
         else:
             # Optimization: Cache column indices to avoid repeated calculations
             cache_key_idx = (step, 'indices')
-            if cache_key_idx not in self._filter_train_X_y_index_cache:
+            if cache_key_idx not in self.filter_train_X_y_index_cache_:
                 n_lags = len(self.lags) if self.lags is not None else 0
                 n_window_features = (
                     len(self.X_train_window_features_names_out_) if self.window_features is not None else 0
@@ -1024,9 +1030,9 @@ class ForecasterDirect(ForecasterBase):
                     np.arange((step - 1) * n_exog, (step) * n_exog) + idx_columns_autoreg[-1] + 1
                 )
                 idx_columns = np.concatenate((idx_columns_autoreg, idx_columns_exog))
-                self._filter_train_X_y_index_cache[cache_key_idx] = idx_columns
+                self.filter_train_X_y_index_cache_[cache_key_idx] = idx_columns
             
-            idx_columns = self._filter_train_X_y_index_cache[cache_key_idx]
+            idx_columns = self.filter_train_X_y_index_cache_[cache_key_idx]
             X_train_step = X_train.iloc[:, idx_columns]
 
         X_train_step.index = y_train_step.index
@@ -1034,14 +1040,14 @@ class ForecasterDirect(ForecasterBase):
         if remove_suffix:
             # Optimization: Cache column names after suffix removal
             cache_key_cols = (step, 'columns', tuple(X_train_step.columns))
-            if cache_key_cols not in self._filter_train_X_y_columns_cache:
+            if cache_key_cols not in self.filter_train_X_y_columns_cache_:
                 new_columns = [
                     col_name.replace(f"_step_{step}", "")
                     for col_name in X_train_step.columns
                 ]
-                self._filter_train_X_y_columns_cache[cache_key_cols] = new_columns
+                self.filter_train_X_y_columns_cache_[cache_key_cols] = new_columns
             
-            X_train_step.columns = self._filter_train_X_y_columns_cache[cache_key_cols]
+            X_train_step.columns = self.filter_train_X_y_columns_cache_[cache_key_cols]
             y_train_step.name = y_train_step.name.replace(f"_step_{step}", "")
 
         return X_train_step, y_train_step
@@ -1200,8 +1206,8 @@ class ForecasterDirect(ForecasterBase):
         self.in_sample_residuals_               = None
         self.in_sample_residuals_by_bin_        = None
         self.binner_intervals_                  = None
-        self._filter_train_X_y_index_cache      = {}
-        self._filter_train_X_y_columns_cache    = {}
+        self.filter_train_X_y_index_cache_      = {}
+        self.filter_train_X_y_columns_cache_    = {}
         self.is_fitted                          = False
         self.fit_date                           = None
 
@@ -2428,8 +2434,8 @@ class ForecasterDirect(ForecasterBase):
             self.window_size += self.differentiation
             self.differentiator.set_params(window_size=self.window_size)
         
-        self._filter_train_X_y_index_cache = {}
-        self._filter_train_X_y_columns_cache = {}
+        self.filter_train_X_y_index_cache_ = {}
+        self.filter_train_X_y_columns_cache_ = {}
 
     def set_window_features(
         self, 
@@ -2475,8 +2481,8 @@ class ForecasterDirect(ForecasterBase):
             self.window_size += self.differentiation   
             self.differentiator.set_params(window_size=self.window_size)
         
-        self._filter_train_X_y_index_cache = {}
-        self._filter_train_X_y_columns_cache = {}
+        self.filter_train_X_y_index_cache_ = {}
+        self.filter_train_X_y_columns_cache_ = {}
 
     def set_in_sample_residuals(
         self,
