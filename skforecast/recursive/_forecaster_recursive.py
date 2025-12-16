@@ -1418,11 +1418,6 @@ class ForecasterRecursive(ForecasterBase):
         last_window = np.tile(last_window_values[:, np.newaxis], (1, n_boot))
         last_window = np.vstack([last_window, np.full((steps, n_boot), np.nan)])
 
-        if use_binned_residuals:
-            # sampled_residuals is a 3D array: (n_bins, steps, n_boot)
-            residuals_stacked = sampled_residuals
-            boot_indices = np.arange(n_boot)
-
         for i in range(steps):
 
             if self.lags is not None:
@@ -1444,8 +1439,10 @@ class ForecasterRecursive(ForecasterBase):
             pred = self.estimator.predict(X).ravel()
             
             if use_binned_residuals:
+                # sampled_residuals is a 3D array: (n_bins, steps, n_boot)
+                boot_indices = np.arange(n_boot)
                 pred_bins = self.binner.transform(pred).astype(int)
-                pred += residuals_stacked[pred_bins, i, boot_indices]
+                pred += sampled_residuals[pred_bins, i, boot_indices]
             else:
                 pred += sampled_residuals[i, :]
             
