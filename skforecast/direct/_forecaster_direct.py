@@ -253,10 +253,20 @@ class ForecasterDirect(ForecasterBase):
         Additional arguments to pass to the `QuantileBinner`.
         **New in version 0.15.0**
     filter_train_X_y_index_cache_ : dict
-        Cache to speed up the creation of training matrices during backtesting.
+        Cache storing column indices for each forecasting step to speed up the 
+        creation of training matrices during backtesting. The cache uses step 
+        numbers as keys and numpy arrays of column indices as values. This avoids 
+        repeated calculations when filtering `X_train` for specific steps. The 
+        cache is cleared during `fit()` and when `set_lags()` or 
+        `set_window_features()` are called.
         **New in version 0.20.0**
     filter_train_X_y_columns_cache_ : dict
-        Cache to speed up the creation of training matrices during backtesting.
+        Cache storing column names for each forecasting step to speed up the 
+        creation of training matrices during backtesting. The cache uses step 
+        numbers as keys and lists of column names as values. This avoids repeated 
+        string operations when removing step suffixes from column names. The cache 
+        is cleared during `fit()` and when `set_lags()` or `set_window_features()` 
+        are called.
         **New in version 0.20.0**
     creation_date : str
         Date of creation.
@@ -1018,8 +1028,7 @@ class ForecasterDirect(ForecasterBase):
             X_train_step = X_train
         else:
             # Optimization: Cache column indices to avoid repeated calculations
-            cache_key_idx = (step, 'indices')
-            if cache_key_idx not in self.filter_train_X_y_index_cache_:
+            if step not in self.filter_train_X_y_index_cache_:
                 n_lags = len(self.lags) if self.lags is not None else 0
                 n_window_features = (
                     len(self.X_train_window_features_names_out_) if self.window_features is not None else 0
@@ -1030,24 +1039,23 @@ class ForecasterDirect(ForecasterBase):
                     np.arange((step - 1) * n_exog, (step) * n_exog) + idx_columns_autoreg[-1] + 1
                 )
                 idx_columns = np.concatenate((idx_columns_autoreg, idx_columns_exog))
-                self.filter_train_X_y_index_cache_[cache_key_idx] = idx_columns
+                self.filter_train_X_y_index_cache_[step] = idx_columns
             
-            idx_columns = self.filter_train_X_y_index_cache_[cache_key_idx]
+            idx_columns = self.filter_train_X_y_index_cache_[step]
             X_train_step = X_train.iloc[:, idx_columns]
 
         X_train_step.index = y_train_step.index
 
         if remove_suffix:
             # Optimization: Cache column names after suffix removal
-            cache_key_cols = (step, 'columns', tuple(X_train_step.columns))
-            if cache_key_cols not in self.filter_train_X_y_columns_cache_:
+            if step not in self.filter_train_X_y_columns_cache_:
                 new_columns = [
                     col_name.replace(f"_step_{step}", "")
                     for col_name in X_train_step.columns
                 ]
-                self.filter_train_X_y_columns_cache_[cache_key_cols] = new_columns
+                self.filter_train_X_y_columns_cache_[step] = new_columns
             
-            X_train_step.columns = self.filter_train_X_y_columns_cache_[cache_key_cols]
+            X_train_step.columns = self.filter_train_X_y_columns_cache_[step]
             y_train_step.name = y_train_step.name.replace(f"_step_{step}", "")
 
         return X_train_step, y_train_step

@@ -1051,7 +1051,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             if np.isnan(y_values).any():
                 raise ValueError(f"Column '{col}' has missing values.")
 
-            # Optimize: skip transform_numpy call when transformer is None
             transformer = self.transformer_series_[col]
             if transformer is not None:
                 y_values = transform_numpy(

@@ -10,7 +10,7 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-danger">Fix</span>              | Bug fix                               |
 
 
-## 0.20.0 <small>Dec 10, 2025</small> { id="0.20.0" }
+## 0.20.0 <small>XX XX, 2025</small> { id="0.20.0" }
 
 The main changes in this release are:
 
@@ -19,17 +19,22 @@ The main changes in this release are:
 
 **Added**
 
-+ 
++ Introduced vectorized <code>_recursive_predict_bootstrapping</code> methods in <code>[ForecasterRecursive]</code> and <code>[ForecasterRecursiveMultiSeries]</code> that predict all bootstrap samples in a single batch per step instead of looping over bootstrap iterations. This achieves significant speedup in the interval prediction process.
+
++ Added <code>_transform_vectorized</code> method to <code>[RollingFeatures]</code> for faster computation of vectorizable statistics.
+  
++ Implemented caching in <code>[ForecasterDirect]</code> to avoid repeated computation of column indices and names during backtesting.
+  
++ Optimized array operations in <code>[ForecasterDirectMultiVariate]</code> and <code>[ForecasterDirect]</code> to reduce memory allocations.
 
 
 **Changed**
 
-+ 
++ Removed residual handling from <code>_recursive_predict</code> methods, separating bootstrap logic into dedicated methods.
 
 
 **Fixed**
 
-+ 
 
 
 ## 0.19.1 <small>Dec 10, 2025</small> { id="0.19.1" }
