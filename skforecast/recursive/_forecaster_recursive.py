@@ -1360,10 +1360,10 @@ class ForecasterRecursive(ForecasterBase):
         self,
         steps: int,
         last_window_values: np.ndarray,
-        exog_values: np.ndarray | None,
         sampled_residuals: np.ndarray,
         use_binned_residuals: bool,
-        n_boot: int
+        n_boot: int,
+        exog_values: np.ndarray | None = None
     ) -> np.ndarray:
         """
         Vectorized bootstrap prediction - predict all n_boot iterations per step.
@@ -1377,17 +1377,17 @@ class ForecasterRecursive(ForecasterBase):
         last_window_values : numpy ndarray
             Series values used to create the predictors needed in the first 
             iteration of the prediction (t + 1).
-        exog_values : numpy ndarray, default None
-            Exogenous variable/s included as predictor/s.
         sampled_residuals : numpy ndarray
             Pre-sampled residuals for all bootstrap iterations.
-            If binned: 3D array of shape (n_bins, steps, n_boot)
-            If not binned: 2D array of shape (steps, n_boot)
+            - If `use_binned_residuals=True`: 3D array of shape (n_bins, steps, n_boot)
+            - If `use_binned_residuals=False`: 2D array of shape (steps, n_boot)
         use_binned_residuals : bool
             If `True`, residuals are selected based on the predicted values.
             If `False`, residuals are selected randomly.
         n_boot : int
             Number of bootstrap iterations.
+        exog_values : numpy ndarray, default None
+            Exogenous variable/s included as predictor/s.
 
         Returns
         -------

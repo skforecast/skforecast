@@ -1,6 +1,5 @@
 # Unit test _recursive_predict_bootstrapping ForecasterRecursiveMultiSeries
 # ==============================================================================
-import pytest
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
@@ -33,8 +32,8 @@ def test_recursive_predict_bootstrapping_output_with_residuals_zero():
     )
     
     n_boot = 3
-    # sampled_residuals shape: (steps, n_boot, n_levels)
-    sampled_residuals = np.zeros((5, n_boot, 2))
+    # sampled_residuals shape: (steps, n_levels, n_boot)
+    sampled_residuals = np.zeros((5, 2, n_boot))
     
     predictions = forecaster._recursive_predict_bootstrapping(
                       steps                = 5,
@@ -78,11 +77,11 @@ def test_recursive_predict_bootstrapping_output_with_residuals_last_step():
     )
     
     n_boot = 2
-    # sampled_residuals shape: (steps, n_boot, n_levels)
-    sampled_residuals = np.zeros((5, n_boot, 2))
+    # sampled_residuals shape: (steps, n_levels, n_boot)
+    sampled_residuals = np.zeros((5, 2, n_boot))
     # Add residuals to last step: [100, 200] for both boots
-    sampled_residuals[4, :, 0] = 100  # level 0
-    sampled_residuals[4, :, 1] = 200  # level 1
+    sampled_residuals[4, 0, :] = 100  # level 0
+    sampled_residuals[4, 1, :] = 200  # level 1
     
     predictions = forecaster._recursive_predict_bootstrapping(
                       steps                = 5,
@@ -124,10 +123,10 @@ def test_recursive_predict_bootstrapping_output_with_residuals():
     )
     
     n_boot = 1
-    # sampled_residuals shape: (steps, n_boot, n_levels)
-    sampled_residuals = np.zeros((5, n_boot, 2))
+    # sampled_residuals shape: (steps, n_levels, n_boot)
+    sampled_residuals = np.zeros((5, 2, n_boot))
     sampled_residuals[:, 0, 0] = np.array([1, 2, 3, 4, 5])    # level 0
-    sampled_residuals[:, 0, 1] = np.array([10, 20, 30, 40, 50])  # level 1
+    sampled_residuals[:, 1, 0] = np.array([10, 20, 30, 40, 50])  # level 1
     
     predictions = forecaster._recursive_predict_bootstrapping(
                       steps                = 5,
@@ -180,8 +179,8 @@ def test_recursive_predict_bootstrapping_output_with_residuals_binned():
     sampled_residuals[0, :, 0, 1] = 300  # level 1
     
     # Bin 1 residuals
-    sampled_residuals[1, :, 0, 0] = 20   # level 0
-    sampled_residuals[1, :, 0, 1] = 4000 # level 1
+    sampled_residuals[1, :, 0, 0] = 20    # level 0
+    sampled_residuals[1, :, 0, 1] = 4000  # level 1
     
     predictions = forecaster._recursive_predict_bootstrapping(
                       steps                = 5,
@@ -206,6 +205,7 @@ def test_recursive_predict_bootstrapping_output_with_residuals_binned():
     assert predictions.shape == (5, 2, n_boot)
     np.testing.assert_array_almost_equal(predictions, expected)
 
+
 def test_recursive_predict_bootstrapping_multiple_boot_samples_different_residuals():
     """
     Test _recursive_predict_bootstrapping with multiple bootstrap samples
@@ -225,21 +225,19 @@ def test_recursive_predict_bootstrapping_multiple_boot_samples_different_residua
     )
     
     n_boot = 3
-    # sampled_residuals shape: (steps, n_boot, n_levels)
+    # sampled_residuals shape: (steps, n_levels, n_boot)
     # Each boot sample has different residuals
-    sampled_residuals = np.zeros((3, n_boot, 2))
+    sampled_residuals = np.zeros((3, 2, n_boot))
     
-    # Boot 0: small residuals
-    sampled_residuals[:, 0, 0] = np.array([1, 1, 1])
-    sampled_residuals[:, 0, 1] = np.array([2, 2, 2])
+    # Level 0: boot 0, 1, 2 residuals
+    sampled_residuals[:, 0, 0] = np.array([1, 1, 1])     # boot 0, level 0
+    sampled_residuals[:, 0, 1] = np.array([5, 5, 5])     # boot 1, level 0
+    sampled_residuals[:, 0, 2] = np.array([10, 10, 10])  # boot 2, level 0
     
-    # Boot 1: medium residuals
-    sampled_residuals[:, 1, 0] = np.array([5, 5, 5])
-    sampled_residuals[:, 1, 1] = np.array([10, 10, 10])
-    
-    # Boot 2: large residuals
-    sampled_residuals[:, 2, 0] = np.array([10, 10, 10])
-    sampled_residuals[:, 2, 1] = np.array([20, 20, 20])
+    # Level 1: boot 0, 1, 2 residuals
+    sampled_residuals[:, 1, 0] = np.array([2, 2, 2])     # boot 0, level 1
+    sampled_residuals[:, 1, 1] = np.array([10, 10, 10])  # boot 1, level 1
+    sampled_residuals[:, 1, 2] = np.array([20, 20, 20])  # boot 2, level 1
     
     predictions = forecaster._recursive_predict_bootstrapping(
                       steps                = 3,
@@ -300,12 +298,13 @@ def test_recursive_predict_bootstrapping_with_exog():
     )
     
     n_boot = 2
-    sampled_residuals = np.zeros((3, n_boot, 2))
+    # sampled_residuals shape: (steps, n_levels, n_boot)
+    sampled_residuals = np.zeros((3, 2, n_boot))
     # Different constant residuals for each bootstrap sample and level
-    sampled_residuals[:, 0, 0] = 10.0  # boot 0, level 0
-    sampled_residuals[:, 0, 1] = 20.0  # boot 0, level 1
-    sampled_residuals[:, 1, 0] = 5.0   # boot 1, level 0
-    sampled_residuals[:, 1, 1] = 15.0  # boot 1, level 1
+    sampled_residuals[:, 0, 0] = 10.0  # level 0, boot 0
+    sampled_residuals[:, 0, 1] = 5.0   # level 0, boot 1
+    sampled_residuals[:, 1, 0] = 20.0  # level 1, boot 0
+    sampled_residuals[:, 1, 1] = 15.0  # level 1, boot 1
     
     predictions = forecaster._recursive_predict_bootstrapping(
                       steps                = 3,
@@ -348,11 +347,12 @@ def test_recursive_predict_bootstrapping_with_window_features():
     )
     
     n_boot = 2
-    sampled_residuals = np.zeros((3, n_boot, 2))
-    sampled_residuals[:, 0, 0] = 2.0  # boot 0, level 0
-    sampled_residuals[:, 0, 1] = 4.0  # boot 0, level 1
-    sampled_residuals[:, 1, 0] = 6.0  # boot 1, level 0
-    sampled_residuals[:, 1, 1] = 8.0  # boot 1, level 1
+    # sampled_residuals shape: (steps, n_levels, n_boot)
+    sampled_residuals = np.zeros((3, 2, n_boot))
+    sampled_residuals[:, 0, 0] = 2.0  # level 0, boot 0
+    sampled_residuals[:, 0, 1] = 6.0  # level 0, boot 1
+    sampled_residuals[:, 1, 0] = 4.0  # level 1, boot 0
+    sampled_residuals[:, 1, 1] = 8.0  # level 1, boot 1
     
     predictions = forecaster._recursive_predict_bootstrapping(
                       steps                = 3,
@@ -447,11 +447,11 @@ def test_recursive_predict_bootstrapping_single_level():
     )
     
     n_boot = 3
-    # sampled_residuals shape: (steps, n_boot, n_levels) - but n_levels=1
-    sampled_residuals = np.zeros((3, n_boot, 1))
+    # sampled_residuals shape: (steps, n_levels, n_boot) - but n_levels=1
+    sampled_residuals = np.zeros((3, 1, n_boot))
     sampled_residuals[:, 0, 0] = 1.0
-    sampled_residuals[:, 1, 0] = 5.0
-    sampled_residuals[:, 2, 0] = 10.0
+    sampled_residuals[:, 0, 1] = 5.0
+    sampled_residuals[:, 0, 2] = 10.0
     
     predictions = forecaster._recursive_predict_bootstrapping(
                       steps                = 3,
