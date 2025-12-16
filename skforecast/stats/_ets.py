@@ -20,6 +20,7 @@ import math
 from statsmodels.tsa.seasonal import seasonal_decompose
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.utils.validation import check_is_fitted
+from ._utils import check_memory_reduced
 
 ERROR_TYPES = {"N": 0, "A": 1, "M": 2}
 TREND_TYPES = {"N": 0, "A": 1, "M": 2}
@@ -1516,6 +1517,7 @@ class Ets(BaseEstimator, RegressorMixin):
         self.ic = ic
         self.allow_multiplicative = allow_multiplicative
         self.allow_multiplicative_trend = allow_multiplicative_trend
+        self.memory_reduced_ = False
 
     def fit(self, y: pd.Series | np.ndarray, exog: None = None) -> "Ets":
         """
@@ -1542,9 +1544,6 @@ class Ets(BaseEstimator, RegressorMixin):
             raise ValueError("`y` must be a 1D array-like sequence.")
         if len(y) < 1:
             raise ValueError("Series too short to fit ETS model.")
-
-        # Store original data
-        self.y_ = y.copy()
 
         # Automatic model selection
         if self.model == "ZZZ":
@@ -1578,12 +1577,14 @@ class Ets(BaseEstimator, RegressorMixin):
                 bounds=self.bounds,
             )
 
-        # Extract model attributes
+        # Extract model attributes (use references to avoid duplicating arrays)
         self.config_ = self.model_.config
         self.params_ = self.model_.params
+        self.y_ = self.model_.y_original
         self.fitted_values_ = self.model_.fitted
         self.residuals_in_ = self.model_.residuals
         self.n_features_in_ = 1
+        self.memory_reduced_ = False
 
         return self
 
@@ -1679,6 +1680,7 @@ class Ets(BaseEstimator, RegressorMixin):
         residuals : ndarray of shape (n_samples,)
         """
         check_is_fitted(self, "model_")
+        check_memory_reduced(self, 'residuals_')
         return self.residuals_in_
 
     def fitted_(self) -> np.ndarray:
@@ -1690,6 +1692,7 @@ class Ets(BaseEstimator, RegressorMixin):
         fitted : ndarray of shape (n_samples,)
         """
         check_is_fitted(self, "model_")
+        check_memory_reduced(self, 'fitted_')
         return self.fitted_values_
 
     def summary(self) -> None:
@@ -1697,6 +1700,7 @@ class Ets(BaseEstimator, RegressorMixin):
         Print a summary of the fitted ETS model.
         """
         check_is_fitted(self, "model_")
+        check_memory_reduced(self, 'summary')
 
         # Format model name
         model_name = f"{self.config_.error}{self.config_.trend}{self.config_.season}"
@@ -1764,6 +1768,7 @@ class Ets(BaseEstimator, RegressorMixin):
             Coefficient of determination.
         """
         check_is_fitted(self, "model_")
+        check_memory_reduced(self, 'score')
         y = self.y_
         fitted = self.fitted_values_
 
@@ -1826,6 +1831,46 @@ class Ets(BaseEstimator, RegressorMixin):
         """
         for key, value in params.items():
             setattr(self, key, value)
+        return self
+
+    def reduce_memory(self) -> "Ets":
+        """
+        Reduce memory usage by removing internal arrays not needed for prediction.
+        This method clears memory-heavy arrays that are only needed for diagnostics
+        but not for prediction. After calling this method, the following methods
+        will raise an error:
+        
+        - fitted_(): In-sample fitted values
+        - residuals_(): In-sample residuals
+        - score(): R² coefficient
+        - summary(): Model summary statistics
+        
+        Prediction methods remain fully functional:
+        
+        - predict(): Point forecasts
+        - predict_interval(): Prediction intervals
+        
+        Returns
+        -------
+        self : Ets
+            The estimator with reduced memory usage.
+        
+        """
+        check_is_fitted(self, "model_")
+        
+        # Clear arrays at Ets level
+        self.y_ = None
+        self.fitted_values_ = None
+        self.residuals_in_ = None
+        
+        # Clear arrays at ETSModel level
+        if hasattr(self, 'model_'):
+            self.model_.fitted = None
+            self.model_.residuals = None
+            self.model_.y_original = None
+        
+        self.memory_reduced_ = True
+        
         return self
 
 

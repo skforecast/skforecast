@@ -13,6 +13,7 @@ import pandas as pd
 from scipy.stats import norm
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.utils.validation import check_is_fitted
+from ._utils import check_memory_reduced
 
 
 def setup_params(y_in, max_ar_depth: int | None = None, max_lag: int | None = None):
@@ -386,12 +387,15 @@ class Arar(BaseEstimator, RegressorMixin):
         Akaike Information Criterion.
     bic_ : float
         Bayesian Information Criterion.
+    memory_reduced_ : bool
+        Flag indicating whether reduce_memory() has been called.
     """
 
     def __init__(self, max_ar_depth: int | None = None, max_lag: int | None = None, safe: bool = True):
         self.max_ar_depth = max_ar_depth
         self.max_lag = max_lag
         self.safe = safe
+        self.memory_reduced_ = False
 
     def fit(self, y: pd.Series | np.ndarray, exog: None = None) -> "Arar":
         """
@@ -441,6 +445,7 @@ class Arar(BaseEstimator, RegressorMixin):
         loglik = -0.5 * n * (np.log(2 * np.pi) + np.log(sigma2) + 1)
         self.aic_ = -2 * loglik + 2 * k
         self.bic_ = -2 * loglik + k * np.log(n)
+        self.memory_reduced_ = False
 
         return self
     
@@ -514,6 +519,7 @@ class Arar(BaseEstimator, RegressorMixin):
         residuals : ndarray of shape (n_samples,)
         """
         check_is_fitted(self, "model_")
+        check_memory_reduced(self, 'residuals_')
         return self.residuals_in_
 
     def fitted_(self) -> np.ndarray:
@@ -525,6 +531,7 @@ class Arar(BaseEstimator, RegressorMixin):
         fitted : ndarray of shape (n_samples,)
         """
         check_is_fitted(self, "model_")
+        check_memory_reduced(self, 'fitted_')
         return self.fitted_values_
 
     def summary(self) -> None:
@@ -532,6 +539,7 @@ class Arar(BaseEstimator, RegressorMixin):
         Print a simple textual summary of the fitted ARAR model.
         """
         check_is_fitted(self, "model_")
+        check_memory_reduced(self, 'summary')
         return summary_arar(self.model_)
 
     def score(self, y=None) -> float:
@@ -549,6 +557,7 @@ class Arar(BaseEstimator, RegressorMixin):
             Coefficient of determination.
         """
         check_is_fitted(self, "model_")
+        check_memory_reduced(self, 'score')
         y = self.y_
         fitted = self.fitted_values_
         mask = ~np.isnan(fitted)
@@ -557,3 +566,36 @@ class Arar(BaseEstimator, RegressorMixin):
         ss_res = np.sum((y[mask] - fitted[mask]) ** 2)
         ss_tot = np.sum((y[mask] - y[mask].mean()) ** 2) + np.finfo(float).eps
         return 1.0 - ss_res / ss_tot
+
+    def reduce_memory(self) -> "Arar":
+        """
+        Reduce memory usage by removing internal arrays not needed for prediction.
+        This method clears memory-heavy arrays that are only needed for diagnostics
+        but not for prediction. After calling this method, the following methods
+        will raise an error:
+        
+        - fitted_(): In-sample fitted values
+        - residuals_(): In-sample residuals
+        - score(): R² coefficient
+        - summary(): Model summary statistics
+        
+        Prediction methods remain fully functional:
+        
+        - predict(): Point forecasts
+        - predict_interval(): Prediction intervals
+        
+        Returns
+        -------
+        self : Arar
+            The estimator with reduced memory usage.
+        
+        """
+        check_is_fitted(self, "model_")
+        
+        # Clear arrays at Arar level
+        self.fitted_values_ = None
+        self.residuals_in_ = None
+
+        self.memory_reduced_ = True
+        
+        return self
