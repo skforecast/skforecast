@@ -2297,8 +2297,8 @@ class QuantileBinner:
         The number of bins learned during fitting.
     bin_edges_ : numpy ndarray
         The edges of the bins learned during fitting.
-    _internal_edges : numpy ndarray
-        The internal edges used for optimized bin assignment.
+    internal_edges_ : numpy ndarray
+        The internal edges used for optimized bin assignment using `numpy.searchsorted`.
     intervals_ : dict
         A dictionary with the bin indices as keys and the corresponding bin
         intervals as values.
@@ -2329,7 +2329,7 @@ class QuantileBinner:
         self.random_state    = random_state
         self.n_bins_         = None
         self.bin_edges_      = None
-        self._internal_edges = None
+        self.internal_edges_ = None
         self.intervals_      = None
 
     def _validate_params(
@@ -2407,8 +2407,8 @@ class QuantileBinner:
         )
 
         self.n_bins_ = len(self.bin_edges_) - 1
-        # Pre-compute internal edges for optimized transform with searchsorted
-        self._internal_edges = self.bin_edges_[1:-1]
+        # Internal edges for optimized transform with searchsorted
+        self.internal_edges_ = self.bin_edges_[1:-1]
         self.intervals_ = {
             int(i): (float(self.bin_edges_[i]), float(self.bin_edges_[i + 1]))
             for i in range(self.n_bins_)
@@ -2437,11 +2437,9 @@ class QuantileBinner:
                 "The model has not been fitted yet. Call 'fit' with training data first."
             )
 
-        # Use searchsorted on internal edges for ~4x speedup over digitize+clip
-        # searchsorted on [e1, e2, ..., e_{n-1}] returns indices in [0, n_bins-1]
-        # which is exactly what we need without clip or subtraction
+        # Assign each value to a bin using searchsorted for performance
         bin_indices = np.searchsorted(
-            self._internal_edges, X, side='right'
+            self.internal_edges_, X, side='right'
         ).astype(self.dtype)
 
         return bin_indices
